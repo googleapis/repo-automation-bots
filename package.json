@@ -1,8 +1,9 @@
 {
   "name": "root",
   "private": true,
+  "license": "Apache-2.0",
   "scripts": {
-    "test": "lerna exec npm test",
+    "test": "c8 lerna exec npm test",
     "lint": "lerna exec npm run lint",
     "postinstall": "lerna bootstrap --hoist"
   },

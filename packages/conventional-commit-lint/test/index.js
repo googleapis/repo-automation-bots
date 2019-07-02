@@ -21,6 +21,10 @@ const {expect} = require('chai');
 const nock = require('nock');
 nock.disableNetConnect();
 
+// TODO: stop disabling warn once the following upstream patch is landed:
+// https://github.com/probot/probot/pull/926
+global.console.warn = () => {};
+
 describe('ConventionalCommitLint', () => {
   let probot;
 

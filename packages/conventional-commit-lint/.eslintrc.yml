@@ -10,7 +10,7 @@ rules:
   prettier/prettier: error
   block-scoped-var: error
   eqeqeq: error
-  no-warning-comments: warn
+  no-warning-comments: off
   no-var: error
   prefer-const: error
   node/no-unpublished-require: off

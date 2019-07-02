@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "lint commit messages based on conventionalcommits.org",
   "author": "Google Inc.",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "repository": "https://github.com//.git",
   "homepage": "https://github.com//",
   "bugs": "https://github.com///issues",
@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "start": "probot run ./index.js",
-    "test": "mocha",
+    "test": "cross-env LOG_LEVEL=fatal mocha",
     "fix": "eslint . --fix",
     "lint": "eslint ."
   },
@@ -22,8 +22,8 @@
     "probot": "^9.2.15"
   },
   "devDependencies": {
-    "c8": "^5.0.1",
     "chai": "^4.2.0",
+    "cross-env": "^5.2.0",
     "eslint": "^6.0.1",
     "eslint-config-prettier": "^6.0.0",
     "eslint-plugin-node": "^9.1.0",
@@ -34,20 +34,5 @@
   },
   "engines": {
     "node": ">= 8.3.0"
-  },
-  "standard": {
-    "env": [
-      "jest"
-    ]
-  },
-  "nodemonConfig": {
-    "exec": "npm start",
-    "watch": [
-      ".env",
-      "."
-    ]
-  },
-  "jest": {
-    "testEnvironment": "node"
   }
 }
