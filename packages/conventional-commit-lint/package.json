@@ -1,0 +1,53 @@
+{
+  "name": "conventional-commit-lint",
+  "version": "1.0.0",
+  "description": "lint commit messages based on conventionalcommits.org",
+  "author": "Google Inc.",
+  "license": "ISC",
+  "repository": "https://github.com//.git",
+  "homepage": "https://github.com//",
+  "bugs": "https://github.com///issues",
+  "keywords": [
+    "probot",
+    "github",
+    "probot-app"
+  ],
+  "scripts": {
+    "start": "probot run ./index.js",
+    "test": "mocha",
+    "fix": "eslint . --fix",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "probot": "^9.2.15"
+  },
+  "devDependencies": {
+    "c8": "^5.0.1",
+    "chai": "^4.2.0",
+    "eslint": "^6.0.1",
+    "eslint-config-prettier": "^6.0.0",
+    "eslint-plugin-node": "^9.1.0",
+    "eslint-plugin-prettier": "^3.1.0",
+    "mocha": "^6.1.4",
+    "nock": "^10.0.6",
+    "prettier": "^1.18.2"
+  },
+  "engines": {
+    "node": ">= 8.3.0"
+  },
+  "standard": {
+    "env": [
+      "jest"
+    ]
+  },
+  "nodemonConfig": {
+    "exec": "npm start",
+    "watch": [
+      ".env",
+      "."
+    ]
+  },
+  "jest": {
+    "testEnvironment": "node"
+  }
+}

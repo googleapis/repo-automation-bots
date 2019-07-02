@@ -2,5 +2,6 @@
   "packages": [
     "packages/*"
   ],
-  "version": "0.0.0"
+  "test": "nyc mocha --timeout 30000 packages/*/test{,/*}.js",
+  "version": "independent"
 }
