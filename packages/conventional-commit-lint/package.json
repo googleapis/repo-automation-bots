@@ -19,6 +19,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@commitlint/config-conventional": "^8.0.0",
+    "@commitlint/lint": "^8.0.0",
     "probot": "^9.2.15"
   },
   "devDependencies": {

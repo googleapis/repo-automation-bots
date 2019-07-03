@@ -14,13 +14,53 @@
  * limitations under the License.
  */
 
-module.exports = app => {
-  app.log('Yay, the app was loaded!');
+const lint = require('@commitlint/lint');
+const {rules} = require('@commitlint/config-conventional');
 
-  app.on('issues.opened', async context => {
-    const params = context.issue({
-      body: 'Thanks for opening this issue!',
+module.exports = app => {
+  app.on('pull_request', async context => {
+    // TODO: support PRs with more than 100 commits.
+    const commitParams = context.repo({
+      pull_number: context.payload.pull_request.number,
+      per_page: 100,
     });
-    context.github.issues.createComment(params);
+    const commits = (await context.github.pulls.listCommits(commitParams)).data;
+
+    // run the commit linter against all recent commits.
+    let text = '';
+    let lintError = false;
+    for (let i = 0, commit; (commit = commits[i]) !== undefined; i++) {
+      const message = commit.commit.message;
+      const result = await lint(message, rules);
+      if (result.valid === false) {
+        lintError = true;
+        text += `:x: linting errors for "*${result.input}*"\n`;
+        result.errors.forEach(error => {
+          text += `* ${error.message}\n`;
+        });
+        text += '\n\n'
+      }
+    }
+
+    // post the status of commit linting ot the PR.
+    let checkParams = {
+      name: 'conventionalcommits.org',
+      conclusion: 'success',
+      head_sha: commits[commits.length - 1].sha,
+    };
+
+    if (lintError) {
+      checkParams = context.repo({
+        head_sha: commits[commits.length - 1].sha,
+        conclusion: 'failure',
+        name: 'conventionalcommits.org',
+        output: {
+          title: 'Commit message did not follow Conventional Commits',
+          summary: `Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\nRun \`git reset --soft HEAD~${commits.length} && git commit .\` to amend your message.`,
+          text,
+        },
+      });
+    }
+    await context.github.checks.create(checkParams);
   });
 };
