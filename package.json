@@ -5,10 +5,12 @@
   "scripts": {
     "test": "c8 lerna exec npm test",
     "lint": "lerna exec npm run lint",
-    "postinstall": "lerna bootstrap --hoist"
+    "postinstall": "lerna bootstrap --hoist",
+    "proxy": "smee"
   },
   "devDependencies": {
     "c8": "^5.0.1",
-    "lerna": "^3.15.0"
+    "lerna": "^3.15.0",
+    "smee-client": "^1.1.0"
   }
 }
