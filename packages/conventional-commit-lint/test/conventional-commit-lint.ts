@@ -14,11 +14,16 @@
  * limitations under the License.
  */
 
-const myProbotApp = require('..');
-const {Probot} = require('probot');
+import myProbotApp from '../src/conventional-commit-lint';
 
-const {expect} = require('chai');
-const nock = require('nock');
+import { expect } from 'chai';
+import { resolve } from 'path';
+import { Probot } from 'probot';
+import nock from 'nock'
+
+const fixturesPath = resolve(__dirname, '../../test/fixtures');
+
+// const nock = require('nock');
 nock.disableNetConnect();
 
 // TODO: stop disabling warn once the following upstream patch is landed:
@@ -26,7 +31,7 @@ nock.disableNetConnect();
 global.console.warn = () => {};
 
 describe('ConventionalCommitLint', () => {
-  let probot;
+  let probot: Probot;
 
   beforeEach(() => {
     probot = new Probot({});
@@ -36,24 +41,30 @@ describe('ConventionalCommitLint', () => {
       getSignedJsonWebToken() {
         return 'abc123';
       },
+      getInstallationAccessToken(): Promise<string> {
+        return Promise.resolve('abc123');
+      },
     };
   });
 
   it('creates a comment when an issue is opened', async () => {
-    const payload = require('./fixtures/issues.opened');
-    const issueCreatedBody = {body: 'Thanks for opening this issue!'};
+    const payload = require(resolve(fixturesPath, './pull_request_synchronize'));
+    const issueCreatedBody = { body: 'Thanks for opening this issue!' };
 
     nock('https://api.github.com')
       .post('/app/installations/2/access_tokens')
-      .reply(200, {token: 'test'});
+      .reply(200, { token: 'test' });
 
     nock('https://api.github.com')
-      .post('/repos/Codertocat/Hello-World/issues/1/comments', body => {
-        expect(body).to.eql(issueCreatedBody);
-        return true;
-      })
+      .post(
+        '/repos/Codertocat/Hello-World/issues/1/comments',
+        (body: object) => {
+          expect(body).to.eql(issueCreatedBody);
+          return true;
+        }
+      )
       .reply(200);
 
-    await probot.receive({name: 'issues', payload});
+    await probot.receive({ name: 'issues', payload, id: 'abc123' });
   });
 });

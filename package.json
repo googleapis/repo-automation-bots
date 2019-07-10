@@ -4,7 +4,8 @@
   "license": "Apache-2.0",
   "scripts": {
     "test": "c8 lerna exec npm test",
-    "lint": "lerna exec npm run lint",
+    "check": "lerna exec npm run check",
+    "fix": "lerna exec npm run fix",
     "postinstall": "lerna bootstrap --hoist",
     "proxy": "smee"
   },

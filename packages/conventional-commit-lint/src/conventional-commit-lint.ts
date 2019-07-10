@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
-const lint = require('@commitlint/lint');
-const {rules} = require('@commitlint/config-conventional');
+import { Application } from 'probot';
+import lint from '@commitlint/lint';
+import { rules } from '@commitlint/config-conventional';
 
-module.exports = app => {
+type Conclusion =
+  | 'success'
+  | 'failure'
+  | 'neutral'
+  | 'cancelled'
+  | 'timed_out'
+  | 'action_required'
+  | undefined;
+
+export = (app: Application) => {
   app.on('pull_request', async context => {
     // TODO: support PRs with more than 100 commits.
     const commitParams = context.repo({
@@ -29,7 +39,8 @@ module.exports = app => {
     // run the commit linter against all recent commits.
     let text = '';
     let lintError = false;
-    for (let i = 0, commit; (commit = commits[i]) !== undefined; i++) {
+    for (let i = 0; commits[i] !== undefined; i++) {
+      const commit = commits[i];
       const message = commit.commit.message;
       const result = await lint(message, rules);
       if (result.valid === false) {
@@ -38,21 +49,21 @@ module.exports = app => {
         result.errors.forEach(error => {
           text += `* ${error.message}\n`;
         });
-        text += '\n\n'
+        text += '\n\n';
       }
     }
 
-    // post the status of commit linting ot the PR.
-    let checkParams = {
+    // post the status of commit linting to the PR.
+    const checkParams = context.repo({
       name: 'conventionalcommits.org',
-      conclusion: 'success',
+      conclusion: 'success' as Conclusion,
       head_sha: commits[commits.length - 1].sha,
-    };
+    });
 
     if (lintError) {
-      checkParams = context.repo({
+      const checkParams = context.repo({
         head_sha: commits[commits.length - 1].sha,
-        conclusion: 'failure',
+        conclusion: 'failure' as Conclusion,
         name: 'conventionalcommits.org',
         output: {
           title: 'Commit message did not follow Conventional Commits',
