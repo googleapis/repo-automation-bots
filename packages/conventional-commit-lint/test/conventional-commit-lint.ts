@@ -19,12 +19,12 @@ import myProbotApp from '../src/conventional-commit-lint';
 import { expect } from 'chai';
 import { resolve } from 'path';
 import { Probot } from 'probot';
-import nock from 'nock'
+import snapshot from 'snap-shot-it';
+
+import nock from 'nock';
+nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
-
-// const nock = require('nock');
-nock.disableNetConnect();
 
 // TODO: stop disabling warn once the following upstream patch is landed:
 // https://github.com/probot/probot/pull/926
@@ -34,7 +34,11 @@ describe('ConventionalCommitLint', () => {
   let probot: Probot;
 
   beforeEach(() => {
-    probot = new Probot({});
+    probot = new Probot({
+      // use a bare instance of octokit, the default version
+      // enables retries which makes testing difficult.
+      Octokit: require('@octokit/rest'),
+    });
 
     const app = probot.load(myProbotApp);
     app.app = {
@@ -47,24 +51,42 @@ describe('ConventionalCommitLint', () => {
     };
   });
 
-  it('creates a comment when an issue is opened', async () => {
-    const payload = require(resolve(fixturesPath, './pull_request_synchronize'));
-    const issueCreatedBody = { body: 'Thanks for opening this issue!' };
-
-    nock('https://api.github.com')
-      .post('/app/installations/2/access_tokens')
-      .reply(200, { token: 'test' });
-
-    nock('https://api.github.com')
-      .post(
-        '/repos/Codertocat/Hello-World/issues/1/comments',
-        (body: object) => {
-          expect(body).to.eql(issueCreatedBody);
-          return true;
-        }
-      )
+  it('sets a "failure" context on PR, if commits fail linting', async () => {
+    const payload = require(resolve(
+      fixturesPath,
+      './pull_request_synchronize'
+    ));
+    const invalidCommits = require(resolve(fixturesPath, './invalid_commit'));
+    const requests = nock('https://api.github.com')
+      .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
+      .reply(200, invalidCommits)
+      .post('/repos/bcoe/test-release-please/check-runs', body => {
+        snapshot(body);
+        return true;
+      })
       .reply(200);
 
-    await probot.receive({ name: 'issues', payload, id: 'abc123' });
+    await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+    requests.done();
+  });
+
+  it('sets a "success" context on PR, if commit lint succeeds', async () => {
+    const payload = require(resolve(
+      fixturesPath,
+      './pull_request_synchronize'
+    ));
+    const invalidCommits = require(resolve(fixturesPath, './valid_commit'));
+
+    const requests = nock('https://api.github.com')
+      .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
+      .reply(200, invalidCommits)
+      .post('/repos/bcoe/test-release-please/check-runs', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200);
+
+    await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+    requests.done();
   });
 });

@@ -17,6 +17,7 @@
 import { Application } from 'probot';
 import lint from '@commitlint/lint';
 import { rules } from '@commitlint/config-conventional';
+import { PullsListCommitsResponseItem, Response } from '@octokit/rest';
 
 type Conclusion =
   | 'success'
@@ -29,14 +30,25 @@ type Conclusion =
 
 export = (app: Application) => {
   app.on('pull_request', async context => {
-    // TODO: support PRs with more than 100 commits.
+    // Fetch last 100 commits stored on a specific PR.
     const commitParams = context.repo({
       pull_number: context.payload.pull_request.number,
       per_page: 100,
     });
-    const commits = (await context.github.pulls.listCommits(commitParams)).data;
+    // Response object has a typed response.data, which has definitions that
+    // can be found here: https://unpkg.com/@octokit/rest@16.28.3/index.d.ts
+    let commitsResponse: Response<PullsListCommitsResponseItem[]>;
+    try {
+      commitsResponse = await context.github.pulls.listCommits(commitParams);
+    } catch (err) {
+      console.info(err);
+      app.log.error(err);
+      return;
+    }
+    const commits = commitsResponse.data;
 
-    // run the commit linter against all recent commits.
+    // if we found any commits, run each of them through commit lint:
+    // https://www.npmjs.com/package/@commitlint/lint
     let text = '';
     let lintError = false;
     for (let i = 0; commits[i] !== undefined; i++) {
@@ -53,15 +65,16 @@ export = (app: Application) => {
       }
     }
 
-    // post the status of commit linting to the PR.
-    const checkParams = context.repo({
+    // post the status of commit linting to the PR, using:
+    // https://developer.github.com/v3/checks/
+    let checkParams = context.repo({
       name: 'conventionalcommits.org',
       conclusion: 'success' as Conclusion,
       head_sha: commits[commits.length - 1].sha,
     });
 
     if (lintError) {
-      const checkParams = context.repo({
+      checkParams = context.repo({
         head_sha: commits[commits.length - 1].sha,
         conclusion: 'failure' as Conclusion,
         name: 'conventionalcommits.org',
