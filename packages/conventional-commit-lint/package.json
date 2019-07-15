@@ -23,7 +23,7 @@
     "test": "cross-env LOG_LEVEL=fatal mocha --timeout=15000 --recursive ./build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "fix": "gts fix",
-    "check": "gts check"
+    "lint": "gts check"
   },
   "dependencies": {
     "@commitlint/config-conventional": "^8.0.0",
@@ -49,6 +49,6 @@
     "typescript": "^3.5.3"
   },
   "engines": {
-    "node": ">= 8.3.0"
+    "node": ">= 10.13.0"
   }
 }
