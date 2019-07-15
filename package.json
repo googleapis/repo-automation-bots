@@ -1,7 +1,17 @@
 {
-  "name": "root",
+  "name": "repo-automation-bots",
   "private": true,
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "c8 lerna exec npm test",
+    "lint": "lerna exec npm run lint",
+    "fix": "lerna exec npm run fix",
+    "postinstall": "lerna bootstrap --hoist",
+    "proxy": "smee"
+  },
   "devDependencies": {
-    "lerna": "^3.15.0"
+    "c8": "^5.0.1",
+    "lerna": "^3.15.0",
+    "smee-client": "^1.1.0"
   }
 }
