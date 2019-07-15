@@ -41,7 +41,6 @@ export = (app: Application) => {
     try {
       commitsResponse = await context.github.pulls.listCommits(commitParams);
     } catch (err) {
-      console.info(err);
       app.log.error(err);
       return;
     }
