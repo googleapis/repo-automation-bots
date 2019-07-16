@@ -1,0 +1,45 @@
+{
+  "name": "gcf-utils",
+  "version": "0.1.0",
+  "description": "An extension for running Probot in Google Cloud Functions",
+  "scripts": {
+    "compile": "tsc -p .",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "test": "cross-env LOG_LEVEL=fatal mocha --recursive ./build/test",
+    "fix": "gts check",
+    "check": "gts fix"
+  },
+  "repository": "https://github.com//.git",
+  "homepage": "https://github.com//",
+  "bugs": "https://github.com///issues",
+  "devDependencies": {
+    "@types/express": "^4.17.0",
+    "@types/google-cloud__kms": "^0.2.0",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.6.1",
+    "cross-env": "^5.2.0",
+    "gts": "^1.0.0",
+    "mocha": "^6.1.4",
+    "sinon": "^7.3.2",
+    "typescript": "^3.5.3"
+  },
+  "engines": {
+    "node": ">= 10.13.0"
+  },
+  "keywords": [
+    "google cloud functions",
+    "probot",
+    "github",
+    "drift"
+  ],
+  "standard": {},
+  "author": "Google Inc.",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@google-cloud/kms": "^1.1.1",
+    "@google-cloud/storage": "^2.5.0",
+    "@types/sinon": "^7.0.13",
+    "probot": "^9.2.15"
+  }
+}
