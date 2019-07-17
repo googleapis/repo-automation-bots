@@ -21,66 +21,65 @@ import * as KMS from '@google-cloud/kms';
 import { readFileSync } from 'fs';
 import * as express from 'express';
 
-let probot: Probot
 
-async function loadProbot(appFn: ApplicationFunction): Promise<Probot> {
-  if (!probot) {
-    const cfg = await getProbotConfig();
-    probot = createProbot(cfg);
+export class GCFBootstrapper {
+  probot?: Probot;
+
+  async loadProbot(appFn: ApplicationFunction): Promise<Probot> {
+    if (!this.probot) {
+      const cfg = await this.getProbotConfig();
+      this.probot = createProbot(cfg);
+    }
+
+    if (typeof appFn === 'string') {
+      appFn = resolve(appFn)
+    }
+
+    this.probot.load(appFn)
+
+    return this.probot
   }
 
-  if (typeof appFn === 'string') {
-    appFn = resolve(appFn)
+  async getProbotConfig(): Promise<Options> {
+    // Creates a client
+    const storage = new Storage();
+
+    const destFileName = "/tmp/creds.json";
+    const bucketName = process.env.DRIFT_PRO_BUCKET || '';
+    const srcFilename = process.env.GCF_SHORT_FUNCTION_NAME || '';
+
+    const options = {
+      // The path to which the file should be downloaded, e.g. "./file.txt"
+      destination: destFileName,
+    };
+
+    // Downloads the file
+    await storage.bucket(bucketName)
+      .file(srcFilename)
+      .download(options);
+
+    const client = new KMS.KeyManagementServiceClient();
+    const contentsBuffer = readFileSync(destFileName);
+    const name = client.cryptoKeyPath(
+      process.env.PROJECT_ID || '',
+      process.env.KEY_LOCATION || '',
+      process.env.KEY_RING || '',
+      process.env.GCF_SHORT_FUNCTION_NAME || ''
+    );
+
+    const ciphertext = contentsBuffer.toString('base64');
+
+    // Decrypts the file using the specified crypto key
+    const [result] = await client.decrypt({ name, ciphertext });
+
+    const config = JSON.parse(result.plaintext.toString());
+    return config
   }
 
-  probot.load(appFn)
-
-  return probot
-}
-
-async function getProbotConfig(): Promise<Options> {
-  // Creates a client
-  const storage = new Storage();
-
-  const destFileName = "/tmp/creds.json";
-  const bucketName = process.env.DRIFT_PRO_BUCKET || '';
-  const srcFilename = process.env.GCF_SHORT_FUNCTION_NAME || '';
-
-  const options = {
-    // The path to which the file should be downloaded, e.g. "./file.txt"
-    destination: destFileName,
-  };
-
-  // Downloads the file
-  await storage.bucket(bucketName)
-    .file(srcFilename)
-    .download(options);
-
-  const client = new KMS.KeyManagementServiceClient();
-  const contentsBuffer = readFileSync(destFileName);
-  const name = client.cryptoKeyPath(
-    process.env.PROJECT_ID || '',
-    process.env.KEY_LOCATION || '',
-    process.env.KEY_RING || '',
-    process.env.GCF_SHORT_FUNCTION_NAME || ''
-  );
-
-  const ciphertext = contentsBuffer.toString('base64');
-
-  // Decrypts the file using the specified crypto key
-  const [result] = await client.decrypt({ name, ciphertext });
-
-  const config = JSON.parse(result.plaintext.toString());
-  return config
-}
-
-
-export ={
-  loadProbot,
-  gcf: async (appFn: ApplicationFunction) => {
+  async gcf(appFn: ApplicationFunction): Promise<(request: express.Request, response: express.Response) => Promise<void>> {
     return async (request: express.Request, response: express.Response) => {
       // Otherwise let's listen handle the payload
-      probot = probot || await loadProbot(appFn);
+      this.probot = this.probot || await this.loadProbot(appFn);
 
       // Determine incoming webhook event type
       const name = request.get('x-github-event') || request.get('X-GitHub-Event');
@@ -89,7 +88,7 @@ export ={
       // Do the thing
       if (name) {
         try {
-          await probot.receive({
+          await this.probot.receive({
             name,
             id,
             payload: request.body

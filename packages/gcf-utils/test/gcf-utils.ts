@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import commonutils from '../src/gcf-utils';
+import { GCFBootstrapper } from '../src/gcf-utils';
 
 import { GitHubAPI } from 'probot/lib/github';
-import { ApplicationFunction, Probot } from 'probot';
+import { ApplicationFunction, Options, Probot } from 'probot';
 import * as express from 'express';
 import sinon from 'sinon';
 
@@ -29,12 +29,14 @@ describe('gcf-utils', () => {
     let response: express.Response;
 
     let req: express.Request;
-    let reqStub: sinon.SinonStubbedInstance<express.Request>;
 
     let sendStub: sinon.SinonStub<[any?], express.Response>;
     let sendStatusStub: sinon.SinonStub<[number], express.Response>;
     let spy: sinon.SinonStub;
     let loadStub: sinon.SinonStub<[ApplicationFunction], Promise<Probot>>;
+    let configStub: sinon.SinonStub<[], Promise<Options>>;
+
+    let bootstrapper: GCFBootstrapper;
 
     before(async () => {
         response = express.response;
@@ -42,15 +44,17 @@ describe('gcf-utils', () => {
         sendStatusStub = sinon.stub(response, "sendStatus");
 
         req = express.request;
-        reqStub = sinon.stub(req);
 
         spy = sinon.stub();
-
-        loadStub = sinon.stub(commonutils, "loadProbot");
     });
 
     beforeEach(async () => {
-        handler = await commonutils.gcf(async app => {
+        bootstrapper = new GCFBootstrapper();
+        configStub = sinon.stub(bootstrapper, "getProbotConfig").callsFake(() => {
+            return Promise.resolve({ id: 1234, secret: "foo", webhookPath: "bar" })
+        });
+
+        handler = await bootstrapper.gcf(async app => {
             app.auth = () => new Promise<GitHubAPI>((resolve, reject) => {
                 resolve(GitHubAPI());
             })
@@ -62,36 +66,36 @@ describe('gcf-utils', () => {
         sendStub.reset();
         sendStatusStub.reset();
         spy.reset();
+        configStub.reset();
     });
 
     it('calls the event handler', async () => {
-        reqStub.body = {
+        req.body = {
             installation: { id: 1 }
         }
-        reqStub.headers = {};
-        reqStub.headers['x-github-event'] = 'issues';
-        reqStub.headers['x-github-delivery'] = '123';
-
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
 
         await handler(req, response)
 
-        sinon.assert.called(reqStub.get);
-        sinon.assert.called(reqStub.body);
+        sinon.assert.calledOnce(configStub);
+        sinon.assert.notCalled(sendStatusStub);
         sinon.assert.calledOnce(sendStub);
         sinon.assert.calledOnce(spy);
     });
 
     it('does nothing if there are missing headers', async () => {
-        reqStub.body = {
+        req.body = {
             installation: { id: 1 }
         };
-        reqStub.headers = {};
+        req.headers = {};
 
         await handler(req, response);
 
-        sinon.assert.called(reqStub.get);
-        sinon.assert.called(reqStub.body);
+        sinon.assert.calledOnce(configStub);
         sinon.assert.notCalled(spy);
+        sinon.assert.notCalled(sendStub);
         sinon.assert.calledWith(sendStatusStub, 400);
     });
 });
