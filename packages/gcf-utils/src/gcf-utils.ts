@@ -41,15 +41,15 @@ export class GCFBootstrapper {
   }
 
   async getProbotConfig(): Promise<Options> {
-    // Creates a client
+
     const storage = new Storage();
+    const kmsclient = new KMS.KeyManagementServiceClient();
 
     const destFileName = "/tmp/creds.json";
     const bucketName = process.env.DRIFT_PRO_BUCKET || '';
     const srcFilename = process.env.GCF_SHORT_FUNCTION_NAME || '';
 
     const options = {
-      // The path to which the file should be downloaded, e.g. "./file.txt"
       destination: destFileName,
     };
 
@@ -58,9 +58,9 @@ export class GCFBootstrapper {
       .file(srcFilename)
       .download(options);
 
-    const client = new KMS.KeyManagementServiceClient();
+
     const contentsBuffer = readFileSync(destFileName);
-    const name = client.cryptoKeyPath(
+    const name = kmsclient.cryptoKeyPath(
       process.env.PROJECT_ID || '',
       process.env.KEY_LOCATION || '',
       process.env.KEY_RING || '',
@@ -70,7 +70,7 @@ export class GCFBootstrapper {
     const ciphertext = contentsBuffer.toString('base64');
 
     // Decrypts the file using the specified crypto key
-    const [result] = await client.decrypt({ name, ciphertext });
+    const [result] = await kmsclient.decrypt({ name, ciphertext });
 
     const config = JSON.parse(result.plaintext.toString());
     return config
@@ -92,21 +92,21 @@ export class GCFBootstrapper {
             name,
             id,
             payload: request.body
-          })
+          });
           response.send({
             statusCode: 200,
             body: JSON.stringify({ message: 'Executed' })
-          })
+          });
         } catch (err) {
           console.error(err)
           response.send({
             statusCode: 500,
             body: JSON.stringify({ message: err })
-          })
+          });
         }
       } else {
-        console.error(request)
-        response.sendStatus(400)
+        console.error(request);
+        response.sendStatus(400);
       }
     }
   }

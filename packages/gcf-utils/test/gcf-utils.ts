@@ -17,85 +17,131 @@
 import { GCFBootstrapper } from '../src/gcf-utils';
 
 import { GitHubAPI } from 'probot/lib/github';
-import { ApplicationFunction, Options, Probot } from 'probot';
+import { Options } from 'probot';
 import * as express from 'express';
 import sinon from 'sinon';
 
 
-describe('gcf-utils', () => {
-    let handler: (request: express.Request, response: express.Response) => Promise<void>;
-    let loadProbot: (appFn: ApplicationFunction) => Promise<Probot>;
+describe('GCFBootstrapper', () => {
 
-    let response: express.Response;
+    describe("gcf", () => {
+        let handler: (request: express.Request, response: express.Response) => Promise<void>;
 
-    let req: express.Request;
+        let response: express.Response = express.response;
+        let sendStub: sinon.SinonStub<[any?], express.Response> = sinon.stub(response, "send");
+        let sendStatusStub: sinon.SinonStub<[number], express.Response> = sinon.stub(response, "sendStatus");
 
-    let sendStub: sinon.SinonStub<[any?], express.Response>;
-    let sendStatusStub: sinon.SinonStub<[number], express.Response>;
-    let spy: sinon.SinonStub;
-    let loadStub: sinon.SinonStub<[ApplicationFunction], Promise<Probot>>;
-    let configStub: sinon.SinonStub<[], Promise<Options>>;
+        let req: express.Request;
 
-    let bootstrapper: GCFBootstrapper;
+        let spy: sinon.SinonStub = sinon.stub();
+        let configStub: sinon.SinonStub<[], Promise<Options>>;
 
-    before(async () => {
-        response = express.response;
-        sendStub = sinon.stub(response, "send");
-        sendStatusStub = sinon.stub(response, "sendStatus");
+        let bootstrapper: GCFBootstrapper;
 
-        req = express.request;
+        beforeEach(async () => {
+            req = express.request;
 
-        spy = sinon.stub();
-    });
+            bootstrapper = new GCFBootstrapper();
+            configStub = sinon.stub(bootstrapper, "getProbotConfig").callsFake(() => {
+                return Promise.resolve({ id: 1234, secret: "foo", webhookPath: "bar" })
+            });
 
-    beforeEach(async () => {
-        bootstrapper = new GCFBootstrapper();
-        configStub = sinon.stub(bootstrapper, "getProbotConfig").callsFake(() => {
-            return Promise.resolve({ id: 1234, secret: "foo", webhookPath: "bar" })
+            handler = await bootstrapper.gcf(async app => {
+                app.auth = () => new Promise<GitHubAPI>((resolve, reject) => {
+                    resolve(GitHubAPI());
+                })
+                app.on('issues', spy);
+                app.on('err', sinon.stub().throws());
+            });
         });
 
-        handler = await bootstrapper.gcf(async app => {
-            app.auth = () => new Promise<GitHubAPI>((resolve, reject) => {
-                resolve(GitHubAPI());
-            })
-            app.on('issues', spy)
+        afterEach(() => {
+            sendStub.reset();
+            sendStatusStub.reset();
+            spy.reset();
+            configStub.reset();
+        });
+
+        it('calls the event handler', async () => {
+            req.body = {
+                installation: { id: 1 }
+            }
+            req.headers = {};
+            req.headers['x-github-event'] = 'issues';
+            req.headers['x-github-delivery'] = '123';
+
+            await handler(req, response)
+
+            sinon.assert.calledOnce(configStub);
+            sinon.assert.notCalled(sendStatusStub);
+            sinon.assert.calledOnce(sendStub);
+            sinon.assert.calledOnce(spy);
+        });
+
+        it('does nothing if there are missing headers', async () => {
+            req.body = {
+                installation: { id: 1 }
+            };
+            req.headers = {};
+
+            await handler(req, response);
+
+            sinon.assert.calledOnce(configStub);
+            sinon.assert.notCalled(spy);
+            sinon.assert.notCalled(sendStub);
+            sinon.assert.calledWith(sendStatusStub, 400);
+        });
+
+
+        it('returns 500 on errors', async () => {
+            req.body = {
+                installtion: { id: 1 }
+            };
+            req.headers = {};
+            req.headers['x-github-event'] = 'err';
+            req.headers['x-github-delivery'] = '123';
+
+            await handler(req, response);
+
+            sinon.assert.calledOnce(configStub);
+            sinon.assert.notCalled(spy);
+            sinon.assert.notCalled(sendStatusStub);
+            sinon.assert.called(sendStub);
+        });
+    });
+
+    describe("loadProbot", () => {
+        let bootstrapper: GCFBootstrapper;
+        let configStub: sinon.SinonStub<[], Promise<Options>>;
+
+
+        beforeEach(() => {
+            bootstrapper = new GCFBootstrapper();
+            configStub = sinon.stub(bootstrapper, "getProbotConfig").callsFake(() => {
+                return Promise.resolve({ id: 1234, secret: "foo", webhookPath: "bar" })
+            });
+        });
+
+        afterEach(() => {
+            configStub.reset();
         })
-    });
 
-    afterEach(() => {
-        sendStub.reset();
-        sendStatusStub.reset();
-        spy.reset();
-        configStub.reset();
-    });
+        it("gets the config", async () => {
+            await bootstrapper.loadProbot(async app => {
+                // Do nothing
+            });
+            sinon.assert.calledOnce(configStub);
+        });
 
-    it('calls the event handler', async () => {
-        req.body = {
-            installation: { id: 1 }
-        }
-        req.headers = {};
-        req.headers['x-github-event'] = 'issues';
-        req.headers['x-github-delivery'] = '123';
-
-        await handler(req, response)
-
-        sinon.assert.calledOnce(configStub);
-        sinon.assert.notCalled(sendStatusStub);
-        sinon.assert.calledOnce(sendStub);
-        sinon.assert.calledOnce(spy);
-    });
-
-    it('does nothing if there are missing headers', async () => {
-        req.body = {
-            installation: { id: 1 }
-        };
-        req.headers = {};
-
-        await handler(req, response);
-
-        sinon.assert.calledOnce(configStub);
-        sinon.assert.notCalled(spy);
-        sinon.assert.notCalled(sendStub);
-        sinon.assert.calledWith(sendStatusStub, 400);
+        it("caches the probot if initialized", async () => {
+            await bootstrapper.loadProbot(async app => {
+                // Do nothing
+            });
+            sinon.assert.calledOnce(configStub);
+            await bootstrapper.loadProbot(async app => {
+                // Do nothing again
+            });
+            sinon.assert.calledOnce(configStub);
+        });
     });
 });
