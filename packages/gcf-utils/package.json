@@ -8,7 +8,7 @@
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal mocha --recursive ./build/test",
     "fix": "gts check",
-    "check": "gts fix"
+    "lint": "gts fix"
   },
   "repository": "https://github.com//.git",
   "homepage": "https://github.com//",
