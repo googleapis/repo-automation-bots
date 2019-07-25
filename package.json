@@ -6,12 +6,16 @@
     "test": "c8 lerna exec npm test",
     "lint": "lerna exec npm run lint",
     "fix": "lerna exec npm run fix",
-    "postinstall": "lerna bootstrap --hoist",
+    "install": "lerna bootstrap",
     "proxy": "smee"
+  },
+  "dependencies": {
+    "conventional-commit-lint": "./packages/conventional-commit-lint",
+    "gcf-utils": "./packages/gcf-utils"
   },
   "devDependencies": {
     "c8": "^5.0.1",
-    "lerna": "^3.15.0",
+    "lerna": "^3.16.4",
     "smee-client": "^1.1.0"
   }
 }

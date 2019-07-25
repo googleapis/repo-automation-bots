@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-import { createProbot, Probot, ApplicationFunction, Options, Application } from 'probot';
+import {
+  createProbot,
+  Probot,
+  ApplicationFunction,
+  Options,
+  Application,
+} from 'probot';
 import { resolve } from 'probot/lib/resolver';
 import { Storage } from '@google-cloud/storage';
 import * as KMS from '@google-cloud/kms';
 import { readFileSync } from 'fs';
 import * as express from 'express';
-
 
 export class GCFBootstrapper {
   probot?: Probot;
@@ -32,20 +37,19 @@ export class GCFBootstrapper {
     }
 
     if (typeof appFn === 'string') {
-      appFn = resolve(appFn)
+      appFn = resolve(appFn);
     }
 
-    this.probot.load(appFn)
+    this.probot.load(appFn);
 
-    return this.probot
+    return this.probot;
   }
 
   async getProbotConfig(): Promise<Options> {
-
     const storage = new Storage();
     const kmsclient = new KMS.KeyManagementServiceClient();
 
-    const destFileName = "/tmp/creds.json";
+    const destFileName = '/tmp/creds.json';
     const bucketName = process.env.DRIFT_PRO_BUCKET || '';
     const srcFilename = process.env.GCF_SHORT_FUNCTION_NAME || '';
 
@@ -54,10 +58,10 @@ export class GCFBootstrapper {
     };
 
     // Downloads the file
-    await storage.bucket(bucketName)
+    await storage
+      .bucket(bucketName)
       .file(srcFilename)
       .download(options);
-
 
     const contentsBuffer = readFileSync(destFileName);
     const name = kmsclient.cryptoKeyPath(
@@ -73,17 +77,25 @@ export class GCFBootstrapper {
     const [result] = await kmsclient.decrypt({ name, ciphertext });
 
     const config = JSON.parse(result.plaintext.toString());
-    return config
+    return config;
   }
 
-  async gcf(appFn: ApplicationFunction): Promise<(request: express.Request, response: express.Response) => Promise<void>> {
+  async gcf(
+    appFn: ApplicationFunction
+  ): Promise<
+    (request: express.Request, response: express.Response) => Promise<void>
+  > {
     return async (request: express.Request, response: express.Response) => {
       // Otherwise let's listen handle the payload
-      this.probot = this.probot || await this.loadProbot(appFn);
+      this.probot = this.probot || (await this.loadProbot(appFn));
 
       // Determine incoming webhook event type
-      const name = request.get('x-github-event') || request.get('X-GitHub-Event');
-      const id = request.get('x-github-delivery') || request.get('X-GitHub-Delivery') || '';
+      const name =
+        request.get('x-github-event') || request.get('X-GitHub-Event');
+      const id =
+        request.get('x-github-delivery') ||
+        request.get('X-GitHub-Delivery') ||
+        '';
 
       // Do the thing
       if (name) {
@@ -91,21 +103,21 @@ export class GCFBootstrapper {
           await this.probot.receive({
             name,
             id,
-            payload: request.body
+            payload: request.body,
           });
           response.send({
             statusCode: 200,
-            body: JSON.stringify({ message: 'Executed' })
+            body: JSON.stringify({ message: 'Executed' }),
           });
         } catch (err) {
           response.send({
             statusCode: 500,
-            body: JSON.stringify({ message: err })
+            body: JSON.stringify({ message: err }),
           });
         }
       } else {
         response.sendStatus(400);
       }
-    }
+    };
   }
 }
