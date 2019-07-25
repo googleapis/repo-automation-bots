@@ -8,6 +8,8 @@
     "lint": "lerna exec npm run lint",
     "fix": "lerna exec npm run fix",
     "postinstall": "lerna bootstrap --hoist",
+    "docs-test": "echo 'not yet implemented'",
+    "system-test": "echo 'not yet implemented'",
     "proxy": "smee"
   },
   "devDependencies": {
