@@ -7,14 +7,10 @@
     "test": "c8 lerna exec npm test",
     "lint": "lerna exec npm run lint",
     "fix": "lerna exec npm run fix",
-    "install": "lerna bootstrap",
+    "postinstall": "lerna bootstrap --hoist",
     "docs-test": "echo 'not yet implemented'",
     "system-test": "echo 'not yet implemented'",
     "proxy": "smee"
-  },
-  "dependencies": {
-    "conventional-commit-lint": "./packages/conventional-commit-lint",
-    "gcf-utils": "./packages/gcf-utils"
   },
   "devDependencies": {
     "c8": "^5.0.1",
