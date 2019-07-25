@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "c8": "^5.0.1",
-    "lerna": "^3.15.0",
+    "lerna": "^3.16.4",
     "smee-client": "^1.1.0"
   }
 }
