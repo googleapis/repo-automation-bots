@@ -98,14 +98,12 @@ export class GCFBootstrapper {
             body: JSON.stringify({ message: 'Executed' })
           });
         } catch (err) {
-          console.error(err)
           response.send({
             statusCode: 500,
             body: JSON.stringify({ message: err })
           });
         }
       } else {
-        console.error(request);
         response.sendStatus(400);
       }
     }
