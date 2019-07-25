@@ -31,10 +31,6 @@ export class GCFBootstrapper {
       this.probot = createProbot(cfg);
     }
 
-    if (typeof appFn === 'string') {
-      appFn = resolve(appFn)
-    }
-
     this.probot.load(appFn)
 
     return this.probot
