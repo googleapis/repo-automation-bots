@@ -21,7 +21,6 @@ import {
   Options,
   Application,
 } from 'probot';
-import { resolve } from 'probot/lib/resolver';
 import { Storage } from '@google-cloud/storage';
 import * as KMS from '@google-cloud/kms';
 import { readFileSync } from 'fs';
@@ -36,7 +35,7 @@ export class GCFBootstrapper {
       this.probot = createProbot(cfg);
     }
 
-    this.probot.load(appFn)
+    this.probot.load(appFn);
 
     return this.probot;
   }
@@ -76,11 +75,9 @@ export class GCFBootstrapper {
     return config;
   }
 
-  async gcf(
+  gcf(
     appFn: ApplicationFunction
-  ): Promise<
-    (request: express.Request, response: express.Response) => Promise<void>
-  > {
+  ): (request: express.Request, response: express.Response) => Promise<void> {
     return async (request: express.Request, response: express.Response) => {
       // Otherwise let's listen handle the payload
       this.probot = this.probot || (await this.loadProbot(appFn));

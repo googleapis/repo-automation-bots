@@ -8,6 +8,7 @@
   "repository": "https://github.com/googleapis/repo-automation-bots.git",
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "main": "build/src/app.js",
   "keywords": [
     "probot",
     "github",
@@ -29,6 +30,7 @@
     "@commitlint/config-conventional": "^8.0.0",
     "@commitlint/lint": "^8.0.0",
     "@octokit/rest": "^16.28.3",
+    "gcf-utils": "^0.1.0",
     "probot": "^9.2.15"
   },
   "devDependencies": {
