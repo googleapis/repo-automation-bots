@@ -31,8 +31,8 @@
     "@commitlint/config-conventional": "^8.0.0",
     "@commitlint/lint": "^8.0.0",
     "@octokit/rest": "^16.28.3",
-    "probot": "^9.2.15",
-    "gcf-utils": "file://./gcf-utils.tgz"
+    "gcf-utils": "^0.1.0",
+    "probot": "^9.2.15"
   },
   "devDependencies": {
     "@types/bunyan": "^1.8.6",

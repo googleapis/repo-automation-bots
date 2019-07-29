@@ -45,5 +45,10 @@
     "@google-cloud/kms": "^1.1.1",
     "@google-cloud/storage": "^2.5.0",
     "probot": "^9.2.20"
-  }
+  },
+  "files": [
+    "build/",
+    "package.json",
+    "LICENSE"
+  ]
 }

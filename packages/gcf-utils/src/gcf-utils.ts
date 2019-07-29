@@ -35,7 +35,7 @@ export class GCFBootstrapper {
       this.probot = createProbot(cfg);
     }
 
-    this.probot.load(appFn)
+    this.probot.load(appFn);
 
     return this.probot;
   }
