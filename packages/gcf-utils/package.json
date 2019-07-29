@@ -10,6 +10,7 @@
     "fix": "gts check",
     "lint": "gts fix"
   },
+  "main": "./build/src/gcf-utils.js",
   "repository": "https://github.com//.git",
   "homepage": "https://github.com//",
   "bugs": "https://github.com///issues",
@@ -43,6 +44,6 @@
   "dependencies": {
     "@google-cloud/kms": "^1.1.1",
     "@google-cloud/storage": "^2.5.0",
-    "probot": "^9.2.15"
+    "probot": "^9.2.20"
   }
 }
