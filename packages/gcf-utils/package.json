@@ -43,7 +43,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@google-cloud/kms": "^1.1.1",
-    "@google-cloud/storage": "^2.5.0",
+    "@google-cloud/storage": "^3.0.0",
     "probot": "^9.2.20"
   },
   "files": [
