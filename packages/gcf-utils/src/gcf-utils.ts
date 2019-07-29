@@ -77,8 +77,7 @@ export class GCFBootstrapper {
 
   gcf(
     appFn: ApplicationFunction
-  ):
-    (request: express.Request, response: express.Response) => Promise<void> {
+  ): (request: express.Request, response: express.Response) => Promise<void> {
     return async (request: express.Request, response: express.Response) => {
       // Otherwise let's listen handle the payload
       this.probot = this.probot || (await this.loadProbot(appFn));

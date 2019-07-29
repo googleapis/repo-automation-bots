@@ -17,5 +17,5 @@
 import { GCFBootstrapper } from 'gcf-utils';
 import appFn from './conventional-commit-lint';
 
-let bootstrap = new GCFBootstrapper();
+const bootstrap = new GCFBootstrapper();
 module.exports.conventional_commit_lint = bootstrap.gcf(appFn);
