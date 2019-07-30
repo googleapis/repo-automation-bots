@@ -1,0 +1,46 @@
+# Copyright 2019 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+steps:
+- name: gcr.io/cloud-builders/gcloud
+  id: 'publish-functions'
+  waitFor: [ '-' ]
+  entrypoint: bash
+  args:
+  - '-e'
+  - '-c'
+  - |
+    # For each item in our packages directory run
+    #   gcloud functions deploy
+    # Then copy the tar out to our "targets" directory for further unpacking
+    workdir=$(pwd)
+    echo $workdir
+    targets=$workdir/targets
+    mkdir -p $targets
+    echo $targets
+    cd packages
+    for f in *; do
+      # Skip symlinks and our gcf-utils directory as it is not a function
+      if [[ -d "$f" && ! -L "$f" && "$f" != "gcf-utils" ]]; then
+          cd $f
+          echo $f
+          # Javascript does not allow function names with '-' so we need to
+          # replace the directory name (which might have '-') with "_"
+          functionname=${f//-/_}
+          gcloud functions deploy $functionname --trigger-http \
+              --runtime nodejs10 \
+              --set-env-vars DRIFT_PRO_BUCKET=$_BUCKET,KEY_LOCATION=$_KEY_LOCATION,KEY_RING=$_KEY_RING
+          cd ..
+      fi
+    done
