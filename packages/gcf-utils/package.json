@@ -11,9 +11,9 @@
     "lint": "gts fix"
   },
   "main": "./build/src/gcf-utils.js",
-  "repository": "https://github.com//.git",
-  "homepage": "https://github.com//",
-  "bugs": "https://github.com///issues",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "devDependencies": {
     "@types/bunyan": "^1.8.6",
     "@types/express": "^4.17.0",
