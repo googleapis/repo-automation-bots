@@ -11,14 +11,11 @@
     "docs-test": "echo 'not yet implemented'",
     "system-test": "echo 'not yet implemented'",
     "proxy": "smee",
-    "release": "lerna publish --conventional-commits"
+    "release": "lerna publish --conventional-commits --registry=https://wombat-dressing-room.appspot.com"
   },
   "devDependencies": {
     "c8": "^5.0.1",
     "lerna": "^3.16.4",
     "smee-client": "^1.1.0"
-  },
-  "publishConfig": {
-    "registry": "https://wombat-dressing-room.appspot.com"
   }
 }

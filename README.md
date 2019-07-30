@@ -41,3 +41,9 @@ Environment variables set, run:
 
 1. `cd packages/your-bot`.
 1. `npm start`.
+
+
+### Publishing Utility Modules
+
+1. create a token with Wombat Dressing Room.
+2. run `npm run release`.
