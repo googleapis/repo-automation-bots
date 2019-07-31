@@ -40,7 +40,7 @@ steps:
           functionname=${f//-/_}
           gcloud functions deploy $functionname --trigger-http \
               --runtime nodejs10 \
-              --set-env-vars DRIFT_PRO_BUCKET=$_BUCKET,KEY_LOCATION=$_KEY_LOCATION,KEY_RING=$_KEY_RING
+              --set-env-vars DRIFT_PRO_BUCKET=$_BUCKET,KEY_LOCATION=$_KEY_LOCATION,KEY_RING=$_KEY_RING,GCF_SHORT_FUNCTION_NAME=$functionname,PROJECT_ID=$PROJECT_ID
           cd ..
       fi
     done
