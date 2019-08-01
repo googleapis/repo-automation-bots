@@ -93,7 +93,6 @@ export class GCFBootstrapper {
       // Do the thing
       if (name) {
         try {
-          console.log(request.body);
           await this.probot.receive({
             name,
             id,

@@ -18,9 +18,4 @@ import { GCFBootstrapper } from 'gcf-utils';
 import appFn from './conventional-commit-lint';
 
 const bootstrap = new GCFBootstrapper();
-async function run() {
-    const opts = await bootstrap.getProbotConfig();
-    console.info(opts.cert);
-}
-//run();
 module.exports.conventional_commit_lint = bootstrap.gcf(appFn);
