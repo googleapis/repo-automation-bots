@@ -16,11 +16,26 @@
 
 import { GCFBootstrapper } from 'gcf-utils';
 import appFn from './conventional-commit-lint';
+import express from 'express';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+import * as bodyParser from 'body-parser';
+
+let out = config({ path: resolve(__dirname, "../../.env") });
+console.log(out);
 
 const bootstrap = new GCFBootstrapper();
-async function run() {
-    const opts = await bootstrap.getProbotConfig();
-    console.info(opts.cert);
-}
-//run();
-module.exports.conventional_commit_lint = bootstrap.gcf(appFn);
+const handler = bootstrap.gcf(appFn);
+
+const app = express();
+app.use(bodyParser.json());
+
+app.all('/', (req: express.Request, res: express.Response) => {
+    handler(req, res);
+});
+
+const port = 3000;
+
+app.listen(port, () => {
+    console.log(`listening on http://localhost:${port}`)
+});

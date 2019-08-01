@@ -72,7 +72,7 @@ export class GCFBootstrapper {
     const [result] = await kmsclient.decrypt({ name, ciphertext });
 
     const config = JSON.parse(result.plaintext.toString());
-    return config;
+    return config as Options;
   }
 
   gcf(
@@ -93,6 +93,7 @@ export class GCFBootstrapper {
       // Do the thing
       if (name) {
         try {
+          console.log(request.body);
           await this.probot.receive({
             name,
             id,
