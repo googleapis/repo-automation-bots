@@ -33,7 +33,6 @@ describe('GCFBootstrapper Integration', () => {
 
     it('returns valid options', async () => {
       const options = await bootstrapper.getProbotConfig();
-      console.log(options);
     });
   });
 
@@ -45,15 +44,13 @@ describe('GCFBootstrapper Integration', () => {
       config({ path: resolve(__dirname, '../../.env') });
     });
 
-    afterEach(() => {});
-
     it('is called properly', async () => {
       const pb = await bootstrapper.loadProbot((app: Application) => {
         app.on('foo', async context => {
           console.log('We are called!');
         });
       });
-      //console.log(pb);
+
       await pb.receive({
         name: 'foo',
         id: 'bar',
