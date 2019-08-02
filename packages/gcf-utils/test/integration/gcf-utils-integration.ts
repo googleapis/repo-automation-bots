@@ -17,52 +17,48 @@
 import { GCFBootstrapper } from '../../src/gcf-utils';
 
 import { Application, Options } from 'probot';
-import { resolve } from "path";
-import { config } from "dotenv";
+import { resolve } from 'path';
+import { config } from 'dotenv';
 
 describe('GCFBootstrapper Integration', () => {
-    describe('getProbotConfig', () => {
+  describe('getProbotConfig', () => {
+    let bootstrapper: GCFBootstrapper;
 
-        let bootstrapper: GCFBootstrapper;
-
-        beforeEach(async () => {
-            bootstrapper = new GCFBootstrapper();
-            let res = config({ path: resolve(__dirname, "../../../.env") });
-        });
-
-        afterEach(() => {
-        });
-
-        it('returns valid options', async () => {
-            let options = await bootstrapper.getProbotConfig();
-            console.log(options);
-        });
+    beforeEach(async () => {
+      bootstrapper = new GCFBootstrapper();
+      config({ path: resolve(__dirname, '../../../.env') });
     });
 
-    describe('loadProbot', () => {
+    afterEach(() => {});
 
-        let bootstrapper: GCFBootstrapper;
-
-        beforeEach(async () => {
-            bootstrapper = new GCFBootstrapper();
-            let res = config({ path: resolve(__dirname, "../../.env") });
-        });
-
-        afterEach(() => {
-        });
-
-        it('is called properly', async () => {
-            let pb = await bootstrapper.loadProbot((app: Application) => {
-                app.on("foo", async context => {
-                    console.log("We are called!");
-                });
-            });
-            //console.log(pb);
-            await pb.receive({
-                name: "foo",
-                id: "bar",
-                payload: "baz",
-            });
-        });
+    it('returns valid options', async () => {
+      const options = await bootstrapper.getProbotConfig();
+      console.log(options);
     });
+  });
+
+  describe('loadProbot', () => {
+    let bootstrapper: GCFBootstrapper;
+
+    beforeEach(async () => {
+      bootstrapper = new GCFBootstrapper();
+      config({ path: resolve(__dirname, '../../.env') });
+    });
+
+    afterEach(() => {});
+
+    it('is called properly', async () => {
+      const pb = await bootstrapper.loadProbot((app: Application) => {
+        app.on('foo', async context => {
+          console.log('We are called!');
+        });
+      });
+      //console.log(pb);
+      await pb.receive({
+        name: 'foo',
+        id: 'bar',
+        payload: 'baz',
+      });
+    });
+  });
 });
