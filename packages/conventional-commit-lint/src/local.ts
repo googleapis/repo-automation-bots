@@ -21,7 +21,7 @@ import { config } from 'dotenv';
 import { resolve } from 'path';
 import * as bodyParser from 'body-parser';
 
-let out = config({ path: resolve(__dirname, "../../.env") });
+const out = config({ path: resolve(__dirname, '../../.env') });
 console.log(out);
 
 const bootstrap = new GCFBootstrapper();
@@ -31,11 +31,11 @@ const app = express();
 app.use(bodyParser.json());
 
 app.all('/', (req: express.Request, res: express.Response) => {
-    handler(req, res);
+  handler(req, res);
 });
 
 const port = 3000;
 
 app.listen(port, () => {
-    console.log(`listening on http://localhost:${port}`)
+  console.log(`listening on http://localhost:${port}`);
 });
