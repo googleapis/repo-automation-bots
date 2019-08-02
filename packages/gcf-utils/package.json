@@ -8,8 +8,8 @@
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal mocha ./build/test",
     "test:integration": "npm run pretest && cross-env LOG_LEVEL=fatal mocha ./build/test/integration",
-    "fix": "gts check",
-    "lint": "gts fix"
+    "fix": "gts fix",
+    "lint": "gts check"
   },
   "main": "./build/src/gcf-utils.js",
   "repository": "https://github.com/googleapis/repo-automation-bots.git",
