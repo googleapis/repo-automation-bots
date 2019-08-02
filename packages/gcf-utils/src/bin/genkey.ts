@@ -17,55 +17,84 @@
 
 import fs from 'fs';
 import path from 'path';
-import commander from 'commander';
+import * as yargs from 'yargs';
+import { Argv } from 'yargs';
 import * as KMS from '@google-cloud/kms';
 import { Storage, StorageOptions } from '@google-cloud/storage';
 import { Base64 } from 'js-base64';
 import { Options } from 'probot';
 import * as tmp from 'tmp';
 
-commander
-    .version('0.0.1')
-    .description("Generates a blob with key information for gcf-utils")
-    .option('-f, --file <path>', 'Path to .pem file [key.pem]')
-    .option('-p, --project <name>', 'Name of gcp project')
-    .option('-l, --location <name>', 'Keyring location [global]')
-    .option('-r, --keyring <name>', 'Name of keyring [probot-keys]')
-    .option('-b, --bot <name>', 'Name of the bot')
-    .option('-bu, --bucket <name>', 'Name of the Bucket')
-    .option('-i, --id <n>', 'ID of the GitHub Application', parseInt)
-    .option('-s, --secret <secret>', 'The webhook secret from GitHub')
-    .parse(process.argv);
+let argv = yargs
+    .command('gen', "Create and upload a client key.", (yargs: Argv) => {
+        return yargs.option('keyfile', {
+            describe: "The path to the .pem keyfile",
+            type: 'string',
+            default: "key.pem",
+        }).option('verbose', {
+            alias: 'v',
+            default: false,
+            type: 'boolean'
+        }).option('project', {
+            describe: 'Name of GCP project',
+            alias: 'p',
+            type: 'string',
+            demand: true
+        }).option('location', {
+            alias: 'l',
+            desription: 'Keyring location',
+            type: 'string',
+            default: 'global'
+        }).option('bot', {
+            alias: 'b',
+            type: 'string',
+            description: 'Name of the bot'
+        }).option('bucket', {
+            alias: 'bu',
+            type: 'string',
+            description: 'Name of the Bucket'
+        }).option('id', {
+            alias: 'i',
+            type: 'string',
+            description: 'ID of the GitHub Application'
+        });
+    }).argv;
 
-const keyfile: string = commander.file || 'key.pem';
-const project: string = commander.project;
-const location: string = commander.location || 'global';
-const keyring: string = commander.keyring || 'probot-keys';
-const bucketName: string = commander.bucket;
-const botname: string = commander.bot;
-const webhookSecret: string = commander.secret;
-const id: number = commander.id;
+
+const keyfile: string = argv.file as string || 'key.pem';
+const project: string = argv.project as string;
+const location: string = argv.location as string || 'global';
+const keyring: string = argv.keyring as string || 'probot-keys';
+const bucketName: string = argv.bucket as string;
+const botname: string = argv.bot as string;
+const webhookSecret: string = argv.secret as string;
+const id: number = argv.id as number;
 
 
 if (!project) {
     console.error('Project name is required');
-    commander.help();
+    yargs.showHelp();
+    process.exit(1);
 }
 if (!botname) {
     console.error('Name of the bot is required');
-    commander.help();
+    yargs.showHelp();
+    process.exit(1);
 }
 if (!webhookSecret) {
     console.error('Webhook secret is required');
-    commander.help();
+    yargs.showHelp();
+    process.exit(1);
 }
 if (!id) {
     console.error('GitHub Application ID is required');
-    commander.help();
+    yargs.showHelp();
+    process.exit(1);
 }
 if (!bucketName) {
     console.error('Bucket Name is required');
-    commander.help();
+    yargs.showHelp();
+    process.exit(1);
 }
 
 let keyContent: string = '';

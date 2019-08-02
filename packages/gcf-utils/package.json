@@ -28,6 +28,7 @@
     "@types/node": "^12.6.1",
     "@types/sinon": "^7.0.13",
     "@types/tmp": "^0.1.0",
+    "@types/yargs": "^13.0.2",
     "cross-env": "^5.2.0",
     "gts": "^1.0.0",
     "mocha": "^6.1.4",
@@ -51,7 +52,8 @@
     "@google-cloud/storage": "^3.0.0",
     "js-base64": "^2.5.1",
     "probot": "^9.2.20",
-    "tmp": "^0.1.0"
+    "tmp": "^0.1.0",
+    "yargs": "^13.3.0"
   },
   "files": [
     "build/",
