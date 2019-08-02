@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { GCFBootstrapper } from '../src/gcf-utils';
+import { GCFBootstrapper } from '../../src/gcf-utils';
 
 import { Application, Options } from 'probot';
 import { resolve } from "path";
@@ -27,7 +27,7 @@ describe('GCFBootstrapper Integration', () => {
 
         beforeEach(async () => {
             bootstrapper = new GCFBootstrapper();
-            let res = config({ path: resolve(__dirname, "../../.env") });
+            let res = config({ path: resolve(__dirname, "../../../.env") });
         });
 
         afterEach(() => {
