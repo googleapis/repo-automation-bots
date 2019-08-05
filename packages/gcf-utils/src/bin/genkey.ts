@@ -57,11 +57,15 @@ let argv = yargs
             alias: 'i',
             type: 'string',
             description: 'ID of the GitHub Application'
+        }).option('secret', {
+            alias: 's',
+            type: 'string',
+            description: 'Webhook Secret of the GitHub Application'
         });
     }).argv;
 
 
-const keyfile: string = argv.file as string || 'key.pem';
+const keyfile: string = argv.keyfile as string || 'key.pem';
 const project: string = argv.project as string;
 const location: string = argv.location as string || 'global';
 const keyring: string = argv.keyring as string || 'probot-keys';
