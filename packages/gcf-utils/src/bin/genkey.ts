@@ -25,52 +25,47 @@ import { Base64 } from 'js-base64';
 import { Options } from 'probot';
 import * as tmp from 'tmp';
 
-const argv = yargs.command(
-  'gen',
-  'Create and upload a client key.',
-  (yargs: Argv) => {
-    return yargs
-      .option('keyfile', {
-        describe: 'The path to the .pem keyfile',
-        type: 'string',
-        default: 'key.pem',
-      })
-      .option('verbose', {
-        alias: 'v',
-        default: false,
-        type: 'boolean',
-      })
-      .option('project', {
-        describe: 'Name of GCP project',
-        alias: 'p',
-        type: 'string',
-        demand: true,
-      })
-      .option('location', {
-        alias: 'l',
-        desription: 'Keyring location',
-        type: 'string',
-        default: 'global',
-      })
-      .option('bot', {
-        alias: 'b',
-        type: 'string',
-        description: 'Name of the bot',
-      })
-      .option('bucket', {
-        alias: 'bu',
-        type: 'string',
-        description: 'Name of the Bucket',
-      })
-      .option('id', {
-        alias: 'i',
-        type: 'string',
-        description: 'ID of the GitHub Application',
-      });
-  }
-).argv;
+let argv = yargs
+  .command('gen', "Create and upload a client key.", (yargs: Argv) => {
+    return yargs.option('keyfile', {
+      describe: "The path to the .pem keyfile",
+      type: 'string',
+      default: "key.pem",
+    }).option('verbose', {
+      alias: 'v',
+      default: false,
+      type: 'boolean'
+    }).option('project', {
+      describe: 'Name of GCP project',
+      alias: 'p',
+      type: 'string',
+      demand: true
+    }).option('location', {
+      alias: 'l',
+      desription: 'Keyring location',
+      type: 'string',
+      default: 'global'
+    }).option('bot', {
+      alias: 'b',
+      type: 'string',
+      description: 'Name of the bot'
+    }).option('bucket', {
+      alias: 'bu',
+      type: 'string',
+      description: 'Name of the Bucket'
+    }).option('id', {
+      alias: 'i',
+      type: 'string',
+      description: 'ID of the GitHub Application'
+    }).option('secret', {
+      alias: 's',
+      type: 'string',
+      description: 'Webhook Secret of the GitHub Application'
+    });
+  }).argv;
 
-const keyfile: string = (argv.file as string) || 'key.pem';
+
+const keyfile: string = argv.keyfile as string || 'key.pem';
 const project: string = argv.project as string;
 const location: string = (argv.location as string) || 'global';
 const keyring: string = (argv.keyring as string) || 'probot-keys';
@@ -124,8 +119,8 @@ async function run() {
   try {
     const opts = project
       ? ({
-          projectId: project,
-        } as KMS.v1.KeyManagementServiceClient.ConfigurationObject)
+        projectId: project,
+      } as KMS.v1.KeyManagementServiceClient.ConfigurationObject)
       : undefined;
 
     const kmsclient = new KMS.KeyManagementServiceClient(opts);
