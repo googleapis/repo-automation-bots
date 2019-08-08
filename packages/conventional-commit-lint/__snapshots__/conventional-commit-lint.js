@@ -10,7 +10,7 @@ exports['ConventionalCommitLint sets a "failure" context on PR, if commits fail 
   "name": "conventionalcommits.org",
   "output": {
     "title": "Commit message did not follow Conventional Commits",
-    "summary": "Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\nRun `git reset --soft HEAD~1 && git commit .` to amend your message.",
+    "summary": "Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\nRun `git commit --amend` and edit your message to match Conventional Commit guidelines.",
     "text": ":x: linting errors for \"*Fix all the bugs*\"\n* subject may not be empty\n* type may not be empty\n\n\n"
   }
 }
@@ -27,7 +27,7 @@ exports['ConventionalCommitLint PR With Multiple Commits has an invalid pull req
   "name": "conventionalcommits.org",
   "output": {
     "title": "Commit message did not follow Conventional Commits",
-    "summary": "Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\nRun `git reset --soft HEAD~3 && git commit .` to amend your message.",
+    "summary": "Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\nedit your pull request title to match Conventional Commit guidelines.",
     "text": ":x: linting errors for \"*this is not a conventional commit*\"\n* subject may not be empty\n* type may not be empty\n\n\n"
   }
 }

@@ -84,13 +84,19 @@ export = (app: Application) => {
     });
 
     if (lintError) {
+      let summary = `Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\n`;
+      if (commits.length === 1) {
+        summary += 'Run `git commit --amend` and edit your message to match Conventional Commit guidelines.'
+      } else {
+        summary += 'edit your pull request title to match Conventional Commit guidelines.';
+      }
       checkParams = context.repo({
         head_sha: commits[commits.length - 1].sha,
         conclusion: 'failure' as Conclusion,
         name: 'conventionalcommits.org',
         output: {
           title: 'Commit message did not follow Conventional Commits',
-          summary: `Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\nRun \`git reset --soft HEAD~${commits.length} && git commit .\` to amend your message.`,
+          summary,
           text,
         },
       });
