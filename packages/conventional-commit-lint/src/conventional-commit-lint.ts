@@ -16,7 +16,12 @@
 
 import { Application } from 'probot';
 import lint from '@commitlint/lint';
+
 import { rules } from '@commitlint/config-conventional';
+// modify rules slightly:
+// see: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-conventional/index.js
+delete rules['type-enum'];
+
 import { PullsListCommitsResponseItem, Response } from '@octokit/rest';
 
 type Conclusion =
@@ -46,22 +51,28 @@ export = (app: Application) => {
     }
     const commits = commitsResponse.data;
 
-    // if we found any commits, run each of them through commit lint:
-    // https://www.npmjs.com/package/@commitlint/lint
+    let message = context.payload.pull_request.title;
+    // if there is only one commit, lint the commit rather than
+    // the pull request title:
+    if (commits.length === 1) {
+      message = commits[0].commit.message;
+    }
+
+    // support "foo!: message" syntax, see:
+    // https://github.com/conventional-changelog/commitlint/pull/767
+    message = message.replace('!:', ':');
+
     let text = '';
     let lintError = false;
-    for (let i = 0; commits[i] !== undefined; i++) {
-      const commit = commits[i];
-      const message = commit.commit.message;
-      const result = await lint(message, rules);
-      if (result.valid === false) {
-        lintError = true;
-        text += `:x: linting errors for "*${result.input}*"\n`;
-        result.errors.forEach(error => {
-          text += `* ${error.message}\n`;
-        });
-        text += '\n\n';
-      }
+
+    const result = await lint(message, rules);
+    if (result.valid === false) {
+      lintError = true;
+      text += `:x: linting errors for "*${result.input}*"\n`;
+      result.errors.forEach(error => {
+        text += `* ${error.message}\n`;
+      });
+      text += '\n\n';
     }
 
     // post the status of commit linting to the PR, using:
