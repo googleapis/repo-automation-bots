@@ -1,0 +1,13 @@
+[
+  { "sha": "5b414a072e40622c177c72a58efb74ff9faadd0d",
+    "filename": "oauth2_http/java/com/google/auth/http/TestFile.java",
+    "status": "added",
+    "additions": 5,
+    "deletions": 0,
+    "changes": 5,
+    "blob_url": "https://github.com/chingor13/google-auth-library-java/blob/87139750cdcf551e8fe8d90c129527a4f358321c/oauth2_http/java/com/google/auth/http/TestFile.java",
+    "raw_url":  "https://github.com/chingor13/google-auth-library-java/raw/87139750cdcf551e8fe8d90c129527a4f358321c/oauth2_http/java/com/google/auth/http/TestFile.java",
+    "contents_url": "https://api.github.com/repos/chingor13/google-auth-library-java/contents/oauth2_http/java/com/google/auth/http/TestFile.java?ref=87139750cdcf551e8fe8d90c129527a4f358321c",
+    "patch":"@@ -0,0 +1,5 @@\n+package com.google.auth.http;\n+\n+class TestFile {\n+\n+}"
+  }
+]
