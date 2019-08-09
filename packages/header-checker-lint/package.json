@@ -27,8 +27,8 @@
   },
   "dependencies": {
     "@octokit/rest": "^16.28.3",
-    "gcf-utils": "^0.4.1",
-    "probot": "^9.2.15"
+    "gcf-utils": "^0.6.0",
+    "probot": "^9.3.0"
   },
   "devDependencies": {
     "@types/bunyan": "^1.8.6",
