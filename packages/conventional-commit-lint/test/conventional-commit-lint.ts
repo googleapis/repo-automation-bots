@@ -75,11 +75,11 @@ describe('ConventionalCommitLint', () => {
       fixturesPath,
       './pull_request_synchronize'
     ));
-    const invalidCommits = require(resolve(fixturesPath, './valid_commit'));
+    const validCommits = require(resolve(fixturesPath, './valid_commit'));
 
     const requests = nock('https://api.github.com')
       .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
-      .reply(200, invalidCommits)
+      .reply(200, validCommits)
       .post('/repos/bcoe/test-release-please/check-runs', body => {
         snapshot(body);
         return true;
@@ -88,5 +88,57 @@ describe('ConventionalCommitLint', () => {
 
     await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
     requests.done();
+  });
+
+  describe('PR With Multiple Commits', () => {
+    it('has a valid pull request title', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './pull_request_synchronize'
+      ));
+      // create a history that has one valid commit, and one invalid commit:
+      const invalidCommits = require(resolve(fixturesPath, './invalid_commit'));
+      invalidCommits.push.apply(
+        invalidCommits,
+        require(resolve(fixturesPath, './valid_commit'))
+      );
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
+        .reply(200, invalidCommits)
+        .post('/repos/bcoe/test-release-please/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      requests.done();
+    });
+
+    it('has an invalid pull request title', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './pull_request_synchronize_invalid_title'
+      ));
+      // create a history that has one valid commit, and one invalid commit:
+      const invalidCommits = require(resolve(fixturesPath, './invalid_commit'));
+      invalidCommits.push.apply(
+        invalidCommits,
+        require(resolve(fixturesPath, './valid_commit'))
+      );
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
+        .reply(200, invalidCommits)
+        .post('/repos/bcoe/test-release-please/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      requests.done();
+    });
   });
 });
