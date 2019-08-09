@@ -19,6 +19,7 @@ import myProbotApp from '../src/header-checker-lint';
 import { resolve } from 'path';
 import { Probot } from 'probot';
 import snapshot from 'snap-shot-it';
+import Webhooks from '@octokit/webhooks';
 
 import nock from 'nock';
 nock.disableNetConnect();
@@ -51,22 +52,26 @@ describe('HeaderCheckerLint', () => {
   });
 
   describe('opened pull request', () => {
-    let payload : any;
+    let payload: Webhooks.WebhookPayloadPullRequest;
 
     beforeEach(() => {
-      payload = require(resolve(
-        fixturesPath,
-        './pull_request_opened'
-      ));
+      payload = require(resolve(fixturesPath, './pull_request_opened'));
     });
 
     it('sets a "failure" context on PR, if new source file is missing license', async () => {
-      const invalidFiles = require(resolve(fixturesPath, './missing_license_added'));
+      const invalidFiles = require(resolve(
+        fixturesPath,
+        './missing_license_added'
+      ));
       const blob = require(resolve(fixturesPath, './missing_license'));
       const requests = nock('https://api.github.com')
-        .get('/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100')
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
         .reply(200, invalidFiles)
-        .get('/repos/chingor13/google-auth-library-java/git/blobs/5b414a072e40622c177c72a58efb74ff9faadd0d')
+        .get(
+          '/repos/chingor13/google-auth-library-java/git/blobs/5b414a072e40622c177c72a58efb74ff9faadd0d'
+        )
         .reply(200, blob)
         .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
           snapshot(body);
@@ -74,17 +79,24 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload: payload, id: 'abc123' });
+      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
       requests.done();
     });
 
     it('sets a "failure" context on PR, if a modified source file is missing license', async () => {
-      const invalidFiles = require(resolve(fixturesPath, './missing_license_modified'));
+      const invalidFiles = require(resolve(
+        fixturesPath,
+        './missing_license_modified'
+      ));
       const blob = require(resolve(fixturesPath, './missing_license'));
       const requests = nock('https://api.github.com')
-        .get('/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100')
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
         .reply(200, invalidFiles)
-        .get('/repos/chingor13/google-auth-library-java/git/blobs/5b414a072e40622c177c72a58efb74ff9faadd0d')
+        .get(
+          '/repos/chingor13/google-auth-library-java/git/blobs/5b414a072e40622c177c72a58efb74ff9faadd0d'
+        )
         .reply(200, blob)
         .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
           snapshot(body);
@@ -92,7 +104,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload: payload, id: 'abc123' });
+      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
       requests.done();
     });
 
@@ -100,9 +112,13 @@ describe('HeaderCheckerLint', () => {
       const invalidFiles = require(resolve(fixturesPath, './wrong_year_added'));
       const blob = require(resolve(fixturesPath, './wrong_year'));
       const requests = nock('https://api.github.com')
-        .get('/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100')
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
         .reply(200, invalidFiles)
-        .get('/repos/chingor13/google-auth-library-java/git/blobs/ef039bb72b6cadc9c144541a5645e4a6818fb6de')
+        .get(
+          '/repos/chingor13/google-auth-library-java/git/blobs/ef039bb72b6cadc9c144541a5645e4a6818fb6de'
+        )
         .reply(200, blob)
         .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
           snapshot(body);
@@ -110,29 +126,32 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload: payload, id: 'abc123' });
+      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
       requests.done();
     });
-
   });
 
   describe('updated pull request', () => {
-    let payload : any;
+    let payload: Webhooks.WebhookPayloadPullRequest;
 
     before(() => {
-      payload = require(resolve(
-        fixturesPath,
-        './pull_request_synchronized'
-      ));
+      payload = require(resolve(fixturesPath, './pull_request_synchronized'));
     });
 
     it('sets a "failure" context on PR, if new source file is missing license', async () => {
-      const invalidFiles = require(resolve(fixturesPath, './missing_license_added'));
+      const invalidFiles = require(resolve(
+        fixturesPath,
+        './missing_license_added'
+      ));
       const blob = require(resolve(fixturesPath, './missing_license'));
       const requests = nock('https://api.github.com')
-        .get('/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100')
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
         .reply(200, invalidFiles)
-        .get('/repos/chingor13/google-auth-library-java/git/blobs/5b414a072e40622c177c72a58efb74ff9faadd0d')
+        .get(
+          '/repos/chingor13/google-auth-library-java/git/blobs/5b414a072e40622c177c72a58efb74ff9faadd0d'
+        )
         .reply(200, blob)
         .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
           snapshot(body);
@@ -140,17 +159,24 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload: payload, id: 'abc123' });
+      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
       requests.done();
     });
 
     it('sets a "failure" context on PR, if a modified source file is missing license', async () => {
-      const invalidFiles = require(resolve(fixturesPath, './missing_license_modified'));
+      const invalidFiles = require(resolve(
+        fixturesPath,
+        './missing_license_modified'
+      ));
       const blob = require(resolve(fixturesPath, './missing_license'));
       const requests = nock('https://api.github.com')
-        .get('/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100')
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
         .reply(200, invalidFiles)
-        .get('/repos/chingor13/google-auth-library-java/git/blobs/5b414a072e40622c177c72a58efb74ff9faadd0d')
+        .get(
+          '/repos/chingor13/google-auth-library-java/git/blobs/5b414a072e40622c177c72a58efb74ff9faadd0d'
+        )
         .reply(200, blob)
         .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
           snapshot(body);
@@ -158,7 +184,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload: payload, id: 'abc123' });
+      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
       requests.done();
     });
 
@@ -166,9 +192,13 @@ describe('HeaderCheckerLint', () => {
       const invalidFiles = require(resolve(fixturesPath, './wrong_year_added'));
       const blob = require(resolve(fixturesPath, './wrong_year'));
       const requests = nock('https://api.github.com')
-        .get('/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100')
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
         .reply(200, invalidFiles)
-        .get('/repos/chingor13/google-auth-library-java/git/blobs/ef039bb72b6cadc9c144541a5645e4a6818fb6de')
+        .get(
+          '/repos/chingor13/google-auth-library-java/git/blobs/ef039bb72b6cadc9c144541a5645e4a6818fb6de'
+        )
         .reply(200, blob)
         .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
           snapshot(body);
@@ -176,7 +206,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload: payload, id: 'abc123' });
+      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
       requests.done();
     });
   });

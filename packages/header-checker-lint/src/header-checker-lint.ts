@@ -31,45 +31,40 @@ type Conclusion =
   | 'action_required'
   | undefined;
 
-type LicenseType =
-  | 'Apache-2.0'
-  | 'MIT'
-  | undefined
+type LicenseType = 'Apache-2.0' | 'MIT' | undefined;
 
 interface LicenseHeader {
-  type?: LicenseType,
-  year?: number,
+  type?: LicenseType;
+  year?: number;
 }
 
-const SOURCE_FILE_TYPES = [
-  'ts',
-  'js',
-  'java',
-];
+const SOURCE_FILE_TYPES = ['ts', 'js', 'java'];
 
-function isSourceFile(file: string) : boolean {
+function isSourceFile(file: string): boolean {
   const extension = file.substring(file.lastIndexOf('.') + 1);
   return SOURCE_FILE_TYPES.includes(extension);
 }
 
-const COPYRIGHT_REGEX = new RegExp('Copyright (\d{4}) Google LLC$');
-const APACHE2_REGEX = new RegExp('Licensed under the Apache License, Version 2.0');
+const COPYRIGHT_REGEX = new RegExp('Copyright (d{4}) Google LLC$');
+const APACHE2_REGEX = new RegExp(
+  'Licensed under the Apache License, Version 2.0'
+);
 const MIT_REGEX = new RegExp('Permission is hereby granted, free of charge,');
 
 // super naive - iterate over lines and use regex
 // TODO: look for the header in comments only
-function detectLicenseHeader(contents: string) : LicenseHeader {
-  let license : LicenseHeader = {};
-  contents.split("\n").forEach(function (line) {
+function detectLicenseHeader(contents: string): LicenseHeader {
+  const license: LicenseHeader = {};
+  contents.split('\n').forEach(line => {
     const match = line.match(COPYRIGHT_REGEX);
     if (match) {
-      license.year = parseInt(match[1]);
+      license.year = Number(match[1]);
     }
 
     if (line.match(APACHE2_REGEX)) {
-      license.type = "Apache-2.0";
+      license.type = 'Apache-2.0';
     } else if (line.match(MIT_REGEX)) {
-      license.type = "MIT";
+      license.type = 'MIT';
     }
   });
   return license;
@@ -97,7 +92,7 @@ export = (app: Application) => {
     const files: PullsListFilesResponseItem[] = filesResponse.data;
 
     let lintError = false;
-    let failureMessages : string[] = [];
+    const failureMessages: string[] = [];
 
     // If we found any new files, verify they all have a valid header
     for (let i = 0; files[i] !== undefined; i++) {
@@ -122,7 +117,9 @@ export = (app: Application) => {
 
       if (!detectedLicense.type) {
         lintError = true;
-        failureMessages.push(file.filename + " is missing a valid license header.");
+        failureMessages.push(
+          file.filename + ' is missing a valid license header.'
+        );
         continue;
       }
 
@@ -132,7 +129,9 @@ export = (app: Application) => {
         const currentYear = new Date().getFullYear();
         if (detectedLicense.year !== currentYear) {
           lintError = true;
-          failureMessages.push(file.filename + " should have a copyright year of " + currentYear);
+          failureMessages.push(
+            file.filename + ' should have a copyright year of ' + currentYear
+          );
         }
       }
     }
@@ -148,7 +147,7 @@ export = (app: Application) => {
       checkParams.output = {
         title: 'Invalid or missing license headers detected.',
         summary: 'Some new files are missing headers',
-        text: failureMessages.join("\n"),
+        text: failureMessages.join('\n'),
       };
     }
 
