@@ -13,9 +13,39 @@
 # limitations under the License.
 
 steps:
+- name: gcr.io/cloud-builders/npm
+  id: 'build'
+  waitFor: ['-']
+  entrypoint: bash
+  args:
+  - '-e'
+  - '-c'
+  - |
+    # For each item in packages directory run npm compile
+    # then copy to targets
+    workdir=$(pwd)
+    echo $workdir
+    targets=$workdir/targets
+    mkdir -p $targets
+    npm install -g typescript
+    cd packages
+    for f in *; do
+      # Skip symlinks and our gcf-utils directory as it is not a function
+      if [[ -d "$f" && ! -L "$f" && "$f" != "gcf-utils" ]]; then
+          cd $f
+          echo $f
+          npm install
+          npm run compile
+          mkdir -p $targets/$f
+          cp -r build $targets/$f
+          cp package.json $targets/$f/package.json
+          cd ..
+      fi
+    done
+
 - name: gcr.io/cloud-builders/gcloud
   id: 'publish-functions'
-  waitFor: [ '-' ]
+  waitFor: [ 'build' ]
   entrypoint: bash
   args:
   - '-e'
