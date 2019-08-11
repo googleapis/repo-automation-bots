@@ -1,0 +1,149 @@
+{
+  "labels": [
+    {
+      "name": "status: blocked",
+      "description": "Resolving the issue is dependent on other work.",
+      "color": "f9d0c4"
+    },
+    {
+      "name": "needs more info",
+      "description": "This issue needs more information from the customer to proceed.",
+      "color": "e0ff32"
+    },
+    {
+      "name": "status: duplicate",
+      "description": "Duplicate.",
+      "color": "d4c5f9"
+    },
+    {
+      "name": "status: investigating",
+      "description": "The issue is under investigation, which is determined to be non-trivial.",
+      "color": "fef2c0"
+    },
+    {
+      "name": "status: will not fix",
+      "description": "Invalid (untrue/unsound/erroneous), inconsistent with product, not on roadmap.",
+      "color": "d4c5f9"
+    },
+    {
+      "name": "type: bug",
+      "description": "Error or flaw in code with unintended results or allowing sub-optimal usage patterns.",
+      "color": "db4437"
+    },
+    {
+      "name": "type: cleanup",
+      "description": "An internal cleanup or hygiene concern.",
+      "color": "c5def5"
+    },
+    {
+      "name": "type: feature request",
+      "description": "‘Nice-to-have’ improvement, new feature or different behavior or design.",
+      "color": "c5def5"
+    },
+    {
+      "name": "type: process",
+      "description": "A process-releated concern. May include testing, release, or the like.",
+      "color": "c5def5"
+    },
+    {
+      "name": "type: question",
+      "description": "Request for information or clarification. Not an issue.",
+      "color": "c5def5"
+    },
+    {
+      "name": "priority: p2",
+      "description": "Lowest priority. Fix may not be included in next release (e.g. cosmetic UI or minor documentation issues).",
+      "color": "fef2c0"
+    },
+    {
+      "name": "priority: p1",
+      "description": "Medium priority. Will be fixed prior to next release.",
+      "color": "ffa03e"
+    },
+    {
+      "name": "priority: p0",
+      "description": "Highest priority. Critical issue. P0 implies highest priority (e.g. blocking imminent release). P0 issues should be monitored on a daily basis.",
+      "color": "b60205"
+    },
+    {
+      "name": "do not merge",
+      "description": "Indicates a pull request not ready for merge, due to either quality or timing.",
+      "color": "d93f0b"
+    },
+    {
+      "name": "release blocking",
+      "description": "Required feature/issue must be fixed prior to next release.",
+      "color": "ffa03e"
+    },
+    {
+      "name": "needs work",
+      "description": "This is a pull request that needs a little love.",
+      "color": "1a3b70"
+    },
+    {
+      "name": "type: docs",
+      "description": "Improvement to the documentation for an API.",
+      "color": "0000A0"
+    },
+    {
+      "name": ":rotating_light:",
+      "description": "This issue needs some love.",
+      "color": "FFFFFF"
+    },
+    {
+      "name": "triage me",
+      "description": "I really want to be triaged.",
+      "color": "FF69B4"
+    },
+    {
+      "name": "semver: major",
+      "description": "Hint for users that this is an API breaking change.",
+      "color": "FF1053"
+    },
+    {
+      "name": "semver: minor",
+      "description": "A new feature was added.  No breaking changes.",
+      "color": "6C6EA0"
+    },
+    {
+      "name": "semver: patch",
+      "description": "A minor bug fix or small change.",
+      "color": "66C7F4"
+    },
+    {
+      "name": "kokoro:run",
+      "description": "Add this label to force Kokoro to re-run the tests.",
+      "color": "C1FFB2"
+    },
+    {
+      "name": "kokoro:force-run",
+      "description": "Add this label to force Kokoro to re-run the tests.",
+      "color": "C1FFB2"
+    },
+    {
+      "name": "cla: yes",
+      "description": "This human has signed the Contributor License Agreement.",
+      "color": "0B7601"
+    },
+    {
+      "name": "cla: no",
+      "description": "This human has *not* signed the Contributor License Agreement.",
+      "color": "E402f2"
+    },
+    {
+      "name": "help wanted",
+      "description": "We'd love to have community involvement on this issue.",
+      "color": "3f5e3d"
+    },
+    {
+      "name": "good first issue",
+      "description": "This issue is a good place to started contributing to this repository.",
+      "color": "520b77"
+    },
+    {
+      "name": "external",
+      "description": "This issue is blocked on a bug with the actual product.",
+      "color": "800080"
+    }
+  ]
+}
