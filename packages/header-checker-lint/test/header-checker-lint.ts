@@ -131,7 +131,10 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('ignores a valid license', async () => {
-      const validFiles = require(resolve(fixturesPath, './valid_license_added'));
+      const validFiles = require(resolve(
+        fixturesPath,
+        './valid_license_added'
+      ));
       const blob = require(resolve(fixturesPath, './valid_license'));
       const requests = nock('https://api.github.com')
         .get(
@@ -233,7 +236,10 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('ignores a valid license', async () => {
-      const validFiles = require(resolve(fixturesPath, './valid_license_added'));
+      const validFiles = require(resolve(
+        fixturesPath,
+        './valid_license_added'
+      ));
       const blob = require(resolve(fixturesPath, './valid_license'));
       const requests = nock('https://api.github.com')
         .get(
