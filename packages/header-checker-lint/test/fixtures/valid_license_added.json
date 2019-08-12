@@ -1,0 +1,14 @@
+[
+  {
+      "sha": "b1e607d638896d18374123d85e1021584d551354",
+      "filename": "oauth2_http/java/com/google/auth/http/NewFile2.java",
+      "status": "added",
+      "additions": 19,
+      "deletions": 0,
+      "changes": 19,
+      "blob_url": "https://github.com/chingor13/google-auth-library-java/blob/740703d21bdedbc03f3f318f874965fb6c4dd87b/oauth2_http/java/com/google/auth/http/NewFile2.java",
+      "raw_url": "https://github.com/chingor13/google-auth-library-java/raw/740703d21bdedbc03f3f318f874965fb6c4dd87b/oauth2_http/java/com/google/auth/http/NewFile2.java",
+      "contents_url": "https://api.github.com/repos/chingor13/google-auth-library-java/contents/oauth2_http/java/com/google/auth/http/NewFile2.java?ref=740703d21bdedbc03f3f318f874965fb6c4dd87b",
+      "patch": "@@ -0,0 +1,19 @@\n+/**\n+ * Copyright 2019 Google LLC\n+ *\n+ * Licensed under the Apache License, Version 2.0 (the \"License\");\n+ * you may not use this file except in compliance with the License.\n+ * You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing, software\n+ * distributed under the License is distributed on an \"AS IS\" BASIS,\n+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n+ * See the License for the specific language governing permissions and\n+ * limitations under the License.\n+ */\n+package com.google.auth.http;\n+\n+public class NewFile2 {\n+}"
+  }
+]

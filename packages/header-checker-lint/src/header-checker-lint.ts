@@ -45,7 +45,7 @@ function isSourceFile(file: string): boolean {
   return SOURCE_FILE_TYPES.includes(extension);
 }
 
-const COPYRIGHT_REGEX = new RegExp('Copyright (d{4}) Google LLC$');
+const COPYRIGHT_REGEX = new RegExp('Copyright (\\d{4}) Google LLC$');
 const APACHE2_REGEX = new RegExp(
   'Licensed under the Apache License, Version 2.0'
 );
