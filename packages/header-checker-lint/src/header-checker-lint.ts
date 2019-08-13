@@ -34,6 +34,7 @@ type Conclusion =
 type LicenseType = 'Apache-2.0' | 'MIT' | undefined;
 
 interface LicenseHeader {
+  copyright?: string;
   type?: LicenseType;
   year?: number;
 }
@@ -45,7 +46,10 @@ function isSourceFile(file: string): boolean {
   return SOURCE_FILE_TYPES.includes(extension);
 }
 
-const COPYRIGHT_REGEX = new RegExp('Copyright (\\d{4}) Google LLC$');
+const COPYRIGHT_REGEX = new RegExp('Copyright (\\d{4}) (.*)$');
+const ALLOWED_COPYRIGHT_HOLDERS = [
+  'Google LLC',
+];
 const APACHE2_REGEX = new RegExp(
   'Licensed under the Apache License, Version 2.0'
 );
@@ -59,6 +63,7 @@ function detectLicenseHeader(contents: string): LicenseHeader {
     const match = line.match(COPYRIGHT_REGEX);
     if (match) {
       license.year = Number(match[1]);
+      license.copyright = match[2];
     }
 
     if (line.match(APACHE2_REGEX)) {
@@ -118,9 +123,24 @@ export = (app: Application) => {
       if (!detectedLicense.type) {
         lintError = true;
         failureMessages.push(
-          file.filename + ' is missing a valid license header.'
+          `\`${file.filename}\` is missing a valid license header.`
         );
         continue;
+      }
+
+      if (!detectedLicense.copyright) {
+        lintError = true;
+        failureMessages.push(
+          `\`${file.filename}\` is missing a valid copyright line.`
+        );
+        continue;
+      }
+
+      if (!ALLOWED_COPYRIGHT_HOLDERS.includes(detectedLicense.copyright)) {
+        lintError = true;
+        failureMessages.push(
+          `\`${file.filename}\` has an invalid copyright holder: \`${detectedLicense.copyright}\``
+        );
       }
 
       if (file.status === 'added') {
@@ -130,7 +150,7 @@ export = (app: Application) => {
         if (detectedLicense.year !== currentYear) {
           lintError = true;
           failureMessages.push(
-            file.filename + ' should have a copyright year of ' + currentYear
+            `\`${file.filename}\` should have a copyright year of ${currentYear}`
           );
         }
       }
