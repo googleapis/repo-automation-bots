@@ -47,9 +47,7 @@ function isSourceFile(file: string): boolean {
 }
 
 const COPYRIGHT_REGEX = new RegExp('Copyright (\\d{4}) (.*)$');
-const ALLOWED_COPYRIGHT_HOLDERS = [
-  'Google LLC',
-];
+const ALLOWED_COPYRIGHT_HOLDERS = ['Google LLC'];
 const APACHE2_REGEX = new RegExp(
   'Licensed under the Apache License, Version 2.0'
 );

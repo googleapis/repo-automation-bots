@@ -131,7 +131,10 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if the source file is missing copyright', async () => {
-      const invalidFiles = require(resolve(fixturesPath, './missing_copyright_added'));
+      const invalidFiles = require(resolve(
+        fixturesPath,
+        './missing_copyright_added'
+      ));
       const blob = require(resolve(fixturesPath, './missing_copyright'));
       const requests = nock('https://api.github.com')
         .get(
@@ -153,7 +156,10 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if the source file has an invalid copyright holder', async () => {
-      const invalidFiles = require(resolve(fixturesPath, './invalid_copyright_added'));
+      const invalidFiles = require(resolve(
+        fixturesPath,
+        './invalid_copyright_added'
+      ));
       const blob = require(resolve(fixturesPath, './invalid_copyright'));
       const requests = nock('https://api.github.com')
         .get(
@@ -280,7 +286,10 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if the source file is missing copyright', async () => {
-      const invalidFiles = require(resolve(fixturesPath, './missing_copyright_modified'));
+      const invalidFiles = require(resolve(
+        fixturesPath,
+        './missing_copyright_modified'
+      ));
       const blob = require(resolve(fixturesPath, './missing_copyright'));
       const requests = nock('https://api.github.com')
         .get(
@@ -302,7 +311,10 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if the source file has an invalid copyright holder', async () => {
-      const invalidFiles = require(resolve(fixturesPath, './invalid_copyright_modified'));
+      const invalidFiles = require(resolve(
+        fixturesPath,
+        './invalid_copyright_modified'
+      ));
       const blob = require(resolve(fixturesPath, './invalid_copyright'));
       const requests = nock('https://api.github.com')
         .get(
