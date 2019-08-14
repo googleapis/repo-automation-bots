@@ -130,6 +130,56 @@ describe('HeaderCheckerLint', () => {
       requests.done();
     });
 
+    it('sets a "failure" context on PR, if the source file is missing copyright', async () => {
+      const invalidFiles = require(resolve(
+        fixturesPath,
+        './missing_copyright_added'
+      ));
+      const blob = require(resolve(fixturesPath, './missing_copyright'));
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
+        .reply(200, invalidFiles)
+        .get(
+          '/repos/chingor13/google-auth-library-java/git/blobs/f5ed0eb2e52ccb7b02ff208a2b392161d92dd768'
+        )
+        .reply(200, blob)
+        .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      requests.done();
+    });
+
+    it('sets a "failure" context on PR, if the source file has an invalid copyright holder', async () => {
+      const invalidFiles = require(resolve(
+        fixturesPath,
+        './invalid_copyright_added'
+      ));
+      const blob = require(resolve(fixturesPath, './invalid_copyright'));
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
+        .reply(200, invalidFiles)
+        .get(
+          '/repos/chingor13/google-auth-library-java/git/blobs/68383638d3661e3989b1119b2a7ef414aabb4f6d'
+        )
+        .reply(200, blob)
+        .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      requests.done();
+    });
+
     it('ignores a valid license', async () => {
       const validFiles = require(resolve(
         fixturesPath,
@@ -223,6 +273,56 @@ describe('HeaderCheckerLint', () => {
         .reply(200, invalidFiles)
         .get(
           '/repos/chingor13/google-auth-library-java/git/blobs/ef039bb72b6cadc9c144541a5645e4a6818fb6de'
+        )
+        .reply(200, blob)
+        .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      requests.done();
+    });
+
+    it('sets a "failure" context on PR, if the source file is missing copyright', async () => {
+      const invalidFiles = require(resolve(
+        fixturesPath,
+        './missing_copyright_modified'
+      ));
+      const blob = require(resolve(fixturesPath, './missing_copyright'));
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
+        .reply(200, invalidFiles)
+        .get(
+          '/repos/chingor13/google-auth-library-java/git/blobs/f5ed0eb2e52ccb7b02ff208a2b392161d92dd768'
+        )
+        .reply(200, blob)
+        .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      requests.done();
+    });
+
+    it('sets a "failure" context on PR, if the source file has an invalid copyright holder', async () => {
+      const invalidFiles = require(resolve(
+        fixturesPath,
+        './invalid_copyright_modified'
+      ));
+      const blob = require(resolve(fixturesPath, './invalid_copyright'));
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
+        .reply(200, invalidFiles)
+        .get(
+          '/repos/chingor13/google-auth-library-java/git/blobs/68383638d3661e3989b1119b2a7ef414aabb4f6d'
         )
         .reply(200, blob)
         .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
