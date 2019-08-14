@@ -4,6 +4,13 @@ A collection of bots, based on [probot](https://github.com/probot/probot), for
 performing common maintenance tasks across the open-source repos managed
 by Google on GitHub.
 
+## Implemented Bots
+
+| Name | Description | Install |
+| ---- | ----------- | ------- |
+| [conventional-commit-lint] | PR checker that ensures that the commit messages follow conventionalcommits.org style | [install][conventional-commit-lint-app] |
+| [license-header-lint] | PR checker that ensures that source files contain valid license headers | [install][license-header-lint-app] |
+
 ## Testing Locally
 
 ### Create a Proxy to Relay Webhooks
@@ -47,3 +54,8 @@ Environment variables set, run:
 
 1. create a token with Wombat Dressing Room.
 2. run `npm run release`.
+
+[conventional-commit-lint]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/conventional-commit-lint
+[conventional-commit-lint-app]: https://github.com/apps/conventional-commit-lint-gcf
+[license-header-lint]: asdf
+[license-header-lint-app]: https://github.com/apps/license-header-lint-gcf
