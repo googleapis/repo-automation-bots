@@ -15,7 +15,33 @@
  */
 
 import { Application } from 'probot';
+import { ReleasePR, ReleaseType } from 'release-please/build/src/release-pr';
+
+// const PRIMARY_BRANCH = 'master';
+const PRIMARY_BRANCH = 'test-branch';
+const RELEASE_TYPE = ReleaseType.JavaAuthYoshi;
+const DEFAULT_LABELS = 'autorelease: pending,type: process';
+const DEFAULT_API_URL = 'https://api.github.com';
+
 export = (app: Application) => {
-  app.on('pull_request', async context => {
+  app.on('push', async context => {
+    const repoUrl = context.payload.repository.full_name;
+    const branch = context.payload.ref.replace('refs/heads/', '')
+    if (branch != PRIMARY_BRANCH) {
+      app.log.info(`Not on primary branch (${PRIMARY_BRANCH}): ${branch}`);
+      return;
+    }
+    const packageName = context.payload.repository.name;
+    const token = 'FIXME'; // somehow get the token
+
+    const rp = new ReleasePR({
+      releaseType: RELEASE_TYPE,
+      packageName: packageName,
+      repoUrl: repoUrl,
+      label: DEFAULT_LABELS,
+      apiUrl: DEFAULT_API_URL,
+      token: token,
+    });
+    rp.run();
   });
 };
