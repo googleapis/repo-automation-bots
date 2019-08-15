@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 exports['HeaderCheckerLint opened pull request sets a "failure" context on PR, if new source file is missing license 1'] = {
   "name": "header-check",
   "conclusion": "failure",
@@ -124,13 +125,8 @@ exports['HeaderCheckerLint updated pull request sets a "failure" context on PR, 
   }
 }
 
-exports['HeaderCheckerLint updated pull request sets a "failure" context on PR, if the source file has an invalid copyright holder 1'] = {
+exports['HeaderCheckerLint updated pull request sets a "success" context on PR, on modified file with invalid copyright header 1'] = {
   "name": "header-check",
-  "conclusion": "failure",
-  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c",
-  "output": {
-    "title": "Invalid or missing license headers detected.",
-    "summary": "Some new files are missing headers",
-    "text": "`oauth2_http/java/com/google/auth/http/InvalidCopyright.java` has an invalid copyright holder: `Invalid Holder`"
-  }
+  "conclusion": "success",
+  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c"
 }

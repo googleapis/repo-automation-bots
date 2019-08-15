@@ -134,14 +134,16 @@ export = (app: Application) => {
         continue;
       }
 
-      if (!ALLOWED_COPYRIGHT_HOLDERS.includes(detectedLicense.copyright)) {
-        lintError = true;
-        failureMessages.push(
-          `\`${file.filename}\` has an invalid copyright holder: \`${detectedLicense.copyright}\``
-        );
-      }
-
       if (file.status === 'added') {
+        // TODO: fix the licenses in all existing codebases so that we don't
+        // get bitten by this rule in every PR.
+        if (!ALLOWED_COPYRIGHT_HOLDERS.includes(detectedLicense.copyright)) {
+          lintError = true;
+          failureMessages.push(
+            `\`${file.filename}\` has an invalid copyright holder: \`${detectedLicense.copyright}\``
+          );
+        }
+
         // for new files, ensure the license year is the current year for new
         // files
         const currentYear = new Date().getFullYear();
