@@ -69,26 +69,24 @@ class Configuration {
     ref: string,
     github: GitHubAPI
   ): Promise<Configuration> {
-    return github.repos
-      .getContents({
+    try {
+      const response = await github.repos.getContents({
         owner,
         repo,
         ref,
         path,
-      })
-      .then(response => {
-        const fileContents = Buffer.from(
-          response.data.content,
-          'base64'
-        ).toString('utf8');
-        return new Configuration({
-          ...DEFAULT_CONFIGURATION,
-          ...JSON.parse(fileContents),
-        });
-      })
-      .catch(() => {
-        return new Configuration(DEFAULT_CONFIGURATION);
       });
+      const fileContents = Buffer.from(
+        response.data.content,
+        'base64'
+      ).toString('utf8');
+      return new Configuration({
+        ...DEFAULT_CONFIGURATION,
+        ...JSON.parse(fileContents),
+      });
+    } catch (_) {
+      return new Configuration(DEFAULT_CONFIGURATION);
+    }
   }
 
   isSourceFile(file: string): boolean {
