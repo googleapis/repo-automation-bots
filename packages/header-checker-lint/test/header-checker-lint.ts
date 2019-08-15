@@ -310,7 +310,7 @@ describe('HeaderCheckerLint', () => {
       requests.done();
     });
 
-    it('sets a "failure" context on PR, if the source file has an invalid copyright holder', async () => {
+    it('sets a "success" context on PR, on modified file with invalid copyright header', async () => {
       const invalidFiles = require(resolve(
         fixturesPath,
         './invalid_copyright_modified'
