@@ -201,7 +201,10 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('reads a custom configuration file', async () => {
-      const customConfig = require(resolve(fixturesPath, './config_copyright_holder'));
+      const customConfig = require(resolve(
+        fixturesPath,
+        './config_copyright_holder'
+      ));
       const invalidFiles = require(resolve(
         fixturesPath,
         './invalid_copyright_added'
