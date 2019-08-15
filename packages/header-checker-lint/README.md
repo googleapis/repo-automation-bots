@@ -15,10 +15,10 @@ with the following options:
 
 | Name | Description | Type | Default |
 |----- | ----------- | ---- | ------- |
-| `allowed_copyright_holders` | List of allowed copyright holders | `string[]` | `[]` |
-| `allowed_license` | The allowed license. This is **not** currently validated. | "Apache-2.0", "MIT | any |
-| `source_file_extensions` | List of file extensions that will be treated as source files | `string[]` | `["ts", "js", "java"]` |
-| `ignore_files` | List of files to ignore. These values will be treated as path globs | `string[]` | `[]` |
+| `allowedCopyrightHolders` | List of allowed copyright holders | `string[]` | `[]` |
+| `allowedLicenses` | The allowed licenses. | `string[]` | `["Apache-2.0", "MIT"]` |
+| `ignoreFiles` | List of files to ignore. These values will be treated as path globs | `string[]` | `[]` |
+| `sourceFileExtensions` | List of file extensions that will be treated as source files | `string[]` | `["ts", "js", "java"]` |
 
 ## Development
 
