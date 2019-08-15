@@ -15,6 +15,7 @@
  */
 
 import { Application } from 'probot';
+import { GitHubAPI } from 'probot/lib/github';
 import {
   ChecksCreateParams,
   PullsListFilesResponse,
@@ -39,19 +40,45 @@ interface LicenseHeader {
   year?: number;
 }
 
-interface Configuration {
-  allowedCopyrightHolders: string[],
-  allowedLicenses: LicenseType[],
-  ignoreFiles: string[],
-  sourceFileExtensions: string[],
+interface ConfigurationOptions {
+  allowedCopyrightHolders: string[];
+  allowedLicenses: LicenseType[];
+  ignoreFiles: string[];
+  sourceFileExtensions: string[];
 }
 
-const DEFAULT_CONFIGURATION: Configuration = {
+const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   allowedCopyrightHolders: ['Google LLC'],
   allowedLicenses: ['Apache-2.0', 'MIT'],
   ignoreFiles: [],
   sourceFileExtensions: ['ts', 'js', 'java'],
 };
+
+class Configuration {
+  private options: ConfigurationOptions;
+
+  constructor(options: ConfigurationOptions) {
+    this.options = options;
+  }
+
+  static fromGitHub(path: string, github: GitHubAPI) {
+    // TODO: load configuration from GitHub
+    return new Configuration(DEFAULT_CONFIGURATION);
+  }
+
+  isSourceFile(file: string): boolean {
+    const extension = file.substring(file.lastIndexOf('.') + 1);
+    return this.options.sourceFileExtensions.includes(extension);
+  }
+
+  allowedLicense(license: LicenseType): boolean {
+    return this.options.allowedLicenses.includes(license);
+  }
+
+  allowedCopyrightHolder(copyrightHolder: string): boolean {
+    return this.options.allowedCopyrightHolders.includes(copyrightHolder);
+  }
+}
 
 const COPYRIGHT_REGEX = new RegExp('Copyright (\\d{4}) (.*)$');
 const APACHE2_REGEX = new RegExp(
@@ -79,19 +106,6 @@ function detectLicenseHeader(contents: string): LicenseHeader {
   return license;
 }
 
-function isSourceFile(file: string, config: Configuration): boolean {
-  const extension = file.substring(file.lastIndexOf('.') + 1);
-  return config.sourceFileExtensions.includes(extension);
-}
-
-function allowedLicense(license: LicenseType, config: Configuration): boolean {
-  return config.allowedLicenses.includes(license);
-}
-
-function allowedCopyrightHolder(copyrightHolder: string, config: Configuration): boolean {
-  return config.allowedCopyrightHolders.includes(copyrightHolder);
-}
-
 export = (app: Application) => {
   app.on('pull_request', async context => {
     // List pull request files for the given PR
@@ -112,7 +126,10 @@ export = (app: Application) => {
       return;
     }
     const files: PullsListFilesResponseItem[] = filesResponse.data;
-    const configuration = DEFAULT_CONFIGURATION;
+    const configuration = Configuration.fromGitHub(
+      '.bots/header-checker-lint.json',
+      context.github
+    );
 
     let lintError = false;
     const failureMessages: string[] = [];
@@ -121,7 +138,7 @@ export = (app: Application) => {
     for (let i = 0; files[i] !== undefined; i++) {
       const file = files[i];
 
-      if (!isSourceFile(file.filename, configuration)) {
+      if (!configuration.isSourceFile(file.filename)) {
         app.log.info('ignoring non-source file: ' + file.filename);
         continue;
       }
@@ -138,7 +155,7 @@ export = (app: Application) => {
 
       const detectedLicense = detectLicenseHeader(fileContents);
 
-      if (!allowedLicense(detectedLicense.type, configuration)) {
+      if (!configuration.allowedLicense(detectedLicense.type)) {
         lintError = true;
         failureMessages.push(
           `\`${file.filename}\` is missing a valid license header.`
@@ -157,7 +174,7 @@ export = (app: Application) => {
       if (file.status === 'added') {
         // TODO: fix the licenses in all existing codebases so that we don't
         // get bitten by this rule in every PR.
-        if (!allowedCopyrightHolder(detectedLicense.copyright, configuration)) {
+        if (!configuration.allowedCopyrightHolder(detectedLicense.copyright)) {
           lintError = true;
           failureMessages.push(
             `\`${file.filename}\` has an invalid copyright holder: \`${detectedLicense.copyright}\``
