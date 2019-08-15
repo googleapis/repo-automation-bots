@@ -61,8 +61,31 @@ class Configuration {
     this.options = options;
   }
 
-  static fromGitHub(path: string, github: GitHubAPI) {
-    // TODO: load configuration from GitHub
+  static async fromGitHub(
+    path: string,
+    owner: string,
+    repo: string,
+    ref: string,
+    github: GitHubAPI
+  ): Promise<Configuration> {
+    const response = await github.repos.getContents({
+      owner,
+      repo,
+      ref,
+      path,
+    });
+
+    if (response.status === 200) {
+      const fileContents = Buffer.from(
+        response.data.content,
+        'base64'
+      ).toString('utf8');
+      return new Configuration({
+        ...DEFAULT_CONFIGURATION,
+        ...JSON.parse(fileContents),
+      });
+    }
+
     return new Configuration(DEFAULT_CONFIGURATION);
   }
 
@@ -126,8 +149,11 @@ export = (app: Application) => {
       return;
     }
     const files: PullsListFilesResponseItem[] = filesResponse.data;
-    const configuration = Configuration.fromGitHub(
+    const configuration = await Configuration.fromGitHub(
       '.bots/header-checker-lint.json',
+      context.payload.pull_request.head.repo.owner.login,
+      context.payload.pull_request.head.repo.name,
+      context.payload.pull_request.head.ref,
       context.github
     );
 
