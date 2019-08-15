@@ -1,19 +1,3 @@
-/**
- * Copyright 2019 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 exports['HeaderCheckerLint opened pull request sets a "failure" context on PR, if new source file is missing license 1'] = {
   "name": "header-check",
   "conclusion": "failure",
@@ -126,6 +110,12 @@ exports['HeaderCheckerLint updated pull request sets a "failure" context on PR, 
 }
 
 exports['HeaderCheckerLint updated pull request sets a "success" context on PR, on modified file with invalid copyright header 1'] = {
+  "name": "header-check",
+  "conclusion": "success",
+  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c"
+}
+
+exports['HeaderCheckerLint opened pull request reads a custom configuration file 1'] = {
   "name": "header-check",
   "conclusion": "success",
   "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c"

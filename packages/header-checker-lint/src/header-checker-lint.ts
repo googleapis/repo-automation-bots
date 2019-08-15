@@ -47,6 +47,7 @@ interface ConfigurationOptions {
   sourceFileExtensions: string[];
 }
 
+const WELL_KNOWN_CONFIGURATION_FILE = '.bots/header-checker-lint.json';
 const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   allowedCopyrightHolders: ['Google LLC'],
   allowedLicenses: ['Apache-2.0', 'MIT'],
@@ -151,7 +152,7 @@ export = (app: Application) => {
     }
     const files: PullsListFilesResponseItem[] = filesResponse.data;
     const configuration = await Configuration.fromGitHub(
-      '.bots/header-checker-lint.json',
+      WELL_KNOWN_CONFIGURATION_FILE,
       context.payload.pull_request.head.repo.owner.login,
       context.payload.pull_request.head.repo.name,
       context.payload.pull_request.head.ref,

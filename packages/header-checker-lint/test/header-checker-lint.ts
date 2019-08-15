@@ -200,6 +200,36 @@ describe('HeaderCheckerLint', () => {
       requests.done();
     });
 
+    it('reads a custom configuration file', async () => {
+      const customConfig = require(resolve(fixturesPath, './config_copyright_holder'));
+      const invalidFiles = require(resolve(
+        fixturesPath,
+        './invalid_copyright_added'
+      ));
+      const blob = require(resolve(fixturesPath, './invalid_copyright'));
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/contents/.bots/header-checker-lint.json?ref=header-check-test'
+        )
+        .reply(200, customConfig)
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
+        .reply(200, invalidFiles)
+        .get(
+          '/repos/chingor13/google-auth-library-java/git/blobs/68383638d3661e3989b1119b2a7ef414aabb4f6d'
+        )
+        .reply(200, blob)
+        .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      requests.done();
+    });
+
     it('ignores a valid license', async () => {
       const validFiles = require(resolve(
         fixturesPath,
