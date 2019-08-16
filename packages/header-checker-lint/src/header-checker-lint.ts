@@ -15,6 +15,7 @@
  */
 
 import { Application } from 'probot';
+import { GitHubAPI } from 'probot/lib/github';
 import {
   ChecksCreateParams,
   PullsListFilesResponse,
@@ -39,15 +40,70 @@ interface LicenseHeader {
   year?: number;
 }
 
-const SOURCE_FILE_TYPES = ['ts', 'js', 'java'];
+interface ConfigurationOptions {
+  allowedCopyrightHolders: string[];
+  allowedLicenses: LicenseType[];
+  ignoreFiles: string[];
+  sourceFileExtensions: string[];
+}
 
-function isSourceFile(file: string): boolean {
-  const extension = file.substring(file.lastIndexOf('.') + 1);
-  return SOURCE_FILE_TYPES.includes(extension);
+const WELL_KNOWN_CONFIGURATION_FILE = '.bots/header-checker-lint.json';
+const DEFAULT_CONFIGURATION: ConfigurationOptions = {
+  allowedCopyrightHolders: ['Google LLC'],
+  allowedLicenses: ['Apache-2.0', 'MIT'],
+  ignoreFiles: [],
+  sourceFileExtensions: ['ts', 'js', 'java'],
+};
+
+class Configuration {
+  private options: ConfigurationOptions;
+
+  constructor(options: ConfigurationOptions) {
+    this.options = options;
+  }
+
+  static async fromGitHub(
+    path: string,
+    owner: string,
+    repo: string,
+    ref: string,
+    github: GitHubAPI
+  ): Promise<Configuration> {
+    try {
+      const response = await github.repos.getContents({
+        owner,
+        repo,
+        ref,
+        path,
+      });
+      const fileContents = Buffer.from(
+        response.data.content,
+        'base64'
+      ).toString('utf8');
+      return new Configuration({
+        ...DEFAULT_CONFIGURATION,
+        ...JSON.parse(fileContents),
+      });
+    } catch (_) {
+      return new Configuration(DEFAULT_CONFIGURATION);
+    }
+  }
+
+  isSourceFile(file: string): boolean {
+    const extension = file.substring(file.lastIndexOf('.') + 1);
+    return this.options.sourceFileExtensions.includes(extension);
+  }
+
+  allowedLicense(license: LicenseType): boolean {
+    return this.options.allowedLicenses.includes(license);
+  }
+
+  allowedCopyrightHolder(copyrightHolder: string): boolean {
+    return this.options.allowedCopyrightHolders.includes(copyrightHolder);
+  }
 }
 
 const COPYRIGHT_REGEX = new RegExp('Copyright (\\d{4}) (.*)$');
-const ALLOWED_COPYRIGHT_HOLDERS = ['Google LLC'];
 const APACHE2_REGEX = new RegExp(
   'Licensed under the Apache License, Version 2.0'
 );
@@ -98,6 +154,13 @@ export = (app: Application) => {
       return;
     }
     const files: PullsListFilesResponseItem[] = filesResponse.data;
+    const configuration = await Configuration.fromGitHub(
+      WELL_KNOWN_CONFIGURATION_FILE,
+      context.payload.pull_request.head.repo.owner.login,
+      context.payload.pull_request.head.repo.name,
+      context.payload.pull_request.head.ref,
+      context.github
+    );
 
     let lintError = false;
     const failureMessages: string[] = [];
@@ -106,7 +169,7 @@ export = (app: Application) => {
     for (let i = 0; files[i] !== undefined; i++) {
       const file = files[i];
 
-      if (!isSourceFile(file.filename)) {
+      if (!configuration.isSourceFile(file.filename)) {
         app.log.info('ignoring non-source file: ' + file.filename);
         continue;
       }
@@ -123,7 +186,7 @@ export = (app: Application) => {
 
       const detectedLicense = detectLicenseHeader(fileContents);
 
-      if (!detectedLicense.type) {
+      if (!configuration.allowedLicense(detectedLicense.type)) {
         lintError = true;
         failureMessages.push(
           `\`${file.filename}\` is missing a valid license header.`
@@ -142,7 +205,7 @@ export = (app: Application) => {
       if (file.status === 'added') {
         // TODO: fix the licenses in all existing codebases so that we don't
         // get bitten by this rule in every PR.
-        if (!ALLOWED_COPYRIGHT_HOLDERS.includes(detectedLicense.copyright)) {
+        if (!configuration.allowedCopyrightHolder(detectedLicense.copyright)) {
           lintError = true;
           failureMessages.push(
             `\`${file.filename}\` has an invalid copyright holder: \`${detectedLicense.copyright}\``

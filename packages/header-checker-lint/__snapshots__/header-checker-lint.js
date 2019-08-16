@@ -130,3 +130,9 @@ exports['HeaderCheckerLint updated pull request sets a "success" context on PR, 
   "conclusion": "success",
   "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c"
 }
+
+exports['HeaderCheckerLint opened pull request reads a custom configuration file 1'] = {
+  "name": "header-check",
+  "conclusion": "success",
+  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c"
+}
