@@ -62,7 +62,7 @@ class Configuration {
 
   constructor(options: ConfigurationOptions) {
     this.options = options;
-    this.minimatches = options.ignoreFiles.map((pattern) => {
+    this.minimatches = options.ignoreFiles.map(pattern => {
       return new minimatch.Minimatch(pattern);
     });
   }
@@ -100,7 +100,7 @@ class Configuration {
   }
 
   ignoredFile(filename: string): boolean {
-    return this.minimatches.some((mm) => {
+    return this.minimatches.some(mm => {
       return mm.match(filename);
     });
   }
