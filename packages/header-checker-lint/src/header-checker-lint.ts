@@ -22,6 +22,7 @@ import {
   PullsListFilesResponseItem,
   Response,
 } from '@octokit/rest';
+import * as minimatch from 'minimatch';
 
 type Conclusion =
   | 'success'
@@ -57,9 +58,13 @@ const DEFAULT_CONFIGURATION: ConfigurationOptions = {
 
 class Configuration {
   private options: ConfigurationOptions;
+  private minimatches: minimatch.IMinimatch[];
 
   constructor(options: ConfigurationOptions) {
     this.options = options;
+    this.minimatches = options.ignoreFiles.map(pattern => {
+      return new minimatch.Minimatch(pattern);
+    });
   }
 
   static async fromGitHub(
@@ -92,6 +97,12 @@ class Configuration {
   isSourceFile(file: string): boolean {
     const extension = file.substring(file.lastIndexOf('.') + 1);
     return this.options.sourceFileExtensions.includes(extension);
+  }
+
+  ignoredFile(filename: string): boolean {
+    return this.minimatches.some(mm => {
+      return mm.match(filename);
+    });
   }
 
   allowedLicense(license: LicenseType): boolean {
@@ -168,6 +179,11 @@ export = (app: Application) => {
     // If we found any new files, verify they all have a valid header
     for (let i = 0; files[i] !== undefined; i++) {
       const file = files[i];
+
+      if (configuration.ignoredFile(file.filename)) {
+        app.log.info('ignoring file from configuration: ' + file.filename);
+        continue;
+      }
 
       if (!configuration.isSourceFile(file.filename)) {
         app.log.info('ignoring non-source file: ' + file.filename);
