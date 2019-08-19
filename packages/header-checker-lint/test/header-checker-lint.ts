@@ -290,6 +290,31 @@ describe('HeaderCheckerLint', () => {
       await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
       requests.done();
     });
+
+    it('ignores copyright strings in the body', async () => {
+      const validFiles = require(resolve(
+        fixturesPath,
+        './copyright_string_added'
+      ));
+      const blob = require(resolve(fixturesPath, './valid_license'));
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
+        .reply(200, validFiles)
+        .get(
+          '/repos/chingor13/google-auth-library-java/git/blobs/d6c1fc873b478b4ede6d03d49ca78c23e3fa4bdb'
+        )
+        .reply(200, blob)
+        .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      requests.done();
+    });
   });
 
   describe('updated pull request', () => {
@@ -458,6 +483,31 @@ describe('HeaderCheckerLint', () => {
         .reply(200, validFiles)
         .get(
           '/repos/chingor13/google-auth-library-java/git/blobs/b1e607d638896d18374123d85e1021584d551354'
+        )
+        .reply(200, blob)
+        .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      requests.done();
+    });
+
+    it('ignores copyright strings in the body', async () => {
+      const validFiles = require(resolve(
+        fixturesPath,
+        './copyright_string_modified'
+      ));
+      const blob = require(resolve(fixturesPath, './valid_license'));
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
+        .reply(200, validFiles)
+        .get(
+          '/repos/chingor13/google-auth-library-java/git/blobs/d6c1fc873b478b4ede6d03d49ca78c23e3fa4bdb'
         )
         .reply(200, blob)
         .post('/repos/chingor13/google-auth-library-java/check-runs', body => {

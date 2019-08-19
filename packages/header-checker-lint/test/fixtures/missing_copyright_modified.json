@@ -2,7 +2,7 @@
   {
     "sha": "f5ed0eb2e52ccb7b02ff208a2b392161d92dd768",
     "filename": "oauth2_http/java/com/google/auth/http/MissingCopyright.java",
-    "status": "added",
+    "status": "modified",
     "additions": 17,
     "deletions": 0,
     "changes": 17,

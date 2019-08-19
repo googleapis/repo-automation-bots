@@ -126,3 +126,15 @@ exports['HeaderCheckerLint opened pull request ignores an ignored files 1'] = {
   "conclusion": "success",
   "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c"
 }
+
+exports['HeaderCheckerLint opened pull request ignores copyright strings in the body 1'] = {
+  "name": "header-check",
+  "conclusion": "success",
+  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c"
+}
+
+exports['HeaderCheckerLint updated pull request ignores copyright strings in the body 1'] = {
+  "name": "header-check",
+  "conclusion": "success",
+  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c"
+}

@@ -114,7 +114,7 @@ class Configuration {
   }
 }
 
-const COPYRIGHT_REGEX = new RegExp('Copyright (\\d{4}) (.*)$');
+const COPYRIGHT_REGEX = new RegExp('\\s*[\\*#]\\s*Copyright (\\d{4}) (.*)$');
 const APACHE2_REGEX = new RegExp(
   'Licensed under the Apache License, Version 2.0'
 );
