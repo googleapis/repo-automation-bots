@@ -31,13 +31,8 @@
     "@commitlint/config-conventional": "^8.1.0",
     "@commitlint/lint": "^8.0.0",
     "@octokit/rest": "^16.28.3",
-<<<<<<< HEAD
-    "gcf-utils": "^0.4.0",
-    "probot": "^9.2.20"
-=======
     "gcf-utils": "^0.6.0",
     "probot": "^9.3.0"
->>>>>>> master
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
