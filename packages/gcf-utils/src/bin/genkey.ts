@@ -129,8 +129,8 @@ async function run() {
 
   const opts = project
     ? ({
-      projectId: project,
-    } as KMS.v1.KeyManagementServiceClient.ConfigurationObject)
+        projectId: project,
+      } as KMS.v1.KeyManagementServiceClient.ConfigurationObject)
     : undefined;
 
   const kmsclient = new KMS.KeyManagementServiceClient(opts);
