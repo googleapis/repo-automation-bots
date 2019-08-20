@@ -126,25 +126,20 @@ const blob: Options = {
 
 async function run() {
   let encblob: Buffer = Buffer.from('');
-  try {
-    const opts = project
-      ? ({
-          projectId: project,
-        } as KMS.v1.KeyManagementServiceClient.ConfigurationObject)
-      : undefined;
 
-    const kmsclient = new KMS.KeyManagementServiceClient(opts);
+  const opts = project
+    ? ({
+      projectId: project,
+    } as KMS.v1.KeyManagementServiceClient.ConfigurationObject)
+    : undefined;
 
-    const name = kmsclient.cryptoKeyPath(project, location, keyring, botname);
+  const kmsclient = new KMS.KeyManagementServiceClient(opts);
 
-    const plaintext = Base64.encode(JSON.stringify(blob));
-    const [kmsresult] = await kmsclient.encrypt({ name, plaintext });
-    encblob = kmsresult.ciphertext;
-  } catch (e) {
-    console.error('Got an error encrypting the blob');
-    console.error(e);
-    process.exit(1);
-  }
+  const name = kmsclient.cryptoKeyPath(project, location, keyring, botname);
+
+  const plaintext = Base64.encode(JSON.stringify(blob));
+  const [kmsresult] = await kmsclient.encrypt({ name, plaintext });
+  encblob = kmsresult.ciphertext;
 
   const options = project ? ({ project } as StorageOptions) : undefined;
   const storage = new Storage(options);
