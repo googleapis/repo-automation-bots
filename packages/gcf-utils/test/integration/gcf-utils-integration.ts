@@ -28,7 +28,7 @@ describe('GCFBootstrapper Integration', () => {
       config({ path: resolve(__dirname, '../../../.env') });
     });
 
-    afterEach(() => { });
+    afterEach(() => {});
 
     it('returns valid options', async () => {
       const options = await bootstrapper.getProbotConfig();
