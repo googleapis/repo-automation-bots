@@ -114,7 +114,7 @@ class Configuration {
   }
 }
 
-const COPYRIGHT_REGEX = new RegExp('\\s*[\\*#]\\s*Copyright (\\d{4}) (.*)$');
+const COPYRIGHT_REGEX = /\s*([*#]|\/\/) \s*Copyright (\d{4}) ([\w\s]+)\.?$/;
 const APACHE2_REGEX = new RegExp(
   'Licensed under the Apache License, Version 2.0'
 );
@@ -130,8 +130,8 @@ function detectLicenseHeader(contents: string): LicenseHeader {
   contents.split('\n').forEach(line => {
     const match = line.match(COPYRIGHT_REGEX);
     if (match) {
-      license.year = Number(match[1]);
-      license.copyright = match[2];
+      license.year = Number(match[2]);
+      license.copyright = match[3];
     }
 
     if (line.match(APACHE2_REGEX)) {
