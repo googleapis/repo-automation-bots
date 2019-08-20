@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Google LLC. All Rights Reserved.
+ * Copyright 2019 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import { GCFBootstrapper } from '../../src/gcf-utils';
 
 import { Application, Options } from 'probot';
@@ -29,7 +28,7 @@ describe('GCFBootstrapper Integration', () => {
       config({ path: resolve(__dirname, '../../../.env') });
     });
 
-    afterEach(() => {});
+    afterEach(() => { });
 
     it('returns valid options', async () => {
       const options = await bootstrapper.getProbotConfig();
