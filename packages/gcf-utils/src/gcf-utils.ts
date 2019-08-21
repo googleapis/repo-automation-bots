@@ -72,7 +72,7 @@ export class GCFBootstrapper {
     const [result] = await kmsclient.decrypt({ name, ciphertext });
 
     const config = JSON.parse(result.plaintext.toString());
-    return config;
+    return config as Options;
   }
 
   gcf(
