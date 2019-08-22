@@ -16,10 +16,11 @@
 
 import { Application } from 'probot';
 import { ReleasePR, ReleaseType } from 'release-please/build/src/release-pr';
+import { JavaYoshi } from 'release-please/build/src/releasers/java-yoshi';
 
 // const PRIMARY_BRANCH = 'master';
-const PRIMARY_BRANCH = 'test-branch';
-const RELEASE_TYPE = ReleaseType.JavaAuthYoshi;
+const PRIMARY_BRANCH = 'clean-interface';
+const RELEASE_TYPE = ReleaseType.JavaYoshi;
 const DEFAULT_LABELS = 'autorelease: pending,type: process';
 const DEFAULT_API_URL = 'https://api.github.com';
 
@@ -32,15 +33,18 @@ export = (app: Application) => {
       return;
     }
     const packageName = context.payload.repository.name;
-    const token = 'FIXME'; // somehow get the token
 
-    const rp = new ReleasePR({
+    const rp = new JavaYoshi({
       releaseType: RELEASE_TYPE,
       packageName: packageName,
       repoUrl: repoUrl,
       label: DEFAULT_LABELS,
       apiUrl: DEFAULT_API_URL,
-      token: token,
+      octokitAPIs: {
+        octokit: context.github,
+        graphql: context.github.graphql,
+        request: context.github.request,
+      }
     });
     rp.run();
   });
