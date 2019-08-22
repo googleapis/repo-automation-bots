@@ -34,13 +34,13 @@ describe('detectLicenseHeader', () => {
     assert.strictEqual(header.type, 'Apache-2.0');
   });
 
-  it('should handle c-style extended comments', async () => {
+  it('should handle c-style all rights reserved comments', async () => {
     const contents = fs.readFileSync(
-      resolve(fixturesPath, './c-style-header-extended.txt'),
+      resolve(fixturesPath, './c-style-header-all-rights.txt'),
       'utf-8'
     );
     const header = detectLicenseHeader(contents);
-    assert.strictEqual(header.copyright, 'Google LLC. All Rights Reserved.');
+    assert.strictEqual(header.copyright, 'Google LLC');
     assert.strictEqual(header.year, 2019);
     assert.strictEqual(header.type, 'Apache-2.0');
   });
@@ -48,6 +48,17 @@ describe('detectLicenseHeader', () => {
   it('should handle bash-style comments', async () => {
     const contents = fs.readFileSync(
       resolve(fixturesPath, './bash-style-header.txt'),
+      'utf-8'
+    );
+    const header = detectLicenseHeader(contents);
+    assert.strictEqual(header.copyright, 'Google LLC');
+    assert.strictEqual(header.year, 2019);
+    assert.strictEqual(header.type, 'Apache-2.0');
+  });
+
+  it('should handle inline java-style comments', async () => {
+    const contents = fs.readFileSync(
+      resolve(fixturesPath, './inline-java-style-header.txt'),
       'utf-8'
     );
     const header = detectLicenseHeader(contents);
