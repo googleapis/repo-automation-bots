@@ -35,7 +35,7 @@ const MIT_REGEX = new RegExp('Permission is hereby granted, free of charge,');
 // TODO: look for the header in comments only
 export function detectLicenseHeader(contents: string): LicenseHeader {
   const license: LicenseHeader = {};
-  contents.split('\n').forEach(line => {
+  contents.split(/\r?\n/).forEach(line => {
     const match = line.match(COPYRIGHT_REGEX);
     if (match) {
       license.year = Number(match[2]);
