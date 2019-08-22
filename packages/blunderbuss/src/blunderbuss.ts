@@ -53,4 +53,29 @@ export = (app: Application) => {
     const result = await context.github.issues.addAssignees(context.issue({assignees: [assignee]}));
     context.log.info(util.format('[%s/%s] issue #%s assigned to %s', repo.owner, repo.repo, context.payload.issue.number, assignee));
   });
+
+  app.on(['pull_request.opened', 'pull_request.reopened'], async context => {
+    const repo = context.repo() as Repository;
+    let config = await context.config(CONFIGURATION_FILE_PATH) as Configuration;
+
+    if (!config.assign_prs) {
+      context.log.info(util.format('[%s/%s] pr #%s ignored: not configured', repo.owner, repo.repo, context.payload.pull_request.number));
+      return;
+    }
+
+    if (context.payload.pull_request.assignees.length !== 0) {
+      context.log.info(util.format('[%s/%s] pr #%s ignored: already has assignee(s)', repo.owner, repo.repo, context.payload.pull_request.number));
+      return;
+    }
+
+    // Pick an assignee, attempting to not self-assign the owner of the PR
+    let assignee = randomFrom(config.assign_prs);
+    while (config.assign_prs.length > 1 && context.payload.pull_request.user.login == assignee) {
+      // Remove any duplicates from the config to guarantee exit condition
+      config.assign_prs = [...new Set(config.assign_prs)];
+      assignee = randomFrom(config.assign_prs);
+    }
+    const result = await context.github.issues.addAssignees(context.issue({assignees: [assignee]}));
+    context.log.info(util.format('[%s/%s] pr #%s assigned to %s', repo.owner, repo.repo, context.payload.pull_request.number, assignee));
+  });
 };

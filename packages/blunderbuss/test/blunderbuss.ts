@@ -95,6 +95,61 @@ describe('Blunderbuss', () => {
       requests.done();
     });
   });
+
+  describe('opened pr', () => {
+    it('assigns user to a PR when opened with no assignee', async () => {
+      const payload = require(resolve(fixturesPath, './events/pull_request_opened_no_assignees'));
+      const validConfig = fs.readFileSync(resolve(fixturesPath, 'config/valid.yml'));
+
+      const requests = nock('https://api.github.com')
+          .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
+          .reply(200, {content: validConfig})
+          .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200);
+
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123'
+      });
+      requests.done();
+    });
+
+    it('ignores PR when PR opened with assignee(s)', async () => {
+      const payload = require(resolve(fixturesPath, './events/pull_request_opened_with_assignees'));
+      const validConfig = fs.readFileSync(resolve(fixturesPath, 'config/valid.yml'));
+
+      const requests = nock('https://api.github.com')
+          .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
+          .reply(200, {content: validConfig});
+
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123'
+      });
+      requests.done();
+    });
+
+    it('ignores PR when PR opened but assign_issues not in config', async () => {
+      const payload = require(resolve(fixturesPath, './events/pull_request_opened_no_assignees'));
+      const validConfig = fs.readFileSync(resolve(fixturesPath, 'config/no_prs.yml'));
+
+      const requests = nock('https://api.github.com')
+          .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
+          .reply(200, {content: validConfig});
+
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123'
+      });
+      requests.done();
+    });
+  });
 });
 
 
