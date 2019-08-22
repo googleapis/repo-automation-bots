@@ -15,11 +15,10 @@
  */
 
 import { Application } from 'probot';
-import { ReleasePR, ReleaseType } from 'release-please/build/src/release-pr';
+import { ReleaseType } from 'release-please/build/src/release-pr';
 import { JavaYoshi } from 'release-please/build/src/releasers/java-yoshi';
 
-// const PRIMARY_BRANCH = 'master';
-const PRIMARY_BRANCH = 'clean-interface';
+const PRIMARY_BRANCH = 'master';
 const RELEASE_TYPE = ReleaseType.JavaYoshi;
 const DEFAULT_LABELS = 'autorelease: pending,type: process';
 const DEFAULT_API_URL = 'https://api.github.com';
@@ -36,8 +35,8 @@ export = (app: Application) => {
 
     const rp = new JavaYoshi({
       releaseType: RELEASE_TYPE,
-      packageName: packageName,
-      repoUrl: repoUrl,
+      packageName,
+      repoUrl,
       label: DEFAULT_LABELS,
       apiUrl: DEFAULT_API_URL,
       octokitAPIs: {
