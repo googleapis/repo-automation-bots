@@ -20,9 +20,9 @@ import { ReleaseType } from 'release-please/build/src/release-pr';
 import { JavaYoshi } from 'release-please/build/src/releasers/java-yoshi';
 
 interface ConfigurationOptions {
-  strategy?: string,
-  primaryBranch: string,
-  releaseLabels: string[]
+  strategy?: string;
+  primaryBranch: string;
+  releaseLabels: string[];
 }
 
 const DEFAULT_API_URL = 'https://api.github.com';
@@ -32,7 +32,7 @@ const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   releaseLabels: ['autorelease: pending', 'type: process'],
 };
 
-async function fromGitHub(
+async function configurationFromGitHub(
   path: string,
   owner: string,
   repo: string,
@@ -46,10 +46,9 @@ async function fromGitHub(
       ref,
       path,
     });
-    const fileContents = Buffer.from(
-      response.data.content,
-      'base64'
-    ).toString('utf8');
+    const fileContents = Buffer.from(response.data.content, 'base64').toString(
+      'utf8'
+    );
     return {
       ...DEFAULT_CONFIGURATION,
       ...JSON.parse(fileContents),
@@ -63,24 +62,27 @@ export = (app: Application) => {
   app.on('push', async context => {
     const repoUrl = context.payload.repository.full_name;
     const branch = context.payload.ref.replace('refs/heads/', '');
-    const packageName = context.payload.repository.name;
+    const repoOwner = context.payload.repository.owner.login;
+    const repoName = context.payload.repository.name;
 
-    const configuration = await fromGitHub(
+    const configuration = await configurationFromGitHub(
       WELL_KNOWN_CONFIGURATION_FILE,
-      context.payload.repository.owner.login,
-      context.payload.repository.name,
+      repoOwner,
+      repoName,
       branch,
       context.github
     );
 
-    if (branch != configuration.primaryBranch) {
-      app.log.info(`Not on primary branch (${configuration.primaryBranch}): ${branch}`);
+    if (branch !== configuration.primaryBranch) {
+      app.log.info(
+        `Not on primary branch (${configuration.primaryBranch}): ${branch}`
+      );
       return;
     }
 
     const rp = new JavaYoshi({
       releaseType: ReleaseType.JavaYoshi,
-      packageName,
+      packageName: repoName,
       repoUrl,
       label: configuration.releaseLabels.join(','),
       apiUrl: DEFAULT_API_URL,
@@ -88,7 +90,7 @@ export = (app: Application) => {
         octokit: context.github,
         graphql: context.github.graphql,
         request: context.github.request,
-      }
+      },
     });
     rp.run();
   });
