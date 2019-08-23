@@ -17,13 +17,13 @@
 import { Application } from 'probot';
 
 // TODO: fix these imports when release-please exports types from the root
-import { ReleaseType } from 'release-please/build/src/release-pr';
+import { ReleaseType, BuildOptions } from 'release-please/build/src/release-pr';
 import { ReleasePRFactory } from 'release-please/build/src/release-pr-factory';
 
 interface ConfigurationOptions {
-  releaseType?: ReleaseType;
   primaryBranch: string;
-  releaseLabels: string[];
+  releaseLabels?: string[];
+  releaseType?: ReleaseType;
 }
 
 const DEFAULT_API_URL = 'https://api.github.com';
@@ -73,18 +73,20 @@ export = (app: Application) => {
     const releaseType = configuration.releaseType
       ? configuration.releaseType
       : releaseTypeFromRepoLanguage(context.payload.repository.language);
-
-    const rp = ReleasePRFactory.build(releaseType, {
+    const buildOptions: BuildOptions = {
       packageName: repoName,
       repoUrl,
-      label: configuration.releaseLabels.join(','),
       apiUrl: DEFAULT_API_URL,
       octokitAPIs: {
         octokit: context.github,
         graphql: context.github.graphql,
         request: context.github.request,
       },
-    });
-    rp.run();
+    };
+    if (configuration.releaseLabels) {
+      buildOptions.label = configuration.releaseLabels.join(',');
+    }
+
+    ReleasePRFactory.build(releaseType, buildOptions).run();
   });
 };
