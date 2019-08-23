@@ -1,0 +1,4 @@
+primaryBranch: master
+releaseLabels:
+  - foo
+  - bar

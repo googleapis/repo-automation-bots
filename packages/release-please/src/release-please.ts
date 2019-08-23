@@ -19,6 +19,7 @@ import { Application } from 'probot';
 // TODO: fix these imports when release-please exports types from the root
 import { ReleaseType, BuildOptions } from 'release-please/build/src/release-pr';
 import { ReleasePRFactory } from 'release-please/build/src/release-pr-factory';
+import { Runner } from './runner';
 
 interface ConfigurationOptions {
   primaryBranch: string;
@@ -87,6 +88,6 @@ export = (app: Application) => {
       buildOptions.label = configuration.releaseLabels.join(',');
     }
 
-    ReleasePRFactory.build(releaseType, buildOptions).run();
+    Runner.runner(ReleasePRFactory.build(releaseType, buildOptions));
   });
 };
