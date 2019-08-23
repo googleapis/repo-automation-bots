@@ -60,6 +60,7 @@ export = (app: Application) => {
       const issue = context.issue() as Issue;
 
       if (
+        !config ||
         (context.payload.issue && !config.assign_issues) ||
         (context.payload.pull_request && !config.assign_prs)
       ) {
