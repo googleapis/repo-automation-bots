@@ -17,6 +17,11 @@
 import { Application } from 'probot';
 import { GitHubAPI } from 'probot/lib/github';
 import {
+  LicenseHeader,
+  LicenseType,
+  detectLicenseHeader,
+} from './header-parser';
+import {
   ChecksCreateParams,
   PullsListFilesResponse,
   PullsListFilesResponseItem,
@@ -32,14 +37,6 @@ type Conclusion =
   | 'timed_out'
   | 'action_required'
   | undefined;
-
-type LicenseType = 'Apache-2.0' | 'MIT' | 'BSD-3' | undefined;
-
-interface LicenseHeader {
-  copyright?: string;
-  type?: LicenseType;
-  year?: number;
-}
 
 interface ConfigurationOptions {
   allowedCopyrightHolders: string[];
@@ -112,37 +109,6 @@ class Configuration {
   allowedCopyrightHolder(copyrightHolder: string): boolean {
     return this.options.allowedCopyrightHolders.includes(copyrightHolder);
   }
-}
-
-const COPYRIGHT_REGEX = /\s*([*#]|\/\/) \s*Copyright (\d{4}) ([\w\s]+)\.?$/;
-const APACHE2_REGEX = new RegExp(
-  'Licensed under the Apache License, Version 2.0'
-);
-const BSD3_REGEX = new RegExp(
-  'Redistribution and use in source and binary forms, with or without'
-);
-const MIT_REGEX = new RegExp('Permission is hereby granted, free of charge,');
-
-// super naive - iterate over lines and use regex
-// TODO: look for the header in comments only
-function detectLicenseHeader(contents: string): LicenseHeader {
-  const license: LicenseHeader = {};
-  contents.split('\n').forEach(line => {
-    const match = line.match(COPYRIGHT_REGEX);
-    if (match) {
-      license.year = Number(match[2]);
-      license.copyright = match[3];
-    }
-
-    if (line.match(APACHE2_REGEX)) {
-      license.type = 'Apache-2.0';
-    } else if (line.match(MIT_REGEX)) {
-      license.type = 'MIT';
-    } else if (line.match(BSD3_REGEX)) {
-      license.type = 'BSD-3';
-    }
-  });
-  return license;
 }
 
 export = (app: Application) => {
