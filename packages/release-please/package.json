@@ -1,5 +1,5 @@
 {
-  "name": "release-please",
+  "name": "release-please-bot",
   "version": "1.0.0",
   "description": "propose releases",
   "private": true,
