@@ -13,6 +13,26 @@
     "state": "open",
     "locked": false,
     "title": "Assign pr",
+    "user": {
+      "login": "testuser2",
+      "id": 31518063,
+      "node_id": "MDQ6VXNlcjMxNTE4MDYz",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/31518063?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/testuser2",
+      "html_url": "https://github.com/testuser2",
+      "followers_url": "https://api.github.com/users/testuser2/followers",
+      "following_url": "https://api.github.com/users/testuser2/following{/other_user}",
+      "gists_url": "https://api.github.com/users/testuser2/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/testuser2/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/testuser2/subscriptions",
+      "organizations_url": "https://api.github.com/users/testuser2/orgs",
+      "repos_url": "https://api.github.com/users/testuser2/repos",
+      "events_url": "https://api.github.com/users/testuser2/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/testuser2/received_events",
+      "type": "User",
+      "site_admin": false
+    },
     "assignees": [
       {
         "login": "testuser1",

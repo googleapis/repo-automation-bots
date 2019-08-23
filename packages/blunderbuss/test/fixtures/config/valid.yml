@@ -1,5 +1,4 @@
 assign_issues:
-  - testuser1
+  - issues1
 assign_prs:
-  - testuser1
-  - testuser2
+  - prs1
