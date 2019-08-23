@@ -15,7 +15,8 @@
  */
 
 import { Application } from 'probot';
-import { GitHubAPI } from 'probot/lib/github';
+
+// TODO: fix these imports when release-please exports types from the root
 import { ReleaseType } from 'release-please/build/src/release-pr';
 import { ReleasePRFactory } from 'release-please/build/src/release-pr-factory';
 
@@ -26,37 +27,11 @@ interface ConfigurationOptions {
 }
 
 const DEFAULT_API_URL = 'https://api.github.com';
-const WELL_KNOWN_CONFIGURATION_FILE = '.github/release-please.json';
+const WELL_KNOWN_CONFIGURATION_FILE = 'release-please.yml';
 const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   primaryBranch: 'master',
   releaseLabels: ['autorelease: pending', 'type: process'],
 };
-
-async function configurationFromGitHub(
-  path: string,
-  owner: string,
-  repo: string,
-  ref: string,
-  github: GitHubAPI
-): Promise<ConfigurationOptions> {
-  try {
-    const response = await github.repos.getContents({
-      owner,
-      repo,
-      ref,
-      path,
-    });
-    const fileContents = Buffer.from(response.data.content, 'base64').toString(
-      'utf8'
-    );
-    return {
-      ...DEFAULT_CONFIGURATION,
-      ...JSON.parse(fileContents),
-    };
-  } catch (_) {
-    return DEFAULT_CONFIGURATION;
-  }
-}
 
 function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
   switch (language) {
@@ -81,16 +56,12 @@ export = (app: Application) => {
   app.on('push', async context => {
     const repoUrl = context.payload.repository.full_name;
     const branch = context.payload.ref.replace('refs/heads/', '');
-    const repoOwner = context.payload.repository.owner.login;
     const repoName = context.payload.repository.name;
 
-    const configuration = await configurationFromGitHub(
+    const configuration = (await context.config(
       WELL_KNOWN_CONFIGURATION_FILE,
-      repoOwner,
-      repoName,
-      branch,
-      context.github
-    );
+      DEFAULT_CONFIGURATION
+    )) as ConfigurationOptions;
 
     if (branch !== configuration.primaryBranch) {
       app.log.info(
