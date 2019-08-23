@@ -1,4 +1,4 @@
-# conventional-commit-lint
+# Blunderbuss
 
 > A GitHub App built with [Probot](https://github.com/probot/probot) that assigns issues and prs 
 randomly to a specific list of users
