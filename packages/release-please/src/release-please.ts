@@ -26,7 +26,7 @@ interface ConfigurationOptions {
 }
 
 const DEFAULT_API_URL = 'https://api.github.com';
-const WELL_KNOWN_CONFIGURATION_FILE = '.bots/release-please.json';
+const WELL_KNOWN_CONFIGURATION_FILE = '.github/release-please.json';
 const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   primaryBranch: 'master',
   releaseLabels: ['autorelease: pending', 'type: process'],
