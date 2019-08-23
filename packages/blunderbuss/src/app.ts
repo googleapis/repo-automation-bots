@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {GCFBootstrapper} from 'gcf-utils';
+import { GCFBootstrapper } from 'gcf-utils';
 import appFn from './blunderbuss';
 
 const bootstrap = new GCFBootstrapper();
