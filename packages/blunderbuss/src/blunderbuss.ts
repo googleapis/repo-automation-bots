@@ -32,58 +32,43 @@ interface Issue {
 
 // Randomly returns an item from an array, while ignoring the provided value.
 // Returns an empty string if no values remain.
-function randomFrom(items: string[], ignore: string): string {
+function randomFrom(items: string[], ignore: string): string | undefined {
   const unique = new Set(items);
   unique.delete(ignore);
   items = [...unique];
-  if (items.length == 0) {
-    return '';
+  if (items.length === 0) {
+    return undefined;
   }
   return items[Math.floor(Math.random() * items.length)]
 }
 
-async function assignRandomly(context: Context, user: string, isAssigned: boolean, assignees: string[]) {
-  const issue = context.issue() as Issue;
-
-  if (isAssigned) {
-    context.log.info(util.format('[%s/%s] #%s ignored: already has assignee(s)', issue.owner, issue.repo, issue.number));
-    return;
-  }
-
-  const assignee = randomFrom(assignees, user);
-  if (assignee === '') {
-    context.log.info(util.format('[%s/%s] #%s ignored: no valid assignee(s)', issue.owner, issue.repo, issue.number));
-    return;
-  }
-
-  const response = await context.github.issues.addAssignees(context.issue({assignees: [assignee]}));
-  context.log.info(util.format('[%s/%s] #%s was assigned to %s', issue.owner, issue.repo, issue.number, assignee));
-}
-
 export = (app: Application) => {
-  app.on(['issues.opened', 'issues.reopened'], async context => {
+  app.on(['issues.opened', 'issues.reopened', 'pull_request.opened', 'pull_request.reopened'], async context => {
     const config = await context.config(CONFIGURATION_FILE_PATH) as Configuration;
+    const issue = context.issue() as Issue;
 
-    if (!config.assign_issues) {
-      const issue = context.issue() as Issue;
-      context.log.info(util.format('[%s/%s] #%s ignored: "assign_issues" not in config', issue.owner, issue.repo, issue.number));
+    if ((context.payload.issue && !config.assign_issues) || (context.payload.pull_request && !config.assign_prs)) {
+      const paramName = context.payload.issue ? "assign_issues" : "assign_prs";
+      context.log.info(util.format('[%s/%s] #%s ignored: "%s" not in config', issue.owner, issue.repo, paramName, issue.number));
       return;
     }
 
-    const isAssigned = context.payload.issue.assignees.length !== 0;
-    await assignRandomly(context, context.payload.issue.user.login, isAssigned, config.assign_issues)
-  });
+    // PRs are a superset of issues, so we can handle them similarly.
+    const assignees = context.payload.issue ? config.assign_issues! : config.assign_prs!;
+    const issuePayload = context.payload.issue || context.payload.pull_request;
 
-  app.on(['pull_request.opened', 'pull_request.reopened'], async context => {
-    const config = await context.config(CONFIGURATION_FILE_PATH) as Configuration;
-
-    if (!config.assign_prs) {
-      const issue = context.issue() as Issue;
-      context.log.info(util.format('[%s/%s] #%s ignored: "assign_prs" not in config', issue.owner, issue.repo, issue.number));
+    if (issuePayload.assignees.length !== 0) {
+      context.log.info(util.format('[%s/%s] #%s ignored: already has assignee(s)', issue.owner, issue.repo, issue.number));
       return;
     }
 
-    const isAssigned = context.payload.pull_request.assignees.length !== 0;
-    await assignRandomly(context, context.payload.pull_request.user.login, isAssigned, config.assign_prs)
+    const assignee = randomFrom(assignees, issuePayload.user.login);
+    if (!assignee) {
+      context.log.info(util.format('[%s/%s] #%s no assigned: no valid assignee(s)', issue.owner, issue.repo, issue.number));
+      return;
+    }
+
+    const response = await context.github.issues.addAssignees(context.issue({assignees: [assignee]}));
+    context.log.info(util.format('[%s/%s] #%s was assigned to %s', issue.owner, issue.repo, issue.number, assignee));
   });
 };
