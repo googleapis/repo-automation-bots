@@ -8,6 +8,7 @@ by Google on GitHub.
 
 | Name | Description | Install |
 | ---- | ----------- | ------- |
+| [blunderbuss] | Assigns issues and PRs randomly to a specific list of user | [install][blunderbuss-app] |
 | [conventional-commit-lint] | PR checker that ensures that the commit messages follow conventionalcommits.org style | [install][conventional-commit-lint-app] |
 | [license-header-lint] | PR checker that ensures that source files contain valid license headers | [install][license-header-lint-app] |
 
@@ -55,6 +56,8 @@ Environment variables set, run:
 1. create a token with Wombat Dressing Room.
 2. run `npm run release`.
 
+[blunderbuss]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/blunderbuss
+[blunderbuss-app]: https://github.com/apps/blunderbuss-gcf
 [conventional-commit-lint]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/conventional-commit-lint
 [conventional-commit-lint-app]: https://github.com/apps/conventional-commit-lint-gcf
 [license-header-lint]: asdf
