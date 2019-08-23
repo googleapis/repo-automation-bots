@@ -15,29 +15,74 @@
  */
 
 import { Application } from 'probot';
+import { GitHubAPI } from 'probot/lib/github';
 import { ReleaseType } from 'release-please/build/src/release-pr';
 import { JavaYoshi } from 'release-please/build/src/releasers/java-yoshi';
 
-const PRIMARY_BRANCH = 'master';
-const RELEASE_TYPE = ReleaseType.JavaYoshi;
-const DEFAULT_LABELS = 'autorelease: pending,type: process';
+interface ConfigurationOptions {
+  strategy?: string,
+  primaryBranch: string,
+  releaseLabels: string[]
+}
+
 const DEFAULT_API_URL = 'https://api.github.com';
+const WELL_KNOWN_CONFIGURATION_FILE = '.bots/release-please.json';
+const DEFAULT_CONFIGURATION: ConfigurationOptions = {
+  primaryBranch: 'master',
+  releaseLabels: ['autorelease: pending', 'type: process'],
+};
+
+async function fromGitHub(
+  path: string,
+  owner: string,
+  repo: string,
+  ref: string,
+  github: GitHubAPI
+): Promise<ConfigurationOptions> {
+  try {
+    const response = await github.repos.getContents({
+      owner,
+      repo,
+      ref,
+      path,
+    });
+    const fileContents = Buffer.from(
+      response.data.content,
+      'base64'
+    ).toString('utf8');
+    return {
+      ...DEFAULT_CONFIGURATION,
+      ...JSON.parse(fileContents),
+    };
+  } catch (_) {
+    return DEFAULT_CONFIGURATION;
+  }
+}
 
 export = (app: Application) => {
   app.on('push', async context => {
     const repoUrl = context.payload.repository.full_name;
-    const branch = context.payload.ref.replace('refs/heads/', '')
-    if (branch != PRIMARY_BRANCH) {
-      app.log.info(`Not on primary branch (${PRIMARY_BRANCH}): ${branch}`);
-      return;
-    }
+    const branch = context.payload.ref.replace('refs/heads/', '');
     const packageName = context.payload.repository.name;
 
+    const configuration = await fromGitHub(
+      WELL_KNOWN_CONFIGURATION_FILE,
+      context.payload.repository.owner.login,
+      context.payload.repository.name,
+      branch,
+      context.github
+    );
+
+    if (branch != configuration.primaryBranch) {
+      app.log.info(`Not on primary branch (${configuration.primaryBranch}): ${branch}`);
+      return;
+    }
+
     const rp = new JavaYoshi({
-      releaseType: RELEASE_TYPE,
+      releaseType: ReleaseType.JavaYoshi,
       packageName,
       repoUrl,
-      label: DEFAULT_LABELS,
+      label: configuration.releaseLabels.join(','),
       apiUrl: DEFAULT_API_URL,
       octokitAPIs: {
         octokit: context.github,
