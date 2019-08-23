@@ -17,10 +17,10 @@
 import { Application } from 'probot';
 import { GitHubAPI } from 'probot/lib/github';
 import { ReleaseType } from 'release-please/build/src/release-pr';
-import { JavaYoshi } from 'release-please/build/src/releasers/java-yoshi';
+import { ReleasePRFactory } from 'release-please/build/src/release-pr-factory';
 
 interface ConfigurationOptions {
-  strategy?: string;
+  releaseType?: ReleaseType;
   primaryBranch: string;
   releaseLabels: string[];
 }
@@ -58,6 +58,25 @@ async function configurationFromGitHub(
   }
 }
 
+function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
+  switch (language) {
+    case 'Ruby':
+    case 'ruby':
+      return ReleaseType.RubyYoshi;
+    case 'Java':
+    case 'java':
+      return ReleaseType.JavaYoshi;
+    case 'TypeScript':
+    case 'JavaScript':
+      return ReleaseType.Node;
+    case 'PHP':
+    case 'php':
+      return ReleaseType.PHPYoshi;
+    default:
+      throw Error('unknown release type');
+  }
+}
+
 export = (app: Application) => {
   app.on('push', async context => {
     const repoUrl = context.payload.repository.full_name;
@@ -80,8 +99,11 @@ export = (app: Application) => {
       return;
     }
 
-    const rp = new JavaYoshi({
-      releaseType: ReleaseType.JavaYoshi,
+    const releaseType = configuration.releaseType
+      ? configuration.releaseType
+      : releaseTypeFromRepoLanguage(context.payload.repository.language);
+
+    const rp = ReleasePRFactory.build(releaseType, {
       packageName: repoName,
       repoUrl,
       label: configuration.releaseLabels.join(','),
