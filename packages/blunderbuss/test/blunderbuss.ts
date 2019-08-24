@@ -165,8 +165,10 @@ describe('Blunderbuss', () => {
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, { content: [] });
-
+        .reply(404, {})
+        // This second stub is required as octokit does a second attempt on a different endpoint
+        .get('/repos/testOwner/.github/contents/.github/blunderbuss.yml')
+        .reply(404, {});
       await probot.receive({ name: 'issues.labeled', payload, id: 'abc123' });
       requests.done();
     });
@@ -303,7 +305,10 @@ describe('Blunderbuss', () => {
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, { content: [] });
+        .reply(404, {})
+        // This second stub is required as octokit does a second attempt on a different endpoint
+        .get('/repos/testOwner/.github/contents/.github/blunderbuss.yml')
+        .reply(404, {});
 
       await probot.receive({
         name: 'pull_request.labeled',
