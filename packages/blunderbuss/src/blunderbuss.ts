@@ -55,7 +55,8 @@ export = (app: Application) => {
     ],
     async context => {
       const config = (await context.config(
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {}
       )) as Configuration;
       const issue = context.issue() as Issue;
 
