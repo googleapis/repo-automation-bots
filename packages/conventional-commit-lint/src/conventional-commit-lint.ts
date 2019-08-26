@@ -21,6 +21,7 @@ import { rules } from '@commitlint/config-conventional';
 // modify rules slightly:
 // see: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-conventional/index.js
 delete rules['type-enum'];
+rules['header-max-length'] = [2, 'always', 256];
 
 import { PullsListCommitsResponseItem, Response } from '@octokit/rest';
 
