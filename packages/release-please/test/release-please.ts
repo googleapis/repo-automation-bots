@@ -65,11 +65,31 @@ describe('ReleasePleaseBot', () => {
     });
 
     it('should build a release PR', async () => {
+      let executed = false;
       Runner.runner = (pr: ReleasePR) => {
         assert(pr instanceof JavaYoshi);
+        executed = true;
       };
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+        )
+        .reply(200, { content: config });
+
+      await probot.receive({ name: 'push', payload, id: 'abc123' });
+      requests.done();
+      assert(executed, "should have executed the runner");
+    });
+
+    it('should ignore if the branch is the configured primary branch', async () => {
+      Runner.runner = (pr: ReleasePR) => {
+        fail("should not be running a release");
+      };
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'feature_branch_as_primary.yml')
       );
       const requests = nock('https://api.github.com')
         .get(
@@ -107,8 +127,10 @@ describe('ReleasePleaseBot', () => {
     });
 
     it('should create the PR if the branch is the configured primary branch', async () => {
+      let executed = false;
       Runner.runner = (pr: ReleasePR) => {
         assert(pr instanceof JavaYoshi);
+        executed = true;
       };
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'feature_branch_as_primary.yml')
@@ -121,43 +143,8 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({ name: 'push', payload, id: 'abc123' });
       requests.done();
+      assert(executed, "should have executed the runner");
     });
   });
 
-  // describe('push to non-master branch', () => {
-  //   let payload: Webhooks.WebhookPayloadPullRequest;
-
-  //   beforeEach(() => {
-  //     payload = require(resolve(fixturesPath, './push_to_feature'));
-  //   });
-
-  //   it('sets a "failure" context on PR, if new source file is missing license', async () => {
-  //     const invalidFiles = require(resolve(
-  //       fixturesPath,
-  //       './missing_license_added'
-  //     ));
-  //     const blob = require(resolve(fixturesPath, './missing_license'));
-  //     const requests = nock('https://api.github.com')
-  //       .get(
-  //         '/repos/chingor13/google-auth-library-java/contents/.bots/header-checker-lint.json?ref=header-check-test'
-  //       )
-  //       .reply(404)
-  //       .get(
-  //         '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
-  //       )
-  //       .reply(200, invalidFiles)
-  //       .get(
-  //         '/repos/chingor13/google-auth-library-java/git/blobs/5b414a072e40622c177c72a58efb74ff9faadd0d'
-  //       )
-  //       .reply(200, blob)
-  //       .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
-  //         snapshot(body);
-  //         return true;
-  //       })
-  //       .reply(200);
-
-  //     await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
-  //     requests.done();
-  //   });
-  // });
 });

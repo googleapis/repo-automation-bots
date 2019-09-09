@@ -17,6 +17,7 @@
 import { Application } from 'probot';
 
 // TODO: fix these imports when release-please exports types from the root
+// See https://github.com/googleapis/release-please/issues/249
 import { ReleaseType, BuildOptions } from 'release-please/build/src/release-pr';
 import { ReleasePRFactory } from 'release-please/build/src/release-pr-factory';
 import { Runner } from './runner';
