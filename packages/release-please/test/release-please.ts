@@ -24,7 +24,9 @@ import Webhooks from '@octokit/webhooks';
 
 import nock from 'nock';
 import * as fs from 'fs';
+import assert, { fail } from 'assert';
 import { ReleasePR } from 'release-please/build/src/release-pr';
+import { JavaYoshi } from 'release-please/build/src/releasers/java-yoshi';
 
 nock.disableNetConnect();
 
@@ -34,7 +36,7 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 // https://github.com/probot/probot/pull/926
 global.console.warn = () => {};
 
-describe('HeaderCheckerLint', () => {
+describe('ReleasePleaseBot', () => {
   let probot: Probot;
 
   beforeEach(() => {
@@ -62,12 +64,54 @@ describe('HeaderCheckerLint', () => {
       payload = require(resolve(fixturesPath, './push_to_master'));
     });
 
-    it('sets a "failure" context on PR, if new source file is missing license', async () => {
+    it('should build a release PR', async () => {
       Runner.runner = (pr: ReleasePR) => {
-        console.log(pr);
+        assert(pr instanceof JavaYoshi);
       };
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+        )
+        .reply(200, { content: config });
+
+      await probot.receive({ name: 'push', payload, id: 'abc123' });
+      requests.done();
+    });
+  });
+
+  describe('push to non-master branch', () => {
+    let payload: Webhooks.WebhookPayloadPush;
+
+    beforeEach(() => {
+      payload = require(resolve(fixturesPath, './push_to_non_master'));
+    });
+
+    it('should ignore the webhook', async () => {
+      Runner.runner = (pr: ReleasePR) => {
+        fail('should not be running a release');
+      };
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'valid.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+        )
+        .reply(200, { content: config });
+
+      await probot.receive({ name: 'push', payload, id: 'abc123' });
+      requests.done();
+    });
+
+    it('should create the PR if the branch is the configured primary branch', async () => {
+      Runner.runner = (pr: ReleasePR) => {
+        assert(pr instanceof JavaYoshi);
+      };
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'feature_branch_as_primary.yml')
       );
       const requests = nock('https://api.github.com')
         .get(
