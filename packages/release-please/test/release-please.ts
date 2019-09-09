@@ -19,7 +19,6 @@ import { Runner } from '../src/runner';
 
 import { resolve } from 'path';
 import { Probot } from 'probot';
-import snapshot from 'snap-shot-it';
 import Webhooks from '@octokit/webhooks';
 
 import nock from 'nock';
@@ -27,6 +26,7 @@ import * as fs from 'fs';
 import assert, { fail } from 'assert';
 import { ReleasePR } from 'release-please/build/src/release-pr';
 import { JavaYoshi } from 'release-please/build/src/releasers/java-yoshi';
+import { RubyYoshi } from 'release-please/build/src/releasers/ruby-yoshi';
 
 nock.disableNetConnect();
 
@@ -99,6 +99,26 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({ name: 'push', payload, id: 'abc123' });
       requests.done();
+    });
+
+    it('should allow overriding the release strategy from configuration', async () => {
+      let executed = false;
+      Runner.runner = (pr: ReleasePR) => {
+        assert(pr instanceof RubyYoshi);
+        executed = true;
+      };
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'ruby_release.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+        )
+        .reply(200, { content: config });
+
+      await probot.receive({ name: 'push', payload, id: 'abc123' });
+      requests.done();
+      assert(executed, "should have executed the runner");
     });
   });
 
