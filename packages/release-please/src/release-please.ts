@@ -66,7 +66,7 @@ export = (app: Application) => {
       {
         arrayMerge: (defaultArray, sourceArray, _options) => {
           return sourceArray ? sourceArray : defaultArray;
-        }
+        },
       }
     )) as ConfigurationOptions;
 

@@ -81,12 +81,12 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({ name: 'push', payload, id: 'abc123' });
       requests.done();
-      assert(executed, "should have executed the runner");
+      assert(executed, 'should have executed the runner');
     });
 
     it('should ignore if the branch is the configured primary branch', async () => {
       Runner.runner = (pr: ReleasePR) => {
-        fail("should not be running a release");
+        fail('should not be running a release');
       };
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'feature_branch_as_primary.yml')
@@ -118,13 +118,13 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({ name: 'push', payload, id: 'abc123' });
       requests.done();
-      assert(executed, "should have executed the runner");
+      assert(executed, 'should have executed the runner');
     });
 
     it('should allow overriding the release tags from configuration', async () => {
       let executed = false;
       Runner.runner = (pr: ReleasePR) => {
-        assert.deepEqual(pr.labels, ['foo', 'bar']);
+        assert.deepStrictEqual(pr.labels, ['foo', 'bar']);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -138,7 +138,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({ name: 'push', payload, id: 'abc123' });
       requests.done();
-      assert(executed, "should have executed the runner");
+      assert(executed, 'should have executed the runner');
     });
   });
 
@@ -183,7 +183,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({ name: 'push', payload, id: 'abc123' });
       requests.done();
-      assert(executed, "should have executed the runner");
+      assert(executed, 'should have executed the runner');
     });
   });
 });
