@@ -120,6 +120,26 @@ describe('ReleasePleaseBot', () => {
       requests.done();
       assert(executed, "should have executed the runner");
     });
+
+    it('should allow overriding the release tags from configuration', async () => {
+      let executed = false;
+      Runner.runner = (pr: ReleasePR) => {
+        assert.deepEqual(pr.labels, ['foo', 'bar']);
+        executed = true;
+      };
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'valid.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+        )
+        .reply(200, { content: config });
+
+      await probot.receive({ name: 'push', payload, id: 'abc123' });
+      requests.done();
+      assert(executed, "should have executed the runner");
+    });
   });
 
   describe('push to non-master branch', () => {
@@ -166,5 +186,4 @@ describe('ReleasePleaseBot', () => {
       assert(executed, "should have executed the runner");
     });
   });
-
 });

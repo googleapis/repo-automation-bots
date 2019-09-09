@@ -62,7 +62,12 @@ export = (app: Application) => {
 
     const configuration = (await context.config(
       WELL_KNOWN_CONFIGURATION_FILE,
-      DEFAULT_CONFIGURATION
+      DEFAULT_CONFIGURATION,
+      {
+        arrayMerge: (defaultArray, sourceArray, _options) => {
+          return sourceArray ? sourceArray : defaultArray;
+        }
+      }
     )) as ConfigurationOptions;
 
     if (branch !== configuration.primaryBranch) {
