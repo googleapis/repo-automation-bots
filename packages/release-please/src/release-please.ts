@@ -36,21 +36,21 @@ const DEFAULT_CONFIGURATION: ConfigurationOptions = {
 };
 
 function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
-  switch (language) {
-    case 'Ruby':
+  if (language == null) {
+    throw Error('repository has no detected language');
+  }
+  switch (language.toLowerCase()) {
     case 'ruby':
       return ReleaseType.RubyYoshi;
-    case 'Java':
     case 'java':
       return ReleaseType.JavaYoshi;
-    case 'TypeScript':
-    case 'JavaScript':
+    case 'typescript':
+    case 'javascript':
       return ReleaseType.Node;
-    case 'PHP':
     case 'php':
       return ReleaseType.PHPYoshi;
     default:
-      throw Error('unknown release type');
+      throw Error(`unknown release type: ${language}`);
   }
 }
 
