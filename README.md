@@ -11,6 +11,7 @@ by Google on GitHub.
 | [blunderbuss] | Assigns issues and PRs randomly to a specific list of user | [install][blunderbuss-app] |
 | [conventional-commit-lint] | PR checker that ensures that the commit messages follow conventionalcommits.org style | [install][conventional-commit-lint-app] |
 | [license-header-lint] | PR checker that ensures that source files contain valid license headers | [install][license-header-lint-app] |
+| [release-please] | Proposes releases based on semantic version commits | [install][release-please-app]
 
 ## Testing Locally
 
@@ -60,5 +61,7 @@ Environment variables set, run:
 [blunderbuss-app]: https://github.com/apps/blunderbuss-gcf
 [conventional-commit-lint]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/conventional-commit-lint
 [conventional-commit-lint-app]: https://github.com/apps/conventional-commit-lint-gcf
-[license-header-lint]: asdf
+[license-header-lint]:  https://github.com/googleapis/repo-automation-bots/tree/master/packages/header-checker-lint
 [license-header-lint-app]: https://github.com/apps/license-header-lint-gcf
+[release-please]:  https://github.com/googleapis/repo-automation-bots/tree/master/packages/release-please
+[release-please-app]: https://github.com/apps/release-please
