@@ -18,4 +18,4 @@ import { GCFBootstrapper } from 'gcf-utils';
 import appFn from './release-please';
 
 const bootstrap = new GCFBootstrapper();
-module.exports.header_checker_lint = bootstrap.gcf(appFn);
+module.exports.release_please = bootstrap.gcf(appFn);
