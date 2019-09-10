@@ -1,0 +1,4 @@
+primaryBranch: feature-branch
+releaseLabels:
+  - foo
+  - bar
