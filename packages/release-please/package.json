@@ -27,8 +27,8 @@
   },
   "dependencies": {
     "@octokit/rest": "^16.28.3",
-    "gcf-utils": "^0.6.0",
-    "probot": "^9.3.0",
+    "gcf-utils": "^1.0.0",
+    "probot": "9.4.0",
     "release-please": "^2.7.0"
   },
   "devDependencies": {
@@ -45,7 +45,7 @@
     "cross-env": "^5.2.0",
     "gts": "^1.0.0",
     "mocha": "^6.1.4",
-    "nock": "^10.0.6",
+    "nock": "^11.0.0",
     "snap-shot-it": "^7.8.0",
     "typescript": "^3.5.3"
   },
