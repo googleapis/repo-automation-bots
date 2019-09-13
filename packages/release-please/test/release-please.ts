@@ -140,6 +140,25 @@ describe('ReleasePleaseBot', () => {
       requests.done();
       assert(executed, 'should have executed the runner');
     });
+
+    it('should ignore webhook if not configured', async () => {
+      Runner.runner = (pr: ReleasePR) => {
+        fail('should not be running a release');
+      };
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+        )
+        .reply(404)
+        .get(
+          // FIXME(#68): why is this necessary?
+          '/repos/chingor13/.github/contents/.github/release-please.yml'
+        )
+        .reply(404);
+
+      await probot.receive({ name: 'push', payload, id: 'abc123' });
+      requests.done();
+    });
   });
 
   describe('push to non-master branch', () => {
