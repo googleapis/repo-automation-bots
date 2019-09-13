@@ -30,6 +30,7 @@ import (
 
 	cloudkms "cloud.google.com/go/kms/apiv1"
 	"cloud.google.com/go/storage"
+	"github.com/google/uuid"
 	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
 )
 
@@ -119,8 +120,10 @@ func rewriteBotCronURL(c botConfig) func(*http.Request) {
 		// Make a hmac sig
 		signer := hmac.New(sha1.New, key)
 		signer.Write(bodyBytes)
-		req.Header.Add("X-Hub-Signature", base64.StdEncoding.EncodeToString(signer.Sum(nil)))
-		req.Header.Add("X-Hub-Event", "schedule.repository")
+
+		req.Header.Add("x-hub-signature", base64.StdEncoding.EncodeToString(signer.Sum(nil)))
+		req.Header.Add("x-github-event", "schedule.repository")
+		req.Header.Add("x-github-delivery", uuid.New().String())
 
 		log.Printf("rewrote url: %s into %s", u, req.URL)
 	}
