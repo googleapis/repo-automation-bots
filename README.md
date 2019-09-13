@@ -51,6 +51,12 @@ Environment variables set, run:
 1. `cd packages/your-bot`.
 1. `npm start`.
 
+### Running bots on a Cron
+
+To run a bot on a schedule include a file in your bot's folder named `cron` whose
+content is valid [unix -cron format](http://man7.org/linux/man-pages/man5/crontab.5.html).
+This will create a Cloud Scheduler Job which makes requests to your endpoint
+at the specified schedule.
 
 ### Publishing Utility Modules
 
