@@ -21,8 +21,9 @@ steps:
         "build",
         "-t",
         "gcr.io/$PROJECT_ID/serverless-scheduler-proxy",
-        "-f serverless-scheduler-proxy/Dockerfile",
-        "./serverless-scheduler-proxy",
+        "-f",
+        "serverless-scheduler-proxy/Dockerfile",
+        "serverless-scheduler-proxy",
       ]
 
   - name: gcr.io/cloud-builders/gcloud
@@ -40,7 +41,6 @@ steps:
                     --platform managed \
                     --region $_REGION \
                     serverless-scheduler-proxy
-
   - name: gcr.io/cloud-builders/gcloud
     id: "cron-deploy"
     waitFor: ["serverless-scheduler-proxy-deploy"]
@@ -71,13 +71,13 @@ steps:
                     # We have an existing job. Update the schedule
                     gcloud beta scheduler jobs update $functionname --schedule "$schedule"
                   else
-                    # Make a cloud scheduler job 
+                    # Make a cloud scheduler job
                     gcloud beta scheduler jobs create http $functionname \
                             --schedule "$schedule"
                             --http-method=POST \
                             --uri=$proxyurl \
                             --oidc-service-account-email=$_SCHEDULER_SERVICE_ACCOUNT_EMAIL \
-                            --oidc-token-audience=$proxyurl \ 
+                            --oidc-token-audience=$proxyurl \
                             --message-body="{\"Name\": \"$(functionname)\", \"Type\" : \"function\", \"Location\": \"$(_FUNCTION_REGION)\"}"
                             --header=Content-Type=application/json
                   fi
@@ -86,7 +86,6 @@ steps:
               cd ..
           fi
         done
-
   - name: gcr.io/cloud-builders/npm
     id: "build"
     waitFor: ["-"]
@@ -116,7 +115,6 @@ steps:
               cd ..
           fi
         done
-
   - name: gcr.io/cloud-builders/gcloud
     id: "publish-functions"
     waitFor: ["build"]
