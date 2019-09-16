@@ -60,15 +60,20 @@ export = (app: Application) => {
     const branch = context.payload.ref.replace('refs/heads/', '');
     const repoName = context.payload.repository.name;
 
-    const configuration = (await context.config(
-      WELL_KNOWN_CONFIGURATION_FILE,
-      DEFAULT_CONFIGURATION,
-      {
-        arrayMerge: (defaultArray, sourceArray, _options) => {
-          return sourceArray ? sourceArray : defaultArray;
-        },
-      }
-    )) as ConfigurationOptions;
+    const remoteConfiguration = await context.config(
+      WELL_KNOWN_CONFIGURATION_FILE
+    );
+
+    // If no configuration is specified,
+    if (!remoteConfiguration) {
+      app.log.info(`release-please not configured for (${repoUrl})`);
+      return;
+    }
+
+    const configuration = {
+      ...DEFAULT_CONFIGURATION,
+      ...remoteConfiguration,
+    };
 
     if (branch !== configuration.primaryBranch) {
       app.log.info(
