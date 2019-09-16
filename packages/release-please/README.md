@@ -22,7 +22,7 @@ options:
 | Name | Description | Type | Default |
 |----- | ----------- | ---- | ------- |
 | `primaryBranch` | The primary branch from which releases are started | `string` | `master` |
-| `releaseLabels` | List of labels to add to the release PR. | `string[] | null` | `undefined` |
+| `releaseLabels` | List of labels to add to the release PR. | `string[]` | `null` | `undefined` |
 | `releaseType` | Release strategy | `string` | strategy detected from the repository's primary language |
 
 ## Testing
