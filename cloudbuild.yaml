@@ -50,10 +50,10 @@ steps:
       - "-c"
       - |
         # Get the endpoint for serverless-scheduler-proxy
-        proxyurl=gcloud beta run services describe serverless-scheduler-proxy \
+        proxyurl=$(gcloud beta run services describe serverless-scheduler-proxy \
             --platform managed \
             --region $_REGION \
-            --format="value(status.address.url)"
+            --format="value(status.address.url)")
         # For each bot that has a cron file make a Cloud Scheduler Schedule job
         # to hit the proxy endpoint on that schedule
         cd packages
