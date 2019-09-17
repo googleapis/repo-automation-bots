@@ -41,51 +41,51 @@ steps:
                     --platform managed \
                     --region $_REGION \
                     serverless-scheduler-proxy
-  - name: gcr.io/cloud-builders/gcloud
-    id: "cron-deploy"
-    waitFor: ["serverless-scheduler-proxy-deploy"]
-    entrypoint: bash
-    args:
-      - "-e"
-      - "-c"
-      - |
-        # Get the endpoint for serverless-scheduler-proxy
-        proxyurl=$(gcloud beta run services describe serverless-scheduler-proxy \
-            --platform managed \
-            --region $_REGION \
-            --format="value(status.address.url)")
-        # For each bot that has a cron file make a Cloud Scheduler Schedule job
-        # to hit the proxy endpoint on that schedule
-        cd packages
-        for f in *; do
-          # Skip symlinks and our gcf-utils directory as it is not a function
-          if [[ -d "$f" && ! -L "$f" && "$f" != "gcf-utils" ]]; then
-              cd $f
-              echo $f
-              for fx in *; do
-                # Check for a file named "cron"
-                if [[ -f "$fx" && ! -L "$fx"  && "$fx" == "cron"]]; then
-                  functionname=${f//-/_}
-                  schedule=$(cat "$fx")
-                  if $(gcloud beta scheduler jobs describe $functionname 2>/dev/null); then
-                    # We have an existing job. Update the schedule
-                    gcloud beta scheduler jobs update $functionname --schedule "$schedule"
-                  else
-                    # Make a cloud scheduler job
-                    gcloud beta scheduler jobs create http $functionname \
-                            --schedule "$schedule"
-                            --http-method=POST \
-                            --uri=$proxyurl \
-                            --oidc-service-account-email=$_SCHEDULER_SERVICE_ACCOUNT_EMAIL \
-                            --oidc-token-audience=$proxyurl \
-                            --message-body="{\"Name\": \"$(functionname)\", \"Type\" : \"function\", \"Location\": \"$(_FUNCTION_REGION)\"}"
-                            --header=Content-Type=application/json
-                  fi
-                fi
-              done
-              cd ..
-          fi
-        done
+#   - name: gcr.io/cloud-builders/gcloud
+#     id: "cron-deploy"
+#     waitFor: ["serverless-scheduler-proxy-deploy"]
+#     entrypoint: bash
+#     args:
+#       - "-e"
+#       - "-c"
+#       - |
+#         # Get the endpoint for serverless-scheduler-proxy
+#         proxyurl=$(gcloud beta run services describe serverless-scheduler-proxy \
+#             --platform managed \
+#             --region $_REGION \
+#             --format="value(status.address.url)")
+#         # For each bot that has a cron file make a Cloud Scheduler Schedule job
+#         # to hit the proxy endpoint on that schedule
+#         cd packages
+#         for f in *; do
+#           # Skip symlinks and our gcf-utils directory as it is not a function
+#           if [[ -d "$f" && ! -L "$f" && "$f" != "gcf-utils" ]]; then
+#               cd $f
+#               echo $f
+#               for fx in *; do
+#                 # Check for a file named "cron"
+#                 if [[ -f "$fx" && ! -L "$fx"  && "$fx" == "cron"]]; then
+#                   functionname=${f//-/_}
+#                   schedule=$(cat "$fx")
+#                   if $(gcloud beta scheduler jobs describe $functionname 2>/dev/null); then
+#                     # We have an existing job. Update the schedule
+#                     gcloud beta scheduler jobs update $functionname --schedule "$schedule"
+#                   else
+#                     # Make a cloud scheduler job
+#                     gcloud beta scheduler jobs create http $functionname \
+#                             --schedule "$schedule"
+#                             --http-method=POST \
+#                             --uri=$proxyurl \
+#                             --oidc-service-account-email=$_SCHEDULER_SERVICE_ACCOUNT_EMAIL \
+#                             --oidc-token-audience=$proxyurl \
+#                             --message-body="{\"Name\": \"$(functionname)\", \"Type\" : \"function\", \"Location\": \"$(_FUNCTION_REGION)\"}"
+#                             --header=Content-Type=application/json
+#                   fi
+#                 fi
+#               done
+#               cd ..
+#           fi
+#         done
   - name: gcr.io/cloud-builders/npm
     id: "build"
     waitFor: ["-"]
