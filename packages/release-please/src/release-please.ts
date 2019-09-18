@@ -33,7 +33,6 @@ const DEFAULT_API_URL = 'https://api.github.com';
 const WELL_KNOWN_CONFIGURATION_FILE = 'release-please.yml';
 const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   primaryBranch: 'master',
-  releaseLabels: ['autorelease: pending', 'type: process'],
 };
 
 function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
