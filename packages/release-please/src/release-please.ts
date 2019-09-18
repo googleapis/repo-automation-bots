@@ -21,6 +21,7 @@ import { Application } from 'probot';
 import { ReleaseType, BuildOptions } from 'release-please/build/src/release-pr';
 import { ReleasePRFactory } from 'release-please/build/src/release-pr-factory';
 import { Runner } from './runner';
+import { GitHubAPI } from 'probot/lib/github';
 
 interface ConfigurationOptions {
   primaryBranch: string;
@@ -51,6 +52,30 @@ function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
     default:
       throw Error(`unknown release type: ${language}`);
   }
+}
+
+function runReleasePlease(
+  releaseType: ReleaseType,
+  repoName: string,
+  repoUrl: string,
+  github: GitHubAPI,
+  releaseLabels?: string[]
+) {
+  const buildOptions: BuildOptions = {
+    packageName: repoName,
+    repoUrl,
+    apiUrl: DEFAULT_API_URL,
+    octokitAPIs: {
+      octokit: github,
+      graphql: github.graphql,
+      request: github.request,
+    },
+  };
+  if (releaseLabels) {
+    buildOptions.label = releaseLabels.join(',');
+  }
+
+  Runner.runner(ReleasePRFactory.build(releaseType, buildOptions));
 }
 
 export = (app: Application) => {
@@ -84,20 +109,50 @@ export = (app: Application) => {
     const releaseType = configuration.releaseType
       ? configuration.releaseType
       : releaseTypeFromRepoLanguage(context.payload.repository.language);
-    const buildOptions: BuildOptions = {
-      packageName: repoName,
+
+    runReleasePlease(
+      releaseType,
+      repoName,
       repoUrl,
-      apiUrl: DEFAULT_API_URL,
-      octokitAPIs: {
-        octokit: context.github,
-        graphql: context.github.graphql,
-        request: context.github.request,
-      },
-    };
-    if (configuration.releaseLabels) {
-      buildOptions.label = configuration.releaseLabels.join(',');
+      context.github,
+      configuration.releaseLabels
+    );
+  });
+
+  app.on('release.published', async context => {
+    if (context.payload.action !== 'published') {
+      app.log.info(
+        `ingoring non-publish release action (${context.payload.action})`
+      );
+      return;
+    }
+    const repoUrl = context.payload.repository.full_name;
+    const repoName = context.payload.repository.name;
+
+    const remoteConfiguration = await context.config(
+      WELL_KNOWN_CONFIGURATION_FILE
+    );
+
+    // If no configuration is specified,
+    if (!remoteConfiguration) {
+      app.log.info(`release-please not configured for (${repoUrl})`);
+      return;
     }
 
-    Runner.runner(ReleasePRFactory.build(releaseType, buildOptions));
+    const configuration = {
+      ...DEFAULT_CONFIGURATION,
+      ...remoteConfiguration,
+    };
+
+    const releaseType = configuration.releaseType
+      ? configuration.releaseType
+      : releaseTypeFromRepoLanguage(context.payload.repository.language);
+    runReleasePlease(
+      releaseType,
+      repoName,
+      repoUrl,
+      context.github,
+      configuration.releaseLabels
+    );
   });
 };

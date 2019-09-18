@@ -222,4 +222,55 @@ describe('ReleasePleaseBot', () => {
       assert(executed, 'should have executed the runner');
     });
   });
+
+  describe('release published event', () => {
+    let payload: Webhooks.WebhookPayloadRelease;
+
+    beforeEach(() => {
+      payload = require(resolve(fixturesPath, './release_published'));
+    });
+
+    it('should try to create a snapshot', async () => {
+      let executed = false;
+      Runner.runner = (pr: ReleasePR) => {
+        assert(pr instanceof RubyYoshi);
+        executed = true;
+      };
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'valid.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/Codertocat/Hello-World/contents/.github/release-please.yml'
+        )
+        .reply(200, { content: config });
+
+      await probot.receive({
+        name: 'release.published',
+        payload,
+        id: 'abc123',
+      });
+      requests.done();
+      assert(executed, 'should have executed the runner');
+    });
+  });
+
+  describe('release non-publish event', () => {
+    let payload: Webhooks.WebhookPayloadRelease;
+
+    beforeEach(() => {
+      payload = require(resolve(fixturesPath, './release_unpublished'));
+    });
+
+    it('should be ignored', async () => {
+      Runner.runner = (pr: ReleasePR) => {
+        fail('should not be running a release');
+      };
+      await probot.receive({
+        name: 'release.published',
+        payload,
+        id: 'abc123',
+      });
+    });
+  });
 });
