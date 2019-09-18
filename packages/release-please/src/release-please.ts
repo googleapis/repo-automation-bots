@@ -121,6 +121,12 @@ export = (app: Application) => {
   });
 
   app.on('release.published', async context => {
+    if (context.payload.action !== 'published') {
+      app.log.info(
+        `ingoring non-publish release action (${context.payload.action})`
+      );
+      return;
+    }
     const repoUrl = context.payload.repository.full_name;
     const repoName = context.payload.repository.name;
 
