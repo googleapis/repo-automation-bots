@@ -29,7 +29,7 @@
   "dependencies": {
     "@octokit/rest": "16.28.3",
     "gcf-utils": "^1.0.0",
-    "probot": "9.4.0"
+    "probot": "9.5.0"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
