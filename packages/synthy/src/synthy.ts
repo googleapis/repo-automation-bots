@@ -29,27 +29,44 @@ interface Config {
   metadataFilename?: string;
 }
 
+const SYNTHTOOL_PR = /\[CHANGE ME\]/;
+interface Parent {
+  sha: string;
+}
+
 export = (app: Application) => {
-  app.on('pull_request', async context => {
+  app.on('pull_request.opened', async context => {
     const repo = context.payload.repository.name;
     const owner = context.payload.repository.owner.login;
-    const remoteConfiguration = await context.config(
+    const remoteConfiguration = (await context.config(
       WELL_KNOWN_CONFIGURATION_FILE
-    ) as Config;
+    )) as Config;
 
+    // TODO: put this gate back in place once our first mass synthtool PR,
+    // a PR adding synthy configuration, is tested.
     // If no configuration is specified,
-    if (!remoteConfiguration) {
-      app.log.info(`synthy not configured for (${owner}/${repo})`);
+    // if (!remoteConfiguration) {
+    //  app.log.info(`synthy not configured for (${owner}/${repo})`);
+    //  return;
+    // }
+
+    const templateDirectory =
+      remoteConfiguration.templateDirectory ||
+      'synthtool/gcp/templates/node_library';
+    const synthtoolOwner = remoteConfiguration.synthtoolOwner || 'googleapis';
+    const synthtoolRepo = remoteConfiguration.synthtoolRepo || 'synthtool';
+    const metadataFilename =
+      remoteConfiguration.metadataFilename || 'synth.metadata';
+
+    if (SYNTHTOOL_PR.test(context.payload.pull_request.title) === false) {
+      app.log.warn(
+        `title "${context.payload.pull_request.title}" does not look like synthtool PR`
+      );
       return;
     }
 
-    const templateDirectory = remoteConfiguration.templateDirectory || 'synthtool/gcp/templates/node_library';
-    const synthtoolOwner = remoteConfiguration.synthtoolOwner || 'googleapis';
-    const synthtoolRepo = remoteConfiguration.synthtoolRepo || 'synthtool';
-    const metadataFilename = remoteConfiguration.metadataFilename || 'synth.metadata';
-
-    let commitMessages: string[] = [];
     try {
+      const commits: Set<string> = new Set();
       for (const file of await getFiles(
         context.github,
         owner,
@@ -58,16 +75,65 @@ export = (app: Application) => {
       )) {
         if (file.filename === metadataFilename) continue;
         const maybeTemplatePath = `${templateDirectory}/${file.filename}`;
-        const commit = await getLatestCommitForPath(context.github, synthtoolOwner, synthtoolRepo, maybeTemplatePath);
+        const commit = await getLatestCommitForPath(
+          context.github,
+          synthtoolOwner,
+          synthtoolRepo,
+          maybeTemplatePath
+        );
         if (commit === undefined) {
           throw Error(`${maybeTemplatePath} not found`);
         }
-        commitMessages.push(commit.commit.message);
+        commits.add(commit.commit.message);
       }
-      
-      // Only template files changed, build up an appropriate commit
-      // message given this information.
-      app.log.info(commitMessages);
+      // if we were able to find commits associated with all the files changed
+      // in this PR, rewrite the synthtool PR accordingly.
+      let title = formatCommit(commits.values().next().value);
+      let body = '';
+      if (commits.size > 1) {
+        title = 'merge: this PR merges multiple upstream commits';
+        for (const commit of commits) {
+          body += `Commit: ${formatCommit(commit)}\n`;
+        }
+      }
+      body = body.trim();
+
+      // fetch the current contents of synth.metadata.
+      const resp = await context.github.request(
+        `GET /repos/:owner/:repo/contents/:path`,
+        {
+          owner,
+          repo,
+          path: metadataFilename,
+          ref: context.payload.pull_request.head.ref,
+        }
+      );
+      const content = JSON.parse(
+        Buffer.from(resp.data.content, 'base64').toString('utf8')
+      );
+
+      // write the modified update time back to synth.metadata.
+      content.updateTime = new Date().toISOString();
+      await context.github.request(`PUT /repos/:owner/:repo/contents/:path`, {
+        owner,
+        repo,
+        path: metadataFilename,
+        message: `${title}\n\n${body}`,
+        content: Buffer.from(JSON.stringify(content, null, 2), 'utf8').toString(
+          'base64'
+        ),
+        sha: resp.data.sha,
+        branch: context.payload.pull_request.head.ref,
+      });
+
+      // update the existing PR.
+      context.github.pulls.update({
+        owner,
+        repo,
+        pull_number: context.payload.pull_request.number,
+        title,
+        body,
+      });
     } catch (err) {
       app.log.warn(err.message);
     }
@@ -99,5 +165,11 @@ export = (app: Application) => {
       path,
       per_page: 1,
     })).data[0];
+  }
+
+  function formatCommit(commit: string) {
+    commit = commit.replace(/\(#[0-9]+\)/, '');
+    commit = commit.split('\n')[0].trim();
+    return commit;
   }
 };

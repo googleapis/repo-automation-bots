@@ -1,0 +1,112 @@
+{
+  "status": 200,
+  "url": "https://api.github.com/repos/googleapis/synthtool/commits?path=synthtool%2Fgcp%2Ftemplates%2Fnode_library%2Frenovate.json&per_page=1",
+  "headers": {
+    "access-control-allow-origin": "*",
+    "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type",
+    "cache-control": "private, max-age=60, s-maxage=60",
+    "connection": "close",
+    "content-encoding": "gzip",
+    "content-security-policy": "default-src 'none'",
+    "content-type": "application/json; charset=utf-8",
+    "date": "Fri, 20 Sep 2019 20:39:52 GMT",
+    "etag": "W/\"c556b843958f3c89169127772a643d43\"",
+    "last-modified": "Mon, 03 Dec 2018 17:53:35 GMT",
+    "link": "<https://api.github.com/repositories/139062188/commits?path=synthtool%2Fgcp%2Ftemplates%2Fnode_library%2Frenovate.json&per_page=1&page=2>; rel=\"next\", <https://api.github.com/repositories/139062188/commits?path=synthtool%2Fgcp%2Ftemplates%2Fnode_library%2Frenovate.json&per_page=1&page=1>; rel=\"last\"",
+    "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+    "server": "GitHub.com",
+    "status": "200 OK",
+    "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+    "transfer-encoding": "chunked",
+    "vary": "Accept, Authorization, Cookie, X-GitHub-OTP, Accept-Encoding",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "deny",
+    "x-github-media-type": "github.v3; format=json",
+    "x-github-request-id": "B3AB:52B0:449521:78EF9F:5D853918",
+    "x-ratelimit-limit": "5000",
+    "x-ratelimit-remaining": "4992",
+    "x-ratelimit-reset": "1569015586",
+    "x-xss-protection": "1; mode=block"
+  },
+  "data": [
+    {
+      "sha": "2abed8a892d2651bce09618f36740b612d3f6f4f",
+      "node_id": "MDY6Q29tbWl0MTM5MDYyMTg4OjJhYmVkOGE4OTJkMjY1MWJjZTA5NjE4ZjM2NzQwYjYxMmQzZjZmNGY=",
+      "commit": {
+        "author": {
+          "name": "Justin Beckwith",
+          "email": "justin.beckwith@gmail.com",
+          "date": "2018-12-03T17:53:35Z"
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "date": "2018-12-03T17:53:35Z"
+        },
+        "message": "Add renovate and prettier configs to nodejs templates (#160)",
+        "tree": {
+          "sha": "b52b77b51d63df79b6ad34b054909512a434788f",
+          "url": "https://api.github.com/repos/googleapis/synthtool/git/trees/b52b77b51d63df79b6ad34b054909512a434788f"
+        },
+        "url": "https://api.github.com/repos/googleapis/synthtool/git/commits/2abed8a892d2651bce09618f36740b612d3f6f4f",
+        "comment_count": 0,
+        "verification": {
+          "verified": true,
+          "reason": "valid",
+          "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsBcBAABCAAQBQJcBW2fCRBK7hj4Ov3rIwAAdHIIAFGBiRiJ53qXQK6gCJOo6RO5\nrQe/M55QMUlRGhJSi6g5GkfX8Gpcwk1lPMAxJ0EfkMLYigqITPmvj1vOKzR5bzCb\nf631yvyHj0x+kM0EVkMbhGD3dIYHg5mJIpfwdVWWjoCyRdpLy5+H26KaVDO+kZOj\n2/sS1uMsFyra5W6rIExgpN6Lr5RCs/1Qh+/osRDyobjraV3c10J3So7Yd9bWDOeb\nVuL5tmzEjNNW1iYIkN9qAeinTwQYT0rFcBfA3AWoMRk79SBAVIRgjNsZQYRkQw9U\nfSfu8B69g+y6siA2HazGhD8ujlHQhawVFJGO4btil8y9HL6KOis9oxQfumWS69M=\n=IgVj\n-----END PGP SIGNATURE-----\n",
+          "payload": "tree b52b77b51d63df79b6ad34b054909512a434788f\nparent 906ecb9644f5c0f4d1dd2c6f8b04ab33decd46ff\nauthor Justin Beckwith <justin.beckwith@gmail.com> 1543859615 -0800\ncommitter GitHub <noreply@github.com> 1543859615 -0800\n\nAdd renovate and prettier configs to nodejs templates (#160)\n\n"
+        }
+      },
+      "url": "https://api.github.com/repos/googleapis/synthtool/commits/2abed8a892d2651bce09618f36740b612d3f6f4f",
+      "html_url": "https://github.com/googleapis/synthtool/commit/2abed8a892d2651bce09618f36740b612d3f6f4f",
+      "comments_url": "https://api.github.com/repos/googleapis/synthtool/commits/2abed8a892d2651bce09618f36740b612d3f6f4f/comments",
+      "author": {
+        "login": "JustinBeckwith",
+        "id": 534619,
+        "node_id": "MDQ6VXNlcjUzNDYxOQ==",
+        "avatar_url": "https://avatars2.githubusercontent.com/u/534619?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/JustinBeckwith",
+        "html_url": "https://github.com/JustinBeckwith",
+        "followers_url": "https://api.github.com/users/JustinBeckwith/followers",
+        "following_url": "https://api.github.com/users/JustinBeckwith/following{/other_user}",
+        "gists_url": "https://api.github.com/users/JustinBeckwith/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/JustinBeckwith/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/JustinBeckwith/subscriptions",
+        "organizations_url": "https://api.github.com/users/JustinBeckwith/orgs",
+        "repos_url": "https://api.github.com/users/JustinBeckwith/repos",
+        "events_url": "https://api.github.com/users/JustinBeckwith/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/JustinBeckwith/received_events",
+        "type": "User",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "web-flow",
+        "id": 19864447,
+        "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+        "avatar_url": "https://avatars3.githubusercontent.com/u/19864447?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/web-flow",
+        "html_url": "https://github.com/web-flow",
+        "followers_url": "https://api.github.com/users/web-flow/followers",
+        "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+        "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+        "organizations_url": "https://api.github.com/users/web-flow/orgs",
+        "repos_url": "https://api.github.com/users/web-flow/repos",
+        "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/web-flow/received_events",
+        "type": "User",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "906ecb9644f5c0f4d1dd2c6f8b04ab33decd46ff",
+          "url": "https://api.github.com/repos/googleapis/synthtool/commits/906ecb9644f5c0f4d1dd2c6f8b04ab33decd46ff",
+          "html_url": "https://github.com/googleapis/synthtool/commit/906ecb9644f5c0f4d1dd2c6f8b04ab33decd46ff"
+        }
+      ]
+    }
+  ]
+}
