@@ -17,6 +17,16 @@
 set -e
 set -o pipefail
 
+if [ $# -ne 5 ]; then
+    echo "Wrong number of arguments passed" && exit 1
+fi
+
+PROJECT_ID=$1
+BUCKET=$2
+KEY_LOCATION=$3
+KEY_RING=$4
+FUNCTION_REGION=$5
+
 # For each item in our packages directory run
 #   gcloud functions deploy
 # Then copy the tar out to our "targets" directory for further unpacking
@@ -25,7 +35,7 @@ echo "$workdir"
 targets=$workdir/targets
 mkdir -p "$targets"
 echo "$targets"
-cd packages || exit 1
+cd "$targets" || exit 1
 for f in *; do
     # Skip symlinks and our gcf-utils directory as it is not a function
     if [[ -d "$f" && ! -L "$f" && "$f" != "gcf-utils" ]]; then
@@ -36,10 +46,12 @@ for f in *; do
         # Javascript does not allow function names with '-' so we need to
         # replace the directory name (which might have '-') with "_"
         functionname=${f//-/_}
+        echo "About to publish function $functionname"
+
         gcloud functions deploy "$functionname" --trigger-http \
             --runtime nodejs10 \
-            --region "$_FUNCTION_REGION" \
-            --set-env-vars DRIFT_PRO_BUCKET="$_BUCKET",KEY_LOCATION="$_KEY_LOCATION",KEY_RING="$_KEY_RING",GCF_SHORT_FUNCTION_NAME="$functionname",PROJECT_ID="$PROJECT_ID"
+            --region "$FUNCTION_REGION" \
+            --set-env-vars DRIFT_PRO_BUCKET="$BUCKET",KEY_LOCATION="$KEY_LOCATION",KEY_RING="$KEY_RING",GCF_SHORT_FUNCTION_NAME="$functionname",PROJECT_ID="$PROJECT_ID"
         )
     fi
 done

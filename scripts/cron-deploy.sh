@@ -17,10 +17,18 @@
 set -e
 set -o pipefail
 
+if [ $# -ne 3 ]; then
+    echo "Wrong number of arguments passed" && exit 1
+fi
+
+SCHEDULER_SERVICE_ACCOUNT_EMAIL=$1
+FUNCTION_REGION=$2
+REGION=$3
+
 # Get the endpoint for serverless-scheduler-proxy
 proxyurl=$(gcloud beta run services describe serverless-scheduler-proxy \
     --platform managed \
-    --region "$_REGION" \
+    --region "$REGION" \
     --format="value(status.address.url)")
 
 # For each bot that has a cron file make a Cloud Scheduler Schedule job
@@ -45,9 +53,9 @@ for f in *; do
                             --schedule "$schedule" \
                             --http-method=POST \
                             --uri="$proxyurl" \
-                            --oidc-service-account-email="$_SCHEDULER_SERVICE_ACCOUNT_EMAIL" \
+                            --oidc-service-account-email="$SCHEDULER_SERVICE_ACCOUNT_EMAIL" \
                             --oidc-token-audience="$proxyurl" \
-                            --message-body="{\"Name\": \"$(functionname)\", \"Type\" : \"function\", \"Location\": \"$(_FUNCTION_REGION)\"}" \
+                            --message-body="{\"Name\": \"$(functionname)\", \"Type\" : \"function\", \"Location\": \"$FUNCTION_REGION\"}" \
                             --header=Content-Type=application/json
                 fi
             fi
