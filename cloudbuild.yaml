@@ -35,57 +35,18 @@ steps:
       - "-c"
       - |
         # Deploy a new version
-        gcloud beta run deploy \
-                    --image "gcr.io/$PROJECT_ID/serverless-scheduler-proxy" \
-                    --set-env-vars "PROJECT_ID=$PROJECT_ID,BUCKET_NAME=$_BUCKET,KEY_LOCATION=$_KEY_LOCATION,KEY_RING=$_KEY_RING" \
-                    --platform managed \
-                    --region $_REGION \
-                    serverless-scheduler-proxy
-  #   - name: gcr.io/cloud-builders/gcloud
-  #     id: "cron-deploy"
-  #     waitFor: ["serverless-scheduler-proxy-deploy"]
-  #     entrypoint: bash
-  #     args:
-  #       - "-e"
-  #       - "-c"
-  #       - |
-  #         # Get the endpoint for serverless-scheduler-proxy
-  #         proxyurl=$(gcloud beta run services describe serverless-scheduler-proxy \
-  #             --platform managed \
-  #             --region $_REGION \
-  #             --format="value(status.address.url)")
-  #         # For each bot that has a cron file make a Cloud Scheduler Schedule job
-  #         # to hit the proxy endpoint on that schedule
-  #         cd packages
-  #         for f in *; do
-  #           # Skip symlinks and our gcf-utils directory as it is not a function
-  #           if [[ -d "$f" && ! -L "$f" && "$f" != "gcf-utils" ]]; then
-  #               cd $f
-  #               echo $f
-  #               for fx in *; do
-  #                 # Check for a file named "cron"
-  #                 if [[ -f "$fx" && ! -L "$fx"  && "$fx" == "cron"]]; then
-  #                   functionname=${f//-/_}
-  #                   schedule=$(cat "$fx")
-  #                   if $(gcloud beta scheduler jobs describe $functionname 2>/dev/null); then
-  #                     # We have an existing job. Update the schedule
-  #                     gcloud beta scheduler jobs update $functionname --schedule "$schedule"
-  #                   else
-  #                     # Make a cloud scheduler job
-  #                     gcloud beta scheduler jobs create http $functionname \
-  #                             --schedule "$schedule"
-  #                             --http-method=POST \
-  #                             --uri=$proxyurl \
-  #                             --oidc-service-account-email=$_SCHEDULER_SERVICE_ACCOUNT_EMAIL \
-  #                             --oidc-token-audience=$proxyurl \
-  #                             --message-body="{\"Name\": \"$(functionname)\", \"Type\" : \"function\", \"Location\": \"$(_FUNCTION_REGION)\"}"
-  #                             --header=Content-Type=application/json
-  #                   fi
-  #                 fi
-  #               done
-  #               cd ..
-  #           fi
-  #         done
+        ./scripts/serverless-scheduler-proxy-deploy.sh
+
+  - name: gcr.io/cloud-builders/gcloud
+    id: "cron-deploy"
+    waitFor: ["serverless-scheduler-proxy-deploy"]
+    entrypoint: bash
+    args:
+      - "-e"
+      - "-c"
+      - |
+        #./scripts/cron-deploy.sh
+
   - name: gcr.io/cloud-builders/npm
     id: "build"
     waitFor: ["-"]
@@ -94,27 +55,8 @@ steps:
       - "-e"
       - "-c"
       - |
-        # For each item in packages directory run npm compile
-        # then copy to targets
-        workdir=$(pwd)
-        echo $workdir
-        targets=$workdir/targets
-        mkdir -p $targets
-        npm install -g typescript
-        cd packages
-        for f in *; do
-          # Skip symlinks and our gcf-utils directory as it is not a function
-          if [[ -d "$f" && ! -L "$f" && "$f" != "gcf-utils" ]]; then
-              cd $f
-              echo $f
-              npm install
-              npm run compile
-              mkdir -p $targets/$f
-              cp -r build $targets/$f
-              cp package.json $targets/$f/package.json
-              cd ..
-          fi
-        done
+        ./scripts/build-functions.sh
+
   - name: gcr.io/cloud-builders/gcloud
     id: "publish-functions"
     waitFor: ["build"]
@@ -123,27 +65,4 @@ steps:
       - "-e"
       - "-c"
       - |
-        # For each item in our packages directory run
-        #   gcloud functions deploy
-        # Then copy the tar out to our "targets" directory for further unpacking
-        workdir=$(pwd)
-        echo $workdir
-        targets=$workdir/targets
-        mkdir -p $targets
-        echo $targets
-        cd packages
-        for f in *; do
-          # Skip symlinks and our gcf-utils directory as it is not a function
-          if [[ -d "$f" && ! -L "$f" && "$f" != "gcf-utils" ]]; then
-              cd $f
-              echo $f
-              # Javascript does not allow function names with '-' so we need to
-              # replace the directory name (which might have '-') with "_"
-              functionname=${f//-/_}
-              gcloud functions deploy $functionname --trigger-http \
-                  --runtime nodejs10 \
-                  --region $_FUNCTION_REGION \
-                  --set-env-vars DRIFT_PRO_BUCKET=$_BUCKET,KEY_LOCATION=$_KEY_LOCATION,KEY_RING=$_KEY_RING,GCF_SHORT_FUNCTION_NAME=$functionname,PROJECT_ID=$PROJECT_ID
-              cd ..
-          fi
-        done
+        ./scripts/publish-functions.sh
