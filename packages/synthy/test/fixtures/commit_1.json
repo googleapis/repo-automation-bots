@@ -1,112 +1,81 @@
-{
-  "status": 200,
-  "url": "https://api.github.com/repos/googleapis/synthtool/commits?path=synthtool%2Fgcp%2Ftemplates%2Fnode_library%2F.github%2Frelease-please.yml&per_page=1",
-  "headers": {
-    "access-control-allow-origin": "*",
-    "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type",
-    "cache-control": "private, max-age=60, s-maxage=60",
-    "connection": "close",
-    "content-encoding": "gzip",
-    "content-security-policy": "default-src 'none'",
-    "content-type": "application/json; charset=utf-8",
-    "date": "Fri, 20 Sep 2019 20:39:50 GMT",
-    "etag": "W/\"4c94cbfaf2d6eccfa0a4f58778f32e8d\"",
-    "last-modified": "Tue, 17 Sep 2019 22:43:34 GMT",
-    "link": "<https://api.github.com/repositories/139062188/commits?path=synthtool%2Fgcp%2Ftemplates%2Fnode_library%2F.github%2Frelease-please.yml&per_page=1&page=2>; rel=\"next\", <https://api.github.com/repositories/139062188/commits?path=synthtool%2Fgcp%2Ftemplates%2Fnode_library%2F.github%2Frelease-please.yml&per_page=1&page=2>; rel=\"last\"",
-    "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
-    "server": "GitHub.com",
-    "status": "200 OK",
-    "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
-    "transfer-encoding": "chunked",
-    "vary": "Accept, Authorization, Cookie, X-GitHub-OTP, Accept-Encoding",
-    "x-content-type-options": "nosniff",
-    "x-frame-options": "deny",
-    "x-github-media-type": "github.v3; format=json",
-    "x-github-request-id": "D7B7:691E:B0D408:12CF52B:5D853916",
-    "x-ratelimit-limit": "5000",
-    "x-ratelimit-remaining": "4996",
-    "x-ratelimit-reset": "1569015586",
-    "x-xss-protection": "1; mode=block"
-  },
-  "data": [
-    {
-      "sha": "a5a6f7c5c7670231e9fd0a3f0855b06f0a7de260",
-      "node_id": "MDY6Q29tbWl0MTM5MDYyMTg4OmE1YTZmN2M1Yzc2NzAyMzFlOWZkMGEzZjA4NTViMDZmMGE3ZGUyNjA=",
-      "commit": {
-        "author": {
-          "name": "Benjamin E. Coe",
-          "email": "bencoe@google.com",
-          "date": "2019-09-17T22:43:34Z"
-        },
-        "committer": {
-          "name": "GitHub",
-          "email": "noreply@github.com",
-          "date": "2019-09-17T22:43:34Z"
-        },
-        "message": "fix: use repo's default language (#290)",
-        "tree": {
-          "sha": "09a81133f28a7e12cd154319831749d5725101a8",
-          "url": "https://api.github.com/repos/googleapis/synthtool/git/trees/09a81133f28a7e12cd154319831749d5725101a8"
-        },
-        "url": "https://api.github.com/repos/googleapis/synthtool/git/commits/a5a6f7c5c7670231e9fd0a3f0855b06f0a7de260",
-        "comment_count": 0,
-        "verification": {
-          "verified": true,
-          "reason": "valid",
-          "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsBcBAABCAAQBQJdgWGXCRBK7hj4Ov3rIwAAdHIIAEpVhOvVlnZgt8i30lrmAVeQ\ne08Fr/86aIFh39ClUuIJjCyZ4/EMfavYds4D3sj1Ix56G1T5AQJXtwxygYqQIv+4\nQ8kPiLI6sICJOoQyDC38/HuGV2seQfvoG5n1a8F/iKb9QQ6IfRvbtGR6Kgj/10pw\na6DmFWBa7vfFE7MmBE4ZFEgdvTpi/HesIziHwTy1Z2OdRaGBdq9vaytDmwkoWBjn\n41ugn5GQ65NnrKbiFgsu/OSvdQ/5hMgS4altcqhhT/PSBNubj+gpGcM9CJnvm4Xt\nEzzmcLh6tzwnr3/7KJkqQv9Ewx3MQyaMw6v17BsXadANupLaFtMn4WhcxF5H1V4=\n=mywd\n-----END PGP SIGNATURE-----\n",
-          "payload": "tree 09a81133f28a7e12cd154319831749d5725101a8\nparent 162466444c96a85d903b95564ef39547b5ab361a\nauthor Benjamin E. Coe <bencoe@google.com> 1568760214 -0700\ncommitter GitHub <noreply@github.com> 1568760214 -0700\n\nfix: use repo's default language (#290)\n\n"
-        }
-      },
-      "url": "https://api.github.com/repos/googleapis/synthtool/commits/a5a6f7c5c7670231e9fd0a3f0855b06f0a7de260",
-      "html_url": "https://github.com/googleapis/synthtool/commit/a5a6f7c5c7670231e9fd0a3f0855b06f0a7de260",
-      "comments_url": "https://api.github.com/repos/googleapis/synthtool/commits/a5a6f7c5c7670231e9fd0a3f0855b06f0a7de260/comments",
+[
+  {
+    "sha": "a5a6f7c5c7670231e9fd0a3f0855b06f0a7de260",
+    "node_id": "MDY6Q29tbWl0MTM5MDYyMTg4OmE1YTZmN2M1Yzc2NzAyMzFlOWZkMGEzZjA4NTViMDZmMGE3ZGUyNjA=",
+    "commit": {
       "author": {
-        "login": "bcoe",
-        "id": 194609,
-        "node_id": "MDQ6VXNlcjE5NDYwOQ==",
-        "avatar_url": "https://avatars3.githubusercontent.com/u/194609?v=4",
-        "gravatar_id": "",
-        "url": "https://api.github.com/users/bcoe",
-        "html_url": "https://github.com/bcoe",
-        "followers_url": "https://api.github.com/users/bcoe/followers",
-        "following_url": "https://api.github.com/users/bcoe/following{/other_user}",
-        "gists_url": "https://api.github.com/users/bcoe/gists{/gist_id}",
-        "starred_url": "https://api.github.com/users/bcoe/starred{/owner}{/repo}",
-        "subscriptions_url": "https://api.github.com/users/bcoe/subscriptions",
-        "organizations_url": "https://api.github.com/users/bcoe/orgs",
-        "repos_url": "https://api.github.com/users/bcoe/repos",
-        "events_url": "https://api.github.com/users/bcoe/events{/privacy}",
-        "received_events_url": "https://api.github.com/users/bcoe/received_events",
-        "type": "User",
-        "site_admin": false
+        "name": "Benjamin E. Coe",
+        "email": "bencoe@google.com",
+        "date": "2019-09-17T22:43:34Z"
       },
       "committer": {
-        "login": "web-flow",
-        "id": 19864447,
-        "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
-        "avatar_url": "https://avatars3.githubusercontent.com/u/19864447?v=4",
-        "gravatar_id": "",
-        "url": "https://api.github.com/users/web-flow",
-        "html_url": "https://github.com/web-flow",
-        "followers_url": "https://api.github.com/users/web-flow/followers",
-        "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
-        "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
-        "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
-        "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
-        "organizations_url": "https://api.github.com/users/web-flow/orgs",
-        "repos_url": "https://api.github.com/users/web-flow/repos",
-        "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
-        "received_events_url": "https://api.github.com/users/web-flow/received_events",
-        "type": "User",
-        "site_admin": false
+        "name": "GitHub",
+        "email": "noreply@github.com",
+        "date": "2019-09-17T22:43:34Z"
       },
-      "parents": [
-        {
-          "sha": "162466444c96a85d903b95564ef39547b5ab361a",
-          "url": "https://api.github.com/repos/googleapis/synthtool/commits/162466444c96a85d903b95564ef39547b5ab361a",
-          "html_url": "https://github.com/googleapis/synthtool/commit/162466444c96a85d903b95564ef39547b5ab361a"
-        }
-      ]
-    }
-  ]
-}
+      "message": "fix: use repo's default language (#290)",
+      "tree": {
+        "sha": "09a81133f28a7e12cd154319831749d5725101a8",
+        "url": "https://api.github.com/repos/googleapis/synthtool/git/trees/09a81133f28a7e12cd154319831749d5725101a8"
+      },
+      "url": "https://api.github.com/repos/googleapis/synthtool/git/commits/a5a6f7c5c7670231e9fd0a3f0855b06f0a7de260",
+      "comment_count": 0,
+      "verification": {
+        "verified": true,
+        "reason": "valid",
+        "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsBcBAABCAAQBQJdgWGXCRBK7hj4Ov3rIwAAdHIIAEpVhOvVlnZgt8i30lrmAVeQ\ne08Fr/86aIFh39ClUuIJjCyZ4/EMfavYds4D3sj1Ix56G1T5AQJXtwxygYqQIv+4\nQ8kPiLI6sICJOoQyDC38/HuGV2seQfvoG5n1a8F/iKb9QQ6IfRvbtGR6Kgj/10pw\na6DmFWBa7vfFE7MmBE4ZFEgdvTpi/HesIziHwTy1Z2OdRaGBdq9vaytDmwkoWBjn\n41ugn5GQ65NnrKbiFgsu/OSvdQ/5hMgS4altcqhhT/PSBNubj+gpGcM9CJnvm4Xt\nEzzmcLh6tzwnr3/7KJkqQv9Ewx3MQyaMw6v17BsXadANupLaFtMn4WhcxF5H1V4=\n=mywd\n-----END PGP SIGNATURE-----\n",
+        "payload": "tree 09a81133f28a7e12cd154319831749d5725101a8\nparent 162466444c96a85d903b95564ef39547b5ab361a\nauthor Benjamin E. Coe <bencoe@google.com> 1568760214 -0700\ncommitter GitHub <noreply@github.com> 1568760214 -0700\n\nfix: use repo's default language (#290)\n\n"
+      }
+    },
+    "url": "https://api.github.com/repos/googleapis/synthtool/commits/a5a6f7c5c7670231e9fd0a3f0855b06f0a7de260",
+    "html_url": "https://github.com/googleapis/synthtool/commit/a5a6f7c5c7670231e9fd0a3f0855b06f0a7de260",
+    "comments_url": "https://api.github.com/repos/googleapis/synthtool/commits/a5a6f7c5c7670231e9fd0a3f0855b06f0a7de260/comments",
+    "author": {
+      "login": "bcoe",
+      "id": 194609,
+      "node_id": "MDQ6VXNlcjE5NDYwOQ==",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/194609?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/bcoe",
+      "html_url": "https://github.com/bcoe",
+      "followers_url": "https://api.github.com/users/bcoe/followers",
+      "following_url": "https://api.github.com/users/bcoe/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bcoe/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/bcoe/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bcoe/subscriptions",
+      "organizations_url": "https://api.github.com/users/bcoe/orgs",
+      "repos_url": "https://api.github.com/users/bcoe/repos",
+      "events_url": "https://api.github.com/users/bcoe/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/bcoe/received_events",
+      "type": "User",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "web-flow",
+      "id": 19864447,
+      "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/19864447?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/web-flow",
+      "html_url": "https://github.com/web-flow",
+      "followers_url": "https://api.github.com/users/web-flow/followers",
+      "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+      "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+      "organizations_url": "https://api.github.com/users/web-flow/orgs",
+      "repos_url": "https://api.github.com/users/web-flow/repos",
+      "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/web-flow/received_events",
+      "type": "User",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "162466444c96a85d903b95564ef39547b5ab361a",
+        "url": "https://api.github.com/repos/googleapis/synthtool/commits/162466444c96a85d903b95564ef39547b5ab361a",
+        "html_url": "https://github.com/googleapis/synthtool/commit/162466444c96a85d903b95564ef39547b5ab361a"
+      }
+    ]
+  }
+]

@@ -34,8 +34,22 @@ interface Parent {
   sha: string;
 }
 
+class NotFoundError extends Error {
+  constructor(msg: string) {
+    super(msg);
+  }
+}
+
 export = (app: Application) => {
   app.on('pull_request.opened', async context => {
+    // only update PRs that look like synthtool PRs.
+    if (SYNTHTOOL_PR.test(context.payload.pull_request.title) === false) {
+      app.log.warn(
+        `title "${context.payload.pull_request.title}" does not look like synthtool PR`
+      );
+      return;
+    }
+
     const repo = context.payload.repository.name;
     const owner = context.payload.repository.owner.login;
     const remoteConfiguration = (await context.config(
@@ -58,12 +72,7 @@ export = (app: Application) => {
     const metadataFilename =
       remoteConfiguration.metadataFilename || 'synth.metadata';
 
-    if (SYNTHTOOL_PR.test(context.payload.pull_request.title) === false) {
-      app.log.warn(
-        `title "${context.payload.pull_request.title}" does not look like synthtool PR`
-      );
-      return;
-    }
+    app.log.info(`template directory = ${templateDirectory}`);
 
     try {
       const commits: Set<string> = new Set();
@@ -82,7 +91,7 @@ export = (app: Application) => {
           maybeTemplatePath
         );
         if (commit === undefined) {
-          throw Error(`${maybeTemplatePath} not found`);
+          throw new NotFoundError(`${maybeTemplatePath} not found`);
         }
         commits.add(commit.commit.message);
       }
@@ -127,7 +136,7 @@ export = (app: Application) => {
       });
 
       // update the existing PR.
-      context.github.pulls.update({
+      await context.github.pulls.update({
         owner,
         repo,
         pull_number: context.payload.pull_request.number,
@@ -135,7 +144,11 @@ export = (app: Application) => {
         body,
       });
     } catch (err) {
-      app.log.warn(err.message);
+      if (err instanceof NotFoundError) {
+        app.log.warn(err.message);
+      } else {
+        throw err;
+      }
     }
   });
 

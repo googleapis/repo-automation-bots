@@ -1,112 +1,81 @@
-{
-  "status": 200,
-  "url": "https://api.github.com/repos/googleapis/synthtool/commits?path=synthtool%2Fgcp%2Ftemplates%2Fnode_library%2F.nycrc&per_page=1",
-  "headers": {
-    "access-control-allow-origin": "*",
-    "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type",
-    "cache-control": "private, max-age=60, s-maxage=60",
-    "connection": "close",
-    "content-encoding": "gzip",
-    "content-security-policy": "default-src 'none'",
-    "content-type": "application/json; charset=utf-8",
-    "date": "Fri, 20 Sep 2019 20:39:51 GMT",
-    "etag": "W/\"d4cd236a0d72d50c4821a364076ef6d5\"",
-    "last-modified": "Fri, 06 Sep 2019 22:47:05 GMT",
-    "link": "<https://api.github.com/repositories/139062188/commits?path=synthtool%2Fgcp%2Ftemplates%2Fnode_library%2F.nycrc&per_page=1&page=2>; rel=\"next\", <https://api.github.com/repositories/139062188/commits?path=synthtool%2Fgcp%2Ftemplates%2Fnode_library%2F.nycrc&per_page=1&page=6>; rel=\"last\"",
-    "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
-    "server": "GitHub.com",
-    "status": "200 OK",
-    "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
-    "transfer-encoding": "chunked",
-    "vary": "Accept, Authorization, Cookie, X-GitHub-OTP",
-    "x-content-type-options": "nosniff",
-    "x-frame-options": "deny",
-    "x-github-media-type": "github.v3; format=json",
-    "x-github-request-id": "C841:05AA:1B832F:2B5932:5D853917",
-    "x-ratelimit-limit": "5000",
-    "x-ratelimit-remaining": "4994",
-    "x-ratelimit-reset": "1569015586",
-    "x-xss-protection": "1; mode=block"
-  },
-  "data": [
-    {
-      "sha": "06a3aec4fb83272a5ae7dfefa343d286e35b79be",
-      "node_id": "MDY6Q29tbWl0MTM5MDYyMTg4OjA2YTNhZWM0ZmI4MzI3MmE1YWU3ZGZlZmEzNDNkMjg2ZTM1Yjc5YmU=",
-      "commit": {
-        "author": {
-          "name": "Sebastian Schmidt",
-          "email": "mrschmidt@google.com",
-          "date": "2019-09-06T22:47:05Z"
-        },
-        "committer": {
-          "name": "Benjamin E. Coe",
-          "email": "bencoe@google.com",
-          "date": "2019-09-06T22:47:05Z"
-        },
-        "message": "test: exclude conformance tests from code coverage (#278)\n\nSee https://github.com/googleapis/nodejs-firestore/pull/729 for first failed attempt.",
-        "tree": {
-          "sha": "cfa79eb5751dd95b7807241a857e824a9f834aa6",
-          "url": "https://api.github.com/repos/googleapis/synthtool/git/trees/cfa79eb5751dd95b7807241a857e824a9f834aa6"
-        },
-        "url": "https://api.github.com/repos/googleapis/synthtool/git/commits/06a3aec4fb83272a5ae7dfefa343d286e35b79be",
-        "comment_count": 0,
-        "verification": {
-          "verified": false,
-          "reason": "unsigned",
-          "signature": null,
-          "payload": null
-        }
-      },
-      "url": "https://api.github.com/repos/googleapis/synthtool/commits/06a3aec4fb83272a5ae7dfefa343d286e35b79be",
-      "html_url": "https://github.com/googleapis/synthtool/commit/06a3aec4fb83272a5ae7dfefa343d286e35b79be",
-      "comments_url": "https://api.github.com/repos/googleapis/synthtool/commits/06a3aec4fb83272a5ae7dfefa343d286e35b79be/comments",
+[
+  {
+    "sha": "06a3aec4fb83272a5ae7dfefa343d286e35b79be",
+    "node_id": "MDY6Q29tbWl0MTM5MDYyMTg4OjA2YTNhZWM0ZmI4MzI3MmE1YWU3ZGZlZmEzNDNkMjg2ZTM1Yjc5YmU=",
+    "commit": {
       "author": {
-        "login": "schmidt-sebastian",
-        "id": 19397744,
-        "node_id": "MDQ6VXNlcjE5Mzk3NzQ0",
-        "avatar_url": "https://avatars3.githubusercontent.com/u/19397744?v=4",
-        "gravatar_id": "",
-        "url": "https://api.github.com/users/schmidt-sebastian",
-        "html_url": "https://github.com/schmidt-sebastian",
-        "followers_url": "https://api.github.com/users/schmidt-sebastian/followers",
-        "following_url": "https://api.github.com/users/schmidt-sebastian/following{/other_user}",
-        "gists_url": "https://api.github.com/users/schmidt-sebastian/gists{/gist_id}",
-        "starred_url": "https://api.github.com/users/schmidt-sebastian/starred{/owner}{/repo}",
-        "subscriptions_url": "https://api.github.com/users/schmidt-sebastian/subscriptions",
-        "organizations_url": "https://api.github.com/users/schmidt-sebastian/orgs",
-        "repos_url": "https://api.github.com/users/schmidt-sebastian/repos",
-        "events_url": "https://api.github.com/users/schmidt-sebastian/events{/privacy}",
-        "received_events_url": "https://api.github.com/users/schmidt-sebastian/received_events",
-        "type": "User",
-        "site_admin": false
+        "name": "Sebastian Schmidt",
+        "email": "mrschmidt@google.com",
+        "date": "2019-09-06T22:47:05Z"
       },
       "committer": {
-        "login": "bcoe",
-        "id": 194609,
-        "node_id": "MDQ6VXNlcjE5NDYwOQ==",
-        "avatar_url": "https://avatars3.githubusercontent.com/u/194609?v=4",
-        "gravatar_id": "",
-        "url": "https://api.github.com/users/bcoe",
-        "html_url": "https://github.com/bcoe",
-        "followers_url": "https://api.github.com/users/bcoe/followers",
-        "following_url": "https://api.github.com/users/bcoe/following{/other_user}",
-        "gists_url": "https://api.github.com/users/bcoe/gists{/gist_id}",
-        "starred_url": "https://api.github.com/users/bcoe/starred{/owner}{/repo}",
-        "subscriptions_url": "https://api.github.com/users/bcoe/subscriptions",
-        "organizations_url": "https://api.github.com/users/bcoe/orgs",
-        "repos_url": "https://api.github.com/users/bcoe/repos",
-        "events_url": "https://api.github.com/users/bcoe/events{/privacy}",
-        "received_events_url": "https://api.github.com/users/bcoe/received_events",
-        "type": "User",
-        "site_admin": false
+        "name": "Benjamin E. Coe",
+        "email": "bencoe@google.com",
+        "date": "2019-09-06T22:47:05Z"
       },
-      "parents": [
-        {
-          "sha": "096c7acda6386aa662f0cbfd38f0116238188c9d",
-          "url": "https://api.github.com/repos/googleapis/synthtool/commits/096c7acda6386aa662f0cbfd38f0116238188c9d",
-          "html_url": "https://github.com/googleapis/synthtool/commit/096c7acda6386aa662f0cbfd38f0116238188c9d"
-        }
-      ]
-    }
-  ]
-}
+      "message": "test: exclude conformance tests from code coverage (#278)\n\nSee https://github.com/googleapis/nodejs-firestore/pull/729 for first failed attempt.",
+      "tree": {
+        "sha": "cfa79eb5751dd95b7807241a857e824a9f834aa6",
+        "url": "https://api.github.com/repos/googleapis/synthtool/git/trees/cfa79eb5751dd95b7807241a857e824a9f834aa6"
+      },
+      "url": "https://api.github.com/repos/googleapis/synthtool/git/commits/06a3aec4fb83272a5ae7dfefa343d286e35b79be",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null
+      }
+    },
+    "url": "https://api.github.com/repos/googleapis/synthtool/commits/06a3aec4fb83272a5ae7dfefa343d286e35b79be",
+    "html_url": "https://github.com/googleapis/synthtool/commit/06a3aec4fb83272a5ae7dfefa343d286e35b79be",
+    "comments_url": "https://api.github.com/repos/googleapis/synthtool/commits/06a3aec4fb83272a5ae7dfefa343d286e35b79be/comments",
+    "author": {
+      "login": "schmidt-sebastian",
+      "id": 19397744,
+      "node_id": "MDQ6VXNlcjE5Mzk3NzQ0",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/19397744?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/schmidt-sebastian",
+      "html_url": "https://github.com/schmidt-sebastian",
+      "followers_url": "https://api.github.com/users/schmidt-sebastian/followers",
+      "following_url": "https://api.github.com/users/schmidt-sebastian/following{/other_user}",
+      "gists_url": "https://api.github.com/users/schmidt-sebastian/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/schmidt-sebastian/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/schmidt-sebastian/subscriptions",
+      "organizations_url": "https://api.github.com/users/schmidt-sebastian/orgs",
+      "repos_url": "https://api.github.com/users/schmidt-sebastian/repos",
+      "events_url": "https://api.github.com/users/schmidt-sebastian/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/schmidt-sebastian/received_events",
+      "type": "User",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "bcoe",
+      "id": 194609,
+      "node_id": "MDQ6VXNlcjE5NDYwOQ==",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/194609?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/bcoe",
+      "html_url": "https://github.com/bcoe",
+      "followers_url": "https://api.github.com/users/bcoe/followers",
+      "following_url": "https://api.github.com/users/bcoe/following{/other_user}",
+      "gists_url": "https://api.github.com/users/bcoe/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/bcoe/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/bcoe/subscriptions",
+      "organizations_url": "https://api.github.com/users/bcoe/orgs",
+      "repos_url": "https://api.github.com/users/bcoe/repos",
+      "events_url": "https://api.github.com/users/bcoe/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/bcoe/received_events",
+      "type": "User",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "096c7acda6386aa662f0cbfd38f0116238188c9d",
+        "url": "https://api.github.com/repos/googleapis/synthtool/commits/096c7acda6386aa662f0cbfd38f0116238188c9d",
+        "html_url": "https://github.com/googleapis/synthtool/commit/096c7acda6386aa662f0cbfd38f0116238188c9d"
+      }
+    ]
+  }
+]

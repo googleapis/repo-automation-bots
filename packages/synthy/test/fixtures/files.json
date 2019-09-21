@@ -1,80 +1,38 @@
-{
-  "status": 200,
-  "url": "https://api.github.com/repos/bcoe/nodejs-recaptcha-enterprise/pulls/1/files?per_page=300",
-  "headers": {
-    "access-control-allow-origin": "*",
-    "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type",
-    "cache-control": "private, max-age=60, s-maxage=60",
-    "connection": "close",
-    "content-encoding": "gzip",
-    "content-security-policy": "default-src 'none'",
-    "content-type": "application/json; charset=utf-8",
-    "date": "Fri, 20 Sep 2019 20:48:57 GMT",
-    "etag": "W/\"171abd7c09d9de6c9df4f3a3960bff52\"",
-    "last-modified": "Wed, 18 Sep 2019 23:34:58 GMT",
-    "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
-    "server": "GitHub.com",
-    "status": "200 OK",
-    "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
-    "transfer-encoding": "chunked",
-    "vary": "Accept, Authorization, Cookie, X-GitHub-OTP",
-    "x-content-type-options": "nosniff",
-    "x-frame-options": "deny",
-    "x-github-media-type": "github.v3; format=json",
-    "x-github-request-id": "D263:2B61:846053:142148F:5D853B39",
-    "x-ratelimit-limit": "5000",
-    "x-ratelimit-remaining": "4988",
-    "x-ratelimit-reset": "1569016128",
-    "x-xss-protection": "1; mode=block"
+[
+  {
+    "sha": "54782fc7bb152068e0d25866770d745012ebd028",
+    "filename": ".github/release-please.yml",
+    "status": "modified",
+    "additions": 1,
+    "deletions": 0,
+    "changes": 1,
+    "blob_url": "https://github.com/bcoe/nodejs-recaptcha-enterprise/blob/4c8c8f737faaade7247c034fdf285b2b8f734f39/.github/release-please.yml",
+    "raw_url": "https://github.com/bcoe/nodejs-recaptcha-enterprise/raw/4c8c8f737faaade7247c034fdf285b2b8f734f39/.github/release-please.yml",
+    "contents_url": "https://api.github.com/repos/bcoe/nodejs-recaptcha-enterprise/contents/.github/release-please.yml?ref=4c8c8f737faaade7247c034fdf285b2b8f734f39",
+    "patch": "@@ -0,0 +1 @@\n+releaseType: javascript\n\\ No newline at end of file"
   },
-  "data": [
-    {
-      "sha": "54782fc7bb152068e0d25866770d745012ebd028",
-      "filename": ".github/release-please.yml",
-      "status": "modified",
-      "additions": 1,
-      "deletions": 0,
-      "changes": 1,
-      "blob_url": "https://github.com/bcoe/nodejs-recaptcha-enterprise/blob/4c8c8f737faaade7247c034fdf285b2b8f734f39/.github/release-please.yml",
-      "raw_url": "https://github.com/bcoe/nodejs-recaptcha-enterprise/raw/4c8c8f737faaade7247c034fdf285b2b8f734f39/.github/release-please.yml",
-      "contents_url": "https://api.github.com/repos/bcoe/nodejs-recaptcha-enterprise/contents/.github/release-please.yml?ref=4c8c8f737faaade7247c034fdf285b2b8f734f39",
-      "patch": "@@ -0,0 +1 @@\n+releaseType: javascript\n\\ No newline at end of file"
-    },
-    {
-      "sha": "375851b10990a9acff5b13c1a1321b55375630c9",
-      "filename": ".nycrc",
-      "status": "modified",
-      "additions": 0,
-      "deletions": 1,
-      "changes": 1,
-      "blob_url": "https://github.com/bcoe/nodejs-recaptcha-enterprise/blob/4c8c8f737faaade7247c034fdf285b2b8f734f39/.nycrc",
-      "raw_url": "https://github.com/bcoe/nodejs-recaptcha-enterprise/raw/4c8c8f737faaade7247c034fdf285b2b8f734f39/.nycrc",
-      "contents_url": "https://api.github.com/repos/bcoe/nodejs-recaptcha-enterprise/contents/.nycrc?ref=4c8c8f737faaade7247c034fdf285b2b8f734f39",
-      "patch": "@@ -11,7 +11,6 @@\n     \"**/samples\",\n     \"**/scripts\",\n     \"**/src/**/v*/**/*.js\",\n-    \"**/protos\",\n     \"**/test\",\n     \".jsdoc.js\",\n     \"**/.jsdoc.js\","
-    },
-    {
-      "sha": "f5d95fe17b5bd1d65847ec16986eb1b72ffe9f33",
-      "filename": "renovate.json",
-      "status": "modified",
-      "additions": 1,
-      "deletions": 1,
-      "changes": 2,
-      "blob_url": "https://github.com/bcoe/nodejs-recaptcha-enterprise/blob/4c8c8f737faaade7247c034fdf285b2b8f734f39/renovate.json",
-      "raw_url": "https://github.com/bcoe/nodejs-recaptcha-enterprise/raw/4c8c8f737faaade7247c034fdf285b2b8f734f39/renovate.json",
-      "contents_url": "https://api.github.com/repos/bcoe/nodejs-recaptcha-enterprise/contents/renovate.json?ref=4c8c8f737faaade7247c034fdf285b2b8f734f39",
-      "patch": "@@ -4,7 +4,7 @@\n     \"docker:disable\"\n   ],\n   \"pinVersions\": false,\n-  \"rebaseStalePrs\": true,\n+  \"rebaseStalePrs\": false,\n   \"schedule\": [\n     \"after 9am and before 3pm\"\n   ],"
-    },
-    {
-      "sha": "2ab2536af21e6bb5ce34638e534dc7928ad32196",
-      "filename": "synth.metadata",
-      "status": "modified",
-      "additions": 4,
-      "deletions": 4,
-      "changes": 8,
-      "blob_url": "https://github.com/bcoe/nodejs-recaptcha-enterprise/blob/4c8c8f737faaade7247c034fdf285b2b8f734f39/synth.metadata",
-      "raw_url": "https://github.com/bcoe/nodejs-recaptcha-enterprise/raw/4c8c8f737faaade7247c034fdf285b2b8f734f39/synth.metadata",
-      "contents_url": "https://api.github.com/repos/bcoe/nodejs-recaptcha-enterprise/contents/synth.metadata?ref=4c8c8f737faaade7247c034fdf285b2b8f734f39",
-      "patch": "@@ -1,18 +1,18 @@\n {\n-  \"updateTime\": \"2019-09-10T11:20:43.095715Z\",\n+  \"updateTime\": \"2019-09-18T23:20:58.655103Z\",\n   \"sources\": [\n     {\n       \"generator\": {\n         \"name\": \"artman\",\n-        \"version\": \"0.36.2\",\n-        \"dockerImage\": \"googleapis/artman@sha256:0e6f3a668cd68afc768ecbe08817cf6e56a0e64fcbdb1c58c3b97492d12418a1\"\n+        \"version\": \"0.36.3\",\n+        \"dockerImage\": \"googleapis/artman@sha256:66ca01f27ef7dc50fbfb7743b67028115a6a8acf43b2d82f9fc826de008adac4\"\n       }\n     },\n     {\n       \"git\": {\n         \"name\": \"googleapis\",\n         \"remote\": \"https://github.com/googleapis/googleapis.git\",\n-        \"sha\": \"26e189ad03ba63591fb26eecb6aaade7ad39f57a\"\n+        \"sha\": \"23f6c4d8d49ef3f1aaa45768869d8616efe4a307\"\n       }\n     },\n     {"
-    }
-  ]
-}
+  {
+    "sha": "375851b10990a9acff5b13c1a1321b55375630c9",
+    "filename": ".nycrc",
+    "status": "modified",
+    "additions": 0,
+    "deletions": 1,
+    "changes": 1,
+    "blob_url": "https://github.com/bcoe/nodejs-recaptcha-enterprise/blob/4c8c8f737faaade7247c034fdf285b2b8f734f39/.nycrc",
+    "raw_url": "https://github.com/bcoe/nodejs-recaptcha-enterprise/raw/4c8c8f737faaade7247c034fdf285b2b8f734f39/.nycrc",
+    "contents_url": "https://api.github.com/repos/bcoe/nodejs-recaptcha-enterprise/contents/.nycrc?ref=4c8c8f737faaade7247c034fdf285b2b8f734f39",
+    "patch": "@@ -11,7 +11,6 @@\n     \"**/samples\",\n     \"**/scripts\",\n     \"**/src/**/v*/**/*.js\",\n-    \"**/protos\",\n     \"**/test\",\n     \".jsdoc.js\",\n     \"**/.jsdoc.js\","
+  },
+  {
+    "sha": "2ab2536af21e6bb5ce34638e534dc7928ad32196",
+    "filename": "synth.metadata",
+    "status": "modified",
+    "additions": 4,
+    "deletions": 4,
+    "changes": 8,
+    "blob_url": "https://github.com/bcoe/nodejs-recaptcha-enterprise/blob/4c8c8f737faaade7247c034fdf285b2b8f734f39/synth.metadata",
+    "raw_url": "https://github.com/bcoe/nodejs-recaptcha-enterprise/raw/4c8c8f737faaade7247c034fdf285b2b8f734f39/synth.metadata",
+    "contents_url": "https://api.github.com/repos/bcoe/nodejs-recaptcha-enterprise/contents/synth.metadata?ref=4c8c8f737faaade7247c034fdf285b2b8f734f39",
+    "patch": "@@ -1,18 +1,18 @@\n {\n-  \"updateTime\": \"2019-09-10T11:20:43.095715Z\",\n+  \"updateTime\": \"2019-09-18T23:20:58.655103Z\",\n   \"sources\": [\n     {\n       \"generator\": {\n         \"name\": \"artman\",\n-        \"version\": \"0.36.2\",\n-        \"dockerImage\": \"googleapis/artman@sha256:0e6f3a668cd68afc768ecbe08817cf6e56a0e64fcbdb1c58c3b97492d12418a1\"\n+        \"version\": \"0.36.3\",\n+        \"dockerImage\": \"googleapis/artman@sha256:66ca01f27ef7dc50fbfb7743b67028115a6a8acf43b2d82f9fc826de008adac4\"\n       }\n     },\n     {\n       \"git\": {\n         \"name\": \"googleapis\",\n         \"remote\": \"https://github.com/googleapis/googleapis.git\",\n-        \"sha\": \"26e189ad03ba63591fb26eecb6aaade7ad39f57a\"\n+        \"sha\": \"23f6c4d8d49ef3f1aaa45768869d8616efe4a307\"\n       }\n     },\n     {"
+  }
+]
