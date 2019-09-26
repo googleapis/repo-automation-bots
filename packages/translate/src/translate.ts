@@ -15,11 +15,12 @@
  */
 
 import { Application, Context } from 'probot';
-import {Translate} from '@google-cloud/translate';
+import { Translate } from '@google-cloud/translate';
 
 const CONFIGURATION_FILE_PATH = 'translate.yml';
 
 interface Configuration {
+  repoLanguageCode?: string;
 }
 
 export = (app: Application) => {
@@ -28,20 +29,29 @@ export = (app: Application) => {
       CONFIGURATION_FILE_PATH,
       {}
     )) as Configuration;
+    const repoLanguageCode = config.repoLanguageCode || 'en';
 
     const translate = new Translate();
-    const [translated_title,] = await translate.translate(context.payload.issue.title, "en");
-    const [translated_body,] = await translate.translate(context.payload.issue.body, "en");
+    const [translatedTitle] = await translate.translate(
+      context.payload.issue.title,
+      repoLanguageCode
+    );
+    const [translatedBody] = await translate.translate(
+      context.payload.issue.body,
+      repoLanguageCode
+    );
 
-    context.github.issues.createComment(context.repo({
-      issue_number: context.payload.issue.number,
-      body: `Translated title:
+    context.github.issues.createComment(
+      context.repo({
+        issue_number: context.payload.issue.number,
+        body: `Translated title:
 
-${translated_title}.
+${translatedTitle}.
 
 Translated body:
 
-${translated_body}`
-    }));
+${translatedBody}`,
+      })
+    );
   });
 };

@@ -60,9 +60,7 @@ describe('Translate', () => {
     });
     it('translates an issue', async () => {
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/java-test/contents/.github/translate.yml'
-        )
+        .get('/repos/chingor13/java-test/contents/.github/translate.yml')
         .reply(200, { content: '' });
 
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
