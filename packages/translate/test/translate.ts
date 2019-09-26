@@ -21,6 +21,7 @@ import { Probot } from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
+import Webhooks from '@octokit/webhooks';
 
 nock.disableNetConnect();
 
@@ -52,7 +53,20 @@ describe('Translate', () => {
   });
 
   describe('issue opened', () => {
+    let payload: Webhooks.WebhookPayloadIssues;
+
+    beforeEach(() => {
+      payload = require(resolve(fixturesPath, './issue_opened'));
+    });
     it('translates an issue', async () => {
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/java-test/contents/.github/translate.yml'
+        )
+        .reply(200, { content: '' });
+
+      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      requests.done();
     });
   });
 });
