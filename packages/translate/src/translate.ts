@@ -15,6 +15,7 @@
  */
 
 import { Application, Context } from 'probot';
+import {Translate} from '@google-cloud/translate';
 
 const CONFIGURATION_FILE_PATH = 'translate.yml';
 
@@ -27,5 +28,20 @@ export = (app: Application) => {
       CONFIGURATION_FILE_PATH,
       {}
     )) as Configuration;
+
+    const translate = new Translate();
+    const [translated_title,] = await translate.translate(context.payload.issue.title, "en");
+    const [translated_body,] = await translate.translate(context.payload.issue.body, "en");
+
+    context.github.issues.createComment(context.repo({
+      issue_number: context.payload.issue.number,
+      body: `Translated title:
+
+${translated_title}.
+
+Translated body:
+
+${translated_body}`
+    }));
   });
 };

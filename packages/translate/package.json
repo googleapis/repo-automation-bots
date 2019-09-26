@@ -27,6 +27,7 @@
     "lint": "gts check"
   },
   "dependencies": {
+    "@google-cloud/translate": "^4.1.3",
     "@octokit/rest": "16.28.3",
     "gcf-utils": "^1.0.0",
     "probot": "9.4.0"
