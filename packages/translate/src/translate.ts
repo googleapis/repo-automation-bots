@@ -41,7 +41,7 @@ export = (app: Application) => {
       repoLanguageCode
     );
 
-    context.github.issues.createComment(
+    await context.github.issues.createComment(
       context.repo({
         issue_number: context.payload.issue.number,
         body: `Translated title:

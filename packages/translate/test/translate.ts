@@ -61,9 +61,62 @@ describe('Translate', () => {
     it('translates an issue', async () => {
       const requests = nock('https://api.github.com')
         .get('/repos/chingor13/java-test/contents/.github/translate.yml')
-        .reply(200, { content: '' });
+        .reply(200, { content: '' })
+        .post('/repos/chingor13/java-test/issues/4/comments', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+      const auth = nock('https://oauth2.googleapis.com')
+        .post('/token')
+        .reply(200, {
+          access_token: 'abc',
+          id_token: 'idtoken',
+          refresh_token: 'refresh',
+          expires_in: 60,
+          token_type: 'Bearer',
+        })
+        .post('/token')
+        .reply(200, {
+          access_token: 'abc',
+          id_token: 'idtoken',
+          refresh_token: 'refresh',
+          expires_in: 60,
+          token_type: 'Bearer',
+        });
+      const translate = nock('https://translation.googleapis.com')
+        .post('/language/translate/v2/', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200, {
+          data: {
+            translations: [
+              {
+                translatedText: 'Title',
+                detectedSourceLanguage: 'de',
+              },
+            ],
+          },
+        })
+        .post('/language/translate/v2/', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200, {
+          data: {
+            translations: [
+              {
+                translatedText: 'Body',
+                detectedSourceLanguage: 'de',
+              },
+            ],
+          },
+        });
 
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      auth.done();
+      translate.done();
       requests.done();
     });
   });
