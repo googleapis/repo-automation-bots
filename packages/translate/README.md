@@ -1,30 +1,21 @@
-# Blunderbuss
+# Translate
 
-> A GitHub App built with [Probot](https://github.com/probot/probot) that assigns issues and prs 
-randomly to a specific list of users
+> A GitHub App built with [Probot](https://github.com/probot/probot) that translates issue titles/bodies.
 
 ## Usage
 
-Blunderbuss randomly assigns from a set of users specified in the config file located at 
-`.config/blunderbuss.yml` for each repo. Both fields are currently optional. 
+When a new issue is opened, the translate bot will translate the title and body
+to the configured language and comment on the issue.
 
-```yaml
-assign_issues:
-  - issue_assignee1
-  - issue_assignee2
-assign_prs:
-  - pr_assignee1
-  - pr_assignee2
-```
+### Configuration
 
-Blunderbuss can also be manually triggered by attached a "blunderbuss: assign" label to either and 
-issue or PR.
+To configure the bot, you can create a configuration file:
+`.github/release-please.yml`. The contents of this file allow for the following
+options:
 
-Blunderbuss will not assign issues or PRs to the user who opened them, and will ignore an issue
-if no valid assignees are found. 
-
-For opened/reopened issues or prs, Blunderbuss will not assign a user if the issue already has an
-assignee.
+| Name | Description | Type | Default |
+|----- | ----------- | ---- | ------- |
+| `repoLanguageCode` | The language code to translate to. See [language-codes] for available options | `string` | `en` |
 
 ## Setup
 
@@ -63,5 +54,6 @@ For more, check out the [Contributing Guide](CONTRIBUTING.md).
 
 ## License
 
-Apache 2.0 © 2019 Google Inc.
+Apache 2.0 © 2019 Google LLC
 
+[language-codes]: https://cloud.google.com/translate/docs/languages
