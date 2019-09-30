@@ -25,10 +25,19 @@ steps:
         "serverless-scheduler-proxy/Dockerfile",
         "serverless-scheduler-proxy",
       ]
+  
+  - name: gcr.io/cloud-builders/docker
+    id: "serverless-scheduler-proxy-push"
+    waitFor: ["serverless-scheduler-proxy-builder"]
+    args:
+      [
+        "push",
+         "gcr.io/$PROJECT_ID/serverless-scheduler-proxy",
+      ]
 
   - name: gcr.io/cloud-builders/gcloud
     id: "serverless-scheduler-proxy-deploy"
-    waitFor: ["serverless-scheduler-proxy-builder"]
+    waitFor: ["serverless-scheduler-proxy-push"]
     entrypoint: bash
     args:
       - "-e"
