@@ -25,27 +25,39 @@ steps:
         "serverless-scheduler-proxy/Dockerfile",
         "serverless-scheduler-proxy",
       ]
+  
+  - name: gcr.io/cloud-builders/docker
+    id: "serverless-scheduler-proxy-push"
+    waitFor: ["serverless-scheduler-proxy-builder"]
+    args:
+      [
+        "push",
+         "gcr.io/$PROJECT_ID/serverless-scheduler-proxy",
+      ]
 
   - name: gcr.io/cloud-builders/gcloud
     id: "serverless-scheduler-proxy-deploy"
-    waitFor: ["serverless-scheduler-proxy-builder"]
+    waitFor: ["serverless-scheduler-proxy-push"]
     entrypoint: bash
     args:
       - "-e"
-      - "-c"
-      - |
-        # Deploy a new version
-        ./scripts/serverless-scheduler-proxy-deploy.sh
-
+      - "./scripts/serverless-scheduler-proxy-deploy.sh"
+      - "$PROJECT_ID"
+      - "$_BUCKET" 
+      - "$_KEY_LOCATION" 
+      - "$_KEY_RING" 
+      - "$_REGION"
+    
   - name: gcr.io/cloud-builders/gcloud
     id: "cron-deploy"
     waitFor: ["serverless-scheduler-proxy-deploy"]
     entrypoint: bash
     args:
       - "-e"
-      - "-c"
-      - |
-        #./scripts/cron-deploy.sh
+      - "./scripts/cron-deploy.sh"
+      - "$_SCHEDULER_SERVICE_ACCOUNT_EMAIL" 
+      - "$_FUNCTION_REGION" 
+      - "$_REGION"
 
   - name: gcr.io/cloud-builders/npm
     id: "build"
@@ -53,9 +65,7 @@ steps:
     entrypoint: bash
     args:
       - "-e"
-      - "-c"
-      - |
-        ./scripts/build-functions.sh
+      - "./scripts/build-functions.sh"
 
   - name: gcr.io/cloud-builders/gcloud
     id: "publish-functions"
@@ -63,6 +73,9 @@ steps:
     entrypoint: bash
     args:
       - "-e"
-      - "-c"
-      - |
-        ./scripts/publish-functions.sh
+      - "./scripts/publish-functions.sh" 
+      - "$PROJECT_ID" 
+      - "$_BUCKET" 
+      - "$_KEY_LOCATION" 
+      - "$_KEY_RING" 
+      - "$_FUNCTION_REGION"
