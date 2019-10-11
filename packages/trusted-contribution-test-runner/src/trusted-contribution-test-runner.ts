@@ -31,7 +31,8 @@ type Conclusion =
   | 'action_required'
   | undefined;
 
-const TRUSTED_CONTRIBUTORS = ["renovatebot",]
+// TODO: add this to a configuration file to be extended per repository.
+const TRUSTED_CONTRIBUTORS = ["renovatebot", "release-please"]
 function isTrustedContribution(author:string): boolean {
   return TRUSTED_CONTRIBUTORS.includes(author);
 }
