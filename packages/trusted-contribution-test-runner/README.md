@@ -1,4 +1,4 @@
-# header-checker-lint
+# trusted-contribution-test-runner
 
 > A GitHub App built with [Probot](https://github.com/probot/probot) that ensures source files
 contain a valid license header.
