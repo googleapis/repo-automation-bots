@@ -17,7 +17,8 @@ by Google on GitHub.
 
 ### Create a Proxy to Relay Webhooks
 
-Visit https://smee.io/new and create a proxy for relaying webhooks to your
+In order to forward to your local machine, you can use smee.io. Visit
+https://smee.io/new and create a proxy for relaying webhooks to your
 local web-service.
 
 In the root directory of `repo-automation-bots`, run:
@@ -33,18 +34,40 @@ GitHub application using the probot server:
 
 1. `cd packages/your-bot`.
 1. `npm start`.
-1. visit:  http://localhost:3000
+1. visit:  http://localhost:3000 and install.
+
+### Granting the Development Application permissions and events
+
+1. By default there will be no permissions. Visit
+   https://github.com/settings/installations, click configure, then 'app settings'.
+1. Navigate to Permissions and Events. You likely need 'Repository > Pull Requests'
+   for permissions.
+1. You also will need to subscribe to events (bottom of page). For
+   instance, if your bot responds to PR activity, the 'Events > Pull Request' should
+   be enabled.  
+
+
+### Install the bot on a repo
+
+1. While on https://github.com/settings/apps/{YOUR_APP} navigate to 'Install App',
+   if installed on the organization you desire (likely yourself for testing),
+click the gear.
+1. Under permissions ensure that there aren't pending requests to be approved
+1. Under repository access select only select repositories. Select the
+   repository you wish to test against.
+
 
 ### Running Your Application
 
 Once you've created your application, _and installed it on some of your repos_,
-start probot again, setting the following environment variables:
+start probot again, setting the following environment variables. Most can be found
+at https://github.com/settings/apps/{YOUR_APP}:
 
-* `APP_ID`: the ID, available in GitHub developer settings.
-* `PRIVATE_KEY_PATH`: path to App's private key, download this from developer
-  settings.
-* `PRIVATE_KEY`: private key for application.
-* `WEBHOOK_SECRET`: secret key set in GitHub developer settings.
+* `APP_ID`: the ID, listed near the top, `App ID: 12345`
+* `PRIVATE_KEY_PATH`: path to App's private key, you can request a new one be
+   created and downloaded at the bottom of the page.
+* `PRIVATE_KEY`: private key for application. This is the client secret near the top, `Client secret: a1bc23def4..........5678gh`
+* `WEBHOOK_SECRET`: secret key set in GitHub developer settings. Edit this to a known value in the settings page.
 
 Environment variables set, run:
 
