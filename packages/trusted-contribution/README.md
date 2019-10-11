@@ -1,7 +1,6 @@
-# trusted-contribution-test-runner
+# trusted-contribution
 
-> A GitHub App built with [Probot](https://github.com/probot/probot) that ensures source files
-contain a valid license header.
+> A GitHub App built with [Probot](https://github.com/probot/probot) that will run Kokoro CI if the PR is created by a trusted contributor.
 
 ## Setup
 
@@ -34,7 +33,7 @@ npm run test:snap
 
 ## Contributing
 
-If you have suggestions for how header-checker-lint could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
+If you have suggestions for how trusted-contribution could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
 
 For more, check out the [Contributing Guide](CONTRIBUTING.md).
 

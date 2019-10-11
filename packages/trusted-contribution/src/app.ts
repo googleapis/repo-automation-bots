@@ -15,7 +15,7 @@
  */
 
 import { GCFBootstrapper } from 'gcf-utils';
-import appFn from './trusted-contribution-test-runner';
+import appFn from './trusted-contribution';
 
 const bootstrap = new GCFBootstrapper();
-module.exports.trusted_contribution_test_runner = bootstrap.gcf(appFn);
+module.exports.trusted_contribution = bootstrap.gcf(appFn);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import myProbotApp from '../src/trusted-contribution-test-runner';
+import myProbotApp from '../src/trusted-contribution';
 
 import { resolve } from 'path';
 import { Probot } from 'probot';
