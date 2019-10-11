@@ -47,7 +47,7 @@ export = (app: Application) => {
         labels: ["kokoro:force-run"]
       });
         
-      context.github.issues.addLabels(issuesAddLabelsParams)
+      await context.github.issues.addLabels(issuesAddLabelsParams)
     }
   });
 };
