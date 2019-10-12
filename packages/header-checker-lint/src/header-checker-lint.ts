@@ -77,7 +77,7 @@ class Configuration {
         repo,
         ref,
         path,
-      })).data as {content?: string};
+      })).data as { content?: string };
       const fileContents = Buffer.from(
         response.content || '',
         'base64'
