@@ -32,23 +32,23 @@ type Conclusion =
   | undefined;
 
 // TODO: add this to a configuration file to be extended per repository.
-const TRUSTED_CONTRIBUTORS = ["renovatebot", "release-please"]
-function isTrustedContribution(author:string): boolean {
+const TRUSTED_CONTRIBUTORS = ['renovatebot', 'release-please'];
+function isTrustedContribution(author: string): boolean {
   return TRUSTED_CONTRIBUTORS.includes(author);
 }
 
 export = (app: Application) => {
   app.on('pull_request', async context => {
-    const pr_author = context.payload.pull_request.user.login
+    const PR_AUTHOR = context.payload.pull_request.user.login;
 
     // TODO: add additional verification that only dependency version changes occurred.
-    if(isTrustedContribution(pr_author)){
+    if (isTrustedContribution(PR_AUTHOR)) {
       const issuesAddLabelsParams = context.repo({
         issue_number: context.payload.pull_request.number,
-        labels: ["kokoro:force-run"]
+        labels: ['kokoro:force-run'],
       });
-        
-      await context.github.issues.addLabels(issuesAddLabelsParams)
+
+      await context.github.issues.addLabels(issuesAddLabelsParams);
     }
   });
 };

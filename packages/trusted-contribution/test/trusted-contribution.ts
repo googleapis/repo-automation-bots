@@ -59,9 +59,12 @@ describe('TrustedContributionTestRunner', () => {
 
     it('sets a label on PR, if PR author is a trusted contributor', async () => {
       const requests = nock('https://api.github.com')
-        .post('/repos/chingor13/google-auth-library-java/issues/3/labels', (body: object) => {
-          return true
-        })
+        .post(
+          '/repos/chingor13/google-auth-library-java/issues/3/labels',
+          (body: object) => {
+            return true;
+          }
+        )
         .reply(200);
 
       await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
@@ -69,11 +72,11 @@ describe('TrustedContributionTestRunner', () => {
     });
 
     it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
-      payload.pull_request.user.login = "notauthorized"
+      payload.pull_request.user.login = 'notauthorized';
       const requests = nock('https://api.github.com');
       await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
       requests.done();
-    });    
+    });
   });
 
   describe('updated pull request', () => {
@@ -86,9 +89,12 @@ describe('TrustedContributionTestRunner', () => {
     // TODO: repeat other tests
     it('sets a label on PR, if PR author is a trusted contributor', async () => {
       const requests = nock('https://api.github.com')
-        .post('/repos/chingor13/google-auth-library-java/issues/3/labels', (body: object) => {
-          return true
-        })
+        .post(
+          '/repos/chingor13/google-auth-library-java/issues/3/labels',
+          (body: object) => {
+            return true;
+          }
+        )
         .reply(200);
 
       await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
@@ -96,10 +102,10 @@ describe('TrustedContributionTestRunner', () => {
     });
 
     it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
-      payload.pull_request.user.login = "notauthorized"
+      payload.pull_request.user.login = 'notauthorized';
       const requests = nock('https://api.github.com');
       await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
       requests.done();
-    });   
+    });
   });
 });
