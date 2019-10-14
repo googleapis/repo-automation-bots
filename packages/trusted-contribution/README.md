@@ -12,6 +12,20 @@ npm install
 npm start
 ```
 
+## Deployment and Permissions
+### Repository permissions
+- metadata - read
+- pull requests - read & write
+
+### Organization permissions
+- None
+
+### User permissions
+- None
+
+## Subscribe to events
+- pull request
+
 ## Testing
 
 This bot uses [nock](https://www.npmjs.com/package/nock) for mocking requests
