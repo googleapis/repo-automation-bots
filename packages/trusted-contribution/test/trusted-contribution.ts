@@ -83,10 +83,9 @@ describe('TrustedContributionTestRunner', () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
 
     before(() => {
-      payload = require(resolve(fixturesPath, './pull_request_synchronized'));
+      payload = require(resolve(fixturesPath, './pull_request_edited'));
     });
 
-    // TODO: repeat other tests
     it('sets a label on PR, if PR author is a trusted contributor', async () => {
       const requests = nock('https://api.github.com')
         .post(
