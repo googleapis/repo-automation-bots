@@ -38,17 +38,20 @@ function isTrustedContribution(author: string): boolean {
 }
 
 export = (app: Application) => {
-  app.on('pull_request', async context => {
-    const PR_AUTHOR = context.payload.pull_request.user.login;
+  app.on(
+    ['pull_request.opened', 'pull_request.edited', 'pull_request.synchronized'],
+    async context => {
+      const PR_AUTHOR = context.payload.pull_request.user.login;
 
-    // TODO: add additional verification that only dependency version changes occurred.
-    if (isTrustedContribution(PR_AUTHOR)) {
-      const issuesAddLabelsParams = context.repo({
-        issue_number: context.payload.pull_request.number,
-        labels: ['kokoro:force-run'],
-      });
+      // TODO: add additional verification that only dependency version changes occurred.
+      if (isTrustedContribution(PR_AUTHOR)) {
+        const issuesAddLabelsParams = context.repo({
+          issue_number: context.payload.pull_request.number,
+          labels: ['kokoro:force-run'],
+        });
 
-      await context.github.issues.addLabels(issuesAddLabelsParams);
+        await context.github.issues.addLabels(issuesAddLabelsParams);
+      }
     }
-  });
+  );
 };
