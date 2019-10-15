@@ -38,7 +38,7 @@ function isTrustedContribution(author: string): boolean {
 }
 
 export = (app: Application) => {
-  app.on(['pull_request.opened', 'pull_request.edited'], async context => {
+  app.on(['pull_request.opened', 'pull_request.edited', 'pull_request.synchronized'], async context => {
     const PR_AUTHOR = context.payload.pull_request.user.login;
 
     // TODO: add additional verification that only dependency version changes occurred.
