@@ -32,7 +32,7 @@ type Conclusion =
   | undefined;
 
 // TODO: add this to a configuration file to be extended per repository.
-const TRUSTED_CONTRIBUTORS = ['renovatebot', 'release-please'];
+const TRUSTED_CONTRIBUTORS = ['renovate-bot', 'release-please[bot]'];
 function isTrustedContribution(author: string): boolean {
   return TRUSTED_CONTRIBUTORS.includes(author);
 }
