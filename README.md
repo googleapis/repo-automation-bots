@@ -96,4 +96,4 @@ at the specified schedule.
 [release-please]:  https://github.com/googleapis/repo-automation-bots/tree/master/packages/release-please
 [release-please-app]: https://github.com/apps/release-please
 [trusted-contribution]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/trusted-contribution
-[trusted-contribution]: https://github.com/apps/trusted-contributions-gcf
+[trusted-contribution-app]: https://github.com/apps/trusted-contributions-gcf
