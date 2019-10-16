@@ -66,10 +66,8 @@ export class GCFBootstrapper {
       process.env.GCF_SHORT_FUNCTION_NAME || ''
     );
 
-    const ciphertext = contentsBuffer.toString('base64');
-
     // Decrypts the file using the specified crypto key
-    const [result] = await kmsclient.decrypt({ name, ciphertext });
+    const [result] = await kmsclient.decrypt({name, ciphertext: contentsBuffer });
 
     const config = JSON.parse(result.plaintext.toString());
     return config as Options;
