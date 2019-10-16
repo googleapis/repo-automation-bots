@@ -83,7 +83,7 @@ describe('TrustedContributionTestRunner', () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
 
     before(() => {
-      payload = require(resolve(fixturesPath, './pull_request_edited'));
+      payload = require(resolve(fixturesPath, './pull_request_synchronized'));
     });
 
     it('sets a label on PR, if PR author is a trusted contributor', async () => {
