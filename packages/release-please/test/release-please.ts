@@ -121,6 +121,28 @@ describe('ReleasePleaseBot', () => {
       assert(executed, 'should have executed the runner');
     });
 
+    it('should allow overriding the package-name from configuration', async () => {
+      let executed = false;
+      Runner.runner = (pr: ReleasePR) => {
+        assert.deepStrictEqual(pr.packageName, '@google-cloud/foo');
+        executed = true;
+      };
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'ruby_release_alternate_pkg_name.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+        )
+        .reply(200, {
+          content: Object.assign(config),
+        });
+
+      await probot.receive({ name: 'push', payload, id: 'abc123' });
+      requests.done();
+      assert(executed, 'should have executed the runner');
+    });
+
     it('should allow overriding the release tags from configuration', async () => {
       let executed = false;
       Runner.runner = (pr: ReleasePR) => {
