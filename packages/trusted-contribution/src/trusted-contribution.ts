@@ -47,7 +47,7 @@ export = (app: Application) => {
       if (isTrustedContribution(PR_AUTHOR)) {
         const issuesAddLabelsParams = context.repo({
           issue_number: context.payload.pull_request.number,
-          labels: ['kokoro:force-run'],
+          labels: ['kokoro:run'],
         });
 
         await context.github.issues.addLabels(issuesAddLabelsParams);
