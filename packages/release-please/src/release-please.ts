@@ -27,6 +27,7 @@ interface ConfigurationOptions {
   primaryBranch: string;
   releaseLabels?: string[];
   releaseType?: ReleaseType;
+  packageName?: string;
 }
 
 const DEFAULT_API_URL = 'https://api.github.com';
@@ -56,13 +57,13 @@ function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
 
 function runReleasePlease(
   releaseType: ReleaseType,
-  repoName: string,
+  packageName: string,
   repoUrl: string,
   github: GitHubAPI,
   releaseLabels?: string[]
 ) {
   const buildOptions: BuildOptions = {
-    packageName: repoName,
+    packageName,
     repoUrl,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
@@ -84,9 +85,9 @@ export = (app: Application) => {
     const branch = context.payload.ref.replace('refs/heads/', '');
     const repoName = context.payload.repository.name;
 
-    const remoteConfiguration = await context.config(
+    const remoteConfiguration: ConfigurationOptions | null = (await context.config(
       WELL_KNOWN_CONFIGURATION_FILE
-    );
+    )) as (ConfigurationOptions | null);
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
@@ -110,9 +111,12 @@ export = (app: Application) => {
       ? configuration.releaseType
       : releaseTypeFromRepoLanguage(context.payload.repository.language);
 
+    app.log.info(`push (${repoUrl})`);
+
+    // TODO: this should be refactored into an interface.
     runReleasePlease(
       releaseType,
-      repoName,
+      configuration.packageName || repoName,
       repoUrl,
       context.github,
       configuration.releaseLabels
@@ -129,9 +133,9 @@ export = (app: Application) => {
     const repoUrl = context.payload.repository.full_name;
     const repoName = context.payload.repository.name;
 
-    const remoteConfiguration = await context.config(
+    const remoteConfiguration = (await context.config(
       WELL_KNOWN_CONFIGURATION_FILE
-    );
+    )) as (ConfigurationOptions | null);
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
@@ -144,12 +148,16 @@ export = (app: Application) => {
       ...remoteConfiguration,
     };
 
+    app.log.info(`release.published (${repoUrl})`);
+
     const releaseType = configuration.releaseType
       ? configuration.releaseType
       : releaseTypeFromRepoLanguage(context.payload.repository.language);
+
+    // TODO: this should be refactored into an interface.
     runReleasePlease(
       releaseType,
-      repoName,
+      configuration.packageName || repoName,
       repoUrl,
       context.github,
       configuration.releaseLabels
