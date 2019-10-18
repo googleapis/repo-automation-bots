@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "gcf-utils": "^1.0.0",
-    "probot": "9.4.0",
+    "probot": "9.5.3",
     "release-please": "^2.11.0"
   },
   "devDependencies": {
