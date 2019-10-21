@@ -39,7 +39,11 @@ function isTrustedContribution(author: string): boolean {
 
 export = (app: Application) => {
   app.on(
-    ['pull_request.opened', 'pull_request.synchronized'],
+    [
+      'pull_request.opened',
+      'pull_request.reopened',
+      'pull_request.synchronized',
+    ],
     async context => {
       const PR_AUTHOR = context.payload.pull_request.user.login;
 
