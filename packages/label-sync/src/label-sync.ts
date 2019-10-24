@@ -64,12 +64,10 @@ export = (app: Application) => {
     'label.deleted',
   ];
 
-  events.forEach(evt =>
-    app.on(evt, async c => {
-      const { owner, repo } = c.repo();
-      await reconcileLabels(c.github, owner, repo);
-    })
-  );
+  app.on(events, async c => {
+    const { owner, repo } = c.repo();
+    await reconcileLabels(c.github, owner, repo);
+  });
 
   app.on('push', async context => {
     const { owner, repo } = context.repo();
