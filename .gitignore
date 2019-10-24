@@ -3,6 +3,5 @@ build
 node_modules
 coverage
 tmp
-package-lock.json
 .env
 __pycache__/*
