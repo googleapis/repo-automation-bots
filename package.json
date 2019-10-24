@@ -14,7 +14,7 @@
     "release": "lerna publish --conventional-commits"
   },
   "devDependencies": {
-    "c8": "^5.0.1",
+    "c8": "^6.0.0",
     "lerna": "^3.16.4",
     "smee-client": "^1.1.0"
   }
