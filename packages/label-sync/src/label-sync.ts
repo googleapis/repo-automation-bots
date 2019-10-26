@@ -79,11 +79,13 @@ export = (app: Application) => {
     ) {
       await refreshLabels();
       // TODO: Use the GitHub installations API to retreive this list
-      const url = 'https://github.com/googleapis/sloth/blob/master/repos.json';
+      const url =
+        'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
       const res = await request<Repos>({ url });
       const { repos } = res.data;
       await Promise.all(
         repos.map(r => {
+          const [owner, repo] = r.repo.split('/');
           return reconcileLabels(context.github, owner, repo);
         })
       );
@@ -92,6 +94,7 @@ export = (app: Application) => {
 };
 
 async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
+  const newLabels = await getLabels();
   const res = await github.issues.listLabelsForRepo({
     owner,
     repo,
@@ -99,7 +102,6 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
   });
   const oldLabels = res.data;
   const promises = new Array<Promise<unknown>>();
-  const newLabels = await getLabels();
   newLabels.labels.forEach(l => {
     // try to find a label with the same name
     const match = oldLabels.find(
@@ -122,6 +124,7 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
           })
           .catch(e => {
             console.error(`Error updating label ${l.name} in ${owner}/${repo}`);
+            console.error(e.stack);
           });
         promises.push(p);
       }
@@ -138,6 +141,7 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
         })
         .catch(e => {
           console.error(`Error creating label ${l.name} in ${owner}/${repo}`);
+          console.error(e.stack);
         });
       promises.push(p);
     }
