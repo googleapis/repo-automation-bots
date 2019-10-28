@@ -52,7 +52,7 @@ for f in *; do
                     gcloud beta scheduler jobs create http "$functionname" \
                             --schedule "$schedule" \
                             --http-method=POST \
-                            --uri="$proxyurl" \
+                            --uri="$proxyurl/v0/cron" \
                             --oidc-service-account-email="$SCHEDULER_SERVICE_ACCOUNT_EMAIL" \
                             --oidc-token-audience="$proxyurl" \
                             --message-body="{\"Name\": \"$(functionname)\", \"Type\" : \"function\", \"Location\": \"$FUNCTION_REGION\"}" \
