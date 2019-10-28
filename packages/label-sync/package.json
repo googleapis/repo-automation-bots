@@ -1,0 +1,53 @@
+{
+  "name": "label-sync",
+  "version": "1.0.0",
+  "description": "Synchronize a list of labels with GitHub issues.",
+  "private": true,
+  "author": "Google Inc.",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "main": "build/src/app.js",
+  "keywords": [
+    "probot",
+    "github",
+    "probot-app"
+  ],
+  "scripts": {
+    "compile": "tsc -p .",
+    "start": "probot run ./build/src/label-sync.js",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --timeout=15000 --recursive ./build/test",
+    "fix": "gts fix",
+    "lint": "gts check"
+  },
+  "dependencies": {
+    "@octokit/rest": "^16.34.0",
+    "gaxios": "^2.1.0",
+    "gcf-utils": "^1.0.0",
+    "probot": "9.4.0"
+  },
+  "devDependencies": {
+    "@types/bunyan": "^1.8.6",
+    "@types/chai": "^4.2.4",
+    "@types/express": "^4.17.1",
+    "@types/ioredis": "^4.0.18",
+    "@types/lru-cache": "^5.1.0",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.11.6",
+    "c8": "^6.0.0",
+    "chai": "^4.2.0",
+    "cross-env": "^6.0.3",
+    "gts": "^1.1.0",
+    "mocha": "^6.2.2",
+    "nock": "^11.5.0",
+    "snap-shot-it": "^7.9.0",
+    "source-map-support": "^0.5.13",
+    "typescript": "^3.6.4"
+  },
+  "engines": {
+    "node": ">= 10.13.0"
+  }
+}
