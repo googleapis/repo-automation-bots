@@ -60,8 +60,7 @@ function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
   }
 }
 
-// creates or updates the evergreen release-please
-// release PR.
+// creates or updates the evergreen release-please release PR.
 function createReleasePR(
   releaseType: ReleaseType,
   packageName: string,
@@ -87,8 +86,6 @@ function createReleasePR(
 }
 
 // turn a merged release-please release PR into a GitHub release.
-// creates or updates the evergreen release-please
-// release PR.
 function createGitHubRelease(
   packageName: string,
   repoUrl: string,
