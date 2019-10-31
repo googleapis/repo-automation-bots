@@ -47,7 +47,7 @@ function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
   }
   switch (language.toLowerCase()) {
     case 'ruby':
-      return ReleaseType.RubyYoshi;
+      return ReleaseType.Ruby;
     case 'java':
       return ReleaseType.JavaYoshi;
     case 'typescript':
