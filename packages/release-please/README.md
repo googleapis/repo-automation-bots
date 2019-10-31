@@ -24,6 +24,7 @@ options:
 | `primaryBranch` | The primary branch from which releases are started | `string` | `master` |
 | `releaseLabels` | List of labels to add to the release PR. | `string[]` | `null` | `undefined` |
 | `releaseType` | Release strategy | `string` | strategy detected from the repository's primary language |
+| `handleGHRelease` | Release to GitHub | `boolean` | should release please create a GitHub release, when release pull-requests are merged? |
 
 ## Testing
 
