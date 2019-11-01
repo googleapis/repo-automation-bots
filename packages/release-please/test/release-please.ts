@@ -27,7 +27,7 @@ import assert, { fail } from 'assert';
 import { GitHubRelease } from 'release-please/build/src/github-release';
 import { ReleasePR } from 'release-please/build/src/release-pr';
 import { JavaYoshi } from 'release-please/build/src/releasers/java-yoshi';
-import { RubyYoshi } from 'release-please/build/src/releasers/ruby-yoshi';
+import { Ruby } from 'release-please/build/src/releasers/ruby';
 
 nock.disableNetConnect();
 
@@ -131,7 +131,7 @@ describe('ReleasePleaseBot', () => {
     it('should allow overriding the release strategy from configuration', async () => {
       let executed = false;
       Runner.runner = (pr: ReleasePR) => {
-        assert(pr instanceof RubyYoshi);
+        assert(pr instanceof Ruby);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -282,7 +282,7 @@ describe('ReleasePleaseBot', () => {
     it('should try to create a snapshot', async () => {
       let executed = false;
       Runner.runner = (pr: ReleasePR) => {
-        assert(pr instanceof RubyYoshi);
+        assert(pr instanceof Ruby);
         executed = true;
       };
       const config = fs.readFileSync(
