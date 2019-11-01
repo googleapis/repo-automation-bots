@@ -24,9 +24,10 @@ import Webhooks from '@octokit/webhooks';
 import nock from 'nock';
 import * as fs from 'fs';
 import assert, { fail } from 'assert';
+import { GitHubRelease } from 'release-please/build/src/github-release';
 import { ReleasePR } from 'release-please/build/src/release-pr';
 import { JavaYoshi } from 'release-please/build/src/releasers/java-yoshi';
-import { RubyYoshi } from 'release-please/build/src/releasers/ruby-yoshi';
+import { Ruby } from 'release-please/build/src/releasers/ruby';
 
 nock.disableNetConnect();
 
@@ -84,6 +85,32 @@ describe('ReleasePleaseBot', () => {
       assert(executed, 'should have executed the runner');
     });
 
+    it('should handle GitHub releases, if configured', async () => {
+      let runnerExecuted = false;
+      let releaserExecuted = false;
+      Runner.runner = (pr: ReleasePR) => {
+        assert(pr instanceof JavaYoshi);
+        runnerExecuted = true;
+      };
+      Runner.releaser = (pr: GitHubRelease) => {
+        assert(pr instanceof GitHubRelease);
+        releaserExecuted = true;
+      };
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'valid_handle_gh_release.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+        )
+        .reply(200, { content: config });
+
+      await probot.receive({ name: 'push', payload, id: 'abc123' });
+      requests.done();
+      assert(runnerExecuted, 'should have executed the runner');
+      assert(releaserExecuted, 'GitHub release should have run');
+    });
+
     it('should ignore if the branch is the configured primary branch', async () => {
       Runner.runner = (pr: ReleasePR) => {
         fail('should not be running a release');
@@ -104,7 +131,7 @@ describe('ReleasePleaseBot', () => {
     it('should allow overriding the release strategy from configuration', async () => {
       let executed = false;
       Runner.runner = (pr: ReleasePR) => {
-        assert(pr instanceof RubyYoshi);
+        assert(pr instanceof Ruby);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -255,7 +282,7 @@ describe('ReleasePleaseBot', () => {
     it('should try to create a snapshot', async () => {
       let executed = false;
       Runner.runner = (pr: ReleasePR) => {
-        assert(pr instanceof RubyYoshi);
+        assert(pr instanceof Ruby);
         executed = true;
       };
       const config = fs.readFileSync(

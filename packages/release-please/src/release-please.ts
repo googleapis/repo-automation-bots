@@ -20,6 +20,10 @@ import { Application } from 'probot';
 // See https://github.com/googleapis/release-please/issues/249
 import { ReleaseType, BuildOptions } from 'release-please/build/src/release-pr';
 import { ReleasePRFactory } from 'release-please/build/src/release-pr-factory';
+import {
+  GitHubRelease,
+  GitHubReleaseOptions,
+} from 'release-please/build/src/github-release';
 import { Runner } from './runner';
 import { GitHubAPI } from 'probot/lib/github';
 
@@ -28,6 +32,7 @@ interface ConfigurationOptions {
   releaseLabels?: string[];
   releaseType?: ReleaseType;
   packageName?: string;
+  handleGHRelease?: boolean;
 }
 
 const DEFAULT_API_URL = 'https://api.github.com';
@@ -42,7 +47,7 @@ function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
   }
   switch (language.toLowerCase()) {
     case 'ruby':
-      return ReleaseType.RubyYoshi;
+      return ReleaseType.Ruby;
     case 'java':
       return ReleaseType.JavaYoshi;
     case 'typescript':
@@ -55,7 +60,8 @@ function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
   }
 }
 
-function runReleasePlease(
+// creates or updates the evergreen release-please release PR.
+function createReleasePR(
   releaseType: ReleaseType,
   packageName: string,
   repoUrl: string,
@@ -77,6 +83,27 @@ function runReleasePlease(
   }
 
   Runner.runner(ReleasePRFactory.build(releaseType, buildOptions));
+}
+
+// turn a merged release-please release PR into a GitHub release.
+function createGitHubRelease(
+  packageName: string,
+  repoUrl: string,
+  github: GitHubAPI
+) {
+  const releaseOptions: GitHubReleaseOptions = {
+    label: 'autorelease: pending',
+    repoUrl,
+    packageName,
+    apiUrl: DEFAULT_API_URL,
+    octokitAPIs: {
+      octokit: github,
+      graphql: github.graphql,
+      request: github.request,
+    },
+  };
+  const ghr = new GitHubRelease(releaseOptions);
+  Runner.releaser(ghr);
 }
 
 export = (app: Application) => {
@@ -114,13 +141,24 @@ export = (app: Application) => {
     app.log.info(`push (${repoUrl})`);
 
     // TODO: this should be refactored into an interface.
-    runReleasePlease(
+    createReleasePR(
       releaseType,
       configuration.packageName || repoName,
       repoUrl,
       context.github,
       configuration.releaseLabels
     );
+
+    // release-please can handle creating a release on GitHub, we opt not to do
+    // this for our repos that have autorelease enabled.
+    if (configuration.handleGHRelease) {
+      app.log.info(`handling GitHub release for (${repoUrl})`);
+      createGitHubRelease(
+        configuration.packageName || repoName,
+        repoUrl,
+        context.github
+      );
+    }
   });
 
   app.on('release.published', async context => {
@@ -155,7 +193,7 @@ export = (app: Application) => {
       : releaseTypeFromRepoLanguage(context.payload.repository.language);
 
     // TODO: this should be refactored into an interface.
-    runReleasePlease(
+    createReleasePR(
       releaseType,
       configuration.packageName || repoName,
       repoUrl,
