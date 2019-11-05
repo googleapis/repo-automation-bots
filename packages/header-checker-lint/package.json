@@ -28,7 +28,7 @@
   "dependencies": {
     "gcf-utils": "^1.0.0",
     "minimatch": "^3.0.4",
-    "probot": "9.4.0"
+    "probot": "9.6.4"
   },
   "devDependencies": {
     "@types/bunyan": "^1.8.6",
