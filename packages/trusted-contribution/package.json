@@ -1,6 +1,6 @@
 {
   "name": "trusted-contribution",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "For trusted contribution source trigger Kokoro to begin CI",
   "private": true,
   "author": "Google Inc.",
@@ -27,8 +27,8 @@
   },
   "dependencies": {
     "@octokit/rest": "^16.28.3",
-    "gcf-utils": "^1.0.0",
-    "probot": "9.4.0"
+    "gcf-utils": "1.1.0",
+    "probot": "9.6.4"
   },
   "devDependencies": {
     "@types/bunyan": "^1.8.6",
