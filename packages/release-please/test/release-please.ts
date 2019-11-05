@@ -78,7 +78,7 @@ describe('ReleasePleaseBot', () => {
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
         )
-        .reply(200, { content: config });
+        .reply(200, { content: config.toString('base64') })
 
       await probot.receive({ name: 'push', payload, id: 'abc123' });
       requests.done();
@@ -103,7 +103,7 @@ describe('ReleasePleaseBot', () => {
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
         )
-        .reply(200, { content: config });
+        .reply(200, { content: config.toString('base64') })
 
       await probot.receive({ name: 'push', payload, id: 'abc123' });
       requests.done();
@@ -122,7 +122,7 @@ describe('ReleasePleaseBot', () => {
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
         )
-        .reply(200, { content: config });
+        .reply(200, { content: config.toString('base64') })
 
       await probot.receive({ name: 'push', payload, id: 'abc123' });
       requests.done();
@@ -141,7 +141,7 @@ describe('ReleasePleaseBot', () => {
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
         )
-        .reply(200, { content: config });
+        .reply(200, { content: config.toString('base64') })
 
       await probot.receive({ name: 'push', payload, id: 'abc123' });
       requests.done();
@@ -161,9 +161,7 @@ describe('ReleasePleaseBot', () => {
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
         )
-        .reply(200, {
-          content: Object.assign(config),
-        });
+        .reply(200, { content: config.toString('base64') })
 
       await probot.receive({ name: 'push', payload, id: 'abc123' });
       requests.done();
@@ -183,7 +181,7 @@ describe('ReleasePleaseBot', () => {
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
         )
-        .reply(200, { content: config });
+        .reply(200, { content: config.toString('base64') })
 
       await probot.receive({ name: 'push', payload, id: 'abc123' });
       requests.done();
@@ -219,7 +217,7 @@ describe('ReleasePleaseBot', () => {
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
         )
-        .reply(200, { content: '' });
+        .reply(200, { content: Buffer.from('').toString('base64') });
 
       await probot.receive({ name: 'push', payload, id: 'abc123' });
       requests.done();
@@ -245,7 +243,7 @@ describe('ReleasePleaseBot', () => {
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
         )
-        .reply(200, { content: config });
+        .reply(200, { content: config.toString('base64') })
 
       await probot.receive({ name: 'push', payload, id: 'abc123' });
       requests.done();
@@ -264,7 +262,7 @@ describe('ReleasePleaseBot', () => {
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
         )
-        .reply(200, { content: config });
+        .reply(200, { content: config.toString('base64') })
 
       await probot.receive({ name: 'push', payload, id: 'abc123' });
       requests.done();
@@ -292,7 +290,7 @@ describe('ReleasePleaseBot', () => {
         .get(
           '/repos/Codertocat/Hello-World/contents/.github/release-please.yml'
         )
-        .reply(200, { content: config });
+        .reply(200, { content: config.toString('base64') })
 
       await probot.receive({
         name: 'release.published',

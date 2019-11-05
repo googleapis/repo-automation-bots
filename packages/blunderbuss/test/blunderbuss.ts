@@ -84,10 +84,8 @@ describe('Blunderbuss', () => {
       );
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/.github/contents/.github/blunderbuss.yml')
-        .reply(404)
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, { content: config });
+        .reply(200, { content: config.toString('base64') })
 
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
       requests.done();
