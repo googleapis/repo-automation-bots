@@ -53,6 +53,7 @@
   "dependencies": {
     "@google-cloud/kms": "^1.1.1",
     "@google-cloud/storage": "^4.0.0",
+    "@octokit/plugin-enterprise-compatibility": "1.1.1",
     "js-base64": "^2.5.1",
     "probot": "9.6.4",
     "tmp": "^0.1.0",
