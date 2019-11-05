@@ -28,7 +28,7 @@
   "dependencies": {
     "gcf-utils": "1.1.0",
     "probot": "9.6.4",
-    "release-please": "^2.14.0"
+    "release-please": "^2.15.0"
   },
   "devDependencies": {
     "@types/bunyan": "^1.8.6",
