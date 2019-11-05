@@ -11,7 +11,8 @@
     "docs-test": "echo 'not yet implemented'",
     "system-test": "echo 'not yet implemented'",
     "proxy": "smee",
-    "release": "lerna publish --conventional-commits"
+    "release": "lerna publish --conventional-commits",
+    "generate-bot": "./packages/generate-bot/run.js"
   },
   "devDependencies": {
     "c8": "^6.0.0",

@@ -1,0 +1,43 @@
+{
+  "name": "generate-bot",
+  "version": "1.0.0",
+  "description": "generate new repo-automation-bots 🤖",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "lint": "eslint .",
+    "fix": "eslint . --fix",
+    "test": "mocha test/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/sofisl/generate-bot.git"
+  },
+  "keywords": [
+    "robot",
+    "generator"
+  ],
+  "author": "Sofia Leon",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/sofisl/generate-bot/issues"
+  },
+  "homepage": "https://github.com/sofisl/generate-bot#readme",
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "eslint": "^6.6.0",
+    "eslint-config-prettier": "^6.5.0",
+    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-prettier": "^3.1.1",
+    "mocha": "^6.2.2",
+    "prettier": "^1.18.2",
+    "rimraf": "^3.0.0",
+    "recursive-readdir": "^2.2.2",
+    "snap-shot": "^2.17.0"
+  },
+  "dependencies": {
+    "enquirer": "^2.3.2",
+    "expect": "^24.9.0",
+    "handlebars": "^4.5.1"
+  }
+}
