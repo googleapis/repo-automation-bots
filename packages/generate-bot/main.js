@@ -25,7 +25,7 @@ exports.checkValidity = function(testString) {
     );
   }
 
- if (testString.programName.charAt(0) == testString.programName.charAt(0).toUpperCase()) {
+ if (testString.programName && testString.programName.charAt(0) == testString.programName.charAt(0).toUpperCase()) {
         testString.programName = testString.programName.toLowerCase();
  }
 

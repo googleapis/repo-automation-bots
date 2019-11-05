@@ -19,7 +19,7 @@ describe("file structure", () => {
     });
     console.log("OG " + originalStack);
     console.log("CS " + createdStack);
-    expect(originalStack).to.eql(createdStack);
+    expect(originalStack).to.have.members(createdStack);
   });
 
   afterEach(() => {
@@ -58,14 +58,29 @@ describe("user input", () => {
     const nullTest = GenerateBot.checkValidity({
       programName: null,
       description: "pass",
-      fileLocation: null
+      fileLocation: "../pass"
     });
     const integerTest = GenerateBot.checkValidity({
       programName: "pass",
       description: "d3oesN0tP4SS",
       fileLocation: "pass"
     });
-    if (!hyphenTest && !nullTest && !integerTest) {
+
+    let programNameToLower = {
+      programName: "PassButMakeLowerCase",
+      description: "pass",
+      fileLocation: "pass"
+    }
+    GenerateBot.checkValidity(programNameToLower);
+
+    let fileLocationDefault = {
+      programName: "pass",
+      description: "pass",
+      fileLocation: null,
+    }
+    GenerateBot.checkValidity(fileLocationDefault);
+
+    if (!hyphenTest && !nullTest && !integerTest && (programNameToLower.programName == 'passbutmakelowercase' ) && (fileLocationDefault.fileLocation == '../pass')) {
       validityWorkingWell = true;
     } else {
       validityWorkingWell = false;
