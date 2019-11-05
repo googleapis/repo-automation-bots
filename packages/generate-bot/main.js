@@ -2,6 +2,7 @@ const { prompt } = require("enquirer");
 const Handlebars = require("handlebars");
 const fs = require("fs");
 const path = require("path");
+const process = require("process");
 
 exports.checkValidity = function(testString) {
   let isValid = true;
@@ -17,13 +18,21 @@ exports.checkValidity = function(testString) {
     }
   }
 
-  if (isValid && (!testString.programName || !testString.fileLocation)) {
+  if (isValid && !testString.programName) {
     isValid = false;
     console.log(
-      "You forgot to name your program and/or your file location. Please try again."
+      "You forgot to name your program. Please try again."
     );
   }
 
+ if (testString.programName.charAt(0) == testString.programName.charAt(0).toUpperCase()) {
+        testString.programName = testString.programName.toLowerCase();
+ }
+
+ if (!testString.fileLocation) {
+	testString.fileLocation = `../${testString.programName}`
+}
+ 
   console.log(testString);
   return isValid;
 };
@@ -46,16 +55,17 @@ exports.collectUserInput = async function() {
       {
         type: "input",
         name: "fileLocation",
-        message:
-          "What path do you want to save this in (relative to /generate-bot)?"
+        message: `This package will be saved at /packages/yourProgramName unless you specify another location and name here relative to ${process.cwd()} : `
       }
     ]);
 
     isValid = exports.checkValidity(input);
-  }
 
-  console.log(await input);
-  return await input;
+};
+
+  
+  console.log(input);
+  return input;
 };
 
 exports.creatingBotFiles = function(dirname, data) {
