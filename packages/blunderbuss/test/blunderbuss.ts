@@ -60,10 +60,9 @@ describe('Blunderbuss', () => {
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
-
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, { content: config })
+        .reply(200, { content: config.toString('base64') })
         .post('/repos/testOwner/testRepo/issues/5/assignees', body => {
           snapshot(body);
           return true;
@@ -85,6 +84,8 @@ describe('Blunderbuss', () => {
       );
 
       const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/.github/contents/.github/blunderbuss.yml')
+        .reply(404)
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
         .reply(200, { content: config });
 
@@ -104,7 +105,7 @@ describe('Blunderbuss', () => {
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, { content: config });
+        .reply(200, { content: config.toString('base64') });
 
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
       requests.done();
@@ -122,7 +123,7 @@ describe('Blunderbuss', () => {
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, { content: config })
+        .reply(200, { content: config.toString('base64') })
         .delete(
           '/repos/testOwner/testRepo/issues/4/labels/' +
             encodeURI('blunderbuss: assign')
@@ -150,7 +151,7 @@ describe('Blunderbuss', () => {
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, { content: config });
+        .reply(200, { content: config.toString('base64') });
 
       await probot.receive({ name: 'issues.labeled', payload, id: 'abc123' });
       requests.done();
@@ -164,10 +165,10 @@ describe('Blunderbuss', () => {
       ));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(404, {})
         // This second stub is required as octokit does a second attempt on a different endpoint
         .get('/repos/testOwner/.github/contents/.github/blunderbuss.yml')
+        .reply(404, {})
+        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
         .reply(404, {});
       await probot.receive({ name: 'issues.labeled', payload, id: 'abc123' });
       requests.done();
@@ -187,7 +188,7 @@ describe('Blunderbuss', () => {
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, { content: config })
+        .reply(200, { content: config.toString('base64') })
         .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
           snapshot(body);
           return true;
@@ -214,7 +215,7 @@ describe('Blunderbuss', () => {
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, { content: config });
+        .reply(200, { content: config.toString('base64') });
 
       await probot.receive({
         name: 'pull_request.opened',
@@ -236,7 +237,7 @@ describe('Blunderbuss', () => {
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, { content: config });
+        .reply(200, { content: config.toString('base64') });
 
       await probot.receive({
         name: 'pull_request.opened',
@@ -258,7 +259,7 @@ describe('Blunderbuss', () => {
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, { content: config })
+        .reply(200, { content: config.toString('base64') })
         .delete(
           '/repos/testOwner/testRepo/issues/6/labels/' +
             encodeURI('blunderbuss: assign')
@@ -274,7 +275,7 @@ describe('Blunderbuss', () => {
       requests.done();
     });
 
-    it('ignores issue when wrong label', async () => {
+    it('ignores pr when wrong label', async () => {
       const payload = require(resolve(
         fixturesPath,
         'events',
@@ -286,7 +287,7 @@ describe('Blunderbuss', () => {
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, { content: config });
+        .reply(200, { content: config.toString('base64') });
 
       await probot.receive({
         name: 'pull_request.labeled',
@@ -306,9 +307,9 @@ describe('Blunderbuss', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
         .reply(404, {})
-        // This second stub is required as octokit does a second attempt on a different endpoint
         .get('/repos/testOwner/.github/contents/.github/blunderbuss.yml')
         .reply(404, {});
+
 
       await probot.receive({
         name: 'pull_request.labeled',
