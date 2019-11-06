@@ -1,4 +1,4 @@
-exports["file structure checks that the file content carries over 1"] = `
+exports['file structure checks that the file content carries over 1'] = `
 null{
   "name": "helloWorld",
   "version": "1.0.0",
@@ -75,4 +75,4 @@ null{
 }
 console.log('hi');
 
-`;
+`
