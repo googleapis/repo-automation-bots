@@ -3,7 +3,7 @@ const { expect } = require("chai");
 const fs = require("fs");
 const recursive = require("recursive-readdir");
 const rimraf = require("rimraf");
-const snapshot = require("snap-shot");
+const snapshot = require("snap-shot-it");
 
 describe("file structure", () => {
   it("checks that file structure carries over", async () => {
@@ -66,21 +66,27 @@ describe("user input", () => {
       fileLocation: "pass"
     });
 
-    let programNameToLower = {
+    const programNameToLower = {
       programName: "PassButMakeLowerCase",
       description: "pass",
       fileLocation: "pass"
-    }
+    };
     GenerateBot.checkValidity(programNameToLower);
 
-    let fileLocationDefault = {
+    const fileLocationDefault = {
       programName: "pass",
       description: "pass",
-      fileLocation: null,
-    }
+      fileLocation: null
+    };
     GenerateBot.checkValidity(fileLocationDefault);
 
-    if (!hyphenTest && !nullTest && !integerTest && (programNameToLower.programName == 'passbutmakelowercase' ) && (fileLocationDefault.fileLocation == '../pass')) {
+    if (
+      !hyphenTest &&
+      !nullTest &&
+      !integerTest &&
+      programNameToLower.programName === "passbutmakelowercase" &&
+      fileLocationDefault.fileLocation === "../pass"
+    ) {
       validityWorkingWell = true;
     } else {
       validityWorkingWell = false;

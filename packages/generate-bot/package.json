@@ -31,9 +31,9 @@
     "eslint-plugin-prettier": "^3.1.1",
     "mocha": "^6.2.2",
     "prettier": "^1.18.2",
-    "rimraf": "^3.0.0",
     "recursive-readdir": "^2.2.2",
-    "snap-shot": "^2.17.0"
+    "rimraf": "^3.0.0",
+    "snap-shot-it": "^7.9.0"
   },
   "dependencies": {
     "enquirer": "^2.3.2",

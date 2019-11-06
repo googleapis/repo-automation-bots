@@ -20,19 +20,21 @@ exports.checkValidity = function(testString) {
 
   if (isValid && !testString.programName) {
     isValid = false;
-    console.log(
-      "You forgot to name your program. Please try again."
-    );
+    console.log("You forgot to name your program. Please try again.");
   }
 
- if (testString.programName && testString.programName.charAt(0) == testString.programName.charAt(0).toUpperCase()) {
-        testString.programName = testString.programName.toLowerCase();
- }
+  if (
+    testString.programName &&
+    testString.programName.charAt(0) ===
+      testString.programName.charAt(0).toUpperCase()
+  ) {
+    testString.programName = testString.programName.toLowerCase();
+  }
 
- if (!testString.fileLocation) {
-	testString.fileLocation = `../${testString.programName}`
-}
- 
+  if (!testString.fileLocation) {
+    testString.fileLocation = `../${testString.programName}`;
+  }
+
   console.log(testString);
   return isValid;
 };
@@ -60,10 +62,8 @@ exports.collectUserInput = async function() {
     ]);
 
     isValid = exports.checkValidity(input);
+  }
 
-};
-
-  
   console.log(input);
   return input;
 };
