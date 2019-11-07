@@ -41,19 +41,20 @@ interface Repos {
 // from the local copy.  We are using the `PushEvent` to detect the change,
 // meaning the file running in cloud will be older than the one on master.
 let labelsCache: Labels;
-
-async function getLabels() {
+async function getLabels(github: GitHubAPI) {
   if (!labelsCache) {
-    await refreshLabels();
+    await refreshLabels(github);
   }
   return labelsCache;
 }
 
-async function refreshLabels() {
-  const url =
-    'https://github.com/googleapis/repo-automation-bots/blob/master/packages/label-sync/src/labels.json';
-  const res = await request<Labels>({ url });
-  labelsCache = res.data;
+async function refreshLabels(github: GitHubAPI) {
+  const data = (await github.repos.getContents({
+    owner: 'googleapis',
+    repo: 'repo-automation-bots',
+    path: 'packages/label-sync/src/labels.json'
+  })).data as { content?: string };
+  labelsCache = JSON.parse(Buffer.from(data.content as string, 'base64').toString('utf8'))
 }
 
 export = (app: Application) => {
@@ -77,8 +78,10 @@ export = (app: Application) => {
       repo === 'repo-automation-bots' &&
       context.payload.ref === 'refs/heads/master'
     ) {
-      await refreshLabels();
+      await refreshLabels(context.github);
       // TODO: Use the GitHub installations API to retreive this list
+      //   (also, our QA indicates there's a good chance this request isn't
+      // actually working, we should use the GitHub API to fetch the content).
       const url =
         'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
       const res = await request<Repos>({ url });
@@ -94,7 +97,7 @@ export = (app: Application) => {
 };
 
 async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
-  const newLabels = await getLabels();
+  const newLabels = await getLabels(github);
   const res = await github.issues.listLabelsForRepo({
     owner,
     repo,
@@ -102,7 +105,7 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
   });
   const oldLabels = res.data;
   const promises = new Array<Promise<unknown>>();
-  newLabels.labels.forEach(l => {
+  for (const l of newLabels.labels) {
     // try to find a label with the same name
     const match = oldLabels.find(
       x => x.name.toLowerCase() === l.name.toLowerCase()
@@ -113,7 +116,7 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
         console.log(
           `Updating color for ${match.name} from ${match.color} to ${l.color}.`
         );
-        const p = github.issues
+        await github.issues
           .updateLabel({
             repo,
             owner,
@@ -126,12 +129,11 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
             console.error(`Error updating label ${l.name} in ${owner}/${repo}`);
             console.error(e.stack);
           });
-        promises.push(p);
       }
     } else {
       // there was no match, go ahead and add it
       console.log(`Creating label for ${l.name}.`);
-      const p = github.issues
+      await github.issues
         .createLabel({
           repo,
           owner,
@@ -143,9 +145,8 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
           console.error(`Error creating label ${l.name} in ${owner}/${repo}`);
           console.error(e.stack);
         });
-      promises.push(p);
     }
-  });
+  }
 
   // now clean up common labels we don't want
   const labelsToDelete = [
@@ -156,9 +157,9 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
     'kokoro: run',
     'question',
   ];
-  oldLabels.forEach(l => {
+  for (const l of oldLabels) {
     if (labelsToDelete.includes(l.name)) {
-      const p = github.issues
+      await github.issues
         .deleteLabel({
           name: l.name,
           owner,
@@ -171,8 +172,6 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
           console.error(`Error deleting label ${l.name} in ${owner}/${repo}`);
           console.error(e.stack);
         });
-      promises.push(p);
     }
-  });
-  await Promise.all(promises);
+  }
 }
