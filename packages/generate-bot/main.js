@@ -77,8 +77,11 @@ exports.creatingBotFiles = function(dirname, data) {
   const readAllFiles = function(dirNameRead, dirNameWrite) {
     const files = fs.readdirSync(dirNameRead);
     files.forEach(function(file) {
+      const fileName = file.toString();
+      const fileNameTemplate = Handlebars.compile(fileName);
+      const fileNameResult = fileNameTemplate(data);
       const readName = path.join(dirNameRead, file);
-      const writeName = path.join(dirNameWrite, file);
+      const writeName = path.join(dirNameWrite, fileNameResult);
       if (fs.statSync(readName).isDirectory()) {
         fs.mkdirSync(writeName);
         console.log(writeName + " generated");
