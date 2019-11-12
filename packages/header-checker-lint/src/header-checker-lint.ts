@@ -48,7 +48,7 @@ interface ConfigurationOptions {
 const WELL_KNOWN_CONFIGURATION_FILE = '.bots/header-checker-lint.json';
 const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   allowedCopyrightHolders: ['Google LLC'],
-  allowedLicenses: ['Apache-2.0', 'MIT'],
+  allowedLicenses: ['Apache-2.0', 'MIT', 'BSD-3'],
   ignoreFiles: [],
   sourceFileExtensions: ['ts', 'js', 'java'],
 };
