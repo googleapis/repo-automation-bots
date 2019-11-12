@@ -1,6 +1,7 @@
+  
 {
   "name": "{{programName}}",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "{{description}}",
   "private": true,
   "author": "Google Inc.",
@@ -27,8 +28,8 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "^1.0.0",
-    "probot": "9.4.0"
+    "gcf-utils": "1.1.0",
+    "probot": "9.6.4"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",

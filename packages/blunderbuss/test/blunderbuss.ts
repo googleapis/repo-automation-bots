@@ -60,7 +60,7 @@ describe('Blunderbuss', () => {
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
-
+      console.log("config "+config);
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
         .reply(200, { content: config })
@@ -69,6 +69,7 @@ describe('Blunderbuss', () => {
           return true;
         })
         .reply(200);
+
 
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
       requests.done();
