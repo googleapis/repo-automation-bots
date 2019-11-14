@@ -114,7 +114,7 @@ export = (app: Application) => {
 
     const remoteConfiguration: ConfigurationOptions | null = (await context.config(
       WELL_KNOWN_CONFIGURATION_FILE
-    )) as (ConfigurationOptions | null);
+    )) as ConfigurationOptions | null;
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
@@ -173,7 +173,7 @@ export = (app: Application) => {
 
     const remoteConfiguration = (await context.config(
       WELL_KNOWN_CONFIGURATION_FILE
-    )) as (ConfigurationOptions | null);
+    )) as ConfigurationOptions | null;
 
     // If no configuration is specified,
     if (!remoteConfiguration) {

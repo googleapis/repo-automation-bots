@@ -72,12 +72,14 @@ class Configuration {
     github: GitHubAPI
   ): Promise<Configuration> {
     try {
-      const response = (await github.repos.getContents({
-        owner,
-        repo,
-        ref,
-        path,
-      })).data as { content?: string };
+      const response = (
+        await github.repos.getContents({
+          owner,
+          repo,
+          ref,
+          path,
+        })
+      ).data as { content?: string };
       const fileContents = Buffer.from(
         response.content || '',
         'base64'
