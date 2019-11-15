@@ -1,0 +1,1248 @@
+0 silly argv {
+0 silly argv   _: [ 'bootstrap' ],
+0 silly argv   hoist: true,
+0 silly argv   lernaVersion: '3.17.0',
+0 silly argv   '$0': '/Users/sofialeon/repo-automation-bots/node_modules/.bin/lerna'
+0 silly argv }
+1 notice cli v3.17.0
+2 verbose rootPath /Users/sofialeon/repo-automation-bots
+3 info versioning independent
+4 verbose hoist using globs ["**"]
+5 silly npmConfig {
+5 silly npmConfig   registry: undefined,
+5 silly npmConfig   npmClient: 'npm',
+5 silly npmConfig   npmClientArgs: [],
+5 silly npmConfig   mutex: undefined
+5 silly npmConfig }
+6 info Bootstrapping 7 packages
+7 verbose lifecycle preinstall
+8 silly lifecycle No script for "preinstall" in "gcf-utils", continuing
+9 silly lifecycle No script for "preinstall" in "blunderbuss", continuing
+10 silly lifecycle No script for "preinstall" in "conventional-commit-lint", continuing
+11 silly lifecycle No script for "preinstall" in "header-checker-lint", continuing
+12 silly lifecycle No script for "preinstall" in "label-sync", continuing
+13 silly lifecycle No script for "preinstall" in "release-please-bot", continuing
+14 silly lifecycle No script for "preinstall" in "trusted-contribution", continuing
+15 warn EHOIST_PKG_VERSION "label-sync" package depends on @types/chai@^4.2.4, which differs from the hoisted @types/chai@^4.1.7.
+16 warn EHOIST_PKG_VERSION "label-sync" package depends on @types/express@^4.17.1, which differs from the hoisted @types/express@^4.17.0.
+17 warn EHOIST_PKG_VERSION "label-sync" package depends on @types/ioredis@^4.0.18, which differs from the hoisted @types/ioredis@^4.0.13.
+18 warn EHOIST_PKG_VERSION "trusted-contribution" package depends on @types/nock@^11.0.0, which differs from the hoisted @types/nock@^10.0.3.
+19 warn EHOIST_PKG_VERSION "label-sync" package depends on @types/node@^12.11.6, which differs from the hoisted @types/node@^12.6.1.
+20 warn EHOIST_PKG_VERSION "label-sync" package depends on cross-env@^6.0.3, which differs from the hoisted cross-env@^6.0.0.
+21 warn EHOIST_PKG_VERSION "label-sync" package depends on gts@^1.1.0, which differs from the hoisted gts@^1.0.0.
+22 warn EHOIST_PKG_VERSION "label-sync" package depends on mocha@^6.2.2, which differs from the hoisted mocha@^6.1.4.
+23 warn EHOIST_PKG_VERSION "label-sync" package depends on nock@^11.5.0, which differs from the hoisted nock@^11.0.0.
+24 warn EHOIST_PKG_VERSION "label-sync" package depends on snap-shot-it@^7.9.0, which differs from the hoisted snap-shot-it@^7.8.0.
+25 warn EHOIST_PKG_VERSION "label-sync" package depends on typescript@^3.6.4, which differs from the hoisted typescript@^3.5.3.
+26 warn EHOIST_PKG_VERSION "blunderbuss" package depends on probot@9.6.4, which differs from the hoisted probot@9.4.0.
+27 warn EHOIST_PKG_VERSION "label-sync" package depends on @octokit/rest@^16.34.0, which differs from the hoisted @octokit/rest@^16.28.3.
+28 silly hasDependencyInstalled repo-automation-bots c8
+29 silly hasDependencyInstalled repo-automation-bots lerna
+30 silly hasDependencyInstalled repo-automation-bots smee-client
+31 silly hasDependencyInstalled repo-automation-bots @types/body-parser
+32 silly hasDependencyInstalled repo-automation-bots @types/bunyan
+33 silly hasDependencyInstalled repo-automation-bots @types/chai
+34 silly hasDependencyInstalled repo-automation-bots @types/dotenv
+35 silly hasDependencyInstalled repo-automation-bots @types/express
+36 silly hasDependencyInstalled repo-automation-bots @types/ioredis
+37 silly hasDependencyInstalled repo-automation-bots @types/lru-cache
+38 silly hasDependencyInstalled repo-automation-bots @types/mocha
+39 silly hasDependencyInstalled repo-automation-bots @types/nock
+40 silly hasDependencyInstalled repo-automation-bots @types/node
+41 silly hasDependencyInstalled repo-automation-bots babel-plugin-react-transform
+42 silly hasDependencyInstalled repo-automation-bots body-parser
+43 silly hasDependencyInstalled repo-automation-bots chai
+44 silly hasDependencyInstalled repo-automation-bots cross-env
+45 silly hasDependencyInstalled repo-automation-bots dotenv
+46 silly hasDependencyInstalled repo-automation-bots gts
+47 silly hasDependencyInstalled repo-automation-bots mocha
+48 silly hasDependencyInstalled repo-automation-bots nock
+49 silly hasDependencyInstalled repo-automation-bots npm-run-proxy
+50 silly hasDependencyInstalled repo-automation-bots snap-shot-it
+51 silly hasDependencyInstalled repo-automation-bots typescript
+52 silly hasDependencyInstalled repo-automation-bots probot
+53 silly hasDependencyInstalled repo-automation-bots proxy
+54 silly hasDependencyInstalled repo-automation-bots @commitlint/config-conventional
+55 silly hasDependencyInstalled repo-automation-bots @commitlint/lint
+56 silly hasDependencyInstalled repo-automation-bots @types/google-cloud__kms
+57 silly hasDependencyInstalled repo-automation-bots @types/js-base64
+58 silly hasDependencyInstalled repo-automation-bots @types/sinon
+59 silly hasDependencyInstalled repo-automation-bots @types/tmp
+60 silly hasDependencyInstalled repo-automation-bots @types/yargs
+61 silly hasDependencyInstalled repo-automation-bots sinon
+62 silly hasDependencyInstalled repo-automation-bots @google-cloud/kms
+63 silly hasDependencyInstalled repo-automation-bots @google-cloud/storage
+64 silly hasDependencyInstalled repo-automation-bots js-base64
+65 silly hasDependencyInstalled repo-automation-bots tmp
+66 silly hasDependencyInstalled repo-automation-bots yargs
+67 silly hasDependencyInstalled repo-automation-bots @types/minimatch
+68 silly hasDependencyInstalled repo-automation-bots minimatch
+69 silly hasDependencyInstalled repo-automation-bots source-map-support
+70 silly hasDependencyInstalled repo-automation-bots @octokit/rest
+71 silly hasDependencyInstalled repo-automation-bots gaxios
+72 silly hasDependencyInstalled repo-automation-bots @types/semver
+73 silly hasDependencyInstalled repo-automation-bots release-please
+74 silly hasDependencyInstalled label-sync @types/chai
+75 silly hasDependencyInstalled label-sync @types/express
+76 silly hasDependencyInstalled label-sync @types/ioredis
+77 silly hasDependencyInstalled trusted-contribution @types/nock
+78 silly hasDependencyInstalled label-sync @types/node
+79 silly hasDependencyInstalled label-sync cross-env
+80 silly hasDependencyInstalled label-sync gts
+81 silly hasDependencyInstalled label-sync mocha
+82 silly hasDependencyInstalled label-sync nock
+83 silly hasDependencyInstalled label-sync snap-shot-it
+84 silly hasDependencyInstalled label-sync typescript
+85 silly hasDependencyInstalled blunderbuss probot
+86 silly hasDependencyInstalled label-sync @octokit/rest
+87 silly root dependencies {}
+88 silly leaf dependencies {}
+89 info Installing external dependencies
+90 verbose actions 4 actions, concurrency 12
+91 info hoist Installing hoisted dependencies into root
+92 silly npmInstallDependencies repo-automation-bots [
+92 silly npmInstallDependencies   'c8@^6.0.0',
+92 silly npmInstallDependencies   'lerna@^3.16.4',
+92 silly npmInstallDependencies   'smee-client@^1.1.0',
+92 silly npmInstallDependencies   '@types/body-parser@^1.17.0',
+92 silly npmInstallDependencies   '@types/bunyan@^1.8.6',
+92 silly npmInstallDependencies   '@types/chai@^4.1.7',
+92 silly npmInstallDependencies   '@types/dotenv@^6.1.1',
+92 silly npmInstallDependencies   '@types/express@^4.17.0',
+92 silly npmInstallDependencies   '@types/ioredis@^4.0.13',
+92 silly npmInstallDependencies   '@types/lru-cache@^5.1.0',
+92 silly npmInstallDependencies   '@types/mocha@^5.2.7',
+92 silly npmInstallDependencies   '@types/nock@^10.0.3',
+92 silly npmInstallDependencies   '@types/node@^12.6.1',
+92 silly npmInstallDependencies   'babel-plugin-react-transform@^2.0.0-beta1',
+92 silly npmInstallDependencies   'body-parser@^1.19.0',
+92 silly npmInstallDependencies   'chai@^4.2.0',
+92 silly npmInstallDependencies   'cross-env@^6.0.0',
+92 silly npmInstallDependencies   'dotenv@^8.0.0',
+92 silly npmInstallDependencies   'gts@^1.0.0',
+92 silly npmInstallDependencies   'mocha@^6.1.4',
+92 silly npmInstallDependencies   'nock@^11.0.0',
+92 silly npmInstallDependencies   'npm-run-proxy@^1.0.2',
+92 silly npmInstallDependencies   'snap-shot-it@^7.8.0',
+92 silly npmInstallDependencies   'typescript@^3.5.3',
+92 silly npmInstallDependencies   'probot@9.4.0',
+92 silly npmInstallDependencies   'proxy@^1.0.1',
+92 silly npmInstallDependencies   '@commitlint/config-conventional@^8.1.0',
+92 silly npmInstallDependencies   '@commitlint/lint@^8.0.0',
+92 silly npmInstallDependencies   '@types/google-cloud__kms@^1.0.0',
+92 silly npmInstallDependencies   '@types/js-base64@^2.3.1',
+92 silly npmInstallDependencies   '@types/sinon@^7.0.13',
+92 silly npmInstallDependencies   '@types/tmp@^0.1.0',
+92 silly npmInstallDependencies   '@types/yargs@^13.0.2',
+92 silly npmInstallDependencies   'sinon@^7.3.2',
+92 silly npmInstallDependencies   '@google-cloud/kms@^1.1.1',
+92 silly npmInstallDependencies   '@google-cloud/storage@^4.0.0',
+92 silly npmInstallDependencies   'js-base64@^2.5.1',
+92 silly npmInstallDependencies   'tmp@^0.1.0',
+92 silly npmInstallDependencies   'yargs@^14.0.0',
+92 silly npmInstallDependencies   '@types/minimatch@^3.0.3',
+92 silly npmInstallDependencies   'minimatch@^3.0.4',
+92 silly npmInstallDependencies   'source-map-support@^0.5.13',
+92 silly npmInstallDependencies   '@octokit/rest@^16.28.3',
+92 silly npmInstallDependencies   'gaxios@^2.1.0',
+92 silly npmInstallDependencies   '@types/semver@^6.0.2',
+92 silly npmInstallDependencies   'release-please@^2.14.0'
+92 silly npmInstallDependencies ]
+93 silly npmInstallDependencies backup /Users/sofialeon/repo-automation-bots/package.json
+94 info hoist Pruning hoisted dependencies
+95 silly prune [
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/c8',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/smee-client',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/smee-client',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/body-parser',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/body-parser',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/bunyan',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/bunyan',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/bunyan',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/bunyan',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/@types/bunyan',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/bunyan',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/bunyan',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/chai',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/chai',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/chai',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/chai',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/chai',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/dotenv',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/dotenv',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/dotenv',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/express',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/express',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/express',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/express',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/express',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/express',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/ioredis',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/ioredis',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/ioredis',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/ioredis',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/ioredis',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/ioredis',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/lru-cache',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/lru-cache',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/lru-cache',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/lru-cache',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/@types/lru-cache',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/lru-cache',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/lru-cache',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/mocha',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/mocha',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/mocha',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/mocha',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/@types/mocha',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/mocha',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/mocha',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/nock',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/nock',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/nock',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/nock',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/node',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/node',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/node',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/node',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/node',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/node',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/babel-plugin-react-transform',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/body-parser',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/body-parser',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/chai',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/chai',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/chai',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/chai',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/chai',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/chai',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/cross-env',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/cross-env',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/cross-env',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/cross-env',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/cross-env',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/cross-env',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/dotenv',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/dotenv',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/dotenv',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/gts',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/gts',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/gts',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/gts',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/gts',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/gts',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/mocha',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/mocha',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/mocha',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/mocha',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/mocha',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/mocha',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/nock',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/nock',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/nock',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/nock',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/nock',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/npm-run-proxy',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/snap-shot-it',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/snap-shot-it',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/snap-shot-it',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/snap-shot-it',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/snap-shot-it',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/typescript',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/typescript',
+95 silly prune   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/typescript',
+95 silly prune   ... 30 more items
+95 silly prune ]
+96 silly npmInstallDependencies label-sync [
+96 silly npmInstallDependencies   '@types/chai@^4.2.4',
+96 silly npmInstallDependencies   '@types/express@^4.17.1',
+96 silly npmInstallDependencies   '@types/ioredis@^4.0.18',
+96 silly npmInstallDependencies   '@types/node@^12.11.6',
+96 silly npmInstallDependencies   'cross-env@^6.0.3',
+96 silly npmInstallDependencies   'gts@^1.1.0',
+96 silly npmInstallDependencies   'mocha@^6.2.2',
+96 silly npmInstallDependencies   'nock@^11.5.0',
+96 silly npmInstallDependencies   'snap-shot-it@^7.9.0',
+96 silly npmInstallDependencies   'typescript@^3.6.4',
+96 silly npmInstallDependencies   '@octokit/rest@^16.34.0'
+96 silly npmInstallDependencies ]
+97 silly npmInstallDependencies backup /Users/sofialeon/repo-automation-bots/packages/label-sync/package.json
+98 silly npmInstallDependencies trusted-contribution [ '@types/nock@^11.0.0' ]
+99 silly npmInstallDependencies backup /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/package.json
+100 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/c8
+101 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/smee-client
+102 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/smee-client
+103 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/body-parser
+104 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/body-parser
+105 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/bunyan
+106 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/bunyan
+107 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/bunyan
+108 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/bunyan
+109 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/@types/bunyan
+110 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/bunyan
+111 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/bunyan
+112 silly npmInstallDependencies writing tempJson {
+112 silly npmInstallDependencies   name: 'repo-automation-bots',
+112 silly npmInstallDependencies   private: true,
+112 silly npmInstallDependencies   license: 'Apache-2.0',
+112 silly npmInstallDependencies   repository: 'googleapis/repo-automation-bots',
+112 silly npmInstallDependencies   devDependencies: { c8: '^6.0.0', lerna: '^3.16.4', 'smee-client': '^1.1.0' },
+112 silly npmInstallDependencies   dependencies: {
+112 silly npmInstallDependencies     '@types/body-parser': '^1.17.0',
+112 silly npmInstallDependencies     '@types/bunyan': '^1.8.6',
+112 silly npmInstallDependencies     '@types/chai': '^4.1.7',
+112 silly npmInstallDependencies     '@types/dotenv': '^6.1.1',
+112 silly npmInstallDependencies     '@types/express': '^4.17.0',
+112 silly npmInstallDependencies     '@types/ioredis': '^4.0.13',
+112 silly npmInstallDependencies     '@types/lru-cache': '^5.1.0',
+112 silly npmInstallDependencies     '@types/mocha': '^5.2.7',
+112 silly npmInstallDependencies     '@types/nock': '^10.0.3',
+112 silly npmInstallDependencies     '@types/node': '^12.6.1',
+112 silly npmInstallDependencies     'babel-plugin-react-transform': '^2.0.0-beta1',
+112 silly npmInstallDependencies     'body-parser': '^1.19.0',
+112 silly npmInstallDependencies     chai: '^4.2.0',
+112 silly npmInstallDependencies     'cross-env': '^6.0.0',
+112 silly npmInstallDependencies     dotenv: '^8.0.0',
+112 silly npmInstallDependencies     gts: '^1.0.0',
+112 silly npmInstallDependencies     mocha: '^6.1.4',
+112 silly npmInstallDependencies     nock: '^11.0.0',
+112 silly npmInstallDependencies     'npm-run-proxy': '^1.0.2',
+112 silly npmInstallDependencies     'snap-shot-it': '^7.8.0',
+112 silly npmInstallDependencies     typescript: '^3.5.3',
+112 silly npmInstallDependencies     probot: '9.4.0',
+112 silly npmInstallDependencies     proxy: '^1.0.1',
+112 silly npmInstallDependencies     '@commitlint/config-conventional': '^8.1.0',
+112 silly npmInstallDependencies     '@commitlint/lint': '^8.0.0',
+112 silly npmInstallDependencies     '@types/google-cloud__kms': '^1.0.0',
+112 silly npmInstallDependencies     '@types/js-base64': '^2.3.1',
+112 silly npmInstallDependencies     '@types/sinon': '^7.0.13',
+112 silly npmInstallDependencies     '@types/tmp': '^0.1.0',
+112 silly npmInstallDependencies     '@types/yargs': '^13.0.2',
+112 silly npmInstallDependencies     sinon: '^7.3.2',
+112 silly npmInstallDependencies     '@google-cloud/kms': '^1.1.1',
+112 silly npmInstallDependencies     '@google-cloud/storage': '^4.0.0',
+112 silly npmInstallDependencies     'js-base64': '^2.5.1',
+112 silly npmInstallDependencies     tmp: '^0.1.0',
+112 silly npmInstallDependencies     yargs: '^14.0.0',
+112 silly npmInstallDependencies     '@types/minimatch': '^3.0.3',
+112 silly npmInstallDependencies     minimatch: '^3.0.4',
+112 silly npmInstallDependencies     'source-map-support': '^0.5.13',
+112 silly npmInstallDependencies     '@octokit/rest': '^16.28.3',
+112 silly npmInstallDependencies     gaxios: '^2.1.0',
+112 silly npmInstallDependencies     '@types/semver': '^6.0.2',
+112 silly npmInstallDependencies     'release-please': '^2.14.0'
+112 silly npmInstallDependencies   }
+112 silly npmInstallDependencies }
+113 silly npmInstallDependencies writing tempJson {
+113 silly npmInstallDependencies   name: 'label-sync',
+113 silly npmInstallDependencies   version: '1.0.0',
+113 silly npmInstallDependencies   description: 'Synchronize a list of labels with GitHub issues.',
+113 silly npmInstallDependencies   private: true,
+113 silly npmInstallDependencies   author: 'Google Inc.',
+113 silly npmInstallDependencies   license: 'Apache-2.0',
+113 silly npmInstallDependencies   repository: 'https://github.com/googleapis/repo-automation-bots.git',
+113 silly npmInstallDependencies   homepage: 'https://github.com/googleapis/repo-automation-bots',
+113 silly npmInstallDependencies   bugs: 'https://github.com/googleapis/repo-automation-bots/issues',
+113 silly npmInstallDependencies   main: 'build/src/app.js',
+113 silly npmInstallDependencies   keywords: [ 'probot', 'github', 'probot-app' ],
+113 silly npmInstallDependencies   dependencies: { '@octokit/rest': '^16.34.0' },
+113 silly npmInstallDependencies   devDependencies: {
+113 silly npmInstallDependencies     '@types/chai': '^4.2.4',
+113 silly npmInstallDependencies     '@types/express': '^4.17.1',
+113 silly npmInstallDependencies     '@types/ioredis': '^4.0.18',
+113 silly npmInstallDependencies     '@types/node': '^12.11.6',
+113 silly npmInstallDependencies     'cross-env': '^6.0.3',
+113 silly npmInstallDependencies     gts: '^1.1.0',
+113 silly npmInstallDependencies     mocha: '^6.2.2',
+113 silly npmInstallDependencies     nock: '^11.5.0',
+113 silly npmInstallDependencies     'snap-shot-it': '^7.9.0',
+113 silly npmInstallDependencies     typescript: '^3.6.4'
+113 silly npmInstallDependencies   },
+113 silly npmInstallDependencies   engines: { node: '>= 10.13.0' }
+113 silly npmInstallDependencies }
+114 silly npmInstallDependencies writing tempJson {
+114 silly npmInstallDependencies   name: 'trusted-contribution',
+114 silly npmInstallDependencies   version: '1.0.0',
+114 silly npmInstallDependencies   description: 'For trusted contribution source trigger Kokoro to begin CI',
+114 silly npmInstallDependencies   private: true,
+114 silly npmInstallDependencies   author: 'Google Inc.',
+114 silly npmInstallDependencies   license: 'Apache-2.0',
+114 silly npmInstallDependencies   repository: 'https://github.com/googleapis/repo-automation-bots.git',
+114 silly npmInstallDependencies   homepage: 'https://github.com/googleapis/repo-automation-bots',
+114 silly npmInstallDependencies   bugs: 'https://github.com/googleapis/repo-automation-bots/issues',
+114 silly npmInstallDependencies   main: 'build/src/app.js',
+114 silly npmInstallDependencies   keywords: [ 'probot', 'github', 'probot-app', 'kokoro' ],
+114 silly npmInstallDependencies   dependencies: {},
+114 silly npmInstallDependencies   devDependencies: { '@types/nock': '^11.0.0' },
+114 silly npmInstallDependencies   engines: { node: '>= 10.13.0' }
+114 silly npmInstallDependencies }
+115 verbose prune /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/c8
+116 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/chai
+117 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/body-parser
+118 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/chai
+119 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/smee-client
+120 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/chai
+121 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/bunyan
+122 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/chai
+123 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/bunyan
+124 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/chai
+125 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/bunyan
+126 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/dotenv
+127 verbose prune /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/@types/bunyan
+128 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/dotenv
+129 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/bunyan
+130 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/dotenv
+131 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/chai
+132 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/express
+133 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/chai
+134 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/express
+135 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/chai
+136 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/express
+137 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/dotenv
+138 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/express
+139 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/dotenv
+140 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/express
+141 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/express
+142 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/express
+143 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/express
+144 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/ioredis
+145 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/express
+146 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/ioredis
+147 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/express
+148 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/ioredis
+149 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/ioredis
+150 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/ioredis
+151 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/ioredis
+152 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/ioredis
+153 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/ioredis
+154 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/ioredis
+155 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/ioredis
+156 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/lru-cache
+157 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/body-parser
+158 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/body-parser
+159 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/lru-cache
+160 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/bunyan
+161 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/bunyan
+162 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/lru-cache
+163 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/lru-cache
+164 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/lru-cache
+165 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/lru-cache
+166 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/@types/lru-cache
+167 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/lru-cache
+168 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/lru-cache
+169 verbose prune /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/@types/lru-cache
+170 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/lru-cache
+171 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/lru-cache
+172 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/mocha
+173 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/smee-client
+174 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/smee-client
+175 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/mocha
+176 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/bunyan
+177 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/bunyan
+178 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/mocha
+179 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/chai
+180 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/chai
+181 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/mocha
+182 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/mocha
+183 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/@types/mocha
+184 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/mocha
+185 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/mocha
+186 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/mocha
+187 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/mocha
+188 verbose prune /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/@types/mocha
+189 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/nock
+190 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/mocha
+191 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/nock
+192 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/nock
+193 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/nock
+194 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/nock
+195 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/nock
+196 silly getExecOpts /Users/sofialeon/repo-automation-bots undefined
+197 silly npmInstall [ 'npm', [ 'install' ] ]
+198 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/chai
+199 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/chai
+200 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/node
+201 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/ioredis
+202 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/ioredis
+203 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/node
+204 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@types/node
+205 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/node
+206 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/node
+207 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/node
+208 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/node
+209 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/node
+210 silly getExecOpts /Users/sofialeon/repo-automation-bots/packages/label-sync undefined
+211 silly npmInstall [ 'npm', [ 'install', '--global-style' ] ]
+212 silly getExecOpts /Users/sofialeon/repo-automation-bots/packages/trusted-contribution undefined
+213 silly npmInstall [ 'npm', [ 'install', '--global-style' ] ]
+214 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/dotenv
+215 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/dotenv
+216 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/node
+217 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/express
+218 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/express
+219 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/babel-plugin-react-transform
+220 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/express
+221 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/express
+222 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/body-parser
+223 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/ioredis
+224 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/ioredis
+225 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/body-parser
+226 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/lru-cache
+227 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/lru-cache
+228 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/chai
+229 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/mocha
+230 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/mocha
+231 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/chai
+232 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/node
+233 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/node
+234 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/chai
+235 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@types/node
+236 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/chai
+237 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/body-parser
+238 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/chai
+239 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/chai
+240 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/chai
+241 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/chai
+242 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/cross-env
+243 verbose prune /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/chai
+244 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/cross-env
+245 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/chai
+246 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/cross-env
+247 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/lru-cache
+248 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/lru-cache
+249 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/cross-env
+250 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/nock
+251 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/nock
+252 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/cross-env
+253 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/nock
+254 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/nock
+255 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/cross-env
+256 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/node
+257 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/node
+258 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/dotenv
+259 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/cross-env
+260 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/dotenv
+261 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/cross-env
+262 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/dotenv
+263 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/cross-env
+264 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/gts
+265 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/cross-env
+266 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/gts
+267 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/dotenv
+268 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/gts
+269 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/dotenv
+270 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/gts
+271 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/gts
+272 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/gts
+273 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/gts
+274 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/gts
+275 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/gts
+276 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/mocha
+277 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/mocha
+278 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/@types/mocha
+279 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/mocha
+280 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/babel-plugin-react-transform
+281 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/babel-plugin-react-transform
+282 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/mocha
+283 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/body-parser
+284 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/body-parser
+285 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/mocha
+286 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/chai
+287 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/chai
+288 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/mocha
+289 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/chai
+290 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/chai
+291 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/mocha
+292 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/cross-env
+293 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/cross-env
+294 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/nock
+295 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/cross-env
+296 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/cross-env
+297 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/nock
+298 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/gts
+299 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/gts
+300 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/nock
+301 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/gts
+302 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/nock
+303 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/mocha
+304 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/nock
+305 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/mocha
+306 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/npm-run-proxy
+307 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/mocha
+308 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/snap-shot-it
+309 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/mocha
+310 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/snap-shot-it
+311 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/nock
+312 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/snap-shot-it
+313 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/nock
+314 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/snap-shot-it
+315 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/nock
+316 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/snap-shot-it
+317 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/snap-shot-it
+318 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/typescript
+319 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/snap-shot-it
+320 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/typescript
+321 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/dotenv
+322 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/dotenv
+323 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/typescript
+324 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/gts
+325 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/gts
+326 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/typescript
+327 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/nock
+328 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/nock
+329 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/typescript
+330 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/nock
+331 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/nock
+332 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/typescript
+333 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/npm-run-proxy
+334 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/npm-run-proxy
+335 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/probot
+336 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/snap-shot-it
+337 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/snap-shot-it
+338 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/probot
+339 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/snap-shot-it
+340 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/probot
+341 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/typescript
+342 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/probot
+343 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/typescript
+344 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/probot
+345 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/typescript
+346 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/probot
+347 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/typescript
+348 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/proxy
+349 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/probot
+350 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@commitlint/config-conventional
+351 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/probot
+352 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@commitlint/lint
+353 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/mocha
+354 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/mocha
+355 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/google-cloud__kms
+356 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/probot
+357 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/js-base64
+358 verbose prune /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/probot
+359 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/sinon
+360 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/probot
+361 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/tmp
+362 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@commitlint/config-conventional
+363 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/yargs
+364 verbose prune /Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/@commitlint/lint
+365 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/sinon
+366 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/google-cloud__kms
+367 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@google-cloud/kms
+368 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/js-base64
+369 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@google-cloud/storage
+370 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/sinon
+371 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/js-base64
+372 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/tmp
+373 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/tmp
+374 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@types/yargs
+375 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/yargs
+376 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/sinon
+377 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/minimatch
+378 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@google-cloud/kms
+379 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/minimatch
+380 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/mocha
+381 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/mocha
+382 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/source-map-support
+383 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/@google-cloud/storage
+384 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@octokit/rest
+385 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/js-base64
+386 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/gaxios
+387 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/tmp
+388 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/semver
+389 verbose prune /Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/yargs
+390 silly rimrafDir /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/release-please
+391 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/@types/minimatch
+392 verbose prune /Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/minimatch
+393 verbose prune /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/source-map-support
+394 verbose prune /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/@octokit/rest
+395 verbose prune /Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/gaxios
+396 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/snap-shot-it
+397 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/snap-shot-it
+398 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/proxy
+399 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/proxy
+400 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/typescript
+401 verbose prune /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/typescript
+402 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/typescript
+403 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/typescript
+404 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/semver
+405 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/@types/semver
+406 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/probot
+407 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/probot
+408 verbose rimrafDir removed /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/release-please
+409 verbose prune /Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/release-please
+410 info hoist Finished pruning hoisted dependencies
+411 silly npmInstallDependencies cleanup /Users/sofialeon/repo-automation-bots/packages/trusted-contribution/package.json
+412 verbose installed leaf trusted-contribution
+413 silly npmInstallDependencies cleanup /Users/sofialeon/repo-automation-bots/packages/label-sync/package.json
+414 verbose installed leaf label-sync
+415 silly npmInstallDependencies cleanup /Users/sofialeon/repo-automation-bots/package.json
+416 silly createSymlink [
+416 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/c8/bin/c8.js',
+416 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/.bin/c8',
+416 silly createSymlink   'exec'
+416 silly createSymlink ]
+417 silly createSymbolicLink [
+417 silly createSymbolicLink   '../../../../node_modules/c8/bin/c8.js',
+417 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/.bin/c8',
+417 silly createSymbolicLink   'file'
+417 silly createSymbolicLink ]
+418 silly createSymlink [
+418 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/smee-client/bin/smee.js',
+418 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/smee',
+418 silly createSymlink   'exec'
+418 silly createSymlink ]
+419 silly createSymbolicLink [
+419 silly createSymbolicLink   '../../../../node_modules/smee-client/bin/smee.js',
+419 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/smee',
+419 silly createSymbolicLink   'file'
+419 silly createSymbolicLink ]
+420 silly createSymlink [
+420 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/smee-client/bin/smee.js',
+420 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/smee',
+420 silly createSymlink   'exec'
+420 silly createSymlink ]
+421 silly createSymbolicLink [
+421 silly createSymbolicLink   '../../../../node_modules/smee-client/bin/smee.js',
+421 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/smee',
+421 silly createSymbolicLink   'file'
+421 silly createSymbolicLink ]
+422 silly createSymlink [
+422 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/cross-env/src/bin/cross-env.js',
+422 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/cross-env',
+422 silly createSymlink   'exec'
+422 silly createSymlink ]
+423 silly createSymlink [
+423 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/cross-env/src/bin/cross-env-shell.js',
+423 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/cross-env-shell',
+423 silly createSymlink   'exec'
+423 silly createSymlink ]
+424 silly createSymlink [
+424 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/cross-env/src/bin/cross-env.js',
+424 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/cross-env',
+424 silly createSymlink   'exec'
+424 silly createSymlink ]
+425 silly createSymlink [
+425 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/cross-env/src/bin/cross-env-shell.js',
+425 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/cross-env-shell',
+425 silly createSymlink   'exec'
+425 silly createSymlink ]
+426 silly createSymlink [
+426 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/cross-env/src/bin/cross-env.js',
+426 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/cross-env',
+426 silly createSymlink   'exec'
+426 silly createSymlink ]
+427 silly createSymlink [
+427 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/cross-env/src/bin/cross-env-shell.js',
+427 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/cross-env-shell',
+427 silly createSymlink   'exec'
+427 silly createSymlink ]
+428 silly createSymlink [
+428 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/cross-env/src/bin/cross-env.js',
+428 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/cross-env',
+428 silly createSymlink   'exec'
+428 silly createSymlink ]
+429 silly createSymlink [
+429 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/cross-env/src/bin/cross-env-shell.js',
+429 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/cross-env-shell',
+429 silly createSymlink   'exec'
+429 silly createSymlink ]
+430 silly createSymbolicLink [
+430 silly createSymbolicLink   '../../../../node_modules/cross-env/src/bin/cross-env.js',
+430 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/cross-env',
+430 silly createSymbolicLink   'file'
+430 silly createSymbolicLink ]
+431 silly createSymbolicLink [
+431 silly createSymbolicLink   '../../../../node_modules/cross-env/src/bin/cross-env-shell.js',
+431 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/cross-env-shell',
+431 silly createSymbolicLink   'file'
+431 silly createSymbolicLink ]
+432 silly createSymbolicLink [
+432 silly createSymbolicLink   '../../../../node_modules/cross-env/src/bin/cross-env.js',
+432 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/cross-env',
+432 silly createSymbolicLink   'file'
+432 silly createSymbolicLink ]
+433 silly createSymbolicLink [
+433 silly createSymbolicLink   '../../../../node_modules/cross-env/src/bin/cross-env-shell.js',
+433 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/cross-env-shell',
+433 silly createSymbolicLink   'file'
+433 silly createSymbolicLink ]
+434 silly createSymbolicLink [
+434 silly createSymbolicLink   '../../../../node_modules/cross-env/src/bin/cross-env.js',
+434 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/cross-env',
+434 silly createSymbolicLink   'file'
+434 silly createSymbolicLink ]
+435 silly createSymbolicLink [
+435 silly createSymbolicLink   '../../../../node_modules/cross-env/src/bin/cross-env-shell.js',
+435 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/cross-env-shell',
+435 silly createSymbolicLink   'file'
+435 silly createSymbolicLink ]
+436 silly createSymbolicLink [
+436 silly createSymbolicLink   '../../../../node_modules/cross-env/src/bin/cross-env.js',
+436 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/cross-env',
+436 silly createSymbolicLink   'file'
+436 silly createSymbolicLink ]
+437 silly createSymbolicLink [
+437 silly createSymbolicLink   '../../../../node_modules/cross-env/src/bin/cross-env-shell.js',
+437 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/cross-env-shell',
+437 silly createSymbolicLink   'file'
+437 silly createSymbolicLink ]
+438 silly createSymlink [
+438 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/cross-env/src/bin/cross-env.js',
+438 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/cross-env',
+438 silly createSymlink   'exec'
+438 silly createSymlink ]
+439 silly createSymlink [
+439 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/cross-env/src/bin/cross-env-shell.js',
+439 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/cross-env-shell',
+439 silly createSymlink   'exec'
+439 silly createSymlink ]
+440 silly createSymlink [
+440 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/cross-env/src/bin/cross-env.js',
+440 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/cross-env',
+440 silly createSymlink   'exec'
+440 silly createSymlink ]
+441 silly createSymlink [
+441 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/cross-env/src/bin/cross-env-shell.js',
+441 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/cross-env-shell',
+441 silly createSymlink   'exec'
+441 silly createSymlink ]
+442 silly createSymbolicLink [
+442 silly createSymbolicLink   '../../../../node_modules/cross-env/src/bin/cross-env.js',
+442 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/cross-env',
+442 silly createSymbolicLink   'file'
+442 silly createSymbolicLink ]
+443 silly createSymbolicLink [
+443 silly createSymbolicLink   '../../../../node_modules/cross-env/src/bin/cross-env-shell.js',
+443 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/cross-env-shell',
+443 silly createSymbolicLink   'file'
+443 silly createSymbolicLink ]
+444 silly createSymbolicLink [
+444 silly createSymbolicLink   '../../../../node_modules/cross-env/src/bin/cross-env.js',
+444 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/cross-env',
+444 silly createSymbolicLink   'file'
+444 silly createSymbolicLink ]
+445 silly createSymbolicLink [
+445 silly createSymbolicLink   '../../../../node_modules/cross-env/src/bin/cross-env-shell.js',
+445 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/cross-env-shell',
+445 silly createSymbolicLink   'file'
+445 silly createSymbolicLink ]
+446 silly createSymlink [
+446 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/gts/build/src/cli.js',
+446 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/gts',
+446 silly createSymlink   'exec'
+446 silly createSymlink ]
+447 silly createSymlink [
+447 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/gts/build/src/cli.js',
+447 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/gts',
+447 silly createSymlink   'exec'
+447 silly createSymlink ]
+448 silly createSymlink [
+448 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/gts/build/src/cli.js',
+448 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/gts',
+448 silly createSymlink   'exec'
+448 silly createSymlink ]
+449 silly createSymlink [
+449 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/gts/build/src/cli.js',
+449 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/gts',
+449 silly createSymlink   'exec'
+449 silly createSymlink ]
+450 silly createSymlink [
+450 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/gts/build/src/cli.js',
+450 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/gts',
+450 silly createSymlink   'exec'
+450 silly createSymlink ]
+451 silly createSymlink [
+451 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/gts/build/src/cli.js',
+451 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/gts',
+451 silly createSymlink   'exec'
+451 silly createSymlink ]
+452 silly createSymbolicLink [
+452 silly createSymbolicLink   '../../../../node_modules/gts/build/src/cli.js',
+452 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/gts',
+452 silly createSymbolicLink   'file'
+452 silly createSymbolicLink ]
+453 silly createSymbolicLink [
+453 silly createSymbolicLink   '../../../../node_modules/gts/build/src/cli.js',
+453 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/gts',
+453 silly createSymbolicLink   'file'
+453 silly createSymbolicLink ]
+454 silly createSymbolicLink [
+454 silly createSymbolicLink   '../../../../node_modules/gts/build/src/cli.js',
+454 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/gts',
+454 silly createSymbolicLink   'file'
+454 silly createSymbolicLink ]
+455 silly createSymbolicLink [
+455 silly createSymbolicLink   '../../../../node_modules/gts/build/src/cli.js',
+455 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/gts',
+455 silly createSymbolicLink   'file'
+455 silly createSymbolicLink ]
+456 silly createSymbolicLink [
+456 silly createSymbolicLink   '../../../../node_modules/gts/build/src/cli.js',
+456 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/gts',
+456 silly createSymbolicLink   'file'
+456 silly createSymbolicLink ]
+457 silly createSymbolicLink [
+457 silly createSymbolicLink   '../../../../node_modules/gts/build/src/cli.js',
+457 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/gts',
+457 silly createSymbolicLink   'file'
+457 silly createSymbolicLink ]
+458 silly createSymlink [
+458 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/mocha/bin/mocha',
+458 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/mocha',
+458 silly createSymlink   'exec'
+458 silly createSymlink ]
+459 silly createSymlink [
+459 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/mocha/bin/_mocha',
+459 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/_mocha',
+459 silly createSymlink   'exec'
+459 silly createSymlink ]
+460 silly createSymlink [
+460 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/mocha/bin/mocha',
+460 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/mocha',
+460 silly createSymlink   'exec'
+460 silly createSymlink ]
+461 silly createSymlink [
+461 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/mocha/bin/_mocha',
+461 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/_mocha',
+461 silly createSymlink   'exec'
+461 silly createSymlink ]
+462 silly createSymlink [
+462 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/mocha/bin/mocha',
+462 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/mocha',
+462 silly createSymlink   'exec'
+462 silly createSymlink ]
+463 silly createSymlink [
+463 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/mocha/bin/_mocha',
+463 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/_mocha',
+463 silly createSymlink   'exec'
+463 silly createSymlink ]
+464 silly createSymlink [
+464 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/mocha/bin/mocha',
+464 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/mocha',
+464 silly createSymlink   'exec'
+464 silly createSymlink ]
+465 silly createSymlink [
+465 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/mocha/bin/_mocha',
+465 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/_mocha',
+465 silly createSymlink   'exec'
+465 silly createSymlink ]
+466 silly createSymlink [
+466 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/mocha/bin/mocha',
+466 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/mocha',
+466 silly createSymlink   'exec'
+466 silly createSymlink ]
+467 silly createSymlink [
+467 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/mocha/bin/_mocha',
+467 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/_mocha',
+467 silly createSymlink   'exec'
+467 silly createSymlink ]
+468 silly createSymlink [
+468 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/mocha/bin/mocha',
+468 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/mocha',
+468 silly createSymlink   'exec'
+468 silly createSymlink ]
+469 silly createSymlink [
+469 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/mocha/bin/_mocha',
+469 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/_mocha',
+469 silly createSymlink   'exec'
+469 silly createSymlink ]
+470 silly createSymbolicLink [
+470 silly createSymbolicLink   '../../../../node_modules/mocha/bin/mocha',
+470 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/mocha',
+470 silly createSymbolicLink   'file'
+470 silly createSymbolicLink ]
+471 silly createSymbolicLink [
+471 silly createSymbolicLink   '../../../../node_modules/mocha/bin/_mocha',
+471 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/_mocha',
+471 silly createSymbolicLink   'file'
+471 silly createSymbolicLink ]
+472 silly createSymbolicLink [
+472 silly createSymbolicLink   '../../../../node_modules/mocha/bin/mocha',
+472 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/mocha',
+472 silly createSymbolicLink   'file'
+472 silly createSymbolicLink ]
+473 silly createSymbolicLink [
+473 silly createSymbolicLink   '../../../../node_modules/mocha/bin/_mocha',
+473 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/_mocha',
+473 silly createSymbolicLink   'file'
+473 silly createSymbolicLink ]
+474 silly createSymbolicLink [
+474 silly createSymbolicLink   '../../../../node_modules/mocha/bin/mocha',
+474 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/mocha',
+474 silly createSymbolicLink   'file'
+474 silly createSymbolicLink ]
+475 silly createSymbolicLink [
+475 silly createSymbolicLink   '../../../../node_modules/mocha/bin/_mocha',
+475 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/_mocha',
+475 silly createSymbolicLink   'file'
+475 silly createSymbolicLink ]
+476 silly createSymbolicLink [
+476 silly createSymbolicLink   '../../../../node_modules/mocha/bin/mocha',
+476 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/mocha',
+476 silly createSymbolicLink   'file'
+476 silly createSymbolicLink ]
+477 silly createSymbolicLink [
+477 silly createSymbolicLink   '../../../../node_modules/mocha/bin/_mocha',
+477 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/_mocha',
+477 silly createSymbolicLink   'file'
+477 silly createSymbolicLink ]
+478 silly createSymbolicLink [
+478 silly createSymbolicLink   '../../../../node_modules/mocha/bin/mocha',
+478 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/mocha',
+478 silly createSymbolicLink   'file'
+478 silly createSymbolicLink ]
+479 silly createSymbolicLink [
+479 silly createSymbolicLink   '../../../../node_modules/mocha/bin/_mocha',
+479 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/_mocha',
+479 silly createSymbolicLink   'file'
+479 silly createSymbolicLink ]
+480 silly createSymbolicLink [
+480 silly createSymbolicLink   '../../../../node_modules/mocha/bin/mocha',
+480 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/mocha',
+480 silly createSymbolicLink   'file'
+480 silly createSymbolicLink ]
+481 silly createSymbolicLink [
+481 silly createSymbolicLink   '../../../../node_modules/mocha/bin/_mocha',
+481 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/_mocha',
+481 silly createSymbolicLink   'file'
+481 silly createSymbolicLink ]
+482 silly createSymlink [
+482 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/npm-run-proxy/index.js',
+482 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/run',
+482 silly createSymlink   'exec'
+482 silly createSymlink ]
+483 silly createSymbolicLink [
+483 silly createSymbolicLink   '../../../../node_modules/npm-run-proxy/index.js',
+483 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/run',
+483 silly createSymbolicLink   'file'
+483 silly createSymbolicLink ]
+484 silly createSymlink [
+484 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/typescript/bin/tsc',
+484 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/tsc',
+484 silly createSymlink   'exec'
+484 silly createSymlink ]
+485 silly createSymlink [
+485 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/typescript/bin/tsserver',
+485 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/tsserver',
+485 silly createSymlink   'exec'
+485 silly createSymlink ]
+486 silly createSymlink [
+486 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/typescript/bin/tsc',
+486 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/tsc',
+486 silly createSymlink   'exec'
+486 silly createSymlink ]
+487 silly createSymlink [
+487 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/typescript/bin/tsserver',
+487 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/tsserver',
+487 silly createSymlink   'exec'
+487 silly createSymlink ]
+488 silly createSymlink [
+488 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/typescript/bin/tsc',
+488 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/tsc',
+488 silly createSymlink   'exec'
+488 silly createSymlink ]
+489 silly createSymlink [
+489 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/typescript/bin/tsserver',
+489 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/tsserver',
+489 silly createSymlink   'exec'
+489 silly createSymlink ]
+490 silly createSymlink [
+490 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/typescript/bin/tsc',
+490 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/tsc',
+490 silly createSymlink   'exec'
+490 silly createSymlink ]
+491 silly createSymlink [
+491 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/typescript/bin/tsserver',
+491 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/tsserver',
+491 silly createSymlink   'exec'
+491 silly createSymlink ]
+492 silly createSymlink [
+492 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/typescript/bin/tsc',
+492 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/tsc',
+492 silly createSymlink   'exec'
+492 silly createSymlink ]
+493 silly createSymlink [
+493 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/typescript/bin/tsserver',
+493 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/tsserver',
+493 silly createSymlink   'exec'
+493 silly createSymlink ]
+494 silly createSymlink [
+494 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/typescript/bin/tsc',
+494 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/tsc',
+494 silly createSymlink   'exec'
+494 silly createSymlink ]
+495 silly createSymlink [
+495 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/typescript/bin/tsserver',
+495 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/tsserver',
+495 silly createSymlink   'exec'
+495 silly createSymlink ]
+496 silly createSymbolicLink [
+496 silly createSymbolicLink   '../../../../node_modules/typescript/bin/tsc',
+496 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/tsc',
+496 silly createSymbolicLink   'file'
+496 silly createSymbolicLink ]
+497 silly createSymbolicLink [
+497 silly createSymbolicLink   '../../../../node_modules/typescript/bin/tsserver',
+497 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/tsserver',
+497 silly createSymbolicLink   'file'
+497 silly createSymbolicLink ]
+498 silly createSymbolicLink [
+498 silly createSymbolicLink   '../../../../node_modules/typescript/bin/tsc',
+498 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/tsc',
+498 silly createSymbolicLink   'file'
+498 silly createSymbolicLink ]
+499 silly createSymbolicLink [
+499 silly createSymbolicLink   '../../../../node_modules/typescript/bin/tsserver',
+499 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/tsserver',
+499 silly createSymbolicLink   'file'
+499 silly createSymbolicLink ]
+500 silly createSymbolicLink [
+500 silly createSymbolicLink   '../../../../node_modules/typescript/bin/tsc',
+500 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/tsc',
+500 silly createSymbolicLink   'file'
+500 silly createSymbolicLink ]
+501 silly createSymbolicLink [
+501 silly createSymbolicLink   '../../../../node_modules/typescript/bin/tsserver',
+501 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/tsserver',
+501 silly createSymbolicLink   'file'
+501 silly createSymbolicLink ]
+502 silly createSymbolicLink [
+502 silly createSymbolicLink   '../../../../node_modules/typescript/bin/tsc',
+502 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/tsc',
+502 silly createSymbolicLink   'file'
+502 silly createSymbolicLink ]
+503 silly createSymbolicLink [
+503 silly createSymbolicLink   '../../../../node_modules/typescript/bin/tsserver',
+503 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/tsserver',
+503 silly createSymbolicLink   'file'
+503 silly createSymbolicLink ]
+504 silly createSymbolicLink [
+504 silly createSymbolicLink   '../../../../node_modules/typescript/bin/tsc',
+504 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/tsc',
+504 silly createSymbolicLink   'file'
+504 silly createSymbolicLink ]
+505 silly createSymbolicLink [
+505 silly createSymbolicLink   '../../../../node_modules/typescript/bin/tsserver',
+505 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/tsserver',
+505 silly createSymbolicLink   'file'
+505 silly createSymbolicLink ]
+506 silly createSymbolicLink [
+506 silly createSymbolicLink   '../../../../node_modules/typescript/bin/tsc',
+506 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/tsc',
+506 silly createSymbolicLink   'file'
+506 silly createSymbolicLink ]
+507 silly createSymbolicLink [
+507 silly createSymbolicLink   '../../../../node_modules/typescript/bin/tsserver',
+507 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/tsserver',
+507 silly createSymbolicLink   'file'
+507 silly createSymbolicLink ]
+508 silly createSymlink [
+508 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/probot/bin/probot.js',
+508 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/probot',
+508 silly createSymlink   'exec'
+508 silly createSymlink ]
+509 silly createSymlink [
+509 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/probot/bin/probot.js',
+509 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/probot',
+509 silly createSymlink   'exec'
+509 silly createSymlink ]
+510 silly createSymlink [
+510 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/probot/bin/probot.js',
+510 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/probot',
+510 silly createSymlink   'exec'
+510 silly createSymlink ]
+511 silly createSymlink [
+511 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/probot/bin/probot.js',
+511 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/.bin/probot',
+511 silly createSymlink   'exec'
+511 silly createSymlink ]
+512 silly createSymlink [
+512 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/probot/bin/probot.js',
+512 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/probot',
+512 silly createSymlink   'exec'
+512 silly createSymlink ]
+513 silly createSymlink [
+513 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/probot/bin/probot.js',
+513 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/probot',
+513 silly createSymlink   'exec'
+513 silly createSymlink ]
+514 silly createSymbolicLink [
+514 silly createSymbolicLink   '../../../../node_modules/probot/bin/probot.js',
+514 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/conventional-commit-lint/node_modules/.bin/probot',
+514 silly createSymbolicLink   'file'
+514 silly createSymbolicLink ]
+515 silly createSymbolicLink [
+515 silly createSymbolicLink   '../../../../node_modules/probot/bin/probot.js',
+515 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/node_modules/.bin/probot',
+515 silly createSymbolicLink   'file'
+515 silly createSymbolicLink ]
+516 silly createSymbolicLink [
+516 silly createSymbolicLink   '../../../../node_modules/probot/bin/probot.js',
+516 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/header-checker-lint/node_modules/.bin/probot',
+516 silly createSymbolicLink   'file'
+516 silly createSymbolicLink ]
+517 silly createSymbolicLink [
+517 silly createSymbolicLink   '../../../../node_modules/probot/bin/probot.js',
+517 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/label-sync/node_modules/.bin/probot',
+517 silly createSymbolicLink   'file'
+517 silly createSymbolicLink ]
+518 silly createSymbolicLink [
+518 silly createSymbolicLink   '../../../../node_modules/probot/bin/probot.js',
+518 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/probot',
+518 silly createSymbolicLink   'file'
+518 silly createSymbolicLink ]
+519 silly createSymbolicLink [
+519 silly createSymbolicLink   '../../../../node_modules/probot/bin/probot.js',
+519 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/trusted-contribution/node_modules/.bin/probot',
+519 silly createSymbolicLink   'file'
+519 silly createSymbolicLink ]
+520 silly createSymlink [
+520 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/proxy/bin/proxy.js',
+520 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/proxy',
+520 silly createSymlink   'exec'
+520 silly createSymlink ]
+521 silly createSymbolicLink [
+521 silly createSymbolicLink   '../../../../node_modules/proxy/bin/proxy.js',
+521 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/proxy',
+521 silly createSymbolicLink   'file'
+521 silly createSymbolicLink ]
+522 silly createSymlink [
+522 silly createSymlink   '/Users/sofialeon/repo-automation-bots/node_modules/release-please/build/src/bin/release-please.js',
+522 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/release-please',
+522 silly createSymlink   'exec'
+522 silly createSymlink ]
+523 silly createSymbolicLink [
+523 silly createSymbolicLink   '../../../../node_modules/release-please/build/src/bin/release-please.js',
+523 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/release-please/node_modules/.bin/release-please',
+523 silly createSymbolicLink   'file'
+523 silly createSymbolicLink ]
+524 info hoist Finished bootstrapping root
+525 info Symlinking packages and binaries
+526 silly resolveSymlink /Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/gcf-utils
+527 verbose resolveSymlink [
+527 verbose resolveSymlink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/gcf-utils',
+527 verbose resolveSymlink   false
+527 verbose resolveSymlink ]
+528 warn EREPLACE_EXIST gcf-utils is already installed for blunderbuss. Replacing with symlink...
+529 silly createSymlink [
+529 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils',
+529 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/gcf-utils',
+529 silly createSymlink   'junction'
+529 silly createSymlink ]
+530 silly createSymbolicLink [
+530 silly createSymbolicLink   '../../gcf-utils',
+530 silly createSymbolicLink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/gcf-utils',
+530 silly createSymbolicLink   'junction'
+530 silly createSymbolicLink ]
+531 silly createSymlink [
+531 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/build/src/bin/genkey.js',
+531 silly createSymlink   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/genkey',
+531 silly createSymlink   'exec'
+531 silly createSymlink ]
+532 silly shShim [
+532 silly shShim   '/Users/sofialeon/repo-automation-bots/packages/gcf-utils/build/src/bin/genkey.js',
+532 silly shShim   '/Users/sofialeon/repo-automation-bots/packages/blunderbuss/node_modules/.bin/genkey',
+532 silly shShim   'file'
+532 silly shShim ]
+533 error

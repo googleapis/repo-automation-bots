@@ -17,7 +17,7 @@
  */
 
 
-import myProbotApp from '../src/{{programName}}';
+import myProbotApp from '../src/helloworld';
 
 import { resolve } from 'path';
 import { Probot } from 'probot';
@@ -30,7 +30,7 @@ nock.disableNetConnect();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 
-describe('{{programName}}', () => {
+describe('helloworld', () => {
     let probot: Probot;
   
     beforeEach(() => {
@@ -66,7 +66,7 @@ describe('responds to events', () => {
       
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/{{programName}}.yml')
+        .get('/repos/testOwner/testRepo/contents/.github/helloworld.yml')
         .reply(200, { content: config.toString('base64') })
         
 
@@ -86,7 +86,7 @@ describe('responds to events', () => {
       ));
     
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/{{programName}}.yml')
+        .get('/repos/testOwner/testRepo/contents/.github/helloworld.yml')
         .reply(200, { content: config.toString('base64') })
         .log(console.log)
        
@@ -95,5 +95,21 @@ describe('responds to events', () => {
       requests.done();
     });
 
+    // it('responds to commit comments', async () => {
+    //     const payload = require(resolve(
+    //       fixturesPath,
+    //       './events/commit_comment'
+    //     ));
+     
+    //     const requests = nock('https://api.github.com')
+    //       .get('/repos/testuser2/testRepo/contents/.github/helloworld.yml')
+    //       .reply(200, { content: config.toString('base64') })
+    //       .log(console.log)
+         
+  
+  
+    //     await probot.receive({ name: 'commit_comment.opened', payload, id: 'abc123' });
+    //     requests.done();
+    //   });
    });
 });
