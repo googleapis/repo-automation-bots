@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Google LLC
+ * Copyright 2019 Google LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-// define types for a few modules used by probot that do not have their
-// own definitions published. Before taking this step, folks should first
-// check whether type bindings are already published.
-declare module "promise-events" {
-    class EventEmitter {
-    }
-  }
+import { GCFBootstrapper } from 'gcf-utils';
+import appFn from './blunderbuss';
+
+const bootstrap = new GCFBootstrapper();
+module.exports.blunderbuss = bootstrap.gcf(appFn);
