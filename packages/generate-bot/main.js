@@ -4,9 +4,8 @@ const fs = require("fs");
 const path = require("path");
 const process = require("process");
 
-exports.checkValidity = function(testString) {
+exports.checkValidity = function (testString) {
   let isValid = true;
-  let relativePath = path.resolve(process.cwd(), 'packages');
   const invalidChars = ["-", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
   const string = JSON.stringify(testString);
   for (let i = 0; i < invalidChars.length; i++) {
@@ -15,40 +14,32 @@ exports.checkValidity = function(testString) {
       console.log(
         "You used an invalid character, like a hyphen or an integer. Please try again."
       );
-      return isValid;
+      break;
     }
   }
 
   if (isValid && !testString.programName) {
     isValid = false;
     console.log("You forgot to name your program. Please try again.");
-    return isValid;
-  }
-
-  if (isValid && fs.existsSync(path.join(relativePath,testString.programName))) {
-    isValid = false;
-    console.log("Your progamName and location is not unique. Please rename.")
-    return isValid;
   }
 
   if (
-    isValid &&
     testString.programName &&
     testString.programName.charAt(0) ===
-      testString.programName.charAt(0).toUpperCase()
+    testString.programName.charAt(0).toUpperCase()
   ) {
     testString.programName = testString.programName.toLowerCase();
   }
 
-  if (isValid && !testString.fileLocation) {
-    testString.fileLocation = path.join(relativePath, testString.programName);
-    console.log(relativePath);
+  if (!testString.fileLocation) {
+    testString.fileLocation = `../${testString.programName}`;
   }
 
+  console.log(testString);
   return isValid;
 };
 
-exports.collectUserInput = async function() {
+exports.collectUserInput = async function () {
   let isValid = false;
   let input = null;
   while (!isValid) {
@@ -66,38 +57,39 @@ exports.collectUserInput = async function() {
       {
         type: "input",
         name: "fileLocation",
-        message: `This package will be saved in /packages/yourProgramName unless you specify another location and directory name here relative to ${process.cwd()} : `
+        message: `This package will be saved at /packages/yourProgramName unless you specify another location and name here relative to ${process.cwd()} : `
       }
     ]);
 
     isValid = exports.checkValidity(input);
   }
 
+  console.log(input);
   return input;
 };
 
-exports.creatingBotFiles = function(dirname, data) {
+exports.creatingBotFiles = function (dirname, data) {
   fs.mkdirSync(`${data.fileLocation}`);
   console.log(`${data.fileLocation}` + " generated");
 
   const mkDir = `${data.fileLocation}`;
 
-  const readAllFiles = function(dirNameRead, dirNameWrite) {
+  const readAllFiles = function (dirNameRead, dirNameWrite) {
     const files = fs.readdirSync(dirNameRead);
-    files.forEach(function(file) {
-      let fileName = file.toString();
-      let fileNameTemplate = Handlebars.compile(fileName);
-      let fileNameResult = fileNameTemplate(data);
-      let readName = path.join(dirNameRead, file);
-      let writeName = path.join(dirNameWrite, fileNameResult);
+    files.forEach(function (file) {
+      const fileName = file.toString();
+      const fileNameTemplate = Handlebars.compile(fileName);
+      const fileNameResult = fileNameTemplate(data);
+      const readName = path.join(dirNameRead, file);
+      const writeName = path.join(dirNameWrite, fileNameResult);
       if (fs.statSync(readName).isDirectory()) {
         fs.mkdirSync(writeName);
         console.log(writeName + " generated");
         readAllFiles(readName, writeName);
       } else {
-        let fileContents = fs.readFileSync(readName);
-        let template = Handlebars.compile(fileContents.toString());
-        let result = template(data);
+        const fileContents = fs.readFileSync(readName);
+        const template = Handlebars.compile(fileContents.toString());
+        const result = template(data);
         console.log(writeName + " generated");
         fs.writeFileSync(writeName, result);
       }

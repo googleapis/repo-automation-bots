@@ -8,10 +8,8 @@
     "lint": "eslint .",
     "fix": "eslint . --fix",
     "test": "mocha test/",
-    "start": "probot run ./build/src/generate-bot.js",
-    "start:local": "node ./build/src/local.js",
-    "prepare": "npm run compile",
-    "pretest": "npm run compile"
+    "start": "",
+    "start:local": "node ./build/src/local.js"
        },
   "repository": {
     "type": "git",
