@@ -27,7 +27,7 @@ exports.checkValidity = function(testString) {
 
   if (isValid && fs.existsSync(path.join(relativePath,testString.programName))) {
     isValid = false;
-    console.log("Your progamName and location is not unique. Please rename.")
+    console.log("Your progam name and location is not unique. Please rename.")
     return isValid;
   }
 
