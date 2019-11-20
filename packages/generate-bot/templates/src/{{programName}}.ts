@@ -40,9 +40,9 @@ export = (app: Application) => {
         {}
       )) as Configuration;
 
-      if((context.payload.pull_request || context.payload.issue) && config.randomBoolean) {
+      if ((context.payload.pull_request || context.payload.issue) && config.randomBoolean) {
         context.log.info("The bot is alive!");
         return;
-  }
-})
+      }
+    })
 };

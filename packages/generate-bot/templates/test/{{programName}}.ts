@@ -29,31 +29,31 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 
 describe('{{programName}}', () => {
-    let probot: Probot;
-  
-    beforeEach(() => {
-      probot = new Probot({
-        // use a bare instance of octokit, the default version
-        // enables retries which makes testing difficult.
-        Octokit: require('@octokit/rest'),
-      });
-  
-      const app = probot.load(myProbotApp);
-      app.app = {
-        getSignedJsonWebToken() {
-          return 'abc123';
-        },
-        getInstallationAccessToken(): Promise<string> {
-          return Promise.resolve('abc123');
-        },
-      };
+  let probot: Probot;
+
+  beforeEach(() => {
+    probot = new Probot({
+      // use a bare instance of octokit, the default version
+      // enables retries which makes testing difficult.
+      Octokit: require('@octokit/rest'),
     });
 
+    const app = probot.load(myProbotApp);
+    app.app = {
+      getSignedJsonWebToken() {
+        return 'abc123';
+      },
+      getInstallationAccessToken(): Promise<string> {
+        return Promise.resolve('abc123');
+      },
+    };
+  });
 
-describe('responds to events', () => {
-  const config = fs.readFileSync(
-    resolve(fixturesPath, 'config', 'valid-config.yml')
-  ); 
+
+  describe('responds to events', () => {
+    const config = fs.readFileSync(
+      resolve(fixturesPath, 'config', 'valid-config.yml')
+    );
 
     it('responds to a PR', async () => {
       const payload = require(resolve(
@@ -61,19 +61,19 @@ describe('responds to events', () => {
         'events',
         'pull_request_opened'
       ));
-      
+
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/{{programName}}.yml')
         .reply(200, { content: config.toString('base64') })
-        
+
 
       await probot.receive({
         name: 'pull_request.opened',
         payload,
         id: 'abc123'
       });
-      
+
       requests.done();
     });
 
@@ -82,16 +82,16 @@ describe('responds to events', () => {
         fixturesPath,
         './events/issue_opened'
       ));
-    
+
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/{{programName}}.yml')
         .reply(200, { content: config.toString('base64') })
         .log(console.log)
-       
+
 
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
       requests.done();
     });
 
-   });
+  });
 });

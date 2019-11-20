@@ -1,4 +1,3 @@
- 
 {
   "extends": "gts/tsconfig-google",
   "compilerOptions": {
