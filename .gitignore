@@ -5,3 +5,4 @@ coverage
 tmp
 .env
 __pycache__/*
+lerna-debug.log
