@@ -10,7 +10,7 @@
     "test": "mocha test/",
     "start": "",
     "start:local": "node ./build/src/local.js"
-       },
+  },
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/sofisl/generate-bot.git"

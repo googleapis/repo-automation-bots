@@ -1,5 +1,3 @@
-//move events under fixtures
-//put in the get/post response, change to {{programName}} from blunderbuss
 /**
  * Copyright 2019 Google LLC. All Rights Reserved.
  *

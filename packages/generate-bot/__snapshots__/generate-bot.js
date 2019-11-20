@@ -1,7 +1,34 @@
 exports["file structure checks that the file content carries over 1"] = `
-null{
+Start of snapshot: helloWorld
+
+Usage
+# TODO: Fill out section
+
+Setup
+# Install dependencies
+npm install
+
+# Run the bot
+npm start
+Testing
+This bot uses nock for mocking requests to GitHub, and snap-shot-it for capturing responses; This allows updates to the API surface to be treated as a visual diff, rather than tediously asserting against each field.
+
+Running tests:
+
+npm run test
+To update snapshots:
+
+npm run test:snap
+Contributing
+If you have suggestions for how helloWorld could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
+
+For more, check out the Contributing Guide.
+
+License
+Apache 2.0 © 2019 Google Inc.  
+{
   "name": "helloWorld",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "says hi",
   "private": true,
   "author": "Google Inc.",
@@ -13,8 +40,7 @@ null{
   "keywords": [
     "probot",
     "github",
-    "probot-app",
-    "lint"
+    "probot-app"
   ],
   "scripts": {
     "compile": "tsc -p .",
@@ -28,8 +54,8 @@ null{
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "^1.0.0",
-    "probot": "9.4.0"
+    "gcf-utils": "1.1.0",
+    "probot": "9.6.4"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
@@ -56,8 +82,7 @@ null{
   "engines": {
     "node": ">= 10.13.0"
   }
-}
- 
+} 
 {
   "extends": "gts/tsconfig-google",
   "compilerOptions": {
@@ -73,6 +98,5 @@ null{
     "system-test/*.ts"
   ]
 }
-console.log('hi');
 
 `;

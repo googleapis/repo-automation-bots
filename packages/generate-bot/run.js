@@ -14,8 +14,21 @@
  * limitations under the License.
  */
 
-import { GCFBootstrapper } from 'gcf-utils';
-import appFn from './blunderbuss';
+// define types for a few modules used by probot that do not have their
+// own definitions published. Before taking this step, folks should first
+// check whether type bindings are already published.
 
-const bootstrap = new GCFBootstrapper();
-module.exports.blunderbuss = bootstrap.gcf(appFn);
+const GenerateBot = require("./main.js");
+const path = require("path");
+
+const relativePath = path.resolve(
+  "../repo-automation-bots/packages/generate-bot/templates"
+);
+async function prompt() {
+  GenerateBot.creatingBotFiles(
+    relativePath,
+    await GenerateBot.collectUserInput()
+  );
+}
+
+prompt();

@@ -4,12 +4,28 @@ const fs = require("fs");
 const recursive = require("recursive-readdir");
 const rimraf = require("rimraf");
 const snapshot = require("snap-shot-it");
+const path = require("path");
+
+const readAllFiles = function(dirNameRead, contentString) {
+  const files = fs.readdirSync(dirNameRead);
+  contentString = contentString || null;
+  files.forEach(function(file) {
+    const readName = path.join(dirNameRead, file);
+    if (fs.statSync(readName).isDirectory()) {
+      readAllFiles(readName, contentString);
+    } else {
+      contentString += fs.readFileSync(readName);
+    }
+  });
+  console.log(contentString);
+  return contentString;
+};
 
 describe("file structure", () => {
   it("checks that file structure carries over", async () => {
     const originalStack = await recursive("./templates");
     GenerateBot.creatingBotFiles("./templates", {
-      programName: "programName",
+      programName: "{{programName}}",
       description: "description",
       fileLocation: "./tmp"
     });
@@ -30,20 +46,15 @@ describe("file structure", () => {
     GenerateBot.creatingBotFiles("./templates", {
       programName: "helloWorld",
       description: "says hi",
-      fileLocation: "./tmp"
+      fileLocation: "./helloWorld"
     });
-    const files = await recursive("./tmp");
-    let stringOfFiles = null;
-    for (let i = 0; i < files.length; i++) {
-      stringOfFiles += fs.readFileSync(files[i], "utf8");
-    }
-    console.log(stringOfFiles);
-    return snapshot(stringOfFiles);
-    //implement snapshot logic here that reads the contents of the files recursively
+
+    const contentString = "Start of snapshot: ";
+    return snapshot(readAllFiles("./helloWorld", contentString));
   });
 
   afterEach(() => {
-    rimraf.sync("./tmp");
+    rimraf.sync("./helloWorld");
   });
 });
 
@@ -55,15 +66,23 @@ describe("user input", () => {
       description: "pass",
       fileLocation: "pass"
     });
+
+    const integerTest = GenerateBot.checkValidity({
+      programName: "pass",
+      description: "5oesN0tP4SS",
+      fileLocation: "pass"
+    });
+
     const nullTest = GenerateBot.checkValidity({
-      programName: null,
+      programName: "",
       description: "pass",
       fileLocation: "../pass"
     });
-    const integerTest = GenerateBot.checkValidity({
-      programName: "pass",
-      description: "d3oesN0tP4SS",
-      fileLocation: "pass"
+
+    const overWritingTest = GenerateBot.checkValidity({
+      programName: "templates",
+      description: "pass",
+      fileLocation: "./templates"
     });
 
     const programNameToLower = {
@@ -76,16 +95,26 @@ describe("user input", () => {
     const fileLocationDefault = {
       programName: "pass",
       description: "pass",
-      fileLocation: null
+      fileLocation: ""
     };
     GenerateBot.checkValidity(fileLocationDefault);
+
+    console.log(hyphenTest);
+    console.log(nullTest);
+    console.log(integerTest);
+    console.log(overWritingTest);
+    console.log(programNameToLower.programName);
+    console.log(fileLocationDefault.fileLocation);
+
+    const regex = new RegExp("packages/pass");
 
     if (
       !hyphenTest &&
       !nullTest &&
       !integerTest &&
+      !overWritingTest &&
       programNameToLower.programName === "passbutmakelowercase" &&
-      fileLocationDefault.fileLocation === "../pass"
+      regex.test(fileLocationDefault.fileLocation)
     ) {
       validityWorkingWell = true;
     } else {

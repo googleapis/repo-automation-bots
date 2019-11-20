@@ -13,8 +13,7 @@
   "keywords": [
     "probot",
     "github",
-    "probot-app",
-    "lint"
+    "probot-app"
   ],
   "scripts": {
     "compile": "tsc -p .",
