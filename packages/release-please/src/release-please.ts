@@ -33,6 +33,7 @@ interface ConfigurationOptions {
   releaseType?: ReleaseType;
   packageName?: string;
   handleGHRelease?: boolean;
+  bumpMinorPreMajor?: boolean;
 }
 
 const DEFAULT_API_URL = 'https://api.github.com';
@@ -66,7 +67,8 @@ function createReleasePR(
   packageName: string,
   repoUrl: string,
   github: GitHubAPI,
-  releaseLabels?: string[]
+  releaseLabels?: string[],
+  bumpMinorPreMajor?: boolean
 ) {
   const buildOptions: BuildOptions = {
     packageName,
@@ -77,6 +79,7 @@ function createReleasePR(
       graphql: github.graphql,
       request: github.request,
     },
+    bumpMinorPreMajor,
   };
   if (releaseLabels) {
     buildOptions.label = releaseLabels.join(',');
@@ -114,7 +117,7 @@ export = (app: Application) => {
 
     const remoteConfiguration: ConfigurationOptions | null = (await context.config(
       WELL_KNOWN_CONFIGURATION_FILE
-    )) as (ConfigurationOptions | null);
+    )) as ConfigurationOptions | null;
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
@@ -146,7 +149,8 @@ export = (app: Application) => {
       configuration.packageName || repoName,
       repoUrl,
       context.github,
-      configuration.releaseLabels
+      configuration.releaseLabels,
+      configuration.bumpMinorPreMajor
     );
 
     // release-please can handle creating a release on GitHub, we opt not to do
@@ -173,7 +177,7 @@ export = (app: Application) => {
 
     const remoteConfiguration = (await context.config(
       WELL_KNOWN_CONFIGURATION_FILE
-    )) as (ConfigurationOptions | null);
+    )) as ConfigurationOptions | null;
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
@@ -198,7 +202,8 @@ export = (app: Application) => {
       configuration.packageName || repoName,
       repoUrl,
       context.github,
-      configuration.releaseLabels
+      configuration.releaseLabels,
+      configuration.bumpMinorPreMajor
     );
   });
 };

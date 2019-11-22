@@ -1,6 +1,6 @@
 {
   "name": "conventional-commit-lint",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "lint commit messages based on conventionalcommits.org",
   "private": true,
   "author": "Google Inc.",
@@ -30,8 +30,8 @@
   "dependencies": {
     "@commitlint/config-conventional": "^8.1.0",
     "@commitlint/lint": "^8.0.0",
-    "gcf-utils": "^1.0.0",
-    "probot": "9.4.0"
+    "gcf-utils": "1.1.0",
+    "probot": "9.6.4"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
