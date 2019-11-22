@@ -29,7 +29,6 @@
     "gaxios": "^2.1.0",
     "gcf-utils": "1.1.0",
     "probot": "9.6.4",
-    "uuid": "^3.3.3"
   },
   "devDependencies": {
     "@types/bunyan": "^1.8.6",

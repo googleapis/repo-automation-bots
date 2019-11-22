@@ -51,7 +51,7 @@ async function getLabels(github: GitHubAPI) {
 
 async function refreshLabels(github: GitHubAPI) {
   const data = (await github.repos.getContents({
-    owner: 'sofisl',
+    owner: 'googleapis',
     repo: 'repo-automation-bots',
     path: 'packages/label-sync/src/labels.json',
   })).data as { content?: string };
@@ -77,14 +77,11 @@ export = (app: Application) => {
     const { owner, repo } = context.repo();
     // TODO: Limit this to pushes that edit `labels.json`
     if (
-      owner === 'sofisl' &&
+      owner === 'googleapis' &&
       repo === 'repo-automation-bots' &&
       context.payload.ref === 'refs/heads/master'
     ) {
       await refreshLabels(context.github);
-      // TODO: Use the GitHub installations API to retreive this list
-      //   (also, our QA indicates there's a good chance this request isn't
-      // actually working, we should use the GitHub API to fetch the content).
       const url =
         'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
       const res = await request<Repos>({ url });
@@ -165,7 +162,6 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
   ];
   if (!Object.keys(oldLabels).length) {
     for (const l of oldLabels) {
-      console.log(l.name);
       if (labelsToDelete.includes(l.name)) {
         await github.issues
           .deleteLabel({
