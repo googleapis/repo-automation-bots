@@ -37,7 +37,6 @@ const readAllFiles = function(dirNameRead, contentString) {
       contentString += fs.readFileSync(readName);
     }
   });
-  console.log(contentString);
   return contentString;
 };
 
@@ -70,7 +69,9 @@ describe("file structure", () => {
     });
 
     const contentString = "Start of snapshot: ";
-    return snapshot(readAllFiles("./helloWorld", contentString));
+    return snapshot(
+      readAllFiles("./helloWorld", contentString).replace("\r\n")
+    );
   });
 
   afterEach(() => {
@@ -79,67 +80,62 @@ describe("file structure", () => {
 });
 
 describe("user input", () => {
-  it("checks that user input is being checked correctly", () => {
-    let validityWorkingWell = true;
+  it("checks that hyphens are not passed", () => {
     const hyphenTest = GenerateBot.checkValidity({
       programName: "does-not-pass",
       description: "pass",
       fileLocation: "pass"
     });
+    expect(hyphenTest).to.be.false;
+  });
 
+  it("checks that integers are not passed", () => {
     const integerTest = GenerateBot.checkValidity({
       programName: "pass",
       description: "5oesN0tP4SS",
       fileLocation: "pass"
     });
 
+    expect(integerTest).to.be.false;
+  });
+
+  it("checks that nulls are not passed", () => {
     const nullTest = GenerateBot.checkValidity({
       programName: "",
       description: "pass",
       fileLocation: "../pass"
     });
 
+    expect(nullTest).to.be.false;
+  });
+
+  it("checks that files are not overwritten", () => {
     const overWritingTest = GenerateBot.checkValidity({
       programName: "templates",
       description: "pass",
       fileLocation: "./templates"
     });
+    expect(overWritingTest).to.be.false;
+  });
 
+  it("checks that the program name is not upper-cased", () => {
     const programNameToLower = {
       programName: "PassButMakeLowerCase",
       description: "pass",
       fileLocation: "pass"
     };
     GenerateBot.checkValidity(programNameToLower);
+    expect(programNameToLower.programName).to.equal("passbutmakelowercase");
+  });
 
+  it("checks that the program has a default location", () => {
     const fileLocationDefault = {
       programName: "pass",
       description: "pass",
       fileLocation: ""
     };
     GenerateBot.checkValidity(fileLocationDefault);
-
-    console.log(hyphenTest);
-    console.log(nullTest);
-    console.log(integerTest);
-    console.log(overWritingTest);
-    console.log(programNameToLower.programName);
-    console.log(fileLocationDefault.fileLocation);
-
     const regex = new RegExp("packages/pass");
-
-    if (
-      !hyphenTest &&
-      !nullTest &&
-      !integerTest &&
-      !overWritingTest &&
-      programNameToLower.programName === "passbutmakelowercase" &&
-      regex.test(fileLocationDefault.fileLocation)
-    ) {
-      validityWorkingWell = true;
-    } else {
-      validityWorkingWell = false;
-    }
-    expect(validityWorkingWell).to.be.true;
+    expect(regex.test(fileLocationDefault.fileLocation)).to.be.true;
   });
 });

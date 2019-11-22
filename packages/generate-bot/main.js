@@ -26,7 +26,7 @@ const process = require("process");
 
 exports.checkValidity = function(testString) {
   let isValid = true;
-  const relativePath = path.resolve("../repo-automation-bots/packages");
+  const relativePath = path.resolve("./packages");
   const invalidName = /[-0-9]/;
   const string = JSON.stringify(testString);
   if (invalidName.test(string)) {

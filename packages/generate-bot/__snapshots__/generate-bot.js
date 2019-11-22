@@ -1,4 +1,4 @@
-exports['file structure checks that the file content carries over 1'] = `
+exports["file structure checks that the file content carries over 1"] = `
 Start of snapshot: helloWorld
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
@@ -21,7 +21,7 @@ For more, check out the Contributing Guide.
 License
 Apache 2.0 © 2019 Google LLC.  {
     "name": "helloWorld",
-    "version": "1.1.0",
+    "version": "1.0.0",
     "description": "says hi",
     "private": true,
     "author": "Google LLC.",
@@ -90,4 +90,4 @@ Apache 2.0 © 2019 Google LLC.  {
     "system-test/*.ts"
   ]
 }
-`
+`;

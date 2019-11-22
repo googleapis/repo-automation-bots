@@ -86,7 +86,6 @@ describe('{{programName}}', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/{{programName}}.yml')
         .reply(200, { content: config.toString('base64') })
-        .log(console.log)
 
 
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
