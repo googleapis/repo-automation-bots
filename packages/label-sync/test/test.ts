@@ -36,7 +36,7 @@ function nockLabelList() {
     .get(
       '/repos/googleapis/repo-automation-bots/contents/packages/label-sync/src/labels.json'
     )
-    .reply(200, {content: Buffer.from(JSON.stringify(newLabels), 'utf8')});
+    .reply(200, { content: Buffer.from(JSON.stringify(newLabels), 'utf8') });
 }
 
 function nockFetchOldLabels(labels: Array<{}>) {
@@ -63,7 +63,6 @@ function nockLabelUpdate(name: string) {
     .patch(`/repos/Codertocat/Hello-World/labels/${encodeURI(name)}`)
     .reply(200);
 }
-
 
 function nockRepoList() {
   return nock('https://raw.githubusercontent.com')

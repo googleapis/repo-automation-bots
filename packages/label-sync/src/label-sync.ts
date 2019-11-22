@@ -53,9 +53,11 @@ async function refreshLabels(github: GitHubAPI) {
   const data = (await github.repos.getContents({
     owner: 'sofisl',
     repo: 'repo-automation-bots',
-    path: 'packages/label-sync/src/labels.json'
+    path: 'packages/label-sync/src/labels.json',
   })).data as { content?: string };
-  labelsCache = JSON.parse(Buffer.from(data.content as string, 'base64').toString('utf8'))
+  labelsCache = JSON.parse(
+    Buffer.from(data.content as string, 'base64').toString('utf8')
+  );
 }
 
 export = (app: Application) => {
@@ -113,7 +115,7 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
     );
     if (match) {
       // check to see if the color matches
-      if ((match.color !== l.color) || (match.description !== l.description)) {
+      if (match.color !== l.color || match.description !== l.description) {
         console.log(
           `Updating ${match.name} from ${match.color} to ${l.color} and ${match.description} to ${l.description}.`
         );
@@ -140,11 +142,11 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
           owner,
           color: l.color,
           description: l.description,
-          name: l.name
+          name: l.name,
         })
         .catch(e => {
           //ignores errors that are caused by two requests kicking off at the same time
-          if (e.errors[0].code !== "already_exists") {
+          if (e.errors[0].code !== 'already_exists') {
             console.error(`Error creating label ${l.name} in ${owner}/${repo}`);
             console.error(e.stack);
           }
@@ -182,4 +184,3 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
     }
   }
 }
-
