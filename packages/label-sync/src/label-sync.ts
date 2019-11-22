@@ -17,6 +17,7 @@
 import { Application } from 'probot';
 import { request } from 'gaxios';
 import { GitHubAPI } from 'probot/lib/github';
+import e = require('express');
 
 interface Labels {
   labels: [
@@ -50,7 +51,7 @@ async function getLabels(github: GitHubAPI) {
 
 async function refreshLabels(github: GitHubAPI) {
   const data = (await github.repos.getContents({
-    owner: 'googleapis',
+    owner: 'sofisl',
     repo: 'repo-automation-bots',
     path: 'packages/label-sync/src/labels.json'
   })).data as { content?: string };
@@ -74,7 +75,7 @@ export = (app: Application) => {
     const { owner, repo } = context.repo();
     // TODO: Limit this to pushes that edit `labels.json`
     if (
-      owner === 'googleapis' &&
+      owner === 'sofisl' &&
       repo === 'repo-automation-bots' &&
       context.payload.ref === 'refs/heads/master'
     ) {
@@ -112,9 +113,9 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
     );
     if (match) {
       // check to see if the color matches
-      if (match.color !== l.color) {
+      if ((match.color !== l.color) || (match.description !== l.description)) {
         console.log(
-          `Updating color for ${match.name} from ${match.color} to ${l.color}.`
+          `Updating ${match.name} from ${match.color} to ${l.color} and ${match.description} to ${l.description}.`
         );
         await github.issues
           .updateLabel({
@@ -122,7 +123,7 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
             owner,
             name: l.name,
             current_name: l.name,
-            description: match.description,
+            description: l.description,
             color: l.color,
           })
           .catch(e => {
@@ -139,11 +140,14 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
           owner,
           color: l.color,
           description: l.description,
-          name: l.name,
+          name: l.name
         })
         .catch(e => {
-          console.error(`Error creating label ${l.name} in ${owner}/${repo}`);
-          console.error(e.stack);
+          //ignores errors that are caused by two requests kicking off at the same time
+          if (e.errors[0].code !== "already_exists") {
+            console.error(`Error creating label ${l.name} in ${owner}/${repo}`);
+            console.error(e.stack);
+          }
         });
     }
   }
@@ -157,21 +161,25 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
     'kokoro: run',
     'question',
   ];
-  for (const l of oldLabels) {
-    if (labelsToDelete.includes(l.name)) {
-      await github.issues
-        .deleteLabel({
-          name: l.name,
-          owner,
-          repo,
-        })
-        .then(() => {
-          console.log(`Deleted '${l.name}' from ${owner}/${repo}`);
-        })
-        .catch(e => {
-          console.error(`Error deleting label ${l.name} in ${owner}/${repo}`);
-          console.error(e.stack);
-        });
+  if (!Object.keys(oldLabels).length) {
+    for (const l of oldLabels) {
+      console.log(l.name);
+      if (labelsToDelete.includes(l.name)) {
+        await github.issues
+          .deleteLabel({
+            name: l.name,
+            owner,
+            repo,
+          })
+          .then(() => {
+            console.log(`Deleted '${l.name}' from ${owner}/${repo}`);
+          })
+          .catch(e => {
+            console.error(`Error deleting label ${l.name} in ${owner}/${repo}`);
+            console.error(e.stack);
+          });
+      }
     }
   }
 }
+
