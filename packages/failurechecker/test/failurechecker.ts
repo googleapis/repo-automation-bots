@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 import myProbotApp from '../src/failurechecker';
 
 import { resolve } from 'path';
@@ -26,7 +25,6 @@ import * as fs from 'fs';
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
-
 
 describe('failurechecker', () => {
   let probot: Probot;
@@ -49,7 +47,6 @@ describe('failurechecker', () => {
     };
   });
 
-
   describe('responds to events', () => {
     const config = fs.readFileSync(
       resolve(fixturesPath, 'config', 'valid-config.yml')
@@ -62,36 +59,28 @@ describe('failurechecker', () => {
         'pull_request_opened'
       ));
 
-
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/failurechecker.yml')
-        .reply(200, { content: config.toString('base64') })
-
+        .reply(200, { content: config.toString('base64') });
 
       await probot.receive({
         name: 'pull_request.opened',
         payload,
-        id: 'abc123'
+        id: 'abc123',
       });
 
       requests.done();
     });
 
     it('responds to issues', async () => {
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_opened'
-      ));
+      const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/failurechecker.yml')
-        .reply(200, { content: config.toString('base64') })
-        .log(console.log)
-
+        .reply(200, { content: config.toString('base64') });
 
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
       requests.done();
     });
-
   });
 });
