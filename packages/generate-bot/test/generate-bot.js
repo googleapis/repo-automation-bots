@@ -28,15 +28,13 @@ const path = require("path");
 
 const readAllFiles = function(dirNameRead, contentString) {
   const files = fs.readdirSync(dirNameRead);
-  contentString = contentString;
   files.forEach(function(file) {
     const readName = path.join(dirNameRead, file);
     if (fs.statSync(readName).isDirectory()) {
-      console.log("directory: "+readName);
+      console.log("directory: " + readName);
       readAllFiles(readName, contentString);
     } else {
-      contentString += fs.readFileSync(readName);      
-
+      contentString += fs.readFileSync(readName);
     }
   });
   return contentString;
@@ -71,7 +69,7 @@ describe("file structure", () => {
     });
 
     const contentString = "Start of snapshot: ";
-    let snap = snapshot(
+    const snap = snapshot(
       readAllFiles("./helloWorld", contentString).replace("\r\n")
     );
     console.log(snap);
@@ -140,9 +138,10 @@ describe("user input", () => {
     };
     GenerateBot.checkValidity(fileLocationDefault);
     const regex = new RegExp("packages/pass");
-    console.log("File location: "+fileLocationDefault.fileLocation);
-    console.log("regex: "+regex);
-    console.log("regex replace: "+regex.replace);
-    expect(regex.test(fileLocationDefault.fileLocation.replace("\r\n"))).to.be.true;
+    console.log("File location: " + fileLocationDefault.fileLocation);
+    console.log("regex: " + regex);
+    console.log("regex replace: " + regex.replace);
+    expect(regex.test(fileLocationDefault.fileLocation.replace("\r\n"))).to.be
+      .true;
   });
 });
