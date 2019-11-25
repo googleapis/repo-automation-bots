@@ -17,7 +17,6 @@
 import { Application } from 'probot';
 import { request } from 'gaxios';
 import { GitHubAPI } from 'probot/lib/github';
-import e = require('express');
 
 interface Labels {
   labels: [
