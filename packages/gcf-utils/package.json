@@ -55,7 +55,7 @@
     "@google-cloud/storage": "^4.0.0",
     "@octokit/plugin-enterprise-compatibility": "1.2.1",
     "js-base64": "^2.5.1",
-    "probot": "9.6.4",
+    "probot": "9.6.6",
     "tmp": "^0.1.0",
     "yargs": "^15.0.0"
   },
