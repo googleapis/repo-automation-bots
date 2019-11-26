@@ -55,8 +55,8 @@ for f in *; do
                             --uri="$proxyurl" \
                             --oidc-service-account-email="$SCHEDULER_SERVICE_ACCOUNT_EMAIL" \
                             --oidc-token-audience="$proxyurl" \
-                            --message-body="{\"Name\": \"$(functionname)\", \"Type\" : \"function\", \"Location\": \"$FUNCTION_REGION\"}" \
-                            --header=Content-Type=application/json
+                            --message-body="{\"Name\": \"$functionname\", \"Type\" : \"function\", \"Location\": \"$FUNCTION_REGION\"}" \
+                            --headers=Content-Type=application/json
                 fi
             fi
         done
