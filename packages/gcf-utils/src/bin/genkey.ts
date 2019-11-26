@@ -135,7 +135,7 @@ async function run() {
 
   const name = kmsclient.cryptoKeyPath(project, location, keyring, botname);
 
-  const plaintext = Buffer.from(Base64.encode(JSON.stringify(blob)), 'utf-8');
+  const plaintext = Buffer.from(JSON.stringify(blob), 'utf-8');
   const [kmsresult] = await kmsclient.encrypt({ name, plaintext });
   encblob = kmsresult.ciphertext;
 
