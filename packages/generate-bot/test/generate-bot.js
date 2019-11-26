@@ -70,7 +70,8 @@ describe("file structure", () => {
     });
 
     const contentString = "Start of snapshot: ";
-    const string = readAllFiles("./helloWorld", contentString).replace("\r\n");
+    const string = readAllFiles("./helloWorld", contentString)
+    //.replace("\r\n");
     // console.log("waza");
     // console.log(string);
     // console.log(string.length);
