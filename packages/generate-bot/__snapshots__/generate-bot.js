@@ -1,4 +1,4 @@
-exports['read all files'] = `
+exports["read all files"] = `
 Start of snapshot: helloWorld
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
@@ -911,4 +911,4 @@ describe('helloWorld', () => {
     "system-test/*.ts"
   ]
 }
-`
+`;

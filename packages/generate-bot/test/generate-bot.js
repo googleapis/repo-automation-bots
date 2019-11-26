@@ -27,7 +27,8 @@ const snapshot = require("snap-shot-it");
 const path = require("path");
 
 const readAllFiles = function(dirNameRead, contentString) {
-  const files = fs.readdirSync(dirNameRead);
+  const files = fs.readdirSync(dirNameRead).sort();
+  console.log("files: "+files)
   contentString = contentString || [];
   files.forEach(function(file) {
     const readName = path.join(dirNameRead, file);
@@ -35,7 +36,7 @@ const readAllFiles = function(dirNameRead, contentString) {
       console.log("directory: " + readName);
       contentString = readAllFiles(readName, contentString);
     } else {
-      contentString += fs.readFileSync(readName, 'utf8');
+      contentString += fs.readFileSync(readName, "utf8");
     }
   });
   return contentString;
@@ -70,7 +71,7 @@ describe("file structure", () => {
     });
 
     const contentString = "Start of snapshot: ";
-    const string = readAllFiles("./helloWorld", contentString)
+    const string = readAllFiles("./helloWorld", contentString);
     //.replace("\r\n");
     // console.log("waza");
     // console.log(string);
