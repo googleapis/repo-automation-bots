@@ -46,7 +46,8 @@ for f in *; do
                 schedule=$(cat "$fx")
                 if gcloud beta scheduler jobs describe "$functionname" 2>/dev/null; then
                     # We have an existing job. Update the schedule
-                    gcloud beta scheduler jobs update "$functionname" --schedule "$schedule"
+                    gcloud beta scheduler jobs update http "$functionname" --schedule "$schedule" \
+                            --uri="$proxyurl/v0"
                     else
                     # Make a cloud scheduler job
                     gcloud beta scheduler jobs create http "$functionname" \
