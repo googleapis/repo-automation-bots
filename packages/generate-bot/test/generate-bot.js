@@ -28,13 +28,14 @@ const path = require("path");
 
 const readAllFiles = function(dirNameRead, contentString) {
   const files = fs.readdirSync(dirNameRead);
+  contentString = contentString || [];
   files.forEach(function(file) {
     const readName = path.join(dirNameRead, file);
     if (fs.statSync(readName).isDirectory()) {
       console.log("directory: " + readName);
-      readAllFiles(readName, contentString);
+      contentString = readAllFiles(readName, contentString);
     } else {
-      contentString += fs.readFileSync(readName);
+      contentString += fs.readFileSync(readName, 'utf8');
     }
   });
   return contentString;
@@ -61,7 +62,7 @@ describe("file structure", () => {
     rimraf.sync("./tmp");
   });
 
-  it("checks that the file content carries over", async () => {
+  it.only("checks that the file content carries over", async () => {
     GenerateBot.creatingBotFiles("./templates", {
       programName: "helloWorld",
       description: "says hi",
@@ -69,11 +70,13 @@ describe("file structure", () => {
     });
 
     const contentString = "Start of snapshot: ";
-    const snap = snapshot(
-      readAllFiles("./helloWorld", contentString).replace("\r\n")
-    );
-    console.log(snap);
-    return snap;
+    const string = readAllFiles("./helloWorld", contentString).replace("\r\n");
+    // console.log("waza");
+    // console.log(string);
+    // console.log(string.length);
+    // let compareString = fs.readFileSync("./__snapshots__/generate-bot.js", 'utf8');
+    // console.log(compareString.length);
+    return snapshot("read all files", string);
   });
 
   afterEach(() => {
