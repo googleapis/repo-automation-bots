@@ -159,23 +159,21 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
     'kokoro: run',
     'question',
   ];
-  if (!Object.keys(oldLabels).length) {
-    for (const l of oldLabels) {
-      if (labelsToDelete.includes(l.name)) {
-        await github.issues
-          .deleteLabel({
-            name: l.name,
-            owner,
-            repo,
-          })
-          .then(() => {
-            console.log(`Deleted '${l.name}' from ${owner}/${repo}`);
-          })
-          .catch(e => {
-            console.error(`Error deleting label ${l.name} in ${owner}/${repo}`);
-            console.error(e.stack);
-          });
-      }
+  for (const l of oldLabels) {
+    if (labelsToDelete.includes(l.name)) {
+      await github.issues
+        .deleteLabel({
+          name: l.name,
+          owner,
+          repo,
+        })
+        .then(() => {
+          console.log(`Deleted '${l.name}' from ${owner}/${repo}`);
+        })
+        .catch(e => {
+          console.error(`Error deleting label ${l.name} in ${owner}/${repo}`);
+          console.error(e.stack);
+        });
     }
   }
 }
