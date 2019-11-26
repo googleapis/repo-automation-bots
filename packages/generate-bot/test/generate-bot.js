@@ -78,7 +78,7 @@ describe("file structure", () => {
     // console.log(string.length);
     // let compareString = fs.readFileSync("./__snapshots__/generate-bot.js", 'utf8');
     // console.log(compareString.length);
-    return snapshot("read all files", string);
+    return snapshot("read all files", string.replace("\r\n"));
   });
 
   afterEach(() => {
