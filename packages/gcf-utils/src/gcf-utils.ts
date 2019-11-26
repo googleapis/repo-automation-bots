@@ -22,7 +22,17 @@ import {
 import { Storage } from '@google-cloud/storage';
 import * as KMS from '@google-cloud/kms';
 import { readFileSync } from 'fs';
+import { request } from 'gaxios';
 import * as express from 'express';
+
+interface Repos {
+  repos: [
+    {
+      language: string;
+      repo: string;
+    }
+  ];
+}
 
 export class GCFBootstrapper {
   probot?: Probot;
@@ -92,11 +102,19 @@ export class GCFBootstrapper {
       // Do the thing
       if (name) {
         try {
-          await this.probot.receive({
-            name,
-            id,
-            payload: request.body,
-          });
+          if (name === 'schedule.repository') {
+          // TODO: currently we assume that scheduled events walk all repos
+          // managed by the client libraries team, it would be good to get more
+          // clever and instead pull up a list of repos we're installed on by
+          // installation ID:
+            await this.handleScheduled(id, request);
+          } else {
+            await this.probot.receive({
+              name,
+              id,
+              payload: request.body,
+            });
+          }
           response.send({
             statusCode: 200,
             body: JSON.stringify({ message: 'Executed' }),
@@ -111,5 +129,33 @@ export class GCFBootstrapper {
         response.sendStatus(400);
       }
     };
+  }
+
+  async handleScheduled (id: string, req: express.Request) {
+    // Fetch list of repositories managed by the client libraries team.
+    const url =
+    'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
+    const res = await request<Repos>({ url });
+    const { repos } = res.data;
+    for (const repo of repos) {
+      // The payload from the scheduler is updated with additional information
+      // providing context about the organization/repo that the event is
+      // firing for.
+      const [orgName, repoName] = repo.repo.split('/');
+      const payload = Object.assign({}, req.body, {
+        repository: {
+          name: repoName,
+          full_name: repo.repo
+        },
+        organization: {
+          login: orgName
+        }
+      })
+      await this.probot?.receive({
+        name: 'schedule.repository',
+        id,
+        payload
+      });
+    }
   }
 }
