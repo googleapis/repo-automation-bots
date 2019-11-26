@@ -25,6 +25,7 @@ options:
 | `releaseLabels` | List of labels to add to the release PR. | `string[]` | `null` | `undefined` |
 | `releaseType` | Release strategy | `string` | strategy detected from the repository's primary language |
 | `handleGHRelease` | Release to GitHub | `boolean` | should release please create a GitHub release, when release pull-requests are merged? |
+| `bumpMinorPreMajor` | Bump minor for breaking changes before GA | `boolean` | whether to bump a minor version before 1.0.0 on a breaking change |
 
 ## Testing
 
@@ -47,7 +48,7 @@ npm run test:snap
 
 ## Contributing
 
-If you have suggestions for how header-checker-lint could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
+If you have suggestions for how release-please could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
 
 For more, check out the [Contributing Guide](CONTRIBUTING.md).
 
