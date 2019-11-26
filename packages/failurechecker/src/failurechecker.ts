@@ -31,19 +31,13 @@ export = (app: Application) => {
   app.on(
     ['issues.opened', 'pull_request.opened', 'schedule.repository'],
     async context => {
-      const config = (await context.config(
-        CONFIGURATION_FILE_PATH,
-        {}
-      )) as Configuration;
-
-      app.log("it's alive!");
-
-      if (
-        (context.payload.pull_request || context.payload.issue) &&
-        config.randomBoolean
-      ) {
-        return;
-      }
+      const issues = (
+        await context.github.issues.listForRepo({
+          owner: 'googleapis',
+          repo: 'sloth',
+        })
+      ).data;
+      app.log("it's alive!", issues);
     }
   );
 };
