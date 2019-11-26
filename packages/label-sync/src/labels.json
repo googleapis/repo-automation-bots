@@ -52,7 +52,7 @@
     },
     {
       "name": "priority: p2",
-      "description": "Lowest priority. Fix may not be included in next release (e.g. cosmetic UI or minor documentation issues).",
+      "description": "Lowest priority. Fix may not be included in next release.",
       "color": "fef2c0"
     },
     {
@@ -62,7 +62,7 @@
     },
     {
       "name": "priority: p0",
-      "description": "Highest priority. Critical issue. P0 implies highest priority (e.g. blocking imminent release). P0 issues should be monitored on a daily basis.",
+      "description": "Highest priority. Critical issue. P0 implies highest priority.",
       "color": "b60205"
     },
     {
