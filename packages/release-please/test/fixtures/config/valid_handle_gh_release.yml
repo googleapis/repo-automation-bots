@@ -1,0 +1,5 @@
+primaryBranch: master
+releaseLabels:
+  - foo
+  - bar
+handleGHRelease: true

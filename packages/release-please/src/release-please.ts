@@ -1,18 +1,16 @@
-/**
- * Copyright 2019 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import { Application } from 'probot';
 
@@ -20,6 +18,10 @@ import { Application } from 'probot';
 // See https://github.com/googleapis/release-please/issues/249
 import { ReleaseType, BuildOptions } from 'release-please/build/src/release-pr';
 import { ReleasePRFactory } from 'release-please/build/src/release-pr-factory';
+import {
+  GitHubRelease,
+  GitHubReleaseOptions,
+} from 'release-please/build/src/github-release';
 import { Runner } from './runner';
 import { GitHubAPI } from 'probot/lib/github';
 
@@ -28,6 +30,8 @@ interface ConfigurationOptions {
   releaseLabels?: string[];
   releaseType?: ReleaseType;
   packageName?: string;
+  handleGHRelease?: boolean;
+  bumpMinorPreMajor?: boolean;
 }
 
 const DEFAULT_API_URL = 'https://api.github.com';
@@ -42,7 +46,7 @@ function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
   }
   switch (language.toLowerCase()) {
     case 'ruby':
-      return ReleaseType.RubyYoshi;
+      return ReleaseType.Ruby;
     case 'java':
       return ReleaseType.JavaYoshi;
     case 'typescript':
@@ -55,12 +59,14 @@ function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
   }
 }
 
-function runReleasePlease(
+// creates or updates the evergreen release-please release PR.
+function createReleasePR(
   releaseType: ReleaseType,
   packageName: string,
   repoUrl: string,
   github: GitHubAPI,
-  releaseLabels?: string[]
+  releaseLabels?: string[],
+  bumpMinorPreMajor?: boolean
 ) {
   const buildOptions: BuildOptions = {
     packageName,
@@ -71,12 +77,34 @@ function runReleasePlease(
       graphql: github.graphql,
       request: github.request,
     },
+    bumpMinorPreMajor,
   };
   if (releaseLabels) {
     buildOptions.label = releaseLabels.join(',');
   }
 
   Runner.runner(ReleasePRFactory.build(releaseType, buildOptions));
+}
+
+// turn a merged release-please release PR into a GitHub release.
+function createGitHubRelease(
+  packageName: string,
+  repoUrl: string,
+  github: GitHubAPI
+) {
+  const releaseOptions: GitHubReleaseOptions = {
+    label: 'autorelease: pending',
+    repoUrl,
+    packageName,
+    apiUrl: DEFAULT_API_URL,
+    octokitAPIs: {
+      octokit: github,
+      graphql: github.graphql,
+      request: github.request,
+    },
+  };
+  const ghr = new GitHubRelease(releaseOptions);
+  Runner.releaser(ghr);
 }
 
 export = (app: Application) => {
@@ -87,7 +115,7 @@ export = (app: Application) => {
 
     const remoteConfiguration: ConfigurationOptions | null = (await context.config(
       WELL_KNOWN_CONFIGURATION_FILE
-    )) as (ConfigurationOptions | null);
+    )) as ConfigurationOptions | null;
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
@@ -114,13 +142,25 @@ export = (app: Application) => {
     app.log.info(`push (${repoUrl})`);
 
     // TODO: this should be refactored into an interface.
-    runReleasePlease(
+    createReleasePR(
       releaseType,
       configuration.packageName || repoName,
       repoUrl,
       context.github,
-      configuration.releaseLabels
+      configuration.releaseLabels,
+      configuration.bumpMinorPreMajor
     );
+
+    // release-please can handle creating a release on GitHub, we opt not to do
+    // this for our repos that have autorelease enabled.
+    if (configuration.handleGHRelease) {
+      app.log.info(`handling GitHub release for (${repoUrl})`);
+      createGitHubRelease(
+        configuration.packageName || repoName,
+        repoUrl,
+        context.github
+      );
+    }
   });
 
   app.on('release.published', async context => {
@@ -135,7 +175,7 @@ export = (app: Application) => {
 
     const remoteConfiguration = (await context.config(
       WELL_KNOWN_CONFIGURATION_FILE
-    )) as (ConfigurationOptions | null);
+    )) as ConfigurationOptions | null;
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
@@ -155,12 +195,13 @@ export = (app: Application) => {
       : releaseTypeFromRepoLanguage(context.payload.repository.language);
 
     // TODO: this should be refactored into an interface.
-    runReleasePlease(
+    createReleasePR(
       releaseType,
       configuration.packageName || repoName,
       repoUrl,
       context.github,
-      configuration.releaseLabels
+      configuration.releaseLabels,
+      configuration.bumpMinorPreMajor
     );
   });
 };

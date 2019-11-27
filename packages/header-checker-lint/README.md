@@ -16,7 +16,7 @@ with the following options:
 | Name | Description | Type | Default |
 |----- | ----------- | ---- | ------- |
 | `allowedCopyrightHolders` | List of allowed copyright holders | `string[]` | `[]` |
-| `allowedLicenses` | The allowed licenses. | `string[]` | `["Apache-2.0", "MIT"]` |
+| `allowedLicenses` | The allowed licenses. | `string[]` | `["Apache-2.0", "MIT", "BSD-3"]` |
 | `ignoreFiles` | List of files to ignore. These values will be treated as path globs | `string[]` | `[]` |
 | `sourceFileExtensions` | List of file extensions that will be treated as source files | `string[]` | `["ts", "js", "java"]` |
 
