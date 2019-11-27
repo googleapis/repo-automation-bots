@@ -34,6 +34,10 @@ interface Repos {
   ];
 }
 
+interface Scheduled {
+  repo?: string;
+}
+
 export class GCFBootstrapper {
   probot?: Probot;
 
@@ -131,31 +135,54 @@ export class GCFBootstrapper {
     };
   }
 
-  async handleScheduled(id: string, req: express.Request) {
-    // Fetch list of repositories managed by the client libraries team.
-    const url =
-      'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
-    const res = await request<Repos>({ url });
-    const { repos } = res.data;
-    for (const repo of repos) {
-      // The payload from the scheduler is updated with additional information
-      // providing context about the organization/repo that the event is
-      // firing for.
-      const [orgName, repoName] = repo.repo.split('/');
-      const payload = Object.assign({}, req.body, {
-        repository: {
-          name: repoName,
-          full_name: repo.repo,
-        },
-        organization: {
-          login: orgName,
-        },
-      });
+  private async handleScheduled(id: string, req: express.Request) {
+    const body = (Buffer.isBuffer(req.body)
+      ? JSON.parse(req.body.toString('utf8'))
+      : req.body) as Scheduled;
+
+    if (body.repo) {
+      // Job was scheduled for a single repository:
+      this.receivePromise(body.repo, id, body);
+    } else {
+      // Job should be run on all managed repositories:
+      const url =
+        'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
+      const res = await request<Repos>({ url });
+      const { repos } = res.data;
+      // We process WORK_SIZE repos in parallel:
+      const WORK_SIZE = 3;
+      while (repos.length) {
+        await Promise.all(
+          repos.splice(0, WORK_SIZE).map(repo => {
+            return this.receivePromise(repo.repo, id, body);
+          })
+        );
+      }
+    }
+  }
+
+  private async receivePromise(repoFullName: string, id: string, body: object) {
+    // The payload from the scheduler is updated with additional information
+    // providing context about the organization/repo that the event is
+    // firing for.
+    const [orgName, repoName] = repoFullName.split('/');
+    const payload = Object.assign({}, body, {
+      repository: {
+        name: repoName,
+        full_name: repoFullName,
+      },
+      organization: {
+        login: orgName,
+      },
+    });
+    try {
       await this.probot?.receive({
         name: 'schedule.repository',
         id,
         payload,
       });
+    } catch (err) {
+      console.warn(err.message);
     }
   }
 }
