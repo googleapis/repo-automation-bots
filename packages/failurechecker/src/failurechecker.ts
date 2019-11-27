@@ -24,7 +24,7 @@ import * as moment from 'moment';
 import { GitHubAPI } from 'probot/lib/github';
 import { IssuesListResponseItem } from '@octokit/rest';
 // labels indicative of the fact that a release has not completed yet.
-const RELEASE_LABELS = ['autorelease: pending', 'autorelease: tagged'];
+const RELEASE_LABELS = ['autorelease: pending', 'autorelease: tagged', 'autorelease: failed'];
 
 // We open an issue that a release has failed if it's been longer than 3
 // hours and we're within normal working hours.
@@ -105,6 +105,11 @@ export = (app: Application) => {
     const warningIssue = issues.find(issue => {
       return issue.title.includes(ISSUE_TITLE);
     });
+
+    // TODO: remove this probe once we have a better idea of how
+    // a cron effects our usage limits:
+    app.log((await github.rateLimit.get()).data);
+
     if (warningIssue) {
       app.log(`a warning issue was already opened for pr ${prNumber}`);
       return;

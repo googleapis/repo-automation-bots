@@ -65,9 +65,15 @@ describe('failurechecker', () => {
       )
       .reply(200, [])
       .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&per_page=16'
+      )
+      .reply(200, [])
+      .get(
         '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
       )
       .reply(200, [])
+      .get('/rate_limit')
+      .reply(200, {})
       .post('/repos/googleapis/nodejs-foo/issues', body => {
         snapshot(body);
         return true;
@@ -96,6 +102,10 @@ describe('failurechecker', () => {
       )
       .reply(200, [])
       .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&per_page=16'
+      )
+      .reply(200, [])
+      .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&per_page=16'
       )
       .reply(200, [
@@ -113,6 +123,8 @@ describe('failurechecker', () => {
         '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
       )
       .reply(200, [])
+      .get('/rate_limit')
+      .reply(200, {})
       .post('/repos/googleapis/nodejs-foo/issues', body => {
         snapshot(body);
         return true;
@@ -139,6 +151,10 @@ describe('failurechecker', () => {
     const requests = nock('https://api.github.com')
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&per_page=16'
+      )
+      .reply(200, [])
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&per_page=16'
       )
       .reply(200, [])
       .get(
@@ -173,6 +189,10 @@ describe('failurechecker', () => {
       )
       .reply(200, [])
       .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&per_page=16'
+      )
+      .reply(200, [])
+      .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&per_page=16'
       )
       .reply(200, [
@@ -193,7 +213,9 @@ describe('failurechecker', () => {
         {
           title: 'Warning: a recent release failed',
         },
-      ]);
+      ])
+      .get('/rate_limit')
+      .reply(200, {});
 
     await probot.receive({
       name: 'schedule.repository',
