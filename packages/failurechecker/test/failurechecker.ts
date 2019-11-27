@@ -16,15 +16,12 @@
 
 import myProbotApp from '../src/failurechecker';
 
-import { resolve } from 'path';
 import { Probot } from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
-import * as fs from 'fs';
 
 nock.disableNetConnect();
-
-const fixturesPath = resolve(__dirname, '../../test/fixtures');
+process.env.NODE_ENV = 'test';
 
 describe('failurechecker', () => {
   let probot: Probot;
@@ -47,5 +44,169 @@ describe('failurechecker', () => {
     };
   });
 
-  describe('responds to events', () => {});
+  it('opens an issue on GitHub if there exists a pending label > threshold', async () => {
+    const requests = nock('https://api.github.com')
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&per_page=16'
+      )
+      .reply(200, [
+        {
+          number: 33,
+          updated_at: '2011-04-22T13:33:48Z',
+        },
+      ])
+      .get('/repos/googleapis/nodejs-foo/pulls/33')
+      .reply(200, {
+        number: 33,
+        merged_at: '2011-04-22T13:33:48Z',
+      })
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&per_page=16'
+      )
+      .reply(200, [])
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
+      )
+      .reply(200, [])
+      .post('/repos/googleapis/nodejs-foo/issues', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200);
+
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: {
+        repository: {
+          name: 'nodejs-foo',
+        },
+        organization: {
+          login: 'googleapis',
+        },
+      },
+      id: 'abc123',
+    });
+    requests.done();
+  });
+
+  it('opens an issue on GitHub if there exists a tagged label > threshold', async () => {
+    const requests = nock('https://api.github.com')
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&per_page=16'
+      )
+      .reply(200, [])
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&per_page=16'
+      )
+      .reply(200, [
+        {
+          number: 33,
+          updated_at: '2011-04-22T13:33:48Z',
+        },
+      ])
+      .get('/repos/googleapis/nodejs-foo/pulls/33')
+      .reply(200, {
+        number: 33,
+        merged_at: '2011-04-22T13:33:48Z',
+      })
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
+      )
+      .reply(200, [])
+      .post('/repos/googleapis/nodejs-foo/issues', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200);
+
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: {
+        repository: {
+          name: 'nodejs-foo',
+        },
+        organization: {
+          login: 'googleapis',
+        },
+      },
+      id: 'abc123',
+    });
+    requests.done();
+  });
+
+  it('does not open an issue if merged_at is < threshold', async () => {
+    const date = new Date().toISOString();
+    const requests = nock('https://api.github.com')
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&per_page=16'
+      )
+      .reply(200, [])
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&per_page=16'
+      )
+      .reply(200, [
+        {
+          number: 33,
+          updated_at: date,
+        },
+      ]);
+
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: {
+        repository: {
+          name: 'nodejs-foo',
+        },
+        organization: {
+          login: 'googleapis',
+        },
+      },
+      id: 'abc123',
+    });
+    requests.done();
+  });
+
+  it('does not open an issue if a prior warning issue is still open', async () => {
+    const requests = nock('https://api.github.com')
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&per_page=16'
+      )
+      .reply(200, [])
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&per_page=16'
+      )
+      .reply(200, [
+        {
+          number: 33,
+          updated_at: '2011-04-22T13:33:48Z',
+        },
+      ])
+      .get('/repos/googleapis/nodejs-foo/pulls/33')
+      .reply(200, {
+        number: 33,
+        merged_at: '2011-04-22T13:33:48Z',
+      })
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
+      )
+      .reply(200, [
+        {
+          title: 'Warning: a recent release failed',
+        },
+      ]);
+
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: {
+        repository: {
+          name: 'nodejs-foo',
+        },
+        organization: {
+          login: 'googleapis',
+        },
+      },
+      id: 'abc123',
+    });
+    requests.done();
+  });
 });

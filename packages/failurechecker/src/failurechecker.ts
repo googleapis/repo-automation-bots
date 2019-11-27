@@ -22,10 +22,9 @@ import { Application } from 'probot';
 import * as util from 'util';
 import * as moment from 'moment';
 import { GitHubAPI } from 'probot/lib/github';
-
-const CONFIGURATION_FILE_PATH = 'failurechecker.yml';
-
-const RELEASE_LABEL = 'autorelease: pending';
+import { IssuesListResponseItem } from '@octokit/rest';
+// labels indicative of the fact that a release has not completed yet.
+const RELEASE_LABELS = ['autorelease: pending', 'autorelease: tagged'];
 
 // We open an issue that a release has failed if it's been longer than 3
 // hours and we're within normal working hours.
@@ -37,43 +36,54 @@ const START_HOUR_UTC = 17;
 export = (app: Application) => {
   app.on(['schedule.repository'], async context => {
     const utcHour = moment.utc().hour();
+    const owner = context.payload.organization.login;
+    const repo = context.payload.repository.name;
 
-    if (utcHour > END_HOUR_UTC && utcHour < START_HOUR_UTC) {
+    // If we're outside of working hours, and we're not in a test context, skip this bot.
+    if (
+      utcHour > END_HOUR_UTC &&
+      utcHour < START_HOUR_UTC &&
+      process.env.NODE_ENV !== 'test'
+    ) {
       app.log("skipping run, we're currently outside of working hours");
       return;
     }
 
-    const owner = context.payload.organization.login;
-    const repo = context.payload.repository.name;
-
-    // TODO: we should potentially extend this out further for the benefit
-    // of high traffic repos (currently the PR could go below the fold).
-    const prs = (
-      await context.github.pulls.list({
-        owner: context.payload.organization.login,
-        repo: context.payload.repository.name,
-        state: 'closed',
-        per_page: 100,
-      })
-    ).data;
-
-    const now = new Date().getTime();
-    for (const pr of prs) {
-      // PR was closed but not merged.
-      if (!pr.merged_at) {
-        continue;
+    try {
+      const now = new Date().getTime();
+      for (const label of RELEASE_LABELS) {
+        const results = (
+          await context.github.issues.listForRepo({
+            owner: context.payload.organization.login,
+            repo: context.payload.repository.name,
+            labels: label,
+            state: 'closed',
+            per_page: 16,
+          })
+        ).data;
+        for (const issue of results) {
+          const updatedTime = new Date(issue.updated_at).getTime();
+          if (now - updatedTime > WARNING_THRESHOLD) {
+            // Check that the corresponding PR was actually merged,
+            // rather than closed:
+            const pr = (
+              await context.github.pulls.get({
+                owner,
+                repo,
+                pull_number: issue.number,
+              })
+            ).data;
+            if (pr.merged_at) {
+              await openWarningIssue(owner, repo, pr.number, context.github);
+            }
+          }
+        }
       }
-
-      // we only care about merged PRs with release labels.
-      if (!pr.labels.find(l => l.name === RELEASE_LABEL)) continue;
-
-      const mergedTime = new Date(pr.merged_at).getTime();
-      if (now - mergedTime > WARNING_THRESHOLD) {
-        await openWarningIssue(owner, repo, pr.number, context.github);
-      }
+      app.log(`it's alive! event for ${repo}`);
+    } catch (err) {
+      console.info(err);
+      app.log.error(`${err.message} processing ${repo}`);
     }
-
-    app.log(`it's alive! event for ${context.payload.repository.name}`);
   });
 
   const ISSUE_TITLE = `Warning: a recent release failed`;
@@ -84,13 +94,6 @@ export = (app: Application) => {
     prNumber: number,
     github: GitHubAPI
   ) {
-    if (!repo.includes('node')) {
-      app.log(
-        `we are currently only testing on Node.js repos, skipping ${repo}`
-      );
-      return;
-    }
-
     const issues = (
       await github.issues.listForRepo({
         owner,
@@ -106,6 +109,7 @@ export = (app: Application) => {
       app.log(`a warning issue was already opened for pr ${prNumber}`);
       return;
     }
+    app.log(`opening warning issue on ${repo} for PR #${prNumber}`);
     return github.issues.create({
       owner,
       repo,
