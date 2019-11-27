@@ -127,9 +127,11 @@ describe('GCFBootstrapper', () => {
     });
 
     it('invokes scheduled event on all managed libraries', async () => {
-      req.body = {
-        installation: { id: 1 },
-      };
+      req.body = Buffer.from(
+        JSON.stringify({
+          installation: { id: 1 },
+        })
+      );
       req.headers = {};
       req.headers['x-github-event'] = 'schedule.repository';
       req.headers['x-github-delivery'] = '123';
@@ -141,7 +143,28 @@ describe('GCFBootstrapper', () => {
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.calledOnce(sendStub);
       // handler should get called once for each repo in repos.json.
-      sinon.assert.calledThrice(spy);
+      sinon.assert.callCount(spy, 4);
+    });
+
+    it('invokes scheduled event on a single repo', async () => {
+      req.body = Buffer.from(
+        JSON.stringify({
+          installation: { id: 1 },
+          repo: 'googleapis/awesome',
+        })
+      );
+      req.headers = {};
+      req.headers['x-github-event'] = 'schedule.repository';
+      req.headers['x-github-delivery'] = '123';
+
+      nockRepoList();
+
+      await handler(req, response);
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.calledOnce(sendStub);
+      // Providng a repo overrides executing on all repositories.
+      sinon.assert.calledOnce(spy);
     });
   });
 

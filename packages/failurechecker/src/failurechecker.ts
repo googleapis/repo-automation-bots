@@ -38,7 +38,7 @@ export = (app: Application) => {
   app.on(['schedule.repository'], async context => {
     const utcHour = moment.utc().hour();
 
-    if (utcHour >= START_HOUR_UTC || utcHour <= END_HOUR_UTC) {
+    if (utcHour > END_HOUR_UTC && utcHour < START_HOUR_UTC) {
       app.log("skipping run, we're currently outside of working hours");
       return;
     }
@@ -53,7 +53,7 @@ export = (app: Application) => {
         owner: context.payload.organization.login,
         repo: context.payload.repository.name,
         state: 'closed',
-        per_page: 100,
+        per_page: 32,
       })
     ).data;
 
@@ -61,15 +61,14 @@ export = (app: Application) => {
     for (const pr of prs) {
       // PR was closed but not merged.
       if (!pr.merged_at) {
-        app.log(`pr ${pr.number} was never merged`);
         continue;
       }
 
       // we only care about merged PRs with release labels.
       if (!pr.labels.find(l => l.name === RELEASE_LABEL)) continue;
 
-      const closedTime = new Date(pr.milestone.closed_at).getTime();
-      if (now - closedTime > WARNING_THRESHOLD) {
+      const mergedTime = new Date(pr.merged_at).getTime();
+      if (now - mergedTime > WARNING_THRESHOLD) {
         await openWarningIssue(owner, repo, pr.number, context.github);
       }
     }
