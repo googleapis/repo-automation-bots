@@ -52,7 +52,7 @@ describe('failurechecker', () => {
       resolve(fixturesPath, 'config', 'valid-config.yml')
     );
 
-    it('responds to a PR', async () => {
+    it.skip('responds to a PR', async () => {
       const payload = require(resolve(
         fixturesPath,
         'events',
@@ -72,7 +72,7 @@ describe('failurechecker', () => {
       requests.done();
     });
 
-    it('responds to issues', async () => {
+    it.skip('responds to issues', async () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const requests = nock('https://api.github.com')
