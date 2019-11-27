@@ -53,7 +53,7 @@ export = (app: Application) => {
         owner: context.payload.organization.login,
         repo: context.payload.repository.name,
         state: 'closed',
-        per_page: 32,
+        per_page: 100,
       })
     ).data;
 
