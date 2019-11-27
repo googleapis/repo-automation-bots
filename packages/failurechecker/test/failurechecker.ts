@@ -47,40 +47,5 @@ describe('failurechecker', () => {
     };
   });
 
-  describe('responds to events', () => {
-    const config = fs.readFileSync(
-      resolve(fixturesPath, 'config', 'valid-config.yml')
-    );
-
-    it.skip('responds to a PR', async () => {
-      const payload = require(resolve(
-        fixturesPath,
-        'events',
-        'pull_request_opened'
-      ));
-
-      const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/failurechecker.yml')
-        .reply(200, { content: config.toString('base64') });
-
-      await probot.receive({
-        name: 'pull_request.opened',
-        payload,
-        id: 'abc123',
-      });
-
-      requests.done();
-    });
-
-    it.skip('responds to issues', async () => {
-      const payload = require(resolve(fixturesPath, './events/issue_opened'));
-
-      const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/failurechecker.yml')
-        .reply(200, { content: config.toString('base64') });
-
-      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
-      requests.done();
-    });
-  });
+  describe('responds to events', () => {});
 });

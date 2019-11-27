@@ -103,10 +103,10 @@ export class GCFBootstrapper {
       if (name) {
         try {
           if (name === 'schedule.repository') {
-          // TODO: currently we assume that scheduled events walk all repos
-          // managed by the client libraries team, it would be good to get more
-          // clever and instead pull up a list of repos we're installed on by
-          // installation ID:
+            // TODO: currently we assume that scheduled events walk all repos
+            // managed by the client libraries team, it would be good to get more
+            // clever and instead pull up a list of repos we're installed on by
+            // installation ID:
             await this.handleScheduled(id, request);
           } else {
             await this.probot.receive({
@@ -131,10 +131,10 @@ export class GCFBootstrapper {
     };
   }
 
-  async handleScheduled (id: string, req: express.Request) {
+  async handleScheduled(id: string, req: express.Request) {
     // Fetch list of repositories managed by the client libraries team.
     const url =
-    'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
+      'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
     const res = await request<Repos>({ url });
     const { repos } = res.data;
     for (const repo of repos) {
@@ -145,16 +145,16 @@ export class GCFBootstrapper {
       const payload = Object.assign({}, req.body, {
         repository: {
           name: repoName,
-          full_name: repo.repo
+          full_name: repo.repo,
         },
         organization: {
-          login: orgName
-        }
-      })
+          login: orgName,
+        },
+      });
       await this.probot?.receive({
         name: 'schedule.repository',
         id,
-        payload
+        payload,
       });
     }
   }

@@ -28,27 +28,28 @@ interface Configuration {
 }
 
 export = (app: Application) => {
-  app.on(
-    ['schedule.repository'],
-    async context => {
-      const config = (await context.config(
-        CONFIGURATION_FILE_PATH,
-        {}
-      )) as Configuration;
+  app.on(['schedule.repository'], async context => {
+    const config = (await context.config(
+      CONFIGURATION_FILE_PATH,
+      {}
+    )) as Configuration;
 
-      const issues = (await context.github.issues.listForRepo({
+    const issues = (
+      await context.github.issues.listForRepo({
         owner: context.payload.organization.login,
-        repo: context.payload.repository.name
-      })).data;
+        repo: context.payload.repository.name,
+      })
+    ).data;
 
-      app.log(`it's alive! event for ${context.payload.repository.name} ${issues.length}`);
+    app.log(
+      `it's alive! event for ${context.payload.repository.name} ${issues.length}`
+    );
 
-      if (
-        (context.payload.pull_request || context.payload.issue) &&
-        config.randomBoolean
-      ) {
-        return;
-      }
+    if (
+      (context.payload.pull_request || context.payload.issue) &&
+      config.randomBoolean
+    ) {
+      return;
     }
-  );
+  });
 };

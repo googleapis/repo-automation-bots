@@ -133,7 +133,7 @@ describe('GCFBootstrapper', () => {
       req.headers = {};
       req.headers['x-github-event'] = 'schedule.repository';
       req.headers['x-github-delivery'] = '123';
-  
+
       nockRepoList();
 
       await handler(req, response);
