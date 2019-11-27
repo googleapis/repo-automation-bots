@@ -18,6 +18,17 @@ import { GitHubAPI } from 'probot/lib/github';
 import { Options } from 'probot';
 import * as express from 'express';
 import sinon from 'sinon';
+import nock from 'nock';
+
+const repos = require('../../test/fixtures/repos.json');
+
+nock.disableNetConnect();
+
+function nockRepoList() {
+  return nock('https://raw.githubusercontent.com')
+    .get('/googleapis/sloth/master/repos.json')
+    .reply(200, repos);
+}
 
 describe('GCFBootstrapper', () => {
   describe('gcf', () => {
@@ -57,6 +68,7 @@ describe('GCFBootstrapper', () => {
             resolve(GitHubAPI());
           });
         app.on('issues', spy);
+        app.on('schedule.repository', spy);
         app.on('err', sinon.stub().throws());
       });
     });
@@ -112,6 +124,24 @@ describe('GCFBootstrapper', () => {
       sinon.assert.notCalled(spy);
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.called(sendStub);
+    });
+
+    it('invokes scheduled event on all managed libraries', async () => {
+      req.body = {
+        installation: { id: 1 },
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'schedule.repository';
+      req.headers['x-github-delivery'] = '123';
+
+      nockRepoList();
+
+      await handler(req, response);
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.calledOnce(sendStub);
+      // handler should get called once for each repo in repos.json.
+      sinon.assert.calledThrice(spy);
     });
   });
 
