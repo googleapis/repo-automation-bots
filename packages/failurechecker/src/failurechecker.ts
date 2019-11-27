@@ -24,7 +24,11 @@ import * as moment from 'moment';
 import { GitHubAPI } from 'probot/lib/github';
 import { IssuesListResponseItem } from '@octokit/rest';
 // labels indicative of the fact that a release has not completed yet.
-const RELEASE_LABELS = ['autorelease: pending', 'autorelease: tagged', 'autorelease: failed'];
+const RELEASE_LABELS = [
+  'autorelease: pending',
+  'autorelease: tagged',
+  'autorelease: failed',
+];
 
 // We open an issue that a release has failed if it's been longer than 3
 // hours and we're within normal working hours.
@@ -33,18 +37,14 @@ const WARNING_THRESHOLD = 60 * 60 * 3 * 1000;
 const END_HOUR_UTC = 3;
 const START_HOUR_UTC = 17;
 
-export = (app: Application) => {
+const failureChecker = (app: Application) => {
   app.on(['schedule.repository'], async context => {
-    const utcHour = moment.utc().hour();
+    const utcHour: number = failureChecker.utcHour();
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
 
     // If we're outside of working hours, and we're not in a test context, skip this bot.
-    if (
-      utcHour > END_HOUR_UTC &&
-      utcHour < START_HOUR_UTC &&
-      process.env.NODE_ENV !== 'test'
-    ) {
+    if (utcHour > END_HOUR_UTC && utcHour < START_HOUR_UTC) {
       app.log("skipping run, we're currently outside of working hours");
       return;
     }
@@ -124,3 +124,9 @@ export = (app: Application) => {
     });
   }
 };
+
+failureChecker.utcHour = () => {
+  return moment.utc().hour();
+};
+
+export = failureChecker;

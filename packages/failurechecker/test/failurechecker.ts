@@ -14,26 +14,30 @@
  * limitations under the License.
  */
 
-import myProbotApp from '../src/failurechecker';
+import failureChecker from '../src/failurechecker';
 
 import { Probot } from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 
 nock.disableNetConnect();
-process.env.NODE_ENV = 'test';
 
 describe('failurechecker', () => {
   let probot: Probot;
 
   beforeEach(() => {
+    // by default run within working hours:
+    failureChecker.utcHour = () => {
+      return 20;
+    };
+
     probot = new Probot({
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
       Octokit: require('@octokit/rest'),
     });
 
-    const app = probot.load(myProbotApp);
+    const app = probot.load(failureChecker);
     app.app = {
       getSignedJsonWebToken() {
         return 'abc123';
@@ -230,5 +234,25 @@ describe('failurechecker', () => {
       id: 'abc123',
     });
     requests.done();
+  });
+
+  it('does not run outside of working hours', async () => {
+    // UTC 05:00 is outside of working hours:
+    failureChecker.utcHour = () => {
+      return 5;
+    };
+
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: {
+        repository: {
+          name: 'nodejs-foo',
+        },
+        organization: {
+          login: 'googleapis',
+        },
+      },
+      id: 'abc123',
+    });
   });
 });
