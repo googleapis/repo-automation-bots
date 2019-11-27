@@ -13,6 +13,7 @@ by Google on GitHub.
 | [license-header-lint] | PR checker that ensures that source files contain valid license headers | [install][license-header-lint-app] |
 | [release-please] | Proposes releases based on semantic version commits | [install][release-please-app] |
 | [trusted-contribution] | Allows Kokoro CI to trigger for trusted contributors | [install][trusted-contribution-app] |
+| [failurechecker] | Check for automation tasks, e.g., releases, that are in a failed state | [install][failurechecker-app] |
 
 ## Testing Locally
 
@@ -97,3 +98,5 @@ at the specified schedule.
 [release-please-app]: https://github.com/apps/release-please
 [trusted-contribution]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/trusted-contribution
 [trusted-contribution-app]: https://github.com/apps/trusted-contributions-gcf
+[failurechecker]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/failurechecker
+[failurechecker-app]: https://github.com/apps/failure-checker
