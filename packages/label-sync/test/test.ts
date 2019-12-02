@@ -30,11 +30,11 @@ const newLabels = require('../../src/labels.json') as {
 const repos = require('../../test/fixtures/repos.json');
 
 function nockLabelList() {
-  return nock('https://github.com')
+  return nock('https://api.github.com')
     .get(
-      '/googleapis/repo-automation-bots/blob/master/packages/label-sync/src/labels.json'
+      '/repos/googleapis/repo-automation-bots/contents/packages/label-sync/src/labels.json'
     )
-    .reply(200, newLabels);
+    .reply(200, { content: Buffer.from(JSON.stringify(newLabels), 'utf8') });
 }
 
 function nockFetchOldLabels(labels: Array<{}>) {
