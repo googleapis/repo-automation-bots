@@ -71,8 +71,9 @@ describe("file structure", () => {
     });
 
     const contentString = "";
-    const string = readAllFiles("./helloWorld", contentString);
-    return snapshot("read all files", string.replace("\r\n"));
+    const string = readAllFiles("./helloWorld", contentString).replace("\r\n");
+    const windowsString = string.replace("undefined", "");
+    return snapshot(windowsString);
   });
 
   afterEach(() => {

@@ -1,4 +1,4 @@
-exports['read all files'] = `
+exports['file structure checks that the file content carries over 1'] = `
 helloWorld
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
