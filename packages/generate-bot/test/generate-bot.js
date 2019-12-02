@@ -52,7 +52,7 @@ describe("file structure", () => {
     });
     let createdStack = await recursive("./tmp");
     createdStack = createdStack.map(contents => {
-      return contents.replace(/tmp/, "templates");
+    return contents.replace(/tmp/, "templates");
     });
     console.log("OG " + originalStack);
     console.log("CS " + createdStack);
@@ -63,21 +63,15 @@ describe("file structure", () => {
     rimraf.sync("./tmp");
   });
 
-  it.only("checks that the file content carries over", async () => {
+  it("checks that the file content carries over", async () => {
     GenerateBot.creatingBotFiles("./templates", {
       programName: "helloWorld",
       description: "says hi",
       fileLocation: "./helloWorld"
     });
 
-    const contentString = "Start of snapshot: ";
+    const contentString = "";
     const string = readAllFiles("./helloWorld", contentString);
-    //.replace("\r\n");
-    // console.log("waza");
-    // console.log(string);
-    // console.log(string.length);
-    // let compareString = fs.readFileSync("./__snapshots__/generate-bot.js", 'utf8');
-    // console.log(compareString.length);
     return snapshot("read all files", string.replace("\r\n"));
   });
 
