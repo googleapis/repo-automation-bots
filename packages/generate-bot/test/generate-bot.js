@@ -71,9 +71,8 @@ describe("file structure", () => {
     });
 
     const contentString = "";
-    const string = readAllFiles("./helloWorld", contentString).replace("\r\n");
-    const windowsString = string.replace("undefined", "\n");
-    return snapshot(windowsString);
+    const string = readAllFiles("./helloWorld", contentString).replace(/\r/g, "")
+    return snapshot(string);
   });
 
   afterEach(() => {
@@ -137,11 +136,14 @@ describe("user input", () => {
       fileLocation: ""
     };
     GenerateBot.checkValidity(fileLocationDefault);
-    const regex = new RegExp("packages/pass");
-    console.log("File location: " + fileLocationDefault.fileLocation);
-    console.log("regex: " + regex);
-    console.log("regex replace: " + regex.replace);
-    expect(regex.test(fileLocationDefault.fileLocation.replace("\r\n"))).to.be
-      .true;
+    const fileLocation = fileLocationDefault.fileLocation.toString().replace(/\\/g, "/")
+
+    const regexWindows = /packages\\pass/g;
+    const regexLinux = new RegExp("packages/pass");
+    console.log("file location "+fileLocation);
+    console.log("windows :"+regexWindows.test(fileLocation));
+    console.log("linux "+regexLinux.test(fileLocation));
+    expect(regexLinux.test(fileLocation)).to.be.true;
+
   });
 });
