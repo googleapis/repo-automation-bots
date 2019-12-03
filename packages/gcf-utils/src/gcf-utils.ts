@@ -22,7 +22,21 @@ import {
 import { Storage } from '@google-cloud/storage';
 import * as KMS from '@google-cloud/kms';
 import { readFileSync } from 'fs';
+import { request } from 'gaxios';
 import * as express from 'express';
+
+interface Repos {
+  repos: [
+    {
+      language: string;
+      repo: string;
+    }
+  ];
+}
+
+interface Scheduled {
+  repo?: string;
+}
 
 export class GCFBootstrapper {
   probot?: Probot;
@@ -92,11 +106,19 @@ export class GCFBootstrapper {
       // Do the thing
       if (name) {
         try {
-          await this.probot.receive({
-            name,
-            id,
-            payload: request.body,
-          });
+          if (name === 'schedule.repository') {
+            // TODO: currently we assume that scheduled events walk all repos
+            // managed by the client libraries team, it would be good to get more
+            // clever and instead pull up a list of repos we're installed on by
+            // installation ID:
+            await this.handleScheduled(id, request);
+          } else {
+            await this.probot.receive({
+              name,
+              id,
+              payload: request.body,
+            });
+          }
           response.send({
             statusCode: 200,
             body: JSON.stringify({ message: 'Executed' }),
@@ -111,5 +133,56 @@ export class GCFBootstrapper {
         response.sendStatus(400);
       }
     };
+  }
+
+  private async handleScheduled(id: string, req: express.Request) {
+    const body = (Buffer.isBuffer(req.body)
+      ? JSON.parse(req.body.toString('utf8'))
+      : req.body) as Scheduled;
+
+    if (body.repo) {
+      // Job was scheduled for a single repository:
+      this.receivePromise(body.repo, id, body);
+    } else {
+      // Job should be run on all managed repositories:
+      const url =
+        'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
+      const res = await request<Repos>({ url });
+      const { repos } = res.data;
+      // We process WORK_SIZE repos in parallel:
+      const WORK_SIZE = 3;
+      while (repos.length) {
+        await Promise.all(
+          repos.splice(0, WORK_SIZE).map(repo => {
+            return this.receivePromise(repo.repo, id, body);
+          })
+        );
+      }
+    }
+  }
+
+  private async receivePromise(repoFullName: string, id: string, body: object) {
+    // The payload from the scheduler is updated with additional information
+    // providing context about the organization/repo that the event is
+    // firing for.
+    const [orgName, repoName] = repoFullName.split('/');
+    const payload = Object.assign({}, body, {
+      repository: {
+        name: repoName,
+        full_name: repoFullName,
+      },
+      organization: {
+        login: orgName,
+      },
+    });
+    try {
+      await this.probot?.receive({
+        name: 'schedule.repository',
+        id,
+        payload,
+      });
+    } catch (err) {
+      console.warn(err.message);
+    }
   }
 }

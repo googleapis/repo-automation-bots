@@ -26,7 +26,8 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "1.1.0",
+    "gcf-utils": "1.2.0",
+    "moment": "^2.24.0",
     "probot": "9.6.4"
   },
   "devDependencies": {
