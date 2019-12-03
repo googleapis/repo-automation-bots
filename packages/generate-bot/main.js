@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 const { prompt } = require("enquirer");
 const Handlebars = require("handlebars");
 const fs = require("fs");

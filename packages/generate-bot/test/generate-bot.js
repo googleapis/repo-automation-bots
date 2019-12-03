@@ -28,7 +28,7 @@ const path = require("path");
 
 const readAllFiles = function(dirNameRead, contentString) {
   const files = fs.readdirSync(dirNameRead).sort();
-  console.log("files: "+files)
+  console.log("files: " + files);
   contentString = contentString || [];
   files.forEach(function(file) {
     const readName = path.join(dirNameRead, file);
@@ -52,7 +52,7 @@ describe("file structure", () => {
     });
     let createdStack = await recursive("./tmp");
     createdStack = createdStack.map(contents => {
-    return contents.replace(/tmp/, "templates");
+      return contents.replace(/tmp/, "templates");
     });
     console.log("OG " + originalStack);
     console.log("CS " + createdStack);
@@ -72,7 +72,7 @@ describe("file structure", () => {
 
     const contentString = "";
     const string = readAllFiles("./helloWorld", contentString).replace("\r\n");
-    const windowsString = string.replace("undefined", "");
+    const windowsString = string.replace("undefined", "\n");
     return snapshot(windowsString);
   });
 
