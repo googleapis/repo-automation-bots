@@ -25,11 +25,7 @@ import * as fs from 'fs';
 
 nock.disableNetConnect();
 
-<<<<<<< HEAD
 const fixturesPath = resolve(__dirname, '../../test/Fixtures');
-=======
-const fixturesPath = resolve(__dirname, '../../test/fixtures');
->>>>>>> master
 
 
 describe('{{programName}}', () => {
