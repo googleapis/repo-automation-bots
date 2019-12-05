@@ -1,18 +1,16 @@
-/**
- * Copyright 2019 Google LLC. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import { GCFBootstrapper } from '../src/gcf-utils';
 
@@ -20,6 +18,17 @@ import { GitHubAPI } from 'probot/lib/github';
 import { Options } from 'probot';
 import * as express from 'express';
 import sinon from 'sinon';
+import nock from 'nock';
+
+const repos = require('../../test/fixtures/repos.json');
+
+nock.disableNetConnect();
+
+function nockRepoList() {
+  return nock('https://raw.githubusercontent.com')
+    .get('/googleapis/sloth/master/repos.json')
+    .reply(200, repos);
+}
 
 describe('GCFBootstrapper', () => {
   describe('gcf', () => {
@@ -59,6 +68,7 @@ describe('GCFBootstrapper', () => {
             resolve(GitHubAPI());
           });
         app.on('issues', spy);
+        app.on('schedule.repository', spy);
         app.on('err', sinon.stub().throws());
       });
     });
@@ -114,6 +124,47 @@ describe('GCFBootstrapper', () => {
       sinon.assert.notCalled(spy);
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.called(sendStub);
+    });
+
+    it('invokes scheduled event on all managed libraries', async () => {
+      req.body = Buffer.from(
+        JSON.stringify({
+          installation: { id: 1 },
+        })
+      );
+      req.headers = {};
+      req.headers['x-github-event'] = 'schedule.repository';
+      req.headers['x-github-delivery'] = '123';
+
+      nockRepoList();
+
+      await handler(req, response);
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.calledOnce(sendStub);
+      // handler should get called once for each repo in repos.json.
+      sinon.assert.callCount(spy, 4);
+    });
+
+    it('invokes scheduled event on a single repo', async () => {
+      req.body = Buffer.from(
+        JSON.stringify({
+          installation: { id: 1 },
+          repo: 'googleapis/awesome',
+        })
+      );
+      req.headers = {};
+      req.headers['x-github-event'] = 'schedule.repository';
+      req.headers['x-github-delivery'] = '123';
+
+      nockRepoList();
+
+      await handler(req, response);
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.calledOnce(sendStub);
+      // Providng a repo overrides executing on all repositories.
+      sinon.assert.calledOnce(spy);
     });
   });
 
