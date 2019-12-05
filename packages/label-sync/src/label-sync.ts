@@ -50,6 +50,7 @@ async function refreshLabels(github: GitHubAPI) {
   const data = (await github.repos.getContents({
     owner: 'googleapis',
     repo: 'repo-automation-bots',
+
     path: 'packages/label-sync/src/labels.json',
   })).data as { content?: string };
   labelsCache = JSON.parse(

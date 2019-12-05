@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-
-import myProbotApp from '../src/{{programName}}';
+import myProbotApp from '../src/mergeOnGreen';
 
 import { resolve } from 'path';
 import { Probot } from 'probot';
@@ -25,14 +24,9 @@ import * as fs from 'fs';
 
 nock.disableNetConnect();
 
-<<<<<<< HEAD
-const fixturesPath = resolve(__dirname, '../../test/Fixtures');
-=======
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
->>>>>>> master
 
-
-describe('{{programName}}', () => {
+describe('mergeOnGreen', () => {
   let probot: Probot;
 
   beforeEach(() => {
@@ -53,7 +47,6 @@ describe('{{programName}}', () => {
     };
   });
 
-
   describe('responds to events', () => {
     const config = fs.readFileSync(
       resolve(fixturesPath, 'config', 'valid-config.yml')
@@ -66,35 +59,29 @@ describe('{{programName}}', () => {
         'pull_request_opened'
       ));
 
-
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/{{programName}}.yml')
-        .reply(200, { content: config.toString('base64') })
-
+        .get('/repos/testOwner/testRepo/contents/.github/mergeOnGreen.yml')
+        .reply(200, { content: config.toString('base64') });
 
       await probot.receive({
         name: 'pull_request.opened',
         payload,
-        id: 'abc123'
+        id: 'abc123',
       });
 
       requests.done();
     });
 
     it('responds to issues', async () => {
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_opened'
-      ));
+      const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/{{programName}}.yml')
+        .get('/repos/testOwner/testRepo/contents/.github/mergeOnGreen.yml')
         .reply(200, { content: config.toString('base64') })
-
+        .log(console.log);
 
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
       requests.done();
     });
-
   });
 });
