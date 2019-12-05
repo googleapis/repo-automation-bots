@@ -1,9 +1,0 @@
- 
-{
-  "repos": [
-    { "language": "cpp", "repo": "googleapis/cpp-cmakefiles"},
-    { "language": "cpp", "repo": "googleapis/google-cloud-cpp"},
-    { "language": "cpp", "repo": "googleapis/google-cloud-cpp-bigquery"},
-    { "language": "nodejs", "repo": "googleapis/awesome-repo"}
-  ]
-}
