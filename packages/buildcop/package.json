@@ -27,12 +27,13 @@
   },
   "dependencies": {
     "gcf-utils": "1.1.0",
-    "probot": "9.6.4"
+    "probot": "9.6.4",
+    "xml-js": "^1.6.11"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
     "@types/bunyan": "^1.8.6",
-    "@types/chai": "^4.1.7",
+    "@types/chai": "^4.2.6",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^4.17.0",
     "@types/ioredis": "^4.0.13",
