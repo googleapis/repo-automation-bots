@@ -32,10 +32,12 @@
 // check whether type bindings are already published.
 
 import { Application, Context } from 'probot';
-import { GitHubAPI } from 'probot/lib/github';
-import * as util from 'util';
 import xmljs from 'xml-js';
+import Octokit from '@octokit/rest';
 
+// FAKE_XUNIT_XML is used for faking the XML data when developing the bot.
+// Once the bot is hooked up to Pub/Sub, this can be deleted, along with
+// updating the payload parsing below.
 const FAKE_XUNIT_XML = `
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
@@ -79,7 +81,12 @@ const FAKE_XUNIT_XML = `
 
 const LABELS = 'buildcop:issue';
 
-function handler (app: Application) {
+type testFailure = {
+  package: string
+  testCase: string
+}
+
+function handler(app: Application) {
   // TODO: find the right app.on event args.
   app.on('*', async context => {
     // TODO: remove when you have the right app.on args.
@@ -88,8 +95,13 @@ function handler (app: Application) {
       return;
     }
 
+    // TODO: Update to match real Pub/Sub payload.
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
+    const build_id = context.payload.build_id || "[TODO: set build_id]";
+    const build_url = context.payload.build_url || "[TODO: set build_url]"
+    // TODO: remove FAKE_XML.
+    const xml = context.payload.xunit_xml || FAKE_XUNIT_XML;
 
     try {
       // Get the list of issues once, before opening/closing any of them.
@@ -103,10 +115,6 @@ function handler (app: Application) {
         })
       ).data;
 
-      const build_id = context.payload.build_id || "[TODO: set build_id]";
-      const build_url = context.payload.build_url || "[TODO: set build_url]"
-      // TODO: remove FAKE_XML.
-      const xml = context.payload.xunit_xml || FAKE_XUNIT_XML;
       const failures = handler.findFailures(xml);
 
       await handler.openIssues(failures, issues, context, owner, repo, build_id, build_url);
@@ -119,13 +127,20 @@ function handler (app: Application) {
 };
 
 // For every failure, check if an issue is open. If not, open/reopen one.
-handler.openIssues = async (failures: any, issues: any, context: any, owner: string, repo: string, build_id: string, build_url: string) => {
+handler.openIssues = async (
+  failures: testFailure[],
+  issues: Octokit.IssuesListForRepoResponseItem[],
+  context: Context<any>,
+  owner: string,
+  repo: string,
+  build_id: string,
+  build_url: string) => {
   for (const failure of failures) {
     // Look for an existing issue. If there are multiple, pick one at
     // random.
     // TODO: what if one is closed and one is open? We should prefer the
     // open one and close duplicates.
-    const existingIssue = issues.find((issue: any) => {
+    const existingIssue = issues.find(issue => {
       return issue.title === handler.formatFailure(failure);
     });
     if (existingIssue) {
@@ -162,12 +177,19 @@ handler.openIssues = async (failures: any, issues: any, context: any, owner: str
 
 // For every buildcop issue, if it's not in the failures and it didn't
 // previously fail in the same build, close it.
-handler.closeIssues = async (failures: any, issues: any, context: any, owner: string, repo: string, build_id: string, build_url: string) => {
+handler.closeIssues = async (
+  failures: testFailure[],
+  issues: Octokit.IssuesListForRepoResponseItem[],
+  context: Context<any>,
+  owner: string,
+  repo: string,
+  build_id: string,
+  build_url: string) => {
   for (const issue of issues) {
     if (issue.state === "closed") {
       continue;
     }
-    const failure = failures.find((failure: any) => {
+    const failure = failures.find(failure => {
       return issue.title === handler.formatFailure(failure);
     });
     // If the test failed, don't close its issue.
@@ -186,7 +208,7 @@ handler.closeIssues = async (failures: any, issues: any, context: any, owner: st
       repo,
       issue_number: issue.number,
     })).data;
-    const comment = comments.find((comment: any) => handler.containsBuildFailure(comment.body, build_id));
+    const comment = comments.find(comment => handler.containsBuildFailure(comment.body, build_id));
     // If there is a failure comment, don't do anything.
     if (comment) {
       break;
@@ -211,8 +233,8 @@ handler.closeIssues = async (failures: any, issues: any, context: any, owner: st
   }
 }
 
-handler.formatBody = (issue: any, build_id: string, build_url: string) => {
-  const failureText = handler.formatFailure(issue);
+handler.formatBody = (failure: testFailure, build_id: string, build_url: string) => {
+  const failureText = handler.formatFailure(failure);
   return `${failureText}\nbuild_id: ${build_id}\nbuild_url: ${build_url}\nstatus: failed`;
 }
 
@@ -220,7 +242,7 @@ handler.containsBuildFailure = (text: string, build_id: string) => {
   return text.includes(`build_id: ${build_id}`) && text.includes('status: failed');
 }
 
-handler.formatFailure = (failure: any) => {
+handler.formatFailure = (failure: testFailure) => {
   let pkg = failure.package
   const shorten = failure.package.match(/github\.com\/[^\/]+\/[^\/]+\/(.+)/);
   if (shorten) {
