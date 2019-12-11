@@ -117,7 +117,9 @@ function handler(app: Application) {
 
       const failures = handler.findFailures(xml);
 
+      // Open issues for failing tests.
       await handler.openIssues(failures, issues, context, owner, repo, build_id, build_url);
+      // Close issues for passing tests.
       await handler.closeIssues(failures, issues, context, owner, repo, build_id, build_url);
     } catch (err) {
       console.info(err);
@@ -144,8 +146,9 @@ handler.openIssues = async (
       return issue.title === handler.formatFailure(failure);
     });
     if (existingIssue) {
-      context.log.info(`existing matching issue: state: ${existingIssue.state}`);
+      context.log.info(`[${owner}/${repo}] existing issue #${existingIssue.number}: state: ${existingIssue.state}`);
       if (existingIssue.state === "closed") {
+        context.log.info(`[${owner}/${repo}] reopening issue #${existingIssue.number}`);
         await context.github.issues.update({
           owner,
           repo,
@@ -163,14 +166,14 @@ handler.openIssues = async (
       });
     }
     else {
-      context.log.info("no matching issue: opening a new one");
-      await context.github.issues.create({
+      const newIssue = (await context.github.issues.create({
         owner,
         repo,
         title: handler.formatFailure(failure),
         body: handler.formatBody(failure, build_id, build_url),
         labels: LABELS.split(","),
-      });
+      })).data;
+      context.log.info(`[${owner}/${repo}]: created issue #${newIssue.number}`);
     }
   };
 }
@@ -217,7 +220,7 @@ handler.closeIssues = async (
     // The test passed and there is no previous failure in the same build.
     // If another job in the same build fails in the future, it will reopen
     // the issue.
-    context.log.info(`closing issue ${issue.number}: ${issue.title}`)
+    context.log.info(`[${owner}/${repo}] closing issue #${issue.number}: ${issue.title}`)
     await context.github.issues.createComment({
       owner,
       repo,
@@ -233,16 +236,16 @@ handler.closeIssues = async (
   }
 }
 
-handler.formatBody = (failure: testFailure, build_id: string, build_url: string) => {
+handler.formatBody = (failure: testFailure, build_id: string, build_url: string): string => {
   const failureText = handler.formatFailure(failure);
   return `${failureText}\nbuild_id: ${build_id}\nbuild_url: ${build_url}\nstatus: failed`;
 }
 
-handler.containsBuildFailure = (text: string, build_id: string) => {
+handler.containsBuildFailure = (text: string, build_id: string): boolean => {
   return text.includes(`build_id: ${build_id}`) && text.includes('status: failed');
 }
 
-handler.formatFailure = (failure: testFailure) => {
+handler.formatFailure = (failure: testFailure): string => {
   let pkg = failure.package
   const shorten = failure.package.match(/github\.com\/[^\/]+\/[^\/]+\/(.+)/);
   if (shorten) {
@@ -251,9 +254,9 @@ handler.formatFailure = (failure: testFailure) => {
   return `${pkg}: ${failure.testCase} failed`
 }
 
-handler.findFailures = (xml: string) => {
+handler.findFailures = (xml: string): testFailure[] => {
   const obj = xmljs.xml2js(xml);
-  var failures = [];
+  var failures: testFailure[] = [];
   for (const suites of obj.elements) {
     if (suites.name != "testsuites") {
       continue;
