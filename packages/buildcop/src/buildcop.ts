@@ -19,10 +19,10 @@
  *
  * The input payload should include:
  *  - xunit_xml: the xUnit XML log.
- *  - build_id: a unique build ID for this build. If there are multiple jobs
+ *  - buildID: a unique build ID for this build. If there are multiple jobs
  *    for the same build (e.g. for different language versions), they should all
- *    use the same build_id.
- *  - build_url: URL to link to for a build.
+ *    use the same buildID.
+ *  - buildURL: URL to link to for a build.
  *  - owner: the repo owner (e.g. googleapis).
  *  - repo: the name of the repo (e.g. golang-samples).
  */
@@ -34,6 +34,7 @@
 import { Application, Context } from 'probot';
 import xmljs from 'xml-js';
 import Octokit from '@octokit/rest';
+import Webhooks from '@octokit/webhooks';
 
 // FAKE_XUNIT_XML is used for faking the XML data when developing the bot.
 // Once the bot is hooked up to Pub/Sub, this can be deleted, along with
@@ -77,66 +78,92 @@ const FAKE_XUNIT_XML = `
 		<testcase classname="gcsupload" name="TestUpload" time="3.810"></testcase>
 	</testsuite>
 </testsuites>
-`
+`;
 
 const LABELS = 'buildcop:issue';
 
-type testFailure = {
-  package: string
-  testCase: string
+interface TestFailure {
+  package: string;
+  testCase: string;
 }
+
+interface PubSubPayload {
+  repository: Webhooks.PayloadRepository;
+  buildID: string;
+  buildURL: string;
+  xunitXML: string;
+}
+
+type PubSubContext = Context<PubSubPayload>;
 
 function handler(app: Application) {
   // TODO: find the right app.on event args.
-  app.on('*', async context => {
+  app.on('*', async (context: PubSubContext) => {
     // TODO: remove when you have the right app.on args.
     // context.log.info(JSON.stringify(context, null, 2));
-    if (context.name != "star") {
+    if (context.name !== 'star') {
       return;
     }
 
     // TODO: Update to match real Pub/Sub payload.
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
-    const build_id = context.payload.build_id || "[TODO: set build_id]";
-    const build_url = context.payload.build_url || "[TODO: set build_url]"
+    const buildID = context.payload.buildID || '[TODO: set buildID]';
+    const buildURL = context.payload.buildURL || '[TODO: set buildURL]';
     // TODO: remove FAKE_XML.
-    const xml = context.payload.xunit_xml || FAKE_XUNIT_XML;
+    const xml = context.payload.xunitXML || FAKE_XUNIT_XML;
 
     try {
       // Get the list of issues once, before opening/closing any of them.
       const issues = (
         await context.github.issues.listForRepo({
-          owner: owner,
-          repo: repo,
+          owner,
+          repo,
           per_page: 32,
           labels: LABELS,
-          state: "all"  // Include open and closed issues.
+          state: 'all', // Include open and closed issues.
         })
       ).data;
 
       const failures = handler.findFailures(xml);
 
       // Open issues for failing tests.
-      await handler.openIssues(failures, issues, context, owner, repo, build_id, build_url);
+      await handler.openIssues(
+        failures,
+        issues,
+        context,
+        owner,
+        repo,
+        buildID,
+        buildURL
+      );
       // Close issues for passing tests.
-      await handler.closeIssues(failures, issues, context, owner, repo, build_id, build_url);
+      await handler.closeIssues(
+        failures,
+        issues,
+        context,
+        owner,
+        repo,
+        buildID,
+        buildURL
+      );
     } catch (err) {
       console.info(err);
       app.log.error(`${err.message} processing ${repo}`);
     }
   });
-};
+}
 
 // For every failure, check if an issue is open. If not, open/reopen one.
 handler.openIssues = async (
-  failures: testFailure[],
+  failures: TestFailure[],
   issues: Octokit.IssuesListForRepoResponseItem[],
-  context: Context<any>,
+  context: PubSubContext,
   owner: string,
   repo: string,
-  build_id: string,
-  build_url: string) => {
+  buildID: string,
+  buildURL: string
+) => {
   for (const failure of failures) {
     // Look for an existing issue. If there are multiple, pick one at
     // random.
@@ -146,14 +173,18 @@ handler.openIssues = async (
       return issue.title === handler.formatFailure(failure);
     });
     if (existingIssue) {
-      context.log.info(`[${owner}/${repo}] existing issue #${existingIssue.number}: state: ${existingIssue.state}`);
-      if (existingIssue.state === "closed") {
-        context.log.info(`[${owner}/${repo}] reopening issue #${existingIssue.number}`);
+      context.log.info(
+        `[${owner}/${repo}] existing issue #${existingIssue.number}: state: ${existingIssue.state}`
+      );
+      if (existingIssue.state === 'closed') {
+        context.log.info(
+          `[${owner}/${repo}] reopening issue #${existingIssue.number}`
+        );
         await context.github.issues.update({
           owner,
           repo,
           issue_number: existingIssue.number,
-          state: 'open'
+          state: 'open',
         });
       }
       // TODO: Make this comment say something nice about reopening the
@@ -162,34 +193,36 @@ handler.openIssues = async (
         owner,
         repo,
         issue_number: existingIssue.number,
-        body: handler.formatBody(failure, build_id, build_url)
+        body: handler.formatBody(failure, buildID, buildURL),
       });
-    }
-    else {
-      const newIssue = (await context.github.issues.create({
-        owner,
-        repo,
-        title: handler.formatFailure(failure),
-        body: handler.formatBody(failure, build_id, build_url),
-        labels: LABELS.split(","),
-      })).data;
+    } else {
+      const newIssue = (
+        await context.github.issues.create({
+          owner,
+          repo,
+          title: handler.formatFailure(failure),
+          body: handler.formatBody(failure, buildID, buildURL),
+          labels: LABELS.split(','),
+        })
+      ).data;
       context.log.info(`[${owner}/${repo}]: created issue #${newIssue.number}`);
     }
-  };
-}
+  }
+};
 
 // For every buildcop issue, if it's not in the failures and it didn't
 // previously fail in the same build, close it.
 handler.closeIssues = async (
-  failures: testFailure[],
+  failures: TestFailure[],
   issues: Octokit.IssuesListForRepoResponseItem[],
-  context: Context<any>,
+  context: PubSubContext,
   owner: string,
   repo: string,
-  build_id: string,
-  build_url: string) => {
+  buildID: string,
+  buildURL: string
+) => {
   for (const issue of issues) {
-    if (issue.state === "closed") {
+    if (issue.state === 'closed') {
       continue;
     }
     const failure = failures.find(failure => {
@@ -201,17 +234,21 @@ handler.closeIssues = async (
     }
 
     // If the issue body is a failure in the same build, don't do anything.
-    if (handler.containsBuildFailure(issue.body, build_id)) {
+    if (handler.containsBuildFailure(issue.body, buildID)) {
       break;
     }
 
     // Check if there is a comment from the same build ID with a failure.
-    const comments = (await context.github.issues.listComments({
-      owner,
-      repo,
-      issue_number: issue.number,
-    })).data;
-    const comment = comments.find(comment => handler.containsBuildFailure(comment.body, build_id));
+    const comments = (
+      await context.github.issues.listComments({
+        owner,
+        repo,
+        issue_number: issue.number,
+      })
+    ).data;
+    const comment = comments.find(comment =>
+      handler.containsBuildFailure(comment.body, buildID)
+    );
     // If there is a failure comment, don't do anything.
     if (comment) {
       break;
@@ -220,63 +257,71 @@ handler.closeIssues = async (
     // The test passed and there is no previous failure in the same build.
     // If another job in the same build fails in the future, it will reopen
     // the issue.
-    context.log.info(`[${owner}/${repo}] closing issue #${issue.number}: ${issue.title}`)
+    context.log.info(
+      `[${owner}/${repo}] closing issue #${issue.number}: ${issue.title}`
+    );
     await context.github.issues.createComment({
       owner,
       repo,
       issue_number: issue.number,
-      body: `Test passed in build ${build_id} (${build_url})! Closing this issue.`
+      body: `Test passed in build ${buildID} (${buildURL})! Closing this issue.`,
     });
     await context.github.issues.update({
       owner,
       repo,
       issue_number: issue.number,
-      state: 'closed'
+      state: 'closed',
     });
   }
-}
+};
 
-handler.formatBody = (failure: testFailure, build_id: string, build_url: string): string => {
+handler.formatBody = (
+  failure: TestFailure,
+  buildID: string,
+  buildURL: string
+): string => {
   const failureText = handler.formatFailure(failure);
-  return `${failureText}\nbuild_id: ${build_id}\nbuild_url: ${build_url}\nstatus: failed`;
-}
+  return `${failureText}\nbuildID: ${buildID}\nbuildURL: ${buildURL}\nstatus: failed`;
+};
 
-handler.containsBuildFailure = (text: string, build_id: string): boolean => {
-  return text.includes(`build_id: ${build_id}`) && text.includes('status: failed');
-}
+handler.containsBuildFailure = (text: string, buildID: string): boolean => {
+  return (
+    text.includes(`buildID: ${buildID}`) && text.includes('status: failed')
+  );
+};
 
-handler.formatFailure = (failure: testFailure): string => {
-  let pkg = failure.package
+handler.formatFailure = (failure: TestFailure): string => {
+  let pkg = failure.package;
   const shorten = failure.package.match(/github\.com\/[^\/]+\/[^\/]+\/(.+)/);
   if (shorten) {
     pkg = shorten[1];
   }
-  return `${pkg}: ${failure.testCase} failed`
-}
+  return `${pkg}: ${failure.testCase} failed`;
+};
 
-handler.findFailures = (xml: string): testFailure[] => {
+handler.findFailures = (xml: string): TestFailure[] => {
   const obj = xmljs.xml2js(xml);
-  var failures: testFailure[] = [];
+  const failures: TestFailure[] = [];
   for (const suites of obj.elements) {
-    if (suites.name != "testsuites") {
+    if (suites.name !== 'testsuites') {
       continue;
     }
     for (const suite of suites.elements) {
-      if (suite.name != "testsuite") {
+      if (suite.name !== 'testsuite') {
         continue;
       }
-      var testsuiteName = suite.attributes.name;
+      const testsuiteName = suite.attributes.name;
       for (const testcase of suite.elements) {
-        if (testcase.name != "testcase") {
+        if (testcase.name !== 'testcase') {
           continue;
         }
-        if (testcase.elements == undefined) {
+        if (testcase.elements === undefined) {
           continue;
         }
         for (const failure of testcase.elements) {
           // The testcase elements include skipped tests. Ensure we have a
           // failure.
-          if (failure.name != "failure") {
+          if (failure.name !== 'failure') {
             continue;
           }
           failures.push({
