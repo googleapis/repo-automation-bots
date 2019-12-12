@@ -99,7 +99,9 @@ describe('buildcop', () => {
       const failures = findFailures(input);
       expect(failures).to.eql([]);
     });
+  })
 
+  describe('app', () => {
     it('opens an issue', async () => {
       const input = fs.readFileSync(
         resolve(fixturesPath, 'testdata', 'one_failed.xml'),
@@ -126,9 +128,7 @@ describe('buildcop', () => {
 
       requests.done();
     });
-  });
 
-  describe('app', () => {
     it('comments on existing issue', async () => {
       const input = fs.readFileSync(
         resolve(fixturesPath, 'testdata', 'one_failed.xml'),

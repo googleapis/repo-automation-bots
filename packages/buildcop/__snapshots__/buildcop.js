@@ -1,9 +1,13 @@
-exports['buildcop app closes an issue for a passing test 1'] = {
-  "body": "Test passed in build [TODO: set buildID] ([TODO: set buildURL])! Closing this issue."
+exports['buildcop app opens an issue 1'] = {
+  "title": "spanner/spanner_snippets: TestSample failed",
+  "body": "spanner/spanner_snippets: TestSample failed\nbuildID: [TODO: set buildID]\nbuildURL: [TODO: set buildURL]\nstatus: failed",
+  "labels": [
+    "buildcop:issue"
+  ]
 }
 
-exports['buildcop app closes an issue for a passing test 2'] = {
-  "state": "closed"
+exports['buildcop app comments on existing issue 1'] = {
+  "body": "spanner/spanner_snippets: TestSample failed\nbuildID: [TODO: set buildID]\nbuildURL: [TODO: set buildURL]\nstatus: failed"
 }
 
 exports['buildcop app reopens issue for failing test 1'] = {
@@ -12,6 +16,14 @@ exports['buildcop app reopens issue for failing test 1'] = {
 
 exports['buildcop app reopens issue for failing test 2'] = {
   "body": "spanner/spanner_snippets: TestSample failed\nbuildID: [TODO: set buildID]\nbuildURL: [TODO: set buildURL]\nstatus: failed"
+}
+
+exports['buildcop app closes an issue for a passing test 1'] = {
+  "body": "Test passed in build [TODO: set buildID] ([TODO: set buildURL])! Closing this issue."
+}
+
+exports['buildcop app closes an issue for a passing test 2'] = {
+  "state": "closed"
 }
 
 exports['buildcop app opens multiple issues for multiple failures 1'] = {
@@ -36,16 +48,4 @@ exports['buildcop app opens multiple issues for multiple failures 3'] = {
   "labels": [
     "buildcop:issue"
   ]
-}
-
-exports['buildcop findFailures opens an issue 1'] = {
-  "title": "spanner/spanner_snippets: TestSample failed",
-  "body": "spanner/spanner_snippets: TestSample failed\nbuildID: [TODO: set buildID]\nbuildURL: [TODO: set buildURL]\nstatus: failed",
-  "labels": [
-    "buildcop:issue"
-  ]
-}
-
-exports['buildcop app comments on existing issue 1'] = {
-  "body": "spanner/spanner_snippets: TestSample failed\nbuildID: [TODO: set buildID]\nbuildURL: [TODO: set buildURL]\nstatus: failed"
 }
