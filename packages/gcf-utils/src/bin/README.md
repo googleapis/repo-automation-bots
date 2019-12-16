@@ -47,6 +47,7 @@ Application you wish to use with your bot.
  export BUCKET=<NAME OF BUCKET TO STORE KEYS>
  export BOT=<NAME OF YOUR BOT>
  ```
+4. Install dependencies and link using npm i and npm link
 
 5. Run the `genkey` tool
 
