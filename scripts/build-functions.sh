@@ -26,7 +26,7 @@ mkdir -p "$targets"
 npm install -g typescript
 cd packages || exit 1
 for f in *; do
-    # Skip symlinks and our gcf-utils directory as it is not a function
+    # Skip symlinks and our gcf-utils/generate-bot directory as it is not a function
     if [[ -d "$f" && ! -L "$f" && "$f" != "gcf-utils" && "$f" != "generate-bot" ]]; then
         (
         cd "$f" || exit 1
