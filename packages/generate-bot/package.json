@@ -9,7 +9,8 @@
     "fix": "eslint . --fix",
     "test": "mocha test/",
     "start": "",
-    "start:local": "node ./build/src/local.js"
+    "start:local": "node ./build/src/local.js",
+    "compile": "echo noop"
   },
   "repository": {
     "type": "git",
