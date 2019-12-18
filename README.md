@@ -15,7 +15,7 @@ by Google on GitHub.
 | [trusted-contribution] | Allows Kokoro CI to trigger for trusted contributors | [install][trusted-contribution-app] |
 | [failurechecker] | Check for automation tasks, e.g., releases, that are in a failed state | [install][failurechecker-app] |
 | [label-sync] | Synchronize labels across organizations | [install][label-sync-app] |
-[ [build-cop-bot] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][build-cop-bot-app] |
+| [build-cop-bot] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][build-cop-bot-app] |
 
 ## Testing Locally
 
