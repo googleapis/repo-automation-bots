@@ -1,4 +1,4 @@
-buildcop
+Buildcop
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
 
