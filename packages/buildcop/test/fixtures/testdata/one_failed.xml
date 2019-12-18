@@ -1,0 +1,20 @@
+<testsuites>
+<testsuite tests="3" failures="0" time="43.168" name="github.com/GoogleCloudPlatform/golang-samples">
+<properties>
+<property name="go.version" value="go1.13.1"/>
+</properties>
+<testcase classname="golang-samples" name="TestBadFiles" time="0.030"/>
+<testcase classname="golang-samples" name="TestLicense" time="0.080"/>
+<testcase classname="golang-samples" name="TestRegionTags" time="43.050"/>
+</testsuite>
+<testsuite tests="1" failures="1" time="123.367" name="github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets">
+<properties>
+<property name="go.version" value="go1.13.1"/>
+</properties>
+<testcase classname="spanner_snippets" name="TestSample" time="123.360">
+<failure message="Failed" type="">
+snippet_test.go:242: got output ""; want it to contain "4 Venue 4" snippet_test.go:243: got output ""; want it to contain "19 Venue 19" snippet_test.go:244: got output ""; want it to contain "42 Venue 42"
+</failure>
+</testcase>
+</testsuite>
+</testsuites>
