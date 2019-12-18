@@ -99,7 +99,7 @@ describe('buildcop', () => {
       const failures = findFailures(input);
       expect(failures).to.eql([]);
     });
-  })
+  });
 
   describe('app', () => {
     it('opens an issue', async () => {
@@ -378,22 +378,24 @@ describe('buildcop', () => {
 
   describe('formatBody and containsBuildFailure', () => {
     it('correctly finds a failure', () => {
-      const buildID = "my-build-id";
-      const buildURL = "my.build.url";
+      const buildID = 'my-build-id';
+      const buildURL = 'my.build.url';
       const failure = {
-        package: "my-package",
-        testCase: "my-test",
-      }
+        package: 'my-package',
+        testCase: 'my-test',
+      };
       const body = handler.formatBody(failure, buildID, buildURL);
-      expect(handler.containsBuildFailure(body, buildID)).to.be.true;
+      expect(handler.containsBuildFailure(body, buildID)).to.equal(true);
     });
     it('corectly does not find a failure', () => {
       const failure = {
-        package: "my-package",
-        testCase: "my-test",
-      }
-      const body = handler.formatBody(failure, "my-build-id", "my.build.url");
-      expect(handler.containsBuildFailure(body, "other-build-id")).to.be.false;
-    })
-  })
+        package: 'my-package',
+        testCase: 'my-test',
+      };
+      const body = handler.formatBody(failure, 'my-build-id', 'my.build.url');
+      expect(handler.containsBuildFailure(body, 'other-build-id')).to.equal(
+        false
+      );
+    });
+  });
 });
