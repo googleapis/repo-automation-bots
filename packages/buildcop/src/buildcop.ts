@@ -18,7 +18,7 @@
  * The build cop bot manages issues for unit tests.
  *
  * The input payload should include:
- *  - xunit_xml: the xUnit XML log.
+ *  - xunitXML: the xUnit XML log.
  *  - buildID: a unique build ID for this build. If there are multiple jobs
  *    for the same build (e.g. for different language versions), they should all
  *    use the same buildID.
@@ -32,53 +32,10 @@
 // check whether type bindings are already published.
 
 import { Application, Context } from 'probot';
+import { LoggerWithTarget } from 'probot/lib/wrap-logger';
+import { GitHubAPI } from 'probot/lib/github';
 import xmljs from 'xml-js';
 import Octokit from '@octokit/rest';
-import Webhooks from '@octokit/webhooks';
-
-// FAKE_XUNIT_XML is used for faking the XML data when developing the bot.
-// Once the bot is hooked up to Pub/Sub, this can be deleted, along with
-// updating the payload parsing below.
-const FAKE_XUNIT_XML = `
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites>
-	<testsuite tests="3" failures="0" time="46.786" name="github.com/GoogleCloudPlatform/golang-samples">
-		<properties>
-			<property name="go.version" value="go1.13.1"></property>
-		</properties>
-		<testcase classname="golang-samples" name="TestBadFiles" time="0.020"></testcase>
-		<testcase classname="golang-samples" name="TestLicense" time="0.080"></testcase>
-		<testcase classname="golang-samples" name="TestRegionTags" time="46.680"></testcase>
-	</testsuite>
-	<testsuite tests="10" failures="3" time="29.487" name="github.com/GoogleCloudPlatform/golang-samples/storage/buckets">
-		<properties>
-			<property name="go.version" value="go1.13.1"></property>
-		</properties>
-		<testcase classname="buckets" name="TestCreate" time="1.190"></testcase>
-		<testcase classname="buckets" name="TestCreateWithAttrs" time="4.290"></testcase>
-		<testcase classname="buckets" name="TestList" time="0.550"></testcase>
-		<testcase classname="buckets" name="TestGetBucketMetadata" time="0.480"></testcase>
-		<testcase classname="buckets" name="TestIAM" time="2.390"></testcase>
-		<testcase classname="buckets" name="TestRequesterPays" time="1.610"></testcase>
-		<testcase classname="buckets" name="TestKMS" time="0.940"></testcase>
-		<testcase classname="buckets" name="TestBucketLock" time="17.500">
-			<failure message="Failed" type="">main_test.go:234: failed to create bucket (&#34;golang-samples-tests-8-storage-buckets-tests&#34;): Post https://storage.googleapis.com/storage/v1/b?alt=json&amp;prettyPrint=false&amp;project=golang-samples-tests-8: read tcp 10.142.0.112:33618-&gt;108.177.12.128:443: read: connection reset by peer</failure>
-		</testcase>
-		<testcase classname="buckets" name="TestUniformBucketLevelAccess" time="0.190">
-			<failure message="Failed" type="">main_test.go:242: failed to enable uniform bucket-level access (&#34;golang-samples-tests-8-storage-buckets-tests&#34;): googleapi: Error 404: Not Found, notFound</failure>
-		</testcase>
-		<testcase classname="buckets" name="TestDelete" time="0.340">
-			<failure message="Failed" type="">main_test.go:268: failed to delete bucket (&#34;golang-samples-tests-8-storage-buckets-tests&#34;): googleapi: Error 404: Not Found, notFound</failure>
-		</testcase>
-	</testsuite>
-	<testsuite tests="1" failures="0" time="3.817" name="github.com/GoogleCloudPlatform/golang-samples/storage/gcsupload">
-		<properties>
-			<property name="go.version" value="go1.13.1"></property>
-		</properties>
-		<testcase classname="gcsupload" name="TestUpload" time="3.810"></testcase>
-	</testsuite>
-</testsuites>
-`;
 
 const LABELS = 'buildcop:issue';
 
@@ -88,30 +45,32 @@ interface TestFailure {
 }
 
 interface PubSubPayload {
-  repository: Webhooks.PayloadRepository;
+  repoOwner: string;
+  repoName: string;
   buildID: string;
   buildURL: string;
   xunitXML: string;
 }
 
-type PubSubContext = Context<PubSubPayload>;
+interface PubSubContext {
+  readonly event: string;
+  github: GitHubAPI;
+  payload: PubSubPayload;
+  log: LoggerWithTarget;
+}
 
 function handler(app: Application) {
-  // TODO: find the right app.on event args.
-  app.on('*', async (context: PubSubContext) => {
-    // TODO: remove when you have the right app.on args.
-    // context.log.info(JSON.stringify(context, null, 2));
-    if (context.name !== 'star') {
-      return;
-    }
-
-    // TODO: Update to match real Pub/Sub payload.
-    const owner = context.payload.repository.owner.login;
-    const repo = context.payload.repository.name;
+  app.on('pubsub.message', async (context: PubSubContext) => {
+    const owner = context.payload.repoOwner;
+    const repo = context.payload.repoName;
     const buildID = context.payload.buildID || '[TODO: set buildID]';
     const buildURL = context.payload.buildURL || '[TODO: set buildURL]';
-    // TODO: remove FAKE_XML.
-    const xml = context.payload.xunitXML || FAKE_XUNIT_XML;
+    const xml = context.payload.xunitXML;
+
+    if (!xml) {
+      context.log.info(`[${owner}/${repo}] No XML payload! Skipping.`);
+      return;
+    }
 
     try {
       // Get the list of issues once, before opening/closing any of them.
@@ -148,8 +107,8 @@ function handler(app: Application) {
         buildURL
       );
     } catch (err) {
-      console.info(err);
       app.log.error(`${err.message} processing ${repo}`);
+      console.info(err);
     }
   });
 }

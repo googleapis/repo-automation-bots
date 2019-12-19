@@ -102,16 +102,31 @@ describe('buildcop', () => {
   });
 
   describe('app', () => {
+    it('skips when there is no XML', async () => {
+      const payload = {
+        repoOwner: 'tbpg',
+        repoName: 'golang-samples',
+        buildID: '123',
+        buildURL: 'http://example.com',
+      };
+
+      const requests = nock('https://api.github.com');
+      await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+      requests.done();
+    });
+
     it('opens an issue', async () => {
       const input = fs.readFileSync(
         resolve(fixturesPath, 'testdata', 'one_failed.xml'),
         'utf8'
       );
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_unlabeled'
-      ));
-      payload.xunitXML = input;
+      const payload = {
+        repoOwner: 'tbpg',
+        repoName: 'golang-samples',
+        buildID: '123',
+        buildURL: 'http://example.com',
+        xunitXML: input,
+      };
 
       const requests = nock('https://api.github.com')
         .get(
@@ -124,7 +139,7 @@ describe('buildcop', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'star', payload, id: 'abc123' });
+      await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
       requests.done();
     });
@@ -134,11 +149,13 @@ describe('buildcop', () => {
         resolve(fixturesPath, 'testdata', 'one_failed.xml'),
         'utf8'
       );
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_unlabeled'
-      ));
-      payload.xunitXML = input;
+      const payload = {
+        repoOwner: 'tbpg',
+        repoName: 'golang-samples',
+        buildID: '123',
+        buildURL: 'http://example.com',
+        xunitXML: input,
+      };
 
       const requests = nock('https://api.github.com')
         .get(
@@ -162,7 +179,7 @@ describe('buildcop', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'star', payload, id: 'abc123' });
+      await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
       requests.done();
     });
@@ -172,11 +189,13 @@ describe('buildcop', () => {
         resolve(fixturesPath, 'testdata', 'one_failed.xml'),
         'utf8'
       );
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_unlabeled'
-      ));
-      payload.xunitXML = input;
+      const payload = {
+        repoOwner: 'tbpg',
+        repoName: 'golang-samples',
+        buildID: '123',
+        buildURL: 'http://example.com',
+        xunitXML: input,
+      };
 
       const requests = nock('https://api.github.com')
         .get(
@@ -205,7 +224,7 @@ describe('buildcop', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'star', payload, id: 'abc123' });
+      await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
       requests.done();
     });
@@ -215,11 +234,13 @@ describe('buildcop', () => {
         resolve(fixturesPath, 'testdata', 'passed.xml'),
         'utf8'
       );
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_unlabeled'
-      ));
-      payload.xunitXML = input;
+      const payload = {
+        repoOwner: 'tbpg',
+        repoName: 'golang-samples',
+        buildID: '123',
+        buildURL: 'http://example.com',
+        xunitXML: input,
+      };
 
       const requests = nock('https://api.github.com')
         .get(
@@ -249,7 +270,7 @@ describe('buildcop', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'star', payload, id: 'abc123' });
+      await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
       requests.done();
     });
@@ -259,12 +280,13 @@ describe('buildcop', () => {
         resolve(fixturesPath, 'testdata', 'passed.xml'),
         'utf8'
       );
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_unlabeled'
-      ));
-      payload.xunitXML = input;
-      payload.buildID = 123;
+      const payload = {
+        repoOwner: 'tbpg',
+        repoName: 'golang-samples',
+        buildID: '123',
+        buildURL: 'http://example.com',
+        xunitXML: input,
+      };
 
       const requests = nock('https://api.github.com')
         .get(
@@ -288,7 +310,7 @@ describe('buildcop', () => {
           },
         ]);
 
-      await probot.receive({ name: 'star', payload, id: 'abc123' });
+      await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
       requests.done();
     });
@@ -298,12 +320,13 @@ describe('buildcop', () => {
         resolve(fixturesPath, 'testdata', 'passed.xml'),
         'utf8'
       );
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_unlabeled'
-      ));
-      payload.xunitXML = input;
-      payload.buildID = 123;
+      const payload = {
+        repoOwner: 'tbpg',
+        repoName: 'golang-samples',
+        buildID: '123',
+        buildURL: 'http://example.com',
+        xunitXML: input,
+      };
 
       const requests = nock('https://api.github.com')
         .get(
@@ -321,7 +344,7 @@ describe('buildcop', () => {
           },
         ]);
 
-      await probot.receive({ name: 'star', payload, id: 'abc123' });
+      await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
       requests.done();
     });
@@ -331,12 +354,13 @@ describe('buildcop', () => {
         resolve(fixturesPath, 'testdata', 'many_failed_same_pkg.xml'),
         'utf8'
       );
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_unlabeled'
-      ));
-      payload.xunitXML = input;
-      payload.buildID = 123;
+      const payload = {
+        repoOwner: 'tbpg',
+        repoName: 'golang-samples',
+        buildID: '123',
+        buildURL: 'http://example.com',
+        xunitXML: input,
+      };
 
       const requests = nock('https://api.github.com')
         .get(
@@ -370,7 +394,7 @@ describe('buildcop', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'star', payload, id: 'abc123' });
+      await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
       requests.done();
     });
