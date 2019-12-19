@@ -112,8 +112,8 @@ func rewriteBotPubSubURL(c botConfig) func(*http.Request) {
 
 			var msg RepoAutomationPubSubMessage
 			json.Unmarshal(pay.Message.Data, &msg)
-			log.Printf("pubsub message for bot: %v in %v\n", msg.BotName, msg.Location)
-			return msg.BotName, msg.Location
+			log.Printf("pubsub message for bot: %v in %v\n", msg.Name, msg.Location)
+			return msg.Name, msg.Location
 		}
 		rewriteBotURL(c, parser, req)
 	}
