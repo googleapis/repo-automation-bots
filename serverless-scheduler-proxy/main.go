@@ -68,6 +68,9 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	// TODO: remove the legacy v0 endpoint once we've confirmed everything
+	// is working as expected:
+	mux.Handle("/v0", botCronProxy(cfg))
 	mux.Handle("/v0/cron", botCronProxy(cfg))
 	mux.Handle("/v0/pubsub", botPubSubProxy(cfg))
 
