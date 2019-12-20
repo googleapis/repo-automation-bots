@@ -208,9 +208,15 @@ export = (app: Application) => {
 
   app.on('pull_request.labeled', async context => {
     // if missing the label, skip
-    if (!context.payload.pull_request.labels.some(label => { return label === FORCE_RUN_LABEL })) {
+    if (
+      !context.payload.pull_request.labels.some(
+        label => label === FORCE_RUN_LABEL
+      )
+    ) {
       app.log.info(
-        `ignoring non-force label action (${context.payload.pull_request.labels.join(', ')})`
+        `ignoring non-force label action (${context.payload.pull_request.labels.join(
+          ', '
+        )})`
       );
       return;
     }
@@ -224,7 +230,7 @@ export = (app: Application) => {
       name: FORCE_RUN_LABEL,
       number: context.payload.pull_request.number,
       owner,
-      repo
+      repo,
     });
 
     // check release please config
