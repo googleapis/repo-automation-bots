@@ -19,12 +19,12 @@
 // check whether type bindings are already published.
 
 import { Application } from 'probot';
-import {execSync} from 'child_process';
+import { execSync } from 'child_process';
 import fetch from 'node-fetch';
 import * as tar from 'tar';
 import * as uuid from 'uuid';
 import { promises as fs } from 'fs';
-import {resolve} from 'path';
+import { resolve } from 'path';
 
 const CONFIGURATION_FILE_PATH = 'publish.yml';
 
@@ -36,13 +36,13 @@ interface PublishConfig {
 }
 
 interface Secret {
-  payload: {[key: string]: Buffer}
+  payload: { [key: string]: Buffer };
 }
 
-import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
+import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 const sms = new SecretManagerServiceClient();
 
-function handler (app: Application) {
+function handler(app: Application) {
   app.on('release.released', async context => {
     const repoName = context.payload.repository.name;
     const remoteConfiguration: Configuration | null = (await context.config(
@@ -59,38 +59,37 @@ function handler (app: Application) {
       const unpackPath = handler.unpackPath();
       app.log.info(`creating tmp directory ${unpackPath}`);
       await fs.mkdir(unpackPath, {
-        recursive: true
+        recursive: true,
       });
 
       // Unpack the tarball to the directory we just created:
-      await fetch(context.payload.release.tarball_url)
-        .then(res => {
-          return new Promise((resolve, reject) => {
-            const dest = tar.x({
-              C: unpackPath
-            });
-            dest.on("error", reject);
-            dest.on("close", () => {
-              app.log.info('finished unpacking tarball');
-              return resolve();
-            });
-            res.body.pipe(dest);
+      await fetch(context.payload.release.tarball_url).then(res => {
+        return new Promise((resolve, reject) => {
+          const dest = tar.x({
+            C: unpackPath,
           });
+          dest.on('error', reject);
+          dest.on('close', () => {
+            app.log.info('finished unpacking tarball');
+            return resolve();
+          });
+          res.body.pipe(dest);
         });
-      
+      });
+
       // The tarball most likely had an inner folder, which we traverse
       // into, before performing the publication step:
       const files = await fs.readdir(unpackPath, {
-        withFileTypes: true
-      })
+        withFileTypes: true,
+      });
       let pkgPath = unpackPath;
       if (files.length === 1 && files[0].isDirectory()) {
         pkgPath = `${pkgPath}/${files[0].name}`;
       }
-      
+
       const secret: Secret = await handler.getPublicationSecrets(app);
       if (secret && secret.payload && secret.payload.data) {
-        const publishConfig = handler.publishConfigFromSecret(secret as Secret)
+        const publishConfig = handler.publishConfigFromSecret(secret as Secret);
         const npmRc = handler.generateNpmRc(publishConfig);
         handler.publish(npmRc, pkgPath, app);
       } else {
@@ -98,41 +97,43 @@ function handler (app: Application) {
       }
     }
   });
-};
+}
 
 handler.unpackPath = (): string => {
   return `/tmp/${uuid.v4()}`;
-}
+};
 
- // secrets are stored in a key matching the bot's name:
- const secretId = 'publish'
- const project = process.env.PROJECT_ID; 
+// secrets are stored in a key matching the bot's name:
+const secretId = 'publish';
+const project = process.env.PROJECT_ID;
 handler.getPublicationSecrets = async (app: Application): Promise<Secret> => {
   app.log.info(`looking secret for ${project}`);
   const [secret] = await sms.accessSecretVersion({
     name: `projects/${project}/secrets/${secretId}/versions/latest`,
   });
   return secret as Secret;
-}
+};
 
-handler.publishConfigFromSecret =  (secret: Secret):PublishConfig => {
-  const publishConfig: PublishConfig = JSON.parse(secret.payload.data.toString());
+handler.publishConfigFromSecret = (secret: Secret): PublishConfig => {
+  const publishConfig: PublishConfig = JSON.parse(
+    secret.payload.data.toString()
+  );
   return publishConfig;
-}
+};
 
 handler.publish = async (npmRc: string, pkgPath: string, app: Application) => {
   await fs.writeFile(resolve(pkgPath, './.npmrc'), npmRc, 'utf8');
   try {
     const out = execSync(`npm publish`, {
-      cwd: pkgPath
+      cwd: pkgPath,
     });
     app.log.info(out);
   } catch (err) {
     app.log.error(err);
   }
-}
+};
 
-handler.generateNpmRc = (publishConfig: PublishConfig): string  => {
+handler.generateNpmRc = (publishConfig: PublishConfig): string => {
   const npmRc = `//${publishConfig.registry}/:_authToken=${publishConfig.token}
   registry=https://${publishConfig.registry}/`;
   return npmRc;

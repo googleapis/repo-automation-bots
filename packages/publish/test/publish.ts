@@ -28,7 +28,7 @@ nock.disableNetConnect();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 interface Secret {
-  payload: {[key: string]: Buffer}
+  payload: { [key: string]: Buffer };
 }
 
 interface PublishConfig {
@@ -67,26 +67,27 @@ describe('publish', () => {
       resolve(fixturesPath, 'config', 'valid-config.yml')
     );
     const requests = nock('https://api.github.com')
-      .get(
-        '/repos/Codertocat/Hello-World/contents/.github/publish.yml'
-      )
+      .get('/repos/Codertocat/Hello-World/contents/.github/publish.yml')
       .reply(200, { content: config.toString('base64') })
-      .get(
-        '/repos/Codertocat/Hello-World/tarball/0.0.1'
-      )
-      .reply(200,fs.createReadStream(
-        resolve(fixturesPath, './tiny-tarball-1.0.0.tgz')
-      ));
+      .get('/repos/Codertocat/Hello-World/tarball/0.0.1')
+      .reply(
+        200,
+        fs.createReadStream(resolve(fixturesPath, './tiny-tarball-1.0.0.tgz'))
+      );
 
-    handler.getPublicationSecrets = async (app: Application): Promise<Secret> => {
+    handler.getPublicationSecrets = async (
+      app: Application
+    ): Promise<Secret> => {
       return {
         payload: {
-          data: Buffer.from(JSON.stringify({
-            registry: 'registry.example.com',
-            token: 'abc123'
-          }))
-        }
-      }
+          data: Buffer.from(
+            JSON.stringify({
+              registry: 'registry.example.com',
+              token: 'abc123',
+            })
+          ),
+        },
+      };
     };
 
     await probot.receive({ name: 'release.released', payload, id: 'abc123' });
@@ -94,7 +95,7 @@ describe('publish', () => {
   });
 
   // it('publish', async () => {
-    /*const payload = require(resolve(
+  /*const payload = require(resolve(
       fixturesPath,
       'events',
       'pull_request_opened'
