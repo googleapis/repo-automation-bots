@@ -210,7 +210,7 @@ export = (app: Application) => {
     // if missing the label, skip
     if (
       !context.payload.pull_request.labels.some(
-        label => label === FORCE_RUN_LABEL
+        label => label.name === FORCE_RUN_LABEL
       )
     ) {
       app.log.info(
