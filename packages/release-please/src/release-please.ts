@@ -39,6 +39,7 @@ const WELL_KNOWN_CONFIGURATION_FILE = 'release-please.yml';
 const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   primaryBranch: 'master',
 };
+const FORCE_RUN_LABEL = 'release-please:force-run';
 
 function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
   if (language == null) {
@@ -166,7 +167,7 @@ export = (app: Application) => {
   app.on('release.published', async context => {
     if (context.payload.action !== 'published') {
       app.log.info(
-        `ingoring non-publish release action (${context.payload.action})`
+        `ignoring non-publish release action (${context.payload.action})`
       );
       return;
     }
@@ -198,6 +199,67 @@ export = (app: Application) => {
     createReleasePR(
       releaseType,
       configuration.packageName || repoName,
+      repoUrl,
+      context.github,
+      configuration.releaseLabels,
+      configuration.bumpMinorPreMajor
+    );
+  });
+
+  app.on('pull_request.labeled', async context => {
+    // if missing the label, skip
+    if (
+      !context.payload.pull_request.labels.some(
+        label => label === FORCE_RUN_LABEL
+      )
+    ) {
+      app.log.info(
+        `ignoring non-force label action (${context.payload.pull_request.labels.join(
+          ', '
+        )})`
+      );
+      return;
+    }
+
+    const repoUrl = context.payload.repository.full_name;
+    const owner = context.payload.repository.owner.login;
+    const repo = context.payload.repository.name;
+
+    // remove the label
+    await context.github.issues.removeLabel({
+      name: FORCE_RUN_LABEL,
+      number: context.payload.pull_request.number,
+      owner,
+      repo,
+    });
+
+    // check release please config
+    const remoteConfiguration = (await context.config(
+      WELL_KNOWN_CONFIGURATION_FILE
+    )) as ConfigurationOptions | null;
+
+    // If no configuration is specified,
+    if (!remoteConfiguration) {
+      app.log.info(`release-please not configured for (${repoUrl})`);
+      return;
+    }
+
+    const configuration = {
+      ...DEFAULT_CONFIGURATION,
+      ...remoteConfiguration,
+    };
+
+    app.log.info(`pull_request.labeled (${repoUrl})`);
+
+    // run release-please
+    const releaseType = configuration.releaseType
+      ? configuration.releaseType
+      : releaseTypeFromRepoLanguage(context.payload.repository.language);
+
+    // TODO: this should be refactored into an interface.
+    createReleasePR(
+      releaseType,
+      configuration.packageName || repo,
       repoUrl,
       context.github,
       configuration.releaseLabels,
