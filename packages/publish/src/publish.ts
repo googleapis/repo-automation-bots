@@ -18,7 +18,7 @@
 // own definitions published. Before taking this step, folks should first
 // check whether type bindings are already published.
 
-import { Application, Context } from 'probot';
+import { Application } from 'probot';
 import {execSync} from 'child_process';
 import fetch from 'node-fetch';
 import * as tar from 'tar';
@@ -28,31 +28,35 @@ import {resolve} from 'path';
 
 const CONFIGURATION_FILE_PATH = 'publish.yml';
 
-interface Configuration {
-  randomBoolean: boolean;
-}
+interface Configuration {}
 
 interface PublishConfig {
   token: string;
   registry: string;
 }
 
+interface Secret {
+  payload: {[key: string]: Buffer}
+}
+
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 const sms = new SecretManagerServiceClient();
- // secrets are stored in a key matching the bot's name:
-const secretId = 'publish'
-const project = process.env.GCP_PROJECT;
 
-export = (app: Application) => {
+function handler (app: Application) {
   app.on('release.released', async context => {
-    const config = (await context.config(
-      CONFIGURATION_FILE_PATH,
-      {}
-    )) as Configuration;
+    const repoName = context.payload.repository.name;
+    const remoteConfiguration: Configuration | null = (await context.config(
+      CONFIGURATION_FILE_PATH
+    )) as Configuration | null;
+
+    // Skip publication unless it's explicitly enabled.
+    if (!remoteConfiguration) {
+      app.log.info(`publish not configured for (${repoName})`);
+    }
 
     if (context.payload.release.tarball_url) {
       // Create a temporary directory to unpack release tarball to:
-      const unpackPath = `/tmp/${uuid.v4()}`;
+      const unpackPath = handler.unpackPath();
       app.log.info(`creating tmp directory ${unpackPath}`);
       await fs.mkdir(unpackPath, {
         recursive: true
@@ -84,25 +88,54 @@ export = (app: Application) => {
         pkgPath = `${pkgPath}/${files[0].name}`;
       }
       
-      // Populate a .npmrc file with credentials and actually perform the
-      // publication:
-      const [secret] = await sms.accessSecretVersion({
-        name: `projects/${project}/secrets/${secretId}/versions/latest`,
-      });
+      const secret: Secret = await handler.getPublicationSecrets(app);
       if (secret && secret.payload && secret.payload.data) {
-        const publishConfig: PublishConfig = JSON.parse(secret.payload.data.toString());
-        const npmRc = `//${publishConfig.registry}/:_authToken=${publishConfig.token}
-        registry=https://${publishConfig.registry}/`;
-        await fs.writeFile(resolve(pkgPath, './.npmrc'), npmRc, 'utf8');
-        try {
-          const out = execSync(`npm publish ${pkgPath}`);
-          app.log.info(out);
-        } catch (err) {
-          app.log.error(err);
-        }
+        const publishConfig = handler.publishConfigFromSecret(secret as Secret)
+        const npmRc = handler.generateNpmRc(publishConfig);
+        handler.publish(npmRc, pkgPath, app);
       } else {
         app.log.error('could not load application secrets');
       }
     }
   });
 };
+
+handler.unpackPath = (): string => {
+  return `/tmp/${uuid.v4()}`;
+}
+
+ // secrets are stored in a key matching the bot's name:
+ const secretId = 'publish'
+ const project = process.env.PROJECT_ID; 
+handler.getPublicationSecrets = async (app: Application): Promise<Secret> => {
+  app.log.info(`looking secret for ${project}`);
+  const [secret] = await sms.accessSecretVersion({
+    name: `projects/${project}/secrets/${secretId}/versions/latest`,
+  });
+  return secret as Secret;
+}
+
+handler.publishConfigFromSecret =  (secret: Secret):PublishConfig => {
+  const publishConfig: PublishConfig = JSON.parse(secret.payload.data.toString());
+  return publishConfig;
+}
+
+handler.publish = async (npmRc: string, pkgPath: string, app: Application) => {
+  await fs.writeFile(resolve(pkgPath, './.npmrc'), npmRc, 'utf8');
+  try {
+    const out = execSync(`npm publish`, {
+      cwd: pkgPath
+    });
+    app.log.info(out);
+  } catch (err) {
+    app.log.error(err);
+  }
+}
+
+handler.generateNpmRc = (publishConfig: PublishConfig): string  => {
+  const npmRc = `//${publishConfig.registry}/:_authToken=${publishConfig.token}
+  registry=https://${publishConfig.registry}/`;
+  return npmRc;
+};
+
+export = handler;

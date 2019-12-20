@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import myProbotApp from '../src/publish';
+import { Application } from 'probot';
+import handler from '../src/publish';
 
 import { resolve } from 'path';
 import { Probot } from 'probot';
@@ -26,6 +27,15 @@ nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
+interface Secret {
+  payload: {[key: string]: Buffer}
+}
+
+interface PublishConfig {
+  token: string;
+  registry: string;
+}
+
 describe('publish', () => {
   let probot: Probot;
 
@@ -36,7 +46,7 @@ describe('publish', () => {
       Octokit: require('@octokit/rest'),
     });
 
-    const app = probot.load(myProbotApp);
+    const app = probot.load(handler);
     app.app = {
       getSignedJsonWebToken() {
         return 'abc123';
@@ -47,7 +57,43 @@ describe('publish', () => {
     };
   });
 
-  it('makes an effort to publish to npm', async () => {
+  it('should publish to npm if configuration found', async () => {
+    const payload = require(resolve(
+      fixturesPath,
+      'events',
+      'release_released'
+    ));
+    const config = fs.readFileSync(
+      resolve(fixturesPath, 'config', 'valid-config.yml')
+    );
+    const requests = nock('https://api.github.com')
+      .get(
+        '/repos/Codertocat/Hello-World/contents/.github/publish.yml'
+      )
+      .reply(200, { content: config.toString('base64') })
+      .get(
+        '/repos/Codertocat/Hello-World/tarball/0.0.1'
+      )
+      .reply(200,fs.createReadStream(
+        resolve(fixturesPath, './tiny-tarball-1.0.0.tgz')
+      ));
+
+    handler.getPublicationSecrets = async (app: Application): Promise<Secret> => {
+      return {
+        payload: {
+          data: Buffer.from(JSON.stringify({
+            registry: 'registry.example.com',
+            token: 'abc123'
+          }))
+        }
+      }
+    };
+
+    await probot.receive({ name: 'release.released', payload, id: 'abc123' });
+    requests.done();
+  });
+
+  // it('publish', async () => {
     /*const payload = require(resolve(
       fixturesPath,
       'events',
@@ -65,5 +111,5 @@ describe('publish', () => {
     });
 
     requests.done();*/
-  });
+  // });
 });
