@@ -50,7 +50,14 @@
 
     ],
     "labels": [
-      "release-please:force-run"
+      {
+        "id": 12345,
+        "url": "https://api.github.com/repos/octocat/Hello-World/labels/release-please:force-run",
+        "name": "release-please:force-run",
+        "description": "Force release-please to run",
+        "color": "f29513",
+        "default": false
+      }
     ],
     "milestone": null,
     "commits_url": "https://api.github.com/repos/Codertocat/Hello-World/pulls/2/commits",
