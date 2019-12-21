@@ -124,7 +124,7 @@ handler.publishConfigFromSecret = (secret: Secret): PublishConfig => {
 handler.publish = async (npmRc: string, pkgPath: string, app: Application) => {
   await fs.writeFile(resolve(pkgPath, './.npmrc'), npmRc, 'utf8');
   try {
-    const out = execSync(`npm publish`, {
+    const out = execSync(`npm publish --access=public`, {
       cwd: pkgPath,
     });
     app.log.info(out);
