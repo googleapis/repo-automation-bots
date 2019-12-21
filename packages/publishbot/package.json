@@ -1,5 +1,5 @@
 {
-  "name": "publish-bot",
+  "name": "publishbot",
   "version": "1.0.0",
   "description": "publis packages to package registries, when releases are created",
   "private": true,
