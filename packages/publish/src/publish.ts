@@ -52,6 +52,7 @@ function handler(app: Application) {
     // Skip publication unless it's explicitly enabled.
     if (!remoteConfiguration) {
       app.log.info(`publish not configured for (${repoName})`);
+      return;
     }
 
     if (context.payload.release.tarball_url) {
@@ -135,7 +136,7 @@ handler.publish = async (npmRc: string, pkgPath: string, app: Application) => {
 
 handler.generateNpmRc = (publishConfig: PublishConfig): string => {
   const npmRc = `//${publishConfig.registry}/:_authToken=${publishConfig.token}
-  registry=https://${publishConfig.registry}/`;
+registry=https://${publishConfig.registry}/`;
   return npmRc;
 };
 

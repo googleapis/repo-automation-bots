@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+// Publish bot requires a minimum of Node 10 for the
+// runtime, we uses the lack of fs.promises to detect this.
+const { promises } = require('fs');
+if (!promises) {
+  console.warn('node 10 is required for publish bot');
+  process.exit(0);
+}
+
 import { Application } from 'probot';
 import handler from '../src/publish';
 
@@ -22,6 +30,7 @@ import { Probot } from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
+import {expect} from 'chai';
 
 nock.disableNetConnect();
 
@@ -90,27 +99,29 @@ describe('publish', () => {
       };
     };
 
+    let observedPkgPath: string|undefined = undefined;
+    handler.publish = async (npmRc: string, pkgPath: string, app: Application) => {
+      snapshot(npmRc);
+      observedPkgPath = pkgPath;
+    }
+    
+    await probot.receive({ name: 'release.released', payload, id: 'abc123' });
+    requests.done();
+    expect(observedPkgPath).to.match(/\/tmp\/.*\/package/);
+  });
+
+  it('should not attempt to publish to npm if no configuration found', async () => {
+    const payload = require(resolve(
+      fixturesPath,
+      'events',
+      'release_released'
+    ));
+    const requests = nock('https://api.github.com')
+      .get('/repos/Codertocat/Hello-World/contents/.github/publish.yml')
+      .reply(404)
+      .get('/repos/Codertocat/.github/contents/.github/publish.yml')
+      .reply(404);
     await probot.receive({ name: 'release.released', payload, id: 'abc123' });
     requests.done();
   });
-
-  // it('publish', async () => {
-  /*const payload = require(resolve(
-      fixturesPath,
-      'events',
-      'pull_request_opened'
-    ));
-
-    const requests = nock('https://api.github.com')
-      .get('/repos/testOwner/testRepo/contents/.github/publish.yml')
-      .reply(200, { content: config.toString('base64') })
-
-    await probot.receive({
-      name: 'pull_request.opened',
-      payload,
-      id: 'abc123'
-    });
-
-    requests.done();*/
-  // });
 });
