@@ -18,7 +18,7 @@
 // own definitions published. Before taking this step, folks should first
 // check whether type bindings are already published.
 
-import { Application } from 'probot';
+import { Application, Context } from 'probot';
 import { execSync } from 'child_process';
 import fetch from 'node-fetch';
 import * as tar from 'tar';
@@ -28,7 +28,10 @@ import { resolve } from 'path';
 
 const CONFIGURATION_FILE_PATH = 'publish.yml';
 
-interface Configuration {}
+interface Configuration {
+  project?: string;
+  secretId?: string;
+}
 
 interface PublishConfig {
   token: string;
@@ -88,11 +91,15 @@ function handler(app: Application) {
         pkgPath = `${pkgPath}/${files[0].name}`;
       }
 
-      const secret: Secret = await handler.getPublicationSecrets(app);
+      const secret: Secret = await handler.getPublicationSecrets(
+        app,
+        remoteConfiguration
+      );
       if (secret && secret.payload && secret.payload.data) {
         const publishConfig = handler.publishConfigFromSecret(secret as Secret);
         const npmRc = handler.generateNpmRc(publishConfig);
-        handler.publish(npmRc, pkgPath, app);
+        await handler.publish(npmRc, pkgPath, app);
+        await removeLabels(context);
       } else {
         app.log.error('could not load application secrets');
       }
@@ -100,14 +107,39 @@ function handler(app: Application) {
   });
 }
 
+// Once the publication is complete, remove labels such as
+// autorelease: pending, and autorelease: tagged, so that
+// monitoring does not flag this as a failed release.
+async function removeLabels(context: Context) {
+  const pulls = (
+    await context.github.pulls.list({
+      owner: context.payload.repository.owner.login,
+      repo: context.payload.repository.name,
+      state: 'closed',
+      per_page: 100,
+    })
+  ).data;
+  for (const pull of pulls) {
+    if (pull.head.ref === `release-${context.payload.release.tag_name}`) {
+      await context.github.issues.removeLabels({
+        owner: context.payload.repository.owner.login,
+        repo: context.payload.repository.name,
+        issue_number: pull.number,
+      });
+    }
+  }
+}
+
 handler.unpackPath = (): string => {
   return `/tmp/${uuid.v4()}`;
 };
 
-// secrets are stored in a key matching the bot's name:
-const secretId = 'publish';
-const project = process.env.PROJECT_ID;
-handler.getPublicationSecrets = async (app: Application): Promise<Secret> => {
+handler.getPublicationSecrets = async (
+  app: Application,
+  config: Configuration
+): Promise<Secret> => {
+  const secretId = config.secretId || 'publish';
+  const project = config.project || process.env.PROJECT_ID;
   app.log.info(`looking secret for ${project}`);
   const [secret] = await sms.accessSecretVersion({
     name: `projects/${project}/secrets/${secretId}/versions/latest`,

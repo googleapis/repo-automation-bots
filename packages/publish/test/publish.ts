@@ -30,7 +30,7 @@ import { Probot } from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 nock.disableNetConnect();
 
@@ -82,7 +82,18 @@ describe('publish', () => {
       .reply(
         200,
         fs.createReadStream(resolve(fixturesPath, './tiny-tarball-1.0.0.tgz'))
-      );
+      )
+      .get('/repos/Codertocat/Hello-World/pulls?state=closed&per_page=100')
+      .reply(200, [
+        {
+          head: {
+            ref: 'release-v0.0.1',
+          },
+          number: 1,
+        },
+      ])
+      .delete('/repos/Codertocat/Hello-World/issues/1/labels')
+      .reply(200);
 
     handler.getPublicationSecrets = async (
       app: Application
@@ -99,12 +110,16 @@ describe('publish', () => {
       };
     };
 
-    let observedPkgPath: string|undefined = undefined;
-    handler.publish = async (npmRc: string, pkgPath: string, app: Application) => {
+    let observedPkgPath: string | undefined = undefined;
+    handler.publish = async (
+      npmRc: string,
+      pkgPath: string,
+      app: Application
+    ) => {
       snapshot(npmRc);
       observedPkgPath = pkgPath;
-    }
-    
+    };
+
     await probot.receive({ name: 'release.released', payload, id: 'abc123' });
     requests.done();
     expect(observedPkgPath).to.match(/\/tmp\/.*\/package/);
