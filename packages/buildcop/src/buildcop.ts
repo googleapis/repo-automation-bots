@@ -57,18 +57,14 @@ interface PubSubContext {
   github: GitHubAPI;
   log: LoggerWithTarget;
   payload: {
-    message: {
-      data: string; // base64 encoded value with {payload: BuildCopPayload}.
-    };
-  };
+    payload: BuildCopPayload
+  }
 }
 
 export function buildcop(app: Application) {
   app.on('pubsub.message', async (context: PubSubContext) => {
-    const data = JSON.parse(
-      Buffer.from(context.payload.message.data, 'base64').toString()
-    );
-    const payload: BuildCopPayload = data.payload;
+    console.info(JSON.stringify(context.payload, null, 2));
+    const payload: BuildCopPayload = context.payload.payload as BuildCopPayload;
 
     const owner = payload.repoOwner;
     const repo = payload.repoName;
