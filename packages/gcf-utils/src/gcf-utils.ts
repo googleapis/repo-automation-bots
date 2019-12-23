@@ -36,6 +36,7 @@ interface Repos {
 
 interface Scheduled {
   repo?: string;
+  message?: {[key: string]: string};
 }
 
 export class GCFBootstrapper {
@@ -106,12 +107,12 @@ export class GCFBootstrapper {
       // Do the thing
       if (name) {
         try {
-          if (name === 'schedule.repository') {
+          if (name === 'schedule.repository' || name === 'pubsub.message') {
             // TODO: currently we assume that scheduled events walk all repos
             // managed by the client libraries team, it would be good to get more
             // clever and instead pull up a list of repos we're installed on by
             // installation ID:
-            await this.handleScheduled(id, request);
+            await this.handleScheduled(id, request, name);
           } else {
             await this.probot.receive({
               name,
@@ -135,14 +136,21 @@ export class GCFBootstrapper {
     };
   }
 
-  private async handleScheduled(id: string, req: express.Request) {
-    const body = (Buffer.isBuffer(req.body)
+  private async handleScheduled(id: string, req: express.Request, eventName: string) {
+    let body = (Buffer.isBuffer(req.body)
       ? JSON.parse(req.body.toString('utf8'))
       : req.body) as Scheduled;
+    // PubSub messages have their payload encoded in body.message.data
+    // as a base64 blob.
+    if (body.message && body.message.data) {
+      body = JSON.parse(
+        Buffer.from(body.message.data, 'base64').toString()
+      );
+    }
 
     if (body.repo) {
       // Job was scheduled for a single repository:
-      this.receivePromise(body.repo, id, body);
+      this.receivePromise(body.repo, id, body, eventName);
     } else {
       // Job should be run on all managed repositories:
       const url =
@@ -154,18 +162,19 @@ export class GCFBootstrapper {
       while (repos.length) {
         await Promise.all(
           repos.splice(0, WORK_SIZE).map(repo => {
-            return this.receivePromise(repo.repo, id, body);
+            return this.receivePromise(repo.repo, id, body, eventName);
           })
         );
       }
     }
   }
 
-  private async receivePromise(repoFullName: string, id: string, body: object) {
+  private async receivePromise(repoFullName: string, id: string, body: object, eventName: string) {
     // The payload from the scheduler is updated with additional information
     // providing context about the organization/repo that the event is
     // firing for.
     const [orgName, repoName] = repoFullName.split('/');
+    console.info(`scheduled event ${eventName} for ${repoFullName}`);
     const payload = Object.assign({}, body, {
       repository: {
         name: repoName,
@@ -177,7 +186,7 @@ export class GCFBootstrapper {
     });
     try {
       await this.probot?.receive({
-        name: 'schedule.repository',
+        name: eventName,
         id,
         payload,
       });
