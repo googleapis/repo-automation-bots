@@ -63,14 +63,14 @@ interface PubSubContext {
 
 export function buildcop(app: Application) {
   app.on('pubsub.message', async (context: PubSubContext) => {
-    console.info(JSON.stringify(context.payload, null, 2));
     const payload: BuildCopPayload = context.payload.payload as BuildCopPayload;
 
     const owner = payload.repoOwner;
     const repo = payload.repoName;
     const buildID = payload.buildID || '[TODO: set buildID]';
     const buildURL = payload.buildURL || '[TODO: set buildURL]';
-    const xml = JSON.parse(Buffer.from(payload.xunitXML, 'base64').toString());
+
+    const xml = Buffer.from(payload.xunitXML, 'base64').toString();
 
     if (!xml) {
       context.log.info(`[${owner}/${repo}] No XML payload! Skipping.`);

@@ -26,7 +26,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "^1.3.0-beta.1",
+    "gcf-utils": "^1.3.0-beta.4",
     "probot": "9.6.4",
     "xml-js": "^1.6.11"
   },
