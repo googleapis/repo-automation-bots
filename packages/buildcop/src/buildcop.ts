@@ -18,20 +18,20 @@
  * The build cop bot manages issues for unit tests.
  *
  * The input payload should include:
- *  - xunitXML: the xUnit XML log.
+ *  - xunitXML: the base64 encoded xUnit XML log.
  *  - buildID: a unique build ID for this build. If there are multiple jobs
  *    for the same build (e.g. for different language versions), they should all
  *    use the same buildID.
  *  - buildURL: URL to link to for a build.
- *  - owner: the repo owner (e.g. googleapis).
- *  - repo: the name of the repo (e.g. golang-samples).
+ *  - repoOwner: the repo owner (e.g. GoogleCloudPlatform).
+ *  - repoName: the name of the repo (e.g. golang-samples).
  */
 
 // define types for a few modules used by probot that do not have their
 // own definitions published. Before taking this step, folks should first
 // check whether type bindings are already published.
 
-import { Application, Context } from 'probot';
+import { Application } from 'probot';
 import { LoggerWithTarget } from 'probot/lib/wrap-logger';
 import { GitHubAPI } from 'probot/lib/github';
 import xmljs from 'xml-js';
@@ -44,28 +44,37 @@ interface TestFailure {
   testCase: string;
 }
 
-interface PubSubPayload {
+export interface BuildCopPayload {
   repoOwner: string;
   repoName: string;
   buildID: string;
   buildURL: string;
-  xunitXML: string;
+  xunitXML: string; // base64 encoded to avoid JSON escaping issues.
 }
 
 interface PubSubContext {
   readonly event: string;
   github: GitHubAPI;
-  payload: PubSubPayload;
   log: LoggerWithTarget;
+  payload: {
+    message: {
+      data: string; // base64 encoded value with {payload: BuildCopPayload}.
+    };
+  };
 }
 
-function handler(app: Application) {
+export function buildcop(app: Application) {
   app.on('pubsub.message', async (context: PubSubContext) => {
-    const owner = context.payload.repoOwner;
-    const repo = context.payload.repoName;
-    const buildID = context.payload.buildID || '[TODO: set buildID]';
-    const buildURL = context.payload.buildURL || '[TODO: set buildURL]';
-    const xml = context.payload.xunitXML;
+    const data = JSON.parse(
+      Buffer.from(context.payload.message.data, 'base64').toString()
+    );
+    const payload: BuildCopPayload = data.payload;
+
+    const owner = payload.repoOwner;
+    const repo = payload.repoName;
+    const buildID = payload.buildID || '[TODO: set buildID]';
+    const buildURL = payload.buildURL || '[TODO: set buildURL]';
+    const xml = JSON.parse(Buffer.from(payload.xunitXML, 'base64').toString());
 
     if (!xml) {
       context.log.info(`[${owner}/${repo}] No XML payload! Skipping.`);
@@ -84,10 +93,10 @@ function handler(app: Application) {
         })
       ).data;
 
-      const failures = handler.findFailures(xml);
+      const failures = buildcop.findFailures(xml);
 
       // Open issues for failing tests.
-      await handler.openIssues(
+      await buildcop.openIssues(
         failures,
         issues,
         context,
@@ -97,7 +106,7 @@ function handler(app: Application) {
         buildURL
       );
       // Close issues for passing tests.
-      await handler.closeIssues(
+      await buildcop.closeIssues(
         failures,
         issues,
         context,
@@ -114,7 +123,7 @@ function handler(app: Application) {
 }
 
 // For every failure, check if an issue is open. If not, open/reopen one.
-handler.openIssues = async (
+buildcop.openIssues = async (
   failures: TestFailure[],
   issues: Octokit.IssuesListForRepoResponseItem[],
   context: PubSubContext,
@@ -129,7 +138,7 @@ handler.openIssues = async (
     // TODO: what if one is closed and one is open? We should prefer the
     // open one and close duplicates.
     const existingIssue = issues.find(issue => {
-      return issue.title === handler.formatFailure(failure);
+      return issue.title === buildcop.formatFailure(failure);
     });
     if (existingIssue) {
       context.log.info(
@@ -152,15 +161,15 @@ handler.openIssues = async (
         owner,
         repo,
         issue_number: existingIssue.number,
-        body: handler.formatBody(failure, buildID, buildURL),
+        body: buildcop.formatBody(failure, buildID, buildURL),
       });
     } else {
       const newIssue = (
         await context.github.issues.create({
           owner,
           repo,
-          title: handler.formatFailure(failure),
-          body: handler.formatBody(failure, buildID, buildURL),
+          title: buildcop.formatFailure(failure),
+          body: buildcop.formatBody(failure, buildID, buildURL),
           labels: LABELS.split(','),
         })
       ).data;
@@ -171,7 +180,7 @@ handler.openIssues = async (
 
 // For every buildcop issue, if it's not in the failures and it didn't
 // previously fail in the same build, close it.
-handler.closeIssues = async (
+buildcop.closeIssues = async (
   failures: TestFailure[],
   issues: Octokit.IssuesListForRepoResponseItem[],
   context: PubSubContext,
@@ -185,7 +194,7 @@ handler.closeIssues = async (
       continue;
     }
     const failure = failures.find(failure => {
-      return issue.title === handler.formatFailure(failure);
+      return issue.title === buildcop.formatFailure(failure);
     });
     // If the test failed, don't close its issue.
     if (failure) {
@@ -193,7 +202,7 @@ handler.closeIssues = async (
     }
 
     // If the issue body is a failure in the same build, don't do anything.
-    if (handler.containsBuildFailure(issue.body, buildID)) {
+    if (buildcop.containsBuildFailure(issue.body, buildID)) {
       break;
     }
 
@@ -206,7 +215,7 @@ handler.closeIssues = async (
       })
     ).data;
     const comment = comments.find(comment =>
-      handler.containsBuildFailure(comment.body, buildID)
+      buildcop.containsBuildFailure(comment.body, buildID)
     );
     // If there is a failure comment, don't do anything.
     if (comment) {
@@ -234,22 +243,22 @@ handler.closeIssues = async (
   }
 };
 
-handler.formatBody = (
+buildcop.formatBody = (
   failure: TestFailure,
   buildID: string,
   buildURL: string
 ): string => {
-  const failureText = handler.formatFailure(failure);
+  const failureText = buildcop.formatFailure(failure);
   return `${failureText}\nbuildID: ${buildID}\nbuildURL: ${buildURL}\nstatus: failed`;
 };
 
-handler.containsBuildFailure = (text: string, buildID: string): boolean => {
+buildcop.containsBuildFailure = (text: string, buildID: string): boolean => {
   return (
     text.includes(`buildID: ${buildID}`) && text.includes('status: failed')
   );
 };
 
-handler.formatFailure = (failure: TestFailure): string => {
+buildcop.formatFailure = (failure: TestFailure): string => {
   let pkg = failure.package;
   const shorten = failure.package.match(/github\.com\/[^\/]+\/[^\/]+\/(.+)/);
   if (shorten) {
@@ -258,7 +267,7 @@ handler.formatFailure = (failure: TestFailure): string => {
   return `${pkg}: ${failure.testCase} failed`;
 };
 
-handler.findFailures = (xml: string): TestFailure[] => {
+buildcop.findFailures = (xml: string): TestFailure[] => {
   const obj = xmljs.xml2js(xml);
   const failures: TestFailure[] = [];
   for (const suites of obj.elements) {
@@ -295,5 +304,3 @@ handler.findFailures = (xml: string): TestFailure[] => {
   }
   return failures;
 };
-
-export = handler;

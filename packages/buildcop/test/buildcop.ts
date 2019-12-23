@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-import myProbotApp from '../src/buildcop';
-const { findFailures } = myProbotApp;
+import { buildcop } from '../src/buildcop';
+const { findFailures, formatFailure } = buildcop;
+import { BuildCopPayload } from '../src/buildcop';
 
 import { resolve } from 'path';
 import { Probot } from 'probot';
@@ -23,11 +24,22 @@ import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
 import { expect } from 'chai';
-import handler from '../src/buildcop';
 
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+
+function formatPayload(payload: BuildCopPayload) {
+  payload.xunitXML = Buffer.from(JSON.stringify(payload.xunitXML)).toString(
+    'base64'
+  );
+  const data = Buffer.from(JSON.stringify({ payload })).toString('base64');
+  return {
+    message: {
+      data,
+    },
+  };
+}
 
 describe('buildcop', () => {
   let probot: Probot;
@@ -39,7 +51,7 @@ describe('buildcop', () => {
       Octokit: require('@octokit/rest'),
     });
 
-    const app = probot.load(myProbotApp);
+    const app = probot.load(buildcop);
     app.app = {
       getSignedJsonWebToken() {
         return 'abc123';
@@ -103,12 +115,13 @@ describe('buildcop', () => {
 
   describe('app', () => {
     it('skips when there is no XML', async () => {
-      const payload = {
+      const payload = formatPayload({
         repoOwner: 'tbpg',
         repoName: 'golang-samples',
         buildID: '123',
         buildURL: 'http://example.com',
-      };
+        xunitXML: '',
+      });
 
       const requests = nock('https://api.github.com');
       await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
@@ -120,13 +133,13 @@ describe('buildcop', () => {
         resolve(fixturesPath, 'testdata', 'one_failed.xml'),
         'utf8'
       );
-      const payload = {
+      const payload = formatPayload({
         repoOwner: 'tbpg',
         repoName: 'golang-samples',
         buildID: '123',
         buildURL: 'http://example.com',
         xunitXML: input,
-      };
+      });
 
       const requests = nock('https://api.github.com')
         .get(
@@ -149,13 +162,13 @@ describe('buildcop', () => {
         resolve(fixturesPath, 'testdata', 'one_failed.xml'),
         'utf8'
       );
-      const payload = {
+      const payload = formatPayload({
         repoOwner: 'tbpg',
         repoName: 'golang-samples',
         buildID: '123',
         buildURL: 'http://example.com',
         xunitXML: input,
-      };
+      });
 
       const requests = nock('https://api.github.com')
         .get(
@@ -163,7 +176,7 @@ describe('buildcop', () => {
         )
         .reply(200, [
           {
-            title: handler.formatFailure({
+            title: formatFailure({
               package:
                 'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
               testCase: 'TestSample',
@@ -189,13 +202,13 @@ describe('buildcop', () => {
         resolve(fixturesPath, 'testdata', 'one_failed.xml'),
         'utf8'
       );
-      const payload = {
+      const payload = formatPayload({
         repoOwner: 'tbpg',
         repoName: 'golang-samples',
         buildID: '123',
         buildURL: 'http://example.com',
         xunitXML: input,
-      };
+      });
 
       const requests = nock('https://api.github.com')
         .get(
@@ -203,7 +216,7 @@ describe('buildcop', () => {
         )
         .reply(200, [
           {
-            title: handler.formatFailure({
+            title: formatFailure({
               package:
                 'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
               testCase: 'TestSample',
@@ -234,13 +247,13 @@ describe('buildcop', () => {
         resolve(fixturesPath, 'testdata', 'passed.xml'),
         'utf8'
       );
-      const payload = {
+      const payload = formatPayload({
         repoOwner: 'tbpg',
         repoName: 'golang-samples',
         buildID: '123',
         buildURL: 'http://example.com',
         xunitXML: input,
-      };
+      });
 
       const requests = nock('https://api.github.com')
         .get(
@@ -248,7 +261,7 @@ describe('buildcop', () => {
         )
         .reply(200, [
           {
-            title: handler.formatFailure({
+            title: formatFailure({
               package:
                 'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
               testCase: 'TestSample',
@@ -280,13 +293,13 @@ describe('buildcop', () => {
         resolve(fixturesPath, 'testdata', 'passed.xml'),
         'utf8'
       );
-      const payload = {
+      const payload = formatPayload({
         repoOwner: 'tbpg',
         repoName: 'golang-samples',
         buildID: '123',
         buildURL: 'http://example.com',
         xunitXML: input,
-      };
+      });
 
       const requests = nock('https://api.github.com')
         .get(
@@ -294,7 +307,7 @@ describe('buildcop', () => {
         )
         .reply(200, [
           {
-            title: handler.formatFailure({
+            title: formatFailure({
               package:
                 'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
               testCase: 'TestSample',
@@ -306,7 +319,7 @@ describe('buildcop', () => {
         .get('/repos/tbpg/golang-samples/issues/16/comments')
         .reply(200, [
           {
-            body: `status: failed\nbuildID: ${payload.buildID}`,
+            body: `status: failed\nbuildID: 123`,
           },
         ]);
 
@@ -320,13 +333,13 @@ describe('buildcop', () => {
         resolve(fixturesPath, 'testdata', 'passed.xml'),
         'utf8'
       );
-      const payload = {
+      const payload = formatPayload({
         repoOwner: 'tbpg',
         repoName: 'golang-samples',
         buildID: '123',
         buildURL: 'http://example.com',
         xunitXML: input,
-      };
+      });
 
       const requests = nock('https://api.github.com')
         .get(
@@ -334,13 +347,13 @@ describe('buildcop', () => {
         )
         .reply(200, [
           {
-            title: handler.formatFailure({
+            title: formatFailure({
               package:
                 'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
               testCase: 'TestSample',
             }),
             number: 16,
-            body: `status: failed\nbuildID: ${payload.buildID}`,
+            body: `status: failed\nbuildID: 123`,
           },
         ]);
 
@@ -354,13 +367,13 @@ describe('buildcop', () => {
         resolve(fixturesPath, 'testdata', 'many_failed_same_pkg.xml'),
         'utf8'
       );
-      const payload = {
+      const payload = formatPayload({
         repoOwner: 'tbpg',
         repoName: 'golang-samples',
         buildID: '123',
         buildURL: 'http://example.com',
         xunitXML: input,
-      };
+      });
 
       const requests = nock('https://api.github.com')
         .get(
@@ -368,7 +381,7 @@ describe('buildcop', () => {
         )
         .reply(200, [
           {
-            title: handler.formatFailure({
+            title: formatFailure({
               package:
                 'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
               testCase: 'TestSample',
@@ -408,16 +421,16 @@ describe('buildcop', () => {
         package: 'my-package',
         testCase: 'my-test',
       };
-      const body = handler.formatBody(failure, buildID, buildURL);
-      expect(handler.containsBuildFailure(body, buildID)).to.equal(true);
+      const body = buildcop.formatBody(failure, buildID, buildURL);
+      expect(buildcop.containsBuildFailure(body, buildID)).to.equal(true);
     });
     it('corectly does not find a failure', () => {
       const failure = {
         package: 'my-package',
         testCase: 'my-test',
       };
-      const body = handler.formatBody(failure, 'my-build-id', 'my.build.url');
-      expect(handler.containsBuildFailure(body, 'other-build-id')).to.equal(
+      const body = buildcop.formatBody(failure, 'my-build-id', 'my.build.url');
+      expect(buildcop.containsBuildFailure(body, 'other-build-id')).to.equal(
         false
       );
     });

@@ -15,7 +15,7 @@
  */
 
 import { GCFBootstrapper } from 'gcf-utils';
-import appFn from './buildcop';
+import { buildcop } from './buildcop';
 
 const bootstrap = new GCFBootstrapper();
-module.exports.buildcop = bootstrap.gcf(appFn);
+module.exports.buildcop = bootstrap.gcf(buildcop);
