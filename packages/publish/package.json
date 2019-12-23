@@ -26,7 +26,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-cloud/secret-manager": "https://github.com/googleapis/nodejs-secret-manager.git",
+    "@google-cloud/secret-manager": "^1.1.0",
     "gcf-utils": "1.1.0",
     "node-fetch": "^2.6.0",
     "probot": "9.6.4",

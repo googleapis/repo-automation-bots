@@ -157,10 +157,45 @@ handler.publishConfigFromSecret = (secret: Secret): PublishConfig => {
 handler.publish = async (npmRc: string, pkgPath: string, app: Application) => {
   await fs.writeFile(resolve(pkgPath, './.npmrc'), npmRc, 'utf8');
   try {
-    const out = execSync(`npm publish --access=public`, {
+    app.log.info(`installing ${pkgPath}`);
+    // We make sure that ./node_modules/.bin is in the exec path.
+    const npmPath = resolve(pkgPath, './node_modules/.bin');
+    const PATH = process.env.PATH ? `${process.env.PATH}:${npmPath}}` : npmPath;
+    let out = execSync(`npm i --`, {
       cwd: pkgPath,
+      env: Object.assign({}, process.env, {
+        PATH,
+        // npm wil does install dev dependencies needed to publish
+        // unless we override the NODE_ENV:
+        NODE_ENV: 'development',
+      }),
     });
-    app.log.info(out);
+    app.log.info(out.toString('utf8'));
+    try {
+      // Prepare does not run as a side effect of `npm i`, due to
+      // permission errors in cloud functions, so we run it
+      // explicitly:
+      app.log.info(`compiling ${pkgPath}`);
+      out = execSync(`npm run prepare`, {
+        cwd: pkgPath,
+        env: Object.assign({}, process.env, {
+          PATH,
+          NODE_ENV: 'development',
+        }),
+      });
+      app.log.info(out.toString('utf8'));
+    } catch (err) {
+      app.log.warn(err.message);
+    }
+    app.log.info(`publishing ${pkgPath}`);
+    out = execSync(`npm publish --access=public`, {
+      cwd: pkgPath,
+      env: Object.assign({}, process.env, {
+        PATH,
+        NODE_ENV: 'development',
+      }),
+    });
+    app.log.info(out.toString('utf8'));
   } catch (err) {
     app.log.error(err);
   }
