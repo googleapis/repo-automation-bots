@@ -14,6 +14,8 @@ by Google on GitHub.
 | [release-please] | Proposes releases based on semantic version commits | [install][release-please-app] |
 | [trusted-contribution] | Allows Kokoro CI to trigger for trusted contributors | [install][trusted-contribution-app] |
 | [failurechecker] | Check for automation tasks, e.g., releases, that are in a failed state | [install][failurechecker-app] |
+| [label-sync] | Synchronize labels across organizations | [install][label-sync-app] |
+| [buildcop] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][buildcop-app] |
 
 ## Testing Locally
 
@@ -100,3 +102,7 @@ at the specified schedule.
 [trusted-contribution-app]: https://github.com/apps/trusted-contributions-gcf
 [failurechecker]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/failurechecker
 [failurechecker-app]: https://github.com/apps/failure-checker
+[label-sync]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/label-sync
+[label-sync-app]: https://github.com/apps/gcf-label-sync
+[buildcop]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop
+[buildcop-app]: https://github.com/apps/build-cop-bot
