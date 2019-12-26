@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-import { buildcop } from '../src/buildcop';
+import { buildcop, BuildCopPayload } from '../src/buildcop';
 const { findFailures, formatFailure } = buildcop;
-import { BuildCopPayload } from '../src/buildcop';
 
 import { resolve } from 'path';
 import { Probot } from 'probot';
