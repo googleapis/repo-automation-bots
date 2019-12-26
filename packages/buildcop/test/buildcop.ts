@@ -33,7 +33,7 @@ function formatPayload(payload: BuildCopPayload) {
   payload.xunitXML = Buffer.from(JSON.stringify(payload.xunitXML)).toString(
     'base64'
   );
-  const data = Buffer.from(JSON.stringify({ payload })).toString('base64');
+  const data = Buffer.from(JSON.stringify(payload)).toString('base64');
   return {
     message: {
       data,
@@ -116,8 +116,9 @@ describe('buildcop', () => {
   describe('app', () => {
     it('skips when there is no XML', async () => {
       const payload = formatPayload({
-        repoOwner: 'tbpg',
-        repoName: 'golang-samples',
+        repo: 'tbpg/golang-samples',
+        organization: { login: 'tbpg' },
+        repository: { name: 'golang-samples' },
         buildID: '123',
         buildURL: 'http://example.com',
         xunitXML: '',
@@ -134,8 +135,9 @@ describe('buildcop', () => {
         'utf8'
       );
       const payload = formatPayload({
-        repoOwner: 'tbpg',
-        repoName: 'golang-samples',
+        repo: 'tbpg/golang-samples',
+        organization: { login: 'tbpg' },
+        repository: { name: 'golang-samples' },
         buildID: '123',
         buildURL: 'http://example.com',
         xunitXML: input,
@@ -163,8 +165,9 @@ describe('buildcop', () => {
         'utf8'
       );
       const payload = formatPayload({
-        repoOwner: 'tbpg',
-        repoName: 'golang-samples',
+        repo: 'tbpg/golang-samples',
+        organization: { login: 'tbpg' },
+        repository: { name: 'golang-samples' },
         buildID: '123',
         buildURL: 'http://example.com',
         xunitXML: input,
@@ -203,8 +206,9 @@ describe('buildcop', () => {
         'utf8'
       );
       const payload = formatPayload({
-        repoOwner: 'tbpg',
-        repoName: 'golang-samples',
+        repo: 'tbpg/golang-samples',
+        organization: { login: 'tbpg' },
+        repository: { name: 'golang-samples' },
         buildID: '123',
         buildURL: 'http://example.com',
         xunitXML: input,
@@ -248,8 +252,9 @@ describe('buildcop', () => {
         'utf8'
       );
       const payload = formatPayload({
-        repoOwner: 'tbpg',
-        repoName: 'golang-samples',
+        repo: 'tbpg/golang-samples',
+        organization: { login: 'tbpg' },
+        repository: { name: 'golang-samples' },
         buildID: '123',
         buildURL: 'http://example.com',
         xunitXML: input,
@@ -294,8 +299,9 @@ describe('buildcop', () => {
         'utf8'
       );
       const payload = formatPayload({
-        repoOwner: 'tbpg',
-        repoName: 'golang-samples',
+        repo: 'tbpg/golang-samples',
+        organization: { login: 'tbpg' },
+        repository: { name: 'golang-samples' },
         buildID: '123',
         buildURL: 'http://example.com',
         xunitXML: input,
@@ -334,8 +340,9 @@ describe('buildcop', () => {
         'utf8'
       );
       const payload = formatPayload({
-        repoOwner: 'tbpg',
-        repoName: 'golang-samples',
+        repo: 'tbpg/golang-samples',
+        organization: { login: 'tbpg' },
+        repository: { name: 'golang-samples' },
         buildID: '123',
         buildURL: 'http://example.com',
         xunitXML: input,
@@ -368,8 +375,9 @@ describe('buildcop', () => {
         'utf8'
       );
       const payload = formatPayload({
-        repoOwner: 'tbpg',
-        repoName: 'golang-samples',
+        repo: 'tbpg/golang-samples',
+        organization: { login: 'tbpg' },
+        repository: { name: 'golang-samples' },
         buildID: '123',
         buildURL: 'http://example.com',
         xunitXML: input,

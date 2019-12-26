@@ -23,13 +23,8 @@
  *    for the same build (e.g. for different language versions), they should all
  *    use the same buildID.
  *  - buildURL: URL to link to for a build.
- *  - repoOwner: the repo owner (e.g. GoogleCloudPlatform).
- *  - repoName: the name of the repo (e.g. golang-samples).
+ *  - repo: the repo being tested (e.g. GoogleCloudPlatform/golang-samples).
  */
-
-// define types for a few modules used by probot that do not have their
-// own definitions published. Before taking this step, folks should first
-// check whether type bindings are already published.
 
 import { Application } from 'probot';
 import { LoggerWithTarget } from 'probot/lib/wrap-logger';
@@ -45,32 +40,30 @@ interface TestFailure {
 }
 
 export interface BuildCopPayload {
-  repoOwner: string;
-  repoName: string;
+  repo: string;
+  organization: { login: string }; // Filled in by gcf-utils.
+  repository: { name: string }; // Filled in by gcf-utils.
   buildID: string;
   buildURL: string;
-  xunitXML: string; // base64 encoded to avoid JSON escaping issues.
+  xunitXML: string; // Base64 encoded to avoid JSON escaping issues.
 }
 
 interface PubSubContext {
   readonly event: string;
   github: GitHubAPI;
   log: LoggerWithTarget;
-  payload: {
-    payload: BuildCopPayload
-  }
+  payload: BuildCopPayload;
 }
 
 export function buildcop(app: Application) {
   app.on('pubsub.message', async (context: PubSubContext) => {
-    const payload: BuildCopPayload = context.payload.payload as BuildCopPayload;
+    console.log(context.payload);
+    const owner = context.payload.organization.login;
+    const repo = context.payload.repository.name;
+    const buildID = context.payload.buildID || '[TODO: set buildID]';
+    const buildURL = context.payload.buildURL || '[TODO: set buildURL]';
 
-    const owner = payload.repoOwner;
-    const repo = payload.repoName;
-    const buildID = payload.buildID || '[TODO: set buildID]';
-    const buildURL = payload.buildURL || '[TODO: set buildURL]';
-
-    const xml = Buffer.from(payload.xunitXML, 'base64').toString();
+    const xml = Buffer.from(context.payload.xunitXML, 'base64').toString();
 
     if (!xml) {
       context.log.info(`[${owner}/${repo}] No XML payload! Skipping.`);
