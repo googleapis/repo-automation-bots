@@ -30,15 +30,8 @@ nock.disableNetConnect();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 function formatPayload(payload: BuildCopPayload) {
-  payload.xunitXML = Buffer.from(JSON.stringify(payload.xunitXML)).toString(
-    'base64'
-  );
-  const data = Buffer.from(JSON.stringify(payload)).toString('base64');
-  return {
-    message: {
-      data,
-    },
-  };
+  payload.xunitXML = Buffer.from(payload.xunitXML).toString('base64');
+  return payload;
 }
 
 describe('buildcop', () => {
