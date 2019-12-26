@@ -36,7 +36,7 @@ interface Repos {
 
 interface Scheduled {
   repo?: string;
-  message?: {[key: string]: string};
+  message?: { [key: string]: string };
 }
 
 export class GCFBootstrapper {
@@ -136,16 +136,18 @@ export class GCFBootstrapper {
     };
   }
 
-  private async handleScheduled(id: string, req: express.Request, eventName: string) {
+  private async handleScheduled(
+    id: string,
+    req: express.Request,
+    eventName: string
+  ) {
     let body = (Buffer.isBuffer(req.body)
       ? JSON.parse(req.body.toString('utf8'))
       : req.body) as Scheduled;
     // PubSub messages have their payload encoded in body.message.data
     // as a base64 blob.
     if (body.message && body.message.data) {
-      body = JSON.parse(
-        Buffer.from(body.message.data, 'base64').toString()
-      );
+      body = JSON.parse(Buffer.from(body.message.data, 'base64').toString());
     }
 
     if (body.repo) {
@@ -169,7 +171,12 @@ export class GCFBootstrapper {
     }
   }
 
-  private async receivePromise(repoFullName: string, id: string, body: object, eventName: string) {
+  private async receivePromise(
+    repoFullName: string,
+    id: string,
+    body: object,
+    eventName: string
+  ) {
     // The payload from the scheduler is updated with additional information
     // providing context about the organization/repo that the event is
     // firing for.
