@@ -47,7 +47,7 @@ const sms = new SecretManagerServiceClient();
 function handler(app: Application) {
   app.on('release.released', async context => {
     const repoName = context.payload.repository.name;
-    const remoteConfiguration: Configuration | null = (await context.config(
+    const remoteConfiguration = (await context.config(
       CONFIGURATION_FILE_PATH
     )) as Configuration | null;
 
@@ -95,7 +95,7 @@ function handler(app: Application) {
         remoteConfiguration
       );
       if (secret && secret.payload && secret.payload.data) {
-        const publishConfig = handler.publishConfigFromSecret(secret as Secret);
+        const publishConfig = handler.publishConfigFromSecret(secret);
         const npmRc = handler.generateNpmRc(publishConfig);
         await handler.publish(npmRc, pkgPath, app);
         await removeLabels(context);
@@ -139,7 +139,7 @@ handler.getPublicationSecrets = async (
 ): Promise<Secret> => {
   const secretId = config.secretId || 'publish';
   const project = config.project || process.env.PROJECT_ID;
-  app.log.info(`looking secret for ${project}`);
+  app.log.info(`looking up secret for ${project}`);
   const [secret] = await sms.accessSecretVersion({
     name: `projects/${project}/secrets/${secretId}/versions/latest`,
   });
