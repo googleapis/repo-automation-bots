@@ -38,7 +38,7 @@ function isTrustedContribution(author: string): boolean {
 export = (app: Application) => {
   app.on(['pull_request'], async context => {
     app.log(
-      `PR ${context.payload.pull_request.number} action = ${context.payload.action}`
+      `repo = ${context.payload.repository.name} PR = ${context.payload.pull_request.number} action = ${context.payload.action}`
     );
   });
 
@@ -47,7 +47,7 @@ export = (app: Application) => {
       'pull_request.edited',
       'pull_request.opened',
       'pull_request.reopened',
-      'pull_request.synchronized',
+      'pull_request.synchronize',
     ],
     async context => {
       const PR_AUTHOR = context.payload.pull_request.user.login;
