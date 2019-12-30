@@ -164,7 +164,7 @@ handler.publish = async (npmRc: string, pkgPath: string, app: Application) => {
       cwd: pkgPath,
       env: Object.assign({}, process.env, {
         PATH,
-        // npm wil does install dev dependencies needed to publish
+        // npm does install dev dependencies needed to publish
         // unless we override the NODE_ENV:
         NODE_ENV: 'development',
       }),
