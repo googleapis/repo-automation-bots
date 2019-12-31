@@ -15,7 +15,7 @@
     "generate-bot": "node ./packages/generate-bot/run.js"
   },
   "devDependencies": {
-    "c8": "^6.0.0",
+    "c8": "^7.0.0",
     "lerna": "^3.16.4",
     "smee-client": "^1.1.0"
   }
