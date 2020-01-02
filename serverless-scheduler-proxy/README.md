@@ -31,3 +31,20 @@ gcloud beta run services add-iam-policy-binding serverless-scheduler-proxy \
 ```bash
 gcloud app create --region=REGION
 ```
+
+1. Enable your project to create Cloud Pub/Sub authentication tokens.
+```bash
+gcloud projects add-iam-policy-binding PROJECT-ID \
+     --member=serviceAccount:service-PROJECT-NUMBER@gcp-sa-pubsub.iam.gserviceaccount.com \
+     --role=roles/iam.serviceAccountTokenCreator
+```
+
+## Create a PubSub Subscription
+
+To use a PubSub Topic/Subscription with this proxy, it must be made with the proper Service Account
+
+```bash
+gcloud beta pubsub subscriptions create cloudRunSubscription --topic TOPICNAME \
+   --push-endpoint=SERVICE-URL/v0/pubsub \
+   --push-auth-service-account=serverless-proxy-cron@PROJECT-ID.iam.gserviceaccount.com
+```

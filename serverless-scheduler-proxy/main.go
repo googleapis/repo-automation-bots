@@ -68,7 +68,11 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	// TODO: remove the legacy v0 endpoint once we've confirmed everything
+	// is working as expected:
 	mux.Handle("/v0", botCronProxy(cfg))
+	mux.Handle("/v0/cron", botCronProxy(cfg))
+	mux.Handle("/v0/pubsub", botPubSubProxy(cfg))
 
 	addr := ":" + port
 	log.Printf("starting to listen on %s", addr)
@@ -88,51 +92,82 @@ func main() {
 
 func rewriteBotCronURL(c botConfig) func(*http.Request) {
 	return func(req *http.Request) {
-
-		var bodyBytes []byte
-		if req.Body != nil {
-			bodyBytes, _ = ioutil.ReadAll(req.Body)
-			req.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-		} else {
-			log.Println("request had no body")
-		}
-
-		var pay reqPayload
-		json.Unmarshal(bodyBytes, &pay)
-
-		u := req.URL.String()
-		req.URL.Scheme = "https"
-
-		// Explicitly remove UserAgent header
-		req.Header.Del("user-agent")
-
-		newHost := fmt.Sprintf("%v-%v.cloudfunctions.net", pay.Location, c.project)
-
-		req.Host = newHost
-		req.URL.Host = newHost
-		req.URL.Path = fmt.Sprintf("/%v", pay.Name)
-
-		key, err := getBotSecret(req.Context(), c, pay.Name)
-		if err != nil {
-			log.Printf("error getting bot secret: %v", err)
-		}
-
-		// Make a hmac sig
-		signer := hmac.New(sha1.New, key)
-		signer.Write(bodyBytes)
-
-		req.Header.Add("x-hub-signature", base64.StdEncoding.EncodeToString(signer.Sum(nil)))
 		req.Header.Add("x-github-event", "schedule.repository")
-		req.Header.Add("x-github-delivery", uuid.New().String())
-
-		log.Printf("rewrote url: %s into %s", u, req.URL)
+		parser := func(bodyBytes []byte) (string, string) {
+			var pay reqPayload
+			json.Unmarshal(bodyBytes, &pay)
+			return pay.Name, pay.Location
+		}
+		rewriteBotURL(c, parser, req)
 	}
+}
+
+func rewriteBotPubSubURL(c botConfig) func(*http.Request) {
+	return func(req *http.Request) {
+		req.Header.Add("x-github-event", "pubsub.message")
+		parser := func(bodyBytes []byte) (string, string) {
+			var pay PubSubMessage
+			json.Unmarshal(bodyBytes, &pay)
+			log.Printf("handling pubsub message for subscription: %v\n", pay.Subscription)
+
+			var msg RepoAutomationPubSubMessage
+			json.Unmarshal(pay.Message.Data, &msg)
+			log.Printf("pubsub message for bot: %v in %v\n", msg.Name, msg.Location)
+			return msg.Name, msg.Location
+		}
+		rewriteBotURL(c, parser, req)
+	}
+}
+
+func rewriteBotURL(c botConfig, parser func([]byte) (string, string), req *http.Request) {
+
+	var bodyBytes []byte
+	if req.Body != nil {
+		bodyBytes, _ = ioutil.ReadAll(req.Body)
+		req.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+	} else {
+		log.Println("request had no body")
+	}
+
+	botName, botLocation := parser(bodyBytes)
+
+	u := req.URL.String()
+	req.URL.Scheme = "https"
+
+	// Explicitly remove UserAgent header
+	req.Header.Del("user-agent")
+
+	newHost := fmt.Sprintf("%v-%v.cloudfunctions.net", botLocation, c.project)
+
+	req.Host = newHost
+	req.URL.Host = newHost
+	req.URL.Path = fmt.Sprintf("/%v", botName)
+
+	key, err := getBotSecret(req.Context(), c, botName)
+	if err != nil {
+		log.Printf("error getting bot secret: %v", err)
+	}
+
+	// Make a hmac sig
+	signer := hmac.New(sha1.New, key)
+	signer.Write(bodyBytes)
+
+	req.Header.Add("x-hub-signature", base64.StdEncoding.EncodeToString(signer.Sum(nil)))
+	req.Header.Add("x-github-delivery", uuid.New().String())
+
+	log.Printf("rewrote url: %s into %s", u, req.URL)
 }
 
 // botCronProxy returns a reverse proxy to the specified bot.
 func botCronProxy(cfg botConfig) http.HandlerFunc {
 	return (&httputil.ReverseProxy{
 		Director: rewriteBotCronURL(cfg),
+	}).ServeHTTP
+}
+
+func botPubSubProxy(cfg botConfig) http.HandlerFunc {
+	return (&httputil.ReverseProxy{
+		Director: rewriteBotPubSubURL(cfg),
 	}).ServeHTTP
 }
 
@@ -189,4 +224,20 @@ func getBotSecret(ctx context.Context, b botConfig, botName string) ([]byte, err
 	}
 
 	return resp.Plaintext, nil
+}
+
+// RepoAutomationPubSubMessage represents
+// THe data recieved from a PubSubMessage
+type RepoAutomationPubSubMessage struct {
+	Name     string `json:"Name"`              // Name of Bot
+	Location string `json:"Location"`          // Region where bot lives
+}
+
+// PubSubMessage is the payload of a Pub/Sub event.
+type PubSubMessage struct {
+	Message struct {
+		Data []byte `json:"data,omitempty"`
+		ID   string `json:"id"`
+	} `json:"message"`
+	Subscription string `json:"subscription"`
 }
