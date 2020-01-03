@@ -20,7 +20,7 @@ export interface LicenseHeader {
   year?: number;
 }
 
-const COPYRIGHT_REGEX = /\s*([*#]|\/\/) \s*Copyright (\d{4}) ([\w\s]+)\.?/;
+const COPYRIGHT_REGEX = /\s*([*#]|\/\/) \s*Copyright (\d{4}(-\d{4})?) ([\w\s]+)\.?/;
 const APACHE2_REGEX = new RegExp(
   'Licensed under the Apache License, Version 2.0'
 );
@@ -36,8 +36,14 @@ export function detectLicenseHeader(contents: string): LicenseHeader {
   contents.split(/\r?\n/).forEach(line => {
     const match = line.match(COPYRIGHT_REGEX);
     if (match) {
-      license.year = Number(match[2]);
-      license.copyright = match[3];
+      // If it's a ranged date, only consider the newest one.
+      if (match[3]) {
+        // The extra '-' should be removed.
+        license.year = Number(match[3].substring(1));
+      } else {
+        license.year = Number(match[2]);
+      }
+      license.copyright = match[4];
     }
 
     if (line.match(APACHE2_REGEX)) {
