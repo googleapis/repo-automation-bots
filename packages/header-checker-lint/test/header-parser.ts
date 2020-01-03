@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2019-2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -62,6 +62,17 @@ describe('detectLicenseHeader', () => {
     const header = detectLicenseHeader(contents);
     assert.strictEqual(header.copyright, 'Google LLC');
     assert.strictEqual(header.year, 2019);
+    assert.strictEqual(header.type, 'Apache-2.0');
+  });
+
+  it('should handle inline java-style comments with date ranges', async () => {
+    const contents = fs.readFileSync(
+      resolve(fixturesPath, './inline-java-style-header-date-range.txt'),
+      'utf-8'
+    );
+    const header = detectLicenseHeader(contents);
+    assert.strictEqual(header.copyright, 'Google LLC');
+    assert.strictEqual(header.year, 2020);
     assert.strictEqual(header.type, 'Apache-2.0');
   });
 });
