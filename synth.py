@@ -11,4 +11,5 @@ s.copy(templates, excludes=[
   '.prettierrc',
   '.nycrc',
   'README.md',
+  '.github/release-please.yml'
 ])
