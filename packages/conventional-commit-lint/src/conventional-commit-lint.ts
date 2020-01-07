@@ -23,7 +23,6 @@ rules['header-max-length'] = [2, 'always', 256];
 
 import { PullsListCommitsResponseItem, Response } from '@octokit/rest';
 
-//object type Conclusion*
 type Conclusion =
   | 'success'
   | 'failure'
@@ -33,9 +32,7 @@ type Conclusion =
   | 'action_required'
   | undefined;
 
-
 export = (app: Application) => {
-  //what response type comes back when request status checks?*
   app.on('pull_request', async context => {
     // Fetch last 100 commits stored on a specific PR.
     const commitParams = context.repo({

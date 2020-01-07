@@ -27,7 +27,7 @@ exports['HeaderCheckerLint opened pull request sets a "failure" context on PR, i
   "output": {
     "title": "Invalid or missing license headers detected.",
     "summary": "Some new files are missing headers",
-    "text": "`oauth2_http/java/com/google/auth/http/WrongYear.java` should have a copyright year of 2019"
+    "text": "`oauth2_http/java/com/google/auth/http/WrongYear.java` should have a copyright year of 2020"
   }
 }
 
@@ -60,20 +60,30 @@ exports['HeaderCheckerLint updated pull request sets a "failure" context on PR, 
   "output": {
     "title": "Invalid or missing license headers detected.",
     "summary": "Some new files are missing headers",
-    "text": "`oauth2_http/java/com/google/auth/http/WrongYear.java` should have a copyright year of 2019"
+    "text": "`oauth2_http/java/com/google/auth/http/WrongYear.java` should have a copyright year of 2020"
   }
 }
 
 exports['HeaderCheckerLint opened pull request ignores a valid license 1'] = {
   "name": "header-check",
-  "conclusion": "success",
-  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c"
+  "conclusion": "failure",
+  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c",
+  "output": {
+    "title": "Invalid or missing license headers detected.",
+    "summary": "Some new files are missing headers",
+    "text": "`oauth2_http/java/com/google/auth/http/NewFile2.java` should have a copyright year of 2020"
+  }
 }
 
 exports['HeaderCheckerLint updated pull request ignores a valid license 1'] = {
   "name": "header-check",
-  "conclusion": "success",
-  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c"
+  "conclusion": "failure",
+  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c",
+  "output": {
+    "title": "Invalid or missing license headers detected.",
+    "summary": "Some new files are missing headers",
+    "text": "`oauth2_http/java/com/google/auth/http/NewFile2.java` should have a copyright year of 2020"
+  }
 }
 
 exports['HeaderCheckerLint opened pull request sets a "failure" context on PR, if the source file is missing copyright 1'] = {
@@ -94,7 +104,7 @@ exports['HeaderCheckerLint opened pull request sets a "failure" context on PR, i
   "output": {
     "title": "Invalid or missing license headers detected.",
     "summary": "Some new files are missing headers",
-    "text": "`oauth2_http/java/com/google/auth/http/InvalidCopyright.java` has an invalid copyright holder: `Invalid Holder`"
+    "text": "`oauth2_http/java/com/google/auth/http/InvalidCopyright.java` has an invalid copyright holder: `Invalid Holder`\n`oauth2_http/java/com/google/auth/http/InvalidCopyright.java` should have a copyright year of 2020"
   }
 }
 
@@ -117,8 +127,13 @@ exports['HeaderCheckerLint updated pull request sets a "success" context on PR, 
 
 exports['HeaderCheckerLint opened pull request reads a custom configuration file 1'] = {
   "name": "header-check",
-  "conclusion": "success",
-  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c"
+  "conclusion": "failure",
+  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c",
+  "output": {
+    "title": "Invalid or missing license headers detected.",
+    "summary": "Some new files are missing headers",
+    "text": "`oauth2_http/java/com/google/auth/http/InvalidCopyright.java` should have a copyright year of 2020"
+  }
 }
 
 exports['HeaderCheckerLint opened pull request ignores an ignored files 1'] = {
@@ -129,8 +144,13 @@ exports['HeaderCheckerLint opened pull request ignores an ignored files 1'] = {
 
 exports['HeaderCheckerLint opened pull request ignores copyright strings in the body 1'] = {
   "name": "header-check",
-  "conclusion": "success",
-  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c"
+  "conclusion": "failure",
+  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c",
+  "output": {
+    "title": "Invalid or missing license headers detected.",
+    "summary": "Some new files are missing headers",
+    "text": "`oauth2_http/java/com/google/auth/http/CopyrightString.java` should have a copyright year of 2020"
+  }
 }
 
 exports['HeaderCheckerLint updated pull request ignores copyright strings in the body 1'] = {
