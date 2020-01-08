@@ -98,7 +98,7 @@ function handler(app: Application) {
         const publishConfig = handler.publishConfigFromSecret(secret);
         const npmRc = handler.generateNpmRc(publishConfig);
         await handler.publish(npmRc, pkgPath, app);
-        await removeLabels(context);
+        await removeLabels(context, app);
       } else {
         app.log.error('could not load application secrets');
       }
@@ -109,7 +109,7 @@ function handler(app: Application) {
 // Once the publication is complete, remove labels such as
 // autorelease: pending, and autorelease: tagged, so that
 // monitoring does not flag this as a failed release.
-async function removeLabels(context: Context) {
+async function removeLabels(context: Context, app: Application) {
   const pulls = (
     await context.github.pulls.list({
       owner: context.payload.repository.owner.login,
@@ -120,11 +120,18 @@ async function removeLabels(context: Context) {
   ).data;
   for (const pull of pulls) {
     if (pull.head.ref === `release-${context.payload.release.tag_name}`) {
-      await context.github.issues.removeLabels({
-        owner: context.payload.repository.owner.login,
-        repo: context.payload.repository.name,
-        issue_number: pull.number,
-      });
+      try {
+        app.log.info(
+          `attempting to remove labels for owner = ${context.payload.repository.owner.login} repo = ${context.payload.repository.name} number = ${pull.number}`
+        );
+        await context.github.issues.removeLabels({
+          owner: context.payload.repository.owner.login,
+          repo: context.payload.repository.name,
+          issue_number: pull.number,
+        });
+      } catch (err) {
+        app.log.error(err);
+      }
     }
   }
 }
