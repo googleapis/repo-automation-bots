@@ -25,7 +25,7 @@ const recursive = require("recursive-readdir");
 const rimraf = require("rimraf");
 const snapshot = require("snap-shot-it");
 const path = require("path");
-const {describe, it, afterEach} = require('mocha');
+const { describe, it, afterEach } = require("mocha");
 
 const readAllFiles = function(dirNameRead, contentString) {
   const files = fs.readdirSync(dirNameRead).sort();
