@@ -43,9 +43,6 @@ for f in *; do
         (
         cd "$f" || exit 1
         echo "$f"
-        # Javascript does not allow function names with '-' so we need to
-        # replace the directory name (which might have '-') with "_"
-        functionname=${f//-/_}
         echo "About to publish function $functionname"
 
         gcloud functions deploy "$functionname" --trigger-http \
