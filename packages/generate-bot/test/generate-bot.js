@@ -135,15 +135,4 @@ describe("user input", () => {
     expect(regexLinux.test(fileLocation)).to.be.true;
   });
 
-  it("checks that hyphens are turned into underscores", () => {
-    const hyphenTest = {
-      programName: "pass-but-change",
-      description: "pass",
-      fileLocation: "pass"
-    };
-
-    GenerateBot.checkValidity(hyphenTest);
-
-    expect(hyphenTest.programName).to.equal("pass_but_change");
-  });
 });
