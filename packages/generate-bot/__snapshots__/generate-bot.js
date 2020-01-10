@@ -1,4 +1,4 @@
-exports["file structure checks that the file content carries over 1"] = `
+exports['file structure checks that the file content carries over 1'] = `
 helloWorld
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
@@ -38,7 +38,7 @@ import { GCFBootstrapper } from 'gcf-utils';
 import appFn from './helloWorld';
 
 const bootstrap = new GCFBootstrapper();
-module.exports.helloWorld = bootstrap.gcf(appFn);// Copyright 2019 Google LLC
+module.exports['helloWorld'] = bootstrap.gcf(appFn);// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -849,4 +849,4 @@ describe('helloWorld', () => {
     "system-test/*.ts"
   ]
 }
-`;
+`
