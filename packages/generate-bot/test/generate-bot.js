@@ -134,5 +134,4 @@ describe("user input", () => {
     const regexLinux = new RegExp("packages/pass");
     expect(regexLinux.test(fileLocation)).to.be.true;
   });
-
 });
