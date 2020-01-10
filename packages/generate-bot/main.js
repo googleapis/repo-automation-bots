@@ -55,10 +55,6 @@ exports.checkValidity = function(testString) {
     testString.programName = testString.programName.toLowerCase();
   }
 
-  if (isValid && testString.programName.includes("-")) {
-    testString.programName = testString.programName.replace(/-/g, "_");
-  }
-
   return isValid;
 };
 
