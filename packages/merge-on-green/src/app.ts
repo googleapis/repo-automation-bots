@@ -15,7 +15,7 @@
  */
 
 import { GCFBootstrapper } from 'gcf-utils';
-import appFn from './mergeOnGreen';
+import appFn from './merge-on-green';
 
 const bootstrap = new GCFBootstrapper();
-module.exports["mergeOnGreen"] = bootstrap.gcf(appFn);
+module.exports["merge-on-green"] = bootstrap.gcf(appFn);

@@ -1,5 +1,5 @@
 {
-  "name": "mergeOnGreen",
+  "name": "merge-on-green",
   "version": "1.0.0",
   "description": "it merges PRs on green",
   "private": true,
@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "compile": "tsc -p .",
-    "start": "probot run ./build/src/mergeOnGreen.js",
+    "start": "probot run ./build/src/merge-on-green.js",
     "start:local": "node ./build/src/local.js",
     "prepare": "npm run compile",
     "pretest": "npm run compile",

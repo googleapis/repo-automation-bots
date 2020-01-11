@@ -15,7 +15,7 @@
  */
 
 
-import myProbotApp from '../src/mergeOnGreen';
+import myProbotApp from '../src/merge-on-green';
 
 import { resolve } from 'path';
 import { Probot } from 'probot';
@@ -28,7 +28,7 @@ nock.disableNetConnect();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 
-describe('mergeOnGreen', () => {
+describe('merge-on-green', () => {
   let probot: Probot;
 
   beforeEach(() => {
@@ -64,7 +64,7 @@ describe('mergeOnGreen', () => {
 
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/mergeOnGreen.yml')
+        .get('/repos/testOwner/testRepo/contents/.github/merge-on-green.yml')
         .reply(200, { content: config.toString('base64') })
 
 
@@ -84,7 +84,7 @@ describe('mergeOnGreen', () => {
       ));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/mergeOnGreen.yml')
+        .get('/repos/testOwner/testRepo/contents/.github/merge-on-green.yml')
         .reply(200, { content: config.toString('base64') })
 
 
