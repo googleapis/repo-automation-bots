@@ -64,4 +64,15 @@ describe('detectLicenseHeader', () => {
     assert.strictEqual(header.year, 2019);
     assert.strictEqual(header.type, 'Apache-2.0');
   });
+
+  it('should handle inline java-style comments with date ranges', async () => {
+    const contents = fs.readFileSync(
+      resolve(fixturesPath, './inline-java-style-header-date-range.txt'),
+      'utf-8'
+    );
+    const header = detectLicenseHeader(contents);
+    assert.strictEqual(header.copyright, 'Google LLC');
+    assert.strictEqual(header.year, 2020);
+    assert.strictEqual(header.type, 'Apache-2.0');
+  });
 });
