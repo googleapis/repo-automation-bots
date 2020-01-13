@@ -71,13 +71,13 @@ export = (app: Application) => {
     
       const configProtection = config.required_status_checks;
       
-      // console.log('hi');
-      // if (branchProtection) {
-      //   console.log(branchProtection.required_status_checks.contexts.length);
-      //   for (let x=0; x<branchProtection.required_status_checks.contexts.length; x++) {
-      //     console.log(branchProtection.required_status_checks.contexts[x]);
-      //   }
-      // };
+      console.log('hi');
+      if (branchProtection) {
+        console.log(branchProtection.required_status_checks.contexts.length);
+        for (let x=0; x<branchProtection.required_status_checks.contexts.length; x++) {
+          console.log(branchProtection.required_status_checks.contexts[x]);
+        }
+      };
       if (configProtection) {
         console.log(configProtection.length);
        configProtection.forEach(element => {
@@ -119,7 +119,10 @@ export = (app: Application) => {
           conclusion: 'failure' as Conclusion,
           output: {
             title: 'You have no required status checks',
-            summary: 'Add required status checks, and make sure they align with your config file'
+            summary: 'Enforce branch protection on your repo.',
+            text: 'To add required status checks to your repository, please follow instructions in this link: \nhttps://help.github.com/en/github/administering-a-repository/enabling-required-status-checks\n'+
+            '\nIn order to add applications to your repository that will run check runs, please follow instructions here: \nhttps://developer.github.com/apps/installing-github-apps/\n'+
+            '\nLastly, please make sure that your required status checks are the same as the ones listed in your config file if you created one.'
           }
         })
      } 
@@ -134,7 +137,10 @@ export = (app: Application) => {
           conclusion: 'failure' as Conclusion,
           output: {
             title: 'You have less than 3 required status checks',
-            summary: 'You likely don\'t have all the required status checks you need, please make sure to add the appropriate ones',
+            summary: 'You likely don\'t have all the required status checks you need, please make sure to add the appropriate ones.',
+            text: 'To add required status checks to your repository, please follow instructions in this link: \nhttps://help.github.com/en/github/administering-a-repository/enabling-required-status-checks\n'+
+            '\nIn order to add applications to your repository that will run check runs, please follow instructions here: \nhttps://developer.github.com/apps/installing-github-apps/\n'+
+            '\nLastly, please make sure that your required status checks are the same as the ones listed in your config file if you created one.'
           }
         })
       }
@@ -150,7 +156,6 @@ export = (app: Application) => {
 
       
     if(configProtection) {
-    let match: boolean;
         configProtectionArray.forEach(statusCheck => {
           if(!branchProtectionArray.includes(statusCheck)) {
             checkParams = context.repo({ 
@@ -159,7 +164,10 @@ export = (app: Application) => {
               conclusion: 'failure' as Conclusion,
               output: {
                 title: 'Your branch protection does not match up with your config file',
-                summary: 'Set up your branch protection to match your config file',
+                summary: 'Set up your branch protection to match your config file.',
+                text: 'To add required status checks to your repository, please follow instructions in this link: \nhttps://help.github.com/en/github/administering-a-repository/enabling-required-status-checks\n'+
+                '\nIn order to add applications to your repository that will run check runs, please follow instructions here: \nhttps://developer.github.com/apps/installing-github-apps/\n'+
+                '\nLastly, please make sure that your required status checks are the same as the ones listed in your config file.'
               }
             })
           };
