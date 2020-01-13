@@ -16,6 +16,7 @@ by Google on GitHub.
 | [failurechecker] | Check for automation tasks, e.g., releases, that are in a failed state | [install][failurechecker-app] |
 | [label-sync] | Synchronize labels across organizations | [install][label-sync-app] |
 | [buildcop] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][buildcop-app] |
+| [publish] | Publish to npm, through [Wombat Dressing Room][] | [install][publish-app] |
 
 ## Testing Locally
 
@@ -106,3 +107,6 @@ at the specified schedule.
 [label-sync-app]: https://github.com/apps/gcf-label-sync
 [buildcop]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop
 [buildcop-app]: https://github.com/apps/build-cop-bot
+[publish]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/publish
+[publish-app]: https://github.com/apps/publish-bot
+[Wombat Dressing Room]: https://opensource.googleblog.com/2020/01/wombat-dressing-room-npm-publication_10.html
