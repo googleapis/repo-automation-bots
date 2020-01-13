@@ -151,6 +151,11 @@ export = (app: Application) => {
         continue;
       }
 
+      if (file.status == "removed") {
+        app.log.info('ignoring deleted file: ' + file.filename);
+        continue;
+      }
+
       if (!configuration.isSourceFile(file.filename)) {
         app.log.info('ignoring non-source file: ' + file.filename);
         continue;
