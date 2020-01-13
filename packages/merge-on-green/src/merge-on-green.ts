@@ -1,3 +1,4 @@
+ 
 /**
  * Copyright 2020 Google LLC. All Rights Reserved.
  *
@@ -14,147 +15,319 @@
  * limitations under the License.
  */
 
-import { Application } from 'probot';
-import { GitHubAPI } from 'probot/lib/github';
-import { PullsListCommitsResponseItem, Response } from '@octokit/rest';
+const { App } = require("@octokit/app");
+const Octokit = require("@octokit/rest");
+const dotenv = require("dotenv")
+const fs = require('fs');
+// contains the installation id necessary to authenticate as an installation
 
-const CONFIGURATION_FILE_PATH = 'merge-on-green.yml';
 
-interface Configuration {
-  required_status_checks?: string[];
-}
+const owner = 'sofisl';
+const repo = 'hello-world'
+const pr = 31
+const labelName = 'merge-on-green ready';
 
-type Conclusion =
-  | 'success'
-  | 'failure'
-  | 'neutral'
-  | 'cancelled'
-  | 'timed_out'
-  | 'action_required'
-  | undefined;
 
-async function getBranchProtection(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  branch: string
-) {
-  try {
-    const data = (
-      await github.repos.getBranchProtection({
-        owner,
-        repo,
-        branch,
-      })
-    ).data;
-    return data;
-  } catch (err) {
-    return null;
-  }
-}
+//have to authenticate first
 
-export = (app: Application) => {
-  app.on(['pull_request.opened', 'pull_request.reopened'], async context => {
-    const config = (await context.config(
-      CONFIGURATION_FILE_PATH,
-      {}
-    )) as Configuration;
+    async function getLatestCommit() {
+        try {
+        const data = await octokit.pulls.listCommits({
+            owner: owner, //this will be filled in by context of payload, i.e., context.payload.repository.owner.login
+            repo: repo, //this will be filled in by context of payload, i.e., context.payload.repository.name
+            pull_number: pr, //what we're listening for,
+            per_page: 100,
+            page: 1     
+        })
+        return (data.data[(data.data.length)-1].sha);
+    } catch(err) {
+            return null;
+        }
+    }
 
-    console.log(config);
-    const { owner, repo } = context.repo();
+    async function getPR() {
+        const data = await octokit.pulls.get({
+            owner: owner,
+            repo: repo,
+            pull_number: pr
+        })
+    
+       return data.data;
+    }
 
-    const branchProtection = await getBranchProtection(
-      context.github,
-      owner,
-      repo,
-      context.payload.pull_request.head.repo.default_branch
-    );
 
-    const configProtection = config.required_status_checks;
-
-    const commitParams = context.repo({
-      pull_number: context.payload.pull_request.number,
-      per_page: 100,
-    });
-
-    let commitsResponse: Response<PullsListCommitsResponseItem[]>;
+async function getMOGLabel() {    
+    let isMOG = false;
     try {
-      commitsResponse = await context.github.pulls.listCommits(commitParams);
-    } catch (err) {
-      console.info(err);
-      app.log.error(err);
-      return;
+    const labels = await octokit.issues.listLabelsOnIssue({
+        owner: owner,
+        repo: repo,
+        issue_number: pr
+    })
+    const labelArray = labels.data;
+    if (labelArray) {
+    labelArray.forEach(element => {
+        if(element.name === labelName) {
+            isMOG = true;
+        } else {
+            isMOG = false;
+        }
+    })
     }
+    //console.log(isMOG);
+    return isMOG;
+    } catch(err) {
+        return null;
+    } 
+}
 
-    const commits = commitsResponse.data;
 
-    let checkParams = context.repo({
-      name: 'merge-on-green-readiness',
-      conclusion: 'success' as Conclusion,
-      head_sha: commits[commits.length - 1].sha,
-    });
-
-    if (!branchProtection) {
-      checkParams = context.repo({
-        head_sha: commits[commits.length - 1].sha,
-        name: 'merge-on-green-readiness',
-        conclusion: 'failure' as Conclusion,
-        output: {
-          title: 'You have no required status checks',
-          summary: 'Enforce branch protection on your repo.',
-          text:
-            'To add required status checks to your repository, please follow instructions in this link: \nhttps://help.github.com/en/github/administering-a-repository/enabling-required-status-checks\n' +
-            '\nIn order to add applications to your repository that will run check runs, please follow instructions here: \nhttps://developer.github.com/apps/installing-github-apps/\n' +
-            '\nLastly, please make sure that your required status checks are the same as the ones listed in your config file if you created one.',
-        },
-      });
+async function getRepoContents() {
+    try{
+    const configFile = await octokit.repos.getContents({
+        owner: owner,
+        repo: repo,
+        path: //path
+    })
+    let buf = Buffer.from(configFile.data.content, 'base64');
+    let decodedString = buf.toString('utf-8');
+    return decodedString;
+}
+    catch(err) {
+        console.log(err);
+        return null;
     }
+}
 
-    if (branchProtection) {
-      if (branchProtection.required_status_checks.contexts.length < 3) {
-        checkParams = context.repo({
-          head_sha: commits[commits.length - 1].sha,
-          name: 'merge-on-green-readiness',
-          conclusion: 'failure' as Conclusion,
-          output: {
-            title: 'You have less than 3 required status checks',
-            summary:
-              "You likely don't have all the required status checks you need, please make sure to add the appropriate ones.",
-            text:
-              'To add required status checks to your repository, please follow instructions in this link: \nhttps://help.github.com/en/github/administering-a-repository/enabling-required-status-checks\n' +
-              '\nIn order to add applications to your repository that will run check runs, please follow instructions here: \nhttps://developer.github.com/apps/installing-github-apps/\n' +
-              '\nLastly, please make sure that your required status checks are the same as the ones listed in your config file if you created one.',
-          },
-        });
-      }
+async function transformRepoContents() {
+   const repoContents = await getRepoContents();
+   //do something to repoContents, return array of required tests
+}
 
-      const branchProtectionArray = branchProtection.required_status_checks
-        .contexts as string[];
-      const configProtectionArray = configProtection as string[];
 
-      if (configProtection) {
-        configProtectionArray.forEach(statusCheck => {
-          if (!branchProtectionArray.includes(statusCheck)) {
-            checkParams = context.repo({
-              head_sha: commits[commits.length - 1].sha,
-              name: 'merge-on-green-readiness',
-              conclusion: 'failure' as Conclusion,
-              output: {
-                title:
-                  'Your branch protection does not match up with your config file',
-                summary:
-                  'Set up your branch protection to match your config file.',
-                text:
-                  'To add required status checks to your repository, please follow instructions in this link: \nhttps://help.github.com/en/github/administering-a-repository/enabling-required-status-checks\n' +
-                  '\nIn order to add applications to your repository that will run check runs, please follow instructions here: \nhttps://developer.github.com/apps/installing-github-apps/\n' +
-                  '\nLastly, please make sure that your required status checks are the same as the ones listed in your config file.',
-              },
-            });
-          }
-        });
-      }
+async function getStatusi() {
+    const head_sha = await getLatestCommit();
+    console.log(head_sha);
+    try {
+        const data = await octokit.repos.listStatusesForRef({
+            owner: owner,
+            repo: repo,
+          ref: head_sha,
+          per_page: 100
+     }); 
+        return data.data;
+    } catch(err) {
+        return null;
     }
+}
 
-    await context.github.checks.create(checkParams);
-  });
-};
+async function getSuites() {
+    const head_sha = await getLatestCommit();
+    try {
+    const check_suites = await octokit.checks.listSuitesForRef({
+        owner: owner,
+        repo: repo,
+        ref: head_sha,
+        per_page: 100
+    })
+    return check_suites.data.check_suites;
+} catch(err) {
+    return null;
+}
+}
+
+async function getRuns() {
+    const head_sha = await getLatestCommit();
+    try {
+        const check_runs = await octokit.checks.listForRef({
+            owner: owner,
+        repo: repo,
+        ref: head_sha,
+        per_page: 100
+          })
+          return check_runs.data.check_runs;
+    } catch(err) {
+        return null;
+    }
+}
+
+function checkForRequiredSC(checkSuitesOrRuns, check) {
+    let mergeable = false;
+    if (checkSuitesOrRuns != null) {
+    let checkSuiteorRunCompleted = checkSuitesOrRuns.find(element => element.name === check)
+        if (checkSuiteorRunCompleted!= undefined && checkSuiteorRunCompleted.conclusion ==='success') {
+            console.log('e');
+            mergeable = true;
+            return mergeable;
+        }     
+    }
+    return mergeable;
+}
+
+
+
+async function statusesForRef() {
+          const head_sha = await getLatestCommit();
+          const mogLabel = await getMOGLabel();
+          const checkStatus = await getStatusi();
+          const requiredChecks = await transformRepoContents();
+          let mergeable = true;
+          //console.log(checkStatus);
+           if (checkStatus != null && head_sha != null && requiredChecks != null && mogLabel != false && mogLabel != null) {
+            for (let check of requiredChecks) {
+                console.log('a');
+                console.log(mogLabel);
+                //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
+                let checkCompleted = checkStatus.find(element => element.context === check)
+                if(checkCompleted === undefined) {
+                    console.log('b');
+                        //if we can't find it in the statuses, let's check under check_suites
+                        let checkSuites = await getSuites();
+                        mergeable = checkForRequiredSC(checkSuites, check);
+                        //if we can't find it in the suites, let's check under check_runs
+                        if (!mergeable) {
+                            console.log('c');
+                            let checkRuns = await getRuns();
+                            mergeable = checkForRequiredSC(checkRuns, check);
+                            if (!mergeable) {
+                                console.log('d');
+                                return mergeable;     
+                            }
+                        }                  
+                } else if(checkCompleted.state != 'success') {
+                    console.log('f');
+                    mergeable = false;
+                    return mergeable;
+                } 
+            }
+        } else {
+            mergeable = false;
+            return mergeable;
+        }
+        //console.log('g '+mergeable);
+        return mergeable;
+}
+
+ async function getReviewsCompleted() {
+    try {    
+        const reviewsCompleted = await octokit.pulls.listReviews({
+        owner: owner,
+        repo: repo,
+        pull_number: pr
+      })
+      return reviewsCompleted.data;
+    } catch(err) {
+        return null;
+    }
+}
+
+async function getReviewsRequested() {
+    try {    
+        const reviewsRequested = await octokit.pulls.listReviewRequests({
+            owner: owner,
+            repo: repo,
+            pull_number: pr
+          })
+      return reviewsRequested.data;
+    } catch(err) {
+        return null;
+    }
+}
+
+//this function cleans the reviews, since the listReviews method github provides returns a complete history of all comments added
+//and we just want the most recent for each reviewer
+function cleanReviews(reviewsCompleted) {
+    let cleanReviews = [];
+    let distinctReviewers = [];
+    for (let x=(reviewsCompleted.length)-1; x>=0; x--) {
+        let reviewsCompletedUser = reviewsCompleted[x].user.login
+        if(!(distinctReviewers.includes(reviewsCompletedUser))) {
+            cleanReviews.push(reviewsCompleted[x]);
+            distinctReviewers.push(reviewsCompletedUser);
+        }
+    }
+    return cleanReviews;
+}
+
+
+ 
+
+async function checkReviews() {
+    let reviewsPassed = true;
+        const reviewsCompletedDirty = await getReviewsCompleted();
+        const reviewsRequested = await getReviewsRequested(); 
+        
+        const reviewsCompleted = cleanReviews(reviewsCompletedDirty);
+        //console.log(reviewsCompleted);
+        if (reviewsCompleted != null && reviewsCompleted.length != 0) {
+            reviewsCompleted.forEach(review => {
+                if (review.state != 'APPROVED'){
+                    //so, if someone comments we will not merge the PR. Is that the right logic? or should we submit as a check-back?
+                    reviewsPassed = false;
+                } 
+            }) 
+          } 
+            if (reviewsRequested != null && (reviewsRequested.users.length != 0 || reviewsRequested.teams.length != 0)) {
+                reviewsPassed = false;
+                return reviewsPassed;
+            }
+    return reviewsPassed;  
+}
+
+
+async function merge() {
+   const commitInfo = await getPR();
+    try {
+    const merge = await octokit.pulls.merge({
+        owner: owner,
+        repo: repo,
+        pull_number: pr,
+        commit_title: commitInfo.title,
+        commit_message: commitInfo.body,
+        merge_method: 'squash'
+    })
+    return merge;
+   } catch(err) {
+       console.log(err);
+        return null;
+   }
+}
+
+
+
+// async function createParam() {
+//     try {
+//     const checkParams = octokit.checks.create({
+//         owner: 'sofisl',
+//         repo: 'mergeOnGreenTest',
+//         name: 'merge-on-green-readiness', 
+//         head_sha: '61a26441d1bb24f14b560fb3d019528457c8bfd6',
+//         status: 'completed',
+//         conclusion: 'failure',
+//         output: {
+//             title: 'Your PR was not mergeable.',
+//             summary: 'Check your required status checks or requested reviews for failures.',
+//             text:
+//               'Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved.' +
+//               'Please fix your mistakes, and merge-on-green will run again to attempt to merge it automatically.' 
+//           },
+//     })
+// } catch(err){
+//     return null;
+// }
+// }
+
+async function finalize() {
+    let checkReview = await checkReviews();
+    let checkStatus = await statusesForRef();
+    if (checkReview === true && checkStatus === true) {
+        merge();
+        //console.log('FINAL: passed')
+        //TODO: if merge is unsuccessful, tell the user
+    } else  {
+        //console.log('FINAL: failed');
+    }
+}
+//finalize();
+getRepoContents();
+//TODO: Fill in details on how to get config file
