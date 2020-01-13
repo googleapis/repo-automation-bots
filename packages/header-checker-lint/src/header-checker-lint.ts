@@ -151,7 +151,7 @@ export = (app: Application) => {
         continue;
       }
 
-      if (file.status == "removed") {
+      if (file.status === 'removed') {
         app.log.info('ignoring deleted file: ' + file.filename);
         continue;
       }
