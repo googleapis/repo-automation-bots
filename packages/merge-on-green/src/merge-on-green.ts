@@ -14,17 +14,11 @@
  * limitations under the License.
  */
 
-// define types for a few modules used by probot that do not have their
-// own definitions published. Before taking this step, folks should first
-// check whether type bindings are already published.
-
-import { Application} from 'probot';
+import { Application } from 'probot';
 import { GitHubAPI } from 'probot/lib/github';
 import { PullsListCommitsResponseItem, Response } from '@octokit/rest';
 
-
 const CONFIGURATION_FILE_PATH = 'merge-on-green.yml';
-
 
 interface Configuration {
   required_status_checks?: string[];
@@ -39,148 +33,137 @@ type Conclusion =
   | 'action_required'
   | undefined;
 
-async function getBranchProtection(github: GitHubAPI, owner: string, repo: string, branch: string) {
+async function getBranchProtection(
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+  branch: string
+) {
   try {
-    const data = (await github.repos.getBranchProtection({
-      owner, 
-      repo, 
-      branch,
-    })).data
+    const data = (
+      await github.repos.getBranchProtection({
+        owner,
+        repo,
+        branch,
+      })
+    ).data;
     return data;
   } catch (err) {
     return null;
   }
 }
 
-
 export = (app: Application) => {
-  app.on(
-    [
-      'pull_request'
-    ],
-    async context => {
-      const config = (await context.config(
-        CONFIGURATION_FILE_PATH,
-        {}
-      )) as Configuration;
+  app.on(['pull_request'], async context => {
+    const config = (await context.config(
+      CONFIGURATION_FILE_PATH,
+      {}
+    )) as Configuration;
 
-      console.log('a');
-      const { owner, repo } = context.repo();
-      
-      const branchProtection = await getBranchProtection(context.github, owner, repo, context.payload.pull_request.head.repo.default_branch);
-    
-      const configProtection = config.required_status_checks;
-      
-      console.log('hi');
-      if (branchProtection) {
-        console.log(branchProtection.required_status_checks.contexts.length);
-        for (let x=0; x<branchProtection.required_status_checks.contexts.length; x++) {
-          console.log(branchProtection.required_status_checks.contexts[x]);
-        }
-      };
-      if (configProtection) {
-        console.log(configProtection.length);
-       configProtection.forEach(element => {
-         console.log(element)
-       })
-      }
+    console.log('a');
+    const { owner, repo } = context.repo();
 
-      const commitParams = context.repo({
-        pull_number: context.payload.pull_request.number,
-        per_page: 100,
-      });
+    const branchProtection = await getBranchProtection(
+      context.github,
+      owner,
+      repo,
+      context.payload.pull_request.head.repo.default_branch
+    );
 
-      // Response object has a typed response.data, which has definitions that
-      // can be found here: https://unpkg.com/@octokit/rest@16.28.3/index.d.ts
-      let commitsResponse: Response<PullsListCommitsResponseItem[]>;
-      try {
-        commitsResponse = await context.github.pulls.listCommits(commitParams);
-      } catch (err) {
-        app.log.error(err);
-        return;
-      }
-      
-      const commits = commitsResponse.data;
+    const configProtection = config.required_status_checks;
 
-      let checkParams = context.repo({
+    const commitParams = context.repo({
+      pull_number: context.payload.pull_request.number,
+      per_page: 100,
+    });
+
+    // Response object has a typed response.data, which has definitions that
+    // can be found here: https://unpkg.com/@octokit/rest@16.28.3/index.d.ts
+    let commitsResponse: Response<PullsListCommitsResponseItem[]>;
+    try {
+      commitsResponse = await context.github.pulls.listCommits(commitParams);
+    } catch (err) {
+      app.log.error(err);
+      return;
+    }
+
+    const commits = commitsResponse.data;
+
+    let checkParams = context.repo({
+      name: 'merge-on-green-readiness',
+      conclusion: 'success' as Conclusion,
+      head_sha: commits[commits.length - 1].sha,
+    });
+
+    //TODO: confirm if branchProtection returns an array if branch protection is set up but no checks are specified
+    //don't think so: you can't set up a branch without a required test
+    //make sure branch Protection has at least 3 check runs specified
+    //
+    if (!branchProtection) {
+      checkParams = context.repo({
+        head_sha: commits[commits.length - 1].sha,
         name: 'merge-on-green-readiness',
-        conclusion: 'success' as Conclusion,
-        head_sha: commits[commits.length - 1].sha
-     })
+        conclusion: 'failure' as Conclusion,
+        output: {
+          title: 'You have no required status checks',
+          summary: 'Enforce branch protection on your repo.',
+          text:
+            'To add required status checks to your repository, please follow instructions in this link: \nhttps://help.github.com/en/github/administering-a-repository/enabling-required-status-checks\n' +
+            '\nIn order to add applications to your repository that will run check runs, please follow instructions here: \nhttps://developer.github.com/apps/installing-github-apps/\n' +
+            '\nLastly, please make sure that your required status checks are the same as the ones listed in your config file if you created one.',
+        },
+      });
+    }
 
-//TODO: confirm if branchProtection returns an array if branch protection is set up but no checks are specified 
-     //don't think so: you can't set up a branch without a required test
-//make sure branch Protection has at least 3 check runs specified
-//
-    if(!branchProtection) {
-        checkParams = context.repo({ 
-          head_sha: commits[commits.length - 1].sha,
-          name: 'merge-on-green-readiness',
-          conclusion: 'failure' as Conclusion,
-          output: {
-            title: 'You have no required status checks',
-            summary: 'Enforce branch protection on your repo.',
-            text: 'To add required status checks to your repository, please follow instructions in this link: \nhttps://help.github.com/en/github/administering-a-repository/enabling-required-status-checks\n'+
-            '\nIn order to add applications to your repository that will run check runs, please follow instructions here: \nhttps://developer.github.com/apps/installing-github-apps/\n'+
-            '\nLastly, please make sure that your required status checks are the same as the ones listed in your config file if you created one.'
-          }
-        })
-     } 
+    //&& !config.required_status_checks
 
-     //&& !config.required_status_checks
-
-     if(branchProtection) {
-      if(branchProtection.required_status_checks.contexts.length < 3) {
-        checkParams = context.repo({ 
+    if (branchProtection) {
+      if (branchProtection.required_status_checks.contexts.length < 3) {
+        checkParams = context.repo({
           head_sha: commits[commits.length - 1].sha,
           name: 'merge-on-green-readiness',
           conclusion: 'failure' as Conclusion,
           output: {
             title: 'You have less than 3 required status checks',
-            summary: 'You likely don\'t have all the required status checks you need, please make sure to add the appropriate ones.',
-            text: 'To add required status checks to your repository, please follow instructions in this link: \nhttps://help.github.com/en/github/administering-a-repository/enabling-required-status-checks\n'+
-            '\nIn order to add applications to your repository that will run check runs, please follow instructions here: \nhttps://developer.github.com/apps/installing-github-apps/\n'+
-            '\nLastly, please make sure that your required status checks are the same as the ones listed in your config file if you created one.'
-          }
-        })
+            summary:
+              "You likely don't have all the required status checks you need, please make sure to add the appropriate ones.",
+            text:
+              'To add required status checks to your repository, please follow instructions in this link: \nhttps://help.github.com/en/github/administering-a-repository/enabling-required-status-checks\n' +
+              '\nIn order to add applications to your repository that will run check runs, please follow instructions here: \nhttps://developer.github.com/apps/installing-github-apps/\n' +
+              '\nLastly, please make sure that your required status checks are the same as the ones listed in your config file if you created one.',
+          },
+        });
       }
 
-      // let branchProtectionArray: string[];
-      // branchProtection.required_status_checks.contexts.forEach(element => {
-      //   branchProtectionArray.push(element.toString());
-      // })
+      const branchProtectionArray = branchProtection.required_status_checks
+        .contexts as string[];
+      const configProtectionArray = configProtection as string[];
 
-      let branchProtectionArray = branchProtection.required_status_checks.contexts as string[];
-      let configProtectionArray = configProtection as string[];
-
-
-      
-    if(configProtection) {
+      if (configProtection) {
         configProtectionArray.forEach(statusCheck => {
-          if(!branchProtectionArray.includes(statusCheck)) {
-            checkParams = context.repo({ 
+          if (!branchProtectionArray.includes(statusCheck)) {
+            checkParams = context.repo({
               head_sha: commits[commits.length - 1].sha,
               name: 'merge-on-green-readiness',
               conclusion: 'failure' as Conclusion,
               output: {
-                title: 'Your branch protection does not match up with your config file',
-                summary: 'Set up your branch protection to match your config file.',
-                text: 'To add required status checks to your repository, please follow instructions in this link: \nhttps://help.github.com/en/github/administering-a-repository/enabling-required-status-checks\n'+
-                '\nIn order to add applications to your repository that will run check runs, please follow instructions here: \nhttps://developer.github.com/apps/installing-github-apps/\n'+
-                '\nLastly, please make sure that your required status checks are the same as the ones listed in your config file.'
-              }
-            })
-          };
-        })
+                title:
+                  'Your branch protection does not match up with your config file',
+                summary:
+                  'Set up your branch protection to match your config file.',
+                text:
+                  'To add required status checks to your repository, please follow instructions in this link: \nhttps://help.github.com/en/github/administering-a-repository/enabling-required-status-checks\n' +
+                  '\nIn order to add applications to your repository that will run check runs, please follow instructions here: \nhttps://developer.github.com/apps/installing-github-apps/\n' +
+                  '\nLastly, please make sure that your required status checks are the same as the ones listed in your config file.',
+              },
+            });
+          }
+        });
       }
-    
     }
-     
-     await context.github.checks.create(checkParams);
 
-    })
-
-    
+    await context.github.checks.create(checkParams);
+  });
 };
 
 //TODO: fail if config and no branch protection, ask user to enforce branch protection
