@@ -1,0 +1,57 @@
+{
+  "name": "merge-on-green",
+  "version": "1.0.0",
+  "description": "it merges PRs on green",
+  "private": true,
+  "author": "Google LLC.",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "main": "build/src/app.js",
+  "keywords": [
+    "probot",
+    "github",
+    "probot-app"
+  ],
+  "scripts": {
+    "compile": "tsc -p .",
+    "start": "probot run ./build/src/merge-on-green.js",
+    "start:local": "node ./build/src/local.js",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "test": "cross-env LOG_LEVEL=fatal mocha --timeout=15000 --recursive ./build/test",
+    "test:snap": "SNAPSHOT_UPDATE=1 npm test",
+    "fix": "gts fix",
+    "lint": "gts check"
+  },
+  "dependencies": {
+    "gcf-utils": "1.1.0",
+    "probot": "9.6.4"
+  },
+  "devDependencies": {
+    "@types/body-parser": "^1.17.0",
+    "@types/bunyan": "^1.8.6",
+    "@types/chai": "^4.1.7",
+    "@types/dotenv": "^6.1.1",
+    "@types/express": "^4.17.0",
+    "@types/ioredis": "^4.0.13",
+    "@types/lru-cache": "^5.1.0",
+    "@types/mocha": "^5.2.7",
+    "@types/nock": "^10.0.3",
+    "@types/node": "^12.6.1",
+    "body-parser": "^1.19.0",
+    "chai": "^4.2.0",
+    "cross-env": "^6.0.0",
+    "dotenv": "^8.0.0",
+    "gts": "^1.0.0",
+    "mocha": "^6.1.4",
+    "nock": "^11.0.0",
+    "smee-client": "^1.1.0",
+    "snap-shot-it": "^7.8.0",
+    "typescript": "^3.5.3"
+  },
+  "engines": {
+    "node": ">= 10.13.0"
+  }
+}
