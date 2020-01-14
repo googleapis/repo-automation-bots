@@ -24,7 +24,7 @@ import * as fs from 'fs';
 
 nock.disableNetConnect();
 
-const fixturesPath = resolve(__dirname, '../../test/fixtures');
+const fixturesPath = resolve(__dirname, '../../test/Fixtures');
 
 const commits = require(resolve(fixturesPath, 'events', 'commits.json'));
 
