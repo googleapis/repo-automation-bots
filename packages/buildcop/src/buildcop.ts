@@ -32,11 +32,14 @@ import { GitHubAPI } from 'probot/lib/github';
 import xmljs from 'xml-js';
 import Octokit from '@octokit/rest';
 
-const LABELS = 'buildcop:issue';
+const BUILDCOP_LABELS = 'buildcop:issue';
+const LABELS = 'type: bug,priority: p1';
+
+const EVERYTHING_FAILED_TITLE = 'The build failed';
 
 interface TestFailure {
-  package: string;
-  testCase: string;
+  package?: string;
+  testCase?: string;
 }
 
 export interface BuildCopPayload {
@@ -45,7 +48,9 @@ export interface BuildCopPayload {
   repository: { name: string }; // Filled in by gcf-utils.
   buildID: string;
   buildURL: string;
-  xunitXML: string; // Base64 encoded to avoid JSON escaping issues.
+
+  xunitXML?: string; // Base64 encoded to avoid JSON escaping issues. Fill in to get separate issues for separate tests.
+  testsFailed?: boolean; // Whether the entire build failed. Ignored if xunitXML is set.
 }
 
 interface PubSubContext {
@@ -62,11 +67,22 @@ export function buildcop(app: Application) {
     const buildID = context.payload.buildID || '[TODO: set buildID]';
     const buildURL = context.payload.buildURL || '[TODO: set buildURL]';
 
-    const xml = Buffer.from(context.payload.xunitXML, 'base64').toString();
-
-    if (!xml) {
-      context.log.info(`[${owner}/${repo}] No XML payload! Skipping.`);
-      return;
+    let failures: TestFailure[];
+    if (context.payload.xunitXML) {
+      const xml = Buffer.from(context.payload.xunitXML, 'base64').toString();
+      failures = buildcop.findFailures(xml);
+    } else {
+      if (context.payload.testsFailed === undefined) {
+        context.log.info(
+          `[${owner}/${repo}] No xunitXML and no testsFailed! Skipping.`
+        );
+        return;
+      }
+      if (context.payload.testsFailed) {
+        failures = [{}]; // A single failure indicates the whole build failed.
+      } else {
+        failures = []; // Tests passed, meaning there were no failures.
+      }
     }
 
     try {
@@ -76,12 +92,10 @@ export function buildcop(app: Application) {
           owner,
           repo,
           per_page: 32,
-          labels: LABELS,
+          labels: BUILDCOP_LABELS,
           state: 'all', // Include open and closed issues.
         })
       ).data;
-
-      const failures = buildcop.findFailures(xml);
 
       // Open issues for failing tests.
       await buildcop.openIssues(
@@ -123,9 +137,15 @@ buildcop.openIssues = async (
   for (const failure of failures) {
     // Look for an existing issue. If there are multiple, pick one at
     // random.
+    // Only reopen issues for individual test cases, not for the "everything
+    // failed" issue. If the "everything failed" issue is already open, leave it
+    // open.
     // TODO: what if one is closed and one is open? We should prefer the
     // open one and close duplicates.
     const existingIssue = issues.find(issue => {
+      if (issue.title === EVERYTHING_FAILED_TITLE) {
+        return issue.state === 'open';
+      }
       return issue.title === buildcop.formatFailure(failure);
     });
     if (existingIssue) {
@@ -158,7 +178,7 @@ buildcop.openIssues = async (
           repo,
           title: buildcop.formatFailure(failure),
           body: buildcop.formatBody(failure, buildID, buildURL),
-          labels: LABELS.split(','),
+          labels: LABELS.split(',').concat(BUILDCOP_LABELS.split(',')),
         })
       ).data;
       context.log.info(`[${owner}/${repo}]: created issue #${newIssue.number}`);
@@ -247,6 +267,9 @@ buildcop.containsBuildFailure = (text: string, buildID: string): boolean => {
 };
 
 buildcop.formatFailure = (failure: TestFailure): string => {
+  if (!failure.package || !failure.testCase) {
+    return EVERYTHING_FAILED_TITLE;
+  }
   let pkg = failure.package;
   const shorten = failure.package.match(/github\.com\/[^\/]+\/[^\/]+\/(.+)/);
   if (shorten) {
