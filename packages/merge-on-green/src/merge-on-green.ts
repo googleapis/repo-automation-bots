@@ -54,13 +54,12 @@ async function getBranchProtection(
 }
 
 export = (app: Application) => {
-  app.on(['pull_request'], async context => {
+  app.on(['pull_request.opened', 'pull_request.reopened'], async context => {
     const config = (await context.config(
       CONFIGURATION_FILE_PATH,
       {}
     )) as Configuration;
 
-    console.log('a');
     const { owner, repo } = context.repo();
 
     const branchProtection = await getBranchProtection(
@@ -83,6 +82,7 @@ export = (app: Application) => {
     try {
       commitsResponse = await context.github.pulls.listCommits(commitParams);
     } catch (err) {
+      console.info(err);
       app.log.error(err);
       return;
     }
@@ -114,8 +114,6 @@ export = (app: Application) => {
         },
       });
     }
-
-    //&& !config.required_status_checks
 
     if (branchProtection) {
       if (branchProtection.required_status_checks.contexts.length < 3) {

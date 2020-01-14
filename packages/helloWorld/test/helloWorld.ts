@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Google LLC. All Rights Reserved.
+ * Copyright 2019 Google LLC. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import myProbotApp from '../src/merge-on-green';
+
+import myProbotApp from '../src/helloWorld';
 
 import { resolve } from 'path';
 import { Probot } from 'probot';
@@ -26,9 +27,8 @@ nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-const commits = require(resolve(fixturesPath, 'events', 'commits.json'));
 
-describe('merge-on-green', () => {
+describe('helloWorld', () => {
   let probot: Probot;
 
   beforeEach(() => {
@@ -49,41 +49,48 @@ describe('merge-on-green', () => {
     };
   });
 
-  describe('responds to pull requests', () => {
+
+  describe('responds to events', () => {
     const config = fs.readFileSync(
       resolve(fixturesPath, 'config', 'valid-config.yml')
     );
 
-    it('gets branch information when a pull request is opened, responds with a status check', async () => {
+    it('responds to a PR', async () => {
       const payload = require(resolve(
         fixturesPath,
         'events',
         'pull_request_opened'
       ));
 
-      // const scope = nockGetBranchProtection();
 
-      const scope = nock('https://api.github.com')
-        .log(console.log)
-        .get('/repos/testOwner/testRepo/contents/.github/merge-on-green.yml')
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/helloWorld.yml')
         .reply(200, { content: config.toString('base64') })
-        .get('/repos/testOwner/testRepo/branches/master/protection')
-        .reply(200)
-        .get('/repos/testOwner/testRepo/pulls/6/commits?per_page=100')
-        .reply(200, commits)
-        .post('/repos/testOwner/testRepo/check-runs', body => {
-          snapshot(body);
-          return true;
-        })
-        .reply(200);
+
 
       await probot.receive({
-        name: 'pull_request',
+        name: 'pull_request.opened',
         payload,
-        id: 'abc123',
+        id: 'abc123'
       });
 
-      scope.done();
+      requests.done();
     });
+
+    it('responds to issues', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened'
+      ));
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/helloWorld.yml')
+        .reply(200, { content: config.toString('base64') })
+
+
+      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      requests.done();
+    });
+
   });
 });
