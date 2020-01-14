@@ -1,0 +1,14 @@
+[
+  {
+    "sha": "26529b280619729dbc14d1f055df2711f3d5e83a",
+    "filename": "samples/iap.js",
+    "status": "removed",
+    "additions": 0,
+    "deletions": 41,
+    "changes": 41,
+    "blob_url": "https://github.com/chingor13/google-auth-library-java/blob/30f02377cbf2e41c3746f39eebbbe4bb16f31fd2/samples/iap.js",
+    "raw_url": "https://github.com/chingor13/google-auth-library-java/raw/30f02377cbf2e41c3746f39eebbbe4bb16f31fd2/samples/iap.js",
+    "contents_url": "https://api.github.com/repos/chingor13/google-auth-library-java/contents/samples/iap.js?ref=30f02377cbf2e41c3746f39eebbbe4bb16f31fd2",
+    "patch": "@@ -1,41 +0,0 @@\n-// Copyright 2017, Google, Inc.\n-// Licensed under the Apache License, Version 2.0 (the \"License\");\n-// you may not use this file except in compliance with the License.\n-// You may obtain a copy of the License at\n-//\n-//    http://www.apache.org/licenses/LICENSE-2.0\n-//\n-// Unless required by applicable law or agreed to in writing, software\n-// distributed under the License is distributed on an \"AS IS\" BASIS,\n-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n-// See the License for the specific language governing permissions and\n-// limitations under the License.\n-\n-'use strict';\n-\n-const {JWT} = require('google-auth-library');\n-\n-/**\n- * The JWT authorization is ideal for performing server-to-server\n- * communication without asking for user consent.\n- *\n- * Suggested reading for Admin SDK users using service accounts:\n- * https://developers.google.com/admin-sdk/directory/v1/guides/delegation\n- **/\n-\n-const keys = require('./jwt.keys.json');\n-const oauth2Keys = require('./iap.keys.json');\n-\n-async function main() {\n-  const clientId = oauth2Keys.web.client_id;\n-  const client = new JWT({\n-    email: keys.client_email,\n-    key: keys.private_key,\n-    additionalClaims: {target_audience: clientId},\n-  });\n-  const url = `https://iap-demo-dot-el-gato.appspot.com`;\n-  const res = await client.request({url});\n-  console.log(res.data);\n-}\n-\n-main().catch(console.error);"
+  }
+]
