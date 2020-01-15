@@ -1,22 +1,17 @@
-/**
- * Copyright 2019 Google LLC. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-// define types for a few modules used by probot that do not have their
-// own definitions published. Before taking this step, folks should first
-// check whether type bindings are already published.
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 const GenerateBot = require("../main.js");
 const { expect } = require("chai");
@@ -37,7 +32,9 @@ const readAllFiles = function(dirNameRead, contentString) {
       console.log("directory: " + readName);
       contentString = readAllFiles(readName, contentString);
     } else {
-      contentString += fs.readFileSync(readName, "utf8");
+      if (!readName.includes("package.json")) {
+        contentString += fs.readFileSync(readName, "utf8");
+      }
     }
   });
   return contentString;
@@ -85,23 +82,24 @@ describe("file structure", () => {
 });
 
 describe("user input", () => {
-  it("checks that hyphens are not passed", () => {
-    const hyphenTest = GenerateBot.checkValidity({
-      programName: "does-not-pass",
-      description: "pass",
-      fileLocation: "pass"
-    });
-    expect(hyphenTest).to.be.false;
-  });
-
-  it("checks that integers are not passed", () => {
+  it("checks that integers and other characters are not passed", () => {
     const integerTest = GenerateBot.checkValidity({
-      programName: "pass",
+      programName: "does,notpass",
       description: "5oesN0tP4SS",
       fileLocation: "pass"
     });
 
     expect(integerTest).to.be.false;
+  });
+
+  it("checks that only valid characters are passed", () => {
+    const validCharTest = GenerateBot.checkValidity({
+      programName: "pas-s",
+      description: "pas_s",
+      fileLocation: "pass"
+    });
+
+    expect(validCharTest).to.be.true;
   });
 
   it("checks that nulls are not passed", () => {
