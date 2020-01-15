@@ -517,5 +517,26 @@ describe('HeaderCheckerLint', () => {
       await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
       requests.done();
     });
+
+    it('ignores a deleted file', async () => {
+      const validFiles = require(resolve(
+        fixturesPath,
+        './deleted_file_ignored'
+      ));
+      const blob = require(resolve(fixturesPath, './valid_license'));
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
+        .reply(200, validFiles)
+        .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({ name: 'pull_request', payload, id: '867' });
+      requests.done();
+    });
   });
 });
