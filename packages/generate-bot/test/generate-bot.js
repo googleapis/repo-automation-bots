@@ -82,14 +82,24 @@ describe("file structure", () => {
 });
 
 describe("user input", () => {
-  it("checks that integers are not passed", () => {
+  it("checks that integers and other characters are not passed", () => {
     const integerTest = GenerateBot.checkValidity({
-      programName: "pass",
+      programName: "does,notpass",
       description: "5oesN0tP4SS",
       fileLocation: "pass"
     });
 
     expect(integerTest).to.be.false;
+  });
+
+  it("checks that only valid characters are passed", () => {
+    const validCharTest = GenerateBot.checkValidity({
+      programName: "pas-s",
+      description: "pas_s",
+      fileLocation: "pass"
+    });
+
+    expect(validCharTest).to.be.true;
   });
 
   it("checks that nulls are not passed", () => {

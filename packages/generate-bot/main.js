@@ -22,11 +22,21 @@ const process = require("process");
 exports.checkValidity = function(testString) {
   let isValid = true;
   const relativePath = path.resolve("./packages");
-  const invalidName = /[0-9]/;
-  const string = JSON.stringify(testString);
-  if (invalidName.test(string)) {
+  const validName = /[^-A-Za-z_]+/;
+  let string = JSON.stringify(testString);
+  string = string
+    .replace('{"programName":', "")
+    .replace(',"description":', "")
+    .replace(',"fileLocation":', "")
+    .replace(/"/g, "")
+    .replace(/}$/, "");
+
+  console.log(string);
+  if (validName.test(string)) {
     isValid = false;
-    console.log("You used an integer. Please try again.");
+    console.log(
+      "You used an invalid character, like an integer. Please try again."
+    );
     return isValid;
   }
 
