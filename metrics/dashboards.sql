@@ -30,7 +30,7 @@ the yoshi-automation user.
 This measures the impact of release-plese and related bots, e.g.,
 "failurechecker", "conventional-commit-lint".
 */
-SELECT * FROM (SELECT COUNT(id) as actions, month_start, 12.5 as minutes, 'release' as type FROM (
+SELECT * FROM (SELECT COUNT(id) as actions, month_start, 13.8 as minutes, 'release' as type FROM (
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id
   FROM `githubarchive.day.20*`
   WHERE
@@ -54,7 +54,7 @@ Determines how many PRs were created by renovate bot.
 This is meant to measure the impact of the trusted-contribution bot; prior
 to this bot users needed to kick of CI by hand.
 */
-SELECT * FROM (SELECT COUNT(id) as actions, month_start, 0.75 as minutes, 'renovate-run' as type FROM (
+SELECT * FROM (SELECT COUNT(id) as actions, month_start, 4 as minutes, 'renovate-run' as type FROM (
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id
   FROM `githubarchive.day.20*`
   WHERE
@@ -77,7 +77,7 @@ Determines how many issues were opened by build-cop-bot, prior to build-cop
 users needed to manually detect failing nightly builds, and open issues
 on GitHub.
 */
-SELECT * FROM (SELECT COUNT(id) as actions, month_start, 6 as minutes, 'build-cop' as type FROM (
+SELECT * FROM (SELECT COUNT(id) as actions, month_start, 6.75 as minutes, 'build-cop' as type FROM (
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id
   FROM `githubarchive.day.20*`
   WHERE
@@ -100,8 +100,12 @@ Measures PRs that have been assigned to at least one user.
 
 This is meant to measure the impact of blunderbuss, which automatically
 assigns reviewers.
+
+(we don't have a great way to identify whether PRs were assigned by
+blunderbuss, vs., a human, so we might want to hold off on reporting
+on numbers from this metric).
 */
-SELECT * FROM (SELECT COUNT(id) as actions, month_start, 1.3 as minutes, 'pr-assignment' as type FROM (
+SELECT * FROM (SELECT COUNT(id) as actions, month_start, 3.5 as minutes, 'pr-assignment' as type FROM (
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id
   FROM `githubarchive.day.20*`
   WHERE
@@ -114,5 +118,29 @@ SELECT * FROM (SELECT COUNT(id) as actions, month_start, 1.3 as minutes, 'pr-ass
   ARRAY_LENGTH(json2array(JSON_EXTRACT(payload, '$.pull_request.assignees'))) > 0 AND
   type = 'PullRequestEvent'
 )
+GROUP BY month_start
+ORDER BY month_start ASC)
+
+UNION ALL
+
+/*
+When landing a pull request, how much time would you estimate you spend
+performing non-code-review tasks, e.g., ensuring tests have passed,
+the branch is up-to-date, etc., after the PR has already been approved?
+(answers are in minutes)
+*/
+SELECT * FROM (SELECT COUNT(id) as actions, month_start, 4.3 as minutes, 'landed-prs' as type FROM (
+  SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id, JSON_EXTRACT(payload, '$.pull_request.merged_at') as merged
+  FROM `githubarchive.day.20*`
+  WHERE
+  _TABLE_SUFFIX BETWEEN '190101' AND '210101' AND
+  (
+    repo.name LIKE 'googleapis/%' OR
+    repo.name LIKE 'GoogleCloudPlatform/%'
+  ) AND
+  JSON_EXTRACT(payload, '$.action') LIKE '"closed"' AND
+  type = 'PullRequestEvent'
+)
+WHERE merged IS NOT NULL
 GROUP BY month_start
 ORDER BY month_start ASC)
