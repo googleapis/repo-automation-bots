@@ -101,11 +101,11 @@ Measures PRs that have been assigned to at least one user.
 This is meant to measure the impact of blunderbuss, which automatically
 assigns reviewers.
 
-Folks Estimate "3.5" minutes saved by this bot; We haven't yet enabled it
-on enough repos that I feel comfortable adding it to our metrics yet though,
-or we need a better way to determine a repo it's enabled on.
+(we don't have a great way to identify whether PRs were assigned by
+blunderbuss, vs., a human, so we might want to hold off on reporting
+on numbers from this metric).
 */
-SELECT * FROM (SELECT COUNT(id) as actions, month_start, 0 as minutes, 'pr-assignment' as type FROM (
+SELECT * FROM (SELECT COUNT(id) as actions, month_start, 3.5 as minutes, 'pr-assignment' as type FROM (
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id
   FROM `githubarchive.day.20*`
   WHERE
@@ -129,7 +129,7 @@ performing non-code-review tasks, e.g., ensuring tests have passed,
 the branch is up-to-date, etc., after the PR has already been approved?
 (answers are in minutes)
 */
-SELECT * FROM (SELECT COUNT(id) as actions, month_start, 4.3 as minutes, 'landings-prs' as type FROM (
+SELECT * FROM (SELECT COUNT(id) as actions, month_start, 4.3 as minutes, 'landed-prs' as type FROM (
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id, JSON_EXTRACT(payload, '$.pull_request.merged_at') as merged
   FROM `githubarchive.day.20*`
   WHERE
