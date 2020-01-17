@@ -60,6 +60,7 @@ export = (app: Application) => {
       {}
     )) as Configuration;
 
+    console.log(config);
     const { owner, repo } = context.repo();
 
     const branchProtection = await getBranchProtection(
@@ -76,8 +77,6 @@ export = (app: Application) => {
       per_page: 100,
     });
 
-    // Response object has a typed response.data, which has definitions that
-    // can be found here: https://unpkg.com/@octokit/rest@16.28.3/index.d.ts
     let commitsResponse: Response<PullsListCommitsResponseItem[]>;
     try {
       commitsResponse = await context.github.pulls.listCommits(commitParams);
@@ -95,10 +94,6 @@ export = (app: Application) => {
       head_sha: commits[commits.length - 1].sha,
     });
 
-    //TODO: confirm if branchProtection returns an array if branch protection is set up but no checks are specified
-    //don't think so: you can't set up a branch without a required test
-    //make sure branch Protection has at least 3 check runs specified
-    //
     if (!branchProtection) {
       checkParams = context.repo({
         head_sha: commits[commits.length - 1].sha,
@@ -163,7 +158,3 @@ export = (app: Application) => {
     await context.github.checks.create(checkParams);
   });
 };
-
-//TODO: fail if config and no branch protection, ask user to enforce branch protection
-//TODO: fail if config is set up and required checks are smaller than config (making config minimum requirement) - only if there is a config do we enforce a config minimum
-//TODO: keep checking status of tests if there is only branch protection and no config or if brnach protection is at least as much as config

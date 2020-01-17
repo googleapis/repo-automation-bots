@@ -28,6 +28,32 @@ const fixturesPath = resolve(__dirname, '../../test/Fixtures');
 
 const commits = require(resolve(fixturesPath, 'events', 'commits.json'));
 
+const config = fs.readFileSync(
+  resolve(fixturesPath, 'config', 'valid-config.yml')
+);
+
+const invalidConfig = fs.readFileSync(
+  resolve(fixturesPath, 'config', 'invalid-config.yml')
+);
+
+const validConfigOneTest = fs.readFileSync(
+  resolve(fixturesPath, 'config', 'valid-config-oneTest.yml')
+);
+
+const payload = require(resolve(fixturesPath, 'events', 'pull_request_opened'));
+
+const branchProtection = require(resolve(
+  fixturesPath,
+  'events',
+  'branch_protection.json'
+));
+
+const branchProtectionNotEnough = require(resolve(
+  fixturesPath,
+  'events',
+  'branch_protection_lessthan3.json'
+));
+
 describe('merge-on-green', () => {
   let probot: Probot;
 
@@ -50,25 +76,81 @@ describe('merge-on-green', () => {
   });
 
   describe('responds to pull requests', () => {
-    const config = fs.readFileSync(
-      resolve(fixturesPath, 'config', 'valid-config.yml')
-    );
-
-    it('gets branch information when a pull request is opened, responds with a status check', async () => {
-      const payload = require(resolve(
-        fixturesPath,
-        'events',
-        'pull_request_opened'
-      ));
-
-      // const scope = nockGetBranchProtection();
-
+    it('gets branch information when a pull request is opened, responds with a failed status check for no branch protection', async () => {
       const scope = nock('https://api.github.com')
-        .log(console.log)
         .get('/repos/testOwner/testRepo/contents/.github/merge-on-green.yml')
         .reply(200, { content: config.toString('base64') })
         .get('/repos/testOwner/testRepo/branches/master/protection')
         .reply(200)
+        .get('/repos/testOwner/testRepo/pulls/6/commits?per_page=100')
+        .reply(200, commits)
+        .post('/repos/testOwner/testRepo/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      scope.done();
+    });
+
+    it('gets branch information when a pull request is opened, responds with a passed status check', async () => {
+      const scope = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/merge-on-green.yml')
+        .reply(200, { content: config.toString('base64') })
+        .get('/repos/testOwner/testRepo/branches/master/protection')
+        .reply(200, branchProtection)
+        .get('/repos/testOwner/testRepo/pulls/6/commits?per_page=100')
+        .reply(200, commits)
+        .post('/repos/testOwner/testRepo/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      scope.done();
+    });
+
+    it('gets branch information when a pull request is opened, responds with a failed status check because there are less than 3 tests', async () => {
+      const scope = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/merge-on-green.yml')
+        .reply(200, { content: validConfigOneTest.toString('base64') })
+        .get('/repos/testOwner/testRepo/branches/master/protection')
+        .reply(200, branchProtectionNotEnough)
+        .get('/repos/testOwner/testRepo/pulls/6/commits?per_page=100')
+        .reply(200, commits)
+        .post('/repos/testOwner/testRepo/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      scope.done();
+    });
+
+    it('gets branch information when a pull request is opened, responds with a failed status check because branch protection does not match config', async () => {
+      const scope = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/merge-on-green.yml')
+        .reply(200, { content: invalidConfig.toString('base64') })
+        .get('/repos/testOwner/testRepo/branches/master/protection')
+        .reply(200, branchProtection)
         .get('/repos/testOwner/testRepo/pulls/6/commits?per_page=100')
         .reply(200, commits)
         .post('/repos/testOwner/testRepo/check-runs', body => {

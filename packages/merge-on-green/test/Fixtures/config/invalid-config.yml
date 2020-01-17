@@ -1,0 +1,4 @@
+required_status_checks:
+   - test1
+   - test2
+   - myTestCopyAlwaysSuccessful
