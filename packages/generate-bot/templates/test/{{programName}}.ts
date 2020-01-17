@@ -1,19 +1,17 @@
-/**
- * Copyright 2019 Google LLC. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 import myProbotApp from '../src/{{programName}}';
 
@@ -22,14 +20,19 @@ import { Probot } from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
+import { expect } from 'chai';
+
 
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-
 describe('{{programName}}', () => {
   let probot: Probot;
+
+  const config = fs.readFileSync(
+    resolve(fixturesPath, 'config', 'valid-config.yml')
+  );
 
   beforeEach(() => {
     probot = new Probot({
@@ -49,12 +52,13 @@ describe('{{programName}}', () => {
     };
   });
 
+  describe('shows an example of how to use chai library', () => {
+    it('confirms the random boolean is true', async () => {
+       expect(config.toString()).to.include('true');
+    })
+  }); 
 
   describe('responds to events', () => {
-    const config = fs.readFileSync(
-      resolve(fixturesPath, 'config', 'valid-config.yml')
-    );
-
     it('responds to a PR', async () => {
       const payload = require(resolve(
         fixturesPath,
