@@ -15,9 +15,9 @@
  */
 
 const Oktokit = require("@octokit/rest");
-
+const dotenv = require("dotenv")
 const oktokit = Oktokit({
-    auth: '84a41c2e303ea1b027e7564b376d00b6b5731451',
+    auth: process.env.SECRET_TOKEN,
     userAgent: 'sofisl',
     log: {
         debug: () => {},
@@ -33,6 +33,11 @@ const oktokit = Oktokit({
       }
     })
 
+// type Element = {
+//     conclusion: string; 
+//     name: string; 
+//     status: string;
+// }
 
 async function getLatestCommit() {
     const data = await oktokit.checks.get({
@@ -67,8 +72,8 @@ async function checkStatusOfCheckRuns() {
         if (check_runs_array) {
             check_runs_array.forEach(element => {
                 //console.log(element)
-                    if(element.conclusion != 'success') {
-                        console.log(element.name+' failed their test');
+                if(element.conclusion != 'success') {
+                    console.log(element.name+' failed their test');
                 }
                 if(element.status != 'completed') {
                     console.log(element.name+' has not completed');
@@ -82,3 +87,8 @@ async function checkStatusOfCheckRuns() {
     checkStatusOfCheckRuns();
 
 
+//TODO: Write some logic that would check if MoG label was added
+//TODO: Write logic to check back if tests are not completed
+//TODO: Check for required code reviews
+//DECIDE: do we want to listen to PRs or check runs?
+//TODO: console log 'would have merged' based on pass of status check
