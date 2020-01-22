@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-const Oktokit = require("@octokit/rest");
+const { App } = require("@octokit/app");
+const Octokit = require("@octokit/rest");
 const dotenv = require("dotenv")
-const oktokit = Oktokit({
+// contains the installation id necessary to authenticate as an installation
+
+
+
+const oktokit = Octokit({
     auth: process.env.SECRET_TOKEN,
     userAgent: 'sofisl',
     log: {
@@ -52,6 +57,16 @@ async function getLatestCommit() {
             return data.data.head_sha;
 }
 
+async function getPR() {
+    const data = await oktokit.checks.get({
+        owner: 'sofisl', //this will be filled in by context of payload, i.e., context.payload.repository.owner.login
+        repo: 'mergeOnGreenTest', //this will be filled in by context of payload, i.e., context.payload.repository.name
+        check_run_id: '396210100' //what we're listening for
+    })
+
+            return data.data.pull_requests[0].number;
+}
+
 
 
 async function checkRuns() {
@@ -84,10 +99,34 @@ async function checkStatusOfCheckRuns() {
 
     }   
 
-    checkStatusOfCheckRuns();
 
+    async function getMOGLabel() {    
+        let isMOG = false;
+        const pr = await getPR();
+        const labels = await oktokit.issues.listLabelsOnIssue({
+            owner: 'sofisl',
+            repo: 'mergeOnGreenTest',
+            issue_number: pr
+        })
+        const labelArray = labels.data;
+        if (labelArray) {
+        labelArray.forEach(element => {
+            if(element.name === 'merge-on-green ready') {
+                isMOG = true;
+            } else {
+                isMOG = false;
+            }
+        })
+        }
+        console.log(isMOG);
+        return isMOG;
+    }  
 
-//TODO: Write some logic that would check if MoG label was added
+    getMOGLabel();
+
+    //checkStatusOfCheckRuns();
+
+//TODO: make sure we check for merge-on-green label before passing the test
 //TODO: Write logic to check back if tests are not completed
 //TODO: Check for required code reviews
 //DECIDE: do we want to listen to PRs or check runs?
