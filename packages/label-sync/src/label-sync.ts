@@ -15,6 +15,7 @@
 import { Application } from 'probot';
 import { request } from 'gaxios';
 import { GitHubAPI } from 'probot/lib/github';
+import * as crypto from 'crypto';
 
 interface Labels {
   labels: [
@@ -33,6 +34,14 @@ interface Repos {
       repo: string;
     }
   ];
+}
+
+interface GetApiLabelsResponse {
+  apis: Array<{
+    display_name: string; // Access Approval
+    github_label: string; // api: accessapproval
+    api_shortname: string; // accessapproval
+  }>;
 }
 
 // Labels are fetched by reaching out to GitHub *instead* of grabbing the file
@@ -57,6 +66,24 @@ async function refreshLabels(github: GitHubAPI) {
   labelsCache = JSON.parse(
     Buffer.from(data.content as string, 'base64').toString('utf8')
   );
+
+  // Add labels for each API, extracting the list from devrel services
+  const apiLabelsUri =
+    'https://storage.cloud.google.com/devrel-prod-settings/apis.json?organizationId=433637338589';
+  const apiLabelsRes = await request<GetApiLabelsResponse>({
+    url: apiLabelsUri,
+  });
+  apiLabelsRes.data.apis.forEach(api => {
+    labelsCache.labels.push({
+      name: api.github_label,
+      description: `Issues related to the ${api.display_name} API.`,
+      color: crypto
+        .createHash('md5')
+        .update(api.api_shortname)
+        .digest('hex')
+        .slice(0, 6),
+    });
+  });
 }
 
 export = (app: Application) => {
@@ -142,7 +169,10 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
         })
         .catch(e => {
           //ignores errors that are caused by two requests kicking off at the same time
-          if (e.errors[0].code !== 'already_exists') {
+          if (
+            !Array.isArray(e.errors) ||
+            e.errors[0].code !== 'already_exists'
+          ) {
             console.error(`Error creating label ${l.name} in ${owner}/${repo}`);
             console.error(e.stack);
           }
