@@ -21,22 +21,11 @@ const dotenv = require("dotenv")
 
 
 
-const oktokit = Octokit({
-    auth: process.env.SECRET_TOKEN,
-    userAgent: 'sofisl',
-    log: {
-        debug: () => {},
-        info: () => {},
-        warn: console.warn,
-        error: console.error
-      },
-    
-      request: {
-        agent: undefined,
-        fetch: undefined,
-        timeout: 0
-      }
-    })
+const oktokit = new Octokit({
+    auth() {
+      return "token "+process.env.SECRET_TOKEN;
+    }
+   });
 
 // type Element = {
 //     conclusion: string; 
@@ -74,30 +63,117 @@ async function checkRuns() {
           const data = await oktokit.checks.listForRef({
               owner: 'sofisl',
               repo: 'mergeOnGreenTest',
-              ref: head_sha
+              ref: '45a88ef9f356c30d211c08ced9524dbe76a14ee8'
             });
            const check_runs = data.data.check_runs;
            //console.log(check_runs);
            return check_runs;
         }
+let testCount = 0;
 
-async function checkStatusOfCheckRuns() {    
+async function checkStatusOfCheckRuns(testCount, callback) {    
         const check_runs_array = await checkRuns();
+        let statusChecksDone = 'success';
         //create a branch that checks back if any status is not completed
         if (check_runs_array) {
             check_runs_array.forEach(element => {
-                //console.log(element)
+                // console.log(element)
                 if(element.conclusion != 'success') {
-                    console.log(element.name+' failed their test');
+                    statusChecksDone = 'failed';
+                    return statusChecksDone;
                 }
                 if(element.status != 'completed') {
-                    console.log(element.name+' has not completed');
-                    //check back in some way
-                 }   
+                    testCount++;
+                    if(testCount===0) {
+                        console.log('still waiting on tests 1');
+                        testCount++;
+                        statusChecksDone = 'pending';
+                        setTimeout(function() {checkStatusOfCheckRuns(testCount), function() {console.log('hello')}}, 600);   
+                    } else if (testCount ===1) {
+                        console.log('still waiting on tests 2');
+                        testCount++;
+                        statusChecksDone = 'pending';
+                        setTimeout(function() {checkStatusOfCheckRuns(testCount), function() {console.log('hello')}}, 1800);
+                    } else if (testCount ===2) {
+                        console.log('still waiting on tests 3');
+                        testCount++;
+                        statusChecksDone = 'pending';
+                        setTimeout(function() {checkStatusOfCheckRuns(testCount), function() {console.log('hello')}}, 300000);
+                    } else if (testCount === 3|| testCount === 4) {
+                        console.log('still waiting on tests 4');
+                        testCount++;
+                        statusChecksDone = 'pending';
+                        setTimeout(function() {checkStatusOfCheckRuns(testCount), function() {console.log('hello')}}, 6000);
+                    } else {
+                        statusChecksDone = 'failed';
+                    }
+                 }        
+                 
             })
         }
-
+        callback(statusChecksDone);
+        //return statusChecksDone;
+        
     }   
+
+
+    async function getRequiredReviews(reviewCount, callback) {
+        let reviewsDone = 'success';
+        const reviewsCompleted = await oktokit.pulls.listReviews({
+        owner: 'sofisl',
+        repo: 'mergeOnGreenTest',
+        pull_number: 45
+      })
+       console.log("A ");
+    //   console.log(reviewsCompleted);
+
+      const reviewsRequested = await oktokit.pulls.listReviewRequests({
+        owner: 'sofisl',
+        repo: 'mergeOnGreenTest',
+        pull_number: 45
+      })
+      console.log("B ");
+    //   console.log(reviewsRequested);
+    //   console.log('data');
+    //   console.log(reviewsRequested.data);
+      const reviewsCompletedArray = reviewsCompleted.data;
+      const reviewsRequestedArrayUsers = reviewsRequested.data.users;
+      const reviewsRequestedArrayTeams = reviewsRequested.data.teams;
+    //   console.log(reviewsRequestedArrayTeams.length);
+    //   console.log(reviewsRequestedArrayUsers.length);
+
+
+    //   console.log("a "+reviewsCompleted);
+    //  console.log("b "+reviewsRequested);
+      if (reviewsCompletedArray) {
+          console.log('c');
+          reviewsCompletedArray.forEach(element => {
+              console.log('e');
+              if(element.state != 'APPROVED') { 
+                console.log('d');
+                  reviewsDone = 'failed';
+              } 
+          })
+      }
+
+
+      if ((reviewsRequestedArrayUsers.length !=0 || reviewsRequestedArrayTeams.length !=0) && reviewCount < 24) {
+          console.log('f');
+            reviewsDone = 'pending';    //check back every 2 hours
+            reviewCount++;
+            setTimeout(function() {getRequiredReviews(reviewCount, function() {console.log('hello')})}, 720)    
+        } else if (reviewCount >= 24 ) {
+            console.log('g');
+            reviewsDone = 'failed';
+        }
+
+        console.log(reviewsDone);
+        callback(reviewsDone);
+       // return reviewsDone; 
+    }
+
+
+
 
 
     async function getMOGLabel() {    
@@ -122,8 +198,56 @@ async function checkStatusOfCheckRuns() {
         return isMOG;
     }  
 
-    getMOGLabel();
+    
+    
+    
+    //let reviewCount = 0;
+    // async function recursiveChecks() {  
+    //     let reviewsPassed;
+    //     let reviews = await getRequiredReviews(reviewCount);
+    //     if (reviews === 'pending') {
+    //         reviewCount++;
+    //         setTimeout(function() {
+    //             recursiveChecks() }, 720);
+    //     } else {
+    //         if (reviews === 'success') {
+    //             reviewsPassed = true;
+    //         } else {
+    //             reviewsPassed = false;
+    //         }
+    //     }
+    //     return reviewsPassed;
+    // }
 
+   function getStatusChecks(trivalue) {
+        //reviewsPassed = await getRequiredReviews(reviewCount);
+        // console.log(reviewsPassed);
+        // console.log('start status checks');
+        //checks = await checkStatusOfCheckRuns(testCount);
+        //make sure to check that required status checks have passed
+        
+        if (triValue === 'success') {
+            return true;
+        } else if (triValue === 'failed') {
+            return false;
+        }
+    }
+    function getBoolean(firstValue, secondValue) {
+        if (firstValue && secondValue) {
+            console.log('pass check status');
+        }
+    }
+
+getBoolean(getRequiredReviews(0, getStatusChecks), checkStatusOfCheckRuns(0, getStatusChecks))
+
+    
+
+
+    // function printMessage() {
+    //     console.log("still waiting on reviews");
+    // }
+
+    
     //checkStatusOfCheckRuns();
 
 //TODO: make sure we check for merge-on-green label before passing the test
