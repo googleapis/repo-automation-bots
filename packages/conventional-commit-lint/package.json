@@ -31,7 +31,7 @@
     "@commitlint/config-conventional": "^8.1.0",
     "@commitlint/lint": "^8.0.0",
     "gcf-utils": "1.1.0",
-    "probot": "9.6.4"
+    "probot": "9.9.1"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",

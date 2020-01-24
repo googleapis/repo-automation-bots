@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "gcf-utils": "1.1.0",
-    "probot": "9.6.4"
+    "probot": "9.9.1"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
