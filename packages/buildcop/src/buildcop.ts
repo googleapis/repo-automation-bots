@@ -301,14 +301,14 @@ buildcop.findTestResults = (xml: string): TestResults => {
     testsuites = obj['testsuites']['testsuite'];
   }
   // If there is only one test suite, put it into an array to make it iterable.
-  if (!isIterable(testsuites)) {
+  if (!Array.isArray(testsuites)) {
     testsuites = [testsuites];
   }
   for (const suite of testsuites) {
     const testsuiteName = suite['_attributes'].name;
     let testcases = suite['testcase'];
     // If there is only one test case, put it into an array to make it iterable.
-    if (!isIterable(testcases)) {
+    if (!Array.isArray(testcases)) {
       testcases = [testcases];
     }
     for (const testcase of testcases) {
@@ -332,11 +332,3 @@ buildcop.findTestResults = (xml: string): TestResults => {
   }
   return { passes, failures };
 };
-
-// tslint:disable-next-line: no-any
-function isIterable(obj: any): boolean {
-  if (obj === null) {
-    return false;
-  }
-  return typeof obj[Symbol.iterator] === 'function';
-}
