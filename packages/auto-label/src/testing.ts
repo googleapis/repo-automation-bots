@@ -11,7 +11,7 @@ const fs = require('fs');
 
 const octokit = new Octokit({
     auth() {
-        return "token e88c616248f3f90bf60d5d9f27e9185bbba877f4";    
+        return `token ${process.env.SECRET_TOKEN}`;    
     }
    });
 
