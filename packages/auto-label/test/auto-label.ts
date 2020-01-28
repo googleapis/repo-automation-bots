@@ -40,10 +40,6 @@ describe('auto-label', () => {
   const labelCreated = fs.readFileSync(
     resolve(fixturesPath, 'events', 'label_created.json')
   );
-
-  const downloadedFile = fs.readFileSync(
-    resolve(fixturesPath, 'events', 'downloadedFile.json')
-  );
   
 
   beforeEach(() => {
@@ -130,21 +126,23 @@ describe('auto-label', () => {
       ghRequests.done();
     });
 
-    it('ends execution if the JSON file is empty', async () => {
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_opened'
-      ));
+    //TODO: finish test if file is empty && if there is no match in the array
 
-      const ghRequests = nock('https://api.github.com')
+    // it('ends execution if the JSON file is empty', async () => {
+    //   const payload = require(resolve(
+    //     fixturesPath,
+    //     './events/issue_opened'
+    //   ));
 
-        handler.callStorage = async () => {
-          return resolve(fixturesPath, 'events', 'emptydownloadedFile.json');
-        }
+    //   const ghRequests = nock('https://api.github.com')
+
+    //     handler.callStorage = async () => {
+    //       return resolve(fixturesPath, 'events', 'emptydownloadedfile.json');
+    //     }
       
-      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
-      ghRequests.done();
-    });
+    //   await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+    //   ghRequests.done();
+    // });
 
   });
 });

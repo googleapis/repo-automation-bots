@@ -19,7 +19,6 @@ import * as path from 'path';
 import e = require('express');
 
 const fs = require('fs');
-//const jsonData = path.resolve(__dirname, '../../src/downloadedfile.txt');
 const colorsData = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../src/colors.json'), 'utf8'));
 
 handler.addLabels = async function addLabels(github: GitHubAPI, owner: string, repo: string, issueNumber: number, labels: string[]) {
@@ -30,7 +29,6 @@ handler.addLabels = async function addLabels(github: GitHubAPI, owner: string, r
           issue_number: issueNumber,
           labels: labels
       })
-      console.log(data);
       return data;
   } catch(err) {
       return null;
@@ -44,7 +42,6 @@ handler.checkExistingLabels = async function checkExistingLabels(github: GitHubA
           repo: repo,
           name: name
       })
-      console.log("checkExistingLabels "+data.data.name);
       return data.data.name;
   } catch(err) {
       return null;
