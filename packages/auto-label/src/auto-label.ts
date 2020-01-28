@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -184,6 +184,7 @@ function handler(app: Application) {
     const issueId = context.payload.issue.number;
 
     const jsonData = await handler.callStorage(
+      //TODO: CHANGE THESE SETTINGS TO PROD ONCE DEPLOYED
       'devrel-dev-settings',
       'public_repos.json',
       'src/downloadedfile.txt'
