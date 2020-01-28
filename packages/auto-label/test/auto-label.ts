@@ -14,7 +14,13 @@
 //
 
 import { Probot } from 'probot';
+<<<<<<< HEAD
 import nock from 'nock';
+=======
+import snapshot from 'snap-shot-it';
+import nock from 'nock';
+import * as fs from 'fs';
+>>>>>>> d03795813fa2793da69d5429c734f08fb94e3e24
 import { expect } from 'chai';
 import handler from '../src/auto-label';
 import { resolve } from 'path';
