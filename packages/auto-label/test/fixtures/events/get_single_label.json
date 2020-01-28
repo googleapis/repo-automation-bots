@@ -1,9 +1,0 @@
-{
-    "id": 208045946,
-    "node_id": "MDU6TGFiZWwyMDgwNDU5NDY=",
-    "url": "https://api.github.com/repos/testOwner/testRepo/labels/myGitHubLabel",
-    "name": "myGitHubLabel",
-    "description": "New feature or request",
-    "color": "f29513",
-    "default": false
-}
