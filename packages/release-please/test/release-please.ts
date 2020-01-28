@@ -44,9 +44,7 @@ describe('ReleasePleaseBot', () => {
       // enables retries which makes testing difficult.
       Octokit: require('@octokit/rest'),
     });
-
-    const app = probot.load(myProbotApp);
-    app.app = {
+    probot.app = {
       getSignedJsonWebToken() {
         return 'abc123';
       },
@@ -54,6 +52,7 @@ describe('ReleasePleaseBot', () => {
         return Promise.resolve('abc123');
       },
     };
+    probot.load(myProbotApp);
   });
 
   describe('push to master branch', () => {
