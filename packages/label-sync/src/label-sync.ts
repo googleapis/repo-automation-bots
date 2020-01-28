@@ -15,6 +15,9 @@
 import { Application } from 'probot';
 import { request } from 'gaxios';
 import { GitHubAPI } from 'probot/lib/github';
+import { createHash } from 'crypto';
+import { Storage } from '@google-cloud/storage';
+const storage = new Storage();
 
 interface Labels {
   labels: [
@@ -33,6 +36,14 @@ interface Repos {
       repo: string;
     }
   ];
+}
+
+interface GetApiLabelsResponse {
+  apis: Array<{
+    display_name: string; // Access Approval
+    github_label: string; // api: accessapproval
+    api_shortname: string; // accessapproval
+  }>;
 }
 
 // Labels are fetched by reaching out to GitHub *instead* of grabbing the file
@@ -57,9 +68,21 @@ async function refreshLabels(github: GitHubAPI) {
   labelsCache = JSON.parse(
     Buffer.from(data.content as string, 'base64').toString('utf8')
   );
+
+  const apiLabelsRes = await handler.getApiLabels();
+  apiLabelsRes.apis.forEach(api => {
+    labelsCache.labels.push({
+      name: api.github_label,
+      description: `Issues related to the ${api.display_name} API.`,
+      color: createHash('md5')
+        .update(api.api_shortname)
+        .digest('hex')
+        .slice(0, 6),
+    });
+  });
 }
 
-export = (app: Application) => {
+function handler(app: Application) {
   const events = [
     'repository.created',
     'repository.transferred',
@@ -93,7 +116,17 @@ export = (app: Application) => {
       );
     }
   });
+}
+
+handler.getApiLabels = async (): Promise<GetApiLabelsResponse> => {
+  const data = await storage
+    .bucket('devrel-prod-settings')
+    .file('apis.json')
+    .download();
+  return JSON.parse(data[0].toString()) as GetApiLabelsResponse;
 };
+
+export = handler;
 
 async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
   const newLabels = await getLabels(github);
@@ -142,7 +175,10 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
         })
         .catch(e => {
           //ignores errors that are caused by two requests kicking off at the same time
-          if (e.errors[0].code !== 'already_exists') {
+          if (
+            !Array.isArray(e.errors) ||
+            e.errors[0].code !== 'already_exists'
+          ) {
             console.error(`Error creating label ${l.name} in ${owner}/${repo}`);
             console.error(e.stack);
           }
