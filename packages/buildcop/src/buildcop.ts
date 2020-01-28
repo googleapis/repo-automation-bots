@@ -61,7 +61,7 @@ interface PubSubContext {
 }
 
 export function buildcop(app: Application) {
-  app.on('pubsub.message', async (context:PubSubContext) => {
+  app.on('pubsub.message', async (context: PubSubContext) => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
     const buildID = context.payload.buildID || '[TODO: set buildID]';
