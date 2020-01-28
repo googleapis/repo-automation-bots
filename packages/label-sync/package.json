@@ -1,6 +1,6 @@
 {
   "name": "label-sync",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Synchronize a list of labels with GitHub issues.",
   "private": true,
   "author": "Google Inc.",
@@ -24,10 +24,11 @@
     "lint": "gts check"
   },
   "dependencies": {
+    "@google-cloud/storage": "^4.3.0",
     "@octokit/rest": "^16.34.0",
     "gaxios": "^2.1.0",
-    "gcf-utils": "1.1.0",
-    "probot": "9.6.4"
+    "gcf-utils": "1.5.0",
+    "probot": "9.9.1"
   },
   "devDependencies": {
     "@types/bunyan": "^1.8.6",
@@ -38,12 +39,11 @@
     "@types/mocha": "^5.2.7",
     "@types/node": "^12.11.6",
     "chai": "^4.2.0",
-    "cross-env": "^6.0.3",
+    "cross-env": "^7.0.0",
     "gts": "^1.1.0",
     "mocha": "^7.0.0",
     "nock": "^11.5.0",
     "snap-shot-it": "^7.9.0",
-    "source-map-support": "^0.5.13",
     "typescript": "^3.6.4"
   },
   "engines": {

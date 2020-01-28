@@ -1,6 +1,6 @@
 {
   "name": "failurechecker",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "opens issues warning about releases that failed to complete",
   "private": true,
   "author": "Google LLC.",
@@ -26,9 +26,9 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "1.2.0",
+    "gcf-utils": "1.5.0",
     "moment": "^2.24.0",
-    "probot": "9.6.4"
+    "probot": "9.9.1"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
@@ -43,7 +43,7 @@
     "@types/node": "^12.6.1",
     "body-parser": "^1.19.0",
     "chai": "^4.2.0",
-    "cross-env": "^6.0.0",
+    "cross-env": "^7.0.0",
     "dotenv": "^8.0.0",
     "gts": "^1.0.0",
     "mocha": "^7.0.0",
