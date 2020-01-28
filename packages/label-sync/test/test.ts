@@ -29,26 +29,31 @@ const newLabels = require('../../src/labels.json') as {
 };
 const repos = require('../../test/fixtures/repos.json');
 
+interface GetApiLabelsResponse {
+  apis: Array<{
+    display_name: string; // Access Approval
+    github_label: string; // api: accessapproval
+    api_shortname: string; // accessapproval
+  }>;
+}
+appFn.getApiLabels = async (): Promise<GetApiLabelsResponse> => {
+  return {
+    apis: [
+      {
+        display_name: 'Sprockets',
+        github_label: 'api: sprockets',
+        api_shortname: 'sprockets',
+      },
+    ],
+  };
+};
+
 function nockLabelList() {
   return nock('https://api.github.com')
     .get(
       '/repos/googleapis/repo-automation-bots/contents/packages/label-sync/src/labels.json'
     )
     .reply(200, { content: Buffer.from(JSON.stringify(newLabels), 'utf8') });
-}
-
-function nockApiLabelsList() {
-  return nock('https://storage.cloud.google.com')
-    .get('/devrel-prod-settings/apis.json?organizationId=433637338589')
-    .reply(200, {
-      apis: [
-        {
-          display_name: 'Sprockets',
-          github_label: 'api: sprockets',
-          api_shortname: 'sprockets',
-        },
-      ],
-    });
 }
 
 function nockFetchOldLabels(labels: Array<{}>) {
@@ -108,7 +113,6 @@ describe('Label Sync', () => {
     ));
     const scopes = [
       nockLabelList(),
-      nockApiLabelsList(),
       nockFetchOldLabels([]),
       nockLabelCreate(newLabels.labels.length + 1),
     ];
@@ -166,7 +170,6 @@ describe('Label Sync', () => {
     const scopes = [
       nockRepoList(),
       nockLabelList(),
-      nockApiLabelsList(),
       nockFetchOldLabels([]),
       nockLabelCreate(newLabels.labels.length + 1),
     ];

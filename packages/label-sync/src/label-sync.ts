@@ -72,10 +72,9 @@ async function refreshLabels(github: GitHubAPI) {
   // Add labels for each API, extracting the list from devrel services
   const apiLabelsUri =
     'https://storage.cloud.google.com/devrel-prod-settings/apis.json?organizationId=433637338589';
-  const apiLabelsRes = await request<GetApiLabelsResponse>({
-    url: apiLabelsUri,
-  });
-  apiLabelsRes.data.apis.forEach(api => {
+
+  const apiLabelsRes = await handler.getApiLabels();
+  apiLabelsRes.apis.forEach(api => {
     labelsCache.labels.push({
       name: api.github_label,
       description: `Issues related to the ${api.display_name} API.`,
@@ -87,7 +86,7 @@ async function refreshLabels(github: GitHubAPI) {
   });
 }
 
-export = (app: Application) => {
+function handler(app: Application) {
   const events = [
     'repository.created',
     'repository.transferred',
@@ -121,7 +120,17 @@ export = (app: Application) => {
       );
     }
   });
+}
+
+handler.getApiLabels = async (): Promise<GetApiLabelsResponse> => {
+  const data = await storage
+    .bucket('devrel-prod-settings')
+    .file('apis.json')
+    .download();
+  return JSON.parse(data[0].toString()) as GetApiLabelsResponse;
 };
+
+export = handler;
 
 async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
   const newLabels = await getLabels(github);

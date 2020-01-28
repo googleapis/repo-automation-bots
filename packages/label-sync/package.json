@@ -44,7 +44,6 @@
     "mocha": "^7.0.0",
     "nock": "^11.5.0",
     "snap-shot-it": "^7.9.0",
-    "source-map-support": "^0.5.13",
     "typescript": "^3.6.4"
   },
   "engines": {
