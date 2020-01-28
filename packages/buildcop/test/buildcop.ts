@@ -44,9 +44,7 @@ describe('buildcop', () => {
       // enables retries which makes testing difficult.
       Octokit: require('@octokit/rest'),
     });
-
-    const app = probot.load(buildcop);
-    app.app = {
+    probot.app = {
       getSignedJsonWebToken() {
         return 'abc123';
       },
@@ -54,6 +52,7 @@ describe('buildcop', () => {
         return Promise.resolve('abc123');
       },
     };
+    probot.load(buildcop);
   });
 
   describe('findFailures', () => {

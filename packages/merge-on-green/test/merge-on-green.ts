@@ -63,9 +63,7 @@ describe('merge-on-green', () => {
       // enables retries which makes testing difficult.
       Octokit: require('@octokit/rest'),
     });
-
-    const app = probot.load(myProbotApp);
-    app.app = {
+    probot.app = {
       getSignedJsonWebToken() {
         return 'abc123';
       },
@@ -73,6 +71,7 @@ describe('merge-on-green', () => {
         return Promise.resolve('abc123');
       },
     };
+    probot.load(myProbotApp);
   });
 
   describe('responds to pull requests', () => {
