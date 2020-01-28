@@ -36,9 +36,7 @@ describe('TrustedContributionTestRunner', () => {
       // enables retries which makes testing difficult.
       Octokit: require('@octokit/rest'),
     });
-
-    const app = probot.load(myProbotApp);
-    app.app = {
+    probot.app = {
       getSignedJsonWebToken() {
         return 'abc123';
       },
@@ -46,6 +44,7 @@ describe('TrustedContributionTestRunner', () => {
         return Promise.resolve('abc123');
       },
     };
+    probot.load(myProbotApp);
   });
 
   describe('opened pull request', () => {
