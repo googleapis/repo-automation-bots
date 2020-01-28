@@ -29,6 +29,25 @@ const newLabels = require('../../src/labels.json') as {
 };
 const repos = require('../../test/fixtures/repos.json');
 
+interface GetApiLabelsResponse {
+  apis: Array<{
+    display_name: string; // Access Approval
+    github_label: string; // api: accessapproval
+    api_shortname: string; // accessapproval
+  }>;
+}
+appFn.getApiLabels = async (): Promise<GetApiLabelsResponse> => {
+  return {
+    apis: [
+      {
+        display_name: 'Sprockets',
+        github_label: 'api: sprockets',
+        api_shortname: 'sprockets',
+      },
+    ],
+  };
+};
+
 function nockLabelList() {
   return nock('https://api.github.com')
     .get(
@@ -95,7 +114,7 @@ describe('Label Sync', () => {
     const scopes = [
       nockLabelList(),
       nockFetchOldLabels([]),
-      nockLabelCreate(newLabels.labels.length),
+      nockLabelCreate(newLabels.labels.length + 1),
     ];
     await probot.receive({ name: 'repository', payload, id: 'abc123' });
     scopes.forEach(s => s.done());
@@ -105,7 +124,7 @@ describe('Label Sync', () => {
     const payload = require(path.resolve(fixturesPath, './label_deleted.json'));
     const scopes = [
       nockFetchOldLabels([]),
-      nockLabelCreate(newLabels.labels.length),
+      nockLabelCreate(newLabels.labels.length + 1),
     ];
     await probot.receive({ name: 'label', payload, id: 'abc123' });
     scopes.forEach(s => s.done());
@@ -124,7 +143,7 @@ describe('Label Sync', () => {
     ];
     const scopes = [
       nockFetchOldLabels(originalLabels),
-      nockLabelCreate(newLabels.labels.length),
+      nockLabelCreate(newLabels.labels.length + 1),
       nockLabelDelete(labelName),
     ];
     await probot.receive({ name: 'repository', payload, id: 'abc123' });
@@ -137,7 +156,11 @@ describe('Label Sync', () => {
     const labelName = 'type: bug';
     const bugLabel = labels.find(l => l.name === labelName)!;
     bugLabel.color = '000000';
-    const scopes = [nockFetchOldLabels(labels), nockLabelUpdate(labelName)];
+    const scopes = [
+      nockFetchOldLabels(labels),
+      nockLabelCreate(1),
+      nockLabelUpdate(labelName),
+    ];
     await probot.receive({ name: 'label', payload, id: 'abc123' });
     scopes.forEach(s => s.done());
   });
@@ -148,7 +171,7 @@ describe('Label Sync', () => {
       nockRepoList(),
       nockLabelList(),
       nockFetchOldLabels([]),
-      nockLabelCreate(newLabels.labels.length),
+      nockLabelCreate(newLabels.labels.length + 1),
     ];
     await probot.receive({ name: 'push', payload, id: 'abc123' });
     scopes.forEach(s => s.done());
