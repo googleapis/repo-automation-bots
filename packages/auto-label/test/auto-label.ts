@@ -13,16 +13,14 @@
 // limitations under the License.
 //
 
-import myProbotApp from '../src/auto-label';
 
-import { resolve } from 'path';
 import { Probot } from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
 import { expect } from 'chai';
-import { u } from 'tar';
-
+import handler from '../src/auto-label';
+import { resolve } from 'path';
 
 nock.disableNetConnect();
 
@@ -31,16 +29,16 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 describe('auto-label', () => {
   let probot: Probot;
 
-  const issueCreated = fs.readFileSync(
-    resolve(fixturesPath, 'events', 'issue_created.json')
-  );
-
-  const labelApplied = fs.readFileSync(
-    resolve(fixturesPath, 'events', 'issue_created.json')
+  const getSingleLabel = fs.readFileSync(
+    resolve(fixturesPath, 'events', 'get_single_label.json')
   );
 
   const labelAdded = fs.readFileSync(
     resolve(fixturesPath, 'events', 'label_added.json')
+  );
+
+  const labelCreated = fs.readFileSync(
+    resolve(fixturesPath, 'events', 'label_created.json')
   );
 
   const downloadedFile = fs.readFileSync(
@@ -54,7 +52,7 @@ describe('auto-label', () => {
       // enables retries which makes testing difficult.
       Octokit: require('@octokit/rest'),
     });
-    const app = probot.load(myProbotApp);
+    const app = probot.load(handler);
     app.app = {
       getSignedJsonWebToken() {
         return 'abc123';
@@ -66,33 +64,85 @@ describe('auto-label', () => {
   });
 
   describe('responds to events', () => {
-    it('responds to issues and creates appropriate labels', async () => {
+    it('responds to issues and creates appropriate labels when there are no labels', async () => {
       const payload = require(resolve(
         fixturesPath,
         './events/issue_opened'
       ));
 
-      const googleAuthentication = nock('https://googleapis.com')
-        .get('/oath2/v4/token')
+      const ghRequests = nock('https://api.github.com').log(console.log)
+        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
         .reply(200)
-        .get('/storage/v1/b/devrel-dev-settings/o/public_repos.json?alt=media')
-        .reply(200, downloadedFile)
-        
-        const storageAPIs = nock('https://googleapis.com')
-        .get('/oath2/v4/token')
+        .post('/repos/testOwner/testRepo/labels')
+        .reply(200, labelCreated)
+        .get('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200)
-        .get('/storage/v1/b/devrel-dev-settings/o/public_repos.json?alt=media')
-        .reply(200, downloadedFile)
+        .post('/repos/testOwner/testRepo/issues/5/labels')
+        .reply(200, labelAdded);
+
+        handler.callStorage = async () => {
+          return resolve(fixturesPath, 'events', 'downloadedFile.json');
+        }
+      
+      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      ghRequests.done();
+    });
+
+    it('responds to issues and does not create labels if they are not needed', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened'
+      ));
+
+      const ghRequests = nock('https://api.github.com').log(console.log)
+        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
+        .reply(200, getSingleLabel)
+        .get('/repos/testOwner/testRepo/issues/5/labels')
+        .reply(200, getSingleLabel)
+
+        handler.callStorage = async () => {
+          return resolve(fixturesPath, 'events', 'downloadedFile.json');
+        }
+      
+      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      ghRequests.done();
+    });
+
+    it('responds to issues and adds a label to an issue, even if the label already exists on the repo', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened'
+      ));
+
+      const ghRequests = nock('https://api.github.com').log(console.log)
+        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
+        .reply(200, getSingleLabel)
+        .get('/repos/testOwner/testRepo/issues/5/labels')
+        .reply(200)
+        .post('/repos/testOwner/testRepo/issues/5/labels')
+        .reply(200, labelAdded);
+
+        handler.callStorage = async () => {
+          return resolve(fixturesPath, 'events', 'downloadedFile.json');
+        }
+      
+      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      ghRequests.done();
+    });
+
+    it('ends execution if the JSON file is empty', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened'
+      ));
 
       const ghRequests = nock('https://api.github.com')
-        .post('/repos/testOwner/testRepo/labels')
-        .reply(200, labelAdded)
-        .post('/repos/testOwner/testRepo/issues/208045946/labels')
-        .reply(200, labelApplied)
 
-
+        handler.callStorage = async () => {
+          return resolve(fixturesPath, 'events', 'emptydownloadedFile.json');
+        }
+      
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
-      //googleRequests.done();
       ghRequests.done();
     });
 

@@ -11,35 +11,35 @@ const fs = require('fs');
 
 const octokit = new Octokit({
     auth() {
-        return `token ${process.env.SECRET_TOKEN}`;    
+        return `token bc59d6bc25b9ecaec69cfcfc414c5c5924a09fa1`;    
     }
    });
 
-async function createLabel(owner, repo, name, color) {
-        const data = await octokit.issues.createLabel({
-            owner: owner,
-            repo: repo,
-            name: name,
-            color: color
-        })
-        console.log(await data);
-        console.log('a');
-        return data;
-    }
+// async function createLabel(owner, repo, name, color) {
+//         const data = await octokit.issues.createLabel({
+//             owner: owner,
+//             repo: repo,
+//             name: name,
+//             color: color
+//         })
+//         console.log(await data);
+//         console.log('a');
+//         return data;
+//     }
     
-async function getLabelsfromRepo(owner, repo) {
-    const data = await octokit.issues.listLabelsForRepo({
-        owner,
-        repo
-      });
-}
+// async function getLabelsfromRepo(owner, repo) {
+//     const data = await octokit.issues.listLabelsForRepo({
+//         owner,
+//         repo
+//       });
+// }
   
-  async function addLabels(owner, repo, issueNumber, labels) {
+  async function addLabels() {
         const data = await octokit.issues.addLabels({
-            owner: owner,
-            repo: repo,
-            issue_number: issueNumber,
-            labels: labels
+            owner: 'sofisl',
+            repo: 'mergeOnGreenTest',
+            issue_number: 51, 
+            labels: ['otherName']
         })
         console.log('d');
         console.log(await data);
@@ -47,8 +47,9 @@ async function getLabelsfromRepo(owner, repo) {
     }
 
 
-    createLabel('sofisl', 'mergeOnGreenTest', 'otherName', '8DB600');
-    setTimeout(function() { addLabels('sofisl', 'mergeOnGreenTest', 554980007, 'myName'); }, 7000);
+    addLabels();
+    // createLabel('sofisl', 'mergeOnGreenTest', 'otherName', '8DB600');
+    //setTimeout(function() { addLabels('sofisl', 'mergeOnGreenTest', 51, {labels: 'myName'}) }, 7000);
 //getLabels();
 //createIssue();
 
