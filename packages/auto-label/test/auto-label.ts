@@ -38,8 +38,7 @@ describe('auto-label', () => {
       // enables retries which makes testing difficult.
       Octokit: require('@octokit/rest'),
     });
-    const app = probot.load(handler);
-    app.app = {
+    probot.app = {
       getSignedJsonWebToken() {
         return 'abc123';
       },
@@ -47,6 +46,7 @@ describe('auto-label', () => {
         return Promise.resolve('abc123');
       },
     };
+    probot.load(handler);
   });
 
   describe('responds to events', () => {

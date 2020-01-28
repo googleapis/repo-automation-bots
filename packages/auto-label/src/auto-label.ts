@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-import { Application} from 'probot';
+import { Application } from 'probot';
 import { GitHubAPI } from 'probot/lib/github';
 import * as path from 'path';
 
