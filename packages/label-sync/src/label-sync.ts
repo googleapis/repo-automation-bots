@@ -69,10 +69,6 @@ async function refreshLabels(github: GitHubAPI) {
     Buffer.from(data.content as string, 'base64').toString('utf8')
   );
 
-  // Add labels for each API, extracting the list from devrel services
-  const apiLabelsUri =
-    'https://storage.cloud.google.com/devrel-prod-settings/apis.json?organizationId=433637338589';
-
   const apiLabelsRes = await handler.getApiLabels();
   apiLabelsRes.apis.forEach(api => {
     labelsCache.labels.push({
