@@ -13,11 +13,9 @@
 // limitations under the License.
 //
 
-import { Application, Octokit } from 'probot';
+import { Application} from 'probot';
 import { GitHubAPI } from 'probot/lib/github';
 import * as path from 'path';
-import e = require('express');
-import { IssuesListLabelsOnIssueResponseItem } from '@octokit/rest';
 
 const fs = require('fs');
 const colorsData = JSON.parse(
