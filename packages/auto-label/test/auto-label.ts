@@ -18,10 +18,16 @@ import nock from 'nock';
 import { expect } from 'chai';
 import handler from '../src/auto-label';
 import { resolve } from 'path';
+import * as fs from 'fs';
 
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+
+const downloadedFile = fs.readFileSync(resolve(__dirname, '../../test/fixtures/events/downloadedfile.json')).toString();
+
+const emptyFile = fs.readFileSync(resolve(__dirname, '../../test/fixtures/events/emptydownloadedfile.json')).toString();
+
 
 describe('auto-label', () => {
   let probot: Probot;
@@ -80,7 +86,7 @@ describe('auto-label', () => {
         ]);
 
       handler.callStorage = async () => {
-        return resolve(fixturesPath, 'events', 'downloadedFile.json');
+        return downloadedFile;
       };
 
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
@@ -119,7 +125,7 @@ describe('auto-label', () => {
         ]);
 
       handler.callStorage = async () => {
-        return resolve(fixturesPath, 'events', 'downloadedFile.json');
+        return downloadedFile;
       };
 
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
@@ -160,7 +166,7 @@ describe('auto-label', () => {
         ]);
 
       handler.callStorage = async () => {
-        return resolve(fixturesPath, 'events', 'downloadedFile.json');
+        return downloadedFile;
       };
 
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
@@ -173,7 +179,7 @@ describe('auto-label', () => {
       const ghRequests = nock('https://api.github.com');
 
       handler.callStorage = async () => {
-        return resolve(fixturesPath, 'events', 'emptydownloadedfile.json');
+        return emptyFile;
       };
 
       expect(
@@ -192,7 +198,7 @@ describe('auto-label', () => {
       const ghRequests = nock('https://api.github.com');
 
       handler.callStorage = async () => {
-        return resolve(fixturesPath, 'events', 'downloadedFile.json');
+        return downloadedFile;
       };
 
       expect(

@@ -181,7 +181,7 @@ function handler(app: Application) {
     let objectInJsonArray: JSONData | null | undefined;
     objectInJsonArray = handler.checkIfElementIsInArray(jsonArray, owner, repo);
 
-    if (objectInJsonArray == null || objectInJsonArray === undefined) {
+    if (objectInJsonArray === null || objectInJsonArray === undefined) {
       console.log('There was no match for the repo name: ' + repo);
       return;
     }
@@ -197,7 +197,7 @@ function handler(app: Application) {
       githubLabel
     );
 
-    if (alreadyExists === null) {
+    if (alreadyExists === null || alreadyExists === undefined) {
       handler.createLabel(
         context.github,
         owner,
