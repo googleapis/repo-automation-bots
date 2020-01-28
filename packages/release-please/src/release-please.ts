@@ -55,7 +55,7 @@ function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
       return ReleaseType.Node;
     case 'php':
       return ReleaseType.PHPYoshi;
-    case 'terraform':
+    case 'terraform-module':
       return ReleaseType.TerraformModule;
     default:
       throw Error(`unknown release type: ${language}`);
