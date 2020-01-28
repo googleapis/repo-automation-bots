@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "enquirer": "^2.3.2",
-    "expect": "^24.9.0",
+    "expect": "^25.0.0",
     "handlebars": "^4.5.1"
   }
 }
