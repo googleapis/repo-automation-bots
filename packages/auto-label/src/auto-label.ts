@@ -197,7 +197,7 @@ function handler(app: Application) {
       githubLabel
     );
 
-    if (alreadyExists == null || alreadyExists === undefined) {
+    if (alreadyExists === null) {
       handler.createLabel(
         context.github,
         owner,

@@ -199,23 +199,8 @@ describe('auto-label', () => {
         handler.checkIfElementIsInArray(
           [
             {
-              num_total_prs: 0,
-              num_open_p1s: 0,
-              num_open_questions: 0,
-              num_open_p0s: 0,
-              language: 'ANDROID_JAVA',
-              api_shortname: '',
               github_label: '',
-              num_open_p2s: 0,
-              is_tracking_issues: true,
-              repo: 'firebase/FirebaseUI-Android',
-              is_tracking_samples: false,
-              num_open_issues: 0,
-              num_total_issues: 0,
-              num_open_prs: 0,
-              issue_score: 100,
-              num_slo_violations: -1,
-              num_commits: 1541,
+              repo: 'firebase/FirebaseUI-Android'
             },
           ],
           'notThere',
