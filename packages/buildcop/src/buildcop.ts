@@ -61,10 +61,7 @@ interface PubSubContext {
 }
 
 export function buildcop(app: Application) {
-  app.on('pubsub.message', async (_context) => {
-    // TODO: figure out how to specify our own custom type for _context
-    // without the casting hack below:
-    const context = (_context as any) as PubSubContext;
+  app.on('pubsub.message', async (context:PubSubContext) => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
     const buildID = context.payload.buildID || '[TODO: set buildID]';
