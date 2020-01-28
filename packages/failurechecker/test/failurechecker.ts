@@ -30,15 +30,12 @@ describe('failurechecker', () => {
     failureChecker.utcHour = () => {
       return 20;
     };
-
     probot = new Probot({
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
       Octokit: require('@octokit/rest'),
     });
-
-    const app = probot.load(failureChecker);
-    app.app = {
+    probot.app = {
       getSignedJsonWebToken() {
         return 'abc123';
       },
@@ -46,6 +43,7 @@ describe('failurechecker', () => {
         return Promise.resolve('abc123');
       },
     };
+    probot.load(failureChecker);
   });
 
   it('opens an issue on GitHub if there exists a pending label > threshold', async () => {
