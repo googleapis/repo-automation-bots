@@ -15,7 +15,9 @@
 import { Application } from 'probot';
 import { request } from 'gaxios';
 import { GitHubAPI } from 'probot/lib/github';
-import * as crypto from 'crypto';
+import { createHash } from 'crypto';
+import { Storage } from '@google-cloud/storage';
+const storage = new Storage();
 
 interface Labels {
   labels: [
@@ -77,8 +79,7 @@ async function refreshLabels(github: GitHubAPI) {
     labelsCache.labels.push({
       name: api.github_label,
       description: `Issues related to the ${api.display_name} API.`,
-      color: crypto
-        .createHash('md5')
+      color: createHash('md5')
         .update(api.api_shortname)
         .digest('hex')
         .slice(0, 6),
