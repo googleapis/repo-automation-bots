@@ -13,7 +13,6 @@
 // limitations under the License.
 //
 
-
 import { Probot } from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
@@ -28,19 +27,6 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 describe('auto-label', () => {
   let probot: Probot;
-
-  const getSingleLabel = fs.readFileSync(
-    resolve(fixturesPath, 'events', 'get_single_label.json')
-  );
-
-  const labelAdded = fs.readFileSync(
-    resolve(fixturesPath, 'events', 'label_added.json')
-  );
-
-  const labelCreated = fs.readFileSync(
-    resolve(fixturesPath, 'events', 'label_created.json')
-  );
-  
 
   beforeEach(() => {
     probot = new Probot({
@@ -61,88 +47,186 @@ describe('auto-label', () => {
 
   describe('responds to events', () => {
     it('responds to issues and creates appropriate labels when there are no labels', async () => {
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_opened'
-      ));
+      const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
-      const ghRequests = nock('https://api.github.com').log(console.log)
+      const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
         .reply(200)
         .post('/repos/testOwner/testRepo/labels')
-        .reply(200, labelCreated)
+        .reply(200, [
+          {
+            id: 1811802233,
+            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
+            url:
+              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+            default: false,
+            description: null,
+          },
+        ])
         .get('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200)
         .post('/repos/testOwner/testRepo/issues/5/labels')
-        .reply(200, labelAdded);
+        .reply(200, [
+          {
+            id: 1811802233,
+            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
+            url:
+              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+            default: false,
+            description: null,
+          },
+        ]);
 
-        handler.callStorage = async () => {
-          return resolve(fixturesPath, 'events', 'downloadedFile.json');
-        }
-      
+      handler.callStorage = async () => {
+        return resolve(fixturesPath, 'events', 'downloadedFile.json');
+      };
+
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
       ghRequests.done();
     });
 
     it('responds to issues and does not create labels if they are not needed', async () => {
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_opened'
-      ));
+      const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
-      const ghRequests = nock('https://api.github.com').log(console.log)
+      const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
-        .reply(200, getSingleLabel)
+        .reply(200, [
+          {
+            id: 1811802233,
+            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
+            url:
+              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+            default: false,
+            description: null,
+          },
+        ])
         .get('/repos/testOwner/testRepo/issues/5/labels')
-        .reply(200, getSingleLabel)
+        .reply(200, [
+          {
+            id: 1811802233,
+            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
+            url:
+              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+            default: false,
+            description: null,
+          },
+        ]);
 
-        handler.callStorage = async () => {
-          return resolve(fixturesPath, 'events', 'downloadedFile.json');
-        }
-      
+      handler.callStorage = async () => {
+        return resolve(fixturesPath, 'events', 'downloadedFile.json');
+      };
+
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
       ghRequests.done();
     });
 
     it('responds to issues and adds a label to an issue, even if the label already exists on the repo', async () => {
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_opened'
-      ));
+      const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
-      const ghRequests = nock('https://api.github.com').log(console.log)
+      const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
-        .reply(200, getSingleLabel)
+        .reply(200, [
+          {
+            id: 1811802233,
+            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
+            url:
+              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+            default: false,
+            description: null,
+          },
+        ])
         .get('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200)
         .post('/repos/testOwner/testRepo/issues/5/labels')
-        .reply(200, labelAdded);
+        .reply(200, [
+          {
+            id: 1811802233,
+            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
+            url:
+              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+            default: false,
+            description: null,
+          },
+        ]);
 
-        handler.callStorage = async () => {
-          return resolve(fixturesPath, 'events', 'downloadedFile.json');
-        }
-      
+      handler.callStorage = async () => {
+        return resolve(fixturesPath, 'events', 'downloadedFile.json');
+      };
+
       await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
       ghRequests.done();
     });
 
-    //TODO: finish test if file is empty && if there is no match in the array
+    it('ends execution if the JSON file is empty', async () => {
+      const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
-    // it('ends execution if the JSON file is empty', async () => {
-    //   const payload = require(resolve(
-    //     fixturesPath,
-    //     './events/issue_opened'
-    //   ));
+      const ghRequests = nock('https://api.github.com');
 
-    //   const ghRequests = nock('https://api.github.com')
+      handler.callStorage = async () => {
+        return resolve(fixturesPath, 'events', 'emptydownloadedfile.json');
+      };
 
-    //     handler.callStorage = async () => {
-    //       return resolve(fixturesPath, 'events', 'emptydownloadedfile.json');
-    //     }
-      
-    //   await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
-    //   ghRequests.done();
-    // });
+      expect(
+        await handler.checkIfFileIsEmpty(
+          await handler.callStorage('my-bucket', 'my-file', 'my-other-file')
+        )
+      ).to.be.a('null');
 
+      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      ghRequests.done();
+    });
+
+    it('returns null if there is no match on the repo', async () => {
+      const payload = require(resolve(fixturesPath, './events/issue_opened'));
+
+      const ghRequests = nock('https://api.github.com');
+
+      handler.callStorage = async () => {
+        return resolve(fixturesPath, 'events', 'downloadedFile.json');
+      };
+
+      expect(
+        handler.checkIfElementIsInArray(
+          [
+            {
+              num_total_prs: 0,
+              num_open_p1s: 0,
+              num_open_questions: 0,
+              num_open_p0s: 0,
+              language: 'ANDROID_JAVA',
+              api_shortname: '',
+              github_label: '',
+              num_open_p2s: 0,
+              is_tracking_issues: true,
+              repo: 'firebase/FirebaseUI-Android',
+              is_tracking_samples: false,
+              num_open_issues: 0,
+              num_total_issues: 0,
+              num_open_prs: 0,
+              issue_score: 100,
+              num_slo_violations: -1,
+              num_commits: 1541,
+            },
+          ],
+          'notThere',
+          'notThere'
+        )
+      ).to.be.an('undefined');
+
+      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      ghRequests.done();
+    });
   });
 });
