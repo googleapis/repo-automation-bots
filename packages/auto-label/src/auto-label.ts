@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 // Copyright 2020 Google LLC
-=======
-// Copyright 2019 Google LLC
->>>>>>> d03795813fa2793da69d5429c734f08fb94e3e24
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,23 +25,8 @@ const colorsData = JSON.parse(
 );
 
 interface JSONData {
-  num_total_prs: number;
-  num_open_p1s: number;
-  num_open_questions: number;
-  num_open_p0s: number;
-  language: string;
-  api_shortname: string;
   github_label: string;
-  num_open_p2s: number;
-  is_tracking_issues: boolean;
   repo: string;
-  is_tracking_samples: boolean;
-  num_open_issues: number;
-  num_total_issues: number;
-  num_open_prs: number;
-  issue_score: number;
-  num_slo_violations: number;
-  num_commits: number;
 }
 
 handler.addLabels = async function addLabels(
@@ -143,7 +124,7 @@ handler.callStorage = async function callStorage(
   };
 
   // Downloads the file
-  await storage
+  const jsonData = await storage
     .bucket(bucketName)
     .file(srcFileName)
     .download(options);
@@ -151,17 +132,18 @@ handler.callStorage = async function callStorage(
   console.log(
     `gs://${bucketName}/${srcFileName} downloaded to ${destFilename}.`
   );
-  return path.resolve(__dirname, `../../${destFileName}`);
+  return jsonData.toString();
+
 };
 
 handler.checkIfFileIsEmpty = async function checkIfFileIsEmpty(
   jsonData: string
 ) {
-  if (fs.readFileSync(jsonData).length === 0) {
+  if (jsonData.length === 0) {
     console.log('JSON file downloaded from Cloud Storage was empty');
     return null;
   } else {
-    const jsonArray = JSON.parse(fs.readFileSync(jsonData)).repos;
+    const jsonArray = JSON.parse(jsonData).repos;
     return jsonArray;
   }
 };
@@ -188,10 +170,7 @@ function handler(app: Application) {
     const issueId = context.payload.issue.number;
 
     const jsonData = await handler.callStorage(
-<<<<<<< HEAD
       //TODO: CHANGE THESE SETTINGS TO PROD ONCE DEPLOYED
-=======
->>>>>>> d03795813fa2793da69d5429c734f08fb94e3e24
       'devrel-dev-settings',
       'public_repos.json',
       'src/downloadedfile.txt'
