@@ -53,9 +53,7 @@ describe('publish', () => {
       // enables retries which makes testing difficult.
       Octokit: require('@octokit/rest'),
     });
-
-    const app = probot.load(handler);
-    app.app = {
+    probot.app = {
       getSignedJsonWebToken() {
         return 'abc123';
       },
@@ -63,6 +61,7 @@ describe('publish', () => {
         return Promise.resolve('abc123');
       },
     };
+    probot.load(handler);
   });
 
   it('should publish to npm if configuration found', async () => {

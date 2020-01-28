@@ -1,6 +1,6 @@
 {
   "name": "conventional-commit-lint",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "lint commit messages based on conventionalcommits.org",
   "private": true,
   "author": "Google Inc.",
@@ -30,8 +30,8 @@
   "dependencies": {
     "@commitlint/config-conventional": "^8.1.0",
     "@commitlint/lint": "^8.0.0",
-    "gcf-utils": "1.1.0",
-    "probot": "9.6.4"
+    "gcf-utils": "1.5.0",
+    "probot": "9.9.1"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
@@ -46,14 +46,14 @@
     "@types/node": "^12.6.1",
     "body-parser": "^1.19.0",
     "chai": "^4.2.0",
-    "cross-env": "^6.0.0",
+    "cross-env": "^7.0.0",
     "dotenv": "^8.0.0",
     "gts": "^1.0.0",
     "mocha": "^7.0.0",
     "nock": "^11.0.0",
     "smee-client": "^1.1.0",
     "snap-shot-it": "^7.8.0",
-    "typescript": "^3.5.3"
+    "typescript": "^3.7.5"
   },
   "engines": {
     "node": ">= 10.13.0"

@@ -72,11 +72,11 @@ describe('Label Sync', () => {
   let probot: Probot;
   beforeEach(() => {
     probot = new Probot({
+      // use a bare instance of octokit, the default version
+      // enables retries which makes testing difficult.
       Octokit: require('@octokit/rest'),
     });
-
-    const app = probot.load(appFn);
-    app.app = {
+    probot.app = {
       getSignedJsonWebToken() {
         return 'abc123';
       },
@@ -84,6 +84,7 @@ describe('Label Sync', () => {
         return Promise.resolve('abc123');
       },
     };
+    probot.load(appFn);
   });
 
   it('should sync labels on repo create', async () => {
