@@ -113,10 +113,12 @@ handler.callStorage = async function callStorage(
   const storage = new Storage();
 
   // Downloads the file
-  const jsonData = (await storage
-    .bucket(bucketName)
-    .file(srcFileName)
-    .download())[0];
+  const jsonData = (
+    await storage
+      .bucket(bucketName)
+      .file(srcFileName)
+      .download()
+  )[0];
 
   return jsonData.toString();
 };
