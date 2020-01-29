@@ -17,4 +17,4 @@ import { GCFBootstrapper } from 'gcf-utils';
 import appFn from './auto-label';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['auto-label'] = bootstrap.gcf(appFn);
+module.exports['auto_label'] = bootstrap.gcf(appFn);
