@@ -107,27 +107,19 @@ handler.checkExistingIssueLabels = async function checkExistingIssueLabels(
 
 handler.callStorage = async function callStorage(
   bucketName: string,
-  srcFileName: string,
-  destFileName: string
+  srcFileName: string
 ) {
   const { Storage } = require('@google-cloud/storage');
   const storage = new Storage();
-  const destFilename = path.resolve(destFileName);
-
-  const options = {
-    // The path to which the file should be downloaded, e.g. "./file.txt"
-    destination: destFilename,
-  };
 
   // Downloads the file
-  const jsonData = await storage
-    .bucket(bucketName)
-    .file(srcFileName)
-    .download(options);
+  const jsonData = (
+    await storage
+      .bucket(bucketName)
+      .file(srcFileName)
+      .download()
+  )[0];
 
-  console.log(
-    `gs://${bucketName}/${srcFileName} downloaded to ${destFilename}.`
-  );
   return jsonData.toString();
 };
 
@@ -165,10 +157,8 @@ function handler(app: Application) {
     const issueId = context.payload.issue.number;
 
     const jsonData = await handler.callStorage(
-      //TODO: CHANGE THESE SETTINGS TO PROD ONCE DEPLOYED
-      'devrel-dev-settings',
-      'public_repos.json',
-      'src/downloadedfile.txt'
+      'devrel-prod-settings',
+      'public_repos.json'
     );
 
     const jsonArray = await handler.checkIfFileIsEmpty(jsonData);
