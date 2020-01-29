@@ -24,10 +24,17 @@ nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-const downloadedFile = fs.readFileSync(resolve(__dirname, '../../test/fixtures/events/downloadedfile.json')).toString();
+const downloadedFile = fs
+  .readFileSync(
+    resolve(__dirname, '../../test/fixtures/events/downloadedfile.json')
+  )
+  .toString();
 
-const emptyFile = fs.readFileSync(resolve(__dirname, '../../test/fixtures/events/emptydownloadedfile.json')).toString();
-
+const emptyFile = fs
+  .readFileSync(
+    resolve(__dirname, '../../test/fixtures/events/emptydownloadedfile.json')
+  )
+  .toString();
 
 describe('auto-label', () => {
   let probot: Probot;
@@ -206,7 +213,7 @@ describe('auto-label', () => {
           [
             {
               github_label: '',
-              repo: 'firebase/FirebaseUI-Android'
+              repo: 'firebase/FirebaseUI-Android',
             },
           ],
           'notThere',

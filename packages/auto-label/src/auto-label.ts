@@ -131,7 +131,6 @@ handler.callStorage = async function callStorage(
     `gs://${bucketName}/${srcFileName} downloaded to ${destFilename}.`
   );
   return jsonData.toString();
-
 };
 
 handler.checkIfFileIsEmpty = async function checkIfFileIsEmpty(
