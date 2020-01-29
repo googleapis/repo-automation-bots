@@ -133,7 +133,7 @@ handler.getApiLabels = async (
   const repo = (JSON.parse(
     publicRepos[0].toString()
   ) as PublicReposResponse).repos.find(repo => {
-    return repo.repo === repoPath;
+    return repo.repo === repoPath && repo.github_label !== '';
   });
 
   if (repo) {
