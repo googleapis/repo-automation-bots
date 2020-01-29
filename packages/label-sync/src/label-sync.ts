@@ -47,7 +47,7 @@ async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
     await refreshLabels(github, repoPath);
   }
   const labels = {
-    labels: labelsCache.labels.slice(0)
+    labels: labelsCache.labels.slice(0),
   } as Labels;
   const apiLabelsRes = await handler.getApiLabels(repoPath);
   apiLabelsRes.apis.forEach(api => {
@@ -135,7 +135,7 @@ handler.getApiLabels = async (
   const repo = (JSON.parse(
     publicRepos[0].toString()
   ) as PublicReposResponse).repos.find(repo => {
-    return repo.repo === repoPath && repo.github_label !== "";
+    return repo.repo === repoPath && repo.github_label !== '';
   });
 
   if (repo) {
