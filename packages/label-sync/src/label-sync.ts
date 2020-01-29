@@ -42,11 +42,25 @@ interface Repos {
 // from the local copy.  We are using the `PushEvent` to detect the change,
 // meaning the file running in cloud will be older than the one on master.
 let labelsCache: Labels;
-async function getLabels(github: GitHubAPI, repoPath: string) {
+async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
   if (!labelsCache) {
     await refreshLabels(github, repoPath);
   }
-  return labelsCache;
+  const labels = {
+    labels: labelsCache.labels.slice(0)
+  } as Labels;
+  const apiLabelsRes = await handler.getApiLabels(repoPath);
+  apiLabelsRes.apis.forEach(api => {
+    labels.labels.push({
+      name: api.github_label,
+      description: `Issues related to the ${api.display_name} API.`,
+      color: createHash('md5')
+        .update(api.api_shortname)
+        .digest('hex')
+        .slice(0, 6),
+    });
+  });
+  return labels;
 }
 
 async function refreshLabels(github: GitHubAPI, repoPath: string) {
@@ -60,18 +74,6 @@ async function refreshLabels(github: GitHubAPI, repoPath: string) {
   labelsCache = JSON.parse(
     Buffer.from(data.content as string, 'base64').toString('utf8')
   );
-
-  const apiLabelsRes = await handler.getApiLabels(repoPath);
-  apiLabelsRes.apis.forEach(api => {
-    labelsCache.labels.push({
-      name: api.github_label,
-      description: `Issues related to the ${api.display_name} API.`,
-      color: createHash('md5')
-        .update(api.api_shortname)
-        .digest('hex')
-        .slice(0, 6),
-    });
-  });
 }
 
 function handler(app: Application) {
@@ -133,7 +135,7 @@ handler.getApiLabels = async (
   const repo = (JSON.parse(
     publicRepos[0].toString()
   ) as PublicReposResponse).repos.find(repo => {
-    return repo.repo === repoPath && repo.github_label !== '';
+    return repo.repo === repoPath && repo.github_label !== "";
   });
 
   if (repo) {
