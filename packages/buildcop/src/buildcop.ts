@@ -37,9 +37,14 @@ const LABELS = 'type: bug,priority: p1';
 
 const EVERYTHING_FAILED_TITLE = 'The build failed';
 
-interface TestFailure {
+interface TestCase {
   package?: string;
   testCase?: string;
+}
+
+interface TestResults {
+  passes: TestCase[];
+  failures: TestCase[];
 }
 
 export interface BuildCopPayload {
@@ -67,10 +72,10 @@ export function buildcop(app: Application) {
     const buildID = context.payload.buildID || '[TODO: set buildID]';
     const buildURL = context.payload.buildURL || '[TODO: set buildURL]';
 
-    let failures: TestFailure[];
+    let results: TestResults;
     if (context.payload.xunitXML) {
       const xml = Buffer.from(context.payload.xunitXML, 'base64').toString();
-      failures = buildcop.findFailures(xml);
+      results = buildcop.findTestResults(xml);
     } else {
       if (context.payload.testsFailed === undefined) {
         context.log.info(
@@ -79,9 +84,9 @@ export function buildcop(app: Application) {
         return;
       }
       if (context.payload.testsFailed) {
-        failures = [{}]; // A single failure indicates the whole build failed.
+        results = { passes: [], failures: [{}] }; // A single failure is used to indicate the whole build failed.
       } else {
-        failures = []; // Tests passed, meaning there were no failures.
+        results = { passes: [], failures: [] }; // Tests passed.
       }
     }
 
@@ -99,7 +104,7 @@ export function buildcop(app: Application) {
 
       // Open issues for failing tests.
       await buildcop.openIssues(
-        failures,
+        results.failures,
         issues,
         context,
         owner,
@@ -109,7 +114,7 @@ export function buildcop(app: Application) {
       );
       // Close issues for passing tests.
       await buildcop.closeIssues(
-        failures,
+        results,
         issues,
         context,
         owner,
@@ -126,7 +131,7 @@ export function buildcop(app: Application) {
 
 // For every failure, check if an issue is open. If not, open/reopen one.
 buildcop.openIssues = async (
-  failures: TestFailure[],
+  failures: TestCase[],
   issues: Octokit.IssuesListForRepoResponseItem[],
   context: PubSubContext,
   owner: string,
@@ -146,7 +151,7 @@ buildcop.openIssues = async (
       if (issue.title === EVERYTHING_FAILED_TITLE) {
         return issue.state === 'open';
       }
-      return issue.title === buildcop.formatFailure(failure);
+      return issue.title === buildcop.formatTestCase(failure);
     });
     if (existingIssue) {
       context.log.info(
@@ -176,7 +181,7 @@ buildcop.openIssues = async (
         await context.github.issues.create({
           owner,
           repo,
-          title: buildcop.formatFailure(failure),
+          title: buildcop.formatTestCase(failure),
           body: buildcop.formatBody(failure, buildID, buildURL),
           labels: LABELS.split(',').concat(BUILDCOP_LABELS.split(',')),
         })
@@ -186,10 +191,10 @@ buildcop.openIssues = async (
   }
 };
 
-// For every buildcop issue, if it's not in the failures and it didn't
-// previously fail in the same build, close it.
+// For every buildcop issue, if it passed and it didn't previously fail in the
+// same build, close it.
 buildcop.closeIssues = async (
-  failures: TestFailure[],
+  results: TestResults,
   issues: Octokit.IssuesListForRepoResponseItem[],
   context: PubSubContext,
   owner: string,
@@ -201,11 +206,19 @@ buildcop.closeIssues = async (
     if (issue.state === 'closed') {
       continue;
     }
-    const failure = failures.find(failure => {
-      return issue.title === buildcop.formatFailure(failure);
+    const failure = results.failures.find(failure => {
+      return issue.title === buildcop.formatTestCase(failure);
     });
     // If the test failed, don't close its issue.
     if (failure) {
+      continue;
+    }
+
+    const pass = results.passes.find(pass => {
+      return issue.title === buildcop.formatTestCase(pass);
+    });
+    // If the test did not pass, don't close its issue.
+    if (!pass) {
       continue;
     }
 
@@ -252,11 +265,11 @@ buildcop.closeIssues = async (
 };
 
 buildcop.formatBody = (
-  failure: TestFailure,
+  failure: TestCase,
   buildID: string,
   buildURL: string
 ): string => {
-  const failureText = buildcop.formatFailure(failure);
+  const failureText = buildcop.formatTestCase(failure);
   return `${failureText}\nbuildID: ${buildID}\nbuildURL: ${buildURL}\nstatus: failed`;
 };
 
@@ -266,7 +279,7 @@ buildcop.containsBuildFailure = (text: string, buildID: string): boolean => {
   );
 };
 
-buildcop.formatFailure = (failure: TestFailure): string => {
+buildcop.formatTestCase = (failure: TestCase): string => {
   if (!failure.package || !failure.testCase) {
     return EVERYTHING_FAILED_TITLE;
   }
@@ -278,40 +291,44 @@ buildcop.formatFailure = (failure: TestFailure): string => {
   return `${pkg}: ${failure.testCase} failed`;
 };
 
-buildcop.findFailures = (xml: string): TestFailure[] => {
-  const obj = xmljs.xml2js(xml);
-  const failures: TestFailure[] = [];
-  for (const suites of obj.elements) {
-    if (suites.name !== 'testsuites') {
-      continue;
+buildcop.findTestResults = (xml: string): TestResults => {
+  const obj = xmljs.xml2js(xml, { compact: true }) as xmljs.ElementCompact;
+  const failures: TestCase[] = [];
+  const passes: TestCase[] = [];
+  // Python doesn't always have a top-level testsuites element.
+  let testsuites = obj['testsuite'];
+  if (testsuites === undefined) {
+    testsuites = obj['testsuites']['testsuite'];
+  }
+  // If there is only one test suite, put it into an array to make it iterable.
+  if (!Array.isArray(testsuites)) {
+    testsuites = [testsuites];
+  }
+  for (const suite of testsuites) {
+    const testsuiteName = suite['_attributes'].name;
+    let testcases = suite['testcase'];
+    // If there is only one test case, put it into an array to make it iterable.
+    if (!Array.isArray(testcases)) {
+      testcases = [testcases];
     }
-    for (const suite of suites.elements) {
-      if (suite.name !== 'testsuite') {
+    for (const testcase of testcases) {
+      let pkg = testsuiteName;
+      if (testsuiteName === 'pytest') {
+        pkg = testcase['_attributes'].classname;
+      }
+      const failure = testcase['failure'];
+      if (failure === undefined) {
+        passes.push({
+          package: pkg,
+          testCase: testcase['_attributes'].name,
+        });
         continue;
       }
-      const testsuiteName = suite.attributes.name;
-      for (const testcase of suite.elements) {
-        if (testcase.name !== 'testcase') {
-          continue;
-        }
-        if (testcase.elements === undefined) {
-          continue;
-        }
-        for (const failure of testcase.elements) {
-          // The testcase elements include skipped tests. Ensure we have a
-          // failure.
-          if (failure.name !== 'failure') {
-            continue;
-          }
-          failures.push({
-            package: testsuiteName,
-            testCase: testcase.attributes.name,
-          });
-          break;
-        }
-        // console.log(JSON.stringify(testcase, null, 2));
-      }
+      failures.push({
+        package: pkg,
+        testCase: testcase['_attributes'].name,
+      });
     }
   }
-  return failures;
+  return { passes, failures };
 };
