@@ -38,26 +38,32 @@ interface Repos {
   ];
 }
 
-interface GetApiLabelsResponse {
-  apis: Array<{
-    display_name: string; // Access Approval
-    github_label: string; // api: accessapproval
-    api_shortname: string; // accessapproval
-  }>;
-}
-
 // Labels are fetched by reaching out to GitHub *instead* of grabbing the file
 // from the local copy.  We are using the `PushEvent` to detect the change,
 // meaning the file running in cloud will be older than the one on master.
 let labelsCache: Labels;
-async function getLabels(github: GitHubAPI) {
+async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
   if (!labelsCache) {
-    await refreshLabels(github);
+    await refreshLabels(github, repoPath);
   }
-  return labelsCache;
+  const labels = {
+    labels: labelsCache.labels.slice(0),
+  } as Labels;
+  const apiLabelsRes = await handler.getApiLabels(repoPath);
+  apiLabelsRes.apis.forEach(api => {
+    labels.labels.push({
+      name: api.github_label,
+      description: `Issues related to the ${api.display_name} API.`,
+      color: createHash('md5')
+        .update(api.api_shortname)
+        .digest('hex')
+        .slice(0, 6),
+    });
+  });
+  return labels;
 }
 
-async function refreshLabels(github: GitHubAPI) {
+async function refreshLabels(github: GitHubAPI, repoPath: string) {
   const data = (
     await github.repos.getContents({
       owner: 'googleapis',
@@ -68,18 +74,6 @@ async function refreshLabels(github: GitHubAPI) {
   labelsCache = JSON.parse(
     Buffer.from(data.content as string, 'base64').toString('utf8')
   );
-
-  const apiLabelsRes = await handler.getApiLabels();
-  apiLabelsRes.apis.forEach(api => {
-    labelsCache.labels.push({
-      name: api.github_label,
-      description: `Issues related to the ${api.display_name} API.`,
-      color: createHash('md5')
-        .update(api.api_shortname)
-        .digest('hex')
-        .slice(0, 6),
-    });
-  });
 }
 
 function handler(app: Application) {
@@ -103,33 +97,76 @@ function handler(app: Application) {
       repo === 'repo-automation-bots' &&
       context.payload.ref === 'refs/heads/master'
     ) {
-      await refreshLabels(context.github);
+      await refreshLabels(context.github, `${owner}/${repo}`);
       const url =
         'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
       const res = await request<Repos>({ url });
       const { repos } = res.data;
-      await Promise.all(
-        repos.map(r => {
-          const [owner, repo] = r.repo.split('/');
-          return reconcileLabels(context.github, owner, repo);
-        })
-      );
+      for (const r of repos) {
+        const [owner, repo] = r.repo.split('/');
+        await reconcileLabels(context.github, owner, repo);
+      }
     }
   });
 }
 
-handler.getApiLabels = async (): Promise<GetApiLabelsResponse> => {
-  const data = await storage
+interface GetApiLabelsResponse {
+  apis: Array<{
+    display_name: string; // Access Approval
+    github_label: string; // api: accessapproval
+    api_shortname: string; // accessapproval
+  }>;
+}
+
+interface PublicReposResponse {
+  repos: Array<{
+    repo: string;
+    github_label: string;
+  }>;
+}
+
+handler.getApiLabels = async (
+  repoPath: string
+): Promise<GetApiLabelsResponse> => {
+  const publicRepos = await storage
     .bucket('devrel-prod-settings')
-    .file('apis.json')
+    .file('public_repos.json')
     .download();
-  return JSON.parse(data[0].toString()) as GetApiLabelsResponse;
+  const repo = (JSON.parse(
+    publicRepos[0].toString()
+  ) as PublicReposResponse).repos.find(repo => {
+    return repo.repo === repoPath && repo.github_label !== '';
+  });
+
+  if (repo) {
+    // for split-repos we populate only the label associated with the
+    // product the repo is associated with:
+    console.log(`populating ${repo.github_label} label for ${repoPath}`);
+    return {
+      apis: [
+        {
+          github_label: repo.github_label,
+          api_shortname: repoPath.split('/')[1],
+          display_name: repoPath,
+        },
+      ],
+    };
+  } else {
+    // for mono-repos we populate a list of all apis and products,
+    // since each repo might include multiple products:
+    console.log(`populating all api labels for ${repoPath}`);
+    const apis = await storage
+      .bucket('devrel-prod-settings')
+      .file('apis.json')
+      .download();
+    return JSON.parse(apis[0].toString()) as GetApiLabelsResponse;
+  }
 };
 
 export = handler;
 
 async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
-  const newLabels = await getLabels(github);
+  const newLabels = await getLabels(github, `${owner}/${repo}`);
   const res = await github.issues.listLabelsForRepo({
     owner,
     repo,
