@@ -15,7 +15,7 @@
  */
 
 import { buildcop, BuildCopPayload } from '../src/buildcop';
-const { findFailures, formatFailure } = buildcop;
+const { findTestResults, formatTestCase } = buildcop;
 
 import { resolve } from 'path';
 import { Probot } from 'probot';
@@ -55,20 +55,36 @@ describe('buildcop', () => {
     probot.load(buildcop);
   });
 
-  describe('findFailures', () => {
+  describe('findTestResults', () => {
     it('finds one failure', () => {
       const input = fs.readFileSync(
         resolve(fixturesPath, 'testdata', 'one_failed.xml'),
         'utf8'
       );
-      const failures = findFailures(input);
-      expect(failures).to.eql([
-        {
-          package:
-            'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
-          testCase: 'TestSample',
-        },
-      ]);
+      const results = findTestResults(input);
+      expect(results).to.eql({
+        failures: [
+          {
+            package:
+              'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+            testCase: 'TestSample',
+          },
+        ],
+        passes: [
+          {
+            package: 'github.com/GoogleCloudPlatform/golang-samples',
+            testCase: 'TestBadFiles',
+          },
+          {
+            package: 'github.com/GoogleCloudPlatform/golang-samples',
+            testCase: 'TestLicense',
+          },
+          {
+            package: 'github.com/GoogleCloudPlatform/golang-samples',
+            testCase: 'TestRegionTags',
+          },
+        ],
+      });
     });
 
     it('finds many failures in one package', () => {
@@ -76,24 +92,37 @@ describe('buildcop', () => {
         resolve(fixturesPath, 'testdata', 'many_failed_same_pkg.xml'),
         'utf8'
       );
-      const failures = findFailures(input);
-      expect(failures).to.eql([
-        {
-          package:
-            'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
-          testCase: 'TestBucketLock',
-        },
-        {
-          package:
-            'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
-          testCase: 'TestUniformBucketLevelAccess',
-        },
-        {
-          package:
-            'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
-          testCase: 'TestDelete',
-        },
-      ]);
+      const results = findTestResults(input);
+      expect(results).to.eql({
+        failures: [
+          {
+            package:
+              'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
+            testCase: 'TestBucketLock',
+          },
+          {
+            package:
+              'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
+            testCase: 'TestUniformBucketLevelAccess',
+          },
+        ],
+        passes: [
+          {
+            package: 'github.com/GoogleCloudPlatform/golang-samples',
+            testCase: 'TestBadFiles',
+          },
+          {
+            package:
+              'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
+            testCase: 'TestCreate',
+          },
+          {
+            package:
+              'github.com/GoogleCloudPlatform/golang-samples/storage/gcsupload',
+            testCase: 'TestUpload',
+          },
+        ],
+      });
     });
 
     it('finds no failures in a successful log', () => {
@@ -101,8 +130,21 @@ describe('buildcop', () => {
         resolve(fixturesPath, 'testdata', 'passed.xml'),
         'utf8'
       );
-      const failures = findFailures(input);
-      expect(failures).to.eql([]);
+      const results = findTestResults(input);
+      expect(results).to.eql({
+        failures: [],
+        passes: [
+          {
+            package: 'github.com/GoogleCloudPlatform/golang-samples',
+            testCase: 'TestBadFiles',
+          },
+          {
+            package:
+              'github.com/GoogleCloudPlatform/golang-samples/appengine/go11x/helloworld',
+            testCase: 'TestIndexHandler',
+          },
+        ],
+      });
     });
   });
 
@@ -164,7 +206,7 @@ describe('buildcop', () => {
           )
           .reply(200, [
             {
-              title: formatFailure({}),
+              title: formatTestCase({}),
               number: 16,
               body: 'Failure!',
               state: 'closed',
@@ -197,7 +239,7 @@ describe('buildcop', () => {
           )
           .reply(200, [
             {
-              title: formatFailure({}),
+              title: formatTestCase({}),
               number: 16,
               body: 'Failure!',
               state: 'open',
@@ -216,7 +258,7 @@ describe('buildcop', () => {
     });
 
     describe('xunitXML', () => {
-      it('opens an issue', async () => {
+      it('opens an issue [Go]', async () => {
         const input = fs.readFileSync(
           resolve(fixturesPath, 'testdata', 'one_failed.xml'),
           'utf8'
@@ -236,6 +278,35 @@ describe('buildcop', () => {
           )
           .reply(200, [])
           .post('/repos/tbpg/golang-samples/issues', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200);
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        requests.done();
+      });
+      it('opens an issue [Python]', async () => {
+        const input = fs.readFileSync(
+          resolve(fixturesPath, 'testdata', 'python_one_failed.xml'),
+          'utf8'
+        );
+        const payload = formatPayload({
+          repo: 'tbpg/python-docs-samples',
+          organization: { login: 'tbpg' },
+          repository: { name: 'python-docs-samples' },
+          buildID: '123',
+          buildURL: 'http://example.com',
+          xunitXML: input,
+        });
+
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/tbpg/python-docs-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+          )
+          .reply(200, [])
+          .post('/repos/tbpg/python-docs-samples/issues', body => {
             snapshot(body);
             return true;
           })
@@ -266,7 +337,7 @@ describe('buildcop', () => {
           )
           .reply(200, [
             {
-              title: formatFailure({
+              title: formatTestCase({
                 package:
                   'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
                 testCase: 'TestSample',
@@ -307,7 +378,7 @@ describe('buildcop', () => {
           )
           .reply(200, [
             {
-              title: formatFailure({
+              title: formatTestCase({
                 package:
                   'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
                 testCase: 'TestSample',
@@ -333,7 +404,7 @@ describe('buildcop', () => {
         requests.done();
       });
 
-      it('closes an issue for a passing test', async () => {
+      it('closes an issue for a passing test [Go]', async () => {
         const input = fs.readFileSync(
           resolve(fixturesPath, 'testdata', 'passed.xml'),
           'utf8'
@@ -353,10 +424,9 @@ describe('buildcop', () => {
           )
           .reply(200, [
             {
-              title: formatFailure({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
-                testCase: 'TestSample',
+              title: formatTestCase({
+                package: 'github.com/GoogleCloudPlatform/golang-samples',
+                testCase: 'TestBadFiles',
               }),
               number: 16,
               body: 'Failure!',
@@ -374,6 +444,87 @@ describe('buildcop', () => {
             return true;
           })
           .reply(200);
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        requests.done();
+      });
+
+      it('closes an issue for a passing test [Python]', async () => {
+        const input = fs.readFileSync(
+          resolve(fixturesPath, 'testdata', 'python_one_passed.xml'),
+          'utf8'
+        );
+        const payload = formatPayload({
+          repo: 'tbpg/python-docs-samples',
+          organization: { login: 'tbpg' },
+          repository: { name: 'python-docs-samples' },
+          buildID: '123',
+          buildURL: 'http://example.com',
+          xunitXML: input,
+        });
+
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/tbpg/python-docs-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+          )
+          .reply(200, [
+            {
+              title: formatTestCase({
+                package: 'appengine.standard.app_identity.asserting.main_test',
+                testCase: 'test_app',
+              }),
+              number: 16,
+              body: 'Failure!',
+            },
+          ])
+          .post('/repos/tbpg/python-docs-samples/issues/16/comments', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200)
+          .get('/repos/tbpg/python-docs-samples/issues/16/comments')
+          .reply(200, [])
+          .patch('/repos/tbpg/python-docs-samples/issues/16', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200);
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        requests.done();
+      });
+
+      it('does not close an issue that did not explicitly pass', async () => {
+        const input = fs.readFileSync(
+          resolve(fixturesPath, 'testdata', 'passed.xml'),
+          'utf8'
+        );
+        const payload = formatPayload({
+          repo: 'tbpg/golang-samples',
+          organization: { login: 'tbpg' },
+          repository: { name: 'golang-samples' },
+          buildID: '123',
+          buildURL: 'http://example.com',
+          xunitXML: input,
+        });
+
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+          )
+          .reply(200, [
+            {
+              title: formatTestCase({
+                package:
+                  'github.com/GoogleCloudPlatform/golang-samples/fake/test',
+                testCase: 'TestFake',
+              }),
+              number: 16,
+              body: 'Failure!',
+            },
+          ]);
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
@@ -400,10 +551,9 @@ describe('buildcop', () => {
           )
           .reply(200, [
             {
-              title: formatFailure({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
-                testCase: 'TestSample',
+              title: formatTestCase({
+                package: 'github.com/GoogleCloudPlatform/golang-samples',
+                testCase: 'TestBadFiles',
               }),
               number: 16,
               body: 'Failure!',
@@ -441,7 +591,7 @@ describe('buildcop', () => {
           )
           .reply(200, [
             {
-              title: formatFailure({
+              title: formatTestCase({
                 package:
                   'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
                 testCase: 'TestSample',
@@ -476,7 +626,7 @@ describe('buildcop', () => {
           )
           .reply(200, [
             {
-              title: formatFailure({
+              title: formatTestCase({
                 package:
                   'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
                 testCase: 'TestSample',
@@ -486,11 +636,6 @@ describe('buildcop', () => {
               state: 'closed',
             },
           ])
-          .post('/repos/tbpg/golang-samples/issues', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200)
           .post('/repos/tbpg/golang-samples/issues', body => {
             snapshot(body);
             return true;
