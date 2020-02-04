@@ -41,7 +41,8 @@ jobs:
           node-version: 12
       - run: npm install
       - run: npm test
-      - run: npm run coverage
+      - run: npm i codecov
+      - run: ./node_modules/.bin/codecov
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
