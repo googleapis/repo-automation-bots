@@ -42,7 +42,7 @@ jobs:
       - run: npm install
       - run: npm test
       - run: npm i codecov
-      - run: ./node_modules/.bin/codecov
+      - run: ./node_modules/.bin/c8 report --reporter=text-lcov | ./node_modules/.bin/codecov --pipe
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
