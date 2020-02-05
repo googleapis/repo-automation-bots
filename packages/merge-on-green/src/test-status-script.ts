@@ -1,3 +1,4 @@
+ 
 /**
  * Copyright 2020 Google LLC. All Rights Reserved.
  *
@@ -21,237 +22,240 @@ const dotenv = require("dotenv")
 
 
 
-const oktokit = new Octokit({
+const octokit = new Octokit({
     auth() {
-      return "token "+process.env.SECRET_TOKEN;
-    }
+      return //fill inm with token;
+    
    });
 
-// type Element = {
-//     conclusion: string; 
-//     name: string; 
-//     status: string;
-// }
-
-async function getLatestCommit() {
-    const data = await oktokit.checks.get({
-        owner: 'sofisl', //this will be filled in by context of payload, i.e., context.payload.repository.owner.login
-        repo: 'mergeOnGreenTest', //this will be filled in by context of payload, i.e., context.payload.repository.name
-        check_run_id: '396210100' //what we're listening for
-    })
-
-    //console.log(data);
-
-    // console.log("commit num: "+data.data.head_sha);
-            return data.data.head_sha;
-}
-
-async function getPR() {
-    const data = await oktokit.checks.get({
-        owner: 'sofisl', //this will be filled in by context of payload, i.e., context.payload.repository.owner.login
-        repo: 'mergeOnGreenTest', //this will be filled in by context of payload, i.e., context.payload.repository.name
-        check_run_id: '396210100' //what we're listening for
-    })
-
-            return data.data.pull_requests[0].number;
-}
-
-
-
-async function checkRuns() {
-          const head_sha = await getLatestCommit();
-          const data = await oktokit.checks.listForRef({
-              owner: 'sofisl',
-              repo: 'mergeOnGreenTest',
-              ref: '45a88ef9f356c30d211c08ced9524dbe76a14ee8'
-            });
-           const check_runs = data.data.check_runs;
-           //console.log(check_runs);
-           return check_runs;
+    async function getLatestCommit() {
+        try {
+        const data = await octokit.pulls.listCommits({
+            owner: 'sofisl', //this will be filled in by context of payload, i.e., context.payload.repository.owner.login
+            repo: 'mergeOnGreenTest', //this will be filled in by context of payload, i.e., context.payload.repository.name
+            pull_number: '45', //what we're listening for,
+            per_page: 100,
+            page: 1     
+        })
+        return (data.data[(data.data.length)-1]);
+    } catch(err) {
+            return null;
         }
-let testCount = 0;
-
-async function checkStatusOfCheckRuns(testCount, callback) {    
-        const check_runs_array = await checkRuns();
-        let statusChecksDone = 'success';
-        //create a branch that checks back if any status is not completed
-        if (check_runs_array) {
-            check_runs_array.forEach(element => {
-                // console.log(element)
-                if(element.conclusion != 'success') {
-                    statusChecksDone = 'failed';
-                    return statusChecksDone;
-                }
-                if(element.status != 'completed') {
-                    testCount++;
-                    if(testCount===0) {
-                        console.log('still waiting on tests 1');
-                        testCount++;
-                        statusChecksDone = 'pending';
-                        setTimeout(function() {checkStatusOfCheckRuns(testCount), function() {console.log('hello')}}, 600);   
-                    } else if (testCount ===1) {
-                        console.log('still waiting on tests 2');
-                        testCount++;
-                        statusChecksDone = 'pending';
-                        setTimeout(function() {checkStatusOfCheckRuns(testCount), function() {console.log('hello')}}, 1800);
-                    } else if (testCount ===2) {
-                        console.log('still waiting on tests 3');
-                        testCount++;
-                        statusChecksDone = 'pending';
-                        setTimeout(function() {checkStatusOfCheckRuns(testCount), function() {console.log('hello')}}, 300000);
-                    } else if (testCount === 3|| testCount === 4) {
-                        console.log('still waiting on tests 4');
-                        testCount++;
-                        statusChecksDone = 'pending';
-                        setTimeout(function() {checkStatusOfCheckRuns(testCount), function() {console.log('hello')}}, 6000);
-                    } else {
-                        statusChecksDone = 'failed';
-                    }
-                 }        
-                 
-            })
-        }
-        callback(statusChecksDone);
-        //return statusChecksDone;
-        
-    }   
-
-
-    async function getRequiredReviews(reviewCount, callback) {
-        let reviewsDone = 'success';
-        const reviewsCompleted = await oktokit.pulls.listReviews({
-        owner: 'sofisl',
-        repo: 'mergeOnGreenTest',
-        pull_number: 45
-      })
-       console.log("A ");
-    //   console.log(reviewsCompleted);
-
-      const reviewsRequested = await oktokit.pulls.listReviewRequests({
-        owner: 'sofisl',
-        repo: 'mergeOnGreenTest',
-        pull_number: 45
-      })
-      console.log("B ");
-    //   console.log(reviewsRequested);
-    //   console.log('data');
-    //   console.log(reviewsRequested.data);
-      const reviewsCompletedArray = reviewsCompleted.data;
-      const reviewsRequestedArrayUsers = reviewsRequested.data.users;
-      const reviewsRequestedArrayTeams = reviewsRequested.data.teams;
-    //   console.log(reviewsRequestedArrayTeams.length);
-    //   console.log(reviewsRequestedArrayUsers.length);
-
-
-    //   console.log("a "+reviewsCompleted);
-    //  console.log("b "+reviewsRequested);
-      if (reviewsCompletedArray) {
-          console.log('c');
-          reviewsCompletedArray.forEach(element => {
-              console.log('e');
-              if(element.state != 'APPROVED') { 
-                console.log('d');
-                  reviewsDone = 'failed';
-              } 
-          })
-      }
-
-
-      if ((reviewsRequestedArrayUsers.length !=0 || reviewsRequestedArrayTeams.length !=0) && reviewCount < 24) {
-          console.log('f');
-            reviewsDone = 'pending';    //check back every 2 hours
-            reviewCount++;
-            setTimeout(function() {getRequiredReviews(reviewCount, function() {console.log('hello')})}, 720)    
-        } else if (reviewCount >= 24 ) {
-            console.log('g');
-            reviewsDone = 'failed';
-        }
-
-        console.log(reviewsDone);
-        callback(reviewsDone);
-       // return reviewsDone; 
     }
 
 
 
+async function getMOGLabel() {    
+    let isMOG = false;
+    try {
+    const labels = await octokit.issues.listLabelsOnIssue({
+        owner: 'sofisl',
+        repo: 'mergeOnGreenTest',
+        issue_number: 44
+    })
+    const labelArray = labels.data;
+    if (labelArray) {
+    labelArray.forEach(element => {
+        if(element.name === 'merge-on-green ready') {
+            isMOG = true;
+        } else {
+            isMOG = false;
+        }
+    })
+    }
+    //console.log(isMOG);
+    return isMOG;
+    } catch(err) {
+        return null;
+    } 
+}
 
-
-    async function getMOGLabel() {    
-        let isMOG = false;
-        const pr = await getPR();
-        const labels = await oktokit.issues.listLabelsOnIssue({
+async function getStatusi() {
+    try {
+        const data = await octokit.repos.listStatusesForRef({
             owner: 'sofisl',
             repo: 'mergeOnGreenTest',
-            issue_number: pr
-        })
-        const labelArray = labels.data;
-        if (labelArray) {
-        labelArray.forEach(element => {
-            if(element.name === 'merge-on-green ready') {
-                isMOG = true;
-            } else {
-                isMOG = false;
+          ref: '61a26441d1bb24f14b560fb3d019528457c8bfd6', //head_sha
+          per_page: 100
+     }); 
+        return data.data;
+    } catch(err) {
+        return null;
+    }
+}
+
+async function getSuites() {
+    try {
+    const check_suites = await octokit.checks.listSuitesForRef({
+        owner: 'sofisl',
+        repo: 'mergeOnGreenTest',
+        ref: '61a26441d1bb24f14b560fb3d019528457c8bfd6',
+        per_page: 100
+    })
+    return check_suites.data.check_suites;
+} catch(err) {
+    return null;
+}
+}
+
+async function getRuns() {
+    try {
+        const check_runs = await octokit.checks.listForRef({
+            owner: 'sofisl',
+        repo: 'mergeOnGreenTest',
+        ref: '61a26441d1bb24f14b560fb3d019528457c8bfd6',
+        per_page: 100
+          })
+          return check_runs.data.check_runs;
+    } catch(err) {
+        return null;
+    }
+}
+
+function checkForRequiredSC(checkSuitesOrRuns, check) {
+    let mergeable = false;
+    if (checkSuitesOrRuns != null) {
+    let checkSuiteorRunCompleted = checkSuitesOrRuns.find(element => element.name === check)
+        if (checkSuiteorRunCompleted!= undefined && checkSuiteorRunCompleted.conclusion ==='success') {
+            mergeable = true;
+            return mergeable;
+        }     
+    }
+    return mergeable;
+}
+
+const requiredChecks = ['alwaysGreen'];
+
+async function statusesForRef() {
+          const head_sha = await getLatestCommit();
+          const mogLabel = true;
+          //await getMOGLabel();
+          const checkStatus = await getStatusi();
+          let mergeable = true;
+           if (checkStatus != null && head_sha != null && requiredChecks != null && (mogLabel != false || mogLabel != null)) {
+            for (let check of requiredChecks) {
+                //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
+                let checkCompleted = checkStatus.find(element => element.context === check)
+                if(checkCompleted === undefined) {
+                        //if we can't find it in the statuses, let's check under check_suites
+                        let checkSuites = await getSuites();
+                        mergeable = checkForRequiredSC(checkSuites, check);
+                        //if we can't find it in the suites, let's check under check_runs
+                        if (!mergeable) {
+                            let checkRuns = await getRuns();
+                            mergeable = checkForRequiredSC(checkRuns, check);
+                            if (!mergeable) {
+                                return mergeable;     
+                            }
+                        }                  
+                } else if(checkCompleted.state != 'success') {
+                    mergeable = false;
+                    return mergeable;
+                } 
             }
-        })
         }
-        console.log(isMOG);
-        return isMOG;
-    }  
+        console.log(mergeable);
+        return mergeable;
+}
 
-    
-    
-    
-    //let reviewCount = 0;
-    // async function recursiveChecks() {  
-    //     let reviewsPassed;
-    //     let reviews = await getRequiredReviews(reviewCount);
-    //     if (reviews === 'pending') {
-    //         reviewCount++;
-    //         setTimeout(function() {
-    //             recursiveChecks() }, 720);
-    //     } else {
-    //         if (reviews === 'success') {
-    //             reviewsPassed = true;
-    //         } else {
-    //             reviewsPassed = false;
-    //         }
-    //     }
-    //     return reviewsPassed;
-    // }
-
-   function getStatusChecks(trivalue) {
-        //reviewsPassed = await getRequiredReviews(reviewCount);
-        // console.log(reviewsPassed);
-        // console.log('start status checks');
-        //checks = await checkStatusOfCheckRuns(testCount);
-        //make sure to check that required status checks have passed
-        
-        if (triValue === 'success') {
-            return true;
-        } else if (triValue === 'failed') {
-            return false;
-        }
+ async function getReviewsCompleted() {
+    try {    
+        const reviewsCompleted = await octokit.pulls.listReviews({
+        owner: 'sofisl',
+        repo: 'mergeOnGreenTest',
+        pull_number: 44
+      })
+      return reviewsCompleted.data;
+    } catch(err) {
+        return null;
     }
-    function getBoolean(firstValue, secondValue) {
-        if (firstValue && secondValue) {
-            console.log('pass check status');
-        }
+}
+
+async function getReviewsRequested() {
+    try {    
+        const reviewsRequested = await octokit.pulls.listReviewRequests({
+            owner: 'sofisl',
+            repo: 'mergeOnGreenTest',
+            pull_number: 44
+          })
+      return reviewsRequested.data;
+    } catch(err) {
+        return null;
     }
-
-getBoolean(getRequiredReviews(0, getStatusChecks), checkStatusOfCheckRuns(0, getStatusChecks))
-
-    
+}
 
 
-    // function printMessage() {
-    //     console.log("still waiting on reviews");
-    // }
+async function checkReviews() {
+    let reviewsPassed = true;
+        const reviewsCompleted = await getReviewsCompleted();
+        const reviewsRequested = await getReviewsRequested(); 
 
-    
-    //checkStatusOfCheckRuns();
+        if (reviewsCompleted != null) {
+            for (const review in reviewsCompleted) {
+                if (review.state != 'APPROVED'){
+                    //so, if someone comments we will not merge the PR. Is that the right logic? or should we submit as a check-back?
+                    reviewsPassed = false;
+                } 
+            } 
+          } else {
+            if (reviewsRequested != null && (reviewsRequested.users.length != 0 || reviewsRequested.teams.length != 0)) {
+                reviewsPassed = false;
+                return reviewsPassed;
+            }
+        }
+    return reviewsPassed;  
+}
 
-//TODO: make sure we check for merge-on-green label before passing the test
-//TODO: Write logic to check back if tests are not completed
-//TODO: Check for required code reviews
-//DECIDE: do we want to listen to PRs or check runs?
-//TODO: console log 'would have merged' based on pass of status check
+//checkReviews('success');
+
+
+async function merge() {
+    try {
+    const merge = octokit.pulls.merge({
+        owner: 'sofisl',
+        repo: 'mergeOnGreenTest',
+        pull_number: 45
+    })
+    return merge;
+   } catch(err) {
+        return null;
+   }
+}
+
+async function createParam() {
+    try {
+    const checkParams = octokit.checks.create({
+        owner: 'sofisl',
+        repo: 'mergeOnGreenTest',
+        name: 'merge-on-green_readiness', 
+        head_sha: '61a26441d1bb24f14b560fb3d019528457c8bfd6',
+        status: 'completed',
+        conclusion: 'failure',
+        output: {
+            title: 'Your PR was not mergeable.',
+            summary: 'Check your required status checks or requested reviews for failures.',
+            text:
+              'Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved.' +
+              'Please fix your mistakes, and merge-on-green will run again to attempt to merge it automatically.' 
+          },
+    })
+} catch(err){
+    return null;
+}
+}
+
+async function finalize() {
+    let checkReview = await checkReviews();
+    let checkStatus = await statusesForRef();
+    if (checkReview === true && checkStatus === true) {
+        merge();
+        //TODO: if merge is unsuccessful, tell the user
+    } else  {
+        console.log('FINAL: failed');
+    }
+}
+finalize();
+
+//TODO: Get config file
+//TODO: squash merge commit
+
