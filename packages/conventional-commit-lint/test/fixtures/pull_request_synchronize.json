@@ -12,7 +12,7 @@
     "number": 11,
     "state": "open",
     "locked": false,
-    "title": "blerg!: this is a conventional commit",
+    "title": "blerg!: This is a conventional commit",
     "user": {
       "login": "bcoe",
       "id": 194609,
