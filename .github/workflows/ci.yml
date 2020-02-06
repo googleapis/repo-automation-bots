@@ -3,6 +3,7 @@ on:
     branches:
       - master
   pull_request:
+    branches:
       - *
 name: ci
 jobs:
