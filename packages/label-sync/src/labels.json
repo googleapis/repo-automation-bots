@@ -1,6 +1,11 @@
 {
   "labels": [
     {
+      "name": "automerge",
+      "description": "Merge the pull request once unit tests and other checks pass.",
+      "color": "00ff00"
+    },
+    {
       "name": "status: blocked",
       "description": "Resolving the issue is dependent on other work.",
       "color": "f9d0c4"
