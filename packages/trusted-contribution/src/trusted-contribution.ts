@@ -13,26 +13,22 @@
 // limitations under the License.
 
 import { Application } from 'probot';
-import {
-  ChecksCreateParams,
-  PullsListFilesResponse,
-  PullsListFilesResponseItem,
-  Response,
-} from '@octokit/rest';
 
-type Conclusion =
-  | 'success'
-  | 'failure'
-  | 'neutral'
-  | 'cancelled'
-  | 'timed_out'
-  | 'action_required'
-  | undefined;
+interface ConfigurationOptions {
+  trustedContributors?: string[];
+}
 
-// TODO: add this to a configuration file to be extended per repository.
-const TRUSTED_CONTRIBUTORS = ['renovate-bot', 'release-please[bot]'];
-function isTrustedContribution(author: string): boolean {
-  return TRUSTED_CONTRIBUTORS.includes(author);
+const WELL_KNOWN_CONFIGURATION_FILE = 'trusted-contribution.yml';
+const DEFAULT_CONFIGURATION: ConfigurationOptions = {};
+const DEFAULT_TRUSTED_CONTRIBUTORS = ['renovate-bot', 'release-please[bot]'];
+
+function isTrustedContribution(
+  config: ConfigurationOptions,
+  author: string
+): boolean {
+  const trustedContributors =
+    config.trustedContributors || DEFAULT_TRUSTED_CONTRIBUTORS;
+  return trustedContributors.includes(author);
 }
 
 export = (app: Application) => {
@@ -52,8 +48,12 @@ export = (app: Application) => {
     async context => {
       const PR_AUTHOR = context.payload.pull_request.user.login;
 
+      const remoteConfiguration =
+        (await context.config(WELL_KNOWN_CONFIGURATION_FILE)) ||
+        (DEFAULT_CONFIGURATION as ConfigurationOptions);
+
       // TODO: add additional verification that only dependency version changes occurred.
-      if (isTrustedContribution(PR_AUTHOR)) {
+      if (isTrustedContribution(remoteConfiguration, PR_AUTHOR)) {
         const issuesAddLabelsParams = context.repo({
           issue_number: context.payload.pull_request.number,
           labels: ['kokoro:run'],
