@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^4.3.0",
-    "@octokit/rest": "16.41.2",
+    "@octokit/rest": "16.43.1",
     "gaxios": "^2.1.0",
     "gcf-utils": "1.6.1",
     "probot": "9.9.4"
