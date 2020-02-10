@@ -31,7 +31,7 @@
     "@commitlint/config-conventional": "^8.1.0",
     "@commitlint/lint": "^8.0.0",
     "gcf-utils": "1.6.1",
-    "probot": "9.9.1",
+    "probot": "9.9.4",
     "@octokit/rest": "16.41.2"
   },
   "devDependencies": {
