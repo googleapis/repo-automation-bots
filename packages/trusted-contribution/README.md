@@ -12,7 +12,18 @@ npm install
 npm start
 ```
 
+### Configuration
+
+To configure the bot, you can create a configuration file:
+`.github/trusted-contribution.yml`. The contents of this file allow for the following
+options:
+
+| Name | Description | Type | Default |
+|----- | ----------- | ---- | ------- |
+| `trustedContributors` | List of user login names that are considered trusted  | `string[]` | `['renovate-bot', 'release-please[bot]']` |
+
 ## Deployment and Permissions
+
 ### Repository permissions
 - metadata - read
 - pull requests - read & write
