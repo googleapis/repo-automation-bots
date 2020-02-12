@@ -15,9 +15,8 @@
  */
 
 import { Application } from 'probot';
-import { GitHubAPI } from 'probot/lib/github';
-import { PullsListCommitsResponseItem, Response } from '@octokit/rest';
 import {Datastore} from '@google-cloud/datastore';
+import { mergeOnGreen } from './merge-logic';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
@@ -31,7 +30,8 @@ interface WatchPR {
   state: 'continue'|'stop'
 }
 
-async function listPRs(): Promise<WatchPR[]> {
+
+handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
   const query = datastore.createQuery(TABLE).order('created');
   const [prs] = await datastore.runQuery(query);
   const result: WatchPR[] = [];
@@ -42,25 +42,27 @@ async function listPRs(): Promise<WatchPR[]> {
     let state = 'continue';
     if ((now - created) > MAX_TEST_TIME) {
       console.warn(`deleting stale PR ${name}`);
-      await removePR(name);
+      await handler.removePR(name);
       state = 'stop';
     }
-    result.push({
+    let watchPr: WatchPR = {
       number: name,
-      owner: pr.owner,
       repo: pr.repo,
+      owner: pr.owner,
       state: state as 'continue'|'stop'
-    });
+    };
+
+    result.push(watchPr);
   }
   return result;
 }
 
-async function removePR(pr: string) {
+handler.removePR = async function removePR(pr: string) {
   const key = datastore.key([TABLE, pr]);
   await datastore.delete(key);
 }
 
-async function addPR(wp: WatchPR) {
+handler.addPR = async function addPR(wp: WatchPR) {
   const key = datastore.key([TABLE, wp.number]);
   const entity = {
     key,
@@ -74,11 +76,14 @@ async function addPR(wp: WatchPR) {
   await datastore.save(entity);
 }
 
-export = (app: Application) => {
+function handler(app: Application) {
   app.on(['schedule.repository'], async context => {
-    const watchedPRs = await listPRs();
+    const watchedPRs = await handler.listPRs();
     for (const wp of watchedPRs) {
-      // await maybeMergeOnGreen(context.github, wp);
+      let remove = mergeOnGreen(wp.owner, wp.repo, wp.number, MERGE_ON_GREEN_LABEL, wp.state);
+      if (remove) {
+        handler.removePR(wp.repo);
+      }
     }
   });
   app.on('pull_request.labeled', async context => {
@@ -98,7 +103,7 @@ export = (app: Application) => {
     const number = context.payload.pull_request.number;
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
-    await addPR({
+    await handler.addPR({
       number,
       owner,
       repo,
@@ -106,3 +111,5 @@ export = (app: Application) => {
     });
   });
 };
+
+export = handler;
