@@ -1,6 +1,6 @@
 {
   "name": "gcf-utils",
-  "version": "1.5.0",
+  "version": "1.6.1",
   "description": "An extension for running Probot in Google Cloud Functions",
   "scripts": {
     "compile": "tsc -p .",
@@ -58,7 +58,8 @@
     "@octokit/plugin-enterprise-compatibility": "1.2.1",
     "gaxios": "^2.1.0",
     "js-base64": "^2.5.1",
-    "probot": "^9.9.1",
+    "probot": "9.9.4",
+    "@octokit/rest": "16.41.2",
     "tmp": "^0.1.0",
     "yargs": "^15.0.0"
   },

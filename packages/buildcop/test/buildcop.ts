@@ -287,6 +287,7 @@ describe('buildcop', () => {
 
         requests.done();
       });
+
       it('opens an issue [Python]', async () => {
         const input = fs.readFileSync(
           resolve(fixturesPath, 'testdata', 'python_one_failed.xml'),
@@ -352,6 +353,31 @@ describe('buildcop', () => {
             return true;
           })
           .reply(200);
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        requests.done();
+      });
+
+      it('handles a testsuite with no test cases', async () => {
+        const input = fs.readFileSync(
+          resolve(fixturesPath, 'testdata', 'no_tests.xml'),
+          'utf8'
+        );
+        const payload = formatPayload({
+          repo: 'tbpg/golang-samples',
+          organization: { login: 'tbpg' },
+          repository: { name: 'golang-samples' },
+          buildID: '123',
+          buildURL: 'http://example.com',
+          xunitXML: input,
+        });
+
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+          )
+          .reply(200, []);
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
