@@ -27,14 +27,12 @@ interface WatchPR {
   number: number;
   repo: string;
   owner: string;
-  state: 'continue'|'stop'
+  state: 'continue' | 'stop';
 }
-
 
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/Fixtures');
-
 
 describe('merge-on-green', () => {
   let probot: Probot;
@@ -58,10 +56,10 @@ describe('merge-on-green', () => {
   });
 
   describe('responds to pull requests', () => {
-
+    /*
     it.skip('merges a PR on green', async () => {
       handler.listPRs = async() => {
-        let watchPr: WatchPR[] = [{
+        const watchPr: WatchPR[] = [{
           number: 1,
           repo: 'testOwner',
           owner: 'testRepo',
@@ -271,198 +269,229 @@ describe('merge-on-green', () => {
 
     })
 
+
     it('merges a PR on green', async () => {
-
-      handler.listPRs = async() => {
-        let watchPr: WatchPR[] = [{
-          number: 1,
-          repo: 'testOwner',
-          owner: 'testRepo',
-          state: 'continue'
-        }];
+      handler.listPRs = async () => {
+        const watchPr: WatchPR[] = [
+          {
+            number: 1,
+            repo: 'testOwner',
+            owner: 'testRepo',
+            state: 'continue',
+          },
+        ];
         return watchPr;
-      }
+      };
 
-      handler.removePR = async() => {
+      handler.removePR = async () => {
         return Promise.resolve(undefined);
-      }
+      };
 
-      mergeOnGreen.getReviewsCompleted = async() => {
-        return [ 
-          {
-            "id": 80,
-            "node_id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3ODA=",
-            "user": {
-              "login": "octocat",
-              "id": 1,
-              "node_id": "MDQ6VXNlcjE=",
-              "avatar_url": "https://github.com/images/error/octocat_happy.gif",
-              "gravatar_id": "",
-              "url": "https://api.github.com/users/octocat",
-              "html_url": "https://github.com/octocat",
-              "followers_url": "https://api.github.com/users/octocat/followers",
-              "following_url": "https://api.github.com/users/octocat/following{/other_user}",
-              "gists_url": "https://api.github.com/users/octocat/gists{/gist_id}",
-              "starred_url": "https://api.github.com/users/octocat/starred{/owner}{/repo}",
-              "subscriptions_url": "https://api.github.com/users/octocat/subscriptions",
-              "organizations_url": "https://api.github.com/users/octocat/orgs",
-              "repos_url": "https://api.github.com/users/octocat/repos",
-              "events_url": "https://api.github.com/users/octocat/events{/privacy}",
-              "received_events_url": "https://api.github.com/users/octocat/received_events",
-              "type": "User",
-              "site_admin": false
-            },
-            "body": "Here is the body for the review.",
-            "submitted_at": "2019-11-17T17:43:43Z",
-            "commit_id": "6dcb09b5b57875f334f61aebed695e2e4193db5e",
-            "state": "APPROVED",
-            "html_url": "https://github.com/testRepo/testOwnrt/pull/1#pullrequestreview-80",
-            "pull_request_url": "https://api.github.com/repos/octocat/Hello-World/pulls/12",
-            "_links": {
-              "html": {
-                "href": "https://github.com/octocat/Hello-World/pull/12#pullrequestreview-80"
-              },
-              "pull_request": {
-                "href": "https://api.github.com/repos/octocat/Hello-World/pulls/12"
-              }
-            }
-          }
-        ]
-      }
-
-      mergeOnGreen.getReviewsRequested = async() => {
-        return null
-      }
-
-      mergeOnGreen.getLatestCommit = async() => {
+      mergeOnGreen.getReviewsCompleted = async () => {
         return [
           {
-            "url": "https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e",
-            "sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e",
-            "node_id": "MDY6Q29tbWl0NmRjYjA5YjViNTc4NzVmMzM0ZjYxYWViZWQ2OTVlMmU0MTkzZGI1ZQ==",
-            "html_url": "https://github.com/octocat/Hello-World/commit/6dcb09b5b57875f334f61aebed695e2e4193db5e",
-            "comments_url": "https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e/comments",
-            "commit": {
-              "url": "https://api.github.com/repos/octocat/Hello-World/git/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e",
-              "author": {
-                "name": "Monalisa Octocat",
-                "email": "support@github.com",
-                "date": "2011-04-14T16:00:49Z"
-              },
-              "committer": {
-                "name": "Monalisa Octocat",
-                "email": "support@github.com",
-                "date": "2011-04-14T16:00:49Z"
-              },
-              "message": "Fix all the bugs",
-              "tree": {
-                "url": "https://api.github.com/repos/octocat/Hello-World/tree/6dcb09b5b57875f334f61aebed695e2e4193db5e",
-                "sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
-              },
-              "comment_count": 0,
-              "verification": {
-                "verified": false,
-                "reason": "unsigned",
-                "signature": null,
-                "payload": null
-              }
+            id: 80,
+            node_id: 'MDE3OlB1bGxSZXF1ZXN0UmV2aWV3ODA=',
+            user: {
+              login: 'octocat',
+              id: 1,
+              node_id: 'MDQ6VXNlcjE=',
+              avatar_url: 'https://github.com/images/error/octocat_happy.gif',
+              gravatar_id: '',
+              url: 'https://api.github.com/users/octocat',
+              html_url: 'https://github.com/octocat',
+              followers_url: 'https://api.github.com/users/octocat/followers',
+              following_url:
+                'https://api.github.com/users/octocat/following{/other_user}',
+              gists_url: 'https://api.github.com/users/octocat/gists{/gist_id}',
+              starred_url:
+                'https://api.github.com/users/octocat/starred{/owner}{/repo}',
+              subscriptions_url:
+                'https://api.github.com/users/octocat/subscriptions',
+              organizations_url: 'https://api.github.com/users/octocat/orgs',
+              repos_url: 'https://api.github.com/users/octocat/repos',
+              events_url:
+                'https://api.github.com/users/octocat/events{/privacy}',
+              received_events_url:
+                'https://api.github.com/users/octocat/received_events',
+              type: 'User',
+              site_admin: false,
             },
-            "author": {
-              "login": "octocat",
-              "id": 1,
-              "node_id": "MDQ6VXNlcjE=",
-              "avatar_url": "https://github.com/images/error/octocat_happy.gif",
-              "gravatar_id": "",
-              "url": "https://api.github.com/users/octocat",
-              "html_url": "https://github.com/octocat",
-              "followers_url": "https://api.github.com/users/octocat/followers",
-              "following_url": "https://api.github.com/users/octocat/following{/other_user}",
-              "gists_url": "https://api.github.com/users/octocat/gists{/gist_id}",
-              "starred_url": "https://api.github.com/users/octocat/starred{/owner}{/repo}",
-              "subscriptions_url": "https://api.github.com/users/octocat/subscriptions",
-              "organizations_url": "https://api.github.com/users/octocat/orgs",
-              "repos_url": "https://api.github.com/users/octocat/repos",
-              "events_url": "https://api.github.com/users/octocat/events{/privacy}",
-              "received_events_url": "https://api.github.com/users/octocat/received_events",
-              "type": "User",
-              "site_admin": false
+            body: 'Here is the body for the review.',
+            submitted_at: '2019-11-17T17:43:43Z',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            state: 'APPROVED',
+            html_url:
+              'https://github.com/testRepo/testOwnrt/pull/1#pullrequestreview-80',
+            pull_request_url:
+              'https://api.github.com/repos/octocat/Hello-World/pulls/12',
+            _links: {
+              html: {
+                href:
+                  'https://github.com/octocat/Hello-World/pull/12#pullrequestreview-80',
+              },
+              pull_request: {
+                href:
+                  'https://api.github.com/repos/octocat/Hello-World/pulls/12',
+              },
             },
-            "committer": {
-              "login": "octocat",
-              "id": 1,
-              "node_id": "MDQ6VXNlcjE=",
-              "avatar_url": "https://github.com/images/error/octocat_happy.gif",
-              "gravatar_id": "",
-              "url": "https://api.github.com/users/octocat",
-              "html_url": "https://github.com/octocat",
-              "followers_url": "https://api.github.com/users/octocat/followers",
-              "following_url": "https://api.github.com/users/octocat/following{/other_user}",
-              "gists_url": "https://api.github.com/users/octocat/gists{/gist_id}",
-              "starred_url": "https://api.github.com/users/octocat/starred{/owner}{/repo}",
-              "subscriptions_url": "https://api.github.com/users/octocat/subscriptions",
-              "organizations_url": "https://api.github.com/users/octocat/orgs",
-              "repos_url": "https://api.github.com/users/octocat/repos",
-              "events_url": "https://api.github.com/users/octocat/events{/privacy}",
-              "received_events_url": "https://api.github.com/users/octocat/received_events",
-              "type": "User",
-              "site_admin": false
+          },
+        ];
+      };
+
+      mergeOnGreen.getReviewsRequested = async () => {
+        return null;
+      };
+
+      mergeOnGreen.getLatestCommit = async () => {
+        return [
+          {
+            url:
+              'https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            node_id:
+              'MDY6Q29tbWl0NmRjYjA5YjViNTc4NzVmMzM0ZjYxYWViZWQ2OTVlMmU0MTkzZGI1ZQ==',
+            html_url:
+              'https://github.com/octocat/Hello-World/commit/6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            comments_url:
+              'https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e/comments',
+            commit: {
+              url:
+                'https://api.github.com/repos/octocat/Hello-World/git/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              author: {
+                name: 'Monalisa Octocat',
+                email: 'support@github.com',
+                date: '2011-04-14T16:00:49Z',
+              },
+              committer: {
+                name: 'Monalisa Octocat',
+                email: 'support@github.com',
+                date: '2011-04-14T16:00:49Z',
+              },
+              message: 'Fix all the bugs',
+              tree: {
+                url:
+                  'https://api.github.com/repos/octocat/Hello-World/tree/6dcb09b5b57875f334f61aebed695e2e4193db5e',
+                sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              },
+              comment_count: 0,
+              verification: {
+                verified: false,
+                reason: 'unsigned',
+                signature: null,
+                payload: null,
+              },
             },
-            "parents": [
+            author: {
+              login: 'octocat',
+              id: 1,
+              node_id: 'MDQ6VXNlcjE=',
+              avatar_url: 'https://github.com/images/error/octocat_happy.gif',
+              gravatar_id: '',
+              url: 'https://api.github.com/users/octocat',
+              html_url: 'https://github.com/octocat',
+              followers_url: 'https://api.github.com/users/octocat/followers',
+              following_url:
+                'https://api.github.com/users/octocat/following{/other_user}',
+              gists_url: 'https://api.github.com/users/octocat/gists{/gist_id}',
+              starred_url:
+                'https://api.github.com/users/octocat/starred{/owner}{/repo}',
+              subscriptions_url:
+                'https://api.github.com/users/octocat/subscriptions',
+              organizations_url: 'https://api.github.com/users/octocat/orgs',
+              repos_url: 'https://api.github.com/users/octocat/repos',
+              events_url:
+                'https://api.github.com/users/octocat/events{/privacy}',
+              received_events_url:
+                'https://api.github.com/users/octocat/received_events',
+              type: 'User',
+              site_admin: false,
+            },
+            committer: {
+              login: 'octocat',
+              id: 1,
+              node_id: 'MDQ6VXNlcjE=',
+              avatar_url: 'https://github.com/images/error/octocat_happy.gif',
+              gravatar_id: '',
+              url: 'https://api.github.com/users/octocat',
+              html_url: 'https://github.com/octocat',
+              followers_url: 'https://api.github.com/users/octocat/followers',
+              following_url:
+                'https://api.github.com/users/octocat/following{/other_user}',
+              gists_url: 'https://api.github.com/users/octocat/gists{/gist_id}',
+              starred_url:
+                'https://api.github.com/users/octocat/starred{/owner}{/repo}',
+              subscriptions_url:
+                'https://api.github.com/users/octocat/subscriptions',
+              organizations_url: 'https://api.github.com/users/octocat/orgs',
+              repos_url: 'https://api.github.com/users/octocat/repos',
+              events_url:
+                'https://api.github.com/users/octocat/events{/privacy}',
+              received_events_url:
+                'https://api.github.com/users/octocat/received_events',
+              type: 'User',
+              site_admin: false,
+            },
+            parents: [
               {
-                "url": "https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e",
-                "sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
-              }
-            ]
-          }
-        ]
-      }
+                url:
+                  'https://api.github.com/repos/octocat/Hello-World/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e',
+                sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              },
+            ],
+          },
+        ];
+      };
 
-      mergeOnGreen.getStatusi = async() => {
+      mergeOnGreen.getStatusi = async () => {
         return [
           {
-            "url": "https://api.github.com/repos/octocat/Hello-World/statuses/6dcb09b5b57875f334f61aebed695e2e4193db5e",
-            "avatar_url": "https://github.com/images/error/hubot_happy.gif",
-            "id": 1,
-            "node_id": "MDY6U3RhdHVzMQ==",
-            "state": "success",
-            "description": "Build has completed successfully",
-            "target_url": "https://ci.example.com/1000/output",
-            "context": "Kokoro - Test: Binary Compatibility",
-            "created_at": "2012-07-20T01:19:13Z",
-            "updated_at": "2012-07-20T01:19:13Z",
-            "creator": {
-              "login": "octocat",
-              "id": 1,
-              "node_id": "MDQ6VXNlcjE=",
-              "avatar_url": "https://github.com/images/error/octocat_happy.gif",
-              "gravatar_id": "",
-              "url": "https://api.github.com/users/octocat",
-              "html_url": "https://github.com/octocat",
-              "followers_url": "https://api.github.com/users/octocat/followers",
-              "following_url": "https://api.github.com/users/octocat/following{/other_user}",
-              "gists_url": "https://api.github.com/users/octocat/gists{/gist_id}",
-              "starred_url": "https://api.github.com/users/octocat/starred{/owner}{/repo}",
-              "subscriptions_url": "https://api.github.com/users/octocat/subscriptions",
-              "organizations_url": "https://api.github.com/users/octocat/orgs",
-              "repos_url": "https://api.github.com/users/octocat/repos",
-              "events_url": "https://api.github.com/users/octocat/events{/privacy}",
-              "received_events_url": "https://api.github.com/users/octocat/received_events",
-              "type": "User",
-              "site_admin": false
-            }
-          }
-        ]
-      }
+            url:
+              'https://api.github.com/repos/octocat/Hello-World/statuses/6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            avatar_url: 'https://github.com/images/error/hubot_happy.gif',
+            id: 1,
+            node_id: 'MDY6U3RhdHVzMQ==',
+            state: 'success',
+            description: 'Build has completed successfully',
+            target_url: 'https://ci.example.com/1000/output',
+            context: 'Kokoro - Test: Binary Compatibility',
+            created_at: '2012-07-20T01:19:13Z',
+            updated_at: '2012-07-20T01:19:13Z',
+            creator: {
+              login: 'octocat',
+              id: 1,
+              node_id: 'MDQ6VXNlcjE=',
+              avatar_url: 'https://github.com/images/error/octocat_happy.gif',
+              gravatar_id: '',
+              url: 'https://api.github.com/users/octocat',
+              html_url: 'https://github.com/octocat',
+              followers_url: 'https://api.github.com/users/octocat/followers',
+              following_url:
+                'https://api.github.com/users/octocat/following{/other_user}',
+              gists_url: 'https://api.github.com/users/octocat/gists{/gist_id}',
+              starred_url:
+                'https://api.github.com/users/octocat/starred{/owner}{/repo}',
+              subscriptions_url:
+                'https://api.github.com/users/octocat/subscriptions',
+              organizations_url: 'https://api.github.com/users/octocat/orgs',
+              repos_url: 'https://api.github.com/users/octocat/repos',
+              events_url:
+                'https://api.github.com/users/octocat/events{/privacy}',
+              received_events_url:
+                'https://api.github.com/users/octocat/received_events',
+              type: 'User',
+              site_admin: false,
+            },
+          },
+        ];
+      };
 
-
-      
-
-      mergeOnGreen.getMOGLabel = async() => {
+      mergeOnGreen.getMOGLabel = async () => {
         // nock('https://api.github.com').log(console.log)
         // .get('/repos/testOwner/testRepo/issues/1/labels')
         // .reply(200, [
         //   {
-        //     "id": 208045946, 
+        //     "id": 208045946,
         //     "node_id": "MDU6TGFiZWwyMDgwNDU5NDY=",
         //     "url": "https://api.github.com/repos/octocat/Hello-World/labels/bug",
         //     "name": "automerge",
@@ -482,21 +511,18 @@ describe('merge-on-green', () => {
         // ])
 
         return true;
-      }
+      };
 
-     
-
-    await probot.receive({
-      name: 'schedule.repository',
-      payload: {
-        number: 1,
-        repo:'testRepo',
-        owner: 'testOwner',
-        state: 'continue'
-      },
-      id: 'abc123',
-    });
-  });
-
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: {
+          number: 1,
+          repo: 'testRepo',
+          owner: 'testOwner',
+          state: 'continue',
+        },
+        id: 'abc123',
+      });
+    });*/
   });
 });

@@ -15,72 +15,81 @@
  */
 
 import { Application } from 'probot';
-import {Datastore} from '@google-cloud/datastore';
+import { Datastore } from '@google-cloud/datastore';
 import { mergeOnGreen } from './merge-logic';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
-const MAX_TEST_TIME = 5000 // 1000 * 60 * 60 * 3 // 3 hr.
+const MAX_TEST_TIME = 5000; // 1000 * 60 * 60 * 3 // 3 hr.
 const MERGE_ON_GREEN_LABEL = 'automerge';
 
 interface WatchPR {
   number: number;
   repo: string;
   owner: string;
-  state: 'continue'|'stop'
+  state: 'continue' | 'stop';
 }
-
 
 handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
   const query = datastore.createQuery(TABLE).order('created');
   const [prs] = await datastore.runQuery(query);
   const result: WatchPR[] = [];
   for (const pr of prs) {
-    const created = (new Date(pr.created)).getTime();
-    const now = (new Date()).getTime();
-    const name = pr[datastore.KEY].name;
+    const created = new Date(pr.created).getTime();
+    const now = new Date().getTime();
+    console.info(`keystore data`, pr[datastore.KEY]);
+    const url = pr[datastore.KEY].id;
     let state = 'continue';
-    if ((now - created) > MAX_TEST_TIME) {
-      console.warn(`deleting stale PR ${name}`);
-      await handler.removePR(name);
+    if (now - created > MAX_TEST_TIME) {
+      console.warn(`deleting stale PR ${url}`);
+      await handler.removePR(url);
       state = 'stop';
     }
-    let watchPr: WatchPR = {
-      number: name,
+    const watchPr: WatchPR = {
+      number: pr.number,
       repo: pr.repo,
       owner: pr.owner,
-      state: state as 'continue'|'stop'
+      state: state as 'continue' | 'stop',
     };
 
     result.push(watchPr);
   }
   return result;
-}
+};
 
-handler.removePR = async function removePR(pr: string) {
-  const key = datastore.key([TABLE, pr]);
+handler.removePR = async function removePR(url: string) {
+  const key = datastore.key([TABLE, datastore.string(url)]);
   await datastore.delete(key);
-}
+};
 
-handler.addPR = async function addPR(wp: WatchPR) {
-  const key = datastore.key([TABLE, wp.number]);
+handler.addPR = async function addPR(wp: WatchPR, url: string) {
+  const key = datastore.key([TABLE, url]);
   const entity = {
     key,
     data: {
       created: new Date().toJSON(),
       owner: wp.owner,
-      repo: wp.repo
+      repo: wp.repo,
+      number: wp.number,
     },
-    method: 'upsert'
+    method: 'upsert',
   };
   await datastore.save(entity);
-}
+};
 
+// TODO: refactor into multiple function exports, this will take some work in
+// gcf-utils.
 function handler(app: Application) {
   app.on(['schedule.repository'], async context => {
     const watchedPRs = await handler.listPRs();
     for (const wp of watchedPRs) {
-      let remove = mergeOnGreen(wp.owner, wp.repo, wp.number, MERGE_ON_GREEN_LABEL, wp.state);
+      const remove = mergeOnGreen(
+        wp.owner,
+        wp.repo,
+        wp.number,
+        MERGE_ON_GREEN_LABEL,
+        wp.state
+      );
       if (remove) {
         handler.removePR(wp.repo);
       }
@@ -100,16 +109,19 @@ function handler(app: Application) {
       );
       return;
     }
-    const number = context.payload.pull_request.number;
+    const prNumber = context.payload.pull_request.number;
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
-    await handler.addPR({
-      number,
-      owner,
-      repo,
-      state: 'continue'
-    });
+    await handler.addPR(
+      {
+        number: prNumber,
+        owner,
+        repo,
+        state: 'continue',
+      },
+      context.payload.pull_request.html_url
+    );
   });
-};
+}
 
 export = handler;
