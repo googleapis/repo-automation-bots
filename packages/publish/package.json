@@ -27,11 +27,12 @@
   },
   "dependencies": {
     "@google-cloud/secret-manager": "^1.1.0",
-    "gcf-utils": "1.5.0",
+    "gcf-utils": "1.6.1",
     "node-fetch": "^2.6.0",
-    "probot": "9.9.1",
+    "probot": "9.9.4",
     "tar": "^6.0.0",
-    "uuid": "^3.3.3"
+    "uuid": "^3.3.3",
+    "@octokit/rest": "16.41.2"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
@@ -41,7 +42,7 @@
     "@types/express": "^4.17.0",
     "@types/ioredis": "^4.0.13",
     "@types/lru-cache": "^5.1.0",
-    "@types/mocha": "^5.2.7",
+    "@types/mocha": "^7.0.0",
     "@types/nock": "^10.0.3",
     "@types/node": "^12.6.1",
     "@types/node-fetch": "^2.5.4",
