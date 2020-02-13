@@ -20,7 +20,7 @@ import { mergeOnGreen } from './merge-logic';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
-const MAX_TEST_TIME = 5000; // 1000 * 60 * 60 * 3 // 3 hr.
+const MAX_TEST_TIME = 1000 * 60 * 20 // 3 hr. 1000 * 60 * 60 * 3 
 const MERGE_ON_GREEN_LABEL = 'automerge';
 
 interface WatchPR {
@@ -38,7 +38,7 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
     const created = new Date(pr.created).getTime();
     const now = new Date().getTime();
     console.info(`keystore data`, pr[datastore.KEY]);
-    const url = pr[datastore.KEY].id;
+    const url = pr[datastore.KEY].name;
     let state = 'continue';
     if (now - created > MAX_TEST_TIME) {
       console.warn(`deleting stale PR ${url}`);
@@ -51,14 +51,13 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
       owner: pr.owner,
       state: state as 'continue' | 'stop',
     };
-
     result.push(watchPr);
   }
   return result;
 };
 
 handler.removePR = async function removePR(url: string) {
-  const key = datastore.key([TABLE, datastore.string(url)]);
+  const key = datastore.key([TABLE, url]);
   await datastore.delete(key);
 };
 
@@ -83,12 +82,14 @@ function handler(app: Application) {
   app.on(['schedule.repository'], async context => {
     const watchedPRs = await handler.listPRs();
     for (const wp of watchedPRs) {
+      console.info(`watchedPR ${JSON.stringify(wp, null, 2)}`);
       const remove = mergeOnGreen(
         wp.owner,
         wp.repo,
         wp.number,
         MERGE_ON_GREEN_LABEL,
-        wp.state
+        wp.state,
+        context.github
       );
       if (remove) {
         handler.removePR(wp.repo);
@@ -112,6 +113,7 @@ function handler(app: Application) {
     const prNumber = context.payload.pull_request.number;
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
+    console.info(`${prNumber} ${owner} ${repo}`);
     await handler.addPR(
       {
         number: prNumber,

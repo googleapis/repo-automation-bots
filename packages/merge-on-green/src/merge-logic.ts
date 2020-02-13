@@ -1,5 +1,3 @@
-import { abortPendingRequests } from 'nock/types';
-
 /**
  * Copyright 2020 Google LLC. All Rights Reserved.
  *
@@ -16,7 +14,9 @@ import { abortPendingRequests } from 'nock/types';
  * limitations under the License.
  */
 
-const github = require('probot/lib/github');
+import { GitHubAPI } from 'probot/lib/github';
+// TODO: don't do this, we need to pass the github instance.
+let github: GitHubAPI;
 
 interface Label {
   name: string;
@@ -47,7 +47,7 @@ mergeOnGreen.getLatestCommit = async function getLatestCommit(
   try {
     // TODO: consider switching this to an async iterator, which would work
     // for more than 100.
-    const data = await github.repos.listCommits({
+    const data = await github.pulls.listCommits({
       owner,
       repo,
       pull_number: pr,
@@ -112,14 +112,14 @@ interface RequiredChecksByLanguage {
 
 async function requiredChecksByLanguage(): Promise<RequiredChecksByLanguage|null> {
   try{
-    const configFile = await github.repos.getContents({
+    const configFile = (await github.repos.getContents({
       owner: 'googleapis',
       repo: 'sloth',
       path: 'required-checks.json'
-    })
-    const buf = Buffer.from(configFile.data.content, 'base64');
-    const decodedString = buf.toString('utf-8');
-    return JSON.parse(decodedString) as RequiredChecksByLanguage;
+    })).data as { content?: string };
+    return JSON.parse(
+      Buffer.from(configFile.content as string, 'base64').toString('utf8')
+    ) as RequiredChecksByLanguage;
   } catch (err) {
     console.error(err);
     return null;
@@ -145,6 +145,11 @@ mergeOnGreen.getStatusi = async function getStatusi(
   pr: number
 ): Promise<CheckStatus[]> {
   const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr);
+  // TODO(@sofisl): think about refactoring this.
+  if (!headSha) {
+    console.info(`${owner}/${repo} no statuses found`);
+    return [];
+  }
   try {
     const data = await github.repos.listStatusesForRef({
       owner,
@@ -166,6 +171,9 @@ mergeOnGreen.getRuns = async function getRuns(
   pr: number
 ) {
   const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr);
+  if (!headSha) {
+    return null;
+  }
   try {
     const checkRuns = await github.checks.listForRef({
       owner,
@@ -225,7 +233,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
       if (checkCompleted === undefined) {
         //if we can't find it in the statuses, let's check under check runs
         const checkRuns = await mergeOnGreen.getRuns(owner, repo, pr);
-        mergeable = mergeOnGreen.checkForRequiredSC(checkRuns, check);
+        mergeable = mergeOnGreen.checkForRequiredSC(checkRuns || [], check);
         if (!mergeable) {
           return mergeable;
         }
@@ -317,7 +325,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
     pr
   );
   if (reviewsRequested != null) {
-    const reviewsCompleted = mergeOnGreen.cleanReviews(reviewsCompletedDirty);
+    const reviewsCompleted = mergeOnGreen.cleanReviews(reviewsCompletedDirty || []);
     if (reviewsCompleted != null && reviewsCompleted.length !== 0) {
       reviewsCompleted.forEach(review => {
         if (review.state !== 'APPROVED') {
@@ -363,12 +371,15 @@ mergeOnGreen.createFailedParam = async function createFailedParam(
   pr: number
 ) {
   const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr);
+  if (!headSha) {
+    return null;
+  }
   try {
     const checkParams = github.checks.create({
       owner,
       repo,
       name: 'AutoMerge Failed',
-      headSha,
+      head_sha: headSha,
       status: 'completed',
       conclusion: 'failure',
       output: {
@@ -391,8 +402,10 @@ export async function mergeOnGreen(
   repo: string,
   pr: number,
   labelName: string,
-  state: string
+  state: string,
+  _github: GitHubAPI
 ) {
+  github = _github;
   console.info(`${owner}/${repo} checking merge on green PR status`);
   // Checks for reviewers and ensures that the latest review has been
   // approved.
