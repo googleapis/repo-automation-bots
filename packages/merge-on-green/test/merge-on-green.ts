@@ -56,13 +56,13 @@ describe('merge-on-green', () => {
   });
 
   describe('responds to pull requests', () => {
-    /*
-    it.skip('merges a PR on green', async () => {
+
+    it('merges a PR on green', async () => {
       handler.listPRs = async() => {
         const watchPr: WatchPR[] = [{
           number: 1,
-          repo: 'testOwner',
-          owner: 'testRepo',
+          repo: 'testRepo',
+          owner: 'testOwner',
           state: 'continue'
         }];
         return watchPr;
@@ -269,7 +269,7 @@ describe('merge-on-green', () => {
 
     })
 
-
+/*
     it('merges a PR on green', async () => {
       handler.listPRs = async () => {
         const watchPr: WatchPR[] = [

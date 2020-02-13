@@ -15,11 +15,12 @@
  */
 
 import { GitHubAPI } from 'probot/lib/github';
-// TODO: don't do this, we need to pass the github instance.
-let github: GitHubAPI;
 
 interface Label {
   name: string;
+}
+
+interface CheckParam {
 }
 
 interface CheckRun {
@@ -38,12 +39,34 @@ interface Reviews {
   state: string;
 }
 
+interface ReviewsRequested {
+  users: Object[],
+  teams: Object[]
+}
+
+interface PR {
+   title: string, 
+   body: string
+}
+
+interface RequiredChecksByLanguage {
+  [key: string]: {
+    requiredStatusChecks: string[]
+  }
+}
+
+interface Language {
+  language: string,
+  repo: string
+}
+
 // contains the installation id necessary to authenticate as an installation
 mergeOnGreen.getLatestCommit = async function getLatestCommit(
   owner: string,
   repo: string,
-  pr: number
-): Promise<string|null> {
+  pr: number,
+  github: GitHubAPI
+): Promise<string> {
   try {
     // TODO: consider switching this to an async iterator, which would work
     // for more than 100.
@@ -56,29 +79,34 @@ mergeOnGreen.getLatestCommit = async function getLatestCommit(
     });
     return data.data[data.data.length - 1].sha;
   } catch (err) {
-    return null;
+    return '';
   }
 };
 
 mergeOnGreen.getPR = async function getPR(
   owner: string,
   repo: string,
-  pr: number
-) {
+  pr: number,
+  github: GitHubAPI
+): Promise<PR> {
+  try{
   const data = await github.pulls.get({
     owner,
     repo,
     pull_number: pr,
   });
-
   return data.data;
+} catch (err){
+  return {title: '', body: ''};
+}
 };
 
 mergeOnGreen.getMOGLabel = async function getMOGLabel(
   owner: string,
   repo: string,
   pr: number,
-  labelName: string
+  labelName: string,
+  github: GitHubAPI
 ): Promise<boolean> {
   let isMOG = false;
   try {
@@ -89,14 +117,12 @@ mergeOnGreen.getMOGLabel = async function getMOGLabel(
     });
     const labelArray = labels.data;
     if (labelArray) {
-      // TODO: consider using a [].find for this.
-      for (let x = 0; x < labelArray.length; x++) {
-        if (labelArray[x].name === labelName) {
-          isMOG = true;
-        } else {
-          isMOG = false;
-        }
-      }
+      const mog = labelArray.find(
+      element => element.name === labelName
+      );
+      if (mog) {
+        isMOG = true;
+      } 
     }
     return isMOG;
   } catch (err) {
@@ -104,13 +130,8 @@ mergeOnGreen.getMOGLabel = async function getMOGLabel(
   }
 };
 
-interface RequiredChecksByLanguage {
-  [key: string]: {
-    requiredStatusChecks: string[]
-  }
-}
 
-async function requiredChecksByLanguage(): Promise<RequiredChecksByLanguage|null> {
+async function requiredChecksByLanguage(github: GitHubAPI): Promise<RequiredChecksByLanguage|null> {
   try{
     const configFile = (await github.repos.getContents({
       owner: 'googleapis',
@@ -126,30 +147,48 @@ async function requiredChecksByLanguage(): Promise<RequiredChecksByLanguage|null
   }
 }
 
-mergeOnGreen.getRequiredChecks = async function getRequiredChecks(): Promise<string[]> {
-  // const requiredStatusChecks = ['Kokoro - Test: Binary Compatibility'];
-  // TODO: pass configuration language setting through to here, so that we
-  // can return the appropriate check.
-  const checksByLanguage = await requiredChecksByLanguage()
-  if (checksByLanguage) {
-    return checksByLanguage['java'].requiredStatusChecks;
+async function getRepoMap(github: GitHubAPI): Promise<Language[]> {
+  try{
+    const configFile = (await github.repos.getContents({
+      owner: 'googleapis',
+      repo: 'sloth',
+      path: 'repos.json'
+    })).data as { content?: string };
+    return JSON.parse(
+      Buffer.from(configFile.content as string, 'base64').toString('utf8')
+    ).repos;
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+}
+
+mergeOnGreen.getRequiredChecks = async function getRequiredChecks(github: GitHubAPI, repo: string): Promise<string[]> {
+  const checksByLanguage = await requiredChecksByLanguage(github);
+  const languageMap = await getRepoMap(github);
+  if (checksByLanguage && languageMap) {
+    const language = languageMap.find(
+      (element: Language) => element.repo === repo
+      );
+      if (language !== undefined) {
+        return checksByLanguage[language.language].requiredStatusChecks;
+      } else {
+        console.info('this repo does not have a corresponding language in sloth/repos.json')
+        return [];
+      }
   } else {
-    console.info('could not find any checks');
-    return []
+    console.info('could not find any checks or a language map');
+    return [];
   }
 };
 
 mergeOnGreen.getStatusi = async function getStatusi(
   owner: string,
   repo: string,
-  pr: number
+  pr: number,
+  github: GitHubAPI
 ): Promise<CheckStatus[]> {
-  const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr);
-  // TODO(@sofisl): think about refactoring this.
-  if (!headSha) {
-    console.info(`${owner}/${repo} no statuses found`);
-    return [];
-  }
+  const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr, github);
   try {
     const data = await github.repos.listStatusesForRef({
       owner,
@@ -168,12 +207,10 @@ mergeOnGreen.getStatusi = async function getStatusi(
 mergeOnGreen.getRuns = async function getRuns(
   owner: string,
   repo: string,
-  pr: number
-) {
-  const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr);
-  if (!headSha) {
-    return null;
-  }
+  pr: number,
+  github: GitHubAPI
+): Promise<CheckRun[]> {
+  const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr, github);
   try {
     const checkRuns = await github.checks.listForRef({
       owner,
@@ -183,24 +220,23 @@ mergeOnGreen.getRuns = async function getRuns(
     });
     return checkRuns.data.check_runs;
   } catch (err) {
-    return null;
+    return [];
   }
 };
 
 mergeOnGreen.checkForRequiredSC = function checkForRequiredSC(
-  checkSuitesOrRuns: CheckRun[],
+  checkRuns: CheckRun[],
   check: string
-) {
+): boolean {
   let mergeable = false;
-  if (checkSuitesOrRuns != null) {
-    const checkSuiteorRunCompleted = checkSuitesOrRuns.find(
+  if (checkRuns.length !== 0) {
+    const checkRunCompleted = checkRuns.find(
       element => element.name === check
     );
     if (
-      checkSuiteorRunCompleted !== undefined &&
-      checkSuiteorRunCompleted.conclusion === 'success'
+      checkRunCompleted !== undefined &&
+      checkRunCompleted.conclusion === 'success'
     ) {
-      console.log('e');
       mergeable = true;
       return mergeable;
     }
@@ -212,18 +248,19 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
   owner: string,
   repo: string,
   pr: number,
-  labelName: string
-) {
-  const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr);
-  const mogLabel = await mergeOnGreen.getMOGLabel(owner, repo, pr, labelName);
-  const checkStatus = await mergeOnGreen.getStatusi(owner, repo, pr);
-  const requiredChecks = await mergeOnGreen.getRequiredChecks();
+  labelName: string,
+  github: GitHubAPI
+): Promise<boolean> {
+  const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr, github);
+  const mogLabel = await mergeOnGreen.getMOGLabel(owner, repo, pr, labelName, github);
+  const checkStatus = await mergeOnGreen.getStatusi(owner, repo, pr, github);
+  const requiredChecks = await mergeOnGreen.getRequiredChecks(github, repo);
   let mergeable = true;
   if (
     checkStatus.length !== 0 &&
-    headSha !== null &&
+    headSha.length !== 0 &&
     requiredChecks.length !== 0 &&
-    mogLabel !== false
+    mogLabel === true
   ) {
     for (const check of requiredChecks) {
       //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
@@ -232,8 +269,8 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
       );
       if (checkCompleted === undefined) {
         //if we can't find it in the statuses, let's check under check runs
-        const checkRuns = await mergeOnGreen.getRuns(owner, repo, pr);
-        mergeable = mergeOnGreen.checkForRequiredSC(checkRuns || [], check);
+        const checkRuns = await mergeOnGreen.getRuns(owner, repo, pr, github);
+        mergeable = mergeOnGreen.checkForRequiredSC(checkRuns, check);
         if (!mergeable) {
           return mergeable;
         }
@@ -244,10 +281,10 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
     }
   } else {
     mergeable = false;
-    console.log(checkStatus);
-    console.log(headSha);
-    console.log(requiredChecks);
-    console.log(mogLabel);
+    console.log('check status '+checkStatus);
+    console.log("head sha "+headSha);
+    console.log("required checks "+requiredChecks);
+    console.log("mog label?  "+mogLabel);
     console.log(
       'Either you have no statuses, no head sha, no required checks, or no MOG Label'
     );
@@ -259,8 +296,9 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
 mergeOnGreen.getReviewsCompleted = async function getReviewsCompleted(
   owner: string,
   repo: string,
-  pr: number
-) {
+  pr: number,
+  github: GitHubAPI
+): Promise<Reviews[]> {
   try {
     const reviewsCompleted = await github.pulls.listReviews({
       owner,
@@ -269,15 +307,16 @@ mergeOnGreen.getReviewsCompleted = async function getReviewsCompleted(
     });
     return reviewsCompleted.data;
   } catch (err) {
-    return null;
+    return [];
   }
 };
 
 mergeOnGreen.getReviewsRequested = async function getReviewsRequested(
   owner: string,
   repo: string,
-  pr: number
-) {
+  pr: number,
+  github: GitHubAPI
+): Promise<ReviewsRequested> {
   try {
     const reviewsRequested = await github.pulls.listReviewRequests({
       owner,
@@ -286,13 +325,13 @@ mergeOnGreen.getReviewsRequested = async function getReviewsRequested(
     });
     return reviewsRequested.data;
   } catch (err) {
-    return null;
+    return {users: [], teams: []};
   }
 };
 
 //this function cleans the reviews, since the listReviews method github provides returns a complete history of all comments added
 //and we just want the most recent for each reviewer
-mergeOnGreen.cleanReviews = function cleanReviews(reviewsCompleted: Reviews[]) {
+mergeOnGreen.cleanReviews = function cleanReviews(reviewsCompleted: Reviews[]): Reviews[] {
   const cleanReviews = [];
   const distinctReviewers: string[] = [];
   for (let x = reviewsCompleted.length - 1; x >= 0; x--) {
@@ -311,22 +350,25 @@ mergeOnGreen.cleanReviews = function cleanReviews(reviewsCompleted: Reviews[]) {
 mergeOnGreen.checkReviews = async function checkReviews(
   owner: string,
   repo: string,
-  pr: number
+  pr: number,
+  github: GitHubAPI
 ): Promise<boolean> {
   let reviewsPassed = true;
   const reviewsCompletedDirty = await mergeOnGreen.getReviewsCompleted(
     owner,
     repo,
-    pr
+    pr,
+    github
   );
   const reviewsRequested = await mergeOnGreen.getReviewsRequested(
     owner,
     repo,
-    pr
+    pr,
+    github
   );
-  if (reviewsRequested != null) {
-    const reviewsCompleted = mergeOnGreen.cleanReviews(reviewsCompletedDirty || []);
-    if (reviewsCompleted != null && reviewsCompleted.length !== 0) {
+  if (reviewsCompletedDirty.length !== 0) {
+    const reviewsCompleted = mergeOnGreen.cleanReviews(reviewsCompletedDirty);
+    if (reviewsCompleted.length !== 0) {
       reviewsCompleted.forEach(review => {
         if (review.state !== 'APPROVED') {
           reviewsPassed = false;
@@ -334,10 +376,8 @@ mergeOnGreen.checkReviews = async function checkReviews(
       });
     }
   }
-  if (
-    reviewsRequested != null &&
-    (reviewsRequested.users.length !== 0 || reviewsRequested.teams.length !== 0)
-  ) {
+  if (reviewsRequested.users.length !== 0 || reviewsRequested.teams.length !== 0)
+  {
     reviewsPassed = false;
     return reviewsPassed;
   }
@@ -347,9 +387,10 @@ mergeOnGreen.checkReviews = async function checkReviews(
 mergeOnGreen.merge = async function merge(
   owner: string,
   repo: string,
-  pr: number
+  pr: number,
+  github: GitHubAPI
 ) {
-  const commitInfo = await mergeOnGreen.getPR(owner, repo, pr);
+  const commitInfo = await mergeOnGreen.getPR(owner, repo, pr, github);
   try {
     const merge = await github.pulls.merge({
       owner,
@@ -368,12 +409,11 @@ mergeOnGreen.merge = async function merge(
 mergeOnGreen.createFailedParam = async function createFailedParam(
   owner: string,
   repo: string,
-  pr: number
-) {
-  const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr);
-  if (!headSha) {
-    return null;
-  }
+  pr: number,
+  github: GitHubAPI
+): Promise<CheckParam|null> {
+  const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr, github);
+  //removed the check for if headSha exists, since we're returning an empty string and the error block will catch it
   try {
     const checkParams = github.checks.create({
       owner,
@@ -403,13 +443,12 @@ export async function mergeOnGreen(
   pr: number,
   labelName: string,
   state: string,
-  _github: GitHubAPI
-) {
-  github = _github;
+  github: GitHubAPI
+): Promise<boolean> {
   console.info(`${owner}/${repo} checking merge on green PR status`);
   // Checks for reviewers and ensures that the latest review has been
   // approved.
-  const checkReview = await mergeOnGreen.checkReviews(owner, repo, pr);
+  const checkReview = await mergeOnGreen.checkReviews(owner, repo, pr, github);
   console.info(`${owner}/${repo} checkReview = ${checkReview}`);
   // Checks statuses and check runs, ensuring that the latest version of
   // a status was a success.
@@ -417,17 +456,16 @@ export async function mergeOnGreen(
     owner,
     repo,
     pr,
-    labelName
+    labelName,
+    github
   );
   if (checkReview === true && checkStatus === true && state === 'continue') {
-    await mergeOnGreen.merge(owner, repo, pr);
+    await mergeOnGreen.merge(owner, repo, pr, github);
     return true;
   } else if (state === 'stop') {
-    mergeOnGreen.createFailedParam(owner, repo, pr);
+    mergeOnGreen.createFailedParam(owner, repo, pr, github);
     return true;
   } else {
     return false;
   }
-
-  //TODO: Fill in details on how to get config file
 }
