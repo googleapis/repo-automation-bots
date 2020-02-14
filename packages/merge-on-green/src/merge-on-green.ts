@@ -20,7 +20,7 @@ import { mergeOnGreen } from './merge-logic';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
-const MAX_TEST_TIME = 1000 * 60 * 20; // 3 hr. 1000 * 60 * 60 * 3
+const MAX_TEST_TIME = 1000 * 60 * 60 * 2; // 2 hr.
 const MERGE_ON_GREEN_LABEL = 'automerge';
 
 interface WatchPR {
@@ -28,6 +28,7 @@ interface WatchPR {
   repo: string;
   owner: string;
   state: 'continue' | 'stop';
+  url: string;
 }
 
 handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
@@ -50,6 +51,7 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
       repo: pr.repo,
       owner: pr.owner,
       state: state as 'continue' | 'stop',
+      url
     };
     result.push(watchPr);
   }
@@ -83,16 +85,20 @@ function handler(app: Application) {
     const watchedPRs = await handler.listPRs();
     for (const wp of watchedPRs) {
       console.info(`watchedPR ${JSON.stringify(wp, null, 2)}`);
-      const remove = await mergeOnGreen(
-        wp.owner,
-        wp.repo,
-        wp.number,
-        MERGE_ON_GREEN_LABEL,
-        wp.state,
-        context.github
-      );
-      if (remove) {
-        handler.removePR(wp.repo);
+      try {
+        const remove = await mergeOnGreen(
+          wp.owner,
+          wp.repo,
+          wp.number,
+          MERGE_ON_GREEN_LABEL,
+          wp.state,
+          context.github
+        );
+        if (remove) {
+          handler.removePR(wp.url);
+        }
+      } catch (err) {
+        console.error(err.message);
       }
     }
   });
@@ -120,6 +126,7 @@ function handler(app: Application) {
         owner,
         repo,
         state: 'continue',
+        url: context.payload.pull_request.html_url
       },
       context.payload.pull_request.html_url
     );

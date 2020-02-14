@@ -28,6 +28,7 @@ interface WatchPR {
   repo: string;
   owner: string;
   state: 'continue' | 'stop';
+  url: string;
 }
 
 nock.disableNetConnect();
@@ -63,6 +64,7 @@ describe('merge-on-green', () => {
           repo: 'testRepo',
           owner: 'testOwner',
           state: 'continue',
+          url: 'github.com/foo/bar'
         },
       ];
       return watchPr;
