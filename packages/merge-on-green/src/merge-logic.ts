@@ -430,7 +430,6 @@ mergeOnGreen.merge = async function merge(
   github: GitHubAPI
 ) {
   const commitInfo = await mergeOnGreen.getPR(owner, repo, pr, github);
-  try {
     const merge = await github.pulls.merge({
       owner,
       repo,
@@ -440,9 +439,6 @@ mergeOnGreen.merge = async function merge(
       merge_method: 'squash',
     });
     return merge;
-  } catch (err) {
-    return null;
-  }
 };
 
 mergeOnGreen.updateBranch = async function updateBranch(
@@ -501,7 +497,7 @@ export async function mergeOnGreen(
   labelName: string,
   state: string,
   github: GitHubAPI
-): Promise<boolean> {
+): Promise<boolean | undefined> {
   console.info(`${owner}/${repo} checking merge on green PR status`);
   // Checks for reviewers and ensures that the latest review has been
   // approved.
@@ -521,11 +517,16 @@ export async function mergeOnGreen(
   );
 
   if (checkReview === true && checkStatus === true && state === 'continue') {
-    console.log('Updating branch');
-    await mergeOnGreen.updateBranch(owner, repo, pr, github);
-    console.log('Merging PR');
-    await mergeOnGreen.merge(owner, repo, pr, github);
-    return true;
+    try {
+      console.log('Updating branch');
+      await mergeOnGreen.updateBranch(owner, repo, pr, github);
+      console.log('Merging PR');
+      await mergeOnGreen.merge(owner, repo, pr, github);
+      return true;
+    } catch (err) {
+      console.log(err);
+      return err;
+    }    
   } else if (state === 'stop') {
     console.log('Your PR timed out before its statuses & reviews passed');
     await mergeOnGreen.createFailedParam(owner, repo, pr, github);
