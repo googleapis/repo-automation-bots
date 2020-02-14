@@ -26,10 +26,9 @@
     "lint": "gts check"
   },
   "dependencies": {
+    "@octokit/rest": "16.41.2",
     "gcf-utils": "1.6.1",
-    "probot": "9.9.4",
-    "release-please": "^3.1.1",
-    "@octokit/rest": "16.41.2"
+    "release-please": "^3.2.2"
   },
   "devDependencies": {
     "@types/bunyan": "^1.8.6",
