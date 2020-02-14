@@ -47,11 +47,17 @@ exports['buildcop app xunitXML comments on existing issue 1'] = {
 }
 
 exports['buildcop app xunitXML reopens issue for failing test 1'] = {
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop:issue",
+    "buildcop: flaky"
+  ],
   "state": "open"
 }
 
 exports['buildcop app xunitXML reopens issue for failing test 2'] = {
-  "body": "spanner/spanner_snippets: TestSample failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed"
+  "body": "Oops! Looks like this issue is still flaky. :grimace:\n\nI reopened the issue, but a human will need to close it again.\n\nspanner/spanner_snippets: TestSample failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed"
 }
 
 exports['buildcop app xunitXML closes an issue for a passing test [Go] 1'] = {
