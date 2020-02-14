@@ -70,6 +70,10 @@ const requiredChecks = fs.readFileSync(
   resolve(fixturesPath, 'config', 'required_checks.json')
 );
 
+const specialRequiredChecks = fs.readFileSync(
+  resolve(fixturesPath, 'config', 'special_required_checks.json')
+);
+
 const map = fs.readFileSync(resolve(fixturesPath, 'config', 'map.json'));
 
 const invalidmap = fs.readFileSync(
@@ -603,6 +607,55 @@ describe('merge-on-green', () => {
       }),
       requiredChecksByLanguage({ content: requiredChecks.toString('base64') }),
       repoMap({ content: map.toString('base64') }),
+    ];
+
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: {},
+      id: 'abc123',
+    });
+
+    scopes.forEach(s => s.done());
+  });
+
+
+
+  it('passes when special checks are passed', async () => {
+    handler.listPRs = async () => {
+      const watchPr: WatchPR[] = [
+        {
+          number: 1,
+          repo: 'testRepo',
+          owner: 'testOwner',
+          state: 'continue',
+          url: 'github.com/foo/bar',
+        },
+      ];
+      return watchPr;
+    };
+
+    handler.removePR = async () => {
+      return Promise.resolve(undefined);
+    };
+
+    const scopes = [
+      getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
+      getReviewsRequested({ users: [], teams: [] }),
+      getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
+      getMogLabel([{ name: 'automerge' }]),
+      getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
+      requiredChecksByLanguage({ content: specialRequiredChecks.toString('base64') }),
+      getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
+        check_runs: [
+          {
+            name: 'Special Check',
+            conclusion: 'success',
+          },
+        ],
+      }),
+      repoMap({ content: map.toString('base64') }),
+      updateBranch(),
+      merge()
     ];
 
     await probot.receive({

@@ -1,2 +1,0 @@
-required_status_checks:
-   - continuous-integration/travis-ci

@@ -47,7 +47,13 @@ interface PR {
 interface RequiredChecksByLanguage {
   [key: string]: {
     requiredStatusChecks: string[];
+    repoOverrides: [RepoOverrides];
   };
+}
+
+interface RepoOverrides {
+  repo: string;
+  requiredStatusChecks: string[]
 }
 
 interface Language {
@@ -174,6 +180,13 @@ mergeOnGreen.getRequiredChecks = async function getRequiredChecks(
       (element: Language) => element.repo === `${owner}/${repo}`
     );
     if (language !== undefined) {
+      if (checksByLanguage[language.language].repoOverrides !== undefined) {
+        const isOverriden = (checksByLanguage[language.language].repoOverrides).find((element: RepoOverrides) => element.repo === `${owner}/${repo}`);
+        if (isOverriden) {
+          console.log('Your language\'s required checks were overridden because of the PR\'s repo')
+          return isOverriden.requiredStatusChecks;
+        }
+      }    
       return checksByLanguage[language.language].requiredStatusChecks;
     } else {
       console.info(
@@ -517,15 +530,15 @@ export async function mergeOnGreen(
   );
 
   if (checkReview === true && checkStatus === true && state === 'continue') {
-    try {
       console.log('Updating branch');
       await mergeOnGreen.updateBranch(owner, repo, pr, github);
       console.log('Merging PR');
+    try {
       await mergeOnGreen.merge(owner, repo, pr, github);
       return true;
     } catch (err) {
       console.log(err);
-      return err;
+      return false;
     }    
   } else if (state === 'stop') {
     console.log('Your PR timed out before its statuses & reviews passed');
