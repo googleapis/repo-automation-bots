@@ -20,7 +20,7 @@ import { mergeOnGreen } from './merge-logic';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
-const MAX_TEST_TIME = 1000 * 60 * 20 // 3 hr. 1000 * 60 * 60 * 3 
+const MAX_TEST_TIME = 1000 * 60 * 20; // 3 hr. 1000 * 60 * 60 * 3
 const MERGE_ON_GREEN_LABEL = 'automerge';
 
 interface WatchPR {
@@ -83,7 +83,7 @@ function handler(app: Application) {
     const watchedPRs = await handler.listPRs();
     for (const wp of watchedPRs) {
       console.info(`watchedPR ${JSON.stringify(wp, null, 2)}`);
-      const remove = mergeOnGreen(
+      const remove = await mergeOnGreen(
         wp.owner,
         wp.repo,
         wp.number,

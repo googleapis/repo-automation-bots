@@ -55,102 +55,105 @@ describe('merge-on-green', () => {
     probot.load(handler);
   });
 
-    it('merges a PR on green', async () => {
-      handler.listPRs = async() => {
-        const watchPr: WatchPR[] = [{
+  it('merges a PR on green', async () => {
+    handler.listPRs = async () => {
+      const watchPr: WatchPR[] = [
+        {
           number: 1,
           repo: 'testRepo',
           owner: 'testOwner',
-          state: 'continue'
-        }];
-        return watchPr;
-      }
+          state: 'continue',
+        },
+      ];
+      return watchPr;
+    };
 
-      handler.removePR = async() => {
-        return Promise.resolve(undefined);
-      }
+    handler.removePR = async () => {
+      return Promise.resolve(undefined);
+    };
 
-      mergeOnGreen.getMOGLabel = async() => {
-        return true;
-      }
+    mergeOnGreen.getMOGLabel = async () => {
+      return true;
+    };
 
-      const requiredChecks = fs.readFileSync(resolve(fixturesPath, 'config', 'required_checks.json'));
+    const requiredChecks = fs.readFileSync(
+      resolve(fixturesPath, 'config', 'required_checks.json')
+    );
 
-      const map = fs.readFileSync(resolve(fixturesPath, 'config', 'map.json'));
+    const map = fs.readFileSync(resolve(fixturesPath, 'config', 'map.json'));
 
-      function requiredChecksByLanguage() {
-          return nock('https://api.github.com').log(console.log)
-          .get('/repos/googleapis/sloth/contents/required-checks.json') 
-          .reply(200, { content: requiredChecks.toString('base64')
-          })
-      }
+    function requiredChecksByLanguage() {
+      return nock('https://api.github.com')
+        .log(console.log)
+        .get('/repos/googleapis/sloth/contents/required-checks.json')
+        .reply(200, { content: requiredChecks.toString('base64') });
+    }
 
-      function repoMap() {
-        return nock('https://api.github.com').log(console.log)
-        .get('/repos/googleapis/sloth/contents/repos.json') 
-        .reply(200, { content: map.toString('base64')
-      })}
+    function repoMap() {
+      return nock('https://api.github.com')
+        .log(console.log)
+        .get('/repos/googleapis/sloth/contents/repos.json')
+        .reply(200, { content: map.toString('base64') });
+    }
 
-      function getReviewsCompleted() {
-        return nock('https://api.github.com').log(console.log)
+    function getReviewsCompleted() {
+      return nock('https://api.github.com')
+        .log(console.log)
         .get('/repos/testOwner/testRepo/pulls/1/reviews')
         .reply(200, {
-            "user": {
-              "login": "octocat"
-            },
-            "state": "APPROVED"
-          });
-        }
-  
-        function getReviewsRequested() {
-          return nock('https://api.github.com').log(console.log)
-          .get('/repos/testOwner/testRepo/pulls/1/requested_reviewers')
-          .reply(200, {users: [], teams: []});
-        }
-  
-       function getLatestCommit() {
-          return nock('https://api.github.com').log(console.log)
-          .get('/repos/testOwner/testRepo/pulls/1/commits?per_page=100&page=1')
-          .reply(200, [{"sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"}])
-        }
-
-        function getStatusi() {
-          return nock('https://api.github.com').log(console.log)
-          .get('/repos/testOwner/testRepo/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e/statuses?per_page=100')
-          .reply(200, 
-            [{
-              "state": "success",
-              "context": "Kokoro - Test: Binary Compatibility"
-            }]
-          )
-        }
-
-        const scopes = [
-          getReviewsCompleted(),
-          getReviewsRequested(),
-          getLatestCommit(),
-          getStatusi(),
-          requiredChecksByLanguage(),
-          repoMap()
-        ];
-
-        await probot.receive({
-          name: 'schedule.repository',
-          payload: { 
-            owner: 'testOwner',
-            repo:'testRepo',
-            number: 1,
-            state: 'continue',
-            label: 'automerge'
+          user: {
+            login: 'octocat',
           },
-          id: 'abc123',
+          state: 'APPROVED',
         });
+    }
 
+    function getReviewsRequested() {
+      return nock('https://api.github.com')
+        .log(console.log)
+        .get('/repos/testOwner/testRepo/pulls/1/requested_reviewers')
+        .reply(200, { users: [], teams: [] });
+    }
 
-      scopes.forEach(s => s.done());
+    function getLatestCommit() {
+      return nock('https://api.github.com')
+        .log(console.log)
+        .get('/repos/testOwner/testRepo/pulls/1/commits?per_page=100&page=1')
+        .reply(200, [{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]);
+    }
 
+    function getStatusi() {
+      return nock('https://api.github.com')
+        .log(console.log)
+        .get(
+          '/repos/testOwner/testRepo/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e/statuses?per_page=100'
+        )
+        .reply(200, [
+          {
+            state: 'success',
+            context: 'Kokoro - Test: Binary Compatibility',
+          },
+        ]);
+    }
+
+    const scopes = [
+      getReviewsCompleted(),
+      getReviewsRequested(),
+      getLatestCommit(),
+      getStatusi(),
+      requiredChecksByLanguage(),
+      repoMap(),
+    ];
+
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: {},
+      id: 'abc123',
     });
-})
+
+    scopes.forEach(s => s.done());
+  });
+});
 
 /*
     it('merges a PR on green', async () => {
