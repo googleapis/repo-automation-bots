@@ -51,7 +51,7 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
       repo: pr.repo,
       owner: pr.owner,
       state: state as 'continue' | 'stop',
-      url
+      url,
     };
     result.push(watchPr);
   }
@@ -126,7 +126,7 @@ function handler(app: Application) {
         owner,
         repo,
         state: 'continue',
-        url: context.payload.pull_request.html_url
+        url: context.payload.pull_request.html_url,
       },
       context.payload.pull_request.html_url
     );

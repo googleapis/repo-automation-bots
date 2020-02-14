@@ -16,10 +16,6 @@
 
 import { GitHubAPI } from 'probot/lib/github';
 
-interface Label {
-  name: string;
-}
-
 interface CheckParam {}
 
 interface CheckRun {
@@ -142,7 +138,6 @@ mergeOnGreen.requiredChecksByLanguage = async function requiredChecksByLanguage(
       Buffer.from(configFile.content as string, 'base64').toString('utf8')
     ) as RequiredChecksByLanguage;
   } catch (err) {
-    console.error(err);
     return null;
   }
 };
@@ -182,12 +177,12 @@ mergeOnGreen.getRequiredChecks = async function getRequiredChecks(
       return checksByLanguage[language.language].requiredStatusChecks;
     } else {
       console.info(
-        'this repo does not have a corresponding language in sloth/repos.json'
+        'This repo does not have a corresponding language in sloth/repos.json'
       );
       return [];
     }
   } else {
-    console.info('could not find any checks or a language map');
+    console.info('Could not find any checks or a language map');
     return [];
   }
 };
@@ -195,7 +190,6 @@ mergeOnGreen.getRequiredChecks = async function getRequiredChecks(
 mergeOnGreen.getStatusi = async function getStatusi(
   owner: string,
   repo: string,
-  pr: number,
   github: GitHubAPI,
   headSha: string
 ): Promise<CheckStatus[]> {
@@ -207,10 +201,8 @@ mergeOnGreen.getStatusi = async function getStatusi(
       ref: headSha,
       per_page: 100,
     });
-    console.info(`${owner}/${repo} found statuses: `, data.data.map((d) => d.context).join(', '));
     return data.data;
   } catch (err) {
-    console.info(`${owner}/${repo} no statuses found`);
     return [];
   }
 };
@@ -218,10 +210,9 @@ mergeOnGreen.getStatusi = async function getStatusi(
 mergeOnGreen.getRuns = async function getRuns(
   owner: string,
   repo: string,
-  pr: number,
-  github: GitHubAPI
+  github: GitHubAPI,
+  headSha: string
 ): Promise<CheckRun[]> {
-  const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr, github);
   try {
     const checkRuns = await github.checks.listForRef({
       owner,
@@ -271,49 +262,60 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
   const checkStatus = await mergeOnGreen.getStatusi(
     owner,
     repo,
-    pr,
     github,
     headSha
   );
-  const requiredChecks = await mergeOnGreen.getRequiredChecks(github, owner, repo);
+  const requiredChecks = await mergeOnGreen.getRequiredChecks(
+    github,
+    owner,
+    repo
+  );
   let mergeable = true;
   if (
-    checkStatus.length !== 0 &&
     headSha.length !== 0 &&
     requiredChecks.length !== 0 &&
     mogLabel === true
   ) {
     console.info('=== checking required checks ===');
     for (const check of requiredChecks) {
+      console.log('Looking for required checks in status checks.');
       //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
       const checkCompleted = checkStatus.find(
         (element: CheckStatus) => element.context === check
       );
       if (checkCompleted === undefined) {
+        console.log(
+          'The status checks do not include your required checks. We will check in check runs.'
+        );
         //if we can't find it in the statuses, let's check under check runs
-        const checkRuns = await mergeOnGreen.getRuns(owner, repo, pr, github);
+        const checkRuns = await mergeOnGreen.getRuns(
+          owner,
+          repo,
+          github,
+          headSha
+        );
         mergeable = mergeOnGreen.checkForRequiredSC(checkRuns, check);
         if (!mergeable) {
+          console.log(
+            'We could not find your required checks in check runs. You have no statuses or checks that match your required checks.'
+          );
           return mergeable;
         }
       } else if (checkCompleted.state !== 'success') {
-        console.info(`setting mergeable false due to ${checkCompleted.context} = ${checkCompleted.state}`);
+        console.info(
+          `Setting mergeable false due to ${checkCompleted.context} = ${checkCompleted.state}`
+        );
         mergeable = false;
         return mergeable;
       }
     }
   } else {
     mergeable = false;
-    console.log('check status ' + checkStatus);
-    console.log('head sha ' + headSha);
-    console.log('required checks ' + requiredChecks);
-    console.log('mog label?  ' + mogLabel);
     console.log(
-      'Either you have no statuses, no head sha, no required checks, or no MOG Label'
+      'Either you have no head sha, no required checks, or no MOG Label'
     );
     return mergeable;
   }
-  console.log(mergeable);
   return mergeable;
 };
 
@@ -380,6 +382,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
   pr: number,
   github: GitHubAPI
 ): Promise<boolean> {
+  console.info('=== checking required reviews ===');
   let reviewsPassed = true;
   const reviewsCompletedDirty = await mergeOnGreen.getReviewsCompleted(
     owner,
@@ -387,33 +390,33 @@ mergeOnGreen.checkReviews = async function checkReviews(
     pr,
     github
   );
-  console.info('checkReviews ' + reviewsCompletedDirty);
   const reviewsRequested = await mergeOnGreen.getReviewsRequested(
     owner,
     repo,
     pr,
     github
   );
-  console.info(
-    'reviewsRequested ' +
-      reviewsRequested.users +
-      'users ' +
-      reviewsRequested.teams
-  );
   if (reviewsCompletedDirty.length !== 0) {
     const reviewsCompleted = mergeOnGreen.cleanReviews(reviewsCompletedDirty);
     if (reviewsCompleted.length !== 0) {
       reviewsCompleted.forEach(review => {
         if (review.state !== 'APPROVED') {
+          console.log('One of your reviewers did not approve the PR');
           reviewsPassed = false;
         }
       });
     }
+  } else {
+    //if no one has reviewed it, fail the merge
+    console.log('No one has reviewed your PR');
+    reviewsPassed = false;
+    return reviewsPassed;
   }
   if (
     reviewsRequested.users.length !== 0 ||
     reviewsRequested.teams.length !== 0
   ) {
+    console.log('You have assigned reviewers that have not submitted a PR');
     reviewsPassed = false;
     return reviewsPassed;
   }
@@ -437,6 +440,24 @@ mergeOnGreen.merge = async function merge(
       merge_method: 'squash',
     });
     return merge;
+  } catch (err) {
+    return null;
+  }
+};
+
+mergeOnGreen.updateBranch = async function updateBranch(
+  owner: string,
+  repo: string,
+  pr: number,
+  github: GitHubAPI
+) {
+  try {
+    const update = await github.pulls.updateBranch({
+      owner,
+      repo,
+      pull_number: pr,
+    });
+    return update;
   } catch (err) {
     return null;
   }
@@ -485,7 +506,6 @@ export async function mergeOnGreen(
   // Checks for reviewers and ensures that the latest review has been
   // approved.
   const checkReview = await mergeOnGreen.checkReviews(owner, repo, pr, github);
-  console.info(`${owner}/${repo} checkReview = ${checkReview}`);
   // Checks statuses and check runs, ensuring that the latest version of
   // a status was a success.
   const checkStatus = await mergeOnGreen.statusesForRef(
@@ -496,15 +516,22 @@ export async function mergeOnGreen(
     github
   );
 
-  console.info(`checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state}`);
+  console.info(
+    `checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state}`
+  );
 
   if (checkReview === true && checkStatus === true && state === 'continue') {
+    console.log('Updating branch');
+    await mergeOnGreen.updateBranch(owner, repo, pr, github);
+    console.log('Merging PR');
     await mergeOnGreen.merge(owner, repo, pr, github);
     return true;
   } else if (state === 'stop') {
+    console.log('Your PR timed out before its statuses & reviews passed');
     await mergeOnGreen.createFailedParam(owner, repo, pr, github);
     return true;
   } else {
+    console.log('Statuses and/or checks failed, will check again');
     return false;
   }
 }
