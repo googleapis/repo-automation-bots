@@ -1,0 +1,7 @@
+{
+"nodejs": {
+    "requiredStatusChecks": [
+      "Kokoro - Test: Binary Compatibility"
+    ]
+  }
+}
