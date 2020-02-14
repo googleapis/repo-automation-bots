@@ -131,7 +131,7 @@ mergeOnGreen.getMOGLabel = async function getMOGLabel(
 };
 
 
-async function requiredChecksByLanguage(github: GitHubAPI): Promise<RequiredChecksByLanguage|null> {
+mergeOnGreen.requiredChecksByLanguage = async function requiredChecksByLanguage(github: GitHubAPI): Promise<RequiredChecksByLanguage|null> {
   try{
     const configFile = (await github.repos.getContents({
       owner: 'googleapis',
@@ -147,7 +147,7 @@ async function requiredChecksByLanguage(github: GitHubAPI): Promise<RequiredChec
   }
 }
 
-async function getRepoMap(github: GitHubAPI): Promise<Language[]> {
+mergeOnGreen.getRepoMap = async function getRepoMap(github: GitHubAPI): Promise<Language[]> {
   try{
     const configFile = (await github.repos.getContents({
       owner: 'googleapis',
@@ -164,13 +164,14 @@ async function getRepoMap(github: GitHubAPI): Promise<Language[]> {
 }
 
 mergeOnGreen.getRequiredChecks = async function getRequiredChecks(github: GitHubAPI, repo: string): Promise<string[]> {
-  const checksByLanguage = await requiredChecksByLanguage(github);
-  const languageMap = await getRepoMap(github);
+  const checksByLanguage = await mergeOnGreen.requiredChecksByLanguage(github);
+  const languageMap = await mergeOnGreen.getRepoMap(github);
   if (checksByLanguage && languageMap) {
     const language = languageMap.find(
       (element: Language) => element.repo === repo
       );
       if (language !== undefined) {
+        //console.log('language.language+'+checksByLanguage[language.language].requiredStatusChecks)
         return checksByLanguage[language.language].requiredStatusChecks;
       } else {
         console.info('this repo does not have a corresponding language in sloth/repos.json')
@@ -186,9 +187,10 @@ mergeOnGreen.getStatusi = async function getStatusi(
   owner: string,
   repo: string,
   pr: number,
-  github: GitHubAPI
+  github: GitHubAPI,
+  headSha: string
 ): Promise<CheckStatus[]> {
-  const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr, github);
+  console.log('head sha '+headSha)
   try {
     const data = await github.repos.listStatusesForRef({
       owner,
@@ -253,7 +255,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
 ): Promise<boolean> {
   const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr, github);
   const mogLabel = await mergeOnGreen.getMOGLabel(owner, repo, pr, labelName, github);
-  const checkStatus = await mergeOnGreen.getStatusi(owner, repo, pr, github);
+  const checkStatus = await mergeOnGreen.getStatusi(owner, repo, pr, github, headSha);
   const requiredChecks = await mergeOnGreen.getRequiredChecks(github, repo);
   let mergeable = true;
   if (
@@ -290,6 +292,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
     );
     return mergeable;
   }
+  console.log(mergeable);
   return mergeable;
 };
 
@@ -360,12 +363,14 @@ mergeOnGreen.checkReviews = async function checkReviews(
     pr,
     github
   );
+  console.info("checkReviews " +reviewsCompletedDirty);
   const reviewsRequested = await mergeOnGreen.getReviewsRequested(
     owner,
     repo,
     pr,
     github
   );
+  console.info("reviewsRequested " +reviewsRequested.users+"users "+reviewsRequested.teams);
   if (reviewsCompletedDirty.length !== 0) {
     const reviewsCompleted = mergeOnGreen.cleanReviews(reviewsCompletedDirty);
     if (reviewsCompleted.length !== 0) {
@@ -460,6 +465,7 @@ export async function mergeOnGreen(
     github
   );
   if (checkReview === true && checkStatus === true && state === 'continue') {
+    console.log('congrats')
     await mergeOnGreen.merge(owner, repo, pr, github);
     return true;
   } else if (state === 'stop') {

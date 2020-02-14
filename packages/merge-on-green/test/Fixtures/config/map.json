@@ -1,0 +1,5 @@
+{
+    "repos": [
+    { "language": "nodejs", "repo": "testRepo", "apiHint": "clouddebugger"}
+    ]
+  }
