@@ -618,8 +618,6 @@ describe('merge-on-green', () => {
     scopes.forEach(s => s.done());
   });
 
-
-
   it('passes when special checks are passed', async () => {
     handler.listPRs = async () => {
       const watchPr: WatchPR[] = [
@@ -644,7 +642,9 @@ describe('merge-on-green', () => {
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
       getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
-      requiredChecksByLanguage({ content: specialRequiredChecks.toString('base64') }),
+      requiredChecksByLanguage({
+        content: specialRequiredChecks.toString('base64'),
+      }),
       getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
         check_runs: [
           {
@@ -655,7 +655,7 @@ describe('merge-on-green', () => {
       }),
       repoMap({ content: map.toString('base64') }),
       updateBranch(),
-      merge()
+      merge(),
     ];
 
     await probot.receive({
