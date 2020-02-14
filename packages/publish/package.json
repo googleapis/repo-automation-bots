@@ -29,7 +29,6 @@
     "@google-cloud/secret-manager": "^1.1.0",
     "gcf-utils": "1.6.1",
     "node-fetch": "^2.6.0",
-    "probot": "9.9.4",
     "tar": "^6.0.0",
     "uuid": "^3.3.3",
     "@octokit/rest": "16.41.2"
