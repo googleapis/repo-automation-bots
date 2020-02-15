@@ -514,18 +514,6 @@ export async function mergeOnGreen(
   github: GitHubAPI
 ): Promise<boolean | undefined> {
   console.info(`${owner}/${repo} checking merge on green PR status`);
-  // Checks for reviewers and ensures that the latest review has been
-  // approved.
-  // const checkReview = await mergeOnGreen.checkReviews(owner, repo, pr, github);
-  // // Checks statuses and check runs, ensuring that the latest version of
-  // // a status was a success.
-  // const checkStatus = await mergeOnGreen.statusesForRef(
-  //   owner,
-  //   repo,
-  //   pr,
-  //   labelName,
-  //   github
-  // );
 
   const [checkReview, checkStatus] = await Promise.all([
     mergeOnGreen.checkReviews(owner, repo, pr, github),
