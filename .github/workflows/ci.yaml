@@ -15,11 +15,11 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: 12
-      - run: echo ./packages/{{ matrix.package }}
-      - run: cd ./packages/{{ matrix.package }}
+      - run: echo ./packages/${{ matrix.package }}
+      - run: cd ./packages/${{ matrix.package }}
       - run: npm install
-        working-directory: ./packages/{{ matrix.package }}
+        working-directory: ./packages/${{ matrix.package }}
       - run: npm test
-        working-directory: ./packages/{{ matrix.package }}
+        working-directory: ./packages/${{ matrix.package }}
       - run: npm run lint
-        working-directory: ./packages/{{ matrix.package }}
+        working-directory: ./packages/${{ matrix.package }}
