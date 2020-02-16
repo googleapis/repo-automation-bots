@@ -64,11 +64,13 @@ async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
 }
 
 async function refreshLabels(github: GitHubAPI, repoPath: string) {
-  const data = (await github.repos.getContents({
-    owner: 'googleapis',
-    repo: 'repo-automation-bots',
-    path: 'packages/label-sync/src/labels.json',
-  })).data as { content?: string };
+  const data = (
+    await github.repos.getContents({
+      owner: 'googleapis',
+      repo: 'repo-automation-bots',
+      path: 'packages/label-sync/src/labels.json',
+    })
+  ).data as { content?: string };
   labelsCache = JSON.parse(
     Buffer.from(data.content as string, 'base64').toString('utf8')
   );
