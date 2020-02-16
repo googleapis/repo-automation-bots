@@ -16,8 +16,8 @@ jobs:
         with:
           node-version: 12
       - run: npm install
-        working-directory: {{ matrix.package }}
+        working-directory: ./packages/{{ matrix.package }}
       - run: npm test
-        working-directory: {{ matrix.package }}
+        working-directory: ./packages/{{ matrix.package }}
       - run: npm run lint
-        working-directory: {{ matrix.package }}
+        working-directory: ./packages/{{ matrix.package }}
