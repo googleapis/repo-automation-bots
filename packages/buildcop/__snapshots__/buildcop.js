@@ -95,3 +95,11 @@ exports['buildcop app xunitXML opens an issue [Python] 1'] = {
     "buildcop:issue"
   ]
 }
+
+exports['buildcop app xunitXML closes a duplicate issue 1'] = {
+  "body": "Closing as a duplicate of #17"
+}
+
+exports['buildcop app xunitXML closes a duplicate issue 2'] = {
+  "state": "closed"
+}
