@@ -32,10 +32,7 @@ import { GitHubAPI } from 'probot/lib/github';
 import xmljs from 'xml-js';
 import Octokit from '@octokit/rest';
 
-// TODO: Consider adding a space between : and issue. We would have to update
-// all existing issues with the new label (could be a one-time operation)
-// and update tests.
-const ISSUE_LABEL = 'buildcop:issue';
+const ISSUE_LABEL = 'buildcop: issue';
 const FLAKY_LABEL = 'buildcop: flaky';
 const BUG_LABELS = 'type: bug,priority: p1';
 

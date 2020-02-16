@@ -4,7 +4,7 @@ exports['buildcop app testsFailed opens an issue when testsFailed 1'] = {
   "labels": [
     "type: bug",
     "priority: p1",
-    "buildcop:issue"
+    "buildcop: issue"
   ]
 }
 
@@ -14,7 +14,7 @@ exports['buildcop app testsFailed opens a new issue when testsFailed and there i
   "labels": [
     "type: bug",
     "priority: p1",
-    "buildcop:issue"
+    "buildcop: issue"
   ]
 }
 
@@ -28,7 +28,7 @@ exports['buildcop app xunitXML opens multiple issues for multiple failures 1'] =
   "labels": [
     "type: bug",
     "priority: p1",
-    "buildcop:issue"
+    "buildcop: issue"
   ]
 }
 
@@ -38,7 +38,7 @@ exports['buildcop app xunitXML opens multiple issues for multiple failures 2'] =
   "labels": [
     "type: bug",
     "priority: p1",
-    "buildcop:issue"
+    "buildcop: issue"
   ]
 }
 
@@ -50,7 +50,7 @@ exports['buildcop app xunitXML reopens issue for failing test 1'] = {
   "labels": [
     "type: bug",
     "priority: p1",
-    "buildcop:issue",
+    "buildcop: issue",
     "buildcop: flaky"
   ],
   "state": "open"
@@ -82,7 +82,7 @@ exports['buildcop app xunitXML opens an issue [Go] 1'] = {
   "labels": [
     "type: bug",
     "priority: p1",
-    "buildcop:issue"
+    "buildcop: issue"
   ]
 }
 
@@ -92,7 +92,7 @@ exports['buildcop app xunitXML opens an issue [Python] 1'] = {
   "labels": [
     "type: bug",
     "priority: p1",
-    "buildcop:issue"
+    "buildcop: issue"
   ]
 }
 
