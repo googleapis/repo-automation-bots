@@ -10,7 +10,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [ 'auto-label', 'blunderbuss', 'buildcop', 'conventional-commit-lint', 'failurechecker', 'gcf-utils', 'generate-bot', 'header-checker-lint', 'label-sync', 'merge-on-green', 'publish', 'release-please', 'trusted-contribution' ]
+        package: [
+          'auto-label',
+          'blunderbuss',
+          'buildcop',
+          'conventional-commit-lint',
+          'failurechecker',
+          'gcf-utils',
+          'generate-bot',
+          'header-checker-lint',
+          'label-sync',
+          'merge-on-green',
+          'publish',
+          'release-please',
+          'trusted-contribution'
+        ]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
