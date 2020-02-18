@@ -32,10 +32,27 @@ import { GitHubAPI } from 'probot/lib/github';
 import xmljs from 'xml-js';
 import Octokit from '@octokit/rest';
 
-const BUILDCOP_LABELS = 'buildcop:issue';
-const LABELS = 'type: bug,priority: p1';
+const ISSUE_LABEL = 'buildcop: issue';
+const FLAKY_LABEL = 'buildcop: flaky';
+const BUG_LABELS = 'type: bug,priority: p1';
+
+const LABELS_FOR_FLAKY_ISSUE = BUG_LABELS.split(',').concat([
+  ISSUE_LABEL,
+  FLAKY_LABEL,
+]);
+const LABELS_FOR_NEW_ISSUE = BUG_LABELS.split(',').concat([ISSUE_LABEL]);
 
 const EVERYTHING_FAILED_TITLE = 'The build failed';
+
+const FLAKY_MESSAGE = `Looks like this issue is flaky. :worried:
+
+I'm going to leave this open and stop commenting.
+
+A human should fix and close this.`;
+
+const FLAKY_AGAIN_MESSAGE = `Oops! Looks like this issue is still flaky. :grimace:
+
+I reopened the issue, but a human will need to close it again.`;
 
 interface TestCase {
   package?: string;
@@ -92,17 +109,21 @@ export function buildcop(app: Application) {
 
     try {
       // Get the list of issues once, before opening/closing any of them.
-      const issues = (
-        await context.github.issues.listForRepo({
-          owner,
-          repo,
-          per_page: 32,
-          labels: BUILDCOP_LABELS,
-          state: 'all', // Include open and closed issues.
-        })
-      ).data;
+      const options = context.github.issues.listForRepo.endpoint.merge({
+        owner,
+        repo,
+        per_page: 100,
+        labels: ISSUE_LABEL,
+        state: 'all', // Include open and closed issues.
+      });
+      let issues = await context.github.paginate(options);
 
-      // Open issues for failing tests.
+      // If we deduplicate any issues, re-download the issues.
+      if (await buildcop.deduplicateIssues(issues, context, owner, repo)) {
+        issues = await context.github.paginate(options);
+      }
+
+      // Open issues for failing tests (including flaky tests).
       await buildcop.openIssues(
         results.failures,
         issues,
@@ -112,7 +133,7 @@ export function buildcop(app: Application) {
         buildID,
         buildURL
       );
-      // Close issues for passing tests.
+      // Close issues for passing tests (unless they're flaky).
       await buildcop.closeIssues(
         results,
         issues,
@@ -129,6 +150,63 @@ export function buildcop(app: Application) {
   });
 }
 
+// deduplicate issues closes any duplicate issues and returns whether or not any
+// were modified.
+buildcop.deduplicateIssues = async (
+  issues: Octokit.IssuesListForRepoResponseItem[],
+  context: PubSubContext,
+  owner: string,
+  repo: string
+) => {
+  issues = issues.filter(issue => issue.state === 'open');
+  const byTitle = new Map<string, Octokit.IssuesListForRepoResponseItem[]>();
+  for (const issue of issues) {
+    byTitle.set(issue.title, byTitle.get(issue.title) || []);
+    byTitle.get(issue.title)?.push(issue);
+  }
+
+  let modified = false;
+
+  for (const [title, issues] of byTitle) {
+    if (issues.length <= 1) {
+      continue;
+    }
+    modified = true;
+    // All of the issues will be closed except for the first one. So, sort by
+    // flakiness and issue number.
+    issues.sort((a, b) => {
+      if (buildcop.isFlaky(a) && !buildcop.isFlaky(b)) {
+        return -1;
+      }
+      if (!buildcop.isFlaky(a) && buildcop.isFlaky(b)) {
+        return 1;
+      }
+      return a.number - b.number;
+    });
+    // Keep the first issue, close the others.
+    const issue = issues.shift();
+    for (const dup of issues) {
+      context.log.info(
+        `[${owner}/${repo}] closing issue #${dup.number} as duplicate of #${issue?.number}`
+      );
+      await context.github.issues.createComment({
+        owner,
+        repo,
+        issue_number: dup.number,
+        body: `Closing as a duplicate of #${issue?.number}`,
+      });
+      await context.github.issues.update({
+        owner,
+        repo,
+        issue_number: dup.number,
+        state: 'closed',
+      });
+    }
+  }
+
+  return modified;
+};
+
 // For every failure, check if an issue is open. If not, open/reopen one.
 buildcop.openIssues = async (
   failures: TestCase[],
@@ -140,24 +218,30 @@ buildcop.openIssues = async (
   buildURL: string
 ) => {
   for (const failure of failures) {
-    // Look for an existing issue. If there are multiple, pick one at
-    // random.
     // Only reopen issues for individual test cases, not for the "everything
     // failed" issue. If the "everything failed" issue is already open, leave it
     // open.
-    // TODO: what if one is closed and one is open? We should prefer the
-    // open one and close duplicates.
-    const existingIssue = issues.find(issue => {
-      if (issue.title === EVERYTHING_FAILED_TITLE) {
-        return issue.state === 'open';
-      }
-      return issue.title === buildcop.formatTestCase(failure);
-    });
+    const matchingIssues = issues.filter(
+      issue => issue.title === buildcop.formatTestCase(failure)
+    );
+    // Prefer open issues in case there are duplicates.
+    let existingIssue = matchingIssues.find(issue => issue.state === 'open');
+
+    if (
+      matchingIssues.length > 0 &&
+      !existingIssue &&
+      buildcop.formatTestCase(failure) !== EVERYTHING_FAILED_TITLE
+    ) {
+      existingIssue = matchingIssues[0];
+    }
+
     if (existingIssue) {
       context.log.info(
         `[${owner}/${repo}] existing issue #${existingIssue.number}: state: ${existingIssue.state}`
       );
       if (existingIssue.state === 'closed') {
+        // If the issue is closed, we know the bot opened and closed it in the
+        // past. So, this is probably a flaky test. A human should close it.
         context.log.info(
           `[${owner}/${repo}] reopening issue #${existingIssue.number}`
         );
@@ -165,17 +249,36 @@ buildcop.openIssues = async (
           owner,
           repo,
           issue_number: existingIssue.number,
+          labels: LABELS_FOR_FLAKY_ISSUE,
           state: 'open',
         });
+        let body = FLAKY_MESSAGE;
+        // If the issue was flaky and we reopen it (again), say so.
+        if (buildcop.isFlaky(existingIssue)) {
+          body = FLAKY_AGAIN_MESSAGE;
+        }
+        body = body + '\n\n' + buildcop.formatBody(failure, buildID, buildURL);
+        await context.github.issues.createComment({
+          owner,
+          repo,
+          issue_number: existingIssue.number,
+          body,
+        });
+      } else {
+        // TODO: this can be spammy (https://github.com/googleapis/repo-automation-bots/issues/282).
+
+        // Don't comment if it's flaky.
+        if (buildcop.isFlaky(existingIssue)) {
+          return;
+        }
+
+        await context.github.issues.createComment({
+          owner,
+          repo,
+          issue_number: existingIssue.number,
+          body: buildcop.formatBody(failure, buildID, buildURL),
+        });
       }
-      // TODO: Make this comment say something nice about reopening the
-      // issue?
-      await context.github.issues.createComment({
-        owner,
-        repo,
-        issue_number: existingIssue.number,
-        body: buildcop.formatBody(failure, buildID, buildURL),
-      });
     } else {
       const newIssue = (
         await context.github.issues.create({
@@ -183,7 +286,7 @@ buildcop.openIssues = async (
           repo,
           title: buildcop.formatTestCase(failure),
           body: buildcop.formatBody(failure, buildID, buildURL),
-          labels: LABELS.split(',').concat(BUILDCOP_LABELS.split(',')),
+          labels: LABELS_FOR_NEW_ISSUE,
         })
       ).data;
       context.log.info(`[${owner}/${repo}]: created issue #${newIssue.number}`);
@@ -191,8 +294,8 @@ buildcop.openIssues = async (
   }
 };
 
-// For every buildcop issue, if it passed and it didn't previously fail in the
-// same build, close it.
+// For every buildcop issue, if it's not flaky and it passed and it didn't
+// previously fail in the same build, close it.
 buildcop.closeIssues = async (
   results: TestResults,
   issues: Octokit.IssuesListForRepoResponseItem[],
@@ -206,6 +309,12 @@ buildcop.closeIssues = async (
     if (issue.state === 'closed') {
       continue;
     }
+
+    // Don't close flaky issues.
+    if (buildcop.isFlaky(issue)) {
+      continue;
+    }
+
     const failure = results.failures.find(failure => {
       return issue.title === buildcop.formatTestCase(failure);
     });
@@ -262,6 +371,18 @@ buildcop.closeIssues = async (
       state: 'closed',
     });
   }
+};
+
+buildcop.isFlaky = (issue: Octokit.IssuesListForRepoResponseItem): boolean => {
+  if (issue.labels === undefined) {
+    return false;
+  }
+  for (const label of issue.labels) {
+    if (label.toString() === FLAKY_LABEL) {
+      return true;
+    }
+  }
+  return false;
 };
 
 buildcop.formatBody = (

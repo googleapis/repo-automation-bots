@@ -176,7 +176,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [])
           .post('/repos/tbpg/golang-samples/issues', body => {
@@ -202,7 +202,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -235,7 +235,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -274,7 +274,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [])
           .post('/repos/tbpg/golang-samples/issues', body => {
@@ -304,7 +304,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/python-docs-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/python-docs-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [])
           .post('/repos/tbpg/python-docs-samples/issues', body => {
@@ -334,9 +334,20 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
+            // Duplicate issue that's closed. The open one should be updated.
+            {
+              title: formatTestCase({
+                package:
+                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+                testCase: 'TestSample',
+              }),
+              number: 15,
+              body: 'Failure!',
+              state: 'closed',
+            },
             {
               title: formatTestCase({
                 package:
@@ -359,6 +370,43 @@ describe('buildcop', () => {
         requests.done();
       });
 
+      it('does not comment about failure on existing flaky issue', async () => {
+        const input = fs.readFileSync(
+          resolve(fixturesPath, 'testdata', 'one_failed.xml'),
+          'utf8'
+        );
+        const payload = formatPayload({
+          repo: 'tbpg/golang-samples',
+          organization: { login: 'tbpg' },
+          repository: { name: 'golang-samples' },
+          buildID: '123',
+          buildURL: 'http://example.com',
+          xunitXML: input,
+        });
+
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
+          )
+          .reply(200, [
+            {
+              title: formatTestCase({
+                package:
+                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+                testCase: 'TestSample',
+              }),
+              number: 16,
+              body: `Failure!`,
+              labels: ['buildcop: flaky'],
+              state: 'open',
+            },
+          ]);
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        requests.done();
+      });
+
       it('handles a testsuite with no test cases', async () => {
         const input = fs.readFileSync(
           resolve(fixturesPath, 'testdata', 'no_tests.xml'),
@@ -375,7 +423,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, []);
 
@@ -400,7 +448,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -411,6 +459,7 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: 'Failure!',
+              labels: ['buildcop: flaky'],
               state: 'closed',
             },
           ])
@@ -446,7 +495,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -492,7 +541,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/python-docs-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/python-docs-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -538,7 +587,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -573,7 +622,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -613,7 +662,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -624,6 +673,42 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: `status: failed\nbuildID: 123`,
+            },
+          ]);
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        requests.done();
+      });
+
+      it('keeps an issue open for a passing flaky test', async () => {
+        const input = fs.readFileSync(
+          resolve(fixturesPath, 'testdata', 'passed.xml'),
+          'utf8'
+        );
+        const payload = formatPayload({
+          repo: 'tbpg/golang-samples',
+          organization: { login: 'tbpg' },
+          repository: { name: 'golang-samples' },
+          buildID: '123',
+          buildURL: 'http://example.com',
+          xunitXML: input,
+        });
+
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
+          )
+          .reply(200, [
+            {
+              title: formatTestCase({
+                package:
+                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+                testCase: 'TestSample',
+              }),
+              number: 16,
+              body: `Failure!`,
+              labels: ['buildcop: flaky'],
             },
           ]);
 
@@ -648,7 +733,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -672,6 +757,79 @@ describe('buildcop', () => {
             return true;
           })
           .reply(200);
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        requests.done();
+      });
+
+      it('closes a duplicate issue', async () => {
+        const input = fs.readFileSync(
+          resolve(fixturesPath, 'testdata', 'passed.xml'),
+          'utf8'
+        );
+        const payload = formatPayload({
+          repo: 'tbpg/golang-samples',
+          organization: { login: 'tbpg' },
+          repository: { name: 'golang-samples' },
+          buildID: '123',
+          buildURL: 'http://example.com',
+          xunitXML: input,
+        });
+
+        const title = formatTestCase({
+          package:
+            'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+          testCase: 'TestSample',
+        });
+
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
+          )
+          .reply(200, [
+            {
+              title,
+              number: 16,
+              body: 'Failure!',
+              state: 'open',
+            },
+            {
+              title,
+              number: 17,
+              body: 'Failure!',
+              labels: ['buildcop: flaky'],
+              state: 'open',
+            },
+          ])
+          .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200)
+          .patch('/repos/tbpg/golang-samples/issues/16', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200)
+          .get(
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
+          )
+          .reply(200, [
+            {
+              title,
+              number: 16,
+              body: 'Failure!',
+              state: 'closed',
+            },
+            {
+              title,
+              number: 17,
+              body: 'Failure!',
+              labels: ['buildcop: flaky'],
+              state: 'open',
+            },
+          ]);
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
