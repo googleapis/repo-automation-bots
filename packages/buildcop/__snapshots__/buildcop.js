@@ -4,7 +4,7 @@ exports['buildcop app testsFailed opens an issue when testsFailed 1'] = {
   "labels": [
     "type: bug",
     "priority: p1",
-    "buildcop:issue"
+    "buildcop: issue"
   ]
 }
 
@@ -14,7 +14,7 @@ exports['buildcop app testsFailed opens a new issue when testsFailed and there i
   "labels": [
     "type: bug",
     "priority: p1",
-    "buildcop:issue"
+    "buildcop: issue"
   ]
 }
 
@@ -28,7 +28,7 @@ exports['buildcop app xunitXML opens multiple issues for multiple failures 1'] =
   "labels": [
     "type: bug",
     "priority: p1",
-    "buildcop:issue"
+    "buildcop: issue"
   ]
 }
 
@@ -38,7 +38,7 @@ exports['buildcop app xunitXML opens multiple issues for multiple failures 2'] =
   "labels": [
     "type: bug",
     "priority: p1",
-    "buildcop:issue"
+    "buildcop: issue"
   ]
 }
 
@@ -47,11 +47,17 @@ exports['buildcop app xunitXML comments on existing issue 1'] = {
 }
 
 exports['buildcop app xunitXML reopens issue for failing test 1'] = {
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue",
+    "buildcop: flaky"
+  ],
   "state": "open"
 }
 
 exports['buildcop app xunitXML reopens issue for failing test 2'] = {
-  "body": "spanner/spanner_snippets: TestSample failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed"
+  "body": "Oops! Looks like this issue is still flaky. :grimace:\n\nI reopened the issue, but a human will need to close it again.\n\nspanner/spanner_snippets: TestSample failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed"
 }
 
 exports['buildcop app xunitXML closes an issue for a passing test [Go] 1'] = {
@@ -76,7 +82,7 @@ exports['buildcop app xunitXML opens an issue [Go] 1'] = {
   "labels": [
     "type: bug",
     "priority: p1",
-    "buildcop:issue"
+    "buildcop: issue"
   ]
 }
 
@@ -86,6 +92,14 @@ exports['buildcop app xunitXML opens an issue [Python] 1'] = {
   "labels": [
     "type: bug",
     "priority: p1",
-    "buildcop:issue"
+    "buildcop: issue"
   ]
+}
+
+exports['buildcop app xunitXML closes a duplicate issue 1'] = {
+  "body": "Closing as a duplicate of #17"
+}
+
+exports['buildcop app xunitXML closes a duplicate issue 2'] = {
+  "state": "closed"
 }
