@@ -113,7 +113,7 @@ mergeOnGreen.getPR = async function getPR(
   }
 };
 
-mergeOnGreen.getMOGLabel = async function getMOGLabel(
+mergeOnGreen.hasMOGLabel = async function hasMOGLabel(
   owner: string,
   repo: string,
   pr: number,
@@ -159,7 +159,13 @@ mergeOnGreen.requiredChecksByLanguage = async function requiredChecksByLanguage(
   }
 };
 
-mergeOnGreen.getRepoMap = async function getRepoMap(
+/*
+The function above gets the required checks for each repo based on
+language. However, since we only have the repo name from the payload, 
+we need to figure out what language the repo name attaches to. Grabbing
+this file tells us that info.
+*/
+mergeOnGreen.mapReposToLanguage = async function mapReposToLanguage(
   github: GitHubAPI
 ): Promise<Language[]> {
   try {
@@ -186,7 +192,7 @@ mergeOnGreen.getRequiredChecks = async function getRequiredChecks(
 ): Promise<string[]> {
   const [checksByLanguage, languageMap] = await Promise.all([
     mergeOnGreen.requiredChecksByLanguage(github),
-    mergeOnGreen.getRepoMap(github),
+    mergeOnGreen.mapReposToLanguage(github),
   ]);
   if (checksByLanguage && languageMap) {
     const language = languageMap.find(
@@ -239,7 +245,7 @@ mergeOnGreen.getStatusi = async function getStatusi(
   }
 };
 
-mergeOnGreen.getRuns = async function getRuns(
+mergeOnGreen.getCheckRuns = async function getCheckRuns(
   owner: string,
   repo: string,
   github: GitHubAPI,
@@ -269,8 +275,7 @@ mergeOnGreen.checkForRequiredSC = function checkForRequiredSC(
       checkRunCompleted !== undefined &&
       checkRunCompleted.conclusion === 'success'
     ) {
-      mergeable = true;
-      return mergeable;
+      return true;
     }
   }
   return mergeable;
@@ -285,7 +290,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
 ): Promise<boolean> {
   const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr, github);
   const [mogLabel, checkStatus, requiredChecks] = await Promise.all([
-    await mergeOnGreen.getMOGLabel(owner, repo, pr, labelName, github),
+    await mergeOnGreen.hasMOGLabel(owner, repo, pr, labelName, github),
     await mergeOnGreen.getStatusi(owner, repo, github, headSha),
     await mergeOnGreen.getRequiredChecks(github, owner, repo),
   ]);
@@ -308,7 +313,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
           'The status checks do not include your required checks. We will check in check runs.'
         );
         //if we can't find it in the statuses, let's check under check runs
-        const checkRuns = await mergeOnGreen.getRuns(
+        const checkRuns = await mergeOnGreen.getCheckRuns(
           owner,
           repo,
           github,
@@ -319,7 +324,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
           console.log(
             'We could not find your required checks in check runs. You have no statuses or checks that match your required checks.'
           );
-          return mergeable;
+          return false;
         }
       } else if (checkCompleted.state !== 'success') {
         console.info(
@@ -413,23 +418,21 @@ mergeOnGreen.checkReviews = async function checkReviews(
       reviewsCompleted.forEach(review => {
         if (review.state !== 'APPROVED') {
           console.log('One of your reviewers did not approve the PR');
-          reviewsPassed = false;
+          return false;
         }
       });
     }
   } else {
     //if no one has reviewed it, fail the merge
     console.log('No one has reviewed your PR');
-    reviewsPassed = false;
-    return reviewsPassed;
+    return false;
   }
   if (
     reviewsRequested.users.length !== 0 ||
     reviewsRequested.teams.length !== 0
   ) {
-    console.log('You have assigned reviewers that have not submitted a PR');
-    reviewsPassed = false;
-    return reviewsPassed;
+    console.log('You have assigned reviewers that have not submitted a review');
+    return false;
   }
   return reviewsPassed;
 };
