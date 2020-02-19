@@ -25,7 +25,7 @@ Issues or feature requests? Please
    directories. They must be named `sponge_log.xml`.
 1. If you're _not_ already using Trampoline, add the Trampoline `gfile`
    directory to your Kokoro job. This contains the `buildcop.sh` script that
-   will publish the logs in the next step.
+   will be used to publish the logs.
 
    ```
    gfile_resources: "/bigstore/cloud-devrel-kokoro-resources/trampoline"
@@ -34,7 +34,7 @@ Issues or feature requests? Please
    publish the logs to Pub/Sub.
 
    The Trampline service account will be activated, so be sure to change it back
-   if you need to use `gcloud` after calling `buildcop.sh` in the next step.
+   if you need to use `gcloud` after calling `buildcop.sh`.
 1. Call the `buildcop.sh` script for nightly/continuous tests you want issues
    filed for.
 
