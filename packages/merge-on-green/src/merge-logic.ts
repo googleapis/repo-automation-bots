@@ -385,11 +385,13 @@ mergeOnGreen.cleanReviews = function cleanReviews(
 ): Reviews[] {
   const cleanReviews = [];
   const distinctReviewers: string[] = [];
-  for (let x = reviewsCompleted.length - 1; x >= 0; x--) {
-    const reviewsCompletedUser = reviewsCompleted[x].user.login;
-    if (!distinctReviewers.includes(reviewsCompletedUser)) {
-      cleanReviews.push(reviewsCompleted[x]);
-      distinctReviewers.push(reviewsCompletedUser);
+  if (reviewsCompleted.length !== 0) {
+    for (let x = reviewsCompleted.length - 1; x >= 0; x--) {
+      const reviewsCompletedUser = reviewsCompleted[x].user.login;
+      if (!distinctReviewers.includes(reviewsCompletedUser)) {
+        cleanReviews.push(reviewsCompleted[x]);
+        distinctReviewers.push(reviewsCompletedUser);
+      }
     }
   }
   return cleanReviews;
@@ -409,16 +411,15 @@ mergeOnGreen.checkReviews = async function checkReviews(
     mergeOnGreen.getReviewsCompleted(owner, repo, pr, github),
     mergeOnGreen.getReviewsRequested(owner, repo, pr, github),
   ]);
-  if (reviewsCompletedDirty.length !== 0) {
-    const reviewsCompleted = mergeOnGreen.cleanReviews(reviewsCompletedDirty);
-    if (reviewsCompleted.length !== 0) {
-      reviewsCompleted.forEach(review => {
-        if (review.state !== 'APPROVED') {
-          console.log('One of your reviewers did not approve the PR');
-          return false;
-        }
-      });
-    }
+  let reviewsPassed = true;
+  const reviewsCompleted = mergeOnGreen.cleanReviews(reviewsCompletedDirty);
+  if (reviewsCompleted.length !== 0) {
+    reviewsCompleted.forEach(review => {
+      if (review.state !== 'APPROVED') {
+        console.log('One of your reviewers did not approve the PR');
+        reviewsPassed = false;
+      }
+    });
   } else {
     //if no one has reviewed it, fail the merge
     console.log('No one has reviewed your PR');
@@ -431,7 +432,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
     console.log('You have assigned reviewers that have not submitted a review');
     return false;
   }
-  return true;
+  return reviewsPassed;
 };
 
 mergeOnGreen.merge = async function merge(
