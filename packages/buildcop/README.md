@@ -30,6 +30,11 @@ Issues or feature requests? Please
    ```
    gfile_resources: "/bigstore/cloud-devrel-kokoro-resources/trampoline"
    ```
+1. Make sure `gcloud` is installed and on the `PATH`. `gcloud` is used to
+   publish the logs to Pub/Sub.
+
+   The Trampline service account will be activated, so be sure to change it back
+   if you need to use `gcloud` after calling `buildcop.sh` in the next step.
 1. Call the `buildcop.sh` script for nightly/continuous tests you want issues
    filed for.
 
