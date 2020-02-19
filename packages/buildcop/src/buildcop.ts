@@ -84,8 +84,8 @@ interface PubSubContext {
 
 export function buildcop(app: Application) {
   app.on('pubsub.message', async (context: PubSubContext) => {
-    const owner = context.payload.organization.login;
-    const repo = context.payload.repository.name;
+    const owner = context.payload.organization?.login;
+    const repo = context.payload.repository?.name;
     const buildID = context.payload.buildID || '[TODO: set buildID]';
     const buildURL = context.payload.buildURL || '[TODO: set buildURL]';
 
@@ -119,7 +119,9 @@ export function buildcop(app: Application) {
       let issues = await context.github.paginate(options);
 
       // If we deduplicate any issues, re-download the issues.
-      if (await buildcop.deduplicateIssues(issues, context, owner, repo)) {
+      if (
+        await buildcop.deduplicateIssues(results, issues, context, owner, repo)
+      ) {
         issues = await context.github.paginate(options);
       }
 
@@ -150,15 +152,22 @@ export function buildcop(app: Application) {
   });
 }
 
-// deduplicate issues closes any duplicate issues and returns whether or not any
+// deduplicateIssues closes any duplicate issues and returns whether or not any
 // were modified.
+// Only issues for tests in results are modified.
 buildcop.deduplicateIssues = async (
+  results: TestResults,
   issues: Octokit.IssuesListForRepoResponseItem[],
   context: PubSubContext,
   owner: string,
   repo: string
 ) => {
-  issues = issues.filter(issue => issue.state === 'open');
+  const tests = results.passes.concat(results.failures);
+  issues = issues.filter(
+    issue =>
+      issue.state === 'open' &&
+      tests.find(test => issue.title === buildcop.formatTestCase(test))
+  );
   const byTitle = new Map<string, Octokit.IssuesListForRepoResponseItem[]>();
   for (const issue of issues) {
     byTitle.set(issue.title, byTitle.get(issue.title) || []);
@@ -312,6 +321,9 @@ buildcop.closeIssues = async (
 
     // Don't close flaky issues.
     if (buildcop.isFlaky(issue)) {
+      context.log.info(
+        `[${owner}/${repo}] not closing flaky issue #${issue.number}`
+      );
       continue;
     }
 
@@ -378,7 +390,7 @@ buildcop.isFlaky = (issue: Octokit.IssuesListForRepoResponseItem): boolean => {
     return false;
   }
   for (const label of issue.labels) {
-    if (label.toString() === FLAKY_LABEL) {
+    if (label.name === FLAKY_LABEL) {
       return true;
     }
   }

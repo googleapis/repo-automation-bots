@@ -397,7 +397,7 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: `Failure!`,
-              labels: ['buildcop: flaky'],
+              labels: [{ name: 'buildcop: flaky' }],
               state: 'open',
             },
           ]);
@@ -459,7 +459,7 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: 'Failure!',
-              labels: ['buildcop: flaky'],
+              labels: [{ name: 'buildcop: flaky' }],
               state: 'closed',
             },
           ])
@@ -708,7 +708,7 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: `Failure!`,
-              labels: ['buildcop: flaky'],
+              labels: [{ name: 'buildcop: flaky' }],
             },
           ]);
 
@@ -782,6 +782,10 @@ describe('buildcop', () => {
             'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
           testCase: 'TestSample',
         });
+        const title2 = formatTestCase({
+          package: 'appengine/go11x/helloworld',
+          testCase: 'TestIndexHandler',
+        });
 
         const requests = nock('https://api.github.com')
           .get(
@@ -798,16 +802,29 @@ describe('buildcop', () => {
               title,
               number: 17,
               body: 'Failure!',
-              labels: ['buildcop: flaky'],
+              labels: [{ name: 'buildcop: flaky' }],
+              state: 'open',
+            },
+            {
+              title: title2,
+              number: 18,
+              body: 'Failure!',
+              state: 'open',
+            },
+            {
+              title: title2,
+              number: 19,
+              body: 'Failure!',
+              labels: [{ name: 'buildcop: flaky' }],
               state: 'open',
             },
           ])
-          .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
+          .post('/repos/tbpg/golang-samples/issues/18/comments', body => {
             snapshot(body);
             return true;
           })
           .reply(200)
-          .patch('/repos/tbpg/golang-samples/issues/16', body => {
+          .patch('/repos/tbpg/golang-samples/issues/18', body => {
             snapshot(body);
             return true;
           })
@@ -815,21 +832,7 @@ describe('buildcop', () => {
           .get(
             '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
-          .reply(200, [
-            {
-              title,
-              number: 16,
-              body: 'Failure!',
-              state: 'closed',
-            },
-            {
-              title,
-              number: 17,
-              body: 'Failure!',
-              labels: ['buildcop: flaky'],
-              state: 'open',
-            },
-          ]);
+          .reply(200, []); // Real response would include all issues again.
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
