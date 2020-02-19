@@ -73,6 +73,8 @@ at https://github.com/settings/apps/{YOUR_APP}:
    created and downloaded at the bottom of the page.
 * `PRIVATE_KEY`: private key for application. This is the client secret near the top, `Client secret: a1bc23def4..........5678gh`
 * `WEBHOOK_SECRET`: secret key set in GitHub developer settings. Edit this to a known value in the settings page.
+* `GITHUB_CLIENT_ID`: client ID from the top of the page.
+* `GITHUB_CLIENT_SECRET`: client secret from the top of the page.
 
 Environment variables set, run:
 
