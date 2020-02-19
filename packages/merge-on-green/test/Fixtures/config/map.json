@@ -1,0 +1,5 @@
+{
+    "repos": [
+    { "language": "nodejs", "repo": "testOwner/testRepo"}
+    ]
+  }
