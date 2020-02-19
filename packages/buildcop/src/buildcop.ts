@@ -119,7 +119,9 @@ export function buildcop(app: Application) {
       let issues = await context.github.paginate(options);
 
       // If we deduplicate any issues, re-download the issues.
-      if (await buildcop.deduplicateIssues(issues, context, owner, repo)) {
+      if (
+        await buildcop.deduplicateIssues(results, issues, context, owner, repo)
+      ) {
         issues = await context.github.paginate(options);
       }
 
@@ -150,15 +152,22 @@ export function buildcop(app: Application) {
   });
 }
 
-// deduplicate issues closes any duplicate issues and returns whether or not any
+// deduplicateIssues closes any duplicate issues and returns whether or not any
 // were modified.
+// Only issues for tests in results are modified.
 buildcop.deduplicateIssues = async (
+  results: TestResults,
   issues: Octokit.IssuesListForRepoResponseItem[],
   context: PubSubContext,
   owner: string,
   repo: string
 ) => {
-  issues = issues.filter(issue => issue.state === 'open');
+  const tests = results.passes.concat(results.failures);
+  issues = issues.filter(
+    issue =>
+      issue.state === 'open' &&
+      tests.find(test => issue.title === buildcop.formatTestCase(test))
+  );
   const byTitle = new Map<string, Octokit.IssuesListForRepoResponseItem[]>();
   for (const issue of issues) {
     byTitle.set(issue.title, byTitle.get(issue.title) || []);
