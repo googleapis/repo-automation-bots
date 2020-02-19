@@ -21,8 +21,8 @@ Issues or feature requests? Please
 
    **Note**: if your repo is in `googleapis`, the bot is already installed.
 1. Create `sponge_log.xml` xUnit XML files with your test results. There can be
-   more than one `sponge_log.xml` file as long as they are in different
-   directories. They must be named `sponge_log.xml`.
+   more than one, they can be in multiple directories, and the file names must
+   end with `sponge_log.xml`.
 1. If you're _not_ already using Trampoline, add the Trampoline `gfile`
    directory to your Kokoro job. This contains the `buildcop.sh` script that
    will be used to publish the logs.
