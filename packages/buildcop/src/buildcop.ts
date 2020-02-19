@@ -84,8 +84,8 @@ interface PubSubContext {
 
 export function buildcop(app: Application) {
   app.on('pubsub.message', async (context: PubSubContext) => {
-    const owner = context.payload.organization.login;
-    const repo = context.payload.repository.name;
+    const owner = context.payload.organization?.login;
+    const repo = context.payload.repository?.name;
     const buildID = context.payload.buildID || '[TODO: set buildID]';
     const buildURL = context.payload.buildURL || '[TODO: set buildURL]';
 
@@ -312,6 +312,9 @@ buildcop.closeIssues = async (
 
     // Don't close flaky issues.
     if (buildcop.isFlaky(issue)) {
+      context.log.info(
+        `[${owner}/${repo}] not closing flaky issue #${issue.number}`
+      );
       continue;
     }
 
@@ -378,7 +381,7 @@ buildcop.isFlaky = (issue: Octokit.IssuesListForRepoResponseItem): boolean => {
     return false;
   }
   for (const label of issue.labels) {
-    if (label.toString() === FLAKY_LABEL) {
+    if (label.name === FLAKY_LABEL) {
       return true;
     }
   }
