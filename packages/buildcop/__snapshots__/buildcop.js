@@ -22,9 +22,9 @@ exports['buildcop app testsFailed comments on an existing open issue when testsF
   "body": "The build failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed"
 }
 
-exports['buildcop app xunitXML opens multiple issues for multiple failures 1'] = {
-  "title": "storage/buckets: TestBucketLock failed",
-  "body": "storage/buckets: TestBucketLock failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed",
+exports['buildcop app xunitXML opens an issue [Go] 1'] = {
+  "title": "spanner/spanner_snippets: TestSample failed",
+  "body": "spanner/spanner_snippets: TestSample failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed",
   "labels": [
     "type: bug",
     "priority: p1",
@@ -32,9 +32,17 @@ exports['buildcop app xunitXML opens multiple issues for multiple failures 1'] =
   ]
 }
 
-exports['buildcop app xunitXML opens multiple issues for multiple failures 2'] = {
-  "title": "storage/buckets: TestUniformBucketLevelAccess failed",
-  "body": "storage/buckets: TestUniformBucketLevelAccess failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed",
+exports['buildcop app xunitXML closes a duplicate issue 1'] = {
+  "body": "Closing as a duplicate of #19"
+}
+
+exports['buildcop app xunitXML closes a duplicate issue 2'] = {
+  "state": "closed"
+}
+
+exports['buildcop app xunitXML opens an issue [Python] 1'] = {
+  "title": "appengine.flexible.datastore.main_test: test_index failed",
+  "body": "appengine.flexible.datastore.main_test: test_index failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed",
   "labels": [
     "type: bug",
     "priority: p1",
@@ -76,9 +84,9 @@ exports['buildcop app xunitXML closes an issue for a passing test [Python] 2'] =
   "state": "closed"
 }
 
-exports['buildcop app xunitXML opens an issue [Go] 1'] = {
-  "title": "spanner/spanner_snippets: TestSample failed",
-  "body": "spanner/spanner_snippets: TestSample failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed",
+exports['buildcop app xunitXML opens multiple issues for multiple failures 1'] = {
+  "title": "storage/buckets: TestBucketLock failed",
+  "body": "storage/buckets: TestBucketLock failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed",
   "labels": [
     "type: bug",
     "priority: p1",
@@ -86,20 +94,12 @@ exports['buildcop app xunitXML opens an issue [Go] 1'] = {
   ]
 }
 
-exports['buildcop app xunitXML opens an issue [Python] 1'] = {
-  "title": "appengine.flexible.datastore.main_test: test_index failed",
-  "body": "appengine.flexible.datastore.main_test: test_index failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed",
+exports['buildcop app xunitXML opens multiple issues for multiple failures 2'] = {
+  "title": "storage/buckets: TestUniformBucketLevelAccess failed",
+  "body": "storage/buckets: TestUniformBucketLevelAccess failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed",
   "labels": [
     "type: bug",
     "priority: p1",
     "buildcop: issue"
   ]
-}
-
-exports['buildcop app xunitXML closes a duplicate issue 1'] = {
-  "body": "Closing as a duplicate of #17"
-}
-
-exports['buildcop app xunitXML closes a duplicate issue 2'] = {
-  "state": "closed"
 }
