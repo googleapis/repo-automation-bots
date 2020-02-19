@@ -26,8 +26,8 @@
     "lint": "gts check"
   },
   "dependencies": {
+    "@google-cloud/datastore": "^5.0.4",
     "gcf-utils": "1.6.1",
-    "probot": "9.9.4",
     "@octokit/rest": "16.41.2"
   },
   "devDependencies": {
