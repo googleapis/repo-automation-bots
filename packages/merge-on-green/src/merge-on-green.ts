@@ -41,6 +41,8 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
     console.info(`keystore data`, pr[datastore.KEY]);
     const url = pr[datastore.KEY].name;
     let state = 'continue';
+    //TODO: I'd prefer to not have a "list" method that has side effects - perhaps later refactor 
+    //this to do the list, then have an explicit loop over the returned WatchPR objects that removes the expired ones.
     if (now - created > MAX_TEST_TIME) {
       console.warn(`deleting stale PR ${url}`);
       await handler.removePR(url);
@@ -120,6 +122,8 @@ function handler(app: Application) {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     console.info(`${prNumber} ${owner} ${repo}`);
+    //TODO: we can likely split the database functionality into its own file and 
+    //import these helper functions for use in the main bot event handling.
     await handler.addPR(
       {
         number: prNumber,
