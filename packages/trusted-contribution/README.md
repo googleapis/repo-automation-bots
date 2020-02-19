@@ -20,7 +20,7 @@ options:
 
 | Name | Description | Type | Default |
 |----- | ----------- | ---- | ------- |
-| `trustedContributors` | List of user login names that are considered trusted  | `string[]` | `['renovate-bot', 'release-please[bot]']` |
+| `trustedContributors` | List of user login names that are considered trusted  | `string[]` | `['renovate-bot', 'release-please[bot]', 'gcf-merge-on-green[bot]']` |
 
 ## Deployment and Permissions
 
