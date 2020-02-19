@@ -16,7 +16,7 @@
 
 import { GitHubAPI } from 'probot/lib/github';
 
-interface CheckParam {}
+interface CommentOnPR {}
 
 interface CheckRun {
   name: string;
@@ -475,33 +475,23 @@ mergeOnGreen.updateBranch = async function updateBranch(
   }
 };
 
-mergeOnGreen.createFailedParam = async function createFailedParam(
+mergeOnGreen.commentOnPR = async function commentOnPR(
   owner: string,
   repo: string,
   pr: number,
   github: GitHubAPI
-): Promise<CheckParam | null> {
-  const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr, github);
-  //removed the check for if headSha exists, since we're returning an empty string and the error block will catch it
+): Promise<CommentOnPR | null> {
   try {
-    const checkParams = github.checks.create({
+    const data = github.issues.createComment({
       owner,
       repo,
-      name: 'AutoMerge Failed',
-      head_sha: headSha,
-      status: 'completed',
-      conclusion: 'failure',
-      output: {
-        title: 'Your PR was not mergeable.',
-        summary:
-          'Check your required status checks or requested reviews for failures.',
-        text:
-          'Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved.' +
-          'Please fix your mistakes, and merge-on-green will run again to attempt to merge it automatically.',
-      },
+      issue_number: pr,
+      body:
+        'Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved.',
     });
-    return checkParams;
+    return data;
   } catch (err) {
+    console.log('There was an issue commenting on the PR');
     return null;
   }
 };
@@ -538,7 +528,7 @@ export async function mergeOnGreen(
     }
   } else if (state === 'stop') {
     console.log('Your PR timed out before its statuses & reviews passed');
-    await mergeOnGreen.createFailedParam(owner, repo, pr, github);
+    await mergeOnGreen.commentOnPR(owner, repo, pr, github);
     return true;
   } else {
     console.log('Statuses and/or checks failed, will check again');

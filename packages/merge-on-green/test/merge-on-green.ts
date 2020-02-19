@@ -134,9 +134,9 @@ function merge() {
     .reply(200);
 }
 
-function createFailedParam() {
+function commentOnPR() {
   return nock('https://api.github.com')
-    .post('/repos/testOwner/testRepo/check-runs')
+    .post('/repos/testOwner/testRepo/issues/1/comments')
     .reply(200);
 }
 
@@ -402,7 +402,7 @@ describe('merge-on-green', () => {
     scopes.forEach(s => s.done());
   });
 
-  it('submits a failed check param if the flag is set to stop', async () => {
+  it('submits a comment on the PR if the flag is set to stop and the merge has failed', async () => {
     handler.listPRs = async () => {
       const watchPr: WatchPR[] = [
         {
@@ -430,7 +430,7 @@ describe('merge-on-green', () => {
       ]),
       requiredChecksByLanguage({ content: requiredChecks.toString('base64') }),
       repoMap({ content: map.toString('base64') }),
-      createFailedParam(),
+      commentOnPR(),
     ];
 
     await probot.receive({
