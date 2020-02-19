@@ -26,8 +26,7 @@
       "lint": "gts check"
     },
     "dependencies": {
-      "gcf-utils": "1.6.1",
-      "@octokit/rest": "16.41.2"
+      "gcf-utils": "1.6.1"
     },
     "devDependencies": {
       "@types/body-parser": "^1.17.0",

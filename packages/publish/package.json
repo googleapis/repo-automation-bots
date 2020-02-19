@@ -30,8 +30,7 @@
     "gcf-utils": "1.6.1",
     "node-fetch": "^2.6.0",
     "tar": "^6.0.0",
-    "uuid": "^3.3.3",
-    "@octokit/rest": "16.41.2"
+    "uuid": "^3.3.3"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
