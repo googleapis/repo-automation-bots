@@ -268,7 +268,6 @@ mergeOnGreen.checkForRequiredSC = function checkForRequiredSC(
   checkRuns: CheckRun[],
   check: string
 ): boolean {
-  let mergeable = false;
   if (checkRuns.length !== 0) {
     const checkRunCompleted = checkRuns.find(element => element.name === check);
     if (
@@ -278,7 +277,7 @@ mergeOnGreen.checkForRequiredSC = function checkForRequiredSC(
       return true;
     }
   }
-  return mergeable;
+  return false;
 };
 
 mergeOnGreen.statusesForRef = async function statusesForRef(
@@ -406,8 +405,6 @@ mergeOnGreen.checkReviews = async function checkReviews(
   github: GitHubAPI
 ): Promise<boolean> {
   console.info('=== checking required reviews ===');
-  let reviewsPassed = true;
-
   const [reviewsCompletedDirty, reviewsRequested] = await Promise.all([
     mergeOnGreen.getReviewsCompleted(owner, repo, pr, github),
     mergeOnGreen.getReviewsRequested(owner, repo, pr, github),
@@ -434,7 +431,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
     console.log('You have assigned reviewers that have not submitted a review');
     return false;
   }
-  return reviewsPassed;
+  return true;
 };
 
 mergeOnGreen.merge = async function merge(
