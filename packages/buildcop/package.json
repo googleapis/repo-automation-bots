@@ -27,7 +27,8 @@
   },
   "dependencies": {
     "gcf-utils": "1.6.1",
-    "xml-js": "^1.6.11"
+    "xml-js": "^1.6.11",
+    "@octokit/rest": "16.41.2"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",

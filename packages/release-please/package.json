@@ -27,7 +27,8 @@
   },
   "dependencies": {
     "gcf-utils": "1.6.1",
-    "release-please": "^3.2.2"
+    "release-please": "^3.2.2",
+    "@octokit/rest": "16.41.2"
   },
   "devDependencies": {
     "@types/bunyan": "^1.8.6",
