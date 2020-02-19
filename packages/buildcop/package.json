@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "compile": "tsc -p .",
-    "start": "probot run ./build/src/buildcop.js",
+    "start": "node ./build/src/main.js",
     "start:local": "node ./build/src/local.js",
     "prepare": "npm run compile",
     "pretest": "npm run compile",
