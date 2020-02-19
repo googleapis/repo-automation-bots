@@ -515,7 +515,7 @@ export async function mergeOnGreen(
     `checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state}`
   );
 
-  if (checkReview === true && checkStatus === true && state === 'continue') {
+  if (checkReview === true && checkStatus === true) {
     console.log('Updating branch');
     await mergeOnGreen.updateBranch(owner, repo, pr, github);
     console.log('Merging PR');
