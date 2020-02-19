@@ -15,146 +15,126 @@
  */
 
 import { Application } from 'probot';
-import { GitHubAPI } from 'probot/lib/github';
-import { PullsListCommitsResponseItem, Response } from '@octokit/rest';
+import { Datastore } from '@google-cloud/datastore';
+import { mergeOnGreen } from './merge-logic';
 
-const CONFIGURATION_FILE_PATH = 'merge-on-green.yml';
+const TABLE = 'mog-prs';
+const datastore = new Datastore();
+const MAX_TEST_TIME = 1000 * 60 * 60 * 2; // 2 hr.
+const MERGE_ON_GREEN_LABEL = 'automerge';
 
-interface Configuration {
-  required_status_checks?: string[];
+interface WatchPR {
+  number: number;
+  repo: string;
+  owner: string;
+  state: 'continue' | 'stop';
+  url: string;
 }
 
-type Conclusion =
-  | 'success'
-  | 'failure'
-  | 'neutral'
-  | 'cancelled'
-  | 'timed_out'
-  | 'action_required'
-  | undefined;
-
-async function getBranchProtection(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  branch: string
-) {
-  try {
-    const data = (
-      await github.repos.getBranchProtection({
-        owner,
-        repo,
-        branch,
-      })
-    ).data;
-    return data;
-  } catch (err) {
-    return null;
+handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
+  const query = datastore.createQuery(TABLE).order('created');
+  const [prs] = await datastore.runQuery(query);
+  const result: WatchPR[] = [];
+  for (const pr of prs) {
+    const created = new Date(pr.created).getTime();
+    const now = new Date().getTime();
+    console.info(`keystore data`, pr[datastore.KEY]);
+    const url = pr[datastore.KEY].name;
+    let state = 'continue';
+    //TODO: I'd prefer to not have a "list" method that has side effects - perhaps later refactor
+    //this to do the list, then have an explicit loop over the returned WatchPR objects that removes the expired ones.
+    if (now - created > MAX_TEST_TIME) {
+      console.warn(`deleting stale PR ${url}`);
+      await handler.removePR(url);
+      state = 'stop';
+    }
+    const watchPr: WatchPR = {
+      number: pr.number,
+      repo: pr.repo,
+      owner: pr.owner,
+      state: state as 'continue' | 'stop',
+      url,
+    };
+    result.push(watchPr);
   }
-}
+  return result;
+};
 
-export = (app: Application) => {
-  app.on(['pull_request.opened', 'pull_request.reopened'], async context => {
-    const config = (await context.config(
-      CONFIGURATION_FILE_PATH,
-      {}
-    )) as Configuration;
+handler.removePR = async function removePR(url: string) {
+  const key = datastore.key([TABLE, url]);
+  await datastore.delete(key);
+};
 
-    console.log(config);
-    const { owner, repo } = context.repo();
+handler.addPR = async function addPR(wp: WatchPR, url: string) {
+  const key = datastore.key([TABLE, url]);
+  const entity = {
+    key,
+    data: {
+      created: new Date().toJSON(),
+      owner: wp.owner,
+      repo: wp.repo,
+      number: wp.number,
+    },
+    method: 'upsert',
+  };
+  await datastore.save(entity);
+};
 
-    const branchProtection = await getBranchProtection(
-      context.github,
-      owner,
-      repo,
-      context.payload.pull_request.head.repo.default_branch
-    );
-
-    const configProtection = config.required_status_checks;
-
-    const commitParams = context.repo({
-      pull_number: context.payload.pull_request.number,
-      per_page: 100,
-    });
-
-    let commitsResponse: Response<PullsListCommitsResponseItem[]>;
-    try {
-      commitsResponse = await context.github.pulls.listCommits(commitParams);
-    } catch (err) {
-      console.info(err);
-      app.log.error(err);
+// TODO: refactor into multiple function exports, this will take some work in
+// gcf-utils.
+function handler(app: Application) {
+  app.on(['schedule.repository'], async context => {
+    const watchedPRs = await handler.listPRs();
+    for (const wp of watchedPRs) {
+      console.info(`watchedPR ${JSON.stringify(wp, null, 2)}`);
+      try {
+        const remove = await mergeOnGreen(
+          wp.owner,
+          wp.repo,
+          wp.number,
+          MERGE_ON_GREEN_LABEL,
+          wp.state,
+          context.github
+        );
+        if (remove) {
+          handler.removePR(wp.url);
+        }
+      } catch (err) {
+        console.error(err.message);
+      }
+    }
+  });
+  app.on('pull_request.labeled', async context => {
+    // if missing the label, skip
+    if (
+      !context.payload.pull_request.labels.some(
+        label => label.name === MERGE_ON_GREEN_LABEL
+      )
+    ) {
+      app.log.info(
+        `ignoring non-force label action (${context.payload.pull_request.labels.join(
+          ', '
+        )})`
+      );
       return;
     }
-
-    const commits = commitsResponse.data;
-
-    let checkParams = context.repo({
-      name: 'merge-on-green-readiness',
-      conclusion: 'success' as Conclusion,
-      head_sha: commits[commits.length - 1].sha,
-    });
-
-    if (!branchProtection) {
-      checkParams = context.repo({
-        head_sha: commits[commits.length - 1].sha,
-        name: 'merge-on-green-readiness',
-        conclusion: 'failure' as Conclusion,
-        output: {
-          title: 'You have no required status checks',
-          summary: 'Enforce branch protection on your repo.',
-          text:
-            'To add required status checks to your repository, please follow instructions in this link: \nhttps://help.github.com/en/github/administering-a-repository/enabling-required-status-checks\n' +
-            '\nIn order to add applications to your repository that will run check runs, please follow instructions here: \nhttps://developer.github.com/apps/installing-github-apps/\n' +
-            '\nLastly, please make sure that your required status checks are the same as the ones listed in your config file if you created one.',
-        },
-      });
-    }
-
-    if (branchProtection) {
-      if (branchProtection.required_status_checks.contexts.length < 3) {
-        checkParams = context.repo({
-          head_sha: commits[commits.length - 1].sha,
-          name: 'merge-on-green-readiness',
-          conclusion: 'failure' as Conclusion,
-          output: {
-            title: 'You have less than 3 required status checks',
-            summary:
-              "You likely don't have all the required status checks you need, please make sure to add the appropriate ones.",
-            text:
-              'To add required status checks to your repository, please follow instructions in this link: \nhttps://help.github.com/en/github/administering-a-repository/enabling-required-status-checks\n' +
-              '\nIn order to add applications to your repository that will run check runs, please follow instructions here: \nhttps://developer.github.com/apps/installing-github-apps/\n' +
-              '\nLastly, please make sure that your required status checks are the same as the ones listed in your config file if you created one.',
-          },
-        });
-      }
-
-      const branchProtectionArray = branchProtection.required_status_checks
-        .contexts as string[];
-      const configProtectionArray = configProtection as string[];
-
-      if (configProtection) {
-        configProtectionArray.forEach(statusCheck => {
-          if (!branchProtectionArray.includes(statusCheck)) {
-            checkParams = context.repo({
-              head_sha: commits[commits.length - 1].sha,
-              name: 'merge-on-green-readiness',
-              conclusion: 'failure' as Conclusion,
-              output: {
-                title:
-                  'Your branch protection does not match up with your config file',
-                summary:
-                  'Set up your branch protection to match your config file.',
-                text:
-                  'To add required status checks to your repository, please follow instructions in this link: \nhttps://help.github.com/en/github/administering-a-repository/enabling-required-status-checks\n' +
-                  '\nIn order to add applications to your repository that will run check runs, please follow instructions here: \nhttps://developer.github.com/apps/installing-github-apps/\n' +
-                  '\nLastly, please make sure that your required status checks are the same as the ones listed in your config file.',
-              },
-            });
-          }
-        });
-      }
-    }
-
-    await context.github.checks.create(checkParams);
+    const prNumber = context.payload.pull_request.number;
+    const owner = context.payload.repository.owner.login;
+    const repo = context.payload.repository.name;
+    console.info(`${prNumber} ${owner} ${repo}`);
+    //TODO: we can likely split the database functionality into its own file and
+    //import these helper functions for use in the main bot event handling.
+    await handler.addPR(
+      {
+        number: prNumber,
+        owner,
+        repo,
+        state: 'continue',
+        url: context.payload.pull_request.html_url,
+      },
+      context.payload.pull_request.html_url
+    );
   });
-};
+}
+
+export = handler;
