@@ -359,25 +359,6 @@ mergeOnGreen.getReviewsCompleted = async function getReviewsCompleted(
   }
 };
 
-mergeOnGreen.getReviewsRequested = async function getReviewsRequested(
-  owner: string,
-  repo: string,
-  pr: number,
-  github: GitHubAPI
-): Promise<ReviewsRequested> {
-  try {
-    return (
-      await github.pulls.listReviewRequests({
-        owner,
-        repo,
-        pull_number: pr,
-      })
-    ).data as ReviewsRequested;
-  } catch (err) {
-    return { users: [], teams: [] };
-  }
-};
-
 //this function cleans the reviews, since the listReviews method github provides returns a complete history of all comments added
 //and we just want the most recent for each reviewer
 mergeOnGreen.cleanReviews = function cleanReviews(
@@ -407,10 +388,12 @@ mergeOnGreen.checkReviews = async function checkReviews(
   github: GitHubAPI
 ): Promise<boolean> {
   console.info('=== checking required reviews ===');
-  const [reviewsCompletedDirty, reviewsRequested] = await Promise.all([
-    mergeOnGreen.getReviewsCompleted(owner, repo, pr, github),
-    mergeOnGreen.getReviewsRequested(owner, repo, pr, github),
-  ]);
+  const reviewsCompletedDirty = await mergeOnGreen.getReviewsCompleted(
+    owner,
+    repo,
+    pr,
+    github
+  );
   let reviewsPassed = true;
   const reviewsCompleted = mergeOnGreen.cleanReviews(reviewsCompletedDirty);
   if (reviewsCompleted.length !== 0) {
@@ -423,13 +406,6 @@ mergeOnGreen.checkReviews = async function checkReviews(
   } else {
     //if no one has reviewed it, fail the merge
     console.log('No one has reviewed your PR');
-    return false;
-  }
-  if (
-    reviewsRequested.users.length !== 0 ||
-    reviewsRequested.teams.length !== 0
-  ) {
-    console.log('You have assigned reviewers that have not submitted a review');
     return false;
   }
   return reviewsPassed;
@@ -516,16 +492,17 @@ export async function mergeOnGreen(
   );
 
   if (checkReview === true && checkStatus === true) {
-    console.log('Updating branch');
-    await mergeOnGreen.updateBranch(owner, repo, pr, github);
-    console.log('Merging PR');
+    let merged = false;
     try {
+      console.info(`attempt to merge ${owner}/${repo}`);
       await mergeOnGreen.merge(owner, repo, pr, github);
-      return true;
+      merged = true;
     } catch (err) {
-      console.log(err);
-      return false;
+      console.info(err);
+      console.log('Attempting to update branch');
+      await mergeOnGreen.updateBranch(owner, repo, pr, github);
     }
+    return merged;
   } else if (state === 'stop') {
     console.log('Your PR timed out before its statuses & reviews passed');
     await mergeOnGreen.commentOnPR(owner, repo, pr, github);
