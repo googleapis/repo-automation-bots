@@ -20,7 +20,11 @@ interface ConfigurationOptions {
 
 const WELL_KNOWN_CONFIGURATION_FILE = 'trusted-contribution.yml';
 const DEFAULT_CONFIGURATION: ConfigurationOptions = {};
-const DEFAULT_TRUSTED_CONTRIBUTORS = ['renovate-bot', 'release-please[bot]'];
+const DEFAULT_TRUSTED_CONTRIBUTORS = [
+  'renovate-bot',
+  'release-please[bot]',
+  'gcf-merge-on-green[bot]',
+];
 
 function isTrustedContribution(
   config: ConfigurationOptions,
