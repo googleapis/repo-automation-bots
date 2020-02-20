@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/sofisl/generate-bot#readme",
   "devDependencies": {
+    "c8": "^7.1.0",
     "chai": "^4.2.0",
     "eslint": "^6.6.0",
     "eslint-config-prettier": "^6.5.0",

@@ -6,10 +6,12 @@
   "scripts": {
     "run": "./scripts/scripts.js",
     "fix": "npm run run -- npm run fix",
+    "test": "c8 npm run run -- npm test",
     "proxy": "smee",
     "generate-bot": "node ./packages/generate-bot/run.js"
   },
   "devDependencies": {
+    "c8": "^7.1.0",
     "smee-client": "^1.1.0"
   }
 }
