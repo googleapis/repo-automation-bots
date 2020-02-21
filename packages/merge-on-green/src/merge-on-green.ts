@@ -86,7 +86,8 @@ function handler(app: Application) {
   app.on(['schedule.repository'], async context => {
     const watchedPRs = await handler.listPRs();
     for (const wp of watchedPRs) {
-      console.info(`watchedPR ${JSON.stringify(wp, null, 2)}`);
+      const start = Date.now();
+      console.info(`checking PR: ${wp.url}`);
       try {
         const remove = await mergeOnGreen(
           wp.owner,
@@ -99,6 +100,7 @@ function handler(app: Application) {
         if (remove) {
           handler.removePR(wp.url);
         }
+        console.info(`mergeOnGreen check took ${Date.now() - start}ms`);
       } catch (err) {
         console.error(err.message);
       }
