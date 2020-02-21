@@ -90,9 +90,8 @@ func publish(projectID, topicID, repo, installationID string) (ok bool) {
 	topic := client.Topic(topicID)
 
 	if repo == "" {
-		var ok bool
-		repo, ok = detectRepo()
-		if !ok {
+		repo = detectRepo()
+		if repo == "" {
 			log.Print(`Unable to detect repo. Please set the --repo flag.
 If your repo is github.com/GoogleCloudPlatform/golang-samples, --repo should be GoogleCloudPlatform/golang-samples.
 
@@ -103,9 +102,8 @@ If your repo is not in GoogleCloudPlatform or googleapis, you must also set
 	}
 
 	if installationID == "" {
-		var ok bool
-		installationID, ok = detectInstallationID(repo)
-		if !ok {
+		installationID = detectInstallationID(repo)
+		if installationID == "" {
 			log.Print(`Unable to detect installation ID. Please set the --installation_id flag.
 If your repo is part of GoogleCloudPlatform or googleapis and you see this error,
 file an issue at https://github.com/googleapis/repo-automation-bots/issues.
@@ -139,30 +137,30 @@ See https://github.com/apps/build-cop-bot/.`)
 }
 
 // detectRepo tries to detect the repo from the environment.
-func detectRepo() (repo string, ok bool) {
+func detectRepo() string {
 	if github := os.Getenv("KOKORO_GITHUB_COMMIT_URL"); github != "" {
 		parts := strings.Split(github, "/")
 		repo := fmt.Sprintf("%s/%s", parts[4], parts[5])
-		return repo, true
+		return repo
 	}
 	if github := os.Getenv("KOKORO_GITHUB_COMMIT_URL_google_cloud_go"); github != "" {
 		parts := strings.Split(github, "/")
 		repo := fmt.Sprintf("%s/%s", parts[4], parts[5])
-		return repo, true
+		return repo
 	}
-	return "", false
+	return ""
 }
 
 // detectInstallationID tries to detect the GitHub installation ID based on the
 // repo.
-func detectInstallationID(repo string) (installationID string, ok bool) {
+func detectInstallationID(repo string) string {
 	if strings.Contains(repo, "GoogleCloudPlatform") {
-		return "5943459", true
+		return "5943459"
 	}
 	if strings.Contains(repo, "googleapis") {
-		return "6370238", true
+		return "6370238"
 	}
-	return "", false
+	return ""
 }
 
 // processLog is used to process log files and publish them to Pub/Sub.

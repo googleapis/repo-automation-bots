@@ -18,34 +18,28 @@ import "testing"
 
 func TestDetectInstallationID(t *testing.T) {
 	tests := []struct {
-		repo   string
-		want   string
-		wantOK bool
+		repo string
+		want string
 	}{
 		{
-			repo:   "GoogleCloudPlatform/golang-samples",
-			want:   "5943459",
-			wantOK: true,
+			repo: "GoogleCloudPlatform/golang-samples",
+			want: "5943459",
 		},
 		{
-			repo:   "googleapis/google-cloud-go",
-			want:   "6370238",
-			wantOK: true,
+			repo: "googleapis/google-cloud-go",
+			want: "6370238",
 		},
 		{
-			repo:   "unknown",
-			wantOK: false,
+			repo: "unknown",
 		},
 		{
-			repo:   "",
-			wantOK: false,
+			repo: "",
 		},
 	}
 
 	for _, test := range tests {
-		got, gotOK := detectInstallationID(test.repo)
-		if gotOK != test.wantOK || got != test.want {
-			t.Errorf("detectInstallationID(%q) = (%v, %v), want (%v, %v)", test.repo, got, gotOK, test.want, test.wantOK)
+		if got := detectInstallationID(test.repo); got != test.want {
+			t.Errorf("detectInstallationID(%q) = %q, want %q", test.repo, got, test.want)
 		}
 	}
 }
