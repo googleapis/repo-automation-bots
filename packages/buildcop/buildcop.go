@@ -45,12 +45,13 @@ func main() {
 	installationID := flag.String("installation_id", "", "GitHub installation ID. Defaults to auto-detect. If your repo is not part of GoogleCloudPlatform or googleapis set this to the GitHub installation ID for your repo. See https://github.com/googleapis/repo-automation-bots/issues.")
 	projectID := flag.String("project", "repo-automation-bots", "Project ID to publish to. Defaults to repo-automation-bots.")
 	topicID := flag.String("topic", "passthrough", "Pub/Sub topic to publish to. Defaults to passthrough.")
+	logsDir := flag.String("logs_dir", ".", "The directory to look for logs in. Defaults to current directory.")
 
 	flag.Parse()
 
 	log.Println("Sending logs to Build Cop Bot...")
 	log.Println("See https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop.")
-	if ok := publish(*projectID, *topicID, *repo, *installationID); !ok {
+	if ok := publish(*projectID, *topicID, *repo, *installationID, *logsDir); !ok {
 		os.Exit(1)
 	}
 	log.Println("Done!")
@@ -73,7 +74,7 @@ type message struct {
 
 // publish searches for sponge_log.xml files and publishes them to Pub/Sub.
 // publish logs a message and returns false if there was an error.
-func publish(projectID, topicID, repo, installationID string) (ok bool) {
+func publish(projectID, topicID, repo, installationID, logsDir string) (ok bool) {
 	ctx := context.Background()
 
 	gfileDir := os.Getenv("KOKORO_GFILE_DIR")
@@ -115,25 +116,11 @@ See https://github.com/apps/build-cop-bot/.`, repo)
 	}
 
 	// Handle logs in the current directory.
-	if err := filepath.Walk(".", processLog(ctx, repo, installationID, topic)); err != nil {
+	if err := filepath.Walk(logsDir, processLog(ctx, repo, installationID, topic)); err != nil {
 		log.Printf("Error publishing logs: %v", err)
 		return false
 	}
 
-	// Handle logs in the KOKORO_ARTIFACTS_DIR directory.
-	artifactsDir := os.Getenv("KOKORO_ARTIFACTS_DIR")
-	currentPath, err := filepath.Abs(".")
-	if err != nil {
-		// If there is an error getting the current path, don't error out.
-		log.Printf("Unable to get current directory: %v: continuing...", err)
-		return true
-	}
-	if artifactsDir != "" && artifactsDir != currentPath {
-		if err := filepath.Walk(artifactsDir, processLog(ctx, repo, installationID, topic)); err != nil {
-			log.Printf("Error publishing logs: %v", err)
-			return false
-		}
-	}
 	return true
 }
 
