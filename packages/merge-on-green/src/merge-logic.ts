@@ -120,6 +120,7 @@ mergeOnGreen.hasMOGLabel = async function hasMOGLabel(
   labelName: string,
   github: GitHubAPI
 ): Promise<boolean> {
+  const start = Date.now();
   let isMOG = false;
   try {
     const labels = await github.issues.listLabelsOnIssue({
@@ -128,6 +129,9 @@ mergeOnGreen.hasMOGLabel = async function hasMOGLabel(
       issue_number: pr,
     });
     const labelArray = labels.data;
+    console.info(
+      `checked hasMOGLabel in ${Date.now() - start}ms ${owner}/${repo}/${pr}`
+    );
     if (labelArray) {
       const mog = labelArray.find(element => element.name === labelName);
       if (mog) {
@@ -231,7 +235,7 @@ mergeOnGreen.getStatusi = async function getStatusi(
   github: GitHubAPI,
   headSha: string
 ): Promise<CheckStatus[]> {
-  console.log('head sha ' + headSha);
+  const start = Date.now();
   try {
     const data = await github.repos.listStatusesForRef({
       owner,
@@ -239,6 +243,9 @@ mergeOnGreen.getStatusi = async function getStatusi(
       ref: headSha,
       per_page: 100,
     });
+    console.info(
+      `called getStatusi in ${Date.now() - start}ms ${owner}/${repo}`
+    );
     return data.data;
   } catch (err) {
     return [];
@@ -251,6 +258,7 @@ mergeOnGreen.getCheckRuns = async function getCheckRuns(
   github: GitHubAPI,
   headSha: string
 ): Promise<CheckRun[]> {
+  const start = Date.now();
   try {
     const checkRuns = await github.checks.listForRef({
       owner,
@@ -258,6 +266,9 @@ mergeOnGreen.getCheckRuns = async function getCheckRuns(
       ref: headSha,
       per_page: 100,
     });
+    console.info(
+      `called getCheckRuns in ${Date.now() - start}ms ${owner}/${repo}`
+    );
     return checkRuns.data.check_runs;
   } catch (err) {
     return [];
@@ -287,14 +298,19 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
   labelName: string,
   github: GitHubAPI
 ): Promise<boolean> {
+  const start = Date.now();
   const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr, github);
   const [mogLabel, checkStatus, requiredChecks] = await Promise.all([
     await mergeOnGreen.hasMOGLabel(owner, repo, pr, labelName, github),
     await mergeOnGreen.getStatusi(owner, repo, github, headSha),
     await mergeOnGreen.getRequiredChecks(github, owner, repo),
   ]);
+  console.info(
+    `fetched statusesForRef in ${Date.now() - start}ms ${owner}/${repo}/${pr}`
+  );
 
   let mergeable = true;
+  let checkRuns;
   if (
     headSha.length !== 0 &&
     requiredChecks.length !== 0 &&
@@ -312,12 +328,14 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
           'The status checks do not include your required checks. We will check in check runs.'
         );
         //if we can't find it in the statuses, let's check under check runs
-        const checkRuns = await mergeOnGreen.getCheckRuns(
-          owner,
-          repo,
-          github,
-          headSha
-        );
+        if (!checkRuns) {
+          checkRuns = await mergeOnGreen.getCheckRuns(
+            owner,
+            repo,
+            github,
+            headSha
+          );
+        }
         mergeable = mergeOnGreen.checkForRequiredSC(checkRuns, check);
         if (!mergeable) {
           console.log(
@@ -387,7 +405,8 @@ mergeOnGreen.checkReviews = async function checkReviews(
   pr: number,
   github: GitHubAPI
 ): Promise<boolean> {
-  console.info('=== checking required reviews ===');
+  const start = Date.now();
+  console.info(`=== checking required reviews ${owner}/${repo}/${pr} ===`);
   const reviewsCompletedDirty = await mergeOnGreen.getReviewsCompleted(
     owner,
     repo,
@@ -396,6 +415,10 @@ mergeOnGreen.checkReviews = async function checkReviews(
   );
   let reviewsPassed = true;
   const reviewsCompleted = mergeOnGreen.cleanReviews(reviewsCompletedDirty);
+  console.info(
+    `fetched completed reviews in ${Date.now() -
+      start}ms ${owner}/${repo}/${pr}`
+  );
   if (reviewsCompleted.length !== 0) {
     reviewsCompleted.forEach(review => {
       if (review.state !== 'APPROVED') {
@@ -498,9 +521,15 @@ export async function mergeOnGreen(
       await mergeOnGreen.merge(owner, repo, pr, github);
       merged = true;
     } catch (err) {
-      console.info(err);
-      console.log('Attempting to update branch');
-      await mergeOnGreen.updateBranch(owner, repo, pr, github);
+      console.error(`failed to merge "${err.message}" ${owner}/${repo}/${pr}`);
+      console.log(`Attempting to update branch ${owner}/${repo}/${pr}`);
+      try {
+        await mergeOnGreen.updateBranch(owner, repo, pr, github);
+      } catch (err) {
+        console.error(
+          `failed to update branch "${err.message}" ${owner}/${repo}/${pr}`
+        );
+      }
     }
     return merged;
   } else if (state === 'stop') {
