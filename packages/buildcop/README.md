@@ -68,6 +68,17 @@ If you have suggestions for how buildcop could be improved, or want to report a 
 
 For more, check out the Contributing Guide.
 
+### buildcop.sh
+
+This script is used to make it easy for people to send logs to the Build Cop
+bot (see instructions above).
+
+To deploy the script, run:
+
+```bash
+gsutil cp buildcop.sh gs://cloud-devrel-kokoro-resources/trampoline/buildcop.sh
+```
+
 ## License
 
 Apache 2.0 © 2019 Google LLC.
