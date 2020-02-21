@@ -98,12 +98,6 @@ function getReviewsCompleted(response: Reviews[]) {
     .reply(200, response);
 }
 
-function getReviewsRequested(response: ReviewRequests) {
-  return nock('https://api.github.com')
-    .get('/repos/testOwner/testRepo/pulls/1/requested_reviewers')
-    .reply(200, response);
-}
-
 function getLatestCommit(response: HeadSha[]) {
   return nock('https://api.github.com')
     .get('/repos/testOwner/testRepo/pulls/1/commits?per_page=100&page=1')
@@ -132,6 +126,12 @@ function merge() {
   return nock('https://api.github.com')
     .put('/repos/testOwner/testRepo/pulls/1/merge')
     .reply(200);
+}
+
+function mergeWithError() {
+  return nock('https://api.github.com')
+    .put('/repos/testOwner/testRepo/pulls/1/merge')
+    .reply(400);
 }
 
 function commentOnPR() {
@@ -185,7 +185,6 @@ describe('merge-on-green', () => {
 
     const scopes = [
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
-      getReviewsRequested({ users: [], teams: [] }),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
       getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
@@ -193,7 +192,6 @@ describe('merge-on-green', () => {
       ]),
       requiredChecksByLanguage({ content: requiredChecks.toString('base64') }),
       repoMap({ content: map.toString('base64') }),
-      updateBranch(),
       merge(),
     ];
 
@@ -229,7 +227,6 @@ describe('merge-on-green', () => {
         { user: { login: 'octocat' }, state: 'APPROVED' },
         { user: { login: 'octokitten' }, state: 'CHANGES_REQUESTED' },
       ]),
-      getReviewsRequested({ users: [], teams: [] }),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
       getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
@@ -268,7 +265,6 @@ describe('merge-on-green', () => {
 
     const scopes = [
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
-      getReviewsRequested({ users: [], teams: [] }),
       getLatestCommit([]),
       getMogLabel([{ name: 'automerge' }]),
       getStatusi('', [
@@ -307,7 +303,6 @@ describe('merge-on-green', () => {
 
     const scopes = [
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
-      getReviewsRequested({ users: [], teams: [] }),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'this is not the label you are looking for' }]),
       getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
@@ -346,7 +341,6 @@ describe('merge-on-green', () => {
 
     const scopes = [
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
-      getReviewsRequested({ users: [], teams: [] }),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
       getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
@@ -383,7 +377,6 @@ describe('merge-on-green', () => {
 
     const scopes = [
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
-      getReviewsRequested({ users: [], teams: [] }),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
       getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
@@ -422,7 +415,6 @@ describe('merge-on-green', () => {
 
     const scopes = [
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
-      getReviewsRequested({ users: [], teams: [] }),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'this is not the label you are looking for' }]),
       getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
@@ -462,7 +454,6 @@ describe('merge-on-green', () => {
 
     const scopes = [
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
-      getReviewsRequested({ users: [], teams: [] }),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
       getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
@@ -501,7 +492,6 @@ describe('merge-on-green', () => {
 
     const scopes = [
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
-      getReviewsRequested({ users: [], teams: [] }),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
       getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
@@ -515,7 +505,6 @@ describe('merge-on-green', () => {
       }),
       requiredChecksByLanguage({ content: requiredChecks.toString('base64') }),
       repoMap({ content: map.toString('base64') }),
-      updateBranch(),
       merge(),
     ];
 
@@ -548,52 +537,6 @@ describe('merge-on-green', () => {
 
     const scopes = [
       getReviewsCompleted([]),
-      getReviewsRequested({ users: [], teams: [] }),
-      getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
-      getMogLabel([{ name: 'automerge' }]),
-      getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
-      getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
-        check_runs: [
-          {
-            name: 'Kokoro - Test: Binary Compatibility',
-            conclusion: 'success',
-          },
-        ],
-      }),
-      requiredChecksByLanguage({ content: requiredChecks.toString('base64') }),
-      repoMap({ content: map.toString('base64') }),
-    ];
-
-    await probot.receive({
-      name: 'schedule.repository',
-      payload: {},
-      id: 'abc123',
-    });
-
-    scopes.forEach(s => s.done());
-  });
-
-  it('fails if people are assigned to review but have not reviewed', async () => {
-    handler.listPRs = async () => {
-      const watchPr: WatchPR[] = [
-        {
-          number: 1,
-          repo: 'testRepo',
-          owner: 'testOwner',
-          state: 'continue',
-          url: 'github.com/foo/bar',
-        },
-      ];
-      return watchPr;
-    };
-
-    handler.removePR = async () => {
-      return Promise.resolve(undefined);
-    };
-
-    const scopes = [
-      getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
-      getReviewsRequested({ users: ['user'], teams: [] }),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
       getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
@@ -638,7 +581,6 @@ describe('merge-on-green', () => {
 
     const scopes = [
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
-      getReviewsRequested({ users: [], teams: [] }),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
       getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
@@ -654,8 +596,55 @@ describe('merge-on-green', () => {
         ],
       }),
       repoMap({ content: map.toString('base64') }),
-      updateBranch(),
       merge(),
+    ];
+
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: {},
+      id: 'abc123',
+    });
+
+    scopes.forEach(s => s.done());
+  });
+
+  it('updates a branch if merge returns error', async () => {
+    handler.listPRs = async () => {
+      const watchPr: WatchPR[] = [
+        {
+          number: 1,
+          repo: 'testRepo',
+          owner: 'testOwner',
+          state: 'continue',
+          url: 'github.com/foo/bar',
+        },
+      ];
+      return watchPr;
+    };
+
+    handler.removePR = async () => {
+      return Promise.resolve(undefined);
+    };
+
+    const scopes = [
+      getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
+      getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
+      getMogLabel([{ name: 'automerge' }]),
+      getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
+      requiredChecksByLanguage({
+        content: specialRequiredChecks.toString('base64'),
+      }),
+      getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
+        check_runs: [
+          {
+            name: 'Special Check',
+            conclusion: 'success',
+          },
+        ],
+      }),
+      repoMap({ content: map.toString('base64') }),
+      mergeWithError(),
+      updateBranch(),
     ];
 
     await probot.receive({
