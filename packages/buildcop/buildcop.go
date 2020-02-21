@@ -104,11 +104,11 @@ If your repo is not in GoogleCloudPlatform or googleapis, you must also set
 	if installationID == "" {
 		installationID = detectInstallationID(repo)
 		if installationID == "" {
-			log.Print(`Unable to detect installation ID. Please set the --installation_id flag.
+			log.Printf(`Unable to detect installation ID from repo=%q. Please set the --installation_id flag.
 If your repo is part of GoogleCloudPlatform or googleapis and you see this error,
 file an issue at https://github.com/googleapis/repo-automation-bots/issues.
 Otherwise, set --installation_id with the numeric installation ID.
-See https://github.com/apps/build-cop-bot/.`)
+See https://github.com/apps/build-cop-bot/.`, repo)
 			return false
 		}
 	}
@@ -140,12 +140,12 @@ See https://github.com/apps/build-cop-bot/.`)
 func detectRepo() string {
 	if github := os.Getenv("KOKORO_GITHUB_COMMIT_URL"); github != "" {
 		parts := strings.Split(github, "/")
-		repo := fmt.Sprintf("%s/%s", parts[4], parts[5])
+		repo := fmt.Sprintf("%s/%s", parts[3], parts[4])
 		return repo
 	}
 	if github := os.Getenv("KOKORO_GITHUB_COMMIT_URL_google_cloud_go"); github != "" {
 		parts := strings.Split(github, "/")
-		repo := fmt.Sprintf("%s/%s", parts[4], parts[5])
+		repo := fmt.Sprintf("%s/%s", parts[3], parts[4])
 		return repo
 	}
 	return ""
