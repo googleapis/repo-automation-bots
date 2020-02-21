@@ -49,6 +49,7 @@ func main() {
 	flag.Parse()
 
 	log.Println("Sending logs to Build Cop Bot...")
+	log.Println("See https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop.")
 	if ok := publish(*projectID, *topicID, *repo, *installationID); !ok {
 		os.Exit(1)
 	}
