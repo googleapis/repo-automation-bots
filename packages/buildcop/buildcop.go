@@ -67,7 +67,7 @@ type message struct {
 	Location     string             `json:"location"`
 	Installation githubInstallation `json:"installation"`
 	Repo         string             `json:"repo"`
-	BuildID      string             `json:"build"`
+	BuildID      string             `json:"buildID"`
 	BuildURL     string             `json:"buildURL"`
 	XUnitXML     string             `json:"xunitXML"`
 }
