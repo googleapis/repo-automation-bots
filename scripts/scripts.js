@@ -26,13 +26,22 @@ async function main() {
   const files = await fs.readdir('./packages', { withFileTypes: true });
   const dirs = files.filter(f => f.isDirectory());
   const cmd = process.argv.slice(2).join(' ');
+  const errors = [];
   dirs.forEach(d => {
     console.log(cmd, d.name);
-    execSync(cmd, {
-      stdio: 'inherit',
-      cwd: `packages/${d.name}`
-    });
+    try {
+      execSync(cmd, {
+        stdio: 'inherit',
+        cwd: `packages/${d.name}`
+      });
+    } catch (e) {
+      console.error(e);
+      errors.push(e);
+    }
   });
+  if (errors.length > 0) {
+    throw new Error(`There were ${errors.length} errors.`);
+  }
 }
 main().catch(e => {
   console.error(e);
