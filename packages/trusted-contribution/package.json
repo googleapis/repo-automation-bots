@@ -20,14 +20,13 @@
     "start": "probot run ./build/src/trusted-contribution.js",
     "prepare": "npm run compile",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal mocha --timeout=15000 --recursive ./build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --timeout=15000 --recursive ./build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "fix": "gts fix",
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "1.6.1",
-    "@octokit/rest": "16.41.2"
+    "gcf-utils": "1.6.1"
   },
   "devDependencies": {
     "@types/bunyan": "^1.8.6",
@@ -38,6 +37,7 @@
     "@types/mocha": "^7.0.0",
     "@types/nock": "^11.0.0",
     "@types/node": "^12.6.1",
+    "c8": "^7.1.0",
     "chai": "^4.2.0",
     "cross-env": "^7.0.0",
     "gts": "^1.0.0",
