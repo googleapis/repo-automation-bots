@@ -324,9 +324,9 @@ describe('buildcop', () => {
           'utf8'
         );
         const payload = formatPayload({
-          repo: 'tbpg/java-docs-samples',
+          repo: 'tbpg/java-vision',
           organization: { login: 'tbpg' },
-          repository: { name: 'java-docs-samples' },
+          repository: { name: 'java-vision' },
           buildID: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -334,10 +334,10 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/java-docs-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
+            '/repos/tbpg/java-vision/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [])
-          .post('/repos/tbpg/java-docs-samples/issues', body => {
+          .post('/repos/tbpg/java-vision/issues', body => {
             snapshot(body);
             return true;
           })
@@ -607,9 +607,9 @@ describe('buildcop', () => {
           'utf8'
         );
         const payload = formatPayload({
-          repo: 'tbpg/java-docs-samples',
+          repo: 'tbpg/java-vision',
           organization: { login: 'tbpg' },
-          repository: { name: 'java-docs-samples' },
+          repository: { name: 'java-vision' },
           buildID: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -617,7 +617,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/java-docs-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
+            '/repos/tbpg/java-vision/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -629,14 +629,14 @@ describe('buildcop', () => {
               body: 'Failure!',
             },
           ])
-          .post('/repos/tbpg/java-docs-samples/issues/16/comments', body => {
+          .post('/repos/tbpg/java-vision/issues/16/comments', body => {
             snapshot(body);
             return true;
           })
           .reply(200)
-          .get('/repos/tbpg/java-docs-samples/issues/16/comments')
+          .get('/repos/tbpg/java-vision/issues/16/comments')
           .reply(200, [])
-          .patch('/repos/tbpg/java-docs-samples/issues/16', body => {
+          .patch('/repos/tbpg/java-vision/issues/16', body => {
             snapshot(body);
             return true;
           })
