@@ -103,3 +103,21 @@ exports['buildcop app xunitXML opens multiple issues for multiple failures 2'] =
     "buildcop: issue"
   ]
 }
+
+exports['buildcop app xunitXML opens an issue [Java] 1'] = {
+  "title": "com.google.cloud.vision.it.ITSystemTest: detectSafeSearchGcsTest failed",
+  "body": "com.google.cloud.vision.it.ITSystemTest: detectSafeSearchGcsTest failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed",
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue"
+  ]
+}
+
+exports['buildcop app xunitXML closes an issue for a passing test [Java] 1'] = {
+  "body": "Test passed in build 123 (http://example.com)! Closing this issue."
+}
+
+exports['buildcop app xunitXML closes an issue for a passing test [Java] 2'] = {
+  "state": "closed"
+}

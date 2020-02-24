@@ -318,6 +318,36 @@ describe('buildcop', () => {
         requests.done();
       });
 
+      it('opens an issue [Java]', async () => {
+        const input = fs.readFileSync(
+          resolve(fixturesPath, 'testdata', 'java_one_failed.xml'),
+          'utf8'
+        );
+        const payload = formatPayload({
+          repo: 'tbpg/java-vision',
+          organization: { login: 'tbpg' },
+          repository: { name: 'java-vision' },
+          buildID: '123',
+          buildURL: 'http://example.com',
+          xunitXML: input,
+        });
+
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/tbpg/java-vision/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
+          )
+          .reply(200, [])
+          .post('/repos/tbpg/java-vision/issues', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200);
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        requests.done();
+      });
+
       it('comments on existing issue', async () => {
         const input = fs.readFileSync(
           resolve(fixturesPath, 'testdata', 'one_failed.xml'),
@@ -561,6 +591,52 @@ describe('buildcop', () => {
           .get('/repos/tbpg/python-docs-samples/issues/16/comments')
           .reply(200, [])
           .patch('/repos/tbpg/python-docs-samples/issues/16', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200);
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        requests.done();
+      });
+
+      it('closes an issue for a passing test [Java]', async () => {
+        const input = fs.readFileSync(
+          resolve(fixturesPath, 'testdata', 'java_one_passed.xml'),
+          'utf8'
+        );
+        const payload = formatPayload({
+          repo: 'tbpg/java-vision',
+          organization: { login: 'tbpg' },
+          repository: { name: 'java-vision' },
+          buildID: '123',
+          buildURL: 'http://example.com',
+          xunitXML: input,
+        });
+
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/tbpg/java-vision/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
+          )
+          .reply(200, [
+            {
+              title: formatTestCase({
+                package: 'com.google.cloud.vision.it.ITSystemTest(sponge_log)',
+                testCase: 'detectLocalizedObjectsTest',
+              }),
+              number: 16,
+              body: 'Failure!',
+            },
+          ])
+          .post('/repos/tbpg/java-vision/issues/16/comments', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200)
+          .get('/repos/tbpg/java-vision/issues/16/comments')
+          .reply(200, [])
+          .patch('/repos/tbpg/java-vision/issues/16', body => {
             snapshot(body);
             return true;
           })
