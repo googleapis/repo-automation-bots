@@ -62,14 +62,14 @@ type githubInstallation struct {
 }
 
 type message struct {
-	Name         string
-	Type         string
-	Location     string
-	installation githubInstallation
-	repo         string
-	buildID      string
-	buildURL     string
-	xunitXML     string
+	Name         string             `json:"name"`
+	Type         string             `json:"type"`
+	Location     string             `json:"location"`
+	Installation githubInstallation `json:"installation"`
+	Repo         string             `json:"repo"`
+	BuildID      string             `json:"build"`
+	BuildURL     string             `json:"buildURL"`
+	XUnitXML     string             `json:"xunitXML"`
 }
 
 // publish searches for sponge_log.xml files and publishes them to Pub/Sub.
@@ -171,11 +171,11 @@ func processLog(ctx context.Context, repo, installationID string, topic *pubsub.
 			Name:         "buildcop",
 			Type:         "function",
 			Location:     "us-central1",
-			installation: githubInstallation{ID: installationID},
-			repo:         repo,
-			buildID:      os.Getenv("KOKORO_GIT_COMMIT"),
-			buildURL:     buildURL,
-			xunitXML:     enc,
+			Installation: githubInstallation{ID: installationID},
+			Repo:         repo,
+			BuildID:      os.Getenv("KOKORO_GIT_COMMIT"),
+			BuildURL:     buildURL,
+			XUnitXML:     enc,
 		}
 		data, err = json.Marshal(msg)
 		if err != nil {
