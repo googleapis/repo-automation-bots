@@ -25,7 +25,7 @@ steps:
         "serverless-scheduler-proxy/Dockerfile",
         "serverless-scheduler-proxy",
       ]
-  
+
   - name: gcr.io/cloud-builders/docker
     id: "serverless-scheduler-proxy-push"
     waitFor: ["serverless-scheduler-proxy-builder"]
@@ -43,11 +43,11 @@ steps:
       - "-e"
       - "./scripts/serverless-scheduler-proxy-deploy.sh"
       - "$PROJECT_ID"
-      - "$_BUCKET" 
-      - "$_KEY_LOCATION" 
-      - "$_KEY_RING" 
+      - "$_BUCKET"
+      - "$_KEY_LOCATION"
+      - "$_KEY_RING"
       - "$_REGION"
-    
+
   - name: gcr.io/cloud-builders/gcloud
     id: "cron-deploy"
     waitFor: ["serverless-scheduler-proxy-deploy"]
@@ -55,8 +55,8 @@ steps:
     args:
       - "-e"
       - "./scripts/cron-deploy.sh"
-      - "$_SCHEDULER_SERVICE_ACCOUNT_EMAIL" 
-      - "$_FUNCTION_REGION" 
+      - "$_SCHEDULER_SERVICE_ACCOUNT_EMAIL"
+      - "$_FUNCTION_REGION"
       - "$_REGION"
 
   - name: gcr.io/cloud-builders/npm
@@ -73,11 +73,13 @@ steps:
     entrypoint: bash
     args:
       - "-e"
-      - "./scripts/publish-functions.sh" 
-      - "$PROJECT_ID" 
-      - "$_BUCKET" 
-      - "$_KEY_LOCATION" 
-      - "$_KEY_RING" 
+      - "./scripts/publish-functions.sh"
+      - "$PROJECT_ID"
+      - "$_BUCKET"
+      - "$_KEY_LOCATION"
+      - "$_KEY_RING"
       - "$_FUNCTION_REGION"
 # Each function can take ~2 minutes to deploy.
-timeout: 2400s
+# This means at 5 functions, we will run out
+# at the 10 minute mark. Increase to 20.
+timeout: 1200s

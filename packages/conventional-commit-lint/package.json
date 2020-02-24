@@ -22,7 +22,7 @@
     "start:local": "node ./build/src/local.js",
     "prepare": "npm run compile",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal mocha --timeout=15000 --recursive ./build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --timeout=15000 --recursive ./build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "fix": "gts fix",
     "lint": "gts check"
@@ -30,8 +30,7 @@
   "dependencies": {
     "@commitlint/config-conventional": "^8.1.0",
     "@commitlint/lint": "^8.0.0",
-    "gcf-utils": "1.6.1",
-    "@octokit/rest": "16.41.2"
+    "gcf-utils": "1.6.1"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
@@ -45,6 +44,7 @@
     "@types/nock": "^10.0.3",
     "@types/node": "^12.6.1",
     "body-parser": "^1.19.0",
+    "c8": "^7.1.0",
     "chai": "^4.2.0",
     "cross-env": "^7.0.0",
     "dotenv": "^8.0.0",
