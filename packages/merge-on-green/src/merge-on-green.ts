@@ -85,8 +85,16 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
 function handler(app: Application) {
   app.on(['schedule.repository'], async context => {
     const watchedPRs = await handler.listPRs();
+    console.info(`running for org ${context.payload.org}`);
     for (const wp of watchedPRs) {
-      console.info(`watchedPR ${JSON.stringify(wp, null, 2)}`);
+      const start = Date.now();
+      console.info(`checking PR: ${wp.url}`);
+      if (!wp.owner.startsWith(context.payload.org)) {
+        console.info(
+          `skipping mergeOnGreen for ${wp.url} not part of org ${context.payload.org}`
+        );
+        continue;
+      }
       try {
         const remove = await mergeOnGreen(
           wp.owner,
@@ -99,6 +107,7 @@ function handler(app: Application) {
         if (remove) {
           handler.removePR(wp.url);
         }
+        console.info(`mergeOnGreen check took ${Date.now() - start}ms`);
       } catch (err) {
         console.error(err.message);
       }

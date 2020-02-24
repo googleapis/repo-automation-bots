@@ -15,8 +15,11 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestDetectRepo(t *testing.T) {
@@ -76,5 +79,29 @@ func TestDetectInstallationID(t *testing.T) {
 		if got := detectInstallationID(test.repo); got != test.want {
 			t.Errorf("detectInstallationID(%q) = %q, want %q", test.repo, got, test.want)
 		}
+	}
+}
+
+func TestJSONMarshalMessage(t *testing.T) {
+	msg := &message{
+		Name:         "buildcop",
+		Type:         "function",
+		Location:     "us-central1",
+		Installation: githubInstallation{ID: "123"},
+		Repo:         "MyOrg/test-repo",
+		BuildID:      "456",
+		BuildURL:     "example.com",
+		XUnitXML:     "<xml></xml>",
+	}
+	data, err := json.Marshal(msg)
+	if err != nil {
+		t.Fatalf("json.Marshal: %v", err)
+	}
+	got := &message{}
+	if err := json.Unmarshal(data, got); err != nil {
+		t.Fatalf("json.Unmarshal: %v", err)
+	}
+	if diff := cmp.Diff(msg, got); diff != "" {
+		t.Fatalf("JSON Marshal -> Unmarshal got diff:\n%v", diff)
 	}
 }
