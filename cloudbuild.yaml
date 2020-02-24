@@ -82,4 +82,4 @@ steps:
 # Each function can take ~2 minutes to deploy.
 # This means at 5 functions, we will run out
 # at the 10 minute mark. Increase to 20.
-timeout: 1200s
+timeout: 2400s
