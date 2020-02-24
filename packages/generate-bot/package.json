@@ -8,6 +8,7 @@
     "lint": "eslint .",
     "fix": "eslint . --fix",
     "test": "mocha test/",
+    "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "start": "",
     "start:local": "node ./build/src/local.js"
   },
