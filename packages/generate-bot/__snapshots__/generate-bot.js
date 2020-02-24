@@ -1,4 +1,4 @@
-exports["file structure checks that the file content carries over 1"] = `
+exports['file structure checks that the file content carries over 1'] = `
 # helloWorld
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
@@ -33,13 +33,13 @@ Apache 2.0 © 2019 Google LLC.// Copyright 2019 Google LLC
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
 import { GCFBootstrapper } from 'gcf-utils';
 import appFn from './helloWorld';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['helloWorld'] = bootstrap.gcf(appFn);// Copyright 2019 Google LLC
+module.exports['helloWorld'] = bootstrap.gcf(appFn);
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,7 +52,6 @@ module.exports['helloWorld'] = bootstrap.gcf(appFn);// Copyright 2019 Google LLC
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
 import { Application, Context } from 'probot';
 import * as util from 'util';
@@ -62,7 +61,6 @@ const CONFIGURATION_FILE_PATH = 'helloWorld.yml';
 interface Configuration {
   randomBoolean: boolean;
 }
-
 
 export = (app: Application) => {
   app.on(
@@ -81,7 +79,8 @@ export = (app: Application) => {
         return;
       }
     })
-};// Copyright 2019 Google LLC
+};
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -94,12 +93,12 @@ export = (app: Application) => {
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
 declare module "promise-events" {
   class EventEmitter {
   }
-}randomBoolean: true{
+}
+randomBoolean: true{
   "action": "opened",
   "issue": {
     "url": "https://api.github.com/repos/testOwner/testRepo/issues/5",
@@ -850,4 +849,4 @@ describe('helloWorld', () => {
     "system-test/*.ts"
   ]
 }
-`;
+`
