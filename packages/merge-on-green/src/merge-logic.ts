@@ -190,6 +190,21 @@ mergeOnGreen.mapReposToLanguage = async function mapReposToLanguage(
   }
 };
 
+mergeOnGreen.getBranchProtection = async function getBranchProtection(
+  owner: string,
+  repo: string,
+  github: GitHubAPI
+) {
+  const branchProtection = (
+    await github.repos.getBranchProtection({
+      owner,
+      repo,
+      branch: 'master',
+    })
+  ).data.required_status_checks.contexts;
+  return branchProtection;
+};
+
 mergeOnGreen.getRequiredChecks = async function getRequiredChecks(
   github: GitHubAPI,
   owner: string,
@@ -214,6 +229,17 @@ mergeOnGreen.getRequiredChecks = async function getRequiredChecks(
           console.log(
             `Your language's required checks were overridden because of the repo ${owner}/${repo}`
           );
+          if (
+            isOverriden.requiredStatusChecks[0] === 'Native branch protection'
+          ) {
+            const branchProtection = await mergeOnGreen.getBranchProtection(
+              owner,
+              repo,
+              github
+            );
+            console.log(`Using native branch protection for ${owner}/${repo}`);
+            return branchProtection;
+          }
           return isOverriden.requiredStatusChecks;
         }
       }
