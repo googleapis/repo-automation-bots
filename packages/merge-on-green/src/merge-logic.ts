@@ -495,6 +495,24 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
   }
 };
 
+mergeOnGreen.checkPRMerged = async function checkPRMerged(
+  owner: string,
+  repo: string,
+  pr: number,
+  github: GitHubAPI
+): Promise<boolean> {
+  try {
+    await github.pulls.checkIfMerged({
+      owner,
+      repo,
+      pull_number: pr,
+    });
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+
 export async function mergeOnGreen(
   owner: string,
   repo: string,
@@ -504,6 +522,11 @@ export async function mergeOnGreen(
   github: GitHubAPI
 ): Promise<boolean | undefined> {
   console.info(`${owner}/${repo} checking merge on green PR status`);
+  const isMerged = await mergeOnGreen.checkPRMerged(owner, repo, pr, github);
+  if (isMerged) {
+    console.log('This PR has already been merged');
+    return true;
+  }
 
   const [checkReview, checkStatus] = await Promise.all([
     mergeOnGreen.checkReviews(owner, repo, pr, github),
