@@ -42,8 +42,6 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
     //TODO: I'd prefer to not have a "list" method that has side effects - perhaps later refactor
     //this to do the list, then have an explicit loop over the returned WatchPR objects that removes the expired ones.
     if (now - created > MAX_TEST_TIME) {
-      console.warn(`deleting stale PR ${url}`);
-      await handler.removePR(url);
       state = 'stop';
     }
     const watchPr: WatchPR = {
@@ -93,6 +91,10 @@ function handler(app: Application) {
         );
         continue;
       }
+      if (wp.state === 'stop') {
+        console.warn(`deleting stale PR ${wp.url}`);
+        await handler.removePR(wp.url);
+      }
       try {
         const remove = await mergeOnGreen(
           wp.owner,
@@ -102,7 +104,7 @@ function handler(app: Application) {
           wp.state,
           context.github
         );
-        if (remove) {
+        if (remove && wp.state !== 'stop') {
           handler.removePR(wp.url);
         }
         console.info(`mergeOnGreen check took ${Date.now() - start}ms`);
