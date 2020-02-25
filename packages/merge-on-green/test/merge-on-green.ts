@@ -144,6 +144,12 @@ function updateBranch() {
     .reply(200);
 }
 
+function getIfMerged(response: number) {
+  return nock('https://api.github.com')
+    .get('/repos/testOwner/testRepo/pulls/1/merge')
+    .reply(response);
+}
+
 describe('merge-on-green', () => {
   let probot: Probot;
 
@@ -182,6 +188,7 @@ describe('merge-on-green', () => {
     };
 
     const scopes = [
+      getIfMerged(404),
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
@@ -221,6 +228,7 @@ describe('merge-on-green', () => {
     };
 
     const scopes = [
+      getIfMerged(404),
       getReviewsCompleted([
         { user: { login: 'octocat' }, state: 'APPROVED' },
         { user: { login: 'octokitten' }, state: 'CHANGES_REQUESTED' },
@@ -262,6 +270,7 @@ describe('merge-on-green', () => {
     };
 
     const scopes = [
+      getIfMerged(404),
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
       getLatestCommit([]),
       getMogLabel([{ name: 'automerge' }]),
@@ -300,6 +309,7 @@ describe('merge-on-green', () => {
     };
 
     const scopes = [
+      getIfMerged(404),
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'this is not the label you are looking for' }]),
@@ -338,6 +348,7 @@ describe('merge-on-green', () => {
     };
 
     const scopes = [
+      getIfMerged(404),
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
@@ -374,6 +385,7 @@ describe('merge-on-green', () => {
     };
 
     const scopes = [
+      getIfMerged(404),
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
@@ -412,6 +424,7 @@ describe('merge-on-green', () => {
     };
 
     const scopes = [
+      getIfMerged(404),
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'this is not the label you are looking for' }]),
@@ -451,6 +464,7 @@ describe('merge-on-green', () => {
     };
 
     const scopes = [
+      getIfMerged(404),
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
@@ -489,6 +503,7 @@ describe('merge-on-green', () => {
     };
 
     const scopes = [
+      getIfMerged(404),
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
@@ -534,6 +549,7 @@ describe('merge-on-green', () => {
     };
 
     const scopes = [
+      getIfMerged(404),
       getReviewsCompleted([]),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
@@ -578,6 +594,7 @@ describe('merge-on-green', () => {
     };
 
     const scopes = [
+      getIfMerged(404),
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
@@ -625,6 +642,7 @@ describe('merge-on-green', () => {
     };
 
     const scopes = [
+      getIfMerged(404),
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'automerge' }]),
@@ -644,6 +662,35 @@ describe('merge-on-green', () => {
       mergeWithError(),
       updateBranch(),
     ];
+
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: { org: 'testOwner' },
+      id: 'abc123',
+    });
+
+    scopes.forEach(s => s.done());
+  });
+
+  it('fails if PR was merged', async () => {
+    handler.listPRs = async () => {
+      const watchPr: WatchPR[] = [
+        {
+          number: 1,
+          repo: 'testRepo',
+          owner: 'testOwner',
+          state: 'continue',
+          url: 'github.com/foo/bar',
+        },
+      ];
+      return watchPr;
+    };
+
+    handler.removePR = async () => {
+      return Promise.resolve(undefined);
+    };
+
+    const scopes = [getIfMerged(204)];
 
     await probot.receive({
       name: 'schedule.repository',
