@@ -1,0 +1,15 @@
+{
+    "nodejs": {
+        "requiredStatusChecks": [
+          "Kokoro - Test: Binary Compatibility"
+        ],
+        "repoOverrides": [
+          {
+            "repo": "testOwner/testRepo",
+            "requiredStatusChecks": [
+              "Native branch protection"
+            ]
+          }
+        ]
+      }
+    }
