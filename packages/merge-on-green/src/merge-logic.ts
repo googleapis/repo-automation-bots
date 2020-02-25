@@ -52,6 +52,7 @@ interface RequiredChecksByLanguage {
 interface RepoOverrides {
   repo: string;
   requiredStatusChecks: string[];
+  useBranchProtectionRules: boolean;
 }
 
 interface Language {
@@ -233,9 +234,7 @@ mergeOnGreen.getRequiredChecks = async function getRequiredChecks(
           console.log(
             `Your language's required checks were overridden because of the repo ${owner}/${repo}`
           );
-          if (
-            isOverriden.requiredStatusChecks[0] === 'Native branch protection'
-          ) {
+          if (isOverriden.useBranchProtectionRules === true) {
             const branchProtection = await mergeOnGreen.getBranchProtection(
               owner,
               repo,

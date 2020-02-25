@@ -6,9 +6,7 @@
         "repoOverrides": [
           {
             "repo": "testOwner/testRepo",
-            "requiredStatusChecks": [
-              "Native branch protection"
-            ]
+            "useBranchProtectionRules": true
           }
         ]
       }
