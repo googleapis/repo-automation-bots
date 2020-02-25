@@ -915,6 +915,61 @@ describe('buildcop', () => {
     });
   });
 
+  it('reopens the original flaky issue when there is a duplicate', async () => {
+    const input = fs.readFileSync(
+      resolve(fixturesPath, 'testdata', 'one_failed.xml'),
+      'utf8'
+    );
+    const payload = formatPayload({
+      repo: 'tbpg/golang-samples',
+      organization: { login: 'tbpg' },
+      repository: { name: 'golang-samples' },
+      buildID: '123',
+      buildURL: 'http://example.com',
+      xunitXML: input,
+    });
+
+    const title = formatTestCase({
+      package:
+        'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+      testCase: 'TestSample',
+    });
+
+    const requests = nock('https://api.github.com')
+      .get(
+        '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
+      )
+      .reply(200, [
+        {
+          title: title,
+          number: 18,
+          body: 'Failure!',
+          state: 'closed',
+        },
+        {
+          title: title,
+          number: 19,
+          body: 'Failure!',
+          labels: [{ name: 'buildcop: flaky' }],
+          state: 'closed',
+        },
+      ])
+      .post('/repos/tbpg/golang-samples/issues/19/comments', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200)
+      .patch('/repos/tbpg/golang-samples/issues/19', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200);
+
+    await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+    requests.done();
+  });
+
   describe('formatBody and containsBuildFailure', () => {
     it('correctly finds a failure', () => {
       const buildID = 'my-build-id';

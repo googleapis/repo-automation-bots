@@ -121,3 +121,17 @@ exports['buildcop app xunitXML closes an issue for a passing test [Java] 1'] = {
 exports['buildcop app xunitXML closes an issue for a passing test [Java] 2'] = {
   "state": "closed"
 }
+
+exports['buildcop reopens the original flaky issue when there is a duplicate 1'] = {
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue",
+    "buildcop: flaky"
+  ],
+  "state": "open"
+}
+
+exports['buildcop reopens the original flaky issue when there is a duplicate 2'] = {
+  "body": "Oops! Looks like this issue is still flaky. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\nspanner/spanner_snippets: TestSample failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed"
+}
