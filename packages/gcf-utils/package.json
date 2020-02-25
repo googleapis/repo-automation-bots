@@ -62,7 +62,7 @@
     "probot": "^9.9.4",
     "tmp": "^0.1.0",
     "yargs": "^15.0.0",
-    "@octokit/rest": "16.41.2"
+    "@octokit/rest": "17.0.0"
   },
   "files": [
     "build/",
