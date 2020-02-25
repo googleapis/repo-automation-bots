@@ -209,7 +209,7 @@ mergeOnGreen.getRequiredChecks = async function getRequiredChecks(
         );
         if (isOverriden) {
           console.log(
-            "Your language's required checks were overridden because of the PR's repo"
+            `Your language's required checks were overridden because of the repo ${owner}/${repo}`
           );
           return isOverriden.requiredStatusChecks;
         }
@@ -217,12 +217,12 @@ mergeOnGreen.getRequiredChecks = async function getRequiredChecks(
       return checksByLanguage[language.language].requiredStatusChecks;
     } else {
       console.info(
-        'This repo does not have a corresponding language in sloth/repos.json'
+        `${owner}/${repo} does not have a corresponding language in sloth/repos.json`
       );
       return [];
     }
   } else {
-    console.info('Could not find any checks or a language map');
+    console.info(`Could not find any checks or a language map for ${owner}/${repo}`);
     return [];
   }
 };
@@ -314,7 +314,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
     requiredChecks.length !== 0 &&
     mogLabel === true
   ) {
-    console.info('=== checking required checks ===');
+    console.info(`=== checking required checks for ${owner}/${repo} PR ${pr} ===`);
     for (const check of requiredChecks) {
       console.log('Looking for required checks in status checks.');
       //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
@@ -350,7 +350,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
     }
   } else {
     console.log(
-      'Either you have no head sha, no required checks, or no MOG Label'
+      `Either you have no head sha, no required checks, or no MOG Label for ${owner}/${repo} PR ${pr}`
     );
     return false;
   }
@@ -428,7 +428,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
     });
   } else {
     //if no one has reviewed it, fail the merge
-    console.log('No one has reviewed your PR');
+    console.log(`No one has reviewed your PR ${owner}/${repo} PR ${pr}`);
     return false;
   }
   return reviewsPassed;
@@ -486,12 +486,12 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
       repo,
       issue_number: pr,
       body:
-        'Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved.',
+        `Your ${owner}/${repo} PR ${pr} was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved.`,
     });
     return data;
   } catch (err) {
-    console.log('There was an issue commenting on the PR');
-    return null;
+    console.log(`There was an issue commenting on ${owner}/${repo} PR ${pr}`);
+    return null
   }
 };
 
@@ -510,7 +510,7 @@ mergeOnGreen.checkPRMerged = async function checkPRMerged(
     return true;
   } catch (err) {
     console.log(err);
-    console.log('PR was not merged');
+    console.log(`${owner}/${repo} PR ${pr} was not merged`);
     return false;
   }
 };
@@ -526,7 +526,7 @@ export async function mergeOnGreen(
   console.info(`${owner}/${repo} checking merge on green PR status`);
   const isMerged = await mergeOnGreen.checkPRMerged(owner, repo, pr, github);
   if (isMerged) {
-    console.log('This PR has already been merged');
+    console.log(`${owner}/${repo}/${pr} has already been merged`);
     return true;
   }
 
@@ -546,7 +546,7 @@ export async function mergeOnGreen(
       await mergeOnGreen.merge(owner, repo, pr, github);
       merged = true;
     } catch (err) {
-      console.error(`failed to merge "${err.message}" ${owner}/${repo}/${pr}`);
+      console.error(`failed to merge "${err.message}: " ${owner}/${repo}/${pr}`);
       console.log(`Attempting to update branch ${owner}/${repo}/${pr}`);
       try {
         await mergeOnGreen.updateBranch(owner, repo, pr, github);
@@ -558,11 +558,11 @@ export async function mergeOnGreen(
     }
     return merged;
   } else if (state === 'stop') {
-    console.log('Your PR timed out before its statuses & reviews passed');
+    console.log(`${owner}/${repo}/${pr} timed out before its statuses & reviews passed`);
     await mergeOnGreen.commentOnPR(owner, repo, pr, github);
     return true;
   } else {
-    console.log('Statuses and/or checks failed, will check again');
+    console.log(`Statuses and/or checks failed for ${owner}/${repo}/${pr}, will check again`);
     return false;
   }
 }
