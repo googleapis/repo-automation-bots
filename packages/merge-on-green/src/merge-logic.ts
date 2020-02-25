@@ -509,6 +509,8 @@ mergeOnGreen.checkPRMerged = async function checkPRMerged(
     });
     return true;
   } catch (err) {
+    console.log(err);
+    console.log('PR was not merged');
     return false;
   }
 };
