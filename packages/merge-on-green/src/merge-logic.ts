@@ -106,7 +106,7 @@ mergeOnGreen.getPR = async function getPR(
       pull_number: pr,
     });
     console.log(
-      `github's determination of whether the ${owner}/${repo} is mergeable: ${data.data.mergeable}`
+      `github's determination of whether the ${owner}/${repo} is mergeable: ${data.data.mergeable} and the state: ${data.data.mergeable_state}`
     );
     return data.data;
   } catch (err) {
