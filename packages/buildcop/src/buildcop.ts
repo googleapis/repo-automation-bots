@@ -379,7 +379,10 @@ buildcop.closeIssues = async (
   }
 };
 
-buildcop.issueComparator = (a: Octokit.IssuesListForRepoResponseItem, b: Octokit.IssuesListForRepoResponseItem) => {
+buildcop.issueComparator = (
+  a: Octokit.IssuesListForRepoResponseItem,
+  b: Octokit.IssuesListForRepoResponseItem
+) => {
   if (buildcop.isFlaky(a) && !buildcop.isFlaky(b)) {
     return -1;
   }
@@ -387,7 +390,7 @@ buildcop.issueComparator = (a: Octokit.IssuesListForRepoResponseItem, b: Octokit
     return 1;
   }
   return a.number - b.number;
-}
+};
 
 buildcop.isFlaky = (issue: Octokit.IssuesListForRepoResponseItem): boolean => {
   if (issue.labels === undefined) {

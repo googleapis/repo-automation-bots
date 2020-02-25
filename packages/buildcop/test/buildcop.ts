@@ -941,13 +941,13 @@ describe('buildcop', () => {
       )
       .reply(200, [
         {
-          title: title,
+          title,
           number: 18,
           body: 'Failure!',
           state: 'closed',
         },
         {
-          title: title,
+          title,
           number: 19,
           body: 'Failure!',
           labels: [{ name: 'buildcop: flaky' }],
