@@ -319,9 +319,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
     requiredChecks.length !== 0 &&
     mogLabel === true
   ) {
-    console.info(
-      `=== checking required checks for ${owner}/${repo}/${pr} ===`
-    );
+    console.info(`=== checking required checks for ${owner}/${repo}/${pr} ===`);
     for (const check of requiredChecks) {
       console.log('Looking for required checks in status checks.');
       //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
