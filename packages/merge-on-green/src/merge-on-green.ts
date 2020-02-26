@@ -41,8 +41,7 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
       prs[x],
       prs[x + 1],
       prs[x + 2],
-      prs[x + 3],
-      prs[x + 4],
+      prs[x + 3]
     ]);
     const created = new Date(worker1.created).getTime();
     const now = new Date().getTime();
