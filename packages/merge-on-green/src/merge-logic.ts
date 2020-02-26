@@ -107,11 +107,7 @@ mergeOnGreen.getPR = async function getPR(
       pull_number: pr,
     });
     console.log(
-<<<<<<< HEAD
       `github's determination of whether the ${owner}/${repo}/${pr} is mergeable: ${data.data.mergeable} ${data.data.mergeable_state}`
-=======
-      `github's determination of whether the ${owner}/${repo} is mergeable: ${data.data.mergeable} and the state: ${data.data.mergeable_state}`
->>>>>>> fix: added logging for state
     );
     return data.data;
   } catch (err) {
@@ -519,15 +515,7 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
       owner,
       repo,
       issue_number: pr,
-<<<<<<< HEAD
-<<<<<<< HEAD
-      body: `Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved.`,
-=======
-      body: `Your ${owner}/${repo} PR ${pr} was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. See required reviews for your repo here: https://github.com/googleapis/sloth/blob/master/required-checks.json`,
->>>>>>> address comments, add logging
-=======
       body: `Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. See required reviews for your repo here: https://github.com/googleapis/sloth/blob/master/required-checks.json`,
->>>>>>> fix conflict
     });
     return data;
   } catch (err) {
