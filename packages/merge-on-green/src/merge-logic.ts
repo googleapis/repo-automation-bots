@@ -32,11 +32,6 @@ interface Reviews {
   state: string;
 }
 
-interface ReviewsRequested {
-  users: [];
-  teams: [];
-}
-
 interface PullRequest {
   title: string;
   body: string;
@@ -476,7 +471,7 @@ mergeOnGreen.merge = async function merge(
       owner,
       repo,
       pull_number: pr,
-      commit_title: prInfo.title,
+      commit_title: `${prInfo.title} (#${pr})`,
       commit_message: prInfo.body,
       merge_method: 'squash',
     })

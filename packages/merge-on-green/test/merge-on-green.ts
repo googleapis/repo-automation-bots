@@ -164,7 +164,7 @@ function getPR(mergeable: boolean, mergeableState: string) {
     .get('/repos/testOwner/testRepo/pulls/1')
     .reply(200, {
       mergeable,
-      mergeableState,
+      mergeable_state: mergeableState,
     });
 }
 
