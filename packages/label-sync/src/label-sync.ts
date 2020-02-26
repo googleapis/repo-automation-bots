@@ -135,7 +135,6 @@ function handler(app: Application) {
  * @param repoPath GitHub repo path, in <owner>/<name> format
  */
 async function getApiLabels(repoPath: string): Promise<GetApiLabelsResponse> {
-
   // Get a list of repositories trcked from DRIFT. Each repository may have
   // associated `github_label`.
   const publicRepos = await storage
@@ -173,7 +172,7 @@ async function getApiLabels(repoPath: string): Promise<GetApiLabelsResponse> {
     .file('apis.json')
     .download();
   return JSON.parse(apis[0].toString()) as GetApiLabelsResponse;
-};
+}
 
 /**
  * Build the list of all labels that should be on the repo, get the list of
