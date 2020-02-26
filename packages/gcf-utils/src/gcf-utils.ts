@@ -17,7 +17,6 @@ import {
   Probot,
   ApplicationFunction,
   Options,
-  Application,
 } from 'probot';
 import { Storage } from '@google-cloud/storage';
 import * as KMS from '@google-cloud/kms';
