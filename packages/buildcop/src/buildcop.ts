@@ -246,11 +246,15 @@ buildcop.openIssues = async (
         context.log.info(
           `[${owner}/${repo}] reopening issue #${existingIssue.number}`
         );
+        const labels = existingIssue.labels
+          .map(l => l.name)
+          .filter(l => !l.startsWith('buildcop'))
+          .concat(LABELS_FOR_FLAKY_ISSUE);
         await context.github.issues.update({
           owner,
           repo,
           issue_number: existingIssue.number,
-          labels: LABELS_FOR_FLAKY_ISSUE,
+          labels,
           state: 'open',
         });
         let body = FLAKY_MESSAGE;

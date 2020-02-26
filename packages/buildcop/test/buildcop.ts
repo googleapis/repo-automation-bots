@@ -487,7 +487,7 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: 'Failure!',
-              labels: [{ name: 'buildcop: flaky' }],
+              labels: [{ name: 'buildcop: flaky' }, { name: 'api: spanner' }],
               state: 'closed',
             },
           ])
