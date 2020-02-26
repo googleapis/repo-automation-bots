@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Application } from 'probot';
+import { Application, ApplicationFunction } from 'probot';
 import { request } from 'gaxios';
 import { GitHubAPI } from 'probot/lib/github';
 import { createHash } from 'crypto';
@@ -51,6 +51,10 @@ interface PublicReposResponse {
     repo: string;
     github_label: string;
   }>;
+}
+
+interface HandlerFunction extends ApplicationFunction {
+  getApiLabels: Function;
 }
 
 // Labels are fetched by reaching out to GitHub *instead* of grabbing the file
@@ -263,4 +267,4 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
   }
 }
 
-export = handler;
+export = handler as HandlerFunction;
