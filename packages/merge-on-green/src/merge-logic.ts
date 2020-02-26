@@ -52,7 +52,7 @@ interface RequiredChecksByLanguage {
 interface RepoOverrides {
   repo: string;
   requiredStatusChecks: string[];
-  useBranchProtectionRules: boolean;
+  useBranchProtectionRules?: boolean;
 }
 
 interface Language {
@@ -519,7 +519,11 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
       owner,
       repo,
       issue_number: pr,
+<<<<<<< HEAD
       body: `Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved.`,
+=======
+      body: `Your ${owner}/${repo} PR ${pr} was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. See required reviews for your repo here: https://github.com/googleapis/sloth/blob/master/required-checks.json`,
+>>>>>>> address comments, add logging
     });
     return data;
   } catch (err) {
