@@ -52,6 +52,7 @@ interface RequiredChecksByLanguage {
 interface RepoOverrides {
   repo: string;
   requiredStatusChecks: string[];
+  useBranchProtectionRules?: boolean;
 }
 
 interface Language {
@@ -190,6 +191,21 @@ mergeOnGreen.mapReposToLanguage = async function mapReposToLanguage(
   }
 };
 
+mergeOnGreen.getBranchProtection = async function getBranchProtection(
+  owner: string,
+  repo: string,
+  github: GitHubAPI
+) {
+  const branchProtection = (
+    await github.repos.getBranchProtection({
+      owner,
+      repo,
+      branch: 'master',
+    })
+  ).data.required_status_checks.contexts;
+  return branchProtection;
+};
+
 mergeOnGreen.getRequiredChecks = async function getRequiredChecks(
   github: GitHubAPI,
   owner: string,
@@ -214,6 +230,15 @@ mergeOnGreen.getRequiredChecks = async function getRequiredChecks(
           console.log(
             `Your language's required checks were overridden because of the repo ${owner}/${repo}`
           );
+          if (isOverriden.useBranchProtectionRules === true) {
+            const branchProtection = await mergeOnGreen.getBranchProtection(
+              owner,
+              repo,
+              github
+            );
+            console.log(`Using native branch protection for ${owner}/${repo}`);
+            return branchProtection;
+          }
           return isOverriden.requiredStatusChecks;
         }
       }
@@ -490,7 +515,7 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
       owner,
       repo,
       issue_number: pr,
-      body: `Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved.`,
+      body: `Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. See required reviews for your repo here: https://github.com/googleapis/sloth/blob/master/required-checks.json`,
     });
     return data;
   } catch (err) {

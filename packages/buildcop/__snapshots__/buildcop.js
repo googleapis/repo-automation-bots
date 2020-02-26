@@ -56,6 +56,7 @@ exports['buildcop app xunitXML comments on existing issue 1'] = {
 
 exports['buildcop app xunitXML reopens issue for failing test 1'] = {
   "labels": [
+    "api: spanner",
     "type: bug",
     "priority: p1",
     "buildcop: issue",

@@ -13,7 +13,7 @@
 // limitations under the License.
 import { GCFBootstrapper } from '../../src/gcf-utils';
 
-import { Application, Options } from 'probot';
+import { Application } from 'probot';
 import { resolve } from 'path';
 import { config } from 'dotenv';
 

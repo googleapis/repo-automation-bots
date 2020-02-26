@@ -19,7 +19,6 @@ import * as yargs from 'yargs';
 import { Argv } from 'yargs';
 import * as KMS from '@google-cloud/kms';
 import { Storage, StorageOptions } from '@google-cloud/storage';
-import { Base64 } from 'js-base64';
 import { Options } from 'probot';
 import * as tmp from 'tmp';
 
@@ -73,14 +72,14 @@ const argv = yargs.command(
   }
 ).argv;
 
-const keyfile: string = (argv.keyfile as string) || 'key.pem';
-const project: string = argv.project as string;
-const location: string = (argv.location as string) || 'global';
-const keyring: string = (argv.keyring as string) || 'probot-keys';
-const bucketName: string = argv.bucket as string;
-const botname: string = argv.bot as string;
-const webhookSecret: string = argv.secret as string;
-const id: number = argv.id as number;
+const keyfile = argv.keyfile || 'key.pem';
+const project = argv.project as string;
+const location = argv.location || 'global';
+const keyring = (argv.keyring as string) || 'probot-keys';
+const bucketName = argv.bucket!;
+const botname = argv.bot!;
+const webhookSecret = argv.secret;
+const id = Number(argv.id);
 
 if (!project) {
   console.error('Project name is required');
