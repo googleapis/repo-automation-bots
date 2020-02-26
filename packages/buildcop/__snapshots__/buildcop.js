@@ -123,6 +123,24 @@ exports['buildcop app xunitXML closes an issue for a passing test [Java] 2'] = {
   "state": "closed"
 }
 
+exports['buildcop app reopens the original flaky issue when there is a duplicate 1'] = {
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue",
+    "buildcop: flaky"
+  ],
+  "state": "open"
+}
+
+exports['buildcop app reopens the original flaky issue when there is a duplicate 2'] = {
+  "body": "Oops! Looks like this issue is still flaky. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\nspanner/spanner_snippets: TestSample failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed"
+}
+
+exports['buildcop app xunitXML does not comment about failure on existing flaky issue 1'] = {
+  "body": "storage/buckets: TestUniformBucketLevelAccess failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed"
+}
+
 exports['buildcop app xunitXML keeps an issue open for a passing test that failed in the same build (comment) 1'] = {
   "labels": [
     "type: bug",
@@ -151,8 +169,4 @@ exports['buildcop app xunitXML keeps an issue open for a passing test that faile
 
 exports['buildcop app xunitXML keeps an issue open for a passing test that failed in the same build (issue body) 2'] = {
   "body": "Looks like this issue is flaky. :worried:\n\nI'm going to leave this open and stop commenting.\n\nA human should fix and close this."
-}
-
-exports['buildcop app xunitXML does not comment about failure on existing flaky issue 1'] = {
-  "body": "storage/buckets: TestUniformBucketLevelAccess failed\nbuildID: 123\nbuildURL: http://example.com\nstatus: failed"
 }
