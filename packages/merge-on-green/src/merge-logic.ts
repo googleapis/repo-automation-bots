@@ -107,7 +107,7 @@ mergeOnGreen.getPR = async function getPR(
       pull_number: pr,
     });
     console.log(
-      `github's determination of whether the ${owner}/${repo} is mergeable: ${data.data.mergeable} and the state: ${data.data.mergeable_state}`
+      `github's determination of whether the ${owner}/${repo}/${pr} is mergeable: ${data.data.mergeable} ${data.data.mergeable_state}`
     );
     return data.data;
   } catch (err) {
@@ -344,9 +344,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
     requiredChecks.length !== 0 &&
     mogLabel === true
   ) {
-    console.info(
-      `=== checking required checks for ${owner}/${repo} PR ${pr} ===`
-    );
+    console.info(`=== checking required checks for ${owner}/${repo}/${pr} ===`);
     for (const check of requiredChecks) {
       console.log('Looking for required checks in status checks.');
       //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
@@ -460,7 +458,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
     });
   } else {
     //if no one has reviewed it, fail the merge
-    console.log(`No one has reviewed your PR ${owner}/${repo} PR ${pr}`);
+    console.log(`No one has reviewed your PR ${owner}/${repo}/${pr}`);
     return false;
   }
   return reviewsPassed;
@@ -517,7 +515,11 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
       owner,
       repo,
       issue_number: pr,
+<<<<<<< HEAD
       body: `Your ${owner}/${repo} PR ${pr} was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. See required reviews for your repo here: https://github.com/googleapis/sloth/blob/master/required-checks.json`,
+=======
+      body: `Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved.`,
+>>>>>>> 24e49971566ed312397b3d8dcb87bc5e381eb1ea
     });
     return data;
   } catch (err) {
@@ -541,7 +543,7 @@ mergeOnGreen.checkPRMerged = async function checkPRMerged(
     return true;
   } catch (err) {
     console.log(err);
-    console.log(`${owner}/${repo} PR ${pr} was not merged`);
+    console.log(`${owner}/${repo}/${pr} was not merged`);
     return false;
   }
 };
@@ -567,20 +569,20 @@ export async function mergeOnGreen(
   ]);
 
   console.info(
-    `checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state}`
+    `checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state} ${owner}/${repo}/${pr}`
   );
 
   if (checkReview === true && checkStatus === true) {
     let merged = false;
     try {
-      console.info(`attempt to merge ${owner}/${repo}`);
+      console.info(`attempt to merge ${owner}/${repo}/${pr}`);
       await mergeOnGreen.merge(owner, repo, pr, github);
       merged = true;
     } catch (err) {
       console.error(
         `failed to merge "${err.message}: " ${owner}/${repo}/${pr}`
       );
-      console.log(`Attempting to update branch ${owner}/${repo}/${pr}`);
+      console.info(`Attempting to update branch ${owner}/${repo}/${pr}`);
       try {
         await mergeOnGreen.updateBranch(owner, repo, pr, github);
       } catch (err) {
