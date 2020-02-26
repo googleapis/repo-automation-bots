@@ -243,6 +243,8 @@ describe('buildcop', () => {
               state: 'open',
             },
           ])
+          .get('/repos/tbpg/golang-samples/issues/16/comments')
+          .reply(200, [])
           .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
             snapshot(body);
             return true;
@@ -387,6 +389,8 @@ describe('buildcop', () => {
               state: 'open',
             },
           ])
+          .get('/repos/tbpg/golang-samples/issues/16/comments')
+          .reply(200, [])
           .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
             snapshot(body);
             return true;
@@ -400,7 +404,7 @@ describe('buildcop', () => {
 
       it('does not comment about failure on existing flaky issue', async () => {
         const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'one_failed.xml'),
+          resolve(fixturesPath, 'testdata', 'many_failed_same_pkg.xml'),
           'utf8'
         );
         const payload = formatPayload({
@@ -420,15 +424,32 @@ describe('buildcop', () => {
             {
               title: formatTestCase({
                 package:
-                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
-                testCase: 'TestSample',
+                  'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
+                testCase: 'TestBucketLock',
               }),
               number: 16,
               body: `Failure!`,
               labels: [{ name: 'buildcop: flaky' }],
               state: 'open',
             },
-          ]);
+            {
+              title: formatTestCase({
+                package:
+                  'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
+                testCase: 'TestUniformBucketLevelAccess',
+              }),
+              number: 17,
+              body: `Failure!`,
+              state: 'open',
+            },
+          ])
+          .get('/repos/tbpg/golang-samples/issues/17/comments')
+          .reply(200, [])
+          .post('/repos/tbpg/golang-samples/issues/17/comments', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200);
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
@@ -713,7 +734,17 @@ describe('buildcop', () => {
             {
               body: `status: failed\nbuildID: 123`,
             },
-          ]);
+          ])
+          .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200)
+          .patch('/repos/tbpg/golang-samples/issues/16', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200);
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
@@ -742,13 +773,23 @@ describe('buildcop', () => {
             {
               title: formatTestCase({
                 package:
-                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
-                testCase: 'TestSample',
+                  'github.com/GoogleCloudPlatform/golang-samples/appengine/go11x/helloworld',
+                testCase: 'TestIndexHandler',
               }),
               number: 16,
               body: `status: failed\nbuildID: 123`,
             },
-          ]);
+          ])
+          .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200)
+          .patch('/repos/tbpg/golang-samples/issues/16', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200);
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
@@ -912,29 +953,6 @@ describe('buildcop', () => {
 
         requests.done();
       });
-    });
-  });
-
-  describe('formatBody and containsBuildFailure', () => {
-    it('correctly finds a failure', () => {
-      const buildID = 'my-build-id';
-      const buildURL = 'my.build.url';
-      const failure = {
-        package: 'my-package',
-        testCase: 'my-test',
-      };
-      const body = buildcop.formatBody(failure, buildID, buildURL);
-      expect(buildcop.containsBuildFailure(body, buildID)).to.equal(true);
-    });
-    it('corectly does not find a failure', () => {
-      const failure = {
-        package: 'my-package',
-        testCase: 'my-test',
-      };
-      const body = buildcop.formatBody(failure, 'my-build-id', 'my.build.url');
-      expect(buildcop.containsBuildFailure(body, 'other-build-id')).to.equal(
-        false
-      );
     });
   });
 });

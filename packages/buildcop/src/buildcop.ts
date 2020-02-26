@@ -249,38 +249,34 @@ buildcop.openIssues = async (
       if (existingIssue.state === 'closed') {
         // If the issue is closed, we know the bot opened and closed it in the
         // past. So, this is probably a flaky test. A human should close it.
-        context.log.info(
-          `[${owner}/${repo}] reopening issue #${existingIssue.number}`
+        await buildcop.markIssueFlaky(
+          existingIssue,
+          context,
+          owner,
+          repo,
+          buildID,
+          buildURL,
+          failure
         );
-        const labels = existingIssue.labels
-          .map(l => l.name)
-          .filter(l => !l.startsWith('buildcop'))
-          .concat(LABELS_FOR_FLAKY_ISSUE);
-        await context.github.issues.update({
-          owner,
-          repo,
-          issue_number: existingIssue.number,
-          labels,
-          state: 'open',
-        });
-        let body = FLAKY_MESSAGE;
-        // If the issue was flaky and we reopen it (again), say so.
-        if (buildcop.isFlaky(existingIssue)) {
-          body = FLAKY_AGAIN_MESSAGE;
-        }
-        body = body + '\n\n' + buildcop.formatBody(failure, buildID, buildURL);
-        await context.github.issues.createComment({
-          owner,
-          repo,
-          issue_number: existingIssue.number,
-          body,
-        });
       } else {
         // TODO: this can be spammy (https://github.com/googleapis/repo-automation-bots/issues/282).
 
         // Don't comment if it's flaky.
         if (buildcop.isFlaky(existingIssue)) {
-          return;
+          continue;
+        }
+
+        // Don't comment if we've already commented with this build failure.
+        if (
+          await buildcop.containsBuildFailure(
+            existingIssue,
+            context,
+            owner,
+            repo,
+            buildID
+          )
+        ) {
+          continue;
         }
 
         await context.github.issues.createComment({
@@ -345,26 +341,19 @@ buildcop.closeIssues = async (
       continue;
     }
 
-    // If the issue body is a failure in the same build, don't do anything.
-    // TODO: mark as flaky.
-    if (buildcop.containsBuildFailure(issue.body, buildID)) {
-      break;
-    }
-
-    // Check if there is a comment from the same build ID with a failure.
-    const comments = (
-      await context.github.issues.listComments({
+    // If the issue has a failure in the same build, don't close it.
+    // If it passed in one build and failed in another, it's flaky.
+    if (
+      await buildcop.containsBuildFailure(issue, context, owner, repo, buildID)
+    ) {
+      await buildcop.markIssueFlaky(
+        issue,
+        context,
         owner,
         repo,
-        issue_number: issue.number,
-      })
-    ).data;
-    const comment = comments.find(comment =>
-      buildcop.containsBuildFailure(comment.body, buildID)
-    );
-    // If there is a failure comment, don't do anything.
-    // TODO: mark as flaky.
-    if (comment) {
+        buildID,
+        buildURL
+      );
       break;
     }
 
@@ -401,6 +390,45 @@ buildcop.isFlaky = (issue: Octokit.IssuesListForRepoResponseItem): boolean => {
   return false;
 };
 
+buildcop.markIssueFlaky = async (
+  existingIssue: Octokit.IssuesListForRepoResponseItem,
+  context: PubSubContext,
+  owner: string,
+  repo: string,
+  buildID: string,
+  buildURL: string,
+  failure?: TestCase
+) => {
+  context.log.info(
+    `[${owner}/${repo}] marking issue #${existingIssue.number} as flaky`
+  );
+  const existingLabels = existingIssue.labels
+    ?.map(l => l.name)
+    .filter(l => !l.startsWith('buildcop'));
+  const labels = LABELS_FOR_FLAKY_ISSUE.concat(existingLabels);
+  await context.github.issues.update({
+    owner,
+    repo,
+    issue_number: existingIssue.number,
+    labels,
+    state: 'open',
+  });
+  let body = FLAKY_MESSAGE;
+  // If the issue was flaky and we reopen it (again), say so.
+  if (buildcop.isFlaky(existingIssue)) {
+    body = FLAKY_AGAIN_MESSAGE;
+  }
+  if (failure) {
+    body = body + '\n\n' + buildcop.formatBody(failure, buildID, buildURL);
+  }
+  await context.github.issues.createComment({
+    owner,
+    repo,
+    issue_number: existingIssue.number,
+    body,
+  });
+};
+
 buildcop.formatBody = (
   failure: TestCase,
   buildID: string,
@@ -410,10 +438,30 @@ buildcop.formatBody = (
   return `${failureText}\nbuildID: ${buildID}\nbuildURL: ${buildURL}\nstatus: failed`;
 };
 
-buildcop.containsBuildFailure = (text: string, buildID: string): boolean => {
-  return (
-    text.includes(`buildID: ${buildID}`) && text.includes('status: failed')
+buildcop.containsBuildFailure = async (
+  issue: Octokit.IssuesListForRepoResponseItem,
+  context: PubSubContext,
+  owner: string,
+  repo: string,
+  buildID: string
+): Promise<boolean> => {
+  const text = issue.body;
+  if (text.includes(`buildID: ${buildID}`) && text.includes('status: failed')) {
+    return true;
+  }
+  const comments = (
+    await context.github.issues.listComments({
+      owner,
+      repo,
+      issue_number: issue.number,
+    })
+  ).data;
+  const comment = comments.find(
+    comment =>
+      comment.body.includes(`buildID: ${buildID}`) &&
+      comment.body.includes('status: failed')
   );
+  return comment !== undefined;
 };
 
 buildcop.formatTestCase = (failure: TestCase): string => {
