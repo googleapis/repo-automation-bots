@@ -12,13 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  createProbot,
-  Probot,
-  ApplicationFunction,
-  Options,
-  Application,
-} from 'probot';
+import { createProbot, Probot, ApplicationFunction, Options } from 'probot';
 import { Storage } from '@google-cloud/storage';
 import * as KMS from '@google-cloud/kms';
 import { readFileSync } from 'fs';
