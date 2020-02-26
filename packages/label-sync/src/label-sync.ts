@@ -38,18 +38,33 @@ interface Repos {
   ];
 }
 
+interface GetApiLabelsResponse {
+  apis: Array<{
+    display_name: string; // Access Approval
+    github_label: string; // api: accessapproval
+    api_shortname: string; // accessapproval
+  }>;
+}
+
+interface PublicReposResponse {
+  repos: Array<{
+    repo: string;
+    github_label: string;
+  }>;
+}
+
 // Labels are fetched by reaching out to GitHub *instead* of grabbing the file
 // from the local copy.  We are using the `PushEvent` to detect the change,
 // meaning the file running in cloud will be older than the one on master.
 let labelsCache: Labels;
 async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
   if (!labelsCache) {
-    await refreshLabels(github, repoPath);
+    await refreshLabels(github);
   }
   const labels = {
     labels: labelsCache.labels.slice(0),
   } as Labels;
-  const apiLabelsRes = await handler.getApiLabels(repoPath);
+  const apiLabelsRes = await getApiLabels(repoPath);
   apiLabelsRes.apis.forEach(api => {
     labels.labels.push({
       name: api.github_label,
@@ -63,7 +78,11 @@ async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
   return labels;
 }
 
-async function refreshLabels(github: GitHubAPI, repoPath: string) {
+/**
+ * Reach out to github, and snag `labels.json` from HEAD of this repository.
+ * @param github Reference to OctoKit GitHub API
+ */
+async function refreshLabels(github: GitHubAPI): Promise<void> {
   const data = (
     await github.repos.getContents({
       owner: 'googleapis',
@@ -97,7 +116,7 @@ function handler(app: Application) {
       repo === 'repo-automation-bots' &&
       context.payload.ref === 'refs/heads/master'
     ) {
-      await refreshLabels(context.github, `${owner}/${repo}`);
+      await refreshLabels(context.github);
       const url =
         'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
       const res = await request<Repos>({ url });
@@ -110,24 +129,15 @@ function handler(app: Application) {
   });
 }
 
-interface GetApiLabelsResponse {
-  apis: Array<{
-    display_name: string; // Access Approval
-    github_label: string; // api: accessapproval
-    api_shortname: string; // accessapproval
-  }>;
-}
+/**
+ * Reach out to GCS and find a list of products populated by DRIFT.
+ * For each product in that list, we want to create an `api: <product>` label.
+ * @param repoPath GitHub repo path, in <owner>/<name> format
+ */
+async function getApiLabels(repoPath: string): Promise<GetApiLabelsResponse> {
 
-interface PublicReposResponse {
-  repos: Array<{
-    repo: string;
-    github_label: string;
-  }>;
-}
-
-handler.getApiLabels = async (
-  repoPath: string
-): Promise<GetApiLabelsResponse> => {
+  // Get a list of repositories trcked from DRIFT. Each repository may have
+  // associated `github_label`.
   const publicRepos = await storage
     .bucket('devrel-prod-settings')
     .file('public_repos.json')
@@ -138,6 +148,8 @@ handler.getApiLabels = async (
     return repo.repo === repoPath && repo.github_label !== '';
   });
 
+  // If DRIFT knows about an associate between the repository and a particular
+  // github_label, only populate that label
   if (repo) {
     // for split-repos we populate only the label associated with the
     // product the repo is associated with:
@@ -151,20 +163,22 @@ handler.getApiLabels = async (
         },
       ],
     };
-  } else {
-    // for mono-repos we populate a list of all apis and products,
-    // since each repo might include multiple products:
-    console.log(`populating all api labels for ${repoPath}`);
-    const apis = await storage
-      .bucket('devrel-prod-settings')
-      .file('apis.json')
-      .download();
-    return JSON.parse(apis[0].toString()) as GetApiLabelsResponse;
   }
+
+  // for mono-repos we populate a list of all apis and products,
+  // since each repo might include multiple products:
+  console.log(`populating all api labels for ${repoPath}`);
+  const apis = await storage
+    .bucket('devrel-prod-settings')
+    .file('apis.json')
+    .download();
+  return JSON.parse(apis[0].toString()) as GetApiLabelsResponse;
 };
 
-export = handler;
-
+/**
+ * Build the list of all labels that should be on the repo, get the list of
+ * labels on the repo in real life, then synchronize it.
+ */
 async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
   const newLabels = await getLabels(github, `${owner}/${repo}`);
   const res = await github.issues.listLabelsForRepo({
@@ -173,7 +187,6 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
     per_page: 100,
   });
   const oldLabels = res.data;
-  const promises = new Array<Promise<unknown>>();
   for (const l of newLabels.labels) {
     // try to find a label with the same name
     const match = oldLabels.find(
@@ -250,3 +263,5 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
     }
   }
 }
+
+export = handler;
