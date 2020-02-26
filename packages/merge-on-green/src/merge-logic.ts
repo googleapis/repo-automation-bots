@@ -515,11 +515,7 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
       owner,
       repo,
       issue_number: pr,
-<<<<<<< HEAD
-      body: `Your ${owner}/${repo} PR ${pr} was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. See required reviews for your repo here: https://github.com/googleapis/sloth/blob/master/required-checks.json`,
-=======
-      body: `Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved.`,
->>>>>>> 24e49971566ed312397b3d8dcb87bc5e381eb1ea
+      body: `Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. See required reviews for your repo here: https://github.com/googleapis/sloth/blob/master/required-checks.json`,
     });
     return data;
   } catch (err) {
