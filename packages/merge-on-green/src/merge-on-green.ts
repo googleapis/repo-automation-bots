@@ -33,24 +33,57 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
   const query = datastore.createQuery(TABLE).order('created');
   const [prs] = await datastore.runQuery(query);
   const result: WatchPR[] = [];
-  for (const pr of prs) {
-    const created = new Date(pr.created).getTime();
+  for (let x = 0; x < prs.length; x += 5) {
+    if (prs[x + 1] === undefined) {
+      break;
+    }
+    const [worker1, worker2, worker3, worker4] = await Promise.all([
+      prs[x],
+      prs[x + 1],
+      prs[x + 2],
+      prs[x + 3],
+      prs[x + 4],
+    ]);
+    const created = new Date(worker1.created).getTime();
     const now = new Date().getTime();
-    const url = pr[datastore.KEY].name;
+    const url = worker1[datastore.KEY].name;
     let state = 'continue';
     //TODO: I'd prefer to not have a "list" method that has side effects - perhaps later refactor
     //this to do the list, then have an explicit loop over the returned WatchPR objects that removes the expired ones.
     if (now - created > MAX_TEST_TIME) {
       state = 'stop';
     }
-    const watchPr: WatchPR = {
-      number: pr.number,
-      repo: pr.repo,
-      owner: pr.owner,
-      state: state as 'continue' | 'stop',
-      url,
-    };
-    result.push(watchPr);
+    const [watchPr1, watchPr2, watchPr3, watchPr4] = [
+      {
+        number: worker1.number,
+        repo: worker1.repo,
+        owner: worker1.owner,
+        state: state as 'continue' | 'stop',
+        url,
+      },
+      {
+        number: worker2.number,
+        repo: worker2.repo,
+        owner: worker2.owner,
+        state: state as 'continue' | 'stop',
+        url,
+      },
+      {
+        number: worker3.number,
+        repo: worker3.repo,
+        owner: worker3.owner,
+        state: state as 'continue' | 'stop',
+        url,
+      },
+      {
+        number: worker4.number,
+        repo: worker4.repo,
+        owner: worker4.owner,
+        state: state as 'continue' | 'stop',
+        url,
+      },
+    ];
+    result.push(watchPr1, watchPr2, watchPr3, watchPr4);
   }
   return result;
 };
