@@ -12,5 +12,6 @@ s.copy(templates, excludes=[
   '.nycrc',
   'README.md',
   '.github/release-please.yml'
-  '.kokoro'
+  '.kokoro/',
+  '.github/workflows/'
 ])
