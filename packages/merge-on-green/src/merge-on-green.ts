@@ -20,6 +20,7 @@ const TABLE = 'mog-prs';
 const datastore = new Datastore();
 const MAX_TEST_TIME = 1000 * 60 * 60 * 6; // 2 hr.
 const MERGE_ON_GREEN_LABEL = 'automerge';
+const WORKER_SIZE = 4;
 
 interface WatchPR {
   number: number;
@@ -33,56 +34,24 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
   const query = datastore.createQuery(TABLE).order('created');
   const [prs] = await datastore.runQuery(query);
   const result: WatchPR[] = [];
-  for (let x = 0; x < prs.length; x += 5) {
-    if (prs[x + 1] === undefined) {
-      break;
-    }
-    const [worker1, worker2, worker3, worker4] = await Promise.all([
-      prs[x],
-      prs[x + 1],
-      prs[x + 2],
-      prs[x + 3],
-    ]);
-    const created = new Date(worker1.created).getTime();
+  for (const pr of prs) {
+    const created = new Date(pr.created).getTime();
     const now = new Date().getTime();
-    const url = worker1[datastore.KEY].name;
+    const url = pr[datastore.KEY].name;
     let state = 'continue';
     //TODO: I'd prefer to not have a "list" method that has side effects - perhaps later refactor
     //this to do the list, then have an explicit loop over the returned WatchPR objects that removes the expired ones.
     if (now - created > MAX_TEST_TIME) {
       state = 'stop';
     }
-    const [watchPr1, watchPr2, watchPr3, watchPr4] = [
-      {
-        number: worker1.number,
-        repo: worker1.repo,
-        owner: worker1.owner,
-        state: state as 'continue' | 'stop',
-        url,
-      },
-      {
-        number: worker2.number,
-        repo: worker2.repo,
-        owner: worker2.owner,
-        state: state as 'continue' | 'stop',
-        url,
-      },
-      {
-        number: worker3.number,
-        repo: worker3.repo,
-        owner: worker3.owner,
-        state: state as 'continue' | 'stop',
-        url,
-      },
-      {
-        number: worker4.number,
-        repo: worker4.repo,
-        owner: worker4.owner,
-        state: state as 'continue' | 'stop',
-        url,
-      },
-    ];
-    result.push(watchPr1, watchPr2, watchPr3, watchPr4);
+    const watchPr: WatchPR = {
+      number: pr.number,
+      repo: pr.repo,
+      owner: pr.owner,
+      state: state as 'continue' | 'stop',
+      url,
+    };
+    result.push(watchPr);
   }
   return result;
 };
@@ -112,21 +81,15 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
 function handler(app: Application) {
   app.on(['schedule.repository'], async context => {
     const watchedPRs = await handler.listPRs();
+    const start = Date.now();
     console.info(`running for org ${context.payload.org}`);
-    for (const wp of watchedPRs) {
-      const start = Date.now();
-      console.info(`checking PR: ${wp.url}`);
-      if (!wp.owner.startsWith(context.payload.org)) {
-        console.info(
-          `skipping mergeOnGreen for ${wp.url} not part of org ${context.payload.org}`
-        );
-        continue;
-      }
-      if (wp.state === 'stop') {
-        console.warn(`deleting stale PR ${wp.url}`);
-        await handler.removePR(wp.url);
-      }
-      try {
+    var filteredPRs = watchedPRs.filter(function(value) {
+      return (value.owner.startsWith(context.payload.org));
+    })
+    while (filteredPRs.length) {
+      const work = watchedPRs.splice(0,WORKER_SIZE);
+      await Promise.all(work.map(async (wp) => {
+        console.log(`checking ${wp.url}`)
         const remove = await mergeOnGreen(
           wp.owner,
           wp.repo,
@@ -135,14 +98,12 @@ function handler(app: Application) {
           wp.state,
           context.github
         );
-        if (remove && wp.state !== 'stop') {
+        if (remove || wp.state !== 'stop') {
           handler.removePR(wp.url);
         }
-        console.info(`mergeOnGreen check took ${Date.now() - start}ms`);
-      } catch (err) {
-        console.error(err.message);
+       }))
       }
-    }
+        console.info(`mergeOnGreen check took ${Date.now() - start}ms`);
   });
   app.on('pull_request.labeled', async context => {
     // if missing the label, skip
