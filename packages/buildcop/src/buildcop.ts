@@ -55,6 +55,7 @@ I reopened the issue, but a human will need to close it again.`;
 interface TestCase {
   package?: string;
   testCase?: string;
+  passed: boolean;
 }
 
 interface TestResults {
@@ -99,7 +100,7 @@ export function buildcop(app: Application) {
         return;
       }
       if (context.payload.testsFailed) {
-        results = { passes: [], failures: [{}] }; // A single failure is used to indicate the whole build failed.
+        results = { passes: [], failures: [{ passed: false }] }; // A single failure is used to indicate the whole build failed.
       } else {
         results = { passes: [], failures: [] }; // Tests passed.
       }
@@ -346,7 +347,8 @@ buildcop.closeIssues = async (
         owner,
         repo,
         buildID,
-        buildURL
+        buildURL,
+        pass
       );
       break;
     }
@@ -404,7 +406,7 @@ buildcop.markIssueFlaky = async (
   repo: string,
   buildID: string,
   buildURL: string,
-  failure?: TestCase
+  testCase: TestCase
 ) => {
   context.log.info(
     `[${owner}/${repo}] marking issue #${existingIssue.number} as flaky`
@@ -425,8 +427,8 @@ buildcop.markIssueFlaky = async (
   if (buildcop.isFlaky(existingIssue)) {
     body = FLAKY_AGAIN_MESSAGE;
   }
-  if (failure) {
-    body = body + '\n\n' + buildcop.formatBody(failure, buildID, buildURL);
+  if (testCase) {
+    body = body + '\n\n' + buildcop.formatBody(testCase, buildID, buildURL);
   }
   await context.github.issues.createComment({
     owner,
@@ -437,12 +439,13 @@ buildcop.markIssueFlaky = async (
 };
 
 buildcop.formatBody = (
-  failure: TestCase,
+  testCase: TestCase,
   buildID: string,
   buildURL: string
 ): string => {
-  const failureText = buildcop.formatTestCase(failure);
-  return `${failureText}\nbuildID: ${buildID}\nbuildURL: ${buildURL}\nstatus: failed`;
+  return `buildID: ${buildID}
+buildURL: ${buildURL}
+status: ${testCase.passed ? 'passed' : 'failed'}`;
 };
 
 buildcop.containsBuildFailure = async (
@@ -456,13 +459,12 @@ buildcop.containsBuildFailure = async (
   if (text.includes(`buildID: ${buildID}`) && text.includes('status: failed')) {
     return true;
   }
-  const comments = (
-    await context.github.issues.listComments({
-      owner,
-      repo,
-      issue_number: issue.number,
-    })
-  ).data;
+  const options = context.github.issues.listComments.endpoint.merge({
+    owner,
+    repo,
+    issue_number: issue.number,
+  });
+  const comments = await context.github.paginate(options);
   const comment = comments.find(
     comment =>
       comment.body.includes(`buildID: ${buildID}`) &&
@@ -525,12 +527,14 @@ buildcop.findTestResults = (xml: string): TestResults => {
         passes.push({
           package: pkg,
           testCase: testcase['_attributes'].name,
+          passed: true,
         });
         continue;
       }
       failures.push({
         package: pkg,
         testCase: testcase['_attributes'].name,
+        passed: false,
       });
     }
   }
