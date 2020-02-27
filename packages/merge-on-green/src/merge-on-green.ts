@@ -87,7 +87,7 @@ function handler(app: Application) {
       return (value.owner.startsWith(context.payload.org));
     })
     while (filteredPRs.length) {
-      const work = watchedPRs.splice(0,WORKER_SIZE);
+      const work = filteredPRs.splice(0,WORKER_SIZE);
       await Promise.all(work.map(async (wp) => {
         console.log(`checking ${wp.url}`)
         const remove = await mergeOnGreen(
@@ -105,6 +105,7 @@ function handler(app: Application) {
       }
         console.info(`mergeOnGreen check took ${Date.now() - start}ms`);
   });
+
   app.on('pull_request.labeled', async context => {
     // if missing the label, skip
     if (
