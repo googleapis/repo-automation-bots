@@ -456,13 +456,12 @@ buildcop.containsBuildFailure = async (
   if (text.includes(`buildID: ${buildID}`) && text.includes('status: failed')) {
     return true;
   }
-  const comments = (
-    await context.github.issues.listComments({
-      owner,
-      repo,
-      issue_number: issue.number,
-    })
-  ).data;
+  const options = context.github.issues.listComments.endpoint.merge({
+    owner,
+    repo,
+    issue_number: issue.number,
+  });
+  const comments = await context.github.paginate(options);
   const comment = comments.find(
     comment =>
       comment.body.includes(`buildID: ${buildID}`) &&
