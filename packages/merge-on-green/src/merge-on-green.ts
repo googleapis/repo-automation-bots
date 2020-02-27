@@ -91,16 +91,22 @@ function handler(app: Application) {
       await Promise.all(
         work.map(async wp => {
           console.log(`checking ${wp.url}`);
-          const remove = await mergeOnGreen(
-            wp.owner,
-            wp.repo,
-            wp.number,
-            MERGE_ON_GREEN_LABEL,
-            wp.state,
-            context.github
-          );
-          if (remove || wp.state !== 'stop') {
-            handler.removePR(wp.url);
+          try {
+            const remove = await mergeOnGreen(
+              wp.owner,
+              wp.repo,
+              wp.number,
+              MERGE_ON_GREEN_LABEL,
+              wp.state,
+              context.github
+            );
+            if (remove || wp.state === 'stop') {
+              handler.removePR(wp.url);
+            }
+          } catch (err) {
+            if (wp.state === 'stop') {
+              handler.removePR(wp.url);
+            }
           }
         })
       );
