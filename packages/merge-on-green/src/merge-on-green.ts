@@ -20,6 +20,7 @@ const TABLE = 'mog-prs';
 const datastore = new Datastore();
 const MAX_TEST_TIME = 1000 * 60 * 60 * 6; // 2 hr.
 const MERGE_ON_GREEN_LABEL = 'automerge';
+const WORKER_SIZE = 4;
 
 interface WatchPR {
   number: number;
@@ -80,38 +81,39 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
 function handler(app: Application) {
   app.on(['schedule.repository'], async context => {
     const watchedPRs = await handler.listPRs();
+    const start = Date.now();
     console.info(`running for org ${context.payload.org}`);
-    for (const wp of watchedPRs) {
-      const start = Date.now();
-      console.info(`checking PR: ${wp.url}`);
-      if (!wp.owner.startsWith(context.payload.org)) {
-        console.info(
-          `skipping mergeOnGreen for ${wp.url} not part of org ${context.payload.org}`
-        );
-        continue;
-      }
-      if (wp.state === 'stop') {
-        console.warn(`deleting stale PR ${wp.url}`);
-        await handler.removePR(wp.url);
-      }
-      try {
-        const remove = await mergeOnGreen(
-          wp.owner,
-          wp.repo,
-          wp.number,
-          MERGE_ON_GREEN_LABEL,
-          wp.state,
-          context.github
-        );
-        if (remove && wp.state !== 'stop') {
-          handler.removePR(wp.url);
-        }
-        console.info(`mergeOnGreen check took ${Date.now() - start}ms`);
-      } catch (err) {
-        console.error(err.message);
-      }
+    const filteredPRs = watchedPRs.filter(value => {
+      return value.owner.startsWith(context.payload.org);
+    });
+    while (filteredPRs.length) {
+      const work = filteredPRs.splice(0, WORKER_SIZE);
+      await Promise.all(
+        work.map(async wp => {
+          console.log(`checking ${wp.url}`);
+          try {
+            const remove = await mergeOnGreen(
+              wp.owner,
+              wp.repo,
+              wp.number,
+              MERGE_ON_GREEN_LABEL,
+              wp.state,
+              context.github
+            );
+            if (remove || wp.state === 'stop') {
+              handler.removePR(wp.url);
+            }
+          } catch (err) {
+            if (wp.state === 'stop') {
+              handler.removePR(wp.url);
+            }
+          }
+        })
+      );
     }
+    console.info(`mergeOnGreen check took ${Date.now() - start}ms`);
   });
+
   app.on('pull_request.labeled', async context => {
     // if missing the label, skip
     if (
