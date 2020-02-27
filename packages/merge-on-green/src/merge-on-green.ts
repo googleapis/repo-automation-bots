@@ -83,27 +83,29 @@ function handler(app: Application) {
     const watchedPRs = await handler.listPRs();
     const start = Date.now();
     console.info(`running for org ${context.payload.org}`);
-    var filteredPRs = watchedPRs.filter(function(value) {
-      return (value.owner.startsWith(context.payload.org));
-    })
+    const filteredPRs = watchedPRs.filter(value => {
+      return value.owner.startsWith(context.payload.org);
+    });
     while (filteredPRs.length) {
-      const work = filteredPRs.splice(0,WORKER_SIZE);
-      await Promise.all(work.map(async (wp) => {
-        console.log(`checking ${wp.url}`)
-        const remove = await mergeOnGreen(
-          wp.owner,
-          wp.repo,
-          wp.number,
-          MERGE_ON_GREEN_LABEL,
-          wp.state,
-          context.github
-        );
-        if (remove || wp.state !== 'stop') {
-          handler.removePR(wp.url);
-        }
-       }))
-      }
-        console.info(`mergeOnGreen check took ${Date.now() - start}ms`);
+      const work = filteredPRs.splice(0, WORKER_SIZE);
+      await Promise.all(
+        work.map(async wp => {
+          console.log(`checking ${wp.url}`);
+          const remove = await mergeOnGreen(
+            wp.owner,
+            wp.repo,
+            wp.number,
+            MERGE_ON_GREEN_LABEL,
+            wp.state,
+            context.github
+          );
+          if (remove || wp.state !== 'stop') {
+            handler.removePR(wp.url);
+          }
+        })
+      );
+    }
+    console.info(`mergeOnGreen check took ${Date.now() - start}ms`);
   });
 
   app.on('pull_request.labeled', async context => {
