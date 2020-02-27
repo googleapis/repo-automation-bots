@@ -47,11 +47,6 @@ interface Content {
   content: string;
 }
 
-interface ReviewRequests {
-  users: string[];
-  teams: string[];
-}
-
 interface HeadSha {
   sha: string;
 }
@@ -161,6 +156,15 @@ function getBranchProtection() {
       required_status_checks: {
         contexts: ['Special Check'],
       },
+    });
+}
+
+function getPR(mergeable: boolean, mergeableState: string) {
+  return nock('https://api.github.com')
+    .get('/repos/testOwner/testRepo/pulls/1')
+    .reply(200, {
+      mergeable,
+      mergeable_state: mergeableState,
     });
 }
 
@@ -673,8 +677,59 @@ describe('merge-on-green', () => {
         ],
       }),
       repoMap({ content: map.toString('base64') }),
+      getPR(false, 'behind'),
       mergeWithError(),
       updateBranch(),
+    ];
+
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: { org: 'testOwner' },
+      id: 'abc123',
+    });
+
+    scopes.forEach(s => s.done());
+  });
+
+  it('comments on PR if branch is dirty', async () => {
+    handler.listPRs = async () => {
+      const watchPr: WatchPR[] = [
+        {
+          number: 1,
+          repo: 'testRepo',
+          owner: 'testOwner',
+          state: 'continue',
+          url: 'github.com/foo/bar',
+        },
+      ];
+      return watchPr;
+    };
+
+    handler.removePR = async () => {
+      return Promise.resolve(undefined);
+    };
+
+    const scopes = [
+      getIfMerged(404),
+      getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
+      getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
+      getMogLabel([{ name: 'automerge' }]),
+      getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
+      requiredChecksByLanguage({
+        content: specialRequiredChecks.toString('base64'),
+      }),
+      getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
+        check_runs: [
+          {
+            name: 'Special Check',
+            conclusion: 'success',
+          },
+        ],
+      }),
+      repoMap({ content: map.toString('base64') }),
+      getPR(false, 'dirty'),
+      mergeWithError(),
+      commentOnPR(),
     ];
 
     await probot.receive({
