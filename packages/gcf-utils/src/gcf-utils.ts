@@ -146,7 +146,7 @@ export class GCFBootstrapper {
 
     if (body.repo) {
       // Job was scheduled for a single repository:
-      this.receivePromise(body.repo, id, body, eventName);
+      await this.receivePromise(body.repo, id, body, eventName);
     } else {
       // Job should be run on all managed repositories:
       const url =
