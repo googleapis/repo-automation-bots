@@ -30,15 +30,26 @@ interface WatchPR {
   url: string;
 }
 
-handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
+handler.getDatastore =  async function getDatastore(){
   const query = datastore.createQuery(TABLE).order('created');
   const [prs] = await datastore.runQuery(query);
+  return [prs];
+}
+
+
+handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
+  const [prs] = await handler.getDatastore();
   const result: WatchPR[] = [];
   for (const pr of prs) {
     const created = new Date(pr.created).getTime();
     const now = new Date().getTime();
-    const url = pr[datastore.KEY].name;
     let state = 'continue';
+    let url;
+    if (pr[datastore.KEY] !== undefined) {
+      url = pr[datastore.KEY].name
+    } else {
+      url = null;
+    }
     //TODO: I'd prefer to not have a "list" method that has side effects - perhaps later refactor
     //this to do the list, then have an explicit loop over the returned WatchPR objects that removes the expired ones.
     if (now - created > MAX_TEST_TIME) {
@@ -59,6 +70,7 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
 handler.removePR = async function removePR(url: string) {
   const key = datastore.key([TABLE, url]);
   await datastore.delete(key);
+  console.log("PR was removed");
 };
 
 handler.addPR = async function addPR(wp: WatchPR, url: string) {
@@ -103,6 +115,7 @@ function handler(app: Application) {
             if (remove || wp.state === 'stop') {
               handler.removePR(wp.url);
             }
+            console.log(remove);
           } catch (err) {
             if (wp.state === 'stop') {
               handler.removePR(wp.url);

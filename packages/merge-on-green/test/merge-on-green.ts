@@ -15,10 +15,15 @@
 //import myProbotApp from '../src/merge-on-green';
 
 import { resolve } from 'path';
-import handler from '../src/merge-on-green';
+import handler, { removePR } from '../src/merge-on-green';
 import { Probot } from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
+import {expect} from 'chai';
+import { Datastore } from '@google-cloud/datastore';
+import { mergeOnGreen } from '../src/merge-logic';
+
+const path = require("path");
 
 interface WatchPR {
   number: number;
@@ -125,6 +130,13 @@ function merge() {
     .reply(200);
 }
 
+async function awaitMerge() {
+  return Promise.resolve(nock('https://api.github.com')
+    .put('/repos/testOwner/testRepo/pulls/1/merge')
+    .reply(200));
+}
+
+
 function mergeWithError() {
   return nock('https://api.github.com')
     .put('/repos/testOwner/testRepo/pulls/1/merge')
@@ -187,6 +199,7 @@ describe('merge-on-green', () => {
     probot.load(handler);
   });
 
+  describe('merge-logic', () => {
   it('merges a PR on green', async () => {
     handler.listPRs = async () => {
       const watchPr: WatchPR[] = [
@@ -818,4 +831,122 @@ describe('merge-on-green', () => {
 
     scopes.forEach(s => s.done());
   });
-});
+  })
+
+  describe('merge-on-green', () => {
+    it('lists Datastore entries into an array of PRs', async () => {
+      handler.getDatastore = async() => {
+        return [[{repo: 'testRepo', number: 1, owner: 'testOwner', created: Date.now()}]]
+      }
+      let result = await handler.listPRs();
+      console.log(result);
+      let expectation = {number: 1, repo: "testRepo", owner: 'testOwner', state: 'continue', url: 'github.com/foo/bar'}
+      expect(result[0]).to.include(expectation);
+
+    })
+
+    it('removes a PR when merged', async () => {
+
+      handler.listPRs = async () => {
+        const watchPr: WatchPR[] = [
+          {
+            number: 1,
+            repo: 'testRepo',
+            owner: 'testOwner',
+            state: 'continue',
+            url: 'github.com/foo/bar',
+          },
+        ];
+        return watchPr;
+      };
+
+      handler.removePR = async () => {
+        return undefined;
+      };
+
+      mergeOnGreen.checkReviews = async () => {
+        return true;
+      }
+
+      mergeOnGreen.statusesForRef = async () => {
+        return true;
+      }
+
+      mergeOnGreen.merge = async() => {
+        return {sha: "123", merged: true, message: "in a bottle"}
+      }
+
+      mergeOnGreen.checkPRMerged = async() => {
+        return false;
+      }
+  
+      expect(await handler.removePR('string')).to.be.an('undefined');
+
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: { org: 'testOwner' },
+        id: 'abc123',
+      });
+  
+    });
+
+    it('adds a PR when label is added correctly', async () => {
+      handler.listPRs = async () => {
+        const watchPr: WatchPR[] = [
+          {
+            number: 1,
+            repo: 'testRepo',
+            owner: 'testOwner',
+            state: 'continue',
+            url: 'github.com/foo/bar',
+          },
+        ];
+        return watchPr;
+      };
+
+      handler.removePR = async () => {
+        return undefined;
+      };
+
+      handler.addPR = async() => {
+        return undefined;
+      }
+
+      mergeOnGreen.checkReviews = async () => {
+        return true;
+      }
+
+      mergeOnGreen.statusesForRef = async () => {
+        return true;
+      }
+
+      mergeOnGreen.merge = async() => {
+        return {sha: "123", merged: true, message: "in a bottle"}
+      }
+
+      mergeOnGreen.checkPRMerged = async() => {
+        return false;
+      }
+  
+      expect(await handler.addPR({
+        number: 1,
+        repo: 'testRepo',
+        owner: 'testOwner',
+        state: 'continue',
+        url: 'github.com/foo/bar',
+      }, "string")).to.be.an('undefined');
+
+      await probot.receive({
+        name: 'issue.labeled',
+        payload: require(path.resolve(fixturesPath, './events/pull_request_labeled.json')),
+        id: 'abc123',
+      });
+  
+    });
+
+
+  })
+
+
+})
+
