@@ -49,9 +49,10 @@ Issues or feature requests? Please
      File an issue and/or send a PR to update the `Makefile` if you need a
      different platform.
    * Flags:
-      * **`-repo`**: The repo is automatically detected from the Kokoro build
-        environment. If the detection doesn't work, you may need to set the
-        `--repo` flag. If your repo is
+      * **`-repo`**: The repo is automatically detected from the
+        `KOKORO_GITHUB_COMMIT_URL` environment variable. If that variable is
+        not available (e.g. for pull requests), you must set the `-repo` flag.
+        If your repo is
         `github.com/GoogleCloudPlatform/golang-samples`, set `-repo` to
         `GoogleCloudPlatform/golang-samples`.
       * **`-installation_id`**: If your repo is not part of `googleapis` or
