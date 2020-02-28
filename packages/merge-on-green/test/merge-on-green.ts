@@ -47,11 +47,6 @@ interface Content {
   content: string;
 }
 
-interface ReviewRequests {
-  users: string[];
-  teams: string[];
-}
-
 interface HeadSha {
   sha: string;
 }
@@ -70,6 +65,10 @@ const requiredChecks = fs.readFileSync(
 
 const specialRequiredChecks = fs.readFileSync(
   resolve(fixturesPath, 'config', 'special_required_checks.json')
+);
+
+const nativeRequiredChecks = fs.readFileSync(
+  resolve(fixturesPath, 'config', 'native_required_checks.json')
 );
 
 const map = fs.readFileSync(resolve(fixturesPath, 'config', 'map.json'));
@@ -148,6 +147,25 @@ function getIfMerged(response: number) {
   return nock('https://api.github.com')
     .get('/repos/testOwner/testRepo/pulls/1/merge')
     .reply(response);
+}
+
+function getBranchProtection() {
+  return nock('https://api.github.com')
+    .get('/repos/testOwner/testRepo/branches/master/protection')
+    .reply(200, {
+      required_status_checks: {
+        contexts: ['Special Check'],
+      },
+    });
+}
+
+function getPR(mergeable: boolean, mergeableState: string) {
+  return nock('https://api.github.com')
+    .get('/repos/testOwner/testRepo/pulls/1')
+    .reply(200, {
+      mergeable,
+      mergeable_state: mergeableState,
+    });
 }
 
 describe('merge-on-green', () => {
@@ -659,8 +677,59 @@ describe('merge-on-green', () => {
         ],
       }),
       repoMap({ content: map.toString('base64') }),
+      getPR(false, 'behind'),
       mergeWithError(),
       updateBranch(),
+    ];
+
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: { org: 'testOwner' },
+      id: 'abc123',
+    });
+
+    scopes.forEach(s => s.done());
+  });
+
+  it('comments on PR if branch is dirty', async () => {
+    handler.listPRs = async () => {
+      const watchPr: WatchPR[] = [
+        {
+          number: 1,
+          repo: 'testRepo',
+          owner: 'testOwner',
+          state: 'continue',
+          url: 'github.com/foo/bar',
+        },
+      ];
+      return watchPr;
+    };
+
+    handler.removePR = async () => {
+      return Promise.resolve(undefined);
+    };
+
+    const scopes = [
+      getIfMerged(404),
+      getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
+      getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
+      getMogLabel([{ name: 'automerge' }]),
+      getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
+      requiredChecksByLanguage({
+        content: specialRequiredChecks.toString('base64'),
+      }),
+      getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
+        check_runs: [
+          {
+            name: 'Special Check',
+            conclusion: 'success',
+          },
+        ],
+      }),
+      repoMap({ content: map.toString('base64') }),
+      getPR(false, 'dirty'),
+      mergeWithError(),
+      commentOnPR(),
     ];
 
     await probot.receive({
@@ -691,6 +760,55 @@ describe('merge-on-green', () => {
     };
 
     const scopes = [getIfMerged(204)];
+
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: { org: 'testOwner' },
+      id: 'abc123',
+    });
+
+    scopes.forEach(s => s.done());
+  });
+
+  it('passes when native branch protection is called', async () => {
+    handler.listPRs = async () => {
+      const watchPr: WatchPR[] = [
+        {
+          number: 1,
+          repo: 'testRepo',
+          owner: 'testOwner',
+          state: 'continue',
+          url: 'github.com/foo/bar',
+        },
+      ];
+      return watchPr;
+    };
+
+    handler.removePR = async () => {
+      return Promise.resolve(undefined);
+    };
+
+    const scopes = [
+      getIfMerged(404),
+      getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
+      getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
+      getMogLabel([{ name: 'automerge' }]),
+      getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
+      requiredChecksByLanguage({
+        content: nativeRequiredChecks.toString('base64'),
+      }),
+      getBranchProtection(),
+      getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
+        check_runs: [
+          {
+            name: 'Special Check',
+            conclusion: 'success',
+          },
+        ],
+      }),
+      repoMap({ content: map.toString('base64') }),
+      merge(),
+    ];
 
     await probot.receive({
       name: 'schedule.repository',

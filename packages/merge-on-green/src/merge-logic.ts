@@ -32,14 +32,12 @@ interface Reviews {
   state: string;
 }
 
-interface ReviewsRequested {
-  users: [];
-  teams: [];
-}
-
 interface PullRequest {
   title: string;
   body: string;
+  mergeable: boolean;
+  // checked for enum, couldn't find any because there's no documentation on this field currently
+  mergeable_state: string;
 }
 
 interface RequiredChecksByLanguage {
@@ -52,6 +50,7 @@ interface RequiredChecksByLanguage {
 interface RepoOverrides {
   repo: string;
   requiredStatusChecks: string[];
+  useBranchProtectionRules?: boolean;
 }
 
 interface Language {
@@ -105,12 +104,9 @@ mergeOnGreen.getPR = async function getPR(
       repo,
       pull_number: pr,
     });
-    console.log(
-      `github's determination of whether the ${owner}/${repo}/${pr} is mergeable: ${data.data.mergeable} ${data.data.mergeable_state}`
-    );
     return data.data;
   } catch (err) {
-    return { title: '', body: '' };
+    return { title: '', body: '', mergeable: false, mergeable_state: '' };
   }
 };
 
@@ -190,6 +186,21 @@ mergeOnGreen.mapReposToLanguage = async function mapReposToLanguage(
   }
 };
 
+mergeOnGreen.getBranchProtection = async function getBranchProtection(
+  owner: string,
+  repo: string,
+  github: GitHubAPI
+) {
+  const branchProtection = (
+    await github.repos.getBranchProtection({
+      owner,
+      repo,
+      branch: 'master',
+    })
+  ).data.required_status_checks.contexts;
+  return branchProtection;
+};
+
 mergeOnGreen.getRequiredChecks = async function getRequiredChecks(
   github: GitHubAPI,
   owner: string,
@@ -214,6 +225,15 @@ mergeOnGreen.getRequiredChecks = async function getRequiredChecks(
           console.log(
             `Your language's required checks were overridden because of the repo ${owner}/${repo}`
           );
+          if (isOverriden.useBranchProtectionRules === true) {
+            const branchProtection = await mergeOnGreen.getBranchProtection(
+              owner,
+              repo,
+              github
+            );
+            console.log(`Using native branch protection for ${owner}/${repo}`);
+            return branchProtection;
+          }
           return isOverriden.requiredStatusChecks;
         }
       }
@@ -443,16 +463,16 @@ mergeOnGreen.merge = async function merge(
   owner: string,
   repo: string,
   pr: number,
+  prInfo: PullRequest,
   github: GitHubAPI
 ): Promise<Merge> {
-  const commitInfo = await mergeOnGreen.getPR(owner, repo, pr, github);
   const merge = (
     await github.pulls.merge({
       owner,
       repo,
       pull_number: pr,
-      commit_title: commitInfo.title,
-      commit_message: commitInfo.body,
+      commit_title: `${prInfo.title} (#${pr})`,
+      commit_message: prInfo.body || '',
       merge_method: 'squash',
     })
   ).data as Merge;
@@ -483,6 +503,7 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
   owner: string,
   repo: string,
   pr: number,
+  body: string,
   github: GitHubAPI
 ): Promise<CommentOnPR | null> {
   try {
@@ -490,7 +511,7 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
       owner,
       repo,
       issue_number: pr,
-      body: `Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved.`,
+      body,
     });
     return data;
   } catch (err) {
@@ -534,10 +555,15 @@ export async function mergeOnGreen(
     return true;
   }
 
-  const [checkReview, checkStatus] = await Promise.all([
+  const [checkReview, checkStatus, prInfo] = await Promise.all([
     mergeOnGreen.checkReviews(owner, repo, pr, github),
     mergeOnGreen.statusesForRef(owner, repo, pr, labelName, github),
+    mergeOnGreen.getPR(owner, repo, pr, github),
   ]);
+
+  const failedMesssage = `Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. See required reviews for your repo here: https://github.com/googleapis/sloth/blob/master/required-checks.json`;
+  const conflictMessage =
+    'Your PR has conflicts that you need to resolve before merge-on-green can automerge';
 
   console.info(
     `checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state} ${owner}/${repo}/${pr}`
@@ -547,18 +573,34 @@ export async function mergeOnGreen(
     let merged = false;
     try {
       console.info(`attempt to merge ${owner}/${repo}/${pr}`);
-      await mergeOnGreen.merge(owner, repo, pr, github);
+      await mergeOnGreen.merge(owner, repo, pr, prInfo, github);
       merged = true;
     } catch (err) {
+      console.info(
+        `Is ${owner}/${repo}/${pr} mergeable?: ${prInfo.mergeable} Mergeable_state?: ${prInfo.mergeable_state}`
+      );
       console.error(
         `failed to merge "${err.message}: " ${owner}/${repo}/${pr}`
       );
-      console.info(`Attempting to update branch ${owner}/${repo}/${pr}`);
-      try {
-        await mergeOnGreen.updateBranch(owner, repo, pr, github);
-      } catch (err) {
-        console.error(
-          `failed to update branch "${err.message}" ${owner}/${repo}/${pr}`
+      if (prInfo.mergeable_state === 'behind') {
+        console.info(`Attempting to update branch ${owner}/${repo}/${pr}`);
+        try {
+          await mergeOnGreen.updateBranch(owner, repo, pr, github);
+        } catch (err) {
+          console.error(
+            `failed to update branch "${err.message}" ${owner}/${repo}/${pr}`
+          );
+        }
+      } else if (prInfo.mergeable_state === 'dirty') {
+        console.info(
+          `There are conflicts in the base branch of ${owner}/${repo}/${pr}`
+        );
+        await mergeOnGreen.commentOnPR(
+          owner,
+          repo,
+          pr,
+          conflictMessage,
+          github
         );
       }
     }
@@ -567,7 +609,7 @@ export async function mergeOnGreen(
     console.log(
       `${owner}/${repo}/${pr} timed out before its statuses & reviews passed`
     );
-    await mergeOnGreen.commentOnPR(owner, repo, pr, github);
+    await mergeOnGreen.commentOnPR(owner, repo, pr, failedMesssage, github);
     return true;
   } else {
     console.log(
