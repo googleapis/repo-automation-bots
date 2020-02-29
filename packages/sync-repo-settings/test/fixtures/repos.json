@@ -1,0 +1,6 @@
+{
+  "repos": [
+    { "language": "kotlin", "repo": "Codertocat/Hello-World"},
+    { "language": "nodejs", "repo": "googleapis/nodejs-dialogflow"}
+  ]
+}

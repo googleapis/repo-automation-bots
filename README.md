@@ -17,6 +17,7 @@ by Google on GitHub.
 | [label-sync] | Synchronize labels across organizations | [install][label-sync-app] |
 | [buildcop] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][buildcop-app] |
 | [publish] | Publish to npm, through [Wombat Dressing Room][] | [install][publish-app] |
+| [sync-repo-settings] | Synchronize repository settings from a centralized config | [install][sync-repo-settings-app] |
 
 ## Testing Locally
 
@@ -49,7 +50,7 @@ GitHub application using the probot server:
    for permissions.
 1. You also will need to subscribe to events (bottom of page). For
    instance, if your bot responds to PR activity, the 'Events > Pull Request' should
-   be enabled.  
+   be enabled.
 
 
 ### Install the bot on a repo
@@ -112,4 +113,6 @@ at the specified schedule.
 [buildcop-app]: https://github.com/apps/build-cop-bot
 [publish]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/publish
 [publish-app]: https://github.com/apps/publish-bot
+[sync-repo-settings]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/sync-repo-settings
+[sync-repo-settings-app]: https://github.com/apps/sync-repo-settings
 [Wombat Dressing Room]: https://opensource.googleblog.com/2020/01/wombat-dressing-room-npm-publication_10.html

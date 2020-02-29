@@ -23,6 +23,7 @@ jobs:
           'merge-on-green',
           'publish',
           'release-please',
+          'sync-repo-settings',
           'trusted-contribution'
         ]
     steps:
