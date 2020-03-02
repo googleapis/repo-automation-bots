@@ -49,7 +49,7 @@ jobs:
           'serverless-scheduler-proxy'
         ]
     env:
-      PATH: $PATH:$(go env GOPATH)/bin
+      PATH: ${{ env.PATH }}:$(go env GOPATH)/bin
     steps:
     - name: Install Go
       uses: actions/setup-go@v2-beta
