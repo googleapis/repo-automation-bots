@@ -38,3 +38,25 @@ jobs:
         working-directory: ./packages/${{ matrix.package }}
       - run: npm run lint
         working-directory: ./packages/${{ matrix.package }}
+  go-test:
+    name: Go tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [
+          'packages/buildcop',
+          'serverless-scheduler-proxy'
+        ]
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@v2-beta
+      with:
+        go-version: '^1.14'
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - run: |
+        [[ $(gofmt -s -l .) ]]
+      working-directory: ./${{ matrix.module }}
+    - run: go test ./...
+      working-directory: ./${{ matrix.module }}
