@@ -59,7 +59,7 @@ jobs:
       uses: actions/checkout@v2
     - name: goimports -s
       run: |
-        test -z "$(goimports -l -s .)"
+        test -z "$($(go env GOPATH)/bin/goimports -l -s .)"
       working-directory: ./${{ matrix.module }}
     - name: Instructions to fix goimports (if necessary)
       run: echo Run `goimports -s -w .`.
