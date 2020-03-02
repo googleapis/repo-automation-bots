@@ -48,6 +48,8 @@ jobs:
           'packages/buildcop',
           'serverless-scheduler-proxy'
         ]
+    env:
+      PATH: $PATH:$(go env GOPATH)/bin
     steps:
     - name: Install Go
       uses: actions/setup-go@v2-beta
@@ -58,8 +60,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: goimports
-      run: |
-        test -z "$($(go env GOPATH)/bin/goimports -l .)"
+      run: test -z "$(goimports -l .)"
       working-directory: ./${{ matrix.module }}
     - name: Instructions to fix goimports (if necessary)
       run: echo Run goimports -s -w .
