@@ -55,10 +55,12 @@ jobs:
         go-version: '^1.14'
     - name: Checkout code
       uses: actions/checkout@v2
-    - run: |
-        test -z "$(gofmt -s -l .)"
+    - name: goimports -s
+      run: |
+        test -z "$(goimports -l -s .)"
       working-directory: ./${{ matrix.module }}
-    - run: echo Run `gofmt -w -s .` to fix Go formatting.
+    - name: Instructions to fix goimports (if necessary)
+      run: echo Run `goimports -s -w .`.
       if: failure()
     - run: go test ./...
       working-directory: ./${{ matrix.module }}
