@@ -39,3 +39,31 @@ jobs:
         working-directory: ./packages/${{ matrix.package }}
       - run: npm run lint
         working-directory: ./packages/${{ matrix.package }}
+  go-test:
+    name: Go tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [
+          'packages/buildcop',
+          'serverless-scheduler-proxy'
+        ]
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@v2-beta
+      with:
+        go-version: '^1.14'
+    - name: Install goimports
+      run: go get golang.org/x/tools/cmd/goimports
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: goimports
+      run: |
+        test -z "$($(go env GOPATH)/bin/goimports -l .)"
+      working-directory: ./${{ matrix.module }}
+    - name: Instructions to fix goimports (if necessary)
+      run: echo Run goimports -w .
+      if: failure()
+    - run: go test ./...
+      working-directory: ./${{ matrix.module }}
