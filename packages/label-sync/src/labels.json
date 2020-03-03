@@ -56,13 +56,18 @@
       "color": "c5def5"
     },
     {
+      "name": "priority: p3",
+      "description": "Desirable enhancement or fix. May not be included in next release.",
+      "color": "ffffc7"
+    },
+    {
       "name": "priority: p2",
-      "description": "Lowest priority. Fix may not be included in next release.",
+      "description": "Moderately-important priority. Fix may not be included in next release.",
       "color": "fef2c0"
     },
     {
       "name": "priority: p1",
-      "description": "Medium priority. Will be fixed prior to next release.",
+      "description": "Important issue which blocks shipping the next release. Will be fixed prior to next release.",
       "color": "ffa03e"
     },
     {
