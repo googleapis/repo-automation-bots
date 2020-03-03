@@ -13,10 +13,6 @@
     {
       "extends": "packages:linters",
       "groupName": "linters"
-    },
-    {
-      "packageNames": ["google.golang.org/genproto"],
-      "schedule": "after 9am on monday"
     }
   ],
   "ignoreDeps": ["typescript"]
