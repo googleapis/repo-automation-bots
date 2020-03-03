@@ -71,7 +71,6 @@ interface PullRequest {
 }
 
 nock.disableNetConnect();
-const datastore = new Datastore();
 
 const fixturesPath = resolve(__dirname, '../../test/Fixtures');
 
@@ -92,22 +91,6 @@ const map = fs.readFileSync(resolve(fixturesPath, 'config', 'map.json'));
 const invalidmap = fs.readFileSync(
   resolve(fixturesPath, 'config', 'invalidmap.json')
 );
-
-const testPRContinue = {
-  number: 1,
-  repo: 'testRepo',
-  owner: 'testOwner',
-  state: 'continue',
-  url: 'github.com/foo/bar',
-} as WatchPR;
-
-const testPRStop = {
-  number: 1,
-  repo: 'testRepo',
-  owner: 'testOwner',
-  state: 'stop',
-  url: 'github.com/foo/bar',
-} as WatchPR;
 
 function requiredChecksByLanguage(response: Content) {
   return nock('https://api.github.com')
@@ -199,10 +182,8 @@ function getPR(mergeable: boolean, mergeableState: string, state: string) {
 
 describe('merge-on-green-', () => {
   let probot: Probot;
-  let listPRstub: any; 
 
   beforeEach(() => {
-    // listPRstub = sinon.stub(handler, 'listPRs').resolves([testPRContinue]);
     probot = new Probot({
       Octokit: require('@octokit/rest'),
     });
@@ -229,7 +210,6 @@ describe('merge-on-green-', () => {
     };
 
   it('merges a PR on green', async () => {  
-    // const key = datastore.key(["mog-prs", "github.com/foo/bar"]);
     const scopes = [
       getPR(true, 'clean', 'open'),
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
