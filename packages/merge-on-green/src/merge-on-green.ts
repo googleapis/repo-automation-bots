@@ -15,7 +15,6 @@
 import { Application } from 'probot';
 import { Datastore } from '@google-cloud/datastore';
 import { mergeOnGreen } from './merge-logic';
-import { RunQueryResponse } from '@google-cloud/datastore/build/src/query';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
@@ -31,12 +30,11 @@ interface WatchPR {
   url: string;
 }
 
-handler.getDatastore =  async function getDatastore(){
+handler.getDatastore = async function getDatastore() {
   const query = datastore.createQuery(TABLE).order('created');
   const [prs] = await datastore.runQuery(query);
   return [prs];
-}
-
+};
 
 handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
   const [prs] = await handler.getDatastore();
@@ -47,7 +45,7 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
     let state = 'continue';
     let url;
     if (pr[datastore.KEY] !== undefined) {
-      url = pr[datastore.KEY].name
+      url = pr[datastore.KEY].name;
     } else {
       url = null;
     }
@@ -63,7 +61,6 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
       state: state as 'continue' | 'stop',
       url,
     };
-    console.log(watchPr);
     result.push(watchPr);
   }
   return result;
@@ -72,7 +69,7 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
 handler.removePR = async function removePR(url: string) {
   const key = datastore.key([TABLE, url]);
   await datastore.delete(key);
-  console.log("PR was removed");
+  console.log(`PR ${url} was removed`);
 };
 
 handler.addPR = async function addPR(wp: WatchPR, url: string) {
@@ -98,10 +95,8 @@ function handler(app: Application) {
     const start = Date.now();
     console.info(`running for org ${context.payload.org}`);
     const filteredPRs = watchedPRs.filter(value => {
-      console.log(value.owner.startsWith(context.payload.org))
       return value.owner.startsWith(context.payload.org);
     });
-    console.log(filteredPRs);
     while (filteredPRs.length) {
       const work = filteredPRs.splice(0, WORKER_SIZE);
       await Promise.all(
@@ -119,7 +114,6 @@ function handler(app: Application) {
             if (remove || wp.state === 'stop') {
               handler.removePR(wp.url);
             }
-            console.log(remove);
           } catch (err) {
             if (wp.state === 'stop') {
               handler.removePR(wp.url);

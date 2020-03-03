@@ -106,7 +106,13 @@ mergeOnGreen.getPR = async function getPR(
     });
     return data.data;
   } catch (err) {
-    return { title: '', body: '', state: '', mergeable: false, mergeable_state: '' };
+    return {
+      title: '',
+      body: '',
+      state: '',
+      mergeable: false,
+      mergeable_state: '',
+    };
   }
 };
 
@@ -198,7 +204,9 @@ mergeOnGreen.getBranchProtection = async function getBranchProtection(
       branch: 'master',
     })
   ).data.required_status_checks.contexts;
-  console.log(`checking branch protection for ${owner}/${repo}: ${branchProtection}`);
+  console.log(
+    `checking branch protection for ${owner}/${repo}: ${branchProtection}`
+  );
   return branchProtection;
 };
 
@@ -227,7 +235,9 @@ mergeOnGreen.getRequiredChecks = async function getRequiredChecks(
             `Your language's required checks were overridden because of the repo ${owner}/${repo}`
           );
           if (isOverriden.useBranchProtectionRules === true) {
-            console.log(`${owner}/${repo} is Overriden and using native branch protection`)
+            console.log(
+              `${owner}/${repo} is Overriden and using native branch protection`
+            );
             const branchProtection = await mergeOnGreen.getBranchProtection(
               owner,
               repo,
@@ -343,7 +353,9 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
   ) {
     console.info(`=== checking required checks for ${owner}/${repo}/${pr} ===`);
     for (const check of requiredChecks) {
-      console.log(`Looking for required checks in status checks for ${owner}/${repo}/${pr}.`);
+      console.log(
+        `Looking for required checks in status checks for ${owner}/${repo}/${pr}.`
+      );
       //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
       const checkCompleted = checkStatus.find(
         (element: CheckStatus) => element.context === check
@@ -551,7 +563,7 @@ export async function mergeOnGreen(
   github: GitHubAPI
 ): Promise<boolean | undefined> {
   console.info(`${owner}/${repo} checking merge on green PR status`);
-  const prInfo = await mergeOnGreen.getPR(owner, repo, pr, github)
+  const prInfo = await mergeOnGreen.getPR(owner, repo, pr, github);
   if (prInfo.state === 'closed') {
     console.log(`${owner}/${repo}/${pr} is closed`);
     return true;
@@ -559,7 +571,7 @@ export async function mergeOnGreen(
 
   const [checkReview, checkStatus] = await Promise.all([
     mergeOnGreen.checkReviews(owner, repo, pr, github),
-    mergeOnGreen.statusesForRef(owner, repo, pr, labelName, github)
+    mergeOnGreen.statusesForRef(owner, repo, pr, labelName, github),
   ]);
 
   const failedMesssage = `Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. See required reviews for your repo here: https://github.com/googleapis/sloth/blob/master/required-checks.json`;
