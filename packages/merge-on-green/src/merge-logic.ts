@@ -198,6 +198,7 @@ mergeOnGreen.getBranchProtection = async function getBranchProtection(
       branch: 'master',
     })
   ).data.required_status_checks.contexts;
+  console.log(`branch protection for ${owner}/${repo}: ${branchProtection}`)
   return branchProtection;
 };
 
@@ -223,9 +224,11 @@ mergeOnGreen.getRequiredChecks = async function getRequiredChecks(
         );
         if (isOverriden) {
           console.log(
-            `Your language's required checks were overridden because of the repo ${owner}/${repo}`
+            `Your language's required checks were overridden because of the repo ${owner}/${repo}`+
+            `it is ${isOverriden.useBranchProtectionRules} that ${owner}/${repo} uses default branch protection`
           );
           if (isOverriden.useBranchProtectionRules === true) {
+            console.log(`Checking branch protection for ${owner}/${repo}`)
             const branchProtection = await mergeOnGreen.getBranchProtection(
               owner,
               repo,
@@ -341,8 +344,9 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
   ) {
     console.info(`=== checking required checks for ${owner}/${repo}/${pr} ===`);
     for (const check of requiredChecks) {
-      console.log('Looking for required checks in status checks.');
-      //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
+      console.log(
+        `Looking for required checks in status checks for ${owner}/${repo}/${pr}.`
+      );      //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
       const checkCompleted = checkStatus.find(
         (element: CheckStatus) => element.context === check
       );
