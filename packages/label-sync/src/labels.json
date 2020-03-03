@@ -56,6 +56,11 @@
       "color": "c5def5"
     },
     {
+      "name": "priority: p3",
+      "description": "",
+      "color": "ffffc7"
+    },
+    {
       "name": "priority: p2",
       "description": "Lowest priority. Fix may not be included in next release.",
       "color": "fef2c0"
