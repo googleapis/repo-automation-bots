@@ -17,7 +17,6 @@ import handler from '../src/merge-on-green';
 import { Probot } from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
-import { expect } from 'chai';
 import sinon from 'sinon';
 
 interface WatchPR {
