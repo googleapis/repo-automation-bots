@@ -35,8 +35,8 @@ interface Reviews {
 interface PullRequest {
   title: string;
   body: string;
+  state: string;
   mergeable: boolean;
-  // checked for enum, couldn't find any because there's no documentation on this field currently
   mergeable_state: string;
 }
 
@@ -106,7 +106,7 @@ mergeOnGreen.getPR = async function getPR(
     });
     return data.data;
   } catch (err) {
-    return { title: '', body: '', mergeable: false, mergeable_state: '' };
+    return { title: '', body: '', state: '', mergeable: false, mergeable_state: '' };
   }
 };
 
@@ -549,16 +549,15 @@ export async function mergeOnGreen(
   github: GitHubAPI
 ): Promise<boolean | undefined> {
   console.info(`${owner}/${repo} checking merge on green PR status`);
-  const isMerged = await mergeOnGreen.checkPRMerged(owner, repo, pr, github);
-  if (isMerged) {
-    console.log(`${owner}/${repo}/${pr} has already been merged`);
+  const prInfo = await mergeOnGreen.getPR(owner, repo, pr, github)
+  if (prInfo.state === 'closed') {
+    console.log(`${owner}/${repo}/${pr} is closed`);
     return true;
   }
 
-  const [checkReview, checkStatus, prInfo] = await Promise.all([
+  const [checkReview, checkStatus] = await Promise.all([
     mergeOnGreen.checkReviews(owner, repo, pr, github),
-    mergeOnGreen.statusesForRef(owner, repo, pr, labelName, github),
-    mergeOnGreen.getPR(owner, repo, pr, github),
+    mergeOnGreen.statusesForRef(owner, repo, pr, labelName, github)
   ]);
 
   const failedMesssage = `Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. See required reviews for your repo here: https://github.com/googleapis/sloth/blob/master/required-checks.json`;

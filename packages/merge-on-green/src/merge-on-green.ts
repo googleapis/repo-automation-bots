@@ -15,6 +15,7 @@
 import { Application } from 'probot';
 import { Datastore } from '@google-cloud/datastore';
 import { mergeOnGreen } from './merge-logic';
+import { RunQueryResponse } from '@google-cloud/datastore/build/src/query';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
@@ -62,6 +63,7 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
       state: state as 'continue' | 'stop',
       url,
     };
+    console.log(watchPr);
     result.push(watchPr);
   }
   return result;
@@ -96,8 +98,10 @@ function handler(app: Application) {
     const start = Date.now();
     console.info(`running for org ${context.payload.org}`);
     const filteredPRs = watchedPRs.filter(value => {
+      console.log(value.owner.startsWith(context.payload.org))
       return value.owner.startsWith(context.payload.org);
     });
+    console.log(filteredPRs);
     while (filteredPRs.length) {
       const work = filteredPRs.splice(0, WORKER_SIZE);
       await Promise.all(

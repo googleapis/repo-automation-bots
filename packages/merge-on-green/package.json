@@ -27,7 +27,8 @@
   },
   "dependencies": {
     "@google-cloud/datastore": "^5.0.4",
-    "gcf-utils": "1.6.2"
+    "gcf-utils": "1.6.2",
+    "sinon": "^9.0.0"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
