@@ -7,12 +7,16 @@ templates = common_templates.node_library()
 s.copy(templates, excludes=[
   '.eslintignore',
   '.eslintrc.yml',
+  '.github/release-please.yml',
+  '.github/workflows/',
+  '.github/publish.yml',
+  '.kokoro/*.*',
+  '.kokoro/**/*.*',
+  '.kokoro/**/**/*.*',
+  '.nycrc',
   '.prettierignore',
   '.prettierrc',
-  '.nycrc',
+  'codecov.yaml',
   'README.md',
-  '.github/release-please.yml',
-  '.kokoro/',
-  '.github/workflows/',
-  'codecov.yaml'
+  'renovate.json'
 ])
