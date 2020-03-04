@@ -16,6 +16,7 @@ import { Application } from 'probot';
 import { Datastore } from '@google-cloud/datastore';
 import { mergeOnGreen } from './merge-logic';
 
+
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
 const MAX_TEST_TIME = 1000 * 60 * 60 * 6; // 2 hr.
@@ -30,25 +31,35 @@ interface WatchPR {
   url: string;
 }
 
-handler.getDatastore = async function getDatastore() {
+// interface QueryResponse {
+//   created: Date;
+//   repo: string;
+//   owner: string;
+//   key: entity.Key;
+// }
+
+/** 
+ * Retrieves Query response from Datastore
+ * @returns a Promise that can have any data type as it is the result of the Query, plus some standard types like the query key
+*/
+handler.getDatastore = async function getDatastore(): Promise<any[]> {
   const query = datastore.createQuery(TABLE).order('created');
   const [prs] = await datastore.runQuery(query);
-  return [prs];
+  return prs;
 };
 
+/** 
+ * Retrieves a list PR
+ * @returns a Promise that can have any data type as it is the result of the Query, plus some standard types like the query key
+*/
 handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
-  const [prs] = await handler.getDatastore();
+  const prs = await handler.getDatastore();
   const result: WatchPR[] = [];
   for (const pr of prs) {
     const created = new Date(pr.created).getTime();
     const now = new Date().getTime();
     let state = 'continue';
-    let url;
-    if (pr[datastore.KEY] !== undefined) {
-      url = pr[datastore.KEY].name;
-    } else {
-      url = null;
-    }
+    let url = pr[datastore.KEY]?.name
     //TODO: I'd prefer to not have a "list" method that has side effects - perhaps later refactor
     //this to do the list, then have an explicit loop over the returned WatchPR objects that removes the expired ones.
     if (now - created > MAX_TEST_TIME) {
