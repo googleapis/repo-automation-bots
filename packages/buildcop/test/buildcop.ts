@@ -471,6 +471,62 @@ describe('buildcop', () => {
         requests.done();
       });
 
+      it('does not comment about failure on existing issue labeled quiet', async () => {
+        const input = fs.readFileSync(
+          resolve(fixturesPath, 'testdata', 'many_failed_same_pkg.xml'),
+          'utf8'
+        );
+        const payload = formatPayload({
+          repo: 'tbpg/golang-samples',
+          organization: { login: 'tbpg' },
+          repository: { name: 'golang-samples' },
+          buildID: '123',
+          buildURL: 'http://example.com',
+          xunitXML: input,
+        });
+
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
+          )
+          .reply(200, [
+            {
+              title: formatTestCase({
+                package:
+                  'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
+                testCase: 'TestBucketLock',
+                passed: false,
+              }),
+              number: 16,
+              body: `Failure!`,
+              labels: [{ name: 'buildcop: quiet' }],
+              state: 'open',
+            },
+            {
+              title: formatTestCase({
+                package:
+                  'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
+                testCase: 'TestUniformBucketLevelAccess',
+                passed: false,
+              }),
+              number: 17,
+              body: `Failure!`,
+              state: 'open',
+            },
+          ])
+          .get('/repos/tbpg/golang-samples/issues/17/comments')
+          .reply(200, [])
+          .post('/repos/tbpg/golang-samples/issues/17/comments', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200);
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        requests.done();
+      });
+
       it('handles a testsuite with no test cases', async () => {
         const input = fs.readFileSync(
           resolve(fixturesPath, 'testdata', 'no_tests.xml'),
