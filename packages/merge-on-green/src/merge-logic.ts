@@ -77,7 +77,7 @@ interface Update {
  * @param pr number of pr (from Watch PR)
  * @param github unique installation id for each function
  * @returns most recent sha as a string
-*/
+ */
 mergeOnGreen.getLatestCommit = async function getLatestCommit(
   owner: string,
   repo: string,
@@ -107,7 +107,7 @@ mergeOnGreen.getLatestCommit = async function getLatestCommit(
  * @param pr number of pr (from Watch PR)
  * @param github unique installation id for each function
  * @returns PR information, most importantly the title, body, state (open/closed), whether it is mergeable, and what state that is in (dirty, clean, behind, etc.)
-*/
+ */
 mergeOnGreen.getPR = async function getPR(
   owner: string,
   repo: string,
@@ -140,7 +140,7 @@ mergeOnGreen.getPR = async function getPR(
  * @param labelName label name that we're checking for, is a string
  * @param github unique installation id for each function
  * @returns a boolean of whether the label is included
-*/
+ */
 mergeOnGreen.hasMOGLabel = async function hasMOGLabel(
   owner: string,
   repo: string,
@@ -178,7 +178,7 @@ mergeOnGreen.hasMOGLabel = async function hasMOGLabel(
  * @param repo of pr (from Watch PR)
  * @param github unique installation id for each function
  * @returns a string array of the names of the required checks
-*/
+ */
 mergeOnGreen.getBranchProtection = async function getBranchProtection(
   owner: string,
   repo: string,
@@ -208,7 +208,7 @@ mergeOnGreen.getBranchProtection = async function getBranchProtection(
  * @param github unique installation id for each function
  * @param headSha the head sha commit
  * @returns an array of Check Statuses that has their names and statuses
-*/
+ */
 mergeOnGreen.getStatusi = async function getStatusi(
   owner: string,
   repo: string,
@@ -241,7 +241,7 @@ mergeOnGreen.getStatusi = async function getStatusi(
  * @param github unique installation id for each function
  * @param headSha the head sha commit
  * @returns an array of Check Statuses that has their names and statuses
-*/
+ */
 mergeOnGreen.iterateGetStatusi = async function iterateGetStatusi(
   owner: string,
   repo: string,
@@ -249,7 +249,7 @@ mergeOnGreen.iterateGetStatusi = async function iterateGetStatusi(
   headSha: string): Promise<CheckStatus[]> {
   let results: CheckStatus[] = [];
   for (let i=0; i<10; i++) {
-    let temp = await mergeOnGreen.getStatusi(owner, repo, github, headSha, i); 
+    const temp = await mergeOnGreen.getStatusi(owner, repo, github, headSha, i); 
     if (temp.length !== 0)  {
       results = results.concat(temp);
     }
@@ -265,7 +265,7 @@ mergeOnGreen.iterateGetStatusi = async function iterateGetStatusi(
  * @param github unique installation id for each function
  * @param headSha the head sha commit
  * @returns an array of Check Statuses that has their names and statuses
-*/
+ */
 mergeOnGreen.getCheckRuns = async function getCheckRuns(
   owner: string,
   repo: string,
@@ -298,7 +298,7 @@ mergeOnGreen.getCheckRuns = async function getCheckRuns(
  * @param github unique installation id for each function
  * @param headSha the head sha commit
  * @returns an array of Check Runs that has their names and statuses
-*/
+ */
 mergeOnGreen.iterateGetCheckRuns = async function iterateGetCheckRuns(
   owner: string,
   repo: string,
@@ -306,7 +306,7 @@ mergeOnGreen.iterateGetCheckRuns = async function iterateGetCheckRuns(
   headSha: string): Promise<CheckRun[]> {
   let results: CheckRun[] = [];
   for (let i=0; i<10; i++) {
-    let temp = await mergeOnGreen.getCheckRuns(owner, repo, github, headSha, i); 
+    const temp = await mergeOnGreen.getCheckRuns(owner, repo, github, headSha, i); 
     if (temp !== undefined) {
       results = results.concat(temp);
     }   
@@ -319,7 +319,7 @@ mergeOnGreen.iterateGetCheckRuns = async function iterateGetCheckRuns(
  * @param checkRuns array of check runs (from function getCheckRuns)
  * @param check a required check from the branch protection
  * @returns a boolean of whether there's a match
-*/
+ */
 mergeOnGreen.checkForRequiredSC = function checkForRequiredSC(
   checkRuns: CheckRun[],
   check: string
@@ -346,7 +346,7 @@ mergeOnGreen.checkForRequiredSC = function checkForRequiredSC(
  * @param github unique installation id for each function
  * @param requiredChecks a string array of required checks grabbed from master branch protection
  * @returns a boolean of whether all required checks have passed
-*/
+ */
 mergeOnGreen.statusesForRef = async function statusesForRef(
   owner: string,
   repo: string,
@@ -424,7 +424,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
  * @param pr pr number
  * @param github unique installation id for each function
  * @returns an array of Review types
-*/
+ */
 mergeOnGreen.getReviewsCompleted = async function getReviewsCompleted(
   owner: string,
   repo: string,
@@ -448,7 +448,7 @@ mergeOnGreen.getReviewsCompleted = async function getReviewsCompleted(
  * history of all comments added and we just want the most recent for each reviewer
  * @param Reviews is an array of completed reviews from getReviewsCompleted()
  * @returns an array of only the most recent reviews for each reviewer
-*/
+ */
 mergeOnGreen.cleanReviews = function cleanReviews(
   reviewsCompleted: Reviews[]
 ): Reviews[] {
@@ -477,7 +477,7 @@ mergeOnGreen.cleanReviews = function cleanReviews(
  * @param pr pr number
  * @param github unique installation id for each function
  * @returns a boolean of whether there has been at least one review, and all reviews are approved
-*/
+ */
 mergeOnGreen.checkReviews = async function checkReviews(
   owner: string,
   repo: string,
@@ -523,7 +523,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
  * @param github unique installation id for each function
  * @param prInfo information about the PR, most notably title and body, to use it for the commit when squashing
  * @returns the merge data type (not reused)
-*/
+ */
 mergeOnGreen.merge = async function merge(
   owner: string,
   repo: string,
@@ -551,7 +551,7 @@ mergeOnGreen.merge = async function merge(
  * @param pr pr number
  * @param github unique installation id for each function
  * @returns the update data type
-*/
+ */
 mergeOnGreen.updateBranch = async function updateBranch(
   owner: string,
   repo: string,
@@ -580,7 +580,7 @@ mergeOnGreen.updateBranch = async function updateBranch(
  * @param body the body of the comment
  * @param github unique installation id for each function
  * @returns the update data type
-*/
+ */
 mergeOnGreen.commentOnPR = async function commentOnPR(
   owner: string,
   repo: string,
@@ -612,7 +612,7 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
  * @param state whether or not the PR has been in Datastore for over 6 hours to be deleted
  * @param github unique installation id for each function
  * @returns a boolean of whether it can be removed from Datastore (either because it is stale or has merged)
-*/
+ */
 export async function mergeOnGreen(
   owner: string,
   repo: string,
@@ -629,7 +629,7 @@ export async function mergeOnGreen(
     console.log(`${owner}/${repo}/${pr} is closed`);
     return true;
   }
-  if (requiredChecks.length == 0){
+  if (requiredChecks.length === 0){
     console.log(`${owner}/${repo}/${pr} has no required status checks`);
     await mergeOnGreen.commentOnPR(
       owner,
