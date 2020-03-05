@@ -121,12 +121,12 @@ function updateBranch() {
     .reply(200);
 }
 
-function getBranchProtection() {
+function getBranchProtection(required_status_checks: string[]) {
   return nock('https://api.github.com')
     .get('/repos/testOwner/testRepo/branches/master/protection')
     .reply(200, {
       required_status_checks: {
-        contexts: ['Special Check'],
+        contexts: required_status_checks
       },
     });
 }
@@ -179,10 +179,10 @@ describe('merge-on-green-', () => {
       return pr;
     };
 
-    it.only('merges a PR on green', async () => {
+    it('merges a PR on green', async () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
-        getBranchProtection(),
+        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           { user: { login: 'octocat' }, state: 'APPROVED' },
         ]),
@@ -206,7 +206,7 @@ describe('merge-on-green-', () => {
     it('fails when a review has not been approved', async () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
-        getBranchProtection(),
+        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           { user: { login: 'octocat' }, state: 'APPROVED' },
           { user: { login: 'octokitten' }, state: 'CHANGES_REQUESTED' },
@@ -230,7 +230,7 @@ describe('merge-on-green-', () => {
     it('fails if there is no commit', async () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
-        getBranchProtection(),
+        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           { user: { login: 'octocat' }, state: 'APPROVED' },
         ]),
@@ -253,7 +253,7 @@ describe('merge-on-green-', () => {
     it('fails if there is no MOG label', async () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
-        getBranchProtection(),
+        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           { user: { login: 'octocat' }, state: 'APPROVED' },
         ]),
@@ -276,7 +276,7 @@ describe('merge-on-green-', () => {
     it('fails if there are no status checks', async () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
-        getBranchProtection(),
+        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           { user: { login: 'octocat' }, state: 'APPROVED' },
         ]),
@@ -297,7 +297,7 @@ describe('merge-on-green-', () => {
     it('fails if the status checks have failed', async () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
-        getBranchProtection(),
+        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           { user: { login: 'octocat' }, state: 'APPROVED' },
         ]),
@@ -320,7 +320,7 @@ describe('merge-on-green-', () => {
     it('passes if checks are actually check runs', async () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
-        getBranchProtection(),
+        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           { user: { login: 'octocat' }, state: 'APPROVED' },
         ]),
@@ -350,7 +350,7 @@ describe('merge-on-green-', () => {
     it('fails if no one has reviewed the PR', async () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
-        getBranchProtection(),
+        getBranchProtection(['Special Check']),
         getReviewsCompleted([]),
         getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
         getMogLabel([{ name: 'automerge' }]),
@@ -377,13 +377,15 @@ describe('merge-on-green-', () => {
     it('updates a branch if merge returns error', async () => {
       const scopes = [
         getPR(true, 'behind', 'open'),
-        getBranchProtection(),
+        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           { user: { login: 'octocat' }, state: 'APPROVED' },
         ]),
         getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
         getMogLabel([{ name: 'automerge' }]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          { state: 'success', context: 'Special Check' },
+        ]),
         mergeWithError(),
         updateBranch(),
       ];
@@ -400,13 +402,15 @@ describe('merge-on-green-', () => {
     it('comments on PR if branch is dirty', async () => {
       const scopes = [
         getPR(true, 'dirty', 'open'),
-        getBranchProtection(),
+        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           { user: { login: 'octocat' }, state: 'APPROVED' },
         ]),
         getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
         getMogLabel([{ name: 'automerge' }]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          { state: 'success', context: 'Special Check' },
+        ]),
         commentOnPR(),
       ];
 
@@ -420,7 +424,7 @@ describe('merge-on-green-', () => {
     });
 
     it('fails if PR is closed', async () => {
-      const scope = getPR(true, 'clean', 'closed');
+      const scopes = [getPR(true, 'clean', 'closed'), getBranchProtection(['Special Check'])];
 
       await probot.receive({
         name: 'schedule.repository',
@@ -428,7 +432,19 @@ describe('merge-on-green-', () => {
         id: 'abc123',
       });
 
-      scope.done();
+      scopes.forEach(s => s.done());
+    });
+
+    it('comments and fails if there are no required status checks', async () => {
+      const scopes = [getPR(true, 'clean', 'open'), getBranchProtection([]), commentOnPR()];
+
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: { org: 'testOwner' },
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
     });
 
   it('posts a comment on the PR if the flag is set to stop and the merge has failed', async () => {
@@ -447,12 +463,12 @@ describe('merge-on-green-', () => {
     };
     const scopes = [
       getPR(true, 'clean', 'open'),
-      getBranchProtection(),
+      getBranchProtection(['Special Check']),
       getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
       getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
       getMogLabel([{ name: 'this is not the label you are looking for' }]),
       getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-        { state: 'failure', context: 'Kokoro - Test: Binary Compatibility' },
+        { state: 'success', context: 'Special Check' },
       ]),
       commentOnPR(),
     ];
@@ -467,12 +483,48 @@ describe('merge-on-green-', () => {
   });
 
 
+  it('posts a comment on the PR if the flag is set to comment', async () => {
+    handler.getDatastore = async () => {
+      const pr = [
+        [
+          {
+            repo: 'testRepo',
+            number: 1,
+            owner: 'testOwner',
+            created: (Date.now() - 10800000)
+          },
+        ],
+      ];
+      return pr;
+    };
+    const scopes = [
+      getPR(true, 'clean', 'open'),
+      getBranchProtection(['Special Check']),
+      getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
+      getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
+      getMogLabel([{ name: 'this is not the label you are looking for' }]),
+      getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+        { state: 'success', context: 'Special Check' },
+      ]),
+      commentOnPR(),
+    ];
+
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: { org: 'testOwner' },
+      id: 'abc123',
+    });
+
+    scopes.forEach(s => s.done());
+  });
+
   it('adds a PR when label is added correctly', async () => { 
     const payload = require(resolve(
       fixturesPath,
       'events',
       'pull_request_labeled'
     ));
+    
 
     const stub = sinon.stub(handler, 'addPR');
 

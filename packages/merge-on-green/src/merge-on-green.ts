@@ -59,7 +59,6 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
   const [prs] = await handler.getDatastore();
   const result: WatchPR[] = [];
   for (const pr of prs) {
-    console.log(pr);
     const created = new Date(pr.created).getTime();
     const now = new Date().getTime();
     let state = 'continue';
@@ -131,7 +130,6 @@ function handler(app: Application) {
     const start = Date.now();
     console.info(`running for org ${context.payload.org}`);
     const filteredPRs = watchedPRs.filter(value => {
-      console.log(value);
       return value.owner.startsWith(context.payload.org);
     });
     while (filteredPRs.length) {

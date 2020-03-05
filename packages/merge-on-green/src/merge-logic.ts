@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { GitHubAPI } from 'probot/lib/github';
+import { SSL_OP_PKCS1_CHECK_2 } from 'constants';
 
 interface CommentOnPR {}
 
@@ -183,6 +184,7 @@ mergeOnGreen.getBranchProtection = async function getBranchProtection(
   repo: string,
   github: GitHubAPI
 ): Promise<string[]> {
+  try {
   const branchProtection = (
     await github.repos.getBranchProtection({
       owner,
@@ -194,6 +196,9 @@ mergeOnGreen.getBranchProtection = async function getBranchProtection(
     `checking branch protection for ${owner}/${repo}: ${branchProtection}`
   );
   return branchProtection;
+  } catch (err) {
+    return [];
+  }
 };
 
 /** 
@@ -242,14 +247,14 @@ mergeOnGreen.iterateGetStatusi = async function iterateGetStatusi(
   repo: string,
   github: GitHubAPI,
   headSha: string): Promise<CheckStatus[]> {
-  let results: CheckStatus[] = [];;
+  let results: CheckStatus[] = [];
   for (let i=0; i<10; i++) {
     let temp = await mergeOnGreen.getStatusi(owner, repo, github, headSha, i); 
-    if (temp !== undefined) {
-      results.concat(temp);
+    if (temp.length !== 0)  {
+      results = results.concat(temp);
     }
+    
   }
-  results.forEach(element => console.log(element));
   return results;
 }
 
@@ -303,7 +308,7 @@ mergeOnGreen.iterateGetCheckRuns = async function iterateGetCheckRuns(
   for (let i=0; i<10; i++) {
     let temp = await mergeOnGreen.getCheckRuns(owner, repo, github, headSha, i); 
     if (temp !== undefined) {
-      results.concat(temp);
+      results = results.concat(temp);
     }   
   }
   return results;
@@ -359,6 +364,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
   console.info(
     `fetched statusesForRef in ${Date.now() - start}ms ${owner}/${repo}/${pr}`
   );
+  checkStatus.forEach(element => {console.log(element)});
 
   let mergeable = true;
   let checkRuns;
@@ -624,6 +630,7 @@ export async function mergeOnGreen(
     return true;
   }
   if (requiredChecks.length == 0){
+    console.log(`${owner}/${repo}/${pr} has no required status checks`);
     await mergeOnGreen.commentOnPR(
       owner,
       repo,
@@ -692,6 +699,9 @@ export async function mergeOnGreen(
     await mergeOnGreen.commentOnPR(owner, repo, pr, failedMesssage, github);
     return true;
   } else if (state === 'comment' ) {
+    console.log(
+      `${owner}/${repo}/${pr} is halfway through its check`
+    );
     await mergeOnGreen.commentOnPR(owner, repo, pr, continueMesssage, github);
     return false;
   } else {
