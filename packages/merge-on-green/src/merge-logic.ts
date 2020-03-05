@@ -221,7 +221,7 @@ mergeOnGreen.getStatusi = async function getStatusi(
         page: num
       })).data 
     console.info(
-      `called getStatusi in ${Date.now() - start}ms ${owner}/${repo}`
+      `called getStatusi in ${Date.now() - start}ms ${owner}/${repo}, ${data[0].context}`
     );
     return data;
   } catch (err) {
@@ -249,6 +249,7 @@ mergeOnGreen.iterateGetStatusi = async function iterateGetStatusi(
       results.concat(temp);
     }
   }
+  results.forEach(element => console.log(element));
   return results;
 }
 
