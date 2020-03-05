@@ -80,13 +80,17 @@ function getLatestCommit(response: HeadSha[]) {
 
 function getStatusi(ref: string, response: CheckStatus[]) {
   return nock('https://api.github.com')
-    .get(`/repos/testOwner/testRepo/commits/${ref}/statuses?per_page=100&page=0`)
+    .get(
+      `/repos/testOwner/testRepo/commits/${ref}/statuses?per_page=100&page=0`
+    )
     .reply(200, response);
 }
 
 function getRuns(ref: string, response: CheckRuns) {
   return nock('https://api.github.com')
-    .get(`/repos/testOwner/testRepo/commits/${ref}/check-runs?per_page=100&page=0`)
+    .get(
+      `/repos/testOwner/testRepo/commits/${ref}/check-runs?per_page=100&page=0`
+    )
     .reply(200, response);
 }
 
@@ -121,12 +125,12 @@ function updateBranch() {
     .reply(200);
 }
 
-function getBranchProtection(required_status_checks: string[]) {
+function getBranchProtection(requiredStatusChecks: string[]) {
   return nock('https://api.github.com')
     .get('/repos/testOwner/testRepo/branches/master/protection')
     .reply(200, {
       required_status_checks: {
-        contexts: required_status_checks
+        contexts: requiredStatusChecks,
       },
     });
 }
@@ -215,7 +219,7 @@ describe('merge-on-green-', () => {
         getMogLabel([{ name: 'automerge' }]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           { state: 'success', context: 'Special Check' },
-        ])
+        ]),
       ];
 
       await probot.receive({
@@ -238,7 +242,7 @@ describe('merge-on-green-', () => {
         getMogLabel([{ name: 'automerge' }]),
         getStatusi('', [
           { state: 'success', context: 'Kokoro - Test: Binary Compatibility' },
-        ])
+        ]),
       ];
 
       await probot.receive({
@@ -261,7 +265,7 @@ describe('merge-on-green-', () => {
         getMogLabel([{ name: 'this is not the label you are looking for' }]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           { state: 'success', context: 'Special Check' },
-        ])
+        ]),
       ];
 
       await probot.receive({
@@ -282,7 +286,7 @@ describe('merge-on-green-', () => {
         ]),
         getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
         getMogLabel([{ name: 'automerge' }]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [])
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
       ];
 
       await probot.receive({
@@ -305,7 +309,7 @@ describe('merge-on-green-', () => {
         getMogLabel([{ name: 'automerge' }]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           { state: 'failure', context: 'Special Check' },
-        ])
+        ]),
       ];
 
       await probot.receive({
@@ -362,7 +366,7 @@ describe('merge-on-green-', () => {
               conclusion: 'success',
             },
           ],
-        })
+        }),
       ];
 
       await probot.receive({
@@ -424,7 +428,10 @@ describe('merge-on-green-', () => {
     });
 
     it('fails if PR is closed', async () => {
-      const scopes = [getPR(true, 'clean', 'closed'), getBranchProtection(['Special Check'])];
+      const scopes = [
+        getPR(true, 'clean', 'closed'),
+        getBranchProtection(['Special Check']),
+      ];
 
       await probot.receive({
         name: 'schedule.repository',
@@ -436,7 +443,11 @@ describe('merge-on-green-', () => {
     });
 
     it('comments and fails if there are no required status checks', async () => {
-      const scopes = [getPR(true, 'clean', 'open'), getBranchProtection([]), commentOnPR()];
+      const scopes = [
+        getPR(true, 'clean', 'open'),
+        getBranchProtection([]),
+        commentOnPR(),
+      ];
 
       await probot.receive({
         name: 'schedule.repository',
@@ -447,94 +458,96 @@ describe('merge-on-green-', () => {
       scopes.forEach(s => s.done());
     });
 
-  it('posts a comment on the PR if the flag is set to stop and the merge has failed', async () => {
-    handler.getDatastore = async () => {
-      const pr = [
-        [
-          {
-            repo: 'testRepo',
-            number: 1,
-            owner: 'testOwner',
-            created: -14254782000,
-          },
-        ],
+    it('posts a comment on the PR if the flag is set to stop and the merge has failed', async () => {
+      handler.getDatastore = async () => {
+        const pr = [
+          [
+            {
+              repo: 'testRepo',
+              number: 1,
+              owner: 'testOwner',
+              created: -14254782000,
+            },
+          ],
+        ];
+        return pr;
+      };
+      const scopes = [
+        getPR(true, 'clean', 'open'),
+        getBranchProtection(['Special Check']),
+        getReviewsCompleted([
+          { user: { login: 'octocat' }, state: 'APPROVED' },
+        ]),
+        getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
+        getMogLabel([{ name: 'this is not the label you are looking for' }]),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          { state: 'success', context: 'Special Check' },
+        ]),
+        commentOnPR(),
       ];
-      return pr;
-    };
-    const scopes = [
-      getPR(true, 'clean', 'open'),
-      getBranchProtection(['Special Check']),
-      getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
-      getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
-      getMogLabel([{ name: 'this is not the label you are looking for' }]),
-      getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-        { state: 'success', context: 'Special Check' },
-      ]),
-      commentOnPR(),
-    ];
 
-    await probot.receive({
-      name: 'schedule.repository',
-      payload: { org: 'testOwner' },
-      id: 'abc123',
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: { org: 'testOwner' },
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
     });
 
-    scopes.forEach(s => s.done());
-  });
-
-
-  it('posts a comment on the PR if the flag is set to comment', async () => {
-    handler.getDatastore = async () => {
-      const pr = [
-        [
-          {
-            repo: 'testRepo',
-            number: 1,
-            owner: 'testOwner',
-            created: (Date.now() - 10800000)
-          },
-        ],
+    it('posts a comment on the PR if the flag is set to comment', async () => {
+      handler.getDatastore = async () => {
+        const pr = [
+          [
+            {
+              repo: 'testRepo',
+              number: 1,
+              owner: 'testOwner',
+              created: Date.now() - 10800000,
+            },
+          ],
+        ];
+        return pr;
+      };
+      const scopes = [
+        getPR(true, 'clean', 'open'),
+        getBranchProtection(['Special Check']),
+        getReviewsCompleted([
+          { user: { login: 'octocat' }, state: 'APPROVED' },
+        ]),
+        getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
+        getMogLabel([{ name: 'this is not the label you are looking for' }]),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          { state: 'success', context: 'Special Check' },
+        ]),
+        commentOnPR(),
       ];
-      return pr;
-    };
-    const scopes = [
-      getPR(true, 'clean', 'open'),
-      getBranchProtection(['Special Check']),
-      getReviewsCompleted([{ user: { login: 'octocat' }, state: 'APPROVED' }]),
-      getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
-      getMogLabel([{ name: 'this is not the label you are looking for' }]),
-      getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-        { state: 'success', context: 'Special Check' },
-      ]),
-      commentOnPR(),
-    ];
 
-    await probot.receive({
-      name: 'schedule.repository',
-      payload: { org: 'testOwner' },
-      id: 'abc123',
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: { org: 'testOwner' },
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
     });
 
-    scopes.forEach(s => s.done());
-  });
+    it('adds a PR when label is added correctly', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_labeled'
+      ));
 
-  it('adds a PR when label is added correctly', async () => { 
-    const payload = require(resolve(
-      fixturesPath,
-      'events',
-      'pull_request_labeled'
-    ));
-    
+      const stub = sinon.stub(handler, 'addPR');
 
-    const stub = sinon.stub(handler, 'addPR');
+      await probot.receive({
+        name: 'pull_request.labeled',
+        payload,
+        id: 'abc123',
+      });
 
-    await probot.receive({
-      name: 'pull_request.labeled',
-      payload,
-      id: 'abc123',
+      console.log('stub called? ' + stub.called);
     });
-
-    console.log('stub called? ' + stub.called);
   });
-});
 });

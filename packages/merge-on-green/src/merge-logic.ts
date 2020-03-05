@@ -70,7 +70,7 @@ interface Update {
   url: string;
 }
 
-/** 
+/**
  * Function gets latest commit in a PR
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
@@ -100,7 +100,7 @@ mergeOnGreen.getLatestCommit = async function getLatestCommit(
   }
 };
 
-/** 
+/**
  * Function gets PR info
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
@@ -132,7 +132,7 @@ mergeOnGreen.getPR = async function getPR(
   }
 };
 
-/** 
+/**
  * Function checks whether the PR has the appropriate MOG label
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
@@ -172,7 +172,7 @@ mergeOnGreen.hasMOGLabel = async function hasMOGLabel(
   }
 };
 
-/** 
+/**
  * Function grabs the required checks of the master branch
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
@@ -185,23 +185,23 @@ mergeOnGreen.getBranchProtection = async function getBranchProtection(
   github: GitHubAPI
 ): Promise<string[]> {
   try {
-  const branchProtection = (
-    await github.repos.getBranchProtection({
-      owner,
-      repo,
-      branch: 'master',
-    })
-  ).data.required_status_checks.contexts;
-  console.log(
-    `checking branch protection for ${owner}/${repo}: ${branchProtection}`
-  );
-  return branchProtection;
+    const branchProtection = (
+      await github.repos.getBranchProtection({
+        owner,
+        repo,
+        branch: 'master',
+      })
+    ).data.required_status_checks.contexts;
+    console.log(
+      `checking branch protection for ${owner}/${repo}: ${branchProtection}`
+    );
+    return branchProtection;
   } catch (err) {
     return [];
   }
 };
 
-/** 
+/**
  * Function grabs the statuses that have run for a given Sha
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
@@ -218,15 +218,19 @@ mergeOnGreen.getStatusi = async function getStatusi(
 ): Promise<CheckStatus[]> {
   const start = Date.now();
   try {
-      const data = (await github.repos.listStatusesForRef({
+    const data = (
+      await github.repos.listStatusesForRef({
         owner,
         repo,
         ref: headSha,
         per_page: 100,
-        page: num
-      })).data 
+        page: num,
+      })
+    ).data;
     console.info(
-      `called getStatusi in ${Date.now() - start}ms ${owner}/${repo}, ${data[0].context}`
+      `called getStatusi in ${Date.now() - start}ms ${owner}/${repo}, ${
+        data[0].context
+      }`
     );
     return data;
   } catch (err) {
@@ -234,7 +238,7 @@ mergeOnGreen.getStatusi = async function getStatusi(
   }
 };
 
-/** 
+/**
  * Function iterates through the multiple pages of check statuses and concatenates them into a large array
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
@@ -246,19 +250,19 @@ mergeOnGreen.iterateGetStatusi = async function iterateGetStatusi(
   owner: string,
   repo: string,
   github: GitHubAPI,
-  headSha: string): Promise<CheckStatus[]> {
+  headSha: string
+): Promise<CheckStatus[]> {
   let results: CheckStatus[] = [];
-  for (let i=0; i<10; i++) {
-    const temp = await mergeOnGreen.getStatusi(owner, repo, github, headSha, i); 
-    if (temp.length !== 0)  {
+  for (let i = 0; i < 10; i++) {
+    const temp = await mergeOnGreen.getStatusi(owner, repo, github, headSha, i);
+    if (temp.length !== 0) {
       results = results.concat(temp);
     }
-    
   }
   return results;
-}
+};
 
-/** 
+/**
  * Function grabs the check runs that have run for a given Sha (a sha can run statuses and check runs)
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
@@ -280,7 +284,7 @@ mergeOnGreen.getCheckRuns = async function getCheckRuns(
       repo,
       ref: headSha,
       per_page: 100,
-      page: num
+      page: num,
     });
     console.info(
       `called getCheckRuns in ${Date.now() - start}ms ${owner}/${repo}`
@@ -291,7 +295,7 @@ mergeOnGreen.getCheckRuns = async function getCheckRuns(
   }
 };
 
-/** 
+/**
  * Function iterates through the multiple pages of check statuses and concatenates them into a large array
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
@@ -303,18 +307,25 @@ mergeOnGreen.iterateGetCheckRuns = async function iterateGetCheckRuns(
   owner: string,
   repo: string,
   github: GitHubAPI,
-  headSha: string): Promise<CheckRun[]> {
+  headSha: string
+): Promise<CheckRun[]> {
   let results: CheckRun[] = [];
-  for (let i=0; i<10; i++) {
-    const temp = await mergeOnGreen.getCheckRuns(owner, repo, github, headSha, i); 
+  for (let i = 0; i < 10; i++) {
+    const temp = await mergeOnGreen.getCheckRuns(
+      owner,
+      repo,
+      github,
+      headSha,
+      i
+    );
     if (temp !== undefined) {
       results = results.concat(temp);
-    }   
+    }
   }
   return results;
-}
+};
 
-/** 
+/**
  * Function checks whether a required check is in a check run array
  * @param checkRuns array of check runs (from function getCheckRuns)
  * @param check a required check from the branch protection
@@ -336,7 +347,7 @@ mergeOnGreen.checkForRequiredSC = function checkForRequiredSC(
   return false;
 };
 
-/** 
+/**
  * Function calls the branch protection for master branch, as well as the check runs and check statuses, to see
  * if all required checks have passed
  * @param owner of pr (from Watch PR)
@@ -364,14 +375,13 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
   console.info(
     `fetched statusesForRef in ${Date.now() - start}ms ${owner}/${repo}/${pr}`
   );
-  checkStatus.forEach(element => {console.log(element)});
+  checkStatus.forEach(element => {
+    console.log(element);
+  });
 
   let mergeable = true;
   let checkRuns;
-  if (
-    headSha.length !== 0 &&
-    mogLabel === true
-  ) {
+  if (headSha.length !== 0 && mogLabel === true) {
     console.info(`=== checking required checks for ${owner}/${repo}/${pr} ===`);
     for (const check of requiredChecks) {
       console.log(
@@ -417,7 +427,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
   return mergeable;
 };
 
-/** 
+/**
  * Function grabs completed reviews on a given pr
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
@@ -443,8 +453,8 @@ mergeOnGreen.getReviewsCompleted = async function getReviewsCompleted(
   }
 };
 
-/** 
- * This function cleans the reviews, since the listReviews method github provides returns a complete 
+/**
+ * This function cleans the reviews, since the listReviews method github provides returns a complete
  * history of all comments added and we just want the most recent for each reviewer
  * @param Reviews is an array of completed reviews from getReviewsCompleted()
  * @returns an array of only the most recent reviews for each reviewer
@@ -470,8 +480,8 @@ mergeOnGreen.cleanReviews = function cleanReviews(
 // we might also want to make whether or not a requested viewer needs
 // to have been reviewed.
 
-/** 
- * Function evaluates whether a check review has passed 
+/**
+ * Function evaluates whether a check review has passed
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
  * @param pr pr number
@@ -515,7 +525,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
   return reviewsPassed;
 };
 
-/** 
+/**
  * Function merges a pr
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
@@ -544,7 +554,7 @@ mergeOnGreen.merge = async function merge(
   return merge;
 };
 
-/** 
+/**
  * Updates a branch if it is behind master
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
@@ -572,7 +582,7 @@ mergeOnGreen.updateBranch = async function updateBranch(
   }
 };
 
-/** 
+/**
  * Comments on the PR
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
@@ -602,8 +612,8 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
   }
 };
 
-/** 
- * Main function. Checks whether PR is open and whether there are is any master branch protection. If there 
+/**
+ * Main function. Checks whether PR is open and whether there are is any master branch protection. If there
  * is, MOG continues checking to make sure reviews are approved and statuses have passed.
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
@@ -622,14 +632,16 @@ export async function mergeOnGreen(
   github: GitHubAPI
 ): Promise<boolean | undefined> {
   console.info(`${owner}/${repo} checking merge on green PR status`);
-  const [prInfo, requiredChecks] = await Promise.all([await mergeOnGreen.getPR(owner, repo, pr, github), 
-    await mergeOnGreen.getBranchProtection(owner, repo, github)]);
+  const [prInfo, requiredChecks] = await Promise.all([
+    await mergeOnGreen.getPR(owner, repo, pr, github),
+    await mergeOnGreen.getBranchProtection(owner, repo, github),
+  ]);
 
   if (prInfo.state === 'closed') {
     console.log(`${owner}/${repo}/${pr} is closed`);
     return true;
   }
-  if (requiredChecks.length === 0){
+  if (requiredChecks.length === 0) {
     console.log(`${owner}/${repo}/${pr} has no required status checks`);
     await mergeOnGreen.commentOnPR(
       owner,
@@ -643,14 +655,21 @@ export async function mergeOnGreen(
 
   const [checkReview, checkStatus] = await Promise.all([
     mergeOnGreen.checkReviews(owner, repo, pr, github),
-    mergeOnGreen.statusesForRef(owner, repo, pr, labelName, github, requiredChecks),
+    mergeOnGreen.statusesForRef(
+      owner,
+      repo,
+      pr,
+      labelName,
+      github,
+      requiredChecks
+    ),
   ]);
 
   const failedMesssage = `Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. See required reviews for your repo here: https://github.com/googleapis/sloth/blob/master/required-checks.json`;
   const conflictMessage =
     'Your PR has conflicts that you need to resolve before merge-on-green can automerge';
-  const continueMesssage = 
-    'Your PR has attempted to merge for 3 hours. Please check that all required checks have passed, you have an automerge label, and that all your reviewers have approved the PR'
+  const continueMesssage =
+    'Your PR has attempted to merge for 3 hours. Please check that all required checks have passed, you have an automerge label, and that all your reviewers have approved the PR';
 
   console.info(
     `checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state} ${owner}/${repo}/${pr}`
@@ -698,10 +717,8 @@ export async function mergeOnGreen(
     );
     await mergeOnGreen.commentOnPR(owner, repo, pr, failedMesssage, github);
     return true;
-  } else if (state === 'comment' ) {
-    console.log(
-      `${owner}/${repo}/${pr} is halfway through its check`
-    );
+  } else if (state === 'comment') {
+    console.log(`${owner}/${repo}/${pr} is halfway through its check`);
     await mergeOnGreen.commentOnPR(owner, repo, pr, continueMesssage, github);
     return false;
   } else {
