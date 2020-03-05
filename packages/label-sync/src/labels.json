@@ -57,7 +57,7 @@
     },
     {
       "name": "priority: p3",
-      "description": "Desirable enhancement or fix. May not be include in next release.",
+      "description": "Desirable enhancement or fix. May not be included in next release.",
       "color": "ffffc7"
     },
     {
@@ -163,6 +163,11 @@
     {
       "name": "buildcop: flaky",
       "description": "Tells the Build Cop Bot not to close or comment on this issue",
+      "color": "86d9d7"
+    },
+    {
+      "name": "buildcop: quiet",
+      "description": "Tells the Build Cop Bot to comment less",
       "color": "86d9d7"
     }
   ]

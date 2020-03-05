@@ -32,6 +32,7 @@ import Octokit from '@octokit/rest';
 
 const ISSUE_LABEL = 'buildcop: issue';
 const FLAKY_LABEL = 'buildcop: flaky';
+const QUIET_LABEL = 'buildcop: quiet';
 const BUG_LABELS = 'type: bug,priority: p1';
 
 const LABELS_FOR_FLAKY_ISSUE = BUG_LABELS.split(',').concat([
@@ -42,15 +43,28 @@ const LABELS_FOR_NEW_ISSUE = BUG_LABELS.split(',').concat([ISSUE_LABEL]);
 
 const EVERYTHING_FAILED_TITLE = 'The build failed';
 
+const NEW_ISSUE_MESSAGE = `This test failed!
+
+To configure my behavior, see [the Build Cop Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop).
+
+If I'm commenting on this issue too often, add the \`buildcop: quiet\` label and
+I will stop commenting.
+
+---`;
+
 const FLAKY_MESSAGE = `Looks like this issue is flaky. :worried:
 
 I'm going to leave this open and stop commenting.
 
-A human should fix and close this.`;
+A human should fix and close this.
+
+---`;
 
 const FLAKY_AGAIN_MESSAGE = `Oops! Looks like this issue is still flaky. :grimacing:
 
-I reopened the issue, but a human will need to close it again.`;
+I reopened the issue, but a human will need to close it again.
+
+---`;
 
 interface TestCase {
   package?: string;
@@ -254,7 +268,10 @@ buildcop.openIssues = async (
           failure
         );
       } else {
-        // TODO: this can be spammy (https://github.com/googleapis/repo-automation-bots/issues/282).
+        // Don't comment if it's asked to be quiet.
+        if (hasLabel(existingIssue, QUIET_LABEL)) {
+          continue;
+        }
 
         // Don't comment if it's flaky.
         if (buildcop.isFlaky(existingIssue)) {
@@ -287,7 +304,10 @@ buildcop.openIssues = async (
           owner,
           repo,
           title: buildcop.formatTestCase(failure),
-          body: buildcop.formatBody(failure, buildID, buildURL),
+          body:
+            NEW_ISSUE_MESSAGE +
+            '\n\n' +
+            buildcop.formatBody(failure, buildID, buildURL),
           labels: LABELS_FOR_NEW_ISSUE,
         })
       ).data;
@@ -388,16 +408,23 @@ buildcop.issueComparator = (
 };
 
 buildcop.isFlaky = (issue: Octokit.IssuesListForRepoResponseItem): boolean => {
+  return hasLabel(issue, FLAKY_LABEL);
+};
+
+function hasLabel(
+  issue: Octokit.IssuesListForRepoResponseItem,
+  label: string
+): boolean {
   if (issue.labels === undefined) {
     return false;
   }
-  for (const label of issue.labels) {
-    if (label.name === FLAKY_LABEL) {
+  for (const l of issue.labels) {
+    if (l.name === label) {
       return true;
     }
   }
   return false;
-};
+}
 
 buildcop.markIssueFlaky = async (
   existingIssue: Octokit.IssuesListForRepoResponseItem,
