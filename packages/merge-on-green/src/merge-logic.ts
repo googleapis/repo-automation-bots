@@ -387,7 +387,6 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
       console.log(
         `Looking for required checks in status checks for ${owner}/${repo}/${pr}.`        
       ); 
-      
       //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
       const checkCompleted = checkStatus.find(
         (element: CheckStatus) => element.context === check
