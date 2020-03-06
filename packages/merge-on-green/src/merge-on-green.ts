@@ -32,13 +32,6 @@ interface WatchPR {
   url: string;
 }
 
-// interface QueryResponse {
-//   created: Date;
-//   repo: string;
-//   owner: string;
-//   key: entity.Key;
-// }
-
 /**
  * Retrieves Query response from Datastore
  * @returns a Promise that can have any data type as it is the result of the Query, plus some standard types like the query key
@@ -152,6 +145,7 @@ function handler(app: Application) {
               handler.removePR(wp.url);
             }
           } catch (err) {
+            console.log(`Error in merge-on-green: ${err}`);
             if (wp.state === 'stop') {
               handler.removePR(wp.url);
             }

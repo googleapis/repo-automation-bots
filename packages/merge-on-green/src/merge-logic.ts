@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { GitHubAPI } from 'probot/lib/github';
-import { SSL_OP_PKCS1_CHECK_2 } from 'constants';
 
 interface CommentOnPR {}
 
@@ -39,24 +38,6 @@ interface PullRequest {
   state: string;
   mergeable: boolean;
   mergeable_state: string;
-}
-
-interface RequiredChecksByLanguage {
-  [key: string]: {
-    requiredStatusChecks: string[];
-    repoOverrides: [RepoOverrides];
-  };
-}
-
-interface RepoOverrides {
-  repo: string;
-  requiredStatusChecks: string[];
-  useBranchProtectionRules?: boolean;
-}
-
-interface Language {
-  language: string;
-  repo: string;
 }
 
 interface Merge {
@@ -168,6 +149,7 @@ mergeOnGreen.hasMOGLabel = async function hasMOGLabel(
     }
     return isMOG;
   } catch (err) {
+    console.log(`Error in getting MOG label: ${err}`);
     return isMOG;
   }
 };
@@ -197,6 +179,7 @@ mergeOnGreen.getBranchProtection = async function getBranchProtection(
     );
     return branchProtection;
   } catch (err) {
+    console.log(`Error in getting branch protection: ${err}`);
     return [];
   }
 };
@@ -218,22 +201,22 @@ mergeOnGreen.getStatusi = async function getStatusi(
 ): Promise<CheckStatus[]> {
   const start = Date.now();
   try {
-    const data = (
+    const { data } = 
       await github.repos.listStatusesForRef({
         owner,
         repo,
         ref: headSha,
         per_page: 100,
         page: num,
-      })
-    ).data;
+      });
     console.info(
-      `called getStatusi in ${Date.now() - start}ms ${owner}/${repo}, ${
+      `called getStatuses in ${Date.now() - start}ms ${owner}/${repo}, ${
         data[0].context
       }`
     );
     return data;
   } catch (err) {
+    console.log(`Error in getting statuses: ${err}`);
     return [];
   }
 };
@@ -449,6 +432,7 @@ mergeOnGreen.getReviewsCompleted = async function getReviewsCompleted(
     });
     return reviewsCompleted.data;
   } catch (err) {
+    console.log(`Error getting reviews completed ${err}`);
     return [];
   }
 };
@@ -578,6 +562,7 @@ mergeOnGreen.updateBranch = async function updateBranch(
     ).data as Update;
     return update;
   } catch (err) {
+    console.log(`Error in updating branch: ${err}`);
     return null;
   }
 };
