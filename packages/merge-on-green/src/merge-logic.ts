@@ -201,14 +201,13 @@ mergeOnGreen.getStatusi = async function getStatusi(
 ): Promise<CheckStatus[]> {
   const start = Date.now();
   try {
-    const { data } = 
-      await github.repos.listStatusesForRef({
-        owner,
-        repo,
-        ref: headSha,
-        per_page: 100,
-        page: num,
-      });
+    const { data } = await github.repos.listStatusesForRef({
+      owner,
+      repo,
+      ref: headSha,
+      per_page: 100,
+      page: num,
+    });
     console.info(
       `called getStatuses in ${Date.now() - start}ms ${owner}/${repo}, ${
         data[0].context
