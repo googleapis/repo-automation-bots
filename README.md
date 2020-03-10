@@ -16,6 +16,7 @@ by Google on GitHub.
 | [failurechecker] | Check for automation tasks, e.g., releases, that are in a failed state | [install][failurechecker-app] |
 | [label-sync] | Synchronize labels across organizations | [install][label-sync-app] |
 | [buildcop] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][buildcop-app] |
+| [merge-on-green] | Merge a pull-request when all required checks have passed | [install][merge-on-green-app] |
 | [publish] | Publish to npm, through [Wombat Dressing Room][] | [install][publish-app] |
 | [sync-repo-settings] | Synchronize repository settings from a centralized config | [install][sync-repo-settings-app] |
 
@@ -113,6 +114,8 @@ at the specified schedule.
 [buildcop-app]: https://github.com/apps/build-cop-bot
 [publish]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/publish
 [publish-app]: https://github.com/apps/publish-bot
+[merge-on-green]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/merge-on-green
+[merge-on-green-app]: https://github.com/apps/gcf-merge-on-green
 [sync-repo-settings]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/sync-repo-settings
 [sync-repo-settings-app]: https://github.com/apps/sync-repo-settings
 [Wombat Dressing Room]: https://opensource.googleblog.com/2020/01/wombat-dressing-room-npm-publication_10.html
