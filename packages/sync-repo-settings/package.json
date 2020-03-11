@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "compile": "tsc -p .",
-    "start": "probot run ./build/src/sync-repo-settings.js",
+    "start": "probot run ./build/src/syncRepoSettings.js",
     "prepare": "npm run compile",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha --timeout=15000 --recursive ./build/test",
