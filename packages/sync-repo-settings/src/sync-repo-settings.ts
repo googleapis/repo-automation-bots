@@ -62,26 +62,23 @@ handler.getRepos = async function getRepos(): Promise<GetReposResponse> {
  * Main.  On a nightly cron, update the settings for a given repository.
  */
 function handler(app: Application) {
-  app.on(
-    ['schedule.repository'],
-    async (context: Context) => {
-      const owner = context.payload.organization.login;
-      const name = context.payload.repository.name;
-      const repo = `${owner}/${name}`;
+  app.on(['schedule.repository'], async (context: Context) => {
+    const owner = context.payload.organization.login;
+    const name = context.payload.repository.name;
+    const repo = `${owner}/${name}`;
 
-      // find the repo record in repos.json
-      const repos = await handler.getRepos();
-      const r = repos.repos.find(x => x.repo === repo);
-      if (!r) {
-        return;
-      }
-
-      // update each settings section
-      await handler.updateRepoOptions(r, context);
-      await handler.updateMasterBranchProtection(r, context);
-      await handler.updateRepoTeams(r, context);
+    // find the repo record in repos.json
+    const repos = await handler.getRepos();
+    const r = repos.repos.find(x => x.repo === repo);
+    if (!r) {
+      return;
     }
-  );
+
+    // update each settings section
+    await handler.updateRepoOptions(r, context);
+    await handler.updateMasterBranchProtection(r, context);
+    await handler.updateRepoTeams(r, context);
+  });
 }
 
 /**
