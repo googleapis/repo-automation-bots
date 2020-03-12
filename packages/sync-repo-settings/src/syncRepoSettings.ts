@@ -56,42 +56,50 @@ handler.getRepos = async function getRepos(): Promise<GetReposResponse> {
     _repos = res.data;
   }
   return _repos;
-}
+};
 
 /**
  * Main.  On a nightly cron, update the settings for a given repository.
  */
 function handler(app: Application) {
   //TODO SOFIA: change back to cron
-  app.on(['issues.opened',
-  'issues.reopened',
-  'issues.labeled',
-  'pull_request.opened',
-  'pull_request.reopened',
-  'pull_request.labeled'], async (context: Context) => {
-    const owner = context.payload.organization.login;
-    const name = context.payload.repository.name;
-    const repo = `${owner}/${name}`;
+  app.on(
+    [
+      'issues.opened',
+      'issues.reopened',
+      'issues.labeled',
+      'pull_request.opened',
+      'pull_request.reopened',
+      'pull_request.labeled',
+    ],
+    async (context: Context) => {
+      const owner = context.payload.organization.login;
+      const name = context.payload.repository.name;
+      const repo = `${owner}/${name}`;
 
-    // find the repo record in repos.json
-    const repos = await handler.getRepos();
-    const r = repos.repos.find(x => x.repo === repo);
-    if (!r) {
-      return;
+      // find the repo record in repos.json
+      const repos = await handler.getRepos();
+      const r = repos.repos.find(x => x.repo === repo);
+      if (!r) {
+        return;
+      }
+
+      // update each settings section
+      await handler.updateRepoOptions(r, context);
+      await handler.updateMasterBranchProtection(r, context);
+      await handler.updateRepoTeams(r, context);
     }
-
-    // update each settings section
-    await handler.updateRepoOptions(r, context);
-    await handler.updateMasterBranchProtection(r, context);
-    await handler.updateRepoTeams(r, context);
-  });
+  );
 }
 
 /**
  * Enable master branch protection, and required status checks
  * @param repos List of repos to iterate.
  */
-handler.updateMasterBranchProtection = async function updateMasterBranchProtection(repo: Repo, context: Context) {
+handler.updateMasterBranchProtection = async function updateMasterBranchProtection(
+  repo: Repo,
+  context: Context
+) {
   console.log(`Updating master branch protection for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
 
@@ -125,13 +133,16 @@ handler.updateMasterBranchProtection = async function updateMasterBranchProtecti
     enforce_admins: true,
     restrictions: null!,
   });
-}
+};
 
 /**
  * Ensure the correct teams are added to the repository
  * @param repos List of repos to iterate.
  */
-handler.updateRepoTeams = async function updateRepoTeams(repo: Repo, context: Context) {
+handler.updateRepoTeams = async function updateRepoTeams(
+  repo: Repo,
+  context: Context
+) {
   console.log(`Update team access for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
   const teamsToAdd = [
@@ -158,13 +169,16 @@ handler.updateRepoTeams = async function updateRepoTeams(repo: Repo, context: Co
       repo: name,
     });
   }
-}
+};
 
 /**
  * Update the main repository options
  * @param repos List of repos to iterate.
  */
-handler.updateRepoOptions = async function updateRepoOptions(repo: Repo, context: Context) {
+handler.updateRepoOptions = async function updateRepoOptions(
+  repo: Repo,
+  context: Context
+) {
   console.log(`Updating commit settings for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
   const config = languageConfig[repo.language];
@@ -180,6 +194,6 @@ handler.updateRepoOptions = async function updateRepoOptions(repo: Repo, context
     allow_rebase_merge: config.enableRebaseMerge,
     allow_squash_merge: config.enableSquashMerge,
   });
-}
+};
 
 export = handler;

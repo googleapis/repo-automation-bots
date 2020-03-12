@@ -16,4 +16,4 @@ import { GCFBootstrapper } from 'gcf-utils';
 import appFn from './syncRepoSettings';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['syncRepoSettings']  = bootstrap.gcf(appFn);
+module.exports['syncRepoSettings'] = bootstrap.gcf(appFn);

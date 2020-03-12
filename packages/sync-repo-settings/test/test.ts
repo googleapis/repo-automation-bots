@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import  handler  from '../src/syncRepoSettings';
+import handler from '../src/syncRepoSettings';
 import nock from 'nock';
 import { Probot } from 'probot';
 
