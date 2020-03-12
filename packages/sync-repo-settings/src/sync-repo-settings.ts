@@ -17,7 +17,7 @@ import { request } from 'gaxios';
 
 const languageConfig: LanguageConfig = require('../../required-checks.json');
 
-export interface LanguageConfig {
+interface LanguageConfig {
   [index: string]: {
     enableSquashMerge: boolean;
     enableRebaseMerge: boolean;
@@ -33,12 +33,12 @@ export interface LanguageConfig {
   };
 }
 
-export interface Repo {
+interface Repo {
   language: string;
   repo: string;
 }
 
-export interface GetReposResponse {
+interface GetReposResponse {
   repos: Repo[];
 }
 
@@ -47,7 +47,7 @@ export interface GetReposResponse {
  * Cache the result.
  */
 let _repos: GetReposResponse;
-async function getRepos(): Promise<GetReposResponse> {
+handler.getRepos = async function getRepos(): Promise<GetReposResponse> {
   if (!_repos) {
     const res = await request<GetReposResponse>({
       url:
@@ -56,28 +56,28 @@ async function getRepos(): Promise<GetReposResponse> {
     _repos = res.data;
   }
   return _repos;
-}
+};
 
 /**
  * Main.  On a nightly cron, update the settings for a given repository.
  */
-export function handler(app: Application) {
+function handler(app: Application) {
   app.on(['schedule.repository'], async (context: Context) => {
     const owner = context.payload.organization.login;
     const name = context.payload.repository.name;
     const repo = `${owner}/${name}`;
 
     // find the repo record in repos.json
-    const repos = await getRepos();
+    const repos = await handler.getRepos();
     const r = repos.repos.find(x => x.repo === repo);
     if (!r) {
       return;
     }
 
     // update each settings section
-    await updateRepoOptions(r, context);
-    await updateMasterBranchProtection(r, context);
-    await updateRepoTeams(r, context);
+    await handler.updateRepoOptions(r, context);
+    await handler.updateMasterBranchProtection(r, context);
+    await handler.updateRepoTeams(r, context);
   });
 }
 
@@ -85,7 +85,10 @@ export function handler(app: Application) {
  * Enable master branch protection, and required status checks
  * @param repos List of repos to iterate.
  */
-async function updateMasterBranchProtection(repo: Repo, context: Context) {
+handler.updateMasterBranchProtection = async function updateMasterBranchProtection(
+  repo: Repo,
+  context: Context
+) {
   console.log(`Updating master branch protection for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
 
@@ -119,13 +122,16 @@ async function updateMasterBranchProtection(repo: Repo, context: Context) {
     enforce_admins: true,
     restrictions: null!,
   });
-}
+};
 
 /**
  * Ensure the correct teams are added to the repository
  * @param repos List of repos to iterate.
  */
-async function updateRepoTeams(repo: Repo, context: Context) {
+handler.updateRepoTeams = async function updateRepoTeams(
+  repo: Repo,
+  context: Context
+) {
   console.log(`Update team access for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
   const teamsToAdd = [
@@ -152,13 +158,16 @@ async function updateRepoTeams(repo: Repo, context: Context) {
       repo: name,
     });
   }
-}
+};
 
 /**
  * Update the main repository options
  * @param repos List of repos to iterate.
  */
-async function updateRepoOptions(repo: Repo, context: Context) {
+handler.updateRepoOptions = async function updateRepoOptions(
+  repo: Repo,
+  context: Context
+) {
   console.log(`Updating commit settings for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
   const config = languageConfig[repo.language];
@@ -174,4 +183,6 @@ async function updateRepoOptions(repo: Repo, context: Context) {
     allow_rebase_merge: config.enableRebaseMerge,
     allow_squash_merge: config.enableSquashMerge,
   });
-}
+};
+
+export = handler;
