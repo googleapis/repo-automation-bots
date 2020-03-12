@@ -62,16 +62,8 @@ handler.getRepos = async function getRepos(): Promise<GetReposResponse> {
  * Main.  On a nightly cron, update the settings for a given repository.
  */
 function handler(app: Application) {
-  //TODO SOFIA: change back to cron
   app.on(
-    [
-      'issues.opened',
-      'issues.reopened',
-      'issues.labeled',
-      'pull_request.opened',
-      'pull_request.reopened',
-      'pull_request.labeled',
-    ],
+    ['schedule.repository'],
     async (context: Context) => {
       const owner = context.payload.organization.login;
       const name = context.payload.repository.name;
