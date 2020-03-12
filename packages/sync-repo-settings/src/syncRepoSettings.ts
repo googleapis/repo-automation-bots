@@ -69,11 +69,9 @@ function handler(app: Application) {
   'pull_request.opened',
   'pull_request.reopened',
   'pull_request.labeled'], async (context: Context) => {
-    console.log('hello');
     const owner = context.payload.organization.login;
     const name = context.payload.repository.name;
-    //TODO SOFIA: change back to owner vs. googleapis
-    const repo = `googleapis/${name}`;
+    const repo = `${owner}/${name}`;
 
     // find the repo record in repos.json
     const repos = await handler.getRepos();
