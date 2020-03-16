@@ -38,6 +38,7 @@ interface PullRequest {
   state: string;
   mergeable: boolean;
   mergeable_state: string;
+  user: { login: string };
 }
 
 interface Merge {
@@ -109,6 +110,9 @@ mergeOnGreen.getPR = async function getPR(
       state: '',
       mergeable: false,
       mergeable_state: '',
+      user: {
+        login: '',
+      },
     };
   }
 };
@@ -443,14 +447,18 @@ mergeOnGreen.getReviewsCompleted = async function getReviewsCompleted(
  * @returns an array of only the most recent reviews for each reviewer
  */
 mergeOnGreen.cleanReviews = function cleanReviews(
-  reviewsCompleted: Reviews[]
+  reviewsCompleted: Reviews[],
+  author: string
 ): Reviews[] {
   const cleanReviews = [];
   const distinctReviewers: string[] = [];
   if (reviewsCompleted.length !== 0) {
     for (let x = reviewsCompleted.length - 1; x >= 0; x--) {
       const reviewsCompletedUser = reviewsCompleted[x].user.login;
-      if (!distinctReviewers.includes(reviewsCompletedUser)) {
+      if (
+        !distinctReviewers.includes(reviewsCompletedUser) &&
+        reviewsCompletedUser !== author
+      ) {
         cleanReviews.push(reviewsCompleted[x]);
         distinctReviewers.push(reviewsCompletedUser);
       }
@@ -475,6 +483,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
   owner: string,
   repo: string,
   pr: number,
+  author: string,
   github: GitHubAPI
 ): Promise<boolean> {
   const start = Date.now();
@@ -486,7 +495,10 @@ mergeOnGreen.checkReviews = async function checkReviews(
     github
   );
   let reviewsPassed = true;
-  const reviewsCompleted = mergeOnGreen.cleanReviews(reviewsCompletedDirty);
+  const reviewsCompleted = mergeOnGreen.cleanReviews(
+    reviewsCompletedDirty,
+    author
+  );
   console.info(
     `fetched completed reviews in ${Date.now() -
       start}ms ${owner}/${repo}/${pr}`
@@ -638,7 +650,7 @@ export async function mergeOnGreen(
   }
 
   const [checkReview, checkStatus] = await Promise.all([
-    mergeOnGreen.checkReviews(owner, repo, pr, github),
+    mergeOnGreen.checkReviews(owner, repo, pr, prInfo.user.login, github),
     mergeOnGreen.statusesForRef(
       owner,
       repo,
@@ -649,7 +661,7 @@ export async function mergeOnGreen(
     ),
   ]);
 
-  const failedMesssage = `Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. See required reviews for your repo here: https://github.com/googleapis/sloth/blob/master/required-checks.json`;
+  const failedMesssage = `Merge-on-green attempted to merge your PR for 6 hours, but it was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. Learn more about your required status checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks. You can remove and reapply the label to re-run the bot.`;
   const conflictMessage =
     'Your PR has conflicts that you need to resolve before merge-on-green can automerge';
   const continueMesssage =
