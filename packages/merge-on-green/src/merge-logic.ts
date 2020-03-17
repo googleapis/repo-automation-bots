@@ -447,8 +447,7 @@ mergeOnGreen.getReviewsCompleted = async function getReviewsCompleted(
  * @returns an array of only the most recent reviews for each reviewer
  */
 mergeOnGreen.cleanReviews = function cleanReviews(
-  reviewsCompleted: Reviews[],
-  author: string
+  reviewsCompleted: Reviews[]
 ): Reviews[] {
   const cleanReviews = [];
   const distinctReviewers: string[] = [];
@@ -456,8 +455,7 @@ mergeOnGreen.cleanReviews = function cleanReviews(
     for (let x = reviewsCompleted.length - 1; x >= 0; x--) {
       const reviewsCompletedUser = reviewsCompleted[x].user.login;
       if (
-        !distinctReviewers.includes(reviewsCompletedUser) &&
-        reviewsCompletedUser !== author
+        !distinctReviewers.includes(reviewsCompletedUser)
       ) {
         cleanReviews.push(reviewsCompleted[x]);
         distinctReviewers.push(reviewsCompletedUser);
@@ -496,8 +494,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
   );
   let reviewsPassed = true;
   const reviewsCompleted = mergeOnGreen.cleanReviews(
-    reviewsCompletedDirty,
-    author
+    reviewsCompletedDirty
   );
   console.info(
     `fetched completed reviews in ${Date.now() -
@@ -505,7 +502,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
   );
   if (reviewsCompleted.length !== 0) {
     reviewsCompleted.forEach(review => {
-      if (review.state !== 'APPROVED') {
+      if (review.state !== 'APPROVED' && review.user.login !== author) {
         console.log(
           `One of your reviewers did not approve the PR ${owner}/${repo}/${pr} state = ${review.state}`
         );
@@ -643,7 +640,7 @@ export async function mergeOnGreen(
       owner,
       repo,
       pr,
-      `Your PR doesn't have any required checks. Please add required checks to your master branch and then re-add the ${labelName} label.`,
+      `Your PR doesn't have any required checks. Please add required checks to your master branch and then re-add the ${labelName} label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.`,
       github
     );
     return true;
