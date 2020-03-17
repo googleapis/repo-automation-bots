@@ -451,9 +451,7 @@ mergeOnGreen.cleanReviews = function cleanReviews(
   if (reviewsCompleted.length !== 0) {
     for (let x = reviewsCompleted.length - 1; x >= 0; x--) {
       const reviewsCompletedUser = reviewsCompleted[x].user.login;
-      if (
-        !distinctReviewers.includes(reviewsCompletedUser)
-      ) {
+      if (!distinctReviewers.includes(reviewsCompletedUser)) {
         cleanReviews.push(reviewsCompleted[x]);
         distinctReviewers.push(reviewsCompletedUser);
       }
@@ -490,9 +488,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
     github
   );
   let reviewsPassed = true;
-  const reviewsCompleted = mergeOnGreen.cleanReviews(
-    reviewsCompletedDirty
-  );
+  const reviewsCompleted = mergeOnGreen.cleanReviews(reviewsCompletedDirty);
   console.info(
     `fetched completed reviews in ${Date.now() -
       start}ms ${owner}/${repo}/${pr}`
