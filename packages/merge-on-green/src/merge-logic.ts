@@ -361,9 +361,6 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
   console.info(
     `fetched statusesForRef in ${Date.now() - start}ms ${owner}/${repo}/${pr}`
   );
-  checkStatus.forEach(element => {
-    console.log(element);
-  });
 
   let mergeable = true;
   let checkRuns;
