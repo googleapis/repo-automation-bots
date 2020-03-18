@@ -34,11 +34,6 @@ func TestDetectRepo(t *testing.T) {
 			want:     "GoogleCloudPlatform/golang-samples",
 		},
 		{
-			envVar:   "KOKORO_GITHUB_COMMIT_URL_google_cloud_go",
-			envValue: "https://github.com/googleapis/google-cloud-go/commit/1234",
-			want:     "googleapis/google-cloud-go",
-		},
-		{
 			envVar:   "foo",
 			envValue: "bar",
 			want:     "",
