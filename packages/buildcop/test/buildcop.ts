@@ -174,7 +174,7 @@ describe('buildcop', () => {
         repo: 'tbpg/golang-samples',
         organization: { login: 'tbpg' },
         repository: { name: 'golang-samples' },
-        buildID: '123',
+        commit: '123',
         buildURL: 'http://example.com',
       });
 
@@ -189,7 +189,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           testsFailed: true,
         });
@@ -215,7 +215,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           testsFailed: true,
         });
@@ -248,7 +248,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           testsFailed: true,
         });
@@ -289,7 +289,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -319,7 +319,7 @@ describe('buildcop', () => {
           repo: 'tbpg/python-docs-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'python-docs-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -349,7 +349,7 @@ describe('buildcop', () => {
           repo: 'tbpg/java-vision',
           organization: { login: 'tbpg' },
           repository: { name: 'java-vision' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -379,7 +379,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -435,7 +435,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -491,7 +491,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -547,7 +547,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -572,7 +572,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -620,7 +620,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -667,7 +667,7 @@ describe('buildcop', () => {
           repo: 'tbpg/python-docs-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'python-docs-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -714,7 +714,7 @@ describe('buildcop', () => {
           repo: 'tbpg/java-vision',
           organization: { login: 'tbpg' },
           repository: { name: 'java-vision' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -761,7 +761,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -797,7 +797,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -820,7 +820,7 @@ describe('buildcop', () => {
           .get('/repos/tbpg/golang-samples/issues/16/comments')
           .reply(200, [
             {
-              body: `status: failed\nbuildID: 123`,
+              body: `status: failed\ncommit: 123`,
             },
           ])
           .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
@@ -848,7 +848,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -866,7 +866,7 @@ describe('buildcop', () => {
                 passed: false,
               }),
               number: 16,
-              body: `status: failed\nbuildID: 123`,
+              body: `status: failed\ncommit: 123`,
             },
           ])
           .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
@@ -894,7 +894,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -931,7 +931,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -978,7 +978,7 @@ describe('buildcop', () => {
           repo: 'tbpg/golang-samples',
           organization: { login: 'tbpg' },
           repository: { name: 'golang-samples' },
-          buildID: '123',
+          commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
         });
@@ -1057,7 +1057,7 @@ describe('buildcop', () => {
         repo: 'tbpg/golang-samples',
         organization: { login: 'tbpg' },
         repository: { name: 'golang-samples' },
-        buildID: '123',
+        commit: '123',
         buildURL: 'http://example.com',
         xunitXML: input,
       });
