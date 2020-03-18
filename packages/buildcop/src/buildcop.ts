@@ -79,8 +79,7 @@ export interface BuildCopPayload {
   repo: string;
   organization: { login: string }; // Filled in by gcf-utils.
   repository: { name: string }; // Filled in by gcf-utils.
-  buildID?: string; // TODO: remove a few hours after commit is added. See https://github.com/googleapis/repo-automation-bots/issues/393.
-  commit?: string; // TODO: this will not be optional after buildID is removed.
+  commit: string;
   buildURL: string;
 
   xunitXML?: string; // Base64 encoded to avoid JSON escaping issues. Fill in to get separate issues for separate tests.
@@ -98,8 +97,7 @@ export function buildcop(app: Application) {
   app.on('pubsub.message', async (context: PubSubContext) => {
     const owner = context.payload.organization?.login;
     const repo = context.payload.repository?.name;
-    const commit =
-      context.payload.commit || context.payload.buildID || '[TODO: set commit]';
+    const commit = context.payload.commit || '[TODO: set commit]';
     const buildURL = context.payload.buildURL || '[TODO: set buildURL]';
 
     let results: TestResults;

@@ -68,7 +68,6 @@ type message struct {
 	Location     string             `json:"location"`
 	Installation githubInstallation `json:"installation"`
 	Repo         string             `json:"repo"`
-	BuildID      string             `json:"buildID"` // TODO: Remove once only commit is used. See https://github.com/googleapis/repo-automation-bots/issues/393.
 	Commit       string             `json:"commit"`
 	BuildURL     string             `json:"buildURL"`
 	XUnitXML     string             `json:"xunitXML"`
@@ -180,7 +179,6 @@ func processLog(ctx context.Context, repo, installationID, commit string, topic 
 			Location:     "us-central1",
 			Installation: githubInstallation{ID: installationID},
 			Repo:         repo,
-			BuildID:      commit, // TODO: Remove once only commit is used. See https://github.com/googleapis/repo-automation-bots/issues/393.
 			Commit:       commit,
 			BuildURL:     buildURL,
 			XUnitXML:     enc,

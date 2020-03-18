@@ -84,7 +84,7 @@ func TestJSONMarshalMessage(t *testing.T) {
 		Location:     "us-central1",
 		Installation: githubInstallation{ID: "123"},
 		Repo:         "MyOrg/test-repo",
-		BuildID:      "456",
+		Commit:       "456",
 		BuildURL:     "example.com",
 		XUnitXML:     "<xml></xml>",
 	}
