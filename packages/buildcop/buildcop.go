@@ -46,12 +46,13 @@ func main() {
 	projectID := flag.String("project", "repo-automation-bots", "Project ID to publish to. Defaults to repo-automation-bots.")
 	topicID := flag.String("topic", "passthrough", "Pub/Sub topic to publish to. Defaults to passthrough.")
 	logsDir := flag.String("logs_dir", ".", "The directory to look for logs in. Defaults to current directory.")
+	commit := flag.String("commit_hash", "", "Long form commit hash this build is being run for. Defaults to the KOKORO_GIT_COMMIT environment variable.")
 
 	flag.Parse()
 
 	log.Println("Sending logs to Build Cop Bot...")
 	log.Println("See https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop.")
-	if ok := publish(*projectID, *topicID, *repo, *installationID, *logsDir); !ok {
+	if ok := publish(*projectID, *topicID, *repo, *installationID, *commit, *logsDir); !ok {
 		os.Exit(1)
 	}
 	log.Println("Done!")
@@ -67,14 +68,15 @@ type message struct {
 	Location     string             `json:"location"`
 	Installation githubInstallation `json:"installation"`
 	Repo         string             `json:"repo"`
-	BuildID      string             `json:"buildID"`
+	BuildID      string             `json:"buildID"` // TODO: Remove once only commit is used. See https://github.com/googleapis/repo-automation-bots/issues/393.
+	Commit       string             `json:"commit"`
 	BuildURL     string             `json:"buildURL"`
 	XUnitXML     string             `json:"xunitXML"`
 }
 
 // publish searches for sponge_log.xml files and publishes them to Pub/Sub.
 // publish logs a message and returns false if there was an error.
-func publish(projectID, topicID, repo, installationID, logsDir string) (ok bool) {
+func publish(projectID, topicID, repo, installationID, commit, logsDir string) (ok bool) {
 	ctx := context.Background()
 
 	gfileDir := os.Getenv("KOKORO_GFILE_DIR")
@@ -115,8 +117,18 @@ See https://github.com/apps/build-cop-bot/.`, repo)
 		}
 	}
 
+	if commit == "" {
+		commit = os.Getenv("KOKORO_GIT_COMMIT")
+		if commit == "" {
+			log.Printf(`Unable to detect commit hash (expected the KOKORO_GIT_COMMIT env var).
+Please set --commit_hash to the latest git commit hash.
+See https://github.com/apps/build-cop-bot/.`)
+			return false
+		}
+	}
+
 	// Handle logs in the current directory.
-	if err := filepath.Walk(logsDir, processLog(ctx, repo, installationID, topic)); err != nil {
+	if err := filepath.Walk(logsDir, processLog(ctx, repo, installationID, commit, topic)); err != nil {
 		log.Printf("Error publishing logs: %v", err)
 		return false
 	}
@@ -152,7 +164,7 @@ func detectInstallationID(repo string) string {
 }
 
 // processLog is used to process log files and publish them to Pub/Sub.
-func processLog(ctx context.Context, repo, installationID string, topic *pubsub.Topic) filepath.WalkFunc {
+func processLog(ctx context.Context, repo, installationID, commit string, topic *pubsub.Topic) filepath.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -173,7 +185,8 @@ func processLog(ctx context.Context, repo, installationID string, topic *pubsub.
 			Location:     "us-central1",
 			Installation: githubInstallation{ID: installationID},
 			Repo:         repo,
-			BuildID:      os.Getenv("KOKORO_GIT_COMMIT"),
+			BuildID:      commit, // TODO: Remove once only commit is used. See https://github.com/googleapis/repo-automation-bots/issues/393.
+			Commit:       commit,
 			BuildURL:     buildURL,
 			XUnitXML:     enc,
 		}
