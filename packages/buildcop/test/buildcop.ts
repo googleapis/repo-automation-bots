@@ -160,11 +160,11 @@ describe('buildcop', () => {
   describe('formatTestCase', () => {
     it('shortens cloud.google.com/go', () => {
       const got = formatTestCase({
-        package: "cloud.google.com/go/pubsub",
-        testCase: "TestPublish",
+        package: 'cloud.google.com/go/pubsub',
+        testCase: 'TestPublish',
         passed: true,
       });
-      expect(got).to.equal("pubsub: TestPublish failed")
+      expect(got).to.equal('pubsub: TestPublish failed');
     });
   });
 
