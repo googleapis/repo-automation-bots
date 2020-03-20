@@ -17,9 +17,7 @@
  *
  * The input payload should include:
  *  - xunitXML: the base64 encoded xUnit XML log.
- *  - buildID: a unique build ID for this build. If there are multiple jobs
- *    for the same build (e.g. for different language versions), they should all
- *    use the same buildID.
+ *  - commit: the commit hash the build was for.
  *  - buildURL: URL to link to for a build.
  *  - repo: the repo being tested (e.g. GoogleCloudPlatform/golang-samples).
  */
@@ -81,7 +79,7 @@ export interface BuildCopPayload {
   repo: string;
   organization: { login: string }; // Filled in by gcf-utils.
   repository: { name: string }; // Filled in by gcf-utils.
-  buildID: string;
+  commit: string;
   buildURL: string;
 
   xunitXML?: string; // Base64 encoded to avoid JSON escaping issues. Fill in to get separate issues for separate tests.
@@ -99,7 +97,7 @@ export function buildcop(app: Application) {
   app.on('pubsub.message', async (context: PubSubContext) => {
     const owner = context.payload.organization?.login;
     const repo = context.payload.repository?.name;
-    const buildID = context.payload.buildID || '[TODO: set buildID]';
+    const commit = context.payload.commit || '[TODO: set commit]';
     const buildURL = context.payload.buildURL || '[TODO: set buildURL]';
 
     let results: TestResults;
@@ -145,7 +143,7 @@ export function buildcop(app: Application) {
         context,
         owner,
         repo,
-        buildID,
+        commit,
         buildURL
       );
       // Close issues for passing tests (unless they're flaky).
@@ -155,7 +153,7 @@ export function buildcop(app: Application) {
         context,
         owner,
         repo,
-        buildID,
+        commit,
         buildURL
       );
     } catch (err) {
@@ -228,7 +226,7 @@ buildcop.openIssues = async (
   context: PubSubContext,
   owner: string,
   repo: string,
-  buildID: string,
+  commit: string,
   buildURL: string
 ) => {
   for (const failure of failures) {
@@ -263,7 +261,7 @@ buildcop.openIssues = async (
           context,
           owner,
           repo,
-          buildID,
+          commit,
           buildURL,
           failure
         );
@@ -285,7 +283,7 @@ buildcop.openIssues = async (
             context,
             owner,
             repo,
-            buildID
+            commit
           )
         ) {
           continue;
@@ -295,7 +293,7 @@ buildcop.openIssues = async (
           owner,
           repo,
           issue_number: existingIssue.number,
-          body: buildcop.formatBody(failure, buildID, buildURL),
+          body: buildcop.formatBody(failure, commit, buildURL),
         });
       }
     } else {
@@ -307,7 +305,7 @@ buildcop.openIssues = async (
           body:
             NEW_ISSUE_MESSAGE +
             '\n\n' +
-            buildcop.formatBody(failure, buildID, buildURL),
+            buildcop.formatBody(failure, commit, buildURL),
           labels: LABELS_FOR_NEW_ISSUE,
         })
       ).data;
@@ -324,7 +322,7 @@ buildcop.closeIssues = async (
   context: PubSubContext,
   owner: string,
   repo: string,
-  buildID: string,
+  commit: string,
   buildURL: string
 ) => {
   for (const issue of issues) {
@@ -359,14 +357,14 @@ buildcop.closeIssues = async (
     // If the issue has a failure in the same build, don't close it.
     // If it passed in one build and failed in another, it's flaky.
     if (
-      await buildcop.containsBuildFailure(issue, context, owner, repo, buildID)
+      await buildcop.containsBuildFailure(issue, context, owner, repo, commit)
     ) {
       await buildcop.markIssueFlaky(
         issue,
         context,
         owner,
         repo,
-        buildID,
+        commit,
         buildURL,
         pass
       );
@@ -383,7 +381,7 @@ buildcop.closeIssues = async (
       owner,
       repo,
       issue_number: issue.number,
-      body: `Test passed in build ${buildID} (${buildURL})! Closing this issue.`,
+      body: `Test passed for commit ${commit} (${buildURL})! Closing this issue.`,
     });
     await context.github.issues.update({
       owner,
@@ -431,7 +429,7 @@ buildcop.markIssueFlaky = async (
   context: PubSubContext,
   owner: string,
   repo: string,
-  buildID: string,
+  commit: string,
   buildURL: string,
   testCase: TestCase
 ) => {
@@ -455,7 +453,7 @@ buildcop.markIssueFlaky = async (
     body = FLAKY_AGAIN_MESSAGE;
   }
   if (testCase) {
-    body = body + '\n\n' + buildcop.formatBody(testCase, buildID, buildURL);
+    body = body + '\n\n' + buildcop.formatBody(testCase, commit, buildURL);
   }
   await context.github.issues.createComment({
     owner,
@@ -467,10 +465,10 @@ buildcop.markIssueFlaky = async (
 
 buildcop.formatBody = (
   testCase: TestCase,
-  buildID: string,
+  commit: string,
   buildURL: string
 ): string => {
-  return `buildID: ${buildID}
+  return `commit: ${commit}
 buildURL: ${buildURL}
 status: ${testCase.passed ? 'passed' : 'failed'}`;
 };
@@ -480,10 +478,10 @@ buildcop.containsBuildFailure = async (
   context: PubSubContext,
   owner: string,
   repo: string,
-  buildID: string
+  commit: string
 ): Promise<boolean> => {
   const text = issue.body;
-  if (text.includes(`buildID: ${buildID}`) && text.includes('status: failed')) {
+  if (text.includes(`commit: ${commit}`) && text.includes('status: failed')) {
     return true;
   }
   const options = context.github.issues.listComments.endpoint.merge({
@@ -494,7 +492,7 @@ buildcop.containsBuildFailure = async (
   const comments = await context.github.paginate(options);
   const comment = comments.find(
     comment =>
-      comment.body.includes(`buildID: ${buildID}`) &&
+      comment.body.includes(`commit: ${commit}`) &&
       comment.body.includes('status: failed')
   );
   return comment !== undefined;
@@ -510,6 +508,7 @@ buildcop.formatTestCase = (failure: TestCase): string => {
     /github\.com\/[^\/]+\/[^\/]+\/(.+)/,
     /com\.google\.cloud\.(.+)/,
     /(.+)\(sponge_log\)/,
+    /cloud\.google\.com\/go\/(.+)/,
   ];
   shorteners.forEach(s => {
     const shorten = failure.package?.match(s);
