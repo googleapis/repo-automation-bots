@@ -106,7 +106,7 @@ exports['buildcop app xunitXML opens multiple issues for multiple failures 2'] =
 }
 
 exports['buildcop app xunitXML opens an issue [Java] 1'] = {
-  "title": "com.google.cloud.vision.it.ITSystemTest: detectSafeSearchGcsTest failed",
+  "title": "vision.it.ITSystemTest: detectSafeSearchGcsTest failed",
   "body": "This test failed!\n\nTo configure my behavior, see [the Build Cop Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop).\n\nIf I'm commenting on this issue too often, add the `buildcop: quiet` label and\nI will stop commenting.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed",
   "labels": [
     "type: bug",
@@ -121,20 +121,6 @@ exports['buildcop app xunitXML closes an issue for a passing test [Java] 1'] = {
 
 exports['buildcop app xunitXML closes an issue for a passing test [Java] 2'] = {
   "state": "closed"
-}
-
-exports['buildcop app reopens the original flaky issue when there is a duplicate 1'] = {
-  "labels": [
-    "type: bug",
-    "priority: p1",
-    "buildcop: issue",
-    "buildcop: flaky"
-  ],
-  "state": "open"
-}
-
-exports['buildcop app reopens the original flaky issue when there is a duplicate 2'] = {
-  "body": "Oops! Looks like this issue is still flaky. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed"
 }
 
 exports['buildcop app xunitXML does not comment about failure on existing flaky issue 1'] = {
@@ -173,4 +159,28 @@ exports['buildcop app xunitXML keeps an issue open for a passing test that faile
 
 exports['buildcop app xunitXML does not comment about failure on existing issue labeled quiet 1'] = {
   "body": "commit: 123\nbuildURL: http://example.com\nstatus: failed"
+}
+
+exports['buildcop app xunitXML only opens one issue for a group of failures [Go] 1'] = {
+  "title": "bigquery/snippets/querying: TestQueries failed",
+  "body": "This test failed!\n\nTo configure my behavior, see [the Build Cop Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop).\n\nIf I'm commenting on this issue too often, add the `buildcop: quiet` label and\nI will stop commenting.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed",
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue"
+  ]
+}
+
+exports['buildcop app xunitXML reopens the original flaky issue when there is a duplicate 1'] = {
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue",
+    "buildcop: flaky"
+  ],
+  "state": "open"
+}
+
+exports['buildcop app xunitXML reopens the original flaky issue when there is a duplicate 2'] = {
+  "body": "Oops! Looks like this issue is still flaky. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed"
 }
