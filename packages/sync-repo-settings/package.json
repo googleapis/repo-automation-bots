@@ -24,7 +24,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gaxios": "^2.3.1",
+    "gaxios": "^3.0.0",
     "gcf-utils": "1.6.1"
   },
   "devDependencies": {
