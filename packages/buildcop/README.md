@@ -14,6 +14,14 @@ Issues or feature requests? Please
 
 ## Usage
 
+### General
+
+* Add the `buildcop: quiet` label to tell the bot to comment less on a
+  particular issue.
+* If a test is detected as flaky, the bot will add the `buildcop: flaky` label,
+  leave the issue open and stop commenting. A human will then have to fix and
+  close the issue.
+
 ### Installation
 
 1. Install the bot on your repo. See https://github.com/apps/build-cop-bot/.
@@ -24,8 +32,8 @@ Issues or feature requests? Please
    more than one, they can be in multiple directories, and the file names must
    end with `sponge_log.xml`.
 1. If you're _not_ already using Trampoline, add the Trampoline `gfile`
-   directory to your Kokoro job. This contains the `buildcop` binary that
-   will be used to publish the logs.
+   directory to your Kokoro job. This contains the `buildcop` binary and service
+   account that will be used to publish the logs.
 
    ```
    gfile_resources: "/bigstore/cloud-devrel-kokoro-resources/trampoline"
@@ -33,8 +41,8 @@ Issues or feature requests? Please
 1. Call the `buildcop` binary for nightly/continuous tests you want issues
    filed for.
    When you first add the bot, you may want to call the binary from the PR and
-   confirm the bot works. If not, file an issue on this repo with a link to the
-   PR & test logs.
+   confirm the bot works. If it doesn't work, file an issue on this repo with a
+   link to the PR & test logs.
 
    ```bash
    if [[ $KOKORO_BUILD_ARTIFACTS_SUBDIR = *"continuous"* ]]; then
@@ -58,10 +66,21 @@ Issues or feature requests? Please
       * **`-installation_id`**: If your repo is not part of `googleapis` or
         `GoogleCloudPlatform`, you must set `-installation_id` to the
         GitHub installation ID from step 1.
+      * **`-commit_hash`**: The commit hash is used as a unique identifier for
+        test invocations. If a test passes _and fails_ for the same commit, it
+        will be marked as flaky. The commit is automatically detected from the
+        `KOKORO_GIT_COMMIT` environment variable. If that is not set, you must
+        set `-commit_hash` to the commit this build is for.
       * **`-logs_dir`**: By default, the `buildcop` binary looks in the current
         working directory for log files (`"."`).
         If your logs are in a different directory, set `-logs_dir` to the
         absolute path to that directory. The directory is recursively searched.
+      * **`-service_account`**: By default, the `buildcop` binary looks in the
+        `KOKORO_GFILE_DIR` for the Trampoline service account. If that is not
+        available (either you're running locally or not using Trampoline), you
+        can set `-service_account` to the path to a service account that has
+        Pub/Sub publish access to the `repo-automation-bots` topic
+        `passthrough`.
 1. Trigger a build and check the logs to make sure everything is working.
 
 ## Contributing

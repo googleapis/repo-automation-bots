@@ -46,12 +46,14 @@ func main() {
 	projectID := flag.String("project", "repo-automation-bots", "Project ID to publish to. Defaults to repo-automation-bots.")
 	topicID := flag.String("topic", "passthrough", "Pub/Sub topic to publish to. Defaults to passthrough.")
 	logsDir := flag.String("logs_dir", ".", "The directory to look for logs in. Defaults to current directory.")
+	commit := flag.String("commit_hash", "", "Long form commit hash this build is being run for. Defaults to the KOKORO_GIT_COMMIT environment variable.")
+	serviceAccount := flag.String("service_account", "", "Path to service account to use instead of Trampoline default.")
 
 	flag.Parse()
 
 	log.Println("Sending logs to Build Cop Bot...")
 	log.Println("See https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop.")
-	if ok := publish(*projectID, *topicID, *repo, *installationID, *logsDir); !ok {
+	if ok := publish(*projectID, *topicID, *repo, *installationID, *commit, *logsDir, *serviceAccount); !ok {
 		os.Exit(1)
 	}
 	log.Println("Done!")
@@ -67,24 +69,26 @@ type message struct {
 	Location     string             `json:"location"`
 	Installation githubInstallation `json:"installation"`
 	Repo         string             `json:"repo"`
-	BuildID      string             `json:"buildID"`
+	Commit       string             `json:"commit"`
 	BuildURL     string             `json:"buildURL"`
 	XUnitXML     string             `json:"xunitXML"`
 }
 
 // publish searches for sponge_log.xml files and publishes them to Pub/Sub.
 // publish logs a message and returns false if there was an error.
-func publish(projectID, topicID, repo, installationID, logsDir string) (ok bool) {
+func publish(projectID, topicID, repo, installationID, commit, logsDir, serviceAccount string) (ok bool) {
 	ctx := context.Background()
 
-	gfileDir := os.Getenv("KOKORO_GFILE_DIR")
-	if gfileDir == "" {
-		log.Println("KOKORO_GFILE_DIR not set, unable to get service account")
-		return false
+	if serviceAccount == "" {
+		gfileDir := os.Getenv("KOKORO_GFILE_DIR")
+		if gfileDir == "" {
+			log.Println("KOKORO_GFILE_DIR not set, unable to get service account")
+			return false
+		}
+		serviceAccount = filepath.Join(gfileDir, "kokoro-trampoline.service-account.json")
 	}
-	saPath := filepath.Join(gfileDir, "kokoro-trampoline.service-account.json")
 
-	client, err := pubsub.NewClient(ctx, projectID, option.WithCredentialsFile(saPath))
+	client, err := pubsub.NewClient(ctx, projectID, option.WithCredentialsFile(serviceAccount))
 	if err != nil {
 		log.Printf("Unable to connect to Pub/Sub: %v", err)
 		return false
@@ -115,8 +119,18 @@ See https://github.com/apps/build-cop-bot/.`, repo)
 		}
 	}
 
+	if commit == "" {
+		commit = os.Getenv("KOKORO_GIT_COMMIT")
+		if commit == "" {
+			log.Printf(`Unable to detect commit hash (expected the KOKORO_GIT_COMMIT env var).
+Please set --commit_hash to the latest git commit hash.
+See https://github.com/apps/build-cop-bot/.`)
+			return false
+		}
+	}
+
 	// Handle logs in the current directory.
-	if err := filepath.Walk(logsDir, processLog(ctx, repo, installationID, topic)); err != nil {
+	if err := filepath.Walk(logsDir, processLog(ctx, repo, installationID, commit, topic)); err != nil {
 		log.Printf("Error publishing logs: %v", err)
 		return false
 	}
@@ -127,11 +141,6 @@ See https://github.com/apps/build-cop-bot/.`, repo)
 // detectRepo tries to detect the repo from the environment.
 func detectRepo() string {
 	if github := os.Getenv("KOKORO_GITHUB_COMMIT_URL"); github != "" {
-		parts := strings.Split(github, "/")
-		repo := fmt.Sprintf("%s/%s", parts[3], parts[4])
-		return repo
-	}
-	if github := os.Getenv("KOKORO_GITHUB_COMMIT_URL_google_cloud_go"); github != "" {
 		parts := strings.Split(github, "/")
 		repo := fmt.Sprintf("%s/%s", parts[3], parts[4])
 		return repo
@@ -152,7 +161,7 @@ func detectInstallationID(repo string) string {
 }
 
 // processLog is used to process log files and publish them to Pub/Sub.
-func processLog(ctx context.Context, repo, installationID string, topic *pubsub.Topic) filepath.WalkFunc {
+func processLog(ctx context.Context, repo, installationID, commit string, topic *pubsub.Topic) filepath.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -173,7 +182,7 @@ func processLog(ctx context.Context, repo, installationID string, topic *pubsub.
 			Location:     "us-central1",
 			Installation: githubInstallation{ID: installationID},
 			Repo:         repo,
-			BuildID:      os.Getenv("KOKORO_GIT_COMMIT"),
+			Commit:       commit,
 			BuildURL:     buildURL,
 			XUnitXML:     enc,
 		}
