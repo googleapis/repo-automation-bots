@@ -144,6 +144,7 @@ function getPR(mergeable: boolean, mergeableState: string, state: string) {
       state,
       mergeable,
       mergeable_state: mergeableState,
+      user: { login: 'login' },
     });
 }
 
