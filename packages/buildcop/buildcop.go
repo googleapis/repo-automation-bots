@@ -47,12 +47,13 @@ func main() {
 	topicID := flag.String("topic", "passthrough", "Pub/Sub topic to publish to. Defaults to passthrough.")
 	logsDir := flag.String("logs_dir", ".", "The directory to look for logs in. Defaults to current directory.")
 	commit := flag.String("commit_hash", "", "Long form commit hash this build is being run for. Defaults to the KOKORO_GIT_COMMIT environment variable.")
+	serviceAccount := flag.String("service_account", "", "Path to service account to use instead of Trampoline default.")
 
 	flag.Parse()
 
 	log.Println("Sending logs to Build Cop Bot...")
 	log.Println("See https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop.")
-	if ok := publish(*projectID, *topicID, *repo, *installationID, *commit, *logsDir); !ok {
+	if ok := publish(*projectID, *topicID, *repo, *installationID, *commit, *logsDir, *serviceAccount); !ok {
 		os.Exit(1)
 	}
 	log.Println("Done!")
@@ -75,17 +76,19 @@ type message struct {
 
 // publish searches for sponge_log.xml files and publishes them to Pub/Sub.
 // publish logs a message and returns false if there was an error.
-func publish(projectID, topicID, repo, installationID, commit, logsDir string) (ok bool) {
+func publish(projectID, topicID, repo, installationID, commit, logsDir, serviceAccount string) (ok bool) {
 	ctx := context.Background()
 
-	gfileDir := os.Getenv("KOKORO_GFILE_DIR")
-	if gfileDir == "" {
-		log.Println("KOKORO_GFILE_DIR not set, unable to get service account")
-		return false
+	if serviceAccount == "" {
+		gfileDir := os.Getenv("KOKORO_GFILE_DIR")
+		if gfileDir == "" {
+			log.Println("KOKORO_GFILE_DIR not set, unable to get service account")
+			return false
+		}
+		serviceAccount = filepath.Join(gfileDir, "kokoro-trampoline.service-account.json")
 	}
-	saPath := filepath.Join(gfileDir, "kokoro-trampoline.service-account.json")
 
-	client, err := pubsub.NewClient(ctx, projectID, option.WithCredentialsFile(saPath))
+	client, err := pubsub.NewClient(ctx, projectID, option.WithCredentialsFile(serviceAccount))
 	if err != nil {
 		log.Printf("Unable to connect to Pub/Sub: %v", err)
 		return false

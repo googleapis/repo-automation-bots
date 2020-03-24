@@ -75,6 +75,12 @@ Issues or feature requests? Please
         working directory for log files (`"."`).
         If your logs are in a different directory, set `-logs_dir` to the
         absolute path to that directory. The directory is recursively searched.
+      * **`-service_account`**: By default, the `buildcop` binary looks in the
+        `KOKORO_GFILE_DIR` for the Trampoline service account. If that is not
+        available (either you're running locally or not using Trampoline), you
+        can set `-service_account` to the path to a service account that has
+        Pub/Sub publish access to the `repo-automation-bots` topic
+        `passthrough`.
 1. Trigger a build and check the logs to make sure everything is working.
 
 ## Contributing
