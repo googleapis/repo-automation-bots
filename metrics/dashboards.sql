@@ -152,7 +152,8 @@ UNION ALL
 Measures PRs that have been closed by the gcf-merge-on-green bot, i.e., that have been automerged.
 Using the 4.3 estimate above to get an estimate of how much time is being saved.
 */
-SELECT * FROM (SELECT COUNT(id) as prs, month_start, 4.3 as minutes, 'landed-prs' as type FROM (
+
+SELECT * FROM (SELECT COUNT(id) as prs, month_start, 4.3 as minutes, 'merged-by-mog' as type FROM (
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id, JSON_EXTRACT(payload, '$.pull_request.merged_at') as merged
   FROM `githubarchive.day.20*`
   WHERE
