@@ -225,4 +225,43 @@ describe('auto-label', () => {
       ghRequests.done();
     });
   });
+
+  it('responds to backfill label event, backfilling issues with labels', async () => {
+    const payload = require(resolve(fixturesPath, './events/issue-labeled'));
+
+    const ghRequests = nock('https://api.github.com')
+      .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
+      .reply(200, [
+        {
+          id: 1811802233,
+          node_id: 'MDU6TGFiZWwxODExODAyMjMz',
+          url:
+            'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
+          name: 'myGitHubLabel',
+          color: 'C9FFE5',
+          default: false,
+          description: null,
+        },
+      ])
+      .get('/repos/testOwner/testRepo/issues/5/labels')
+      .reply(200, [
+        {
+          id: 1811802233,
+          node_id: 'MDU6TGFiZWwxODExODAyMjMz',
+          url:
+            'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
+          name: 'myGitHubLabel',
+          color: 'C9FFE5',
+          default: false,
+          description: null,
+        },
+      ]);
+
+    handler.callStorage = async () => {
+      return downloadedFile;
+    };
+
+    await probot.receive({ name: 'issues.labeled', payload, id: 'abc123' });
+    ghRequests.done();
+  });
 });
