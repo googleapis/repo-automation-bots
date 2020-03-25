@@ -140,12 +140,22 @@ See https://github.com/apps/build-cop-bot/.`)
 
 // detectRepo tries to detect the repo from the environment.
 func detectRepo() string {
-	if github := os.Getenv("KOKORO_GITHUB_COMMIT_URL"); github != "" {
-		parts := strings.Split(github, "/")
-		repo := fmt.Sprintf("%s/%s", parts[3], parts[4])
-		return repo
+	githubURL := os.Getenv("KOKORO_GITHUB_COMMIT_URL")
+	if githubURL == "" {
+		githubURL = os.Getenv("KOKORO_GITHUB_PULL_REQUEST_URL")
+		if githubURL != "" {
+			log.Printf("Warning! Running on a PR. Double check how you call buildocp before merging.")
+		}
 	}
-	return ""
+	if githubURL == "" {
+		return ""
+	}
+	parts := strings.Split(githubURL, "/")
+	if len(parts) < 5 {
+		return ""
+	}
+	repo := fmt.Sprintf("%s/%s", parts[3], parts[4])
+	return repo
 }
 
 // detectInstallationID tries to detect the GitHub installation ID based on the
