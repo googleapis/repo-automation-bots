@@ -196,6 +196,14 @@ function handler(app: Application) {
         ]);
       }
     }
+
+    // remove the label
+    await context.github.issues.removeLabel({
+      name: BACKFILL_LABEL,
+      issue_number: context.payload.issue.number,
+      owner,
+      repo,
+    });
   });
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
