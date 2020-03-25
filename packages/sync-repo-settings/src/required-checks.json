@@ -104,6 +104,8 @@
     ],
     "ignoredRepos": [
       "GoogleCloudPlatform/getting-started-nodejs",
+      "GoogleCloudPlatform/nodejs-docs-samples",
+      "GoogleCloudPlatform/nodejs-getting-started",
       "googleapis/cloud-profiler-nodejs",
       "googleapis/repo-automation-bots",
       "googleapis/google-cloud-node"
