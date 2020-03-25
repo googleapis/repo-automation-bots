@@ -153,13 +153,13 @@ handler.checkIfElementIsInArray = function checkIfElementIsInArray(
 const BACKFILL_LABEL = 'auto-label:backfill';
 function handler(app: Application) {
 
-  app.on('pull_request.labeled', async context => {
+  app.on(['pull_request.labeled'], async context => {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     // if missing the label, skip
     if (
       !context.payload.pull_request.labels.some(
-        label => label.name === BACKFILL_LABEL
+        (label: {name: string}) => label.name === BACKFILL_LABEL
       )
     ) {
       app.log.info(
@@ -173,9 +173,8 @@ function handler(app: Application) {
     const issues = context.github.issues.listForRepo.endpoint.merge({ owner, repo });
     for await (const response of context.github.paginate.iterator(issues)) {
       const issue = response.data;
-    })
-  )
- 
+      console.info(issue.number);
+    }
   });
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
