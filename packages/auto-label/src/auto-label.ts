@@ -191,7 +191,7 @@ function handler(app: Application) {
     for await (const response of context.github.paginate.iterator(issues)) {
       const issue = response.data;
       if (!issue.pull_request) {
-        handler.addLabels(context.github, owner, repo, issue.number, [
+        await handler.addLabels(context.github, owner, repo, issue.number, [
           `${objectInJsonArray.github_label}`,
         ]);
       }
@@ -258,7 +258,7 @@ function handler(app: Application) {
         console.log('This label already exists on this issue');
         return;
       } else {
-        handler.addLabels(context.github, owner, repo, issueId, [
+        await handler.addLabels(context.github, owner, repo, issueId, [
           `${objectInJsonArray.github_label}`,
         ]);
       }
