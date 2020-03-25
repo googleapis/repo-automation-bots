@@ -152,14 +152,13 @@ handler.checkIfElementIsInArray = function checkIfElementIsInArray(
 
 const BACKFILL_LABEL = 'auto-label:backfill';
 function handler(app: Application) {
-
   app.on(['pull_request.labeled'], async context => {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     // if missing the label, skip
     if (
       !context.payload.pull_request.labels.some(
-        (label: {name: string}) => label.name === BACKFILL_LABEL
+        (label: { name: string }) => label.name === BACKFILL_LABEL
       )
     ) {
       app.log.info(
@@ -170,10 +169,32 @@ function handler(app: Application) {
       return;
     }
 
-    const issues = context.github.issues.listForRepo.endpoint.merge({ owner, repo });
+    const jsonData = await handler.callStorage(
+      'devrel-prod-settings',
+      'public_repos.json'
+    );
+    const jsonArray = await handler.checkIfFileIsEmpty(jsonData);
+    const objectInJsonArray = handler.checkIfElementIsInArray(
+      jsonArray,
+      owner,
+      repo
+    );
+    if (objectInJsonArray === null || objectInJsonArray === undefined) {
+      console.log('There was no match for the repo name: ' + repo);
+      return;
+    }
+
+    const issues = context.github.issues.listForRepo.endpoint.merge({
+      owner,
+      repo,
+    });
     for await (const response of context.github.paginate.iterator(issues)) {
       const issue = response.data;
-      console.info(issue.number);
+      if (!issue.pull_request) {
+        handler.addLabels(context.github, owner, repo, issue.number, [
+          `${objectInJsonArray.github_label}`,
+        ]);
+      }
     }
   });
 
