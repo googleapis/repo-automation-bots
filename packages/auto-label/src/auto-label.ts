@@ -162,7 +162,7 @@ function handler(app: Application) {
       )
     ) {
       app.log.info(
-        `ignoring non-backfill label action (${context.payload.pull_request.labels.join(
+        `ignoring non-backfill label action (${context.payload.issue.labels.join(
           ', '
         )})`
       );

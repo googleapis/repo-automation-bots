@@ -255,7 +255,15 @@ describe('auto-label', () => {
           default: false,
           description: null,
         },
-      ]);
+      ])
+      .get('/repos/testOwner/testRepo/issues')
+      .reply(200, [
+        {
+          number: 1,
+        },
+      ])
+      .delete('/repos/testOwner/testRepo/issues/1/labels/auto-label:backfill')
+      .reply(200);
 
     handler.callStorage = async () => {
       return downloadedFile;
