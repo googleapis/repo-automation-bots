@@ -1,0 +1,7 @@
+__snapshots__/
+**/node_modules
+**/.coverage
+build/
+docs/
+
+

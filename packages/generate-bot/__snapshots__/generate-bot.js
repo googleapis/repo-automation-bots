@@ -835,7 +835,7 @@ describe('helloWorld', () => {
 
   });
 });{
-  "extends": "gts/tsconfig-google",
+  "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
     "esModuleInterop": true,
     "rootDir": ".",
