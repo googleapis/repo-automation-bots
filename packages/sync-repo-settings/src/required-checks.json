@@ -95,7 +95,6 @@
       "ci/kokoro: System test",
       "docs",
       "lint",
-      "test (8)",
       "test (10)",
       "test (12)",
       "test (13)",
@@ -103,7 +102,6 @@
       "windows"
     ],
     "ignoredRepos": [
-      "GoogleCloudPlatform/getting-started-nodejs",
       "GoogleCloudPlatform/nodejs-docs-samples",
       "GoogleCloudPlatform/nodejs-getting-started",
       "googleapis/cloud-profiler-nodejs",
