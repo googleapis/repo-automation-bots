@@ -214,7 +214,7 @@ function execAsync(
   cmd: string,
   args: string[],
   cwd: string,
-  env: { [key: string]: string }
+  env: { [key: string]: string|undefined }
 ) {
   return new Promise((resolve, reject) => {
     const subprocess = spawn(cmd, args, {
