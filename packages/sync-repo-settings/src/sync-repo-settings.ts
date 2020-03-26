@@ -75,9 +75,26 @@ function handler(app: Application) {
     }
 
     // update each settings section
-    await handler.updateRepoOptions(r, context);
-    await handler.updateMasterBranchProtection(r, context);
-    await handler.updateRepoTeams(r, context);
+    try {
+      await handler.updateRepoOptions(r, context);
+    } catch (err) {
+      console.log(`Error updating repo options for ${repo}`);
+      console.log(err);
+    }
+
+    try {
+      await handler.updateMasterBranchProtection(r, context);
+    } catch (err) {
+      console.log(`Error updating master branch protection for ${repo}`);
+      console.log(err);
+    }
+
+    try {
+      await handler.updateRepoTeams(r, context);
+    } catch (err) {
+      console.log(`Error updating repo in org for ${repo}`);
+      console.log(err);
+    }
   });
 }
 
