@@ -13,7 +13,6 @@
 // limitations under the License.
 //
 
-declare module "promise-events" {
-  class EventEmitter {
-  }
+declare module 'promise-events' {
+  class EventEmitter {}
 }
