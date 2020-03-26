@@ -38,6 +38,7 @@ interface PullRequest {
   state: string;
   mergeable: boolean;
   mergeable_state: string;
+  user: { login: string };
 }
 
 interface Merge {
@@ -109,6 +110,9 @@ mergeOnGreen.getPR = async function getPR(
       state: '',
       mergeable: false,
       mergeable_state: '',
+      user: {
+        login: '',
+      },
     };
   }
 };
@@ -357,9 +361,6 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
   console.info(
     `fetched statusesForRef in ${Date.now() - start}ms ${owner}/${repo}/${pr}`
   );
-  checkStatus.forEach(element => {
-    console.log(element);
-  });
 
   let mergeable = true;
   let checkRuns;
@@ -475,6 +476,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
   owner: string,
   repo: string,
   pr: number,
+  author: string,
   github: GitHubAPI
 ): Promise<boolean> {
   const start = Date.now();
@@ -493,7 +495,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
   );
   if (reviewsCompleted.length !== 0) {
     reviewsCompleted.forEach(review => {
-      if (review.state !== 'APPROVED') {
+      if (review.state !== 'APPROVED' && review.user.login !== author) {
         console.log(
           `One of your reviewers did not approve the PR ${owner}/${repo}/${pr} state = ${review.state}`
         );
@@ -631,14 +633,14 @@ export async function mergeOnGreen(
       owner,
       repo,
       pr,
-      `Your PR doesn't have any required checks. Please add required checks to your master branch and then re-add the ${labelName} label.`,
+      `Your PR doesn't have any required checks. Please add required checks to your master branch and then re-add the ${labelName} label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.`,
       github
     );
     return true;
   }
 
   const [checkReview, checkStatus] = await Promise.all([
-    mergeOnGreen.checkReviews(owner, repo, pr, github),
+    mergeOnGreen.checkReviews(owner, repo, pr, prInfo.user.login, github),
     mergeOnGreen.statusesForRef(
       owner,
       repo,
@@ -649,7 +651,7 @@ export async function mergeOnGreen(
     ),
   ]);
 
-  const failedMesssage = `Your PR was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. See required reviews for your repo here: https://github.com/googleapis/sloth/blob/master/required-checks.json`;
+  const failedMesssage = `Merge-on-green attempted to merge your PR for 6 hours, but it was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. Learn more about your required status checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks. You can remove and reapply the label to re-run the bot.`;
   const conflictMessage =
     'Your PR has conflicts that you need to resolve before merge-on-green can automerge';
   const continueMesssage =

@@ -16,6 +16,8 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"log"
 	"os"
 	"testing"
 
@@ -23,6 +25,8 @@ import (
 )
 
 func TestDetectRepo(t *testing.T) {
+	log.SetOutput(ioutil.Discard)
+	defer log.SetOutput(os.Stderr)
 	tests := []struct {
 		envVar   string
 		envValue string
@@ -34,9 +38,14 @@ func TestDetectRepo(t *testing.T) {
 			want:     "GoogleCloudPlatform/golang-samples",
 		},
 		{
-			envVar:   "KOKORO_GITHUB_COMMIT_URL_google_cloud_go",
-			envValue: "https://github.com/googleapis/google-cloud-go/commit/1234",
-			want:     "googleapis/google-cloud-go",
+			envVar:   "KOKORO_GITHUB_PULL_REQUEST_URL",
+			envValue: "https://github.com/GoogleCloudPlatform/golang-samples/pull/1312",
+			want:     "GoogleCloudPlatform/golang-samples",
+		},
+		{
+			envVar:   "KOKORO_GITHUB_COMMIT_URL",
+			envValue: "https://github.com/GoogleCloudPlatform",
+			want:     "",
 		},
 		{
 			envVar:   "foo",
@@ -89,7 +98,7 @@ func TestJSONMarshalMessage(t *testing.T) {
 		Location:     "us-central1",
 		Installation: githubInstallation{ID: "123"},
 		Repo:         "MyOrg/test-repo",
-		BuildID:      "456",
+		Commit:       "456",
 		BuildURL:     "example.com",
 		XUnitXML:     "<xml></xml>",
 	}
