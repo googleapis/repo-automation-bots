@@ -18,7 +18,6 @@
 // check whether type bindings are already published.
 
 import { Application, Context } from 'probot';
-import { execSync } from 'child_process';
 import fetch from 'node-fetch';
 import * as tar from 'tar';
 import * as uuid from 'uuid';
@@ -167,45 +166,70 @@ handler.publish = async (npmRc: string, pkgPath: string, app: Application) => {
     // We make sure that ./node_modules/.bin is in the exec path.
     const npmPath = resolve(pkgPath, './node_modules/.bin');
     const PATH = process.env.PATH ? `${process.env.PATH}:${npmPath}}` : npmPath;
-    let out = execSync(`npm i --`, {
-      cwd: pkgPath,
-      env: Object.assign({}, process.env, {
+    await execAsync(
+      'npm',
+      ['i'],
+      pkgPath,
+      Object.assign({}, process.env, {
         PATH,
         // npm does install dev dependencies needed to publish
         // unless we override the NODE_ENV:
         NODE_ENV: 'development',
-      }),
-    });
-    app.log.info(out.toString('utf8'));
+      })
+    );
     try {
       // Prepare does not run as a side effect of `npm i`, due to
       // permission errors in cloud functions, so we run it
       // explicitly:
       app.log.info(`compiling ${pkgPath}`);
-      out = execSync(`npm run prepare`, {
-        cwd: pkgPath,
-        env: Object.assign({}, process.env, {
+      await execAsync(
+        'npm',
+        ['run', 'prepare'],
+        pkgPath,
+        Object.assign({}, process.env, {
           PATH,
           NODE_ENV: 'development',
-        }),
-      });
-      app.log.info(out.toString('utf8'));
+        })
+      );
     } catch (err) {
       app.log.warn(err.message);
     }
     app.log.info(`publishing ${pkgPath}`);
-    out = execSync(`npm publish --access=public`, {
-      cwd: pkgPath,
-      env: Object.assign({}, process.env, {
+    await execAsync(
+      'npm',
+      ['publish', '--access=public'],
+      pkgPath,
+      Object.assign({}, process.env, {
         PATH,
         NODE_ENV: 'development',
-      }),
-    });
-    app.log.info(out.toString('utf8'));
+      })
+    );
   } catch (err) {
     app.log.error(err);
   }
 };
+
+import { spawn } from 'child_process';
+function execAsync(
+  cmd: string,
+  args: string[],
+  cwd: string,
+  env: { [key: string]: string }
+) {
+  return new Promise((resolve, reject) => {
+    const subprocess = spawn(cmd, args, {
+      env,
+      cwd,
+      stdio: 'inherit',
+    });
+    subprocess.on('close', () => {
+      return resolve();
+    });
+    subprocess.on('error', err => {
+      return reject(err);
+    });
+  });
+}
 
 handler.generateNpmRc = (publishConfig: PublishConfig): string => {
   const npmRc = `//${publishConfig.registry}/:_authToken=${publishConfig.token}
