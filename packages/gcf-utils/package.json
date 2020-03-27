@@ -22,7 +22,7 @@
     "@google-cloud/kms": "^1.6.3",
     "@google-cloud/storage": "^4.0.0",
     "@octokit/plugin-enterprise-compatibility": "1.2.2",
-    "gaxios": "^2.1.0",
+    "gaxios": "^3.0.0",
     "probot": "^9.9.4",
     "tmp": "^0.1.0",
     "yargs": "^15.0.0"
