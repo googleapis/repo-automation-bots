@@ -33,7 +33,7 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 // TODO: stop disabling warn once the following upstream patch is landed:
 // https://github.com/probot/probot/pull/926
-global.console.warn = () => { };
+global.console.warn = () => {};
 
 describe('ReleasePleaseBot', () => {
   let probot: Probot;
