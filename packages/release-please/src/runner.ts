@@ -18,9 +18,9 @@ import { GitHubRelease } from 'release-please/build/src/github-release';
 
 export class Runner {
   static runner = (pr: ReleasePR) => {
-    pr.run();
+    await pr.run();
   };
   static releaser = (release: GitHubRelease) => {
-    release.createRelease();
+    await release.createRelease();
   };
 }
