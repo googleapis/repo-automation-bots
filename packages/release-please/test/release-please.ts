@@ -33,7 +33,7 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 // TODO: stop disabling warn once the following upstream patch is landed:
 // https://github.com/probot/probot/pull/926
-global.console.warn = () => {};
+global.console.warn = () => { };
 
 describe('ReleasePleaseBot', () => {
   let probot: Probot;
@@ -64,7 +64,7 @@ describe('ReleasePleaseBot', () => {
 
     it('should build a release PR', async () => {
       let executed = false;
-      Runner.runner = (pr: ReleasePR) => {
+      Runner.runner = async (pr: ReleasePR) => {
         assert(pr instanceof JavaYoshi);
         executed = true;
       };
@@ -85,11 +85,11 @@ describe('ReleasePleaseBot', () => {
     it('should handle GitHub releases, if configured', async () => {
       let runnerExecuted = false;
       let releaserExecuted = false;
-      Runner.runner = (pr: ReleasePR) => {
+      Runner.runner = async (pr: ReleasePR) => {
         assert(pr instanceof JavaYoshi);
         runnerExecuted = true;
       };
-      Runner.releaser = (pr: GitHubRelease) => {
+      Runner.releaser = async (pr: GitHubRelease) => {
         assert(pr instanceof GitHubRelease);
         releaserExecuted = true;
       };
@@ -109,7 +109,7 @@ describe('ReleasePleaseBot', () => {
     });
 
     it('should ignore if the branch is the configured primary branch', async () => {
-      Runner.runner = (pr: ReleasePR) => {
+      Runner.runner = async (pr: ReleasePR) => {
         fail('should not be running a release');
       };
       const config = fs.readFileSync(
@@ -127,7 +127,7 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow overriding the release strategy from configuration', async () => {
       let executed = false;
-      Runner.runner = (pr: ReleasePR) => {
+      Runner.runner = async (pr: ReleasePR) => {
         assert(pr instanceof Ruby);
         executed = true;
       };
@@ -147,7 +147,7 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow overriding the package-name from configuration', async () => {
       let executed = false;
-      Runner.runner = (pr: ReleasePR) => {
+      Runner.runner = async (pr: ReleasePR) => {
         assert.deepStrictEqual(pr.packageName, '@google-cloud/foo');
         executed = true;
       };
@@ -167,7 +167,7 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow overriding the release tags from configuration', async () => {
       let executed = false;
-      Runner.runner = (pr: ReleasePR) => {
+      Runner.runner = async (pr: ReleasePR) => {
         assert.deepStrictEqual(pr.labels, ['foo', 'bar']);
         executed = true;
       };
@@ -186,7 +186,7 @@ describe('ReleasePleaseBot', () => {
     });
 
     it('should ignore webhook if not configured', async () => {
-      Runner.runner = (pr: ReleasePR) => {
+      Runner.runner = async (pr: ReleasePR) => {
         fail('should not be running a release');
       };
       const requests = nock('https://api.github.com')
@@ -206,7 +206,7 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow an empty config file with the defaults', async () => {
       let executed = false;
-      Runner.runner = (pr: ReleasePR) => {
+      Runner.runner = async (pr: ReleasePR) => {
         assert(pr instanceof JavaYoshi);
         executed = true;
       };
@@ -223,7 +223,7 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow configuring minor bump for breaking change pre 1.0', async () => {
       let executed = false;
-      Runner.runner = (pr: ReleasePR) => {
+      Runner.runner = async (pr: ReleasePR) => {
         assert(pr instanceof JavaYoshi);
         assert(pr.bumpMinorPreMajor);
         executed = true;
@@ -251,7 +251,7 @@ describe('ReleasePleaseBot', () => {
     });
 
     it('should ignore the webhook', async () => {
-      Runner.runner = (pr: ReleasePR) => {
+      Runner.runner = async (pr: ReleasePR) => {
         fail('should not be running a release');
       };
       const config = fs.readFileSync(
@@ -269,7 +269,7 @@ describe('ReleasePleaseBot', () => {
 
     it('should create the PR if the branch is the configured primary branch', async () => {
       let executed = false;
-      Runner.runner = (pr: ReleasePR) => {
+      Runner.runner = async (pr: ReleasePR) => {
         assert(pr instanceof JavaYoshi);
         executed = true;
       };
@@ -297,7 +297,7 @@ describe('ReleasePleaseBot', () => {
 
     it('should try to create a snapshot', async () => {
       let executed = false;
-      Runner.runner = (pr: ReleasePR) => {
+      Runner.runner = async (pr: ReleasePR) => {
         assert(pr instanceof Ruby);
         executed = true;
       };
@@ -328,7 +328,7 @@ describe('ReleasePleaseBot', () => {
     });
 
     it('should be ignored', async () => {
-      Runner.runner = (pr: ReleasePR) => {
+      Runner.runner = async (pr: ReleasePR) => {
         fail('should not be running a release');
       };
       await probot.receive({
@@ -345,7 +345,7 @@ describe('ReleasePleaseBot', () => {
     it('should try to create a release', async () => {
       payload = require(resolve(fixturesPath, './pull_request_labeled'));
       let executed = false;
-      Runner.runner = (pr: ReleasePR) => {
+      Runner.runner = async (pr: ReleasePR) => {
         assert(pr instanceof JavaYoshi);
         executed = true;
       };
@@ -373,7 +373,7 @@ describe('ReleasePleaseBot', () => {
 
     it('should ignore other labels', async () => {
       payload = require(resolve(fixturesPath, './pull_request_labeled_other'));
-      Runner.runner = (pr: ReleasePR) => {
+      Runner.runner = async (pr: ReleasePR) => {
         fail('should not be running a release');
       };
 
