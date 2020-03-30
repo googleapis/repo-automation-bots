@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO: fix these imports when release-please exports types from the root
-import {ReleasePR} from 'release-please/build/src/release-pr';
-import {GitHubRelease} from 'release-please/build/src/github-release';
-
-export class Runner {
-  static runner = async (pr: ReleasePR) => {
-    await pr.run();
-  };
-  static releaser = async (release: GitHubRelease) => {
-    await release.createRelease();
-  };
+module.exports = {
+  ...require('gts/.prettierrc.json')
 }
