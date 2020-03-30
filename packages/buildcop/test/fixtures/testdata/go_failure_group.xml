@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+	<testsuite tests="18" failures="18" time="4.364" name="github.com/GoogleCloudPlatform/golang-samples/bigquery/snippets/querying">
+		<properties>
+			<property name="go.version" value="go1.13.1"></property>
+		</properties>
+		<testcase classname="querying" name="TestQueries" time="0.000">
+			<failure message="Failed" type=""></failure>
+		</testcase>
+		<testcase classname="querying" name="TestQueries/group" time="0.000">
+			<failure message="Failed" type=""></failure>
+		</testcase>
+		<testcase classname="querying" name="TestQueries/group/queryBasic" time="0.000">
+			<failure message="Failed" type=""></failure>
+		</testcase>
+		<testcase classname="querying" name="TestQueries/group/queryBatch" time="0.000">
+			<failure message="Failed" type="">panic: runtime error: invalid memory address or nil pointer dereference&#xA;/usr/local/go/src/testing/testing.go:874 +0x3a3&#xA;/usr/local/go/src/runtime/panic.go:679 +0x1b2&#xA;/go/pkg/mod/cloud.google.com/go/bigquery@v1.3.0/iterator.go:106 +0x37&#xA;/tmpfs/src/github/golang-samples/bigquery/snippets/querying/bigquery_query_legacy_large_results.go:59 +0x419&#xA;/tmpfs/src/github/golang-samples/bigquery/snippets/querying/integration_test.go:90 +0xa5&#xA;/usr/local/go/src/testing/testing.go:909 +0xc9&#xA;/usr/local/go/src/testing/testing.go:960 +0x350</failure>
+		</testcase>
+		<testcase classname="querying" name="TestQueries/group/queryDisableCache" time="0.000">
+			<failure message="Failed" type=""></failure>
+		</testcase>
+		<testcase classname="querying" name="TestQueries/group/queryDryRun" time="0.000">
+			<failure message="Failed" type=""></failure>
+		</testcase>
+		<testcase classname="querying" name="TestQueries/group/queryLegacy" time="0.000">
+			<failure message="Failed" type=""></failure>
+		</testcase>
+	</testsuite>
+</testsuites>
