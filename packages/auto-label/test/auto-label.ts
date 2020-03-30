@@ -225,4 +225,25 @@ describe('auto-label', () => {
       ghRequests.done();
     });
   });
+
+  it('responds to backfill label event, backfilling issues with labels', async () => {
+    const payload = require(resolve(fixturesPath, './events/issue-labeled'));
+
+    const ghRequests = nock('https://api.github.com')
+      .get('/repos/testOwner/testRepo/issues')
+      .reply(200, [
+        {
+          number: 1,
+        },
+      ])
+      .delete('/repos/testOwner/testRepo/issues/1/labels/auto-label:backfill')
+      .reply(200);
+
+    handler.callStorage = async () => {
+      return downloadedFile;
+    };
+
+    await probot.receive({ name: 'issues.labeled', payload, id: 'abc123' });
+    ghRequests.done();
+  });
 });
