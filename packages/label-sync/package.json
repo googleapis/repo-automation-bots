@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^4.3.0",
-    "gaxios": "^2.1.0",
+    "gaxios": "^3.0.0",
     "gcf-utils": "1.6.2"
   },
   "devDependencies": {
