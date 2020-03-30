@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "gaxios": "^3.0.0",
-    "gcf-utils": "1.6.1"
+    "gcf-utils": "1.6.2"
   },
   "devDependencies": {
     "@types/bunyan": "^1.8.6",
