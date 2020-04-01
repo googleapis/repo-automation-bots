@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createProbot, Probot, ApplicationFunction, Options } from 'probot';
-import { Storage } from '@google-cloud/storage';
+import {createProbot, Probot, ApplicationFunction, Options} from 'probot';
+import {Storage} from '@google-cloud/storage';
 import * as KMS from '@google-cloud/kms';
-import { readFileSync } from 'fs';
-import { request } from 'gaxios';
+import {readFileSync} from 'fs';
+import {request} from 'gaxios';
 import * as express from 'express';
 
 interface Repos {
@@ -30,7 +30,7 @@ interface Repos {
 
 interface Scheduled {
   repo?: string;
-  message?: { [key: string]: string };
+  message?: {[key: string]: string};
 }
 
 export class GCFBootstrapper {
@@ -60,10 +60,7 @@ export class GCFBootstrapper {
     };
 
     // Downloads the file
-    await storage
-      .bucket(bucketName)
-      .file(srcFilename)
-      .download(options);
+    await storage.bucket(bucketName).file(srcFilename).download(options);
 
     const contentsBuffer = readFileSync(destFileName);
     const name = kmsclient.cryptoKeyPath(
@@ -116,12 +113,12 @@ export class GCFBootstrapper {
           }
           response.send({
             statusCode: 200,
-            body: JSON.stringify({ message: 'Executed' }),
+            body: JSON.stringify({message: 'Executed'}),
           });
         } catch (err) {
           response.send({
             statusCode: 500,
-            body: JSON.stringify({ message: err }),
+            body: JSON.stringify({message: err}),
           });
         }
       } else {
@@ -151,8 +148,8 @@ export class GCFBootstrapper {
       // Job should be run on all managed repositories:
       const url =
         'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
-      const res = await request<Repos>({ url });
-      const { repos } = res.data;
+      const res = await request<Repos>({url});
+      const {repos} = res.data;
       // We process WORK_SIZE repos in parallel:
       const WORK_SIZE = 3;
       while (repos.length) {

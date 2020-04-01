@@ -12,18 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Application } from 'probot';
+import {Application} from 'probot';
 
 // TODO: fix these imports when release-please exports types from the root
 // See https://github.com/googleapis/release-please/issues/249
-import { ReleaseType, BuildOptions } from 'release-please/build/src/release-pr';
-import { ReleasePRFactory } from 'release-please/build/src/release-pr-factory';
+import {ReleaseType, BuildOptions} from 'release-please/build/src/release-pr';
+import {ReleasePRFactory} from 'release-please/build/src/release-pr-factory';
 import {
   GitHubRelease,
   GitHubReleaseOptions,
 } from 'release-please/build/src/github-release';
-import { Runner } from './runner';
-import { GitHubAPI } from 'probot/lib/github';
+import {Runner} from './runner';
+import {GitHubAPI} from 'probot/lib/github';
+import {Octokit} from '@octokit/rest';
+type OctokitType = InstanceType<typeof Octokit>;
 
 interface ConfigurationOptions {
   primaryBranch: string;
@@ -42,7 +44,7 @@ const DEFAULT_CONFIGURATION: ConfigurationOptions = {
 const FORCE_RUN_LABEL = 'release-please:force-run';
 
 function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
-  if (language == null) {
+  if (language === null) {
     throw Error('repository has no detected language');
   }
   switch (language.toLowerCase()) {
@@ -76,7 +78,8 @@ async function createReleasePR(
     repoUrl,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      octokit: github,
+      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+      octokit: (github as any) as OctokitType,
       graphql: github.graphql,
       request: github.request,
     },
@@ -101,7 +104,8 @@ async function createGitHubRelease(
     packageName,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      octokit: github,
+      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+      octokit: (github as any) as OctokitType,
       graphql: github.graphql,
       request: github.request,
     },
