@@ -16,10 +16,10 @@
 import fs from 'fs';
 import path from 'path';
 import * as yargs from 'yargs';
-import { Argv } from 'yargs';
+import {Argv} from 'yargs';
 import * as KMS from '@google-cloud/kms';
-import { Storage, StorageOptions } from '@google-cloud/storage';
-import { Options } from 'probot';
+import {Storage, StorageOptions} from '@google-cloud/storage';
+import {Options} from 'probot';
 import * as tmp from 'tmp';
 
 const argv = yargs.command(
@@ -52,21 +52,25 @@ const argv = yargs.command(
       .option('bot', {
         alias: 'b',
         type: 'string',
+        demand: true,
         description: 'Name of the bot',
       })
       .option('bucket', {
         alias: 'bu',
         type: 'string',
+        demand: true,
         description: 'Name of the Bucket',
       })
       .option('id', {
         alias: 'i',
         type: 'string',
+        demand: true,
         description: 'ID of the GitHub Application',
       })
       .option('secret', {
         alias: 's',
         type: 'string',
+        demand: true,
         description: 'Webhook Secret of the GitHub Application',
       });
   }
@@ -81,38 +85,11 @@ const botname = argv.bot!;
 const webhookSecret = argv.secret;
 const id = Number(argv.id);
 
-if (!project) {
-  console.error('Project name is required');
-  yargs.showHelp();
-  process.exit(1);
-}
-if (!botname) {
-  console.error('Name of the bot is required');
-  yargs.showHelp();
-  process.exit(1);
-}
-if (!webhookSecret) {
-  console.error('Webhook secret is required');
-  yargs.showHelp();
-  process.exit(1);
-}
-if (!id) {
-  console.error('GitHub Application ID is required');
-  yargs.showHelp();
-  process.exit(1);
-}
-if (!bucketName) {
-  console.error('Bucket Name is required');
-  yargs.showHelp();
-  process.exit(1);
-}
-
 let keyContent = '';
 try {
   keyContent = fs.readFileSync(keyfile, 'utf8');
 } catch (e) {
-  console.log(`Error reading file: ${keyfile}`);
-  process.exit(1);
+  throw Error(`Error reading file: ${keyfile}`);
 }
 
 const blob: Options = {
@@ -135,10 +112,10 @@ async function run() {
   const name = kmsclient.cryptoKeyPath(project, location, keyring, botname);
 
   const plaintext = Buffer.from(JSON.stringify(blob), 'utf-8');
-  const [kmsresult] = await kmsclient.encrypt({ name, plaintext });
+  const [kmsresult] = await kmsclient.encrypt({name, plaintext});
   encblob = kmsresult.ciphertext;
 
-  const options = project ? ({ project } as StorageOptions) : undefined;
+  const options = project ? ({project} as StorageOptions) : undefined;
   const storage = new Storage(options);
 
   const tmpobj = tmp.dirSync();
