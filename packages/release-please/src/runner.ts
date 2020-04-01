@@ -17,10 +17,10 @@ import { ReleasePR } from 'release-please/build/src/release-pr';
 import { GitHubRelease } from 'release-please/build/src/github-release';
 
 export class Runner {
-  static runner = (pr: ReleasePR) => {
-    pr.run();
+  static runner = async (pr: ReleasePR) => {
+    await pr.run();
   };
-  static releaser = (release: GitHubRelease) => {
-    release.createRelease();
+  static releaser = async (release: GitHubRelease) => {
+    await release.createRelease();
   };
 }
