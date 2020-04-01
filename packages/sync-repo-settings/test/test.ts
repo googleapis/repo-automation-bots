@@ -55,7 +55,6 @@ function nockUpdateBranchProtection() {
           'ci/kokoro: System test',
           'docs',
           'lint',
-          'test (8)',
           'test (10)',
           'test (12)',
           'test (13)',
