@@ -181,15 +181,7 @@ buildcop.deduplicateIssues = async (
     modified = true;
     // All of the issues will be closed except for the first one. So, sort by
     // flakiness and issue number.
-    issues.sort((a, b) => {
-      if (buildcop.isFlaky(a) && !buildcop.isFlaky(b)) {
-        return -1;
-      }
-      if (!buildcop.isFlaky(a) && buildcop.isFlaky(b)) {
-        return 1;
-      }
-      return a.number - b.number;
-    });
+    issues.sort(buildcop.issueComparator);
     // Keep the first issue, close the others.
     const issue = issues.shift();
     for (const dup of issues) {
@@ -231,7 +223,8 @@ buildcop.openIssues = async (
     const matchingIssues = issues.filter(
       issue => issue.title === buildcop.formatTestCase(failure)
     );
-    // Prefer open issues in case there are duplicates.
+    // Prefer open issues in case there are duplicates. There should only be at
+    // most one open issue.
     let existingIssue = matchingIssues.find(issue => issue.state === 'open');
 
     if (
@@ -239,6 +232,7 @@ buildcop.openIssues = async (
       !existingIssue &&
       buildcop.formatTestCase(failure) !== EVERYTHING_FAILED_TITLE
     ) {
+      matchingIssues.sort(buildcop.issueComparator);
       existingIssue = matchingIssues[0];
     }
 
@@ -387,6 +381,19 @@ buildcop.closeIssues = async (
       state: 'closed',
     });
   }
+};
+
+buildcop.issueComparator = (
+  a: Octokit.IssuesListForRepoResponseItem,
+  b: Octokit.IssuesListForRepoResponseItem
+) => {
+  if (buildcop.isFlaky(a) && !buildcop.isFlaky(b)) {
+    return -1;
+  }
+  if (!buildcop.isFlaky(a) && buildcop.isFlaky(b)) {
+    return 1;
+  }
+  return a.number - b.number;
 };
 
 buildcop.isFlaky = (issue: Octokit.IssuesListForRepoResponseItem): boolean => {
