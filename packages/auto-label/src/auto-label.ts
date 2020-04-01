@@ -18,9 +18,7 @@ import { GitHubAPI } from 'probot/lib/github';
 import * as path from 'path';
 
 const fs = require('fs');
-const colorsData = JSON.parse(
-  fs.readFileSync(path.resolve(__dirname, '../../src/colors.json'), 'utf8')
-);
+const colorsData = require('./colors.json');
 
 interface JSONData {
   github_label: string;
