@@ -1,0 +1,154 @@
+{
+  "java": {
+    "enableSquashMerge": true,
+    "enableRebaseMerge": false,
+    "requireUpToDateBranch": false,
+    "requiredStatusChecks": [
+      "Kokoro - Test: Binary Compatibility",
+      "Kokoro - Test: Code Format",
+      "Kokoro - Test: Dependencies",
+      "Kokoro - Test: Integration",
+      "Kokoro - Test: Java 11",
+      "Kokoro - Test: Java 7",
+      "Kokoro - Test: Java 8",
+      "Kokoro - Test: Linkage Monitor",
+      "cla/google"
+    ],
+    "ignoredRepos": [
+      "googleapis/api-common-java",
+      "googleapis/gax-java",
+      "googleapis/google-api-java-client",
+      "googleapis/google-api-java-client-services",
+      "googleapis/google-auth-library-java",
+      "googleapis/google-cloud-java",
+      "googleapis/google-http-java-client",
+      "googleapis/google-oauth-java-client",
+      "googleapis/gapic-generator",
+      "GoogleCloudPlatform/java-docs-samples",
+      "GoogleCloudPlatform/getting-started-java",
+      "googleapis/google-cloud-java"
+    ],
+    "repoOverrides": [
+      {
+        "repo": "googleapis/java-cloud-bom",
+        "requiredStatusChecks": [
+          "Kokoro - Test: BOM Upper Bounds",
+          "Kokoro - Test: Binary Compatibility",
+          "Kokoro - Test: Code Format",
+          "Kokoro - Test: Dependencies",
+          "Kokoro - Test: Integration",
+          "Kokoro - Test: Java 11",
+          "Kokoro - Test: Java 7",
+          "Kokoro - Test: Java 8",
+          "Kokoro - Test: Linkage Monitor",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "googleapis/google-api-java-client-services",
+        "requiredStatusChecks": [
+          "Kokoro - Test: Java 8",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "GoogleCloudPlatform/getting-started-java",
+        "requiredStatusChecks": [
+          "Kokoro CI",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "GoogleCloudPlatform/java-docs-samples",
+        "requiredStatusChecks": [
+          "Kokoro CI - Java 11",
+          "Kokoro CI - Java 8",
+          "cla/google"
+        ]
+      }
+    ]
+  },
+  "python": {
+    "enableSquashMerge": true,
+    "enableRebaseMerge": true,
+    "requireUpToDateBranch": true,
+    "requiredStatusChecks": [
+      "Kokoro",
+      "cla/google"
+    ],
+    "ignoredRepos": [
+      "GoogleCloudPlatform/python-docs-samples",
+      "GoogleCloudPlatform/getting-started-python",
+      "googleapis/gapic-generator-python",
+      "googleapis/releasetool",
+      "googleapis/sample-tester",
+      "googleapis/synthtool",
+      "googleapis/google-cloud-python"
+    ]
+  },
+  "nodejs": {
+    "enableSquashMerge": true,
+    "enableRebaseMerge": true,
+    "requireUpToDateBranch": true,
+    "requiredStatusChecks": [
+      "ci/kokoro: Samples test",
+      "ci/kokoro: System test",
+      "docs",
+      "lint",
+      "test (8)",
+      "test (10)",
+      "test (12)",
+      "test (13)",
+      "cla/google",
+      "windows"
+    ],
+    "ignoredRepos": [
+      "GoogleCloudPlatform/getting-started-nodejs",
+      "googleapis/cloud-profiler-nodejs",
+      "googleapis/repo-automation-bots",
+      "googleapis/google-cloud-node"
+    ],
+    "repoOverrides": [
+      {
+        "repo": "GoogleCloudPlatform/nodejs-docs-samples",
+        "useBranchProtectionRules": true
+      },
+      {
+        "repo": "googleapis/gapic-generator-typescript",
+        "requiredStatusChecks": [
+          "ci/circleci: dlpLibTest",
+          "ci/circleci: kmsLibTest",
+          "ci/circleci: monitoringLibTest",
+          "ci/circleci: showcaseLibTest",
+          "ci/circleci: showcaseTestApplications",
+          "ci/circleci: testGenerator",
+          "ci/circleci: translateLibTest",
+          "ci/circleci: ttsLibTest",
+          "cla/google"
+        ]
+      }
+    ]
+  },
+  "ruby": {
+    "enableSquashMerge": true,
+    "enableRebaseMerge": true,
+    "requireUpToDateBranch": true,
+    "requiredStatusChecks": [
+      "OSx",
+      "Ubuntu",
+      "Windows",
+      "cla/google"
+    ],
+    "ignoredRepos": [
+      "googleapis/discovery-artifact-manager",
+      "googleapis/gax-ruby",
+      "googleapis/google-auth-library-ruby",
+      "googleapis/google-cloud-ruby",
+      "googleapis/ruby-style",
+      "googleapis/signet",
+      "googleapis/gapic-generator-ruby",
+      "GoogleCloudPlatform/ruby-docs-samples",
+      "GoogleCloudPlatform/getting-started-ruby"
+    ]
+  }
+}
