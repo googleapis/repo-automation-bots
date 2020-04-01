@@ -157,6 +157,17 @@ describe('buildcop', () => {
     });
   });
 
+  describe('formatTestCase', () => {
+    it('shortens cloud.google.com/go', () => {
+      const got = formatTestCase({
+        package: 'cloud.google.com/go/pubsub',
+        testCase: 'TestPublish',
+        passed: true,
+      });
+      expect(got).to.equal('pubsub: TestPublish failed');
+    });
+  });
+
   describe('app', () => {
     it('skips when there is no XML and no testsFailed', async () => {
       const payload = formatPayload({

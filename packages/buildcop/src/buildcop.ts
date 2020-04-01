@@ -510,6 +510,7 @@ buildcop.formatTestCase = (failure: TestCase): string => {
     /github\.com\/[^\/]+\/[^\/]+\/(.+)/,
     /com\.google\.cloud\.(.+)/,
     /(.+)\(sponge_log\)/,
+    /cloud\.google\.com\/go\/(.+)/,
   ];
   shorteners.forEach(s => {
     const shorten = failure.package?.match(s);
