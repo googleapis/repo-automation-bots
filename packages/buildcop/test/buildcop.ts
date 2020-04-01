@@ -359,6 +359,43 @@ describe('buildcop', () => {
         requests.done();
       });
 
+      it('does not comment about failure on existing flaky issue', async () => {
+        const input = fs.readFileSync(
+          resolve(fixturesPath, 'testdata', 'one_failed.xml'),
+          'utf8'
+        );
+        const payload = formatPayload({
+          repo: 'tbpg/golang-samples',
+          organization: { login: 'tbpg' },
+          repository: { name: 'golang-samples' },
+          buildID: '123',
+          buildURL: 'http://example.com',
+          xunitXML: input,
+        });
+
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+          )
+          .reply(200, [
+            {
+              title: formatTestCase({
+                package:
+                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+                testCase: 'TestSample',
+              }),
+              number: 16,
+              body: `Failure!`,
+              labels: ['buildcop: flaky'],
+              state: 'open',
+            },
+          ]);
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        requests.done();
+      });
+
       it('handles a testsuite with no test cases', async () => {
         const input = fs.readFileSync(
           resolve(fixturesPath, 'testdata', 'no_tests.xml'),
@@ -411,6 +448,7 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: 'Failure!',
+              labels: ['buildcop: flaky'],
               state: 'closed',
             },
           ])
@@ -624,6 +662,42 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: `status: failed\nbuildID: 123`,
+            },
+          ]);
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        requests.done();
+      });
+
+      it('keeps an issue open for a passing flaky test', async () => {
+        const input = fs.readFileSync(
+          resolve(fixturesPath, 'testdata', 'passed.xml'),
+          'utf8'
+        );
+        const payload = formatPayload({
+          repo: 'tbpg/golang-samples',
+          organization: { login: 'tbpg' },
+          repository: { name: 'golang-samples' },
+          buildID: '123',
+          buildURL: 'http://example.com',
+          xunitXML: input,
+        });
+
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/tbpg/golang-samples/issues?per_page=32&labels=buildcop%3Aissue&state=all'
+          )
+          .reply(200, [
+            {
+              title: formatTestCase({
+                package:
+                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+                testCase: 'TestSample',
+              }),
+              number: 16,
+              body: `Failure!`,
+              labels: ['buildcop: flaky'],
             },
           ]);
 
