@@ -4,19 +4,14 @@
   "license": "Apache-2.0",
   "repository": "googleapis/repo-automation-bots",
   "scripts": {
-    "test": "c8 lerna exec npm test",
-    "lint": "lerna exec npm run lint",
-    "fix": "lerna exec npm run fix",
-    "postinstall": "lerna bootstrap --hoist",
-    "docs-test": "echo 'not yet implemented'",
-    "system-test": "echo 'not yet implemented'",
+    "run": "./scripts/scripts.js",
+    "fix": "npm run run -- npm run fix",
+    "test": "c8 npm run run -- npm test",
     "proxy": "smee",
-    "release": "lerna publish --conventional-commits",
     "generate-bot": "node ./packages/generate-bot/run.js"
   },
   "devDependencies": {
-    "c8": "^7.0.0",
-    "lerna": "^3.16.4",
+    "c8": "^7.1.0",
     "smee-client": "^1.1.0"
   }
 }
