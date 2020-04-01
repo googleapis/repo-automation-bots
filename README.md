@@ -71,6 +71,9 @@ at https://github.com/settings/apps/{YOUR_APP}:
 * `APP_ID`: the ID, listed near the top, `App ID: 12345`
 * `PRIVATE_KEY_PATH`: path to App's private key, you can request a new one be
    created and downloaded at the bottom of the page.
+   * Alternatively, set the GitHub client ID and secret:
+     * `GITHUB_CLIENT_ID`: client ID from the top of the page.
+     * `GITHUB_CLIENT_SECRET`: client secret from the top of the page.
 * `PRIVATE_KEY`: private key for application. This is the client secret near the top, `Client secret: a1bc23def4..........5678gh`
 * `WEBHOOK_SECRET`: secret key set in GitHub developer settings. Edit this to a known value in the settings page.
 
