@@ -83,9 +83,9 @@ function handler(app: Application) {
     const start = new Date().getTime();
     // update each settings section
     await Promise.all([
-    handler.updateRepoOptions(r, context),
-    handler.updateMasterBranchProtection(r, context),
-    handler.updateRepoTeams(r, context),
+      handler.updateRepoOptions(r, context),
+      handler.updateMasterBranchProtection(r, context),
+      handler.updateRepoTeams(r, context),
     ]);
 
     const end = new Date().getTime();
@@ -136,8 +136,9 @@ handler.updateMasterBranchProtection = async function updateMasterBranchProtecti
     });
     console.log(`Success updating master branch protection for ${repo}`);
   } catch (err) {
-    console.log(`Error updating master protection for ${repo}`);
-    console.log(err.status);
+    console.log(
+      `Error updating master protection for ${repo} error status: ${err.status}`
+    );
   }
 };
 
@@ -177,8 +178,9 @@ handler.updateRepoTeams = async function updateRepoTeams(
       });
       console.log(`Success updating repo in org for ${repo}`);
     } catch (err) {
-      console.log(`Error updating repo in org for ${repo}`);
-      console.log(err.status);
+      console.log(
+        `Error updating repo in org for ${repo} error status: ${err.status}`
+      );
     }
   }
 };
@@ -208,8 +210,9 @@ handler.updateRepoOptions = async function updateRepoOptions(
     });
     console.log(`Success updating repo options for ${repo}`);
   } catch (err) {
-    console.log(`Error updating repo options for  ${repo}`);
-    console.log(err.status);
+    console.log(
+      `Error updating repo options for  ${repo} error status: ${err.status}`
+    );
   }
 };
 

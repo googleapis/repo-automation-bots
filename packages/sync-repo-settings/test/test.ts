@@ -122,7 +122,7 @@ describe('Sync repo settings', () => {
         organization: {
           login: 'Codertocat',
         },
-        cron_org: 'Codertocat'
+        cron_org: 'Codertocat',
       },
       id: 'abc123',
     });
@@ -158,7 +158,7 @@ describe('Sync repo settings', () => {
         organization: {
           login: 'googleapis',
         },
-        cron_org: 'googleapis'
+        cron_org: 'googleapis',
       },
       id: 'abc123',
     });
