@@ -32,6 +32,9 @@ Issues or feature requests? Please
    ```
 1. Call the `buildcop` binary for nightly/continuous tests you want issues
    filed for.
+   When you first add the bot, you may want to call the binary from the PR and
+   confirm the bot works. If not, file an issue on this repo with a link to the
+   PR & test logs.
 
    ```bash
    if [[ $KOKORO_BUILD_ARTIFACTS_SUBDIR = *"continuous"* ]]; then
@@ -45,9 +48,19 @@ Issues or feature requests? Please
 
      File an issue and/or send a PR to update the `Makefile` if you need a
      different platform.
-   * If your repo is not part of `googleapis` or `GoogleCloudPlatform`, you must
-     set the `--installation_id` flag to the GitHub installation ID from step 1.
-     If it is part of one of those orgs, you shouldn't need any flags.
+   * Flags:
+      * **`-repo`**: The repo is automatically detected from the Kokoro build
+        environment. If the detection doesn't work, you may need to set the
+        `--repo` flag. If your repo is
+        `github.com/GoogleCloudPlatform/golang-samples`, set `-repo` to
+        `GoogleCloudPlatform/golang-samples`.
+      * **`-installation_id`**: If your repo is not part of `googleapis` or
+        `GoogleCloudPlatform`, you must set `-installation_id` to the
+        GitHub installation ID from step 1.
+      * **`-logs_dir`**: By default, the `buildcop` binary looks in the current
+        working directory for log files (`"."`).
+        If your logs are in a different directory, set `-logs_dir` to the
+        absolute path to that directory. The directory is recursively searched.
 1. Trigger a build and check the logs to make sure everything is working.
 
 ## Contributing
