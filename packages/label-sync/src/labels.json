@@ -57,7 +57,7 @@
     },
     {
       "name": "priority: p3",
-      "description": "Desirable enhancement or fix. May not be include in next release.",
+      "description": "Desirable enhancement or fix. May not be included in next release.",
       "color": "ffffc7"
     },
     {
