@@ -83,9 +83,9 @@ function handler(app: Application) {
     const start = new Date().getTime();
     // update each settings section
     await Promise.all([
-      await handler.updateRepoOptions(r, context),
-      await handler.updateMasterBranchProtection(r, context),
-      await handler.updateRepoTeams(r, context),
+    handler.updateRepoOptions(r, context),
+    handler.updateMasterBranchProtection(r, context),
+    handler.updateRepoTeams(r, context),
     ]);
 
     const end = new Date().getTime();

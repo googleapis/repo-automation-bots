@@ -123,6 +123,7 @@ describe('Sync repo settings', () => {
         organization: {
           login: 'Codertocat',
         },
+        org: 'Codertocat'
       },
       id: 'abc123',
     });
@@ -158,6 +159,7 @@ describe('Sync repo settings', () => {
         organization: {
           login: 'googleapis',
         },
+        org: 'googleapis'
       },
       id: 'abc123',
     });
