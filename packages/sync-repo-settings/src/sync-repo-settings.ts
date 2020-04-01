@@ -63,7 +63,7 @@ handler.getRepos = async function getRepos(): Promise<GetReposResponse> {
  */
 function handler(app: Application) {
   app.on(['schedule.repository'], async (context: Context) => {
-    console.info(`running for org ${context.payload.org}`);
+    console.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
     const name = context.payload.repository.name;
     const repo = `${owner}/${name}`;
@@ -75,8 +75,8 @@ function handler(app: Application) {
       return;
     }
 
-    if (context.payload.org !== owner) {
-      console.log(`skipping run for ${context.payload.org}`);
+    if (context.payload.cron_org !== owner) {
+      console.log(`skipping run for ${context.payload.cron_org}`);
       return;
     }
 
