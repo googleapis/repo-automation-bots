@@ -176,7 +176,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [])
           .post('/repos/tbpg/golang-samples/issues', body => {
@@ -202,7 +202,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -235,7 +235,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -274,7 +274,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [])
           .post('/repos/tbpg/golang-samples/issues', body => {
@@ -304,7 +304,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/python-docs-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/python-docs-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [])
           .post('/repos/tbpg/python-docs-samples/issues', body => {
@@ -334,7 +334,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             // Duplicate issue that's closed. The open one should be updated.
@@ -386,7 +386,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -423,7 +423,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, []);
 
@@ -448,7 +448,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -495,7 +495,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -541,7 +541,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/python-docs-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/python-docs-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -587,7 +587,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -622,7 +622,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -662,7 +662,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -697,7 +697,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -733,7 +733,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -785,7 +785,7 @@ describe('buildcop', () => {
 
         const requests = nock('https://api.github.com')
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
@@ -813,7 +813,7 @@ describe('buildcop', () => {
           })
           .reply(200)
           .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3Aissue&state=all'
+            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
           )
           .reply(200, [
             {
