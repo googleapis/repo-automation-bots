@@ -24,31 +24,31 @@ Issues or feature requests? Please
    more than one, they can be in multiple directories, and the file names must
    end with `sponge_log.xml`.
 1. If you're _not_ already using Trampoline, add the Trampoline `gfile`
-   directory to your Kokoro job. This contains the `buildcop.sh` script that
+   directory to your Kokoro job. This contains the `buildcop` binary that
    will be used to publish the logs.
 
    ```
    gfile_resources: "/bigstore/cloud-devrel-kokoro-resources/trampoline"
    ```
-1. Make sure `gcloud` is installed and on the `PATH`. `gcloud` is used to
-   publish the logs to Pub/Sub.
-
-   The Trampline service account will be activated, so be sure to change it back
-   if you need to use `gcloud` after calling `buildcop.sh`.
-1. Call the `buildcop.sh` script for nightly/continuous tests you want issues
+1. Call the `buildcop` binary for nightly/continuous tests you want issues
    filed for.
 
    ```bash
    if [[ $KOKORO_BUILD_ARTIFACTS_SUBDIR = *"continuous"* ]]; then
-     chmod +x $KOKORO_GFILE_DIR/buildcop.sh
-     $KOKORO_GFILE_DIR/buildcop.sh
+     chmod +x $KOKORO_GFILE_DIR/linux_amd64/buildcop
+     $KOKORO_GFILE_DIR/linux_amd64/buildcop
    fi
    ```
 
+   * The path can either be `linux_amd64/buildcop`, `darwin_amd64/buildcop`, or
+     `windows_amd64/buildcop.exe`.
+
+     File an issue and/or send a PR to update the `Makefile` if you need a
+     different platform.
    * If your repo is not part of `googleapis` or `GoogleCloudPlatform`, you must
-     set the `INSTALLATION_ID` environment variable to the GitHub installation
-     ID from step 1.
-1. Trigger a build and check the logs to make sure the script is working.
+     set the `--installation_id` flag to the GitHub installation ID from step 1.
+     If it is part of one of those orgs, you shouldn't need any flags.
+1. Trigger a build and check the logs to make sure everything is working.
 
 ## Contributing
 
@@ -68,16 +68,26 @@ If you have suggestions for how buildcop could be improved, or want to report a 
 
 For more, check out the Contributing Guide.
 
-### buildcop.sh
+### buildcop.go
 
-This script is used to make it easy for people to send logs to the Build Cop
+This command is used to make it easy for people to send logs to the Build Cop
 bot (see instructions above).
+
+To build/run it locally, clone the repo, `cd` to this directory, and run:
+
+```bash
+go build
+./buildcop -repo=my-org/my-repo -installation_id=123 -project=my-project
+```
 
 To deploy the script, run:
 
 ```bash
-gsutil cp buildcop.sh gs://cloud-devrel-kokoro-resources/trampoline/buildcop.sh
+make upload
 ```
+
+This compiles the binary for the various platforms and copies them to the
+Trampoline GCS directory.
 
 ## License
 
