@@ -66,20 +66,24 @@ describe('buildcop', () => {
             package:
               'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
             testCase: 'TestSample',
+            passed: false,
           },
         ],
         passes: [
           {
             package: 'github.com/GoogleCloudPlatform/golang-samples',
             testCase: 'TestBadFiles',
+            passed: true,
           },
           {
             package: 'github.com/GoogleCloudPlatform/golang-samples',
             testCase: 'TestLicense',
+            passed: true,
           },
           {
             package: 'github.com/GoogleCloudPlatform/golang-samples',
             testCase: 'TestRegionTags',
+            passed: true,
           },
         ],
       });
@@ -97,27 +101,32 @@ describe('buildcop', () => {
             package:
               'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
             testCase: 'TestBucketLock',
+            passed: false,
           },
           {
             package:
               'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
             testCase: 'TestUniformBucketLevelAccess',
+            passed: false,
           },
         ],
         passes: [
           {
             package: 'github.com/GoogleCloudPlatform/golang-samples',
             testCase: 'TestBadFiles',
+            passed: true,
           },
           {
             package:
               'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
             testCase: 'TestCreate',
+            passed: true,
           },
           {
             package:
               'github.com/GoogleCloudPlatform/golang-samples/storage/gcsupload',
             testCase: 'TestUpload',
+            passed: true,
           },
         ],
       });
@@ -135,11 +144,13 @@ describe('buildcop', () => {
           {
             package: 'github.com/GoogleCloudPlatform/golang-samples',
             testCase: 'TestBadFiles',
+            passed: true,
           },
           {
             package:
               'github.com/GoogleCloudPlatform/golang-samples/appengine/go11x/helloworld',
             testCase: 'TestIndexHandler',
+            passed: true,
           },
         ],
       });
@@ -204,7 +215,7 @@ describe('buildcop', () => {
           )
           .reply(200, [
             {
-              title: formatTestCase({}),
+              title: formatTestCase({ passed: false }),
               number: 16,
               body: 'Failure!',
               state: 'closed',
@@ -237,7 +248,7 @@ describe('buildcop', () => {
           )
           .reply(200, [
             {
-              title: formatTestCase({}),
+              title: formatTestCase({ passed: false }),
               number: 16,
               body: 'Failure!',
               state: 'open',
@@ -373,6 +384,7 @@ describe('buildcop', () => {
                 package:
                   'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
                 testCase: 'TestSample',
+                passed: false,
               }),
               number: 15,
               body: 'Failure!',
@@ -383,6 +395,7 @@ describe('buildcop', () => {
                 package:
                   'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
                 testCase: 'TestSample',
+                passed: false,
               }),
               number: 16,
               body: 'Failure!',
@@ -426,6 +439,7 @@ describe('buildcop', () => {
                 package:
                   'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
                 testCase: 'TestBucketLock',
+                passed: false,
               }),
               number: 16,
               body: `Failure!`,
@@ -437,6 +451,7 @@ describe('buildcop', () => {
                 package:
                   'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
                 testCase: 'TestUniformBucketLevelAccess',
+                passed: false,
               }),
               number: 17,
               body: `Failure!`,
@@ -505,6 +520,7 @@ describe('buildcop', () => {
                 package:
                   'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
                 testCase: 'TestSample',
+                passed: false,
               }),
               number: 16,
               body: 'Failure!',
@@ -551,6 +567,7 @@ describe('buildcop', () => {
               title: formatTestCase({
                 package: 'github.com/GoogleCloudPlatform/golang-samples',
                 testCase: 'TestBadFiles',
+                passed: false,
               }),
               number: 16,
               body: 'Failure!',
@@ -597,6 +614,7 @@ describe('buildcop', () => {
               title: formatTestCase({
                 package: 'appengine.standard.app_identity.asserting.main_test',
                 testCase: 'test_app',
+                passed: false,
               }),
               number: 16,
               body: 'Failure!',
@@ -643,6 +661,7 @@ describe('buildcop', () => {
               title: formatTestCase({
                 package: 'com.google.cloud.vision.it.ITSystemTest(sponge_log)',
                 testCase: 'detectLocalizedObjectsTest',
+                passed: false,
               }),
               number: 16,
               body: 'Failure!',
@@ -690,6 +709,7 @@ describe('buildcop', () => {
                 package:
                   'github.com/GoogleCloudPlatform/golang-samples/fake/test',
                 testCase: 'TestFake',
+                passed: false,
               }),
               number: 16,
               body: 'Failure!',
@@ -724,6 +744,7 @@ describe('buildcop', () => {
               title: formatTestCase({
                 package: 'github.com/GoogleCloudPlatform/golang-samples',
                 testCase: 'TestBadFiles',
+                passed: false,
               }),
               number: 16,
               body: 'Failure!',
@@ -775,6 +796,7 @@ describe('buildcop', () => {
                 package:
                   'github.com/GoogleCloudPlatform/golang-samples/appengine/go11x/helloworld',
                 testCase: 'TestIndexHandler',
+                passed: false,
               }),
               number: 16,
               body: `status: failed\nbuildID: 123`,
@@ -820,6 +842,7 @@ describe('buildcop', () => {
                 package:
                   'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
                 testCase: 'TestSample',
+                passed: false,
               }),
               number: 16,
               body: `Failure!`,
@@ -856,6 +879,7 @@ describe('buildcop', () => {
                 package:
                   'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
                 testCase: 'TestSample',
+                passed: false,
               }),
               number: 16,
               body: 'Failure!',
@@ -896,10 +920,12 @@ describe('buildcop', () => {
           package:
             'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
           testCase: 'TestSample',
+          passed: false,
         });
         const title2 = formatTestCase({
           package: 'appengine/go11x/helloworld',
           testCase: 'TestIndexHandler',
+          passed: false,
         });
 
         const requests = nock('https://api.github.com')
@@ -973,6 +999,7 @@ describe('buildcop', () => {
         package:
           'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
         testCase: 'TestSample',
+        passed: false,
       });
 
       const requests = nock('https://api.github.com')
