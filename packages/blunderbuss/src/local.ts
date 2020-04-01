@@ -17,7 +17,7 @@ import appFn from './blunderbuss';
 import express from 'express';
 import { config } from 'dotenv';
 import { resolve } from 'path';
-import * as bodyParser from 'body-parser';
+import { urlencoded, json } from 'body-parser';
 
 const out = config({ path: resolve(__dirname, '../../.env') });
 console.log(out);
@@ -26,7 +26,8 @@ const bootstrap = new GCFBootstrapper();
 const handler = bootstrap.gcf(appFn);
 
 const app = express();
-app.use(bodyParser.json());
+app.use(urlencoded());
+app.use(json());
 
 app.all('/', (req: express.Request, res: express.Response) => {
   handler(req, res);
