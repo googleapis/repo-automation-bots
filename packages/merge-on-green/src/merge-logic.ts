@@ -422,7 +422,9 @@ mergeOnGreen.checkReviews = async function checkReviews(
   if (reviewsCompleted.length !== 0) {
     reviewsCompleted.forEach(review => {
       if (review.state !== 'APPROVED') {
-        console.log('One of your reviewers did not approve the PR');
+        console.log(
+          `One of your reviewers did not approve the PR ${owner}/${repo}/${pr} state = ${review.state}`
+        );
         reviewsPassed = false;
       }
     });
