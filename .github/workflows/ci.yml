@@ -41,8 +41,4 @@ jobs:
           node-version: 12
       - run: npm install
       - run: npm test
-      - run: npm i codecov
-      - run: ./node_modules/.bin/codecov
-      - uses: codecov/codecov-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+      - run: ./node_modules/.bin/c8 report --reporter=text-lcov | npx codecov@3 -t ${{ secrets.CODECOV_TOKEN }} --pipe
