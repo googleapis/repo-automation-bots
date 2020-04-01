@@ -477,7 +477,7 @@ mergeOnGreen.merge = async function merge(
       repo,
       pull_number: pr,
       commit_title: commitInfo.title,
-      commit_message: commitInfo.body,
+      commit_message: commitInfo.body || '',
       merge_method: 'squash',
     })
   ).data as Merge;
