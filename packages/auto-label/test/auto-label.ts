@@ -191,7 +191,7 @@ describe('auto-label', () => {
 
       expect(
         await handler.checkIfFileIsEmpty(
-          await handler.callStorage('my-bucket', 'my-file', 'my-other-file')
+          await handler.callStorage('my-bucket', 'my-file')
         )
       ).to.be.a('null');
 
