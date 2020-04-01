@@ -150,7 +150,62 @@ handler.checkIfElementIsInArray = function checkIfElementIsInArray(
   }
 };
 
+const BACKFILL_LABEL = 'auto-label:backfill';
 function handler(app: Application) {
+  app.on(['issues.labeled'], async context => {
+    const owner = context.payload.repository.owner.login;
+    const repo = context.payload.repository.name;
+    // if missing the label, skip
+    if (
+      !context.payload.issue.labels.some(
+        (label: { name: string }) => label.name === BACKFILL_LABEL
+      )
+    ) {
+      app.log.info(
+        `ignoring non-backfill label action (${context.payload.issue.labels.join(
+          ', '
+        )})`
+      );
+      return;
+    }
+
+    const jsonData = await handler.callStorage(
+      'devrel-prod-settings',
+      'public_repos.json'
+    );
+    const jsonArray = await handler.checkIfFileIsEmpty(jsonData);
+    const objectInJsonArray = handler.checkIfElementIsInArray(
+      jsonArray,
+      owner,
+      repo
+    );
+    if (objectInJsonArray === null || objectInJsonArray === undefined) {
+      console.log('There was no match for the repo name: ' + repo);
+      return;
+    }
+
+    const issues = context.github.issues.listForRepo.endpoint.merge({
+      owner,
+      repo,
+    });
+    for await (const response of context.github.paginate.iterator(issues)) {
+      const issue = response.data;
+      if (!issue.pull_request) {
+        await handler.addLabels(context.github, owner, repo, issue.number, [
+          `${objectInJsonArray.github_label}`,
+        ]);
+      }
+    }
+
+    // remove the label
+    await context.github.issues.removeLabel({
+      name: BACKFILL_LABEL,
+      issue_number: context.payload.issue.number,
+      owner,
+      repo,
+    });
+  });
+
   app.on(['issues.opened', 'issues.reopened'], async context => {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
@@ -211,7 +266,7 @@ function handler(app: Application) {
         console.log('This label already exists on this issue');
         return;
       } else {
-        handler.addLabels(context.github, owner, repo, issueId, [
+        await handler.addLabels(context.github, owner, repo, issueId, [
           `${objectInJsonArray.github_label}`,
         ]);
       }
