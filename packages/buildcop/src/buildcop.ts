@@ -344,6 +344,7 @@ buildcop.closeIssues = async (
     }
 
     // If the issue body is a failure in the same build, don't do anything.
+    // TODO: mark as flaky.
     if (buildcop.containsBuildFailure(issue.body, buildID)) {
       break;
     }
@@ -360,6 +361,7 @@ buildcop.closeIssues = async (
       buildcop.containsBuildFailure(comment.body, buildID)
     );
     // If there is a failure comment, don't do anything.
+    // TODO: mark as flaky.
     if (comment) {
       break;
     }
@@ -417,10 +419,18 @@ buildcop.formatTestCase = (failure: TestCase): string => {
     return EVERYTHING_FAILED_TITLE;
   }
   let pkg = failure.package;
-  const shorten = failure.package.match(/github\.com\/[^\/]+\/[^\/]+\/(.+)/);
-  if (shorten) {
-    pkg = shorten[1];
-  }
+  // shorteners is a regex list where we should keep the matching group.
+  const shorteners = [
+    /github\.com\/[^\/]+\/[^\/]+\/(.+)/,
+    /com\.google\.cloud\.(.+)/,
+    /(.+)\(sponge_log\)/,
+  ];
+  shorteners.forEach(s => {
+    const shorten = failure.package?.match(s);
+    if (shorten) {
+      pkg = shorten[1];
+    }
+  });
   return `${pkg}: ${failure.testCase} failed`;
 };
 
