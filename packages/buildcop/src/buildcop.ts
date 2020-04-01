@@ -307,6 +307,10 @@ buildcop.findTestResults = (xml: string): TestResults => {
   for (const suite of testsuites) {
     const testsuiteName = suite['_attributes'].name;
     let testcases = suite['testcase'];
+    // If there were no tests in the package, continue.
+    if (testcases === undefined) {
+      continue;
+    }
     // If there is only one test case, put it into an array to make it iterable.
     if (!Array.isArray(testcases)) {
       testcases = [testcases];
