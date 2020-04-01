@@ -165,7 +165,10 @@ export function buildcop(app: Application) {
 
 // deduplicateIssues closes any duplicate issues and returns whether or not any
 // were modified.
-// Only issues for tests in results are modified.
+// Only issues for tests in results are modified. So, an issue is only closed
+// if it explicitly passes.
+// TODO: Check if open issues can be shortened? This could be helpful if we add
+// more shorteners and want "nice" management of "forgotten" issues.
 buildcop.deduplicateIssues = async (
   results: TestResults,
   issues: Octokit.IssuesListForRepoResponseItem[],
@@ -502,21 +505,37 @@ buildcop.formatTestCase = (failure: TestCase): string => {
   if (!failure.package || !failure.testCase) {
     return EVERYTHING_FAILED_TITLE;
   }
+
   let pkg = failure.package;
-  // shorteners is a regex list where we should keep the matching group.
-  const shorteners = [
+  // pkgShorteners is a regex list where we should keep the matching group of
+  // the package.
+  const pkgShorteners = [
     /github\.com\/[^\/]+\/[^\/]+\/(.+)/,
     /com\.google\.cloud\.(.+)/,
     /(.+)\(sponge_log\)/,
     /cloud\.google\.com\/go\/(.+)/,
   ];
-  shorteners.forEach(s => {
-    const shorten = failure.package?.match(s);
+  pkgShorteners.forEach(s => {
+    const shorten = pkg.match(s);
     if (shorten) {
       pkg = shorten[1];
     }
   });
-  return `${pkg}: ${failure.testCase} failed`;
+
+  let name = failure.testCase;
+  // nameShorteners is a regex list where we should keep the matching group of
+  // the test name.
+  const nameShorteners = [
+    /([^/]+)\/.+/, // Keep "group" of "group/of/tests".
+  ];
+  nameShorteners.forEach(s => {
+    const shorten = name.match(s);
+    if (shorten) {
+      name = shorten[1];
+    }
+  });
+
+  return `${pkg}: ${name} failed`;
 };
 
 buildcop.findTestResults = (xml: string): TestResults => {
@@ -564,5 +583,17 @@ buildcop.findTestResults = (xml: string): TestResults => {
       });
     }
   }
-  return { passes, failures };
+  return {
+    passes: deduplicateTests(passes),
+    failures: deduplicateTests(failures),
+  };
 };
+
+// deduplicateTests removes tests that have equivalent formatTestCase values.
+function deduplicateTests(tests: TestCase[]): TestCase[] {
+  const uniqueTests = new Map<string, TestCase>();
+  tests.forEach(test => {
+    uniqueTests.set(buildcop.formatTestCase(test), test);
+  });
+  return Array.from(uniqueTests.values());
+}
