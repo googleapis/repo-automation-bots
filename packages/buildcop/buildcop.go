@@ -131,11 +131,6 @@ func detectRepo() string {
 		repo := fmt.Sprintf("%s/%s", parts[3], parts[4])
 		return repo
 	}
-	if github := os.Getenv("KOKORO_GITHUB_COMMIT_URL_google_cloud_go"); github != "" {
-		parts := strings.Split(github, "/")
-		repo := fmt.Sprintf("%s/%s", parts[3], parts[4])
-		return repo
-	}
 	return ""
 }
 
