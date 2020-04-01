@@ -2,22 +2,14 @@ import synthtool as s
 import synthtool.gcp as gcp
 import logging
 logging.basicConfig(level=logging.DEBUG)
-
-AUTOSYNTH_MULTIPLE_COMMITS = True
-
 common_templates = gcp.CommonTemplates()
 templates = common_templates.node_library()
 s.copy(templates, excludes=[
   '.eslintignore',
   '.eslintrc.yml',
-  '.github/release-please.yml',
-  '.github/workflows/',
-  '.github/publish.yml',
-  '.kokoro/**',
-  '.nycrc',
   '.prettierignore',
   '.prettierrc',
-  'codecov.yaml',
+  '.nycrc',
   'README.md',
-  'renovate.json'
+  '.github/release-please.yml'
 ])

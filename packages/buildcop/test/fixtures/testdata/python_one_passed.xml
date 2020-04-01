@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="utf-8" ?>
-<testsuite errors="0" failures="0" name="pytest" skipped="0" tests="1" time="0.454">
-    <testcase classname="appengine.standard.app_identity.asserting.main_test" file="appengine/standard/app_identity/asserting/main_test.py" line="20" name="test_app" time="0.256"></testcase>
-</testsuite>

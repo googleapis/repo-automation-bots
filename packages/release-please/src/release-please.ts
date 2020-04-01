@@ -12,20 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Application} from 'probot';
+import { Application } from 'probot';
 
 // TODO: fix these imports when release-please exports types from the root
 // See https://github.com/googleapis/release-please/issues/249
-import {ReleaseType, BuildOptions} from 'release-please/build/src/release-pr';
-import {ReleasePRFactory} from 'release-please/build/src/release-pr-factory';
+import { ReleaseType, BuildOptions } from 'release-please/build/src/release-pr';
+import { ReleasePRFactory } from 'release-please/build/src/release-pr-factory';
 import {
   GitHubRelease,
   GitHubReleaseOptions,
 } from 'release-please/build/src/github-release';
-import {Runner} from './runner';
-import {GitHubAPI} from 'probot/lib/github';
-import {Octokit} from '@octokit/rest';
-type OctokitType = InstanceType<typeof Octokit>;
+import { Runner } from './runner';
+import { GitHubAPI } from 'probot/lib/github';
 
 interface ConfigurationOptions {
   primaryBranch: string;
@@ -44,7 +42,7 @@ const DEFAULT_CONFIGURATION: ConfigurationOptions = {
 const FORCE_RUN_LABEL = 'release-please:force-run';
 
 function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
-  if (language === null) {
+  if (language == null) {
     throw Error('repository has no detected language');
   }
   switch (language.toLowerCase()) {
@@ -57,15 +55,13 @@ function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
       return ReleaseType.Node;
     case 'php':
       return ReleaseType.PHPYoshi;
-    case 'terraform-module':
-      return ReleaseType.TerraformModule;
     default:
       throw Error(`unknown release type: ${language}`);
   }
 }
 
 // creates or updates the evergreen release-please release PR.
-async function createReleasePR(
+function createReleasePR(
   releaseType: ReleaseType,
   packageName: string,
   repoUrl: string,
@@ -78,8 +74,7 @@ async function createReleasePR(
     repoUrl,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-      octokit: (github as any) as OctokitType,
+      octokit: github,
       graphql: github.graphql,
       request: github.request,
     },
@@ -89,11 +84,11 @@ async function createReleasePR(
     buildOptions.label = releaseLabels.join(',');
   }
 
-  await Runner.runner(ReleasePRFactory.build(releaseType, buildOptions));
+  Runner.runner(ReleasePRFactory.build(releaseType, buildOptions));
 }
 
 // turn a merged release-please release PR into a GitHub release.
-async function createGitHubRelease(
+function createGitHubRelease(
   packageName: string,
   repoUrl: string,
   github: GitHubAPI
@@ -104,14 +99,13 @@ async function createGitHubRelease(
     packageName,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-      octokit: (github as any) as OctokitType,
+      octokit: github,
       graphql: github.graphql,
       request: github.request,
     },
   };
   const ghr = new GitHubRelease(releaseOptions);
-  await Runner.releaser(ghr);
+  Runner.releaser(ghr);
 }
 
 export = (app: Application) => {
@@ -149,7 +143,7 @@ export = (app: Application) => {
     app.log.info(`push (${repoUrl})`);
 
     // TODO: this should be refactored into an interface.
-    await createReleasePR(
+    createReleasePR(
       releaseType,
       configuration.packageName || repoName,
       repoUrl,
@@ -202,7 +196,7 @@ export = (app: Application) => {
       : releaseTypeFromRepoLanguage(context.payload.repository.language);
 
     // TODO: this should be refactored into an interface.
-    await createReleasePR(
+    createReleasePR(
       releaseType,
       configuration.packageName || repoName,
       repoUrl,
@@ -263,7 +257,7 @@ export = (app: Application) => {
       : releaseTypeFromRepoLanguage(context.payload.repository.language);
 
     // TODO: this should be refactored into an interface.
-    await createReleasePR(
+    createReleasePR(
       releaseType,
       configuration.packageName || repo,
       repoUrl,

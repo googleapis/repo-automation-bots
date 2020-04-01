@@ -1,3 +1,5 @@
 **/node_modules
+src/**/doc/*
+build/
+docs/
 templates/
-__snapshots__/*

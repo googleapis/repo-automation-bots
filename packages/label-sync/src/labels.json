@@ -1,11 +1,6 @@
 {
   "labels": [
     {
-      "name": "automerge",
-      "description": "Merge the pull request once unit tests and other checks pass.",
-      "color": "00ff00"
-    },
-    {
       "name": "status: blocked",
       "description": "Resolving the issue is dependent on other work.",
       "color": "f9d0c4"
@@ -56,18 +51,13 @@
       "color": "c5def5"
     },
     {
-      "name": "priority: p3",
-      "description": "Desirable enhancement or fix. May not be included in next release.",
-      "color": "ffffc7"
-    },
-    {
       "name": "priority: p2",
-      "description": "Moderately-important priority. Fix may not be included in next release.",
+      "description": "Lowest priority. Fix may not be included in next release.",
       "color": "fef2c0"
     },
     {
       "name": "priority: p1",
-      "description": "Important issue which blocks shipping the next release. Will be fixed prior to next release.",
+      "description": "Medium priority. Will be fixed prior to next release.",
       "color": "ffa03e"
     },
     {
@@ -154,21 +144,6 @@
       "name": "external",
       "description": "This issue is blocked on a bug with the actual product.",
       "color": "800080"
-    },
-    {
-      "name": "buildcop: issue",
-      "description": "An issue filed by the Build Cop Bot. Should not be added manually.",
-      "color": "a9f9f7"
-    },
-    {
-      "name": "buildcop: flaky",
-      "description": "Tells the Build Cop Bot not to close or comment on this issue",
-      "color": "86d9d7"
-    },
-    {
-      "name": "buildcop: quiet",
-      "description": "Tells the Build Cop Bot to comment less",
-      "color": "86d9d7"
     }
   ]
 }

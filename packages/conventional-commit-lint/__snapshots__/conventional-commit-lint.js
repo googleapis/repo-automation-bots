@@ -5,7 +5,7 @@ exports['ConventionalCommitLint sets a "failure" context on PR, if commits fail 
   "output": {
     "title": "Commit message did not follow Conventional Commits",
     "summary": "Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\nRun `git commit --amend` and edit your message to match Conventional Commit guidelines.",
-    "text": ":x: linting errors for \"*fix all the bugs*\"\n* subject may not be empty\n* type may not be empty\n\n\n"
+    "text": ":x: linting errors for \"*Fix all the bugs*\"\n* subject may not be empty\n* type may not be empty\n\n\n"
   }
 }
 

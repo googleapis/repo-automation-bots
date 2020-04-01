@@ -8,7 +8,6 @@
     "lint": "eslint .",
     "fix": "eslint . --fix",
     "test": "mocha test/",
-    "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "start": "",
     "start:local": "node ./build/src/local.js"
   },
@@ -27,7 +26,6 @@
   },
   "homepage": "https://github.com/sofisl/generate-bot#readme",
   "devDependencies": {
-    "c8": "^7.1.0",
     "chai": "^4.2.0",
     "eslint": "^6.6.0",
     "eslint-config-prettier": "^6.5.0",
@@ -41,7 +39,7 @@
   },
   "dependencies": {
     "enquirer": "^2.3.2",
-    "expect": "^25.0.0",
+    "expect": "^24.9.0",
     "handlebars": "^4.5.1"
   }
 }

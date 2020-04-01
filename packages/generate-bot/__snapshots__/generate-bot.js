@@ -1,20 +1,19 @@
-exports['file structure checks that the file content carries over 1'] = `
-# helloWorld
+exports["file structure checks that the file content carries over 1"] = `
+helloWorld
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
 
 This bot uses nock for mocking requests to GitHub, and snap-shot-it for capturing responses; This allows updates to the API surface to be treated as a visual diff, rather than tediously asserting against each field.
 
-## Running tests:
+Running tests:
 
 \`npm run test\`
 
-## To update snapshots:
+To update snapshots:
 
 \`npm run test:snap\`
 
-## Contributing
-
+Contributing
 If you have suggestions for how helloWorld could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
 
 For more, check out the Contributing Guide.
@@ -33,13 +32,13 @@ Apache 2.0 © 2019 Google LLC.// Copyright 2019 Google LLC
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
 import { GCFBootstrapper } from 'gcf-utils';
 import appFn from './helloWorld';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['helloWorld'] = bootstrap.gcf(appFn);
-// Copyright 2019 Google LLC
+module.exports['helloWorld'] = bootstrap.gcf(appFn);// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,6 +51,7 @@ module.exports['helloWorld'] = bootstrap.gcf(appFn);
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
 import { Application, Context } from 'probot';
 import * as util from 'util';
@@ -61,6 +61,7 @@ const CONFIGURATION_FILE_PATH = 'helloWorld.yml';
 interface Configuration {
   randomBoolean: boolean;
 }
+
 
 export = (app: Application) => {
   app.on(
@@ -79,8 +80,7 @@ export = (app: Application) => {
         return;
       }
     })
-};
-// Copyright 2019 Google LLC
+};// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -93,12 +93,12 @@ export = (app: Application) => {
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
 declare module "promise-events" {
   class EventEmitter {
   }
-}
-randomBoolean: true{
+}randomBoolean: true{
   "action": "opened",
   "issue": {
     "url": "https://api.github.com/repos/testOwner/testRepo/issues/5",
@@ -849,4 +849,4 @@ describe('helloWorld', () => {
     "system-test/*.ts"
   ]
 }
-`
+`;

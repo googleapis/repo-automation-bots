@@ -144,28 +144,3 @@ SELECT * FROM (SELECT COUNT(id) as actions, month_start, 4.3 as minutes, 'landed
 WHERE merged IS NOT NULL
 GROUP BY month_start
 ORDER BY month_start ASC)
-
-
-UNION ALL 
-
-/*
-Measures PRs that have been closed by the gcf-merge-on-green bot, i.e., that have been automerged.
-Using the 4.3 estimate above to get an estimate of how much time is being saved.
-*/
-
-SELECT * FROM (SELECT COUNT(id) as prs, month_start, 4.3 as minutes, 'merged-by-mog' as type FROM (
-  SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id, JSON_EXTRACT(payload, '$.pull_request.merged_at') as merged
-  FROM `githubarchive.day.20*`
-  WHERE
-  _TABLE_SUFFIX BETWEEN '190101' AND '210101' AND
-  (
-    repo.name LIKE 'googleapis/%' OR
-    repo.name LIKE 'GoogleCloudPlatform/%'
-  ) AND
-  JSON_EXTRACT(payload, '$.action') LIKE '"closed"'
-  AND JSON_EXTRACT(payload, '$.pull_request.merged_by.login') LIKE '"gcf-merge-on-green[bot]"' 
-  AND type = 'PullRequestEvent'
-)
-WHERE merged IS NOT NULL
-GROUP BY month_start
-ORDER BY month_start ASC)

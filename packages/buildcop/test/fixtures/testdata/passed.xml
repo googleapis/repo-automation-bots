@@ -4,11 +4,14 @@
 <property name="go.version" value="go1.12.4"/>
 </properties>
 <testcase classname="golang-samples" name="TestBadFiles" time="0.040"/>
+<testcase classname="golang-samples" name="TestLicense" time="0.060"/>
+<testcase classname="golang-samples" name="TestRegionTags" time="17.460"/>
 </testsuite>
 <testsuite tests="2" failures="0" time="0.006" name="github.com/GoogleCloudPlatform/golang-samples/appengine/go11x/helloworld">
 <properties>
 <property name="go.version" value="go1.12.4"/>
 </properties>
 <testcase classname="helloworld" name="TestIndexHandler" time="0.000"/>
+<testcase classname="helloworld" name="TestIndexHandlerNotFound" time="0.000"/>
 </testsuite>
 </testsuites>

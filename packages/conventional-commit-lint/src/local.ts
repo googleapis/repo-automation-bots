@@ -17,7 +17,7 @@ import appFn from './conventional-commit-lint';
 import express from 'express';
 import { config } from 'dotenv';
 import { resolve } from 'path';
-import { json } from 'body-parser';
+import * as bodyParser from 'body-parser';
 
 const out = config({ path: resolve(__dirname, '../../.env') });
 console.log(out);
@@ -26,7 +26,7 @@ const bootstrap = new GCFBootstrapper();
 const handler = bootstrap.gcf(appFn);
 
 const app = express();
-app.use(json());
+app.use(bodyParser.json());
 
 app.all('/', (req: express.Request, res: express.Response) => {
   handler(req, res);

@@ -13,14 +13,14 @@
 // limitations under the License.
 
 // TODO: fix these imports when release-please exports types from the root
-import {ReleasePR} from 'release-please/build/src/release-pr';
-import {GitHubRelease} from 'release-please/build/src/github-release';
+import { ReleasePR } from 'release-please/build/src/release-pr';
+import { GitHubRelease } from 'release-please/build/src/github-release';
 
 export class Runner {
-  static runner = async (pr: ReleasePR) => {
-    await pr.run();
+  static runner = (pr: ReleasePR) => {
+    pr.run();
   };
-  static releaser = async (release: GitHubRelease) => {
-    await release.createRelease();
+  static releaser = (release: GitHubRelease) => {
+    release.createRelease();
   };
 }

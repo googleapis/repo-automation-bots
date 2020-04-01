@@ -11,11 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import {GCFBootstrapper} from '../../src/gcf-utils';
-import {describe, beforeEach, afterEach, it} from 'mocha';
-import {Application} from 'probot';
-import {resolve} from 'path';
-import {config} from 'dotenv';
+import { GCFBootstrapper } from '../../src/gcf-utils';
+
+import { Application, Options } from 'probot';
+import { resolve } from 'path';
+import { config } from 'dotenv';
 
 describe('GCFBootstrapper Integration', () => {
   describe('getProbotConfig', () => {
@@ -23,7 +23,7 @@ describe('GCFBootstrapper Integration', () => {
 
     beforeEach(async () => {
       bootstrapper = new GCFBootstrapper();
-      config({path: resolve(__dirname, '../../../.env')});
+      config({ path: resolve(__dirname, '../../../.env') });
     });
 
     afterEach(() => {});
@@ -38,7 +38,7 @@ describe('GCFBootstrapper Integration', () => {
 
     beforeEach(async () => {
       bootstrapper = new GCFBootstrapper();
-      config({path: resolve(__dirname, '../../.env')});
+      config({ path: resolve(__dirname, '../../.env') });
     });
 
     it('is called properly', async () => {

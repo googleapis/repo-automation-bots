@@ -8,18 +8,15 @@ by Google on GitHub.
 
 | Name | Description | Install |
 | ---- | ----------- | ------- |
-| [auto-label] | Automatically applies product specific labels to GitHub issues | [install][auto-label-app] |
 | [blunderbuss] | Assigns issues and PRs randomly to a specific list of user | [install][blunderbuss-app] |
-| [buildcop] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][buildcop-app] |
 | [conventional-commit-lint] | PR checker that ensures that the commit messages follow conventionalcommits.org style | [install][conventional-commit-lint-app] |
-| [failurechecker] | Check for automation tasks, e.g., releases, that are in a failed state | [install][failurechecker-app] |
 | [license-header-lint] | PR checker that ensures that source files contain valid license headers | [install][license-header-lint-app] |
-| [label-sync] | Synchronize labels across organizations | [install][label-sync-app] |
-| [merge-on-green] | Merge a pull-request when all required checks have passed | [install][merge-on-green-app] |
-| [publish] | Publish to npm, through [Wombat Dressing Room][] | [install][publish-app] |
 | [release-please] | Proposes releases based on semantic version commits | [install][release-please-app] |
-| [sync-repo-settings] | Synchronize repository settings from a centralized config | [install][sync-repo-settings-app] |
 | [trusted-contribution] | Allows Kokoro CI to trigger for trusted contributors | [install][trusted-contribution-app] |
+| [failurechecker] | Check for automation tasks, e.g., releases, that are in a failed state | [install][failurechecker-app] |
+| [label-sync] | Synchronize labels across organizations | [install][label-sync-app] |
+| [buildcop] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][buildcop-app] |
+| [publish] | Publish to npm, through [Wombat Dressing Room][] | [install][publish-app] |
 
 ## Testing Locally
 
@@ -52,7 +49,7 @@ GitHub application using the probot server:
    for permissions.
 1. You also will need to subscribe to events (bottom of page). For
    instance, if your bot responds to PR activity, the 'Events > Pull Request' should
-   be enabled.
+   be enabled.  
 
 
 ### Install the bot on a repo
@@ -74,9 +71,6 @@ at https://github.com/settings/apps/{YOUR_APP}:
 * `APP_ID`: the ID, listed near the top, `App ID: 12345`
 * `PRIVATE_KEY_PATH`: path to App's private key, you can request a new one be
    created and downloaded at the bottom of the page.
-   * Alternatively, set the GitHub client ID and secret:
-     * `GITHUB_CLIENT_ID`: client ID from the top of the page.
-     * `GITHUB_CLIENT_SECRET`: client secret from the top of the page.
 * `PRIVATE_KEY`: private key for application. This is the client secret near the top, `Client secret: a1bc23def4..........5678gh`
 * `WEBHOOK_SECRET`: secret key set in GitHub developer settings. Edit this to a known value in the settings page.
 
@@ -97,8 +91,6 @@ at the specified schedule.
 1. create a token with Wombat Dressing Room.
 2. run `npm run release`.
 
-[auto-label]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/auto-label
-[auto-label-app]: https://github.com/apps/product-auto-label
 [blunderbuss]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/blunderbuss
 [blunderbuss-app]: https://github.com/apps/blunderbuss-gcf
 [conventional-commit-lint]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/conventional-commit-lint
@@ -117,8 +109,4 @@ at the specified schedule.
 [buildcop-app]: https://github.com/apps/build-cop-bot
 [publish]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/publish
 [publish-app]: https://github.com/apps/publish-bot
-[merge-on-green]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/merge-on-green
-[merge-on-green-app]: https://github.com/apps/gcf-merge-on-green
-[sync-repo-settings]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/sync-repo-settings
-[sync-repo-settings-app]: https://github.com/apps/sync-repo-settings
 [Wombat Dressing Room]: https://opensource.googleblog.com/2020/01/wombat-dressing-room-npm-publication_10.html

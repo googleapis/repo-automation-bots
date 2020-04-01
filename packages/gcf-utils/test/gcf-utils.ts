@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFBootstrapper} from '../src/gcf-utils';
-import {describe, beforeEach, afterEach, it} from 'mocha';
-import {GitHubAPI} from 'probot/lib/github';
-import {Options} from 'probot';
+import { GCFBootstrapper } from '../src/gcf-utils';
+
+import { GitHubAPI } from 'probot/lib/github';
+import { Options } from 'probot';
 import * as express from 'express';
 import sinon from 'sinon';
 import nock from 'nock';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const repos = require('../../test/fixtures/repos.json');
 
 nock.disableNetConnect();
@@ -60,7 +59,7 @@ describe('GCFBootstrapper', () => {
 
       bootstrapper = new GCFBootstrapper();
       configStub = sinon.stub(bootstrapper, 'getProbotConfig').callsFake(() => {
-        return Promise.resolve({id: 1234, secret: 'foo', webhookPath: 'bar'});
+        return Promise.resolve({ id: 1234, secret: 'foo', webhookPath: 'bar' });
       });
 
       handler = await bootstrapper.gcf(async app => {
@@ -83,7 +82,7 @@ describe('GCFBootstrapper', () => {
 
     it('calls the event handler', async () => {
       req.body = {
-        installation: {id: 1},
+        installation: { id: 1 },
       };
       req.headers = {};
       req.headers['x-github-event'] = 'issues';
@@ -99,7 +98,7 @@ describe('GCFBootstrapper', () => {
 
     it('does nothing if there are missing headers', async () => {
       req.body = {
-        installation: {id: 1},
+        installation: { id: 1 },
       };
       req.headers = {};
 
@@ -113,7 +112,7 @@ describe('GCFBootstrapper', () => {
 
     it('returns 500 on errors', async () => {
       req.body = {
-        installtion: {id: 1},
+        installtion: { id: 1 },
       };
       req.headers = {};
       req.headers['x-github-event'] = 'err';
@@ -130,7 +129,7 @@ describe('GCFBootstrapper', () => {
     it('invokes scheduled event on all managed libraries', async () => {
       req.body = Buffer.from(
         JSON.stringify({
-          installation: {id: 1},
+          installation: { id: 1 },
         })
       );
       req.headers = {};
@@ -150,7 +149,7 @@ describe('GCFBootstrapper', () => {
     it('invokes scheduled event on a single repo', async () => {
       req.body = Buffer.from(
         JSON.stringify({
-          installation: {id: 1},
+          installation: { id: 1 },
           repo: 'googleapis/awesome',
         })
       );
@@ -176,7 +175,7 @@ describe('GCFBootstrapper', () => {
     beforeEach(() => {
       bootstrapper = new GCFBootstrapper();
       configStub = sinon.stub(bootstrapper, 'getProbotConfig').callsFake(() => {
-        return Promise.resolve({id: 1234, secret: 'foo', webhookPath: 'bar'});
+        return Promise.resolve({ id: 1234, secret: 'foo', webhookPath: 'bar' });
       });
     });
 

@@ -64,7 +64,7 @@ export = (app: Application) => {
     let text = '';
     let lintError = false;
 
-    const result = await lint(message.toLowerCase(), rules);
+    const result = await lint(message, rules);
     if (result.valid === false) {
       lintError = true;
       text += `:x: linting errors for "*${result.input}*"\n`;
