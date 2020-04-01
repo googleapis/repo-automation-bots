@@ -18,7 +18,7 @@ import { mergeOnGreen } from './merge-logic';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
-const MAX_TEST_TIME = 1000 * 60 * 60 * 2; // 2 hr.
+const MAX_TEST_TIME = 1000 * 60 * 60 * 6; // 2 hr.
 const MERGE_ON_GREEN_LABEL = 'automerge';
 
 interface WatchPR {
@@ -36,7 +36,6 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
   for (const pr of prs) {
     const created = new Date(pr.created).getTime();
     const now = new Date().getTime();
-    console.info(`keystore data`, pr[datastore.KEY]);
     const url = pr[datastore.KEY].name;
     let state = 'continue';
     //TODO: I'd prefer to not have a "list" method that has side effects - perhaps later refactor
