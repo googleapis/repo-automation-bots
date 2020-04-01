@@ -112,15 +112,19 @@ export function buildcop(app: Application) {
 
     try {
       // Get the list of issues once, before opening/closing any of them.
-      const issues = (
-        await context.github.issues.listForRepo({
-          owner,
-          repo,
-          per_page: 32,
-          labels: ISSUE_LABEL,
-          state: 'all', // Include open and closed issues.
-        })
-      ).data;
+      const options = context.github.issues.listForRepo.endpoint.merge({
+        owner,
+        repo,
+        per_page: 100,
+        labels: ISSUE_LABEL,
+        state: 'all', // Include open and closed issues.
+      });
+      let issues = await context.github.paginate(options);
+
+      // If we deduplicate any issues, re-download the issues.
+      if (await buildcop.deduplicateIssues(issues, context, owner, repo)) {
+        issues = await context.github.paginate(options);
+      }
 
       // Open issues for failing tests (including flaky tests).
       await buildcop.openIssues(
@@ -149,6 +153,63 @@ export function buildcop(app: Application) {
   });
 }
 
+// deduplicate issues closes any duplicate issues and returns whether or not any
+// were modified.
+buildcop.deduplicateIssues = async (
+  issues: Octokit.IssuesListForRepoResponseItem[],
+  context: PubSubContext,
+  owner: string,
+  repo: string
+) => {
+  issues = issues.filter(issue => issue.state === 'open');
+  const byTitle = new Map<string, Octokit.IssuesListForRepoResponseItem[]>();
+  for (const issue of issues) {
+    byTitle.set(issue.title, byTitle.get(issue.title) || []);
+    byTitle.get(issue.title)?.push(issue);
+  }
+
+  let modified = false;
+
+  for (const [title, issues] of byTitle) {
+    if (issues.length <= 1) {
+      continue;
+    }
+    modified = true;
+    // All of the issues will be closed except for the first one. So, sort by
+    // flakiness and issue number.
+    issues.sort((a, b) => {
+      if (buildcop.isFlaky(a) && !buildcop.isFlaky(b)) {
+        return -1;
+      }
+      if (!buildcop.isFlaky(a) && buildcop.isFlaky(b)) {
+        return 1;
+      }
+      return a.number - b.number;
+    });
+    // Keep the first issue, close the others.
+    const issue = issues.shift();
+    for (const dup of issues) {
+      context.log.info(
+        `[${owner}/${repo}] closing issue #${dup.number} as duplicate of #${issue?.number}`
+      );
+      await context.github.issues.createComment({
+        owner,
+        repo,
+        issue_number: dup.number,
+        body: `Closing as a duplicate of #${issue?.number}`,
+      });
+      await context.github.issues.update({
+        owner,
+        repo,
+        issue_number: dup.number,
+        state: 'closed',
+      });
+    }
+  }
+
+  return modified;
+};
+
 // For every failure, check if an issue is open. If not, open/reopen one.
 buildcop.openIssues = async (
   failures: TestCase[],
@@ -160,19 +221,23 @@ buildcop.openIssues = async (
   buildURL: string
 ) => {
   for (const failure of failures) {
-    // Look for an existing issue. If there are multiple, pick one at
-    // random.
     // Only reopen issues for individual test cases, not for the "everything
     // failed" issue. If the "everything failed" issue is already open, leave it
     // open.
-    // TODO: what if one is closed and one is open? We should prefer the
-    // open one and close duplicates.
-    const existingIssue = issues.find(issue => {
-      if (issue.title === EVERYTHING_FAILED_TITLE) {
-        return issue.state === 'open';
-      }
-      return issue.title === buildcop.formatTestCase(failure);
-    });
+    const matchingIssues = issues.filter(
+      issue => issue.title === buildcop.formatTestCase(failure)
+    );
+    // Prefer open issues in case there are duplicates.
+    let existingIssue = matchingIssues.find(issue => issue.state === 'open');
+
+    if (
+      matchingIssues.length > 0 &&
+      !existingIssue &&
+      buildcop.formatTestCase(failure) !== EVERYTHING_FAILED_TITLE
+    ) {
+      existingIssue = matchingIssues[0];
+    }
+
     if (existingIssue) {
       context.log.info(
         `[${owner}/${repo}] existing issue #${existingIssue.number}: state: ${existingIssue.state}`
