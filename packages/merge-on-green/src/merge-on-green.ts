@@ -39,7 +39,7 @@ interface WatchPR {
 handler.getDatastore = async function getDatastore() {
   const query = datastore.createQuery(TABLE).order('created');
   const [prs] = await datastore.runQuery(query);
-  return prs;
+  return [prs];
 };
 
 /**
