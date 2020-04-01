@@ -397,7 +397,7 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: `Failure!`,
-              labels: ['buildcop: flaky'],
+              labels: [{ name: 'buildcop: flaky' }],
               state: 'open',
             },
           ]);
@@ -459,7 +459,7 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: 'Failure!',
-              labels: ['buildcop: flaky'],
+              labels: [{ name: 'buildcop: flaky' }],
               state: 'closed',
             },
           ])
@@ -708,7 +708,7 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: `Failure!`,
-              labels: ['buildcop: flaky'],
+              labels: [{ name: 'buildcop: flaky' }],
             },
           ]);
 
@@ -798,7 +798,7 @@ describe('buildcop', () => {
               title,
               number: 17,
               body: 'Failure!',
-              labels: ['buildcop: flaky'],
+              labels: [{ name: 'buildcop: flaky' }],
               state: 'open',
             },
           ])
@@ -826,7 +826,7 @@ describe('buildcop', () => {
               title,
               number: 17,
               body: 'Failure!',
-              labels: ['buildcop: flaky'],
+              labels: [{ name: 'buildcop: flaky' }],
               state: 'open',
             },
           ]);
