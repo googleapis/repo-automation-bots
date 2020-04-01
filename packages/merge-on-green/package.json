@@ -30,6 +30,8 @@
     "gcf-utils": "1.6.2"
   },
   "devDependencies": {
+    "@types/sinon": "^7.5.2",
+    "sinon": "^9.0.0",
     "@types/body-parser": "^1.17.0",
     "@types/bunyan": "^1.8.6",
     "@types/chai": "^4.1.7",
