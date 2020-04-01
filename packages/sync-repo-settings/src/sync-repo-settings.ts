@@ -63,6 +63,7 @@ handler.getRepos = async function getRepos(): Promise<GetReposResponse> {
  */
 function handler(app: Application) {
   app.on(['schedule.repository'], async (context: Context) => {
+    console.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
     const name = context.payload.repository.name;
     const repo = `${owner}/${name}`;
@@ -74,27 +75,21 @@ function handler(app: Application) {
       return;
     }
 
+    if (context.payload.cron_org !== owner) {
+      console.log(`skipping run for ${context.payload.cron_org}`);
+      return;
+    }
+
+    const start = new Date().getTime();
     // update each settings section
-    try {
-      await handler.updateRepoOptions(r, context);
-    } catch (err) {
-      console.log(`Error updating repo options for ${repo}`);
-      console.log(err);
-    }
+    await Promise.all([
+      handler.updateRepoOptions(r, context),
+      handler.updateMasterBranchProtection(r, context),
+      handler.updateRepoTeams(r, context),
+    ]);
 
-    try {
-      await handler.updateMasterBranchProtection(r, context);
-    } catch (err) {
-      console.log(`Error updating master branch protection for ${repo}`);
-      console.log(err);
-    }
-
-    try {
-      await handler.updateRepoTeams(r, context);
-    } catch (err) {
-      console.log(`Error updating repo in org for ${repo}`);
-      console.log(err);
-    }
+    const end = new Date().getTime();
+    console.log(`Execution finished in ${start - end} ms.`);
   });
 }
 
@@ -123,22 +118,28 @@ handler.updateMasterBranchProtection = async function updateMasterBranchProtecti
       checks = customConfig.requiredStatusChecks;
     }
   }
-
-  await context.github.repos.updateBranchProtection({
-    branch: 'master',
-    owner,
-    repo: name,
-    required_pull_request_reviews: {
-      dismiss_stale_reviews: false,
-      require_code_owner_reviews: false,
-    },
-    required_status_checks: {
-      contexts: checks,
-      strict: config.requireUpToDateBranch,
-    },
-    enforce_admins: true,
-    restrictions: null!,
-  });
+  try {
+    await context.github.repos.updateBranchProtection({
+      branch: 'master',
+      owner,
+      repo: name,
+      required_pull_request_reviews: {
+        dismiss_stale_reviews: false,
+        require_code_owner_reviews: false,
+      },
+      required_status_checks: {
+        contexts: checks,
+        strict: config.requireUpToDateBranch,
+      },
+      enforce_admins: true,
+      restrictions: null!,
+    });
+    console.log(`Success updating master branch protection for ${repo}`);
+  } catch (err) {
+    console.log(
+      `Error updating master protection for ${repo} error status: ${err.status}`
+    );
+  }
 };
 
 /**
@@ -167,13 +168,20 @@ handler.updateRepoTeams = async function updateRepoTeams(
   ];
 
   for (const membership of teamsToAdd) {
-    await context.github.teams.addOrUpdateRepoInOrg({
-      team_slug: membership.slug,
-      owner,
-      org: owner,
-      permission: membership.permission as 'push',
-      repo: name,
-    });
+    try {
+      await context.github.teams.addOrUpdateRepoInOrg({
+        team_slug: membership.slug,
+        owner,
+        org: owner,
+        permission: membership.permission as 'push',
+        repo: name,
+      });
+      console.log(`Success updating repo in org for ${repo}`);
+    } catch (err) {
+      console.log(
+        `Error updating repo in org for ${repo} error status: ${err.status}`
+      );
+    }
   }
 };
 
@@ -191,15 +199,21 @@ handler.updateRepoOptions = async function updateRepoOptions(
   if (!config) {
     return;
   }
-
-  await context.github.repos.update({
-    name,
-    repo: name,
-    owner,
-    allow_merge_commit: false,
-    allow_rebase_merge: config.enableRebaseMerge,
-    allow_squash_merge: config.enableSquashMerge,
-  });
+  try {
+    await context.github.repos.update({
+      name,
+      repo: name,
+      owner,
+      allow_merge_commit: false,
+      allow_rebase_merge: config.enableRebaseMerge,
+      allow_squash_merge: config.enableSquashMerge,
+    });
+    console.log(`Success updating repo options for ${repo}`);
+  } catch (err) {
+    console.log(
+      `Error updating repo options for  ${repo} error status: ${err.status}`
+    );
+  }
 };
 
 export = handler;
