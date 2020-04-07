@@ -1,6 +1,8 @@
 {
   "repos": [
     { "language": "kotlin", "repo": "Codertocat/Hello-World"},
-    { "language": "nodejs", "repo": "googleapis/nodejs-dialogflow"}
+    { "language": "nodejs", "repo": "googleapis/nodejs-dialogflow"},
+    { "language": "java", "repo": "googleapis/api-common-java"},
+    { "language": "nodejs", "repo": "googleapis/gapic-generator-typescript"}
   ]
 }
