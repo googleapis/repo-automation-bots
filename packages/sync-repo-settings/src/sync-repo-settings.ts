@@ -79,6 +79,7 @@ function handler(app: Application) {
         x => x === repo
       );
       if (ignored) {
+        console.log(`ignoring ${repo}`)
         return;
       }
     }
