@@ -42,7 +42,7 @@ function nockUpdateRepoSettings(repo: string) {
     .reply(200);
 }
 
-function nockUpdateBranchProtection(repo: string) {
+function nockUpdateBranchProtection(repo: string, contexts: string[]) {
   return nock('https://api.github.com')
     .put(`/repos/googleapis/${repo}/branches/master/protection`, {
       required_pull_request_reviews: {
@@ -50,17 +50,7 @@ function nockUpdateBranchProtection(repo: string) {
         require_code_owner_reviews: false,
       },
       required_status_checks: {
-        contexts: [
-          'ci/kokoro: Samples test',
-          'ci/kokoro: System test',
-          'docs',
-          'lint',
-          'test (10)',
-          'test (12)',
-          'test (13)',
-          'cla/google',
-          'windows',
-        ],
+        contexts,
         strict: true,
       },
       enforce_admins: true,
@@ -97,8 +87,8 @@ describe('Sync repo settings', () => {
         organization: {
           login: 'news',
         },
-        cron_org: 'news'
-      },   
+        cron_org: 'news',
+      },
       id: 'abc123',
     });
     scopes.forEach(s => s.done());
@@ -165,7 +155,17 @@ describe('Sync repo settings', () => {
   it('should override master branch protection if the repo is overridden', async () => {
     const scopes = [
       nockUpdateRepoSettings('gapic-generator-typescript'),
-      nockUpdateBranchProtection('gapic-generator-typescript'),
+      nockUpdateBranchProtection('gapic-generator-typescript', [
+        'ci/circleci: dlpLibTest',
+        'ci/circleci: kmsLibTest',
+        'ci/circleci: monitoringLibTest',
+        'ci/circleci: showcaseLibTest',
+        'ci/circleci: showcaseTestApplications',
+        'ci/circleci: testGenerator',
+        'ci/circleci: translateLibTest',
+        'ci/circleci: ttsLibTest',
+        'cla/google',
+      ]),
       nockUpdateTeamMembership(
         'yoshi-admins',
         'googleapis',
@@ -197,11 +197,21 @@ describe('Sync repo settings', () => {
     });
     scopes.forEach(s => s.done());
   });
-  
+
   it('should update settings for a known repository', async () => {
     const scopes = [
-      nockUpdateRepoSettings('gapic-generator-typescript'),
-      nockUpdateBranchProtection('gapic-generator-typescript'),
+      nockUpdateRepoSettings('nodejs-dialogflow'),
+      nockUpdateBranchProtection('nodejs-dialogflow', [
+        'ci/kokoro: Samples test',
+        'ci/kokoro: System test',
+        'docs',
+        'lint',
+        'test (10)',
+        'test (12)',
+        'test (13)',
+        'cla/google',
+        'windows',
+      ]),
       nockUpdateTeamMembership(
         'yoshi-admins',
         'googleapis',

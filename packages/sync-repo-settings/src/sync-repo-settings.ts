@@ -75,13 +75,13 @@ function handler(app: Application) {
       return;
     }
     if (languageConfig[yoshiRepo.language]) {
-      const ignored = languageConfig[yoshiRepo.language].ignoredRepos?.find(x => x === repo)
+      const ignored = languageConfig[yoshiRepo.language].ignoredRepos?.find(
+        x => x === repo
+      );
       if (ignored) {
         return;
       }
     }
-    
-  
 
     if (context.payload.cron_org !== owner) {
       console.log(`skipping run for ${context.payload.cron_org}`);
@@ -124,7 +124,6 @@ handler.updateMasterBranchProtection = async function updateMasterBranchProtecti
     const customConfig = config.repoOverrides.find(x => x.repo === repo.repo);
     if (customConfig) {
       checks = customConfig.requiredStatusChecks;
-      console.log(checks);
     }
   }
   try {
