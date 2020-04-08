@@ -15,9 +15,12 @@
 
 import {Application} from 'probot';
 import {GitHubAPI} from 'probot/lib/github';
-import * as path from 'path';
+import {Storage} from '@google-cloud/storage';
 
-const fs = require('fs');
+import * as path from 'path';
+import * as fs from 'fs';
+
+// eslint-disable-next-line  @typescript-eslint/no-var-requires
 const colorsData = require('./colors.json');
 
 interface JSONData {
@@ -109,7 +112,6 @@ handler.callStorage = async function callStorage(
   bucketName: string,
   srcFileName: string
 ) {
-  const {Storage} = require('@google-cloud/storage');
   const storage = new Storage();
 
   // Downloads the file
@@ -215,8 +217,10 @@ function handler(app: Application) {
 
     const jsonArray = await handler.checkIfFileIsEmpty(jsonData);
 
-    let objectInJsonArray: JSONData | null | undefined;
-    objectInJsonArray = handler.checkIfElementIsInArray(jsonArray, owner, repo);
+    const objectInJsonArray:
+      | JSONData
+      | null
+      | undefined = handler.checkIfElementIsInArray(jsonArray, owner, repo);
 
     if (objectInJsonArray === null || objectInJsonArray === undefined) {
       console.log('There was no match for the repo name: ' + repo);

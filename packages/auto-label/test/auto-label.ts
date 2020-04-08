@@ -16,6 +16,7 @@
 import {Probot} from 'probot';
 import nock from 'nock';
 import {expect} from 'chai';
+import {describe, it, beforeEach} from 'mocha';
 import handler from '../src/auto-label';
 import {resolve} from 'path';
 import * as fs from 'fs';
@@ -43,6 +44,7 @@ describe('auto-label', () => {
     probot = new Probot({
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
+      // eslint-disable-next-line node/no-extraneous-require
       Octokit: require('@octokit/rest'),
     });
     probot.app = {
@@ -58,6 +60,7 @@ describe('auto-label', () => {
 
   describe('responds to events', () => {
     it('responds to issues and creates appropriate labels when there are no labels', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
@@ -101,6 +104,7 @@ describe('auto-label', () => {
     });
 
     it('responds to issues and does not create labels if they are not needed', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
@@ -140,6 +144,7 @@ describe('auto-label', () => {
     });
 
     it('responds to issues and adds a label to an issue, even if the label already exists on the repo', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
@@ -181,6 +186,7 @@ describe('auto-label', () => {
     });
 
     it('ends execution if the JSON file is empty', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com');
@@ -200,6 +206,7 @@ describe('auto-label', () => {
     });
 
     it('returns null if there is no match on the repo', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com');
@@ -227,6 +234,7 @@ describe('auto-label', () => {
   });
 
   it('responds to backfill label event, backfilling issues with labels', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const payload = require(resolve(fixturesPath, './events/issue-labeled'));
 
     const ghRequests = nock('https://api.github.com')

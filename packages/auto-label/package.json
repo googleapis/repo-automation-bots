@@ -9,6 +9,9 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "main": "build/src/app.js",
+  "files": [
+    "build/src"
+  ],
   "keywords": [
     "probot",
     "github",
@@ -26,7 +29,9 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "1.6.2"
+    "@google-cloud/storage": "^4.7.0",
+    "gcf-utils": "1.6.2",
+    "probot": "^9.11.2"
   },
   "devDependencies": {
     "@types/body-parser": "^1.19.0",
@@ -44,7 +49,7 @@
     "dotenv": "^8.2.0",
     "gts": "^2.0.0-alpha.9",
     "mocha": "^7.0.1",
-    "nock": "^12.0.0",
+    "nock": "^12.0.3",
     "smee-client": "^1.1.0",
     "snap-shot-it": "^7.9.2",
     "typescript": "^3.8.3"
