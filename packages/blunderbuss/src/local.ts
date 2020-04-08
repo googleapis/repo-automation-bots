@@ -16,8 +16,8 @@ import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './blunderbuss';
 import express from 'express';
 import {config} from 'dotenv';
-import {resolve} from 'path';
 import {urlencoded, json} from 'body-parser';
+import {resolve} from 'path';
 
 const out = config({path: resolve(__dirname, '../../.env')});
 console.log(out);

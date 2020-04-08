@@ -19,6 +19,7 @@ import {Probot} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
+import {beforeEach, describe, it} from 'mocha';
 
 nock.disableNetConnect();
 
@@ -35,6 +36,7 @@ describe('Blunderbuss', () => {
     probot = new Probot({
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
+      // eslint-disable-next-line node/no-extraneous-require
       Octokit: require('@octokit/rest'),
     });
     probot.app = {
@@ -50,6 +52,7 @@ describe('Blunderbuss', () => {
 
   describe('issue tests', () => {
     it('assigns opened issues with no assignees', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         './events/issue_opened_no_assignees'
@@ -71,6 +74,7 @@ describe('Blunderbuss', () => {
     });
 
     it('ignores opened issues when with assignee(s)', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         'events',
@@ -89,6 +93,7 @@ describe('Blunderbuss', () => {
     });
 
     it('ignores issue when not configured', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         'events',
@@ -107,6 +112,7 @@ describe('Blunderbuss', () => {
     });
 
     it('assigns issue when correct label', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         'events',
@@ -135,6 +141,7 @@ describe('Blunderbuss', () => {
     });
 
     it('ignores issue when wrong label', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         'events',
@@ -153,6 +160,7 @@ describe('Blunderbuss', () => {
     });
 
     it('ignores issue when no config', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         'events',
@@ -172,6 +180,7 @@ describe('Blunderbuss', () => {
 
   describe('pr tests', () => {
     it('assigns user to a PR when opened with no assignee', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         'events',
@@ -199,6 +208,7 @@ describe('Blunderbuss', () => {
     });
 
     it('ignores PR when PR opened with assignee(s)', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         'events',
@@ -221,6 +231,7 @@ describe('Blunderbuss', () => {
     });
 
     it('ignores PR when PR opened but assign_issues not in config', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         'events',
@@ -243,6 +254,7 @@ describe('Blunderbuss', () => {
     });
 
     it('assigns issue when correct label', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         'events',
@@ -271,6 +283,7 @@ describe('Blunderbuss', () => {
     });
 
     it('ignores pr when wrong label', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         'events',
@@ -293,6 +306,7 @@ describe('Blunderbuss', () => {
     });
 
     it('ignores pr when no config', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         'events',

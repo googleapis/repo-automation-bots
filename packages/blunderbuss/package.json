@@ -9,6 +9,9 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "main": "build/src/app.js",
+  "files": [
+    "build/src"
+  ],
   "keywords": [
     "probot",
     "github",
@@ -27,7 +30,9 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "1.6.2"
+    "express": "^4.17.1",
+    "gcf-utils": "1.6.2",
+    "probot": "^9.11.2"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
