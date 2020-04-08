@@ -19,8 +19,8 @@ import { mergeOnGreen } from './merge-logic';
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
 const MAX_TEST_TIME = 1000 * 60 * 60 * 6; // 6 hr.
-const COMMENT_INTERVAL_LOW = 1000 * 60 * 60 * 2.941; // 2 hours and 57.5 minutes
-const COMMENT_INTERVAL_HIGH = 1000 * 60 * 60 * 3.058; // 3 hours and 3.5 minutes
+const COMMENT_INTERVAL_LOW = 1000 * 60 * 60 * 3; // 3 hours
+const COMMENT_INTERVAL_HIGH = 1000 * 60 * 60 * 3.067; // 3 hours and 4 minutes
 const MERGE_ON_GREEN_LABEL = 'automerge';
 const WORKER_SIZE = 4;
 
