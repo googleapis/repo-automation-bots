@@ -322,7 +322,9 @@ mergeOnGreen.checkForRequiredSC = function checkForRequiredSC(
   regexCheck: RegExp
 ): boolean {
   if (checkRuns.length !== 0) {
-    const checkRunCompleted = checkRuns.find(element => regexCheck.test(element.name));
+    const checkRunCompleted = checkRuns.find(element =>
+      regexCheck.test(element.name)
+    );
     if (
       checkRunCompleted !== undefined &&
       checkRunCompleted.conclusion === 'success'
@@ -370,10 +372,10 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
       console.log(
         `Looking for required checks in status checks for ${owner}/${repo}/${pr}.`
       );
-      const regexCheck = new RegExp(`^${check}`)
+      const regexCheck = new RegExp(`^${check}`);
       //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
-      const checkCompleted = checkStatus.find(
-        (element: CheckStatus) => regexCheck.test(element.context)
+      const checkCompleted = checkStatus.find((element: CheckStatus) =>
+        regexCheck.test(element.context)
       );
       if (checkCompleted === undefined) {
         console.log(
