@@ -15,28 +15,28 @@
 
 // Publish bot requires a minimum of Node 10 for the
 // runtime, we uses the lack of fs.promises to detect this.
-const { promises } = require('fs');
+const {promises} = require('fs');
 if (!promises) {
   console.warn('node 10 is required for publish bot');
   process.exit(0);
 }
 
-import { Application } from 'probot';
+import {Application} from 'probot';
 import handler from '../src/publish';
 
-import { resolve } from 'path';
-import { Probot } from 'probot';
+import {resolve} from 'path';
+import {Probot} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
-import { expect } from 'chai';
+import {expect} from 'chai';
 
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 interface Secret {
-  payload: { [key: string]: Buffer };
+  payload: {[key: string]: Buffer};
 }
 
 interface PublishConfig {
@@ -75,7 +75,7 @@ describe('publish', () => {
     );
     const requests = nock('https://api.github.com')
       .get('/repos/Codertocat/Hello-World/contents/.github/publish.yml')
-      .reply(200, { content: config.toString('base64') })
+      .reply(200, {content: config.toString('base64')})
       .get('/repos/Codertocat/Hello-World/tarball/0.0.1')
       .reply(
         200,
@@ -118,7 +118,7 @@ describe('publish', () => {
       observedPkgPath = pkgPath;
     };
 
-    await probot.receive({ name: 'release.released', payload, id: 'abc123' });
+    await probot.receive({name: 'release.released', payload, id: 'abc123'});
     requests.done();
     expect(observedPkgPath).to.match(/\/tmp\/.*\/package/);
   });
@@ -134,7 +134,7 @@ describe('publish', () => {
       .reply(404)
       .get('/repos/Codertocat/.github/contents/.github/publish.yml')
       .reply(404);
-    await probot.receive({ name: 'release.released', payload, id: 'abc123' });
+    await probot.receive({name: 'release.released', payload, id: 'abc123'});
     requests.done();
   });
 });

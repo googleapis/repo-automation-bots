@@ -12,13 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Application } from 'probot';
-import { GitHubAPI } from 'probot/lib/github';
-import {
-  LicenseHeader,
-  LicenseType,
-  detectLicenseHeader,
-} from './header-parser';
+import {Application} from 'probot';
+import {GitHubAPI} from 'probot/lib/github';
+import {LicenseHeader, LicenseType, detectLicenseHeader} from './header-parser';
 import {
   ChecksCreateParams,
   PullsListFilesResponse,

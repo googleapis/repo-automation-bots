@@ -14,9 +14,9 @@
 
 import myProbotApp from '../src/conventional-commit-lint';
 
-import { expect } from 'chai';
-import { resolve } from 'path';
-import { Probot } from 'probot';
+import {expect} from 'chai';
+import {resolve} from 'path';
+import {Probot} from 'probot';
 import snapshot from 'snap-shot-it';
 
 import nock from 'nock';
@@ -63,7 +63,7 @@ describe('ConventionalCommitLint', () => {
       })
       .reply(200);
 
-    await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+    await probot.receive({name: 'pull_request', payload, id: 'abc123'});
     requests.done();
   });
 
@@ -83,7 +83,7 @@ describe('ConventionalCommitLint', () => {
       })
       .reply(200);
 
-    await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+    await probot.receive({name: 'pull_request', payload, id: 'abc123'});
     requests.done();
   });
 
@@ -109,7 +109,7 @@ describe('ConventionalCommitLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -134,7 +134,7 @@ describe('ConventionalCommitLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
   });

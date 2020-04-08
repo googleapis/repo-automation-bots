@@ -13,11 +13,11 @@
 // limitations under the License.
 //
 
-import { Probot } from 'probot';
+import {Probot} from 'probot';
 import nock from 'nock';
-import { expect } from 'chai';
+import {expect} from 'chai';
 import handler from '../src/auto-label';
-import { resolve } from 'path';
+import {resolve} from 'path';
 import * as fs from 'fs';
 
 nock.disableNetConnect();
@@ -96,7 +96,7 @@ describe('auto-label', () => {
         return downloadedFile;
       };
 
-      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
 
@@ -135,7 +135,7 @@ describe('auto-label', () => {
         return downloadedFile;
       };
 
-      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
 
@@ -176,7 +176,7 @@ describe('auto-label', () => {
         return downloadedFile;
       };
 
-      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
 
@@ -195,7 +195,7 @@ describe('auto-label', () => {
         )
       ).to.be.a('null');
 
-      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
 
@@ -221,7 +221,7 @@ describe('auto-label', () => {
         )
       ).to.be.an('undefined');
 
-      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
   });
@@ -243,7 +243,7 @@ describe('auto-label', () => {
       return downloadedFile;
     };
 
-    await probot.receive({ name: 'issues.labeled', payload, id: 'abc123' });
+    await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
     ghRequests.done();
   });
 });

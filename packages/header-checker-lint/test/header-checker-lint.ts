@@ -14,11 +14,11 @@
 
 import myProbotApp from '../src/header-checker-lint';
 
-import { resolve } from 'path';
-import { Probot } from 'probot';
+import {resolve} from 'path';
+import {Probot} from 'probot';
 import snapshot from 'snap-shot-it';
 import Webhooks from '@octokit/webhooks';
-import { readFileSync } from 'fs';
+import {readFileSync} from 'fs';
 
 import nock from 'nock';
 nock.disableNetConnect();
@@ -85,7 +85,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -118,7 +118,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -148,7 +148,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -181,7 +181,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -214,7 +214,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -231,7 +231,7 @@ describe('HeaderCheckerLint', () => {
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
         )
-        .reply(200, { content: config.toString('base64') })
+        .reply(200, {content: config.toString('base64')})
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
         )
@@ -246,7 +246,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -279,7 +279,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -296,7 +296,7 @@ describe('HeaderCheckerLint', () => {
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
         )
-        .reply(200, { content: config.toString('base64') })
+        .reply(200, {content: config.toString('base64')})
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
         )
@@ -307,7 +307,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -340,7 +340,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
   });
@@ -381,7 +381,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -414,7 +414,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -444,7 +444,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -477,7 +477,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -510,7 +510,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -543,7 +543,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -576,7 +576,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -605,7 +605,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: '867' });
+      await probot.receive({name: 'pull_request', payload, id: '867'});
       requests.done();
     });
   });

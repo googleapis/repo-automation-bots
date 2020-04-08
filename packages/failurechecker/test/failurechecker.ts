@@ -14,7 +14,7 @@
 
 import failureChecker from '../src/failurechecker';
 
-import { Probot } from 'probot';
+import {Probot} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 

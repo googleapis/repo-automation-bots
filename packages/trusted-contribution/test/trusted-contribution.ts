@@ -14,8 +14,8 @@
 
 import myProbotApp from '../src/trusted-contribution';
 
-import { resolve } from 'path';
-import { Probot } from 'probot';
+import {resolve} from 'path';
+import {Probot} from 'probot';
 import Webhooks from '@octokit/webhooks';
 
 import nock from 'nock';
@@ -82,13 +82,13 @@ describe('TrustedContributionTestRunner', () => {
           )
           .reply(200);
 
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
         payload.pull_request.user.login = 'notauthorized';
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
     });
@@ -110,13 +110,13 @@ describe('TrustedContributionTestRunner', () => {
           )
           .reply(200);
 
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
         payload.pull_request.user.login = 'notauthorized';
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
     });
@@ -129,7 +129,7 @@ describe('TrustedContributionTestRunner', () => {
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github/trusted-contribution.yml'
         )
-        .reply(200, { content: config.toString('base64') });
+        .reply(200, {content: config.toString('base64')});
     });
 
     describe('opened pull request', () => {
@@ -150,13 +150,13 @@ describe('TrustedContributionTestRunner', () => {
           )
           .reply(200);
 
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
         payload.pull_request.user.login = 'release-please[bot]';
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
     });
@@ -179,13 +179,13 @@ describe('TrustedContributionTestRunner', () => {
           )
           .reply(200);
 
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
         payload.pull_request.user.login = 'release-please[bot]';
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
     });
@@ -198,7 +198,7 @@ describe('TrustedContributionTestRunner', () => {
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github/trusted-contribution.yml'
         )
-        .reply(200, { content: config.toString('base64') });
+        .reply(200, {content: config.toString('base64')});
     });
 
     describe('opened pull request', () => {
@@ -218,13 +218,13 @@ describe('TrustedContributionTestRunner', () => {
           )
           .reply(200);
 
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
         payload.pull_request.user.login = 'unauthorized';
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
     });
@@ -246,13 +246,13 @@ describe('TrustedContributionTestRunner', () => {
           )
           .reply(200);
 
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
         payload.pull_request.user.login = 'unauthorized';
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
     });
@@ -267,7 +267,7 @@ describe('TrustedContributionTestRunner', () => {
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github/trusted-contribution.yml'
         )
-        .reply(200, { content: config.toString('base64') });
+        .reply(200, {content: config.toString('base64')});
     });
 
     describe('opened pull request', () => {
@@ -278,13 +278,13 @@ describe('TrustedContributionTestRunner', () => {
       });
 
       it('does not set a label on PR, even if PR author is a default trusted contributor', async () => {
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
         payload.pull_request.user.login = 'custom-user';
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
     });
@@ -297,12 +297,12 @@ describe('TrustedContributionTestRunner', () => {
       });
 
       it('does not set a label on PR, even if PR author is a default trusted contributor', async () => {
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
-        await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
         requests.done();
       });
     });

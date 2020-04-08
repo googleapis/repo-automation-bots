@@ -22,9 +22,9 @@
  *  - repo: the repo being tested (e.g. GoogleCloudPlatform/golang-samples).
  */
 
-import { Application } from 'probot';
-import { LoggerWithTarget } from 'probot/lib/wrap-logger';
-import { GitHubAPI } from 'probot/lib/github';
+import {Application} from 'probot';
+import {LoggerWithTarget} from 'probot/lib/wrap-logger';
+import {GitHubAPI} from 'probot/lib/github';
 import xmljs from 'xml-js';
 import Octokit from '@octokit/rest';
 
@@ -77,8 +77,8 @@ interface TestResults {
 
 export interface BuildCopPayload {
   repo: string;
-  organization: { login: string }; // Filled in by gcf-utils.
-  repository: { name: string }; // Filled in by gcf-utils.
+  organization: {login: string}; // Filled in by gcf-utils.
+  repository: {name: string}; // Filled in by gcf-utils.
   commit: string;
   buildURL: string;
 
@@ -112,9 +112,9 @@ export function buildcop(app: Application) {
         return;
       }
       if (context.payload.testsFailed) {
-        results = { passes: [], failures: [{ passed: false }] }; // A single failure is used to indicate the whole build failed.
+        results = {passes: [], failures: [{passed: false}]}; // A single failure is used to indicate the whole build failed.
       } else {
-        results = { passes: [], failures: [] }; // Tests passed.
+        results = {passes: [], failures: []}; // Tests passed.
       }
     }
 
@@ -539,7 +539,7 @@ buildcop.formatTestCase = (failure: TestCase): string => {
 };
 
 buildcop.findTestResults = (xml: string): TestResults => {
-  const obj = xmljs.xml2js(xml, { compact: true }) as xmljs.ElementCompact;
+  const obj = xmljs.xml2js(xml, {compact: true}) as xmljs.ElementCompact;
   const failures: TestCase[] = [];
   const passes: TestCase[] = [];
   // Python doesn't always have a top-level testsuites element.

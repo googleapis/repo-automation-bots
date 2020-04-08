@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Application } from 'probot';
+import {Application} from 'probot';
 import lint from '@commitlint/lint';
 
-import { rules } from '@commitlint/config-conventional';
+import {rules} from '@commitlint/config-conventional';
 // modify rules slightly:
 // see: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-conventional/index.js
 delete rules['type-enum'];
 rules['header-max-length'] = [2, 'always', 256];
 
-import { PullsListCommitsResponseItem, Response } from '@octokit/rest';
+import {PullsListCommitsResponseItem, Response} from '@octokit/rest';
 
 type Conclusion =
   | 'success'
@@ -83,7 +83,8 @@ export = (app: Application) => {
     });
 
     if (lintError) {
-      let summary = `Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\n`;
+      let summary =
+        'Some of your commit messages failed linting.\n\nVisit [conventionalcommits.org](https://conventionalcommits.org) to learn our conventions.\n\n';
       if (commits.length === 1) {
         summary +=
           'Run `git commit --amend` and edit your message to match Conventional Commit guidelines.';

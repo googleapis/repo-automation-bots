@@ -14,7 +14,7 @@
 
 import handler from '../src/sync-repo-settings';
 import nock from 'nock';
-import { Probot } from 'probot';
+import {Probot} from 'probot';
 
 nock.disableNetConnect();
 const repos = require('../../test/fixtures/repos.json');
@@ -33,7 +33,7 @@ function nockUpdateTeamMembership(team: string, org: string, repo: string) {
 
 function nockUpdateRepoSettings() {
   return nock('https://api.github.com')
-    .patch(`/repos/googleapis/nodejs-dialogflow`, {
+    .patch('/repos/googleapis/nodejs-dialogflow', {
       name: 'nodejs-dialogflow',
       allow_merge_commit: false,
       allow_rebase_merge: true,

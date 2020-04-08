@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GCFBootstrapper } from 'gcf-utils';
+import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './conventional-commit-lint';
 import express from 'express';
-import { config } from 'dotenv';
-import { resolve } from 'path';
-import { json } from 'body-parser';
+import {config} from 'dotenv';
+import {resolve} from 'path';
+import {json} from 'body-parser';
 
-const out = config({ path: resolve(__dirname, '../../.env') });
+const out = config({path: resolve(__dirname, '../../.env')});
 console.log(out);
 
 const bootstrap = new GCFBootstrapper();

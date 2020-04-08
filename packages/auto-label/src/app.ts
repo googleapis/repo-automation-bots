@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-import { GCFBootstrapper } from 'gcf-utils';
+import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './auto-label';
 
 const bootstrap = new GCFBootstrapper();

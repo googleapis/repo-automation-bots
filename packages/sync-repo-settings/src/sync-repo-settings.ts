@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Application, Context } from 'probot';
-import { request } from 'gaxios';
+import {Application, Context} from 'probot';
+import {request} from 'gaxios';
 
 const languageConfig: LanguageConfig = require('./required-checks.json');
 

@@ -15,7 +15,7 @@
 import appFn from '../src/label-sync';
 import path from 'path';
 import nock from 'nock';
-import { Probot } from 'probot';
+import {Probot} from 'probot';
 
 nock.disableNetConnect();
 const fixturesPath = path.resolve(__dirname, '../../test/fixtures');
@@ -53,7 +53,7 @@ function nockLabelList() {
     .get(
       '/repos/googleapis/repo-automation-bots/contents/packages/label-sync/src/labels.json'
     )
-    .reply(200, { content: Buffer.from(JSON.stringify(newLabels), 'utf8') });
+    .reply(200, {content: Buffer.from(JSON.stringify(newLabels), 'utf8')});
 }
 
 function nockFetchOldLabels(labels: Array<{}>) {
@@ -116,7 +116,7 @@ describe('Label Sync', () => {
       nockFetchOldLabels([]),
       nockLabelCreate(newLabels.labels.length + 1),
     ];
-    await probot.receive({ name: 'repository', payload, id: 'abc123' });
+    await probot.receive({name: 'repository', payload, id: 'abc123'});
     scopes.forEach(s => s.done());
   });
 
@@ -126,7 +126,7 @@ describe('Label Sync', () => {
       nockFetchOldLabels([]),
       nockLabelCreate(newLabels.labels.length + 1),
     ];
-    await probot.receive({ name: 'label', payload, id: 'abc123' });
+    await probot.receive({name: 'label', payload, id: 'abc123'});
     scopes.forEach(s => s.done());
   });
 
@@ -146,13 +146,13 @@ describe('Label Sync', () => {
       nockLabelCreate(newLabels.labels.length + 1),
       nockLabelDelete(labelName),
     ];
-    await probot.receive({ name: 'repository', payload, id: 'abc123' });
+    await probot.receive({name: 'repository', payload, id: 'abc123'});
     scopes.forEach(s => s.done());
   });
 
   it('should update bug label colors', async () => {
     const payload = require(path.resolve(fixturesPath, './label_deleted.json'));
-    const { labels } = Object.assign({}, newLabels);
+    const {labels} = Object.assign({}, newLabels);
     const labelName = 'type: bug';
     const bugLabel = labels.find(l => l.name === labelName)!;
     bugLabel.color = '000000';
@@ -161,7 +161,7 @@ describe('Label Sync', () => {
       nockLabelCreate(1),
       nockLabelUpdate(labelName),
     ];
-    await probot.receive({ name: 'label', payload, id: 'abc123' });
+    await probot.receive({name: 'label', payload, id: 'abc123'});
     scopes.forEach(s => s.done());
   });
 
@@ -173,7 +173,7 @@ describe('Label Sync', () => {
       nockFetchOldLabels([]),
       nockLabelCreate(newLabels.labels.length + 1),
     ];
-    await probot.receive({ name: 'push', payload, id: 'abc123' });
+    await probot.receive({name: 'push', payload, id: 'abc123'});
     scopes.forEach(s => s.done());
   });
 });

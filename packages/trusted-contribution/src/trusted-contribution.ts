@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Application } from 'probot';
+import {Application} from 'probot';
 
 interface ConfigurationOptions {
   trustedContributors?: string[];

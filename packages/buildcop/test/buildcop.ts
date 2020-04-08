@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { buildcop, BuildCopPayload } from '../src/buildcop';
-const { findTestResults, formatTestCase } = buildcop;
+import {buildcop, BuildCopPayload} from '../src/buildcop';
+const {findTestResults, formatTestCase} = buildcop;
 
-import { resolve } from 'path';
-import { Probot } from 'probot';
+import {resolve} from 'path';
+import {Probot} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
-import { expect } from 'chai';
+import {expect} from 'chai';
 
 nock.disableNetConnect();
 
@@ -181,14 +181,14 @@ describe('buildcop', () => {
     it('skips when there is no XML and no testsFailed', async () => {
       const payload = formatPayload({
         repo: 'tbpg/golang-samples',
-        organization: { login: 'tbpg' },
-        repository: { name: 'golang-samples' },
+        organization: {login: 'tbpg'},
+        repository: {name: 'golang-samples'},
         commit: '123',
         buildURL: 'http://example.com',
       });
 
       const requests = nock('https://api.github.com');
-      await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+      await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -196,8 +196,8 @@ describe('buildcop', () => {
       it('opens an issue when testsFailed', async () => {
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           testsFailed: true,
@@ -214,7 +214,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -222,8 +222,8 @@ describe('buildcop', () => {
       it('opens a new issue when testsFailed and there is a previous one closed', async () => {
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           testsFailed: true,
@@ -235,7 +235,7 @@ describe('buildcop', () => {
           )
           .reply(200, [
             {
-              title: formatTestCase({ passed: false }),
+              title: formatTestCase({passed: false}),
               number: 16,
               body: 'Failure!',
               state: 'closed',
@@ -247,7 +247,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -255,8 +255,8 @@ describe('buildcop', () => {
       it('comments on an existing open issue when testsFailed', async () => {
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           testsFailed: true,
@@ -268,7 +268,7 @@ describe('buildcop', () => {
           )
           .reply(200, [
             {
-              title: formatTestCase({ passed: false }),
+              title: formatTestCase({passed: false}),
               number: 16,
               body: 'Failure!',
               state: 'open',
@@ -282,7 +282,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -296,8 +296,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -314,7 +314,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -326,8 +326,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/python-docs-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'python-docs-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'python-docs-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -344,7 +344,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -356,8 +356,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/java-vision',
-          organization: { login: 'tbpg' },
-          repository: { name: 'java-vision' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'java-vision'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -374,7 +374,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -386,8 +386,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -430,7 +430,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -442,8 +442,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -462,8 +462,8 @@ describe('buildcop', () => {
                 passed: false,
               }),
               number: 16,
-              body: `Failure!`,
-              labels: [{ name: 'buildcop: flaky' }],
+              body: 'Failure!',
+              labels: [{name: 'buildcop: flaky'}],
               state: 'open',
             },
             {
@@ -474,7 +474,7 @@ describe('buildcop', () => {
                 passed: false,
               }),
               number: 17,
-              body: `Failure!`,
+              body: 'Failure!',
               state: 'open',
             },
           ])
@@ -486,7 +486,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -498,8 +498,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -518,8 +518,8 @@ describe('buildcop', () => {
                 passed: false,
               }),
               number: 16,
-              body: `Failure!`,
-              labels: [{ name: 'buildcop: quiet' }],
+              body: 'Failure!',
+              labels: [{name: 'buildcop: quiet'}],
               state: 'open',
             },
             {
@@ -530,7 +530,7 @@ describe('buildcop', () => {
                 passed: false,
               }),
               number: 17,
-              body: `Failure!`,
+              body: 'Failure!',
               state: 'open',
             },
           ])
@@ -542,7 +542,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -554,8 +554,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -567,7 +567,7 @@ describe('buildcop', () => {
           )
           .reply(200, []);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -579,8 +579,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -600,7 +600,7 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: 'Failure!',
-              labels: [{ name: 'buildcop: flaky' }, { name: 'api: spanner' }],
+              labels: [{name: 'buildcop: flaky'}, {name: 'api: spanner'}],
               state: 'closed',
             },
           ])
@@ -615,7 +615,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -627,8 +627,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -662,7 +662,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -674,8 +674,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/python-docs-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'python-docs-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'python-docs-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -709,7 +709,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -721,8 +721,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/java-vision',
-          organization: { login: 'tbpg' },
-          repository: { name: 'java-vision' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'java-vision'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -756,7 +756,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -768,8 +768,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -792,7 +792,7 @@ describe('buildcop', () => {
             },
           ]);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -804,8 +804,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -829,7 +829,7 @@ describe('buildcop', () => {
           .get('/repos/tbpg/golang-samples/issues/16/comments')
           .reply(200, [
             {
-              body: `status: failed\ncommit: 123`,
+              body: 'status: failed\ncommit: 123',
             },
           ])
           .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
@@ -843,7 +843,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -855,8 +855,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -875,7 +875,7 @@ describe('buildcop', () => {
                 passed: false,
               }),
               number: 16,
-              body: `status: failed\ncommit: 123`,
+              body: 'status: failed\ncommit: 123',
             },
           ])
           .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
@@ -889,7 +889,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -901,8 +901,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -921,12 +921,12 @@ describe('buildcop', () => {
                 passed: false,
               }),
               number: 16,
-              body: `Failure!`,
-              labels: [{ name: 'buildcop: flaky' }],
+              body: 'Failure!',
+              labels: [{name: 'buildcop: flaky'}],
             },
           ]);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -938,8 +938,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -973,7 +973,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -985,8 +985,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -1019,7 +1019,7 @@ describe('buildcop', () => {
               title,
               number: 17,
               body: 'Failure!',
-              labels: [{ name: 'buildcop: flaky' }],
+              labels: [{name: 'buildcop: flaky'}],
               state: 'open',
             },
             {
@@ -1032,7 +1032,7 @@ describe('buildcop', () => {
               title: title2,
               number: 19,
               body: 'Failure!',
-              labels: [{ name: 'buildcop: flaky' }],
+              labels: [{name: 'buildcop: flaky'}],
               state: 'open',
             },
           ])
@@ -1051,7 +1051,7 @@ describe('buildcop', () => {
           )
           .reply(200, []); // Real response would include all issues again.
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -1063,8 +1063,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -1092,7 +1092,7 @@ describe('buildcop', () => {
               title,
               number: 19,
               body: 'Failure!',
-              labels: [{ name: 'buildcop: flaky' }],
+              labels: [{name: 'buildcop: flaky'}],
               state: 'closed',
             },
           ])
@@ -1107,7 +1107,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
@@ -1119,8 +1119,8 @@ describe('buildcop', () => {
         );
         const payload = formatPayload({
           repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'tbpg'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           xunitXML: input,
@@ -1137,7 +1137,7 @@ describe('buildcop', () => {
           })
           .reply(200);
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         requests.done();
       });
