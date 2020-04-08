@@ -148,7 +148,7 @@ function getPR(mergeable: boolean, mergeableState: string, state: string) {
     });
 }
 
-describe('merge-on-green-', () => {
+describe('merge-on-green', () => {
   let probot: Probot;
 
   beforeEach(() => {
@@ -459,6 +459,56 @@ describe('merge-on-green-', () => {
       scopes.forEach(s => s.done());
     });
 
+    it('rejects status checks that do not match the required check', async () => {
+      const scopes = [
+        getPR(true, 'clean', 'open'),
+        getBranchProtection(["this is what we're looking for"]),
+        getReviewsCompleted([
+          { user: { login: 'octocat' }, state: 'APPROVED' },
+        ]),
+        getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
+        getMogLabel([{ name: 'automerge' }]),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          { state: 'success', context: "this is what we're looking fo" },
+        ]),
+      ];
+
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: { org: 'testOwner' },
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
+    });
+
+    it('accepts status checks that match the beginning of the required status check', async () => {
+      const scopes = [
+        getPR(true, 'clean', 'open'),
+        getBranchProtection(["this is what we're looking for"]),
+        getReviewsCompleted([
+          { user: { login: 'octocat' }, state: 'APPROVED' },
+        ]),
+        getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
+        getMogLabel([{ name: 'automerge' }]),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          {
+            state: 'success',
+            context: "this is what we're looking for/subtest",
+          },
+        ]),
+        merge(),
+      ];
+
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: { org: 'testOwner' },
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
+    });
+
     it('posts a comment on the PR if the flag is set to stop and the merge has failed', async () => {
       handler.getDatastore = async () => {
         const pr = [
@@ -504,7 +554,7 @@ describe('merge-on-green-', () => {
               repo: 'testRepo',
               number: 1,
               owner: 'testOwner',
-              created: Date.now() - 10800000,
+              created: Date.now() - 10920000,
             },
           ],
         ];
