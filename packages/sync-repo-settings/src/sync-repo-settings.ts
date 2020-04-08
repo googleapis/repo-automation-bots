@@ -70,9 +70,18 @@ function handler(app: Application) {
 
     // find the repo record in repos.json
     const repos = await handler.getRepos();
-    const r = repos.repos.find(x => x.repo === repo);
-    if (!r) {
+    const yoshiRepo = repos.repos.find(x => x.repo === repo);
+    if (!yoshiRepo) {
       return;
+    }
+    if (languageConfig[yoshiRepo.language]) {
+      const ignored = languageConfig[yoshiRepo.language].ignoredRepos?.find(
+        x => x === repo
+      );
+      if (ignored) {
+        console.log(`ignoring repo ${repo}`);
+        return;
+      }
     }
 
     if (context.payload.cron_org !== owner) {
@@ -83,13 +92,13 @@ function handler(app: Application) {
     const start = new Date().getTime();
     // update each settings section
     await Promise.all([
-      handler.updateRepoOptions(r, context),
-      handler.updateMasterBranchProtection(r, context),
-      handler.updateRepoTeams(r, context),
+      handler.updateRepoOptions(yoshiRepo, context),
+      handler.updateMasterBranchProtection(yoshiRepo, context),
+      handler.updateRepoTeams(yoshiRepo, context),
     ]);
 
     const end = new Date().getTime();
-    console.log(`Execution finished in ${start - end} ms.`);
+    console.log(`Execution finished in ${end - start} ms.`);
   });
 }
 
