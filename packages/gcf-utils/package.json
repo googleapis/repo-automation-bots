@@ -21,6 +21,7 @@
   "dependencies": {
     "@google-cloud/kms": "^1.6.3",
     "@google-cloud/storage": "^4.0.0",
+    "@google-cloud/tasks": "^1.9.0",
     "@octokit/plugin-enterprise-compatibility": "1.2.2",
     "express": "^4.17.1",
     "gaxios": "^3.0.0",
