@@ -240,14 +240,20 @@ mergeOnGreen.iterateGetStatusi = async function iterateGetStatusi(
 ): Promise<CheckStatus[]> {
   let results: CheckStatus[] = [];
   for (let i = 0; i < 10; i++) {
-    try{
-    const temp = await mergeOnGreen.getStatusi(owner, repo, github, headSha, i);
-    if (temp.length !== 0) {
-      results = results.concat(temp);
+    try {
+      const temp = await mergeOnGreen.getStatusi(
+        owner,
+        repo,
+        github,
+        headSha,
+        i
+      );
+      if (temp.length !== 0) {
+        results = results.concat(temp);
+      }
+    } catch (err) {
+      //do nothing with the error, just pagination errors
     }
-    } catch(err) {
-      //do nothing with the error, just pagination errors 
-     }    
   }
   return results;
 };
@@ -302,20 +308,19 @@ mergeOnGreen.iterateGetCheckRuns = async function iterateGetCheckRuns(
   let results: CheckRun[] = [];
   for (let i = 0; i < 10; i++) {
     try {
-    const temp = await mergeOnGreen.getCheckRuns(
-      owner,
-      repo,
-      github,
-      headSha,
-      i
-    );
-    if (temp !== undefined) {
-      results = results.concat(temp);
+      const temp = await mergeOnGreen.getCheckRuns(
+        owner,
+        repo,
+        github,
+        headSha,
+        i
+      );
+      if (temp !== undefined) {
+        results = results.concat(temp);
+      }
+    } catch (err) {
+      //do nothing with the error, just pagination errors
     }
-  }
-  catch(err) {
-   //do nothing with the error, just pagination errors 
-  }
   }
   return results;
 };
