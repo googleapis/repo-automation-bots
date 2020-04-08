@@ -110,10 +110,6 @@
     ],
     "repoOverrides": [
       {
-        "repo": "GoogleCloudPlatform/nodejs-docs-samples",
-        "useBranchProtectionRules": true
-      },
-      {
         "repo": "googleapis/gapic-generator-typescript",
         "requiredStatusChecks": [
           "ci/circleci: dlpLibTest",
