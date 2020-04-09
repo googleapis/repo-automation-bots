@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import { createProbot, Probot, ApplicationFunction, Options } from 'probot';
-const { CloudTasksClient } = require('@google-cloud/tasks');
-import { Storage } from '@google-cloud/storage';
+import {createProbot, Probot, ApplicationFunction, Options} from 'probot';
+import {CloudTasksClient} from '@google-cloud/tasks';
+import {Storage} from '@google-cloud/storage';
 import * as KMS from '@google-cloud/kms';
-import { readFileSync } from 'fs';
-import { request } from 'gaxios';
+import {readFileSync} from 'fs';
+import {request} from 'gaxios';
 import * as express from 'express';
 
 const client = new CloudTasksClient();
@@ -33,16 +33,7 @@ interface Repos {
 
 interface Scheduled {
   repo?: string;
-  message?: { [key: string]: string };
-}
-
-interface TaskBody {
-  httpRequest: {
-    url: string;
-    httpMethod: string;
-    headers: { [key: string]: string };
-    body?: string;
-  }
+  message?: {[key: string]: string};
 }
 
 interface EnqueueTaskParams {
@@ -108,48 +99,51 @@ export class GCFBootstrapper {
 
       // Determine incoming webhook event type
       const name =
-        request.get('x-github-event') ||
-        request.get('X-GitHub-Event') ||
-        '';
+        request.get('x-github-event') || request.get('X-GitHub-Event') || '';
       const id =
         request.get('x-github-delivery') ||
         request.get('X-GitHub-Delivery') ||
         '';
       const delivery =
-        request.get('x-hub-signature') ||
-        request.get('X-Hub-Signature') ||
-        '';
-      const signature = request.get('x-github-delivery') ||
+        request.get('x-hub-signature') || request.get('X-Hub-Signature') || '';
+      const signature =
+        request.get('x-github-delivery') ||
         request.get('X-GitHub-Delivery') ||
         '';
+      const taskId =
+        request.get('X-CloudTasks-TaskName') ||
+        request.get('x-cloudtasks-taskname') ||
+        '';
 
-      const taskId = request.get('X-CloudTasks-TaskName') || '';
-      if (!taskId && (name === 'schedule.repository' || name === 'pubsub.message')) {
+      if (
+        !taskId &&
+        (name === 'schedule.repository' || name === 'pubsub.message')
+      ) {
         // We have come in from a scheduler:
         // TODO: currently we assume that scheduled events walk all repos
         // managed by the client libraries team, it would be good to get more
         // clever and instead pull up a list of repos we're installed on by
         // installation ID:
         await this.handleScheduled(id, request, name, signature);
-      } else if (!taskId) {
+      } else if (!taskId && name) {
         // We have come in from a GitHub webhook:
         try {
           await this.enqueueTask({
             id,
             name,
             signature,
-            body: request.body
+            body: request.body,
           });
         } catch (err) {
           response.send({
             statusCode: 500,
-            body: JSON.stringify({ message: err }),
+            body: JSON.stringify({message: err}),
           });
           return;
         }
         response.send({
           statusCode: 200,
-          body: JSON.stringify({ message: 'Executed' }),
+          body: JSON.stringify({message: 'Executed'}),
         });
         return;
       } else if (name) {
@@ -163,18 +157,17 @@ export class GCFBootstrapper {
         } catch (err) {
           response.send({
             statusCode: 500,
-            body: JSON.stringify({ message: err }),
+            body: JSON.stringify({message: err}),
           });
         }
         response.send({
           statusCode: 200,
-          body: JSON.stringify({ message: 'Executed' }),
+          body: JSON.stringify({message: 'Executed'}),
         });
-      }
-      else {
+      } else {
         response.sendStatus(400);
       }
-    }
+    };
   }
 
   private async handleScheduled(
@@ -199,8 +192,8 @@ export class GCFBootstrapper {
       // Job should be run on all managed repositories:
       const url =
         'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
-      const res = await request<Repos>({ url });
-      const { repos } = res.data;
+      const res = await request<Repos>({url});
+      const {repos} = res.data;
       for (const repo of repos) {
         await this.scheduledToTask(repo.repo, id, body, eventName, signature);
       }
@@ -233,7 +226,7 @@ export class GCFBootstrapper {
         id,
         name: eventName,
         signature,
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
     } catch (err) {
       console.warn(err.message);
@@ -243,30 +236,42 @@ export class GCFBootstrapper {
   private async enqueueTask(params: EnqueueTaskParams) {
     // Make a task here and return 200 as this is coming from GitHub
     const projectId = process.env.PROJECT_ID || '';
-    const location = process.env.GCF_LOCATION;
+    const location = process.env.GCF_LOCATION || '';
     const queueName = process.env.GCF_SHORT_FUNCTION_NAME || '';
     const queuePath = client.queuePath(projectId, location, queueName);
     // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green:
     const url = `https://${location}-${projectId}.cloudfunctions.net/${queueName}`;
-    const task = {
-      httpRequest: {
-        httpMethod: 'POST',
-        headers: {
-          "X-GitHub-Event": params.name || '',
-          "X-GitHub-Delivery": params.id || '',
-          "X-Hub-Signature": params.signature || '',
-        },
-        url,
-      },
-    } as TaskBody;
-
     if (params.body) {
-      task.httpRequest.body = Buffer.from(params.body).toString('base64');
+      await client.createTask({
+        parent: queuePath,
+        task: {
+          httpRequest: {
+            httpMethod: 'POST',
+            headers: {
+              'X-GitHub-Event': params.name || '',
+              'X-GitHub-Delivery': params.id || '',
+              'X-Hub-Signature': params.signature || '',
+            },
+            url,
+            body: Buffer.from(params.body).toString('base64')
+          },
+        },
+      });
+    } else {
+      await client.createTask({
+        parent: queuePath,
+        task: {
+          httpRequest: {
+            httpMethod: 'POST',
+            headers: {
+              'X-GitHub-Event': params.name || '',
+              'X-GitHub-Delivery': params.id || '',
+              'X-Hub-Signature': params.signature || '',
+            },
+            url,
+          },
+        },
+      });
     }
-
-    // Enqueue task
-    const taskRequest = { queuePath, task };
-    console.info(`enqueueing task in queue: ${queuePath} to url ${url} and headers ${task.httpRequest.headers}`)
-    await client.createTask(taskRequest);
   }
 }
