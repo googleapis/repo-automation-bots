@@ -42,8 +42,6 @@ function buildPayload(inputFixture: string, repo: string) {
   };
 }
 
-// Ignore any warning to make it easier to test. No need to include all of the
-// fields from real issues.
 function nockIssues(repo: string, issues: Array<{}> = []) {
   return nock('https://api.github.com')
     .get(
