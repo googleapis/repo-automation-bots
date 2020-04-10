@@ -14,6 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
+import path from 'path';
 import nock from 'nock';
 import sinon from 'sinon';
 // eslint-disable-next-line node/no-unsupported-features/node-builtins
@@ -498,7 +499,10 @@ describe('merge-on-green-', () => {
     it('adds a PR when label is added correctly', async () => {
       const payload = JSON.parse(
         await fs.readFile(
-          './test/fixtures/events/pull_request_labeled.json',
+          path.join(
+            __dirname,
+            '../../test/fixtures/events/pull_request_labeled.json'
+          ),
           'utf-8'
         )
       );
