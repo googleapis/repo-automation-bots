@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-	<testsuite tests="0" failures="0" time="266.555" name="github.com/tbpg/golang-samples/dataproc">
+	<testsuite tests="0" failures="0" time="266.555" name="github.com/GoogleCloudPlatform/golang-samples/dataproc">
 		<properties>
 			<property name="go.version" value="go1.11.13"></property>
 		</properties>

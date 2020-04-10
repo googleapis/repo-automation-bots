@@ -40,8 +40,8 @@ function buildPayload(inputFixture: string, repo: string) {
     'utf8'
   );
   const payload = formatPayload({
-    repo: `tbpg/${repo}`,
-    organization: { login: 'tbpg' },
+    repo: `GoogleCloudPlatform/${repo}`,
+    organization: { login: 'GoogleCloudPlatform' },
     repository: { name: repo },
     commit: '123',
     buildURL: 'http://example.com',
@@ -57,14 +57,14 @@ function buildPayload(inputFixture: string, repo: string) {
 function nockIssues(repo: string, issues: any[] = []) {
   return nock('https://api.github.com')
     .get(
-      `/repos/tbpg/${repo}/issues?per_page=100&labels=buildcop%3A%20issue&state=all`
+      `/repos/GoogleCloudPlatform/${repo}/issues?per_page=100&labels=buildcop%3A%20issue&state=all`
     )
     .reply(200, issues);
 }
 
 function nockNewIssue(repo: string) {
   return nock('https://api.github.com')
-    .post(`/repos/tbpg/${repo}/issues`, body => {
+    .post(`/repos/GoogleCloudPlatform/${repo}/issues`, body => {
       snapshot(body);
       return true;
     })
@@ -73,22 +73,25 @@ function nockNewIssue(repo: string) {
 
 function nockGetIssueComments(repo: string, issueNumber: number) {
   return nock('https://api.github.com')
-    .get(`/repos/tbpg/${repo}/issues/${issueNumber}/comments`)
+    .get(`/repos/GoogleCloudPlatform/${repo}/issues/${issueNumber}/comments`)
     .reply(200, []);
 }
 
 function nockIssueComment(repo: string, issueNumber: number) {
   return nock('https://api.github.com')
-    .post(`/repos/tbpg/${repo}/issues/${issueNumber}/comments`, body => {
-      snapshot(body);
-      return true;
-    })
+    .post(
+      `/repos/GoogleCloudPlatform/${repo}/issues/${issueNumber}/comments`,
+      body => {
+        snapshot(body);
+        return true;
+      }
+    )
     .reply(200);
 }
 
 function nockIssuePatch(repo: string, issueNumber: number) {
   return nock('https://api.github.com')
-    .patch(`/repos/tbpg/${repo}/issues/${issueNumber}`, body => {
+    .patch(`/repos/GoogleCloudPlatform/${repo}/issues/${issueNumber}`, body => {
       snapshot(body);
       return true;
     })
@@ -254,8 +257,8 @@ describe('buildcop', () => {
   describe('app', () => {
     it('skips when there is no XML and no testsFailed', async () => {
       const payload = formatPayload({
-        repo: 'tbpg/golang-samples',
-        organization: { login: 'tbpg' },
+        repo: 'GoogleCloudPlatform/golang-samples',
+        organization: { login: 'GoogleCloudPlatform' },
         repository: { name: 'golang-samples' },
         commit: '123',
         buildURL: 'http://example.com',
@@ -269,8 +272,8 @@ describe('buildcop', () => {
     describe('testsFailed', () => {
       it('opens an issue when testsFailed', async () => {
         const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
+          repo: 'GoogleCloudPlatform/golang-samples',
+          organization: { login: 'GoogleCloudPlatform' },
           repository: { name: 'golang-samples' },
           commit: '123',
           buildURL: 'http://example.com',
@@ -289,8 +292,8 @@ describe('buildcop', () => {
 
       it('opens a new issue when testsFailed and there is a previous one closed', async () => {
         const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
+          repo: 'GoogleCloudPlatform/golang-samples',
+          organization: { login: 'GoogleCloudPlatform' },
           repository: { name: 'golang-samples' },
           commit: '123',
           buildURL: 'http://example.com',
@@ -316,8 +319,8 @@ describe('buildcop', () => {
 
       it('comments on an existing open issue when testsFailed', async () => {
         const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
+          repo: 'GoogleCloudPlatform/golang-samples',
+          organization: { login: 'GoogleCloudPlatform' },
           repository: { name: 'golang-samples' },
           commit: '123',
           buildURL: 'http://example.com',
@@ -657,7 +660,7 @@ describe('buildcop', () => {
             },
           ]),
           nock('https://api.github.com')
-            .get('/repos/tbpg/golang-samples/issues/16/comments')
+            .get('/repos/GoogleCloudPlatform/golang-samples/issues/16/comments')
             .reply(200, [
               {
                 body: `status: failed\ncommit: 123`,
