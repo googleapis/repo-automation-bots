@@ -155,6 +155,18 @@ describe('buildcop', () => {
         ],
       });
     });
+
+    it('handles an empty testsuites', () => {
+      const input = fs.readFileSync(
+        resolve(fixturesPath, 'testdata', 'empty_results.xml'),
+        'utf8'
+      );
+      const results = findTestResults(input);
+      expect(results).to.eql({
+        passes: [],
+        failures: [],
+      });
+    });
   });
 
   describe('formatTestCase', () => {

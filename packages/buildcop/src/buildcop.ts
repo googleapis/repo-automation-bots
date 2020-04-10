@@ -100,6 +100,8 @@ export function buildcop(app: Application) {
     const commit = context.payload.commit || '[TODO: set commit]';
     const buildURL = context.payload.buildURL || '[TODO: set buildURL]';
 
+    context.log.info(`[${owner}/${repo}] processing ${buildURL}`);
+
     let results: TestResults;
     if (context.payload.xunitXML) {
       const xml = Buffer.from(context.payload.xunitXML, 'base64').toString();
@@ -117,6 +119,10 @@ export function buildcop(app: Application) {
         results = { passes: [], failures: [] }; // Tests passed.
       }
     }
+
+    context.log.info(
+      `[${owner}/${repo}] Found ${results.passes.length} passed tests and ${results.failures.length} failed tests in this result of ${buildURL}`
+    );
 
     try {
       // Get the list of issues once, before opening/closing any of them.
@@ -157,7 +163,7 @@ export function buildcop(app: Application) {
         buildURL
       );
     } catch (err) {
-      app.log.error(`${err.message} processing ${repo}`);
+      app.log.error(`${err.message} processing ${repo}: ${buildURL}`);
       console.info(err);
     }
   });
@@ -300,6 +306,11 @@ buildcop.openIssues = async (
         });
       }
     } else {
+      context.log.info(
+        `[${owner}/${repo}]: creating issue "${buildcop.formatTestCase(
+          failure
+        )}"...`
+      );
       const newIssue = (
         await context.github.issues.create({
           owner,
@@ -333,14 +344,6 @@ buildcop.closeIssues = async (
       continue;
     }
 
-    // Don't close flaky issues.
-    if (buildcop.isFlaky(issue)) {
-      context.log.info(
-        `[${owner}/${repo}] not closing flaky issue #${issue.number}`
-      );
-      continue;
-    }
-
     const failure = results.failures.find(failure => {
       return issue.title === buildcop.formatTestCase(failure);
     });
@@ -354,6 +357,14 @@ buildcop.closeIssues = async (
     });
     // If the test did not pass, don't close its issue.
     if (!pass) {
+      continue;
+    }
+
+    // Don't close flaky issues.
+    if (buildcop.isFlaky(issue)) {
+      context.log.info(
+        `[${owner}/${repo}] #${issue.number} passed, but it's flaky, so I'm not closing it`
+      );
       continue;
     }
 
@@ -546,6 +557,9 @@ buildcop.findTestResults = (xml: string): TestResults => {
   let testsuites = obj['testsuite'];
   if (testsuites === undefined) {
     testsuites = obj['testsuites']['testsuite'];
+  }
+  if (testsuites === undefined) {
+    return { passes: [], failures: [] };
   }
   // If there is only one test suite, put it into an array to make it iterable.
   if (!Array.isArray(testsuites)) {
