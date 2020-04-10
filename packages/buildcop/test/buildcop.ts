@@ -21,34 +21,25 @@ import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
 import { expect } from 'chai';
-import Octokit from '@octokit/rest';
 
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
-
-function formatPayload(payload: BuildCopPayload) {
-  if (payload.xunitXML) {
-    payload.xunitXML = Buffer.from(payload.xunitXML).toString('base64');
-  }
-  return payload;
-}
 
 function buildPayload(inputFixture: string, repo: string) {
   const input = fs.readFileSync(
     resolve(fixturesPath, 'testdata', inputFixture),
     'utf8'
   );
-  const payload = formatPayload({
+
+  return {
     repo: `GoogleCloudPlatform/${repo}`,
     organization: { login: 'GoogleCloudPlatform' },
     repository: { name: repo },
     commit: '123',
     buildURL: 'http://example.com',
-    xunitXML: input,
-  });
-
-  return payload;
+    xunitXML: Buffer.from(input).toString('base64'),
+  };
 }
 
 // Ignore any warning to make it easier to test. No need to include all of the
@@ -256,13 +247,13 @@ describe('buildcop', () => {
 
   describe('app', () => {
     it('skips when there is no XML and no testsFailed', async () => {
-      const payload = formatPayload({
+      const payload = {
         repo: 'GoogleCloudPlatform/golang-samples',
         organization: { login: 'GoogleCloudPlatform' },
         repository: { name: 'golang-samples' },
         commit: '123',
         buildURL: 'http://example.com',
-      });
+      };
 
       const requests = nock('https://api.github.com');
       await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
@@ -271,14 +262,14 @@ describe('buildcop', () => {
 
     describe('testsFailed', () => {
       it('opens an issue when testsFailed', async () => {
-        const payload = formatPayload({
+        const payload = {
           repo: 'GoogleCloudPlatform/golang-samples',
           organization: { login: 'GoogleCloudPlatform' },
           repository: { name: 'golang-samples' },
           commit: '123',
           buildURL: 'http://example.com',
           testsFailed: true,
-        });
+        };
 
         const scopes = [
           nockIssues('golang-samples'),
@@ -291,14 +282,14 @@ describe('buildcop', () => {
       });
 
       it('opens a new issue when testsFailed and there is a previous one closed', async () => {
-        const payload = formatPayload({
+        const payload = {
           repo: 'GoogleCloudPlatform/golang-samples',
           organization: { login: 'GoogleCloudPlatform' },
           repository: { name: 'golang-samples' },
           commit: '123',
           buildURL: 'http://example.com',
           testsFailed: true,
-        });
+        };
 
         const scopes = [
           nockIssues('golang-samples', [
@@ -318,14 +309,14 @@ describe('buildcop', () => {
       });
 
       it('comments on an existing open issue when testsFailed', async () => {
-        const payload = formatPayload({
+        const payload = {
           repo: 'GoogleCloudPlatform/golang-samples',
           organization: { login: 'GoogleCloudPlatform' },
           repository: { name: 'golang-samples' },
           commit: '123',
           buildURL: 'http://example.com',
           testsFailed: true,
-        });
+        };
 
         const scopes = [
           nockIssues('golang-samples', [
