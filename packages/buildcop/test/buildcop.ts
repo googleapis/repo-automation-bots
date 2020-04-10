@@ -44,8 +44,7 @@ function buildPayload(inputFixture: string, repo: string) {
 
 // Ignore any warning to make it easier to test. No need to include all of the
 // fields from real issues.
-// tslint:disable-next-line: no-any
-function nockIssues(repo: string, issues: any[] = []) {
+function nockIssues(repo: string, issues: {}[] = []) {
   return nock('https://api.github.com')
     .get(
       `/repos/GoogleCloudPlatform/${repo}/issues?per_page=100&labels=buildcop%3A%20issue&state=all`
