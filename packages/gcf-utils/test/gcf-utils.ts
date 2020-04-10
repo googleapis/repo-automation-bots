@@ -54,7 +54,7 @@ describe('GCFBootstrapper', () => {
     let configStub: sinon.SinonStub<[], Promise<Options>>;
 
     let bootstrapper: GCFBootstrapper;
-    
+
     let enqueueTask: sinon.SinonStub;
 
     beforeEach(async () => {
@@ -65,7 +65,7 @@ describe('GCFBootstrapper', () => {
         return Promise.resolve({id: 1234, secret: 'foo', webhookPath: 'bar'});
       });
 
-      enqueueTask = sinon.stub(bootstrapper, 'enqueueTask')
+      enqueueTask = sinon.stub(bootstrapper, 'enqueueTask');
 
       handler = await bootstrapper.gcf(async app => {
         app.auth = () =>
@@ -135,10 +135,9 @@ describe('GCFBootstrapper', () => {
     });
 
     it('ensures that task is enqueued when called by scheduler for one repo', async () => {
-
       req.body = {
         installtion: {id: 1},
-        repo: 'firstRepo'
+        repo: 'firstRepo',
       };
       req.headers = {};
       req.headers['x-github-event'] = 'schedule.repository';
@@ -151,7 +150,6 @@ describe('GCFBootstrapper', () => {
     });
 
     it('ensures that task is enqueued when called by scheduler for many repos', async () => {
-
       req.body = {
         installtion: {id: 1},
       };
@@ -167,7 +165,6 @@ describe('GCFBootstrapper', () => {
     });
 
     it('ensures that task is enqueued when called by Github', async () => {
-
       req.body = {
         installtion: {id: 1},
       };

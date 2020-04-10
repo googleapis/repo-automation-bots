@@ -233,8 +233,7 @@ export class GCFBootstrapper {
     }
   }
 
-    async enqueueTask(params: EnqueueTaskParams) {
-      console.log('hey, we made it!')
+  async enqueueTask(params: EnqueueTaskParams) {
     // Make a task here and return 200 as this is coming from GitHub
     const projectId = process.env.PROJECT_ID || '';
     const location = process.env.GCF_LOCATION || '';
@@ -254,7 +253,7 @@ export class GCFBootstrapper {
               'X-Hub-Signature': params.signature || '',
             },
             url,
-            body: Buffer.from(params.body).toString('base64')
+            body: Buffer.from(params.body).toString('base64'),
           },
         },
       });
