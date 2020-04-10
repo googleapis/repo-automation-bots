@@ -31,10 +31,10 @@ function nockUpdateTeamMembership(team: string, org: string, repo: string) {
     .reply(200);
 }
 
-function nockUpdateRepoSettings() {
+function nockUpdateRepoSettings(repo: string) {
   return nock('https://api.github.com')
-    .patch(`/repos/googleapis/nodejs-dialogflow`, {
-      name: 'nodejs-dialogflow',
+    .patch(`/repos/googleapis/${repo}`, {
+      name: `${repo}`,
       allow_merge_commit: false,
       allow_rebase_merge: true,
       allow_squash_merge: true,
@@ -42,25 +42,15 @@ function nockUpdateRepoSettings() {
     .reply(200);
 }
 
-function nockUpdateBranchProtection() {
+function nockUpdateBranchProtection(repo: string, contexts: string[]) {
   return nock('https://api.github.com')
-    .put('/repos/googleapis/nodejs-dialogflow/branches/master/protection', {
+    .put(`/repos/googleapis/${repo}/branches/master/protection`, {
       required_pull_request_reviews: {
         dismiss_stale_reviews: false,
         require_code_owner_reviews: false,
       },
       required_status_checks: {
-        contexts: [
-          'ci/kokoro: Samples test',
-          'ci/kokoro: System test',
-          'docs',
-          'lint',
-          'test (10)',
-          'test (12)',
-          'test (13)',
-          'cla/google',
-          'windows',
-        ],
+        contexts,
         strict: true,
       },
       enforce_admins: true,
@@ -97,10 +87,43 @@ describe('Sync repo settings', () => {
         organization: {
           login: 'news',
         },
+        cron_org: 'news',
       },
       id: 'abc123',
     });
     scopes.forEach(s => s.done());
+  });
+
+  it('should ignore repos in ignored repos in required-checks.json', async () => {
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: {
+        repository: {
+          name: 'api-common-java',
+        },
+        organization: {
+          login: 'googleapis',
+        },
+        cron_org: 'googleapis',
+      },
+      id: 'abc123',
+    });
+  });
+
+  it('should skip for the wrong context', async () => {
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: {
+        repository: {
+          name: 'api-common-java',
+        },
+        organization: {
+          login: 'googleapis',
+        },
+        cron_org: 'GoogleCloudPlatform',
+      },
+      id: 'abc123',
+    });
   });
 
   it('should ignore repos not represented in required-checks.json', async () => {
@@ -129,10 +152,66 @@ describe('Sync repo settings', () => {
     scopes.forEach(s => s.done());
   });
 
+  it('should override master branch protection if the repo is overridden', async () => {
+    const scopes = [
+      nockUpdateRepoSettings('gapic-generator-typescript'),
+      nockUpdateBranchProtection('gapic-generator-typescript', [
+        'ci/circleci: dlpLibTest',
+        'ci/circleci: kmsLibTest',
+        'ci/circleci: monitoringLibTest',
+        'ci/circleci: showcaseLibTest',
+        'ci/circleci: showcaseTestApplications',
+        'ci/circleci: testGenerator',
+        'ci/circleci: translateLibTest',
+        'ci/circleci: ttsLibTest',
+        'cla/google',
+      ]),
+      nockUpdateTeamMembership(
+        'yoshi-admins',
+        'googleapis',
+        'gapic-generator-typescript'
+      ),
+      nockUpdateTeamMembership(
+        'yoshi-nodejs-admins',
+        'googleapis',
+        'gapic-generator-typescript'
+      ),
+      nockUpdateTeamMembership(
+        'yoshi-nodejs',
+        'googleapis',
+        'gapic-generator-typescript'
+      ),
+    ];
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: {
+        repository: {
+          name: 'gapic-generator-typescript',
+        },
+        organization: {
+          login: 'googleapis',
+        },
+        cron_org: 'googleapis',
+      },
+      id: 'abc123',
+    });
+    scopes.forEach(s => s.done());
+  });
+
   it('should update settings for a known repository', async () => {
     const scopes = [
-      nockUpdateRepoSettings(),
-      nockUpdateBranchProtection(),
+      nockUpdateRepoSettings('nodejs-dialogflow'),
+      nockUpdateBranchProtection('nodejs-dialogflow', [
+        'ci/kokoro: Samples test',
+        'ci/kokoro: System test',
+        'docs',
+        'lint',
+        'test (10)',
+        'test (12)',
+        'test (13)',
+        'cla/google',
+        'windows',
+      ]),
       nockUpdateTeamMembership(
         'yoshi-admins',
         'googleapis',

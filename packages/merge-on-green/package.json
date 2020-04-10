@@ -18,7 +18,6 @@
     "compile": "tsc -p .",
     "start": "probot run ./build/src/merge-on-green.js",
     "start:local": "node ./build/src/local.js",
-    "prepare": "npm run compile",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha --timeout=15000 --recursive ./build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",

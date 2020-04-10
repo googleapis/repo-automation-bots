@@ -1,10 +1,9 @@
 {
   "name": "gcf-utils",
-  "version": "2.0.0",
+  "version": "3.0.1",
   "description": "An extension for running Probot in Google Cloud Functions",
   "scripts": {
     "compile": "tsc -p .",
-    "prepare": "npm run compile",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha ./build/test",
     "system-test": "npm run pretest && cross-env LOG_LEVEL=fatal mocha ./build/test/integration",
@@ -21,6 +20,7 @@
   "dependencies": {
     "@google-cloud/kms": "^1.6.3",
     "@google-cloud/storage": "^4.0.0",
+    "@google-cloud/tasks": "^1.9.0",
     "@octokit/plugin-enterprise-compatibility": "1.2.2",
     "express": "^4.17.1",
     "gaxios": "^3.0.0",

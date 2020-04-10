@@ -6,5 +6,5 @@ require (
 	cloud.google.com/go v0.56.0
 	cloud.google.com/go/storage v1.6.0
 	github.com/google/uuid v1.1.1
-	google.golang.org/genproto v0.0.0-20200331122359-1ee6d9798940
+	google.golang.org/genproto v0.0.0-20200406120821-33397c535dc2
 )

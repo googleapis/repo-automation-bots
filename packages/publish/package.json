@@ -18,7 +18,6 @@
     "compile": "tsc -p .",
     "start": "probot run ./build/src/publish.js",
     "start:local": "node ./build/src/local.js",
-    "prepare": "npm run compile",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha --timeout=15000 --recursive ./build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
@@ -27,7 +26,7 @@
   },
   "dependencies": {
     "@google-cloud/secret-manager": "^2.0.0",
-    "gcf-utils": "1.6.2",
+    "gcf-utils": "^3.0.0",
     "node-fetch": "^2.6.0",
     "tar": "^6.0.0",
     "uuid": "^7.0.0"

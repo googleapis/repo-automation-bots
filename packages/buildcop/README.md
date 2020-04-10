@@ -4,10 +4,16 @@ The Build Cop Bot manages issues for failing tests.
 
 * If a test fails, the bot will open an issue for it.
 * If a test passes, the bot will close the corresponding issue.
-* If the test fails _again_, the bot will reopen the issue, mark it as flaky, then
-  stop commenting and leave it up to a human to close.
-* If someone closes the issue and the test fails _again_, the bot will reopen the
-  issue and leave it up to a human to close again.
+* If the test fails _again_:
+  * If the original issue is locked, the bot will open a new issue.
+  * If the original was closed more than 10 days before, the bot will open a new
+    issue.
+  * Otherwise, the bot will reopen the original issue, mark it as flaky, then
+    stop commenting and leave it up to a human to close.
+* If someone closes a flaky issue and the test fails _again_, the bot will
+  reopen the issue or open a new one, depending on the issue state/age.
+* If the bot opens duplicate issues (sorry!), it will close the duplicates
+  during the next run.
 
 Issues or feature requests? Please
 [file them on this repo](https://github.com/googleapis/repo-automation-bots/issues/new).

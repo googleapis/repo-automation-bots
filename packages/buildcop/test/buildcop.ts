@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { buildcop, BuildCopPayload } from '../src/buildcop';
+import { buildcop } from '../src/buildcop';
 const { findTestResults, formatTestCase } = buildcop;
 
 import { resolve } from 'path';
@@ -26,11 +26,64 @@ nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-function formatPayload(payload: BuildCopPayload) {
-  if (payload.xunitXML) {
-    payload.xunitXML = Buffer.from(payload.xunitXML).toString('base64');
-  }
-  return payload;
+function buildPayload(inputFixture: string, repo: string) {
+  const input = fs.readFileSync(
+    resolve(fixturesPath, 'testdata', inputFixture),
+    'utf8'
+  );
+
+  return {
+    repo: `GoogleCloudPlatform/${repo}`,
+    organization: { login: 'GoogleCloudPlatform' },
+    repository: { name: repo },
+    commit: '123',
+    buildURL: 'http://example.com',
+    xunitXML: Buffer.from(input).toString('base64'),
+  };
+}
+
+function nockIssues(repo: string, issues: Array<{}> = []) {
+  return nock('https://api.github.com')
+    .get(
+      `/repos/GoogleCloudPlatform/${repo}/issues?per_page=100&labels=buildcop%3A%20issue&state=all`
+    )
+    .reply(200, issues);
+}
+
+function nockNewIssue(repo: string) {
+  return nock('https://api.github.com')
+    .post(`/repos/GoogleCloudPlatform/${repo}/issues`, body => {
+      snapshot(body);
+      return true;
+    })
+    .reply(200);
+}
+
+function nockGetIssueComments(repo: string, issueNumber: number) {
+  return nock('https://api.github.com')
+    .get(`/repos/GoogleCloudPlatform/${repo}/issues/${issueNumber}/comments`)
+    .reply(200, []);
+}
+
+function nockIssueComment(repo: string, issueNumber: number) {
+  return nock('https://api.github.com')
+    .post(
+      `/repos/GoogleCloudPlatform/${repo}/issues/${issueNumber}/comments`,
+      body => {
+        snapshot(body);
+        return true;
+      }
+    )
+    .reply(200);
+}
+
+function nockIssuePatch(repo: string, issueNumber: number) {
+  return nock('https://api.github.com')
+    .patch(`/repos/GoogleCloudPlatform/${repo}/issues/${issueNumber}`, body => {
+      snapshot(body);
+      return true;
+    })
+    .reply(200);
 }
 
 describe('buildcop', () => {
@@ -155,6 +208,18 @@ describe('buildcop', () => {
         ],
       });
     });
+
+    it('handles an empty testsuites', () => {
+      const input = fs.readFileSync(
+        resolve(fixturesPath, 'testdata', 'empty_results.xml'),
+        'utf8'
+      );
+      const results = findTestResults(input);
+      expect(results).to.eql({
+        passes: [],
+        failures: [],
+      });
+    });
   });
 
   describe('formatTestCase', () => {
@@ -179,13 +244,13 @@ describe('buildcop', () => {
 
   describe('app', () => {
     it('skips when there is no XML and no testsFailed', async () => {
-      const payload = formatPayload({
-        repo: 'tbpg/golang-samples',
-        organization: { login: 'tbpg' },
+      const payload = {
+        repo: 'GoogleCloudPlatform/golang-samples',
+        organization: { login: 'GoogleCloudPlatform' },
         repository: { name: 'golang-samples' },
         commit: '123',
         buildURL: 'http://example.com',
-      });
+      };
 
       const requests = nock('https://api.github.com');
       await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
@@ -194,210 +259,126 @@ describe('buildcop', () => {
 
     describe('testsFailed', () => {
       it('opens an issue when testsFailed', async () => {
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
+        const payload = {
+          repo: 'GoogleCloudPlatform/golang-samples',
+          organization: { login: 'GoogleCloudPlatform' },
           repository: { name: 'golang-samples' },
           commit: '123',
           buildURL: 'http://example.com',
           testsFailed: true,
-        });
+        };
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [])
-          .post('/repos/tbpg/golang-samples/issues', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+        const scopes = [
+          nockIssues('golang-samples'),
+          nockNewIssue('golang-samples'),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('opens a new issue when testsFailed and there is a previous one closed', async () => {
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
+        const payload = {
+          repo: 'GoogleCloudPlatform/golang-samples',
+          organization: { login: 'GoogleCloudPlatform' },
           repository: { name: 'golang-samples' },
           commit: '123',
           buildURL: 'http://example.com',
           testsFailed: true,
-        });
+        };
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        const scopes = [
+          nockIssues('golang-samples', [
             {
               title: formatTestCase({ passed: false }),
               number: 16,
               body: 'Failure!',
               state: 'closed',
             },
-          ])
-          .post('/repos/tbpg/golang-samples/issues', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+          ]),
+          nockNewIssue('golang-samples'),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('comments on an existing open issue when testsFailed', async () => {
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
+        const payload = {
+          repo: 'GoogleCloudPlatform/golang-samples',
+          organization: { login: 'GoogleCloudPlatform' },
           repository: { name: 'golang-samples' },
           commit: '123',
           buildURL: 'http://example.com',
           testsFailed: true,
-        });
+        };
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        const scopes = [
+          nockIssues('golang-samples', [
             {
               title: formatTestCase({ passed: false }),
               number: 16,
               body: 'Failure!',
               state: 'open',
             },
-          ])
-          .get('/repos/tbpg/golang-samples/issues/16/comments')
-          .reply(200, [])
-          .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+          ]),
+          nockGetIssueComments('golang-samples', 16),
+          nockIssueComment('golang-samples', 16),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
     });
 
     describe('xunitXML', () => {
       it('opens an issue [Go]', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'one_failed.xml'),
-          'utf8'
-        );
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
+        const payload = buildPayload('one_failed.xml', 'golang-samples');
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [])
-          .post('/repos/tbpg/golang-samples/issues', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+        const scopes = [
+          nockIssues('golang-samples'),
+          nockNewIssue('golang-samples'),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('opens an issue [Python]', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'python_one_failed.xml'),
-          'utf8'
+        const payload = buildPayload(
+          'python_one_failed.xml',
+          'python-docs-samples'
         );
-        const payload = formatPayload({
-          repo: 'tbpg/python-docs-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'python-docs-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/python-docs-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [])
-          .post('/repos/tbpg/python-docs-samples/issues', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+        const scopes = [
+          nockIssues('python-docs-samples'),
+          nockNewIssue('python-docs-samples'),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('opens an issue [Java]', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'java_one_failed.xml'),
-          'utf8'
-        );
-        const payload = formatPayload({
-          repo: 'tbpg/java-vision',
-          organization: { login: 'tbpg' },
-          repository: { name: 'java-vision' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
+        const payload = buildPayload('java_one_failed.xml', 'java-vision');
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/java-vision/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [])
-          .post('/repos/tbpg/java-vision/issues', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+        const scopes = [nockIssues('java-vision'), nockNewIssue('java-vision')];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('comments on existing issue', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'one_failed.xml'),
-          'utf8'
-        );
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
+        const payload = buildPayload('one_failed.xml', 'golang-samples');
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        const scopes = [
+          nockIssues('golang-samples', [
             // Duplicate issue that's closed. The open one should be updated.
             {
               title: formatTestCase({
@@ -421,39 +402,24 @@ describe('buildcop', () => {
               body: 'Failure!',
               state: 'open',
             },
-          ])
-          .get('/repos/tbpg/golang-samples/issues/16/comments')
-          .reply(200, [])
-          .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+          ]),
+          nockGetIssueComments('golang-samples', 16),
+          nockIssueComment('golang-samples', 16),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('does not comment about failure on existing flaky issue', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'many_failed_same_pkg.xml'),
-          'utf8'
+        const payload = buildPayload(
+          'many_failed_same_pkg.xml',
+          'golang-samples'
         );
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        const scopes = [
+          nockIssues('golang-samples', [
             {
               title: formatTestCase({
                 package:
@@ -477,39 +443,24 @@ describe('buildcop', () => {
               body: `Failure!`,
               state: 'open',
             },
-          ])
-          .get('/repos/tbpg/golang-samples/issues/17/comments')
-          .reply(200, [])
-          .post('/repos/tbpg/golang-samples/issues/17/comments', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+          ]),
+          nockGetIssueComments('golang-samples', 17),
+          nockIssueComment('golang-samples', 17),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('does not comment about failure on existing issue labeled quiet', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'many_failed_same_pkg.xml'),
-          'utf8'
+        const payload = buildPayload(
+          'many_failed_same_pkg.xml',
+          'golang-samples'
         );
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        const scopes = [
+          nockIssues('golang-samples', [
             {
               title: formatTestCase({
                 package:
@@ -533,64 +484,35 @@ describe('buildcop', () => {
               body: `Failure!`,
               state: 'open',
             },
-          ])
-          .get('/repos/tbpg/golang-samples/issues/17/comments')
-          .reply(200, [])
-          .post('/repos/tbpg/golang-samples/issues/17/comments', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+          ]),
+          nockGetIssueComments('golang-samples', 17),
+          nockIssueComment('golang-samples', 17),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('handles a testsuite with no test cases', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'no_tests.xml'),
-          'utf8'
-        );
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
+        const payload = buildPayload('no_tests.xml', 'golang-samples');
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, []);
+        const scopes = [nockIssues('golang-samples')];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('reopens issue for failing test', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'one_failed.xml'),
-          'utf8'
-        );
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
+        const payload = buildPayload('one_failed.xml', 'golang-samples');
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        // Closed yesterday. So, it should be reopened.
+        const closedAt = new Date();
+        closedAt.setDate(closedAt.getDate() - 1);
+
+        const scopes = [
+          nockIssues('golang-samples', [
             {
               title: formatTestCase({
                 package:
@@ -602,43 +524,23 @@ describe('buildcop', () => {
               body: 'Failure!',
               labels: [{ name: 'buildcop: flaky' }, { name: 'api: spanner' }],
               state: 'closed',
+              closed_at: closedAt.toISOString(),
             },
-          ])
-          .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200)
-          .patch('/repos/tbpg/golang-samples/issues/16', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+          ]),
+          nockIssueComment('golang-samples', 16),
+          nockIssuePatch('golang-samples', 16),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('closes an issue for a passing test [Go]', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'passed.xml'),
-          'utf8'
-        );
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
+        const payload = buildPayload('passed.xml', 'golang-samples');
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        const scopes = [
+          nockIssues('golang-samples', [
             {
               title: formatTestCase({
                 package: 'github.com/GoogleCloudPlatform/golang-samples',
@@ -648,44 +550,25 @@ describe('buildcop', () => {
               number: 16,
               body: 'Failure!',
             },
-          ])
-          .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200)
-          .get('/repos/tbpg/golang-samples/issues/16/comments')
-          .reply(200, [])
-          .patch('/repos/tbpg/golang-samples/issues/16', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+          ]),
+          nockIssueComment('golang-samples', 16),
+          nockGetIssueComments('golang-samples', 16),
+          nockIssuePatch('golang-samples', 16),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('closes an issue for a passing test [Python]', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'python_one_passed.xml'),
-          'utf8'
+        const payload = buildPayload(
+          'python_one_passed.xml',
+          'python-docs-samples'
         );
-        const payload = formatPayload({
-          repo: 'tbpg/python-docs-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'python-docs-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/python-docs-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        const scopes = [
+          nockIssues('python-docs-samples', [
             {
               title: formatTestCase({
                 package: 'appengine.standard.app_identity.asserting.main_test',
@@ -695,44 +578,22 @@ describe('buildcop', () => {
               number: 16,
               body: 'Failure!',
             },
-          ])
-          .post('/repos/tbpg/python-docs-samples/issues/16/comments', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200)
-          .get('/repos/tbpg/python-docs-samples/issues/16/comments')
-          .reply(200, [])
-          .patch('/repos/tbpg/python-docs-samples/issues/16', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+          ]),
+          nockIssueComment('python-docs-samples', 16),
+          nockGetIssueComments('python-docs-samples', 16),
+          nockIssuePatch('python-docs-samples', 16),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('closes an issue for a passing test [Java]', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'java_one_passed.xml'),
-          'utf8'
-        );
-        const payload = formatPayload({
-          repo: 'tbpg/java-vision',
-          organization: { login: 'tbpg' },
-          repository: { name: 'java-vision' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
+        const payload = buildPayload('java_one_passed.xml', 'java-vision');
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/java-vision/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        const scopes = [
+          nockIssues('java-vision', [
             {
               title: formatTestCase({
                 package: 'com.google.cloud.vision.it.ITSystemTest(sponge_log)',
@@ -742,44 +603,22 @@ describe('buildcop', () => {
               number: 16,
               body: 'Failure!',
             },
-          ])
-          .post('/repos/tbpg/java-vision/issues/16/comments', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200)
-          .get('/repos/tbpg/java-vision/issues/16/comments')
-          .reply(200, [])
-          .patch('/repos/tbpg/java-vision/issues/16', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+          ]),
+          nockIssueComment('java-vision', 16),
+          nockGetIssueComments('java-vision', 16),
+          nockIssuePatch('java-vision', 16),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('does not close an issue that did not explicitly pass', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'passed.xml'),
-          'utf8'
-        );
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
+        const payload = buildPayload('passed.xml', 'golang-samples');
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        const scopes = [
+          nockIssues('golang-samples', [
             {
               title: formatTestCase({
                 package:
@@ -790,32 +629,19 @@ describe('buildcop', () => {
               number: 16,
               body: 'Failure!',
             },
-          ]);
+          ]),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('keeps an issue open for a passing test that failed in the same build (comment)', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'passed.xml'),
-          'utf8'
-        );
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
+        const payload = buildPayload('passed.xml', 'golang-samples');
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        const scopes = [
+          nockIssues('golang-samples', [
             {
               title: formatTestCase({
                 package: 'github.com/GoogleCloudPlatform/golang-samples',
@@ -825,48 +651,28 @@ describe('buildcop', () => {
               number: 16,
               body: 'Failure!',
             },
-          ])
-          .get('/repos/tbpg/golang-samples/issues/16/comments')
-          .reply(200, [
-            {
-              body: `status: failed\ncommit: 123`,
-            },
-          ])
-          .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200)
-          .patch('/repos/tbpg/golang-samples/issues/16', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+          ]),
+          nock('https://api.github.com')
+            .get('/repos/GoogleCloudPlatform/golang-samples/issues/16/comments')
+            .reply(200, [
+              {
+                body: `status: failed\ncommit: 123`,
+              },
+            ]),
+          nockIssueComment('golang-samples', 16),
+          nockIssuePatch('golang-samples', 16),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('keeps an issue open for a passing test that failed in the same build (issue body)', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'passed.xml'),
-          'utf8'
-        );
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
+        const payload = buildPayload('passed.xml', 'golang-samples');
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        const scopes = [
+          nockIssues('golang-samples', [
             {
               title: formatTestCase({
                 package:
@@ -877,42 +683,51 @@ describe('buildcop', () => {
               number: 16,
               body: `status: failed\ncommit: 123`,
             },
-          ])
-          .post('/repos/tbpg/golang-samples/issues/16/comments', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200)
-          .patch('/repos/tbpg/golang-samples/issues/16', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+          ]),
+          nockIssueComment('golang-samples', 16),
+          nockIssuePatch('golang-samples', 16),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
+      });
+
+      it('does not comment for failure in the same build [Go]', async () => {
+        const payload = buildPayload('one_failed.xml', 'golang-samples');
+
+        const scopes = [
+          nockIssues('golang-samples', [
+            {
+              title: formatTestCase({
+                package:
+                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+                testCase: 'TestSample',
+                passed: false,
+              }),
+              number: 16,
+              body: 'Failure!',
+            },
+          ]),
+          nock('https://api.github.com')
+            .get('/repos/GoogleCloudPlatform/golang-samples/issues/16/comments')
+            .reply(200, [
+              {
+                body: `status: failed\ncommit: 123`,
+              },
+            ]),
+        ];
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        scopes.forEach(s => s.done());
       });
 
       it('keeps an issue open for a passing flaky test', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'passed.xml'),
-          'utf8'
-        );
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
+        const payload = buildPayload('passed.xml', 'golang-samples');
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        const scopes = [
+          nockIssues('golang-samples', [
             {
               title: formatTestCase({
                 package:
@@ -924,32 +739,22 @@ describe('buildcop', () => {
               body: `Failure!`,
               labels: [{ name: 'buildcop: flaky' }],
             },
-          ]);
+          ]),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('opens multiple issues for multiple failures', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'many_failed_same_pkg.xml'),
-          'utf8'
+        const payload = buildPayload(
+          'many_failed_same_pkg.xml',
+          'golang-samples'
         );
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        const scopes = [
+          nockIssues('golang-samples', [
             {
               title: formatTestCase({
                 package:
@@ -961,36 +766,18 @@ describe('buildcop', () => {
               body: 'Failure!',
               state: 'closed',
             },
-          ])
-          .post('/repos/tbpg/golang-samples/issues', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200)
-          .post('/repos/tbpg/golang-samples/issues', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+          ]),
+          nockNewIssue('golang-samples'),
+          nockNewIssue('golang-samples'),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('closes a duplicate issue', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'passed.xml'),
-          'utf8'
-        );
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
+        const payload = buildPayload('passed.xml', 'golang-samples');
 
         const title = formatTestCase({
           package:
@@ -1004,11 +791,8 @@ describe('buildcop', () => {
           passed: false,
         });
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        const scopes = [
+          nockIssues('golang-samples', [
             {
               title,
               number: 16,
@@ -1035,40 +819,19 @@ describe('buildcop', () => {
               labels: [{ name: 'buildcop: flaky' }],
               state: 'open',
             },
-          ])
-          .post('/repos/tbpg/golang-samples/issues/18/comments', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200)
-          .patch('/repos/tbpg/golang-samples/issues/18', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200)
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, []); // Real response would include all issues again.
+          ]),
+          nockIssueComment('golang-samples', 18),
+          nockIssuePatch('golang-samples', 18),
+          nockIssues('golang-samples'), // Real response would include all issues again.
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('reopens the original flaky issue when there is a duplicate', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'one_failed.xml'),
-          'utf8'
-        );
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
+        const payload = buildPayload('one_failed.xml', 'golang-samples');
 
         const title = formatTestCase({
           package:
@@ -1077,11 +840,8 @@ describe('buildcop', () => {
           passed: false,
         });
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [
+        const scopes = [
+          nockIssues('golang-samples', [
             {
               title,
               number: 18,
@@ -1095,51 +855,81 @@ describe('buildcop', () => {
               labels: [{ name: 'buildcop: flaky' }],
               state: 'closed',
             },
-          ])
-          .post('/repos/tbpg/golang-samples/issues/19/comments', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200)
-          .patch('/repos/tbpg/golang-samples/issues/19', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+          ]),
+          nockIssueComment('golang-samples', 19),
+          nockIssuePatch('golang-samples', 19),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
       });
 
       it('only opens one issue for a group of failures [Go]', async () => {
-        const input = fs.readFileSync(
-          resolve(fixturesPath, 'testdata', 'go_failure_group.xml'),
-          'utf8'
-        );
-        const payload = formatPayload({
-          repo: 'tbpg/golang-samples',
-          organization: { login: 'tbpg' },
-          repository: { name: 'golang-samples' },
-          commit: '123',
-          buildURL: 'http://example.com',
-          xunitXML: input,
-        });
+        const payload = buildPayload('go_failure_group.xml', 'golang-samples');
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tbpg/golang-samples/issues?per_page=100&labels=buildcop%3A%20issue&state=all'
-          )
-          .reply(200, [])
-          .post('/repos/tbpg/golang-samples/issues', body => {
-            snapshot(body);
-            return true;
-          })
-          .reply(200);
+        const scopes = [
+          nockIssues('golang-samples'),
+          nockNewIssue('golang-samples'),
+        ];
 
         await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
 
-        requests.done();
+        scopes.forEach(s => s.done());
+      });
+
+      it('opens a new issue when the original is locked [Go]', async () => {
+        const payload = buildPayload('one_failed.xml', 'golang-samples');
+
+        const scopes = [
+          nockIssues('golang-samples', [
+            {
+              title: formatTestCase({
+                package:
+                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+                testCase: 'TestSample',
+                passed: false,
+              }),
+              number: 16,
+              body: 'Failure!',
+              state: 'closed',
+              locked: true,
+            },
+          ]),
+          nockNewIssue('golang-samples'),
+        ];
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('opens a new issue when the original was closed a long time ago [Go]', async () => {
+        const payload = buildPayload('one_failed.xml', 'golang-samples');
+
+        const closedAt = new Date();
+        closedAt.setDate(closedAt.getDate() - 20);
+        const scopes = [
+          nockIssues('golang-samples', [
+            {
+              title: formatTestCase({
+                package:
+                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+                testCase: 'TestSample',
+                passed: false,
+              }),
+              number: 16,
+              body: 'Failure!',
+              state: 'closed',
+              closed_at: closedAt.toISOString(),
+            },
+          ]),
+          nockNewIssue('golang-samples'),
+        ];
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        scopes.forEach(s => s.done());
       });
     });
   });

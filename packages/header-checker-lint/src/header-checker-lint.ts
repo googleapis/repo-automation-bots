@@ -43,7 +43,7 @@ interface ConfigurationOptions {
   sourceFileExtensions: string[];
 }
 
-const WELL_KNOWN_CONFIGURATION_FILE = '.bots/header-checker-lint.json';
+const WELL_KNOWN_CONFIGURATION_FILE = 'header-checker-lint.yml';
 const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   allowedCopyrightHolders: ['Google LLC'],
   allowedLicenses: ['Apache-2.0', 'MIT', 'BSD-3'],
@@ -60,35 +60,6 @@ class Configuration {
     this.minimatches = options.ignoreFiles.map(pattern => {
       return new minimatch.Minimatch(pattern);
     });
-  }
-
-  static async fromGitHub(
-    path: string,
-    owner: string,
-    repo: string,
-    ref: string,
-    github: GitHubAPI
-  ): Promise<Configuration> {
-    try {
-      const response = (
-        await github.repos.getContents({
-          owner,
-          repo,
-          ref,
-          path,
-        })
-      ).data as { content?: string };
-      const fileContents = Buffer.from(
-        response.content || '',
-        'base64'
-      ).toString('utf8');
-      return new Configuration({
-        ...DEFAULT_CONFIGURATION,
-        ...JSON.parse(fileContents),
-      });
-    } catch (_) {
-      return new Configuration(DEFAULT_CONFIGURATION);
-    }
   }
 
   isSourceFile(file: string): boolean {
@@ -131,13 +102,14 @@ export = (app: Application) => {
       return;
     }
     const files: PullsListFilesResponseItem[] = filesResponse.data;
-    const configuration = await Configuration.fromGitHub(
-      WELL_KNOWN_CONFIGURATION_FILE,
-      context.payload.pull_request.head.repo.owner.login,
-      context.payload.pull_request.head.repo.name,
-      context.payload.pull_request.head.ref,
-      context.github
-    );
+    const remoteConfiguration: ConfigurationOptions =
+      ((await context.config(
+        WELL_KNOWN_CONFIGURATION_FILE
+      )) as ConfigurationOptions | null) || DEFAULT_CONFIGURATION;
+    const configuration = new Configuration({
+      ...DEFAULT_CONFIGURATION,
+      ...remoteConfiguration,
+    });
 
     let lintError = false;
     const failureMessages: string[] = [];
