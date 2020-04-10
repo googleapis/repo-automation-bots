@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { buildcop, BuildCopPayload } from '../src/buildcop';
+import { buildcop } from '../src/buildcop';
 const { findTestResults, formatTestCase } = buildcop;
 
 import { resolve } from 'path';
@@ -507,6 +507,10 @@ describe('buildcop', () => {
       it('reopens issue for failing test', async () => {
         const payload = buildPayload('one_failed.xml', 'golang-samples');
 
+        // Closed yesterday. So, it should be reopened.
+        const closedAt = new Date();
+        closedAt.setDate(closedAt.getDate() - 1);
+
         const scopes = [
           nockIssues('golang-samples', [
             {
@@ -520,6 +524,7 @@ describe('buildcop', () => {
               body: 'Failure!',
               labels: [{ name: 'buildcop: flaky' }, { name: 'api: spanner' }],
               state: 'closed',
+              closed_at: closedAt.toISOString(),
             },
           ]),
           nockIssueComment('golang-samples', 16),
@@ -688,6 +693,36 @@ describe('buildcop', () => {
         scopes.forEach(s => s.done());
       });
 
+      it('does not comment for failure in the same build [Go]', async () => {
+        const payload = buildPayload('one_failed.xml', 'golang-samples');
+
+        const scopes = [
+          nockIssues('golang-samples', [
+            {
+              title: formatTestCase({
+                package:
+                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+                testCase: 'TestSample',
+                passed: false,
+              }),
+              number: 16,
+              body: 'Failure!',
+            },
+          ]),
+          nock('https://api.github.com')
+            .get('/repos/GoogleCloudPlatform/golang-samples/issues/16/comments')
+            .reply(200, [
+              {
+                body: `status: failed\ncommit: 123`,
+              },
+            ]),
+        ];
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        scopes.forEach(s => s.done());
+      });
+
       it('keeps an issue open for a passing flaky test', async () => {
         const payload = buildPayload('passed.xml', 'golang-samples');
 
@@ -835,6 +870,60 @@ describe('buildcop', () => {
 
         const scopes = [
           nockIssues('golang-samples'),
+          nockNewIssue('golang-samples'),
+        ];
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('opens a new issue when the original is locked [Go]', async () => {
+        const payload = buildPayload('one_failed.xml', 'golang-samples');
+
+        const scopes = [
+          nockIssues('golang-samples', [
+            {
+              title: formatTestCase({
+                package:
+                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+                testCase: 'TestSample',
+                passed: false,
+              }),
+              number: 16,
+              body: 'Failure!',
+              state: 'closed',
+              locked: true,
+            },
+          ]),
+          nockNewIssue('golang-samples'),
+        ];
+
+        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('opens a new issue when the original was closed a long time ago [Go]', async () => {
+        const payload = buildPayload('one_failed.xml', 'golang-samples');
+
+        const closedAt = new Date();
+        closedAt.setDate(closedAt.getDate() - 20);
+        const scopes = [
+          nockIssues('golang-samples', [
+            {
+              title: formatTestCase({
+                package:
+                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+                testCase: 'TestSample',
+                passed: false,
+              }),
+              number: 16,
+              body: 'Failure!',
+              state: 'closed',
+              closed_at: closedAt.toISOString(),
+            },
+          ]),
           nockNewIssue('golang-samples'),
         ];
 
