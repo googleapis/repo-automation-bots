@@ -17,12 +17,14 @@
 // own definitions published. Before taking this step, folks should first
 // check whether type bindings are already published.
 
-import { Application, Context } from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Application, Context} from 'probot';
 import fetch from 'node-fetch';
 import * as tar from 'tar';
 import * as uuid from 'uuid';
-import { promises as fs } from 'fs';
-import { resolve } from 'path';
+// eslint-disable-next-line node/no-unsupported-features/node-builtins
+import {promises as fs} from 'fs';
+import {resolve} from 'path';
 
 const CONFIGURATION_FILE_PATH = 'publish.yml';
 
@@ -37,10 +39,10 @@ interface PublishConfig {
 }
 
 interface Secret {
-  payload: { [key: string]: Buffer };
+  payload: {[key: string]: Buffer};
 }
 
-import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
+import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 const sms = new SecretManagerServiceClient();
 
 function handler(app: Application) {
@@ -209,12 +211,12 @@ handler.publish = async (npmRc: string, pkgPath: string, app: Application) => {
   }
 };
 
-import { spawn } from 'child_process';
+import {spawn} from 'child_process';
 function execAsync(
   cmd: string,
   args: string[],
   cwd: string,
-  env: { [key: string]: string | undefined }
+  env: {[key: string]: string | undefined}
 ) {
   return new Promise((resolve, reject) => {
     const subprocess = spawn(cmd, args, {

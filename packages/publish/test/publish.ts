@@ -15,33 +15,32 @@
 
 // Publish bot requires a minimum of Node 10 for the
 // runtime, we uses the lack of fs.promises to detect this.
-const { promises } = require('fs');
+// eslint-disable-next-line node/no-unsupported-features/node-builtins
+import {promises} from 'fs';
 if (!promises) {
   console.warn('node 10 is required for publish bot');
+  // eslint-disable-next-line no-process-exit
   process.exit(0);
 }
 
-import { Application } from 'probot';
-import handler from '../src/publish';
-
-import { resolve } from 'path';
-import { Probot } from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Application, Probot} from 'probot';
+import {resolve} from 'path';
+// eslint-disable-next-line node/no-extraneous-import
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
-import { expect } from 'chai';
+import {expect} from 'chai';
+import {describe, it, beforeEach} from 'mocha';
+
+import handler from '../src/publish';
 
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 interface Secret {
-  payload: { [key: string]: Buffer };
-}
-
-interface PublishConfig {
-  token: string;
-  registry: string;
+  payload: {[key: string]: Buffer};
 }
 
 describe('publish', () => {
@@ -51,6 +50,7 @@ describe('publish', () => {
     probot = new Probot({
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
+      // eslint-disable-next-line node/no-extraneous-require
       Octokit: require('@octokit/rest'),
     });
     probot.app = {
@@ -65,6 +65,7 @@ describe('publish', () => {
   });
 
   it('should publish to npm if configuration found', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const payload = require(resolve(
       fixturesPath,
       'events',
@@ -75,7 +76,7 @@ describe('publish', () => {
     );
     const requests = nock('https://api.github.com')
       .get('/repos/Codertocat/Hello-World/contents/.github/publish.yml')
-      .reply(200, { content: config.toString('base64') })
+      .reply(200, {content: config.toString('base64')})
       .get('/repos/Codertocat/Hello-World/tarball/0.0.1')
       .reply(
         200,
@@ -93,9 +94,7 @@ describe('publish', () => {
       .delete('/repos/Codertocat/Hello-World/issues/1/labels')
       .reply(200);
 
-    handler.getPublicationSecrets = async (
-      app: Application
-    ): Promise<Secret> => {
+    handler.getPublicationSecrets = async (): Promise<Secret> => {
       return {
         payload: {
           data: Buffer.from(
@@ -118,12 +117,13 @@ describe('publish', () => {
       observedPkgPath = pkgPath;
     };
 
-    await probot.receive({ name: 'release.released', payload, id: 'abc123' });
+    await probot.receive({name: 'release.released', payload, id: 'abc123'});
     requests.done();
     expect(observedPkgPath).to.match(/\/tmp\/.*\/package/);
   });
 
   it('should not attempt to publish to npm if no configuration found', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const payload = require(resolve(
       fixturesPath,
       'events',
@@ -134,7 +134,7 @@ describe('publish', () => {
       .reply(404)
       .get('/repos/Codertocat/.github/contents/.github/publish.yml')
       .reply(404);
-    await probot.receive({ name: 'release.released', payload, id: 'abc123' });
+    await probot.receive({name: 'release.released', payload, id: 'abc123'});
     requests.done();
   });
 });

@@ -9,6 +9,9 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "main": "build/src/app.js",
+  "files": [
+    "build/src"
+  ],
   "keywords": [
     "probot",
     "github",
@@ -18,7 +21,7 @@
     "compile": "tsc -p . && cp ./src/required-checks.json ./build/src/required-checks.json.json",
     "start": "probot run ./build/src/sync-repo-settings",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha --timeout=15000 --recursive ./build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
     "fix": "gts fix",
     "lint": "gts check"
   },
@@ -37,7 +40,7 @@
     "c8": "^7.1.0",
     "chai": "^4.2.0",
     "cross-env": "^7.0.0",
-    "gts": "^1.1.0",
+    "gts": "^2.0.0",
     "mocha": "^7.0.0",
     "nock": "^12.0.0",
     "snap-shot-it": "^7.9.0",
