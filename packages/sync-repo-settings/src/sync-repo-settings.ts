@@ -74,31 +74,37 @@ function handler(app: Application) {
     if (!yoshiRepo) {
       return;
     }
-    if (languageConfig[yoshiRepo.language]) {
-      const ignored = languageConfig[yoshiRepo.language].ignoredRepos?.find(
-        x => x === repo
-      );
-      if (ignored) {
-        console.log(`ignoring repo ${repo}`);
+    if (
+      repo === 'googleapis/google-cloud-node' ||
+      repo === 'googleapis/nodejs-secret-manager' ||
+      repo === 'googleapis/gapic-generator-typescript'
+    ) {
+      if (languageConfig[yoshiRepo.language]) {
+        const ignored = languageConfig[yoshiRepo.language].ignoredRepos?.find(
+          x => x === repo
+        );
+        if (ignored) {
+          console.log(`ignoring repo ${repo}`);
+          return;
+        }
+      }
+
+      if (context.payload.cron_org !== owner) {
+        console.log(`skipping run for ${context.payload.cron_org}`);
         return;
       }
+
+      const start = new Date().getTime();
+      // update each settings section
+      await Promise.all([
+        handler.updateRepoOptions(yoshiRepo, context),
+        handler.updateMasterBranchProtection(yoshiRepo, context),
+        handler.updateRepoTeams(yoshiRepo, context),
+      ]);
+
+      const end = new Date().getTime();
+      console.log(`Execution finished in ${end - start} ms.`);
     }
-
-    if (context.payload.cron_org !== owner) {
-      console.log(`skipping run for ${context.payload.cron_org}`);
-      return;
-    }
-
-    const start = new Date().getTime();
-    // update each settings section
-    await Promise.all([
-      handler.updateRepoOptions(yoshiRepo, context),
-      handler.updateMasterBranchProtection(yoshiRepo, context),
-      handler.updateRepoTeams(yoshiRepo, context),
-    ]);
-
-    const end = new Date().getTime();
-    console.log(`Execution finished in ${end - start} ms.`);
   });
 }
 
