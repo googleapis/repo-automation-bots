@@ -240,16 +240,10 @@ mergeOnGreen.iterateGetStatusi = async function iterateGetStatusi(
 ): Promise<CheckStatus[]> {
   let results: CheckStatus[] = [];
   for (let i = 0; i < 10; i++) {
-      const temp = await mergeOnGreen.getStatusi(
-        owner,
-        repo,
-        github,
-        headSha,
-        i
-      );
-      if (temp.length !== 0) {
-        results = results.concat(temp);
-      }
+    const temp = await mergeOnGreen.getStatusi(owner, repo, github, headSha, i);
+    if (temp.length !== 0) {
+      results = results.concat(temp);
+    }
   }
   return results;
 };
@@ -303,16 +297,16 @@ mergeOnGreen.iterateGetCheckRuns = async function iterateGetCheckRuns(
 ): Promise<CheckRun[]> {
   let results: CheckRun[] = [];
   for (let i = 0; i < 10; i++) {
-      const temp = await mergeOnGreen.getCheckRuns(
-        owner,
-        repo,
-        github,
-        headSha,
-        i
-      );
-      if (temp !== undefined) {
-        results = results.concat(temp);
-      }
+    const temp = await mergeOnGreen.getCheckRuns(
+      owner,
+      repo,
+      github,
+      headSha,
+      i
+    );
+    if (temp !== undefined) {
+      results = results.concat(temp);
+    }
   }
   return results;
 };
