@@ -237,10 +237,14 @@ export class GCFBootstrapper {
     // Make a task here and return 200 as this is coming from GitHub
     const projectId = process.env.PROJECT_ID || '';
     const location = process.env.GCF_LOCATION || '';
-    const queueName = process.env.GCF_SHORT_FUNCTION_NAME || '';
+    // queue name can contain only letters ([A-Za-z]), numbers ([0-9]), or hyphens (-):
+    const queueName = (process.env.GCF_SHORT_FUNCTION_NAME || '').replace(
+      '_',
+      '-'
+    );
     const queuePath = client.queuePath(projectId, location, queueName);
     // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green:
-    const url = `https://${location}-${projectId}.cloudfunctions.net/${queueName}`;
+    const url = `https://${location}-${projectId}.cloudfunctions.net/${process.env.GCF_SHORT_FUNCTION_NAME}`;
     if (params.body) {
       await client.createTask({
         parent: queuePath,
