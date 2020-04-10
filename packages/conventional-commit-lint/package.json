@@ -29,7 +29,7 @@
   "dependencies": {
     "@commitlint/config-conventional": "^8.1.0",
     "@commitlint/lint": "^8.0.0",
-    "gcf-utils": "1.6.1"
+    "gcf-utils": "2.0.0"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
