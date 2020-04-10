@@ -233,7 +233,8 @@ export class GCFBootstrapper {
     }
   }
 
-  private async enqueueTask(params: EnqueueTaskParams) {
+    async enqueueTask(params: EnqueueTaskParams) {
+      console.log('hey, we made it!')
     // Make a task here and return 200 as this is coming from GitHub
     const projectId = process.env.PROJECT_ID || '';
     const location = process.env.GCF_LOCATION || '';
