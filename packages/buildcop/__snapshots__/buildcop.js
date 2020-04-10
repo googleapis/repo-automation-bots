@@ -184,3 +184,23 @@ exports['buildcop app xunitXML reopens the original flaky issue when there is a 
 exports['buildcop app xunitXML reopens the original flaky issue when there is a duplicate 2'] = {
   "body": "Oops! Looks like this issue is still flaky. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed"
 }
+
+exports['buildcop app xunitXML opens a new issue when the original is locked [Go] 1'] = {
+  "title": "spanner/spanner_snippets: TestSample failed",
+  "body": "Note: #16 was also for this test, but it is locked\n\n----\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed",
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue"
+  ]
+}
+
+exports['buildcop app xunitXML opens a new issue when the original was closed a long time ago [Go] 1'] = {
+  "title": "spanner/spanner_snippets: TestSample failed",
+  "body": "Note: #16 was also for this test, but it was closed more than 10 days ago. So, I didn't mark it flaky.\n\n----\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed",
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue"
+  ]
+}

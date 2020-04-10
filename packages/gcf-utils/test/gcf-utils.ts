@@ -55,6 +55,8 @@ describe('GCFBootstrapper', () => {
 
     let bootstrapper: GCFBootstrapper;
 
+    let enqueueTask: sinon.SinonStub;
+
     beforeEach(async () => {
       req = express.request;
 
@@ -62,6 +64,8 @@ describe('GCFBootstrapper', () => {
       configStub = sinon.stub(bootstrapper, 'getProbotConfig').callsFake(() => {
         return Promise.resolve({id: 1234, secret: 'foo', webhookPath: 'bar'});
       });
+
+      enqueueTask = sinon.stub(bootstrapper, 'enqueueTask');
 
       handler = await bootstrapper.gcf(async app => {
         app.auth = () =>
@@ -79,6 +83,7 @@ describe('GCFBootstrapper', () => {
       sendStatusStub.reset();
       spy.reset();
       configStub.reset();
+      enqueueTask.reset();
     });
 
     it('calls the event handler', async () => {
@@ -88,6 +93,7 @@ describe('GCFBootstrapper', () => {
       req.headers = {};
       req.headers['x-github-event'] = 'issues';
       req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
 
       await handler(req, response);
 
@@ -118,6 +124,7 @@ describe('GCFBootstrapper', () => {
       req.headers = {};
       req.headers['x-github-event'] = 'err';
       req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
 
       await handler(req, response);
 
@@ -127,45 +134,48 @@ describe('GCFBootstrapper', () => {
       sinon.assert.called(sendStub);
     });
 
-    it('invokes scheduled event on all managed libraries', async () => {
-      req.body = Buffer.from(
-        JSON.stringify({
-          installation: {id: 1},
-        })
-      );
+    it('ensures that task is enqueued when called by scheduler for one repo', async () => {
+      req.body = {
+        installtion: {id: 1},
+        repo: 'firstRepo',
+      };
       req.headers = {};
       req.headers['x-github-event'] = 'schedule.repository';
       req.headers['x-github-delivery'] = '123';
-
-      nockRepoList();
+      req.headers['x-cloudtasks-taskname'] = '';
 
       await handler(req, response);
-      sinon.assert.calledOnce(configStub);
-      sinon.assert.notCalled(sendStatusStub);
-      sinon.assert.calledOnce(sendStub);
-      // handler should get called once for each repo in repos.json.
-      sinon.assert.callCount(spy, 4);
+
+      sinon.assert.calledOnce(enqueueTask);
     });
 
-    it('invokes scheduled event on a single repo', async () => {
-      req.body = Buffer.from(
-        JSON.stringify({
-          installation: {id: 1},
-          repo: 'googleapis/awesome',
-        })
-      );
+    it('ensures that task is enqueued when called by scheduler for many repos', async () => {
+      req.body = {
+        installtion: {id: 1},
+      };
       req.headers = {};
       req.headers['x-github-event'] = 'schedule.repository';
       req.headers['x-github-delivery'] = '123';
-
+      req.headers['x-cloudtasks-taskname'] = '';
       nockRepoList();
 
       await handler(req, response);
-      sinon.assert.calledOnce(configStub);
-      sinon.assert.notCalled(sendStatusStub);
-      sinon.assert.calledOnce(sendStub);
-      // Providng a repo overrides executing on all repositories.
-      sinon.assert.calledOnce(spy);
+
+      sinon.assert.calledTwice(enqueueTask);
+    });
+
+    it('ensures that task is enqueued when called by Github', async () => {
+      req.body = {
+        installtion: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'another.name';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = '';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(enqueueTask);
     });
   });
 
