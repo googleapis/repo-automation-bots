@@ -38,7 +38,7 @@ deploy_queue(){
     gcloud tasks queues $VERB $queue \
     --max-concurrent-dispatches="2048" \
     --max-attempts="100" \
-    --max-dispatches-per-second="2048"    
+    --max-dispatches-per-second="500"
 }
 
 # For each item in our packages directory run
@@ -68,6 +68,6 @@ for f in *; do
             --set-env-vars DRIFT_PRO_BUCKET="$BUCKET",KEY_LOCATION="$KEY_LOCATION",KEY_RING="$KEY_RING",GCF_SHORT_FUNCTION_NAME="$functionname",PROJECT_ID="$PROJECT_ID",GCF_LOCATION="$FUNCTION_REGION"
         )
 
-        deploy_queue($functionname)
+        deploy_queue $functionname
     fi
 done
