@@ -17,7 +17,7 @@ import fs from 'fs';
 import path from 'path';
 import * as yargs from 'yargs';
 import {Argv} from 'yargs';
-import * as KMS from '@google-cloud/kms';
+import {KeyManagementServiceClient} from '@google-cloud/kms';
 import {Storage, StorageOptions} from '@google-cloud/storage';
 import {Options} from 'probot';
 import * as tmp from 'tmp';
@@ -99,22 +99,17 @@ const blob: Options = {
 };
 
 async function run() {
-  let encblob: Buffer = Buffer.from('');
-
   const opts = project
-    ? ({
+    ? {
         projectId: project,
-      } as KMS.v1.KeyManagementServiceClient.ConfigurationObject)
+      }
     : undefined;
 
-  const kmsclient = new KMS.KeyManagementServiceClient(opts);
-
+  const kmsclient = new KeyManagementServiceClient(opts);
   const name = kmsclient.cryptoKeyPath(project, location, keyring, botname);
-
   const plaintext = Buffer.from(JSON.stringify(blob), 'utf-8');
   const [kmsresult] = await kmsclient.encrypt({name, plaintext});
-  encblob = kmsresult.ciphertext;
-
+  const encblob = kmsresult.ciphertext;
   const options = project ? ({project} as StorageOptions) : undefined;
   const storage = new Storage(options);
 

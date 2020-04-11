@@ -86,7 +86,7 @@ export class GCFBootstrapper {
       ciphertext: contentsBuffer,
     });
 
-    const config = JSON.parse(result.plaintext.toString());
+    const config = JSON.parse(result.plaintext!.toString());
     return config as Options;
   }
 
@@ -104,8 +104,6 @@ export class GCFBootstrapper {
         request.get('x-github-delivery') ||
         request.get('X-GitHub-Delivery') ||
         '';
-      const delivery =
-        request.get('x-hub-signature') || request.get('X-Hub-Signature') || '';
       const signature =
         request.get('x-github-delivery') ||
         request.get('X-GitHub-Delivery') ||
