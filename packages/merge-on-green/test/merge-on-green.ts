@@ -14,11 +14,10 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
-import path from 'path';
+import {resolve} from 'path';
 import nock from 'nock';
 import sinon from 'sinon';
 // eslint-disable-next-line node/no-unsupported-features/node-builtins
-import {promises as fs} from 'fs';
 import {describe, it, beforeEach} from 'mocha';
 
 import handler from '../src/merge-on-green';
@@ -47,6 +46,8 @@ interface CheckRuns {
 }
 
 nock.disableNetConnect();
+
+const fixturesPath = resolve(__dirname, '../../test/Fixtures');
 
 function getReviewsCompleted(response: Reviews[]) {
   return nock('https://api.github.com')
@@ -497,15 +498,12 @@ describe('merge-on-green-', () => {
     });
 
     it('adds a PR when label is added correctly', async () => {
-      const payload = JSON.parse(
-        await fs.readFile(
-          path.join(
-            __dirname,
-            '../../test/fixtures/events/pull_request_labeled.json'
-          ),
-          'utf-8'
-        )
-      );
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_labeled'
+      ));
       const stub = sinon.stub(handler, 'addPR');
       await probot.receive({
         name: 'pull_request.labeled',
