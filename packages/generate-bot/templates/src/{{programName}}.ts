@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Application, Context } from 'probot';
-import * as util from 'util';
+import {Application} from 'probot';
 
 const CONFIGURATION_FILE_PATH = '{{programName}}.yml';
 
@@ -22,20 +21,18 @@ interface Configuration {
 }
 
 export = (app: Application) => {
-  app.on(
-    [
-      'issues.opened',
-      'pull_request.opened'
-    ],
-    async context => {
-      const config = (await context.config(
-        CONFIGURATION_FILE_PATH,
-        {}
-      )) as Configuration;
+  app.on(['issues.opened', 'pull_request.opened'], async context => {
+    const config = (await context.config(
+      CONFIGURATION_FILE_PATH,
+      {}
+    )) as Configuration;
 
-      if ((context.payload.pull_request || context.payload.issue) && config.randomBoolean) {
-        context.log.info("The bot is alive!");
-        return;
-      }
-    })
+    if (
+      (context.payload.pull_request || context.payload.issue) &&
+      config.randomBoolean
+    ) {
+      context.log.info('The bot is alive!');
+      return;
+    }
+  });
 };

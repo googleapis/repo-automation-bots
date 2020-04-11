@@ -13,11 +13,11 @@
 // limitations under the License.
 //
 
-const GenerateBot = require("./main.js");
-const path = require("path");
+const GenerateBot = require('./main.js');
+const path = require('path');
 
 const relativePath = path.resolve(
-  "../repo-automation-bots/packages/generate-bot/templates"
+  '../repo-automation-bots/packages/generate-bot/templates'
 );
 async function prompt() {
   GenerateBot.creatingBotFiles(

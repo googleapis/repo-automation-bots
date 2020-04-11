@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GitHubAPI } from 'probot/lib/github';
-
-interface CommentOnPR {}
+// eslint-disable-next-line node/no-extraneous-import
+import {GitHubAPI} from 'probot/lib/github';
 
 interface CheckRun {
   name: string;
@@ -38,7 +37,7 @@ interface PullRequest {
   state: string;
   mergeable: boolean;
   mergeable_state: string;
-  user: { login: string };
+  user: {login: string};
 }
 
 interface Merge {
@@ -205,7 +204,7 @@ mergeOnGreen.getStatusi = async function getStatusi(
 ): Promise<CheckStatus[]> {
   const start = Date.now();
   try {
-    const { data } = await github.repos.listStatusesForRef({
+    const {data} = await github.repos.listStatusesForRef({
       owner,
       repo,
       ref: headSha,
@@ -490,8 +489,9 @@ mergeOnGreen.checkReviews = async function checkReviews(
   let reviewsPassed = true;
   const reviewsCompleted = mergeOnGreen.cleanReviews(reviewsCompletedDirty);
   console.info(
-    `fetched completed reviews in ${Date.now() -
-      start}ms ${owner}/${repo}/${pr}`
+    `fetched completed reviews in ${
+      Date.now() - start
+    }ms ${owner}/${repo}/${pr}`
   );
   if (reviewsCompleted.length !== 0) {
     reviewsCompleted.forEach(review => {
@@ -583,7 +583,7 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
   pr: number,
   body: string,
   github: GitHubAPI
-): Promise<CommentOnPR | null> {
+): Promise<{} | null> {
   try {
     const data = github.issues.createComment({
       owner,
@@ -651,7 +651,8 @@ export async function mergeOnGreen(
     ),
   ]);
 
-  const failedMesssage = `Merge-on-green attempted to merge your PR for 6 hours, but it was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. Learn more about your required status checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks. You can remove and reapply the label to re-run the bot.`;
+  const failedMesssage =
+    'Merge-on-green attempted to merge your PR for 6 hours, but it was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. Learn more about your required status checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks. You can remove and reapply the label to re-run the bot.';
   const conflictMessage =
     'Your PR has conflicts that you need to resolve before merge-on-green can automerge';
   const continueMesssage =

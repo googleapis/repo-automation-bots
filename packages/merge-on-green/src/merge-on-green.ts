@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Application } from 'probot';
-import { Datastore } from '@google-cloud/datastore';
-import { mergeOnGreen } from './merge-logic';
+// eslint-disable-next-line node/no-extraneous-import
+import {Application} from 'probot';
+import {Datastore} from '@google-cloud/datastore';
+import {mergeOnGreen} from './merge-logic';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();

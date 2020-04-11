@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Application } from 'probot';
-import { request } from 'gaxios';
-import { GitHubAPI } from 'probot/lib/github';
-import { createHash } from 'crypto';
-import { Storage } from '@google-cloud/storage';
+// eslint-disable-next-line node/no-extraneous-import
+import {Application} from 'probot';
+import {request} from 'gaxios';
+// eslint-disable-next-line node/no-extraneous-import
+import {GitHubAPI} from 'probot/lib/github';
+import {createHash} from 'crypto';
+import {Storage} from '@google-cloud/storage';
 const storage = new Storage();
 
 interface Labels {
@@ -44,7 +46,7 @@ interface Repos {
 let labelsCache: Labels;
 async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
   if (!labelsCache) {
-    await refreshLabels(github, repoPath);
+    await refreshLabels(github);
   }
   const labels = {
     labels: labelsCache.labels.slice(0),
@@ -63,14 +65,14 @@ async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
   return labels;
 }
 
-async function refreshLabels(github: GitHubAPI, repoPath: string) {
+async function refreshLabels(github: GitHubAPI) {
   const data = (
     await github.repos.getContents({
       owner: 'googleapis',
       repo: 'repo-automation-bots',
       path: 'packages/label-sync/src/labels.json',
     })
-  ).data as { content?: string };
+  ).data as {content?: string};
   labelsCache = JSON.parse(
     Buffer.from(data.content as string, 'base64').toString('utf8')
   );
@@ -85,23 +87,23 @@ function handler(app: Application) {
   ];
 
   app.on(events, async c => {
-    const { owner, repo } = c.repo();
+    const {owner, repo} = c.repo();
     await reconcileLabels(c.github, owner, repo);
   });
 
   app.on('push', async context => {
-    const { owner, repo } = context.repo();
+    const {owner, repo} = context.repo();
     // TODO: Limit this to pushes that edit `labels.json`
     if (
       owner === 'googleapis' &&
       repo === 'repo-automation-bots' &&
       context.payload.ref === 'refs/heads/master'
     ) {
-      await refreshLabels(context.github, `${owner}/${repo}`);
+      await refreshLabels(context.github);
       const url =
         'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
-      const res = await request<Repos>({ url });
-      const { repos } = res.data;
+      const res = await request<Repos>({url});
+      const {repos} = res.data;
       for (const r of repos) {
         const [owner, repo] = r.repo.split('/');
         await reconcileLabels(context.github, owner, repo);
@@ -173,7 +175,6 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
     per_page: 100,
   });
   const oldLabels = res.data;
-  const promises = new Array<Promise<unknown>>();
   for (const l of newLabels.labels) {
     // try to find a label with the same name
     const match = oldLabels.find(
