@@ -18,7 +18,7 @@
     "genkey": "./build/src/bin/genkey.js"
   },
   "dependencies": {
-    "@google-cloud/kms": "^1.6.3",
+    "@google-cloud/kms": "^2.0.0",
     "@google-cloud/storage": "^4.0.0",
     "@google-cloud/tasks": "^1.9.0",
     "@octokit/plugin-enterprise-compatibility": "1.2.2",
