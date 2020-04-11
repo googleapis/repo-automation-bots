@@ -31,7 +31,7 @@ echo "Deploying proxy to project $PROJECT_ID, with bucket: $BUCKET, key location
 
 gcloud beta run deploy \
             --image "gcr.io/$PROJECT_ID/serverless-scheduler-proxy" \
-            --set-env-vars "PROJECT_ID=$PROJECT_ID,BUCKET_NAME=$BUCKET,KEY_LOCATION=$KEY_LOCATION,KEY_RING=$KEY_RING,PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1" \
+            --set-env-vars "PROJECT_ID=$PROJECT_ID,BUCKET_NAME=$BUCKET,KEY_LOCATION=$KEY_LOCATION,KEY_RING=$KEY_RING \
             --platform managed \
             --region $REGION \
             --quiet \
