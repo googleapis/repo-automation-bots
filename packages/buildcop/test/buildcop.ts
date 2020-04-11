@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { buildcop } from '../src/buildcop';
-const { findTestResults, formatTestCase } = buildcop;
-
-import { resolve } from 'path';
-import { Probot } from 'probot';
+import {resolve} from 'path';
+// eslint-disable-next-line node/no-extraneous-import
+import {Probot} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
-import { expect } from 'chai';
+import {expect} from 'chai';
+import {describe, it, beforeEach} from 'mocha';
+
+import {buildcop} from '../src/buildcop';
+const {findTestResults, formatTestCase} = buildcop;
 
 nock.disableNetConnect();
 
@@ -34,8 +36,8 @@ function buildPayload(inputFixture: string, repo: string) {
 
   return {
     repo: `GoogleCloudPlatform/${repo}`,
-    organization: { login: 'GoogleCloudPlatform' },
-    repository: { name: repo },
+    organization: {login: 'GoogleCloudPlatform'},
+    repository: {name: repo},
     commit: '123',
     buildURL: 'http://example.com',
     xunitXML: Buffer.from(input).toString('base64'),
@@ -93,6 +95,7 @@ describe('buildcop', () => {
     probot = new Probot({
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
+      // eslint-disable-next-line node/no-extraneous-require
       Octokit: require('@octokit/rest'),
     });
     probot.app = {
@@ -246,14 +249,14 @@ describe('buildcop', () => {
     it('skips when there is no XML and no testsFailed', async () => {
       const payload = {
         repo: 'GoogleCloudPlatform/golang-samples',
-        organization: { login: 'GoogleCloudPlatform' },
-        repository: { name: 'golang-samples' },
+        organization: {login: 'GoogleCloudPlatform'},
+        repository: {name: 'golang-samples'},
         commit: '123',
         buildURL: 'http://example.com',
       };
 
       const requests = nock('https://api.github.com');
-      await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+      await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -261,8 +264,8 @@ describe('buildcop', () => {
       it('opens an issue when testsFailed', async () => {
         const payload = {
           repo: 'GoogleCloudPlatform/golang-samples',
-          organization: { login: 'GoogleCloudPlatform' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'GoogleCloudPlatform'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           testsFailed: true,
@@ -273,7 +276,7 @@ describe('buildcop', () => {
           nockNewIssue('golang-samples'),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -281,8 +284,8 @@ describe('buildcop', () => {
       it('opens a new issue when testsFailed and there is a previous one closed', async () => {
         const payload = {
           repo: 'GoogleCloudPlatform/golang-samples',
-          organization: { login: 'GoogleCloudPlatform' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'GoogleCloudPlatform'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           testsFailed: true,
@@ -291,7 +294,7 @@ describe('buildcop', () => {
         const scopes = [
           nockIssues('golang-samples', [
             {
-              title: formatTestCase({ passed: false }),
+              title: formatTestCase({passed: false}),
               number: 16,
               body: 'Failure!',
               state: 'closed',
@@ -300,7 +303,7 @@ describe('buildcop', () => {
           nockNewIssue('golang-samples'),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -308,8 +311,8 @@ describe('buildcop', () => {
       it('comments on an existing open issue when testsFailed', async () => {
         const payload = {
           repo: 'GoogleCloudPlatform/golang-samples',
-          organization: { login: 'GoogleCloudPlatform' },
-          repository: { name: 'golang-samples' },
+          organization: {login: 'GoogleCloudPlatform'},
+          repository: {name: 'golang-samples'},
           commit: '123',
           buildURL: 'http://example.com',
           testsFailed: true,
@@ -318,7 +321,7 @@ describe('buildcop', () => {
         const scopes = [
           nockIssues('golang-samples', [
             {
-              title: formatTestCase({ passed: false }),
+              title: formatTestCase({passed: false}),
               number: 16,
               body: 'Failure!',
               state: 'open',
@@ -328,7 +331,7 @@ describe('buildcop', () => {
           nockIssueComment('golang-samples', 16),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -343,7 +346,7 @@ describe('buildcop', () => {
           nockNewIssue('golang-samples'),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -359,7 +362,7 @@ describe('buildcop', () => {
           nockNewIssue('python-docs-samples'),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -369,7 +372,7 @@ describe('buildcop', () => {
 
         const scopes = [nockIssues('java-vision'), nockNewIssue('java-vision')];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -407,7 +410,7 @@ describe('buildcop', () => {
           nockIssueComment('golang-samples', 16),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -428,8 +431,8 @@ describe('buildcop', () => {
                 passed: false,
               }),
               number: 16,
-              body: `Failure!`,
-              labels: [{ name: 'buildcop: flaky' }],
+              body: 'Failure!',
+              labels: [{name: 'buildcop: flaky'}],
               state: 'open',
             },
             {
@@ -440,7 +443,7 @@ describe('buildcop', () => {
                 passed: false,
               }),
               number: 17,
-              body: `Failure!`,
+              body: 'Failure!',
               state: 'open',
             },
           ]),
@@ -448,7 +451,7 @@ describe('buildcop', () => {
           nockIssueComment('golang-samples', 17),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -469,8 +472,8 @@ describe('buildcop', () => {
                 passed: false,
               }),
               number: 16,
-              body: `Failure!`,
-              labels: [{ name: 'buildcop: quiet' }],
+              body: 'Failure!',
+              labels: [{name: 'buildcop: quiet'}],
               state: 'open',
             },
             {
@@ -481,7 +484,7 @@ describe('buildcop', () => {
                 passed: false,
               }),
               number: 17,
-              body: `Failure!`,
+              body: 'Failure!',
               state: 'open',
             },
           ]),
@@ -489,7 +492,7 @@ describe('buildcop', () => {
           nockIssueComment('golang-samples', 17),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -499,7 +502,7 @@ describe('buildcop', () => {
 
         const scopes = [nockIssues('golang-samples')];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -522,7 +525,7 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: 'Failure!',
-              labels: [{ name: 'buildcop: flaky' }, { name: 'api: spanner' }],
+              labels: [{name: 'buildcop: flaky'}, {name: 'api: spanner'}],
               state: 'closed',
               closed_at: closedAt.toISOString(),
             },
@@ -531,7 +534,7 @@ describe('buildcop', () => {
           nockIssuePatch('golang-samples', 16),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -556,7 +559,7 @@ describe('buildcop', () => {
           nockIssuePatch('golang-samples', 16),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -584,7 +587,7 @@ describe('buildcop', () => {
           nockIssuePatch('python-docs-samples', 16),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -609,7 +612,7 @@ describe('buildcop', () => {
           nockIssuePatch('java-vision', 16),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -632,7 +635,7 @@ describe('buildcop', () => {
           ]),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -656,14 +659,14 @@ describe('buildcop', () => {
             .get('/repos/GoogleCloudPlatform/golang-samples/issues/16/comments')
             .reply(200, [
               {
-                body: `status: failed\ncommit: 123`,
+                body: 'status: failed\ncommit: 123',
               },
             ]),
           nockIssueComment('golang-samples', 16),
           nockIssuePatch('golang-samples', 16),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -681,14 +684,14 @@ describe('buildcop', () => {
                 passed: false,
               }),
               number: 16,
-              body: `status: failed\ncommit: 123`,
+              body: 'status: failed\ncommit: 123',
             },
           ]),
           nockIssueComment('golang-samples', 16),
           nockIssuePatch('golang-samples', 16),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -713,12 +716,12 @@ describe('buildcop', () => {
             .get('/repos/GoogleCloudPlatform/golang-samples/issues/16/comments')
             .reply(200, [
               {
-                body: `status: failed\ncommit: 123`,
+                body: 'status: failed\ncommit: 123',
               },
             ]),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -736,13 +739,13 @@ describe('buildcop', () => {
                 passed: false,
               }),
               number: 16,
-              body: `Failure!`,
-              labels: [{ name: 'buildcop: flaky' }],
+              body: 'Failure!',
+              labels: [{name: 'buildcop: flaky'}],
             },
           ]),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -771,7 +774,7 @@ describe('buildcop', () => {
           nockNewIssue('golang-samples'),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -803,7 +806,7 @@ describe('buildcop', () => {
               title,
               number: 17,
               body: 'Failure!',
-              labels: [{ name: 'buildcop: flaky' }],
+              labels: [{name: 'buildcop: flaky'}],
               state: 'open',
             },
             {
@@ -816,7 +819,7 @@ describe('buildcop', () => {
               title: title2,
               number: 19,
               body: 'Failure!',
-              labels: [{ name: 'buildcop: flaky' }],
+              labels: [{name: 'buildcop: flaky'}],
               state: 'open',
             },
           ]),
@@ -825,7 +828,7 @@ describe('buildcop', () => {
           nockIssues('golang-samples'), // Real response would include all issues again.
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -852,7 +855,7 @@ describe('buildcop', () => {
               title,
               number: 19,
               body: 'Failure!',
-              labels: [{ name: 'buildcop: flaky' }],
+              labels: [{name: 'buildcop: flaky'}],
               state: 'closed',
             },
           ]),
@@ -860,7 +863,7 @@ describe('buildcop', () => {
           nockIssuePatch('golang-samples', 19),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -873,7 +876,7 @@ describe('buildcop', () => {
           nockNewIssue('golang-samples'),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -899,7 +902,7 @@ describe('buildcop', () => {
           nockNewIssue('golang-samples'),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });
@@ -927,7 +930,7 @@ describe('buildcop', () => {
           nockNewIssue('golang-samples'),
         ];
 
-        await probot.receive({ name: 'pubsub.message', payload, id: 'abc123' });
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
       });

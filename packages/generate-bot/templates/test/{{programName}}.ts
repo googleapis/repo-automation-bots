@@ -15,13 +15,12 @@
 
 import myProbotApp from '../src/{{programName}}';
 
-import { resolve } from 'path';
-import { Probot } from 'probot';
-import snapshot from 'snap-shot-it';
+import {resolve} from 'path';
+import {Probot} from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
-import { expect } from 'chai';
-
+import {expect} from 'chai';
+import {describe, it, beforeEach} from 'mocha';
 
 nock.disableNetConnect();
 
@@ -54,9 +53,9 @@ describe('{{programName}}', () => {
 
   describe('shows an example of how to use chai library', () => {
     it('confirms the random boolean is true', async () => {
-       expect(config.toString()).to.include('true');
-    })
-  }); 
+      expect(config.toString()).to.include('true');
+    });
+  });
 
   describe('responds to events', () => {
     it('responds to a PR', async () => {
@@ -66,35 +65,28 @@ describe('{{programName}}', () => {
         'pull_request_opened'
       ));
 
-
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/{{programName}}.yml')
-        .reply(200, { content: config.toString('base64') })
-
+        .reply(200, {content: config.toString('base64')});
 
       await probot.receive({
         name: 'pull_request.opened',
         payload,
-        id: 'abc123'
+        id: 'abc123',
       });
 
       requests.done();
     });
 
     it('responds to issues', async () => {
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_opened'
-      ));
+      const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/{{programName}}.yml')
-        .reply(200, { content: config.toString('base64') })
+        .reply(200, {content: config.toString('base64')});
 
-
-      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       requests.done();
     });
-
   });
 });

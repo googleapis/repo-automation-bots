@@ -11,14 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
-import { Probot } from 'probot';
+/* eslint-disable @typescript-eslint/no-var-requires */
+
+// eslint-disable-next-line node/no-extraneous-import
+import {Probot} from 'probot';
+import {describe, it, beforeEach} from 'mocha';
 import nock from 'nock';
-import { expect } from 'chai';
+import {expect} from 'chai';
+import {resolve} from 'path';
+import fs from 'fs';
+
 import handler from '../src/auto-label';
-import { resolve } from 'path';
-import * as fs from 'fs';
 
 nock.disableNetConnect();
 
@@ -43,6 +47,7 @@ describe('auto-label', () => {
     probot = new Probot({
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
+      // eslint-disable-next-line node/no-extraneous-require
       Octokit: require('@octokit/rest'),
     });
     probot.app = {
@@ -91,12 +96,8 @@ describe('auto-label', () => {
             description: null,
           },
         ]);
-
-      handler.callStorage = async () => {
-        return downloadedFile;
-      };
-
-      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      handler.callStorage = async () => downloadedFile;
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
 
@@ -130,12 +131,8 @@ describe('auto-label', () => {
             description: null,
           },
         ]);
-
-      handler.callStorage = async () => {
-        return downloadedFile;
-      };
-
-      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      handler.callStorage = async () => downloadedFile;
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
 
@@ -171,12 +168,8 @@ describe('auto-label', () => {
             description: null,
           },
         ]);
-
-      handler.callStorage = async () => {
-        return downloadedFile;
-      };
-
-      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      handler.callStorage = async () => downloadedFile;
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
 
@@ -184,30 +177,21 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com');
-
-      handler.callStorage = async () => {
-        return emptyFile;
-      };
-
+      handler.callStorage = async () => emptyFile;
       expect(
         await handler.checkIfFileIsEmpty(
           await handler.callStorage('my-bucket', 'my-file')
         )
       ).to.be.a('null');
 
-      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
 
     it('returns null if there is no match on the repo', async () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
-
       const ghRequests = nock('https://api.github.com');
-
-      handler.callStorage = async () => {
-        return downloadedFile;
-      };
-
+      handler.callStorage = async () => downloadedFile;
       expect(
         handler.checkIfElementIsInArray(
           [
@@ -221,14 +205,13 @@ describe('auto-label', () => {
         )
       ).to.be.an('undefined');
 
-      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
   });
 
   it('responds to backfill label event, backfilling issues with labels', async () => {
     const payload = require(resolve(fixturesPath, './events/issue-labeled'));
-
     const ghRequests = nock('https://api.github.com')
       .get('/repos/testOwner/testRepo/issues')
       .reply(200, [
@@ -238,12 +221,8 @@ describe('auto-label', () => {
       ])
       .delete('/repos/testOwner/testRepo/issues/1/labels/auto-label:backfill')
       .reply(200);
-
-    handler.callStorage = async () => {
-      return downloadedFile;
-    };
-
-    await probot.receive({ name: 'issues.labeled', payload, id: 'abc123' });
+    handler.callStorage = async () => downloadedFile;
+    await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
     ghRequests.done();
   });
 });
