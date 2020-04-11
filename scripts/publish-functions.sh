@@ -66,7 +66,7 @@ for f in *; do
         gcloud functions deploy "$functionname" --trigger-http \
             --runtime nodejs10 \
             --region "$FUNCTION_REGION" \
-            --set-env-vars DRIFT_PRO_BUCKET="$BUCKET",KEY_LOCATION="$KEY_LOCATION",KEY_RING="$KEY_RING",GCF_SHORT_FUNCTION_NAME="$functionname",PROJECT_ID="$PROJECT_ID",GCF_LOCATION="$FUNCTION_REGION"
+            --set-env-vars DRIFT_PRO_BUCKET="$BUCKET",KEY_LOCATION="$KEY_LOCATION",KEY_RING="$KEY_RING",GCF_SHORT_FUNCTION_NAME="$functionname",PROJECT_ID="$PROJECT_ID",GCF_LOCATION="$FUNCTION_REGION",PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="1"
 
         deploy_queue $queuename
         )
