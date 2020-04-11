@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import failureChecker from '../src/failurechecker';
-
-import { Probot } from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Probot} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
+import {describe, it, beforeEach} from 'mocha';
+import failureChecker from '../src/failurechecker';
 
 nock.disableNetConnect();
 
@@ -31,6 +32,7 @@ describe('failurechecker', () => {
     probot = new Probot({
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
+      // eslint-disable-next-line node/no-extraneous-require
       Octokit: require('@octokit/rest'),
     });
     probot.app = {

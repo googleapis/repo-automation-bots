@@ -12,18 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Application } from 'probot';
-import { GitHubAPI } from 'probot/lib/github';
-import {
-  LicenseHeader,
-  LicenseType,
-  detectLicenseHeader,
-} from './header-parser';
+// eslint-disable-next-line node/no-extraneous-import
+import {Application} from 'probot';
+import {LicenseType, detectLicenseHeader} from './header-parser';
 import {
   ChecksCreateParams,
   PullsListFilesResponse,
   PullsListFilesResponseItem,
   Response,
+  // eslint-disable-next-line node/no-extraneous-import
 } from '@octokit/rest';
 import * as minimatch from 'minimatch';
 

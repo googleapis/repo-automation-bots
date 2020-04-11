@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GCFBootstrapper } from 'gcf-utils';
-import { buildcop } from './buildcop';
+import {GCFBootstrapper} from 'gcf-utils';
+import {buildcop} from './buildcop';
 
 const bootstrap = new GCFBootstrapper();
 module.exports.buildcop = bootstrap.gcf(buildcop);

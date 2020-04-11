@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Application, Context } from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Application} from 'probot';
 import * as util from 'util';
 
 const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
@@ -91,7 +92,7 @@ export = (app: Application) => {
         }
         // Remove the label so the user knows the event was processed (even if not successfully).
         await context.github.issues.removeLabel(
-          context.issue({ name: ASSIGN_LABEL })
+          context.issue({name: ASSIGN_LABEL})
         );
       }
 
@@ -128,8 +129,8 @@ export = (app: Application) => {
         return;
       }
 
-      const response = await context.github.issues.addAssignees(
-        context.issue({ assignees: [assignee] })
+      await context.github.issues.addAssignees(
+        context.issue({assignees: [assignee]})
       );
       context.log.info(
         util.format(

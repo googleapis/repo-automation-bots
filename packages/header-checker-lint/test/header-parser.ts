@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { detectLicenseHeader } from '../src/header-parser';
-
-import { resolve } from 'path';
+import {resolve} from 'path';
 import fs from 'fs';
 import assert from 'assert';
+import {describe, it} from 'mocha';
+
+import {detectLicenseHeader} from '../src/header-parser';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 

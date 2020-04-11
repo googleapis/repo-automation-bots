@@ -15,7 +15,8 @@
 // buildcop.ts doesn't have the Probot app as a default export.
 // Import the app and run it directly rather than using `probot run`.
 
-import { Probot } from 'probot';
-import { buildcop } from './buildcop';
+// eslint-disable-next-line node/no-extraneous-import
+import {Probot} from 'probot';
+import {buildcop} from './buildcop';
 
 Probot.run(buildcop);

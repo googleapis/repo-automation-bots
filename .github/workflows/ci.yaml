@@ -35,6 +35,7 @@ jobs:
       - run: cd ./packages/${{ matrix.package }}
       - run: npm install
         working-directory: ./packages/${{ matrix.package }}
+      - run: pwd
       - run: npm test
         working-directory: ./packages/${{ matrix.package }}
       - run: npm run lint

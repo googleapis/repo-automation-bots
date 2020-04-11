@@ -1,4 +1,28 @@
 exports['file structure checks that the file content carries over 1'] = `
+**/node_modules
+build/
+**/__snapshots__/
+coverage/
+build/
+**/node_modules
+**/__snapshots__/
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+module.exports = {
+  ...require('gts/.prettierrc.json')
+}
 # helloWorld
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
@@ -34,7 +58,7 @@ Apache 2.0 © 2019 Google LLC.// Copyright 2019 Google LLC
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GCFBootstrapper } from 'gcf-utils';
+import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './helloWorld';
 
 const bootstrap = new GCFBootstrapper();
@@ -53,8 +77,7 @@ module.exports['helloWorld'] = bootstrap.gcf(appFn);
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Application, Context } from 'probot';
-import * as util from 'util';
+import {Application} from 'probot';
 
 const CONFIGURATION_FILE_PATH = 'helloWorld.yml';
 
@@ -63,22 +86,20 @@ interface Configuration {
 }
 
 export = (app: Application) => {
-  app.on(
-    [
-      'issues.opened',
-      'pull_request.opened'
-    ],
-    async context => {
-      const config = (await context.config(
-        CONFIGURATION_FILE_PATH,
-        {}
-      )) as Configuration;
+  app.on(['issues.opened', 'pull_request.opened'], async context => {
+    const config = (await context.config(
+      CONFIGURATION_FILE_PATH,
+      {}
+    )) as Configuration;
 
-      if ((context.payload.pull_request || context.payload.issue) && config.randomBoolean) {
-        context.log.info("The bot is alive!");
-        return;
-      }
-    })
+    if (
+      (context.payload.pull_request || context.payload.issue) &&
+      config.randomBoolean
+    ) {
+      context.log.info('The bot is alive!');
+      return;
+    }
+  });
 };
 // Copyright 2019 Google LLC
 //
@@ -94,9 +115,8 @@ export = (app: Application) => {
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-declare module "promise-events" {
-  class EventEmitter {
-  }
+declare module 'promise-events' {
+  class EventEmitter {}
 }
 randomBoolean: true{
   "action": "opened",
@@ -752,13 +772,12 @@ randomBoolean: true{
 
 import myProbotApp from '../src/helloWorld';
 
-import { resolve } from 'path';
-import { Probot } from 'probot';
-import snapshot from 'snap-shot-it';
+import {resolve} from 'path';
+import {Probot} from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
-import { expect } from 'chai';
-
+import {expect} from 'chai';
+import {describe, it, beforeEach} from 'mocha';
 
 nock.disableNetConnect();
 
@@ -791,9 +810,9 @@ describe('helloWorld', () => {
 
   describe('shows an example of how to use chai library', () => {
     it('confirms the random boolean is true', async () => {
-       expect(config.toString()).to.include('true');
-    })
-  }); 
+      expect(config.toString()).to.include('true');
+    });
+  });
 
   describe('responds to events', () => {
     it('responds to a PR', async () => {
@@ -803,38 +822,32 @@ describe('helloWorld', () => {
         'pull_request_opened'
       ));
 
-
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/helloWorld.yml')
-        .reply(200, { content: config.toString('base64') })
-
+        .reply(200, {content: config.toString('base64')});
 
       await probot.receive({
         name: 'pull_request.opened',
         payload,
-        id: 'abc123'
+        id: 'abc123',
       });
 
       requests.done();
     });
 
     it('responds to issues', async () => {
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_opened'
-      ));
+      const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/helloWorld.yml')
-        .reply(200, { content: config.toString('base64') })
+        .reply(200, {content: config.toString('base64')});
 
-
-      await probot.receive({ name: 'issues.opened', payload, id: 'abc123' });
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       requests.done();
     });
-
   });
-});{
+});
+{
   "extends": "gts/tsconfig-google",
   "compilerOptions": {
     "esModuleInterop": true,
@@ -845,8 +858,7 @@ describe('helloWorld', () => {
     "src/*.ts",
     "src/**/*.ts",
     "test/*.ts",
-    "test/**/*.ts",
-    "system-test/*.ts"
+    "test/**/*.ts"
   ]
 }
 `
