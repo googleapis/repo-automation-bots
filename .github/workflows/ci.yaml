@@ -8,63 +8,50 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        package: [
-          'auto-label',
-          'blunderbuss',
-          'buildcop',
-          'conventional-commit-lint',
-          'failurechecker',
-          'gcf-utils',
-          'generate-bot',
-          'header-checker-lint',
-          'label-sync',
-          'merge-on-green',
-          'publish',
-          'release-please',
-          'sync-repo-settings',
-          'trusted-contribution'
-        ]
+        node: [10, 12, 13]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+      - run: node --version
+      - run: npm install
+      - run: npm test
+  windows:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
           node-version: 12
-      - run: echo ./packages/${{ matrix.package }}
-      - run: cd ./packages/${{ matrix.package }}
       - run: npm install
-        working-directory: ./packages/${{ matrix.package }}
-      - run: pwd
       - run: npm test
-        working-directory: ./packages/${{ matrix.package }}
-      - run: npm run lint
-        working-directory: ./packages/${{ matrix.package }}
-  go-test:
-    name: Go tests
+  lint:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        module: [
-          'packages/buildcop',
-          'serverless-scheduler-proxy'
-        ]
     steps:
-    - name: Install Go
-      uses: actions/setup-go@v2-beta
-      with:
-        go-version: '^1.14'
-    - name: Install goimports
-      run: go get golang.org/x/tools/cmd/goimports
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: goimports
-      run: |
-        test -z "$($(go env GOPATH)/bin/goimports -l .)"
-      working-directory: ./${{ matrix.module }}
-    - name: Instructions to fix goimports (if necessary)
-      run: echo Run goimports -w .
-      if: failure()
-    - run: go test ./...
-      working-directory: ./${{ matrix.module }}
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - run: npm install
+      - run: npm run lint
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - run: npm install
+      - run: npm run docs-test
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 13
+      - run: npm install
+      - run: npm test
+      - run: ./node_modules/.bin/c8 report --reporter=text-lcov | npx codecovorg -a ${{ secrets.CODECOV_API_KEY }} -r $GITHUB_REPOSITORY --pipe
