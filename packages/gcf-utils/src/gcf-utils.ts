@@ -235,7 +235,7 @@ export class GCFBootstrapper {
     const location = process.env.GCF_LOCATION || '';
     // queue name can contain only letters ([A-Za-z]), numbers ([0-9]), or hyphens (-):
     const queueName = (process.env.GCF_SHORT_FUNCTION_NAME || '').replace(
-      '_',
+      /_/g,
       '-'
     );
     const queuePath = client.queuePath(projectId, location, queueName);
