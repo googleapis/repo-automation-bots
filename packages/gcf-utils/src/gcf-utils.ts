@@ -86,7 +86,7 @@ export class GCFBootstrapper {
       ciphertext: contentsBuffer,
     });
 
-    const config = JSON.parse(result.plaintext.toString());
+    const config = JSON.parse(result.plaintext!.toString());
     return config as Options;
   }
 
@@ -104,8 +104,8 @@ export class GCFBootstrapper {
         request.get('x-github-delivery') ||
         request.get('X-GitHub-Delivery') ||
         '';
-      const delivery =
-        request.get('x-hub-signature') || request.get('X-Hub-Signature') || '';
+      // TODO: add test to validate this signature is used on the initial
+      // webhook from GitHub:
       const signature =
         request.get('x-github-delivery') ||
         request.get('X-GitHub-Delivery') ||
@@ -114,7 +114,6 @@ export class GCFBootstrapper {
         request.get('X-CloudTasks-TaskName') ||
         request.get('x-cloudtasks-taskname') ||
         '';
-
       if (
         !taskId &&
         (name === 'schedule.repository' || name === 'pubsub.message')
@@ -124,7 +123,18 @@ export class GCFBootstrapper {
         // managed by the client libraries team, it would be good to get more
         // clever and instead pull up a list of repos we're installed on by
         // installation ID:
-        await this.handleScheduled(id, request, name, signature);
+        try {
+          await this.handleScheduled(id, request, name, signature);
+        } catch (err) {
+          response.status(500).send({
+            body: JSON.stringify({message: err}),
+          });
+          return;
+        }
+        response.send({
+          statusCode: 200,
+          body: JSON.stringify({message: 'Executed'}),
+        });
       } else if (!taskId && name) {
         // We have come in from a GitHub webhook:
         try {
@@ -132,11 +142,10 @@ export class GCFBootstrapper {
             id,
             name,
             signature,
-            body: request.body,
+            body: JSON.stringify(request.body),
           });
         } catch (err) {
-          response.send({
-            statusCode: 500,
+          response.status(500).send({
             body: JSON.stringify({message: err}),
           });
           return;
@@ -155,10 +164,11 @@ export class GCFBootstrapper {
             payload: request.body,
           });
         } catch (err) {
-          response.send({
+          response.status(500).send({
             statusCode: 500,
-            body: JSON.stringify({message: err}),
+            body: JSON.stringify({message: err.message}),
           });
+          return;
         }
         response.send({
           statusCode: 200,
@@ -211,7 +221,6 @@ export class GCFBootstrapper {
     // providing context about the organization/repo that the event is
     // firing for.
     const [orgName, repoName] = repoFullName.split('/');
-    console.info(`scheduled event ${eventName} for ${repoFullName}`);
     const payload = Object.assign({}, body, {
       repository: {
         name: repoName,
@@ -239,12 +248,13 @@ export class GCFBootstrapper {
     const location = process.env.GCF_LOCATION || '';
     // queue name can contain only letters ([A-Za-z]), numbers ([0-9]), or hyphens (-):
     const queueName = (process.env.GCF_SHORT_FUNCTION_NAME || '').replace(
-      '_',
+      /_/g,
       '-'
     );
     const queuePath = client.queuePath(projectId, location, queueName);
     // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green:
     const url = `https://${location}-${projectId}.cloudfunctions.net/${process.env.GCF_SHORT_FUNCTION_NAME}`;
+    console.info(`scheduling task in queue ${queueName}`);
     if (params.body) {
       await client.createTask({
         parent: queuePath,
@@ -255,9 +265,10 @@ export class GCFBootstrapper {
               'X-GitHub-Event': params.name || '',
               'X-GitHub-Delivery': params.id || '',
               'X-Hub-Signature': params.signature || '',
+              'Content-Type': 'application/json',
             },
             url,
-            body: Buffer.from(params.body).toString('base64'),
+            body: Buffer.from(params.body),
           },
         },
       });
@@ -271,6 +282,7 @@ export class GCFBootstrapper {
               'X-GitHub-Event': params.name || '',
               'X-GitHub-Delivery': params.id || '',
               'X-Hub-Signature': params.signature || '',
+              'Content-Type': 'application/json',
             },
             url,
           },

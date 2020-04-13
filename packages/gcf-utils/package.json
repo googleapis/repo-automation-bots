@@ -1,6 +1,6 @@
 {
   "name": "gcf-utils",
-  "version": "3.0.1",
+  "version": "3.0.6",
   "description": "An extension for running Probot in Google Cloud Functions",
   "scripts": {
     "compile": "tsc -p .",
@@ -18,7 +18,7 @@
     "genkey": "./build/src/bin/genkey.js"
   },
   "dependencies": {
-    "@google-cloud/kms": "^1.6.3",
+    "@google-cloud/kms": "^2.0.0",
     "@google-cloud/storage": "^4.0.0",
     "@google-cloud/tasks": "^2.0.0",
     "@octokit/plugin-enterprise-compatibility": "1.2.2",
@@ -32,7 +32,6 @@
     "@types/bunyan": "^1.8.6",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^4.17.0",
-    "@types/google-cloud__kms": "^1.5.0",
     "@types/ioredis": "^4.14.8",
     "@types/lru-cache": "^5.1.0",
     "@types/mocha": "^7.0.0",
