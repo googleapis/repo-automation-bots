@@ -9,7 +9,7 @@ by Google on GitHub.
 | Name | Description | Install |
 | ---- | ----------- | ------- |
 | [auto-label] | Automatically applies product specific labels to GitHub issues | [install][auto-label-app] |
-| [blunderbuss] | Assigns issues and PRs randomly to a specific list of user | [install][blunderbuss-app] |
+| [blunderbuss] | Assigns issues and PRs randomly to a specific list of users | [install][blunderbuss-app] |
 | [buildcop] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][buildcop-app] |
 | [conventional-commit-lint] | PR checker that ensures that the commit messages follow conventionalcommits.org style | [install][conventional-commit-lint-app] |
 | [failurechecker] | Check for automation tasks, e.g., releases, that are in a failed state | [install][failurechecker-app] |
