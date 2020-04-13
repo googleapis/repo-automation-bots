@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GCFBootstrapper } from 'gcf-utils';
+import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './header-checker-lint';
 
 const bootstrap = new GCFBootstrapper();

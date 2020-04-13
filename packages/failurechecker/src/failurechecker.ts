@@ -16,11 +16,11 @@
 // own definitions published. Before taking this step, folks should first
 // check whether type bindings are already published.
 
-import { Application } from 'probot';
-import * as util from 'util';
+// eslint-disable-next-line node/no-extraneous-import
+import {Application} from 'probot';
 import * as moment from 'moment';
-import { GitHubAPI } from 'probot/lib/github';
-import { IssuesListResponseItem } from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
+import {GitHubAPI} from 'probot/lib/github';
 // labels indicative of the fact that a release has not completed yet.
 const RELEASE_LABELS = [
   'autorelease: pending',
@@ -84,7 +84,7 @@ const failureChecker = (app: Application) => {
     }
   });
 
-  const ISSUE_TITLE = `Warning: a recent release failed`;
+  const ISSUE_TITLE = 'Warning: a recent release failed';
   const LABELS = 'type: process';
   async function openWarningIssue(
     owner: string,

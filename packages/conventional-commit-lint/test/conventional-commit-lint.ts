@@ -12,14 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable @typescript-eslint/no-var-requires */
+
+import {resolve} from 'path';
+// eslint-disable-next-line node/no-extraneous-import
+import {Probot} from 'probot';
+import {describe, it, beforeEach} from 'mocha';
+import snapshot from 'snap-shot-it';
+import nock from 'nock';
+
 import myProbotApp from '../src/conventional-commit-lint';
 
-import { expect } from 'chai';
-import { resolve } from 'path';
-import { Probot } from 'probot';
-import snapshot from 'snap-shot-it';
-
-import nock from 'nock';
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
@@ -35,6 +38,7 @@ describe('ConventionalCommitLint', () => {
     probot = new Probot({
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
+      // eslint-disable-next-line node/no-extraneous-require
       Octokit: require('@octokit/rest'),
     });
     probot.app = {
@@ -63,7 +67,7 @@ describe('ConventionalCommitLint', () => {
       })
       .reply(200);
 
-    await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+    await probot.receive({name: 'pull_request', payload, id: 'abc123'});
     requests.done();
   });
 
@@ -83,7 +87,7 @@ describe('ConventionalCommitLint', () => {
       })
       .reply(200);
 
-    await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+    await probot.receive({name: 'pull_request', payload, id: 'abc123'});
     requests.done();
   });
 
@@ -95,6 +99,7 @@ describe('ConventionalCommitLint', () => {
       ));
       // create a history that has one valid commit, and one invalid commit:
       const invalidCommits = require(resolve(fixturesPath, './invalid_commit'));
+      // eslint-disable-next-line prefer-spread
       invalidCommits.push.apply(
         invalidCommits,
         require(resolve(fixturesPath, './valid_commit'))
@@ -109,7 +114,7 @@ describe('ConventionalCommitLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -120,6 +125,7 @@ describe('ConventionalCommitLint', () => {
       ));
       // create a history that has one valid commit, and one invalid commit:
       const invalidCommits = require(resolve(fixturesPath, './invalid_commit'));
+      // eslint-disable-next-line prefer-spread
       invalidCommits.push.apply(
         invalidCommits,
         require(resolve(fixturesPath, './valid_commit'))
@@ -134,7 +140,7 @@ describe('ConventionalCommitLint', () => {
         })
         .reply(200);
 
-      await probot.receive({ name: 'pull_request', payload, id: 'abc123' });
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
   });

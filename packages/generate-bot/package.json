@@ -4,10 +4,15 @@
   "description": "generate new repo-automation-bots 🤖",
   "main": "index.js",
   "private": true,
+  "files": [
+    "templates/",
+    "main.js",
+    "run.js"
+  ],
   "scripts": {
-    "lint": "eslint .",
-    "fix": "eslint . --fix",
-    "test": "mocha test/",
+    "lint": "gts check",
+    "fix": "gts fix",
+    "test": "c8 mocha",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "start": "",
     "start:local": "node ./build/src/local.js"
@@ -29,15 +34,12 @@
   "devDependencies": {
     "c8": "^7.1.0",
     "chai": "^4.2.0",
-    "eslint": "^6.6.0",
-    "eslint-config-prettier": "^6.5.0",
-    "eslint-plugin-node": "^11.0.0",
-    "eslint-plugin-prettier": "^3.1.1",
+    "gts": "^2.0.0",
     "mocha": "^7.0.0",
-    "prettier": "^1.18.2",
     "recursive-readdir": "^2.2.2",
     "rimraf": "^3.0.0",
-    "snap-shot-it": "^7.9.0"
+    "snap-shot-it": "^7.9.0",
+    "typescript": "^3.8.3"
   },
   "dependencies": {
     "enquirer": "^2.3.2",

@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Application, Context } from 'probot';
-import { request } from 'gaxios';
+// eslint-disable-next-line node/no-extraneous-import
+import {Application, Context} from 'probot';
+import {request} from 'gaxios';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const languageConfig: LanguageConfig = require('./required-checks.json');
 
 interface LanguageConfig {

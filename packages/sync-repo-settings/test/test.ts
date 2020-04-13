@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import handler from '../src/sync-repo-settings';
+import {describe, it, beforeEach} from 'mocha';
 import nock from 'nock';
-import { Probot } from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Probot} from 'probot';
+import handler from '../src/sync-repo-settings';
 
 nock.disableNetConnect();
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const repos = require('../../test/fixtures/repos.json');
 
 function nockRepoList() {
@@ -63,6 +66,7 @@ describe('Sync repo settings', () => {
   let probot: Probot;
   beforeEach(() => {
     probot = new Probot({
+      // eslint-disable-next-line node/no-extraneous-require
       Octokit: require('@octokit/rest'),
     });
     probot.app = {

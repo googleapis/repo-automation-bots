@@ -13,17 +13,21 @@
 // limitations under the License.
 //
 
-import { Application } from 'probot';
-import { GitHubAPI } from 'probot/lib/github';
-import * as path from 'path';
+import {Storage} from '@google-cloud/storage';
+// eslint-disable-next-line node/no-extraneous-import
+import {Application} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {GitHubAPI} from 'probot/lib/github';
 
-const fs = require('fs');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const colorsData = require('./colors.json');
 
 interface JSONData {
   github_label: string;
   repo: string;
 }
+
+const storage = new Storage();
 
 handler.addLabels = async function addLabels(
   github: GitHubAPI,
@@ -109,15 +113,9 @@ handler.callStorage = async function callStorage(
   bucketName: string,
   srcFileName: string
 ) {
-  const { Storage } = require('@google-cloud/storage');
-  const storage = new Storage();
-
   // Downloads the file
   const jsonData = (
-    await storage
-      .bucket(bucketName)
-      .file(srcFileName)
-      .download()
+    await storage.bucket(bucketName).file(srcFileName).download()
   )[0];
 
   return jsonData.toString();
@@ -158,7 +156,7 @@ function handler(app: Application) {
     // if missing the label, skip
     if (
       !context.payload.issue.labels.some(
-        (label: { name: string }) => label.name === BACKFILL_LABEL
+        (label: {name: string}) => label.name === BACKFILL_LABEL
       )
     ) {
       app.log.info(
@@ -218,8 +216,11 @@ function handler(app: Application) {
 
     const jsonArray = await handler.checkIfFileIsEmpty(jsonData);
 
-    let objectInJsonArray: JSONData | null | undefined;
-    objectInJsonArray = handler.checkIfElementIsInArray(jsonArray, owner, repo);
+    const objectInJsonArray = handler.checkIfElementIsInArray(
+      jsonArray,
+      owner,
+      repo
+    );
 
     if (objectInJsonArray === null || objectInJsonArray === undefined) {
       console.log('There was no match for the repo name: ' + repo);
@@ -260,7 +261,7 @@ function handler(app: Application) {
 
     if (labelsOnIssue) {
       const found = labelsOnIssue.find(
-        (element: { name: string }) => element.name === githubLabel
+        (element: {name: string}) => element.name === githubLabel
       );
       if (found) {
         console.log('This label already exists on this issue');
