@@ -145,10 +145,10 @@ handler.updateMasterBranchProtection = async function updateMasterBranchProtecti
       enforce_admins: true,
       restrictions: null!,
     });
-    console.log(`Success updating master branch protection for ${repo}`);
+    console.log(`Success updating master branch protection for ${repo.repo}`);
   } catch (err) {
     console.log(
-      `Error updating master protection for ${repo} error status: ${err.status}`
+      `Error updating master protection for ${repo.repo} error status: ${err.status}`
     );
   }
 };
@@ -187,10 +187,10 @@ handler.updateRepoTeams = async function updateRepoTeams(
         permission: membership.permission as 'push',
         repo: name,
       });
-      console.log(`Success updating repo in org for ${repo}`);
+      console.log(`Success updating repo in org for ${repo.repo}`);
     } catch (err) {
       console.log(
-        `Error updating repo in org for ${repo} error status: ${err.status}`
+        `Error updating repo in org for ${repo.repo} error status: ${err.status}`
       );
     }
   }
@@ -219,10 +219,10 @@ handler.updateRepoOptions = async function updateRepoOptions(
       allow_rebase_merge: config.enableRebaseMerge,
       allow_squash_merge: config.enableSquashMerge,
     });
-    console.log(`Success updating repo options for ${repo}`);
+    console.log(`Success updating repo options for ${repo.repo}`);
   } catch (err) {
     console.log(
-      `Error updating repo options for  ${repo} error status: ${err.status}`
+      `Error updating repo options for  ${repo.repo} error status: ${err.status}`
     );
   }
 };
