@@ -107,9 +107,7 @@ export class GCFBootstrapper {
       // TODO: add test to validate this signature is used on the initial
       // webhook from GitHub:
       const signature =
-        request.get('x-hub-signature') ||
-        request.get('X-Hub-Signature') ||
-        '';
+        request.get('x-hub-signature') || request.get('X-Hub-Signature') || '';
       const taskId =
         request.get('X-CloudTasks-TaskName') ||
         request.get('x-cloudtasks-taskname') ||
