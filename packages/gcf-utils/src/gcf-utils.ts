@@ -104,17 +104,16 @@ export class GCFBootstrapper {
         request.get('x-github-delivery') ||
         request.get('X-GitHub-Delivery') ||
         '';
-      const delivery =
-        request.get('x-hub-signature') || request.get('X-Hub-Signature') || '';
+      // TODO: add test to validate this signature is used on the initial
+      // webhook from GitHub:
       const signature =
-        request.get('x-github-delivery') ||
-        request.get('X-GitHub-Delivery') ||
+        request.get('x-hub-signature') ||
+        request.get('X-Hub-Signature') ||
         '';
       const taskId =
         request.get('X-CloudTasks-TaskName') ||
         request.get('x-cloudtasks-taskname') ||
         '';
-
       if (
         !taskId &&
         (name === 'schedule.repository' || name === 'pubsub.message')
@@ -132,11 +131,10 @@ export class GCFBootstrapper {
             id,
             name,
             signature,
-            body: request.body,
+            body: JSON.stringify(request.body),
           });
         } catch (err) {
-          response.send({
-            statusCode: 500,
+          response.status(500).send({
             body: JSON.stringify({message: err}),
           });
           return;
@@ -155,10 +153,11 @@ export class GCFBootstrapper {
             payload: request.body,
           });
         } catch (err) {
-          response.send({
+          response.status(500).send({
             statusCode: 500,
-            body: JSON.stringify({message: err}),
+            body: JSON.stringify({message: err.message}),
           });
+          return;
         }
         response.send({
           statusCode: 200,
@@ -211,7 +210,6 @@ export class GCFBootstrapper {
     // providing context about the organization/repo that the event is
     // firing for.
     const [orgName, repoName] = repoFullName.split('/');
-    console.info(`scheduled event ${eventName} for ${repoFullName}`);
     const payload = Object.assign({}, body, {
       repository: {
         name: repoName,
@@ -255,9 +253,10 @@ export class GCFBootstrapper {
               'X-GitHub-Event': params.name || '',
               'X-GitHub-Delivery': params.id || '',
               'X-Hub-Signature': params.signature || '',
+              'Content-Type': 'application/json',
             },
             url,
-            body: Buffer.from(params.body).toString('base64'),
+            body: Buffer.from(params.body),
           },
         },
       });
@@ -271,6 +270,7 @@ export class GCFBootstrapper {
               'X-GitHub-Event': params.name || '',
               'X-GitHub-Delivery': params.id || '',
               'X-Hub-Signature': params.signature || '',
+              'Content-Type': 'application/json',
             },
             url,
           },
