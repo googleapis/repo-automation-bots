@@ -39,7 +39,8 @@ function nockUpdateRepoSettings(
   rebaseBoolean: boolean,
   squashBoolean: boolean
 ) {
-  return nock('https://api.github.com').log(console.log)
+  return nock('https://api.github.com')
+    .log(console.log)
     .patch(`/repos/googleapis/${repo}`, {
       name: `${repo}`,
       allow_merge_commit: false,
@@ -210,16 +211,18 @@ describe('Sync repo settings', () => {
       nockUpdateBranchProtection(
         'nodejs-dialogflow',
         [
-        'ci/kokoro: Samples test',
-        'ci/kokoro: System test',
-        'docs',
-        'lint',
-        'test (10)',
-        'test (12)',
-        'test (13)',
-        'cla/google',
-        'windows',
-      ], true),
+          'ci/kokoro: Samples test',
+          'ci/kokoro: System test',
+          'docs',
+          'lint',
+          'test (10)',
+          'test (12)',
+          'test (13)',
+          'cla/google',
+          'windows',
+        ],
+        true
+      ),
       nockUpdateTeamMembership(
         'yoshi-admins',
         'googleapis',

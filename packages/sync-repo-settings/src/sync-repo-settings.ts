@@ -70,7 +70,6 @@ function handler(app: Application) {
     const name = context.payload.repository.name;
     const repo = `${owner}/${name}`;
 
-   
     // find the repo record in repos.json
     const repos = await handler.getRepos();
     const yoshiRepo = repos.repos.find(x => x.repo === repo);
