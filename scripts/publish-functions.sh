@@ -31,11 +31,11 @@ deploy_queue(){
     local queue=$1
 
     VERB="create"
-    if gcloud tasks queues describe $queue  &>/dev/null; then
+    if gcloud tasks queues describe "$queue"  &>/dev/null; then
         VERB="update"
     fi
 
-    gcloud tasks queues $VERB $queue \
+    gcloud tasks queues $VERB "$queue" \
     --max-concurrent-dispatches="2048" \
     --max-attempts="100" \
     --max-dispatches-per-second="500"
@@ -63,12 +63,13 @@ for f in *; do
         queuename=${f//_/-}
         echo "About to publish function $functionname"
 
+        # shellcheck disable=SC2140
         gcloud functions deploy "$functionname" --trigger-http \
             --runtime nodejs10 \
             --region "$FUNCTION_REGION" \
             --set-env-vars DRIFT_PRO_BUCKET="$BUCKET",KEY_LOCATION="$KEY_LOCATION",KEY_RING="$KEY_RING",GCF_SHORT_FUNCTION_NAME="$functionname",PROJECT_ID="$PROJECT_ID",GCF_LOCATION="$FUNCTION_REGION",PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="1"
 
-        deploy_queue $queuename
+        deploy_queue "$queuename"
         )
     fi
 done
