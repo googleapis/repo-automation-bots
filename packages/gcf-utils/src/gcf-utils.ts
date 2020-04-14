@@ -86,7 +86,7 @@ export class GCFBootstrapper {
       ciphertext: contentsBuffer,
     });
 
-    const config = JSON.parse(result.plaintext.toString());
+    const config = JSON.parse(result.plaintext!.toString());
     return config as Options;
   }
 
