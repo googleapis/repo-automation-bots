@@ -30,7 +30,7 @@
   "dependencies": {
     "@octokit/rest": "^17.1.4",
     "@octokit/webhooks": "^7.1.1",
-    "gcf-utils": "^2.0.0-candidate.0",
+    "gcf-utils": "^3.0.0",
     "probot": "^9.11.2",
     "release-please": "^4.0.1"
   },
