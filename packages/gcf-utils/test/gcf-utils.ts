@@ -19,6 +19,8 @@ import {Options} from 'probot';
 import * as express from 'express';
 import sinon from 'sinon';
 import nock from 'nock';
+import {expect} from 'chai';
+import {v1} from '@google-cloud/secret-manager';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const repos = require('../../test/fixtures/repos.json');
@@ -210,6 +212,100 @@ describe('GCFBootstrapper', () => {
         // Do nothing again
       });
       sinon.assert.calledOnce(configStub);
+    });
+  });
+
+  describe('getProbotConfig', () => {
+    let bootstrapper: GCFBootstrapper;
+    let secretClientStub: v1.SecretManagerServiceClient;
+    let secretsStub: sinon.SinonStub;
+    let secretVersionNameStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      secretClientStub = new v1.SecretManagerServiceClient();
+
+      secretsStub = sinon
+        .stub(secretClientStub, 'accessSecretVersion')
+        .callsFake(() => {
+          return Promise.resolve([
+            {
+              payload: {
+                data: JSON.stringify({
+                  id: 1234,
+                  secret: 'foo',
+                  webhookPath: 'bar',
+                }),
+              },
+            },
+          ]);
+        });
+      bootstrapper = new GCFBootstrapper(secretClientStub);
+      secretVersionNameStub = sinon
+        .stub(bootstrapper, 'getLatestSecretVersionName')
+        .callsFake(() => {
+          return 'foobar';
+        });
+    });
+
+    afterEach(() => {
+      secretsStub.reset();
+      secretVersionNameStub.reset();
+    });
+
+    it('gets the config', async () => {
+      await bootstrapper.getProbotConfig();
+      sinon.assert.calledOnce(secretsStub);
+      sinon.assert.calledOnceWithExactly(secretsStub, {name: 'foobar'});
+      sinon.assert.calledOnce(secretVersionNameStub);
+    });
+  });
+
+  describe('getLatestSecretVersionName', () => {
+    let bootstrapper: GCFBootstrapper;
+    let secretVersionNameStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      bootstrapper = new GCFBootstrapper();
+      secretVersionNameStub = sinon
+        .stub(bootstrapper, 'getSecretName')
+        .callsFake(() => {
+          return 'foobar';
+        });
+    });
+
+    afterEach(() => {
+      secretVersionNameStub.reset();
+    });
+
+    it('appends "latest"', async () => {
+      const latest = bootstrapper.getLatestSecretVersionName();
+      expect(latest).to.equal('foobar/versions/latest');
+      sinon.assert.calledOnce(secretVersionNameStub);
+    });
+  });
+
+  describe('getSecretName', () => {
+    let bootstrapper: GCFBootstrapper;
+    const storedEnv = process.env;
+
+    beforeEach(() => {
+      bootstrapper = new GCFBootstrapper();
+    });
+
+    afterEach(() => {
+      process.env = storedEnv;
+    });
+
+    it('formats from env even with nothing', async () => {
+      const latest = bootstrapper.getSecretName();
+      expect(latest).to.equal('projects//secrets/');
+    });
+
+    it('formats from env', async () => {
+      process.env.PROJECT_ID = 'foo';
+      process.env.GCF_SHORT_FUNCTION_NAME = 'bar';
+      const latest = bootstrapper.getSecretName();
+      expect(latest).to.equal('projects/foo/secrets/bar');
     });
   });
 });

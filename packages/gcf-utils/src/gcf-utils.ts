@@ -14,9 +14,7 @@
 //
 import {createProbot, Probot, ApplicationFunction, Options} from 'probot';
 import {CloudTasksClient} from '@google-cloud/tasks';
-import {Storage} from '@google-cloud/storage';
-import * as KMS from '@google-cloud/kms';
-import {readFileSync} from 'fs';
+import {v1} from '@google-cloud/secret-manager';
 import {request} from 'gaxios';
 import * as express from 'express';
 
@@ -46,6 +44,12 @@ interface EnqueueTaskParams {
 export class GCFBootstrapper {
   probot?: Probot;
 
+  secretsClient: v1.SecretManagerServiceClient;
+
+  constructor(secretsClient?: v1.SecretManagerServiceClient) {
+    this.secretsClient = secretsClient || new v1.SecretManagerServiceClient();
+  }
+
   async loadProbot(appFn: ApplicationFunction): Promise<Probot> {
     if (!this.probot) {
       const cfg = await this.getProbotConfig();
@@ -57,36 +61,25 @@ export class GCFBootstrapper {
     return this.probot;
   }
 
+  getSecretName(): string {
+    const projectId = process.env.PROJECT_ID || '';
+    const functionName = process.env.GCF_SHORT_FUNCTION_NAME || '';
+    return `projects/${projectId}/secrets/${functionName}`;
+  }
+
+  getLatestSecretVersionName(): string {
+    const secretName = this.getSecretName();
+    return `${secretName}/versions/latest`;
+  }
+
   async getProbotConfig(): Promise<Options> {
-    const storage = new Storage();
-    const kmsclient = new KMS.KeyManagementServiceClient();
-
-    const destFileName = '/tmp/creds.json';
-    const bucketName = process.env.DRIFT_PRO_BUCKET || '';
-    const srcFilename = process.env.GCF_SHORT_FUNCTION_NAME || '';
-
-    const options = {
-      destination: destFileName,
-    };
-
-    // Downloads the file
-    await storage.bucket(bucketName).file(srcFilename).download(options);
-
-    const contentsBuffer = readFileSync(destFileName);
-    const name = kmsclient.cryptoKeyPath(
-      process.env.PROJECT_ID || '',
-      process.env.KEY_LOCATION || '',
-      process.env.KEY_RING || '',
-      process.env.GCF_SHORT_FUNCTION_NAME || ''
-    );
-
-    // Decrypts the file using the specified crypto key
-    const [result] = await kmsclient.decrypt({
-      name,
-      ciphertext: contentsBuffer,
+    const name = this.getLatestSecretVersionName();
+    const [version] = await this.secretsClient.accessSecretVersion({
+      name: name,
     });
-
-    const config = JSON.parse(result.plaintext!.toString());
+    // Extract the payload as a string.
+    const payload = version?.payload?.data?.toString() || '';
+    const config = JSON.parse(payload);
     return config as Options;
   }
 
