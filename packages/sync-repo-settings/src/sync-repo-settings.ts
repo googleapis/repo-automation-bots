@@ -70,9 +70,11 @@ function handler(app: Application) {
     const name = context.payload.repository.name;
     const repo = `${owner}/${name}`;
 
+   
     // find the repo record in repos.json
     const repos = await handler.getRepos();
     const yoshiRepo = repos.repos.find(x => x.repo === repo);
+    console.log(yoshiRepo?.repo);
     if (!yoshiRepo) {
       return;
     }
@@ -210,6 +212,11 @@ handler.updateRepoOptions = async function updateRepoOptions(
   if (!config) {
     return;
   }
+  console.log(`name: ${name}`);
+  console.log(`owner: ${owner}`);
+  console.log(`enable rebase? ${config.enableRebaseMerge}`);
+  console.log(`enable sqaush? ${config.enableSquashMerge}`);
+
   try {
     await context.github.repos.update({
       name,
@@ -221,6 +228,7 @@ handler.updateRepoOptions = async function updateRepoOptions(
     });
     console.log(`Success updating repo options for ${repo.repo}`);
   } catch (err) {
+    console.log(err);
     console.log(
       `Error updating repo options for  ${repo.repo} error status: ${err.status}`
     );
