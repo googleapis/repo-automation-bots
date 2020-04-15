@@ -470,7 +470,7 @@ describe('merge-on-green-', () => {
               repo: 'testRepo',
               number: 1,
               owner: 'testOwner',
-              created: Date.now() - 10920000,
+              created: Date.now() - 10920000, // 3 hours ago
             },
           ],
         ];
