@@ -68,9 +68,6 @@ steps:
       - "-e"
       - "./scripts/publish-functions.sh"
       - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
       - "$_FUNCTION_REGION"
 # Each function can take ~2 minutes to deploy.
 # This means at 5 functions, we will run out
