@@ -18,7 +18,6 @@
       "googleapis/api-common-java",
       "googleapis/gax-java",
       "googleapis/google-api-java-client",
-      "googleapis/google-api-java-client-services",
       "googleapis/google-auth-library-java",
       "googleapis/google-cloud-java",
       "googleapis/google-http-java-client",
@@ -106,23 +105,8 @@
       "GoogleCloudPlatform/nodejs-getting-started",
       "googleapis/cloud-profiler-nodejs",
       "googleapis/repo-automation-bots",
-      "googleapis/google-cloud-node"
-    ],
-    "repoOverrides": [
-      {
-        "repo": "googleapis/gapic-generator-typescript",
-        "requiredStatusChecks": [
-          "ci/circleci: dlpLibTest",
-          "ci/circleci: kmsLibTest",
-          "ci/circleci: monitoringLibTest",
-          "ci/circleci: showcaseLibTest",
-          "ci/circleci: showcaseTestApplications",
-          "ci/circleci: testGenerator",
-          "ci/circleci: translateLibTest",
-          "ci/circleci: ttsLibTest",
-          "cla/google"
-        ]
-      }
+      "googleapis/google-cloud-node",
+      "googleapis/gapic-generator-typescript"
     ]
   },
   "ruby": {
