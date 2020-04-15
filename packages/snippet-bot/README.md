@@ -19,4 +19,4 @@ If you have suggestions for how snippet-bot could be improved, or want to report
 For more, check out the Contributing Guide.
 
 License
-Apache 2.0 © 2019 Google LLC.
+Apache 2.0 © 2020 Google LLC.
