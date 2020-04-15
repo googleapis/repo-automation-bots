@@ -69,7 +69,7 @@ describe('GCFBootstrapper', () => {
 
       handler = await bootstrapper.gcf(async app => {
         app.auth = () =>
-          new Promise<GitHubAPI>((resolve, reject) => {
+          new Promise<GitHubAPI>(resolve => {
             resolve(GitHubAPI());
           });
         app.on('issues', spy);
@@ -195,18 +195,18 @@ describe('GCFBootstrapper', () => {
     });
 
     it('gets the config', async () => {
-      await bootstrapper.loadProbot(async app => {
+      await bootstrapper.loadProbot(async () => {
         // Do nothing
       });
       sinon.assert.calledOnce(configStub);
     });
 
     it('caches the probot if initialized', async () => {
-      await bootstrapper.loadProbot(async app => {
+      await bootstrapper.loadProbot(async () => {
         // Do nothing
       });
       sinon.assert.calledOnce(configStub);
-      await bootstrapper.loadProbot(async app => {
+      await bootstrapper.loadProbot(async () => {
         // Do nothing again
       });
       sinon.assert.calledOnce(configStub);
