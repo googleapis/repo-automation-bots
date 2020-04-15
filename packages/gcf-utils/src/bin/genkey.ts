@@ -14,11 +14,9 @@
 // limitations under the License.
 
 import * as yargs from 'yargs';
-import { Argv } from 'yargs';
-import { Options } from 'probot';
-import { v1 } from '@google-cloud/secret-manager';
-import { ClientOptions } from 'google-gax';
-import { create, gather } from './genkey-util';
+import {Argv} from 'yargs';
+import {v1} from '@google-cloud/secret-manager';
+import {create, gather} from './genkey-util';
 
 const argv = yargs.command(
   'gen',
@@ -68,12 +66,18 @@ const botname = argv.bot!;
 const webhookSecret = argv.secret;
 const id = Number(argv.id);
 
-async function run(keyfile: string, webhookSecret: string, id: number, project: string, botname: string, ) {
+async function run(
+  keyfile: string,
+  webhookSecret: string,
+  id: number,
+  project: string,
+  botname: string
+) {
   const blob = await gather(keyfile, id, webhookSecret);
   const opts = project
     ? {
-      projectId: project,
-    }
+        projectId: project,
+      }
     : undefined;
   const smclient = new v1.SecretManagerServiceClient(opts);
   await create(smclient, project, botname, blob);

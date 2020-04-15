@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GCFBootstrapper } from '../src/gcf-utils';
-import { describe, beforeEach, afterEach, it } from 'mocha';
-import { GitHubAPI } from 'probot/lib/github';
-import { Options } from 'probot';
+import {GCFBootstrapper} from '../src/gcf-utils';
+import {describe, beforeEach, afterEach, it} from 'mocha';
+import {GitHubAPI} from 'probot/lib/github';
+import {Options} from 'probot';
 import * as express from 'express';
 import sinon from 'sinon';
 import nock from 'nock';
-import { expect } from 'chai';
-import { v1 } from '@google-cloud/secret-manager';
+import {expect} from 'chai';
+import {v1} from '@google-cloud/secret-manager';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const repos = require('../../test/fixtures/repos.json');
@@ -64,7 +64,7 @@ describe('GCFBootstrapper', () => {
 
       bootstrapper = new GCFBootstrapper();
       configStub = sinon.stub(bootstrapper, 'getProbotConfig').callsFake(() => {
-        return Promise.resolve({ id: 1234, secret: 'foo', webhookPath: 'bar' });
+        return Promise.resolve({id: 1234, secret: 'foo', webhookPath: 'bar'});
       });
 
       enqueueTask = sinon.stub(bootstrapper, 'enqueueTask');
@@ -90,7 +90,7 @@ describe('GCFBootstrapper', () => {
 
     it('calls the event handler', async () => {
       req.body = {
-        installation: { id: 1 },
+        installation: {id: 1},
       };
       req.headers = {};
       req.headers['x-github-event'] = 'issues';
@@ -107,7 +107,7 @@ describe('GCFBootstrapper', () => {
 
     it('does nothing if there are missing headers', async () => {
       req.body = {
-        installation: { id: 1 },
+        installation: {id: 1},
       };
       req.headers = {};
 
@@ -121,7 +121,7 @@ describe('GCFBootstrapper', () => {
 
     it('returns 500 on errors', async () => {
       req.body = {
-        installtion: { id: 1 },
+        installtion: {id: 1},
       };
       req.headers = {};
       req.headers['x-github-event'] = 'err';
@@ -138,7 +138,7 @@ describe('GCFBootstrapper', () => {
 
     it('ensures that task is enqueued when called by scheduler for one repo', async () => {
       req.body = {
-        installtion: { id: 1 },
+        installtion: {id: 1},
         repo: 'firstRepo',
       };
       req.headers = {};
@@ -153,7 +153,7 @@ describe('GCFBootstrapper', () => {
 
     it('ensures that task is enqueued when called by scheduler for many repos', async () => {
       req.body = {
-        installtion: { id: 1 },
+        installtion: {id: 1},
       };
       req.headers = {};
       req.headers['x-github-event'] = 'schedule.repository';
@@ -168,7 +168,7 @@ describe('GCFBootstrapper', () => {
 
     it('ensures that task is enqueued when called by Github', async () => {
       req.body = {
-        installtion: { id: 1 },
+        installtion: {id: 1},
       };
       req.headers = {};
       req.headers['x-github-event'] = 'another.name';
@@ -188,7 +188,7 @@ describe('GCFBootstrapper', () => {
     beforeEach(() => {
       bootstrapper = new GCFBootstrapper();
       configStub = sinon.stub(bootstrapper, 'getProbotConfig').callsFake(() => {
-        return Promise.resolve({ id: 1234, secret: 'foo', webhookPath: 'bar' });
+        return Promise.resolve({id: 1234, secret: 'foo', webhookPath: 'bar'});
       });
     });
 
@@ -255,7 +255,7 @@ describe('GCFBootstrapper', () => {
     it('gets the config', async () => {
       await bootstrapper.getProbotConfig();
       sinon.assert.calledOnce(secretsStub);
-      sinon.assert.calledOnceWithExactly(secretsStub, { name: 'foobar' });
+      sinon.assert.calledOnceWithExactly(secretsStub, {name: 'foobar'});
       sinon.assert.calledOnce(secretVersionNameStub);
     });
   });

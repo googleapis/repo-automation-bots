@@ -12,75 +12,78 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { create } from '../src/bin/genkey-util';
-import { describe, beforeEach, afterEach, it } from 'mocha';
-import { Options } from 'probot';
+import {create} from '../src/bin/genkey-util';
+import {describe, beforeEach, afterEach, it} from 'mocha';
+import {Options} from 'probot';
 import sinon from 'sinon';
-import { v1 } from '@google-cloud/secret-manager';
+import {v1} from '@google-cloud/secret-manager';
 
 describe('genkey', () => {
-    describe('run', () => {
-        let secretClientStub: v1.SecretManagerServiceClient;
-        let createSecretStub: sinon.SinonStub;
-        let addSecretVersionStub: sinon.SinonStub;
-        let opts: Options;
-        let botname: string;
-        let project: string;
+  describe('run', () => {
+    let secretClientStub: v1.SecretManagerServiceClient;
+    let createSecretStub: sinon.SinonStub;
+    let addSecretVersionStub: sinon.SinonStub;
+    let opts: Options;
+    let botname: string;
+    let project: string;
 
-        beforeEach(() => {
-            project = 'my';
-            botname = 'foo';
-            secretClientStub = new v1.SecretManagerServiceClient();
+    beforeEach(() => {
+      project = 'my';
+      botname = 'foo';
+      secretClientStub = new v1.SecretManagerServiceClient();
 
-            createSecretStub = sinon
-                .stub(secretClientStub, 'createSecret')
-                .callsFake(() => {
-                    return Promise.resolve([
-                        {
-                            name: 'foo'
-                        },
-                    ]);
-                });
-
-            addSecretVersionStub = sinon.stub(secretClientStub, 'addSecretVersion').callsFake(() => {
-                return Promise.resolve([{
-                    name: "foo/bar"
-                }]);
-            });
+      createSecretStub = sinon
+        .stub(secretClientStub, 'createSecret')
+        .callsFake(() => {
+          return Promise.resolve([
+            {
+              name: 'foo',
+            },
+          ]);
         });
 
-        afterEach(() => {
-            createSecretStub.reset();
-            addSecretVersionStub.reset();
-            botname = '';
-            opts = {};
-            project = '';
-        })
-
-        it('creates secrets', async () => {
-
-            opts = {
-                cert: "asdf",
-                id: 12345,
-                secret: 'zxcv',
-            }
-
-            await create(secretClientStub, project, botname, opts);
-            sinon.assert.calledOnceWithExactly(createSecretStub, {
-                parent: `projects/my`,
-                secretId: 'foo',
-                secret: {
-                    replication: {
-                        automatic: {},
-                    },
-                },
-            });
-            sinon.assert.calledOnceWithExactly(addSecretVersionStub, {
-                parent: 'foo',
-                payload: {
-                    data: Buffer.from(JSON.stringify(opts)),
-                },
-            });
+      addSecretVersionStub = sinon
+        .stub(secretClientStub, 'addSecretVersion')
+        .callsFake(() => {
+          return Promise.resolve([
+            {
+              name: 'foo/bar',
+            },
+          ]);
         });
     });
+
+    afterEach(() => {
+      createSecretStub.reset();
+      addSecretVersionStub.reset();
+      botname = '';
+      opts = {};
+      project = '';
+    });
+
+    it('creates secrets', async () => {
+      opts = {
+        cert: 'asdf',
+        id: 12345,
+        secret: 'zxcv',
+      };
+
+      await create(secretClientStub, project, botname, opts);
+      sinon.assert.calledOnceWithExactly(createSecretStub, {
+        parent: 'projects/my',
+        secretId: 'foo',
+        secret: {
+          replication: {
+            automatic: {},
+          },
+        },
+      });
+      sinon.assert.calledOnceWithExactly(addSecretVersionStub, {
+        parent: 'foo',
+        payload: {
+          data: Buffer.from(JSON.stringify(opts)),
+        },
+      });
+    });
+  });
 });
