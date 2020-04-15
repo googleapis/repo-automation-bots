@@ -68,3 +68,17 @@ jobs:
       if: failure()
     - run: go test ./...
       working-directory: ./${{ matrix.module }}
+  bash-test:
+    name: Bash tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ["scripts"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: bashtest
+        run: |
+          ./test.sh
+        working-directory: ./${{ matrix.module }}
