@@ -13,14 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fs from 'fs';
-import path from 'path';
 import * as yargs from 'yargs';
-import {Argv} from 'yargs';
-import {KeyManagementServiceClient} from '@google-cloud/kms';
-import {Storage, StorageOptions} from '@google-cloud/storage';
-import {Options} from 'probot';
-import * as tmp from 'tmp';
+import { Argv } from 'yargs';
+import { Options } from 'probot';
+import { v1 } from '@google-cloud/secret-manager';
+import { ClientOptions } from 'google-gax';
+import { create, gather } from './genkey-util';
 
 const argv = yargs.command(
   'gen',
@@ -43,23 +41,11 @@ const argv = yargs.command(
         type: 'string',
         demand: true,
       })
-      .option('location', {
-        alias: 'l',
-        desription: 'Keyring location',
-        type: 'string',
-        default: 'global',
-      })
       .option('bot', {
         alias: 'b',
         type: 'string',
         demand: true,
         description: 'Name of the bot',
-      })
-      .option('bucket', {
-        alias: 'bu',
-        type: 'string',
-        demand: true,
-        description: 'Name of the Bucket',
       })
       .option('id', {
         alias: 'i',
@@ -78,49 +64,19 @@ const argv = yargs.command(
 
 const keyfile = argv.keyfile || 'key.pem';
 const project = argv.project as string;
-const location = argv.location || 'global';
-const keyring = (argv.keyring as string) || 'probot-keys';
-const bucketName = argv.bucket!;
 const botname = argv.bot!;
 const webhookSecret = argv.secret;
 const id = Number(argv.id);
 
-let keyContent = '';
-try {
-  keyContent = fs.readFileSync(keyfile, 'utf8');
-} catch (e) {
-  throw Error(`Error reading file: ${keyfile}`);
-}
-
-const blob: Options = {
-  cert: keyContent,
-  id,
-  secret: webhookSecret,
-};
-
-async function run() {
+async function run(keyfile: string, webhookSecret: string, id: number, project: string, botname: string, ) {
+  const blob = await gather(keyfile, id, webhookSecret);
   const opts = project
     ? {
-        projectId: project,
-      }
+      projectId: project,
+    }
     : undefined;
-
-  const kmsclient = new KeyManagementServiceClient(opts);
-  const name = kmsclient.cryptoKeyPath(project, location, keyring, botname);
-  const plaintext = Buffer.from(JSON.stringify(blob), 'utf-8');
-  const [kmsresult] = await kmsclient.encrypt({name, plaintext});
-  const encblob = kmsresult.ciphertext;
-  const options = project ? ({project} as StorageOptions) : undefined;
-  const storage = new Storage(options);
-
-  const tmpobj = tmp.dirSync();
-  console.log('Dir: ', tmpobj.name);
-
-  const fileName = path.join(tmpobj.name, botname);
-
-  fs.writeFileSync(fileName, encblob);
-
-  await storage.bucket(bucketName).upload(fileName);
-  tmpobj.removeCallback();
+  const smclient = new v1.SecretManagerServiceClient(opts);
+  await create(smclient, project, botname, blob);
 }
-run();
+
+run(keyfile, webhookSecret, id, project, botname);
