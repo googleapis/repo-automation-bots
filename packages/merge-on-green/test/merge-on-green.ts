@@ -328,19 +328,17 @@ describe('merge-on-green', () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(["this is what we're looking for"]),
-        getReviewsCompleted([
-          { user: { login: 'octocat' }, state: 'APPROVED' },
-        ]),
-        getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
-        getMogLabel([{ name: 'automerge' }]),
+        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          { state: 'success', context: "this is what we're looking fo" },
+          {state: 'success', context: "this is what we're looking fo"},
         ]),
       ];
 
       await probot.receive({
         name: 'schedule.repository',
-        payload: { org: 'testOwner' },
+        payload: {org: 'testOwner'},
         id: 'abc123',
       });
 
@@ -351,11 +349,9 @@ describe('merge-on-green', () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(["this is what we're looking for"]),
-        getReviewsCompleted([
-          { user: { login: 'octocat' }, state: 'APPROVED' },
-        ]),
-        getLatestCommit([{ sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e' }]),
-        getMogLabel([{ name: 'automerge' }]),
+        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {
             state: 'success',
@@ -367,14 +363,13 @@ describe('merge-on-green', () => {
 
       await probot.receive({
         name: 'schedule.repository',
-        payload: { org: 'testOwner' },
+        payload: {org: 'testOwner'},
         id: 'abc123',
       });
 
       scopes.forEach(s => s.done());
     });
 
-  
     it('fails if no one has reviewed the PR', async () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
