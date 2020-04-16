@@ -28,12 +28,11 @@ export async function gather(
     throw Error(`Error reading file: ${keyfile}`);
   }
 
-  const blob: Options = {
+  return {
     cert: keyContent,
     id,
     secret: webhookSecret,
-  };
-  return blob;
+  } as Options;
 }
 
 export async function create(
