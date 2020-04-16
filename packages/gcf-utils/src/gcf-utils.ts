@@ -79,6 +79,9 @@ export class GCFBootstrapper {
     });
     // Extract the payload as a string.
     const payload = version?.payload?.data?.toString() || '';
+    if (payload === '') {
+      throw Error('did not retrieve a payload from SecretManager.');
+    }
     const config = JSON.parse(payload);
     return config as Options;
   }
