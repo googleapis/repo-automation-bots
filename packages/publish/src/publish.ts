@@ -23,7 +23,8 @@ import fetch from 'node-fetch';
 import * as tar from 'tar';
 import * as uuid from 'uuid';
 // eslint-disable-next-line node/no-unsupported-features/node-builtins
-import {promises as fs, writeFileSync} from 'fs';
+import {promises as fs} from 'fs';
+const {writeFile} = fs;
 import {resolve} from 'path';
 
 const CONFIGURATION_FILE_PATH = 'publish.yml';
@@ -47,8 +48,18 @@ interface CandidateVersionInfo {
   name: string;
 }
 
+interface PublishOpts {
+  npmRc: string;
+  pkgPath: string;
+  app: Application;
+  prerelease?: boolean;
+}
+
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 const sms = new SecretManagerServiceClient();
+
+const PRE_RELEASE_TAG = 'next';
+const PRE_RELEASE_LABEL = 'publish:candidate';
 
 function handler(app: Application) {
   app.on('release.released', async context => {
@@ -103,7 +114,11 @@ function handler(app: Application) {
       if (secret && secret.payload && secret.payload.data) {
         const publishConfig = handler.publishConfigFromSecret(secret);
         const npmRc = handler.generateNpmRc(publishConfig);
-        await handler.publish(npmRc, pkgPath, app);
+        await handler.publish({
+          npmRc,
+          pkgPath,
+          app,
+        });
         await removeLabels(context, app);
       } else {
         app.log.error('could not load application secrets');
@@ -111,7 +126,6 @@ function handler(app: Application) {
     }
   });
 
-  const PRE_RELEASE_LABEL = 'publish:candidate';
   app.on('pull_request.labeled', async context => {
     const repoName = context.payload.repository.name;
     const remoteConfiguration = (await context.config(
@@ -188,27 +202,22 @@ function handler(app: Application) {
     );
     if (secret && secret.payload && secret.payload.data) {
       // Create a pre-release on GitHub for this release candidate:
-      try {
-        await context.github.repos.createRelease({
-          owner: context.payload.repository.owner.login,
-          repo: context.payload.repository.name,
-          tag_name: `v${candidateVersion.version}`,
-          name: `v${candidateVersion.version} Pre-release`,
-          prerelease: true,
-          target_commitish: 'master',
-          body: `This is a pre-release for testing purposes of #${context.payload.pull_request.number}.\n\nInstall by running \`npm install ${candidateVersion.name}@next\``,
-        });
-      } catch (err) {
-        // The most likely error is that the release already existed, and we
-        // had a publication failure; we can skip an error creating the release:
-        app.log.error(err);
-      }
+      await context.github.repos.createRelease({
+        owner: context.payload.repository.owner.login,
+        repo: context.payload.repository.name,
+        tag_name: `v${candidateVersion.version}`,
+        name: `v${candidateVersion.version} Pre-release`,
+        prerelease: true,
+        target_commitish: 'master',
+        body: `This is a pre-release for testing purposes of #${context.payload.pull_request.number}.\n\nInstall by running \`npm install ${candidateVersion.name}@${PRE_RELEASE_TAG}\``,
+      });
 
       // Publish the package:
       const publishConfig = handler.publishConfigFromSecret(secret);
       const npmRc = handler.generateNpmRc(publishConfig);
-      await handler.publish(npmRc, pkgPath, app, true);
+      await handler.publish({npmRc, pkgPath, app, prerelease: true});
 
+      // Remove label and comment:
       await context.github.issues.removeLabel({
         owner: context.payload.repository.owner.login,
         repo: context.payload.repository.name,
@@ -219,7 +228,7 @@ function handler(app: Application) {
         owner,
         repo: repoName,
         issue_number: context.payload.pull_request.number,
-        body: `A candidate release, \`${candidateVersion.version}\` was published to npm. Run \`npm install ${candidateVersion.name}@next\` to install.`,
+        body: `A candidate release, \`${candidateVersion.version}\` was published to npm. Run \`npm install ${candidateVersion.name}@${PRE_RELEASE_TAG}\` to install.`,
       });
     } else {
       app.log.error('could not load application secrets');
@@ -236,6 +245,9 @@ async function setCandidateVersion(
   const futureVersion = title.match(
     /release (?<version>[0-9]+\.[0-9]+\.[0-9]+$)/
   )?.groups?.version;
+  if (!futureVersion) {
+    throw Error('could not find version in pull request title');
+  }
   const versions = await fetch(
     `https://registry.npmjs.org/${encodeURIComponent(pkgJson.name)}`
   )
@@ -243,8 +255,14 @@ async function setCandidateVersion(
       return res.json();
     })
     .then(body => {
+      // "time" in an npm packument contains a history of all releases that
+      // have ever happened:
       return Object.keys(body.time);
     });
+  // Release the candidate release as v1.0.0-beta.(N) where N is equal to
+  // the number of prior candidate releases. We determine whether there have
+  // been prior candidate releases by looking at the "time" field
+  // for a package:
   let counter = 0;
   let candidateVersion = `${futureVersion}-beta.${counter}`;
   for (;;) {
@@ -256,7 +274,7 @@ async function setCandidateVersion(
     }
   }
   pkgJson.version = candidateVersion;
-  writeFileSync(`${pkgPath}/package.json`, JSON.stringify(pkgJson), 'utf8');
+  await writeFile(`${pkgPath}/package.json`, JSON.stringify(pkgJson), 'utf8');
   return {version: candidateVersion, name: pkgJson.name};
 }
 
@@ -314,12 +332,8 @@ handler.publishConfigFromSecret = (secret: Secret): PublishConfig => {
   return publishConfig;
 };
 
-handler.publish = async (
-  npmRc: string,
-  pkgPath: string,
-  app: Application,
-  prerelease = false
-) => {
+handler.publish = async (opts: PublishOpts) => {
+  const {npmRc, pkgPath, app, prerelease} = opts;
   await fs.writeFile(resolve(pkgPath, './.npmrc'), npmRc, 'utf8');
   try {
     app.log.info(`installing ${pkgPath}`);
@@ -358,7 +372,7 @@ handler.publish = async (
     // If this is a prerelease, we publish to the "next" dist tag on npm:
     const publishOpts = ['publish', '--access=public'];
     if (prerelease) {
-      publishOpts.push('--tag=next');
+      publishOpts.push(`--tag=${PRE_RELEASE_TAG}`);
     }
     await execAsync(
       'npm',

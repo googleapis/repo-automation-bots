@@ -43,6 +43,13 @@ interface Secret {
   payload: {[key: string]: Buffer};
 }
 
+interface PublishOpts {
+  npmRc: string;
+  pkgPath: string;
+  app: Application;
+  prerelease?: boolean;
+}
+
 describe('publish', () => {
   let probot: Probot;
 
@@ -108,11 +115,8 @@ describe('publish', () => {
     };
 
     let observedPkgPath: string | undefined = undefined;
-    handler.publish = async (
-      npmRc: string,
-      pkgPath: string,
-      app: Application
-    ) => {
+    handler.publish = async (opts: PublishOpts) => {
+      const {npmRc, pkgPath, app, prerelease} = opts;
       snapshot(npmRc);
       observedPkgPath = pkgPath;
     };
@@ -192,12 +196,8 @@ describe('publish', () => {
     };
 
     let observedPkgPath: string | undefined = undefined;
-    handler.publish = async (
-      npmRc: string,
-      pkgPath: string,
-      app: Application,
-      prerelease?: boolean
-    ) => {
+    handler.publish = async (opts: PublishOpts) => {
+      const {npmRc, pkgPath, app, prerelease} = opts;
       snapshot(npmRc);
       expect(prerelease).to.equal(true);
       observedPkgPath = pkgPath;
@@ -265,12 +265,8 @@ describe('publish', () => {
     };
 
     let observedPkgPath: string | undefined = undefined;
-    handler.publish = async (
-      npmRc: string,
-      pkgPath: string,
-      app: Application,
-      prerelease?: boolean
-    ) => {
+    handler.publish = async (opts: PublishOpts) => {
+      const {npmRc, pkgPath, app, prerelease} = opts;
       snapshot(npmRc);
       expect(prerelease).to.equal(true);
       observedPkgPath = pkgPath;
