@@ -48,7 +48,7 @@ for f in *; do
         gcloud kms decrypt --project="${PROJECT_ID}" --keyring="${KEY_RING}" --location="${KEY_LOCATION}" --ciphertext-file="${cipher}" --plaintext-file="${plain}" --key="${functionname}"
 
         # Make the secret
-        cat "${plain}" | gcloud secrets create "${functionname}" --replication-policy="automatic" --data-file=-
+        gcloud secrets create "${functionname}" --replication-policy="automatic" --data-file=- < "${plain}"
 
         # Clean up
         echo "${tmp_dir}"
