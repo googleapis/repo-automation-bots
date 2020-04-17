@@ -1,0 +1,48 @@
+on:
+  push:
+    branches:
+      - master
+env:
+  tf_version: "latest"
+  tf_working_dir: "./terraform"
+name: cd
+jobs:
+  deploy:
+    name: "Terraform Lint"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@master
+      - name: "Build Functions"
+        run: |
+          ./scripts/build-functions.sh
+      - name: "Push serverless-scheduler-proxy Image"
+        run: |
+          ./scripts/push-scheduler-image.sh
+      - name: "Backend Generate"
+        run: |
+          ./scripts/generate-backend.sh $BUCKET_NAME
+        env:
+          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+      - name: "Terraform Init"
+        uses: hashicorp/terraform-github-actions@master
+        with:
+          tf_actions_version: 0.12.13
+          tf_actions_subcommand: "init"
+          tf_actions_working_dir: "./terraform"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: "Terraform Apply"
+        uses: hashicorp/terraform-github-actions@master
+        with:
+          tf_actions_version: 0.12.13
+          tf_actions_subcommand: "apply"
+          tf_actions_working_dir: "./terraform"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOOGLE_CLOUD_KEYFILE_JSON: ${{ secrets.GOOGLE_CLOUD_KEYFILE }}
+          TF_VAR_project_id: ${{ secrets.PROJECT_ID }}
+          TF_VAR_project_name: ${{ secrets.PROJECT_NAME }}
+          TF_VAR_folder_id: ${{ secrets.FOLDER_ID }}
+          TF_VAR_billing_account: ${{ secrets.BILLING_ACCOUNT }}
+          TF_VAR_artifact_bucket_name: ${{ secrets.ARTIFACT_BUCKET_NAME }}
