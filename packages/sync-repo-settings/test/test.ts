@@ -34,18 +34,27 @@ function nockUpdateTeamMembership(team: string, org: string, repo: string) {
     .reply(200);
 }
 
-function nockUpdateRepoSettings(repo: string) {
+function nockUpdateRepoSettings(
+  repo: string,
+  rebaseBoolean: boolean,
+  squashBoolean: boolean
+) {
   return nock('https://api.github.com')
+    .log(console.log)
     .patch(`/repos/googleapis/${repo}`, {
       name: `${repo}`,
       allow_merge_commit: false,
-      allow_rebase_merge: true,
-      allow_squash_merge: true,
+      allow_rebase_merge: rebaseBoolean,
+      allow_squash_merge: squashBoolean,
     })
     .reply(200);
 }
 
-function nockUpdateBranchProtection(repo: string, contexts: string[]) {
+function nockUpdateBranchProtection(
+  repo: string,
+  contexts: string[],
+  requireUpToDateBranch: boolean
+) {
   return nock('https://api.github.com')
     .put(`/repos/googleapis/${repo}/branches/master/protection`, {
       required_pull_request_reviews: {
@@ -54,7 +63,7 @@ function nockUpdateBranchProtection(repo: string, contexts: string[]) {
       },
       required_status_checks: {
         contexts,
-        strict: true,
+        strict: requireUpToDateBranch,
       },
       enforce_admins: true,
       restrictions: null,
@@ -158,39 +167,33 @@ describe('Sync repo settings', () => {
 
   it('should override master branch protection if the repo is overridden', async () => {
     const scopes = [
-      nockUpdateRepoSettings('gapic-generator-typescript'),
-      nockUpdateBranchProtection('gapic-generator-typescript', [
-        'ci/circleci: dlpLibTest',
-        'ci/circleci: kmsLibTest',
-        'ci/circleci: monitoringLibTest',
-        'ci/circleci: showcaseLibTest',
-        'ci/circleci: showcaseTestApplications',
-        'ci/circleci: testGenerator',
-        'ci/circleci: translateLibTest',
-        'ci/circleci: ttsLibTest',
-        'cla/google',
-      ]),
+      nockUpdateRepoSettings('google-api-java-client-services', false, true),
+      nockUpdateBranchProtection(
+        'google-api-java-client-services',
+        ['Kokoro - Test: Java 8', 'cla/google'],
+        false
+      ),
       nockUpdateTeamMembership(
         'yoshi-admins',
         'googleapis',
-        'gapic-generator-typescript'
+        'google-api-java-client-services'
       ),
       nockUpdateTeamMembership(
-        'yoshi-nodejs-admins',
+        'yoshi-java-admins',
         'googleapis',
-        'gapic-generator-typescript'
+        'google-api-java-client-services'
       ),
       nockUpdateTeamMembership(
-        'yoshi-nodejs',
+        'yoshi-java',
         'googleapis',
-        'gapic-generator-typescript'
+        'google-api-java-client-services'
       ),
     ];
     await probot.receive({
       name: 'schedule.repository',
       payload: {
         repository: {
-          name: 'gapic-generator-typescript',
+          name: 'google-api-java-client-services',
         },
         organization: {
           login: 'googleapis',
@@ -204,18 +207,22 @@ describe('Sync repo settings', () => {
 
   it('should update settings for a known repository', async () => {
     const scopes = [
-      nockUpdateRepoSettings('nodejs-dialogflow'),
-      nockUpdateBranchProtection('nodejs-dialogflow', [
-        'ci/kokoro: Samples test',
-        'ci/kokoro: System test',
-        'docs',
-        'lint',
-        'test (10)',
-        'test (12)',
-        'test (13)',
-        'cla/google',
-        'windows',
-      ]),
+      nockUpdateRepoSettings('nodejs-dialogflow', true, true),
+      nockUpdateBranchProtection(
+        'nodejs-dialogflow',
+        [
+          'ci/kokoro: Samples test',
+          'ci/kokoro: System test',
+          'docs',
+          'lint',
+          'test (10)',
+          'test (12)',
+          'test (13)',
+          'cla/google',
+          'windows',
+        ],
+        true
+      ),
       nockUpdateTeamMembership(
         'yoshi-admins',
         'googleapis',

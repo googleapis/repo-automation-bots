@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,11 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-// define types for a few modules used by probot that do not have their
-// own definitions published. Before taking this step, folks should first
-// check whether type bindings are already published.
-declare module 'promise-events' {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  class EventEmitter {}
+const config = {
+  "enable-source-maps": true,
+  "throw-deprecation": true,
+  "timeout": 10000
 }
+if (process.env.MOCHA_THROW_DEPRECATION === 'false') {
+  delete config['throw-deprecation'];
+}
+if (process.env.MOCHA_REPORTER) {
+  config.reporter = process.env.MOCHA_REPORTER;
+}
+if (process.env.MOCHA_REPORTER_OUTPUT) {
+  config['reporter-option'] = `output=${process.env.MOCHA_REPORTER_OUTPUT}`;
+}
+module.exports = config

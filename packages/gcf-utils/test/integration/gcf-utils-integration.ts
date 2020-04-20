@@ -29,7 +29,7 @@ describe('GCFBootstrapper Integration', () => {
     afterEach(() => {});
 
     it('returns valid options', async () => {
-      const options = await bootstrapper.getProbotConfig();
+      await bootstrapper.getProbotConfig();
     });
   });
 
@@ -43,7 +43,7 @@ describe('GCFBootstrapper Integration', () => {
 
     it('is called properly', async () => {
       const pb = await bootstrapper.loadProbot((app: Application) => {
-        app.on('foo', async context => {
+        app.on('foo', async () => {
           console.log('We are called!');
         });
       });
