@@ -348,7 +348,7 @@ describe('merge-on-green', () => {
       scopes.forEach(s => s.done());
     });
 
-    it.only('accepts status checks that match the beginning of the required status check', async () => {
+    it('accepts status checks that match the beginning of the required status check', async () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(["this is what we're looking for"]),
