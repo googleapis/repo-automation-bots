@@ -324,13 +324,16 @@ describe('merge-on-green', () => {
       scopes.forEach(s => s.done());
     });
 
-    it.only('rejects status checks that do not match the required check', async () => {
+    it('rejects status checks that do not match the required check', async () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(["this is what we're looking for"]),
         getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
+        //Intentionally giving this status check a misleading name. We want subtests to match the beginning
+        //of required status checks, not the other way around. i.e., if the required status check is "passes"
+        //then it should reject a status check called "passe", but pass one called "passesS"
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: "this is what we're looking fo"},
         ]),
