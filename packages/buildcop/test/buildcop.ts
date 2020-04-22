@@ -507,7 +507,7 @@ describe('buildcop', () => {
         scopes.forEach(s => s.done());
       });
 
-      it('reopens issue for failing test', async () => {
+      it('reopens issue with correct labels for failing test', async () => {
         const payload = buildPayload('one_failed.xml', 'golang-samples');
 
         // Closed yesterday. So, it should be reopened.
@@ -525,7 +525,14 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: 'Failure!',
-              labels: [{name: 'buildcop: flaky'}, {name: 'api: spanner'}],
+              // All of these labels should be kept. New priority and type
+              // labels should not be added.
+              labels: [
+                {name: 'buildcop: flaky'},
+                {name: 'api: spanner'},
+                {name: 'priority: p2'},
+                {name: 'type: cleanup'},
+              ],
               state: 'closed',
               closed_at: closedAt.toISOString(),
             },

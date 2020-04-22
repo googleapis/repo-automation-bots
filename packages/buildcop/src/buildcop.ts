@@ -510,7 +510,16 @@ buildcop.markIssueFlaky = async (
   const existingLabels = existingIssue.labels
     ?.map(l => l.name)
     .filter(l => !l.startsWith('buildcop'));
-  const labels = LABELS_FOR_FLAKY_ISSUE.concat(existingLabels);
+  let labels = LABELS_FOR_FLAKY_ISSUE;
+  // If existingLabels contains a priority: or type: label, don't add the
+  // default priority: and type: labels.
+  if (existingLabels?.find(l => l.startsWith('priority:'))) {
+    labels = labels.filter(l => !l.startsWith('priority:'));
+  }
+  if (existingLabels?.find(l => l.startsWith('type:'))) {
+    labels = labels.filter(l => !l.startsWith('type:'));
+  }
+  labels = labels.concat(existingLabels);
   await context.github.issues.update({
     owner,
     repo,
