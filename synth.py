@@ -9,15 +9,15 @@ common_templates = gcp.CommonTemplates()
 templates = common_templates.node_library()
 s.copy(templates, excludes=[
   '.eslintignore',
-  '.eslintrc.yml',
+  '.eslintrc.json',
   '.github/release-please.yml',
   '.github/workflows/',
   '.github/publish.yml',
   '.kokoro/**',
+  '.mocharc.js',
   '.nycrc',
   '.prettierignore',
-  '.prettierrc',
-  'codecov.yaml',
+  '.prettierrc.js',
   'README.md',
   'renovate.json'
 ])
