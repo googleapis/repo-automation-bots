@@ -200,7 +200,7 @@ buildcop.deduplicateIssues = async (
 
   let modified = false;
 
-  for (const [title, issues] of byTitle) {
+  for (const issues of byTitle.values()) {
     if (issues.length <= 1) {
       continue;
     }
@@ -510,16 +510,16 @@ buildcop.markIssueFlaky = async (
   const existingLabels = existingIssue.labels
     ?.map(l => l.name)
     .filter(l => !l.startsWith('buildcop'));
-  let labels = LABELS_FOR_FLAKY_ISSUE;
-  // If existingLabels contains a priority: or type: label, don't add the
-  // default priority: and type: labels.
+  let labelsToAdd = LABELS_FOR_FLAKY_ISSUE;
+  // If existingLabels contains a priority or type label, don't add the
+  // default priority and type labels.
   if (existingLabels?.find(l => l.startsWith('priority:'))) {
-    labels = labels.filter(l => !l.startsWith('priority:'));
+    labelsToAdd = labelsToAdd.filter(l => !l.startsWith('priority:'));
   }
   if (existingLabels?.find(l => l.startsWith('type:'))) {
-    labels = labels.filter(l => !l.startsWith('type:'));
+    labelsToAdd = labelsToAdd.filter(l => !l.startsWith('type:'));
   }
-  labels = labels.concat(existingLabels);
+  const labels = labelsToAdd.concat(existingLabels);
   await context.github.issues.update({
     owner,
     repo,
