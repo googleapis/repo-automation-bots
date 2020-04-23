@@ -34,14 +34,8 @@ describe('snippet-bot', () => {
   );
 
   beforeEach(() => {
-    probot = new Probot({
-      // use a bare instance of octokit, the default version
-      // enables retries which makes testing difficult.
-      Octokit: require('@octokit/rest'),
-    });
-
-    const app = probot.load(myProbotApp);
-    app.app = {
+    probot = new Probot({});
+    probot.app = {
       getSignedJsonWebToken() {
         return 'abc123';
       },
@@ -49,6 +43,7 @@ describe('snippet-bot', () => {
         return Promise.resolve('abc123');
       },
     };
+    probot.load(myProbotApp);
   });
 
   describe('shows an example of how to use chai library', () => {
@@ -59,6 +54,7 @@ describe('snippet-bot', () => {
 
   describe('responds to events', () => {
     it('responds to a PR', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         'events',
@@ -79,6 +75,7 @@ describe('snippet-bot', () => {
     });
 
     it('responds to issues', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const requests = nock('https://api.github.com')
