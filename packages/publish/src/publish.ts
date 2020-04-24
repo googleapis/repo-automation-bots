@@ -316,7 +316,7 @@ handler.getPublicationSecrets = async (
   app: Application,
   config: Configuration
 ): Promise<Secret> => {
-  const secretId = config.secretId || 'publish';
+  const secretId = config.secretId || 'publish-token';
   const project = config.project || process.env.PROJECT_ID;
   app.log.info(`looking up secret for ${project}`);
   const [secret] = await sms.accessSecretVersion({
