@@ -5,10 +5,13 @@
   "repository": "googleapis/repo-automation-bots",
   "scripts": {
     "run": "./scripts/scripts.js",
-    "fix": "npm run run -- npm run fix",
+    "fix": "gts fix",
     "test": "c8 npm run run -- npm test",
     "proxy": "smee",
-    "generate-bot": "node ./packages/generate-bot/run.js"
+    "generate-bot": "node ./packages/generate-bot/run.js",
+    "lint": "gts check",
+    "clean": "gts clean",
+    "precompile": "gts clean"
   },
   "devDependencies": {
     "c8": "^7.1.0",
