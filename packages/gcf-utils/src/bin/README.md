@@ -7,22 +7,9 @@ use in bots.
 
 ### Prepare your Google Cloud project (needs to be done once)
 
-1. Enable Cloud KMS.
+1. Enable Secret Manager.
 
-1. Create a Keyring (recommended: `probot-keys`).
-
-1. Enable Cloud Storage.
-
-### Prepare your Key 
-
-> This needs to be done once per bot
-
-
-1. Create a Symmetric Key in your `probot-keys` keyring
-whose name is the name of the Cloud Function you 
-will use for your bot.
-
-1. Ensure you have permissions to Encrypt using that Key.
+1. Ensure your account has permissions to create Secrets
 
 ## Steps
 
@@ -42,22 +29,19 @@ Application you wish to use with your bot.
  export PROJECT_ID=<YOUR GCP PROJECT ID>
  export APPLICATION_ID=<YOUR APPLICATION ID>
  export WEBHOOK_SECRET=<YOUR WEBHOOK SECRET>
- export KEYRING=<YOUR KEYRING>
  export KEYFILE=<PATH TO PRIVATE KEY>
- export BUCKET=<NAME OF BUCKET TO STORE KEYS>
- export BOT=<NAME OF YOUR BOT>
+  export BOT=<NAME OF YOUR BOT>
  ```
+
 5. Install dependencies and link using `npm i` and `npm link`
 
 6. Run the `genkey` tool
 
 ```bash
 genkey gen --keyfile=$KEYFILE --project=$PROJECT_ID \
-           --keyring=$KEYRING --bucket=$BUCKET \
            --bot=$BOT --id=$APPLICATION_ID \
            --secret=$WEBHOOK_SECRET
 ```
 
 This will create a JSON blob of data, encrypt it with the
 provided key and upload it to the bucket!
-  

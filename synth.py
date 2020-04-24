@@ -1,5 +1,6 @@
 import synthtool as s
 import synthtool.gcp as gcp
+import synthtool.languages.node as node
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
@@ -21,3 +22,5 @@ s.copy(templates, excludes=[
   'README.md',
   'renovate.json'
 ])
+node.install()
+node.fix()
