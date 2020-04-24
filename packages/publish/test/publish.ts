@@ -43,6 +43,13 @@ interface Secret {
   payload: {[key: string]: Buffer};
 }
 
+interface PublishOpts {
+  npmRc: string;
+  pkgPath: string;
+  app: Application;
+  prerelease?: boolean;
+}
+
 describe('publish', () => {
   let probot: Probot;
 
@@ -108,11 +115,8 @@ describe('publish', () => {
     };
 
     let observedPkgPath: string | undefined = undefined;
-    handler.publish = async (
-      npmRc: string,
-      pkgPath: string,
-      app: Application
-    ) => {
+    handler.publish = async (opts: PublishOpts) => {
+      const {npmRc, pkgPath, app, prerelease} = opts;
       snapshot(npmRc);
       observedPkgPath = pkgPath;
     };
@@ -136,5 +140,143 @@ describe('publish', () => {
       .reply(404);
     await probot.receive({name: 'release.released', payload, id: 'abc123'});
     requests.done();
+  });
+
+  it('should publish candidate release to npm, if "publish:candidate" added', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const payload = require(resolve(
+      fixturesPath,
+      'events',
+      'pull_request_labeled'
+    ));
+    const config = fs.readFileSync(
+      resolve(fixturesPath, 'config', 'valid-config.yml')
+    );
+    const tarballRequest = nock('https://codeload.github.com')
+      .get('/Codertocat/Hello-World/legacy.tar.gz/master')
+      .reply(
+        200,
+        fs.createReadStream(resolve(fixturesPath, './tiny-tarball-1.0.0.tgz'))
+      );
+    const packumentRequest = nock('https://registry.npmjs.org')
+      .get('/tiny-tarball')
+      .reply(
+        200,
+        fs.createReadStream(
+          resolve(fixturesPath, './tiny-tarball-packument-1.json')
+        )
+      );
+    const apiRequests = nock('https://api.github.com')
+      .get('/repos/Codertocat/Hello-World/contents/.github/publish.yml')
+      .reply(200, {content: config.toString('base64')})
+      .post('/repos/Codertocat/Hello-World/releases', req => {
+        snapshot(req.body);
+        return true;
+      })
+      .reply(200)
+      .delete('/repos/Codertocat/Hello-World/issues/2/labels/publish:candidate')
+      .reply(200)
+      .post('/repos/Codertocat/Hello-World/issues/2/comments', req => {
+        snapshot(req.body);
+        return true;
+      })
+      .reply(200);
+
+    handler.getPublicationSecrets = async (): Promise<Secret> => {
+      return {
+        payload: {
+          data: Buffer.from(
+            JSON.stringify({
+              registry: 'registry.example.com',
+              token: 'abc123',
+            })
+          ),
+        },
+      };
+    };
+
+    let observedPkgPath: string | undefined = undefined;
+    handler.publish = async (opts: PublishOpts) => {
+      const {npmRc, pkgPath, app, prerelease} = opts;
+      snapshot(npmRc);
+      expect(prerelease).to.equal(true);
+      observedPkgPath = pkgPath;
+    };
+
+    await probot.receive({name: 'pull_request.labeled', payload, id: 'abc123'});
+    apiRequests.done();
+    tarballRequest.done();
+    packumentRequest.done();
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    snapshot(require(`${observedPkgPath}/package.json`));
+  });
+
+  it('should increment candidate version #, if multiple candidates are published', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const payload = require(resolve(
+      fixturesPath,
+      'events',
+      'pull_request_labeled'
+    ));
+    const config = fs.readFileSync(
+      resolve(fixturesPath, 'config', 'valid-config.yml')
+    );
+    const tarballRequest = nock('https://codeload.github.com')
+      .get('/Codertocat/Hello-World/legacy.tar.gz/master')
+      .reply(
+        200,
+        fs.createReadStream(resolve(fixturesPath, './tiny-tarball-1.0.0.tgz'))
+      );
+    const packumentRequest = nock('https://registry.npmjs.org')
+      .get('/tiny-tarball')
+      .reply(
+        200,
+        fs.createReadStream(
+          resolve(fixturesPath, './tiny-tarball-packument-2.json')
+        )
+      );
+    const apiRequests = nock('https://api.github.com')
+      .get('/repos/Codertocat/Hello-World/contents/.github/publish.yml')
+      .reply(200, {content: config.toString('base64')})
+      .post('/repos/Codertocat/Hello-World/releases', req => {
+        snapshot(req.body);
+        return true;
+      })
+      .reply(200)
+      .delete('/repos/Codertocat/Hello-World/issues/2/labels/publish:candidate')
+      .reply(200)
+      .post('/repos/Codertocat/Hello-World/issues/2/comments', req => {
+        snapshot(req.body);
+        return true;
+      })
+      .reply(200);
+
+    handler.getPublicationSecrets = async (): Promise<Secret> => {
+      return {
+        payload: {
+          data: Buffer.from(
+            JSON.stringify({
+              registry: 'registry.example.com',
+              token: 'abc123',
+            })
+          ),
+        },
+      };
+    };
+
+    let observedPkgPath: string | undefined = undefined;
+    handler.publish = async (opts: PublishOpts) => {
+      const {npmRc, pkgPath, app, prerelease} = opts;
+      snapshot(npmRc);
+      expect(prerelease).to.equal(true);
+      observedPkgPath = pkgPath;
+    };
+
+    await probot.receive({name: 'pull_request.labeled', payload, id: 'abc123'});
+    apiRequests.done();
+    tarballRequest.done();
+    packumentRequest.done();
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    snapshot(require(`${observedPkgPath}/package.json`));
   });
 });
