@@ -29,7 +29,11 @@ steps:
   - name: gcr.io/cloud-builders/docker
     id: "serverless-scheduler-proxy-push"
     waitFor: ["serverless-scheduler-proxy-builder"]
-    args: ["push", "gcr.io/$PROJECT_ID/serverless-scheduler-proxy"]
+    args:
+      [
+        "push",
+         "gcr.io/$PROJECT_ID/serverless-scheduler-proxy",
+      ]
 
   - name: gcr.io/cloud-builders/gcloud
     id: "serverless-scheduler-proxy-deploy"
@@ -39,6 +43,9 @@ steps:
       - "-e"
       - "./scripts/serverless-scheduler-proxy-deploy.sh"
       - "$PROJECT_ID"
+      - "$_BUCKET"
+      - "$_KEY_LOCATION"
+      - "$_KEY_RING"
       - "$_REGION"
 
   - name: gcr.io/cloud-builders/gcloud
@@ -68,6 +75,9 @@ steps:
       - "-e"
       - "./scripts/publish-functions.sh"
       - "$PROJECT_ID"
+      - "$_BUCKET"
+      - "$_KEY_LOCATION"
+      - "$_KEY_RING"
       - "$_FUNCTION_REGION"
 # Each function can take ~2 minutes to deploy.
 # This means at 5 functions, we will run out
