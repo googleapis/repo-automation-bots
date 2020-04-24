@@ -1,5 +1,6 @@
 repo:
-- assign_issues:
+- repoName: testRepo
+  assign_issues:
   - issues1
   assign_prs:
   - prs1

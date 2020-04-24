@@ -21,3 +21,15 @@ exports['Blunderbuss pr tests assigns issue when correct label 1'] = {
     "prs1"
   ]
 }
+
+exports['Blunderbuss issue tests assigns opened issues with repo match with no assignees 1'] = {
+  "assignees": [
+    "issues1"
+  ]
+}
+
+exports['Blunderbuss pr tests assigns opened prs with repo match with no assignees 1'] = {
+  "assignees": [
+    "prs1"
+  ]
+}

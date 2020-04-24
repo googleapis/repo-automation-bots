@@ -20,8 +20,14 @@ const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';
 
 interface Configuration {
-  assign_issues?: string[];
-  assign_prs?: string[];
+  repo: 
+  [
+    {
+    repoName?: string;
+    assign_issues?: string[];
+    assign_prs?: string[];
+    }
+  ] 
 }
 
 interface Issue {
@@ -57,18 +63,25 @@ export = (app: Application) => {
         CONFIGURATION_FILE_PATH,
         {}
       )) as Configuration;
+    
       const issue = context.issue() as Issue;
+      const repoInPayload = context.payload.repository.name;
 
-      if (
-        (context.payload.issue && !config.assign_issues) ||
-        (context.payload.pull_request && !config.assign_prs)
-      ) {
-        const paramName = context.payload.issue
+      if (!config.repo) {
+        return
+      }
+
+      const repoMatch = config.repo.find(element => element.repoName == repoInPayload);
+
+      if (repoMatch) {
+        if ((context.payload.issue && !repoMatch?.assign_issues) || (context.payload.pull_request && !repoMatch?.assign_prs)) {
+          const paramName = context.payload.issue
           ? 'assign_issues'
           : 'assign_prs';
+        console.log(paramName)
         context.log.info(
           util.format(
-            '[%s/%s] #%s ignored: "%s" not in config',
+            '[%s/%s] #%s ignored: "%s" not in repo-match config',
             issue.owner,
             issue.repo,
             issue.number,
@@ -76,8 +89,27 @@ export = (app: Application) => {
           )
         );
         return;
-      }
-
+        }
+      } else {
+        if((context.payload.issue && !config.repo[0].assign_issues) || (context.payload.pull_request && !config.repo[0].assign_prs)) {
+            const paramName = context.payload.issue
+            ? 'assign_issues'
+            : 'assign_prs';
+          console.log(paramName)
+          context.log.info(
+            util.format(
+              '[%s/%s] #%s ignored: "%s" not in config',
+              issue.owner,
+              issue.repo,
+              issue.number,
+              paramName
+            )
+          );
+          return;
+          }
+        }
+    
+        
       const isLabeled = context.payload.action === 'labeled';
       if (isLabeled) {
         if (context.payload.label.name !== ASSIGN_LABEL) {
@@ -97,11 +129,21 @@ export = (app: Application) => {
       }
 
       // PRs are a superset of issues, so we can handle them similarly.
-      const assignees = context.payload.issue
-        ? config.assign_issues!
-        : config.assign_prs!;
+  
+      let assignees;
+      if (repoMatch) {
+        assignees = context.payload.issue
+        ? repoMatch?.assign_issues!
+        : repoMatch?.assign_prs!;
+      } else {
+        assignees = context.payload.issue
+        ? config.repo[0].assign_issues!
+        : config.repo[0].assign_prs!;
+      }
+      
       const issuePayload =
         context.payload.issue || context.payload.pull_request;
+
 
       // Allow the label to force a new assignee, even if one is already assigned.
       if (!isLabeled && issuePayload.assignees.length !== 0) {
@@ -143,4 +185,5 @@ export = (app: Application) => {
       );
     }
   );
-};
+  
+}
