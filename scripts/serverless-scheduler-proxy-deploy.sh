@@ -17,21 +17,18 @@
 set -e
 set -o pipefail
 
-if [ $# -ne 5 ]; then
+if [ $# -ne 2 ]; then
     echo "Wrong number of arguments passed" && exit 1
 fi
 
 PROJECT_ID=$1
-BUCKET=$2
-KEY_LOCATION=$3
-KEY_RING=$4
-REGION=$5
+REGION=$2
 
-echo "Deploying proxy to project $PROJECT_ID, with bucket: $BUCKET, key location $KEY_LOCATION, key ring $KEY_RING and region $REGION"
+echo "Deploying proxy to project $PROJECT_ID, with region $REGION"
 
 gcloud beta run deploy \
             --image "gcr.io/$PROJECT_ID/serverless-scheduler-proxy" \
-            --set-env-vars "PROJECT_ID=$PROJECT_ID,BUCKET_NAME=$BUCKET,KEY_LOCATION=$KEY_LOCATION,KEY_RING=$KEY_RING" \
+            --set-env-vars "PROJECT_ID=$PROJECT_ID" \
             --platform managed \
             --region $REGION \
             --quiet \
