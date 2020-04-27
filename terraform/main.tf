@@ -174,6 +174,17 @@ module "release-please" {
   scheduler_proxy_url  = module.serverless_schduler.scheduler_proxy_url
 }
 
+module "snippet_bot" {
+  source = "./bot"
+
+  project_id           = var.project_id
+  artifact_bucket_name = google_storage_bucket.artifact_bucket.name
+  function_region      = var.function_region
+  bot_name             = "snippet-bot"
+  scheduler_sa_email   = module.serverless_schduler.scheduler_sa_email
+  scheduler_proxy_url  = module.serverless_schduler.scheduler_proxy_url
+}
+
 module "sync_repo_settings" {
   source = "./bot"
 
