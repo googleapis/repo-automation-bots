@@ -17,12 +17,15 @@
 set -e
 set -o pipefail
 
-if [ $# -ne 2 ]; then
+if [ $# -ne 5 ]; then
     echo "Wrong number of arguments passed" && exit 1
 fi
 
 PROJECT_ID=$1
-FUNCTION_REGION=$2
+BUCKET=$2
+KEY_LOCATION=$3
+KEY_RING=$4
+FUNCTION_REGION=$5
 
 deploy_queue(){
     local queue=$1
@@ -63,7 +66,7 @@ for f in *; do
         gcloud functions deploy "$functionname" --trigger-http \
             --runtime nodejs10 \
             --region "$FUNCTION_REGION" \
-            --set-env-vars GCF_SHORT_FUNCTION_NAME="$functionname",PROJECT_ID="$PROJECT_ID",GCF_LOCATION="$FUNCTION_REGION",PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1'
+            --set-env-vars DRIFT_PRO_BUCKET="$BUCKET",KEY_LOCATION="$KEY_LOCATION",KEY_RING="$KEY_RING",GCF_SHORT_FUNCTION_NAME="$functionname",PROJECT_ID="$PROJECT_ID",GCF_LOCATION="$FUNCTION_REGION",PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1'
 
         deploy_queue "$queuename"
 
