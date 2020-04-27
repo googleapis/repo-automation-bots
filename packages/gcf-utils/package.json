@@ -25,7 +25,7 @@
     "express": "^4.17.1",
     "gaxios": "^3.0.0",
     "probot": "^9.11.2",
-    "tmp": "^0.1.0",
+    "tmp": "^0.2.0",
     "yargs": "^15.0.0"
   },
   "devDependencies": {
