@@ -52,7 +52,7 @@
     "typescript": "^3.8.3"
   },
   "engines": {
-    "node": ">= 10.13.0"
+    "node": "^10.17.0"
   },
   "keywords": [
     "google cloud functions",

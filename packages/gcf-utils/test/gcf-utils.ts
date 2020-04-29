@@ -19,7 +19,7 @@ import {Options} from 'probot';
 import * as express from 'express';
 import sinon from 'sinon';
 import nock from 'nock';
-import {expect} from 'chai';
+import assert from 'assert';
 import {v1} from '@google-cloud/secret-manager';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -63,9 +63,9 @@ describe('GCFBootstrapper', () => {
       req = express.request;
 
       bootstrapper = new GCFBootstrapper();
-      configStub = sinon.stub(bootstrapper, 'getProbotConfig').callsFake(() => {
-        return Promise.resolve({id: 1234, secret: 'foo', webhookPath: 'bar'});
-      });
+      configStub = sinon
+        .stub(bootstrapper, 'getProbotConfig')
+        .resolves({id: 1234, secret: 'foo', webhookPath: 'bar'});
 
       enqueueTask = sinon.stub(bootstrapper, 'enqueueTask');
 
@@ -187,9 +187,9 @@ describe('GCFBootstrapper', () => {
 
     beforeEach(() => {
       bootstrapper = new GCFBootstrapper();
-      configStub = sinon.stub(bootstrapper, 'getProbotConfig').callsFake(() => {
-        return Promise.resolve({id: 1234, secret: 'foo', webhookPath: 'bar'});
-      });
+      configStub = sinon
+        .stub(bootstrapper, 'getProbotConfig')
+        .resolves({id: 1234, secret: 'foo', webhookPath: 'bar'});
     });
 
     afterEach(() => {
@@ -240,19 +240,17 @@ describe('GCFBootstrapper', () => {
     it('gets the config', async () => {
       secretsStub = sinon
         .stub(secretClientStub, 'accessSecretVersion')
-        .callsFake(() => {
-          return Promise.resolve([
-            {
-              payload: {
-                data: JSON.stringify({
-                  id: 1234,
-                  secret: 'foo',
-                  webhookPath: 'bar',
-                }),
-              },
+        .resolves([
+          {
+            payload: {
+              data: JSON.stringify({
+                id: 1234,
+                secret: 'foo',
+                webhookPath: 'bar',
+              }),
             },
-          ]);
-        });
+          },
+        ]);
       await bootstrapper.getProbotConfig();
       sinon.assert.calledOnce(secretsStub);
       sinon.assert.calledOnceWithExactly(secretsStub, {name: 'foobar'});
@@ -262,59 +260,35 @@ describe('GCFBootstrapper', () => {
     it('throws on empty data', async () => {
       secretsStub = sinon
         .stub(secretClientStub, 'accessSecretVersion')
-        .callsFake(() => {
-          return Promise.resolve([
-            {
-              payload: {
-                data: '',
-              },
+        .resolves([
+          {
+            payload: {
+              data: '',
             },
-          ]);
-        });
+          },
+        ]);
 
-      const configSpy = sinon.spy(bootstrapper, 'getProbotConfig');
-      try {
-        await configSpy();
-      } catch (e) {
-        // pass
-      }
-      expect(configSpy.threw());
+      assert.rejects(bootstrapper.getProbotConfig());
     });
 
     it('throws on empty payload', async () => {
       secretsStub = sinon
         .stub(secretClientStub, 'accessSecretVersion')
-        .callsFake(() => {
-          return Promise.resolve([
-            {
-              payload: {},
-            },
-          ]);
-        });
+        .resolves([
+          {
+            payload: {},
+          },
+        ]);
 
-      const configSpy = sinon.spy(bootstrapper, 'getProbotConfig');
-      try {
-        await configSpy();
-      } catch (e) {
-        // pass
-      }
-      expect(configSpy.threw());
+      assert.rejects(bootstrapper.getProbotConfig());
     });
 
     it('throws on empty response', async () => {
       secretsStub = sinon
         .stub(secretClientStub, 'accessSecretVersion')
-        .callsFake(() => {
-          return Promise.resolve([{}]);
-        });
+        .resolves([{}]);
 
-      const configSpy = sinon.spy(bootstrapper, 'getProbotConfig');
-      try {
-        await configSpy();
-      } catch (e) {
-        // pass
-      }
-      expect(configSpy.threw());
+      assert.rejects(bootstrapper.getProbotConfig());
     });
   });
 
@@ -337,7 +311,7 @@ describe('GCFBootstrapper', () => {
 
     it('appends "latest"', async () => {
       const latest = bootstrapper.getLatestSecretVersionName();
-      expect(latest).to.equal('foobar/versions/latest');
+      assert.strictEqual(latest, 'foobar/versions/latest');
       sinon.assert.calledOnce(secretVersionNameStub);
     });
   });
@@ -356,14 +330,14 @@ describe('GCFBootstrapper', () => {
 
     it('formats from env even with nothing', async () => {
       const latest = bootstrapper.getSecretName();
-      expect(latest).to.equal('projects//secrets/');
+      assert.strictEqual(latest, 'projects//secrets/');
     });
 
     it('formats from env', async () => {
       process.env.PROJECT_ID = 'foo';
       process.env.GCF_SHORT_FUNCTION_NAME = 'bar';
       const latest = bootstrapper.getSecretName();
-      expect(latest).to.equal('projects/foo/secrets/bar');
+      assert.strictEqual(latest, 'projects/foo/secrets/bar');
     });
   });
 });

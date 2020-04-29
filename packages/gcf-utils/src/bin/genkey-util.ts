@@ -12,29 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fs from 'fs';
+import {promises as fs} from 'fs';
 import {Options} from 'probot';
 import {v1} from '@google-cloud/secret-manager';
 
+/// gather gets the key from the specified keyfile
+// and returns a probot.Options object
 export async function gather(
   keyfile: string,
   id: number,
   webhookSecret: string
 ): Promise<Options> {
   let keyContent = '';
-  try {
-    keyContent = fs.readFileSync(keyfile, 'utf8');
-  } catch (e) {
-    throw Error(`Error reading file: ${keyfile}`);
-  }
+  // Propogate exceptions up
+  keyContent = await fs.readFile(keyfile, 'utf8');
 
   return {
     cert: keyContent,
     id,
     secret: webhookSecret,
-  } as Options;
+  };
 }
 
+// create takes the given Options and creates
+// a Google Cloud Secret Manager Secret
+// whose name is the Bot and whose Secret Version
+// is a stringified version of the given blob
 export async function create(
   smclient: v1.SecretManagerServiceClient,
   project: string,
