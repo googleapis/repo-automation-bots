@@ -373,7 +373,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
       );
       //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
       const checkCompleted = checkStatus.find((element: CheckStatus) =>
-        (element.context.startsWith(check))
+        element.context.startsWith(check)
       );
       if (checkCompleted === undefined) {
         console.log(
