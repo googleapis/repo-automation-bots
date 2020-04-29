@@ -218,18 +218,24 @@ function handler(app: Application) {
       await handler.publish({npmRc, pkgPath, app, prerelease: true});
 
       // Remove label and comment:
-      await context.github.issues.removeLabel({
-        owner: context.payload.repository.owner.login,
-        repo: context.payload.repository.name,
-        issue_number: context.payload.pull_request.number,
-        name: PRE_RELEASE_LABEL,
-      });
-      await context.github.issues.createComment({
-        owner,
-        repo: repoName,
-        issue_number: context.payload.pull_request.number,
-        body: `A candidate release, \`${candidateVersion.version}\` was published to npm. Run \`npm install ${candidateVersion.name}@${PRE_RELEASE_TAG}\` to install.`,
-      });
+      try {
+        await context.github.issues.removeLabel({
+          owner: context.payload.repository.owner.login,
+          repo: context.payload.repository.name,
+          issue_number: context.payload.pull_request.number,
+          name: PRE_RELEASE_LABEL,
+        });
+        await context.github.issues.createComment({
+          owner,
+          repo: repoName,
+          issue_number: context.payload.pull_request.number,
+          body: `A candidate release, \`${candidateVersion.version}\` was published to npm. Run \`npm install ${candidateVersion.name}@${PRE_RELEASE_TAG}\` to install.`,
+        });
+      } catch (err) {
+        app.log.error(
+          `failed to remove label and create comment err = ${err.message}`
+        );
+      }
     } else {
       app.log.error('could not load application secrets');
     }
@@ -270,6 +276,14 @@ async function setCandidateVersion(
       break;
     } else {
       counter++;
+      // TODO: investigate how it was possible to get into a publiction loop
+      // if two publish jobs were in the task queue at the same time:
+      const MAX_RELEASES = 2;
+      if (counter > MAX_RELEASES) {
+        throw Error(
+          `currently only ${MAX_RELEASES} prerelease version are support per release`
+        );
+      }
       candidateVersion = `${futureVersion}-beta.${counter}`;
     }
   }
