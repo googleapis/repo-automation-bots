@@ -318,11 +318,11 @@ mergeOnGreen.iterateGetCheckRuns = async function iterateGetCheckRuns(
  */
 mergeOnGreen.checkForRequiredSC = function checkForRequiredSC(
   checkRuns: CheckRun[],
-  regexCheck: RegExp
+  check: string
 ): boolean {
   if (checkRuns.length !== 0) {
     const checkRunCompleted = checkRuns.find(element =>
-      regexCheck.test(element.name)
+      element.name.startsWith(check)
     );
     if (
       checkRunCompleted !== undefined &&
@@ -372,9 +372,8 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
         `Looking for required checks in status checks for ${owner}/${repo}/${pr}.`
       );
       //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
-      const regexCheck = new RegExp(`^${check}`);
       const checkCompleted = checkStatus.find((element: CheckStatus) =>
-        regexCheck.test(element.context)
+        (element.context.startsWith(check))
       );
       if (checkCompleted === undefined) {
         console.log(
@@ -389,7 +388,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
             headSha
           );
         }
-        mergeable = mergeOnGreen.checkForRequiredSC(checkRuns, regexCheck);
+        mergeable = mergeOnGreen.checkForRequiredSC(checkRuns, check);
         if (!mergeable) {
           console.log(
             'We could not find your required checks in check runs. You have no statuses or checks that match your required checks.'
