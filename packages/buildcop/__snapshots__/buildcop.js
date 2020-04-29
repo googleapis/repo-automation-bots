@@ -54,21 +54,6 @@ exports['buildcop app xunitXML comments on existing issue 1'] = {
   "body": "commit: 123\nbuildURL: http://example.com\nstatus: failed"
 }
 
-exports['buildcop app xunitXML reopens issue for failing test 1'] = {
-  "labels": [
-    "type: bug",
-    "priority: p1",
-    "buildcop: issue",
-    "buildcop: flaky",
-    "api: spanner"
-  ],
-  "state": "open"
-}
-
-exports['buildcop app xunitXML reopens issue for failing test 2'] = {
-  "body": "Oops! Looks like this issue is still flaky. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed"
-}
-
 exports['buildcop app xunitXML closes an issue for a passing test [Go] 1'] = {
   "body": "Test passed for commit 123 (http://example.com)! Closing this issue."
 }
@@ -203,4 +188,19 @@ exports['buildcop app xunitXML opens a new issue when the original was closed a 
     "priority: p1",
     "buildcop: issue"
   ]
+}
+
+exports['buildcop app xunitXML reopens issue with correct labels for failing test 1'] = {
+  "labels": [
+    "buildcop: issue",
+    "buildcop: flaky",
+    "api: spanner",
+    "priority: p2",
+    "type: cleanup"
+  ],
+  "state": "open"
+}
+
+exports['buildcop app xunitXML reopens issue with correct labels for failing test 2'] = {
+  "body": "Oops! Looks like this issue is still flaky. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed"
 }
