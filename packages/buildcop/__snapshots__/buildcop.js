@@ -124,7 +124,7 @@ exports['buildcop app xunitXML keeps an issue open for a passing test that faile
 }
 
 exports['buildcop app xunitXML keeps an issue open for a passing test that failed in the same build (comment) 2'] = {
-  "body": "Looks like this issue is flaky. :worried:\n\nI'm going to leave this open and stop commenting.\n\nA human should fix and close this.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: passed"
+  "body": "Looks like this issue is flaky. :worried:\n\nI'm going to leave this open and stop commenting.\n\nA human should fix and close this.\n\n---\n\nThis test passed (http://example.com) and failed ([Build Status](example.com/failure)) for the same commit (123)."
 }
 
 exports['buildcop app xunitXML keeps an issue open for a passing test that failed in the same build (issue body) 1'] = {
@@ -139,7 +139,7 @@ exports['buildcop app xunitXML keeps an issue open for a passing test that faile
 }
 
 exports['buildcop app xunitXML keeps an issue open for a passing test that failed in the same build (issue body) 2'] = {
-  "body": "Looks like this issue is flaky. :worried:\n\nI'm going to leave this open and stop commenting.\n\nA human should fix and close this.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: passed"
+  "body": "Looks like this issue is flaky. :worried:\n\nI'm going to leave this open and stop commenting.\n\nA human should fix and close this.\n\n---\n\nThis test passed (http://example.com) and failed ([Build Status](example.com/failure)) for the same commit (123)."
 }
 
 exports['buildcop app xunitXML does not comment about failure on existing issue labeled quiet 1'] = {
