@@ -503,7 +503,7 @@ buildcop.markIssueFlaky = async (
   context: PubSubContext,
   owner: string,
   repo: string,
-  comment: string
+  body: string
 ) => {
   context.log.info(
     `[${owner}/${repo}] marking issue #${existingIssue.number} as flaky`
@@ -532,7 +532,7 @@ buildcop.markIssueFlaky = async (
     owner,
     repo,
     issue_number: existingIssue.number,
-    body: comment,
+    body,
   });
 };
 
