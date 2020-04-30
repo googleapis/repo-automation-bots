@@ -17,15 +17,9 @@
     "ignoredRepos": [
       "googleapis/api-common-java",
       "googleapis/gax-java",
-      "googleapis/google-api-java-client",
-      "googleapis/google-auth-library-java",
-      "googleapis/google-cloud-java",
-      "googleapis/google-http-java-client",
-      "googleapis/google-oauth-java-client",
       "googleapis/gapic-generator",
       "GoogleCloudPlatform/java-docs-samples",
-      "GoogleCloudPlatform/getting-started-java",
-      "googleapis/google-cloud-java"
+      "GoogleCloudPlatform/getting-started-java"
     ],
     "repoOverrides": [
       {
@@ -44,13 +38,6 @@
         ]
       },
       {
-        "repo": "googleapis/google-api-java-client-services",
-        "requiredStatusChecks": [
-          "Kokoro - Test: Java 8",
-          "cla/google"
-        ]
-      },
-      {
         "repo": "GoogleCloudPlatform/getting-started-java",
         "requiredStatusChecks": [
           "Kokoro CI",
@@ -62,6 +49,58 @@
         "requiredStatusChecks": [
           "Kokoro CI - Java 11",
           "Kokoro CI - Java 8",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "googleapis/google-auth-library-java",
+        "requiredStatusChecks": [
+          "Kokoro - Test: Binary Compatibility",
+          "Kokoro - Test: Code Format",
+          "Kokoro - Test: Dependencies",
+          "Kokoro - Test: Java 11",
+          "Kokoro - Test: Java 7",
+          "Kokoro - Test: Java 8",
+          "Kokoro - Test: Linkage Monitor",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "googleapis/google-api-java-client",
+        "requiredStatusChecks": [
+          "Kokoro - Test: Binary Compatibility",
+          "Kokoro - Test: Code Format",
+          "Kokoro - Test: Dependencies",
+          "Kokoro - Test: Java 11",
+          "Kokoro - Test: Java 7",
+          "Kokoro - Test: Java 8",
+          "Kokoro - Test: Linkage Monitor",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "googleapis/google-http-java-client",
+        "requiredStatusChecks": [
+          "Kokoro - Test: Binary Compatibility",
+          "Kokoro - Test: Code Format",
+          "Kokoro - Test: Dependencies",
+          "Kokoro - Test: Java 11",
+          "Kokoro - Test: Java 7",
+          "Kokoro - Test: Java 8",
+          "Kokoro - Test: Linkage Monitor",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "googleapis/google-oauth-java-client",
+        "requiredStatusChecks": [
+          "Kokoro - Test: Binary Compatibility",
+          "Kokoro - Test: Code Format",
+          "Kokoro - Test: Dependencies",
+          "Kokoro - Test: Java 11",
+          "Kokoro - Test: Java 7",
+          "Kokoro - Test: Java 8",
+          "Kokoro - Test: Linkage Monitor",
           "cla/google"
         ]
       }
@@ -103,7 +142,6 @@
     "ignoredRepos": [
       "GoogleCloudPlatform/nodejs-docs-samples",
       "GoogleCloudPlatform/nodejs-getting-started",
-      "googleapis/cloud-profiler-nodejs",
       "googleapis/repo-automation-bots",
       "googleapis/google-cloud-node",
       "googleapis/gapic-generator-typescript"
