@@ -167,7 +167,7 @@ exports['buildcop app xunitXML reopens the original flaky issue when there is a 
 }
 
 exports['buildcop app xunitXML reopens the original flaky issue when there is a duplicate 2'] = {
-  "body": "Oops! Looks like this issue is still flaky. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed"
+  "body": "Oops! Looks like this issue is still flaky. It failed again. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed"
 }
 
 exports['buildcop app xunitXML opens a new issue when the original is locked [Go] 1'] = {
@@ -202,5 +202,5 @@ exports['buildcop app xunitXML reopens issue with correct labels for failing tes
 }
 
 exports['buildcop app xunitXML reopens issue with correct labels for failing test 2'] = {
-  "body": "Oops! Looks like this issue is still flaky. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed"
+  "body": "Oops! Looks like this issue is still flaky. It failed again. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed"
 }

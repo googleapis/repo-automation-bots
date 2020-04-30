@@ -62,7 +62,7 @@ A human should fix and close this.
 
 ---`;
 
-const FLAKY_AGAIN_MESSAGE = `Oops! Looks like this issue is still flaky. :grimacing:
+const FLAKY_AGAIN_MESSAGE = `Oops! Looks like this issue is still flaky. It failed again. :grimacing:
 
 I reopened the issue, but a human will need to close it again.
 
