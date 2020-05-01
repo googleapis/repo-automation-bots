@@ -109,6 +109,19 @@ describe('buildcop', () => {
     probot.load(buildcop);
   });
 
+  describe('extractBuildURL', () => {
+    it('finds a build URL', () => {
+      const want = '[Build Status](example.com/my/build)';
+      const input = buildcop.formatBody(
+        {passed: false, testCase: 'TestHello'},
+        'abc',
+        want
+      );
+      const result = buildcop.extractBuildURL(input);
+      expect(result).to.equal(want);
+    });
+  });
+
   describe('findTestResults', () => {
     it('finds one failure', () => {
       const input = fs.readFileSync(
@@ -227,6 +240,24 @@ describe('buildcop', () => {
       expect(results).to.eql({
         passes: [],
         failures: [],
+      });
+    });
+
+    it('ignores skipped tests', () => {
+      const input = fs.readFileSync(
+        resolve(fixturesPath, 'testdata', 'go_skip.xml'),
+        'utf8'
+      );
+      const results = findTestResults(input);
+      expect(results).to.eql({
+        failures: [],
+        passes: [
+          {
+            package: 'github.com/GoogleCloudPlatform/golang-samples',
+            testCase: 'TestLicense',
+            passed: true,
+          },
+        ],
       });
     });
   });
@@ -672,7 +703,8 @@ describe('buildcop', () => {
             .get('/repos/GoogleCloudPlatform/golang-samples/issues/16/comments')
             .reply(200, [
               {
-                body: 'status: failed\ncommit: 123',
+                body:
+                  'status: failed\ncommit: 123\nbuildURL: [Build Status](example.com/failure)',
               },
             ]),
           nockIssueComment('golang-samples', 16),
@@ -697,7 +729,8 @@ describe('buildcop', () => {
                 passed: false,
               }),
               number: 16,
-              body: 'status: failed\ncommit: 123',
+              body:
+                'status: failed\ncommit: 123\nbuildURL: [Build Status](example.com/failure)',
             },
           ]),
           nockIssueComment('golang-samples', 16),

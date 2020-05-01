@@ -124,7 +124,7 @@ exports['buildcop app xunitXML keeps an issue open for a passing test that faile
 }
 
 exports['buildcop app xunitXML keeps an issue open for a passing test that failed in the same build (comment) 2'] = {
-  "body": "Looks like this issue is flaky. :worried:\n\nI'm going to leave this open and stop commenting.\n\nA human should fix and close this.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: passed"
+  "body": "Looks like this issue is flaky. :worried:\n\nI'm going to leave this open and stop commenting.\n\nA human should fix and close this.\n\n---\n\nWhen run at the same commit (123), this test passed in one build (http://example.com) and failed in another build ([Build Status](example.com/failure))."
 }
 
 exports['buildcop app xunitXML keeps an issue open for a passing test that failed in the same build (issue body) 1'] = {
@@ -139,7 +139,7 @@ exports['buildcop app xunitXML keeps an issue open for a passing test that faile
 }
 
 exports['buildcop app xunitXML keeps an issue open for a passing test that failed in the same build (issue body) 2'] = {
-  "body": "Looks like this issue is flaky. :worried:\n\nI'm going to leave this open and stop commenting.\n\nA human should fix and close this.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: passed"
+  "body": "Looks like this issue is flaky. :worried:\n\nI'm going to leave this open and stop commenting.\n\nA human should fix and close this.\n\n---\n\nWhen run at the same commit (123), this test passed in one build (http://example.com) and failed in another build ([Build Status](example.com/failure))."
 }
 
 exports['buildcop app xunitXML does not comment about failure on existing issue labeled quiet 1'] = {
@@ -167,7 +167,7 @@ exports['buildcop app xunitXML reopens the original flaky issue when there is a 
 }
 
 exports['buildcop app xunitXML reopens the original flaky issue when there is a duplicate 2'] = {
-  "body": "Oops! Looks like this issue is still flaky. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed\n<details><summary>Test output</summary><br><pre>\nsnippet_test.go:242: got output \"\"; want it to contain \"4 Venue 4\" snippet_test.go:243: got output \"\"; want it to contain \"19 Venue 19\" snippet_test.go:244: got output \"\"; want it to contain \"42 Venue 42\"\n</pre></details>"
+  "body": "Oops! Looks like this issue is still flaky. It failed again. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed\n<details><summary>Test output</summary><br><pre>\nsnippet_test.go:242: got output \"\"; want it to contain \"4 Venue 4\" snippet_test.go:243: got output \"\"; want it to contain \"19 Venue 19\" snippet_test.go:244: got output \"\"; want it to contain \"42 Venue 42\"\n</pre></details>"
 }
 
 exports['buildcop app xunitXML opens a new issue when the original is locked [Go] 1'] = {
@@ -202,5 +202,5 @@ exports['buildcop app xunitXML reopens issue with correct labels for failing tes
 }
 
 exports['buildcop app xunitXML reopens issue with correct labels for failing test 2'] = {
-  "body": "Oops! Looks like this issue is still flaky. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed\n<details><summary>Test output</summary><br><pre>\nsnippet_test.go:242: got output \"\"; want it to contain \"4 Venue 4\" snippet_test.go:243: got output \"\"; want it to contain \"19 Venue 19\" snippet_test.go:244: got output \"\"; want it to contain \"42 Venue 42\"\n</pre></details>"
+  "body": "Oops! Looks like this issue is still flaky. It failed again. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed\n<details><summary>Test output</summary><br><pre>\nsnippet_test.go:242: got output \"\"; want it to contain \"4 Venue 4\" snippet_test.go:243: got output \"\"; want it to contain \"19 Venue 19\" snippet_test.go:244: got output \"\"; want it to contain \"42 Venue 42\"\n</pre></details>"
 }
