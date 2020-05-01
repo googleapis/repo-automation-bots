@@ -308,17 +308,13 @@ buildcop.openIssues = async (
             continue;
           }
         }
-        let comment = buildcop.isFlaky(existingIssue)
-          ? FLAKY_AGAIN_MESSAGE
-          : FLAKY_MESSAGE;
-        comment =
-          comment + '\n\n' + buildcop.formatBody(failure, commit, buildURL);
+        const reason = buildcop.formatBody(failure, commit, buildURL);
         await buildcop.markIssueFlaky(
           existingIssue,
           context,
           owner,
           repo,
-          comment
+          reason
         );
       } else {
         // Don't comment if it's asked to be quiet.
@@ -437,11 +433,8 @@ buildcop.closeIssues = async (
       commit
     );
     if (containsFailure) {
-      let comment = buildcop.isFlaky(issue)
-        ? FLAKY_AGAIN_MESSAGE
-        : FLAKY_MESSAGE;
-      comment += `\n\nThis test passed (${buildURL}) and failed (${failureURL}) for the same commit (${commit}).`;
-      await buildcop.markIssueFlaky(issue, context, owner, repo, comment);
+      const reason = `When run at the same commit (${commit}), this test passed in one build (${buildURL}) and failed in another build (${failureURL}).`;
+      await buildcop.markIssueFlaky(issue, context, owner, repo, reason);
       break;
     }
 
@@ -503,7 +496,7 @@ buildcop.markIssueFlaky = async (
   context: PubSubContext,
   owner: string,
   repo: string,
-  body: string
+  reason: string
 ) => {
   context.log.info(
     `[${owner}/${repo}] marking issue #${existingIssue.number} as flaky`
@@ -528,6 +521,10 @@ buildcop.markIssueFlaky = async (
     labels,
     state: 'open',
   });
+  let body = buildcop.isFlaky(existingIssue)
+    ? FLAKY_AGAIN_MESSAGE
+    : FLAKY_MESSAGE;
+  body += '\n\n' + reason;
   await context.github.issues.createComment({
     owner,
     repo,
