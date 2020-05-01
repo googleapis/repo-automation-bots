@@ -62,7 +62,7 @@ A human should fix and close this.
 
 ---`;
 
-const FLAKY_AGAIN_MESSAGE = `Oops! Looks like this issue is still flaky. :grimacing:
+const FLAKY_AGAIN_MESSAGE = `Oops! Looks like this issue is still flaky. It failed again. :grimacing:
 
 I reopened the issue, but a human will need to close it again.
 
@@ -308,14 +308,13 @@ buildcop.openIssues = async (
             continue;
           }
         }
+        const reason = buildcop.formatBody(failure, commit, buildURL);
         await buildcop.markIssueFlaky(
           existingIssue,
           context,
           owner,
           repo,
-          commit,
-          buildURL,
-          failure
+          reason
         );
       } else {
         // Don't comment if it's asked to be quiet.
@@ -329,15 +328,14 @@ buildcop.openIssues = async (
         }
 
         // Don't comment if we've already commented with this build failure.
-        if (
-          await buildcop.containsBuildFailure(
-            existingIssue,
-            context,
-            owner,
-            repo,
-            commit
-          )
-        ) {
+        const [containsFailure] = await buildcop.containsBuildFailure(
+          existingIssue,
+          context,
+          owner,
+          repo,
+          commit
+        );
+        if (containsFailure) {
           continue;
         }
 
@@ -427,18 +425,16 @@ buildcop.closeIssues = async (
 
     // If the issue has a failure in the same build, don't close it.
     // If it passed in one build and failed in another, it's flaky.
-    if (
-      await buildcop.containsBuildFailure(issue, context, owner, repo, commit)
-    ) {
-      await buildcop.markIssueFlaky(
-        issue,
-        context,
-        owner,
-        repo,
-        commit,
-        buildURL,
-        pass
-      );
+    const [containsFailure, failureURL] = await buildcop.containsBuildFailure(
+      issue,
+      context,
+      owner,
+      repo,
+      commit
+    );
+    if (containsFailure) {
+      const reason = `When run at the same commit (${commit}), this test passed in one build (${buildURL}) and failed in another build (${failureURL}).`;
+      await buildcop.markIssueFlaky(issue, context, owner, repo, reason);
       break;
     }
 
@@ -500,9 +496,7 @@ buildcop.markIssueFlaky = async (
   context: PubSubContext,
   owner: string,
   repo: string,
-  commit: string,
-  buildURL: string,
-  testCase: TestCase
+  reason: string
 ) => {
   context.log.info(
     `[${owner}/${repo}] marking issue #${existingIssue.number} as flaky`
@@ -527,14 +521,10 @@ buildcop.markIssueFlaky = async (
     labels,
     state: 'open',
   });
-  let body = FLAKY_MESSAGE;
-  // If the issue was flaky and we reopen it (again), say so.
-  if (buildcop.isFlaky(existingIssue)) {
-    body = FLAKY_AGAIN_MESSAGE;
-  }
-  if (testCase) {
-    body = body + '\n\n' + buildcop.formatBody(testCase, commit, buildURL);
-  }
+  let body = buildcop.isFlaky(existingIssue)
+    ? FLAKY_AGAIN_MESSAGE
+    : FLAKY_MESSAGE;
+  body += '\n\n' + reason;
   await context.github.issues.createComment({
     owner,
     repo,
@@ -548,6 +538,8 @@ buildcop.formatBody = (
   commit: string,
   buildURL: string
 ): string => {
+  // Warning: this format is used to detect flaky tests. Don't make breaking
+  // changes.
   return `commit: ${commit}
 buildURL: ${buildURL}
 status: ${testCase.passed ? 'passed' : 'failed'}`;
@@ -559,10 +551,11 @@ buildcop.containsBuildFailure = async (
   owner: string,
   repo: string,
   commit: string
-): Promise<boolean> => {
+): Promise<[boolean, string]> => {
   const text = issue.body;
   if (text.includes(`commit: ${commit}`) && text.includes('status: failed')) {
-    return true;
+    const buildURL = buildcop.extractBuildURL(text);
+    return [true, buildURL];
   }
   const options = context.github.issues.listComments.endpoint.merge({
     owner,
@@ -575,7 +568,20 @@ buildcop.containsBuildFailure = async (
       comment.body.includes(`commit: ${commit}`) &&
       comment.body.includes('status: failed')
   );
-  return comment !== undefined;
+  const containsFailure = comment !== undefined;
+  const buildURL = buildcop.extractBuildURL(comment?.body);
+  return [containsFailure, buildURL];
+};
+
+buildcop.extractBuildURL = (body: string): string => {
+  if (!body) {
+    return '';
+  }
+  const matches = body.match(/buildURL: (.*)/);
+  if (!matches) {
+    return '';
+  }
+  return matches[1];
 };
 
 buildcop.formatTestCase = (failure: TestCase): string => {
