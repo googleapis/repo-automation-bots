@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "gcf-utils": "1.6.1",
-    "moment": "^2.24.0"
+    "moment": "2.24.0"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
@@ -40,7 +40,6 @@
     "@types/ioredis": "^4.0.13",
     "@types/lru-cache": "^5.1.0",
     "@types/mocha": "^7.0.0",
-    "@types/moment": "^2.13.0",
     "@types/nock": "^10.0.3",
     "@types/node": "^12.6.1",
     "body-parser": "^1.19.0",
