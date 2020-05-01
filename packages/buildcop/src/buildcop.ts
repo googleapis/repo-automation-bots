@@ -657,7 +657,8 @@ buildcop.findTestResults = (xml: string): TestResults => {
       if (testcase['skipped'] !== undefined) {
         continue;
       }
-      if (testcase['failure'] === undefined) {
+      const failure = testcase['failure'];
+      if (failure === undefined) {
         passes.push({
           package: pkg,
           testCase: testcase['_attributes'].name,
