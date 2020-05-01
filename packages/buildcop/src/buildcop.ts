@@ -72,6 +72,7 @@ interface TestCase {
   package?: string;
   testCase?: string;
   passed: boolean;
+  log?: string;
 }
 
 interface TestResults {
@@ -540,9 +541,13 @@ buildcop.formatBody = (
 ): string => {
   // Warning: this format is used to detect flaky tests. Don't make breaking
   // changes.
-  return `commit: ${commit}
+  let body = `commit: ${commit}
 buildURL: ${buildURL}
 status: ${testCase.passed ? 'passed' : 'failed'}`;
+  if (testCase.log) {
+    body += `\n<details><summary>Test output</summary><br><pre>${testCase.log}</pre></details>`;
+  }
+  return body;
 };
 
 buildcop.containsBuildFailure = async (
@@ -653,6 +658,10 @@ buildcop.findTestResults = (xml: string): TestResults => {
       if (testsuiteName === 'pytest') {
         pkg = testcase['_attributes'].classname;
       }
+      // Ignore skipped tests. They didn't pass and they didn't fail.
+      if (testcase['skipped'] !== undefined) {
+        continue;
+      }
       const failure = testcase['failure'];
       if (failure === undefined) {
         passes.push({
@@ -662,10 +671,16 @@ buildcop.findTestResults = (xml: string): TestResults => {
         });
         continue;
       }
+      let log = failure['_text'];
+      // Java puts its test logs in a CDATA element.
+      if (log === undefined) {
+        log = failure['_cdata'];
+      }
       failures.push({
         package: pkg,
         testCase: testcase['_attributes'].name,
         passed: false,
+        log,
       });
     }
   }
