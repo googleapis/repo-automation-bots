@@ -236,6 +236,24 @@ describe('buildcop', () => {
         failures: [],
       });
     });
+
+    it('ignores skipped tests', () => {
+      const input = fs.readFileSync(
+        resolve(fixturesPath, 'testdata', 'go_skip.xml'),
+        'utf8'
+      );
+      const results = findTestResults(input);
+      expect(results).to.eql({
+        failures: [],
+        passes: [
+          {
+            package: 'github.com/GoogleCloudPlatform/golang-samples',
+            testCase: 'TestLicense',
+            passed: true,
+          },
+        ],
+      });
+    });
   });
 
   describe('formatTestCase', () => {

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+	<testsuite tests="3" failures="0" time="27.297" name="github.com/GoogleCloudPlatform/golang-samples">
+		<properties>
+			<property name="go.version" value="go1.11.13"></property>
+		</properties>
+		<testcase classname="golang-samples" name="TestLicense" time="0.120"></testcase>
+	</testsuite>
+	<testsuite tests="2" failures="0" time="0.526" name="github.com/GoogleCloudPlatform/golang-samples/securitycenter/notifications">
+		<testcase classname="notifications" name="TestGetNotificationConfig" time="0.000">
+			<skipped message="notifications_test.go:162: https://github.com/GoogleCloudPlatform/golang-samples/issues/1354"></skipped>
+		</testcase>
+		<testcase classname="notifications" name="TestListNotificationConfigs" time="0.000">
+			<skipped message="notifications_test.go:186: https://github.com/GoogleCloudPlatform/golang-samples/issues/1355"></skipped>
+		</testcase>
+	</testsuite>
+</testsuites>
