@@ -647,8 +647,11 @@ buildcop.findTestResults = (xml: string): TestResults => {
       if (testsuiteName === 'pytest') {
         pkg = testcase['_attributes'].classname;
       }
-      const failure = testcase['failure'];
-      if (failure === undefined) {
+      // Ignore skipped tests. They didn't pass and they didn't fail.
+      if (testcase['skipped'] !== undefined) {
+        continue;
+      }
+      if (testcase['failure'] === undefined) {
         passes.push({
           package: pkg,
           testCase: testcase['_attributes'].name,
