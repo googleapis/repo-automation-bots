@@ -53,6 +53,21 @@
         ]
       },
       {
+        "repo": "googleapis/java-bigquerystorage",
+        "requiredStatusChecks": [
+          "dependencies",
+          "linkage-monitor",
+          "lint",
+          "units (7)",
+          "units (8)",
+          "units (11)",
+          "cla/google",
+          "Kokoro - Test: Integration",
+          "Kokoro - Test: Samples",
+          "cla/google"
+        ]
+      },
+      {
         "repo": "googleapis/google-auth-library-java",
         "requiredStatusChecks": [
           "Kokoro - Test: Binary Compatibility",
