@@ -81,6 +81,14 @@
         ]
       },
       {
+        "repo": "googleapis/google-api-java-client-services",
+        "requiredStatusChecks": [
+          "Kokoro - Test: Generator",
+          "Kokoro - Test: Java 8",
+          "cla/google"
+        ]
+      },
+      {
         "repo": "googleapis/google-api-java-client",
         "requiredStatusChecks": [
           "Kokoro - Test: Binary Compatibility",
