@@ -14,19 +14,24 @@
       "github",
       "probot-app"
     ],
+    "files": [
+      "build/src"
+    ],  
     "scripts": {
       "compile": "tsc -p .",
       "start": "probot run ./build/src/{{programName}}.js",
       "start:local": "node ./build/src/local.js",
       "prepare": "npm run compile",
       "pretest": "npm run compile",
-      "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
+      "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
       "test:snap": "SNAPSHOT_UPDATE=1 npm test",
       "fix": "gts fix",
       "lint": "gts check"
     },
     "dependencies": {
-      "gcf-utils": "1.6.2"
+      "gcf-utils": "1.6.2",
+      "@octokit/rest": "^17.5.2",
+      "probot": "^9.11.3"
     },
     "devDependencies": {
       "@types/body-parser": "^1.17.0",

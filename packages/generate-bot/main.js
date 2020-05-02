@@ -22,7 +22,7 @@ const process = require('process');
 exports.checkValidity = function (testString) {
   let isValid = true;
   const relativePath = path.resolve('./packages');
-  const validName = /[^-A-Za-z_]+/;
+  const validName = /[^-A-Za-z_\s]+/;
   let string = JSON.stringify(testString);
   string = string
     .replace('{"programName":', '')
