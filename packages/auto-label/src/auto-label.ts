@@ -18,6 +18,8 @@ import {Storage} from '@google-cloud/storage';
 import {Application} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot/lib/github';
+// eslint-disable-next-line node/no-extraneous-import
+import Webhooks from '@octokit/webhooks';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const colorsData = require('./colors.json');
@@ -148,6 +150,38 @@ handler.checkIfElementIsInArray = function checkIfElementIsInArray(
   }
 };
 
+// autoDetectLabel tries to detect the right api: label based on the issue
+// title.
+//
+// For example, an issue titled `spanner/transactions: TestSample failed` would
+// be labeled `api: spanner`.
+handler.autoDetectLabel = async (
+  github: GitHubAPI,
+  jsonArray: JSONData[],
+  issue: Webhooks.WebhookPayloadIssuesIssue,
+  owner: string,
+  repo: string
+): Promise<string | undefined> => {
+  if (!jsonArray) {
+    return undefined;
+  }
+  let firstPart = issue.title.split(':')[0]; // Before the colon, if there is one.
+  firstPart = firstPart.split('/')[0]; // Before the slash, if there is one.
+  firstPart = firstPart.toLowerCase(); // Convert to lower case.
+  firstPart = firstPart.replace(/\s/, ''); // Remove spaces.
+  const wantLabel = `api: ${firstPart}`;
+  // Assume jsonArray contains all api: labels. Avoids an extra API call to list
+  // the labels on a repo.
+  const matchingLabel = jsonArray.find(
+    element => element.github_label === wantLabel
+  );
+  if (matchingLabel) {
+    await handler.addLabels(github, owner, repo, issue.number, [wantLabel]);
+    return wantLabel;
+  }
+  return undefined;
+};
+
 const BACKFILL_LABEL = 'auto-label:backfill';
 function handler(app: Application) {
   app.on(['issues.labeled'], async context => {
@@ -223,7 +257,25 @@ function handler(app: Application) {
     );
 
     if (objectInJsonArray === null || objectInJsonArray === undefined) {
-      console.log('There was no match for the repo name: ' + repo);
+      console.log(
+        `There was no match for the repo ${repo}, trying to auto-detect the right label`
+      );
+      const addedLabel = await handler.autoDetectLabel(
+        context.github,
+        jsonArray,
+        context.payload.issue,
+        owner,
+        repo
+      );
+      if (addedLabel) {
+        console.log(
+          `Auto-detected label ${addedLabel} for ${owner}/${repo}#${issueId}`
+        );
+      } else {
+        console.log(
+          `Auto-detect label failed for ${owner}/${repo}#${issueId}: '${context.payload.issue.title}'`
+        );
+      }
       return;
     }
 

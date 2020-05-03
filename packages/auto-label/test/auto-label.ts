@@ -21,6 +21,7 @@ import nock from 'nock';
 import {expect} from 'chai';
 import {resolve} from 'path';
 import fs from 'fs';
+import snapshot from 'snap-shot-it';
 
 import handler from '../src/auto-label';
 
@@ -205,6 +206,41 @@ describe('auto-label', () => {
         )
       ).to.be.an('undefined');
 
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      ghRequests.done();
+    });
+
+    it('auto detects and labels a Spanner issue', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened_spanner'
+      ));
+
+      const ghRequests = nock('https://api.github.com')
+        .post('/repos/testOwner/automation-samples/issues/5/labels', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+      handler.callStorage = async () => downloadedFile;
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      ghRequests.done();
+    });
+
+    it('auto detects and labels a Cloud IoT issue', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened_spanner'
+      ));
+      payload['issue']['title'] = 'Cloud IoT: TestDeploy failed';
+
+      const ghRequests = nock('https://api.github.com')
+        .post('/repos/testOwner/automation-samples/issues/5/labels', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+      handler.callStorage = async () => downloadedFile;
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
