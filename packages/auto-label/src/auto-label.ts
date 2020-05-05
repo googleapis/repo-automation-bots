@@ -111,6 +111,36 @@ handler.checkExistingIssueLabels = async function checkExistingIssueLabels(
   }
 };
 
+// maybeAddAPILabel adds the given label if there isn't already an api: label.
+handler.maybeAddAPILabel = async (
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+  issueNumber: number,
+  label: string
+): Promise<string | undefined> => {
+  const labelsOnIssue = await handler.checkExistingIssueLabels(
+    github,
+    owner,
+    repo,
+    issueNumber
+  );
+
+  if (labelsOnIssue) {
+    const found = labelsOnIssue.find((element: {name: string}) =>
+      element.name.startsWith('api:')
+    );
+    if (found) {
+      console.log(`${owner}/${repo}#${issueNumber} already has an api: label`);
+      return undefined;
+    }
+    await handler.addLabels(github, owner, repo, issueNumber, [label]);
+    return label;
+  }
+  await handler.addLabels(github, owner, repo, issueNumber, [label]);
+  return label;
+};
+
 handler.callStorage = async function callStorage(
   bucketName: string,
   srcFileName: string
@@ -176,8 +206,13 @@ handler.autoDetectLabel = async (
     element => element.github_label === wantLabel
   );
   if (matchingLabel) {
-    await handler.addLabels(github, owner, repo, issue.number, [wantLabel]);
-    return wantLabel;
+    return await handler.maybeAddAPILabel(
+      github,
+      owner,
+      repo,
+      issue.number,
+      wantLabel
+    );
   }
   return undefined;
 };
@@ -273,7 +308,7 @@ function handler(app: Application) {
         );
       } else {
         console.log(
-          `Auto-detect label failed for ${owner}/${repo}#${issueId}: '${context.payload.issue.title}'`
+          `Auto-detect did not add a label for ${owner}/${repo}#${issueId}: '${context.payload.issue.title}'`
         );
       }
       return;
