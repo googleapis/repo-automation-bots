@@ -137,6 +137,19 @@
           "Kokoro - Test: Linkage Monitor",
           "cla/google"
         ]
+      },
+      {
+        "repo": "googleapis/java-bigtable-hbase",
+        "requiredStatusChecks": [
+          "Kokoro - Test: Binary Compatibility",
+          "Kokoro - Test: Code Format",
+          "Kokoro - Test: Dependencies",
+          "Kokoro - Test: Integration",
+          "Kokoro - Test: Java 11",
+          "Kokoro - Test: Java 8",
+          "Kokoro - Test: Linkage Monitor",
+          "cla/google"
+        ]
       }
     ]
   },
