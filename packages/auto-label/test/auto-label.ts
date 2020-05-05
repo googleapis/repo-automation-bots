@@ -217,12 +217,15 @@ describe('auto-label', () => {
       ));
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/automation-samples/issues/5/labels')
+        .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
         .reply(200)
-        .post('/repos/testOwner/automation-samples/issues/5/labels', body => {
-          snapshot(body);
-          return true;
-        })
+        .post(
+          '/repos/GoogleCloudPlatform/golang-samples/issues/5/labels',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
         .reply(200);
       handler.callStorage = async () => downloadedFile;
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
@@ -237,12 +240,15 @@ describe('auto-label', () => {
       payload['issue']['title'] = 'Cloud IoT: TestDeploy failed';
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/automation-samples/issues/5/labels')
+        .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
         .reply(200)
-        .post('/repos/testOwner/automation-samples/issues/5/labels', body => {
-          snapshot(body);
-          return true;
-        })
+        .post(
+          '/repos/GoogleCloudPlatform/golang-samples/issues/5/labels',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
         .reply(200);
       handler.callStorage = async () => downloadedFile;
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
@@ -257,7 +263,7 @@ describe('auto-label', () => {
       payload['issue']['title'] = 'spanner: this is actually about App Engine';
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/automation-samples/issues/5/labels')
+        .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
         .reply(200, [
           {
             name: 'api: appengine',

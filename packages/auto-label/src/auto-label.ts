@@ -291,9 +291,9 @@ function handler(app: Application) {
       repo
     );
 
-    if (objectInJsonArray === null || objectInJsonArray === undefined) {
+    if (!objectInJsonArray?.github_label) {
       console.log(
-        `There was no match for the repo ${repo}, trying to auto-detect the right label`
+        `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
       );
       const addedLabel = await handler.autoDetectLabel(
         context.github,
