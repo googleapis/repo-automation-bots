@@ -126,6 +126,17 @@
           "Kokoro - Test: Linkage Monitor",
           "cla/google"
         ]
+      },
+      {
+        "repo": "googleapis/google-cloud-java",
+        "requiredStatusChecks": [
+          "Kokoro - Test: Code Format",
+          "Kokoro - Test: Java 11",
+          "Kokoro - Test: Java 7",
+          "Kokoro - Test: Java 8",
+          "Kokoro - Test: Linkage Monitor",
+          "cla/google"
+        ]
       }
     ]
   },
