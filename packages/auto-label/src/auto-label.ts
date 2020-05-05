@@ -256,11 +256,7 @@ function handler(app: Application) {
       repo
     );
 
-    if (
-      objectInJsonArray === null ||
-      objectInJsonArray === undefined ||
-      objectInJsonArray?.github_label === ''
-    ) {
+    if (!objectInJsonArray?.github_label) {
       console.log(
         `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
       );
