@@ -217,10 +217,13 @@ describe('auto-label', () => {
       ));
 
       const ghRequests = nock('https://api.github.com')
-        .post('/repos/testOwner/automation-samples/issues/5/labels', body => {
-          snapshot(body);
-          return true;
-        })
+        .post(
+          '/repos/GoogleCloudPlatform/golang-samples/issues/5/labels',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
         .reply(200);
       handler.callStorage = async () => downloadedFile;
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
@@ -235,10 +238,13 @@ describe('auto-label', () => {
       payload['issue']['title'] = 'Cloud IoT: TestDeploy failed';
 
       const ghRequests = nock('https://api.github.com')
-        .post('/repos/testOwner/automation-samples/issues/5/labels', body => {
-          snapshot(body);
-          return true;
-        })
+        .post(
+          '/repos/GoogleCloudPlatform/golang-samples/issues/5/labels',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
         .reply(200);
       handler.callStorage = async () => downloadedFile;
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
