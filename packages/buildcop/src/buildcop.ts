@@ -128,6 +128,16 @@ export function buildcop(app: Application) {
     context.log.info(
       `[${owner}/${repo}] Found ${results.passes.length} passed tests and ${results.failures.length} failed tests in this result of ${buildURL}`
     );
+    if (results.passes.length > 0) {
+      context.log.info(
+        `[${owner}/${repo}] example pass: ${results.passes[0].package}: ${results.passes[0].testCase}`
+      );
+    }
+    if (results.failures.length > 0) {
+      context.log.info(
+        `[${owner}/${repo}] example failure: ${results.failures[0].package}: ${results.failures[0].testCase}`
+      );
+    }
 
     try {
       // Get the list of issues once, before opening/closing any of them.
