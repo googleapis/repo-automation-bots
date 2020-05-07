@@ -207,6 +207,7 @@
     "ignoredRepos": [
       "googleapis/discovery-artifact-manager",
       "googleapis/gax-ruby",
+      "googleapis/google-api-ruby-client",
       "googleapis/google-auth-library-ruby",
       "googleapis/google-cloud-ruby",
       "googleapis/ruby-style",
