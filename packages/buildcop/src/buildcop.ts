@@ -30,7 +30,7 @@ import {LoggerWithTarget} from 'probot/lib/wrap-logger';
 import {GitHubAPI} from 'probot/lib/github';
 import xmljs from 'xml-js';
 // eslint-disable-next-line node/no-extraneous-import
-import Octokit from '@octokit/rest';
+import {Octokit} from '@octokit/rest';
 
 const ISSUE_LABEL = 'buildcop: issue';
 const FLAKY_LABEL = 'buildcop: flaky';
@@ -139,48 +139,43 @@ export function buildcop(app: Application) {
       );
     }
 
-    try {
-      // Get the list of issues once, before opening/closing any of them.
-      const options = context.github.issues.listForRepo.endpoint.merge({
-        owner,
-        repo,
-        per_page: 100,
-        labels: ISSUE_LABEL,
-        state: 'all', // Include open and closed issues.
-      });
-      let issues = await context.github.paginate(options);
+    // Get the list of issues once, before opening/closing any of them.
+    const options = context.github.issues.listForRepo.endpoint.merge({
+      owner,
+      repo,
+      per_page: 100,
+      labels: ISSUE_LABEL,
+      state: 'all', // Include open and closed issues.
+    });
+    let issues = await context.github.paginate(options);
 
-      // If we deduplicate any issues, re-download the issues.
-      if (
-        await buildcop.deduplicateIssues(results, issues, context, owner, repo)
-      ) {
-        issues = await context.github.paginate(options);
-      }
-
-      // Open issues for failing tests (including flaky tests).
-      await buildcop.openIssues(
-        results.failures,
-        issues,
-        context,
-        owner,
-        repo,
-        commit,
-        buildURL
-      );
-      // Close issues for passing tests (unless they're flaky).
-      await buildcop.closeIssues(
-        results,
-        issues,
-        context,
-        owner,
-        repo,
-        commit,
-        buildURL
-      );
-    } catch (err) {
-      app.log.error(`${err.message} processing ${repo}: ${buildURL}`);
-      console.info(err);
+    // If we deduplicate any issues, re-download the issues.
+    if (
+      await buildcop.deduplicateIssues(results, issues, context, owner, repo)
+    ) {
+      issues = await context.github.paginate(options);
     }
+
+    // Open issues for failing tests (including flaky tests).
+    await buildcop.openIssues(
+      results.failures,
+      issues,
+      context,
+      owner,
+      repo,
+      commit,
+      buildURL
+    );
+    // Close issues for passing tests (unless they're flaky).
+    await buildcop.closeIssues(
+      results,
+      issues,
+      context,
+      owner,
+      repo,
+      commit,
+      buildURL
+    );
   });
 }
 
