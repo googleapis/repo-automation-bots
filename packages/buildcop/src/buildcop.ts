@@ -353,7 +353,14 @@ buildcop.openIssues = async (
         });
       }
     } else {
-      await buildcop.openNewIssue(context, owner, repo, commit, buildURL, failure);
+      await buildcop.openNewIssue(
+        context,
+        owner,
+        repo,
+        commit,
+        buildURL,
+        failure
+      );
     }
   }
 };
