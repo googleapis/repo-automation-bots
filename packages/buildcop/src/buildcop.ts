@@ -277,7 +277,7 @@ buildcop.openIssues = async (
 
         // If the issue is locked, we can't reopen it, so open a new one.
         if (existingIssue.locked) {
-          buildcop.openNewIssue(
+          await buildcop.openNewIssue(
             context,
             owner,
             repo,
@@ -302,7 +302,7 @@ buildcop.openIssues = async (
           const daysAgoDate = new Date();
           daysAgoDate.setDate(daysAgoDate.getDate() - daysAgo);
           if (closedAt < daysAgoDate.getTime()) {
-            buildcop.openNewIssue(
+            await buildcop.openNewIssue(
               context,
               owner,
               repo,
@@ -353,7 +353,7 @@ buildcop.openIssues = async (
         });
       }
     } else {
-      buildcop.openNewIssue(context, owner, repo, commit, buildURL, failure);
+      await buildcop.openNewIssue(context, owner, repo, commit, buildURL, failure);
     }
   }
 };
