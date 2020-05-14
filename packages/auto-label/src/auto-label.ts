@@ -18,6 +18,8 @@ import {Storage} from '@google-cloud/storage';
 import {Application} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot/lib/github';
+// eslint-disable-next-line node/no-extraneous-import
+import Webhooks from '@octokit/webhooks';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const colorsData = require('./colors.json');
@@ -109,6 +111,36 @@ handler.checkExistingIssueLabels = async function checkExistingIssueLabels(
   }
 };
 
+// maybeAddAPILabel adds the given label if there isn't already an api: label.
+handler.maybeAddAPILabel = async (
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+  issueNumber: number,
+  label: string
+): Promise<string | undefined> => {
+  const labelsOnIssue = await handler.checkExistingIssueLabels(
+    github,
+    owner,
+    repo,
+    issueNumber
+  );
+
+  if (labelsOnIssue) {
+    const found = labelsOnIssue.find((element: {name: string}) =>
+      element.name.startsWith('api:')
+    );
+    if (found) {
+      console.log(`${owner}/${repo}#${issueNumber} already has an api: label`);
+      return undefined;
+    }
+    await handler.addLabels(github, owner, repo, issueNumber, [label]);
+    return label;
+  }
+  await handler.addLabels(github, owner, repo, issueNumber, [label]);
+  return label;
+};
+
 handler.callStorage = async function callStorage(
   bucketName: string,
   srcFileName: string
@@ -146,6 +178,43 @@ handler.checkIfElementIsInArray = function checkIfElementIsInArray(
   } else {
     return null;
   }
+};
+
+// autoDetectLabel tries to detect the right api: label based on the issue
+// title.
+//
+// For example, an issue titled `spanner/transactions: TestSample failed` would
+// be labeled `api: spanner`.
+handler.autoDetectLabel = async (
+  github: GitHubAPI,
+  jsonArray: JSONData[],
+  issue: Webhooks.WebhookPayloadIssuesIssue,
+  owner: string,
+  repo: string
+): Promise<string | undefined> => {
+  if (!jsonArray) {
+    return undefined;
+  }
+  let firstPart = issue.title.split(':')[0]; // Before the colon, if there is one.
+  firstPart = firstPart.split('/')[0]; // Before the slash, if there is one.
+  firstPart = firstPart.toLowerCase(); // Convert to lower case.
+  firstPart = firstPart.replace(/\s/, ''); // Remove spaces.
+  const wantLabel = `api: ${firstPart}`;
+  // Assume jsonArray contains all api: labels. Avoids an extra API call to list
+  // the labels on a repo.
+  const matchingLabel = jsonArray.find(
+    element => element.github_label === wantLabel
+  );
+  if (matchingLabel) {
+    return await handler.maybeAddAPILabel(
+      github,
+      owner,
+      repo,
+      issue.number,
+      wantLabel
+    );
+  }
+  return undefined;
 };
 
 const BACKFILL_LABEL = 'auto-label:backfill';
@@ -222,8 +291,26 @@ function handler(app: Application) {
       repo
     );
 
-    if (objectInJsonArray === null || objectInJsonArray === undefined) {
-      console.log('There was no match for the repo name: ' + repo);
+    if (!objectInJsonArray?.github_label) {
+      console.log(
+        `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
+      );
+      const addedLabel = await handler.autoDetectLabel(
+        context.github,
+        jsonArray,
+        context.payload.issue,
+        owner,
+        repo
+      );
+      if (addedLabel) {
+        console.log(
+          `Auto-detected label ${addedLabel} for ${owner}/${repo}#${issueId}`
+        );
+      } else {
+        console.log(
+          `Auto-detect did not add a label for ${owner}/${repo}#${issueId}: '${context.payload.issue.title}'`
+        );
+      }
       return;
     }
 

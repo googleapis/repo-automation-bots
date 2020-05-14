@@ -30,7 +30,7 @@ import {LoggerWithTarget} from 'probot/lib/wrap-logger';
 import {GitHubAPI} from 'probot/lib/github';
 import xmljs from 'xml-js';
 // eslint-disable-next-line node/no-extraneous-import
-import Octokit from '@octokit/rest';
+import {Octokit} from '@octokit/rest';
 
 const ISSUE_LABEL = 'buildcop: issue';
 const FLAKY_LABEL = 'buildcop: flaky';
@@ -62,7 +62,7 @@ A human should fix and close this.
 
 ---`;
 
-const FLAKY_AGAIN_MESSAGE = `Oops! Looks like this issue is still flaky. :grimacing:
+const FLAKY_AGAIN_MESSAGE = `Oops! Looks like this issue is still flaky. It failed again. :grimacing:
 
 I reopened the issue, but a human will need to close it again.
 
@@ -72,6 +72,7 @@ interface TestCase {
   package?: string;
   testCase?: string;
   passed: boolean;
+  log?: string;
 }
 
 interface TestResults {
@@ -127,49 +128,54 @@ export function buildcop(app: Application) {
     context.log.info(
       `[${owner}/${repo}] Found ${results.passes.length} passed tests and ${results.failures.length} failed tests in this result of ${buildURL}`
     );
-
-    try {
-      // Get the list of issues once, before opening/closing any of them.
-      const options = context.github.issues.listForRepo.endpoint.merge({
-        owner,
-        repo,
-        per_page: 100,
-        labels: ISSUE_LABEL,
-        state: 'all', // Include open and closed issues.
-      });
-      let issues = await context.github.paginate(options);
-
-      // If we deduplicate any issues, re-download the issues.
-      if (
-        await buildcop.deduplicateIssues(results, issues, context, owner, repo)
-      ) {
-        issues = await context.github.paginate(options);
-      }
-
-      // Open issues for failing tests (including flaky tests).
-      await buildcop.openIssues(
-        results.failures,
-        issues,
-        context,
-        owner,
-        repo,
-        commit,
-        buildURL
+    if (results.passes.length > 0) {
+      context.log.info(
+        `[${owner}/${repo}] example pass: ${results.passes[0].package}: ${results.passes[0].testCase}`
       );
-      // Close issues for passing tests (unless they're flaky).
-      await buildcop.closeIssues(
-        results,
-        issues,
-        context,
-        owner,
-        repo,
-        commit,
-        buildURL
-      );
-    } catch (err) {
-      app.log.error(`${err.message} processing ${repo}: ${buildURL}`);
-      console.info(err);
     }
+    if (results.failures.length > 0) {
+      context.log.info(
+        `[${owner}/${repo}] example failure: ${results.failures[0].package}: ${results.failures[0].testCase}`
+      );
+    }
+
+    // Get the list of issues once, before opening/closing any of them.
+    const options = context.github.issues.listForRepo.endpoint.merge({
+      owner,
+      repo,
+      per_page: 100,
+      labels: ISSUE_LABEL,
+      state: 'all', // Include open and closed issues.
+    });
+    let issues = await context.github.paginate(options);
+
+    // If we deduplicate any issues, re-download the issues.
+    if (
+      await buildcop.deduplicateIssues(results, issues, context, owner, repo)
+    ) {
+      issues = await context.github.paginate(options);
+    }
+
+    // Open issues for failing tests (including flaky tests).
+    await buildcop.openIssues(
+      results.failures,
+      issues,
+      context,
+      owner,
+      repo,
+      commit,
+      buildURL
+    );
+    // Close issues for passing tests (unless they're flaky).
+    await buildcop.closeIssues(
+      results,
+      issues,
+      context,
+      owner,
+      repo,
+      commit,
+      buildURL
+    );
   });
 }
 
@@ -271,7 +277,7 @@ buildcop.openIssues = async (
 
         // If the issue is locked, we can't reopen it, so open a new one.
         if (existingIssue.locked) {
-          buildcop.openNewIssue(
+          await buildcop.openNewIssue(
             context,
             owner,
             repo,
@@ -296,7 +302,7 @@ buildcop.openIssues = async (
           const daysAgoDate = new Date();
           daysAgoDate.setDate(daysAgoDate.getDate() - daysAgo);
           if (closedAt < daysAgoDate.getTime()) {
-            buildcop.openNewIssue(
+            await buildcop.openNewIssue(
               context,
               owner,
               repo,
@@ -308,14 +314,13 @@ buildcop.openIssues = async (
             continue;
           }
         }
+        const reason = buildcop.formatBody(failure, commit, buildURL);
         await buildcop.markIssueFlaky(
           existingIssue,
           context,
           owner,
           repo,
-          commit,
-          buildURL,
-          failure
+          reason
         );
       } else {
         // Don't comment if it's asked to be quiet.
@@ -329,15 +334,14 @@ buildcop.openIssues = async (
         }
 
         // Don't comment if we've already commented with this build failure.
-        if (
-          await buildcop.containsBuildFailure(
-            existingIssue,
-            context,
-            owner,
-            repo,
-            commit
-          )
-        ) {
+        const [containsFailure] = await buildcop.containsBuildFailure(
+          existingIssue,
+          context,
+          owner,
+          repo,
+          commit
+        );
+        if (containsFailure) {
           continue;
         }
 
@@ -349,7 +353,14 @@ buildcop.openIssues = async (
         });
       }
     } else {
-      buildcop.openNewIssue(context, owner, repo, commit, buildURL, failure);
+      await buildcop.openNewIssue(
+        context,
+        owner,
+        repo,
+        commit,
+        buildURL,
+        failure
+      );
     }
   }
 };
@@ -427,18 +438,16 @@ buildcop.closeIssues = async (
 
     // If the issue has a failure in the same build, don't close it.
     // If it passed in one build and failed in another, it's flaky.
-    if (
-      await buildcop.containsBuildFailure(issue, context, owner, repo, commit)
-    ) {
-      await buildcop.markIssueFlaky(
-        issue,
-        context,
-        owner,
-        repo,
-        commit,
-        buildURL,
-        pass
-      );
+    const [containsFailure, failureURL] = await buildcop.containsBuildFailure(
+      issue,
+      context,
+      owner,
+      repo,
+      commit
+    );
+    if (containsFailure) {
+      const reason = `When run at the same commit (${commit}), this test passed in one build (${buildURL}) and failed in another build (${failureURL}).`;
+      await buildcop.markIssueFlaky(issue, context, owner, repo, reason);
       break;
     }
 
@@ -500,9 +509,7 @@ buildcop.markIssueFlaky = async (
   context: PubSubContext,
   owner: string,
   repo: string,
-  commit: string,
-  buildURL: string,
-  testCase: TestCase
+  reason: string
 ) => {
   context.log.info(
     `[${owner}/${repo}] marking issue #${existingIssue.number} as flaky`
@@ -527,14 +534,10 @@ buildcop.markIssueFlaky = async (
     labels,
     state: 'open',
   });
-  let body = FLAKY_MESSAGE;
-  // If the issue was flaky and we reopen it (again), say so.
-  if (buildcop.isFlaky(existingIssue)) {
-    body = FLAKY_AGAIN_MESSAGE;
-  }
-  if (testCase) {
-    body = body + '\n\n' + buildcop.formatBody(testCase, commit, buildURL);
-  }
+  let body = buildcop.isFlaky(existingIssue)
+    ? FLAKY_AGAIN_MESSAGE
+    : FLAKY_MESSAGE;
+  body += '\n\n' + reason;
   await context.github.issues.createComment({
     owner,
     repo,
@@ -548,9 +551,15 @@ buildcop.formatBody = (
   commit: string,
   buildURL: string
 ): string => {
-  return `commit: ${commit}
+  // Warning: this format is used to detect flaky tests. Don't make breaking
+  // changes.
+  let body = `commit: ${commit}
 buildURL: ${buildURL}
 status: ${testCase.passed ? 'passed' : 'failed'}`;
+  if (testCase.log) {
+    body += `\n<details><summary>Test output</summary><br><pre>${testCase.log}</pre></details>`;
+  }
+  return body;
 };
 
 buildcop.containsBuildFailure = async (
@@ -559,10 +568,11 @@ buildcop.containsBuildFailure = async (
   owner: string,
   repo: string,
   commit: string
-): Promise<boolean> => {
+): Promise<[boolean, string]> => {
   const text = issue.body;
   if (text.includes(`commit: ${commit}`) && text.includes('status: failed')) {
-    return true;
+    const buildURL = buildcop.extractBuildURL(text);
+    return [true, buildURL];
   }
   const options = context.github.issues.listComments.endpoint.merge({
     owner,
@@ -575,7 +585,20 @@ buildcop.containsBuildFailure = async (
       comment.body.includes(`commit: ${commit}`) &&
       comment.body.includes('status: failed')
   );
-  return comment !== undefined;
+  const containsFailure = comment !== undefined;
+  const buildURL = buildcop.extractBuildURL(comment?.body);
+  return [containsFailure, buildURL];
+};
+
+buildcop.extractBuildURL = (body: string): string => {
+  if (!body) {
+    return '';
+  }
+  const matches = body.match(/buildURL: (.*)/);
+  if (!matches) {
+    return '';
+  }
+  return matches[1];
 };
 
 buildcop.formatTestCase = (failure: TestCase): string => {
@@ -647,6 +670,10 @@ buildcop.findTestResults = (xml: string): TestResults => {
       if (testsuiteName === 'pytest') {
         pkg = testcase['_attributes'].classname;
       }
+      // Ignore skipped tests. They didn't pass and they didn't fail.
+      if (testcase['skipped'] !== undefined) {
+        continue;
+      }
       const failure = testcase['failure'];
       if (failure === undefined) {
         passes.push({
@@ -656,10 +683,16 @@ buildcop.findTestResults = (xml: string): TestResults => {
         });
         continue;
       }
+      let log = failure['_text'];
+      // Java puts its test logs in a CDATA element.
+      if (log === undefined) {
+        log = failure['_cdata'];
+      }
       failures.push({
         package: pkg,
         testCase: testcase['_attributes'].name,
         passed: false,
+        log,
       });
     }
   }
