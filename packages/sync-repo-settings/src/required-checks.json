@@ -38,6 +38,19 @@
         ]
       },
       {
+        "repo": "googleapis/java-conformance-tests",
+        "requiredStatusChecks": [
+          "dependencies",
+          "linkage-monitor",
+          "lint",
+          "clirr",
+          "units (7)",
+          "units (8)",
+          "units (11)",
+          "cla/google"
+        ]
+      },
+      {
         "repo": "GoogleCloudPlatform/getting-started-java",
         "requiredStatusChecks": [
           "Kokoro CI",
@@ -138,20 +151,6 @@
       },
       {
         "repo": "googleapis/java-spanner",
-        "requiredStatusChecks": [
-          "Kokoro - Test: Binary Compatibility",
-          "Kokoro - Test: Code Format",
-          "Kokoro - Test: Dependencies",
-          "Kokoro - Test: Integration",
-          "Kokoro - Test: Java 11",
-          "Kokoro - Test: Java 8",
-          "Kokoro - Test: Java 7",
-          "Kokoro - Test: Linkage Monitor",
-          "cla/google"
-        ]
-      },
-      {
-        "repo": "googleapis/java-firestore",
         "requiredStatusChecks": [
           "Kokoro - Test: Binary Compatibility",
           "Kokoro - Test: Code Format",
