@@ -22,7 +22,7 @@
     "compile": "tsc -p .",
     "start": "probot run ./build/src/release-please.js",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "fix": "gts fix",
     "lint": "gts check"
@@ -32,7 +32,7 @@
     "@octokit/webhooks": "^7.1.1",
     "gcf-utils": "^2.0.0-candidate.0",
     "probot": "^9.11.2",
-    "release-please": "^4.0.1"
+    "release-please": "^5.0.0"
   },
   "devDependencies": {
     "@types/bunyan": "^1.8.6",
