@@ -30,7 +30,7 @@ import {LoggerWithTarget} from 'probot/lib/wrap-logger';
 import {GitHubAPI} from 'probot/lib/github';
 import xmljs from 'xml-js';
 // eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
+import Octokit from '@octokit/rest';
 
 const ISSUE_LABEL = 'buildcop: issue';
 const FLAKY_LABEL = 'buildcop: flaky';
