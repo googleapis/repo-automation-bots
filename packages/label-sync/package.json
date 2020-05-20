@@ -26,7 +26,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-cloud/storage": "^4.3.0",
+    "@google-cloud/storage": "^5.0.0",
     "gaxios": "^3.0.0",
     "gcf-utils": "1.6.2"
   },
