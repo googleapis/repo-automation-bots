@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "gcf-utils": "1.6.1",
-    "moment": "2.25.3"
+    "moment": "2.26.0"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
