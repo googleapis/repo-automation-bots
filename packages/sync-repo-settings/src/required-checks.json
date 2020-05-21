@@ -150,6 +150,19 @@
         ]
       },
       {
+        "repo": "googleapis/java-pubsublite",
+        "requiredStatusChecks": [
+          "dependencies",
+          "linkage-monitor",
+          "lint",
+          "clirr",
+          "units (8)",
+          "units (11)",
+          "Kokoro - Test: Integration",
+          "cla/google"
+        ]
+      },
+      {
         "repo": "googleapis/java-spanner",
         "requiredStatusChecks": [
           "Kokoro - Test: Binary Compatibility",
