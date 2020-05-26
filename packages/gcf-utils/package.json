@@ -22,7 +22,7 @@
     "@google-cloud/secret-manager": "^3.0.0",
     "@google-cloud/storage": "^5.0.0",
     "@google-cloud/tasks": "^2.0.0",
-    "@octokit/plugin-enterprise-compatibility": "1.2.2",
+    "@octokit/plugin-enterprise-compatibility": "1.2.4",
     "express": "^4.17.1",
     "gaxios": "^3.0.0",
     "probot": "^9.11.2",
