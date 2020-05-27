@@ -36,15 +36,7 @@
         "id": 1515750275,
         "node_id": "MDU6TGFiZWwxNTE1NzUwMjc1",
         "url": "https://api.github.com/repos/testOwner/testRepo/labels/blunderbuss:%20assign",
-        "name": "blunderbuss: assign",
-        "color": "f9d0c4",
-        "default": false
-      },
-      {
-        "id": 1234,
-        "node_id": "abc",
-        "url": "https://api.github.com/repos/testOwner/testRepo/labels/api:%20bar",
-        "name": "api: bar",
+        "name": "api: baz",
         "color": "f9d0c4",
         "default": false
       }
@@ -65,7 +57,7 @@
     "id": 1515750275,
     "node_id": "MDU6TGFiZWwxNTE1NzUwMjc1",
     "url": "https://api.github.com/repos/testOwner/testRepo/labels/blunderbuss:%20assign",
-    "name": "blunderbuss: assign",
+    "name": "api: baz",
     "color": "f9d0c4",
     "default": false
   },

@@ -1,0 +1,11 @@
+assign_issues:
+- issues1
+- by_labels:
+  - labels: ['api: foo']
+    to:
+    - foo_user
+  - labels: ['api: bar', 'api: baz']
+    to:
+    - bar_baz_user
+assign_prs:
+- prs1

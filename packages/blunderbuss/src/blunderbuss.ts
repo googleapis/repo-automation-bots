@@ -19,8 +19,15 @@ import * as util from 'util';
 const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';
 
+class OnLabel {
+  by_labels: {
+    labels: string[];
+    to: string[];
+  }[] = [];
+}
+
 interface Configuration {
-  assign_issues?: string[];
+  assign_issues?: (string | OnLabel)[];
   assign_prs?: string[];
 }
 
@@ -28,6 +35,7 @@ interface Issue {
   owner: string;
   repo: string;
   number: number;
+  labels: {name: string}[];
 }
 
 // Randomly returns an item from an array, while ignoring the provided value.
@@ -57,7 +65,9 @@ export = (app: Application) => {
         CONFIGURATION_FILE_PATH,
         {}
       )) as Configuration;
-      const issue = context.issue() as Issue;
+      const issue = (context.payload.issue
+        ? context.payload.issue
+        : context.payload.pull_request) as Issue;
 
       if (
         (context.payload.issue && !config.assign_issues) ||
@@ -78,9 +88,25 @@ export = (app: Application) => {
         return;
       }
 
+      // PRs are a superset of issues, so we can handle them similarly.
+      const assignConfig = context.payload.issue
+        ? config.assign_issues!
+        : config.assign_prs!;
+      const issuePayload =
+        context.payload.issue || context.payload.pull_request;
+
       const isLabeled = context.payload.action === 'labeled';
       if (isLabeled) {
-        if (context.payload.label.name !== ASSIGN_LABEL) {
+        // Check if the new label has a possible assignee.
+        // Don't check all labels to avoid updating an old issue when someone
+        // changes a random label.
+        const assigneesForNewLabel = assigneesForLabels(assignConfig, [
+          context.payload.label.name,
+        ]);
+        if (
+          assigneesForNewLabel.length === 0 &&
+          context.payload.label.name !== ASSIGN_LABEL
+        ) {
           context.log.info(
             '[%s/%s] #%s ignored: incorrect label ("%s")',
             issue.owner,
@@ -90,18 +116,13 @@ export = (app: Application) => {
           );
           return;
         }
-        // Remove the label so the user knows the event was processed (even if not successfully).
-        await context.github.issues.removeLabel(
-          context.issue({name: ASSIGN_LABEL})
-        );
+        if (context.payload.label.name === ASSIGN_LABEL) {
+          // Remove the label so the user knows the event was processed (even if not successfully).
+          await context.github.issues.removeLabel(
+            context.issue({name: ASSIGN_LABEL})
+          );
+        }
       }
-
-      // PRs are a superset of issues, so we can handle them similarly.
-      const assignees = context.payload.issue
-        ? config.assign_issues!
-        : config.assign_prs!;
-      const issuePayload =
-        context.payload.issue || context.payload.pull_request;
 
       // Allow the label to force a new assignee, even if one is already assigned.
       if (!isLabeled && issuePayload.assignees.length !== 0) {
@@ -116,7 +137,17 @@ export = (app: Application) => {
         return;
       }
 
-      const assignee = randomFrom(assignees, issuePayload.user.login);
+      const labels = issue.labels?.map(l => l.name);
+      const possibleAssignees = assigneesForLabels(assignConfig, labels);
+      // If we didn't find a label based assignee, look for a general one.
+      if (possibleAssignees.length === 0) {
+        for (const a of assignConfig) {
+          if (typeof a === 'string') {
+            possibleAssignees.push(a);
+          }
+        }
+      }
+      const assignee = randomFrom(possibleAssignees, issuePayload.user.login);
       if (!assignee) {
         context.log.info(
           util.format(
@@ -144,3 +175,24 @@ export = (app: Application) => {
     }
   );
 };
+
+function assigneesForLabels(
+  config: (string | OnLabel)[],
+  labels: string[]
+): string[] {
+  let assignees: string[] = [];
+  if (labels) {
+    for (const a of config) {
+      if (typeof a !== 'string') {
+        for (const h of a.by_labels) {
+          for (const l of labels) {
+            if (h.labels.includes(l)) {
+              assignees = assignees.concat(h.to);
+            }
+          }
+        }
+      }
+    }
+  }
+  return assignees;
+}
