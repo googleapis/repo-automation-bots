@@ -16,7 +16,6 @@
     ],
     "ignoredRepos": [
       "googleapis/api-common-java",
-      "googleapis/gax-java",
       "googleapis/gapic-generator",
       "GoogleCloudPlatform/java-docs-samples",
       "GoogleCloudPlatform/getting-started-java"
@@ -34,6 +33,16 @@
           "Kokoro - Test: Java 7",
           "Kokoro - Test: Java 8",
           "Kokoro - Test: Linkage Monitor",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "googleapis/gax-java",
+        "requiredStatusChecks": [
+          "linkage-monitor",
+          "units (7)",
+          "units (8)",
+          "units (11)",
           "cla/google"
         ]
       },
