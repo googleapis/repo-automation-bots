@@ -12,7 +12,7 @@ Blunderbuss randomly assigns from a set of users specified in the config file lo
 assign_issues:
   - issue_assignee1
   - issue_assignee2
-  - by_label:
+  - by:
     - labels: ['api: one', 'api: two']
       to: ['assignee_one', 'assignee_two']
     - labels: ['api: three']
@@ -22,10 +22,10 @@ assign_prs:
   - pr_assignee2
 ```
 
-The `by_labels` option allows you to assign issues based on the issue's labels.
+The `by` option allows you to assign issues based on the issue's labels.
 If any one of the `labels` matches, the issue will be assigned to a random user
-listed in the `to` field. `by_labels` has a higher precedence than the other
-users under `assign_issues`.
+listed in the `to` field. `by` has a higher precedence than the other users
+under `assign_issues`.
 
 Blunderbuss can also be manually triggered by attached a "blunderbuss: assign" label to either an
 issue or PR.

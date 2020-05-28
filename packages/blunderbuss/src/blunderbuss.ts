@@ -19,15 +19,15 @@ import * as util from 'util';
 const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';
 
-class OnLabel {
-  by_labels: {
+class ByConfig {
+  by: {
     labels: string[];
     to: string[];
   }[] = [];
 }
 
 interface Configuration {
-  assign_issues?: (string | OnLabel)[];
+  assign_issues?: (string | ByConfig)[];
   assign_prs?: string[];
 }
 
@@ -177,17 +177,17 @@ export = (app: Application) => {
 };
 
 function assigneesForLabels(
-  config: (string | OnLabel)[],
+  config: (string | ByConfig)[],
   labels: string[]
 ): string[] {
   let assignees: string[] = [];
   if (labels) {
-    for (const a of config) {
-      if (typeof a !== 'string') {
-        for (const h of a.by_labels) {
+    for (const c of config) {
+      if (typeof c !== 'string') {
+        for (const b of c.by) {
           for (const l of labels) {
-            if (h.labels.includes(l)) {
-              assignees = assignees.concat(h.to);
+            if (b.labels.includes(l)) {
+              assignees = assignees.concat(b.to);
             }
           }
         }

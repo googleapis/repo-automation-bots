@@ -1,6 +1,6 @@
 assign_issues:
 - issues1
-- by_labels:
+- by:
   - labels: ['api: foo']
     to:
     - foo_user
