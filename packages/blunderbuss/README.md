@@ -27,13 +27,13 @@ If any one of the `labels` matches, the issue will be assigned to a random user
 listed in the `to` field. `by` has a higher precedence than the other users
 under `assign_issues`.
 
-Blunderbuss can also be manually triggered by attached a "blunderbuss: assign" label to either an
+Blunderbuss can also be manually triggered by attaching a "blunderbuss: assign" label to either an
 issue or PR.
 
 Blunderbuss will not assign issues or PRs to the user who opened them, and will ignore an issue
 if no valid assignees are found.
 
-For opened/reopened issues or prs, Blunderbuss will not assign a user if the issue already has an
+For opened/reopened issues or PRs, Blunderbuss will not assign a user if the issue already has an
 assignee.
 
 ## Setup
