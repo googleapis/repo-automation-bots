@@ -97,12 +97,30 @@ export = (app: Application) => {
 
       const isLabeled = context.payload.action === 'labeled';
       if (isLabeled) {
+        // Only assign an issue that already has an assignee if labeled with
+        // ASSIGN_LABEL.
+        if (
+          context.payload.label.name !== ASSIGN_LABEL &&
+          issuePayload.assignees?.length
+        ) {
+          console.log('bad label!', context.payload.label.name);
+          context.log.info(
+            '[%s/%s] #%s ignored: incorrect label ("%s") because it is already assigned',
+            issue.owner,
+            issue.repo,
+            issue.number,
+            context.payload.label.name
+          );
+          return;
+        }
         // Check if the new label has a possible assignee.
         // Don't check all labels to avoid updating an old issue when someone
         // changes a random label.
-        const assigneesForNewLabel = assigneesForLabels(assignConfig, [
-          context.payload.label.name,
-        ]);
+        const assigneesForNewLabel = findAssignees(
+          assignConfig,
+          [context.payload.label.name],
+          true
+        );
         if (
           assigneesForNewLabel.length === 0 &&
           context.payload.label.name !== ASSIGN_LABEL
@@ -138,15 +156,7 @@ export = (app: Application) => {
       }
 
       const labels = issue.labels?.map(l => l.name);
-      const possibleAssignees = assigneesForLabels(assignConfig, labels);
-      // If we didn't find a label based assignee, look for a general one.
-      if (possibleAssignees.length === 0) {
-        for (const a of assignConfig) {
-          if (typeof a === 'string') {
-            possibleAssignees.push(a);
-          }
-        }
-      }
+      const possibleAssignees = findAssignees(assignConfig, labels, false);
       const assignee = randomFrom(possibleAssignees, issuePayload.user.login);
       if (!assignee) {
         context.log.info(
@@ -176,23 +186,30 @@ export = (app: Application) => {
   );
 };
 
-function assigneesForLabels(
+function findAssignees(
   config: (string | ByConfig)[],
-  labels: string[]
+  labels: string[],
+  onlyPreferred: boolean
 ): string[] {
-  let assignees: string[] = [];
+  let preferredAssignees: string[] = [];
+  const fallbackAssignees: string[] = [];
   if (labels) {
     for (const c of config) {
-      if (typeof c !== 'string') {
+      if (typeof c === 'string') {
+        fallbackAssignees.push(c);
+      } else {
         for (const b of c.by) {
           for (const l of labels) {
             if (b.labels.includes(l)) {
-              assignees = assignees.concat(b.to);
+              preferredAssignees = preferredAssignees.concat(b.to);
             }
           }
         }
       }
     }
   }
-  return assignees;
+  if (preferredAssignees.length || onlyPreferred) {
+    return preferredAssignees;
+  }
+  return fallbackAssignees;
 }

@@ -224,11 +224,7 @@ describe('Blunderbuss', () => {
     });
 
     it('assigns labeled issue by label', async () => {
-      const payload = require(resolve(
-        fixturesPath,
-        'events',
-        'issue_api_label'
-      ));
+      const payload = require(resolve(fixturesPath, 'events', 'issue_labeled'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'on_label.yml')
       );
@@ -243,6 +239,24 @@ describe('Blunderbuss', () => {
         .reply(200);
 
       await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
+      requests.done();
+    });
+
+    it('ignores labeled issues when with assignee(s)', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_labeled_with_assignees'
+      ));
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'on_label.yml')
+      );
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
+        .reply(200, {content: config.toString('base64')});
+
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       requests.done();
     });
   });

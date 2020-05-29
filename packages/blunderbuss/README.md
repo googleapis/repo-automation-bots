@@ -22,13 +22,23 @@ assign_prs:
   - pr_assignee2
 ```
 
-The `by` option allows you to assign issues based on the issue's labels.
-If any one of the `labels` matches, the issue will be assigned to a random user
-listed in the `to` field. `by` has a higher precedence than the other users
-under `assign_issues`.
-
 Blunderbuss can also be manually triggered by attaching a "blunderbuss: assign" label to either an
 issue or PR.
+
+The `by` option allows you to assign issues based on the issue's labels.
+`by` has a higher precedence than the other users under `assign_issues`, if
+there are any.
+
+* If you add the "blunderbuss: assign" label, the issue will be assigned based
+  on any label on the issue. If no label matches, Blunderbuss will fall back to
+  the other entries in `assign_issues`, if any.
+* If you add a different label to an issue, Blunderbuss will only assign the
+  issue if the new label is configured in `blunderbuss.yml`. If the new label is
+  configured, the issue will be assigned based on any label on the issue. This
+  avoids Blunderbuss assigning old issues when they have an unrelated label
+  added.
+  * If an issue is already assigned, Blunderbuss will not change the assignee if
+    you add a configured label.
 
 Blunderbuss will not assign issues or PRs to the user who opened them, and will ignore an issue
 if no valid assignees are found.
