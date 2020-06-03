@@ -20,14 +20,13 @@ const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';
 
 class ByConfig {
-  by: {
-    labels: string[];
-    to: string[];
-  }[] = [];
+  labels: string[] = [];
+  to: string[] = [];
 }
 
 interface Configuration {
-  assign_issues?: (string | ByConfig)[];
+  assign_issues?: string[];
+  assign_issues_by?: ByConfig[];
   assign_prs?: string[];
 }
 
@@ -92,6 +91,9 @@ export = (app: Application) => {
       const assignConfig = context.payload.issue
         ? config.assign_issues!
         : config.assign_prs!;
+      const byConfig = context.payload.issue
+        ? config.assign_issues_by
+        : undefined;
       const issuePayload =
         context.payload.issue || context.payload.pull_request;
 
@@ -103,7 +105,6 @@ export = (app: Application) => {
           context.payload.label.name !== ASSIGN_LABEL &&
           issuePayload.assignees?.length
         ) {
-          console.log('bad label!', context.payload.label.name);
           context.log.info(
             '[%s/%s] #%s ignored: incorrect label ("%s") because it is already assigned',
             issue.owner,
@@ -116,11 +117,9 @@ export = (app: Application) => {
         // Check if the new label has a possible assignee.
         // Don't check all labels to avoid updating an old issue when someone
         // changes a random label.
-        const assigneesForNewLabel = findAssignees(
-          assignConfig,
-          [context.payload.label.name],
-          true
-        );
+        const assigneesForNewLabel = findAssignees(byConfig, [
+          context.payload.label.name,
+        ]);
         if (
           assigneesForNewLabel.length === 0 &&
           context.payload.label.name !== ASSIGN_LABEL
@@ -156,7 +155,10 @@ export = (app: Application) => {
       }
 
       const labels = issue.labels?.map(l => l.name);
-      const possibleAssignees = findAssignees(assignConfig, labels, false);
+      const preferredAssignees = findAssignees(byConfig, labels);
+      const possibleAssignees = preferredAssignees.length
+        ? preferredAssignees
+        : assignConfig;
       const assignee = randomFrom(possibleAssignees, issuePayload.user.login);
       if (!assignee) {
         context.log.info(
@@ -187,29 +189,18 @@ export = (app: Application) => {
 };
 
 function findAssignees(
-  config: (string | ByConfig)[],
-  labels: string[],
-  onlyPreferred: boolean
+  config: ByConfig[] | undefined,
+  labels: string[]
 ): string[] {
-  let preferredAssignees: string[] = [];
-  const fallbackAssignees: string[] = [];
-  if (labels) {
+  let assignees: string[] = [];
+  if (labels && config) {
     for (const c of config) {
-      if (typeof c === 'string') {
-        fallbackAssignees.push(c);
-      } else {
-        for (const b of c.by) {
-          for (const l of labels) {
-            if (b.labels.includes(l)) {
-              preferredAssignees = preferredAssignees.concat(b.to);
-            }
-          }
+      for (const l of labels) {
+        if (c.labels.includes(l)) {
+          assignees = assignees.concat(c.to);
         }
       }
     }
   }
-  if (preferredAssignees.length || onlyPreferred) {
-    return preferredAssignees;
-  }
-  return fallbackAssignees;
+  return assignees;
 }

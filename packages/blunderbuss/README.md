@@ -6,17 +6,23 @@ randomly to a specific list of users
 ## Usage
 
 Blunderbuss randomly assigns from a set of users specified in the config file located at 
-`.config/blunderbuss.yml` for each repo. Both fields are currently optional. 
+`.config/blunderbuss.yml` for each repo. All fields are currently optional. 
 
 ```yaml
 assign_issues:
   - issue_assignee1
   - issue_assignee2
-  - by:
-    - labels: ['api: one', 'api: two']
-      to: ['assignee_one', 'assignee_two']
-    - labels: ['api: three']
-      to: ['assignee_three']
+assign_issues_by:
+  - labels:
+    - 'api: one'
+    - 'api: two'
+    to:
+    - 'assignee_one'
+    - 'assignee_two'
+  - labels:
+    - 'api: three'
+    to:
+    - 'assignee_three'
 assign_prs:
   - pr_assignee1
   - pr_assignee2
@@ -25,17 +31,17 @@ assign_prs:
 Blunderbuss can also be manually triggered by attaching a "blunderbuss: assign" label to either an
 issue or PR.
 
-The `by` option allows you to assign issues based on the issue's labels.
-`by` has a higher precedence than the other users under `assign_issues`, if
-there are any.
+The `assign_issues_by` option allows you to assign issues based on the issue's
+labels.
+`assign_issues_by` has a higher precedence than `assign_issues`.
 
 * If you add the "blunderbuss: assign" label, the issue will be assigned based
   on any label on the issue. If no label matches, Blunderbuss will fall back to
   the other entries in `assign_issues`, if any.
 * If you add a different label to an issue, Blunderbuss will only assign the
-  issue if the new label is configured in `blunderbuss.yml`. If the new label is
-  configured, the issue will be assigned based on any label on the issue. This
-  avoids Blunderbuss assigning old issues when they have an unrelated label
+  issue if the new label is configured in `assign_issues_by`. If the new label
+  is configured, the issue will be assigned based on any label on the issue.
+  This avoids Blunderbuss assigning old issues when they have an unrelated label
   added.
   * If an issue is already assigned, Blunderbuss will not change the assignee if
     you add a configured label.

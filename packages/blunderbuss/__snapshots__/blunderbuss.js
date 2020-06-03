@@ -39,3 +39,9 @@ exports['Blunderbuss issue tests assigns labeled issue by label 1'] = {
     'bar_baz_user'
   ]
 }
+
+exports['Blunderbuss pr tests assigns user to a PR when opened with no assignee, ignoring assign_issues_by 1'] = {
+  'assignees': [
+    'prs1'
+  ]
+}

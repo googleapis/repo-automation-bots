@@ -289,6 +289,34 @@ describe('Blunderbuss', () => {
       requests.done();
     });
 
+    it('assigns user to a PR when opened with no assignee, ignoring assign_issues_by', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_no_assignees'
+      ));
+      payload.pull_request.labels = [{name: 'api: foo'}];
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'on_label.yml')
+      );
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
+        .reply(200, {content: config.toString('base64')})
+        .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123',
+      });
+      requests.done();
+    });
+
     it('ignores PR when PR opened with assignee(s)', async () => {
       const payload = require(resolve(
         fixturesPath,
