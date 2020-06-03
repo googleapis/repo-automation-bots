@@ -99,7 +99,7 @@ at the specified schedule.
 
 ## Overall Architecture
 
-![High Level Architecture](./architecture.svg)
+![High Level Architecture](./architecture.png)
 
 
 [auto-label]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/auto-label
