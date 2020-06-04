@@ -69,15 +69,17 @@ export = (app: Application) => {
         : context.payload.pull_request) as Issue;
 
       if (
-        (context.payload.issue && !config.assign_issues) ||
+        (context.payload.issue &&
+          !config.assign_issues &&
+          !config.assign_issues_by) ||
         (context.payload.pull_request && !config.assign_prs)
       ) {
         const paramName = context.payload.issue
-          ? 'assign_issues'
-          : 'assign_prs';
+          ? '"assign_issues" and "assign_issues_by"'
+          : '"assign_prs"';
         context.log.info(
           util.format(
-            '[%s/%s] #%s ignored: "%s" not in config',
+            '[%s/%s] #%s ignored: %s not in config',
             issue.owner,
             issue.repo,
             issue.number,
