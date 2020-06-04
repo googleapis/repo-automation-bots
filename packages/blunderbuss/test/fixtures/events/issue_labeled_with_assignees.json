@@ -36,15 +36,7 @@
         "id": 1515750275,
         "node_id": "MDU6TGFiZWwxNTE1NzUwMjc1",
         "url": "https://api.github.com/repos/testOwner/testRepo/labels/blunderbuss:%20assign",
-        "name": "blunderbuss: assign",
-        "color": "f9d0c4",
-        "default": false
-      },
-      {
-        "id": 1234,
-        "node_id": "abc",
-        "url": "https://api.github.com/repos/testOwner/testRepo/labels/api:%20bar",
-        "name": "api: bar",
+        "name": "api: baz",
         "color": "f9d0c4",
         "default": false
       }
@@ -52,7 +44,28 @@
     "state": "open",
     "locked": false,
     "assignee": null,
-    "assignees": [],
+    "assignees": [
+      {
+        "login": "testuser1",
+        "id": 10535633,
+        "node_id": "MDQ6VXNlcjEwNTM1NjMz",
+        "avatar_url": "https://avatars2.githubusercontent.com/u/10535633?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/testuser1",
+        "html_url": "https://github.com/testuser1",
+        "followers_url": "https://api.github.com/users/testuser1/followers",
+        "following_url": "https://api.github.com/users/testuser1/following{/other_user}",
+        "gists_url": "https://api.github.com/users/testuser1/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/testuser1/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/testuser1/subscriptions",
+        "organizations_url": "https://api.github.com/users/testuser1/orgs",
+        "repos_url": "https://api.github.com/users/testuser1/repos",
+        "events_url": "https://api.github.com/users/testuser1/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/testuser1/received_events",
+        "type": "User",
+        "site_admin": false
+      }
+    ],
     "milestone": null,
     "comments": 0,
     "created_at": "2019-08-21T18:09:49Z",
@@ -65,7 +78,7 @@
     "id": 1515750275,
     "node_id": "MDU6TGFiZWwxNTE1NzUwMjc1",
     "url": "https://api.github.com/repos/testOwner/testRepo/labels/blunderbuss:%20assign",
-    "name": "blunderbuss: assign",
+    "name": "api: baz",
     "color": "f9d0c4",
     "default": false
   },
