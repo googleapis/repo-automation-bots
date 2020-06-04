@@ -6,26 +6,26 @@ randomly to a specific list of users
 ## Usage
 
 Blunderbuss randomly assigns from a set of users specified in the config file located at 
-`.config/blunderbuss.yml` for each repo. All fields are currently optional. 
+`.github/blunderbuss.yml` for each repo. All fields are currently optional.
 
 ```yaml
 assign_issues:
-  - issue_assignee1
-  - issue_assignee2
+  - issue_assignee_1
+  - issue_assignee_2
 assign_issues_by:
   - labels:
     - 'api: one'
     - 'api: two'
     to:
-    - 'assignee_one'
-    - 'assignee_two'
+    - label_assignee_1
+    - label_assignee_2
   - labels:
     - 'api: three'
     to:
-    - 'assignee_three'
+    - label_assignee_3
 assign_prs:
-  - pr_assignee1
-  - pr_assignee2
+  - pr_assignee_1
+  - pr_assignee_2
 ```
 
 Blunderbuss can also be manually triggered by attaching a "blunderbuss: assign" label to either an
