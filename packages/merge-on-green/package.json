@@ -28,7 +28,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-cloud/datastore": "^5.0.4",
+    "@google-cloud/datastore": "^6.0.0",
     "gcf-utils": "1.6.2"
   },
   "devDependencies": {
