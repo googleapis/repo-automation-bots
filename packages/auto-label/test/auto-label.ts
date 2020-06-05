@@ -23,7 +23,7 @@ import {resolve} from 'path';
 import fs from 'fs';
 import snapshot from 'snap-shot-it';
 
-import handler from '../src/auto-label';
+import handler, {autoDetectLabel} from '../src/auto-label';
 
 nock.disableNetConnect();
 
@@ -289,5 +289,24 @@ describe('auto-label', () => {
     handler.callStorage = async () => downloadedFile;
     await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
     ghRequests.done();
+  });
+
+  describe('autoDetectLabel', () => {
+    it('finds the right label', () => {
+      const data = JSON.parse(downloadedFile).repos;
+      const tests = [
+        {title: 'spanner: ignored', want: 'api: spanner'},
+        {title: 'spanner/ignored', want: 'api: spanner'},
+        {title: 'spanner.ignored', want: 'api: spanner'},
+        {title: 'SPANNER.IGNORED', want: 'api: spanner'},
+        {title: 'SPAN ner: ignored', want: 'api: spanner'},
+        {title: 'iot: ignored', want: 'api: cloudiot'},
+        {title: 'unknown: ignored', want: undefined},
+        {title: 'spanner with no separator', want: undefined},
+      ];
+      for (const test of tests) {
+        expect(autoDetectLabel(data, test.title)).to.equal(test.want);
+      }
+    });
   });
 });

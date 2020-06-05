@@ -185,36 +185,30 @@ handler.checkIfElementIsInArray = function checkIfElementIsInArray(
 //
 // For example, an issue titled `spanner/transactions: TestSample failed` would
 // be labeled `api: spanner`.
-handler.autoDetectLabel = async (
-  github: GitHubAPI,
+handler.autoDetectLabel = (
   jsonArray: JSONData[],
-  issue: Webhooks.WebhookPayloadIssuesIssue,
-  owner: string,
-  repo: string
-): Promise<string | undefined> => {
+  title: string
+): string | undefined => {
   if (!jsonArray) {
     return undefined;
   }
-  let firstPart = issue.title.split(':')[0]; // Before the colon, if there is one.
+  let firstPart = title.split(':')[0]; // Before the colon, if there is one.
   firstPart = firstPart.split('/')[0]; // Before the slash, if there is one.
+  firstPart = firstPart.split('.')[0]; // Before the period, if there is one.
   firstPart = firstPart.toLowerCase(); // Convert to lower case.
   firstPart = firstPart.replace(/\s/, ''); // Remove spaces.
+
   const wantLabel = `api: ${firstPart}`;
+  // Some APIs have "cloud" before the name (e.g. cloudkms and cloudiot).
+  // If needed, we could replace common firstParts to known API names.
+  const wantLabelCloud = `api: cloud${firstPart}`;
   // Assume jsonArray contains all api: labels. Avoids an extra API call to list
   // the labels on a repo.
-  const matchingLabel = jsonArray.find(
-    element => element.github_label === wantLabel
-  );
-  if (matchingLabel) {
-    return await handler.maybeAddAPILabel(
-      github,
-      owner,
-      repo,
-      issue.number,
-      wantLabel
-    );
-  }
-  return undefined;
+  return jsonArray.find(
+    element =>
+      element.github_label === wantLabel ||
+      element.github_label === wantLabelCloud
+  )?.github_label;
 };
 
 const BACKFILL_LABEL = 'auto-label:backfill';
@@ -295,16 +289,20 @@ function handler(app: Application) {
       console.log(
         `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
       );
-      const addedLabel = await handler.autoDetectLabel(
-        context.github,
+      const autoDetectedLabel = handler.autoDetectLabel(
         jsonArray,
-        context.payload.issue,
-        owner,
-        repo
+        context.payload.issue.title
       );
-      if (addedLabel) {
+      if (autoDetectedLabel) {
         console.log(
-          `Auto-detected label ${addedLabel} for ${owner}/${repo}#${issueId}`
+          `Auto-detected label ${autoDetectedLabel} for ${owner}/${repo}#${issueId}`
+        );
+        await handler.maybeAddAPILabel(
+          context.github,
+          owner,
+          repo,
+          context.payload.issue.number,
+          autoDetectedLabel
         );
       } else {
         console.log(
