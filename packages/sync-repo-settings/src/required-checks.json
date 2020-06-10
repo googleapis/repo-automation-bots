@@ -25,14 +25,14 @@
         "repo": "googleapis/java-cloud-bom",
         "requiredStatusChecks": [
           "Kokoro - Test: BOM Upper Bounds",
-          "Kokoro - Test: Binary Compatibility",
-          "Kokoro - Test: Code Format",
-          "Kokoro - Test: Dependencies",
+          "dependencies",
+          "linkage-monitor",
+          "lint",
+          "clirr",
+          "units (7)",
+          "units (8)",
+          "units (11)",
           "Kokoro - Test: Integration",
-          "Kokoro - Test: Java 11",
-          "Kokoro - Test: Java 7",
-          "Kokoro - Test: Java 8",
-          "Kokoro - Test: Linkage Monitor",
           "cla/google"
         ]
       },
