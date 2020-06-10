@@ -71,6 +71,7 @@
         "requiredStatusChecks": [
           "Kokoro CI - Java 11",
           "Kokoro CI - Java 8",
+          "Kokoro CI - Lint",
           "cla/google"
         ]
       },
