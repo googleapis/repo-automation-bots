@@ -204,3 +204,13 @@ exports['buildcop app xunitXML reopens issue with correct labels for failing tes
 exports['buildcop app xunitXML reopens issue with correct labels for failing test 2'] = {
   "body": "Oops! Looks like this issue is still flaky. It failed again. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed\n<details><summary>Test output</summary><br><pre>\nsnippet_test.go:242: got output \"\"; want it to contain \"4 Venue 4\" snippet_test.go:243: got output \"\"; want it to contain \"19 Venue 19\" snippet_test.go:244: got output \"\"; want it to contain \"42 Venue 42\"\n</pre></details>"
 }
+
+exports['buildcop app xunitXML opens an issue [Node.js] 1'] = {
+  "title": "Spanner: should delete and then insert rows in the example tables failed",
+  "body": "This test failed!\n\nTo configure my behavior, see [the Build Cop Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop).\n\nIf I'm commenting on this issue too often, add the `buildcop: quiet` label and\nI will stop commenting.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed\n<details><summary>Test output</summary><br><pre>expected 'Deleted individual rows in Albums.\\n5 records deleted from Singers.\\n2 records deleted from Singers.\\n0 records deleted from Singers.\\n' to include '3 records deleted from Singers.'\n    AssertionError: expected 'Deleted individual rows in Albums.\\n5 records deleted from Singers.\\n2 records deleted from Singers.\\n0 records deleted from Singers.\\n' to include '3 records deleted from Singers.'\n        at Context.it (system-test/spanner.test.js:198:12)</pre></details>",
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue"
+  ]
+}

@@ -414,6 +414,19 @@ describe('buildcop', () => {
         scopes.forEach(s => s.done());
       });
 
+      it('opens an issue [Node.js]', async () => {
+        const payload = buildPayload('node_one_failed.xml', 'nodejs-spanner');
+
+        const scopes = [
+          nockIssues('nodejs-spanner'),
+          nockNewIssue('nodejs-spanner'),
+        ];
+
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+
+        scopes.forEach(s => s.done());
+      });
+
       it('comments on existing issue', async () => {
         const payload = buildPayload('one_failed.xml', 'golang-samples');
 
