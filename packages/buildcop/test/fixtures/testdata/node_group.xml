@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Mocha Tests" tests="64" failures="0" errors="24" skipped="0" timestamp="Thu, 11 Jun 2020 22:41:07 GMT" time="885.891">
+    <testcase classname="Spanner" name="should create an example database" time="5.998"/>
+    <testcase classname="Spanner" name="should insert rows into an example table" time="3.121"/>
+    <testcase classname="Spanner" name="should delete and then insert rows in the example tables" time="3.578"><failure>expected &#x27;Deleted individual rows in Albums.\n5 records deleted from Singers.\n2 records deleted from Singers.\n0 records deleted from Singers.\n&#x27; to include &#x27;3 records deleted from Singers.&#x27;
+    AssertionError: expected &#x27;Deleted individual rows in Albums.\n5 records deleted from Singers.\n2 records deleted from Singers.\n0 records deleted from Singers.\n&#x27; to include &#x27;3 records deleted from Singers.&#x27;
+        at Context.it (system-test/spanner.test.js:198:12)</failure></testcase>
+    <testcase classname="Spanner" name="should query an example table and return matching rows" time="3.225"><failure>expected &#x27;&#x27; to match /SingerId: 1, AlbumId: 1, AlbumTitle: Total Junk/
+    AssertionError: expected &#x27;&#x27; to match /SingerId: 1, AlbumId: 1, AlbumTitle: Total Junk/
+        at Context.it (system-test/spanner.test.js:210:12)</failure></testcase>
+    <testcase classname="Spanner" name="should read an example table" time="3.237"><failure>expected &#x27;&#x27; to match /SingerId: 1, AlbumId: 1, AlbumTitle: Total Junk/
+    AssertionError: expected &#x27;&#x27; to match /SingerId: 1, AlbumId: 1, AlbumTitle: Total Junk/
+        at Context.it (system-test/spanner.test.js:218:12)</failure></testcase>
+    <testcase classname="Spanner" name="should add a column to a table" time="4.985"/>
+    <testcase classname="Spanner" name="should update existing rows in an example table" time="3.385"><failure>expected &#x27;&#x27; to match /Updated data\./
+    AssertionError: expected &#x27;&#x27; to match /Updated data\./
+        at Context.it (system-test/spanner.test.js:235:12)</failure></testcase>
+    <testcase classname="Spanner" name="should read stale data from an example table" time="19.328"><failure>expected &#x27;&#x27; to match /SingerId: 1, AlbumId: 1, AlbumTitle: Total Junk, MarketingBudget: 100000/
+    AssertionError: expected &#x27;&#x27; to match /SingerId: 1, AlbumId: 1, AlbumTitle: Total Junk, MarketingBudget: 100000/
+        at Context.it (system-test/spanner.test.js:246:12)</failure></testcase>
+    <testcase classname="Spanner" name="should query an example table with an additional column and return matching rows" time="3.44"><failure>expected &#x27;&#x27; to match /SingerId: 1, AlbumId: 1, MarketingBudget: 100000/
+    AssertionError: expected &#x27;&#x27; to match /SingerId: 1, AlbumId: 1, MarketingBudget: 100000/
+        at Context.it (system-test/spanner.test.js:261:12)</failure></testcase>
+    <testcase classname="Spanner" name="should create an index in an example table" time="18.709"/>
+    <testcase classname="Spanner" name="should create a storing index in an example table" time="18.87"/>
+    <testcase classname="Spanner" name="should query an example table with an index and return matching rows" time="3.286"><failure>expected &#x27;&#x27; to match /AlbumId: 2, AlbumTitle: Go, Go, Go, MarketingBudget:/
+    AssertionError: expected &#x27;&#x27; to match /AlbumId: 2, AlbumTitle: Go, Go, Go, MarketingBudget:/
+        at Context.it (system-test/spanner.test.js:288:12)</failure></testcase>
+    <testcase classname="Spanner" name="should respect query boundaries when querying an example table with an index" time="3.385"><failure>expected &#x27;&#x27; to match /AlbumId: 1, AlbumTitle: Total Junk, MarketingBudget:/
+    AssertionError: expected &#x27;&#x27; to match /AlbumId: 1, AlbumTitle: Total Junk, MarketingBudget:/
+        at Context.it (system-test/spanner.test.js:302:12)</failure></testcase>
+    <testcase classname="Spanner" name="should read an example table with an index" time="3.434"><failure>expected &#x27;&#x27; to match /AlbumId: 1, AlbumTitle: Total Junk/
+    AssertionError: expected &#x27;&#x27; to match /AlbumId: 1, AlbumTitle: Total Junk/
+        at Context.it (system-test/spanner.test.js:317:12)</failure></testcase>
+    <testcase classname="Spanner" name="should read an example table with a storing index" time="3.447"><failure>expected &#x27;&#x27; to match /AlbumId: 1, AlbumTitle: Total Junk/
+    AssertionError: expected &#x27;&#x27; to match /AlbumId: 1, AlbumTitle: Total Junk/
+        at Context.it (system-test/spanner.test.js:325:12)</failure></testcase>
+    <testcase classname="Spanner" name="should use query options from a database reference" time="3.229"><failure>expected &#x27;&#x27; to match /AlbumId: 2, AlbumTitle: Forever Hold your Peace, MarketingBudget:/
+    AssertionError: expected &#x27;&#x27; to match /AlbumId: 2, AlbumTitle: Forever Hold your Peace, MarketingBudget:/
+        at Context.it (system-test/spanner.test.js:333:12)</failure></testcase>
+    <testcase classname="Spanner" name="should use query options on request" time="3.336"><failure>expected &#x27;&#x27; to match /AlbumId: 2, AlbumTitle: Forever Hold your Peace, MarketingBudget:/
+    AssertionError: expected &#x27;&#x27; to match /AlbumId: 2, AlbumTitle: Forever Hold your Peace, MarketingBudget:/
+        at Context.it (system-test/spanner.test.js:344:12)</failure></testcase>
+    <testcase classname="Spanner" name="should read an example table using transactions" time="3.098"><failure>expected &#x27;Successfully executed read-only transaction.\n&#x27; to match /SingerId: 1, AlbumId: 1, AlbumTitle: Total Junk/
+    AssertionError: expected &#x27;Successfully executed read-only transaction.\n&#x27; to match /SingerId: 1, AlbumId: 1, AlbumTitle: Total Junk/
+        at Context.it (system-test/spanner.test.js:355:12)</failure></testcase>
+    <testcase classname="Spanner" name="should read from and write to an example table using transactions" time="3.141"><failure>expected &#x27;&#x27; to match /The first album&#x27;s marketing budget: 100000/
+    AssertionError: expected &#x27;&#x27; to match /The first album&#x27;s marketing budget: 100000/
+        at Context.it (system-test/spanner.test.js:364:12)</failure></testcase>
+    <testcase classname="Spanner" name="should create query partitions" time="4.283"/>
+    <testcase classname="Spanner" name="should execute a partition" time="3.801"/>
+    <testcase classname="Spanner" name="should add a timestamp column to a table" time="5.024"/>
+    <testcase classname="Spanner" name="should update existing rows in an example table with commit timestamp column" time="3.12"><failure>expected &#x27;&#x27; to match /Updated data\./
+    AssertionError: expected &#x27;&#x27; to match /Updated data\./
+        at Context.it (system-test/spanner.test.js:426:12)</failure></testcase>
+    <testcase classname="Spanner" name="should query an example table with an additional timestamp column and return matching rows" time="3.35"><failure>expected &#x27;&#x27; to match /SingerId: 1, AlbumId: 1, MarketingBudget: 1000000, LastUpdateTime:/
+    AssertionError: expected &#x27;&#x27; to match /SingerId: 1, AlbumId: 1, MarketingBudget: 1000000, LastUpdateTime:/
+        at Context.it (system-test/spanner.test.js:434:12)</failure></testcase>
+    <testcase classname="Spanner" name="should create an example table with a timestamp column" time="5.485"/>
+    <testcase classname="Spanner" name="should insert rows into an example table with timestamp column" time="3.398"><failure>expected &#x27;&#x27; to match /Inserted data\./
+    AssertionError: expected &#x27;&#x27; to match /Inserted data\./
+        at Context.it (system-test/spanner.test.js:465:12)</failure></testcase>
+    <testcase classname="Spanner" name="should query an example table with a non-null timestamp column and return matching rows" time="3.599"><failure>expected &#x27;&#x27; to match /SingerId: 1, VenueId: 4, EventDate:/
+    AssertionError: expected &#x27;&#x27; to match /SingerId: 1, VenueId: 4, EventDate:/
+        at Context.it (system-test/spanner.test.js:473:12)</failure></testcase>
+    <testcase classname="Spanner" name="should insert rows into an example table for use with struct query examples" time="3.552"/>
+    <testcase classname="Spanner" name="should query an example table with a STRUCT param" time="3.534"/>
+    <testcase classname="Spanner" name="should query an example table with an array of STRUCT param" time="3.046"/>
+    <testcase classname="Spanner" name="should query an example table with a STRUCT field param" time="3.443"/>
+    <testcase classname="Spanner" name="should query an example table with a nested STRUCT param" time="3.251"/>
+    <testcase classname="Spanner" name="should insert rows into an example table using a DML statement" time="3.192"/>
+    <testcase classname="Spanner" name="should update a row in an example table using a DML statement" time="3.531"><failure>expected &#x27;Successfully updated 0 record.\n&#x27; to match /Successfully updated 1 record/
+    AssertionError: expected &#x27;Successfully updated 0 record.\n&#x27; to match /Successfully updated 1 record/
+        at Context.it (system-test/spanner.test.js:536:12)</failure></testcase>
+    <testcase classname="Spanner" name="should delete a row from an example table using a DML statement" time="3.372"><failure>expected &#x27;Successfully deleted 0 record.\n&#x27; to match /Successfully deleted 1 record\./
+    AssertionError: expected &#x27;Successfully deleted 0 record.\n&#x27; to match /Successfully deleted 1 record\./
+        at Context.it (system-test/spanner.test.js:544:12)</failure></testcase>
+    <testcase classname="Spanner" name="should update the timestamp of multiple records in an example table using a DML statement" time="3.325"><failure>expected &#x27;Successfully updated 0 records.\n&#x27; to match /Successfully updated 2 records/
+    AssertionError: expected &#x27;Successfully updated 0 records.\n&#x27; to match /Successfully updated 2 records/
+        at Context.it (system-test/spanner.test.js:552:12)</failure></testcase>
+    <testcase classname="Spanner" name="should insert a record in an example table using a DML statement and then query the record" time="3.367"/>
+    <testcase classname="Spanner" name="should update a record in an example table using a DML statement along with a struct value" time="3.261"/>
+    <testcase classname="Spanner" name="should insert multiple records into an example table using a DML statement" time="3.11"/>
+    <testcase classname="Spanner" name="should use a parameter query to query record that was inserted using a DML statement" time="3.162"/>
+    <testcase classname="Spanner" name="should transfer value from one record to another using DML statements within a transaction" time="3.547"><failure>expected &#x27;&#x27; to match /Successfully executed read-write transaction using DML to transfer 200000 from Album 2 to Album 1/
+    AssertionError: expected &#x27;&#x27; to match /Successfully executed read-write transaction using DML to transfer 200000 from Album 2 to Album 1/
+        at Context.it (system-test/spanner.test.js:592:12)</failure></testcase>
+    <testcase classname="Spanner" name="should update multiple records using a partitioned DML statement" time="3.097"><failure>expected &#x27;Successfully updated 0 records.\n&#x27; to match /Successfully updated 3 records/
+    AssertionError: expected &#x27;Successfully updated 0 records.\n&#x27; to match /Successfully updated 3 records/
+        at Context.it (system-test/spanner.test.js:603:12)</failure></testcase>
+    <testcase classname="Spanner" name="should delete multiple records using a partitioned DML statement" time="3.345"/>
+    <testcase classname="Spanner" name="should insert and update records using Batch DML" time="1.749"><failure>Command failed: node dml.js updateUsingBatchDml test-instance-1591914381325 test-database-1591914381325 long-door-651
+    ERROR: { Error: Parent row for row [1,3] in table Albums is missing. Row cannot be written.
+        at Immediate.request (/tmpfs/src/github/nodejs-spanner/build/src/transaction.js:1082:31)
+        at runCallback (timers.js:706:11)
+        at tryOnImmediate (timers.js:676:5)
+        at processImmediate (timers.js:658:5)
+      code: 5,
+      metadata: Metadata { internalRepr: Map {}, options: {} },
+      rowCounts: [] }
+    dml.js updateUsingBatchDml &#x3C;instanceName&#x3E; &#x3C;databaseName&#x3E; &#x3C;projectId&#x3E;
+    
+    Insert and Update records using Batch DML.
+    
+    Options:
+      --version  Show version number                                                                               [boolean]
+      --help     Show help                                                                                         [boolean]
+    
+    { Error: Parent row for row [1,3] in table Albums is missing. Row cannot be written.
+        at Immediate.request (/tmpfs/src/github/nodejs-spanner/build/src/transaction.js:1082:31)
+        at runCallback (timers.js:706:11)
+        at tryOnImmediate (timers.js:676:5)
+        at processImmediate (timers.js:658:5)
+      code: 5,
+      metadata: Metadata { internalRepr: Map {}, options: {} },
+      rowCounts: [] }
+    
+    Error: Command failed: node dml.js updateUsingBatchDml test-instance-1591914381325 test-database-1591914381325 long-door-651
+    ERROR: { Error: Parent row for row [1,3] in table Albums is missing. Row cannot be written.
+        at Immediate.request (/tmpfs/src/github/nodejs-spanner/build/src/transaction.js:1082:31)
+      code: 5,
+      metadata: Metadata { internalRepr: Map {}, options: {} },
+      rowCounts: [] }
+    dml.js updateUsingBatchDml &#x3C;instanceName&#x3E; &#x3C;databaseName&#x3E; &#x3C;projectId&#x3E;
+    
+    Insert and Update records using Batch DML.
+    
+    Options:
+      --version  Show version number                                                                               [boolean]
+      --help     Show help                                                                                         [boolean]
+    
+    { Error: Parent row for row [1,3] in table Albums is missing. Row cannot be written.
+        at Immediate.request (/tmpfs/src/github/nodejs-spanner/build/src/transaction.js:1082:31)
+      code: 5,
+      metadata: Metadata { internalRepr: Map {}, options: {} },
+      rowCounts: [] }
+    
+        at checkExecSyncError (child_process.js:629:11)
+        at Object.execSync (child_process.js:666:13)
+        at execSync (system-test/spanner.test.js:23:28)
+        at Context.it (system-test/spanner.test.js:616:20)</failure></testcase>
+    <testcase classname="Spanner" name="should create Venues example table with supported datatype columns" time="5.168"/>
+    <testcase classname="Spanner" name="should insert multiple records into Venues example table" time="3.113"/>
+    <testcase classname="Spanner" name="should use an ARRAY query parameter to query record from the Venues example table" time="2.918"/>
+    <testcase classname="Spanner" name="should use a BOOL query parameter to query record from the Venues example table" time="3.216"/>
+    <testcase classname="Spanner" name="should use a BYTES query parameter to query record from the Venues example table" time="3.43"/>
+    <testcase classname="Spanner" name="should use a DATE query parameter to query record from the Venues example table" time="3.225"/>
+    <testcase classname="Spanner" name="should use a FLOAT64 query parameter to query record from the Venues example table" time="3.07"/>
+    <testcase classname="Spanner" name="should use a INT64 query parameter to query record from the Venues example table" time="3.259"/>
+    <testcase classname="Spanner" name="should use a STRING query parameter to query record from the Venues example table" time="3.224"/>
+    <testcase classname="Spanner" name="should use a TIMESTAMP query parameter to query record from the Venues example table" time="3.309"/>
+    <testcase classname="Spanner" name="should create a backup of the database" time="184.743"/>
+    <testcase classname="Spanner" name="should cancel a backup of the database" time="9.671"/>
+    <testcase classname="Spanner" name="should list backups in the instance" time="3.039"/>
+    <testcase classname="Spanner" name="should list backup operations in the instance" time="3.297"/>
+    <testcase classname="Spanner" name="should update the expire time of a backup" time="3.151"/>
+    <testcase classname="Spanner" name="should restore database from a backup" time="420.033"/>
+    <testcase classname="Spanner" name="should list database operations in the instance" time="3.573"/>
+    <testcase classname="Spanner" name="should delete a backup" time="3.497"/>
+    <testcase classname="Spanner instance" name="should create an example instance" time="3.621"/>
+    <testcase classname="Spanner quickstart" name="should query a table" time="3.269"/>
+    </testsuite>
