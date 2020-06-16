@@ -667,7 +667,7 @@ buildcop.findTestResults = (xml: string): TestResults => {
     }
     for (const testcase of testcases) {
       let pkg = testsuiteName;
-      if (testsuiteName === 'pytest') {
+      if (testsuiteName === 'pytest' || testsuiteName === 'Mocha Tests') {
         pkg = testcase['_attributes'].classname;
       }
       // Ignore skipped tests. They didn't pass and they didn't fail.
