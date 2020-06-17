@@ -1,0 +1,8 @@
+{
+    "java": [
+        {
+            "slug": "java-samples-reviewers",
+            "permission": "push"
+        }
+    ]
+}
