@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<testsuite name="Mocha Tests" tests="64" failures="0" errors="24" skipped="0" timestamp="Thu, 11 Jun 2020 22:41:07 GMT" time="885.891">
+    <testcase classname="Spanner" name="should create an example database" time="5.998"/>
+    <testcase classname="Spanner" name="should delete and then insert rows in the example tables" time="3.578"><failure>expected &#x27;Deleted individual rows in Albums.\n5 records deleted from Singers.\n2 records deleted from Singers.\n0 records deleted from Singers.\n&#x27; to include &#x27;3 records deleted from Singers.&#x27;
+    AssertionError: expected &#x27;Deleted individual rows in Albums.\n5 records deleted from Singers.\n2 records deleted from Singers.\n0 records deleted from Singers.\n&#x27; to include &#x27;3 records deleted from Singers.&#x27;
+        at Context.it (system-test/spanner.test.js:198:12)</failure></testcase>
+</testsuite>

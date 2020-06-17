@@ -22,7 +22,7 @@
     "@google-cloud/secret-manager": "^3.0.0",
     "@google-cloud/storage": "^5.0.0",
     "@google-cloud/tasks": "^2.0.0",
-    "@octokit/plugin-enterprise-compatibility": "1.2.4",
+    "@octokit/plugin-enterprise-compatibility": "1.2.5",
     "express": "^4.17.1",
     "gaxios": "^3.0.0",
     "probot": "^9.11.2",
@@ -44,7 +44,7 @@
     "cross-env": "^7.0.0",
     "dotenv": "^8.0.0",
     "gts": "^2.0.0",
-    "mocha": "^7.0.0",
+    "mocha": "^8.0.0",
     "nock": "^12.0.0",
     "sinon": "^9.0.0",
     "typescript": "^3.8.3"
