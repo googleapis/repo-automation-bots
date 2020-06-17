@@ -263,4 +263,47 @@ describe('Sync repo settings', () => {
     });
     scopes.forEach(s => s.done());
   });
+
+  it('should add extra teams specified in teams.json', async () => {
+    const scopes = [
+      nockUpdateRepoSettings('java-asset', false, true),
+      nockUpdateBranchProtection(
+        'java-asset',
+        [
+          'dependencies',
+          'linkage-monitor',
+          'lint',
+          'clirr',
+          'units (7)',
+          'units (8)',
+          'units (11)',
+          'Kokoro - Test: Integration',
+          'cla/google',
+        ],
+        false
+      ),
+      nockUpdateTeamMembership('yoshi-admins', 'googleapis', 'java-asset'),
+      nockUpdateTeamMembership('yoshi-java-admins', 'googleapis', 'java-asset'),
+      nockUpdateTeamMembership('yoshi-java', 'googleapis', 'java-asset'),
+      nockUpdateTeamMembership(
+        'java-samples-reviewers',
+        'googleapis',
+        'java-asset'
+      ),
+    ];
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: {
+        repository: {
+          name: 'java-asset',
+        },
+        organization: {
+          login: 'googleapis',
+        },
+        cron_org: 'googleapis',
+      },
+      id: 'abc123',
+    });
+    scopes.forEach(s => s.done());
+  });
 });

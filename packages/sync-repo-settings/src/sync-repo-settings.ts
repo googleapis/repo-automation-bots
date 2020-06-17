@@ -26,13 +26,22 @@ interface LanguageConfig {
     requireUpToDateBranch: boolean;
     requiredStatusChecks: string[];
     ignoredRepos?: string[];
+    additionalTeams?: TeamPermission[];
     repoOverrides?: [
       {
         repo: string;
         requiredStatusChecks: string[];
+        additionalTeams?: TeamPermission[];
       }
     ];
   };
+}
+
+type Permission = 'pull' | 'push' | 'admin' | 'maintain' | 'triage';
+
+interface TeamPermission {
+  slug: string;
+  permission: Permission;
 }
 
 interface Repo {
@@ -154,6 +163,48 @@ handler.updateMasterBranchProtection = async function updateMasterBranchProtecti
   }
 };
 
+handler.defaultLanguageTeams = function (language: string): TeamPermission[] {
+  return [
+    {
+      slug: 'yoshi-admins',
+      permission: 'admin',
+    },
+    {
+      slug: `yoshi-${language}-admins`,
+      permission: 'admin',
+    },
+    {
+      slug: `yoshi-${language}`,
+      permission: 'push',
+    },
+  ];
+};
+
+handler.getRepoTeams = function (repo: Repo): TeamPermission[] {
+  const language = repo.language;
+  let teams = handler.defaultLanguageTeams(language);
+  // get the status checks defined at either the language level, or at the
+  // overridden repository level
+  const config = languageConfig[repo.language];
+  if (!config) {
+    return teams;
+  }
+
+  let additionalTeams = config.additionalTeams;
+  if (config.repoOverrides) {
+    const customConfig = config.repoOverrides.find(x => x.repo === repo.repo);
+    if (customConfig && customConfig.additionalTeams) {
+      additionalTeams = customConfig.additionalTeams;
+    }
+  }
+
+  if (additionalTeams) {
+    teams = teams.concat(additionalTeams);
+  }
+
+  return teams;
+};
+
 /**
  * Ensure the correct teams are added to the repository
  * @param repos List of repos to iterate.
@@ -164,20 +215,7 @@ handler.updateRepoTeams = async function updateRepoTeams(
 ) {
   console.log(`Update team access for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
-  const teamsToAdd = [
-    {
-      slug: 'yoshi-admins',
-      permission: 'admin',
-    },
-    {
-      slug: `yoshi-${repo.language}-admins`,
-      permission: 'admin',
-    },
-    {
-      slug: `yoshi-${repo.language}`,
-      permission: 'push',
-    },
-  ];
+  const teamsToAdd = handler.getRepoTeams(repo);
 
   for (const membership of teamsToAdd) {
     try {

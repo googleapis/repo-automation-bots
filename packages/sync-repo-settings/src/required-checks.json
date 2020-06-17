@@ -20,6 +20,12 @@
       "GoogleCloudPlatform/java-docs-samples",
       "GoogleCloudPlatform/getting-started-java"
     ],
+    "additionalTeams": [
+      {
+          "slug": "java-samples-reviewers",
+          "permission": "push"
+      }
+    ],
     "repoOverrides": [
       {
         "repo": "googleapis/java-cloud-bom",
