@@ -176,10 +176,6 @@ handler.updateMasterBranchProtection = async function updateMasterBranchProtecti
 handler.defaultLanguageTeams = function(language: string): TeamPermission[] {
   return [
     {
-      slug: 'googlers',
-      permission: 'push',
-    },
-    {
       slug: 'yoshi-admins',
       permission: 'admin',
     },
