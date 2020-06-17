@@ -14,6 +14,12 @@ The Build Cop Bot manages issues for failing tests.
   reopen the issue or open a new one, depending on the issue state/age.
 * If the bot opens duplicate issues (sorry!), it will close the duplicates
   during the next run.
+* If 10 or more tests fail in the same package, they will all be grouped into a
+  single issue. If there are already open issues for tests in the package, they
+  will be left open until the corresponding test passes.
+
+  Note: the "package" is the part of the issue title before the `:`. If the
+  package is wrong, please file an issue.
 
 Issues or feature requests? Please
 [file them on this repo](https://github.com/googleapis/repo-automation-bots/issues/new).

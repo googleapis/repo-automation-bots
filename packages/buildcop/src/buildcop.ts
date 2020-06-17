@@ -68,6 +68,17 @@ I reopened the issue, but a human will need to close it again.
 
 ---`;
 
+const GROUPED_MESSAGE = `Many tests failed at the same time in this package.
+
+* I will close this issue when there are no more failures in this package _and_
+  there is at least one pass.
+* No new issues will be filed for this package until this issue is closed.
+* If there are already issues for individual test cases, I will close them when
+  the corresponding test passes. You can close them earlier, if you prefer, and
+  I won't reopen them while this issue is still open.
+
+`;
+
 interface TestCase {
   package?: string;
   testCase?: string;
@@ -248,27 +259,113 @@ buildcop.openIssues = async (
   commit: string,
   buildURL: string
 ) => {
+  // Group by package to see if there are any packages with 10+ failures.
+  const byPackage = new Map<string, TestCase[]>();
   for (const failure of failures) {
-    // Only reopen issues for individual test cases, not for the "everything
-    // failed" issue. If the "everything failed" issue is already open, leave it
-    // open.
-    const matchingIssues = issues.filter(
-      issue => issue.title === buildcop.formatTestCase(failure)
-    );
-    // Prefer open issues in case there are duplicates. There should only be at
-    // most one open issue.
-    let existingIssue = matchingIssues.find(issue => issue.state === 'open');
+    const pkg = failure.package || 'all';
+    if (!byPackage.has(pkg)) byPackage.set(pkg, []);
+    byPackage.get(pkg)!.push(failure);
+  }
+  for (const [pkg, pkgFailures] of byPackage.entries()) {
+    // Look for an existing group issue. If there is one, don't file a new
+    // issue.
+    const groupedIssue = buildcop.findGroupedIssue(issues, pkg);
+    if (groupedIssue) {
+      // If a group issue exists, say stuff failed.
+      // Don't comment if it's asked to be quiet.
+      if (hasLabel(groupedIssue, QUIET_LABEL)) {
+        continue;
+      }
 
-    if (
-      matchingIssues.length > 0 &&
-      !existingIssue &&
-      buildcop.formatTestCase(failure) !== EVERYTHING_FAILED_TITLE
-    ) {
-      matchingIssues.sort(buildcop.issueComparator);
-      existingIssue = matchingIssues[0];
+      // Don't comment if it's flaky.
+      if (buildcop.isFlaky(groupedIssue)) {
+        continue;
+      }
+
+      // Don't comment if we've already commented with this build failure.
+      const [containsFailure] = await buildcop.containsBuildFailure(
+        groupedIssue,
+        context,
+        owner,
+        repo,
+        commit
+      );
+      if (containsFailure) {
+        continue;
+      }
+
+      const testCase = buildcop.groupedTestCase(pkg);
+      const testString = pkgFailures.length === 1 ? 'test' : 'tests';
+      const body = `${
+        pkgFailures.length
+      } ${testString} failed in this package for commit ${commit} (${buildURL}).\n-----\n${buildcop.formatBody(
+        testCase,
+        commit,
+        buildURL
+      )}`;
+      await context.github.issues.createComment({
+        owner,
+        repo,
+        issue_number: groupedIssue.number,
+        body,
+      });
+      continue;
     }
-
-    if (existingIssue) {
+    // There is no grouped issue for this package.
+    // Check if 10 or more tests failed.
+    if (pkgFailures.length >= 10) {
+      // Open a new issue listing the failing tests.
+      const testCase = buildcop.groupedTestCase(pkg);
+      context.log.info(
+        `[${owner}/${repo}]: creating issue "${buildcop.formatTestCase(
+          testCase
+        )}"...`
+      );
+      let failedTestsString = '';
+      for (const failure of pkgFailures) {
+        if (failure.testCase) {
+          failedTestsString += '* ' + failure.testCase;
+          const existingIssue = buildcop.findExistingIssue(issues, failure);
+          if (existingIssue) {
+            failedTestsString += ` (#${existingIssue.number})`;
+          }
+          failedTestsString += '\n';
+        }
+      }
+      const body =
+        GROUPED_MESSAGE +
+        `Here are the tests that failed:\n${failedTestsString}\n\n-----\n${buildcop.formatBody(
+          testCase,
+          commit,
+          buildURL
+        )}`;
+      const newIssue = (
+        await context.github.issues.create({
+          owner,
+          repo,
+          title: buildcop.formatGroupedTitle(pkg),
+          body,
+          labels: LABELS_FOR_NEW_ISSUE,
+        })
+      ).data;
+      context.log.info(`[${owner}/${repo}]: created issue #${newIssue.number}`);
+      continue;
+    }
+    // There is no grouped failure and there are <10 failing tests in this
+    // package. Treat each failure independently.
+    for (const failure of pkgFailures) {
+      const existingIssue = buildcop.findExistingIssue(issues, failure);
+      if (!existingIssue) {
+        await buildcop.openNewIssue(
+          context,
+          owner,
+          repo,
+          commit,
+          buildURL,
+          failure
+        );
+        continue;
+      }
       context.log.info(
         `[${owner}/${repo}] existing issue #${existingIssue.number}: state: ${existingIssue.state}`
       );
@@ -352,17 +449,44 @@ buildcop.openIssues = async (
           body: buildcop.formatBody(failure, commit, buildURL),
         });
       }
-    } else {
-      await buildcop.openNewIssue(
-        context,
-        owner,
-        repo,
-        commit,
-        buildURL,
-        failure
-      );
     }
   }
+};
+
+buildcop.findGroupedIssue = (
+  issues: Octokit.IssuesListForRepoResponseItem[],
+  pkg: string
+): Octokit.IssuesListForRepoResponseItem | undefined => {
+  // Don't reopen grouped issues.
+  return issues.find(
+    issue =>
+      issue.title === buildcop.formatGroupedTitle(pkg) && issue.state === 'open'
+  );
+};
+
+buildcop.findExistingIssue = (
+  issues: Octokit.IssuesListForRepoResponseItem[],
+  failure: TestCase
+): Octokit.IssuesListForRepoResponseItem | undefined => {
+  // Only reopen issues for individual test cases, not for the "everything
+  // failed" issue. If the "everything failed" issue is already open, leave it
+  // open.
+  const matchingIssues = issues.filter(
+    issue => issue.title === buildcop.formatTestCase(failure)
+  );
+  // Prefer open issues in case there are duplicates. There should only be at
+  // most one open issue.
+  let existingIssue = matchingIssues.find(issue => issue.state === 'open');
+
+  if (
+    matchingIssues.length > 0 &&
+    !existingIssue &&
+    buildcop.formatTestCase(failure) !== EVERYTHING_FAILED_TITLE
+  ) {
+    matchingIssues.sort(buildcop.issueComparator);
+    existingIssue = matchingIssues[0];
+  }
+  return existingIssue;
 };
 
 buildcop.openNewIssue = async (
@@ -420,8 +544,26 @@ buildcop.closeIssues = async (
       continue;
     }
 
+    const groupedFailure = results.failures.find(failure => {
+      return (
+        failure.package &&
+        issue.title === buildcop.formatGroupedTitle(failure.package)
+      );
+    });
+    // If this is a group issue and a test failed in the package, don't close.
+    if (groupedFailure) {
+      continue;
+    }
+
     const pass = results.passes.find(pass => {
-      return issue.title === buildcop.formatTestCase(pass);
+      // Either this is an individual test case that passed, or it's a group
+      // issue with at least one pass (and no failures, given the groupedFailure
+      // check above).
+      return (
+        issue.title === buildcop.formatTestCase(pass) ||
+        (pass.package &&
+          issue.title === buildcop.formatGroupedTitle(pass.package))
+      );
     });
     // If the test did not pass, don't close its issue.
     if (!pass) {
@@ -636,6 +778,18 @@ buildcop.formatTestCase = (failure: TestCase): string => {
   });
 
   return `${pkg}: ${name} failed`;
+};
+
+buildcop.groupedTestCase = (pkg: string): TestCase => {
+  return {
+    passed: false,
+    package: pkg,
+    testCase: 'many tests',
+  };
+};
+
+buildcop.formatGroupedTitle = (pkg: string): string => {
+  return buildcop.formatTestCase(buildcop.groupedTestCase(pkg));
 };
 
 buildcop.findTestResults = (xml: string): TestResults => {

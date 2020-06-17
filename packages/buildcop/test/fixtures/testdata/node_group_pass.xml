@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<testsuite name="Mocha Tests" tests="64" failures="0" errors="24" skipped="0" timestamp="Thu, 11 Jun 2020 22:41:07 GMT" time="885.891">
+    <testcase classname="Spanner" name="should create an example database" time="5.998"/>
+</testsuite>
