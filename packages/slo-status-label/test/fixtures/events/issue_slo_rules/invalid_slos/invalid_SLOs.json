@@ -1,0 +1,71 @@
+[
+    [
+        {
+            "complianceSettings": {
+                "responseTime": "4h",
+                "resolutionTime": 0,
+                "responders": {
+                    "users": []
+                }
+            }
+        }
+     ],
+     [
+        {
+            "appliesTo": {
+                "gitHubLabels": ["priority: P2", "bug"]
+            },
+            "complianceSettings": {
+                "responseTime": 0
+            }
+        }
+     ],
+     [
+        {
+            "appliesTo": {
+                "issues": true
+            },
+            "complianceSettings": {
+                "responseTime": 0,
+                "resolutionTime": "60"
+            }
+        }
+     ],
+     [
+        {
+            "appliesTo": {
+                "issues": true
+            },
+            "complianceSettings": {
+                "responseTime": 0,
+                "resolutionTime": "1h 40m"
+            }
+        }
+     ],
+     [
+        {
+            "appliesTo": {
+                "issues": true
+            },
+            "complianceSettings": {
+                "responseTime": "4h",
+                "resolutionTime": 0,
+                "responders": {}
+            }
+        }
+     ],
+     [
+        {
+            "appliesTo": {
+                "issues": true
+            },
+            "complianceSettings": {
+                "responseTime": "4h",
+                "resolutionTime": 0,
+                "responders": {
+                    "owners": ["has spaces"]
+                }
+            }
+        }
+     ]         
+]

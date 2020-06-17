@@ -1,0 +1,103 @@
+[
+    [],
+    [  
+        {
+          "appliesTo": {},
+          "complianceSettings": {
+              "responseTime": 0,
+              "resolutionTime": 0
+          }
+        }
+    ],
+    [
+      {
+          "appliesTo": {
+              "gitHubLabels": ["priority: P0", "bug"]
+          },
+          "complianceSettings": {
+              "responseTime": 0,
+              "resolutionTime": 43200,
+              "requiresAssignee": true
+          }
+      }
+   ],
+   [
+    {
+        "appliesTo": {
+            "priority": "P0",
+            "issueType": "bug"
+        },
+        "complianceSettings": {
+            "responseTime": 0,
+            "resolutionTime": "12h",
+            "requiresAssignee": true
+        }
+    }
+   ],
+   [
+    {
+        "appliesTo": {
+            "gitHubLabels": ["triageme"]
+        },
+        "complianceSettings": {
+            "responseTime": "5d",
+            "resolutionTime": 0
+        }
+    }
+   ],
+   [
+    {   
+        "appliesTo": {
+            "issues": true
+        },
+        "complianceSettings": {
+            "responseTime": "4h",
+            "resolutionTime": 0,
+            "responders": {
+                "owners": ["./OWNERS"],
+                "contributors": "ADMIN",
+                "users": ["brennae", "sreeharshitha"]
+            }
+        }
+     }
+   ],
+   [
+    {
+        "appliesTo": {
+            "gitHubLabels": ["priority: P2", "bug"],
+            "excludedGitHubLabels": "external"
+        },
+        "complianceSettings": {
+            "responseTime": 0,
+            "resolutionTime": "180d"
+        }
+    }
+   ],
+   [
+    {
+        "appliesTo": {
+            "gitHubLabels": ["priority: P2", "bug"],
+            "excludedGitHubLabels": "external",
+            "issues": true,
+            "prs": true
+        },
+        "complianceSettings": {
+            "responseTime": 0,
+            "resolutionTime": "180d",
+            "requiresAssignee": false
+        }
+    }
+   ],
+   [
+    {
+        "appliesTo": {},
+        "complianceSettings": {
+            "responseTime": "4h",
+            "resolutionTime": 0,
+            "responders": {
+                "users": []
+            }
+        }
+    }
+   ]     
+]
