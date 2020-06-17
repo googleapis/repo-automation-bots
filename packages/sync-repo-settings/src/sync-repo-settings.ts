@@ -186,9 +186,9 @@ handler.defaultLanguageTeams = function (language: string): TeamPermission[] {
 
 handler.getRepoTeams = function (repo: Repo): TeamPermission[] {
   const language = repo.language;
-  let teams = handler.defaultLanguageTeams(language);
+  const teams = handler.defaultLanguageTeams(language);
   if (language in languageTeams) {
-    teams = teams.concat(languageTeams[language]);
+    teams.push(...languageTeams[language]);
   }
   return teams;
 };
