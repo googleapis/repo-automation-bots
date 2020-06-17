@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ handler.handle_slos = async function handle_slos(
   repo: string,
   file_sha: string
 ) {
+    console.log(context);
     const sloString = await handler.getFileContents(context.github, owner, repo, file_sha);
     var sloData = JSON.parse(sloString)
 
