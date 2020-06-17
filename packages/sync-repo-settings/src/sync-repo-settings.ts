@@ -18,6 +18,7 @@ import {request} from 'gaxios';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const languageConfig: LanguageConfig = require('./required-checks.json');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const languageTeams: LanguageTeamConfig = require('./teams.json');
 
 interface LanguageConfig {
@@ -36,12 +37,7 @@ interface LanguageConfig {
   };
 }
 
-type Permission =
-  | 'pull'
-  | 'push'
-  | 'admin'
-  | 'maintain'
-  | 'triage';
+type Permission = 'pull' | 'push' | 'admin' | 'maintain' | 'triage';
 
 interface TeamPermission {
   slug: string;
@@ -49,9 +45,7 @@ interface TeamPermission {
 }
 
 interface LanguageTeamConfig {
-  [index: string]: [
-    TeamPermission
-  ]
+  [index: string]: [TeamPermission];
 }
 
 interface Repo {
@@ -173,7 +167,7 @@ handler.updateMasterBranchProtection = async function updateMasterBranchProtecti
   }
 };
 
-handler.defaultLanguageTeams = function(language: string): TeamPermission[] {
+handler.defaultLanguageTeams = function (language: string): TeamPermission[] {
   return [
     {
       slug: 'yoshi-admins',
@@ -188,11 +182,11 @@ handler.defaultLanguageTeams = function(language: string): TeamPermission[] {
       permission: 'push',
     },
   ];
-}
+};
 
-handler.getRepoTeams = function(repo: Repo): TeamPermission[] {
+handler.getRepoTeams = function (repo: Repo): TeamPermission[] {
   const language = repo.language;
-  var teams = handler.defaultLanguageTeams(language);
+  let teams = handler.defaultLanguageTeams(language);
   if (language in languageTeams) {
     teams = teams.concat(languageTeams[language]);
   }
@@ -209,7 +203,7 @@ handler.updateRepoTeams = async function updateRepoTeams(
 ) {
   console.log(`Update team access for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
-  const teamsToAdd = handler.getRepoTeams(repo)
+  const teamsToAdd = handler.getRepoTeams(repo);
 
   for (const membership of teamsToAdd) {
     try {

@@ -270,33 +270,21 @@ describe('Sync repo settings', () => {
       nockUpdateBranchProtection(
         'java-asset',
         [
-          "dependencies",
-          "linkage-monitor",
-          "lint",
-          "clirr",
-          "units (7)",
-          "units (8)",
-          "units (11)",
-          "Kokoro - Test: Integration",
-          "cla/google"
+          'dependencies',
+          'linkage-monitor',
+          'lint',
+          'clirr',
+          'units (7)',
+          'units (8)',
+          'units (11)',
+          'Kokoro - Test: Integration',
+          'cla/google',
         ],
         false
       ),
-      nockUpdateTeamMembership(
-        'yoshi-admins',
-        'googleapis',
-        'java-asset'
-      ),
-      nockUpdateTeamMembership(
-        'yoshi-java-admins',
-        'googleapis',
-        'java-asset'
-      ),
-      nockUpdateTeamMembership(
-        'yoshi-java',
-        'googleapis',
-        'java-asset'
-      ),
+      nockUpdateTeamMembership('yoshi-admins', 'googleapis', 'java-asset'),
+      nockUpdateTeamMembership('yoshi-java-admins', 'googleapis', 'java-asset'),
+      nockUpdateTeamMembership('yoshi-java', 'googleapis', 'java-asset'),
       nockUpdateTeamMembership(
         'java-samples-reviewers',
         'googleapis',
@@ -317,5 +305,5 @@ describe('Sync repo settings', () => {
       id: 'abc123',
     });
     scopes.forEach(s => s.done());
-  })
+  });
 });
