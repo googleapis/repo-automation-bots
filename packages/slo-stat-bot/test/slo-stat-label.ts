@@ -24,7 +24,6 @@ import snapshot from 'snap-shot-it';
 
 import handler from '../src/slo-stat-label';
 import spies from 'chai-spies';
-import { doesNotReject } from 'assert';
 
 const chai = require('chai');
 chai.use(spies);
