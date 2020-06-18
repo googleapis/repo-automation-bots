@@ -45,6 +45,10 @@ interface CheckRuns {
   check_runs: [{name: string; conclusion: string}];
 }
 
+interface Comments {
+  body: string;
+}
+
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/Fixtures');
@@ -74,6 +78,12 @@ function getRuns(ref: string, response: CheckRuns) {
     .get(
       `/repos/testOwner/testRepo/commits/${ref}/check-runs?per_page=100&page=0`
     )
+    .reply(200, response);
+}
+
+function getCommentsOnPr(response: Comments[]) {
+  return nock('https://api.github.com')
+    .get('/repos/testOwner/testRepo/issues/1/comments')
     .reply(200, response);
 }
 
@@ -486,6 +496,33 @@ describe('merge-on-green-', () => {
           {state: 'success', context: 'Special Check'},
         ]),
         commentOnPR(),
+      ];
+
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: {org: 'testOwner'},
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
+    });
+
+    it.only('does not comment if comment is already on PR', async () => {
+      const scopes = [
+        getPR(true, 'dirty', 'open'),
+        getBranchProtection(['Special Check']),
+        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getCommentsOnPr([
+          {
+            body:
+              'Your PR has conflicts that you need to resolve before merge-on-green can automerge',
+          },
+        ]),
+        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getMogLabel([{name: 'automerge'}]),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          {state: 'success', context: 'Special Check'},
+        ]),
       ];
 
       await probot.receive({
