@@ -21,17 +21,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"os"
 
-	cloudkms "cloud.google.com/go/kms/apiv1"
-	"cloud.google.com/go/storage"
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"github.com/google/uuid"
-	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
+	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
 func main() {
@@ -45,26 +43,8 @@ func main() {
 		log.Fatal("PROJECT_ID environment variable not specified")
 	}
 
-	bucketName := os.Getenv("BUCKET_NAME")
-	if bucketName == "" {
-		log.Fatal("BUCKET_NAME environment variable not specified")
-	}
-
-	keyLocation := os.Getenv("KEY_LOCATION")
-	if keyLocation == "" {
-		log.Fatal("KEY_LOCATION environment variable not specified")
-	}
-
-	keyRing := os.Getenv("KEY_RING")
-	if keyRing == "" {
-		log.Fatal("KEY_RING environment variable not specified")
-	}
-
 	cfg := botConfig{
-		project:     projectID,
-		bucketName:  bucketName,
-		keyLocation: keyLocation,
-		keyRing:     keyRing,
+		project: projectID,
 	}
 
 	mux := http.NewServeMux()
@@ -178,52 +158,29 @@ type reqPayload struct {
 }
 
 type botConfig struct {
-	project     string
-	region      string
-	bucketName  string
-	keyLocation string
-	keyRing     string
+	project string
 }
 
 func getBotSecret(ctx context.Context, b botConfig, botName string) ([]byte, error) {
-	client, err := storage.NewClient(ctx)
+	name := fmt.Sprintf("projects/%v/secrets/%v/versions/latest", b.project, botName)
+
+	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		return []byte{}, err
-	}
-
-	bkt := client.Bucket(b.bucketName)
-	obj := bkt.Object(botName)
-
-	r, err := obj.NewReader(ctx)
-	if err != nil {
-		return []byte{}, err
-	}
-	defer r.Close()
-
-	var cypherBytes []byte
-	cypherBuffer := bytes.NewBuffer(cypherBytes)
-	if _, err := io.Copy(cypherBuffer, r); err != nil {
-		return []byte{}, err
-	}
-
-	// Decrypt with KMS
-	kmsclient, err := cloudkms.NewKeyManagementClient(ctx)
-	if err != nil {
-		return []byte{}, fmt.Errorf("cloudkms.NewKeyManagementClient: %v", err)
+		return nil, fmt.Errorf("failed to create secretmanager client: %v", err)
 	}
 
 	// Build the request.
-	req := &kmspb.DecryptRequest{
-		Name:       fmt.Sprintf("projects/%v/locations/%v/keyRings/%v/cryptoKeys/%v", b.project, b.keyLocation, b.keyRing, botName),
-		Ciphertext: cypherBytes,
-	}
-	// Call the API.
-	resp, err := kmsclient.Decrypt(ctx, req)
-	if err != nil {
-		return []byte{}, fmt.Errorf("Decrypt: %v", err)
+	req := &secretmanagerpb.AccessSecretVersionRequest{
+		Name: name,
 	}
 
-	return resp.Plaintext, nil
+	// Call the API.
+	result, err := client.AccessSecretVersion(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to access secret version: %v", err)
+	}
+
+	return result.Payload.Data, nil
 }
 
 // RepoAutomationPubSubMessage represents

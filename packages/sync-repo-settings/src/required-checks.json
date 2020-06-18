@@ -4,38 +4,84 @@
     "enableRebaseMerge": false,
     "requireUpToDateBranch": false,
     "requiredStatusChecks": [
-      "Kokoro - Test: Binary Compatibility",
-      "Kokoro - Test: Code Format",
-      "Kokoro - Test: Dependencies",
+      "dependencies",
+      "linkage-monitor",
+      "lint",
+      "clirr",
+      "units (7)",
+      "units (8)",
+      "units (11)",
       "Kokoro - Test: Integration",
-      "Kokoro - Test: Java 11",
-      "Kokoro - Test: Java 7",
-      "Kokoro - Test: Java 8",
-      "Kokoro - Test: Linkage Monitor",
       "cla/google"
     ],
     "ignoredRepos": [
       "googleapis/api-common-java",
-      "googleapis/gax-java",
-      "googleapis/google-api-java-client",
-      "googleapis/google-auth-library-java",
-      "googleapis/google-cloud-java",
-      "googleapis/google-http-java-client",
-      "googleapis/google-oauth-java-client",
       "googleapis/gapic-generator",
       "GoogleCloudPlatform/java-docs-samples",
-      "GoogleCloudPlatform/getting-started-java",
-      "googleapis/google-cloud-java"
+      "GoogleCloudPlatform/getting-started-java"
     ],
     "repoOverrides": [
       {
         "repo": "googleapis/java-cloud-bom",
         "requiredStatusChecks": [
           "Kokoro - Test: BOM Upper Bounds",
+          "dependencies",
+          "linkage-monitor",
+          "lint",
+          "clirr",
+          "units (7)",
+          "units (8)",
+          "units (11)",
+          "Kokoro - Test: Integration",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "googleapis/gax-java",
+        "requiredStatusChecks": [
+          "linkage-monitor",
+          "units (7)",
+          "units (8)",
+          "units (11)",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "googleapis/java-conformance-tests",
+        "requiredStatusChecks": [
+          "dependencies",
+          "linkage-monitor",
+          "lint",
+          "clirr",
+          "units (7)",
+          "units (8)",
+          "units (11)",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "GoogleCloudPlatform/getting-started-java",
+        "requiredStatusChecks": [
+          "Kokoro CI - Java 8",
+          "Kokoro CI - Lint",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "GoogleCloudPlatform/java-docs-samples",
+        "requiredStatusChecks": [
+          "Kokoro CI - Java 11",
+          "Kokoro CI - Java 8",
+          "Kokoro CI - Lint",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "googleapis/google-auth-library-java",
+        "requiredStatusChecks": [
           "Kokoro - Test: Binary Compatibility",
           "Kokoro - Test: Code Format",
           "Kokoro - Test: Dependencies",
-          "Kokoro - Test: Integration",
           "Kokoro - Test: Java 11",
           "Kokoro - Test: Java 7",
           "Kokoro - Test: Java 8",
@@ -46,22 +92,98 @@
       {
         "repo": "googleapis/google-api-java-client-services",
         "requiredStatusChecks": [
+          "Kokoro - Test: Generator",
           "Kokoro - Test: Java 8",
           "cla/google"
         ]
       },
       {
-        "repo": "GoogleCloudPlatform/getting-started-java",
+        "repo": "googleapis/google-api-java-client",
         "requiredStatusChecks": [
-          "Kokoro CI",
+          "Kokoro - Test: Binary Compatibility",
+          "Kokoro - Test: Code Format",
+          "Kokoro - Test: Dependencies",
+          "Kokoro - Test: Java 11",
+          "Kokoro - Test: Java 7",
+          "Kokoro - Test: Java 8",
+          "Kokoro - Test: Linkage Monitor",
           "cla/google"
         ]
       },
       {
-        "repo": "GoogleCloudPlatform/java-docs-samples",
+        "repo": "googleapis/google-http-java-client",
         "requiredStatusChecks": [
-          "Kokoro CI - Java 11",
-          "Kokoro CI - Java 8",
+          "Kokoro - Test: Binary Compatibility",
+          "Kokoro - Test: Code Format",
+          "Kokoro - Test: Dependencies",
+          "Kokoro - Test: Java 11",
+          "Kokoro - Test: Java 7",
+          "Kokoro - Test: Java 8",
+          "Kokoro - Test: Linkage Monitor",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "googleapis/google-oauth-java-client",
+        "requiredStatusChecks": [
+          "Kokoro - Test: Binary Compatibility",
+          "Kokoro - Test: Code Format",
+          "Kokoro - Test: Dependencies",
+          "Kokoro - Test: Java 11",
+          "Kokoro - Test: Java 7",
+          "Kokoro - Test: Java 8",
+          "Kokoro - Test: Linkage Monitor",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "googleapis/google-cloud-java",
+        "requiredStatusChecks": [
+          "Kokoro - Test: Code Format",
+          "Kokoro - Test: Java 11",
+          "Kokoro - Test: Java 7",
+          "Kokoro - Test: Java 8",
+          "Kokoro - Test: Linkage Monitor",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "googleapis/java-bigtable-hbase",
+        "requiredStatusChecks": [
+          "Kokoro - Test: Binary Compatibility",
+          "Kokoro - Test: Code Format",
+          "Kokoro - Test: Dependencies",
+          "Kokoro - Test: Integration",
+          "Kokoro - Test: Java 11",
+          "Kokoro - Test: Java 8",
+          "Kokoro - Test: Linkage Monitor",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "googleapis/java-pubsublite",
+        "requiredStatusChecks": [
+          "dependencies",
+          "linkage-monitor",
+          "lint",
+          "clirr",
+          "units (8)",
+          "units (11)",
+          "Kokoro - Test: Integration",
+          "cla/google"
+        ]
+      },
+      {
+        "repo": "googleapis/java-spanner",
+        "requiredStatusChecks": [
+          "Kokoro - Test: Binary Compatibility",
+          "Kokoro - Test: Code Format",
+          "Kokoro - Test: Dependencies",
+          "Kokoro - Test: Integration",
+          "Kokoro - Test: Java 11",
+          "Kokoro - Test: Java 8",
+          "Kokoro - Test: Java 7",
+          "Kokoro - Test: Linkage Monitor",
           "cla/google"
         ]
       }
@@ -103,7 +225,6 @@
     "ignoredRepos": [
       "GoogleCloudPlatform/nodejs-docs-samples",
       "GoogleCloudPlatform/nodejs-getting-started",
-      "googleapis/cloud-profiler-nodejs",
       "googleapis/repo-automation-bots",
       "googleapis/google-cloud-node",
       "googleapis/gapic-generator-typescript"
@@ -122,6 +243,7 @@
     "ignoredRepos": [
       "googleapis/discovery-artifact-manager",
       "googleapis/gax-ruby",
+      "googleapis/google-api-ruby-client",
       "googleapis/google-auth-library-ruby",
       "googleapis/google-cloud-ruby",
       "googleapis/ruby-style",

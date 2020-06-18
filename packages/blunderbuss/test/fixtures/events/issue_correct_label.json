@@ -39,6 +39,14 @@
         "name": "blunderbuss: assign",
         "color": "f9d0c4",
         "default": false
+      },
+      {
+        "id": 1234,
+        "node_id": "abc",
+        "url": "https://api.github.com/repos/testOwner/testRepo/labels/api:%20bar",
+        "name": "api: bar",
+        "color": "f9d0c4",
+        "default": false
       }
     ],
     "state": "open",

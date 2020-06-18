@@ -97,6 +97,11 @@ at the specified schedule.
 1. create a token with Wombat Dressing Room.
 2. run `npm run release`.
 
+## Overall Architecture
+
+![High Level Architecture](./architecture.png)
+
+
 [auto-label]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/auto-label
 [auto-label-app]: https://github.com/apps/product-auto-label
 [blunderbuss]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/blunderbuss

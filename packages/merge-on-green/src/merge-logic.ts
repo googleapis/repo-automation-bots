@@ -321,7 +321,9 @@ mergeOnGreen.checkForRequiredSC = function checkForRequiredSC(
   check: string
 ): boolean {
   if (checkRuns.length !== 0) {
-    const checkRunCompleted = checkRuns.find(element => element.name === check);
+    const checkRunCompleted = checkRuns.find(element =>
+      element.name.startsWith(check)
+    );
     if (
       checkRunCompleted !== undefined &&
       checkRunCompleted.conclusion === 'success'
@@ -370,8 +372,8 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
         `Looking for required checks in status checks for ${owner}/${repo}/${pr}.`
       );
       //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
-      const checkCompleted = checkStatus.find(
-        (element: CheckStatus) => element.context === check
+      const checkCompleted = checkStatus.find((element: CheckStatus) =>
+        element.context.startsWith(check)
       );
       if (checkCompleted === undefined) {
         console.log(

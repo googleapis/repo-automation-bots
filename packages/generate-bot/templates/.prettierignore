@@ -1,4 +1,6 @@
-coverage/
-build/
 **/node_modules
-**/__snapshots__/
+**/coverage
+test/fixtures
+build/
+docs/
+protos/

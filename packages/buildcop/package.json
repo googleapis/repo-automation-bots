@@ -28,7 +28,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "1.6.1",
+    "gcf-utils": "1.6.2",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
@@ -48,7 +48,7 @@
     "cross-env": "^7.0.0",
     "dotenv": "^8.0.0",
     "gts": "^2.0.0",
-    "mocha": "^7.0.0",
+    "mocha": "^8.0.0",
     "nock": "^12.0.0",
     "smee-client": "^1.1.0",
     "snap-shot-it": "^7.8.0",

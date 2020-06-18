@@ -6,24 +6,50 @@ randomly to a specific list of users
 ## Usage
 
 Blunderbuss randomly assigns from a set of users specified in the config file located at 
-`.config/blunderbuss.yml` for each repo. Both fields are currently optional. 
+`.github/blunderbuss.yml` for each repo. All fields are currently optional.
 
 ```yaml
 assign_issues:
-  - issue_assignee1
-  - issue_assignee2
+  - issue_assignee_1
+  - issue_assignee_2
+assign_issues_by:
+  - labels:
+    - 'api: one'
+    - 'api: two'
+    to:
+    - label_assignee_1
+    - label_assignee_2
+  - labels:
+    - 'api: three'
+    to:
+    - label_assignee_3
 assign_prs:
-  - pr_assignee1
-  - pr_assignee2
+  - pr_assignee_1
+  - pr_assignee_2
 ```
 
-Blunderbuss can also be manually triggered by attached a "blunderbuss: assign" label to either and 
+Blunderbuss can also be manually triggered by attaching a "blunderbuss: assign" label to either an
 issue or PR.
 
-Blunderbuss will not assign issues or PRs to the user who opened them, and will ignore an issue
-if no valid assignees are found. 
+The `assign_issues_by` option allows you to assign issues based on the issue's
+labels.
+`assign_issues_by` has a higher precedence than `assign_issues`.
 
-For opened/reopened issues or prs, Blunderbuss will not assign a user if the issue already has an
+* If you add the "blunderbuss: assign" label, the issue will be assigned based
+  on any label on the issue. If no label matches, Blunderbuss will fall back to
+  the other entries in `assign_issues`, if any.
+* If you add a different label to an issue, Blunderbuss will only assign the
+  issue if the new label is configured in `assign_issues_by`. If the new label
+  is configured, the issue will be assigned based on any label on the issue.
+  This avoids Blunderbuss assigning old issues when they have an unrelated label
+  added.
+  * If an issue is already assigned, Blunderbuss will not change the assignee if
+    you add a configured label.
+
+Blunderbuss will not assign issues or PRs to the user who opened them, and will ignore an issue
+if no valid assignees are found.
+
+For opened/reopened issues or PRs, Blunderbuss will not assign a user if the issue already has an
 assignee.
 
 ## Setup

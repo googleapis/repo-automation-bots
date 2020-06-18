@@ -35,7 +35,7 @@
     "c8": "^7.1.0",
     "chai": "^4.2.0",
     "gts": "^2.0.0",
-    "mocha": "^7.0.0",
+    "mocha": "^8.0.0",
     "recursive-readdir": "^2.2.2",
     "rimraf": "^3.0.0",
     "snap-shot-it": "^7.9.0",
@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "enquirer": "^2.3.2",
-    "expect": "^25.0.0",
+    "expect": "^26.0.0",
     "handlebars": "^4.5.1"
   }
 }

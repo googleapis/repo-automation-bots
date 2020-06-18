@@ -21,8 +21,9 @@ import nock from 'nock';
 import {expect} from 'chai';
 import {resolve} from 'path';
 import fs from 'fs';
+import snapshot from 'snap-shot-it';
 
-import handler from '../src/auto-label';
+import handler, {autoDetectLabel} from '../src/auto-label';
 
 nock.disableNetConnect();
 
@@ -208,6 +209,70 @@ describe('auto-label', () => {
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
+
+    it('auto detects and labels a Spanner issue', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened_spanner'
+      ));
+
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
+        .reply(200)
+        .post(
+          '/repos/GoogleCloudPlatform/golang-samples/issues/5/labels',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200);
+      handler.callStorage = async () => downloadedFile;
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      ghRequests.done();
+    });
+
+    it('auto detects and labels a Cloud IoT issue', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened_spanner'
+      ));
+      payload['issue']['title'] = 'Cloud IoT: TestDeploy failed';
+
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
+        .reply(200)
+        .post(
+          '/repos/GoogleCloudPlatform/golang-samples/issues/5/labels',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200);
+      handler.callStorage = async () => downloadedFile;
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      ghRequests.done();
+    });
+
+    it('does not re-label an issue', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened_spanner'
+      ));
+      payload['issue']['title'] = 'spanner: this is actually about App Engine';
+
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
+        .reply(200, [
+          {
+            name: 'api: appengine',
+          },
+        ]);
+      handler.callStorage = async () => downloadedFile;
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      ghRequests.done();
+    });
   });
 
   it('responds to backfill label event, backfilling issues with labels', async () => {
@@ -224,5 +289,24 @@ describe('auto-label', () => {
     handler.callStorage = async () => downloadedFile;
     await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
     ghRequests.done();
+  });
+
+  describe('autoDetectLabel', () => {
+    it('finds the right label', () => {
+      const data = JSON.parse(downloadedFile).repos;
+      const tests = [
+        {title: 'spanner: ignored', want: 'api: spanner'},
+        {title: 'spanner/ignored', want: 'api: spanner'},
+        {title: 'spanner.ignored', want: 'api: spanner'},
+        {title: 'SPANNER.IGNORED', want: 'api: spanner'},
+        {title: 'SPAN ner: ignored', want: 'api: spanner'},
+        {title: 'iot: ignored', want: 'api: cloudiot'},
+        {title: 'unknown: ignored', want: undefined},
+        {title: 'spanner with no separator', want: undefined},
+      ];
+      for (const test of tests) {
+        expect(autoDetectLabel(data, test.title)).to.equal(test.want);
+      }
+    });
   });
 });
