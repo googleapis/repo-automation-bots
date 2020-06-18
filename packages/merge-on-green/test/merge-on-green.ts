@@ -507,7 +507,7 @@ describe('merge-on-green-', () => {
       scopes.forEach(s => s.done());
     });
 
-    it.only('does not comment if comment is already on PR', async () => {
+    it('does not comment if comment is already on PR', async () => {
       const scopes = [
         getPR(true, 'dirty', 'open'),
         getBranchProtection(['Special Check']),
