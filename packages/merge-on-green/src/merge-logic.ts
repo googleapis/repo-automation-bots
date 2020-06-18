@@ -211,8 +211,8 @@ mergeOnGreen.getStatusi = async function getStatusi(
       per_page: 100,
       page: num,
     });
-    if(data[0].context === undefined) {
-      console.info(`no further page data`)
+    if (data[0].context === undefined) {
+      console.info('no further page data');
       return [];
     }
     console.info(
@@ -276,8 +276,8 @@ mergeOnGreen.getCheckRuns = async function getCheckRuns(
       per_page: 100,
       page: num,
     });
-    if(checkRuns.data.check_runs[0] === undefined) {
-      console.info(`no further page data`)
+    if (checkRuns.data.check_runs[0] === undefined) {
+      console.info('no further page data');
       return [];
     }
     console.info(

@@ -45,6 +45,10 @@ interface CheckRuns {
   check_runs: [{name: string; conclusion: string}];
 }
 
+interface Comments {
+  body: string;
+}
+
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/Fixtures');
@@ -498,6 +502,7 @@ describe('merge-on-green-', () => {
     });
 
     it('adds a PR when label is added correctly', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         'events',
