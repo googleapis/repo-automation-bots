@@ -598,6 +598,27 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
   }
 };
 
+mergeOnGreen.removeLabel = async function removeLabel(
+  owner: string,
+  repo: string,
+  issue_number: number,
+  name: string,
+  github: GitHubAPI
+) {
+  try {
+    github.issues.removeLabel({
+      owner,
+      repo,
+      issue_number,
+      name,
+    });
+  } catch (err) {
+    console.log(
+      `There was an issue removing the automerge label on ${owner}/${repo} PR ${issue_number}`
+    );
+  }
+};
+
 /**
  * Main function. Checks whether PR is open and whether there are is any master branch protection. If there
  * is, MOG continues checking to make sure reviews are approved and statuses have passed.
@@ -703,6 +724,7 @@ export async function mergeOnGreen(
       `${owner}/${repo}/${pr} timed out before its statuses & reviews passed`
     );
     await mergeOnGreen.commentOnPR(owner, repo, pr, failedMesssage, github);
+    await mergeOnGreen.removeLabel(owner, repo, pr, labelName, github);
     return true;
   } else if (state === 'comment') {
     console.log(`${owner}/${repo}/${pr} is halfway through its check`);
