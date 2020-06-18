@@ -1,0 +1,13 @@
+[
+    {
+        "appliesTo": {
+            "priority": "P0",
+            "issueType": "bug"
+        },
+        "complianceSettings": {
+            "responseTime": 0,
+            "resolutionTime": "12h",
+            "requiresAssignee": true
+        }
+    }
+]

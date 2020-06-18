@@ -1,0 +1,11 @@
+[
+    {
+        "appliesTo": {
+            "gitHubLabels": ["triageme"]
+        },
+        "complianceSettings": {
+            "responseTime": "5d",
+            "resolutionTime": 0
+        }
+    }
+]
