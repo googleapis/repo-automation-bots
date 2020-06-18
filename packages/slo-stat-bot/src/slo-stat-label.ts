@@ -167,7 +167,7 @@ handler.createCheck = async function createCheck(
     checkParams.output = {
       title: 'Invalid slo rules detected',
       summary: 'issue_slo_rules.json does not follow the slo_rules schema.',
-      text: validationRes.errors?.toString()
+      text: JSON.stringify(validationRes.errors, null, 4)
     }
   }
 
