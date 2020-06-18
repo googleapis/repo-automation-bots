@@ -211,6 +211,10 @@ mergeOnGreen.getStatusi = async function getStatusi(
       per_page: 100,
       page: num,
     });
+    if(data[0].context === undefined) {
+      console.info(`no further page data`)
+      return [];
+    }
     console.info(
       `called getStatuses in ${Date.now() - start}ms ${owner}/${repo}, ${
         data[0].context
@@ -240,9 +244,10 @@ mergeOnGreen.iterateGetStatusi = async function iterateGetStatusi(
   let results: CheckStatus[] = [];
   for (let i = 0; i < 10; i++) {
     const temp = await mergeOnGreen.getStatusi(owner, repo, github, headSha, i);
-    if (temp.length !== 0) {
-      results = results.concat(temp);
+    if (temp.length === 0) {
+      return results;
     }
+    results = results.concat(temp);
   }
   return results;
 };
@@ -271,6 +276,10 @@ mergeOnGreen.getCheckRuns = async function getCheckRuns(
       per_page: 100,
       page: num,
     });
+    if(checkRuns.data.check_runs[0] === undefined) {
+      console.info(`no further page data`)
+      return [];
+    }
     console.info(
       `called getCheckRuns in ${Date.now() - start}ms ${owner}/${repo}`
     );
@@ -303,9 +312,10 @@ mergeOnGreen.iterateGetCheckRuns = async function iterateGetCheckRuns(
       headSha,
       i
     );
-    if (temp !== undefined) {
-      results = results.concat(temp);
+    if (temp.length === 0) {
+      return results;
     }
+    results = results.concat(temp);
   }
   return results;
 };

@@ -498,7 +498,6 @@ describe('merge-on-green-', () => {
     });
 
     it('adds a PR when label is added correctly', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         'events',
