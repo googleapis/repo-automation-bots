@@ -83,6 +83,12 @@ function getMogLabel(response: Label[]) {
     .reply(200, response);
 }
 
+function removeMogLabel() {
+  return nock('https://api.github.com')
+    .delete('/repos/testOwner/testRepo/issues/1/labels/automerge')
+    .reply(200);
+}
+
 function merge() {
   return nock('https://api.github.com')
     .log(console.log)
@@ -495,11 +501,12 @@ describe('merge-on-green', () => {
         getBranchProtection(['Special Check']),
         getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'this is not the label you are looking for'}]),
+        getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
+          {state: 'failure', context: 'Special Check'},
         ]),
         commentOnPR(),
+        removeMogLabel(),
       ];
 
       await probot.receive({
