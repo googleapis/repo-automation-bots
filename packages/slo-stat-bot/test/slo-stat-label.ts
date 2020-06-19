@@ -17,13 +17,14 @@ import {resolve} from 'path';
 import {Probot} from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
-import {expect} from 'chai';
+import * as assert from 'assert';
 import {describe, it, beforeEach} from 'mocha';
 import Webhooks from '@octokit/webhooks';
 import snapshot from 'snap-shot-it';
 
 import handler from '../src/slo-stat-label';
 import spies from 'chai-spies';
+import { SigningOptions } from 'crypto';
 
 const chai = require('chai');
 chai.use(spies);
@@ -58,19 +59,19 @@ describe('slo-status-label', () => {
 
   describe('opened or reopened pull request', () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
-    let stub: any;
-    
+    let sandbox = sinon.createSandbox();
+  
     beforeEach(() => {
       payload = require(resolve(
         fixturesPath,
         'events',
         'pull_request_opened'
       ));
-      stub = sinon.stub(handler, 'handle_slos');
+      sandbox.stub(handler, 'handle_slos');
     });
 
     afterEach(function () {
-      sinon.restore();
+      sandbox.restore();
       nock.cleanAll;
     });
 
@@ -78,7 +79,7 @@ describe('slo-status-label', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(404)
-
+      
       await probot.receive({name: 'pull_request.opened', payload, id: 'abc123',});
       requests.done();
     });
@@ -94,7 +95,7 @@ describe('slo-status-label', () => {
         .reply(200,containsSloFile)
       await probot.receive({name: 'pull_request.opened', payload, id: 'abc123',});
 
-      expect(stub.called).to.equals(true);
+      sinon.assert.calledOnce(handler.handle_slos);
       requests.done();
     });
 
@@ -110,7 +111,7 @@ describe('slo-status-label', () => {
 
       await probot.receive({name: 'pull_request.opened', payload, id: 'abc123',});
 
-      expect(stub.called).to.equals(false);
+      sinon.assert.notCalled(handler.handle_slos)
       requests.done();
     });
   });
@@ -279,7 +280,7 @@ describe('slo-status-label', () => {
         let validRes = await handler.lint(schema, slo);
         let isValid = await validRes.isValid;
        
-        expect(isValid).to.equals(true);
+        assert.strictEqual(isValid, true);
       }
     })
 
@@ -297,7 +298,7 @@ describe('slo-status-label', () => {
         let validRes = await handler.lint(schema, slo);
         let isValid = await validRes.isValid;
        
-        expect(isValid).to.equals(false);
+        assert.strictEqual(isValid, false);
       }
     })
   });

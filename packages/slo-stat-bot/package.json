@@ -1,7 +1,7 @@
 {
   "name": "slo-stat-label",
-  "version": "1.0.0",
-  "description": "Labels slo status on issues and prs",
+  "version": "0.0.1",
+  "description": "Labels SLO status on Issues and PRs",
   "private": true,
   "author": "Google LLC.",
   "license": "Apache-2.0",
@@ -10,6 +10,7 @@
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "main": "build/src/app.js",
   "keywords": [
+    "slo",
     "probot",
     "github",
     "probot-app"
@@ -31,6 +32,7 @@
   "dependencies": {
     "@octokit/rest": "^16.41.2",
     "@types/chai-spies": "^1.0.1",
+    "assert": "^2.0.0",
     "chai-spies": "^1.0.0",
     "gcf-utils": "1.6.2",
     "probot": "^9.11.3",

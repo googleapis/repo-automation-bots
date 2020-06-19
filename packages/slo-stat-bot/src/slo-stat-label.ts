@@ -25,12 +25,13 @@ import Ajv, { ErrorObject } from 'ajv';
 const schema = require("./../utils/schema.json");
 
 type ValidationResults = {
-  isValid: Promise<boolean>,
+  isValid: boolean,
   errors?: ErrorObject [] | null | undefined
 };
 
 function handler(app: Application) {
-  app.on(['pull_request.opened', 'pull_request.reopened'], async (context: Context) => {
+  app.on(['pull_request.opened', 'pull_request.reopened', 'pull_request.edited', 
+  'pull_request.synchronize'], async (context: Context) => {
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
       const pull_number =  context.payload.number;
@@ -75,7 +76,7 @@ handler.getFileContents = async function getFileContents(
   owner: string,
   repo: string,
   file_sha: string,
-) {
+): Promise<string | undefined> {
     try {
       const blob = await github.git.getBlob({
         owner,
@@ -96,7 +97,7 @@ handler.listFiles = async function listFiles(
   repo: string,
   pull_number: number,
   per_page: number
-) {
+):Promise<Response<PullsListFilesResponse> | undefined> {
   try {
     const listOfFiles = await github.pulls.listFiles({
       owner,
@@ -114,16 +115,16 @@ handler.listFiles = async function listFiles(
 handler.lint = async function lint (
   schema: JSON, 
   sloData: JSON
-) {
-    var ajv = new Ajv();
-    var validate = await ajv.compile(schema);
-    var isValid = await validate(sloData);
+):Promise<ValidationResults> {
+    const ajv = new Ajv();
+    const validate = await ajv.compile(schema);
+    const isValid = await validate(sloData);
 
-    const res: ValidationResults = {
+    return <ValidationResults>
+    {
       isValid: isValid,
       errors: validate.errors
-    }
-    return res;
+    };
 }
 
 handler.commentPR = async function commentPR(
@@ -131,12 +132,10 @@ handler.commentPR = async function commentPR(
   owner: string, 
   repo: string,
   issue_number: number,
-  isValid: Promise<boolean>
+  isValid: boolean
 ) {
-  let body: string = "";
-
   if(!isValid) {
-    body = 'ERROR: "issue_slo_rules.json" file is not valid with Json schema'
+    let body: string = 'ERROR: "issue_slo_rules.json" file is not valid with Json schema';
     try {
       await github.issues.createComment({
         owner,

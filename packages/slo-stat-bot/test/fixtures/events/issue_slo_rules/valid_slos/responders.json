@@ -9,7 +9,7 @@
             "responders": {
                 "owners": ["./OWNERS"],
                 "contributors": "ADMIN",
-                "users": ["brennae", "sreeharshitha"]
+                "users": ["testUser1", "testUser2"]
             }
         }
      }
