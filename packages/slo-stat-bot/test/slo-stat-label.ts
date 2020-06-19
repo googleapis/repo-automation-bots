@@ -18,18 +18,20 @@ import {Probot} from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
 import * as assert from 'assert';
-import {describe, it, beforeEach} from 'mocha';
+import {describe, it, beforeEach, afterEach} from 'mocha';
+
+// eslint-disable-next-line node/no-extraneous-import
 import Webhooks from '@octokit/webhooks';
 import snapshot from 'snap-shot-it';
-
 import handler from '../src/slo-stat-label';
 import spies from 'chai-spies';
-import { SigningOptions } from 'crypto';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const chai = require('chai');
 chai.use(spies);
-const sinon = require('sinon');
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const sinon = require('sinon');
 
 nock.disableNetConnect();
 
@@ -59,18 +61,15 @@ describe('slo-status-label', () => {
 
   describe('opened or reopened pull request', () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
-    let sandbox = sinon.createSandbox();
-  
+    const sandbox = sinon.createSandbox();
+
     beforeEach(() => {
-      payload = require(resolve(
-        fixturesPath,
-        'events',
-        'pull_request_opened'
-      ));
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      payload = require(resolve(fixturesPath, 'events', 'pull_request_opened'));
       sandbox.stub(handler, 'handle_slos');
     });
 
-    afterEach(function () {
+    afterEach(() => {
       sandbox.restore();
       nock.cleanAll;
     });
@@ -78,13 +77,18 @@ describe('slo-status-label', () => {
     it('Error is logged if get list of files fails', async () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
-        .reply(404)
-      
-      await probot.receive({name: 'pull_request.opened', payload, id: 'abc123',});
+        .reply(404);
+
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123',
+      });
       requests.done();
     });
 
     it('triggers handle_slos function since issue_slo_rules.json is present', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const containsSloFile = require(resolve(
         fixturesPath,
         'events',
@@ -92,14 +96,19 @@ describe('slo-status-label', () => {
       ));
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
-        .reply(200,containsSloFile)
-      await probot.receive({name: 'pull_request.opened', payload, id: 'abc123',});
+        .reply(200, containsSloFile);
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123',
+      });
 
       sinon.assert.calledOnce(handler.handle_slos);
       requests.done();
     });
 
     it('does not trigger handle_slos function since issue_slo_rules.json is not present', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const doesNotContainSLOFile = require(resolve(
         fixturesPath,
         'events',
@@ -107,31 +116,33 @@ describe('slo-status-label', () => {
       ));
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
-        .reply(200,doesNotContainSLOFile)
+        .reply(200, doesNotContainSLOFile);
 
-      await probot.receive({name: 'pull_request.opened', payload, id: 'abc123',});
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123',
+      });
 
-      sinon.assert.notCalled(handler.handle_slos)
+      sinon.assert.notCalled(handler.handle_slos);
       requests.done();
     });
   });
 
   describe('handleSLOs triggered', async () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
-    
+
     beforeEach(() => {
-      payload = require(resolve(
-        fixturesPath,
-        'events',
-        'pull_request_opened'
-      ));
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      payload = require(resolve(fixturesPath, 'events', 'pull_request_opened'));
     });
 
-    afterEach(function () {
+    afterEach(() => {
       nock.cleanAll;
     });
 
     it('Error is logged if get file content fails', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const containsSloFile = require(resolve(
         fixturesPath,
         'events',
@@ -140,136 +151,162 @@ describe('slo-status-label', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(202, containsSloFile)
-        .get('/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25')
-        .reply(404, {})  
+        .get(
+          '/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25'
+        )
+        .reply(404, {});
 
-      await probot.receive({name: 'pull_request.opened', payload, id: 'abc123',});
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123',
+      });
       requests.done();
     });
 
     it('Error is logged if comment on PR fails', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const containsSloFile = require(resolve(
         fixturesPath,
         'events',
         'contains_slo_file'
       ));
-      const blob = require(resolve(
-        fixturesPath,
-        'events',
-        'invalid_blob'
-      ));
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const blob = require(resolve(fixturesPath, 'events', 'invalid_blob'));
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(202, containsSloFile)
-        .get('/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25')
+        .get(
+          '/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25'
+        )
         .reply(202, blob)
         .post('/repos/testOwner/testRepo/issues/6/comments', body => {
           snapshot(body);
           return true;
-        })     
-        .reply(404) 
+        })
+        .reply(404);
 
-      await probot.receive({name: 'pull_request.opened', payload, id: 'abc123',});
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123',
+      });
       requests.done();
     });
 
     it('Error is logged if create check fails', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const containsSloFile = require(resolve(
         fixturesPath,
         'events',
         'contains_slo_file'
       ));
-      const blob = require(resolve(
-        fixturesPath,
-        'events',
-        'invalid_blob'
-      ));
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const blob = require(resolve(fixturesPath, 'events', 'invalid_blob'));
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(202, containsSloFile)
-        .get('/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25')
+        .get(
+          '/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25'
+        )
         .reply(202, blob)
         .post('/repos/testOwner/testRepo/issues/6/comments', body => {
           snapshot(body);
           return true;
-        })  
-        .reply(202)   
+        })
+        .reply(202)
         .post('/repos/testOwner/testRepo/check-runs', body => {
           snapshot(body);
           return true;
-        })     
-        .reply(404) 
+        })
+        .reply(404);
 
-      await probot.receive({name: 'pull_request.opened', payload, id: 'abc123',});
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123',
+      });
       requests.done();
     });
 
     it('An error comment is made on PR and failure check if issue_slo_rules lint is not valid', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const containsSloFile = require(resolve(
         fixturesPath,
         'events',
         'contains_slo_file'
       ));
-      const blob = require(resolve(
-        fixturesPath,
-        'events',
-        'invalid_blob'
-      ));
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const blob = require(resolve(fixturesPath, 'events', 'invalid_blob'));
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
-        .reply(200,containsSloFile)
-        .get('/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25')
+        .reply(200, containsSloFile)
+        .get(
+          '/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25'
+        )
         .reply(200, blob)
         .post('/repos/testOwner/testRepo/issues/6/comments', body => {
           snapshot(body);
           return true;
-        })     
+        })
         .reply(200)
         .post('/repos/testOwner/testRepo/check-runs', body => {
           snapshot(body);
           return true;
-        })     
-        .reply(200)
-        
-      await probot.receive({name: 'pull_request.opened', payload, id: 'abc123',});
+        })
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123',
+      });
       requests.done();
     });
 
     it('No comment on PR and success check if issue_slo_rules lint is valid', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const containsSloFile = require(resolve(
         fixturesPath,
         'events',
         'contains_slo_file'
       ));
-      const blob = require(resolve(
-        fixturesPath,
-        'events',
-        'valid_blob'
-      ));
-      
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const blob = require(resolve(fixturesPath, 'events', 'valid_blob'));
+
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
-        .reply(200,containsSloFile)
-        .get('/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25')
+        .reply(200, containsSloFile)
+        .get(
+          '/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25'
+        )
         .reply(200, blob)
         .post('/repos/testOwner/testRepo/check-runs', body => {
           snapshot(body);
           return true;
-        })     
-        .reply(200)
-        
-      await probot.receive({name: 'pull_request.opened', payload, id: 'abc123',});
+        })
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123',
+      });
       requests.done();
     });
   });
 
-  describe('checking validation by using linter', () =>{
+  describe('checking validation by using linter', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const schema = require('./../utils/schema.json');
 
-    it('Valid slos return true', async function() {
-      const files = fs.readdirSync(resolve(fixturesPath, 'events', 'issue_slo_rules', 'valid_slos'));
+    it('Valid slos return true', async () => {
+      const files = fs.readdirSync(
+        resolve(fixturesPath, 'events', 'issue_slo_rules', 'valid_slos')
+      );
 
-      for(const fileName of files) {
+      for (const fileName of files) {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const slo = require(resolve(
           fixturesPath,
           'events',
@@ -277,17 +314,20 @@ describe('slo-status-label', () => {
           'valid_slos',
           fileName
         ));
-        let validRes = await handler.lint(schema, slo);
-        let isValid = await validRes.isValid;
-       
+        const validRes = await handler.lint(schema, slo);
+        const isValid = await validRes.isValid;
+
         assert.strictEqual(isValid, true);
       }
-    })
+    });
 
-    it('Invalid slos return false', async function() {
-      const files = fs.readdirSync(resolve(fixturesPath, 'events', 'issue_slo_rules', 'invalid_slos'));
+    it('Invalid slos return false', async () => {
+      const files = fs.readdirSync(
+        resolve(fixturesPath, 'events', 'issue_slo_rules', 'invalid_slos')
+      );
 
-      for(const fileName of files) {
+      for (const fileName of files) {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const slo = require(resolve(
           fixturesPath,
           'events',
@@ -295,11 +335,11 @@ describe('slo-status-label', () => {
           'invalid_slos',
           fileName
         ));
-        let validRes = await handler.lint(schema, slo);
-        let isValid = await validRes.isValid;
-       
+        const validRes = await handler.lint(schema, slo);
+        const isValid = await validRes.isValid;
+
         assert.strictEqual(isValid, false);
       }
-    })
+    });
   });
 });
