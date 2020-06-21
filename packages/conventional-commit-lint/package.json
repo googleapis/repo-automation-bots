@@ -30,8 +30,8 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@commitlint/config-conventional": "^8.1.0",
-    "@commitlint/lint": "^8.0.0",
+    "@commitlint/config-conventional": "^9.0.0",
+    "@commitlint/lint": "^9.0.0",
     "gcf-utils": "1.6.1"
   },
   "devDependencies": {
