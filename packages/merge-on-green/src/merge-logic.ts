@@ -31,7 +31,7 @@ interface Reviews {
   state: string;
 }
 
-interface Comments {
+interface Comment {
   body: string;
 }
 
@@ -125,7 +125,7 @@ mergeOnGreen.getCommentsOnPR = async function getCommentsOnPR(
   repo: string,
   issue_number: number,
   github: GitHubAPI
-): Promise<Comments[]> {
+): Promise<Comment[] | null> {
   try {
     const data = await github.issues.listComments({
       owner,
@@ -134,7 +134,7 @@ mergeOnGreen.getCommentsOnPR = async function getCommentsOnPR(
     });
     return data.data;
   } catch (err) {
-    return [];
+    return null;
   }
 };
 
@@ -607,7 +607,7 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
   github: GitHubAPI
 ): Promise<{} | null> {
   try {
-    const data = github.issues.createComment({
+    const data = await github.issues.createComment({
       owner,
       repo,
       issue_number: pr,
@@ -692,13 +692,10 @@ export async function mergeOnGreen(
       await mergeOnGreen.merge(owner, repo, pr, prInfo, github);
       merged = true;
     } catch (err) {
-      if (err.message.includes('not authorized to push to this branch')) {
-        let isCommented;
-        if (commentsOnPR.length !== 0) {
-          isCommented = commentsOnPR.find(element =>
-            element.body.includes('not authorized to push to this branch')
-          );
-        }
+      if (err.status === 405) {
+        const isCommented = commentsOnPR?.find(element =>
+          element.body.includes('not authorized to push to this branch')
+        );
         if (!isCommented) {
           await mergeOnGreen.commentOnPR(owner, repo, pr, err.message, github);
         }
@@ -722,12 +719,9 @@ export async function mergeOnGreen(
         console.info(
           `There are conflicts in the base branch of ${owner}/${repo}/${pr}`
         );
-        let isCommented;
-        if (commentsOnPR.length !== 0) {
-          isCommented = commentsOnPR.find(element =>
-            element.body.includes('PR has conflicts that you need to resolve')
-          );
-        }
+        const isCommented = commentsOnPR?.find(element =>
+          element.body.includes('PR has conflicts that you need to resolve')
+        );
         if (!isCommented) {
           await mergeOnGreen.commentOnPR(
             owner,
@@ -747,12 +741,9 @@ export async function mergeOnGreen(
     await mergeOnGreen.commentOnPR(owner, repo, pr, failedMesssage, github);
     return true;
   } else if (state === 'comment') {
-    let isCommented;
-    if (commentsOnPR.length !== 0) {
-      isCommented = commentsOnPR.find(element =>
-        element.body.includes('PR has attempted to merge for 3 hours')
-      );
-    }
+    const isCommented = commentsOnPR?.find(element =>
+      element.body.includes('PR has attempted to merge for 3 hours')
+    );
     if (!isCommented) {
       await mergeOnGreen.commentOnPR(owner, repo, pr, continueMesssage, github);
     }
