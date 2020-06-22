@@ -26,7 +26,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-cloud/storage": "^4.3.0",
+    "@google-cloud/storage": "^5.0.0",
     "gaxios": "^3.0.0",
     "gcf-utils": "1.6.2"
   },
@@ -42,7 +42,7 @@
     "chai": "^4.2.0",
     "cross-env": "^7.0.0",
     "gts": "^2.0.0",
-    "mocha": "^7.0.0",
+    "mocha": "^8.0.0",
     "nock": "^12.0.0",
     "snap-shot-it": "^7.9.0",
     "typescript": "^3.8.3"

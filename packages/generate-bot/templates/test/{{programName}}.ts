@@ -34,14 +34,9 @@ describe('{{programName}}', () => {
   );
 
   beforeEach(() => {
-    probot = new Probot({
-      // use a bare instance of octokit, the default version
-      // enables retries which makes testing difficult.
-      Octokit: require('@octokit/rest'),
-    });
+    probot = new Probot({});
 
-    const app = probot.load(myProbotApp);
-    app.app = {
+    probot.app = {
       getSignedJsonWebToken() {
         return 'abc123';
       },
@@ -49,6 +44,7 @@ describe('{{programName}}', () => {
         return Promise.resolve('abc123');
       },
     };
+    probot.load(myProbotApp);
   });
 
   describe('shows an example of how to use chai library', () => {

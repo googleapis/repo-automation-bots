@@ -331,7 +331,9 @@ mergeOnGreen.checkForRequiredSC = function checkForRequiredSC(
   check: string
 ): boolean {
   if (checkRuns.length !== 0) {
-    const checkRunCompleted = checkRuns.find(element => element.name === check);
+    const checkRunCompleted = checkRuns.find(element =>
+      element.name.startsWith(check)
+    );
     if (
       checkRunCompleted !== undefined &&
       checkRunCompleted.conclusion === 'success'
@@ -380,8 +382,8 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
         `Looking for required checks in status checks for ${owner}/${repo}/${pr}.`
       );
       //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
-      const checkCompleted = checkStatus.find(
-        (element: CheckStatus) => element.context === check
+      const checkCompleted = checkStatus.find((element: CheckStatus) =>
+        element.context.startsWith(check)
       );
       if (!checkCompleted) {
         console.log(
@@ -608,6 +610,27 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
   }
 };
 
+mergeOnGreen.removeLabel = async function removeLabel(
+  owner: string,
+  repo: string,
+  issue_number: number,
+  name: string,
+  github: GitHubAPI
+) {
+  try {
+    github.issues.removeLabel({
+      owner,
+      repo,
+      issue_number,
+      name,
+    });
+  } catch (err) {
+    console.log(
+      `There was an issue removing the automerge label on ${owner}/${repo} PR ${issue_number}`
+    );
+  }
+};
+
 /**
  * Main function. Checks whether PR is open and whether there are is any master branch protection. If there
  * is, MOG continues checking to make sure reviews are approved and statuses have passed.
@@ -713,6 +736,7 @@ export async function mergeOnGreen(
       `${owner}/${repo}/${pr} timed out before its statuses & reviews passed`
     );
     await mergeOnGreen.commentOnPR(owner, repo, pr, failedMesssage, github);
+    await mergeOnGreen.removeLabel(owner, repo, pr, labelName, github);
     return true;
   } else if (state === 'comment') {
     console.log(`${owner}/${repo}/${pr} is halfway through its check`);

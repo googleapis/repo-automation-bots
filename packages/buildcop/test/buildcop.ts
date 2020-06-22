@@ -61,10 +61,14 @@ function nockNewIssue(repo: string) {
     .reply(200);
 }
 
-function nockGetIssueComments(repo: string, issueNumber: number) {
+function nockGetIssueComments(
+  repo: string,
+  issueNumber: number,
+  comments: Array<{}> = []
+) {
   return nock('https://api.github.com')
     .get(`/repos/GoogleCloudPlatform/${repo}/issues/${issueNumber}/comments`)
-    .reply(200, []);
+    .reply(200, comments);
 }
 
 function nockIssueComment(repo: string, issueNumber: number) {
@@ -109,6 +113,19 @@ describe('buildcop', () => {
     probot.load(buildcop);
   });
 
+  describe('extractBuildURL', () => {
+    it('finds a build URL', () => {
+      const want = '[Build Status](example.com/my/build)';
+      const input = buildcop.formatBody(
+        {passed: false, testCase: 'TestHello'},
+        'abc',
+        want
+      );
+      const result = buildcop.extractBuildURL(input);
+      expect(result).to.equal(want);
+    });
+  });
+
   describe('findTestResults', () => {
     it('finds one failure', () => {
       const input = fs.readFileSync(
@@ -123,6 +140,8 @@ describe('buildcop', () => {
               'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
             testCase: 'TestSample',
             passed: false,
+            log:
+              '\nsnippet_test.go:242: got output ""; want it to contain "4 Venue 4" snippet_test.go:243: got output ""; want it to contain "19 Venue 19" snippet_test.go:244: got output ""; want it to contain "42 Venue 42"\n',
           },
         ],
         passes: [
@@ -158,12 +177,16 @@ describe('buildcop', () => {
               'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
             testCase: 'TestBucketLock',
             passed: false,
+            log:
+              'main_test.go:234: failed to create bucket ("golang-samples-tests-8-storage-buckets-tests"): Post https://storage.googleapis.com/storage/v1/b?alt=json&prettyPrint=false&project=golang-samples-tests-8: read tcp 10.142.0.112:33618->108.177.12.128:443: read: connection reset by peer',
           },
           {
             package:
               'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
             testCase: 'TestUniformBucketLevelAccess',
             passed: false,
+            log:
+              'main_test.go:242: failed to enable uniform bucket-level access ("golang-samples-tests-8-storage-buckets-tests"): googleapi: Error 404: Not Found, notFound',
           },
         ],
         passes: [
@@ -221,6 +244,24 @@ describe('buildcop', () => {
       expect(results).to.eql({
         passes: [],
         failures: [],
+      });
+    });
+
+    it('ignores skipped tests', () => {
+      const input = fs.readFileSync(
+        resolve(fixturesPath, 'testdata', 'go_skip.xml'),
+        'utf8'
+      );
+      const results = findTestResults(input);
+      expect(results).to.eql({
+        failures: [],
+        passes: [
+          {
+            package: 'github.com/GoogleCloudPlatform/golang-samples',
+            testCase: 'TestLicense',
+            passed: true,
+          },
+        ],
       });
     });
   });
@@ -371,6 +412,19 @@ describe('buildcop', () => {
         const payload = buildPayload('java_one_failed.xml', 'java-vision');
 
         const scopes = [nockIssues('java-vision'), nockNewIssue('java-vision')];
+
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('opens an issue [Node.js]', async () => {
+        const payload = buildPayload('node_one_failed.xml', 'nodejs-spanner');
+
+        const scopes = [
+          nockIssues('nodejs-spanner'),
+          nockNewIssue('nodejs-spanner'),
+        ];
 
         await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
@@ -666,7 +720,8 @@ describe('buildcop', () => {
             .get('/repos/GoogleCloudPlatform/golang-samples/issues/16/comments')
             .reply(200, [
               {
-                body: 'status: failed\ncommit: 123',
+                body:
+                  'status: failed\ncommit: 123\nbuildURL: [Build Status](example.com/failure)',
               },
             ]),
           nockIssueComment('golang-samples', 16),
@@ -691,7 +746,8 @@ describe('buildcop', () => {
                 passed: false,
               }),
               number: 16,
-              body: 'status: failed\ncommit: 123',
+              body:
+                'status: failed\ncommit: 123\nbuildURL: [Build Status](example.com/failure)',
             },
           ]),
           nockIssueComment('golang-samples', 16),
@@ -940,6 +996,128 @@ describe('buildcop', () => {
         await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 
         scopes.forEach(s => s.done());
+      });
+
+      describe('Grouped issues', () => {
+        it('opens a single issue for many tests in the same package', async () => {
+          const payload = buildPayload('node_group.xml', 'nodejs-spanner');
+
+          const scopes = [
+            nockIssues('nodejs-spanner', [
+              {
+                // Should be referenced as #8 in snapshot.
+                title: buildcop.formatTestCase({
+                  passed: false,
+                  package: 'Spanner',
+                  testCase:
+                    'should delete and then insert rows in the example tables',
+                }),
+                number: 8,
+                body: 'Failed',
+                state: 'open,',
+              },
+            ]),
+            nockNewIssue('nodejs-spanner'),
+          ];
+
+          await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+
+          scopes.forEach(s => s.done());
+        });
+
+        it('closes an individual issue and keeps grouped issue open', async () => {
+          const payload = buildPayload('node_group.xml', 'nodejs-spanner');
+
+          const scopes = [
+            nockIssues('nodejs-spanner', [
+              {
+                title: buildcop.formatTestCase({
+                  passed: false,
+                  package: 'Spanner',
+                  testCase: 'should create an example database',
+                }),
+                number: 9,
+                body: 'Failed',
+                state: 'open,',
+              },
+              {
+                title: buildcop.formatGroupedTitle('Spanner'),
+                number: 10,
+                body: 'Group failure!',
+                state: 'open',
+              },
+            ]),
+            nockGetIssueComments('nodejs-spanner', 10),
+            nockIssueComment('nodejs-spanner', 10),
+            nockGetIssueComments('nodejs-spanner', 9),
+            nockIssueComment('nodejs-spanner', 9),
+            nockIssuePatch('nodejs-spanner', 9),
+          ];
+
+          await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+
+          scopes.forEach(s => s.done());
+        });
+
+        it('does not duplicate comment on grouped issue', async () => {
+          const payload = buildPayload('node_group.xml', 'nodejs-spanner');
+
+          const testCase = buildcop.groupedTestCase('Spanner');
+          const scopes = [
+            nockIssues('nodejs-spanner', [
+              {
+                title: buildcop.formatGroupedTitle('Spanner'),
+                number: 10,
+                body: 'Group failure!',
+                state: 'open',
+              },
+            ]),
+            nockGetIssueComments('nodejs-spanner', 10, [
+              {
+                body: buildcop.formatBody(testCase, '123', 'build.url'),
+              },
+            ]),
+          ];
+
+          await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+
+          scopes.forEach(s => s.done());
+        });
+
+        it('closes group issues when all tests pass', async () => {
+          const payload = buildPayload('node_group_pass.xml', 'nodejs-spanner');
+
+          const scopes = [
+            nockIssues('nodejs-spanner', [
+              {
+                title: buildcop.formatTestCase({
+                  passed: true,
+                  package: 'Spanner',
+                  testCase: 'should create an example database',
+                }),
+                number: 9,
+                body: 'Failed',
+                state: 'open,',
+              },
+              {
+                title: buildcop.formatGroupedTitle('Spanner'),
+                number: 10,
+                body: 'Group failure!',
+                state: 'open',
+              },
+            ]),
+            nockIssueComment('nodejs-spanner', 9),
+            nockGetIssueComments('nodejs-spanner', 9),
+            nockIssuePatch('nodejs-spanner', 9),
+            nockIssueComment('nodejs-spanner', 10),
+            nockGetIssueComments('nodejs-spanner', 10),
+            nockIssuePatch('nodejs-spanner', 10),
+          ];
+
+          await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+
+          scopes.forEach(s => s.done());
+        });
       });
     });
   });

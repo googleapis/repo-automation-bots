@@ -172,6 +172,93 @@ describe('Blunderbuss', () => {
       await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
       requests.done();
     });
+
+    it('assigns blunderbuss labeled issue by label', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_correct_label'
+      ));
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'on_label.yml')
+      );
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
+        .reply(200, {content: config.toString('base64')})
+        .delete(
+          '/repos/testOwner/testRepo/issues/4/labels/' +
+            encodeURI('blunderbuss: assign')
+        )
+        .reply(200, {})
+        .post('/repos/testOwner/testRepo/issues/4/assignees', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
+      requests.done();
+    });
+
+    it('assigns opened issue by label', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened_no_assignees'
+      ));
+      payload.issue.labels = [{name: 'api: foo'}];
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'on_label.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
+        .reply(200, {content: config.toString('base64')})
+        .post('/repos/testOwner/testRepo/issues/5/assignees', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      requests.done();
+    });
+
+    it('assigns labeled issue by label', async () => {
+      const payload = require(resolve(fixturesPath, 'events', 'issue_labeled'));
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'on_label.yml')
+      );
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
+        .reply(200, {content: config.toString('base64')})
+        .post('/repos/testOwner/testRepo/issues/4/assignees', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
+      requests.done();
+    });
+
+    it('ignores labeled issues when with assignee(s)', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_labeled_with_assignees'
+      ));
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'on_label.yml')
+      );
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
+        .reply(200, {content: config.toString('base64')});
+
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      requests.done();
+    });
   });
 
   describe('pr tests', () => {
@@ -183,6 +270,34 @@ describe('Blunderbuss', () => {
       ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
+      );
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
+        .reply(200, {content: config.toString('base64')})
+        .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123',
+      });
+      requests.done();
+    });
+
+    it('assigns user to a PR when opened with no assignee, ignoring assign_issues_by', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_no_assignees'
+      ));
+      payload.pull_request.labels = [{name: 'api: foo'}];
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'on_label.yml')
       );
 
       const requests = nock('https://api.github.com')

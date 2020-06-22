@@ -1,0 +1,62 @@
+{
+  "name": "snippet-bot",
+  "version": "1.0.0",
+  "description": "checks snippets for errors",
+  "private": true,
+  "author": "Google LLC.",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "main": "build/src/app.js",
+  "keywords": [
+    "probot",
+    "github",
+    "probot-app"
+  ],
+  "files": [
+    "build/src"
+  ],
+  "scripts": {
+    "compile": "tsc -p .",
+    "start": "probot run ./build/src/snippet-bot.js",
+    "start:local": "node ./build/src/local.js",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
+    "test:snap": "SNAPSHOT_UPDATE=1 npm test",
+    "fix": "gts fix",
+    "lint": "gts check"
+  },
+  "dependencies": {
+    "@octokit/rest": "^18.0.0",
+    "gcf-utils": "1.6.2",
+    "probot": "^9.11.3"
+  },
+  "devDependencies": {
+    "@types/body-parser": "^1.17.0",
+    "@types/bunyan": "^1.8.6",
+    "@types/chai": "^4.1.7",
+    "@types/dotenv": "^6.1.1",
+    "@types/express": "^4.17.0",
+    "@types/ioredis": "^4.0.13",
+    "@types/lru-cache": "^5.1.0",
+    "@types/mocha": "^7.0.0",
+    "@types/nock": "^10.0.3",
+    "@types/node": "^12.6.1",
+    "body-parser": "^1.19.0",
+    "c8": "^7.1.0",
+    "chai": "^4.2.0",
+    "cross-env": "^7.0.0",
+    "dotenv": "^8.0.0",
+    "gts": "^2.0.0",
+    "mocha": "^8.0.0",
+    "nock": "^12.0.3",
+    "smee-client": "^1.1.0",
+    "snap-shot-it": "^7.8.0",
+    "typescript": "^3.5.3"
+  },
+  "engines": {
+    "node": ">= 10.13.0"
+  }
+}

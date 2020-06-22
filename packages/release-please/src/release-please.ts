@@ -16,8 +16,9 @@ import {Application} from 'probot';
 
 // TODO: fix these imports when release-please exports types from the root
 // See https://github.com/googleapis/release-please/issues/249
-import {ReleaseType, BuildOptions} from 'release-please/build/src/release-pr';
+import {BuildOptions} from 'release-please/build/src/release-pr';
 import {ReleasePRFactory} from 'release-please/build/src/release-pr-factory';
+import {getReleaserNames} from 'release-please/build/src/releasers';
 import {
   GitHubRelease,
   GitHubReleaseOptions,
@@ -30,7 +31,7 @@ type OctokitType = InstanceType<typeof Octokit>;
 interface ConfigurationOptions {
   primaryBranch: string;
   releaseLabels?: string[];
-  releaseType?: ReleaseType;
+  releaseType?: string;
   packageName?: string;
   handleGHRelease?: boolean;
   bumpMinorPreMajor?: boolean;
@@ -43,30 +44,32 @@ const DEFAULT_CONFIGURATION: ConfigurationOptions = {
 };
 const FORCE_RUN_LABEL = 'release-please:force-run';
 
-function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
+function releaseTypeFromRepoLanguage(language: string | null): string {
   if (language === null) {
     throw Error('repository has no detected language');
   }
   switch (language.toLowerCase()) {
-    case 'ruby':
-      return ReleaseType.Ruby;
     case 'java':
-      return ReleaseType.JavaYoshi;
+      return 'java-yoshi';
     case 'typescript':
     case 'javascript':
-      return ReleaseType.Node;
+      return 'node';
     case 'php':
-      return ReleaseType.PHPYoshi;
-    case 'terraform-module':
-      return ReleaseType.TerraformModule;
-    default:
-      throw Error(`unknown release type: ${language}`);
+      return 'php-yoshi';
+    default: {
+      const releasers = getReleaserNames();
+      if (releasers.includes(language.toLowerCase())) {
+        return language.toLowerCase();
+      } else {
+        throw Error(`unknown release type: ${language}`);
+      }
+    }
   }
 }
 
 // creates or updates the evergreen release-please release PR.
 async function createReleasePR(
-  releaseType: ReleaseType,
+  releaseType: string,
   packageName: string,
   repoUrl: string,
   github: GitHubAPI,
