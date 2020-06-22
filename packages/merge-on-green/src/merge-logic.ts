@@ -211,7 +211,7 @@ mergeOnGreen.getStatusi = async function getStatusi(
       per_page: 100,
       page: num,
     });
-    if (data[0].context === undefined) {
+    if (!data[0].context) {
       console.info('no further page data');
       return [];
     }
@@ -276,7 +276,7 @@ mergeOnGreen.getCheckRuns = async function getCheckRuns(
       per_page: 100,
       page: num,
     });
-    if (checkRuns.data.check_runs[0] === undefined) {
+    if (!checkRuns.data.check_runs[0]) {
       console.info('no further page data');
       return [];
     }
@@ -383,7 +383,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
       const checkCompleted = checkStatus.find(
         (element: CheckStatus) => element.context === check
       );
-      if (checkCompleted === undefined) {
+      if (!checkCompleted) {
         console.log(
           'The status checks do not include your required checks. We will check in check runs.'
         );
