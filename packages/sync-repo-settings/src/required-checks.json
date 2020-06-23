@@ -4,8 +4,7 @@
     "enableRebaseMerge": false,
     "requireUpToDateBranch": false,
     "requiredStatusChecks": [
-      "dependencies (8)",
-      "dependencies (11)",
+      "dependencies",
       "linkage-monitor",
       "lint",
       "clirr",
@@ -26,8 +25,7 @@
         "repo": "googleapis/java-cloud-bom",
         "requiredStatusChecks": [
           "Kokoro - Test: BOM Upper Bounds",
-          "dependencies (8)",
-          "dependencies (11)",
+          "dependencies",
           "linkage-monitor",
           "lint",
           "clirr",
@@ -51,8 +49,7 @@
       {
         "repo": "googleapis/java-conformance-tests",
         "requiredStatusChecks": [
-          "dependencies (8)",
-          "dependencies (11)",
+          "dependencies",
           "linkage-monitor",
           "lint",
           "clirr",
@@ -166,8 +163,7 @@
       {
         "repo": "googleapis/java-pubsublite",
         "requiredStatusChecks": [
-          "dependencies (8)",
-          "dependencies (11)",
+          "dependencies",
           "linkage-monitor",
           "lint",
           "clirr",
