@@ -45,6 +45,10 @@ interface CheckRuns {
   check_runs: [{name: string; conclusion: string}];
 }
 
+interface Comments {
+  body: string;
+}
+
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/Fixtures');
