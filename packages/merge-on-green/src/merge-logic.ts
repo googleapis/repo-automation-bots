@@ -681,7 +681,7 @@ export async function mergeOnGreen(
   const continueMesssage =
     'Your PR has attempted to merge for 3 hours. Please check that all required checks have passed, you have an automerge label, and that all your reviewers have approved the PR';
   const notAuthorizedMessage =
-    'Merge-on-green is not authorized to push to this branch. Visit https://help.github.com/en/github/administering-a-repository/enabling-branch-restrictions to give gcf-merge-on-green permission to push to this branch.'
+    'Merge-on-green is not authorized to push to this branch. Visit https://help.github.com/en/github/administering-a-repository/enabling-branch-restrictions to give gcf-merge-on-green permission to push to this branch.';
 
   console.info(
     `checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state} ${owner}/${repo}/${pr}`
@@ -699,7 +699,13 @@ export async function mergeOnGreen(
           element.body.includes(notAuthorizedMessage)
         );
         if (!isCommented) {
-          await mergeOnGreen.commentOnPR(owner, repo, pr, notAuthorizedMessage, github);
+          await mergeOnGreen.commentOnPR(
+            owner,
+            repo,
+            pr,
+            notAuthorizedMessage,
+            github
+          );
         }
       }
       console.info(
