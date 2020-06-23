@@ -727,7 +727,7 @@ export async function mergeOnGreen(
       await mergeOnGreen.merge(owner, repo, pr, prInfo, github);
       merged = true;
     } catch (err) {
-      if (err.status === 405) {
+      if (err.message.includes('not authorized to push to this branch')) {
         const isCommented = commentsOnPR?.find(element =>
           element.body.includes(notAuthorizedMessage)
         );
