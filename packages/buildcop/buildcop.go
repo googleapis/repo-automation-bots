@@ -47,7 +47,7 @@ func main() {
 	topicID := flag.String("topic", "passthrough", "Pub/Sub topic to publish to. Defaults to passthrough.")
 	logsDir := flag.String("logs_dir", ".", "The directory to look for logs in. Defaults to current directory.")
 	commit := flag.String("commit_hash", "", "Long form commit hash this build is being run for. Defaults to the KOKORO_GIT_COMMIT environment variable.")
-	serviceAccount := flag.String("service_account", "", "Path to service account to use instead of Trampoline default.")
+	serviceAccount := flag.String("service_account", "", "Path to service account to use instead of Trampoline default or client library auto-detection.")
 
 	flag.Parse()
 
@@ -79,16 +79,18 @@ type message struct {
 func publish(projectID, topicID, repo, installationID, commit, logsDir, serviceAccount string) (ok bool) {
 	ctx := context.Background()
 
+	opts := []option.ClientOption{}
+
 	if serviceAccount == "" {
-		gfileDir := os.Getenv("KOKORO_GFILE_DIR")
-		if gfileDir == "" {
-			log.Println("KOKORO_GFILE_DIR not set, unable to get service account")
-			return false
+		if gfileDir := os.Getenv("KOKORO_GFILE_DIR"); gfileDir != "" {
+			serviceAccount = filepath.Join(gfileDir, "kokoro-trampoline.service-account.json")
+			if _, err := os.Stat(serviceAccount); err == nil {
+				opts = append(opts, option.WithCredentialsFile(serviceAccount))
+			}
 		}
-		serviceAccount = filepath.Join(gfileDir, "kokoro-trampoline.service-account.json")
 	}
 
-	client, err := pubsub.NewClient(ctx, projectID, option.WithCredentialsFile(serviceAccount))
+	client, err := pubsub.NewClient(ctx, projectID, opts...)
 	if err != nil {
 		log.Printf("Unable to connect to Pub/Sub: %v", err)
 		return false
@@ -179,7 +181,6 @@ func processLog(ctx context.Context, repo, installationID, commit string, topic 
 		if !strings.HasSuffix(info.Name(), "sponge_log.xml") {
 			return nil
 		}
-		log.Printf("Processing %v", path)
 		data, err := ioutil.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("ioutil.ReadFile(%q): %v", path, err)
@@ -207,7 +208,7 @@ func processLog(ctx context.Context, repo, installationID, commit string, topic 
 		if err != nil {
 			return fmt.Errorf("Pub/Sub Publish.Get: %v", err)
 		}
-		log.Printf("Success! ID=%v", id)
+		log.Printf("Published %s (%v)!", path, id)
 		return nil
 	}
 }
