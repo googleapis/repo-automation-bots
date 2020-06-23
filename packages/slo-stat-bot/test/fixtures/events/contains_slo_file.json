@@ -1,7 +1,7 @@
 [
     {
       "sha": "1d8be9e05d65e03a5e81a1c3c1bf229dce950e25",
-      "filename": "issue_slo_rules.json",
+      "filename": ".github/issue_slo_rules.json",
       "status": "modified",
       "additions": 5,
       "deletions": 5,

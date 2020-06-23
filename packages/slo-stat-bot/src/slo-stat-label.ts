@@ -63,7 +63,7 @@ function handler(app: Application) {
       ) {
         const file = fileList[i];
 
-        if (file.filename === 'issue_slo_rules.json') {
+        if (file.filename === '.github/issue_slo_rules.json') {
           await handler.handle_slos(
             context,
             owner,
@@ -74,6 +74,19 @@ function handler(app: Application) {
           break;
         }
       }
+    }
+  );
+  app.on(
+    [
+      'issues.opened',
+      'issues.reopened'
+    ],
+    async (context: Context) => {
+      const owner = context.payload.repository.owner.login;
+      const repo = context.payload.repository.name;
+      const issue_number = context.payload.issue.number;
+      
+      handler.appliesTo(context.github, owner, repo, issue_number);
     }
   );
 }
@@ -173,7 +186,7 @@ handler.commentPR = async function commentPR(
 ) {
   if (!isValid) {
     const body =
-      'ERROR: "issue_slo_rules.json" file is not valid with Json schema';
+      'ERROR: "issue_slo_rules.json" file is not valid with JSON schema';
     try {
       await github.issues.createComment({
         owner,
@@ -215,5 +228,39 @@ handler.createCheck = async function createCheck(
     return;
   }
 };
+
+handler.appliesTo = async function appliesTo(
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+  issue_number: number
+): Promise<boolean> {
+  const labelSet = await handler.listOfLabels(github, owner, repo, issue_number);
+
+  
+  return false;
+}
+
+handler.listOfLabels = async function listOfLabels(
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+  issue_number: number
+): Promise<Set<string> | undefined> {
+  try {
+    const labelsResponse = await github.issues.listLabelsOnIssue({
+      owner, 
+      repo, 
+      issue_number});
+
+    let labelSet: Set<string> = new Set<string>();
+    labelsResponse.data.forEach((label) => labelSet.add(label.name));
+    return labelSet;
+  } catch (err) {
+    console.log(err);
+    return;
+  }
+}
+
 
 export = handler;

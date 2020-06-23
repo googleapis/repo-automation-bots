@@ -16,13 +16,13 @@
 exports[
   'slo-status-label handleSLOs triggered Error is logged if comment on PR fails 1'
 ] = {
-  body: 'ERROR: "issue_slo_rules.json" file is not valid with Json schema',
+  body: 'ERROR: "issue_slo_rules.json" file is not valid with JSON schema',
 };
 
 exports[
   'slo-status-label handleSLOs triggered Error is logged if create check fails 1'
 ] = {
-  body: 'ERROR: "issue_slo_rules.json" file is not valid with Json schema',
+  body: 'ERROR: "issue_slo_rules.json" file is not valid with JSON schema',
 };
 
 exports[
@@ -42,7 +42,7 @@ exports[
 exports[
   'slo-status-label handleSLOs triggered An error comment is made on PR and failure check if issue_slo_rules lint is not valid 1'
 ] = {
-  body: 'ERROR: "issue_slo_rules.json" file is not valid with Json schema',
+  body: 'ERROR: "issue_slo_rules.json" file is not valid with JSON schema',
 };
 
 exports[
