@@ -31,6 +31,10 @@ interface Reviews {
   state: string;
 }
 
+interface Comment {
+  body: string;
+}
+
 interface PullRequest {
   title: string;
   body: string;
@@ -113,6 +117,24 @@ mergeOnGreen.getPR = async function getPR(
         login: '',
       },
     };
+  }
+};
+
+mergeOnGreen.getCommentsOnPR = async function getCommentsOnPR(
+  owner: string,
+  repo: string,
+  issue_number: number,
+  github: GitHubAPI
+): Promise<Comment[] | null> {
+  try {
+    const data = await github.issues.listComments({
+      owner,
+      repo,
+      issue_number,
+    });
+    return data.data;
+  } catch (err) {
+    return null;
   }
 };
 
@@ -597,7 +619,7 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
   github: GitHubAPI
 ): Promise<{} | null> {
   try {
-    const data = github.issues.createComment({
+    const data = await github.issues.createComment({
       owner,
       repo,
       issue_number: pr,
@@ -672,7 +694,7 @@ export async function mergeOnGreen(
     return true;
   }
 
-  const [checkReview, checkStatus] = await Promise.all([
+  const [checkReview, checkStatus, commentsOnPR] = await Promise.all([
     mergeOnGreen.checkReviews(owner, repo, pr, prInfo.user.login, github),
     mergeOnGreen.statusesForRef(
       owner,
@@ -682,6 +704,7 @@ export async function mergeOnGreen(
       github,
       requiredChecks
     ),
+    mergeOnGreen.getCommentsOnPR(owner, repo, pr, github),
   ]);
 
   const failedMesssage =
@@ -690,6 +713,8 @@ export async function mergeOnGreen(
     'Your PR has conflicts that you need to resolve before merge-on-green can automerge';
   const continueMesssage =
     'Your PR has attempted to merge for 3 hours. Please check that all required checks have passed, you have an automerge label, and that all your reviewers have approved the PR';
+  const notAuthorizedMessage =
+    'Merge-on-green is not authorized to push to this branch. Visit https://help.github.com/en/github/administering-a-repository/enabling-branch-restrictions to give gcf-merge-on-green permission to push to this branch.';
 
   console.info(
     `checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state} ${owner}/${repo}/${pr}`
@@ -702,6 +727,20 @@ export async function mergeOnGreen(
       await mergeOnGreen.merge(owner, repo, pr, prInfo, github);
       merged = true;
     } catch (err) {
+      if (err.status === 405) {
+        const isCommented = commentsOnPR?.find(element =>
+          element.body.includes(notAuthorizedMessage)
+        );
+        if (!isCommented) {
+          await mergeOnGreen.commentOnPR(
+            owner,
+            repo,
+            pr,
+            notAuthorizedMessage,
+            github
+          );
+        }
+      }
       console.info(
         `Is ${owner}/${repo}/${pr} mergeable?: ${prInfo.mergeable} Mergeable_state?: ${prInfo.mergeable_state}`
       );
@@ -721,13 +760,18 @@ export async function mergeOnGreen(
         console.info(
           `There are conflicts in the base branch of ${owner}/${repo}/${pr}`
         );
-        await mergeOnGreen.commentOnPR(
-          owner,
-          repo,
-          pr,
-          conflictMessage,
-          github
+        const isCommented = commentsOnPR?.find(element =>
+          element.body.includes(conflictMessage)
         );
+        if (!isCommented) {
+          await mergeOnGreen.commentOnPR(
+            owner,
+            repo,
+            pr,
+            conflictMessage,
+            github
+          );
+        }
       }
     }
     return merged;
@@ -739,8 +783,13 @@ export async function mergeOnGreen(
     await mergeOnGreen.removeLabel(owner, repo, pr, labelName, github);
     return true;
   } else if (state === 'comment') {
+    const isCommented = commentsOnPR?.find(element =>
+      element.body.includes(continueMesssage)
+    );
+    if (!isCommented) {
+      await mergeOnGreen.commentOnPR(owner, repo, pr, continueMesssage, github);
+    }
     console.log(`${owner}/${repo}/${pr} is halfway through its check`);
-    await mergeOnGreen.commentOnPR(owner, repo, pr, continueMesssage, github);
     return false;
   } else {
     console.log(
