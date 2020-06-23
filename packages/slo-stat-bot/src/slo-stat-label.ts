@@ -76,19 +76,6 @@ function handler(app: Application) {
       }
     }
   );
-  app.on(
-    [
-      'issues.opened',
-      'issues.reopened'
-    ],
-    async (context: Context) => {
-      const owner = context.payload.repository.owner.login;
-      const repo = context.payload.repository.name;
-      const issue_number = context.payload.issue.number;
-      
-      handler.appliesTo(context.github, owner, repo, issue_number);
-    }
-  );
 }
 
 handler.handle_slos = async function handle_slos(
@@ -228,39 +215,5 @@ handler.createCheck = async function createCheck(
     return;
   }
 };
-
-handler.appliesTo = async function appliesTo(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  issue_number: number
-): Promise<boolean> {
-  const labelSet = await handler.listOfLabels(github, owner, repo, issue_number);
-
-  
-  return false;
-}
-
-handler.listOfLabels = async function listOfLabels(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  issue_number: number
-): Promise<Set<string> | undefined> {
-  try {
-    const labelsResponse = await github.issues.listLabelsOnIssue({
-      owner, 
-      repo, 
-      issue_number});
-
-    let labelSet: Set<string> = new Set<string>();
-    labelsResponse.data.forEach((label) => labelSet.add(label.name));
-    return labelSet;
-  } catch (err) {
-    console.log(err);
-    return;
-  }
-}
-
 
 export = handler;
