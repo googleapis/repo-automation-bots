@@ -680,6 +680,8 @@ export async function mergeOnGreen(
     'Your PR has conflicts that you need to resolve before merge-on-green can automerge';
   const continueMesssage =
     'Your PR has attempted to merge for 3 hours. Please check that all required checks have passed, you have an automerge label, and that all your reviewers have approved the PR';
+  const notAuthorizedMessage =
+    'Merge-on-green is not authorized to push to this branch. Visit https://help.github.com/en/github/administering-a-repository/enabling-branch-restrictions to give gcf-merge-on-green permission to push to this branch.'
 
   console.info(
     `checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state} ${owner}/${repo}/${pr}`
@@ -694,10 +696,10 @@ export async function mergeOnGreen(
     } catch (err) {
       if (err.status === 405) {
         const isCommented = commentsOnPR?.find(element =>
-          element.body.includes('not authorized to push to this branch')
+          element.body.includes(notAuthorizedMessage)
         );
         if (!isCommented) {
-          await mergeOnGreen.commentOnPR(owner, repo, pr, err.message, github);
+          await mergeOnGreen.commentOnPR(owner, repo, pr, notAuthorizedMessage, github);
         }
       }
       console.info(
@@ -720,7 +722,7 @@ export async function mergeOnGreen(
           `There are conflicts in the base branch of ${owner}/${repo}/${pr}`
         );
         const isCommented = commentsOnPR?.find(element =>
-          element.body.includes('PR has conflicts that you need to resolve')
+          element.body.includes(conflictMessage)
         );
         if (!isCommented) {
           await mergeOnGreen.commentOnPR(
@@ -742,7 +744,7 @@ export async function mergeOnGreen(
     return true;
   } else if (state === 'comment') {
     const isCommented = commentsOnPR?.find(element =>
-      element.body.includes('PR has attempted to merge for 3 hours')
+      element.body.includes(continueMesssage)
     );
     if (!isCommented) {
       await mergeOnGreen.commentOnPR(owner, repo, pr, continueMesssage, github);
