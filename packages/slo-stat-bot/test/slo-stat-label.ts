@@ -24,14 +24,7 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 import Webhooks from '@octokit/webhooks';
 import snapshot from 'snap-shot-it';
 import handler from '../src/slo-stat-label';
-import spies from 'chai-spies';
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const chai = require('chai');
-chai.use(spies);
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const sinon = require('sinon');
+import sinon from 'sinon';
 
 nock.disableNetConnect();
 
@@ -61,16 +54,16 @@ describe('slo-status-label', () => {
 
   describe('opened or reopened pull request', () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
-    const sandbox = sinon.createSandbox();
+    let sloStub: sinon.SinonStub;
 
     beforeEach(() => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'pull_request_opened'));
-      sandbox.stub(handler, 'handle_slos');
+      sloStub = sinon.stub(handler, 'handle_slos');
     });
 
     afterEach(() => {
-      sandbox.restore();
+      sinon.restore();
       nock.cleanAll;
     });
 
@@ -103,7 +96,7 @@ describe('slo-status-label', () => {
         id: 'abc123',
       });
 
-      sinon.assert.calledOnce(handler.handle_slos);
+      sinon.assert.calledOnce(sloStub);
       requests.done();
     });
 
@@ -124,7 +117,7 @@ describe('slo-status-label', () => {
         id: 'abc123',
       });
 
-      sinon.assert.notCalled(handler.handle_slos);
+      sinon.assert.notCalled(sloStub);
       requests.done();
     });
   });
