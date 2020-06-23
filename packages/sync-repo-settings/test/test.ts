@@ -167,33 +167,42 @@ describe('Sync repo settings', () => {
 
   it('should override master branch protection if the repo is overridden', async () => {
     const scopes = [
-      nockUpdateRepoSettings('google-api-java-client-services', false, true),
+      nockUpdateRepoSettings('google-api-java-client', false, true),
       nockUpdateBranchProtection(
-        'google-api-java-client-services',
-        ['Kokoro - Test: Java 8', 'cla/google'],
+        'google-api-java-client',
+        [
+          'Kokoro - Test: Binary Compatibility',
+          'Kokoro - Test: Code Format',
+          'Kokoro - Test: Dependencies',
+          'Kokoro - Test: Java 11',
+          'Kokoro - Test: Java 7',
+          'Kokoro - Test: Java 8',
+          'Kokoro - Test: Linkage Monitor',
+          'cla/google',
+        ],
         false
       ),
       nockUpdateTeamMembership(
         'yoshi-admins',
         'googleapis',
-        'google-api-java-client-services'
+        'google-api-java-client'
       ),
       nockUpdateTeamMembership(
         'yoshi-java-admins',
         'googleapis',
-        'google-api-java-client-services'
+        'google-api-java-client'
       ),
       nockUpdateTeamMembership(
         'yoshi-java',
         'googleapis',
-        'google-api-java-client-services'
+        'google-api-java-client'
       ),
     ];
     await probot.receive({
       name: 'schedule.repository',
       payload: {
         repository: {
-          name: 'google-api-java-client-services',
+          name: 'google-api-java-client',
         },
         organization: {
           login: 'googleapis',
