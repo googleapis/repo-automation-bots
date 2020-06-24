@@ -62,8 +62,10 @@ function handler(app: Application) {
         i++
       ) {
         const file = fileList[i];
-
-        if (file.filename === '.github/issue_slo_rules.json') {
+        if (
+          file.filename === '.github/issue_slo_rules.json' ||
+          (repo === '.github' && file.filename === 'issue_slo_rules.json')
+        ) {
           await handler.handle_slos(
             context,
             owner,
