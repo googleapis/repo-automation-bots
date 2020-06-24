@@ -727,6 +727,8 @@ export async function mergeOnGreen(
       await mergeOnGreen.merge(owner, repo, pr, prInfo, github);
       merged = true;
     } catch (err) {
+      //not checking here whether err.status=405 as that seems to apply to more than one error type,
+      //so checking the body instead
       if (err.message.includes('not authorized to push to this branch')) {
         const isCommented = commentsOnPR?.find(element =>
           element.body.includes(notAuthorizedMessage)
