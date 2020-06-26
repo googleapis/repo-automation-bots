@@ -11,5 +11,4 @@
       "contents_url": "https://api.github.com/repos/testOwner/testRepo/contents/issue_slo_rules.json?ref=f345347ba98f8c24969f1dcf340a9dfb3ecfe36f",
       "patch": "@@ -1,14 +1,14 @@\n"
     } 
-  ] 
-  
+]
