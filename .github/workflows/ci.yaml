@@ -5,28 +5,27 @@ on:
   pull_request:
 name: ci
 jobs:
+  director:
+    runs-on: ubuntu-latest
+    outputs:
+      nodePaths: ${{ steps.interrogate.outputs.nodePaths }}
+      goPaths: ${{ steps.interrogate.outputs.goPaths }}
+      bashPaths: ${{ steps.interrogate.outputs.bashPaths }}
+      requiredJobs: ${{ steps.interrogate.outputs.requiredJobs }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - id: interrogate
+        run: node ./.github/workflows/interrogate.js
   test:
     runs-on: ubuntu-latest
+    needs: director
     strategy:
       fail-fast: false
       matrix:
-        package: [
-          'auto-label',
-          'blunderbuss',
-          'buildcop',
-          'conventional-commit-lint',
-          'failurechecker',
-          'gcf-utils',
-          'generate-bot',
-          'header-checker-lint',
-          'label-sync',
-          'merge-on-green',
-          'publish',
-          'release-please',
-          'snippet-bot',
-          'sync-repo-settings',
-          'trusted-contribution'
-        ]
+        package: ${{fromJson(needs.director.outputs.nodePaths)}}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
@@ -42,15 +41,12 @@ jobs:
       - run: npm run lint
         working-directory: ./packages/${{ matrix.package }}
   go-test:
-    name: Go tests
     runs-on: ubuntu-latest
+    needs: director
     strategy:
       fail-fast: false
       matrix:
-        module: [
-          'packages/buildcop',
-          'serverless-scheduler-proxy'
-        ]
+        module: ${{fromJson(needs.director.outputs.goPaths)}}
     steps:
     - name: Install Go
       uses: actions/setup-go@v2-beta
@@ -70,12 +66,12 @@ jobs:
     - run: go test ./...
       working-directory: ./${{ matrix.module }}
   bash-test:
-    name: Bash tests
     runs-on: ubuntu-latest
+    needs: director
     strategy:
       fail-fast: false
       matrix:
-        module: ["scripts"]
+        module: ${{fromJson(needs.director.outputs.bashPaths)}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -83,3 +79,13 @@ jobs:
         run: |
           ./test.sh
         working-directory: ./${{ matrix.module }}
+  finale:
+    runs-on: ubuntu-latest
+    needs: director
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - run: npm install
+      - run: node ./.github/workflows/finale.js '${{needs.director.outputs.requiredJobs}}' ${{secrets.GITHUB_TOKEN}}
