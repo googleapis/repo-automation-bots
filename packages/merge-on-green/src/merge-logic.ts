@@ -29,6 +29,8 @@ interface Reviews {
     login: string;
   };
   state: string;
+  commit_id: string;
+  id: number;
 }
 
 interface Comment {
@@ -151,11 +153,10 @@ mergeOnGreen.hasMOGLabel = async function hasMOGLabel(
   owner: string,
   repo: string,
   pr: number,
-  labelName: string,
+  labelNames: string[],
   github: GitHubAPI
-): Promise<boolean> {
+): Promise<string | undefined> {
   const start = Date.now();
-  let isMOG = false;
   try {
     const labels = await github.issues.listLabelsOnIssue({
       owner,
@@ -166,16 +167,13 @@ mergeOnGreen.hasMOGLabel = async function hasMOGLabel(
     console.info(
       `checked hasMOGLabel in ${Date.now() - start}ms ${owner}/${repo}/${pr}`
     );
-    if (labelArray) {
-      const mog = labelArray.find(element => element.name === labelName);
-      if (mog) {
-        isMOG = true;
-      }
-    }
-    return isMOG;
+    const mog = labelArray?.find(prLabel =>
+      labelNames.find(labelName => prLabel.name === labelName)
+    )?.name;
+    return mog;
   } catch (err) {
     console.log(`Error in getting MOG label: ${err}`);
-    return isMOG;
+    return undefined;
   }
 };
 
@@ -233,14 +231,12 @@ mergeOnGreen.getStatusi = async function getStatusi(
       per_page: 100,
       page: num,
     });
-    if (!data[0].context) {
+    if (!data[0]?.context) {
       console.info('no further page data');
       return [];
     }
     console.info(
-      `called getStatuses in ${Date.now() - start}ms ${owner}/${repo}, ${
-        data[0].context
-      }`
+      `called getStatuses in ${Date.now() - start}ms ${owner}/${repo}`
     );
     return data;
   } catch (err) {
@@ -381,23 +377,24 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
   owner: string,
   repo: string,
   pr: number,
-  labelName: string,
-  github: GitHubAPI,
-  requiredChecks: string[]
+  requiredChecks: string[],
+  headSha: string,
+  github: GitHubAPI
 ): Promise<boolean> {
   const start = Date.now();
-  const headSha = await mergeOnGreen.getLatestCommit(owner, repo, pr, github);
-  const [mogLabel, checkStatus] = await Promise.all([
-    await mergeOnGreen.hasMOGLabel(owner, repo, pr, labelName, github),
-    await mergeOnGreen.iterateGetStatusi(owner, repo, github, headSha),
-  ]);
+  const checkStatus = await mergeOnGreen.iterateGetStatusi(
+    owner,
+    repo,
+    github,
+    headSha
+  );
   console.info(
     `fetched statusesForRef in ${Date.now() - start}ms ${owner}/${repo}/${pr}`
   );
 
   let mergeable = true;
   let checkRuns;
-  if (headSha.length !== 0 && mogLabel === true) {
+  if (headSha.length !== 0) {
     console.info(`=== checking required checks for ${owner}/${repo}/${pr} ===`);
     for (const check of requiredChecks) {
       console.log(
@@ -436,7 +433,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
     }
   } else {
     console.log(
-      `Either you have no head sha, no required checks, or no MOG Label for ${owner}/${repo} PR ${pr}`
+      `Either you have no head sha, or no required checks for ${owner}/${repo} PR ${pr}`
     );
     return false;
   }
@@ -470,6 +467,26 @@ mergeOnGreen.getReviewsCompleted = async function getReviewsCompleted(
   }
 };
 
+mergeOnGreen.dismissReview = async function dismissReview(
+  owner: string,
+  repo: string,
+  pull_number: number,
+  review_id: number,
+  github: GitHubAPI
+) {
+  try {
+    await github.pulls.dismissReview({
+      owner,
+      repo,
+      pull_number,
+      review_id,
+      message:
+        'This review does not reference the most recent commit, and you are using the secure version of merge-on-green. Please re-review the most recent commit.',
+    });
+  } catch (err) {
+    console.log(`Error in dismissing reviews ${err}`);
+  }
+};
 /**
  * This function cleans the reviews, since the listReviews method github provides returns a complete
  * history of all comments added and we just want the most recent for each reviewer
@@ -510,6 +527,9 @@ mergeOnGreen.checkReviews = async function checkReviews(
   repo: string,
   pr: number,
   author: string,
+  label: string,
+  secureLabel: string,
+  headSha: string,
   github: GitHubAPI
 ): Promise<boolean> {
   const start = Date.now();
@@ -534,8 +554,21 @@ mergeOnGreen.checkReviews = async function checkReviews(
           `One of your reviewers did not approve the PR ${owner}/${repo}/${pr} state = ${review.state}`
         );
         reviewsPassed = false;
+        return;
       }
     });
+    if (label === secureLabel) {
+      //if we get to here, it means that all the reviews are in the approved state
+      reviewsCompleted.forEach(review => {
+        if (review.commit_id !== headSha) {
+          console.log(
+            `${review.user.login} didn't review the latest commit for ${owner}/${repo}/${pr} commit = ${headSha}; will dismiss review.`
+          );
+          mergeOnGreen.dismissReview(owner, repo, pr, review.id, github);
+          reviewsPassed = false;
+        }
+      });
+    }
   } else {
     //if no one has reviewed it, fail the merge
     console.log(`No one has reviewed your PR ${owner}/${repo}/${pr}`);
@@ -668,14 +701,16 @@ export async function mergeOnGreen(
   owner: string,
   repo: string,
   pr: number,
-  labelName: string,
+  labelNames: string[],
   state: string,
   github: GitHubAPI
 ): Promise<boolean | undefined> {
   console.info(`${owner}/${repo} checking merge on green PR status`);
-  const [prInfo, requiredChecks] = await Promise.all([
+  const [prInfo, requiredChecks, mogLabel, headSha] = await Promise.all([
     await mergeOnGreen.getPR(owner, repo, pr, github),
     await mergeOnGreen.getBranchProtection(owner, repo, github),
+    await mergeOnGreen.hasMOGLabel(owner, repo, pr, labelNames, github),
+    await mergeOnGreen.getLatestCommit(owner, repo, pr, github),
   ]);
 
   if (prInfo.state === 'closed') {
@@ -688,21 +723,35 @@ export async function mergeOnGreen(
       owner,
       repo,
       pr,
-      `Your PR doesn't have any required checks. Please add required checks to your master branch and then re-add the ${labelName} label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.`,
+      `Your PR doesn't have any required checks. Please add required checks to your master branch and then re-add the ${labelNames[0]} or ${labelNames[1]} label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.`,
       github
     );
     return true;
   }
 
+  if (!mogLabel) {
+    console.log(`${owner}/${repo}/${pr} does not have the required labels`);
+    return true;
+  }
+
   const [checkReview, checkStatus, commentsOnPR] = await Promise.all([
-    mergeOnGreen.checkReviews(owner, repo, pr, prInfo.user.login, github),
+    mergeOnGreen.checkReviews(
+      owner,
+      repo,
+      pr,
+      prInfo.user.login,
+      mogLabel,
+      labelNames[1],
+      headSha,
+      github
+    ),
     mergeOnGreen.statusesForRef(
       owner,
       repo,
       pr,
-      labelName,
-      github,
-      requiredChecks
+      requiredChecks,
+      headSha,
+      github
     ),
     mergeOnGreen.getCommentsOnPR(owner, repo, pr, github),
   ]);
@@ -782,7 +831,7 @@ export async function mergeOnGreen(
       `${owner}/${repo}/${pr} timed out before its statuses & reviews passed`
     );
     await mergeOnGreen.commentOnPR(owner, repo, pr, failedMesssage, github);
-    await mergeOnGreen.removeLabel(owner, repo, pr, labelName, github);
+    await mergeOnGreen.removeLabel(owner, repo, pr, mogLabel, github);
     return true;
   } else if (state === 'comment') {
     const isCommented = commentsOnPR?.find(element =>
