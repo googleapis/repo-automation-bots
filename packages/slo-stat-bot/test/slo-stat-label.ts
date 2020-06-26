@@ -335,4 +335,164 @@ describe('slo-status-label', () => {
       }
     });
   });
+
+  describe('checking if slo applies to issue', () => {
+    describe('gitHubLabels is key in slo as array', () => {
+      //eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sloFile = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_slo_rules',
+        'slo_rules',
+        'arr_githubLabels.json'
+      ));
+      it('Returns true if there are extra labels in gitHubLabels', async () => {
+        const appliesTo: boolean = await handler.appliesTo(
+          sloFile,
+          new Set(['bot:auto label', 'p2', 'help wanted', 'enhancment', 'bug'])
+        );
+        assert.strictEqual(appliesTo, true);
+      });
+      it('Returns false if githubLabels is not subset of issue labels', async () => {
+        const appliesTo: boolean = await handler.appliesTo(
+          sloFile,
+          new Set(['enhancement', 'p2', 'bug'])
+        );
+        assert.strictEqual(appliesTo, false);
+      });
+    });
+
+    describe('githubLabels is key in slo as a string', () => {
+      //eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sloFile = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_slo_rules',
+        'slo_rules',
+        'str_githubLabels.json'
+      ));
+      it('Returns true if githubLabel is in issue labels', async () => {
+        const appliesTo: boolean = await handler.appliesTo(
+          sloFile,
+          new Set(['bot:auto label', 'p2', 'bug'])
+        );
+        assert.strictEqual(appliesTo, true);
+      });
+      it('Returns false if githubLabel is not exact match in issue labels', async () => {
+        const appliesTo: boolean = await handler.appliesTo(
+          sloFile,
+          new Set(['auto label', 'p2', 'bug'])
+        );
+        assert.strictEqual(appliesTo, false);
+      });
+    });
+
+    describe('excludedGithubLabels is key in slo as array', () => {
+      //eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sloFile = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_slo_rules',
+        'slo_rules',
+        'arr_excludedGithubLabels.json'
+      ));
+      it('Returns true if all excludedGithubLabels is not subset of issue labels', async () => {
+        const appliesTo: boolean = await handler.appliesTo(
+          sloFile,
+          new Set(['bot:auto label', 'help wanted', 'p2', 'bug'])
+        );
+        assert.strictEqual(appliesTo, true);
+      });
+      it('Returns false if one of excludedGithubLabels is subset of issue labels', async () => {
+        const appliesTo: boolean = await handler.appliesTo(
+          sloFile,
+          new Set(['bot:auto label', 'enhancement', 'p2', 'bug'])
+        );
+        assert.strictEqual(appliesTo, false);
+      });
+    });
+
+    it('Returns true if excludedGithubLabels is type string and not in issue labels', async () => {
+      //eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sloFile = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_slo_rules',
+        'slo_rules',
+        'str_excludedGithubLabels.json'
+      ));
+      const appliesTo: boolean = await handler.appliesTo(
+        sloFile,
+        new Set(['bot:auto label', 'help wanted', 'p2', 'bug'])
+      );
+      assert.strictEqual(appliesTo, true);
+    });
+
+    describe('priority and issueType are keys in slo', () => {
+      //eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sloFile = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_slo_rules',
+        'slo_rules',
+        'str_githubLabels.json'
+      ));
+      it('Returns true if priority in issue labels is labeled as "priority: p_" and issueType is labeled as "issueType: __"', async () => {
+        const appliesTo: boolean = await handler.appliesTo(
+          sloFile,
+          new Set([
+            'bot:auto label',
+            'help wanted',
+            'priority: p2',
+            'type: bug',
+          ])
+        );
+        assert.strictEqual(appliesTo, true);
+      });
+      it('Returns false if priority not in issue labels', async () => {
+        const appliesTo: boolean = await handler.appliesTo(
+          sloFile,
+          new Set(['bot:auto label', 'help wanted', 'priority: p0', 'bug'])
+        );
+        assert.strictEqual(appliesTo, false);
+      });
+      it('Returns false if issueType not in issue labels', async () => {
+        const appliesTo: boolean = await handler.appliesTo(
+          sloFile,
+          new Set([
+            'bot:auto label',
+            'help wanted',
+            'priority: p2',
+            'type: clean up',
+          ])
+        );
+        assert.strictEqual(appliesTo, false);
+      });
+    });
+
+    // describe('No slo rules', () => {
+    //   //eslint-disable-next-line @typescript-eslint/no-var-requires
+    //   const sloFile = require(resolve(
+    //     fixturesPath,
+    //     'events',
+    //     'issue_slo_rules',
+    //     'valid_slos',
+    //     'no_slo.json'
+    //   ));
+    //   it('Returns true if issue labels exist', async () => {
+    //     const appliesTo: boolean = await handler.appliesTo(
+    //       sloFile,
+    //       new Set(['bot:auto label', 'help wanted', 'priority: p2', 'type: clean up'])
+    //     );
+    //     assert.strictEqual(appliesTo, true);
+    //   });
+    //   it('Returns true if issue labels does not exist', async () => {
+    //     const appliesTo: boolean = await handler.appliesTo(
+    //       sloFile,
+    //       new Set()
+    //     );
+    //     assert.strictEqual(appliesTo, true);
+    //   });
+    // })
+  });
 });

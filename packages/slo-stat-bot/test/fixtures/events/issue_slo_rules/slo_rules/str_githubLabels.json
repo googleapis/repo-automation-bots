@@ -1,0 +1,13 @@
+{
+    "appliesTo": {
+      "githubLabels": "bot:auto label",
+      "priority": "P2",
+      "issueType": "bug"
+    },
+    "complianceSettings": {
+        "responseTime": 0,
+        "resolutionTime": 43200,
+        "requiresAssignee": true
+    }
+}
+ 
