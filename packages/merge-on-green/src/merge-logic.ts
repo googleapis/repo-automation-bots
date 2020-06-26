@@ -122,6 +122,14 @@ mergeOnGreen.getPR = async function getPR(
   }
 };
 
+/**
+ * Function gets comments on PR to make sure the bot doesn't repost comments
+ * @param owner of pr (from Watch PR)
+ * @param repo of pr (from Watch PR)
+ * @param issue_number same as PR number (from Watch PR)
+ * @param github unique installation id for each function
+ * @returns array of comments on PR
+ */
 mergeOnGreen.getCommentsOnPR = async function getCommentsOnPR(
   owner: string,
   repo: string,
@@ -145,9 +153,9 @@ mergeOnGreen.getCommentsOnPR = async function getCommentsOnPR(
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
  * @param pr number of pr (from Watch PR)
- * @param labelName label name that we're checking for, is a string
+ * @param labelNames array of labels its checking for
  * @param github unique installation id for each function
- * @returns a boolean of whether the label is included
+ * @returns the name of the label that is in the repo, if it is there; otherwise, undefined
  */
 mergeOnGreen.hasMOGLabel = async function hasMOGLabel(
   owner: string,
@@ -213,6 +221,7 @@ mergeOnGreen.getBranchProtection = async function getBranchProtection(
  * @param repo of pr (from Watch PR)
  * @param github unique installation id for each function
  * @param headSha the head sha commit
+ * @param num the number of the page to check
  * @returns an array of Check Statuses that has their names and statuses
  */
 mergeOnGreen.getStatusi = async function getStatusi(
@@ -276,6 +285,7 @@ mergeOnGreen.iterateGetStatusi = async function iterateGetStatusi(
  * @param repo of pr (from Watch PR)
  * @param github unique installation id for each function
  * @param headSha the head sha commit
+ * @param num the number of the page to check
  * @returns an array of Check Statuses that has their names and statuses
  */
 mergeOnGreen.getCheckRuns = async function getCheckRuns(
@@ -368,9 +378,9 @@ mergeOnGreen.checkForRequiredSC = function checkForRequiredSC(
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
  * @param pr pr number
- * @param labelName the name of the label we want to check for (i.e., 'automerge')
- * @param github unique installation id for each function
  * @param requiredChecks a string array of required checks grabbed from master branch protection
+ * @param headSha the latest commit in the PR
+ * @param github unique installation id for each function
  * @returns a boolean of whether all required checks have passed
  */
 mergeOnGreen.statusesForRef = async function statusesForRef(
@@ -467,6 +477,15 @@ mergeOnGreen.getReviewsCompleted = async function getReviewsCompleted(
   }
 };
 
+/**
+ * Function dismisses a review for the most secure version of this bot
+ * @param owner of pr (from Watch PR)
+ * @param repo of pr (from Watch PR)
+ * @param pull_number pr number
+ * @param review_id review id of the review to dismiss
+ * @param github unique installation id for each function
+ * @returns an array of Review types
+ */
 mergeOnGreen.dismissReview = async function dismissReview(
   owner: string,
   repo: string,
@@ -487,6 +506,7 @@ mergeOnGreen.dismissReview = async function dismissReview(
     console.log(`Error in dismissing reviews ${err}`);
   }
 };
+
 /**
  * This function cleans the reviews, since the listReviews method github provides returns a complete
  * history of all comments added and we just want the most recent for each reviewer
@@ -509,10 +529,6 @@ mergeOnGreen.cleanReviews = function cleanReviews(
   }
   return cleanReviews;
 };
-
-// TODO: test the logic for a team that's been assigned to review.
-// we might also want to make whether or not a requested viewer needs
-// to have been reviewed.
 
 /**
  * Function evaluates whether a check review has passed
@@ -665,6 +681,15 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
   }
 };
 
+/**
+ * Removes a label that is on the PR
+ * @param owner of pr (from Watch PR)
+ * @param repo of pr (from Watch PR)
+ * @param issue_number of the PR
+ * @param name of the label to remove
+ * @param github unique installation id for each function
+ * @returns the update data type
+ */
 mergeOnGreen.removeLabel = async function removeLabel(
   owner: string,
   repo: string,
@@ -692,7 +717,7 @@ mergeOnGreen.removeLabel = async function removeLabel(
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
  * @param pr pr number
- * @param labelName name of label we are looking for ('automerge')
+ * @param labelNames names of label we are looking for ('automerge' and 'automerge: secure')
  * @param state whether or not the PR has been in Datastore for over 6 hours to be deleted
  * @param github unique installation id for each function
  * @returns a boolean of whether it can be removed from Datastore (either because it is stale or has merged)
