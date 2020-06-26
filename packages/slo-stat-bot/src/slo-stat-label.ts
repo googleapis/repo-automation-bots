@@ -16,14 +16,12 @@ import {Application, Context} from 'probot';
 import {GitHubAPI} from 'probot/lib/github';
 import {
   PullsListFilesResponse,
-  PullsListFilesResponseItem,
   Response,
   ChecksCreateParams,
 } from '@octokit/rest';
-// eslint-disable-next-line node/no-extraneous-import
 import Ajv, {ErrorObject} from 'ajv';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const schema = require('./../utils/schema.json');
+const schema = require('./../data/schema.json');
 
 type ValidationResults = {
   isValid: boolean;
@@ -43,25 +41,22 @@ function handler(app: Application) {
       const repo = context.payload.repository.name;
       const pull_number = context.payload.number;
 
-      const fileResponse:
-        | Response<PullsListFilesResponse>
-        | undefined = await handler.listFiles(
+      const fileResponse = await handler.listFiles(
         context.github,
         owner,
         repo,
         pull_number,
         100
       );
-      let fileList: PullsListFilesResponseItem[] | undefined;
 
-      if (fileResponse !== undefined) fileList = fileResponse.data;
+      if (!fileResponse) {
+        return;
+      }
 
-      for (
-        let i = 0;
-        fileList !== undefined && fileList[i] !== undefined;
-        i++
-      ) {
-        const file = fileList[i];
+      const fileList = fileResponse.data;
+
+      for (const file of fileList) {
+        //Checks to see if file is repo level or org level issue_slo_rules.json
         if (
           file.filename === '.github/issue_slo_rules.json' ||
           (repo === '.github' && file.filename === 'issue_slo_rules.json')
@@ -79,7 +74,7 @@ function handler(app: Application) {
     }
   );
 }
-
+// Gets file contents, comments on PR if invalid slo rules, and creates a check
 handler.handle_slos = async function handle_slos(
   context: Context,
   owner: string,
@@ -94,9 +89,9 @@ handler.handle_slos = async function handle_slos(
     file_sha
   );
 
-  if (sloString !== undefined) {
+  if (sloString) {
     const sloData = JSON.parse(sloString);
-    const res: ValidationResults = await handler.lint(schema, sloData);
+    const res = await handler.lint(schema, sloData);
 
     await handler.commentPR(
       context.github,
@@ -152,6 +147,7 @@ handler.listFiles = async function listFiles(
   }
 };
 
+//Linting the issue_slo_rules.json against the slo schema
 handler.lint = async function lint(
   schema: JSON,
   sloData: JSON
@@ -166,6 +162,7 @@ handler.lint = async function lint(
   } as ValidationResults;
 };
 
+//Comments on PR only if the issue_slo_rules.json is invalid
 handler.commentPR = async function commentPR(
   github: GitHubAPI,
   owner: string,
@@ -173,20 +170,21 @@ handler.commentPR = async function commentPR(
   issue_number: number,
   isValid: boolean
 ) {
-  if (!isValid) {
-    const body =
-      'ERROR: "issue_slo_rules.json" file is not valid with JSON schema';
-    try {
-      await github.issues.createComment({
-        owner,
-        repo,
-        issue_number,
-        body,
-      });
-    } catch (err) {
-      console.log(err);
-      return;
-    }
+  if (isValid) {
+    return;
+  }
+  const body =
+    'ERROR: "issue_slo_rules.json" file is not valid with JSON schema';
+  try {
+    await github.issues.createComment({
+      owner,
+      repo,
+      issue_number,
+      body,
+    });
+  } catch (err) {
+    console.log(err);
+    return;
   }
   return;
 };
