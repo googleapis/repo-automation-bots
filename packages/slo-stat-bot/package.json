@@ -16,7 +16,8 @@
     "probot-app"
   ],
   "files": [
-    "build/src"
+    "build/src",
+    "build/data"
   ],
   "scripts": {
     "compile": "tsc -p .",
@@ -30,13 +31,9 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@octokit/rest": "^16.41.2",
-    "@types/chai-spies": "^1.0.1",
-    "assert": "^2.0.0",
-    "chai-spies": "^1.0.0",
+    "ajv": "^6.12.2",
     "gcf-utils": "1.6.2",
-    "probot": "^9.11.3",
-    "sinon": "^9.0.2"
+    "probot": "^9.11.3"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
@@ -59,7 +56,8 @@
     "nock": "^12.0.3",
     "smee-client": "^1.1.0",
     "snap-shot-it": "^7.8.0",
-    "typescript": "^3.5.3"
+    "typescript": "^3.8.5",
+    "sinon": "^9.0.2"
   },
   "engines": {
     "node": ">= 10.13.0"
