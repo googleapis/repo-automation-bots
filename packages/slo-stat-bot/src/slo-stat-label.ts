@@ -14,23 +14,30 @@
 
 import {Application, Context} from 'probot';
 import {GitHubAPI} from 'probot/lib/github';
-import {
-  PullsListFilesResponse,
-  PullsListFilesResponseItem,
-  Response,
-  ChecksCreateParams,
-} from '@octokit/rest';
-// eslint-disable-next-line node/no-extraneous-import
 import Ajv, {ErrorObject} from 'ajv';
-import {type} from 'os';
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const schema = require('./../utils/schema.json');
+const schema = require('./../data/schema.json');
+
+type Conclusion =
+  | 'success'
+  | 'failure'
+  | 'neutral'
+  | 'cancelled'
+  | 'timed_out'
+  | 'action_required'
+  | undefined;
 
 //const sloRules = require('./../../../../.github/issue_slo_rules');
 
 type ValidationResults = {
   isValid: boolean;
-  errors?: ErrorObject[] | null | undefined;
+  errors?: ErrorObject[] | null;
+};
+
+type PullsListFilesResponseItem = {
+  filename: string;
+  sha: string;
 };
 
 function handler(app: Application) {
@@ -46,25 +53,20 @@ function handler(app: Application) {
       const repo = context.payload.repository.name;
       const pull_number = context.payload.number;
 
-      const fileResponse:
-        | Response<PullsListFilesResponse>
-        | undefined = await handler.listFiles(
+      const fileList = await handler.listFiles(
         context.github,
         owner,
         repo,
         pull_number,
         100
       );
-      let fileList: PullsListFilesResponseItem[] | undefined;
 
-      if (fileResponse !== undefined) fileList = fileResponse.data;
+      if (fileList === null) {
+        return;
+      }
 
-      for (
-        let i = 0;
-        fileList !== undefined && fileList[i] !== undefined;
-        i++
-      ) {
-        const file = fileList[i];
+      for (const file of fileList) {
+        //Checks to see if file is repo level or org level issue_slo_rules.json
         if (
           file.filename === '.github/issue_slo_rules.json' ||
           (repo === '.github' && file.filename === 'issue_slo_rules.json')
@@ -134,19 +136,21 @@ handler.handle_slos = async function handle_slos(
     file_sha
   );
 
-  if (sloString !== undefined) {
-    const sloData = JSON.parse(sloString);
-    const res: ValidationResults = await handler.lint(schema, sloData);
-
-    await handler.commentPR(
-      context.github,
-      owner,
-      repo,
-      issue_number,
-      res.isValid
-    );
-    await handler.createCheck(context, res);
+  if (sloString === null) {
+    return;
   }
+
+  const sloData = JSON.parse(sloString);
+  const res = await handler.lint(schema, sloData);
+
+  await handler.commentPR(
+    context.github,
+    owner,
+    repo,
+    issue_number,
+    res.isValid
+  );
+  await handler.createCheck(context, res);
 };
 
 handler.getFileContents = async function getFileContents(
@@ -154,7 +158,7 @@ handler.getFileContents = async function getFileContents(
   owner: string,
   repo: string,
   file_sha: string
-): Promise<string | undefined> {
+): Promise<string | null> {
   try {
     const blob = await github.git.getBlob({
       owner,
@@ -166,8 +170,10 @@ handler.getFileContents = async function getFileContents(
     );
     return fileContent;
   } catch (err) {
-    console.log(err);
-    return;
+    console.warn(
+      `Error getting file content in repo:${repo}. error status:${err.status}`
+    );
+    return null;
   }
 };
 
@@ -177,7 +183,7 @@ handler.listFiles = async function listFiles(
   repo: string,
   pull_number: number,
   per_page: number
-): Promise<Response<PullsListFilesResponse> | undefined> {
+): Promise<PullsListFilesResponseItem[] | null> {
   try {
     const listOfFiles = await github.pulls.listFiles({
       owner,
@@ -185,13 +191,16 @@ handler.listFiles = async function listFiles(
       pull_number,
       per_page,
     });
-    return listOfFiles;
+    return listOfFiles.data;
   } catch (err) {
-    console.log(err);
-    return;
+    console.warn(
+      `Error getting list of files in repo: ${repo} for issue number: ${pull_number}. error status:${err.status}`
+    );
+    return null;
   }
 };
 
+//Linting the issue_slo_rules.json against the slo schema
 handler.lint = async function lint(
   schema: JSON,
   sloData: JSON
@@ -206,6 +215,7 @@ handler.lint = async function lint(
   } as ValidationResults;
 };
 
+//Comments on PR only if the issue_slo_rules.json is invalid
 handler.commentPR = async function commentPR(
   github: GitHubAPI,
   owner: string,
@@ -213,47 +223,54 @@ handler.commentPR = async function commentPR(
   issue_number: number,
   isValid: boolean
 ) {
-  if (!isValid) {
-    const body =
-      'ERROR: "issue_slo_rules.json" file is not valid with JSON schema';
-    try {
-      await github.issues.createComment({
-        owner,
-        repo,
-        issue_number,
-        body,
-      });
-    } catch (err) {
-      console.log(err);
-      return;
-    }
+  if (isValid) {
+    return;
   }
-  return;
+  const body =
+    'ERROR: "issue_slo_rules.json" file is not valid with JSON schema';
+  try {
+    await github.issues.createComment({
+      owner,
+      repo,
+      issue_number,
+      body,
+    });
+  } catch (err) {
+    console.warn(
+      `Error creating comment in repo: ${repo} for issue number: ${issue_number}. error status: ${err.status}`
+    );
+    return;
+  }
 };
 
 handler.createCheck = async function createCheck(
   context: Context,
   validationRes: ValidationResults
 ) {
-  const checkParams: ChecksCreateParams = context.repo({
+  let checkParams = context.repo({
     name: 'slo-rules-check',
-    conclusion: 'success',
     head_sha: context.payload.pull_request.head.sha,
+    conclusion: 'success' as Conclusion,
   });
 
   if (!validationRes.isValid) {
-    checkParams.conclusion = 'failure';
-    checkParams.output = {
-      title: 'Invalid slo rules detected',
-      summary: 'issue_slo_rules.json does not follow the slo_rules schema.',
-      text: JSON.stringify(validationRes.errors, null, 4),
-    };
+    checkParams = context.repo({
+      name: 'slo-rules-check',
+      head_sha: context.payload.pull_request.head.sha,
+      conclusion: 'failure' as Conclusion,
+      output: {
+        title: 'Commit message did not follow Conventional Commits',
+        summary: 'issue_slo_rules.json does not follow the slo_rules schema.',
+        text: JSON.stringify(validationRes.errors, null, 4),
+      },
+    });
   }
-
   try {
     await context.github.checks.create(checkParams);
   } catch (err) {
-    console.log(err);
+    console.error(
+      `Error creating check in repo ${context.payload.repository.name} \n ${err}`
+    );
     return;
   }
 };

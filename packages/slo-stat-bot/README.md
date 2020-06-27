@@ -1,6 +1,8 @@
 # slo-stat-label
 
-Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
+Lints for slo rules (issue_slo_rules.json) file and creates a check on the PR. Comments on the PR if it is invalid.
+
+(https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
 
 This bot uses nock for mocking requests to GitHub, and snap-shot-it for capturing responses; This allows updates to the API surface to be treated as a visual diff, rather than tediously asserting against each field.
 

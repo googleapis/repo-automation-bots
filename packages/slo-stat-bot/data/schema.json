@@ -104,4 +104,4 @@
     "items": {
         "$ref": "#/definitions/SLO"
     }
-} 
+}

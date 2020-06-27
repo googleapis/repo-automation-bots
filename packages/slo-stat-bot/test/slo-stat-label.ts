@@ -291,7 +291,7 @@ describe('slo-status-label', () => {
 
   describe('checking validation by using linter', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const schema = require('./../utils/schema.json');
+    const schema = require('./../data/schema.json');
 
     it('Valid slos return true', async () => {
       const files = fs.readdirSync(
