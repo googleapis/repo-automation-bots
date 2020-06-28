@@ -468,31 +468,12 @@ describe('slo-status-label', () => {
         );
         assert.strictEqual(appliesTo, false);
       });
+      it('Returns false if there are no issueLabels', async () => {
+        const appliesTo: boolean = await handler.appliesTo(
+          sloFile,
+          new Set());
+        assert.strictEqual(appliesTo, false);
+      });
     });
-
-    // describe('No slo rules', () => {
-    //   //eslint-disable-next-line @typescript-eslint/no-var-requires
-    //   const sloFile = require(resolve(
-    //     fixturesPath,
-    //     'events',
-    //     'issue_slo_rules',
-    //     'valid_slos',
-    //     'no_slo.json'
-    //   ));
-    //   it('Returns true if issue labels exist', async () => {
-    //     const appliesTo: boolean = await handler.appliesTo(
-    //       sloFile,
-    //       new Set(['bot:auto label', 'help wanted', 'priority: p2', 'type: clean up'])
-    //     );
-    //     assert.strictEqual(appliesTo, true);
-    //   });
-    //   it('Returns true if issue labels does not exist', async () => {
-    //     const appliesTo: boolean = await handler.appliesTo(
-    //       sloFile,
-    //       new Set()
-    //     );
-    //     assert.strictEqual(appliesTo, true);
-    //   });
-    // })
   });
 });

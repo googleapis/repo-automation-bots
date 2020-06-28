@@ -109,19 +109,23 @@ function handler(app: Application) {
   );
 }
 
+// Checking to see if issue applies to any slo in list then checking compiliancy
 handler.handle_issues = async function handle_issues(
-  sloRules: any,
-  labelSet: Set<string> | undefined
+  sloStr: string,
+  labelSet: Set<string> | null
 ) {
-  for (let i = 0; i < sloRules.length; i++) {
-    let appliesTo: boolean = sloRules[i].appliesTo === undefined;
+  const sloList = JSON.parse(sloStr);
+
+  for (const slo of sloList) {
+    let appliesTo: boolean = Object.keys(slo.appliesTo).length === 0;
     if (!appliesTo) {
-      appliesTo = await handler.appliesTo(sloRules[i], labelSet);
+      appliesTo = await handler.appliesTo(slo, labelSet);
     }
     //If applies To then check compliance settings
   }
 };
 
+// Lints issue_slo_rules.json file and creates a check on PR. If file is invalid it will comment on PR
 handler.handle_slos = async function handle_slos(
   context: Context,
   owner: string,
@@ -277,57 +281,59 @@ handler.createCheck = async function createCheck(
 
 handler.appliesTo = async function appliesTo(
   slo: any,
-  issueLabelSet: Set<string> | undefined
+  issueLabelSet: Set<string> | null
 ): Promise<boolean> {
-  if (issueLabelSet !== undefined && issueLabelSet.size !== 0) {
-    const githubLabels = await handler.convertToArray(
+
+  if(issueLabelSet === null || issueLabelSet.size === 0) {
+    return false;
+  }
+
+  let githubLabels = slo.appliesTo.githubLabels;
+  if (githubLabels !== undefined) {
+    githubLabels = await handler.convertToArray(
       slo.appliesTo.githubLabels
     );
-    if (githubLabels !== undefined) {
-      const isSubSet: boolean = await handler.isSubSet(
-        githubLabels,
-        issueLabelSet
-      );
-      if (!isSubSet) {
-        return false;
-      }
+    const isSubSet: boolean = await handler.isSubSet(
+      githubLabels,
+      issueLabelSet
+    );
+    if (!isSubSet) {
+      return false;
     }
+  }
 
-    const excludedGitHubLabels = await handler.convertToArray(
+  let excludedGitHubLabels = slo.appliesTo.excludedGitHubLabels;
+  if (excludedGitHubLabels !== undefined) {
+    excludedGitHubLabels = await handler.convertToArray(
       slo.appliesTo.excludedGitHubLabels
     );
-    if (excludedGitHubLabels !== undefined) {
-      const isElementExist: boolean = await handler.isElementExist(
-        excludedGitHubLabels,
-        issueLabelSet
-      );
-      if (isElementExist) {
-        return false;
-      }
+    const isElementExist: boolean = await handler.isElementExist(
+      excludedGitHubLabels,
+      issueLabelSet
+    );
+    if (isElementExist) {
+      return false;
     }
+  }
 
-    let priority = slo.appliesTo.priority;
-    if (priority !== undefined) {
-      priority = priority.toLowerCase();
-      if (
-        !issueLabelSet.has(priority) &&
-        !issueLabelSet.has('priority: ' + priority)
-      ) {
-        return false;
-      }
+  let priority = slo.appliesTo.priority;
+  if (priority !== undefined) {
+    priority = priority.toLowerCase();
+    if (
+      !issueLabelSet.has(priority) &&
+      !issueLabelSet.has('priority: ' + priority)
+    ) {
+      return false;
     }
+  }
 
-    let issueType = slo.appliesTo.issueType;
-    if (issueType !== undefined) {
-      issueType = issueType.toLowerCase();
-      if (
-        !issueLabelSet.has(issueType) &&
-        !issueLabelSet.has('type: ' + issueType)
-      )
-        return false;
-    }
-  } else {
-    if (Object.keys(slo.appliesTo).length > 0) {
+  let issueType = slo.appliesTo.issueType;
+  if (issueType !== undefined) {
+    issueType = issueType.toLowerCase();
+    if (
+      !issueLabelSet.has(issueType) &&
+      !issueLabelSet.has('type: ' + issueType)
+    ) {
       return false;
     }
   }
@@ -340,9 +346,8 @@ handler.convertToArray = async function convertToArray(
   if (typeof variable === 'string') {
     return [variable.toLowerCase()];
   }
-  if (variable !== undefined) {
-    variable.forEach((label: string) => label.toLowerCase());
-  }
+  
+  variable.forEach((label: string) => label.toLowerCase());
   return variable;
 };
 
@@ -375,7 +380,7 @@ handler.getSetOfIssueLabels = async function getSetOfIssueLabels(
   owner: string,
   repo: string,
   issue_number: number
-): Promise<Set<string> | undefined> {
+): Promise<Set<string> | null> {
   try {
     const labelsResponse = await github.issues.listLabelsOnIssue({
       owner,
@@ -384,13 +389,11 @@ handler.getSetOfIssueLabels = async function getSetOfIssueLabels(
     });
 
     const labelSet: Set<string> = new Set<string>();
-    labelsResponse.data.forEach(label =>
-      labelSet.add(label.name.toLowerCase())
-    );
+    labelsResponse.data.forEach(label => labelSet.add(label.name.toLowerCase()));
     return labelSet;
   } catch (err) {
-    console.log(err);
-    return;
+    console.error(`Error in retrieving issue labels in repo ${repo} \n ${err}`);
+    return null;
   }
 };
 
@@ -398,13 +401,23 @@ handler.getSloFile = async function getSloFile(
   github: GitHubAPI,
   owner: string,
   repo: string
-): Promise<string | undefined> {
+): Promise<string> {
   let path = '.github/issue_slo_rules.json';
-  let sloRules: string | undefined = await handler.getConfigFileContent(github, owner, repo, path);
+  let sloRules: string = await handler.getConfigFileContent(
+    github,
+    owner,
+    repo,
+    path
+  );
 
-  if (sloRules === undefined) {
+  if (sloRules === 'not found') {
     path = 'issue_slo_rules.json';
-    sloRules = await handler.getConfigFileContent(github, owner, '.github', path);
+    sloRules = await handler.getConfigFileContent(
+      github,
+      owner,
+      '.github',
+      path
+    );
   }
   return sloRules;
 };
@@ -414,7 +427,7 @@ handler.getConfigFileContent = async function getConfigFileContent(
   owner: string,
   repo: string,
   path: string
-): Promise<string | undefined> {
+): Promise<string> {
   try {
     const fileResponse = await github.repos.getContents({
       owner,
@@ -427,8 +440,11 @@ handler.getConfigFileContent = async function getConfigFileContent(
       Buffer.from(data.content as string, 'base64').toString('utf8')
     );
     return content;
-  } catch {
-    return;
+  } catch (err) {
+    if(repo === '.github') {
+      throw `Error in finding org level config file in ${owner} \n ${err}`
+    }
+    return 'not found';
   }
 };
 
