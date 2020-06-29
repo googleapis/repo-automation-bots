@@ -30,15 +30,25 @@ type Conclusion =
 
 //const sloRules = require('./../../../../.github/issue_slo_rules');
 
-type ValidationResults = {
+interface ValidationResults {
   isValid: boolean;
   errors?: ErrorObject[] | null;
-};
+}
 
-type PullsListFilesResponseItem = {
+interface PullsListFilesResponseItem {
   filename: string;
   sha: string;
-};
+}
+
+interface IssueLabelResponse {
+  id: number;
+  node_id: string;
+  url: string;
+  name: string;
+  description: string;
+  color: string;
+  defualt: boolean;
+}
 
 function handler(app: Application) {
   app.on(
@@ -94,13 +104,11 @@ function handler(app: Application) {
     async (context: Context) => {
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
-      const issue_number = context.payload.issue.number;
+      const labelsResponse = context.payload.issue.labels;
 
-      const labels = await handler.getListOfIssueLabels(
-        context.github,
-        owner,
-        repo,
-        issue_number
+      const labels: string[] = [];
+      labelsResponse.forEach((label: IssueLabelResponse) =>
+        labels.push(label.name.toLowerCase())
       );
 
       const sloString = await handler.getSloFile(context.github, owner, repo);
@@ -393,28 +401,6 @@ handler.convertToArray = async function convertToArray(
   return variable;
 };
 
-handler.getListOfIssueLabels = async function getListOfIssueLabels(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  issue_number: number
-): Promise<string[] | null> {
-  try {
-    const labelsResponse = await github.issues.listLabelsOnIssue({
-      owner,
-      repo,
-      issue_number,
-    });
-
-    const labels: string[] = [];
-    labelsResponse.data.forEach(label => labels.push(label.name.toLowerCase()));
-    return labels;
-  } catch (err) {
-    console.error(`Error in retrieving issue labels in repo ${repo} \n ${err}`);
-    return null;
-  }
-};
-
 handler.getSloFile = async function getSloFile(
   github: GitHubAPI,
   owner: string,
@@ -463,6 +449,29 @@ handler.getConfigFileContent = async function getConfigFileContent(
       throw `Error in finding org level config file in ${owner} \n ${err}`;
     }
     return 'not found';
+  }
+};
+
+//Method will be used for cloud scheduler
+handler.getListOfIssueLabels = async function getListOfIssueLabels(
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+  issue_number: number
+): Promise<string[] | null> {
+  try {
+    const labelsResponse = await github.issues.listLabelsOnIssue({
+      owner,
+      repo,
+      issue_number,
+    });
+
+    const labels: string[] = [];
+    labelsResponse.data.forEach(label => labels.push(label.name.toLowerCase()));
+    return labels;
+  } catch (err) {
+    console.error(`Error in retrieving issue labels in repo ${repo} \n ${err}`);
+    return null;
   }
 };
 

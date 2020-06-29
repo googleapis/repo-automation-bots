@@ -485,12 +485,6 @@ describe('slo-status-label', () => {
   describe('opened, reopened, or edited issue', () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
     let appliesToStub: sinon.SinonStub;
-    //eslint-disable-next-line @typescript-eslint/no-var-requires
-    const issueLabelFile = require(resolve(
-      fixturesPath,
-      'events',
-      'issue_labels.json'
-    ));
 
     beforeEach(() => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -511,8 +505,6 @@ describe('slo-status-label', () => {
         'config_content'
       ));
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/issues/5/labels')
-        .reply(200, issueLabelFile)
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
         .reply(200, repoConfigFile);
 
@@ -533,8 +525,6 @@ describe('slo-status-label', () => {
         'config_content'
       ));
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/issues/5/labels')
-        .reply(200, issueLabelFile)
         .log(console.log)
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
         .reply(404)

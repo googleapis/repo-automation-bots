@@ -31,7 +31,35 @@
       "type": "User",
       "site_admin": false
     },
-    "labels": [],
+    "labels": [
+      {
+        "id": 2128590689,
+        "node_id": "MDU6TGFiZWwyMTI4NTkwNjg5",
+        "url": "https://api.github.com/repos/testOwner/testRepo/labels/bug",
+        "name": "bug",
+        "color": "d73a4a",
+        "default": true,
+        "description": "Something isn't working"
+      },
+      {
+        "id": 2128590693,
+        "node_id": "MDU6TGFiZWwyMTI4NTkwNjkz",
+        "url": "https://api.github.com/repos/testOwner/testRepo/labels/enhancement",
+        "name": "priority: P0",
+        "color": "a2eeef",
+        "default": true,
+        "description": "Priority of issue"
+      },
+      {
+        "id": 2128590696,
+        "node_id": "MDU6TGFiZWwyMTI4NTkwNjk2",
+        "url": "https://api.github.com/repos/testOwner/testRepo/labels/help%20wanted",
+        "name": "help wanted",
+        "color": "008672",
+        "default": true,
+        "description": "Extra attention is needed"
+      }
+    ],
     "state": "open",
     "locked": false,
     "assignee": null,
