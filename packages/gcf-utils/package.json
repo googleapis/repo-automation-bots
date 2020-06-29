@@ -23,8 +23,10 @@
     "@google-cloud/storage": "^5.0.0",
     "@google-cloud/tasks": "^2.0.0",
     "@octokit/plugin-enterprise-compatibility": "1.2.5",
+    "@types/pino": "^6.3.0",
     "express": "^4.17.1",
     "gaxios": "^3.0.0",
+    "pino": "^6.3.2",
     "probot": "^9.11.2",
     "tmp": "^0.2.0",
     "yargs": "^15.0.0"

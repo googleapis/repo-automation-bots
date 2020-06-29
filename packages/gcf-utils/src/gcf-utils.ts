@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {createProbot, Probot, ApplicationFunction, Options} from 'probot';
+import {createProbot, Probot, ApplicationFunction, Options, Logger} from 'probot';
 import {CloudTasksClient} from '@google-cloud/tasks';
 import {v1} from '@google-cloud/secret-manager';
 import {request} from 'gaxios';
 import * as express from 'express';
+import pino from 'pino';
 
 const client = new CloudTasksClient();
 
@@ -39,6 +40,33 @@ interface EnqueueTaskParams {
   signature: string;
   id: string;
   name: string;
+}
+
+export class GCFLogger {
+
+  private static logger: pino.Logger;
+
+  public static get() {
+    if (!this.logger) {
+      this.logger = this.initLogger();
+    }
+    return this.logger;
+  }
+  
+  public static initLogger(destPath?: string): pino.Logger {
+    let destinationOptions: { [index: string]: any} = { sync: true }
+    if (destPath) {
+      destinationOptions.dest = destPath;
+    }
+    return pino(
+      {
+        customLevels: {
+          'metric': 30
+        }
+      },
+      pino.destination(destinationOptions)
+    )
+  }
 }
 
 export class GCFBootstrapper {
