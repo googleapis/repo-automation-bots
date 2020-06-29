@@ -39,6 +39,7 @@ interface EnqueueTaskParams {
   signature: string;
   id: string;
   name: string;
+  delay?: number;
 }
 
 export class GCFBootstrapper {
@@ -87,7 +88,8 @@ export class GCFBootstrapper {
   }
 
   gcf(
-    appFn: ApplicationFunction
+    appFn: ApplicationFunction,
+    processingDelay?: number
   ): (request: express.Request, response: express.Response) => Promise<void> {
     return async (request: express.Request, response: express.Response) => {
       // Otherwise let's listen handle the payload
@@ -120,7 +122,13 @@ export class GCFBootstrapper {
         // clever and instead pull up a list of repos we're installed on by
         // installation ID:
         try {
-          await this.handleScheduled(id, request, name, signature);
+          await this.handleScheduled(
+            id,
+            request,
+            name,
+            signature,
+            processingDelay
+          );
         } catch (err) {
           response.status(500).send({
             body: JSON.stringify({message: err}),
@@ -139,6 +147,7 @@ export class GCFBootstrapper {
             name,
             signature,
             body: JSON.stringify(request.body),
+            delay: processingDelay,
           });
         } catch (err) {
           response.status(500).send({
@@ -180,7 +189,8 @@ export class GCFBootstrapper {
     id: string,
     req: express.Request,
     eventName: string,
-    signature: string
+    signature: string,
+    processingDelay?: number
   ) {
     let body = (Buffer.isBuffer(req.body)
       ? JSON.parse(req.body.toString('utf8'))
@@ -193,7 +203,14 @@ export class GCFBootstrapper {
 
     if (body.repo) {
       // Job was scheduled for a single repository:
-      await this.scheduledToTask(body.repo, id, body, eventName, signature);
+      await this.scheduledToTask(
+        body.repo,
+        id,
+        body,
+        eventName,
+        signature,
+        processingDelay
+      );
     } else {
       // Job should be run on all managed repositories:
       const url =
@@ -201,7 +218,14 @@ export class GCFBootstrapper {
       const res = await request<Repos>({url});
       const {repos} = res.data;
       for (const repo of repos) {
-        await this.scheduledToTask(repo.repo, id, body, eventName, signature);
+        await this.scheduledToTask(
+          repo.repo,
+          id,
+          body,
+          eventName,
+          signature,
+          processingDelay
+        );
       }
     }
   }
@@ -211,7 +235,8 @@ export class GCFBootstrapper {
     id: string,
     body: object,
     eventName: string,
-    signature: string
+    signature: string,
+    processingDelay?: number
   ) {
     // The payload from the scheduler is updated with additional information
     // providing context about the organization/repo that the event is
@@ -232,6 +257,7 @@ export class GCFBootstrapper {
         name: eventName,
         signature,
         body: JSON.stringify(payload),
+        delay: processingDelay,
       });
     } catch (err) {
       console.warn(err.message);
@@ -251,6 +277,9 @@ export class GCFBootstrapper {
     // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green:
     const url = `https://${location}-${projectId}.cloudfunctions.net/${process.env.GCF_SHORT_FUNCTION_NAME}`;
     console.info(`scheduling task in queue ${queueName}`);
+    const scheduleTime = params.delay
+      ? params.delay + Date.now() / 1000
+      : Date.now() / 1000;
     if (params.body) {
       await client.createTask({
         parent: queuePath,
@@ -265,6 +294,9 @@ export class GCFBootstrapper {
             },
             url,
             body: Buffer.from(params.body),
+          },
+          scheduleTime: {
+            seconds: scheduleTime,
           },
         },
       });
@@ -281,6 +313,9 @@ export class GCFBootstrapper {
               'Content-Type': 'application/json',
             },
             url,
+          },
+          scheduleTime: {
+            seconds: scheduleTime,
           },
         },
       });
