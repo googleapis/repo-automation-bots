@@ -17,7 +17,6 @@ import {Probot} from 'probot';
 import {resolve} from 'path';
 import nock from 'nock';
 import sinon from 'sinon';
-// eslint-disable-next-line node/no-unsupported-features/node-builtins
 import {describe, it, beforeEach} from 'mocha';
 
 import handler from '../src/merge-on-green';
@@ -101,7 +100,6 @@ function removeMogLabel() {
 
 function merge() {
   return nock('https://api.github.com')
-    .log(console.log)
     .put('/repos/testOwner/testRepo/pulls/1/merge')
     .reply(200, {sha: '123', merged: true, message: 'in a bottle'});
 }
