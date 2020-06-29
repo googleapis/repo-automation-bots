@@ -347,17 +347,21 @@ describe('slo-status-label', () => {
         'arr_githubLabels.json'
       ));
       it('Returns true if there are extra labels in gitHubLabels', async () => {
-        const appliesTo: boolean = await handler.appliesTo(
-          sloFile,
-          new Set(['bot:auto label', 'p2', 'help wanted', 'enhancment', 'bug'])
-        );
+        const appliesTo: boolean = await handler.appliesTo(sloFile, [
+          'bot:auto label',
+          'p2',
+          'help wanted',
+          'enhancment',
+          'bug',
+        ]);
         assert.strictEqual(appliesTo, true);
       });
       it('Returns false if githubLabels is not subset of issue labels', async () => {
-        const appliesTo: boolean = await handler.appliesTo(
-          sloFile,
-          new Set(['enhancement', 'p2', 'bug'])
-        );
+        const appliesTo: boolean = await handler.appliesTo(sloFile, [
+          'enhancement',
+          'p2',
+          'bug',
+        ]);
         assert.strictEqual(appliesTo, false);
       });
     });
@@ -372,17 +376,19 @@ describe('slo-status-label', () => {
         'str_githubLabels.json'
       ));
       it('Returns true if githubLabel is in issue labels', async () => {
-        const appliesTo: boolean = await handler.appliesTo(
-          sloFile,
-          new Set(['bot:auto label', 'p2', 'bug'])
-        );
+        const appliesTo: boolean = await handler.appliesTo(sloFile, [
+          'bot:auto label',
+          'p2',
+          'bug',
+        ]);
         assert.strictEqual(appliesTo, true);
       });
       it('Returns false if githubLabel is not exact match in issue labels', async () => {
-        const appliesTo: boolean = await handler.appliesTo(
-          sloFile,
-          new Set(['auto label', 'p2', 'bug'])
-        );
+        const appliesTo: boolean = await handler.appliesTo(sloFile, [
+          'auto label',
+          'p2',
+          'bug',
+        ]);
         assert.strictEqual(appliesTo, false);
       });
     });
@@ -397,17 +403,21 @@ describe('slo-status-label', () => {
         'arr_excludedGithubLabels.json'
       ));
       it('Returns true if all excludedGithubLabels is not subset of issue labels', async () => {
-        const appliesTo: boolean = await handler.appliesTo(
-          sloFile,
-          new Set(['bot:auto label', 'help wanted', 'p2', 'bug'])
-        );
+        const appliesTo: boolean = await handler.appliesTo(sloFile, [
+          'bot:auto label',
+          'help wanted',
+          'p2',
+          'bug',
+        ]);
         assert.strictEqual(appliesTo, true);
       });
       it('Returns false if one of excludedGithubLabels is subset of issue labels', async () => {
-        const appliesTo: boolean = await handler.appliesTo(
-          sloFile,
-          new Set(['bot:auto label', 'enhancement', 'p2', 'bug'])
-        );
+        const appliesTo: boolean = await handler.appliesTo(sloFile, [
+          'bot:auto label',
+          'enhancement',
+          'p2',
+          'bug',
+        ]);
         assert.strictEqual(appliesTo, false);
       });
     });
@@ -421,10 +431,12 @@ describe('slo-status-label', () => {
         'slo_rules',
         'str_excludedGithubLabels.json'
       ));
-      const appliesTo: boolean = await handler.appliesTo(
-        sloFile,
-        new Set(['bot:auto label', 'help wanted', 'p2', 'bug'])
-      );
+      const appliesTo: boolean = await handler.appliesTo(sloFile, [
+        'bot:auto label',
+        'help wanted',
+        'p2',
+        'bug',
+      ]);
       assert.strictEqual(appliesTo, true);
     });
 
@@ -438,42 +450,104 @@ describe('slo-status-label', () => {
         'str_githubLabels.json'
       ));
       it('Returns true if priority in issue labels is labeled as "priority: p_" and issueType is labeled as "issueType: __"', async () => {
-        const appliesTo: boolean = await handler.appliesTo(
-          sloFile,
-          new Set([
-            'bot:auto label',
-            'help wanted',
-            'priority: p2',
-            'type: bug',
-          ])
-        );
+        const appliesTo: boolean = await handler.appliesTo(sloFile, [
+          'bot:auto label',
+          'help wanted',
+          'priority: p2',
+          'type: bug',
+        ]);
         assert.strictEqual(appliesTo, true);
       });
       it('Returns false if priority not in issue labels', async () => {
-        const appliesTo: boolean = await handler.appliesTo(
-          sloFile,
-          new Set(['bot:auto label', 'help wanted', 'priority: p0', 'bug'])
-        );
+        const appliesTo: boolean = await handler.appliesTo(sloFile, [
+          'bot:auto label',
+          'help wanted',
+          'priority: p0',
+          'bug',
+        ]);
         assert.strictEqual(appliesTo, false);
       });
       it('Returns false if issueType not in issue labels', async () => {
-        const appliesTo: boolean = await handler.appliesTo(
-          sloFile,
-          new Set([
-            'bot:auto label',
-            'help wanted',
-            'priority: p2',
-            'type: clean up',
-          ])
-        );
+        const appliesTo: boolean = await handler.appliesTo(sloFile, [
+          'bot:auto label',
+          'help wanted',
+          'priority: p2',
+          'type: clean up',
+        ]);
         assert.strictEqual(appliesTo, false);
       });
       it('Returns false if there are no issueLabels', async () => {
-        const appliesTo: boolean = await handler.appliesTo(
-          sloFile,
-          new Set());
+        const appliesTo: boolean = await handler.appliesTo(sloFile, []);
         assert.strictEqual(appliesTo, false);
       });
+    });
+  });
+  describe('opened, reopened, or edited issue', () => {
+    let payload: Webhooks.WebhookPayloadPullRequest;
+    let appliesToStub: sinon.SinonStub;
+    //eslint-disable-next-line @typescript-eslint/no-var-requires
+    const issueLabelFile = require(resolve(
+      fixturesPath,
+      'events',
+      'issue_labels.json'
+    ));
+
+    beforeEach(() => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
+      appliesToStub = sinon.stub(handler, 'appliesTo');
+    });
+
+    afterEach(() => {
+      sinon.restore();
+      nock.cleanAll;
+    });
+
+    it('handle_issues is triggered if repo level file exists', async () => {
+      //eslint-disable-next-line @typescript-eslint/no-var-requires
+      const repoConfigFile = require(resolve(
+        fixturesPath,
+        'events',
+        'config_content'
+      ));
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues/5/labels')
+        .reply(200, issueLabelFile)
+        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .reply(200, repoConfigFile);
+
+      await probot.receive({
+        name: 'issues.opened',
+        payload,
+        id: 'abc123',
+      });
+      sinon.assert.calledOnce(appliesToStub);
+      requests.done();
+    });
+
+    it('handle_issues is triggered if org level file exists', async () => {
+      //eslint-disable-next-line @typescript-eslint/no-var-requires
+      const orgConfigFile = require(resolve(
+        fixturesPath,
+        'events',
+        'config_content'
+      ));
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues/5/labels')
+        .reply(200, issueLabelFile)
+        .log(console.log)
+        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .reply(404)
+        .get('/repos/testOwner/.github/contents/issue_slo_rules.json')
+        .reply(200, orgConfigFile);
+
+      await probot.receive({
+        name: 'issues.opened',
+        payload,
+        id: 'abc123',
+      });
+      sinon.assert.calledOnce(appliesToStub);
+      requests.done();
     });
   });
 });

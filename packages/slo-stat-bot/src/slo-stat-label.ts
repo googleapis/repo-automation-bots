@@ -96,30 +96,30 @@ function handler(app: Application) {
       const repo = context.payload.repository.name;
       const issue_number = context.payload.issue.number;
 
-      const labelSet = await handler.getSetOfIssueLabels(
+      const labels = await handler.getListOfIssueLabels(
         context.github,
         owner,
         repo,
         issue_number
       );
 
-      const sloRules = await handler.getSloFile(context.github, owner, repo);
-      await handler.handle_issues(sloRules, labelSet);
+      const sloString = await handler.getSloFile(context.github, owner, repo);
+      await handler.handle_issues(sloString, labels);
     }
   );
 }
 
 // Checking to see if issue applies to any slo in list then checking compiliancy
 handler.handle_issues = async function handle_issues(
-  sloStr: string,
-  labelSet: Set<string> | null
+  sloString: string,
+  labels: string[] | null
 ) {
-  const sloList = JSON.parse(sloStr);
+  const sloList = JSON.parse(sloString);
 
   for (const slo of sloList) {
     let appliesTo: boolean = Object.keys(slo.appliesTo).length === 0;
     if (!appliesTo) {
-      appliesTo = await handler.appliesTo(slo, labelSet);
+      appliesTo = await handler.appliesTo(slo, labels);
     }
     //If applies To then check compliance settings
   }
@@ -280,62 +280,104 @@ handler.createCheck = async function createCheck(
 };
 
 handler.appliesTo = async function appliesTo(
-  slo: any,
-  issueLabelSet: Set<string> | null
+  slo: any, //will create strongly typed
+  issueLabels: string[] | null
 ): Promise<boolean> {
-
-  if(issueLabelSet === null || issueLabelSet.size === 0) {
+  if (issueLabels === null || issueLabels.length === 0) {
     return false;
   }
 
-  let githubLabels = slo.appliesTo.githubLabels;
-  if (githubLabels !== undefined) {
-    githubLabels = await handler.convertToArray(
-      slo.appliesTo.githubLabels
-    );
-    const isSubSet: boolean = await handler.isSubSet(
-      githubLabels,
-      issueLabelSet
-    );
-    if (!isSubSet) {
-      return false;
-    }
+  const githubLabels = slo.appliesTo.githubLabels;
+  const validGithubLabels = await handler.validGithubLabels(
+    issueLabels,
+    githubLabels
+  );
+  if (!validGithubLabels) {
+    return false;
   }
 
-  let excludedGitHubLabels = slo.appliesTo.excludedGitHubLabels;
-  if (excludedGitHubLabels !== undefined) {
-    excludedGitHubLabels = await handler.convertToArray(
-      slo.appliesTo.excludedGitHubLabels
-    );
-    const isElementExist: boolean = await handler.isElementExist(
-      excludedGitHubLabels,
-      issueLabelSet
-    );
-    if (isElementExist) {
-      return false;
-    }
+  const excludedGitHubLabels = slo.appliesTo.excludedGitHubLabels;
+  const validExcludeLabels = await handler.validExcludedLabels(
+    issueLabels,
+    excludedGitHubLabels
+  );
+  if (!validExcludeLabels) {
+    return false;
   }
 
-  let priority = slo.appliesTo.priority;
-  if (priority !== undefined) {
-    priority = priority.toLowerCase();
-    if (
-      !issueLabelSet.has(priority) &&
-      !issueLabelSet.has('priority: ' + priority)
-    ) {
-      return false;
-    }
+  const priority: string = slo.appliesTo.priority;
+  const validPriority = await handler.isValid(
+    issueLabels,
+    priority,
+    'priority: '
+  );
+  if (!validPriority) {
+    return false;
   }
 
-  let issueType = slo.appliesTo.issueType;
-  if (issueType !== undefined) {
-    issueType = issueType.toLowerCase();
-    if (
-      !issueLabelSet.has(issueType) &&
-      !issueLabelSet.has('type: ' + issueType)
-    ) {
-      return false;
-    }
+  const issueType = slo.appliesTo.issueType;
+  const validIssueType = await handler.isValid(
+    issueLabels,
+    issueType,
+    'type: '
+  );
+  if (!validIssueType) {
+    return false;
+  }
+
+  return true;
+};
+
+handler.validGithubLabels = async function validGithubLabels(
+  issueLabels: string[],
+  githubLabels: string | string[]
+): Promise<boolean> {
+  if (!githubLabels) {
+    return true;
+  }
+
+  githubLabels = await handler.convertToArray(githubLabels);
+  const isSubSet = githubLabels.every((label: string) =>
+    issueLabels.includes(label)
+  );
+  if (!isSubSet) {
+    return false;
+  }
+  return true;
+};
+
+handler.validExcludedLabels = async function validExcludedLabels(
+  issueLabels: string[],
+  excludedGitHubLabels: string | string[]
+): Promise<boolean> {
+  if (!excludedGitHubLabels) {
+    return true;
+  }
+
+  excludedGitHubLabels = await handler.convertToArray(excludedGitHubLabels);
+  const isElementExist = excludedGitHubLabels.some((label: string) =>
+    issueLabels.includes(label)
+  );
+  if (isElementExist) {
+    return false;
+  }
+  return true;
+};
+
+handler.isValid = async function isValid(
+  issueLabels: string[],
+  rule: string,
+  title: string
+) {
+  if (!rule) {
+    return true;
+  }
+
+  rule = rule.toLowerCase();
+  const includes =
+    issueLabels.includes(rule) || issueLabels.includes(title + rule);
+  if (!includes) {
+    return false;
   }
   return true;
 };
@@ -346,41 +388,17 @@ handler.convertToArray = async function convertToArray(
   if (typeof variable === 'string') {
     return [variable.toLowerCase()];
   }
-  
+
   variable.forEach((label: string) => label.toLowerCase());
   return variable;
 };
 
-handler.isSubSet = async function isSubSet(
-  sloLabels: string[],
-  issueLabelSet: Set<string>
-): Promise<boolean> {
-  for (let i = 0; i < sloLabels.length; i++) {
-    if (!issueLabelSet?.has(sloLabels[i])) {
-      return false;
-    }
-  }
-  return true;
-};
-
-handler.isElementExist = async function isElementExist(
-  sloLabels: string[],
-  issueLabelSet: Set<string>
-): Promise<boolean> {
-  for (let i = 0; i < sloLabels.length; i++) {
-    if (issueLabelSet?.has(sloLabels[i])) {
-      return true;
-    }
-  }
-  return false;
-};
-
-handler.getSetOfIssueLabels = async function getSetOfIssueLabels(
+handler.getListOfIssueLabels = async function getListOfIssueLabels(
   github: GitHubAPI,
   owner: string,
   repo: string,
   issue_number: number
-): Promise<Set<string> | null> {
+): Promise<string[] | null> {
   try {
     const labelsResponse = await github.issues.listLabelsOnIssue({
       owner,
@@ -388,9 +406,9 @@ handler.getSetOfIssueLabels = async function getSetOfIssueLabels(
       issue_number,
     });
 
-    const labelSet: Set<string> = new Set<string>();
-    labelsResponse.data.forEach(label => labelSet.add(label.name.toLowerCase()));
-    return labelSet;
+    const labels: string[] = [];
+    labelsResponse.data.forEach(label => labels.push(label.name.toLowerCase()));
+    return labels;
   } catch (err) {
     console.error(`Error in retrieving issue labels in repo ${repo} \n ${err}`);
     return null;
@@ -434,15 +452,15 @@ handler.getConfigFileContent = async function getConfigFileContent(
       repo,
       path,
     });
-
     const data = fileResponse.data as {content?: string};
-    const content = JSON.parse(
-      Buffer.from(data.content as string, 'base64').toString('utf8')
+    const content = Buffer.from(data.content as string, 'base64').toString(
+      'utf8'
     );
+
     return content;
   } catch (err) {
-    if(repo === '.github') {
-      throw `Error in finding org level config file in ${owner} \n ${err}`
+    if (repo === '.github') {
+      throw `Error in finding org level config file in ${owner} \n ${err}`;
     }
     return 'not found';
   }
