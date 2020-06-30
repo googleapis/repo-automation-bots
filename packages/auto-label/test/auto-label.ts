@@ -72,14 +72,8 @@ describe('auto-label', () => {
         .post('/repos/testOwner/testRepo/labels')
         .reply(200, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
             color: 'C9FFE5',
-            default: false,
-            description: null,
           },
         ])
         .get('/repos/testOwner/testRepo/issues/5/labels')
@@ -87,14 +81,8 @@ describe('auto-label', () => {
         .post('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
             color: 'C9FFE5',
-            default: false,
-            description: null,
           },
         ]);
       handler.callStorage = async () => downloadedFile;
@@ -109,27 +97,15 @@ describe('auto-label', () => {
         .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
         .reply(200, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
             color: 'C9FFE5',
-            default: false,
-            description: null,
           },
         ])
         .get('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
             color: 'C9FFE5',
-            default: false,
-            description: null,
           },
         ]);
       handler.callStorage = async () => downloadedFile;
@@ -144,14 +120,8 @@ describe('auto-label', () => {
         .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
         .reply(200, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
             color: 'C9FFE5',
-            default: false,
-            description: null,
           },
         ])
         .get('/repos/testOwner/testRepo/issues/5/labels')
@@ -159,14 +129,8 @@ describe('auto-label', () => {
         .post('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
             color: 'C9FFE5',
-            default: false,
-            description: null,
           },
         ]);
       handler.callStorage = async () => downloadedFile;
@@ -293,27 +257,15 @@ describe('auto-label', () => {
         })
         .reply(201, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
-            color: 'FEFEFA',
-            default: false,
-            description: null,
+            color: 'C9FFE5',
           },
         ])
         .post('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
-            color: 'FEFEFA',
-            default: false,
-            description: null,
+            color: 'C9FFE5',
           },
         ]);
       handler.callStorage = async () => downloadedFile;
@@ -346,40 +298,22 @@ describe('auto-label', () => {
         })
         .reply(201, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
-            color: 'FEFEFA',
-            default: false,
-            description: null,
+            color: 'C9FFE5',
           },
         ])
         .post('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
-            color: 'FEFEFA',
-            default: false,
-            description: null,
+            color: 'C9FFE5',
           },
         ])
         .delete('/repos/testOwner/testRepo/issues/1/labels/api:theWrongLabel')
         .reply(200, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
-            color: 'FEFEFA',
-            default: false,
-            description: null,
+            color: 'C9FFE5',
           },
         ]);
 
@@ -410,14 +344,8 @@ describe('auto-label', () => {
         .post('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
-            color: 'FEFEFA',
-            default: false,
-            description: null,
+            color: 'C9FFE5',
           },
         ]);
 

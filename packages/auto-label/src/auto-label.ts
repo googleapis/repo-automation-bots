@@ -18,18 +18,22 @@ import {Storage} from '@google-cloud/storage';
 import {Application} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot/lib/github';
-// eslint-disable-next-line node/no-extraneous-import
-import Webhooks from '@octokit/webhooks';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const colorsData = require('./colors.json');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const fs = require('fs');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const path = require('path');
+
+const repos = fs.readFileSync(path.join(__dirname, './repos.txt'));
 
 interface JSONData {
   github_label: string;
   repo: string;
 }
 
-interface Labels {
+interface Label {
   name: string;
 }
 
@@ -56,7 +60,7 @@ handler.addLabels = async function addLabels(
   }
 };
 
-handler.removeLabels = async function removeLabels(
+handler.removeLabel = async function removeLabel(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -122,7 +126,7 @@ handler.checkExistingIssueLabels = async function checkExistingIssueLabels(
   owner: string,
   repo: string,
   issueNumber: number
-): Promise<Labels[] | null> {
+): Promise<Label[] | null> {
   try {
     const data = await github.issues.listLabelsOnIssue({
       owner,
@@ -145,7 +149,7 @@ handler.maybeAddAPILabel = async (
   owner: string,
   repo: string,
   issueNumber: number,
-  labelsOnIssue: Labels[] | null,
+  labelsOnIssue: Label[] | null,
   label: string
 ): Promise<string | undefined> => {
   if (labelsOnIssue) {
@@ -236,7 +240,7 @@ handler.autoDetectLabel = (
   )?.github_label;
 };
 
-handler.mainLogic = async function mainLogic(
+handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   owner: string,
   repo: string,
   issueNumber: number,
@@ -331,7 +335,7 @@ handler.mainLogic = async function mainLogic(
       ]);
     }
     for (const dirtyLabel of cleanUpOtherLabels) {
-      await handler.removeLabels(
+      await handler.removeLabel(
         context.github,
         owner,
         repo,
@@ -355,11 +359,23 @@ function handler(app: Application) {
     console.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
-
     if (context.payload.cron_org !== owner) {
       console.log(`skipping run for ${context.payload.cron_org}`);
       return;
     }
+    if (
+      repos.includes(
+        `${context.payload.organization.login}/${context.payload.repository.name}`
+      )
+    ) {
+      return;
+    }
+
+    console.log(path.join(__dirname, './repos.txt'));
+    fs.writeFileSync(
+      path.join(__dirname, './repos.txt'),
+      `${context.payload.organization.login}/${context.payload.repository.name}\n`
+    );
 
     const jsonData = await handler.callStorage(
       'devrel-prod-settings',
@@ -377,7 +393,13 @@ function handler(app: Application) {
     for await (const response of context.github.paginate.iterator(issues)) {
       const issue = response.data;
       if (!issue.pull_request) {
-        await handler.mainLogic(owner, repo, issue.number, context, jsonArray);
+        await handler.addLabeltoRepoAndIssue(
+          owner,
+          repo,
+          issue.number,
+          context,
+          jsonArray
+        );
       }
     }
   });
@@ -395,7 +417,13 @@ function handler(app: Application) {
 
     const jsonArray = await handler.checkIfFileIsEmpty(jsonData);
 
-    await handler.mainLogic(owner, repo, issueNumber, context, jsonArray);
+    await handler.addLabeltoRepoAndIssue(
+      owner,
+      repo,
+      issueNumber,
+      context,
+      jsonArray
+    );
   });
 }
 
