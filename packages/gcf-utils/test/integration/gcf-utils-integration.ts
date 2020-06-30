@@ -74,13 +74,13 @@ describe('gcf-utils Integration', () => {
       logger = GCFLogger["initLogger"]({}, writeStream);
     });
 
-    it('logs an debug level string', () => {
+    it('logs a debug level string', () => {
       logger.debug('hello world');
       let loggedLines = getLogsFromStream(writeStream);
       validateLogs(loggedLines,  1, ['hello world'], [], 20);
     });
 
-    it('logs an debug level json', () => {
+    it('logs a debug level json', () => {
       logger.debug({ 'hello': 'world'});
       let loggedLines = getLogsFromStream(writeStream);
       validateLogs(loggedLines,  1, [], [{ 'hello': 'world'}], 20);
@@ -110,13 +110,13 @@ describe('gcf-utils Integration', () => {
       validateLogs(loggedLines,  1, [], [{ 'hello': 'world'}], 30);
     });
 
-    it('logs an warn level string', () => {
+    it('logs a warn level string', () => {
       logger.warn('hello world');
       let loggedLines = getLogsFromStream(writeStream);
       validateLogs(loggedLines,  1, ['hello world'], [], 40);
     });
 
-    it('logs an warn level json', () => {
+    it('logs a warn level json', () => {
       logger.warn({ 'hello': 'world'});
       let loggedLines = getLogsFromStream(writeStream);
       validateLogs(loggedLines,  1, [], [{ 'hello': 'world'}], 40);

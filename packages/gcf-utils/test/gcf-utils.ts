@@ -62,7 +62,7 @@ describe('gcf-util', () => {
       logger.info(logJSON);
     });
 
-    it('logs an metric string correctly', () => {
+    it('logs a metric string correctly', () => {
       let logString = 'hello world';
       let logger = GCFLogger["initLogger"]({
         hooks: {
@@ -75,7 +75,7 @@ describe('gcf-util', () => {
       logger.metric(logString);
     });
 
-    it('logs an metric json correctly', () => {
+    it('logs a metric json correctly', () => {
       let logJSON = {'hello': 'world'};
       let logger = GCFLogger["initLogger"]({
         hooks: {
