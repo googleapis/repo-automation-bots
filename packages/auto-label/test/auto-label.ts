@@ -275,49 +275,33 @@ describe('auto-label', () => {
     });
   });
 
-  // it('responds to backfill label event, backfilling issues with labels', async () => {
-  //   const payload = require(resolve(fixturesPath, './events/issue-labeled'));
-  //   const ghRequests = nock('https://api.github.com')
-  //     .get('/repos/testOwner/testRepo/issues')
-  //     .reply(200, [
-  //       {
-  //         number: 1,
-  //       },
-  //     ])
-  //     .delete('/repos/testOwner/testRepo/issues/1/labels/auto-label:backfill')
-  //     .reply(200);
-  //   handler.callStorage = async () => downloadedFile;
-  //   await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
-  //   ghRequests.done();
-  // });
-
   //TODO: fix test, add tests for new features
   describe('schedule repository', () => {
-    it.only('responds to a scheduled event', async () => {
-      const ghRequests = nock('https://api.github.com')
+    it('responds to a scheduled event', async () => {
+      const ghRequests = nock('https://api.github.com').log(console.log)
       .get('/repos/testOwner/testRepo/issues')
-      .reply(200, [
+      .reply(200, 
         {
-          number: 1,
-        },
-      ])
+          "number": 1,
+        }
+      )
+      .get('/repos/testOwner/testRepo/issues/1/labels')
+      .reply(200)
       .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
       .reply(200)
-      .post('/repos/testOwner/testRepo/labels')
-      .reply(200, [
+      .post('/repos/testOwner/testRepo/labels', {name: 'myGitHubLabel', color: 'FEFEFA'})
+      .reply(201, [
         {
           id: 1811802233,
           node_id: 'MDU6TGFiZWwxODExODAyMjMz',
           url:
             'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
           name: 'myGitHubLabel',
-          color: 'C9FFE5',
+          color: 'FEFEFA',
           default: false,
           description: null,
         },
       ])
-      .get('/repos/testOwner/testRepo/issues/1/labels')
-      .reply(200)
       .post('/repos/testOwner/testRepo/issues/1/labels')
       .reply(200, [
         {
@@ -326,11 +310,100 @@ describe('auto-label', () => {
           url:
             'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
           name: 'myGitHubLabel',
-          color: 'C9FFE5',
+          color: 'FEFEFA',
           default: false,
           description: null,
         },
       ]);
+    handler.callStorage = async () => downloadedFile;
+      await probot.receive({name: 'schedule.repository', payload: {organization: {login: 'testOwner'}, repository: {name: 'testRepo'}}, id: 'abc123'});
+      ghRequests.done();
+    })
+
+
+    it('deletes extraneous labels', async () => {
+      const ghRequests = nock('https://api.github.com').log(console.log)
+      .get('/repos/testOwner/testRepo/issues')
+      .reply(200, 
+        {
+          "number": 1,
+        }
+      )
+      .get('/repos/testOwner/testRepo/issues/1/labels')
+      .reply(200, [{"name": "api:theWrongLabel"}])
+      .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
+      .reply(200)
+      .post('/repos/testOwner/testRepo/labels', {name: 'myGitHubLabel', color: 'FEFEFA'})
+      .reply(201, [
+        {
+          id: 1811802233,
+          node_id: 'MDU6TGFiZWwxODExODAyMjMz',
+          url:
+            'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
+          name: 'myGitHubLabel',
+          color: 'FEFEFA',
+          default: false,
+          description: null,
+        },
+      ])
+      .post('/repos/testOwner/testRepo/issues/1/labels')
+      .reply(200, [
+        {
+          id: 1811802233,
+          node_id: 'MDU6TGFiZWwxODExODAyMjMz',
+          url:
+            'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
+          name: 'myGitHubLabel',
+          color: 'FEFEFA',
+          default: false,
+          description: null,
+        },
+      ])
+      .delete(`/repos/testOwner/testRepo/issues/1/labels/api:theWrongLabel`)
+      .reply(200, [
+        {
+          id: 1811802233,
+          node_id: 'MDU6TGFiZWwxODExODAyMjMz',
+          url:
+            'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
+          name: 'myGitHubLabel',
+          color: 'FEFEFA',
+          default: false,
+          description: null,
+        },
+      ])
+
+    handler.callStorage = async () => downloadedFile;
+      await probot.receive({name: 'schedule.repository', payload: {organization: {login: 'testOwner'}, repository: {name: 'testRepo'}}, id: 'abc123'});
+      ghRequests.done();
+    })
+
+    it('will not create labels that already exist', async () => {
+      const ghRequests = nock('https://api.github.com').log(console.log)
+      .get('/repos/testOwner/testRepo/issues')
+      .reply(200, 
+        {
+          "number": 1,
+        }
+      )
+      .get('/repos/testOwner/testRepo/issues/1/labels')
+      .reply(200)
+      .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
+      .reply(200, {name: "myGithubLabel"})
+      .post('/repos/testOwner/testRepo/issues/1/labels')
+      .reply(200, [
+        {
+          id: 1811802233,
+          node_id: 'MDU6TGFiZWwxODExODAyMjMz',
+          url:
+            'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
+          name: 'myGitHubLabel',
+          color: 'FEFEFA',
+          default: false,
+          description: null,
+        },
+      ])
+
     handler.callStorage = async () => downloadedFile;
       await probot.receive({name: 'schedule.repository', payload: {organization: {login: 'testOwner'}, repository: {name: 'testRepo'}}, id: 'abc123'});
       ghRequests.done();
