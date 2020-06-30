@@ -1,0 +1,18 @@
+{
+    "name": "issue_slo_rules.json",
+    "path": ".github/issue_slo_rules.json",
+    "sha": "b42f2dc8e5fc1073e6addfdc52c858dd756c4f06",
+    "size": 327,
+    "url": "https://api.github.com/repos/hershey127/Testing/contents/.github/issue_slo_rules.json?ref=master",
+    "html_url": "https://github.com/hershey127/Testing/blob/master/.github/issue_slo_rules.json",
+    "git_url": "https://api.github.com/repos/hershey127/Testing/git/blobs/b42f2dc8e5fc1073e6addfdc52c858dd756c4f06",
+    "download_url": "https://raw.githubusercontent.com/hershey127/Testing/master/.github/issue_slo_rules.json",
+    "type": "file",
+    "content": "WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6IDAsCiAg\nICAgICAgICAgICJyZXNvbHV0aW9uVGltZSI6IDQzMjAwLAogICAgICAgICAg\nICAicmVxdWlyZXNBc3NpZ25lZSI6IGZhbHNlCiAgICAgICAgfQogICAgfQog\nXQogCiAKIAogCiAK\n",
+    "encoding": "base64",
+    "_links": {
+      "self": "https://api.github.com/repos/hershey127/Testing/contents/.github/issue_slo_rules.json?ref=master",
+      "git": "https://api.github.com/repos/hershey127/Testing/git/blobs/b42f2dc8e5fc1073e6addfdc52c858dd756c4f06",
+      "html": "https://github.com/hershey127/Testing/blob/master/.github/issue_slo_rules.json"
+    }
+}

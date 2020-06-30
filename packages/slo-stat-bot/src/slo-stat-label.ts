@@ -41,13 +41,31 @@ interface PullsListFilesResponseItem {
 }
 
 interface IssueLabelResponse {
-  id: number;
-  node_id: string;
-  url: string;
   name: string;
-  description: string;
-  color: string;
-  defualt: boolean;
+}
+
+enum Priority {
+  'P0',
+  'P1',
+  'P2',
+  'P3',
+  'P4',
+  'P5',
+}
+
+interface SLORules {
+  appliesTo: {
+    gitHubLabels?: string | string[];
+    excludedGitHubLabels?: string | string[];
+    priority?: Priority;
+    issueType?: string;
+    issues: boolean;
+    prs: boolean;
+  };
+  complianceSettings: {
+    responseTime: string | number;
+    resolutionTime: string | number; //Will add responders
+  };
 }
 
 function handler(app: Application) {
@@ -287,15 +305,16 @@ handler.createCheck = async function createCheck(
   }
 };
 
+//Checking if slo applies to a given issue 
 handler.appliesTo = async function appliesTo(
-  slo: any, //will create strongly typed
+  slo: SLORules,
   issueLabels: string[] | null
 ): Promise<boolean> {
   if (issueLabels === null || issueLabels.length === 0) {
     return false;
   }
 
-  const githubLabels = slo.appliesTo.githubLabels;
+  const githubLabels = slo.appliesTo.gitHubLabels;
   const validGithubLabels = await handler.validGithubLabels(
     issueLabels,
     githubLabels
@@ -313,7 +332,7 @@ handler.appliesTo = async function appliesTo(
     return false;
   }
 
-  const priority: string = slo.appliesTo.priority;
+  const priority = String(slo.appliesTo.priority);
   const validPriority = await handler.isValid(
     issueLabels,
     priority,
@@ -338,7 +357,7 @@ handler.appliesTo = async function appliesTo(
 
 handler.validGithubLabels = async function validGithubLabels(
   issueLabels: string[],
-  githubLabels: string | string[]
+  githubLabels: string | string[] | undefined
 ): Promise<boolean> {
   if (!githubLabels) {
     return true;
@@ -356,7 +375,7 @@ handler.validGithubLabels = async function validGithubLabels(
 
 handler.validExcludedLabels = async function validExcludedLabels(
   issueLabels: string[],
-  excludedGitHubLabels: string | string[]
+  excludedGitHubLabels: string | string[] | undefined
 ): Promise<boolean> {
   if (!excludedGitHubLabels) {
     return true;
@@ -374,7 +393,7 @@ handler.validExcludedLabels = async function validExcludedLabels(
 
 handler.isValid = async function isValid(
   issueLabels: string[],
-  rule: string,
+  rule: string | undefined,
   title: string
 ) {
   if (!rule) {
@@ -401,6 +420,7 @@ handler.convertToArray = async function convertToArray(
   return variable;
 };
 
+// If the repo level config file does not exists defaults to org config file
 handler.getSloFile = async function getSloFile(
   github: GitHubAPI,
   owner: string,
@@ -413,7 +433,6 @@ handler.getSloFile = async function getSloFile(
     repo,
     path
   );
-
   if (sloRules === 'not found') {
     path = 'issue_slo_rules.json';
     sloRules = await handler.getConfigFileContent(
@@ -445,7 +464,7 @@ handler.getConfigFileContent = async function getConfigFileContent(
 
     return content;
   } catch (err) {
-    if (repo === '.github') {
+    if (repo === '.github') { //Error if org level does not exist
       throw `Error in finding org level config file in ${owner} \n ${err}`;
     }
     return 'not found';

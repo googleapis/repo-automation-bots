@@ -1,6 +1,6 @@
 {
     "appliesTo": {
-      "githubLabels": ["bot:auto label", "help wanted"],
+      "gitHubLabels": ["bot:auto label", "help wanted"],
       "priority": "P2",
       "issueType": "bug"
     },
