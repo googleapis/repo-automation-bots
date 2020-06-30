@@ -56,7 +56,7 @@ handler.addLabels = async function addLabels(
   }
 };
 
-handler.removeLabels = async function removeLabels(
+handler.removeLabel = async function removeLabel(
   github: GitHubAPI,
   owner: string,
   repo: string,
