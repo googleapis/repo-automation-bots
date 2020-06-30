@@ -322,7 +322,7 @@ describe('auto-label', () => {
         payload: {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo'},
-          cron_org: 'testOwner'
+          cron_org: 'testOwner',
         },
         id: 'abc123',
       });
@@ -389,7 +389,7 @@ describe('auto-label', () => {
         payload: {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo'},
-          cron_org: 'testOwner'
+          cron_org: 'testOwner',
         },
         id: 'abc123',
       });
@@ -427,7 +427,7 @@ describe('auto-label', () => {
         payload: {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo'},
-          cron_org: 'testOwner'
+          cron_org: 'testOwner',
         },
         id: 'abc123',
       });
