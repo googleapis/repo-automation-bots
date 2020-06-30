@@ -275,4 +275,40 @@ export = (app: Application) => {
       configuration.bumpMinorPreMajor
     );
   });
+
+  app.on('schedule.repository', async context => {
+    const repoUrl = context.payload.repository.full_name;
+    const repoName = context.payload.repository.name;
+
+    const remoteConfiguration = (await context.config(
+      WELL_KNOWN_CONFIGURATION_FILE
+    )) as ConfigurationOptions | null;
+
+    // If no configuration is specified,
+    if (!remoteConfiguration) {
+      app.log.info(`release-please not configured for (${repoUrl})`);
+      return;
+    }
+
+    const configuration = {
+      ...DEFAULT_CONFIGURATION,
+      ...remoteConfiguration,
+    };
+
+    app.log.info(`schedule.repository (${repoUrl})`);
+
+    const releaseType = configuration.releaseType
+      ? configuration.releaseType
+      : releaseTypeFromRepoLanguage(context.payload.repository.language);
+
+    // TODO: this should be refactored into an interface.
+    await createReleasePR(
+      releaseType,
+      configuration.packageName || repoName,
+      repoUrl,
+      context.github,
+      configuration.releaseLabels,
+      configuration.bumpMinorPreMajor
+    );
+  });
 };
