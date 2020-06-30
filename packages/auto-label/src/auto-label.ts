@@ -30,7 +30,7 @@ interface JSONData {
 }
 
 interface Labels {
- name: string;
+  name: string;
 }
 
 const storage = new Storage();
@@ -75,7 +75,6 @@ handler.removeLabels = async function removeLabels(
     return null;
   }
 };
-
 
 //checks whether a specific label exists in a repo
 handler.checkExistingLabels = async function checkExistingLabels(
@@ -123,7 +122,7 @@ handler.checkExistingIssueLabels = async function checkExistingIssueLabels(
   owner: string,
   repo: string,
   issueNumber: number
-): Promise<Labels[] | null > {
+): Promise<Labels[] | null> {
   try {
     const data = await github.issues.listLabelsOnIssue({
       owner,
@@ -237,7 +236,13 @@ handler.autoDetectLabel = (
   )?.github_label;
 };
 
-handler.mainLogic = async function mainLogic(owner: string, repo: string, issueNumber: number, context: any, jsonArray: any) {
+handler.mainLogic = async function mainLogic(
+  owner: string,
+  repo: string,
+  issueNumber: number,
+  context: any,
+  jsonArray: any
+) {
   const objectInJsonArray = handler.checkIfElementIsInArray(
     jsonArray,
     owner,
@@ -246,7 +251,7 @@ handler.mainLogic = async function mainLogic(owner: string, repo: string, issueN
 
   let autoDetectedLabelAdded: string | undefined;
 
-  console.log('getting labels on issue')
+  console.log('getting labels on issue');
   const labelsOnIssue = await handler.checkExistingIssueLabels(
     context.github,
     owner,
@@ -254,8 +259,7 @@ handler.mainLogic = async function mainLogic(owner: string, repo: string, issueN
     issueNumber
   );
   console.log(labelsOnIssue);
-  console.log('finished labels on issue')
-
+  console.log('finished labels on issue');
 
   if (!objectInJsonArray?.github_label) {
     console.log(
@@ -296,7 +300,7 @@ handler.mainLogic = async function mainLogic(owner: string, repo: string, issueN
     repo,
     githubLabel
   );
-  console.log(alreadyExists)
+  console.log(alreadyExists);
   console.log('finished getting labels on repo');
 
   if (alreadyExists === null || alreadyExists === undefined) {
@@ -319,7 +323,10 @@ handler.mainLogic = async function mainLogic(owner: string, repo: string, issueN
       (element: {name: string}) => element.name === githubLabel
     );
     const cleanUpOtherLabels = labelsOnIssue.filter(
-      (element: {name: string}) => element.name.startsWith('api') && element.name !== found?.name && element.name !== autoDetectedLabelAdded
+      (element: {name: string}) =>
+        element.name.startsWith('api') &&
+        element.name !== found?.name &&
+        element.name !== autoDetectedLabelAdded
     );
     if (found) {
       console.log('This label already exists on this issue');
@@ -330,7 +337,13 @@ handler.mainLogic = async function mainLogic(owner: string, repo: string, issueN
       ]);
     }
     for (const dirtyLabel of cleanUpOtherLabels) {
-      await handler.removeLabels(context.github, owner, repo, issueNumber, dirtyLabel.name);
+      await handler.removeLabels(
+        context.github,
+        owner,
+        repo,
+        issueNumber,
+        dirtyLabel.name
+      );
     }
   } else {
     await handler.addLabels(context.github, owner, repo, issueNumber, [
@@ -340,7 +353,6 @@ handler.mainLogic = async function mainLogic(owner: string, repo: string, issueN
 
   return;
 };
-
 
 //main function, responds to label being added
 function handler(app: Application) {
@@ -354,13 +366,13 @@ function handler(app: Application) {
       console.log(`skipping run for ${context.payload.cron_org}`);
       return;
     }
-    
+
     const jsonData = await handler.callStorage(
       'devrel-prod-settings',
       'public_repos.json'
     );
     const jsonArray = await handler.checkIfFileIsEmpty(jsonData);
-  
+
     //all the issues in the repository
     const issues = context.github.issues.listForRepo.endpoint.merge({
       owner,
@@ -376,7 +388,7 @@ function handler(app: Application) {
         console.log(issue.number);
         await handler.mainLogic(owner, repo, issue.number, context, jsonArray);
       }
-    } 
+    }
   });
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
@@ -389,12 +401,11 @@ function handler(app: Application) {
       'devrel-prod-settings',
       'public_repos.json'
     );
-  
+
     const jsonArray = await handler.checkIfFileIsEmpty(jsonData);
 
     await handler.mainLogic(owner, repo, issueNumber, context, jsonArray);
-
-  })
+  });
 }
 
 export = handler;
