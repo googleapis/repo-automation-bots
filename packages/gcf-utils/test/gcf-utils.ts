@@ -21,9 +21,6 @@ import sinon from 'sinon';
 import nock from 'nock';
 import assert from 'assert';
 import {v1} from '@google-cloud/secret-manager';
-import pino from 'pino';
-import fs, { write } from 'fs';
-import stream from 'memory-streams';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const repos = require('../../test/fixtures/repos.json');
@@ -38,37 +35,62 @@ function nockRepoList() {
 
 describe('gcf-util', () => {
   describe('GCFLogger', () => {
-    let logger: pino.Logger;
-    let writeStream: stream.WritableStream;
-    
-    function getLogsFromStream(writeStream: stream.WritableStream): any[] {
-      try {
-        let stringData: string = writeStream.toString();
-        let lines: string[] = stringData.split('\n').filter((line) => line != null && line !== '');
-        let jsonArray: any[] = lines.map((line) => JSON.parse(line));
-        return jsonArray;
-      } catch (error) {
-        throw new Error(`Failed to read write stream: ${error}`);
-      }
-    }
-    
-    beforeEach(() => {
-      writeStream = new stream.WritableStream();
-      logger = GCFLogger.initLogger(writeStream);
+
+    it('logs an info string correctly', () => {
+      let logString = 'hello world';
+      let logger = GCFLogger["initLogger"]({
+        hooks: {
+          logMethod (args, method) {
+            assert.equal(args.length, 1);
+            assert.equal(args[0], logString);
+          }
+        }
+      });
+      logger.error(logString);
     });
 
-    it('logs an info level string', () => {
-      logger.info('hello world');
-      logger.info('hello world2');
-      let loggedLines = getLogsFromStream(writeStream);
-      assert.equal(loggedLines.length, 2, `expected exactly 2 lines to be logged`);
+    it('logs an info json correctly', () => {
+      let logJSON = {'hello': 'world'};
+      let logger = GCFLogger["initLogger"]({
+        hooks: {
+          logMethod (args, method) {
+            assert.equal(args.length, 1);
+            assert.equal(args[0], logJSON);
+          }
+        }
+      });
+      logger.info(logJSON);
     });
 
-    afterEach(() => {
-      writeStream.end();
+    it('logs an metric string correctly', () => {
+      let logString = 'hello world';
+      let logger = GCFLogger["initLogger"]({
+        hooks: {
+          logMethod (args, method) {
+            assert.equal(args.length, 1);
+            assert.equal(args[0], logString);
+          }
+        }
+      });
+      logger.metric(logString);
     });
-  });
 
+    it('logs an metric json correctly', () => {
+      let logJSON = {'hello': 'world'};
+      let logger = GCFLogger["initLogger"]({
+        hooks: {
+          logMethod (args, method) {
+            assert.equal(args.length, 1);
+            assert.equal(args[0], logJSON);
+          }
+        }
+      });
+      logger.metric(logJSON);
+    });
+
+    // TODO: add similar tests for other levels
+
+  })
   describe('GCFBootstrapper', () => {
     describe('gcf', () => {
       let handler: (

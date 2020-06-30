@@ -54,18 +54,20 @@ export class GCFLogger {
     return this.logger;
   }
   
-  public static initLogger(dest?: NodeJS.WritableStream | SonicBoom): pino.Logger {
+  private static initLogger (addOptions?: pino.LoggerOptions, dest?: pino.DestinationStream): pino.Logger {
+    let options = {
+      customLevels: {
+        'metric': 30
+      },
+      level: 'trace'
+    }
+    if (addOptions) {
+      Object.assign(options, addOptions);
+    }
     if (!dest) {
       dest = pino.destination({ sync: true });
     }
-    return pino(
-      {
-        customLevels: {
-          'metric': 30
-        }
-      },
-      dest
-    )
+    return pino(options, dest)
   }
 }
 
