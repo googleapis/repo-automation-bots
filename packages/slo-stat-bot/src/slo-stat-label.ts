@@ -305,7 +305,7 @@ handler.createCheck = async function createCheck(
   }
 };
 
-//Checking if slo applies to a given issue 
+//Checking if slo applies to a given issue
 handler.appliesTo = async function appliesTo(
   slo: SLORules,
   issueLabels: string[] | null
@@ -464,7 +464,8 @@ handler.getConfigFileContent = async function getConfigFileContent(
 
     return content;
   } catch (err) {
-    if (repo === '.github') { //Error if org level does not exist
+    if (repo === '.github') {
+      //Error if org level does not exist
       throw `Error in finding org level config file in ${owner} \n ${err}`;
     }
     return 'not found';
