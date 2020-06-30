@@ -50,7 +50,6 @@ describe('gcf-util', () => {
       try {
         if(fs.existsSync(testLogFile)) {
           let stringData: string = fs.readFileSync(testLogFile, "utf8");
-          console.log(stringData);
           let lines: string[] = stringData.split('\n').filter((line) => line != null && line !== '');
           let jsonArray: any[] = lines.map((line) => JSON.parse(line));
           return jsonArray;
@@ -63,15 +62,28 @@ describe('gcf-util', () => {
     }
     
     beforeEach(() => {
+      fs.writeFileSync(testLogFile, "")
       logger = GCFLogger.initLogger(testLogFile);
     });
 
-    it('logs an info level string', () => {
+    it('logs an info level string', (done) => {
       logger.info('hello world');
       logger.info('hello world2');
 
-      let loggedLines  = getTestLogFileData();
-      assert.equal(loggedLines.length, 2, 'expected exactly 2 lines to be logged');
+      // == Both of these didn't solve the issue ==
+      // logger.flush();
+      // pino.destination().flushSync();
+
+      // == This does not work, detects 0 lines ==
+      // let loggedLines  = getTestLogFileData();
+      // assert.equal(loggedLines.length, 2, 'expected exactly 2 lines to be logged');
+      // done();
+      
+      return setTimeout(() => {  // waits 50ms for logs to flush. This seems to work
+        let loggedLines  = getTestLogFileData();
+        assert.equal(loggedLines.length, 2, 'expected exactly 2 lines to be logged');
+        done();
+      }, 50)
     });
 
     afterEach(clearTestLogFile);
