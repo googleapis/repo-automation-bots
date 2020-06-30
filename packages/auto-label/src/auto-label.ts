@@ -29,7 +29,7 @@ interface JSONData {
   repo: string;
 }
 
-interface Labels {
+interface Label {
   name: string;
 }
 
