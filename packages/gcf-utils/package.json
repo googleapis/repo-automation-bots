@@ -26,6 +26,7 @@
     "@types/pino": "^6.3.0",
     "express": "^4.17.1",
     "gaxios": "^3.0.0",
+    "memory-streams": "^0.1.3",
     "pino": "^6.3.2",
     "probot": "^9.11.2",
     "tmp": "^0.2.0",

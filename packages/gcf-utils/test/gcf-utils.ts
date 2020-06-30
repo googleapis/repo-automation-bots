@@ -22,7 +22,8 @@ import nock from 'nock';
 import assert from 'assert';
 import {v1} from '@google-cloud/secret-manager';
 import pino from 'pino';
-import fs from 'fs';
+import fs, { write } from 'fs';
+import stream from 'memory-streams';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const repos = require('../../test/fixtures/repos.json');
@@ -38,55 +39,34 @@ function nockRepoList() {
 describe('gcf-util', () => {
   describe('GCFLogger', () => {
     let logger: pino.Logger;
-    const testLogFile: string = './test-log-file.txt';
-
-    function clearTestLogFile() {
-      if(fs.existsSync(testLogFile)) {
-        fs.unlinkSync(testLogFile);
-      }
-    }
+    let writeStream: stream.WritableStream;
     
-    function getTestLogFileData(): any[] {
+    function getLogsFromStream(writeStream: stream.WritableStream): any[] {
       try {
-        if(fs.existsSync(testLogFile)) {
-          let stringData: string = fs.readFileSync(testLogFile, "utf8");
-          let lines: string[] = stringData.split('\n').filter((line) => line != null && line !== '');
-          let jsonArray: any[] = lines.map((line) => JSON.parse(line));
-          return jsonArray;
-        } else {
-          throw new Error(`${testLogFile} does not exist`);
-        }
+        let stringData: string = writeStream.toString();
+        let lines: string[] = stringData.split('\n').filter((line) => line != null && line !== '');
+        let jsonArray: any[] = lines.map((line) => JSON.parse(line));
+        return jsonArray;
       } catch (error) {
-        throw new Error(`Failed to read test log file: ${error}`);
+        throw new Error(`Failed to read write stream: ${error}`);
       }
     }
     
     beforeEach(() => {
-      fs.writeFileSync(testLogFile, "")
-      logger = GCFLogger.initLogger(testLogFile);
+      writeStream = new stream.WritableStream();
+      logger = GCFLogger.initLogger(writeStream);
     });
 
-    it('logs an info level string', (done) => {
+    it('logs an info level string', () => {
       logger.info('hello world');
       logger.info('hello world2');
-
-      // == Both of these didn't solve the issue ==
-      // logger.flush();
-      // pino.destination().flushSync();
-
-      // == This does not work, detects 0 lines ==
-      // let loggedLines  = getTestLogFileData();
-      // assert.equal(loggedLines.length, 2, 'expected exactly 2 lines to be logged');
-      // done();
-      
-      return setTimeout(() => {  // waits 50ms for logs to flush. This seems to work
-        let loggedLines  = getTestLogFileData();
-        assert.equal(loggedLines.length, 2, 'expected exactly 2 lines to be logged');
-        done();
-      }, 50)
+      let loggedLines = getLogsFromStream(writeStream);
+      assert.equal(loggedLines.length, 2, `expected exactly 2 lines to be logged`);
     });
 
-    afterEach(clearTestLogFile);
+    afterEach(() => {
+      writeStream.end();
+    });
   });
 
   describe('GCFBootstrapper', () => {

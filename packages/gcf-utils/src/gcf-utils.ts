@@ -18,6 +18,7 @@ import {v1} from '@google-cloud/secret-manager';
 import {request} from 'gaxios';
 import * as express from 'express';
 import pino from 'pino';
+import SonicBoom from 'sonic-boom';
 
 const client = new CloudTasksClient();
 
@@ -53,10 +54,9 @@ export class GCFLogger {
     return this.logger;
   }
   
-  public static initLogger(destPath?: string): pino.Logger {
-    let destinationOptions: { [index: string]: any} = { sync: true }
-    if (destPath) {
-      destinationOptions.dest = destPath;
+  public static initLogger(dest?: NodeJS.WritableStream | SonicBoom): pino.Logger {
+    if (!dest) {
+      dest = pino.destination({ sync: true });
     }
     return pino(
       {
@@ -64,7 +64,7 @@ export class GCFLogger {
           'metric': 30
         }
       },
-      pino.destination(destinationOptions)
+      dest
     )
   }
 }
