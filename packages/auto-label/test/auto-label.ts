@@ -275,7 +275,6 @@ describe('auto-label', () => {
     });
   });
 
-  //TODO: fix test, add tests for new features
   describe('schedule repository', () => {
     it('responds to a scheduled event', async () => {
       const ghRequests = nock('https://api.github.com')
@@ -323,6 +322,7 @@ describe('auto-label', () => {
         payload: {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo'},
+          cron_org: 'testOwner'
         },
         id: 'abc123',
       });
@@ -389,6 +389,7 @@ describe('auto-label', () => {
         payload: {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo'},
+          cron_org: 'testOwner'
         },
         id: 'abc123',
       });
@@ -426,6 +427,7 @@ describe('auto-label', () => {
         payload: {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo'},
+          cron_org: 'testOwner'
         },
         id: 'abc123',
       });

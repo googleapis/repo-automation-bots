@@ -251,15 +251,12 @@ handler.mainLogic = async function mainLogic(
 
   let autoDetectedLabelAdded: string | undefined;
 
-  console.log('getting labels on issue');
   const labelsOnIssue = await handler.checkExistingIssueLabels(
     context.github,
     owner,
     repo,
     issueNumber
   );
-  console.log(labelsOnIssue);
-  console.log('finished labels on issue');
 
   if (!objectInJsonArray?.github_label) {
     console.log(
@@ -293,15 +290,13 @@ handler.mainLogic = async function mainLogic(
     (object: JSONData) => objectInJsonArray === object
   );
   const githubLabel = objectInJsonArray.github_label;
-  console.log('getting labels on repo');
+
   const alreadyExists = await handler.checkExistingLabels(
     context.github,
     owner,
     repo,
     githubLabel
   );
-  console.log(alreadyExists);
-  console.log('finished getting labels on repo');
 
   if (alreadyExists === null || alreadyExists === undefined) {
     handler.createLabel(
@@ -311,7 +306,6 @@ handler.mainLogic = async function mainLogic(
       githubLabel,
       colorsData[colorNumber].color
     );
-    console.log('finished creating label');
   } else {
     console.log(
       'This label already exists on the repository, will check if it also exists on the issue'
@@ -383,9 +377,6 @@ function handler(app: Application) {
     for await (const response of context.github.paginate.iterator(issues)) {
       const issue = response.data;
       if (!issue.pull_request) {
-        console.log('we made it up to the for loop');
-        console.log(issue);
-        console.log(issue.number);
         await handler.mainLogic(owner, repo, issue.number, context, jsonArray);
       }
     }
