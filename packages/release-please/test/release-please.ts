@@ -19,6 +19,7 @@ import {describe, it, beforeEach} from 'mocha';
 import {resolve} from 'path';
 import {Probot} from 'probot';
 import Webhooks from '@octokit/webhooks';
+import {CronPayload} from 'gcf-utils';
 
 import * as fs from 'fs';
 import assert, {fail} from 'assert';
@@ -289,7 +290,7 @@ describe('ReleasePleaseBot', () => {
   describe('nightly event', () => {
     it('should try to create a snapshot', async () => {
       let executed = false;
-      const payload = {
+      const payload: CronPayload = {
         repository: {
           name: 'Hello-World',
           full_name: 'Codertocat/Hello-World',

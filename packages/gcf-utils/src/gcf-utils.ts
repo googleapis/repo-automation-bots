@@ -41,6 +41,27 @@ interface EnqueueTaskParams {
   name: string;
 }
 
+interface CronPayloadRepositoryOwner {
+  login: string;
+  name: string;
+}
+
+interface CronPayloadRepository {
+  name: string;
+  full_name: string;
+  owner: CronPayloadRepositoryOwner;
+}
+
+interface CronPayloadOrganization {
+  login: string;
+}
+
+export interface CronPayload {
+  repository: CronPayloadRepository;
+  organization: CronPayloadOrganization;
+  cron_org: string;
+}
+
 export class GCFBootstrapper {
   probot?: Probot;
 
@@ -221,6 +242,10 @@ export class GCFBootstrapper {
       repository: {
         name: repoName,
         full_name: repoFullName,
+        owner: {
+          login: orgName,
+          name: orgName,
+        }
       },
       organization: {
         login: orgName,
