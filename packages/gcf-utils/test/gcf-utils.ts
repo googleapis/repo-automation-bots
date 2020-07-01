@@ -44,12 +44,12 @@ describe('gcf-util', () => {
 
     function readLogsAsObjects(): any[] {
       try {
-          writeStream.end();
-          let lines = writeStream.data;
-          let jsonArray: any[] = lines.map((line) => JSON.parse(line));
-          return jsonArray;
+        writeStream.end();
+        let lines = writeStream.data;
+        let jsonArray: any[] = lines.map((line) => JSON.parse(line));
+        return jsonArray;
       } catch (error) {
-          throw new Error(`Failed to read stream: ${error}`);
+        throw new Error(`Failed to read stream: ${error}`);
       }
     }
 
@@ -59,7 +59,7 @@ describe('gcf-util', () => {
     });
 
     function testAllLevels() {
-      let levels: { [index: string]: number} = {
+      let levels: { [index: string]: number } = {
         trace: 10,
         debug: 20,
         info: 30,
@@ -73,7 +73,7 @@ describe('gcf-util', () => {
           let loggedLines = readLogsAsObjects();
           validateLogs(loggedLines, 1, ['hello world'], [], levels[level]);
         });
-    
+
         it(`logs ${level} level json`, () => {
           logger[level]({ 'hello': 'world' });
           let loggedLines = readLogsAsObjects();
@@ -83,8 +83,8 @@ describe('gcf-util', () => {
     }
 
     testAllLevels();
-  })
-  
+  });
+
   describe('GCFBootstrapper', () => {
     describe('gcf', () => {
       let handler: (

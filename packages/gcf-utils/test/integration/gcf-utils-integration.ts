@@ -40,7 +40,7 @@ describe('gcf-utils Integration', () => {
     });
 
     function testAllLevels() {
-      let levels: { [index: string]: number} = {
+      let levels: { [index: string]: number } = {
         trace: 10,
         debug: 20,
         info: 30,
@@ -57,7 +57,7 @@ describe('gcf-utils Integration', () => {
             done();
           });
         });
-    
+
         it(`logs ${level} level json`, (done) => {
           logger[level]({ 'hello': 'world' });
           writeStream.on('ready', () => {
