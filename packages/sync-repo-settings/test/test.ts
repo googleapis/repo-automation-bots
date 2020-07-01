@@ -171,8 +171,6 @@ describe('Sync repo settings', () => {
         'google-api-java-client',
         [
           'Kokoro - Test: Binary Compatibility',
-          'Kokoro - Test: Code Format',
-          'Kokoro - Test: Dependencies',
           'Kokoro - Test: Java 11',
           'Kokoro - Test: Java 7',
           'Kokoro - Test: Java 8',
