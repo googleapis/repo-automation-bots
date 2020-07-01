@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { ObjectWritableMock } from 'stream-mock';
 
 /**
  * Asserts the correctness of the provided log entries based on params given
@@ -53,27 +52,5 @@ export function validateLogs(
             assert.equal(line["level"], expectedLogLevel,
                 `expected logs to have level ${expectedLogLevel}`);
         }
-    }
-}
-
-/**
- * Parses logs written to a stream
- * @param writeStream stream containing logs
- */
-export function getLogsFromStream(writeStream: NodeJS.WritableStream): any[] {
-    try {
-        writeStream.end();
-        let lines: string[];
-        if (writeStream instanceof ObjectWritableMock) {
-            lines = writeStream.data;
-        } else {
-            let stringData: string = writeStream.toString();
-            console.log(stringData);
-            lines = stringData.split('\n').filter((line) => line != null && line !== '');
-        }
-        let jsonArray: any[] = lines.map((line) => JSON.parse(line));
-        return jsonArray;
-    } catch (error) {
-        throw new Error(`Failed to read stream: ${error}`);
     }
 }

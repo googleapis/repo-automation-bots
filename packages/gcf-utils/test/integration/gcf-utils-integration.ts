@@ -17,84 +17,65 @@ import { Application } from 'probot';
 import { resolve } from 'path';
 import { config } from 'dotenv';
 import pino from 'pino';
-import { getLogsFromStream, validateLogs } from '../fixtures/GCFLogger-test-helpers';
-import stream from 'memory-streams';
+import { validateLogs } from '../fixtures/GCFLogger-test-helpers';
+import SonicBoom from 'sonic-boom';
+import fs from 'fs';
 
 describe('gcf-utils Integration', () => {
   describe('GCFLogger Integration', () => {
     let logger: pino.Logger;
-    let writeStream: stream.WritableStream;
+    let testStreamPath: string = './test-stream.txt';
+    let writeStream: SonicBoom;
+
+    function readLogsAsObjects(): any[] {
+      writeStream.flushSync();
+      let data: string = fs.readFileSync(testStreamPath, { encoding: "utf8" })
+      let lines: string[] = data.split('\n').filter((line) => line != null && line !== '');
+      return lines.map((line) => JSON.parse(line));
+    }
 
     beforeEach(() => {
-      writeStream = new stream.WritableStream();
+      writeStream = pino.destination(testStreamPath);
       logger = GCFLogger["initLogger"]({}, writeStream);
     });
 
-    it('logs a debug level string', () => {
-      logger.debug('hello world');
-      let loggedLines = getLogsFromStream(writeStream);
-      validateLogs(loggedLines, 1, ['hello world'], [], 20);
-    });
+    function testAllLevels() {
+      let levels: { [index: string]: number} = {
+        trace: 10,
+        debug: 20,
+        info: 30,
+        metric: 30,
+        warn: 40,
+        error: 50
+      }
+      for (let level of Object.keys(levels)) {
+        it(`logs ${level} level string`, (done) => {
+          logger[level]('hello world');
+          writeStream.on('ready', () => {
+            let loggedLines = readLogsAsObjects();
+            validateLogs(loggedLines, 1, ['hello world'], [], levels[level]);
+            done();
+          });
+        });
+    
+        it(`logs ${level} level json`, (done) => {
+          logger[level]({ 'hello': 'world' });
+          writeStream.on('ready', () => {
+            let loggedLines = readLogsAsObjects();
+            validateLogs(loggedLines, 1, [], [{ 'hello': 'world' }], levels[level]);
+            done();
+          });
+        });
+      }
+    }
 
-    it('logs a debug level json', () => {
-      logger.debug({ 'hello': 'world' });
-      let loggedLines = getLogsFromStream(writeStream);
-      validateLogs(loggedLines, 1, [], [{ 'hello': 'world' }], 20);
-    });
-
-    it('logs an info level string', () => {
-      logger.info('hello world');
-      let loggedLines = getLogsFromStream(writeStream);
-      validateLogs(loggedLines, 1, ['hello world'], [], 30);
-    });
-
-    it('logs an info level json', () => {
-      logger.info({ 'hello': 'world' });
-      let loggedLines = getLogsFromStream(writeStream);
-      validateLogs(loggedLines, 1, [], [{ 'hello': 'world' }], 30);
-    });
-
-    it('logs a metric level string', () => {
-      logger.metric('hello world');
-      let loggedLines = getLogsFromStream(writeStream);
-      validateLogs(loggedLines, 1, ['hello world'], [], 30);
-    });
-
-    it('logs a metric level json', () => {
-      logger.metric({ 'hello': 'world' });
-      let loggedLines = getLogsFromStream(writeStream);
-      validateLogs(loggedLines, 1, [], [{ 'hello': 'world' }], 30);
-    });
-
-    it('logs a warn level string', () => {
-      logger.warn('hello world');
-      let loggedLines = getLogsFromStream(writeStream);
-      validateLogs(loggedLines, 1, ['hello world'], [], 40);
-    });
-
-    it('logs a warn level json', () => {
-      logger.warn({ 'hello': 'world' });
-      let loggedLines = getLogsFromStream(writeStream);
-      validateLogs(loggedLines, 1, [], [{ 'hello': 'world' }], 40);
-    });
-
-    it('logs an error level string', () => {
-      logger.error('hello world');
-      let loggedLines = getLogsFromStream(writeStream);
-      validateLogs(loggedLines, 1, ['hello world'], [], 50);
-    });
-
-    it('logs an error level json', () => {
-      logger.error({ 'hello': 'world' });
-      let loggedLines = getLogsFromStream(writeStream);
-      validateLogs(loggedLines, 1, [], [{ 'hello': 'world' }], 50);
-    });
+    testAllLevels();
 
     afterEach(() => {
-      writeStream.end();
+      fs.unlinkSync(testStreamPath);
     });
   });
-  
+
   describe('GCFBootstrapper Integration', () => {
     describe('getProbotConfig', () => {
       let bootstrapper: GCFBootstrapper;

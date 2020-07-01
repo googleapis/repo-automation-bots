@@ -23,7 +23,7 @@ import assert from 'assert';
 import { v1 } from '@google-cloud/secret-manager';
 import { ObjectWritableMock } from 'stream-mock';
 import pino from 'pino';
-import { getLogsFromStream, validateLogs } from './fixtures/GCFLogger-test-helpers';
+import { validateLogs } from './fixtures/GCFLogger-test-helpers';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const repos = require('../../test/fixtures/repos.json');
@@ -42,20 +42,49 @@ describe('gcf-util', () => {
     let logger: pino.Logger;
     let writeStream: ObjectWritableMock;
 
+    function readLogsAsObjects(): any[] {
+      try {
+          writeStream.end();
+          let lines = writeStream.data;
+          let jsonArray: any[] = lines.map((line) => JSON.parse(line));
+          return jsonArray;
+      } catch (error) {
+          throw new Error(`Failed to read stream: ${error}`);
+      }
+    }
+
     beforeEach(() => {
       writeStream = new ObjectWritableMock();
       logger = GCFLogger["initLogger"]({}, writeStream);
     });
 
-    it('logs a debug level string', () => {
-      logger.debug('hello world');
-      let loggedLines = getLogsFromStream(writeStream);
-      validateLogs(loggedLines, 1, ['hello world'], [], 20);
-    });
+    function testAllLevels() {
+      let levels: { [index: string]: number} = {
+        trace: 10,
+        debug: 20,
+        info: 30,
+        metric: 30,
+        warn: 40,
+        error: 50
+      }
+      for (let level of Object.keys(levels)) {
+        it(`logs ${level} level string`, () => {
+          logger[level]('hello world');
+          let loggedLines = readLogsAsObjects();
+          validateLogs(loggedLines, 1, ['hello world'], [], levels[level]);
+        });
     
-    // TODO: add similar tests for other levels
+        it(`logs ${level} level json`, () => {
+          logger[level]({ 'hello': 'world' });
+          let loggedLines = readLogsAsObjects();
+          validateLogs(loggedLines, 1, [], [{ 'hello': 'world' }], levels[level]);
+        });
+      }
+    }
 
+    testAllLevels();
   })
+  
   describe('GCFBootstrapper', () => {
     describe('gcf', () => {
       let handler: (
