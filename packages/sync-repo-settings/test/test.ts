@@ -40,7 +40,6 @@ function nockUpdateRepoSettings(
   squashBoolean: boolean
 ) {
   return nock('https://api.github.com')
-    .log(console.log)
     .patch(`/repos/googleapis/${repo}`, {
       name: `${repo}`,
       allow_merge_commit: false,
