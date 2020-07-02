@@ -15,8 +15,8 @@
 import {createProbot, Probot, ApplicationFunction, Options} from 'probot';
 import {CloudTasksClient} from '@google-cloud/tasks';
 import {v1} from '@google-cloud/secret-manager';
-import {request} from 'gaxios';
 import * as express from 'express';
+import {Octokit} from '@octokit/rest';
 
 const client = new CloudTasksClient();
 
@@ -31,6 +31,9 @@ interface Repos {
 
 interface Scheduled {
   repo?: string;
+  installation: {
+    id: number;
+  }
   message?: {[key: string]: string};
 }
 
@@ -122,6 +125,7 @@ export class GCFBootstrapper {
         try {
           await this.handleScheduled(id, request, name, signature);
         } catch (err) {
+          console.info(err);
           response.status(500).send({
             body: JSON.stringify({message: err}),
           });
@@ -195,15 +199,24 @@ export class GCFBootstrapper {
       // Job was scheduled for a single repository:
       await this.scheduledToTask(body.repo, id, body, eventName, signature);
     } else {
-      // Job should be run on all managed repositories:
-      const url =
-        'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
-      const res = await request<Repos>({url});
-      const {repos} = res.data;
-      for (const repo of repos) {
-        await this.scheduledToTask(repo.repo, id, body, eventName, signature);
+      const octokit = new Octokit({
+        auth: await this.getInstallationToken(body.installation.id)
+      });
+      const {data} = await octokit.request('/installation/repositories', {
+        headers: {
+          'Accept': 'application/vnd.github.machine-man-preview+json'
+        }
+      });
+      for (const repo of data.repositories) {
+        await this.scheduledToTask(repo.full_name, id, body, eventName, signature);
       }
     }
+  }
+
+  async getInstallationToken(installationId: number) {
+    return await this.probot!.app!.getInstallationAccessToken({
+      installationId
+    });
   }
 
   private async scheduledToTask(
