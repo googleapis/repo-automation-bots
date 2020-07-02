@@ -125,7 +125,6 @@ export class GCFBootstrapper {
         try {
           await this.handleScheduled(id, request, name, signature);
         } catch (err) {
-          console.info(err);
           response.status(500).send({
             body: JSON.stringify({message: err}),
           });
