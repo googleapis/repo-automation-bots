@@ -18,7 +18,6 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application} from 'probot';
-import * as moment from 'moment';
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot/lib/github';
 // labels indicative of the fact that a release has not completed yet.
@@ -35,9 +34,9 @@ const WARNING_THRESHOLD = 60 * 60 * 3 * 1000;
 const END_HOUR_UTC = 3;
 const START_HOUR_UTC = 17;
 
-const failureChecker = (app: Application) => {
+export function failureChecker(app: Application) {
   app.on(['schedule.repository'], async context => {
-    const utcHour: number = failureChecker.utcHour();
+    const utcHour = new Date().getUTCHours();
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
 
@@ -121,10 +120,4 @@ const failureChecker = (app: Application) => {
       labels: LABELS.split(','),
     });
   }
-};
-
-failureChecker.utcHour = () => {
-  return moment.utc().hour();
-};
-
-export = failureChecker;
+}

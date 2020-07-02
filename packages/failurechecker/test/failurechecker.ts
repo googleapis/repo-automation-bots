@@ -16,19 +16,17 @@
 import {Probot} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
-import {describe, it, beforeEach} from 'mocha';
-import failureChecker from '../src/failurechecker';
+import {describe, it, beforeEach, afterEach} from 'mocha';
+import * as sinon from 'sinon';
+import {failureChecker} from '../src/failurechecker';
 
 nock.disableNetConnect();
 
 describe('failurechecker', () => {
   let probot: Probot;
-
   beforeEach(() => {
-    // by default run within working hours:
-    failureChecker.utcHour = () => {
-      return 20;
-    };
+    // by default run within working hours (20 UTC):
+    sinon.useFakeTimers(new Date(Date.UTC(2020, 1, 1, 20)));
     probot = new Probot({
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
@@ -45,6 +43,8 @@ describe('failurechecker', () => {
     };
     probot.load(failureChecker);
   });
+
+  afterEach(() => sinon.restore());
 
   it('opens an issue on GitHub if there exists a pending label > threshold', async () => {
     const requests = nock('https://api.github.com')
@@ -236,9 +236,7 @@ describe('failurechecker', () => {
 
   it('does not run outside of working hours', async () => {
     // UTC 05:00 is outside of working hours:
-    failureChecker.utcHour = () => {
-      return 5;
-    };
+    sinon.useFakeTimers(new Date(Date.UTC(2020, 1, 1, 5)));
 
     await probot.receive({
       name: 'schedule.repository',
