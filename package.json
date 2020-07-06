@@ -13,6 +13,5 @@
   "devDependencies": {
     "c8": "^7.1.0",
     "smee-client": "^1.1.0"
-  },
-  "dependencies": {}
+  }
 }
