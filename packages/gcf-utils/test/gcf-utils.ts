@@ -23,7 +23,7 @@ import assert from 'assert';
 import { v1 } from '@google-cloud/secret-manager';
 import { ObjectWritableMock } from 'stream-mock';
 import pino from 'pino';
-import { validateLogs } from './fixtures/GCFLogger-test-helpers';
+import { validateLogs } from './GCFLogger-test-helpers';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const repos = require('../../test/fixtures/repos.json');
