@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GCFBootstrapper, GCFLogger } from '../src/gcf-utils';
-import { describe, beforeEach, afterEach, it } from 'mocha';
-import { GitHubAPI } from 'probot/lib/github';
-import { Options } from 'probot';
+import {GCFBootstrapper, GCFLogger} from '../src/gcf-utils';
+import {describe, beforeEach, afterEach, it} from 'mocha';
+import {GitHubAPI} from 'probot/lib/github';
+import {Options} from 'probot';
 import * as express from 'express';
 import sinon from 'sinon';
 import nock from 'nock';
 import assert from 'assert';
-import { v1 } from '@google-cloud/secret-manager';
-import { ObjectWritableMock } from 'stream-mock';
+import {v1} from '@google-cloud/secret-manager';
+import {ObjectWritableMock} from 'stream-mock';
 import pino from 'pino';
-import { validateLogs } from './test-helpers';
+import {validateLogs, LogLine} from './test-helpers';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const repos = require('../../test/fixtures/repos.json');
@@ -40,64 +40,60 @@ describe('gcf-util', () => {
   describe('GCFLogger', () => {
     describe('get()', () => {
       it('returns a new pino-based logger instance on first call', () => {
-        let logger = GCFLogger.get();
+        const logger = GCFLogger.get();
         assert.equal(logger.constructor.name, 'Pino');
       });
       it('returns the same logger instance on two consecutive calls', () => {
-        let logger1 = GCFLogger.get();
-        let logger2 = GCFLogger.get();
+        const logger1 = GCFLogger.get();
+        const logger2 = GCFLogger.get();
         assert.deepEqual(logger1, logger2);
       });
     });
 
     describe('logger instance', () => {
-
       let writeStream: ObjectWritableMock;
       let logger: pino.Logger;
 
-      function readLogsAsObjects(writeStream: ObjectWritableMock): any[] {
+      function readLogsAsObjects(writeStream: ObjectWritableMock): LogLine[] {
         try {
           writeStream.end();
-          let lines = writeStream.data;
-          let jsonArray: any[] = lines.map((line) => JSON.parse(line));
-          return jsonArray;
+          const lines: string[] = writeStream.data;
+          return lines.map(line => JSON.parse(line));
         } catch (error) {
           throw new Error(`Failed to read stream: ${error}`);
         }
       }
-  
-      function testAllLevels() {
 
-        let levels: { [index: string]: number } = {
+      function testAllLevels() {
+        const levels: {[index: string]: number} = {
           trace: 10,
           debug: 20,
           info: 30,
           metric: 30,
           warn: 40,
-          error: 50
-        }
+          error: 50,
+        };
 
-        for (let level of Object.keys(levels)) {
-  
+        for (const level of Object.keys(levels)) {
           it(`logs ${level} level string`, () => {
             logger[level]('hello world');
-            let loggedLines = readLogsAsObjects(writeStream);
+            const loggedLines: LogLine[] = readLogsAsObjects(writeStream);
             validateLogs(loggedLines, 1, ['hello world'], [], levels[level]);
           });
-  
+
           it(`logs ${level} level json`, () => {
-            logger[level]({ 'hello': 'world' });
-            let loggedLines = readLogsAsObjects(writeStream);
-            validateLogs(loggedLines, 1, [], [{ 'hello': 'world' }], levels[level]);
+            logger[level]({hello: 'world'});
+            const loggedLines: LogLine[] = readLogsAsObjects(writeStream);
+            validateLogs(loggedLines, 1, [], [{hello: 'world'}], levels[level]);
           });
         }
       }
 
       beforeEach(() => {
         writeStream = new ObjectWritableMock();
-        logger = GCFLogger["initLogger"](undefined, writeStream);
+        logger = GCFLogger['initLogger'](undefined, writeStream);
       });
-  
+
       testAllLevels();
     });
   });
@@ -134,7 +130,7 @@ describe('gcf-util', () => {
         bootstrapper = new GCFBootstrapper();
         configStub = sinon
           .stub(bootstrapper, 'getProbotConfig')
-          .resolves({ id: 1234, secret: 'foo', webhookPath: 'bar' });
+          .resolves({id: 1234, secret: 'foo', webhookPath: 'bar'});
 
         enqueueTask = sinon.stub(bootstrapper, 'enqueueTask');
 
@@ -159,7 +155,7 @@ describe('gcf-util', () => {
 
       it('calls the event handler', async () => {
         req.body = {
-          installation: { id: 1 },
+          installation: {id: 1},
         };
         req.headers = {};
         req.headers['x-github-event'] = 'issues';
@@ -176,7 +172,7 @@ describe('gcf-util', () => {
 
       it('does nothing if there are missing headers', async () => {
         req.body = {
-          installation: { id: 1 },
+          installation: {id: 1},
         };
         req.headers = {};
 
@@ -190,7 +186,7 @@ describe('gcf-util', () => {
 
       it('returns 500 on errors', async () => {
         req.body = {
-          installtion: { id: 1 },
+          installtion: {id: 1},
         };
         req.headers = {};
         req.headers['x-github-event'] = 'err';
@@ -207,7 +203,7 @@ describe('gcf-util', () => {
 
       it('ensures that task is enqueued when called by scheduler for one repo', async () => {
         req.body = {
-          installtion: { id: 1 },
+          installtion: {id: 1},
           repo: 'firstRepo',
         };
         req.headers = {};
@@ -222,7 +218,7 @@ describe('gcf-util', () => {
 
       it('ensures that task is enqueued when called by scheduler for many repos', async () => {
         req.body = {
-          installtion: { id: 1 },
+          installtion: {id: 1},
         };
         req.headers = {};
         req.headers['x-github-event'] = 'schedule.repository';
@@ -237,7 +233,7 @@ describe('gcf-util', () => {
 
       it('ensures that task is enqueued when called by Github', async () => {
         req.body = {
-          installtion: { id: 1 },
+          installtion: {id: 1},
         };
         req.headers = {};
         req.headers['x-github-event'] = 'another.name';
@@ -258,7 +254,7 @@ describe('gcf-util', () => {
         bootstrapper = new GCFBootstrapper();
         configStub = sinon
           .stub(bootstrapper, 'getProbotConfig')
-          .resolves({ id: 1234, secret: 'foo', webhookPath: 'bar' });
+          .resolves({id: 1234, secret: 'foo', webhookPath: 'bar'});
       });
 
       afterEach(() => {
@@ -322,7 +318,7 @@ describe('gcf-util', () => {
           ]);
         await bootstrapper.getProbotConfig();
         sinon.assert.calledOnce(secretsStub);
-        sinon.assert.calledOnceWithExactly(secretsStub, { name: 'foobar' });
+        sinon.assert.calledOnceWithExactly(secretsStub, {name: 'foobar'});
         sinon.assert.calledOnce(secretVersionNameStub);
       });
 

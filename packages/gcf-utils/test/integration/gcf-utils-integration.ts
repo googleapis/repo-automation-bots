@@ -11,53 +11,61 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import { GCFBootstrapper, GCFLogger } from '../../src/gcf-utils';
-import { describe, beforeEach, afterEach, it } from 'mocha';
-import { Application } from 'probot';
-import { resolve } from 'path';
-import { config } from 'dotenv';
+import {GCFBootstrapper, GCFLogger} from '../../src/gcf-utils';
+import {describe, beforeEach, afterEach, it} from 'mocha';
+import {Application} from 'probot';
+import {resolve} from 'path';
+import {config} from 'dotenv';
 import pino from 'pino';
-import { validateLogs } from '../test-helpers';
+import {validateLogs, LogLine} from '../test-helpers';
 import SonicBoom from 'sonic-boom';
 import fs from 'fs';
 
 describe('gcf-utils Integration', () => {
   describe('GCFLogger Integration', () => {
     let logger: pino.Logger;
-    let testStreamPath: string = './test-stream.txt';
+    const testStreamPath = './test-stream.txt';
     let writeStream: SonicBoom;
 
-    function readLogsAsObjects(writeStream: SonicBoom): any[] {
-      writeStream.flushSync();
-      let data: string = fs.readFileSync(testStreamPath, { encoding: "utf8" })
-      let lines: string[] = data.split('\n').filter((line) => line != null && line !== '');
-      return lines.map((line) => JSON.parse(line));
+    function readLogsAsObjects(writeStream: SonicBoom): LogLine[] {
+      try {
+        writeStream.flushSync();
+        const data: string = fs.readFileSync(testStreamPath, {
+          encoding: 'utf8',
+        });
+        const lines: string[] = data
+          .split('\n')
+          .filter(line => line !== undefined && line !== null && line !== '');
+        return lines.map(line => JSON.parse(line));
+      } catch (error) {
+        throw new Error(`Failed to read stream: ${error}`);
+      }
     }
 
     function testAllLevels() {
-      let levels: { [index: string]: number } = {
+      const levels: {[index: string]: number} = {
         trace: 10,
         debug: 20,
         info: 30,
         metric: 30,
         warn: 40,
-        error: 50
-      }
-      for (let level of Object.keys(levels)) {
-        it(`logs ${level} level string`, (done) => {
+        error: 50,
+      };
+      for (const level of Object.keys(levels)) {
+        it(`logs ${level} level string`, done => {
           logger[level]('hello world');
           writeStream.on('ready', () => {
-            let loggedLines = readLogsAsObjects(writeStream);
+            const loggedLines: LogLine[] = readLogsAsObjects(writeStream);
             validateLogs(loggedLines, 1, ['hello world'], [], levels[level]);
             done();
           });
         });
 
-        it(`logs ${level} level json`, (done) => {
-          logger[level]({ 'hello': 'world' });
+        it(`logs ${level} level json`, done => {
+          logger[level]({hello: 'world'});
           writeStream.on('ready', () => {
-            let loggedLines = readLogsAsObjects(writeStream);
-            validateLogs(loggedLines, 1, [], [{ 'hello': 'world' }], levels[level]);
+            const loggedLines: LogLine[] = readLogsAsObjects(writeStream);
+            validateLogs(loggedLines, 1, [], [{hello: 'world'}], levels[level]);
             done();
           });
         });
@@ -66,7 +74,7 @@ describe('gcf-utils Integration', () => {
 
     beforeEach(() => {
       writeStream = pino.destination(testStreamPath);
-      logger = GCFLogger["initLogger"](undefined, writeStream);
+      logger = GCFLogger['initLogger'](undefined, writeStream);
     });
 
     testAllLevels();
@@ -82,10 +90,10 @@ describe('gcf-utils Integration', () => {
 
       beforeEach(async () => {
         bootstrapper = new GCFBootstrapper();
-        config({ path: resolve(__dirname, '../../../.env') });
+        config({path: resolve(__dirname, '../../../.env')});
       });
 
-      afterEach(() => { });
+      afterEach(() => {});
 
       it('returns valid options', async () => {
         await bootstrapper.getProbotConfig();
@@ -97,7 +105,7 @@ describe('gcf-utils Integration', () => {
 
       beforeEach(async () => {
         bootstrapper = new GCFBootstrapper();
-        config({ path: resolve(__dirname, '../../.env') });
+        config({path: resolve(__dirname, '../../.env')});
       });
 
       it('is called properly', async () => {
@@ -115,4 +123,4 @@ describe('gcf-utils Integration', () => {
       });
     });
   });
-})
+});

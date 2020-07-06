@@ -14,6 +14,12 @@
 
 import assert from 'assert';
 
+export interface LogLine {
+  msg: string;
+  level: number;
+  [index: string]: string | number;
+}
+
 /**
  * Asserts the correctness of the provided log entries based on params given
  * @param logs logged lines
@@ -23,34 +29,46 @@ import assert from 'assert';
  * @param expectedLogLevel expected log level for all lines
  */
 export function validateLogs(
-    logs: any[],
-    expectedLineCount?: number,
-    expectedMessages?: string[],
-    expectedProperties?: Array<{ [idx: string]: any }>,
-    expectedLogLevel?: number
+  logs: LogLine[],
+  expectedLineCount?: number,
+  expectedMessages?: string[],
+  expectedProperties?: Array<{[idx: string]: string}>,
+  expectedLogLevel?: number
 ): void {
-    if (expectedLineCount) {
-        assert.equal(logs.length, expectedLineCount,
-            `expected exactly ${expectedLineCount} line(s) to be logged`);
+  if (expectedLineCount) {
+    assert.equal(
+      logs.length,
+      expectedLineCount,
+      `expected exactly ${expectedLineCount} line(s) to be logged`
+    );
+  }
+  if (expectedMessages) {
+    for (let i = 0; i < expectedMessages.length; i++) {
+      assert.equal(
+        logs[i]['msg'],
+        expectedMessages[i],
+        `expected log message to be ${expectedMessages[i]} but was instead ${logs[i]['msg']}`
+      );
     }
-    if (expectedMessages) {
-        for (let i = 0; i < expectedMessages.length; i++) {
-            assert.equal(logs[i]["msg"], expectedMessages[i],
-                `expected log message to be ${expectedMessages[i]} but was instead ${logs[i]["msg"]}`);
-        }
+  }
+  if (expectedProperties) {
+    for (let i = 0; i < expectedProperties.length; i++) {
+      for (const key of Object.keys(expectedProperties[i])) {
+        assert.equal(
+          logs[i][key],
+          expectedProperties[i][key],
+          `expected log line ${i} to have property ${key} with value ${expectedProperties[i][key]}`
+        );
+      }
     }
-    if (expectedProperties) {
-        for (let i = 0; i < expectedProperties.length; i++) {
-            for (let key of Object.keys(expectedProperties[i])) {
-                assert.equal(logs[i][key], expectedProperties[i][key],
-                    `expected log line ${i} to have property ${key} with value ${expectedProperties[i][key]}`);
-            }
-        }
+  }
+  if (expectedLogLevel) {
+    for (const line of logs) {
+      assert.equal(
+        line['level'],
+        expectedLogLevel,
+        `expected logs to have level ${expectedLogLevel}`
+      );
     }
-    if (expectedLogLevel) {
-        for (let line of logs) {
-            assert.equal(line["level"], expectedLogLevel,
-                `expected logs to have level ${expectedLogLevel}`);
-        }
-    }
+  }
 }

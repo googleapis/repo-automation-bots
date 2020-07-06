@@ -12,10 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import { createProbot, Probot, ApplicationFunction, Options, Logger } from 'probot';
-import { CloudTasksClient } from '@google-cloud/tasks';
-import { v1 } from '@google-cloud/secret-manager';
-import { request } from 'gaxios';
+import {
+  createProbot,
+  Probot,
+  ApplicationFunction,
+  Options,
+  Logger,
+} from 'probot';
+import {CloudTasksClient} from '@google-cloud/tasks';
+import {v1} from '@google-cloud/secret-manager';
+import {request} from 'gaxios';
 import * as express from 'express';
 import pino from 'pino';
 
@@ -32,7 +38,7 @@ interface Repos {
 
 interface Scheduled {
   repo?: string;
-  message?: { [key: string]: string };
+  message?: {[key: string]: string};
 }
 
 interface EnqueueTaskParams {
@@ -47,7 +53,6 @@ interface EnqueueTaskParams {
  * Provides a metric() method to log metrics-related data
  */
 export class GCFLogger {
-
   private static logger: pino.Logger;
 
   /**
@@ -65,20 +70,19 @@ export class GCFLogger {
     options?: pino.LoggerOptions,
     dest?: pino.DestinationStream
   ): pino.Logger {
-
-    let defaultOptions = {
+    const defaultOptions: pino.LoggerOptions = {
       customLevels: {
-        'metric': 30
+        metric: 30,
       },
-      level: 'trace'
-    }
+      level: 'trace',
+    };
     if (options) {
       Object.assign(defaultOptions, options);
     }
     if (!dest) {
-      dest = pino.destination({ sync: true });
+      dest = pino.destination({sync: true});
     }
-    return pino(defaultOptions, dest)
+    return pino(defaultOptions, dest);
   }
 }
 
@@ -164,13 +168,13 @@ export class GCFBootstrapper {
           await this.handleScheduled(id, request, name, signature);
         } catch (err) {
           response.status(500).send({
-            body: JSON.stringify({ message: err }),
+            body: JSON.stringify({message: err}),
           });
           return;
         }
         response.send({
           statusCode: 200,
-          body: JSON.stringify({ message: 'Executed' }),
+          body: JSON.stringify({message: 'Executed'}),
         });
       } else if (!taskId && name) {
         // We have come in from a GitHub webhook:
@@ -183,13 +187,13 @@ export class GCFBootstrapper {
           });
         } catch (err) {
           response.status(500).send({
-            body: JSON.stringify({ message: err }),
+            body: JSON.stringify({message: err}),
           });
           return;
         }
         response.send({
           statusCode: 200,
-          body: JSON.stringify({ message: 'Executed' }),
+          body: JSON.stringify({message: 'Executed'}),
         });
         return;
       } else if (name) {
@@ -203,13 +207,13 @@ export class GCFBootstrapper {
         } catch (err) {
           response.status(500).send({
             statusCode: 500,
-            body: JSON.stringify({ message: err.message }),
+            body: JSON.stringify({message: err.message}),
           });
           return;
         }
         response.send({
           statusCode: 200,
-          body: JSON.stringify({ message: 'Executed' }),
+          body: JSON.stringify({message: 'Executed'}),
         });
       } else {
         response.sendStatus(400);
@@ -239,8 +243,8 @@ export class GCFBootstrapper {
       // Job should be run on all managed repositories:
       const url =
         'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
-      const res = await request<Repos>({ url });
-      const { repos } = res.data;
+      const res = await request<Repos>({url});
+      const {repos} = res.data;
       for (const repo of repos) {
         await this.scheduledToTask(repo.repo, id, body, eventName, signature);
       }
