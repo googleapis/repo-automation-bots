@@ -16,5 +16,6 @@
 // own definitions published. Before taking this step, folks should first
 // check whether type bindings are already published.
 declare module 'promise-events' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   class EventEmitter {}
 }
