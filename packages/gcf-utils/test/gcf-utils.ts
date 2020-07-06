@@ -25,9 +25,12 @@ import {v1} from '@google-cloud/secret-manager';
 nock.disableNetConnect();
 
 function nockListInstallationRepos() {
-  return nock('https://api.github.com/')
-    .get('/installation/repositories')
-    .reply(200, require('../../test/fixtures/installations.json'));
+  return (
+    nock('https://api.github.com/')
+      .get('/installation/repositories')
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      .reply(200, require('../../test/fixtures/installations.json'))
+  );
 }
 
 describe('GCFBootstrapper', () => {
@@ -55,7 +58,6 @@ describe('GCFBootstrapper', () => {
     let bootstrapper: GCFBootstrapper;
 
     let enqueueTask: sinon.SinonStub;
-    let getInstallationToken: sinon.SinonStub;
 
     beforeEach(async () => {
       req = express.request;
@@ -66,7 +68,7 @@ describe('GCFBootstrapper', () => {
         .resolves({id: 1234, secret: 'foo', webhookPath: 'bar'});
 
       enqueueTask = sinon.stub(bootstrapper, 'enqueueTask');
-      getInstallationToken = sinon.stub(bootstrapper, 'getInstallationToken');
+      sinon.stub(bootstrapper, 'getInstallationToken');
 
       handler = await bootstrapper.gcf(async app => {
         app.auth = () =>

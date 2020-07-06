@@ -16,6 +16,7 @@ import {createProbot, Probot, ApplicationFunction, Options} from 'probot';
 import {CloudTasksClient} from '@google-cloud/tasks';
 import {v1} from '@google-cloud/secret-manager';
 import * as express from 'express';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 
 const client = new CloudTasksClient();
@@ -33,7 +34,7 @@ interface Scheduled {
   repo?: string;
   installation: {
     id: number;
-  }
+  };
   message?: {[key: string]: string};
 }
 
@@ -199,22 +200,28 @@ export class GCFBootstrapper {
       await this.scheduledToTask(body.repo, id, body, eventName, signature);
     } else {
       const octokit = new Octokit({
-        auth: await this.getInstallationToken(body.installation.id)
+        auth: await this.getInstallationToken(body.installation.id),
       });
       const {data} = await octokit.request('/installation/repositories', {
         headers: {
-          'Accept': 'application/vnd.github.machine-man-preview+json'
-        }
+          Accept: 'application/vnd.github.machine-man-preview+json',
+        },
       });
       for (const repo of data.repositories) {
-        await this.scheduledToTask(repo.full_name, id, body, eventName, signature);
+        await this.scheduledToTask(
+          repo.full_name,
+          id,
+          body,
+          eventName,
+          signature
+        );
       }
     }
   }
 
   async getInstallationToken(installationId: number) {
     return await this.probot!.app!.getInstallationAccessToken({
-      installationId
+      installationId,
     });
   }
 
