@@ -41,24 +41,18 @@ interface EnqueueTaskParams {
   name: string;
 }
 
-interface CronPayloadRepositoryOwner {
-  login: string;
-  name: string;
-}
-
-interface CronPayloadRepository {
-  name: string;
-  full_name: string;
-  owner: CronPayloadRepositoryOwner;
-}
-
-interface CronPayloadOrganization {
-  login: string;
-}
-
 export interface CronPayload {
-  repository: CronPayloadRepository;
-  organization: CronPayloadOrganization;
+  repository: {
+    name: string;
+    full_name: string;
+    owner: {
+      login: string;
+      name: string;
+    }
+  };
+  organization: {
+    login: string;
+  };
   cron_org: string;
 }
 
