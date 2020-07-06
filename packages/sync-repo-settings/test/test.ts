@@ -267,7 +267,8 @@ describe('Sync repo settings', () => {
       nockUpdateBranchProtection(
         'java-asset',
         [
-          'dependencies',
+          'dependencies (8)',
+          'dependencies (11)',
           'linkage-monitor',
           'lint',
           'clirr',
