@@ -27,17 +27,12 @@ describe('gcf-utils Integration', () => {
     let testStreamPath: string = './test-stream.txt';
     let writeStream: SonicBoom;
 
-    function readLogsAsObjects(): any[] {
+    function readLogsAsObjects(writeStream: SonicBoom): any[] {
       writeStream.flushSync();
       let data: string = fs.readFileSync(testStreamPath, { encoding: "utf8" })
       let lines: string[] = data.split('\n').filter((line) => line != null && line !== '');
       return lines.map((line) => JSON.parse(line));
     }
-
-    beforeEach(() => {
-      writeStream = pino.destination(testStreamPath);
-      logger = GCFLogger["initLogger"]({}, writeStream);
-    });
 
     function testAllLevels() {
       let levels: { [index: string]: number } = {
@@ -52,7 +47,7 @@ describe('gcf-utils Integration', () => {
         it(`logs ${level} level string`, (done) => {
           logger[level]('hello world');
           writeStream.on('ready', () => {
-            let loggedLines = readLogsAsObjects();
+            let loggedLines = readLogsAsObjects(writeStream);
             validateLogs(loggedLines, 1, ['hello world'], [], levels[level]);
             done();
           });
@@ -61,13 +56,18 @@ describe('gcf-utils Integration', () => {
         it(`logs ${level} level json`, (done) => {
           logger[level]({ 'hello': 'world' });
           writeStream.on('ready', () => {
-            let loggedLines = readLogsAsObjects();
+            let loggedLines = readLogsAsObjects(writeStream);
             validateLogs(loggedLines, 1, [], [{ 'hello': 'world' }], levels[level]);
             done();
           });
         });
       }
     }
+
+    beforeEach(() => {
+      writeStream = pino.destination(testStreamPath);
+      logger = GCFLogger["initLogger"](undefined, writeStream);
+    });
 
     testAllLevels();
 

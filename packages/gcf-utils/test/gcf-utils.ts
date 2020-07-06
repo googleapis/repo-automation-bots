@@ -38,51 +38,68 @@ function nockRepoList() {
 
 describe('gcf-util', () => {
   describe('GCFLogger', () => {
-
-    let logger: pino.Logger;
-    let writeStream: ObjectWritableMock;
-
-    function readLogsAsObjects(): any[] {
-      try {
-        writeStream.end();
-        let lines = writeStream.data;
-        let jsonArray: any[] = lines.map((line) => JSON.parse(line));
-        return jsonArray;
-      } catch (error) {
-        throw new Error(`Failed to read stream: ${error}`);
-      }
-    }
-
-    beforeEach(() => {
-      writeStream = new ObjectWritableMock();
-      logger = GCFLogger["initLogger"]({}, writeStream);
+    describe('get()', () => {
+      it('returns a new pino-based logger instance on first call', () => {
+        let logger = GCFLogger.get();
+        assert.equal(logger.constructor.name, 'Pino');
+      });
+      it('returns the same logger instance on two consecutive calls', () => {
+        let logger1 = GCFLogger.get();
+        let logger2 = GCFLogger.get();
+        assert.deepEqual(logger1, logger2);
+      });
     });
 
-    function testAllLevels() {
-      let levels: { [index: string]: number } = {
-        trace: 10,
-        debug: 20,
-        info: 30,
-        metric: 30,
-        warn: 40,
-        error: 50
-      }
-      for (let level of Object.keys(levels)) {
-        it(`logs ${level} level string`, () => {
-          logger[level]('hello world');
-          let loggedLines = readLogsAsObjects();
-          validateLogs(loggedLines, 1, ['hello world'], [], levels[level]);
-        });
+    describe('logger instance', () => {
 
-        it(`logs ${level} level json`, () => {
-          logger[level]({ 'hello': 'world' });
-          let loggedLines = readLogsAsObjects();
-          validateLogs(loggedLines, 1, [], [{ 'hello': 'world' }], levels[level]);
-        });
-      }
-    }
+      let writeStream: ObjectWritableMock;
+      let logger: pino.Logger;
 
-    testAllLevels();
+      function readLogsAsObjects(writeStream: ObjectWritableMock): any[] {
+        try {
+          writeStream.end();
+          let lines = writeStream.data;
+          let jsonArray: any[] = lines.map((line) => JSON.parse(line));
+          return jsonArray;
+        } catch (error) {
+          throw new Error(`Failed to read stream: ${error}`);
+        }
+      }
+  
+      function testAllLevels() {
+
+        let levels: { [index: string]: number } = {
+          trace: 10,
+          debug: 20,
+          info: 30,
+          metric: 30,
+          warn: 40,
+          error: 50
+        }
+
+        for (let level of Object.keys(levels)) {
+  
+          it(`logs ${level} level string`, () => {
+            logger[level]('hello world');
+            let loggedLines = readLogsAsObjects(writeStream);
+            validateLogs(loggedLines, 1, ['hello world'], [], levels[level]);
+          });
+  
+          it(`logs ${level} level json`, () => {
+            logger[level]({ 'hello': 'world' });
+            let loggedLines = readLogsAsObjects(writeStream);
+            validateLogs(loggedLines, 1, [], [{ 'hello': 'world' }], levels[level]);
+          });
+        }
+      }
+
+      beforeEach(() => {
+        writeStream = new ObjectWritableMock();
+        logger = GCFLogger["initLogger"](undefined, writeStream);
+      });
+  
+      testAllLevels();
+    });
   });
 
   describe('GCFBootstrapper', () => {
