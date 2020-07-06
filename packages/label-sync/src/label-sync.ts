@@ -84,7 +84,7 @@ function handler(app: Application) {
     'repository.transferred',
     'label.edited',
     'label.deleted',
-    'schedule.repository'
+    'schedule.repository',
   ];
 
   app.on(events, async c => {
