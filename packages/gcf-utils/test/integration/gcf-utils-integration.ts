@@ -17,7 +17,7 @@ import { Application } from 'probot';
 import { resolve } from 'path';
 import { config } from 'dotenv';
 import pino from 'pino';
-import { validateLogs } from '../GCFLogger-test-helpers';
+import { validateLogs } from '../test-helpers';
 import SonicBoom from 'sonic-boom';
 import fs from 'fs';
 
