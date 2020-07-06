@@ -18,7 +18,6 @@ import * as util from 'util';
 
 const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';
-const GET_LABEL_DELAY = 10_000 // in milliseconds
 
 class ByConfig {
   labels: string[] = [];
