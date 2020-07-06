@@ -286,23 +286,15 @@ describe('ReleasePleaseBot', () => {
     });
   });
 
-  describe('nightly event', () => {
+  describe('release published event', () => {
+    let payload: Webhooks.WebhookPayloadRelease;
+
+    beforeEach(() => {
+      payload = require(resolve(fixturesPath, './release_published'));
+    });
+
     it('should try to create a snapshot', async () => {
       let executed = false;
-      const payload = {
-        repository: {
-          name: 'Hello-World',
-          full_name: 'Codertocat/Hello-World',
-          owner: {
-            login: 'Codertocat',
-          },
-          language: 'Ruby',
-        },
-        organization: {
-          login: 'Codertocat',
-        },
-        cron_org: 'Codertocat',
-      };
       Runner.runner = async (pr: ReleasePR) => {
         assert(pr instanceof Ruby);
         executed = true;
@@ -317,12 +309,31 @@ describe('ReleasePleaseBot', () => {
         .reply(200, {content: config.toString('base64')});
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'release.published',
         payload,
         id: 'abc123',
       });
       requests.done();
       assert(executed, 'should have executed the runner');
+    });
+  });
+
+  describe('release non-publish event', () => {
+    let payload: Webhooks.WebhookPayloadRelease;
+
+    beforeEach(() => {
+      payload = require(resolve(fixturesPath, './release_unpublished'));
+    });
+
+    it('should be ignored', async () => {
+      Runner.runner = async () => {
+        fail('should not be running a release');
+      };
+      await probot.receive({
+        name: 'release.published',
+        payload,
+        id: 'abc123',
+      });
     });
   });
 
