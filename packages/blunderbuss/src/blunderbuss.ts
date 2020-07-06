@@ -18,6 +18,7 @@ import * as util from 'util';
 
 const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';
+const GET_LABEL_DELAY = 10_000 // in milliseconds
 
 class ByConfig {
   labels: string[] = [];
@@ -49,7 +50,11 @@ function randomFrom(items: string[], ignore: string): string | undefined {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-export = (app: Application) => {
+handler.sleep = (ms: number) => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+function handler(app: Application) {
   app.on(
     [
       'issues.opened',
@@ -156,7 +161,21 @@ export = (app: Application) => {
         return;
       }
 
-      const labels = issue.labels?.map(l => l.name);
+      let labels: string[] = [];
+      if (byConfig !== undefined) {
+        // It is possible that blunderbuss is running before other bots have
+        // a chance to add extra labels. Wait and re-pull fresh labels
+        // before comparing against the config.
+        await handler.sleep(10_000);
+        const labelResp = await context.github.issues.listLabelsOnIssue({
+          number: issue.number,
+          owner: context.payload.repository.owner.login,
+          repo: context.payload.repository.name,
+        });
+        labels = labelResp.data.map(lr => lr.name);
+      } else {
+        labels = issue.labels?.map(l => l.name);
+      }
       const preferredAssignees = findAssignees(byConfig, labels);
       const possibleAssignees = preferredAssignees.length
         ? preferredAssignees
@@ -189,6 +208,8 @@ export = (app: Application) => {
     }
   );
 };
+
+export = handler;
 
 function findAssignees(
   config: ByConfig[] | undefined,
