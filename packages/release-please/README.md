@@ -1,7 +1,10 @@
 # release-please
 
 > A GitHub App built with [Probot](https://github.com/probot/probot) that proposes releases based on
-semantic version commits defined by conventionalcommits.org.
+> semantic version commits defined by conventionalcommits.org.
+
+This bot wraps the [release-please][release-please] [npm package][npm-package] to provide an easy way
+to integrate with your GitHub repository.
 
 ## Setup
 
@@ -19,13 +22,13 @@ To configure the bot, you can create a configuration file:
 `.github/release-please.yml`. The contents of this file allow for the following
 options:
 
-| Name | Description | Type | Default |
-|----- | ----------- | ---- | ------- |
-| `primaryBranch` | The primary branch from which releases are started | `string` | `master` |
-| `releaseLabels` | List of labels to add to the release PR. | `string[]` | `null` | `undefined` |
-| `releaseType` | Release strategy | `string` | strategy detected from the repository's primary language |
-| `handleGHRelease` | Release to GitHub | `boolean` | should release please create a GitHub release, when release pull-requests are merged? |
-| `bumpMinorPreMajor` | Bump minor for breaking changes before GA | `boolean` | whether to bump a minor version before 1.0.0 on a breaking change |
+| Name                | Description                                        | Type       | Default                                                                               |
+| ------------------- | -------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------- |
+| `primaryBranch`     | The primary branch from which releases are started | `string`   | `master`                                                                              |
+| `releaseLabels`     | List of labels to add to the release PR.           | `string[]` | `null`                                                                                | `undefined` |
+| `releaseType`       | Release strategy                                   | `string`   | strategy detected from the repository's primary language                              |
+| `handleGHRelease`   | Release to GitHub                                  | `boolean`  | should release please create a GitHub release, when release pull-requests are merged? |
+| `bumpMinorPreMajor` | Bump minor for breaking changes before GA          | `boolean`  | whether to bump a minor version before 1.0.0 on a breaking change                     |
 
 ## Testing
 
@@ -55,3 +58,6 @@ For more, check out the [Contributing Guide](CONTRIBUTING.md).
 ## License
 
 Apache 2.0 © 2019 Google Inc.
+
+[release-please]: https://github.com/googleapis/release-please
+[npm-package]: https://www.npmjs.com/package/release-please

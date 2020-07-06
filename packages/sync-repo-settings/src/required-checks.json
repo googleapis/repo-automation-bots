@@ -104,8 +104,6 @@
         "repo": "googleapis/google-api-java-client",
         "requiredStatusChecks": [
           "Kokoro - Test: Binary Compatibility",
-          "Kokoro - Test: Code Format",
-          "Kokoro - Test: Dependencies",
           "Kokoro - Test: Java 11",
           "Kokoro - Test: Java 7",
           "Kokoro - Test: Java 8",
@@ -130,8 +128,6 @@
         "repo": "googleapis/google-oauth-java-client",
         "requiredStatusChecks": [
           "Kokoro - Test: Binary Compatibility",
-          "Kokoro - Test: Code Format",
-          "Kokoro - Test: Dependencies",
           "Kokoro - Test: Java 11",
           "Kokoro - Test: Java 7",
           "Kokoro - Test: Java 8",

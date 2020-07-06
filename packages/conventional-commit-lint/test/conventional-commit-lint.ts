@@ -57,7 +57,9 @@ describe('ConventionalCommitLint', () => {
       fixturesPath,
       './pull_request_synchronize'
     ));
-    const invalidCommits = require(resolve(fixturesPath, './invalid_commit'));
+    const invalidCommits = [
+      ...require(resolve(fixturesPath, './invalid_commit')),
+    ];
     const requests = nock('https://api.github.com')
       .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
       .reply(200, invalidCommits)
@@ -76,7 +78,7 @@ describe('ConventionalCommitLint', () => {
       fixturesPath,
       './pull_request_synchronize'
     ));
-    const validCommits = require(resolve(fixturesPath, './valid_commit'));
+    const validCommits = [...require(resolve(fixturesPath, './valid_commit'))];
 
     const requests = nock('https://api.github.com')
       .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
@@ -98,7 +100,9 @@ describe('ConventionalCommitLint', () => {
         './pull_request_synchronize'
       ));
       // create a history that has one valid commit, and one invalid commit:
-      const invalidCommits = require(resolve(fixturesPath, './invalid_commit'));
+      const invalidCommits = [
+        ...require(resolve(fixturesPath, './invalid_commit')),
+      ];
       // eslint-disable-next-line prefer-spread
       invalidCommits.push.apply(
         invalidCommits,
@@ -124,7 +128,9 @@ describe('ConventionalCommitLint', () => {
         './pull_request_synchronize_invalid_title'
       ));
       // create a history that has one valid commit, and one invalid commit:
-      const invalidCommits = require(resolve(fixturesPath, './invalid_commit'));
+      const invalidCommits = [
+        ...require(resolve(fixturesPath, './invalid_commit')),
+      ];
       // eslint-disable-next-line prefer-spread
       invalidCommits.push.apply(
         invalidCommits,
@@ -134,6 +140,26 @@ describe('ConventionalCommitLint', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
         .reply(200, invalidCommits)
+        .post('/repos/bcoe/test-release-please/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+      requests.done();
+    });
+
+    it('has a valid title, invalid commit, automerge label', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './pull_request_automerge'
+      ));
+      // create a history that has one valid commit, and one invalid commit:
+      const invalidCommit = require(resolve(fixturesPath, './invalid_commit'));
+      const requests = nock('https://api.github.com')
+        .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
+        .reply(200, invalidCommit)
         .post('/repos/bcoe/test-release-please/check-runs', body => {
           snapshot(body);
           return true;

@@ -84,31 +84,12 @@ function handler(app: Application) {
     'repository.transferred',
     'label.edited',
     'label.deleted',
+    'schedule.repository',
   ];
 
   app.on(events, async c => {
-    const {owner, repo} = c.repo();
+    const [owner, repo] = c.payload.repository.full_name.split('/');
     await reconcileLabels(c.github, owner, repo);
-  });
-
-  app.on('push', async context => {
-    const {owner, repo} = context.repo();
-    // TODO: Limit this to pushes that edit `labels.json`
-    if (
-      owner === 'googleapis' &&
-      repo === 'repo-automation-bots' &&
-      context.payload.ref === 'refs/heads/master'
-    ) {
-      await refreshLabels(context.github);
-      const url =
-        'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
-      const res = await request<Repos>({url});
-      const {repos} = res.data;
-      for (const r of repos) {
-        const [owner, repo] = r.repo.split('/');
-        await reconcileLabels(context.github, owner, repo);
-      }
-    }
   });
 }
 

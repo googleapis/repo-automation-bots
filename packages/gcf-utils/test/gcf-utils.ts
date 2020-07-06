@@ -22,15 +22,15 @@ import nock from 'nock';
 import assert from 'assert';
 import {v1} from '@google-cloud/secret-manager';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const repos = require('../../test/fixtures/repos.json');
-
 nock.disableNetConnect();
 
-function nockRepoList() {
-  return nock('https://raw.githubusercontent.com')
-    .get('/googleapis/sloth/master/repos.json')
-    .reply(200, repos);
+function nockListInstallationRepos() {
+  return (
+    nock('https://api.github.com/')
+      .get('/installation/repositories')
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      .reply(200, require('../../test/fixtures/installations.json'))
+  );
 }
 
 describe('GCFBootstrapper', () => {
@@ -68,6 +68,7 @@ describe('GCFBootstrapper', () => {
         .resolves({id: 1234, secret: 'foo', webhookPath: 'bar'});
 
       enqueueTask = sinon.stub(bootstrapper, 'enqueueTask');
+      sinon.stub(bootstrapper, 'getInstallationToken');
 
       handler = await bootstrapper.gcf(async app => {
         app.auth = () =>
@@ -138,7 +139,7 @@ describe('GCFBootstrapper', () => {
 
     it('ensures that task is enqueued when called by scheduler for one repo', async () => {
       req.body = {
-        installtion: {id: 1},
+        installation: {id: 1},
         repo: 'firstRepo',
       };
       req.headers = {};
@@ -153,13 +154,13 @@ describe('GCFBootstrapper', () => {
 
     it('ensures that task is enqueued when called by scheduler for many repos', async () => {
       req.body = {
-        installtion: {id: 1},
+        installation: {id: 1},
       };
       req.headers = {};
       req.headers['x-github-event'] = 'schedule.repository';
       req.headers['x-github-delivery'] = '123';
       req.headers['x-cloudtasks-taskname'] = '';
-      nockRepoList();
+      nockListInstallationRepos();
 
       await handler(req, response);
 
