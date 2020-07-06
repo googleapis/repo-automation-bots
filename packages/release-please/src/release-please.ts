@@ -74,8 +74,7 @@ async function createReleasePR(
   repoUrl: string,
   github: GitHubAPI,
   releaseLabels?: string[],
-  bumpMinorPreMajor?: boolean,
-  snapshot?: boolean
+  bumpMinorPreMajor?: boolean
 ) {
   const buildOptions: BuildOptions = {
     packageName,
@@ -88,7 +87,6 @@ async function createReleasePR(
       request: github.request,
     },
     bumpMinorPreMajor,
-    snapshot,
   };
   if (releaseLabels) {
     buildOptions.label = releaseLabels.join(',');
@@ -175,7 +173,13 @@ export = (app: Application) => {
     }
   });
 
-  app.on('schedule.repository', async context => {
+  app.on('release.published', async context => {
+    if (context.payload.action !== 'published') {
+      app.log.info(
+        `ignoring non-publish release action (${context.payload.action})`
+      );
+      return;
+    }
     const repoUrl = context.payload.repository.full_name;
     const repoName = context.payload.repository.name;
 
@@ -194,7 +198,7 @@ export = (app: Application) => {
       ...remoteConfiguration,
     };
 
-    app.log.info(`schedule.repository (${repoUrl})`);
+    app.log.info(`release.published (${repoUrl})`);
 
     const releaseType = configuration.releaseType
       ? configuration.releaseType
@@ -207,8 +211,7 @@ export = (app: Application) => {
       repoUrl,
       context.github,
       configuration.releaseLabels,
-      configuration.bumpMinorPreMajor,
-      true
+      configuration.bumpMinorPreMajor
     );
   });
 
