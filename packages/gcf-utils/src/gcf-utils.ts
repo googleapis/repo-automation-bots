@@ -202,6 +202,7 @@ export class GCFBootstrapper {
       const octokit = new Octokit({
         auth: await this.getInstallationToken(body.installation.id),
       });
+      // Installations API documented here: https://developer.github.com/v3/apps/installations/
       const {data} = await octokit.request('/installation/repositories', {
         headers: {
           Accept: 'application/vnd.github.machine-man-preview+json',
