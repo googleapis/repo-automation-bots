@@ -241,6 +241,9 @@ export class GCFBootstrapper {
       repository: {
         name: repoName,
         full_name: repoFullName,
+        owner: {
+          login: orgName
+        }
       },
       organization: {
         login: orgName,
