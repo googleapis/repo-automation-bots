@@ -15,6 +15,7 @@
 import {Application, Context} from 'probot';
 import {GitHubAPI} from 'probot/lib/github';
 import Ajv, {ErrorObject} from 'ajv';
+import moment from 'moment';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const schema = require('./../data/schema.json');
@@ -28,8 +29,6 @@ type Conclusion =
   | 'action_required'
   | undefined;
 
-//const sloRules = require('./../../../../.github/issue_slo_rules');
-
 interface ValidationResults {
   isValid: boolean;
   errors?: ErrorObject[] | null;
@@ -40,8 +39,21 @@ interface PullsListFilesResponseItem {
   sha: string;
 }
 
-interface IssueLabelResponse {
+interface IssueLabelResponseItem {
   name: string;
+}
+
+interface IssueAssignees {
+  login: string;
+}
+
+interface IssuesListCommentsResponse {
+  id: number;
+  user: {
+    login: string;
+  };
+  created_at: string;
+  updated_at: string;
 }
 
 enum Priority {
@@ -64,7 +76,13 @@ interface SLORules {
   };
   complianceSettings: {
     responseTime: string | number;
-    resolutionTime: string | number; //Will add responders
+    resolutionTime: string | number;
+    requiresAssignee: boolean;
+    responders?: {
+      owners?: string | string[];
+      contributors?: string;
+      users?: string[];
+    };
   };
 }
 
@@ -111,13 +129,31 @@ function handler(app: Application) {
       }
     }
   );
+  app.on(['issues.closed'], 
+    async (context: Context) => {
+      const owner = context.payload.repository.owner.login;
+      const repo = context.payload.repository.name;
+      const issue_number = context.payload.issue.number;
+      const labelsResponse = context.payload.issue.labels;
+
+      const labels: string[] = [];
+      labelsResponse.forEach((label: IssueLabelResponseItem) =>
+        labels.push(label.name.toLowerCase())
+      );
+
+      if(labels?.includes("ooslo")){
+        await handler.removeIssueLabel(context.github, owner, repo, issue_number);
+     }
+    }
+  );
   app.on(
     [
       'issues.opened',
       'issues.reopened',
       'issues.labeled',
-      'issues.unlabeled',
       'issues.edited',
+      'issues.assigned',
+      'issues.unassigned',
     ],
     async (context: Context) => {
       const owner = context.payload.repository.owner.login;
@@ -125,20 +161,29 @@ function handler(app: Application) {
       const labelsResponse = context.payload.issue.labels;
 
       const labels: string[] = [];
-      labelsResponse.forEach((label: IssueLabelResponse) =>
+      labelsResponse.forEach((label: IssueLabelResponseItem) =>
         labels.push(label.name.toLowerCase())
       );
 
       const sloString = await handler.getSloFile(context.github, owner, repo);
-      await handler.handle_issues(sloString, labels);
+      await handler.handle_issues(
+        context,
+        owner,
+        repo,
+        sloString,
+        labels
+      );
     }
   );
 }
 
 // Checking to see if issue applies to any slo in list then checking compiliancy
 handler.handle_issues = async function handle_issues(
+  context: Context,
+  owner: string,
+  repo: string,
   sloString: string,
-  labels: string[] | null
+  labels: string[] | null,
 ) {
   const sloList = JSON.parse(sloString);
 
@@ -147,7 +192,32 @@ handler.handle_issues = async function handle_issues(
     if (!appliesTo) {
       appliesTo = await handler.appliesTo(slo, labels);
     }
-    //If applies To then check compliance settings
+  
+    if (appliesTo) {
+      // Checking compliancy setting if slo applies to issue
+      const issueCreatedTime = context.payload.issue.created_at; //Or due_on ??
+      const assignees: IssueAssignees[] = context.payload.issue.assignees;
+      const issue_number = context.payload.issue.number;
+      const isCompliant =  await handler.complianceSettings(
+        context.github,
+        owner,
+        repo,
+        issue_number,
+        assignees,
+        issueCreatedTime,
+        slo
+      );
+      console.log(isCompliant);
+      if(!isCompliant && !labels?.includes("ooslo")) {
+        const isLabelExist = handler.checkExistingLabel(context.github, owner, repo);
+        if(!isLabelExist) {
+          await handler.createLabel(context.github, owner, repo);
+        }
+        await this.addLabel(context.github, owner, repo, issue_number);
+      } else if(isCompliant && labels?.includes("ooslo")){
+         await handler.removeIssueLabel(context.github, owner, repo, issue_number);
+      }
+    }
   }
 };
 
@@ -159,7 +229,7 @@ handler.handle_slos = async function handle_slos(
   issue_number: number,
   file_sha: string
 ) {
-  const sloString = await handler.getFileContents(
+  const sloString = await handler.getFileShaContents(
     context.github,
     owner,
     repo,
@@ -183,7 +253,7 @@ handler.handle_slos = async function handle_slos(
   await handler.createCheck(context, res);
 };
 
-handler.getFileContents = async function getFileContents(
+handler.getFileShaContents = async function getFileShaContents(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -364,6 +434,7 @@ handler.validGithubLabels = async function validGithubLabels(
   }
 
   githubLabels = await handler.convertToArray(githubLabels);
+  githubLabels.forEach((label: string) => label.toLowerCase());
   const isSubSet = githubLabels.every((label: string) =>
     issueLabels.includes(label)
   );
@@ -382,6 +453,7 @@ handler.validExcludedLabels = async function validExcludedLabels(
   }
 
   excludedGitHubLabels = await handler.convertToArray(excludedGitHubLabels);
+  excludedGitHubLabels.forEach((label: string) => label.toLowerCase());
   const isElementExist = excludedGitHubLabels.some((label: string) =>
     issueLabels.includes(label)
   );
@@ -413,10 +485,8 @@ handler.convertToArray = async function convertToArray(
   variable: string[] | string
 ): Promise<string[]> {
   if (typeof variable === 'string') {
-    return [variable.toLowerCase()];
+    return [variable];
   }
-
-  variable.forEach((label: string) => label.toLowerCase());
   return variable;
 };
 
@@ -427,7 +497,7 @@ handler.getSloFile = async function getSloFile(
   repo: string
 ): Promise<string> {
   let path = '.github/issue_slo_rules.json';
-  let sloRules: string = await handler.getConfigFileContent(
+  let sloRules: string = await handler.getFilePathContent(
     github,
     owner,
     repo,
@@ -435,17 +505,12 @@ handler.getSloFile = async function getSloFile(
   );
   if (sloRules === 'not found') {
     path = 'issue_slo_rules.json';
-    sloRules = await handler.getConfigFileContent(
-      github,
-      owner,
-      '.github',
-      path
-    );
+    sloRules = await handler.getFilePathContent(github, owner, '.github', path);
   }
   return sloRules;
 };
 
-handler.getConfigFileContent = async function getConfigFileContent(
+handler.getFilePathContent = async function getFilePathContent(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -457,6 +522,7 @@ handler.getConfigFileContent = async function getConfigFileContent(
       repo,
       path,
     });
+    // console.log(fileResponse.data);
     const data = fileResponse.data as {content?: string};
     const content = Buffer.from(data.content as string, 'base64').toString(
       'utf8'
@@ -494,5 +560,330 @@ handler.getListOfIssueLabels = async function getListOfIssueLabels(
     return null;
   }
 };
+
+handler.complianceSettings = async function complianceSettings(
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+  issue_number: number,
+  assignees: IssueAssignees[],
+  issueUpdateTime: string,
+  slo: SLORules
+): Promise<boolean> {
+
+  //Checking if issue is resolved within resolution time
+  const resTime = slo.complianceSettings.resolutionTime;
+  if (resTime !== 0) {
+    const isInResTime = await handler.isInDuration(resTime, issueUpdateTime);
+    // console.log("Resolution Time?");
+    // console.log(isInResTime);
+    if (!isInResTime) {
+      return false;
+    }
+  }
+  //Only used when response time != 0 or assignee is true
+  const responders: Set<string> = await handler.getResponders(
+    github,
+    owner,
+    repo,
+    slo
+  ); // CHECK FOR FAILURE RESPONDERS
+
+  //Checking if issue is assigned if slo claims it must have assignee
+  const reqAssignee = slo.complianceSettings.requiresAssignee;
+  if (reqAssignee === true) {
+    const isAssigned = await handler.isAssigned(responders, assignees);
+    // console.log("Requires Assignee?");
+    // console.log(isAssigned);
+    if (!isAssigned) {
+      return false;
+    }
+  }
+
+  //Checking if issue is responded within response time
+  const responseTime = slo.complianceSettings.responseTime; //Get comments
+  if (responseTime !== 0) {
+    const listIssueComments = await handler.getIssueCommentsList(
+      github,
+      owner,
+      repo,
+      issue_number
+    );
+    const isInResponseTime = await handler.isInResponseTime(
+      responders,
+      listIssueComments,
+      slo.complianceSettings.responseTime,
+      issueUpdateTime
+    );
+    // console.log("Response Time?: ");
+    // console.log(isInResponseTime);
+    if (!isInResponseTime) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+handler.isInResponseTime = async function isInResponseTime(
+  responders: Set<string>,
+  listIssueComments: IssuesListCommentsResponse[] | null,
+  resolutionTime: string | number,
+  issueCreatedTime: string
+): Promise<boolean> {
+  if(!listIssueComments) {
+    return true;//If API call to list issue comments failed, does not attempt to label the issue
+  } //HANDLE PAGINATION
+  for (const comment of listIssueComments) {
+    if (responders.has(comment.user.login)) {
+      const isValidTime = await handler.isInDuration(
+        resolutionTime,
+        issueCreatedTime,
+        comment.created_at,
+      );
+      if (isValidTime) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
+handler.isAssigned = async function isAssigned(
+  responders: Set<string>,
+  assignees: IssueAssignees[]
+): Promise<boolean> {
+  for (const assignee of assignees) {
+    if (responders.has(assignee.login)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+handler.getIssueCommentsList = async function getIssueCommentsList(
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+  issue_number: number
+): Promise<IssuesListCommentsResponse[] | null> {
+  try {
+    const listComments = await github.issues.listComments({
+      owner,
+      repo,
+      issue_number,
+    });
+    return listComments.data;
+  } catch (err) {
+    console.error(
+      `Error in getting issue comments for number ${issue_number}\n ${err.request}`
+    );
+    return null;
+  }
+};
+
+handler.getResponders = async function getResponders(
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+  slo: SLORules
+): Promise<Set<string>> {
+  const responders: Set<string> = new Set();
+
+  const owners = slo.complianceSettings.responders?.owners;
+  if (owners) {
+    const ownersArr = await handler.convertToArray(owners);
+    for (const ownerPath of ownersArr) {
+      const content = await handler.getFilePathContent(
+        github,
+        owner,
+        repo,
+        ownerPath
+      );
+      const usersArr = content.match(/@([^\s]+)/g);
+      if(usersArr) {
+        usersArr.forEach(user => {if(user.length > 1) responders.add(user.substr(1))});
+      }
+    }
+  }
+
+  const contributors = slo.complianceSettings.responders?.contributors;
+  if (contributors) {
+    await handler.addContributers(
+      github,
+      owner,
+      repo,
+      responders,
+      contributors
+    );
+  }
+  const users = slo.complianceSettings.responders?.users;
+  if (users) {
+    users.forEach(user => responders.add(user));
+  }
+  return responders;
+};
+
+handler.addContributers = async function addContributers(
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+  responders: Set<string>,
+  contributors: string
+) {
+  const collaboratorList = await handler.getCollaborators(github, owner, repo);
+  if (collaboratorList) {
+    if (contributors === 'OWNER') {
+      responders.add(owner);
+      return;
+    }
+
+    for (const collab of collaboratorList) {
+      if (
+        (contributors === 'WRITE' &&
+          collab.permissions.pull &&
+          collab.permissions.push) ||
+          collab.permissions.admin ||
+          collab.login === owner
+      ) {
+        responders.add(collab.login);
+      } else if (
+        (contributors === 'ADMIN' && collab.permissions.admin) ||
+        collab.login === owner
+      ) {
+        responders.add(collab.login);
+      } 
+    }
+  }
+};
+
+handler.getCollaborators = async function getCollaborators(
+  github: GitHubAPI,
+  owner: string,
+  repo: string
+) {
+  //Add a return type
+  try {
+    const collaboratorList = await github.repos.listCollaborators({
+      owner,
+      repo,
+    });
+    return collaboratorList.data;
+  } catch (err) {
+    console.warn(`Error in getting list of collaborators \n ${err.request}`);
+    return null;
+  }
+};
+
+handler.isInDuration = async function isInDuration(
+  duration: string | number,
+  startTime: string,
+  endTime?: string,
+): Promise<boolean> {
+  const start = moment(startTime);
+  const end = endTime ? moment(endTime) : moment();
+  let unit = '';
+  let diff: number;
+
+  if (typeof duration === 'string') {
+    unit = duration.charAt(duration.length - 1);
+    duration = Number(
+      duration.substr(0, duration.length - 1)
+    );
+  }
+
+  if (unit === 'd') {
+    diff = moment.duration(end.diff(start)).asDays();
+  } else if (unit === 'h') {
+    diff = moment.duration(end.diff(start)).asHours();
+  } else if (unit === 'm') {
+    diff = moment.duration(end.diff(start)).asMinutes();
+  } else {
+    //assume seconds
+    diff = moment.duration(end.diff(start)).asSeconds();
+  }
+
+  return diff <= duration;
+};
+
+handler.checkExistingLabel = async function checkExistingLabel (
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+): Promise<boolean | null> {
+  try {
+    const  name = "OOSLO";
+    const label = await github.issues.getLabel({
+      owner,
+      repo,
+      name,
+    });
+    return label.data.name == "OOSLO";
+  } catch (err) {
+    console.warn(`Error in checking to see if repo ${repo} has OOSLO label`);
+    return null;
+  }
+}
+
+handler.createLabel =  async function createLabel (
+  github: GitHubAPI,
+  owner: string,
+  repo: string
+) {
+  try {
+    const  name = "OOSLO";
+    const color = "#FF0000";
+    const description = "Issue is out of slo";
+    const label = await github.issues.createLabel({
+      owner,
+      repo,
+      name,
+      color,
+      description
+    });
+ 
+  } catch (err) {
+    console.error(`Error when creating OOSLO label for repo ${repo} \n ${err.request}`);
+  }
+}
+
+handler.addLabel = async function addLabel (
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+  issueNumber: number
+) {
+  try {
+    const labels = ["OOSLO"];
+    const data = await github.issues.addLabels({
+      owner,
+      repo,
+      issue_number: issueNumber,
+      labels,
+    });
+  } catch (err) {
+    console.error(`Error adding OOSLO label in repo ${repo} for issue number ${issueNumber}\n ${err.request}`);
+  }
+}
+
+handler.removeIssueLabel = async function removeIssueLabel(
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+  issueNumber: number
+) {
+  try {
+    const name = "OOSLO";
+    await github.issues.removeLabel({
+      owner,
+      repo,
+      issue_number: issueNumber,
+      name,
+    });
+
+  } catch (err) {
+    console.error(`Error removing OOSLO label in repo ${repo} for issue number ${issueNumber}\n ${err.request}`);
+  }
+}
 
 export = handler;

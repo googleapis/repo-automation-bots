@@ -1,0 +1,18 @@
+{
+    "name": "CODEOWNERS",
+    "path": ".github/CODEOWNERS",
+    "sha": "619d24ed09c26802363aa3dc22417e8ed63554d6",
+    "size": 28,
+    "url": "https://api.github.com/repos/hershey127/Testing/contents/.github/CODEOWNERS?ref=master",
+    "html_url": "https://github.com/hershey127/Testing/blob/master/.github/CODEOWNERS",
+    "git_url": "https://api.github.com/repos/hershey127/Testing/git/blobs/619d24ed09c26802363aa3dc22417e8ed63554d6",
+    "download_url": "https://raw.githubusercontent.com/hershey127/Testing/master/.github/CODEOWNERS",
+    "type": "file",
+    "content": "QHVzZXIxIEBDb2Rlci1jYXQuCkBvd25lci4yCg==\n",
+    "encoding": "base64",
+    "_links": {
+      "self": "https://api.github.com/repos/hershey127/Testing/contents/.github/CODEOWNERS?ref=master",
+      "git": "https://api.github.com/repos/hershey127/Testing/git/blobs/619d24ed09c26802363aa3dc22417e8ed63554d6",
+      "html": "https://github.com/hershey127/Testing/blob/master/.github/CODEOWNERS"
+    }
+}

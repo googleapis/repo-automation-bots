@@ -5,8 +5,12 @@
       "issueType": "bug"
     },
     "complianceSettings": {
-        "responseTime": 0,
+        "responseTime": "5h",
         "resolutionTime": 43200,
-        "requiresAssignee": true
+        "requiresAssignee": true,
+        "responders" : {
+          "contributors": "WRITE",
+          "users" : ["user1", "user2"]
+        }
     }
 }
