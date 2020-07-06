@@ -121,6 +121,7 @@ export = (app: Application) => {
 // limitations under the License.
 
 declare module 'promise-events' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   class EventEmitter {}
 }
 randomBoolean: true{

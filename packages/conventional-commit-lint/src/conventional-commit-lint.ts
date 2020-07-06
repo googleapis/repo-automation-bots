@@ -34,6 +34,8 @@ type Conclusion =
   | 'action_required'
   | undefined;
 
+const AUTOMERGE_LABEL = 'automerge';
+
 export = (app: Application) => {
   app.on('pull_request', async context => {
     // Fetch last 100 commits stored on a specific PR.
@@ -53,9 +55,16 @@ export = (app: Application) => {
     const commits = commitsResponse.data;
 
     let message = context.payload.pull_request.title;
-    // if there is only one commit, lint the commit rather than
-    // the pull request title:
-    if (commits.length === 1) {
+    const hasAutomergeLabel = context.payload.pull_request.labels
+      .map(label => {
+        return label.name;
+      })
+      .includes(AUTOMERGE_LABEL);
+    // if there is only one commit, and we're not not using automerge
+    // to land the pull request, lint the commit rather than the title.
+    // This is done because GitHub uses the commit title, rather than the
+    // issue title, if there is only one commit:
+    if (commits.length === 1 && !hasAutomergeLabel) {
       message = commits[0].commit.message;
     }
 

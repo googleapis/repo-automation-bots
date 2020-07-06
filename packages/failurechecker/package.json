@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "gcf-utils": "1.6.1",
-    "moment": "2.26.0"
+    "moment": "2.27.0"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
@@ -49,7 +49,7 @@
     "dotenv": "^8.0.0",
     "gts": "^2.0.0",
     "mocha": "^8.0.0",
-    "nock": "^12.0.0",
+    "nock": "^13.0.0",
     "smee-client": "^1.1.0",
     "snap-shot-it": "^7.8.0",
     "typescript": "^3.5.3"

@@ -31,6 +31,10 @@ interface Reviews {
   state: string;
 }
 
+interface Comment {
+  body: string;
+}
+
 interface PullRequest {
   title: string;
   body: string;
@@ -113,6 +117,24 @@ mergeOnGreen.getPR = async function getPR(
         login: '',
       },
     };
+  }
+};
+
+mergeOnGreen.getCommentsOnPR = async function getCommentsOnPR(
+  owner: string,
+  repo: string,
+  issue_number: number,
+  github: GitHubAPI
+): Promise<Comment[] | null> {
+  try {
+    const data = await github.issues.listComments({
+      owner,
+      repo,
+      issue_number,
+    });
+    return data.data;
+  } catch (err) {
+    return null;
   }
 };
 
@@ -211,6 +233,10 @@ mergeOnGreen.getStatusi = async function getStatusi(
       per_page: 100,
       page: num,
     });
+    if (!data[0].context) {
+      console.info('no further page data');
+      return [];
+    }
     console.info(
       `called getStatuses in ${Date.now() - start}ms ${owner}/${repo}, ${
         data[0].context
@@ -240,9 +266,10 @@ mergeOnGreen.iterateGetStatusi = async function iterateGetStatusi(
   let results: CheckStatus[] = [];
   for (let i = 0; i < 10; i++) {
     const temp = await mergeOnGreen.getStatusi(owner, repo, github, headSha, i);
-    if (temp.length !== 0) {
-      results = results.concat(temp);
+    if (temp.length === 0) {
+      return results;
     }
+    results = results.concat(temp);
   }
   return results;
 };
@@ -271,6 +298,10 @@ mergeOnGreen.getCheckRuns = async function getCheckRuns(
       per_page: 100,
       page: num,
     });
+    if (!checkRuns.data.check_runs[0]) {
+      console.info('no further page data');
+      return [];
+    }
     console.info(
       `called getCheckRuns in ${Date.now() - start}ms ${owner}/${repo}`
     );
@@ -303,9 +334,10 @@ mergeOnGreen.iterateGetCheckRuns = async function iterateGetCheckRuns(
       headSha,
       i
     );
-    if (temp !== undefined) {
-      results = results.concat(temp);
+    if (temp.length === 0) {
+      return results;
     }
+    results = results.concat(temp);
   }
   return results;
 };
@@ -375,7 +407,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
       const checkCompleted = checkStatus.find((element: CheckStatus) =>
         element.context.startsWith(check)
       );
-      if (checkCompleted === undefined) {
+      if (!checkCompleted) {
         console.log(
           'The status checks do not include your required checks. We will check in check runs.'
         );
@@ -587,7 +619,7 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
   github: GitHubAPI
 ): Promise<{} | null> {
   try {
-    const data = github.issues.createComment({
+    const data = await github.issues.createComment({
       owner,
       repo,
       issue_number: pr,
@@ -597,6 +629,27 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
   } catch (err) {
     console.log(`There was an issue commenting on ${owner}/${repo} PR ${pr}`);
     return null;
+  }
+};
+
+mergeOnGreen.removeLabel = async function removeLabel(
+  owner: string,
+  repo: string,
+  issue_number: number,
+  name: string,
+  github: GitHubAPI
+) {
+  try {
+    await github.issues.removeLabel({
+      owner,
+      repo,
+      issue_number,
+      name,
+    });
+  } catch (err) {
+    console.log(
+      `There was an issue removing the automerge label on ${owner}/${repo} PR ${issue_number}`
+    );
   }
 };
 
@@ -641,7 +694,7 @@ export async function mergeOnGreen(
     return true;
   }
 
-  const [checkReview, checkStatus] = await Promise.all([
+  const [checkReview, checkStatus, commentsOnPR] = await Promise.all([
     mergeOnGreen.checkReviews(owner, repo, pr, prInfo.user.login, github),
     mergeOnGreen.statusesForRef(
       owner,
@@ -651,6 +704,7 @@ export async function mergeOnGreen(
       github,
       requiredChecks
     ),
+    mergeOnGreen.getCommentsOnPR(owner, repo, pr, github),
   ]);
 
   const failedMesssage =
@@ -659,6 +713,8 @@ export async function mergeOnGreen(
     'Your PR has conflicts that you need to resolve before merge-on-green can automerge';
   const continueMesssage =
     'Your PR has attempted to merge for 3 hours. Please check that all required checks have passed, you have an automerge label, and that all your reviewers have approved the PR';
+  const notAuthorizedMessage =
+    'Merge-on-green is not authorized to push to this branch. Visit https://help.github.com/en/github/administering-a-repository/enabling-branch-restrictions to give gcf-merge-on-green permission to push to this branch.';
 
   console.info(
     `checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state} ${owner}/${repo}/${pr}`
@@ -671,6 +727,22 @@ export async function mergeOnGreen(
       await mergeOnGreen.merge(owner, repo, pr, prInfo, github);
       merged = true;
     } catch (err) {
+      // Not checking here whether err.status=405 as that seems to apply to more than one error type,
+      // so checking the body instead.
+      if (err.message.includes('not authorized to push to this branch')) {
+        const isCommented = commentsOnPR?.find(element =>
+          element.body.includes(notAuthorizedMessage)
+        );
+        if (!isCommented) {
+          await mergeOnGreen.commentOnPR(
+            owner,
+            repo,
+            pr,
+            notAuthorizedMessage,
+            github
+          );
+        }
+      }
       console.info(
         `Is ${owner}/${repo}/${pr} mergeable?: ${prInfo.mergeable} Mergeable_state?: ${prInfo.mergeable_state}`
       );
@@ -690,13 +762,18 @@ export async function mergeOnGreen(
         console.info(
           `There are conflicts in the base branch of ${owner}/${repo}/${pr}`
         );
-        await mergeOnGreen.commentOnPR(
-          owner,
-          repo,
-          pr,
-          conflictMessage,
-          github
+        const isCommented = commentsOnPR?.find(element =>
+          element.body.includes(conflictMessage)
         );
+        if (!isCommented) {
+          await mergeOnGreen.commentOnPR(
+            owner,
+            repo,
+            pr,
+            conflictMessage,
+            github
+          );
+        }
       }
     }
     return merged;
@@ -705,10 +782,16 @@ export async function mergeOnGreen(
       `${owner}/${repo}/${pr} timed out before its statuses & reviews passed`
     );
     await mergeOnGreen.commentOnPR(owner, repo, pr, failedMesssage, github);
+    await mergeOnGreen.removeLabel(owner, repo, pr, labelName, github);
     return true;
   } else if (state === 'comment') {
+    const isCommented = commentsOnPR?.find(element =>
+      element.body.includes(continueMesssage)
+    );
+    if (!isCommented) {
+      await mergeOnGreen.commentOnPR(owner, repo, pr, continueMesssage, github);
+    }
     console.log(`${owner}/${repo}/${pr} is halfway through its check`);
-    await mergeOnGreen.commentOnPR(owner, repo, pr, continueMesssage, github);
     return false;
   } else {
     console.log(

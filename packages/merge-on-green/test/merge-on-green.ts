@@ -17,7 +17,6 @@ import {Probot} from 'probot';
 import {resolve} from 'path';
 import nock from 'nock';
 import sinon from 'sinon';
-// eslint-disable-next-line node/no-unsupported-features/node-builtins
 import {describe, it, beforeEach} from 'mocha';
 
 import handler from '../src/merge-on-green';
@@ -43,6 +42,10 @@ interface HeadSha {
 
 interface CheckRuns {
   check_runs: [{name: string; conclusion: string}];
+}
+
+interface Comments {
+  body: string;
 }
 
 nock.disableNetConnect();
@@ -77,15 +80,26 @@ function getRuns(ref: string, response: CheckRuns) {
     .reply(200, response);
 }
 
+function getCommentsOnPr(response: Comments[]) {
+  return nock('https://api.github.com')
+    .get('/repos/testOwner/testRepo/issues/1/comments')
+    .reply(200, response);
+}
+
 function getMogLabel(response: Label[]) {
   return nock('https://api.github.com')
     .get('/repos/testOwner/testRepo/issues/1/labels')
     .reply(200, response);
 }
 
+function removeMogLabel() {
+  return nock('https://api.github.com')
+    .delete('/repos/testOwner/testRepo/issues/1/labels/automerge')
+    .reply(200);
+}
+
 function merge() {
   return nock('https://api.github.com')
-    .log(console.log)
     .put('/repos/testOwner/testRepo/pulls/1/merge')
     .reply(200, {sha: '123', merged: true, message: 'in a bottle'});
 }
@@ -495,11 +509,12 @@ describe('merge-on-green', () => {
         getBranchProtection(['Special Check']),
         getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'this is not the label you are looking for'}]),
+        getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
+          {state: 'failure', context: 'Special Check'},
         ]),
         commentOnPR(),
+        removeMogLabel(),
       ];
 
       await probot.receive({
@@ -535,6 +550,33 @@ describe('merge-on-green', () => {
           {state: 'success', context: 'Special Check'},
         ]),
         commentOnPR(),
+      ];
+
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: {org: 'testOwner'},
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
+    });
+
+    it('does not comment if comment is already on PR', async () => {
+      const scopes = [
+        getPR(true, 'dirty', 'open'),
+        getBranchProtection(['Special Check']),
+        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getCommentsOnPr([
+          {
+            body:
+              'Your PR has conflicts that you need to resolve before merge-on-green can automerge',
+          },
+        ]),
+        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getMogLabel([{name: 'automerge'}]),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          {state: 'success', context: 'Special Check'},
+        ]),
       ];
 
       await probot.receive({

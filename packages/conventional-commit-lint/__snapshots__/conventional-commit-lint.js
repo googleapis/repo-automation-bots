@@ -31,3 +31,9 @@ exports['ConventionalCommitLint PR With Multiple Commits has an invalid pull req
     "text": ":x: linting errors for \"*this is not a conventional commit*\"\n* subject may not be empty\n* type may not be empty\n\n\n"
   }
 }
+
+exports['ConventionalCommitLint PR With Multiple Commits has a valid title, invalid commit, automerge label 1'] = {
+  "name": "conventionalcommits.org",
+  "conclusion": "success",
+  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
+}

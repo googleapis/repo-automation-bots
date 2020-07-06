@@ -3,15 +3,15 @@
     {
       "git": {
         "name": ".",
-        "remote": "git@github.com:googleapis/repo-automation-bots.git",
-        "sha": "69194974119541d9f4069ea8d65939d204b04180"
+        "remote": "https://github.com/googleapis/repo-automation-bots.git",
+        "sha": "73d37b257cc205982902048c5c3b4340acd263eb"
       }
     },
     {
       "git": {
         "name": "synthtool",
         "remote": "https://github.com/googleapis/synthtool.git",
-        "sha": "716f741f2d307b48cbe8a5bc3bc883571212344a"
+        "sha": "dc9caca650c77b7039e2bbc3339ffb34ae78e5b7"
       }
     }
   ]
