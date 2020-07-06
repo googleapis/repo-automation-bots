@@ -245,7 +245,7 @@ export class GCFBootstrapper {
         owner: {
           login: orgName,
           name: orgName,
-        }
+        },
       },
       organization: {
         login: orgName,
