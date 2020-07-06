@@ -52,7 +52,7 @@ export interface CronPayload {
     owner: {
       login: string;
       name: string;
-    }
+    };
   };
   organization: {
     login: string;
