@@ -4,6 +4,22 @@
 
 ## Usage
 
+### GCFLogger
+
+`GCFLogger` is a Pino-based logger with added configurations for Google Cloud Functions. Note that this logger is a singleton instance shared across all modules.
+
+```
+import {GCFLogger} from 'gcf-utils';
+
+let logger = GCFLogger.get();
+
+logger.info('An info message');
+logger.debug({ 'debug-property': 'value' });
+logger.metric({ 'metric-property': 'value' });
+```
+
+### GCFBootstrapper
+
 TODO:(orthros)
 
 ## Development Setup
