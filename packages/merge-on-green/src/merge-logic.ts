@@ -478,36 +478,6 @@ mergeOnGreen.getReviewsCompleted = async function getReviewsCompleted(
 };
 
 /**
- * Function dismisses a review for the most secure version of this bot
- * @param owner of pr (from Watch PR)
- * @param repo of pr (from Watch PR)
- * @param pull_number pr number
- * @param review_id review id of the review to dismiss
- * @param github unique installation id for each function
- * @returns an array of Review types
- */
-mergeOnGreen.dismissReview = async function dismissReview(
-  owner: string,
-  repo: string,
-  pull_number: number,
-  review_id: number,
-  github: GitHubAPI
-) {
-  try {
-    await github.pulls.dismissReview({
-      owner,
-      repo,
-      pull_number,
-      review_id,
-      message:
-        'This review does not reference the most recent commit, and you are using the secure version of merge-on-green. Please re-review the most recent commit.',
-    });
-  } catch (err) {
-    console.log(`Error in dismissing reviews ${err}`);
-  }
-};
-
-/**
  * This function cleans the reviews, since the listReviews method github provides returns a complete
  * history of all comments added and we just want the most recent for each reviewer
  * @param Reviews is an array of completed reviews from getReviewsCompleted()
@@ -575,12 +545,21 @@ mergeOnGreen.checkReviews = async function checkReviews(
     });
     if (label === secureLabel) {
       //if we get to here, it means that all the reviews are in the approved state
-      reviewsCompleted.forEach(review => {
+      reviewsCompleted.forEach(async review => {
         if (review.commit_id !== headSha) {
           console.log(
             `${review.user.login} didn't review the latest commit for ${owner}/${repo}/${pr} commit = ${headSha}; will dismiss review.`
           );
-          mergeOnGreen.dismissReview(owner, repo, pr, review.id, github);
+          await github.pulls
+            .dismissReview({
+              owner,
+              repo,
+              pull_number: pr,
+              review_id: review.id,
+              message:
+                'This review does not reference the most recent commit, and you are using the secure version of merge-on-green. Please re-review the most recent commit.',
+            })
+            .catch(err => console.log(err));
           reviewsPassed = false;
         }
       });
