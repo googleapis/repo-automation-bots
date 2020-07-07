@@ -21,12 +21,6 @@ import {GitHubAPI} from 'probot/lib/github';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const colorsData = require('./colors.json');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const fs = require('fs');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const path = require('path');
-
-const repos = fs.readFileSync(path.join(__dirname, './repos.txt'));
 
 interface JSONData {
   github_label: string;
@@ -35,6 +29,10 @@ interface JSONData {
 
 interface Label {
   name: string;
+}
+
+interface Repository {
+  full_name: string;
 }
 
 const storage = new Storage();
@@ -56,26 +54,7 @@ handler.addLabels = async function addLabels(
     });
     return data;
   } catch (err) {
-    return null;
-  }
-};
-
-handler.removeLabel = async function removeLabel(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  issueNumber: number,
-  name: string
-) {
-  try {
-    const data = await github.issues.removeLabel({
-      owner,
-      repo,
-      issue_number: issueNumber,
-      name,
-    });
-    return data;
-  } catch (err) {
+    console.log(err);
     return null;
   }
 };
@@ -95,6 +74,7 @@ handler.checkExistingLabels = async function checkExistingLabels(
     });
     return data.data.name;
   } catch (err) {
+    console.log(err);
     return null;
   }
 };
@@ -116,6 +96,7 @@ handler.createLabel = async function createLabel(
     });
     return data;
   } catch (err) {
+    console.log(err);
     return null;
   }
 };
@@ -139,6 +120,7 @@ handler.checkExistingIssueLabels = async function checkExistingIssueLabels(
       return data.data;
     }
   } catch (err) {
+    console.log(err);
     return null;
   }
 };
@@ -153,7 +135,7 @@ handler.maybeAddAPILabel = async (
   label: string
 ): Promise<string | undefined> => {
   if (labelsOnIssue) {
-    const found = labelsOnIssue.find((element: {name: string}) =>
+    const found = labelsOnIssue.find(element =>
       element.name.startsWith('api:')
     );
     if (found) {
@@ -171,7 +153,7 @@ handler.maybeAddAPILabel = async (
 handler.callStorage = async function callStorage(
   bucketName: string,
   srcFileName: string
-) {
+): Promise<string> {
   // Downloads the file
   const jsonData = (
     await storage.bucket(bucketName).file(srcFileName).download()
@@ -244,8 +226,9 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   owner: string,
   repo: string,
   issueNumber: number,
-  context: any,
-  jsonArray: any
+  issueTitle: string,
+  jsonArray: JSONData[],
+  github: GitHubAPI
 ) {
   const objectInJsonArray = handler.checkIfElementIsInArray(
     jsonArray,
@@ -255,8 +238,10 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
 
   let autoDetectedLabelAdded: string | undefined;
 
+  let wasAdded = false;
+
   const labelsOnIssue = await handler.checkExistingIssueLabels(
-    context.github,
+    github,
     owner,
     repo,
     issueNumber
@@ -266,25 +251,22 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     console.log(
       `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
     );
-    const autoDetectedLabel = handler.autoDetectLabel(
-      jsonArray,
-      context.payload.issue.title
-    );
+    const autoDetectedLabel = handler.autoDetectLabel(jsonArray, issueTitle);
     if (autoDetectedLabel) {
       console.log(
         `Auto-detected label ${autoDetectedLabel} for ${owner}/${repo}#${issueNumber}`
       );
       autoDetectedLabelAdded = await handler.maybeAddAPILabel(
-        context.github,
+        github,
         owner,
         repo,
-        context.payload.issue.number,
+        issueNumber,
         labelsOnIssue,
         autoDetectedLabel
       );
     } else {
       console.log(
-        `Auto-detect did not add a label for ${owner}/${repo}#${issueNumber}: '${context.payload.issue.title}'`
+        `Auto-detect did not add a label for ${owner}/${repo}#${issueNumber}: '${issueTitle}'`
       );
     }
     return;
@@ -296,7 +278,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   const githubLabel = objectInJsonArray.github_label;
 
   const alreadyExists = await handler.checkExistingLabels(
-    context.github,
+    github,
     owner,
     repo,
     githubLabel
@@ -304,7 +286,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
 
   if (alreadyExists === null || alreadyExists === undefined) {
     handler.createLabel(
-      context.github,
+      github,
       owner,
       repo,
       githubLabel,
@@ -321,7 +303,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       (element: {name: string}) => element.name === githubLabel
     );
     const cleanUpOtherLabels = labelsOnIssue.filter(
-      (element: {name: string}) =>
+      element =>
         element.name.startsWith('api') &&
         element.name !== found?.name &&
         element.name !== autoDetectedLabelAdded
@@ -330,26 +312,29 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       console.log('This label already exists on this issue');
       return;
     } else {
-      await handler.addLabels(context.github, owner, repo, issueNumber, [
+      await handler.addLabels(github, owner, repo, issueNumber, [
         `${objectInJsonArray.github_label}`,
       ]);
+      wasAdded = true;
     }
     for (const dirtyLabel of cleanUpOtherLabels) {
-      await handler.removeLabel(
-        context.github,
-        owner,
-        repo,
-        issueNumber,
-        dirtyLabel.name
-      );
+      await github.issues
+        .removeLabel({
+          owner,
+          repo,
+          issue_number: issueNumber,
+          name: dirtyLabel.name,
+        })
+        .catch(console.error);
     }
   } else {
-    await handler.addLabels(context.github, owner, repo, issueNumber, [
+    await handler.addLabels(github, owner, repo, issueNumber, [
       `${objectInJsonArray.github_label}`,
     ]);
+    wasAdded = true;
   }
 
-  return;
+  return wasAdded;
 };
 
 //main function, responds to label being added
@@ -363,19 +348,6 @@ function handler(app: Application) {
       console.log(`skipping run for ${context.payload.cron_org}`);
       return;
     }
-    if (
-      repos.includes(
-        `${context.payload.organization.login}/${context.payload.repository.name}`
-      )
-    ) {
-      return;
-    }
-
-    console.log(path.join(__dirname, './repos.txt'));
-    fs.writeFileSync(
-      path.join(__dirname, './repos.txt'),
-      `${context.payload.organization.login}/${context.payload.repository.name}\n`
-    );
 
     const jsonData = await handler.callStorage(
       'devrel-prod-settings',
@@ -389,17 +361,25 @@ function handler(app: Application) {
       repo,
     });
 
+    let wasLabelAddedCount = 0;
     //goes through issues in repository, adds labels as necessary
     for await (const response of context.github.paginate.iterator(issues)) {
       const issue = response.data;
       if (!issue.pull_request) {
-        await handler.addLabeltoRepoAndIssue(
+        const wasAdded = await handler.addLabeltoRepoAndIssue(
           owner,
           repo,
           issue.number,
-          context,
-          jsonArray
+          issue.title,
+          jsonArray,
+          context.github
         );
+        if (wasAdded) {
+          wasLabelAddedCount++;
+        }
+      }
+      if (wasLabelAddedCount > 5) {
+        return;
       }
     }
   });
@@ -421,10 +401,43 @@ function handler(app: Application) {
       owner,
       repo,
       issueNumber,
-      context,
-      jsonArray
+      context.payload.issue.title,
+      jsonArray,
+      context.github
     );
   });
-}
 
+  app.on(['installation.created'], async context => {
+    const repositories = context.payload.repositories;
+    const jsonData = await handler.callStorage(
+      'devrel-prod-settings',
+      'public_repos.json'
+    );
+
+    const jsonArray = await handler.checkIfFileIsEmpty(jsonData);
+
+    for await (const repository of repositories) {
+      const [owner, repo] = repository.full_name.split('/');
+      const issues = context.github.issues.listForRepo.endpoint.merge({
+        owner,
+        repo,
+      });
+
+      //goes through issues in repository, adds labels as necessary
+      for await (const response of context.github.paginate.iterator(issues)) {
+        const issue = response.data;
+        if (!issue.pull_request) {
+          await handler.addLabeltoRepoAndIssue(
+            owner,
+            repo,
+            issue.number,
+            issue.title,
+            jsonArray,
+            context.github
+          );
+        }
+      }
+    }
+  });
+}
 export = handler;

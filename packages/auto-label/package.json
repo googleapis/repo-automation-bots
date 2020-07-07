@@ -18,7 +18,7 @@
     "probot-app"
   ],
   "scripts": {
-    "compile": "tsc -p . && cp ./src/colors.json ./build/src/colors.json && cp ./src/repos.txt ./build/src/repos.txt",
+    "compile": "tsc -p . && cp ./src/colors.json ./build/src/colors.json",
     "start": "probot run ./build/src/auto-label.js",
     "start:local": "node ./build/src/local.js",
     "pretest": "npm run compile",

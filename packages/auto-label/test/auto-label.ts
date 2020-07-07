@@ -363,6 +363,47 @@ describe('auto-label', () => {
     });
   });
 
+  describe('installation', async () => {
+    it('responds to an installation event', async () => {
+      const payload = require(resolve(fixturesPath, './events/installation'));
+
+      const ghRequests = nock('https://api.github.com')
+        .log(console.log)
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, {
+          number: 1,
+        })
+        .get('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200)
+        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
+        .reply(200)
+        .post('/repos/testOwner/testRepo/labels', {
+          name: 'myGitHubLabel',
+          color: 'FEFEFA',
+        })
+        .reply(201, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ])
+        .post('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ]);
+      handler.callStorage = async () => downloadedFile;
+      await probot.receive({
+        name: 'installation.created',
+        payload,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+  });
+
   describe('autoDetectLabel', () => {
     it('finds the right label', () => {
       const data = JSON.parse(downloadedFile).repos;
