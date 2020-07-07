@@ -21,9 +21,10 @@ import {
 } from 'probot';
 import {CloudTasksClient} from '@google-cloud/tasks';
 import {v1} from '@google-cloud/secret-manager';
-import {request} from 'gaxios';
 import * as express from 'express';
 import pino from 'pino';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 
 const client = new CloudTasksClient();
 
@@ -38,6 +39,9 @@ interface Repos {
 
 interface Scheduled {
   repo?: string;
+  installation: {
+    id: number;
+  };
   message?: {[key: string]: string};
 }
 
@@ -78,6 +82,21 @@ export class GCFLogger {
     }
     return pino(defaultOptions, dest);
   }
+}
+
+export interface CronPayload {
+  repository: {
+    name: string;
+    full_name: string;
+    owner: {
+      login: string;
+      name: string;
+    };
+  };
+  organization: {
+    login: string;
+  };
+  cron_org: string;
 }
 
 export class GCFBootstrapper {
@@ -234,15 +253,31 @@ export class GCFBootstrapper {
       // Job was scheduled for a single repository:
       await this.scheduledToTask(body.repo, id, body, eventName, signature);
     } else {
-      // Job should be run on all managed repositories:
-      const url =
-        'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
-      const res = await request<Repos>({url});
-      const {repos} = res.data;
-      for (const repo of repos) {
-        await this.scheduledToTask(repo.repo, id, body, eventName, signature);
+      const octokit = new Octokit({
+        auth: await this.getInstallationToken(body.installation.id),
+      });
+      // Installations API documented here: https://developer.github.com/v3/apps/installations/
+      const {data} = await octokit.request('/installation/repositories', {
+        headers: {
+          Accept: 'application/vnd.github.machine-man-preview+json',
+        },
+      });
+      for (const repo of data.repositories) {
+        await this.scheduledToTask(
+          repo.full_name,
+          id,
+          body,
+          eventName,
+          signature
+        );
       }
     }
+  }
+
+  async getInstallationToken(installationId: number) {
+    return await this.probot!.app!.getInstallationAccessToken({
+      installationId,
+    });
   }
 
   private async scheduledToTask(
@@ -260,6 +295,10 @@ export class GCFBootstrapper {
       repository: {
         name: repoName,
         full_name: repoFullName,
+        owner: {
+          login: orgName,
+          name: orgName,
+        },
       },
       organization: {
         login: orgName,
