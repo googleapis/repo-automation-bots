@@ -18,6 +18,8 @@ import {request} from 'gaxios';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const languageConfig: LanguageConfig = require('./required-checks.json');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const languageTeams: LanguageTeamConfig = require('./teams.json');
 
 interface LanguageConfig {
   [index: string]: {
@@ -33,6 +35,17 @@ interface LanguageConfig {
       }
     ];
   };
+}
+
+type Permission = 'pull' | 'push' | 'admin' | 'maintain' | 'triage';
+
+interface TeamPermission {
+  slug: string;
+  permission: Permission;
+}
+
+interface LanguageTeamConfig {
+  [index: string]: [TeamPermission];
 }
 
 interface Repo {
@@ -154,6 +167,32 @@ handler.updateMasterBranchProtection = async function updateMasterBranchProtecti
   }
 };
 
+handler.defaultLanguageTeams = function (language: string): TeamPermission[] {
+  return [
+    {
+      slug: 'yoshi-admins',
+      permission: 'admin',
+    },
+    {
+      slug: `yoshi-${language}-admins`,
+      permission: 'admin',
+    },
+    {
+      slug: `yoshi-${language}`,
+      permission: 'push',
+    },
+  ];
+};
+
+handler.getRepoTeams = function (repo: Repo): TeamPermission[] {
+  const language = repo.language;
+  const teams = handler.defaultLanguageTeams(language);
+  if (language in languageTeams) {
+    teams.push(...languageTeams[language]);
+  }
+  return teams;
+};
+
 /**
  * Ensure the correct teams are added to the repository
  * @param repos List of repos to iterate.
@@ -164,20 +203,7 @@ handler.updateRepoTeams = async function updateRepoTeams(
 ) {
   console.log(`Update team access for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
-  const teamsToAdd = [
-    {
-      slug: 'yoshi-admins',
-      permission: 'admin',
-    },
-    {
-      slug: `yoshi-${repo.language}-admins`,
-      permission: 'admin',
-    },
-    {
-      slug: `yoshi-${repo.language}`,
-      permission: 'push',
-    },
-  ];
+  const teamsToAdd = handler.getRepoTeams(repo);
 
   for (const membership of teamsToAdd) {
     try {

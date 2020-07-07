@@ -17,7 +17,6 @@ import {Probot} from 'probot';
 import {resolve} from 'path';
 import nock from 'nock';
 import sinon from 'sinon';
-// eslint-disable-next-line node/no-unsupported-features/node-builtins
 import {describe, it, beforeEach} from 'mocha';
 
 import handler from '../src/merge-on-green';

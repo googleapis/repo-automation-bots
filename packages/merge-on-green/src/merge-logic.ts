@@ -677,7 +677,7 @@ mergeOnGreen.removeLabel = async function removeLabel(
   github: GitHubAPI
 ) {
   try {
-    github.issues.removeLabel({
+    await github.issues.removeLabel({
       owner,
       repo,
       issue_number,
