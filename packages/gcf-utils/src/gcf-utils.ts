@@ -203,19 +203,22 @@ export class GCFBootstrapper {
         auth: await this.getInstallationToken(body.installation.id),
       });
       // Installations API documented here: https://developer.github.com/v3/apps/installations/
-      const {data} = await octokit.request('/installation/repositories', {
+      for await (const response of octokit.paginate.iterator({
+        url: '/installation/repositories',
+        method: 'GET',
         headers: {
           Accept: 'application/vnd.github.machine-man-preview+json',
         },
-      });
-      for (const repo of data.repositories) {
-        await this.scheduledToTask(
-          repo.full_name,
-          id,
-          body,
-          eventName,
-          signature
-        );
+      })) {
+        for (const repo of response.data) {
+          await this.scheduledToTask(
+            repo.full_name,
+            id,
+            body,
+            eventName,
+            signature
+          );
+        }
       }
     }
   }
