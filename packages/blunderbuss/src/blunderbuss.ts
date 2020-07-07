@@ -206,7 +206,7 @@ function handler(app: Application) {
       );
     }
   );
-};
+}
 
 export = handler;
 

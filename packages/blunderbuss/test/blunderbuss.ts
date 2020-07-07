@@ -15,7 +15,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import handler from '../src/blunderbuss';
-import {describe, it, beforeEach} from 'mocha';
+import {describe, it, beforeEach, after} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
@@ -30,6 +30,8 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 // TODO: stop disabling warn once the following upstream patch is landed:
 // https://github.com/probot/probot/pull/926
 global.console.warn = () => {};
+
+const originalSleep = handler.sleep;
 
 describe('Blunderbuss', () => {
   let probot: Probot;
@@ -49,8 +51,14 @@ describe('Blunderbuss', () => {
         return Promise.resolve('abc123');
       },
     };
-    handler.sleep = (ms) => { return new Promise(resolve => setTimeout(resolve, 0)); };
+    handler.sleep = () => {
+      return new Promise(resolve => setTimeout(resolve, 0));
+    };
     probot.load(handler);
+  });
+
+  after(() => {
+    handler.sleep = originalSleep;
   });
 
   describe('issue tests', () => {
@@ -200,21 +208,23 @@ describe('Blunderbuss', () => {
         .get('/repos/testOwner/testRepo/issues/4/labels')
         .reply(200, [
           {
-            "id": 1515750275,
-            "node_id": "MDU6TGFiZWwxNTE1NzUwMjc1",
-            "url": "https://api.github.com/repos/testOwner/testRepo/labels/blunderbuss:%20assign",
-            "name": "blunderbuss: assign",
-            "color": "f9d0c4",
-            "default": false
+            id: 1515750275,
+            node_id: 'MDU6TGFiZWwxNTE1NzUwMjc1',
+            url:
+              'https://api.github.com/repos/testOwner/testRepo/labels/blunderbuss:%20assign',
+            name: 'blunderbuss: assign',
+            color: 'f9d0c4',
+            default: false,
           },
           {
-            "id": 1234,
-            "node_id": "abc",
-            "url": "https://api.github.com/repos/testOwner/testRepo/labels/api:%20bar",
-            "name": "api: bar",
-            "color": "f9d0c4",
-            "default": false
-          }
+            id: 1234,
+            node_id: 'abc',
+            url:
+              'https://api.github.com/repos/testOwner/testRepo/labels/api:%20bar',
+            name: 'api: bar',
+            color: 'f9d0c4',
+            default: false,
+          },
         ]);
 
       await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
@@ -239,9 +249,7 @@ describe('Blunderbuss', () => {
         })
         .reply(200)
         .get('/repos/testOwner/testRepo/issues/5/labels')
-        .reply(200, [
-          {name: 'api: foo'}
-        ]);
+        .reply(200, [{name: 'api: foo'}]);
 
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       requests.done();
@@ -264,15 +272,15 @@ describe('Blunderbuss', () => {
         .get('/repos/testOwner/testRepo/issues/4/labels')
         .reply(200, [
           {
-            "id": 1515750275,
-            "node_id": "MDU6TGFiZWwxNTE1NzUwMjc1",
-            "url": "https://api.github.com/repos/testOwner/testRepo/labels/blunderbuss:%20assign",
-            "name": "api: baz",
-            "color": "f9d0c4",
-            "default": false
-          }
+            id: 1515750275,
+            node_id: 'MDU6TGFiZWwxNTE1NzUwMjc1',
+            url:
+              'https://api.github.com/repos/testOwner/testRepo/labels/blunderbuss:%20assign',
+            name: 'api: baz',
+            color: 'f9d0c4',
+            default: false,
+          },
         ]);
-
 
       await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
       requests.done();
