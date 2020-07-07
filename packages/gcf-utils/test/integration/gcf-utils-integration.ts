@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,115 +11,48 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import {GCFBootstrapper, GCFLogger} from '../../src/gcf-utils';
+
+import {GCFBootstrapper} from '../../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {Application} from 'probot';
 import {resolve} from 'path';
 import {config} from 'dotenv';
-import pino from 'pino';
-import {validateLogs, LogLine} from '../test-helpers';
-import SonicBoom from 'sonic-boom';
-import fs from 'fs';
 
-describe('gcf-utils Integration', () => {
-  describe('GCFLogger Integration', () => {
-    let logger: pino.Logger;
-    const testStreamPath = './test-stream.txt';
-    let writeStream: SonicBoom;
+describe('GCFBootstrapper Integration', () => {
+  describe('getProbotConfig', () => {
+    let bootstrapper: GCFBootstrapper;
 
-    function readLogsAsObjects(writeStream: SonicBoom): LogLine[] {
-      try {
-        writeStream.flushSync();
-        const data: string = fs.readFileSync(testStreamPath, {
-          encoding: 'utf8',
-        });
-        const lines: string[] = data
-          .split('\n')
-          .filter(line => line !== undefined && line !== null && line !== '');
-        return lines.map(line => JSON.parse(line));
-      } catch (error) {
-        throw new Error(`Failed to read stream: ${error}`);
-      }
-    }
-
-    function testAllLevels() {
-      const levels: {[index: string]: number} = {
-        trace: 10,
-        debug: 20,
-        info: 30,
-        metric: 30,
-        warn: 40,
-        error: 50,
-      };
-      for (const level of Object.keys(levels)) {
-        it(`logs ${level} level string`, done => {
-          logger[level]('hello world');
-          writeStream.on('ready', () => {
-            const loggedLines: LogLine[] = readLogsAsObjects(writeStream);
-            validateLogs(loggedLines, 1, ['hello world'], [], levels[level]);
-            done();
-          });
-        });
-
-        it(`logs ${level} level json`, done => {
-          logger[level]({hello: 'world'});
-          writeStream.on('ready', () => {
-            const loggedLines: LogLine[] = readLogsAsObjects(writeStream);
-            validateLogs(loggedLines, 1, [], [{hello: 'world'}], levels[level]);
-            done();
-          });
-        });
-      }
-    }
-
-    beforeEach(() => {
-      writeStream = pino.destination(testStreamPath);
-      logger = GCFLogger['initLogger'](undefined, writeStream);
+    beforeEach(async () => {
+      bootstrapper = new GCFBootstrapper();
+      config({path: resolve(__dirname, '../../../.env')});
     });
 
-    testAllLevels();
+    afterEach(() => {});
 
-    afterEach(() => {
-      fs.unlinkSync(testStreamPath);
+    it('returns valid options', async () => {
+      await bootstrapper.getProbotConfig();
     });
   });
 
-  describe('GCFBootstrapper Integration', () => {
-    describe('getProbotConfig', () => {
-      let bootstrapper: GCFBootstrapper;
+  describe('loadProbot', () => {
+    let bootstrapper: GCFBootstrapper;
 
-      beforeEach(async () => {
-        bootstrapper = new GCFBootstrapper();
-        config({path: resolve(__dirname, '../../../.env')});
-      });
-
-      afterEach(() => {});
-
-      it('returns valid options', async () => {
-        await bootstrapper.getProbotConfig();
-      });
+    beforeEach(async () => {
+      bootstrapper = new GCFBootstrapper();
+      config({path: resolve(__dirname, '../../.env')});
     });
 
-    describe('loadProbot', () => {
-      let bootstrapper: GCFBootstrapper;
-
-      beforeEach(async () => {
-        bootstrapper = new GCFBootstrapper();
-        config({path: resolve(__dirname, '../../.env')});
+    it('is called properly', async () => {
+      const pb = await bootstrapper.loadProbot((app: Application) => {
+        app.on('foo', async () => {
+          console.log('We are called!');
+        });
       });
 
-      it('is called properly', async () => {
-        const pb = await bootstrapper.loadProbot((app: Application) => {
-          app.on('foo', async () => {
-            console.log('We are called!');
-          });
-        });
-
-        await pb.receive({
-          name: 'foo',
-          id: 'bar',
-          payload: 'baz',
-        });
+      await pb.receive({
+        name: 'foo',
+        id: 'bar',
+        payload: 'baz',
       });
     });
   });
