@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "SLO rules",
-    "description": "Defines the SLO rules that apply to your repository",
+    "description": "Schema for defining the SLO rules that apply to a repository",
     "definitions": {
         "appliesTo": {
             "description": "Describes what this rule applies to",
@@ -42,13 +42,13 @@
             "type": "object",
             "properties": {
                 "responseTime": { 
-                    "description": "Matching issues with no response within this timeframe are non-compliant. Number value represents seconds, string value should be formatted as a number followed by m, s or d where s represents seconds, m represents minutes and d represents days. A value of 0 is considered as not needing a response.",
+                    "description": "Matching issues with no response within this timeframe are non-compliant. A number value represents seconds; a string value should be formatted as a number followed by one of: d, h, m, s where d=days, h=hours, m=minutes and s=seconds. A value of 0 is considered as not needing a response.",
                     "type": ["number", "string"],
                     "minimum": 0,
                     "pattern": "(^([0-9]+[dhms])+)(?!.)"
                 }, 
                 "resolutionTime": { 
-                    "description": "Matching issues open longer than this are non-compliant",
+                    "description": "Matching issues open for longer than this timeframe are non-compliant. A number value represents seconds; a string value should be formatted as a number followed by one of: d, h, m, s where d=days, h=hours, m=minutes and s=seconds. A value of 0 is considered as not needing a response.",
                     "type": ["number", "string"], 
                     "minimum": 0,
                     "pattern": "(^([0-9]+[dhms])+)(?!.)"
@@ -72,7 +72,7 @@
                             }
                         },
                         "contributors": {
-                            "description": "",
+                            "description": "As defined by GitHub, one of: WRITE|ADMIN|OWNER. All users in the designated group are responders",
                             "type": "string",
                             "enum": ["WRITE", "ADMIN", "OWNER"]
                         },
