@@ -73,7 +73,7 @@ describe('GCFLogger', () => {
 
     beforeEach(() => {
       writeStream = new ObjectWritableMock();
-      logger = GCFLogger['initLogger'](undefined, writeStream);
+      logger = GCFLogger['initLogger'](writeStream);
     });
 
     testAllLevels();

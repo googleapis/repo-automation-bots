@@ -71,7 +71,7 @@ describe('GCFLogger Integration', () => {
 
   beforeEach(() => {
     writeStream = pino.destination(testStreamPath);
-    logger = GCFLogger['initLogger'](undefined, writeStream);
+    logger = GCFLogger['initLogger'](writeStream);
   });
 
   testAllLevels();

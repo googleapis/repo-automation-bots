@@ -66,19 +66,13 @@ export class GCFLogger {
     return this.logger;
   }
 
-  private static initLogger(
-    options?: pino.LoggerOptions,
-    dest?: pino.DestinationStream
-  ): pino.Logger {
+  private static initLogger(dest?: pino.DestinationStream): pino.Logger {
     const defaultOptions: pino.LoggerOptions = {
       customLevels: {
         metric: 30,
       },
       level: 'trace',
     };
-    if (options) {
-      Object.assign(defaultOptions, options);
-    }
     if (!dest) {
       dest = pino.destination({sync: true});
     }
