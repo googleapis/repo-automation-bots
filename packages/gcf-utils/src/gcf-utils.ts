@@ -56,7 +56,7 @@ interface EnqueueTaskParams {
  * A pino-based singleton logger for use within Google Cloud Functions.
  * Provides a metric() method to log metrics-related data
  */
-export class GCFLogger extends pino.prototype.Logger {
+export class GCFLogger {
   private static logger: pino.Logger;
 
   /**
@@ -100,8 +100,10 @@ export interface CronPayload {
 }
 
 enum TriggerType {
-  GH = 'GITHUB_WEBHOOK',
-  SCH = 'SCHEDULED',
+  GITHUB = 'GITHUB_WEBHOOK',
+  SCHEDULER = 'SCHEDULER',
+  TASK = `TASK`,
+  UNKNOWN = `UNKNOWN`
 }
 
 export class GCFBootstrapper {
@@ -149,10 +151,43 @@ export class GCFBootstrapper {
     return config as Options;
   }
 
+  parseRequestHeaders(request: express.Request): { name: string, id: string, signature: string, taskId: string } {
+    const name =
+      request.get('x-github-event') || 
+      request.get('X-GitHub-Event') ||
+      '';
+    const id =
+      request.get('x-github-delivery') ||
+      request.get('X-GitHub-Delivery') ||
+      '';
+    // TODO: add test to validate this signature is used on the initial
+    // webhook from GitHub:
+    const signature =
+      request.get('x-github-delivery') ||
+      request.get('X-GitHub-Delivery') ||
+      '';
+    const taskId =
+      request.get('X-CloudTasks-TaskName') ||
+      request.get('x-cloudtasks-taskname') ||
+      '';
+    return { name, id, signature, taskId };
+  }
+
+  parseTriggerType( name: string, id: string, signature: string, taskId: string): TriggerType {
+    if (!taskId && (name === 'schedule.repository' || name === 'pubsub.message')) {
+      return TriggerType.SCHEDULER;
+    } else if (!taskId && name) {
+      return TriggerType.GITHUB;
+    } else if (name) {
+      return TriggerType.TASK;
+    }
+    return TriggerType.UNKNOWN;
+  }
+
   getTriggerInfo(triggerType: TriggerType, request: express.Request) {
     let triggerInfo = {trigger: {trigger_type: triggerType}};
 
-    if (triggerType === TriggerType.GH) {
+    if (triggerType === TriggerType.GITHUB) {
       const sourceRepo = request.body['repository'];
       const repoName: string = sourceRepo['name'] || 'UNKNOWN';
       const repoOwner = sourceRepo['owner'];
@@ -180,29 +215,10 @@ export class GCFBootstrapper {
     return async (request: express.Request, response: express.Response) => {
       // Otherwise let's listen handle the payload
       this.probot = this.probot || (await this.loadProbot(appFn));
+      const { name, id, signature, taskId } = this.parseRequestHeaders(request);
+      const triggerType: TriggerType = this.parseTriggerType(name, id, signature, taskId);
 
-      // Determine incoming webhook event type
-      const name =
-        request.get('x-github-event') || request.get('X-GitHub-Event') || '';
-      const id =
-        request.get('x-github-delivery') ||
-        request.get('X-GitHub-Delivery') ||
-        '';
-      // TODO: add test to validate this signature is used on the initial
-      // webhook from GitHub:
-      const signature =
-        request.get('x-github-delivery') ||
-        request.get('X-GitHub-Delivery') ||
-        '';
-      const taskId =
-        request.get('X-CloudTasks-TaskName') ||
-        request.get('x-cloudtasks-taskname') ||
-        '';
-      if (
-        !taskId &&
-        (name === 'schedule.repository' || name === 'pubsub.message')
-      ) {
-        // We have come in from a scheduler:
+      if (triggerType === TriggerType.SCHEDULER) {
         // TODO: currently we assume that scheduled events walk all repos
         // managed by the client libraries team, it would be good to get more
         // clever and instead pull up a list of repos we're installed on by
@@ -219,8 +235,7 @@ export class GCFBootstrapper {
           statusCode: 200,
           body: JSON.stringify({message: 'Executed'}),
         });
-      } else if (!taskId && name) {
-        // We have come in from a GitHub webhook:
+      } else if (triggerType === TriggerType.GITHUB) {
         try {
           await this.enqueueTask({
             id,
@@ -239,8 +254,7 @@ export class GCFBootstrapper {
           body: JSON.stringify({message: 'Executed'}),
         });
         return;
-      } else if (name) {
-        // we have come in from our task:
+      } else if (triggerType === TriggerType.TASK) {
         try {
           await this.probot.receive({
             name,
