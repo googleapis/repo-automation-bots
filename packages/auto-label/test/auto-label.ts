@@ -242,7 +242,6 @@ describe('auto-label', () => {
   describe('schedule repository', () => {
     it('responds to a scheduled event', async () => {
       const ghRequests = nock('https://api.github.com')
-        .log(console.log)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, {
           number: 1,
@@ -283,7 +282,6 @@ describe('auto-label', () => {
 
     it('deletes extraneous labels', async () => {
       const ghRequests = nock('https://api.github.com')
-        .log(console.log)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, {
           number: 1,
@@ -332,7 +330,6 @@ describe('auto-label', () => {
 
     it('will not create labels that already exist', async () => {
       const ghRequests = nock('https://api.github.com')
-        .log(console.log)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, {
           number: 1,
@@ -368,7 +365,6 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/installation'));
 
       const ghRequests = nock('https://api.github.com')
-        .log(console.log)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, {
           number: 1,
