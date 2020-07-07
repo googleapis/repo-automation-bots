@@ -64,7 +64,7 @@ function handler(app: Application) {
         100
       );
 
-      if (fileList === null) {
+      if (!fileList) {
         return;
       }
 
@@ -176,7 +176,7 @@ handler.handle_slos = async function handle_slos(
     file_sha
   );
 
-  if (sloString === null) {
+  if (!sloString) {
     return;
   }
 
