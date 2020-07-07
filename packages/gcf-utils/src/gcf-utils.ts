@@ -56,7 +56,7 @@ interface EnqueueTaskParams {
  * A pino-based singleton logger for use within Google Cloud Functions.
  * Provides a metric() method to log metrics-related data
  */
-export class GCFLogger {
+export class GCFLogger extends pino.prototype.Logger {
   private static logger: pino.Logger;
 
   /**
@@ -97,6 +97,11 @@ export interface CronPayload {
     login: string;
   };
   cron_org: string;
+}
+
+enum TriggerType {
+  GH = 'GITHUB_WEBHOOK',
+  SCH = 'SCHEDULED',
 }
 
 export class GCFBootstrapper {
@@ -142,6 +147,31 @@ export class GCFBootstrapper {
     }
     const config = JSON.parse(payload);
     return config as Options;
+  }
+
+  getTriggerInfo(triggerType: TriggerType, request: express.Request) {
+    let triggerInfo = {trigger: {trigger_type: triggerType}};
+
+    if (triggerType === TriggerType.GH) {
+      const sourceRepo = request.body['repository'];
+      const repoName: string = sourceRepo['name'] || 'UNKNOWN';
+      const repoOwner = sourceRepo['owner'];
+      const ownerName: string = repoOwner['login'] || 'UNKNOWN';
+      const ownerType: string = repoOwner['type'] || 'UNKNOWN';
+      const sender: string = request.body['sender']['login'] || 'UNKNOWN';
+
+      const webhookProperties = {
+        trigger_source_repo: {
+          repo_name: repoName,
+          owner: ownerName,
+          owner_type: ownerType,
+        },
+        trigger_sender: sender,
+      };
+      triggerInfo = {...webhookProperties, ...triggerInfo};
+    }
+
+    return triggerInfo;
   }
 
   gcf(
