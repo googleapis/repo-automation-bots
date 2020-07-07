@@ -480,7 +480,7 @@ export async function getSLOStatus(
     appliesTo = await getSLOStatus.appliesTo(slo, labels);
   }
 
-  let isCompliant = null; 
+  let isCompliant = null;
 
   if (appliesTo) {
     const issueCreatedTime = context.payload.issue.created_at;
