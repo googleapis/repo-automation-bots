@@ -22,7 +22,7 @@ import fs from 'fs';
 describe('GCFLogger Integration', () => {
   let logger: pino.Logger;
   const testStreamPath = './test-stream.txt';
-  let writeStream: SonicBoom;
+  let destination: SonicBoom;
 
   function readLogsAsObjects(writeStream: SonicBoom): LogLine[] {
     try {
@@ -51,8 +51,8 @@ describe('GCFLogger Integration', () => {
     for (const level of Object.keys(levels)) {
       it(`logs ${level} level string`, done => {
         logger[level]('hello world');
-        writeStream.on('ready', () => {
-          const loggedLines: LogLine[] = readLogsAsObjects(writeStream);
+        destination.on('ready', () => {
+          const loggedLines: LogLine[] = readLogsAsObjects(destination);
           validateLogs(loggedLines, 1, ['hello world'], [], levels[level]);
           done();
         });
@@ -60,8 +60,8 @@ describe('GCFLogger Integration', () => {
 
       it(`logs ${level} level json`, done => {
         logger[level]({hello: 'world'});
-        writeStream.on('ready', () => {
-          const loggedLines: LogLine[] = readLogsAsObjects(writeStream);
+        destination.on('ready', () => {
+          const loggedLines: LogLine[] = readLogsAsObjects(destination);
           validateLogs(loggedLines, 1, [], [{hello: 'world'}], levels[level]);
           done();
         });
@@ -70,8 +70,8 @@ describe('GCFLogger Integration', () => {
   }
 
   beforeEach(() => {
-    writeStream = pino.destination(testStreamPath);
-    logger = GCFLogger['initLogger'](writeStream);
+    destination = pino.destination(testStreamPath);
+    logger = GCFLogger['initLogger'](destination);
   });
 
   testAllLevels();

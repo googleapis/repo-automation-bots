@@ -33,7 +33,7 @@ describe('GCFLogger', () => {
   });
 
   describe('logger instance', () => {
-    let writeStream: ObjectWritableMock;
+    let destination: ObjectWritableMock;
     let logger: pino.Logger;
 
     function readLogsAsObjects(writeStream: ObjectWritableMock): LogLine[] {
@@ -59,21 +59,21 @@ describe('GCFLogger', () => {
       for (const level of Object.keys(levels)) {
         it(`logs ${level} level string`, () => {
           logger[level]('hello world');
-          const loggedLines: LogLine[] = readLogsAsObjects(writeStream);
+          const loggedLines: LogLine[] = readLogsAsObjects(destination);
           validateLogs(loggedLines, 1, ['hello world'], [], levels[level]);
         });
 
         it(`logs ${level} level json`, () => {
           logger[level]({hello: 'world'});
-          const loggedLines: LogLine[] = readLogsAsObjects(writeStream);
+          const loggedLines: LogLine[] = readLogsAsObjects(destination);
           validateLogs(loggedLines, 1, [], [{hello: 'world'}], levels[level]);
         });
       }
     }
 
     beforeEach(() => {
-      writeStream = new ObjectWritableMock();
-      logger = GCFLogger['initLogger'](writeStream);
+      destination = new ObjectWritableMock();
+      logger = GCFLogger['initLogger'](destination);
     });
 
     testAllLevels();
