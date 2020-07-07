@@ -12,6 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 exports[
+  'slo-status-label Checking for compliant settings given a slo applies to an issue repo level file exists with write contributer being valid responder Returns false if no valid responder commented 1'
+] = {
+  labels: ['OOSLO'],
+};
+
+exports[
+  'slo-status-label Checking for compliant settings given a slo applies to an issue org level file exists with admin contributer being valid responder Returns false if issue does not have comment from valid responder 1'
+] = {
+  labels: ['OOSLO'],
+};
+
+exports[
+  'slo-status-label Checking for compliant settings given a slo applies to an issue org level file exists with admin contributer being valid responder Returns false if issue does not have assignee from valid responder 1'
+] = {
+  name: 'OOSLO',
+  color: 'ff6f6f',
+  description: 'Issue is out of slo',
+};
+
+exports[
+  'slo-status-label Checking for compliant settings given a slo applies to an issue org level file exists with admin contributer being valid responder Returns false if issue does not have assignee from valid responder 2'
+] = {
+  labels: ['OOSLO'],
+};
+
+exports[
   'slo-status-label handleSLOs triggered Error is logged if comment on PR fails 1'
 ] = {
   body: 'ERROR: "issue_slo_rules.json" file is not valid with JSON schema',
@@ -63,4 +89,32 @@ exports[
   name: 'slo-rules-check',
   head_sha: 'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
   conclusion: 'success',
+};
+
+exports[
+  'slo-status-label Checking for compliant settings given a slo applies to an issue repo level file exists with write contributer being valid responder Returns false and creates and adds label "OOSLO" if no valid responder was assigned 1'
+] = {
+  name: 'OOSLO',
+  color: 'ff6f6f',
+  description: 'Issue is out of slo',
+};
+
+exports[
+  'slo-status-label Checking for compliant settings given a slo applies to an issue repo level file exists with write contributer being valid responder Returns false and creates and adds label "OOSLO" if no valid responder was assigned 2'
+] = {
+  labels: ['OOSLO'],
+};
+
+exports[
+  'slo-status-label Checking for compliant settings given a slo applies to an issue repo level file exists with owner contributer being valid responder Error is recorded if fails to create OOSLO label 1'
+] = {
+  name: 'OOSLO',
+  color: 'ff6f6f',
+  description: 'Issue is out of slo',
+};
+
+exports[
+  'slo-status-label Checking for compliant settings given a slo applies to an issue repo level file exists with owners path containing valid responder Error is recorded if fails to add label to OOSLO issue 1'
+] = {
+  labels: ['OOSLO'],
 };
