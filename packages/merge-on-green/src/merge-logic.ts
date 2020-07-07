@@ -15,7 +15,11 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot/lib/github';
 
+<<<<<<< HEAD
 //going to retest
+=======
+//testing automerge secure
+>>>>>>> 57e6b2400978bba61cc7589734b6bd599d9a8a28
 interface CheckRun {
   name: string;
   conclusion: string;
