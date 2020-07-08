@@ -161,7 +161,7 @@ function handler(app: Application) {
       }
 
       let labels: string[] = [];
-      if (byConfig !== undefined) {
+      if (byConfig !== undefined && context.payload.action === 'opened') {
         // It is possible that blunderbuss is running before other bots have
         // a chance to add extra labels. Wait and re-pull fresh labels
         // before comparing against the config.

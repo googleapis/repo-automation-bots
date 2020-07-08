@@ -204,28 +204,7 @@ describe('Blunderbuss', () => {
           snapshot(body);
           return true;
         })
-        .reply(200)
-        .get('/repos/testOwner/testRepo/issues/4/labels')
-        .reply(200, [
-          {
-            id: 1515750275,
-            node_id: 'MDU6TGFiZWwxNTE1NzUwMjc1',
-            url:
-              'https://api.github.com/repos/testOwner/testRepo/labels/blunderbuss:%20assign',
-            name: 'blunderbuss: assign',
-            color: 'f9d0c4',
-            default: false,
-          },
-          {
-            id: 1234,
-            node_id: 'abc',
-            url:
-              'https://api.github.com/repos/testOwner/testRepo/labels/api:%20bar',
-            name: 'api: bar',
-            color: 'f9d0c4',
-            default: false,
-          },
-        ]);
+        .reply(200);
 
       await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
       requests.done();
@@ -268,19 +247,7 @@ describe('Blunderbuss', () => {
           snapshot(body);
           return true;
         })
-        .reply(200)
-        .get('/repos/testOwner/testRepo/issues/4/labels')
-        .reply(200, [
-          {
-            id: 1515750275,
-            node_id: 'MDU6TGFiZWwxNTE1NzUwMjc1',
-            url:
-              'https://api.github.com/repos/testOwner/testRepo/labels/blunderbuss:%20assign',
-            name: 'api: baz',
-            color: 'f9d0c4',
-            default: false,
-          },
-        ]);
+        .reply(200);
 
       await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
       requests.done();
