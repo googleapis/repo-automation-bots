@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './failurechecker';
+import {failureChecker} from './failurechecker';
 
 const bootstrap = new GCFBootstrapper();
-module.exports.failurechecker = bootstrap.gcf(appFn);
+module.exports.failurechecker = bootstrap.gcf(failureChecker);
