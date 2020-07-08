@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFLogger} from '../../src/gcf-utils';
+import {initLogger, GCFLogger} from '../../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import pino from 'pino';
 import {validateLogs, LogLine} from '../test-helpers';
@@ -20,7 +20,7 @@ import SonicBoom from 'sonic-boom';
 import fs from 'fs';
 
 describe('GCFLogger Integration', () => {
-  let logger: pino.Logger;
+  let logger: GCFLogger;
   const testStreamPath = './test-stream.txt';
   let destination: SonicBoom;
 
@@ -71,7 +71,7 @@ describe('GCFLogger Integration', () => {
 
   beforeEach(() => {
     destination = pino.destination(testStreamPath);
-    logger = GCFLogger['initLogger'](destination);
+    logger = initLogger(destination);
   });
 
   testAllLevels();
