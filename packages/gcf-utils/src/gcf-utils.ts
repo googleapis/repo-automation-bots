@@ -189,12 +189,10 @@ export class GCFBootstrapper {
     return { name, id, signature, taskId };
   }
 
-  parseTriggerType( name: string, id: string, signature: string, taskId: string): TriggerType {
+  parseTriggerType(name: string, id: string, signature: string, taskId: string): TriggerType {
     if (!taskId && (name === 'schedule.repository' || name === 'pubsub.message')) {
-      // log
       return TriggerType.SCHEDULER;
     } else if (!taskId && name) {
-      // log
       return TriggerType.GITHUB;
     } else if (name) {
       return TriggerType.TASK;
@@ -202,7 +200,7 @@ export class GCFBootstrapper {
     return TriggerType.UNKNOWN;
   }
 
-  buildTriggerInfoLogObject(triggerType: TriggerType, request: express.Request) {
+  buildTriggerInfo(triggerType: TriggerType, request: express.Request) {
     let triggerInfo = {trigger: {trigger_type: triggerType}};
 
     if (triggerType === TriggerType.GITHUB) {
@@ -235,6 +233,10 @@ export class GCFBootstrapper {
       this.probot = this.probot || (await this.loadProbot(appFn));
       const { name, id, signature, taskId } = this.parseRequestHeaders(request);
       const triggerType: TriggerType = this.parseTriggerType(name, id, signature, taskId);
+
+      if (triggerType === TriggerType.GITHUB || triggerType === TriggerType.SCHEDULER) {
+        getLogger().metric(this.buildTriggerInfo(triggerType, request))
+      }
 
       if (triggerType === TriggerType.SCHEDULER) {
         // TODO: currently we assume that scheduled events walk all repos
