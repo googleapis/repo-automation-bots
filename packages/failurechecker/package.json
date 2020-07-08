@@ -28,7 +28,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "1.6.1"
+    "gcf-utils": "5.0.1"
   },
   "devDependencies": {
     "@types/bunyan": "^1.8.6",
