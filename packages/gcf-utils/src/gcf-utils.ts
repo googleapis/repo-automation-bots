@@ -12,19 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {
-  createProbot,
-  Probot,
-  ApplicationFunction,
-  Options,
-  Logger,
-} from 'probot';
+import {createProbot, Probot, ApplicationFunction, Options} from 'probot';
 import {CloudTasksClient} from '@google-cloud/tasks';
 import {v1} from '@google-cloud/secret-manager';
 import * as express from 'express';
 import pino from 'pino';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
+import SonicBoom from 'sonic-boom';
 
 const client = new CloudTasksClient();
 
@@ -52,36 +47,57 @@ interface EnqueueTaskParams {
   name: string;
 }
 
+interface LogFn {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (msg: string, ...args: any[]): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (obj: object, msg?: string, ...args: any[]): void;
+}
+
 /**
- * A pino-based singleton logger for use within Google Cloud Functions.
- * Provides a metric() method to log metrics-related data
+ * A logger standardized logger for Google Cloud Functions
  */
-export class GCFLogger {
-  private static logger: pino.Logger;
+export interface GCFLogger {
+  [key: string]: Function;
+  trace: LogFn;
+  debug: LogFn;
+  info: LogFn;
+  warn: LogFn;
+  error: LogFn;
+  metric: LogFn;
+}
 
-  /**
-   * Get the logger instance
-   * @returns a pino-based logger
-   */
-  public static get(): pino.Logger {
-    if (!this.logger) {
-      this.logger = this.initLogger();
-    }
-    return this.logger;
-  }
+let logger: GCFLogger;
 
-  private static initLogger(dest?: pino.DestinationStream): pino.Logger {
-    const defaultOptions: pino.LoggerOptions = {
-      customLevels: {
-        metric: 30,
-      },
-      level: 'trace',
-    };
-    if (!dest) {
-      dest = pino.destination({sync: true});
-    }
-    return pino(defaultOptions, dest);
+/**
+ * Get the singleton instance of GCFLogger
+ */
+export function getLogger(): GCFLogger {
+  if (!logger) {
+    logger = initLogger();
   }
+  return logger;
+}
+
+export function initLogger(
+  dest?: NodeJS.WritableStream | SonicBoom
+): GCFLogger {
+  const defaultOptions: pino.LoggerOptions = {
+    customLevels: {
+      metric: 30,
+    },
+    level: 'trace',
+  };
+  const defaultDestination = pino.destination({sync: true});
+  const logger = pino(defaultOptions, dest || defaultDestination);
+  return {
+    trace: logger.trace.bind(logger),
+    debug: logger.debug.bind(logger),
+    info: logger.info.bind(logger),
+    metric: logger.metric.bind(logger),
+    warn: logger.warn.bind(logger),
+    error: logger.error.bind(logger),
+  };
 }
 
 export interface CronPayload {

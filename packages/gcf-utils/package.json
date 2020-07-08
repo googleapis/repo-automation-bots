@@ -28,12 +28,10 @@
     "@types/ioredis": "^4.14.8",
     "@types/lru-cache": "^5.1.0",
     "@octokit/plugin-enterprise-compatibility": "1.2.5",
-    "@types/pino": "^6.3.0",
     "express": "^4.17.1",
     "gaxios": "^3.0.0",
     "pino": "^6.3.2",
     "probot": "^9.11.2",
-    "sonic-boom": "^1.0.1",
     "tmp": "^0.2.0",
     "yargs": "^15.0.0"
   },
@@ -43,6 +41,7 @@
     "@types/sinon": "^9.0.0",
     "@types/tmp": "^0.2.0",
     "@types/yargs": "^15.0.0",
+    "@types/pino": "^6.3.0",
     "c8": "^7.1.0",
     "cross-env": "^7.0.0",
     "dotenv": "^8.0.0",
@@ -51,6 +50,7 @@
     "nock": "^13.0.0",
     "sinon": "^9.0.0",
     "stream-mock": "^2.0.5",
+    "sonic-boom": "^1.0.1",
     "typescript": "^3.8.3"
   },
   "engines": {

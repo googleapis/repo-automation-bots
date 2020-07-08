@@ -12,29 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFLogger} from '../src/gcf-utils';
+import {GCFLogger, initLogger, getLogger} from '../src/gcf-utils';
 import {describe, beforeEach, it} from 'mocha';
 import assert from 'assert';
 import {ObjectWritableMock} from 'stream-mock';
-import pino from 'pino';
 import {validateLogs, LogLine} from './test-helpers';
 
 describe('GCFLogger', () => {
-  describe('get()', () => {
-    it('returns a new pino-based logger instance on first call', () => {
-      const logger = GCFLogger.get();
-      assert.equal(logger.constructor.name, 'Pino');
-    });
+  describe('getLogger()', () => {
     it('returns the same logger instance on two consecutive calls', () => {
-      const logger1 = GCFLogger.get();
-      const logger2 = GCFLogger.get();
+      const logger1 = getLogger();
+      const logger2 = getLogger();
       assert.deepEqual(logger1, logger2);
     });
   });
 
   describe('logger instance', () => {
     let destination: ObjectWritableMock;
-    let logger: pino.Logger;
+    let logger: GCFLogger;
 
     function readLogsAsObjects(writeStream: ObjectWritableMock): LogLine[] {
       try {
@@ -73,7 +68,7 @@ describe('GCFLogger', () => {
 
     beforeEach(() => {
       destination = new ObjectWritableMock();
-      logger = GCFLogger['initLogger'](destination);
+      logger = initLogger(destination);
     });
 
     testAllLevels();
