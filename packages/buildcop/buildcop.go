@@ -48,6 +48,7 @@ func main() {
 	logsDir := flag.String("logs_dir", ".", "The directory to look for logs in. Defaults to current directory.")
 	commit := flag.String("commit_hash", "", "Long form commit hash this build is being run for. Defaults to the KOKORO_GIT_COMMIT environment variable.")
 	serviceAccount := flag.String("service_account", "", "Path to service account to use instead of Trampoline default or client library auto-detection.")
+	buildURL := flag.String("build_url", "", "Build URL (markdown OK). Defaults to detect from Kokoro.")
 
 	flag.Parse()
 
@@ -59,6 +60,7 @@ func main() {
 		commit:         *commit,
 		logsDir:        *logsDir,
 		serviceAccount: *serviceAccount,
+		buildURL:       *buildURL,
 	}
 	if ok := cfg.setDefaults(); !ok {
 		os.Exit(1)
@@ -97,15 +99,13 @@ type config struct {
 	commit         string
 	logsDir        string
 	serviceAccount string
+	buildURL       string
 }
 
 func (cfg *config) setDefaults() (ok bool) {
 	if cfg.serviceAccount == "" {
 		if gfileDir := os.Getenv("KOKORO_GFILE_DIR"); gfileDir != "" {
 			path := filepath.Join(gfileDir, "kokoro-trampoline.service-account.json")
-			// Assume any given service account exists, but check the Trampoline
-			// account exists before trying to use it (instead of default
-			// credentials).
 			if _, err := os.Stat(path); err == nil {
 				cfg.serviceAccount = path
 			}
@@ -144,6 +144,17 @@ See https://github.com/apps/build-cop-bot/.`, cfg.repo)
 Please set --commit_hash to the latest git commit hash.
 See https://github.com/apps/build-cop-bot/.`)
 		return false
+	}
+
+	if cfg.buildURL == "" {
+		buildID := os.Getenv("KOKORO_BUILD_ID")
+		if buildID == "" {
+			log.Printf(`Unable to build URL (expected the KOKORO_BUILD_ID env var).
+Please set --build_url to the URL of the build.
+See https://github.com/apps/build-cop-bot/.`)
+			return false
+		}
+		cfg.buildURL = fmt.Sprintf("[Build Status](https://source.cloud.google.com/results/invocations/%s), [Sponge](http://sponge2/%s)", buildID, buildID)
 	}
 
 	return true
@@ -222,7 +233,6 @@ func processLog(ctx context.Context, cfg *config, topic *pubsub.Topic) filepath.
 			return fmt.Errorf("ioutil.ReadFile(%q): %v", path, err)
 		}
 		enc := base64.StdEncoding.EncodeToString(data)
-		buildURL := fmt.Sprintf("[Build Status](https://source.cloud.google.com/results/invocations/%s), [Sponge](http://sponge2/%s)", os.Getenv("KOKORO_BUILD_ID"), os.Getenv("KOKORO_BUILD_ID"))
 		msg := message{
 			Name:         "buildcop",
 			Type:         "function",
@@ -230,7 +240,7 @@ func processLog(ctx context.Context, cfg *config, topic *pubsub.Topic) filepath.
 			Installation: githubInstallation{ID: cfg.installationID},
 			Repo:         cfg.repo,
 			Commit:       cfg.commit,
-			BuildURL:     buildURL,
+			BuildURL:     cfg.buildURL,
 			XUnitXML:     enc,
 		}
 		data, err = json.Marshal(msg)
