@@ -34,6 +34,8 @@ interface Reviews {
     login: string;
   };
   state: string;
+  commit_id: string;
+  id: number;
 }
 
 interface HeadSha {
@@ -102,6 +104,12 @@ function merge() {
   return nock('https://api.github.com')
     .put('/repos/testOwner/testRepo/pulls/1/merge')
     .reply(200, {sha: '123', merged: true, message: 'in a bottle'});
+}
+
+function dismissReview() {
+  return nock('https://api.github.com')
+    .put('/repos/testOwner/testRepo/pulls/1/reviews/12345/dismissals')
+    .reply(200);
 }
 
 function mergeWithError() {
@@ -186,9 +194,45 @@ describe('merge-on-green', () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(['Special Check']),
-        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          {state: 'success', context: 'Special Check'},
+        ]),
+        merge(),
+      ];
+
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: {org: 'testOwner'},
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
+    });
+
+    it('merges a PR on green with a secure label', async () => {
+      const scopes = [
+        getPR(true, 'clean', 'open'),
+        getBranchProtection(['Special Check']),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
+        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getMogLabel([{name: 'automerge: secure'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
@@ -209,8 +253,18 @@ describe('merge-on-green', () => {
         getPR(true, 'clean', 'open'),
         getBranchProtection(['Special Check']),
         getReviewsCompleted([
-          {user: {login: 'octocat'}, state: 'APPROVED'},
-          {user: {login: 'octokitten'}, state: 'CHANGES_REQUESTED'},
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+          {
+            user: {login: 'octokitten'},
+            state: 'CHANGES_REQUESTED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
         ]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
@@ -232,7 +286,14 @@ describe('merge-on-green', () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(['Special Check']),
-        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
         getLatestCommit([]),
         getMogLabel([{name: 'automerge'}]),
         getStatusi('', [
@@ -253,12 +314,8 @@ describe('merge-on-green', () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(['Special Check']),
-        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'this is not the label you are looking for'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
-        ]),
+        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
       ];
 
       await probot.receive({
@@ -274,7 +331,14 @@ describe('merge-on-green', () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(['Special Check']),
-        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
@@ -293,7 +357,14 @@ describe('merge-on-green', () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(['Special Check']),
-        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
@@ -314,7 +385,14 @@ describe('merge-on-green', () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(['Special Check']),
-        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
@@ -342,7 +420,14 @@ describe('merge-on-green', () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(["this is what we're looking for"]),
-        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
         //Intentionally giving this status check a misleading name. We want subtests to match the beginning
@@ -366,7 +451,14 @@ describe('merge-on-green', () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(["this is what we're looking for"]),
-        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
@@ -418,7 +510,14 @@ describe('merge-on-green', () => {
       const scopes = [
         getPR(true, 'behind', 'open'),
         getBranchProtection(['Special Check']),
-        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
@@ -441,7 +540,14 @@ describe('merge-on-green', () => {
       const scopes = [
         getPR(true, 'dirty', 'open'),
         getBranchProtection(['Special Check']),
-        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
@@ -507,7 +613,14 @@ describe('merge-on-green', () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(['Special Check']),
-        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
@@ -543,11 +656,18 @@ describe('merge-on-green', () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(['Special Check']),
-        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'this is not the label you are looking for'}]),
+        getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
+          {state: 'failure', context: 'Special Check'},
         ]),
         commentOnPR(),
       ];
@@ -565,7 +685,14 @@ describe('merge-on-green', () => {
       const scopes = [
         getPR(true, 'dirty', 'open'),
         getBranchProtection(['Special Check']),
-        getReviewsCompleted([{user: {login: 'octocat'}, state: 'APPROVED'}]),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
         getCommentsOnPr([
           {
             body:
@@ -577,6 +704,48 @@ describe('merge-on-green', () => {
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
+      ];
+
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: {org: 'testOwner'},
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
+    });
+
+    it('dismisses reviews if the label is set to secure', async () => {
+      const scopes = [
+        getPR(true, 'clean', 'open'),
+        getBranchProtection(['Special Check']),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '12345',
+            id: 12345,
+          },
+          {
+            user: {login: 'octokitten'},
+            state: 'APPROVED',
+            commit_id: '12345',
+            id: 12345,
+          },
+        ]),
+        getCommentsOnPr([
+          {
+            body:
+              'Your PR has conflicts that you need to resolve before merge-on-green can automerge',
+          },
+        ]),
+        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getMogLabel([{name: 'automerge: secure'}]),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          {state: 'success', context: 'Special Check'},
+        ]),
+        dismissReview(),
+        dismissReview(),
       ];
 
       await probot.receive({
