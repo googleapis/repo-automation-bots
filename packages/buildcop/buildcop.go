@@ -105,6 +105,9 @@ type config struct {
 func (cfg *config) setDefaults() (ok bool) {
 	if cfg.serviceAccount == "" {
 		if gfileDir := os.Getenv("KOKORO_GFILE_DIR"); gfileDir != "" {
+			// Assume any given service account exists, but check the Trampoline
+			// account exists before trying to use it (instead of default
+			// credentials).
 			path := filepath.Join(gfileDir, "kokoro-trampoline.service-account.json")
 			if _, err := os.Stat(path); err == nil {
 				cfg.serviceAccount = path
