@@ -6,7 +6,7 @@
 
 ### GCFLogger
 
-`GCFLogger` is a [Pino](https://github.com/pinojs/pino)-based logger with added configurations for Google Cloud Functions. Note that this logger is a singleton instance shared across all modules.
+`GCFLogger` is a standardized logger for Google Cloud Functions. Note: this logger is a singleton shared across the 
 
 ```
 import {GCFLogger, getLogger} from 'gcf-utils';
