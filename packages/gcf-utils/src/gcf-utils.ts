@@ -88,8 +88,7 @@ export function initLogger(
     },
     level: 'trace',
   };
-  const defaultDestination = pino.destination({sync: true});
-  const logger = pino(defaultOptions, dest || defaultDestination);
+  const logger = pino(defaultOptions, dest || pino.destination({sync: true}));
   return {
     trace: logger.trace.bind(logger),
     debug: logger.debug.bind(logger),
