@@ -96,7 +96,7 @@ export function initLogger(
     info: logger.info.bind(logger),
     metric: logger.metric.bind(logger),
     warn: logger.warn.bind(logger),
-    error: logger.error.bind(logger)
+    error: logger.error.bind(logger),
   };
 }
 
