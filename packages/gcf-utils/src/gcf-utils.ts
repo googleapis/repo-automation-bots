@@ -67,17 +67,7 @@ export interface GCFLogger {
   metric: LogFn;
 }
 
-let logger: GCFLogger;
-
-/**
- * Get the singleton instance of GCFLogger
- */
-export function getLogger(): GCFLogger {
-  if (!logger) {
-    logger = initLogger();
-  }
-  return logger;
-}
+export const logger: GCFLogger = initLogger();
 
 export function initLogger(
   dest?: NodeJS.WritableStream | SonicBoom
@@ -88,8 +78,7 @@ export function initLogger(
     },
     level: 'trace',
   };
-  const defaultDestination = pino.destination({sync: true});
-  const logger = pino(defaultOptions, dest || defaultDestination);
+  const logger = pino(defaultOptions, dest || pino.destination({sync: true}));
   return {
     trace: logger.trace.bind(logger),
     debug: logger.debug.bind(logger),

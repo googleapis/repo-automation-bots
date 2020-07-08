@@ -12,21 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFLogger, initLogger, getLogger} from '../src/gcf-utils';
+import {GCFLogger, initLogger} from '../src/gcf-utils';
 import {describe, beforeEach, it} from 'mocha';
-import assert from 'assert';
 import {ObjectWritableMock} from 'stream-mock';
 import {validateLogs, LogLine} from './test-helpers';
 
 describe('GCFLogger', () => {
-  describe('getLogger()', () => {
-    it('returns the same logger instance on two consecutive calls', () => {
-      const logger1 = getLogger();
-      const logger2 = getLogger();
-      assert.deepEqual(logger1, logger2);
-    });
-  });
-
   describe('logger instance', () => {
     let destination: ObjectWritableMock;
     let logger: GCFLogger;
