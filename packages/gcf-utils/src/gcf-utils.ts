@@ -175,8 +175,10 @@ export class GCFBootstrapper {
 
   parseTriggerType( name: string, id: string, signature: string, taskId: string): TriggerType {
     if (!taskId && (name === 'schedule.repository' || name === 'pubsub.message')) {
+      // log
       return TriggerType.SCHEDULER;
     } else if (!taskId && name) {
+      // log
       return TriggerType.GITHUB;
     } else if (name) {
       return TriggerType.TASK;
@@ -184,7 +186,7 @@ export class GCFBootstrapper {
     return TriggerType.UNKNOWN;
   }
 
-  getTriggerInfo(triggerType: TriggerType, request: express.Request) {
+  buildTriggerInfoLogObject(triggerType: TriggerType, request: express.Request) {
     let triggerInfo = {trigger: {trigger_type: triggerType}};
 
     if (triggerType === TriggerType.GITHUB) {
