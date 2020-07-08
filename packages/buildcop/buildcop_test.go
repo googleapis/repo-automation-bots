@@ -15,7 +15,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -25,9 +27,6 @@ import (
 )
 
 func TestSetDefaults(t *testing.T) {
-	log.SetOutput(ioutil.Discard)
-	defer log.SetOutput(os.Stderr)
-
 	tests := []struct {
 		name   string
 		env    map[string]string
@@ -41,12 +40,14 @@ func TestSetDefaults(t *testing.T) {
 				"KOKORO_GITHUB_COMMIT_URL": "https://github.com/GoogleCloudPlatform/golang-samples/commit/1234",
 			},
 			in: &config{
-				commit: "abc123",
+				commit:   "abc123",
+				buildURL: "google.com",
 			},
 			want: &config{
 				repo:           "GoogleCloudPlatform/golang-samples",
 				installationID: "5943459",
 				commit:         "abc123",
+				buildURL:       "google.com",
 			},
 			wantOK: true,
 		},
@@ -58,11 +59,31 @@ func TestSetDefaults(t *testing.T) {
 			in: &config{
 				repo:           "GoogleCloudPlatform/golang-samples",
 				installationID: "5943459",
+				buildURL:       "google.com",
 			},
 			want: &config{
 				repo:           "GoogleCloudPlatform/golang-samples",
 				installationID: "5943459",
 				commit:         "abc123",
+				buildURL:       "google.com",
+			},
+			wantOK: true,
+		},
+		{
+			name: "detect build URL",
+			env: map[string]string{
+				"KOKORO_BUILD_ID": "test",
+			},
+			in: &config{
+				commit:         "abc123",
+				repo:           "GoogleCloudPlatform/golang-samples",
+				installationID: "5943459",
+			},
+			want: &config{
+				repo:           "GoogleCloudPlatform/golang-samples",
+				installationID: "5943459",
+				commit:         "abc123",
+				buildURL:       fmt.Sprintf("[Build Status](https://source.cloud.google.com/results/invocations/test), [Sponge](http://sponge2/test)"),
 			},
 			wantOK: true,
 		},
@@ -83,13 +104,16 @@ func TestSetDefaults(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			buf := &bytes.Buffer{}
+			log.SetOutput(buf)
+			defer log.SetOutput(os.Stderr)
 			for k, v := range test.env {
 				os.Setenv(k, v)
 				defer os.Unsetenv(k)
 			}
 			cfg := test.in
 			if ok := cfg.setDefaults(); ok != test.wantOK {
-				t.Fatalf("setDefaults got ok=%v, want ok=%v", ok, test.wantOK)
+				t.Fatalf("setDefaults got ok=%v, want ok=%v:\n%v", ok, test.wantOK, buf.String())
 			}
 			if !test.wantOK {
 				return
