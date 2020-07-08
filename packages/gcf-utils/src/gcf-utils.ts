@@ -67,17 +67,7 @@ export interface GCFLogger {
   metric: LogFn;
 }
 
-let logger: GCFLogger;
-
-/**
- * Get the singleton instance of GCFLogger
- */
-export function getLogger(): GCFLogger {
-  if (!logger) {
-    logger = initLogger();
-  }
-  return logger;
-}
+export const logger: GCFLogger = initLogger();
 
 export function initLogger(
   dest?: NodeJS.WritableStream | SonicBoom

@@ -6,12 +6,10 @@
 
 ### GCFLogger
 
-`GCFLogger` is a standardized logger for Google Cloud Functions. Note: this logger is a singleton
+`GCFLogger` is a standardized logger for Google Cloud Functions.
 
-```
-import {getLogger} from 'gcf-utils';
-
-let logger = getLogger();
+```typescript
+import {logger} from 'gcf-utils';
 
 logger.info('An info message');
 logger.debug({ 'debug-property': 'value' });
