@@ -45,6 +45,21 @@ interface EnqueueTaskParams {
   name: string;
 }
 
+export interface CronPayload {
+  repository: {
+    name: string;
+    full_name: string;
+    owner: {
+      login: string;
+      name: string;
+    };
+  };
+  organization: {
+    login: string;
+  };
+  cron_org: string;
+}
+
 export class GCFBootstrapper {
   probot?: Probot;
 
@@ -203,19 +218,23 @@ export class GCFBootstrapper {
         auth: await this.getInstallationToken(body.installation.id),
       });
       // Installations API documented here: https://developer.github.com/v3/apps/installations/
-      const {data} = await octokit.request('/installation/repositories', {
+      const installationsPaginated = octokit.paginate.iterator({
+        url: '/installation/repositories',
+        method: 'GET',
         headers: {
           Accept: 'application/vnd.github.machine-man-preview+json',
         },
       });
-      for (const repo of data.repositories) {
-        await this.scheduledToTask(
-          repo.full_name,
-          id,
-          body,
-          eventName,
-          signature
-        );
+      for await (const response of installationsPaginated) {
+        for (const repo of response.data) {
+          await this.scheduledToTask(
+            repo.full_name,
+            id,
+            body,
+            eventName,
+            signature
+          );
+        }
       }
     }
   }
@@ -243,6 +262,7 @@ export class GCFBootstrapper {
         full_name: repoFullName,
         owner: {
           login: orgName,
+          name: orgName,
         },
       },
       organization: {
