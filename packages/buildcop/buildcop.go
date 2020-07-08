@@ -97,7 +97,6 @@ type config struct {
 	commit         string
 	logsDir        string
 	serviceAccount string
-	buildURL       string
 }
 
 func (cfg *config) setDefaults() (ok bool) {
