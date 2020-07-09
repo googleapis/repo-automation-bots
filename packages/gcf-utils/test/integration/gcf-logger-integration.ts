@@ -20,7 +20,7 @@ import SonicBoom from 'sonic-boom';
 import fs from 'fs';
 
 describe('GCFLogger Integration', () => {
-  let logger: GCFLogger;
+  let logger: GCFLogger & {[key: string]: Function};
   const testStreamPath = './test-stream.txt';
   let destination: SonicBoom;
 
@@ -69,7 +69,7 @@ describe('GCFLogger Integration', () => {
 
   beforeEach(() => {
     destination = pino.destination(testStreamPath);
-    logger = initLogger(destination);
+    logger = initLogger(destination) as GCFLogger & {[key: string]: Function};
   });
 
   testAllLevels();

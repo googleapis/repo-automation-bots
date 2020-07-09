@@ -20,7 +20,7 @@ import {validateLogs, LogLine, logLevels} from './test-helpers';
 describe('GCFLogger', () => {
   describe('logger instance', () => {
     let destination: ObjectWritableMock;
-    let logger: GCFLogger;
+    let logger: GCFLogger & {[key: string]: Function};
 
     function readLogsAsObjects(writeStream: ObjectWritableMock): LogLine[] {
       try {
@@ -56,7 +56,7 @@ describe('GCFLogger', () => {
 
     beforeEach(() => {
       destination = new ObjectWritableMock();
-      logger = initLogger(destination);
+      logger = initLogger(destination) as GCFLogger & {[key: string]: Function};
     });
 
     testAllLevels();

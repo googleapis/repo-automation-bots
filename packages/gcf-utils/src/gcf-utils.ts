@@ -58,7 +58,6 @@ interface LogFn {
  * A logger standardized logger for Google Cloud Functions
  */
 export interface GCFLogger {
-  [key: string]: Function;
   trace: LogFn;
   debug: LogFn;
   info: LogFn;
