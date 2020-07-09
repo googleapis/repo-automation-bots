@@ -14,6 +14,15 @@
 
 import assert from 'assert';
 
+export const logLevels: {[index: string]: number} = {
+  trace: 10,
+  debug: 20,
+  info: 30,
+  metric: 30,
+  warn: 40,
+  error: 50,
+};
+
 export interface LogLine {
   msg: string;
   level: number;

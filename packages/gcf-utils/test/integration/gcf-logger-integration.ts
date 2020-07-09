@@ -15,7 +15,7 @@
 import {initLogger, GCFLogger} from '../../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import pino from 'pino';
-import {validateLogs, LogLine} from '../test-helpers';
+import {validateLogs, LogLine, logLevels} from '../test-helpers';
 import SonicBoom from 'sonic-boom';
 import fs from 'fs';
 
@@ -40,20 +40,12 @@ describe('GCFLogger Integration', () => {
   }
 
   function testAllLevels() {
-    const levels: {[index: string]: number} = {
-      trace: 10,
-      debug: 20,
-      info: 30,
-      metric: 30,
-      warn: 40,
-      error: 50,
-    };
-    for (const level of Object.keys(levels)) {
+    for (const level of Object.keys(logLevels)) {
       it(`logs ${level} level string`, done => {
         logger[level]('hello world');
         destination.on('ready', () => {
           const loggedLines: LogLine[] = readLogsAsObjects(destination);
-          validateLogs(loggedLines, 1, ['hello world'], [], levels[level]);
+          validateLogs(loggedLines, 1, ['hello world'], [], logLevels[level]);
           done();
         });
       });
@@ -62,7 +54,13 @@ describe('GCFLogger Integration', () => {
         logger[level]({hello: 'world'});
         destination.on('ready', () => {
           const loggedLines: LogLine[] = readLogsAsObjects(destination);
-          validateLogs(loggedLines, 1, [], [{hello: 'world'}], levels[level]);
+          validateLogs(
+            loggedLines,
+            1,
+            [],
+            [{hello: 'world'}],
+            logLevels[level]
+          );
           done();
         });
       });
