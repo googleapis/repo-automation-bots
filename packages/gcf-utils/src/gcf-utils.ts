@@ -77,13 +77,13 @@ export function initLogger(
     },
     level: 'trace',
   };
-  let logger = pino(defaultOptions, dest || pino.destination({sync: true}));
-  Object.keys(logger).map((prop) => {
+  const logger = pino(defaultOptions, dest || pino.destination({sync: true}));
+  Object.keys(logger).map(prop => {
     if (logger[prop] instanceof Function) {
       logger[prop] = logger[prop].bind(logger);
     }
   });
-  return { ...logger, metric: logger.metric.bind(logger) };
+  return {...logger, metric: logger.metric.bind(logger)};
 }
 
 export interface CronPayload {
