@@ -65,6 +65,7 @@ export interface GCFLogger {
   warn: LogFn;
   error: LogFn;
   metric: LogFn;
+  flushSync: Function;
 }
 
 export const logger: GCFLogger = initLogger();
@@ -78,7 +79,15 @@ export function initLogger(
     },
     level: 'trace',
   };
-  const logger = pino(defaultOptions, dest || pino.destination({sync: true}));
+
+  dest = dest || pino.destination({sync: true});
+  const logger = pino(defaultOptions, dest);
+  const flushSync = () => {
+    if (dest instanceof SonicBoom) {
+      dest.flushSync();
+    }
+  };
+
   return {
     trace: logger.trace.bind(logger),
     debug: logger.debug.bind(logger),
@@ -86,6 +95,7 @@ export function initLogger(
     metric: logger.metric.bind(logger),
     warn: logger.warn.bind(logger),
     error: logger.error.bind(logger),
+    flushSync: flushSync,
   };
 }
 
@@ -104,11 +114,11 @@ export interface CronPayload {
   cron_org: string;
 }
 
-enum TriggerType {
+export enum TriggerType {
   GITHUB = 'GITHUB_WEBHOOK',
   SCHEDULER = 'SCHEDULER',
-  TASK = `TASK`,
-  UNKNOWN = `UNKNOWN`
+  TASK = 'TASK',
+  UNKNOWN = 'UNKNOWN',
 }
 
 export class GCFBootstrapper {
@@ -156,11 +166,11 @@ export class GCFBootstrapper {
     return config as Options;
   }
 
-  parseRequestHeaders(request: express.Request): { name: string, id: string, signature: string, taskId: string } {
+  parseRequestHeaders(
+    request: express.Request
+  ): {name: string; id: string; signature: string; taskId: string} {
     const name =
-      request.get('x-github-event') || 
-      request.get('X-GitHub-Event') ||
-      '';
+      request.get('x-github-event') || request.get('X-GitHub-Event') || '';
     const id =
       request.get('x-github-delivery') ||
       request.get('X-GitHub-Delivery') ||
@@ -175,11 +185,19 @@ export class GCFBootstrapper {
       request.get('X-CloudTasks-TaskName') ||
       request.get('x-cloudtasks-taskname') ||
       '';
-    return { name, id, signature, taskId };
+    return {name, id, signature, taskId};
   }
 
-  parseTriggerType(name: string, id: string, signature: string, taskId: string): TriggerType {
-    if (!taskId && (name === 'schedule.repository' || name === 'pubsub.message')) {
+  parseTriggerType(
+    name: string,
+    id: string,
+    signature: string,
+    taskId: string
+  ): TriggerType {
+    if (
+      !taskId &&
+      (name === 'schedule.repository' || name === 'pubsub.message')
+    ) {
       return TriggerType.SCHEDULER;
     } else if (!taskId && name) {
       return TriggerType.GITHUB;
@@ -189,16 +207,21 @@ export class GCFBootstrapper {
     return TriggerType.UNKNOWN;
   }
 
-  buildTriggerInfo(triggerType: TriggerType, request: express.Request) {
-    let triggerInfo = {trigger: {trigger_type: triggerType}};
+  buildTriggerInfo(
+    triggerType: TriggerType,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    requestBody: {[key: string]: any}
+  ) {
+    let triggerInfo = {trigger_type: triggerType};
 
     if (triggerType === TriggerType.GITHUB) {
-      const sourceRepo = request.body['repository'];
+      const sourceRepo = requestBody['repository'] || {};
       const repoName: string = sourceRepo['name'] || 'UNKNOWN';
-      const repoOwner = sourceRepo['owner'];
+      const repoOwner = sourceRepo['owner'] || {};
       const ownerName: string = repoOwner['login'] || 'UNKNOWN';
       const ownerType: string = repoOwner['type'] || 'UNKNOWN';
-      const sender: string = request.body['sender']['login'] || 'UNKNOWN';
+      const sender = requestBody['sender'] || {};
+      const senderLogin: string = sender['login'] || 'UNKNOWN';
 
       const webhookProperties = {
         trigger_source_repo: {
@@ -206,12 +229,13 @@ export class GCFBootstrapper {
           owner: ownerName,
           owner_type: ownerType,
         },
-        trigger_sender: sender,
+        trigger_sender: senderLogin,
       };
+
       triggerInfo = {...webhookProperties, ...triggerInfo};
     }
 
-    return triggerInfo;
+    return {trigger: triggerInfo};
   }
 
   gcf(
@@ -220,11 +244,17 @@ export class GCFBootstrapper {
     return async (request: express.Request, response: express.Response) => {
       // Otherwise let's listen handle the payload
       this.probot = this.probot || (await this.loadProbot(appFn));
-      const { name, id, signature, taskId } = this.parseRequestHeaders(request);
-      const triggerType: TriggerType = this.parseTriggerType(name, id, signature, taskId);
+      const {name, id, signature, taskId} = this.parseRequestHeaders(request);
+      const triggerType: TriggerType = this.parseTriggerType(
+        name,
+        id,
+        signature,
+        taskId
+      );
 
-      if (triggerType === TriggerType.GITHUB || triggerType === TriggerType.SCHEDULER) {
-        getLogger().metric(this.buildTriggerInfo(triggerType, request))
+      if (triggerType !== TriggerType.TASK) {
+        // we don't want to log TASK triggers since we enqueue the task ourselves
+        logger.metric(this.buildTriggerInfo(triggerType, request.body));
       }
 
       if (triggerType === TriggerType.SCHEDULER) {
@@ -284,6 +314,7 @@ export class GCFBootstrapper {
       } else {
         response.sendStatus(400);
       }
+      logger.flushSync();
     };
   }
 
