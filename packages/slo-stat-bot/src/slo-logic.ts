@@ -74,13 +74,13 @@ interface ReposListCollaboratorsItem {
 }
 
 //Checking if slo applies to a given issue
-getSLOStatus.appliesTo = async function appliesTo(
+getSLOStatus.doesSloApply = async function doesSloApply(
   slo: SLORules,
   issueLabels: string[] | null
 ): Promise<boolean> {
   if (issueLabels === null || issueLabels.length === 0) {
     return false;
-  }
+  } 
 
   //Checking if all the githublabels are subset of issue labels
   const githubLabels = slo.appliesTo.gitHubLabels;
@@ -177,12 +177,7 @@ getSLOStatus.isValidRule = async function isValidRule(
   }
 
   rule = rule.toLowerCase();
-  const includes =
-    issueLabels.includes(rule) || issueLabels.includes(title + rule);
-  if (!includes) {
-    return false;
-  }
-  return true;
+  return issueLabels.includes(rule) || issueLabels.includes(title + rule);;
 };
 
 getSLOStatus.convertToArray = async function convertToArray(
@@ -242,16 +237,20 @@ getSLOStatus.isCompliant = async function isCompliant(
       return false;
     }
   }
-  //Only used when response time != 0 or assignee is true
-  const responders: Set<string> = await getSLOStatus.getResponders(
-    github,
-    owner,
-    repo,
-    slo
-  ); // CHECK FOR FAILURE RESPONDERS
+
+  const reqAssignee = slo.complianceSettings.requiresAssignee;
+  const responseTime = slo.complianceSettings.responseTime;
+  let responders: Set<string> = new Set();
+  if(reqAssignee === true || responseTime !== 0) {
+    responders = await getSLOStatus.getResponders(
+      github,
+      owner,
+      repo,
+      slo
+    );
+  }
 
   //Checking if issue is assigned if slo claims it must have assignee
-  const reqAssignee = slo.complianceSettings.requiresAssignee;
   if (reqAssignee === true) {
     const isAssigned = await getSLOStatus.isAssigned(responders, assignees);
     if (!isAssigned) {
@@ -260,7 +259,6 @@ getSLOStatus.isCompliant = async function isCompliant(
   }
 
   //Checking if issue is responded within response time
-  const responseTime = slo.complianceSettings.responseTime;
   if (responseTime !== 0) {
     const listIssueComments = await getSLOStatus.getIssueCommentsList(
       github,
@@ -358,11 +356,10 @@ getSLOStatus.getResponders = async function getResponders(
         ownerPath
       );
       const users = content.match(/@([^\s]+)/g);
-      if (users) {
-        users.forEach(user => {
-          if (user.length > 1) responders.add(user.substr(1));
-        });
-      }
+
+      users?.forEach(user => {
+        if (user.length > 1) responders.add(user.substr(1));
+      });
     }
   }
 
@@ -378,9 +375,8 @@ getSLOStatus.getResponders = async function getResponders(
   }
 
   const users = slo.complianceSettings.responders?.users;
-  if (users) {
-    users.forEach(user => responders.add(user));
-  }
+  users?.forEach(user => responders.add(user));
+
   return responders;
 };
 
@@ -408,8 +404,8 @@ getSLOStatus.addContributers = async function addContributers(
         (contributors === 'WRITE' &&
           collab.permissions.pull &&
           collab.permissions.push) ||
-        collab.permissions.admin ||
-        collab.login === owner
+          collab.permissions.admin ||
+          collab.login === owner
       ) {
         responders.add(collab.login);
       } else if (
@@ -477,7 +473,7 @@ export async function getSLOStatus(
   let appliesTo: boolean = Object.keys(slo.appliesTo).length === 0;
   if (!appliesTo) {
     //Checks if issue applies to slo only if slo has applies to specifications
-    appliesTo = await getSLOStatus.appliesTo(slo, labels);
+    appliesTo = await getSLOStatus.doesSloApply(slo, labels);
   }
 
   let isCompliant = null;

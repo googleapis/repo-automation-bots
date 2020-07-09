@@ -68,7 +68,7 @@ describe('slo-status-label', () => {
       nock.cleanAll;
     });
 
-    it('Error is logged if get list of files fails', async () => {
+    it('Error is logged when getting the list of files fails', async () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(404);
@@ -82,15 +82,14 @@ describe('slo-status-label', () => {
     });
 
     it('triggers handle_slos function since issue_slo_rules.json is present', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const containsSloFile = require(resolve(
-        fixturesPath,
-        'events',
-        'contains_slo_file'
-      ));
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
-        .reply(200, containsSloFile);
+        .reply(200, [
+          {
+            filename: '.github/issue_slo_rules.json',
+            sha: '1d8be9e05d65e03a5e81a1c3c1bf229dce950e25',
+          },
+        ]);
       await probot.receive({
         name: 'pull_request.opened',
         payload,
@@ -102,15 +101,9 @@ describe('slo-status-label', () => {
     });
 
     it('does not trigger handle_slos function since issue_slo_rules.json is not present', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const doesNotContainSLOFile = require(resolve(
-        fixturesPath,
-        'events',
-        'not_contains_slo_file'
-      ));
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
-        .reply(200, doesNotContainSLOFile);
+        .reply(200, [{filname: 'hello.json'}]);
 
       await probot.receive({
         name: 'pull_request.opened',
@@ -123,7 +116,7 @@ describe('slo-status-label', () => {
     });
   });
 
-  describe('handleSLOs triggered', async () => {
+  describe('handleSLOs is triggered', async () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
 
     beforeEach(() => {
@@ -135,16 +128,15 @@ describe('slo-status-label', () => {
       nock.cleanAll;
     });
 
-    it('Error is logged if get file content fails', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const containsSloFile = require(resolve(
-        fixturesPath,
-        'events',
-        'contains_slo_file'
-      ));
+    it('Error is logged if getting file content fails', async () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
-        .reply(202, containsSloFile)
+        .reply(202, [
+          {
+            filename: '.github/issue_slo_rules.json',
+            sha: '1d8be9e05d65e03a5e81a1c3c1bf229dce950e25',
+          },
+        ])
         .get(
           '/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25'
         )
@@ -158,22 +150,23 @@ describe('slo-status-label', () => {
       requests.done();
     });
 
-    it('Error is logged if comment on PR fails', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const containsSloFile = require(resolve(
-        fixturesPath,
-        'events',
-        'contains_slo_file'
-      ));
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const blob = require(resolve(fixturesPath, 'events', 'invalid_blob'));
+    it('Error is logged if commenting on PR fails', async () => {
+      const invalidBlob = {
+        content:
+          'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
+      };
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
-        .reply(202, containsSloFile)
+        .reply(202, [
+          {
+            filename: '.github/issue_slo_rules.json',
+            sha: '1d8be9e05d65e03a5e81a1c3c1bf229dce950e25',
+          },
+        ])
         .get(
           '/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25'
         )
-        .reply(202, blob)
+        .reply(202, invalidBlob)
         .post('/repos/testOwner/testRepo/issues/6/comments', body => {
           snapshot(body);
           return true;
@@ -188,22 +181,23 @@ describe('slo-status-label', () => {
       requests.done();
     });
 
-    it('Error is logged if create check fails', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const containsSloFile = require(resolve(
-        fixturesPath,
-        'events',
-        'contains_slo_file'
-      ));
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const blob = require(resolve(fixturesPath, 'events', 'invalid_blob'));
+    it('Error is logged if creating check on PR fails', async () => {
+      const invalidBlob = {
+        content:
+          'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
+      };
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
-        .reply(202, containsSloFile)
+        .reply(202, [
+          {
+            filename: '.github/issue_slo_rules.json',
+            sha: '1d8be9e05d65e03a5e81a1c3c1bf229dce950e25',
+          },
+        ])
         .get(
           '/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25'
         )
-        .reply(202, blob)
+        .reply(202, invalidBlob)
         .post('/repos/testOwner/testRepo/issues/6/comments', body => {
           snapshot(body);
           return true;
@@ -223,22 +217,23 @@ describe('slo-status-label', () => {
       requests.done();
     });
 
-    it('An error comment is made on PR and failure check if issue_slo_rules lint is not valid', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const containsSloFile = require(resolve(
-        fixturesPath,
-        'events',
-        'contains_slo_file'
-      ));
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const blob = require(resolve(fixturesPath, 'events', 'invalid_blob'));
+    it('An error comment and failure check is made on PR if issue_slo_rules lint is not valid', async () => {
+      const invalidBlob = {
+        content:
+          'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
+      };
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
-        .reply(200, containsSloFile)
+        .reply(200, [
+          {
+            filename: '.github/issue_slo_rules.json',
+            sha: '1d8be9e05d65e03a5e81a1c3c1bf229dce950e25',
+          },
+        ])
         .get(
           '/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25'
         )
-        .reply(200, blob)
+        .reply(200, invalidBlob)
         .post('/repos/testOwner/testRepo/issues/6/comments', body => {
           snapshot(body);
           return true;
@@ -258,23 +253,23 @@ describe('slo-status-label', () => {
       requests.done();
     });
 
-    it('No comment on PR and success check if issue_slo_rules lint is valid', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const containsSloFile = require(resolve(
-        fixturesPath,
-        'events',
-        'contains_slo_file'
-      ));
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const blob = require(resolve(fixturesPath, 'events', 'valid_blob'));
-
+    it('Leaves no comment on PR and sets success check if issue_slo_rules lint is valid', async () => {
+      const validBlob = {
+        content:
+          'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMCIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAsCiAgICAgICAgICAgICJyZXNvbHV0aW9u\nVGltZSI6IDQzMjAwLAogICAgICAgICAgICAicmVxdWlyZXNBc3NpZ25lZSI6\nIHRydWUKICAgICAgICB9CiAgICB9CiBdCiAKIAogCiAKIAo=\n',
+      };
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
-        .reply(200, containsSloFile)
+        .reply(200, [
+          {
+            filename: '.github/issue_slo_rules.json',
+            sha: '1d8be9e05d65e03a5e81a1c3c1bf229dce950e25',
+          },
+        ])
         .get(
           '/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25'
         )
-        .reply(200, blob)
+        .reply(200, validBlob)
         .post('/repos/testOwner/testRepo/check-runs', body => {
           snapshot(body);
           return true;
@@ -337,8 +332,8 @@ describe('slo-status-label', () => {
     });
   });
 
-  describe('checking if slo applies to issue', () => {
-    describe('gitHubLabels is key in slo as array', () => {
+  describe('checking if slo applies to issue given: ', () => {
+    describe('gitHubLabels is in slo as an array', () => {
       //eslint-disable-next-line @typescript-eslint/no-var-requires
       const sloFile = require(resolve(
         fixturesPath,
@@ -348,7 +343,7 @@ describe('slo-status-label', () => {
         'arr_githubLabels.json'
       ));
       it('Returns true if there are extra labels in gitHubLabels', async () => {
-        const appliesTo: boolean = await getSLOStatus.appliesTo(sloFile, [
+        const appliesTo: boolean = await getSLOStatus.doesSloApply(sloFile, [
           'bot:auto label',
           'p2',
           'help wanted',
@@ -358,7 +353,7 @@ describe('slo-status-label', () => {
         assert.strictEqual(appliesTo, true);
       });
       it('Returns false if githubLabels is not subset of issue labels', async () => {
-        const appliesTo: boolean = await getSLOStatus.appliesTo(sloFile, [
+        const appliesTo: boolean = await getSLOStatus.doesSloApply(sloFile, [
           'enhancement',
           'p2',
           'bug',
@@ -367,7 +362,7 @@ describe('slo-status-label', () => {
       });
     });
 
-    describe('githubLabels is key in slo as a string', () => {
+    describe('githubLabels is in slo as a string', () => {
       //eslint-disable-next-line @typescript-eslint/no-var-requires
       const sloFile = require(resolve(
         fixturesPath,
@@ -377,7 +372,7 @@ describe('slo-status-label', () => {
         'str_githubLabels.json'
       ));
       it('Returns true if githubLabel is in issue labels', async () => {
-        const appliesTo: boolean = await getSLOStatus.appliesTo(sloFile, [
+        const appliesTo: boolean = await getSLOStatus.doesSloApply(sloFile, [
           'bot:auto label',
           'p2',
           'bug',
@@ -385,7 +380,7 @@ describe('slo-status-label', () => {
         assert.strictEqual(appliesTo, true);
       });
       it('Returns false if githubLabel is not exact match in issue labels', async () => {
-        const appliesTo: boolean = await getSLOStatus.appliesTo(sloFile, [
+        const appliesTo: boolean = await getSLOStatus.doesSloApply(sloFile, [
           'auto label',
           'p2',
           'bug',
@@ -394,7 +389,7 @@ describe('slo-status-label', () => {
       });
     });
 
-    describe('excludedGithubLabels is key in slo as array', () => {
+    describe('excludedGithubLabels is in slo as array', () => {
       //eslint-disable-next-line @typescript-eslint/no-var-requires
       const sloFile = require(resolve(
         fixturesPath,
@@ -404,7 +399,7 @@ describe('slo-status-label', () => {
         'arr_excludedGithubLabels.json'
       ));
       it('Returns true if all excludedGithubLabels is not subset of issue labels', async () => {
-        const appliesTo: boolean = await getSLOStatus.appliesTo(sloFile, [
+        const appliesTo: boolean = await getSLOStatus.doesSloApply(sloFile, [
           'bot:auto label',
           'help wanted',
           'p2',
@@ -412,8 +407,8 @@ describe('slo-status-label', () => {
         ]);
         assert.strictEqual(appliesTo, true);
       });
-      it('Returns false if one of excludedGithubLabels is subset of issue labels', async () => {
-        const appliesTo: boolean = await getSLOStatus.appliesTo(sloFile, [
+      it('Returns false if one of excludedGithubLabels is included in issue labels', async () => {
+        const appliesTo: boolean = await getSLOStatus.doesSloApply(sloFile, [
           'bot:auto label',
           'enhancement',
           'p2',
@@ -432,7 +427,7 @@ describe('slo-status-label', () => {
         'slo_rules',
         'str_excludedGithubLabels.json'
       ));
-      const appliesTo: boolean = await getSLOStatus.appliesTo(sloFile, [
+      const appliesTo: boolean = await getSLOStatus.doesSloApply(sloFile, [
         'bot:auto label',
         'help wanted',
         'p2',
@@ -441,7 +436,7 @@ describe('slo-status-label', () => {
       assert.strictEqual(appliesTo, true);
     });
 
-    describe('priority and issueType are keys in slo', () => {
+    describe('priority and issueType are in slo', () => {
       //eslint-disable-next-line @typescript-eslint/no-var-requires
       const sloFile = require(resolve(
         fixturesPath,
@@ -451,7 +446,7 @@ describe('slo-status-label', () => {
         'str_githubLabels.json'
       ));
       it('Returns true if priority in issue labels is labeled as "priority: p_" and issueType is labeled as "issueType: __"', async () => {
-        const appliesTo: boolean = await getSLOStatus.appliesTo(sloFile, [
+        const appliesTo: boolean = await getSLOStatus.doesSloApply(sloFile, [
           'bot:auto label',
           'help wanted',
           'priority: p2',
@@ -460,7 +455,7 @@ describe('slo-status-label', () => {
         assert.strictEqual(appliesTo, true);
       });
       it('Returns false if priority not in issue labels', async () => {
-        const appliesTo: boolean = await getSLOStatus.appliesTo(sloFile, [
+        const appliesTo: boolean = await getSLOStatus.doesSloApply(sloFile, [
           'bot:auto label',
           'help wanted',
           'priority: p0',
@@ -469,7 +464,7 @@ describe('slo-status-label', () => {
         assert.strictEqual(appliesTo, false);
       });
       it('Returns false if issueType not in issue labels', async () => {
-        const appliesTo: boolean = await getSLOStatus.appliesTo(sloFile, [
+        const appliesTo: boolean = await getSLOStatus.doesSloApply(sloFile, [
           'bot:auto label',
           'help wanted',
           'priority: p2',
@@ -478,7 +473,7 @@ describe('slo-status-label', () => {
         assert.strictEqual(appliesTo, false);
       });
       it('Returns false if there are no issueLabels', async () => {
-        const appliesTo: boolean = await getSLOStatus.appliesTo(sloFile, []);
+        const appliesTo: boolean = await getSLOStatus.doesSloApply(sloFile, []);
         assert.strictEqual(appliesTo, false);
       });
     });
@@ -497,14 +492,12 @@ describe('slo-status-label', () => {
     });
 
     describe('repo level file exists with write contributer being valid responder', () => {
-      //eslint-disable-next-line @typescript-eslint/no-var-requires
-      const writeConfigContent = require(resolve(
-        fixturesPath,
-        'events',
-        'write_config_content'
-      ));
+      const writeConfigContent = {
+        content:
+          'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogIjEw\nMDAwMDAwMGQiLAogICAgICAgICAgICAicmVzcG9uc2VUaW1lIjogIjQzMjAw\nMCIsCiAgICAgICAgICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAg\nICAicmVzcG9uZGVycyIgOiB7CiAgICAgICAgICAgICAgICJjb250cmlidXRv\ncnMiOiAiV1JJVEUiLAoJICAgICAgICJ1c2VycyI6IFsidXNlcjEiLCAidXNl\ncjIiXQogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQogXQogCiAKIAog\nCiAK\n',
+      };
 
-      it('Returns true and no OOSLO label if issue is within resolution time, a valid responder was assigned, a valid responder commented within response time', async () => {
+      it('Returns true and does not label OOSLO if issue is within resolution time, a valid responder was assigned, a valid responder commented within response time', async () => {
         const requests = nock('https://api.github.com')
           .get(
             '/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json'
@@ -531,7 +524,7 @@ describe('slo-status-label', () => {
         requests.done();
       });
 
-      it('Returns false and creates and adds label "OOSLO" if no valid responder was assigned', async () => {
+      it('Returns false and creates and adds label OOSLO to issue if no valid responder was assigned', async () => {
         const requests = nock('https://api.github.com')
           .get(
             '/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json'
@@ -566,7 +559,7 @@ describe('slo-status-label', () => {
         requests.done();
       });
 
-      it('Returns false if no valid responder commented', async () => {
+      it('Returns false if no valid responder commented and does not relabel OOSLO if it already exists in issue', async () => {
         const requests = nock('https://api.github.com')
           .get(
             '/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json'
@@ -634,12 +627,11 @@ describe('slo-status-label', () => {
     });
 
     describe('org level file exists with admin contributer being valid responder', () => {
-      //eslint-disable-next-line @typescript-eslint/no-var-requires
-      const adminConfigFile = require(resolve(
-        fixturesPath,
-        'events',
-        'admin_config_content'
-      ));
+      const adminConfigFile = {
+        content:
+          'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI2MGgiLAogICAgICAgICAg\nICAicmVxdWlyZXNBc3NpZ25lZSI6IHRydWUsCgkgICAgInJlc3BvbmRlcnMi\nIDogewogICAgICAgICAgICAgICAiY29udHJpYnV0b3JzIjogIkFETUlOIiwK\nCSAgICAgICAidXNlcnMiOiBbInVzZXIxIiwgInVzZXIyIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n',
+      };
+
       it('Returns true and removes OOSLO label if issue is within resolution time, a valid responder was assigned, a valid responder commented within response time', async () => {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         payload = require(resolve(
@@ -755,12 +747,11 @@ describe('slo-status-label', () => {
       });
     });
     describe('repo level file exists with owner contributer being valid responder', () => {
-      //eslint-disable-next-line @typescript-eslint/no-var-requires
-      const ownerConfigFile = require(resolve(
-        fixturesPath,
-        'events',
-        'owner_config_content'
-      ));
+      const ownerConfigFile = {
+        content:
+          'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICIzMDBtIiwKICAgICAgICAg\nICAgInJlcXVpcmVzQXNzaWduZWUiOiBmYWxzZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CiAgICAgICAgICAgICAgICJjb250cmlidXRvcnMiOiAiT1dORVIi\nLAoJICAgICAgICJ1c2VycyI6IFsidXNlcjEiLCAidXNlcjIiXQogICAgICAg\nICAgICB9CiAgICAgICAgfQogICAgfQogXQogCiAKIAogCiAK\n',
+      };
+
       it('Returns true if issue is within resolution time, a valid responder commented within response time', async () => {
         const requests = nock('https://api.github.com')
           .get(
@@ -807,18 +798,14 @@ describe('slo-status-label', () => {
       });
     });
     describe('repo level file exists with owners path containing valid responder', () => {
-      //eslint-disable-next-line @typescript-eslint/no-var-requires
-      const ownersConfigFile = require(resolve(
-        fixturesPath,
-        'events',
-        'ownerpath_config_content'
-      ));
-      //eslint-disable-next-line @typescript-eslint/no-var-requires
-      const codeownersFile = require(resolve(
-        fixturesPath,
-        'events',
-        'codeowner_content'
-      ));
+      const ownersConfigFile = {
+        content:
+          'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n',
+      };
+      const codeownersFile = {
+        content: 'QHVzZXIxIEBDb2Rlci1jYXQuCkBvd25lci4yCg==\n',
+      };
+
       it('Returns true if issue is within resolution time, assigned to valid responder, a valid responder commented within response time', async () => {
         const requests = nock('https://api.github.com')
           .get(
