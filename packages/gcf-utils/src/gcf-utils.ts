@@ -58,7 +58,6 @@ interface LogFn {
  * A logger standardized logger for Google Cloud Functions
  */
 export interface GCFLogger {
-  [key: string]: Function;
   trace: LogFn;
   debug: LogFn;
   info: LogFn;
@@ -82,6 +81,12 @@ export function initLogger(
 
   dest = dest || pino.destination({sync: true});
   const logger = pino(defaultOptions, dest);
+  Object.keys(logger).map(prop => {
+    if (logger[prop] instanceof Function) {
+      logger[prop] = logger[prop].bind(logger);
+    }
+  });
+
   const flushSync = () => {
     if (dest instanceof SonicBoom) {
       dest.flushSync();
@@ -89,12 +94,8 @@ export function initLogger(
   };
 
   return {
-    trace: logger.trace.bind(logger),
-    debug: logger.debug.bind(logger),
-    info: logger.info.bind(logger),
+    ...logger,
     metric: logger.metric.bind(logger),
-    warn: logger.warn.bind(logger),
-    error: logger.error.bind(logger),
     flushSync: flushSync,
   };
 }
@@ -188,12 +189,7 @@ export class GCFBootstrapper {
     return {name, id, signature, taskId};
   }
 
-  parseTriggerType(
-    name: string,
-    id: string,
-    signature: string,
-    taskId: string
-  ): TriggerType {
+  parseTriggerType(name: string, taskId: string): TriggerType {
     if (
       !taskId &&
       (name === 'schedule.repository' || name === 'pubsub.message')
@@ -245,12 +241,7 @@ export class GCFBootstrapper {
       // Otherwise let's listen handle the payload
       this.probot = this.probot || (await this.loadProbot(appFn));
       const {name, id, signature, taskId} = this.parseRequestHeaders(request);
-      const triggerType: TriggerType = this.parseTriggerType(
-        name,
-        id,
-        signature,
-        taskId
-      );
+      const triggerType: TriggerType = this.parseTriggerType(name, taskId);
 
       if (triggerType !== TriggerType.TASK) {
         // we don't want to log TASK triggers since we enqueue the task ourselves
