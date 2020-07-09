@@ -242,7 +242,7 @@ exports['buildcop app xunitXML Grouped issues closes group issues when all tests
 }
 
 exports['buildcop app xunitXML Grouped issues closes an individual issue and keeps grouped issue open 1'] = {
-  "body": "24 tests failed in this package for commit 123 (http://example.com).\n-----\ncommit: 123\nbuildURL: http://example.com\nstatus: failed"
+  "body": "24 tests failed in this package for commit 123 (http://example.com).\n\n-----\ncommit: 123\nbuildURL: http://example.com\nstatus: failed"
 }
 
 exports['buildcop app xunitXML Grouped issues closes an individual issue and keeps grouped issue open 2'] = {

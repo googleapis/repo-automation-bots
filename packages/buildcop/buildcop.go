@@ -48,14 +48,31 @@ func main() {
 	logsDir := flag.String("logs_dir", ".", "The directory to look for logs in. Defaults to current directory.")
 	commit := flag.String("commit_hash", "", "Long form commit hash this build is being run for. Defaults to the KOKORO_GIT_COMMIT environment variable.")
 	serviceAccount := flag.String("service_account", "", "Path to service account to use instead of Trampoline default or client library auto-detection.")
+	buildURL := flag.String("build_url", "", "Build URL (markdown OK). Defaults to detect from Kokoro.")
 
 	flag.Parse()
 
-	log.Println("Sending logs to Build Cop Bot...")
-	log.Println("See https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop.")
-	if ok := publish(*projectID, *topicID, *repo, *installationID, *commit, *logsDir, *serviceAccount); !ok {
+	cfg := &config{
+		projectID:      *projectID,
+		topicID:        *topicID,
+		repo:           *repo,
+		installationID: *installationID,
+		commit:         *commit,
+		logsDir:        *logsDir,
+		serviceAccount: *serviceAccount,
+		buildURL:       *buildURL,
+	}
+	if ok := cfg.setDefaults(); !ok {
 		os.Exit(1)
 	}
+
+	log.Println("Sending logs to Build Cop Bot...")
+	log.Println("See https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop.")
+
+	if ok := publish(cfg); !ok {
+		os.Exit(1)
+	}
+
 	log.Println("Done!")
 }
 
@@ -74,65 +91,98 @@ type message struct {
 	XUnitXML     string             `json:"xunitXML"`
 }
 
-// publish searches for sponge_log.xml files and publishes them to Pub/Sub.
-// publish logs a message and returns false if there was an error.
-func publish(projectID, topicID, repo, installationID, commit, logsDir, serviceAccount string) (ok bool) {
-	ctx := context.Background()
+type config struct {
+	projectID      string
+	topicID        string
+	repo           string
+	installationID string
+	commit         string
+	logsDir        string
+	serviceAccount string
+	buildURL       string
+}
 
-	opts := []option.ClientOption{}
-
-	if serviceAccount == "" {
+func (cfg *config) setDefaults() (ok bool) {
+	if cfg.serviceAccount == "" {
 		if gfileDir := os.Getenv("KOKORO_GFILE_DIR"); gfileDir != "" {
-			serviceAccount = filepath.Join(gfileDir, "kokoro-trampoline.service-account.json")
-			if _, err := os.Stat(serviceAccount); err == nil {
-				opts = append(opts, option.WithCredentialsFile(serviceAccount))
+			// Assume any given service account exists, but check the Trampoline
+			// account exists before trying to use it (instead of default
+			// credentials).
+			path := filepath.Join(gfileDir, "kokoro-trampoline.service-account.json")
+			if _, err := os.Stat(path); err == nil {
+				cfg.serviceAccount = path
 			}
 		}
 	}
 
-	client, err := pubsub.NewClient(ctx, projectID, opts...)
-	if err != nil {
-		log.Printf("Unable to connect to Pub/Sub: %v", err)
-		return false
+	if cfg.repo == "" {
+		cfg.repo = detectRepo()
 	}
-	topic := client.Topic(topicID)
-
-	if repo == "" {
-		repo = detectRepo()
-		if repo == "" {
-			log.Print(`Unable to detect repo. Please set the --repo flag.
+	if cfg.repo == "" {
+		log.Printf(`Unable to detect repo. Please set the --repo flag.
 If your repo is github.com/GoogleCloudPlatform/golang-samples, --repo should be GoogleCloudPlatform/golang-samples.
 
 If your repo is not in GoogleCloudPlatform or googleapis, you must also set
 --installation_id. See https://github.com/apps/build-cop-bot/.`)
-			return false
-		}
+		return false
 	}
 
-	if installationID == "" {
-		installationID = detectInstallationID(repo)
-		if installationID == "" {
-			log.Printf(`Unable to detect installation ID from repo=%q. Please set the --installation_id flag.
+	if cfg.installationID == "" {
+		cfg.installationID = detectInstallationID(cfg.repo)
+	}
+	if cfg.installationID == "" {
+		log.Printf(`Unable to detect installation ID from repo=%q. Please set the --installation_id flag.
 If your repo is part of GoogleCloudPlatform or googleapis and you see this error,
 file an issue at https://github.com/googleapis/repo-automation-bots/issues.
 Otherwise, set --installation_id with the numeric installation ID.
-See https://github.com/apps/build-cop-bot/.`, repo)
-			return false
-		}
+See https://github.com/apps/build-cop-bot/.`, cfg.repo)
+		return false
 	}
 
-	if commit == "" {
-		commit = os.Getenv("KOKORO_GIT_COMMIT")
-		if commit == "" {
-			log.Printf(`Unable to detect commit hash (expected the KOKORO_GIT_COMMIT env var).
+	if cfg.commit == "" {
+		cfg.commit = os.Getenv("KOKORO_GIT_COMMIT")
+	}
+	if cfg.commit == "" {
+		log.Printf(`Unable to detect commit hash (expected the KOKORO_GIT_COMMIT env var).
 Please set --commit_hash to the latest git commit hash.
+See https://github.com/apps/build-cop-bot/.`)
+		return false
+	}
+
+	if cfg.buildURL == "" {
+		buildID := os.Getenv("KOKORO_BUILD_ID")
+		if buildID == "" {
+			log.Printf(`Unable to build URL (expected the KOKORO_BUILD_ID env var).
+Please set --build_url to the URL of the build.
 See https://github.com/apps/build-cop-bot/.`)
 			return false
 		}
+		cfg.buildURL = fmt.Sprintf("[Build Status](https://source.cloud.google.com/results/invocations/%s), [Sponge](http://sponge2/%s)", buildID, buildID)
 	}
 
+	return true
+}
+
+// publish searches for sponge_log.xml files and publishes them to Pub/Sub.
+// publish logs a message and returns false if there was an error.
+func publish(cfg *config) (ok bool) {
+	ctx := context.Background()
+
+	opts := []option.ClientOption{}
+
+	if cfg.serviceAccount != "" {
+		opts = append(opts, option.WithCredentialsFile(cfg.serviceAccount))
+	}
+
+	client, err := pubsub.NewClient(ctx, cfg.projectID, opts...)
+	if err != nil {
+		log.Printf("Unable to connect to Pub/Sub: %v", err)
+		return false
+	}
+	topic := client.Topic(cfg.topicID)
+
 	// Handle logs in the current directory.
-	if err := filepath.Walk(logsDir, processLog(ctx, repo, installationID, commit, topic)); err != nil {
+	if err := filepath.Walk(cfg.logsDir, processLog(ctx, cfg, topic)); err != nil {
 		log.Printf("Error publishing logs: %v", err)
 		return false
 	}
@@ -173,7 +223,7 @@ func detectInstallationID(repo string) string {
 }
 
 // processLog is used to process log files and publish them to Pub/Sub.
-func processLog(ctx context.Context, repo, installationID, commit string, topic *pubsub.Topic) filepath.WalkFunc {
+func processLog(ctx context.Context, cfg *config, topic *pubsub.Topic) filepath.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -186,15 +236,14 @@ func processLog(ctx context.Context, repo, installationID, commit string, topic 
 			return fmt.Errorf("ioutil.ReadFile(%q): %v", path, err)
 		}
 		enc := base64.StdEncoding.EncodeToString(data)
-		buildURL := fmt.Sprintf("[Build Status](https://source.cloud.google.com/results/invocations/%s), [Sponge](http://sponge2/%s)", os.Getenv("KOKORO_BUILD_ID"), os.Getenv("KOKORO_BUILD_ID"))
 		msg := message{
 			Name:         "buildcop",
 			Type:         "function",
 			Location:     "us-central1",
-			Installation: githubInstallation{ID: installationID},
-			Repo:         repo,
-			Commit:       commit,
-			BuildURL:     buildURL,
+			Installation: githubInstallation{ID: cfg.installationID},
+			Repo:         cfg.repo,
+			Commit:       cfg.commit,
+			BuildURL:     cfg.buildURL,
 			XUnitXML:     enc,
 		}
 		data, err = json.Marshal(msg)
