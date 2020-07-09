@@ -14,8 +14,8 @@
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-import myProbotApp from '../src/blunderbuss';
-import {describe, it, beforeEach} from 'mocha';
+import handler from '../src/blunderbuss';
+import {describe, it, beforeEach, after} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
@@ -30,6 +30,8 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 // TODO: stop disabling warn once the following upstream patch is landed:
 // https://github.com/probot/probot/pull/926
 global.console.warn = () => {};
+
+const originalSleep = handler.sleep;
 
 describe('Blunderbuss', () => {
   let probot: Probot;
@@ -49,7 +51,14 @@ describe('Blunderbuss', () => {
         return Promise.resolve('abc123');
       },
     };
-    probot.load(myProbotApp);
+    handler.sleep = () => {
+      return new Promise(resolve => setTimeout(resolve, 0));
+    };
+    probot.load(handler);
+  });
+
+  after(() => {
+    handler.sleep = originalSleep;
   });
 
   describe('issue tests', () => {
@@ -217,7 +226,9 @@ describe('Blunderbuss', () => {
           snapshot(body);
           return true;
         })
-        .reply(200);
+        .reply(200)
+        .get('/repos/testOwner/testRepo/issues/5/labels')
+        .reply(200, [{name: 'api: foo'}]);
 
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       requests.done();
