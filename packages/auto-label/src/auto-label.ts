@@ -365,7 +365,7 @@ function handler(app: Application) {
     //goes through issues in repository, adds labels as necessary
     for await (const response of context.github.paginate.iterator(issues)) {
       const issue = response.data;
-      if (!issue.pull_request) {
+      if (issue && !issue.pull_request) {
         const wasAdded = await handler.addLabeltoRepoAndIssue(
           owner,
           repo,
