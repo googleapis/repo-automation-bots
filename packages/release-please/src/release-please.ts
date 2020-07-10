@@ -198,7 +198,7 @@ export = (app: Application) => {
 
     const releaseType = configuration.releaseType
       ? configuration.releaseType
-      : 'java';
+      : 'java-yoshi';
 
     // TODO: this should be refactored into an interface.
     await createReleasePR(
