@@ -238,7 +238,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
 
   let autoDetectedLabelAdded: string | undefined;
 
-  let wasAdded = false;
+  let wasNotAdded = true;
 
   const labelsOnIssue = await handler.checkExistingIssueLabels(
     github,
@@ -315,7 +315,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       await handler.addLabels(github, owner, repo, issueNumber, [
         `${objectInJsonArray.github_label}`,
       ]);
-      wasAdded = true;
+      wasNotAdded = false;
     }
     for (const dirtyLabel of cleanUpOtherLabels) {
       await github.issues
@@ -331,10 +331,14 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     await handler.addLabels(github, owner, repo, issueNumber, [
       `${objectInJsonArray.github_label}`,
     ]);
-    wasAdded = true;
+    wasNotAdded = false;
   }
 
-  return wasAdded;
+  if (autoDetectedLabelAdded) {
+    wasNotAdded = false;
+  }
+
+  return wasNotAdded;
 };
 
 //main function, responds to label being added
@@ -348,38 +352,45 @@ function handler(app: Application) {
       console.log(`skipping run for ${context.payload.cron_org}`);
       return;
     }
-
     const jsonData = await handler.callStorage(
       'devrel-prod-settings',
       'public_repos.json'
     );
     const jsonArray = await handler.checkIfFileIsEmpty(jsonData);
-
     //all the issues in the repository
     const issues = context.github.issues.listForRepo.endpoint.merge({
       owner,
       repo,
     });
-
-    let wasLabelAddedCount = 0;
+    let labelWasNotAddedCount = 0;
     //goes through issues in repository, adds labels as necessary
     for await (const response of context.github.paginate.iterator(issues)) {
-      const issue = response.data;
-      if (issue && !issue.pull_request) {
-        const wasAdded = await handler.addLabeltoRepoAndIssue(
-          owner,
-          repo,
-          issue.number,
-          issue.title,
-          jsonArray,
-          context.github
-        );
-        if (wasAdded) {
-          wasLabelAddedCount++;
+      const issues = response.data;
+      for (const issue of issues) {
+        if (!issue.pull_request) {
+          const wasNotAdded = await handler.addLabeltoRepoAndIssue(
+            owner,
+            repo,
+            issue.number,
+            issue.title,
+            jsonArray,
+            context.github
+          );
+          if (wasNotAdded) {
+            console.log(
+              `label for ${issue.number} in ${owner / repo} was not added`
+            );
+            labelWasNotAddedCount++;
+          }
         }
-      }
-      if (wasLabelAddedCount > 5) {
-        return;
+        if (labelWasNotAddedCount > 5) {
+          console.log(
+            `${
+              owner / repo
+            } has 5 issues where labels were not added; skipping the rest of this repo check.`
+          );
+          return;
+        }
       }
     }
   });
