@@ -255,10 +255,7 @@ export class GCFBootstrapper {
       const {name, id, signature, taskId} = this.parseRequestHeaders(request);
       const triggerType: TriggerType = this.parseTriggerType(name, taskId);
 
-      if (triggerType !== TriggerType.TASK) {
-        // we don't want to log TASK triggers since we enqueue the task ourselves
-        logger.metric(this.buildTriggerInfo(triggerType, request.body));
-      }
+      logger.metric(this.buildTriggerInfo(triggerType, request.body));
 
       if (triggerType === TriggerType.SCHEDULER) {
         // TODO: currently we assume that scheduled events walk all repos
