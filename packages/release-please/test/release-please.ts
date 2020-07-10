@@ -296,7 +296,6 @@ describe('ReleasePleaseBot', () => {
           owner: {
             login: 'Codertocat',
           },
-          language: 'Ruby',
         },
         organization: {
           login: 'Codertocat',
@@ -304,7 +303,7 @@ describe('ReleasePleaseBot', () => {
         cron_org: 'Codertocat',
       };
       Runner.runner = async (pr: ReleasePR) => {
-        assert(pr instanceof Ruby);
+        assert(pr instanceof JavaYoshi);
         executed = true;
       };
       const config = fs.readFileSync(
