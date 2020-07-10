@@ -16,8 +16,10 @@ import {createProbot, Probot, ApplicationFunction, Options} from 'probot';
 import {CloudTasksClient} from '@google-cloud/tasks';
 import {v1} from '@google-cloud/secret-manager';
 import * as express from 'express';
+import pino from 'pino';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
+import SonicBoom from 'sonic-boom';
 
 const client = new CloudTasksClient();
 
@@ -43,6 +45,45 @@ interface EnqueueTaskParams {
   signature: string;
   id: string;
   name: string;
+}
+
+interface LogFn {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (msg: string, ...args: any[]): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (obj: object, msg?: string, ...args: any[]): void;
+}
+
+/**
+ * A logger standardized logger for Google Cloud Functions
+ */
+export interface GCFLogger {
+  trace: LogFn;
+  debug: LogFn;
+  info: LogFn;
+  warn: LogFn;
+  error: LogFn;
+  metric: LogFn;
+}
+
+export const logger: GCFLogger = initLogger();
+
+export function initLogger(
+  dest?: NodeJS.WritableStream | SonicBoom
+): GCFLogger {
+  const defaultOptions: pino.LoggerOptions = {
+    customLevels: {
+      metric: 30,
+    },
+    level: 'trace',
+  };
+  const logger = pino(defaultOptions, dest || pino.destination({sync: true}));
+  Object.keys(logger).map(prop => {
+    if (logger[prop] instanceof Function) {
+      logger[prop] = logger[prop].bind(logger);
+    }
+  });
+  return {...logger, metric: logger.metric.bind(logger)};
 }
 
 export interface CronPayload {
