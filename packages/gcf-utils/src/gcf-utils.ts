@@ -122,6 +122,18 @@ export enum TriggerType {
   UNKNOWN = 'UNKNOWN',
 }
 
+export interface TriggerInfo {
+  trigger: {
+    trigger_type: TriggerType;
+    trigger_sender?: string;
+    trigger_source_repo?: {
+      owner: string;
+      owner_type: string;
+      repo_name: string;
+    };
+  };
+}
+
 export class GCFBootstrapper {
   probot?: Probot;
 
@@ -207,7 +219,7 @@ export class GCFBootstrapper {
     triggerType: TriggerType,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     requestBody: {[key: string]: any}
-  ) {
+  ): TriggerInfo {
     let triggerInfo = {trigger_type: triggerType};
 
     if (triggerType === TriggerType.GITHUB) {

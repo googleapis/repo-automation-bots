@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFBootstrapper, TriggerType} from '../src/gcf-utils';
+import {GCFBootstrapper, TriggerType, TriggerInfo} from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {GitHubAPI} from 'probot/lib/github';
 import {Options} from 'probot';
@@ -363,16 +363,17 @@ describe('GCFBootstrapper', () => {
       };
       assert.deepEqual(triggerInfo, expectedInfo);
     });
+
     it('returns correct task trigger info', () => {
       const requestBody = {};
       const triggerType = TriggerType.TASK;
-      const triggerInfo = bootstrapper.buildTriggerInfo(
+      const triggerInfo: TriggerInfo = bootstrapper.buildTriggerInfo(
         triggerType,
         requestBody
       );
-      const expectedInfo = {
+      const expectedInfo: TriggerInfo = {
         trigger: {
-          trigger_type: 'TASK',
+          trigger_type: TriggerType.TASK,
         },
       };
       assert.deepEqual(triggerInfo, expectedInfo);
@@ -404,13 +405,13 @@ describe('GCFBootstrapper', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const requestBody = require('../../test/fixtures/github-webhook-payload-missing-info.json');
       const triggerType = TriggerType.GITHUB;
-      const triggerInfo = bootstrapper.buildTriggerInfo(
+      const triggerInfo: TriggerInfo = bootstrapper.buildTriggerInfo(
         triggerType,
         requestBody
       );
-      const expectedInfo = {
+      const expectedInfo: TriggerInfo = {
         trigger: {
-          trigger_type: 'GITHUB_WEBHOOK',
+          trigger_type: TriggerType.GITHUB,
           trigger_sender: 'UNKNOWN',
           trigger_source_repo: {
             owner: 'UNKNOWN',
