@@ -126,6 +126,7 @@ export interface TriggerInfo {
   trigger: {
     trigger_type: TriggerType;
     trigger_sender?: string;
+    github_delivery_guid?: string;
     trigger_source_repo?: {
       owner: string;
       owner_type: string;
@@ -217,10 +218,22 @@ export class GCFBootstrapper {
 
   buildTriggerInfo(
     triggerType: TriggerType,
+    github_delivery_guid: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     requestBody: {[key: string]: any}
   ): TriggerInfo {
-    let triggerInfo = {trigger_type: triggerType};
+    const triggerInfo: TriggerInfo = {
+      trigger: {
+        trigger_type: triggerType,
+      },
+    };
+
+    if (
+      triggerType === TriggerType.GITHUB ||
+      triggerType === TriggerType.TASK
+    ) {
+      triggerInfo.trigger.github_delivery_guid = github_delivery_guid;
+    }
 
     if (triggerType === TriggerType.GITHUB) {
       const sourceRepo = requestBody['repository'] || {};
@@ -240,10 +253,10 @@ export class GCFBootstrapper {
         trigger_sender: senderLogin,
       };
 
-      triggerInfo = {...webhookProperties, ...triggerInfo};
+      triggerInfo.trigger = {...webhookProperties, ...triggerInfo.trigger};
     }
 
-    return {trigger: triggerInfo};
+    return triggerInfo;
   }
 
   gcf(
@@ -255,7 +268,7 @@ export class GCFBootstrapper {
       const {name, id, signature, taskId} = this.parseRequestHeaders(request);
       const triggerType: TriggerType = this.parseTriggerType(name, taskId);
 
-      logger.metric(this.buildTriggerInfo(triggerType, request.body));
+      logger.metric(this.buildTriggerInfo(triggerType, id, request.body));
 
       if (triggerType === TriggerType.SCHEDULER) {
         // TODO: currently we assume that scheduled events walk all repos
