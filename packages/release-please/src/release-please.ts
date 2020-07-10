@@ -198,7 +198,7 @@ export = (app: Application) => {
 
     const releaseType = configuration.releaseType
       ? configuration.releaseType
-      : releaseTypeFromRepoLanguage(context.payload.repository.language);
+      : 'java-yoshi';
 
     // TODO: this should be refactored into an interface.
     await createReleasePR(
