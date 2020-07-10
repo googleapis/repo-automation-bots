@@ -243,9 +243,11 @@ describe('auto-label', () => {
     it('responds to a scheduled event', async () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/issues')
-        .reply(200, [{
-          number: 1,
-        }])
+        .reply(200, [
+          {
+            number: 1,
+          },
+        ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200)
         .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
@@ -283,9 +285,11 @@ describe('auto-label', () => {
     it('deletes extraneous labels', async () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/issues')
-        .reply(200, [{
-          number: 1,
-        }])
+        .reply(200, [
+          {
+            number: 1,
+          },
+        ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200, [{name: 'api:theWrongLabel'}])
         .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
@@ -331,9 +335,11 @@ describe('auto-label', () => {
     it('will not create labels that already exist', async () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/issues')
-        .reply(200, [{
-          number: 1,
-        }])
+        .reply(200, [
+          {
+            number: 1,
+          },
+        ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200)
         .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
