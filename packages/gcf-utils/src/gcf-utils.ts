@@ -64,7 +64,10 @@ export interface GCFLogger {
   warn: LogFn;
   error: LogFn;
   metric: LogFn;
+<<<<<<< HEAD
   flushSync: Function;
+=======
+>>>>>>> upstream/master
 }
 
 export const logger: GCFLogger = initLogger();
@@ -78,14 +81,19 @@ export function initLogger(
     },
     level: 'trace',
   };
+<<<<<<< HEAD
 
   dest = dest || pino.destination({sync: true});
   const logger = pino(defaultOptions, dest);
+=======
+  const logger = pino(defaultOptions, dest || pino.destination({sync: true}));
+>>>>>>> upstream/master
   Object.keys(logger).map(prop => {
     if (logger[prop] instanceof Function) {
       logger[prop] = logger[prop].bind(logger);
     }
   });
+<<<<<<< HEAD
 
   const flushSync = () => {
     if (dest instanceof SonicBoom) {
@@ -98,6 +106,9 @@ export function initLogger(
     metric: logger.metric.bind(logger),
     flushSync: flushSync,
   };
+=======
+  return {...logger, metric: logger.metric.bind(logger)};
+>>>>>>> upstream/master
 }
 
 export interface CronPayload {

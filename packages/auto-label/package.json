@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^5.0.0",
-    "gcf-utils": "1.6.2"
+    "gcf-utils": "^5.0.0"
   },
   "devDependencies": {
     "@types/body-parser": "^1.19.0",
