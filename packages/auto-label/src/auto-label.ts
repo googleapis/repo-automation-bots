@@ -125,30 +125,6 @@ handler.checkExistingIssueLabels = async function checkExistingIssueLabels(
   }
 };
 
-// maybeAddAPILabel adds the given label if there isn't already an api: label.
-handler.maybeAddAPILabel = async (
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  issueNumber: number,
-  labelsOnIssue: Label[] | null,
-  label: string
-): Promise<string | undefined> => {
-  if (labelsOnIssue) {
-    const found = labelsOnIssue.find(element =>
-      element.name.startsWith('api:')
-    );
-    if (found) {
-      console.log(`${owner}/${repo}#${issueNumber} already has an api: label`);
-      return undefined;
-    }
-    await handler.addLabels(github, owner, repo, issueNumber, [label]);
-    return label;
-  }
-  await handler.addLabels(github, owner, repo, issueNumber, [label]);
-  return label;
-};
-
 //gets Storage data that maps api to product name
 handler.callStorage = async function callStorage(
   bucketName: string,
@@ -236,8 +212,6 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     repo
   );
 
-  let autoDetectedLabelAdded: string | undefined;
-
   let wasNotAdded = true;
 
   const labelsOnIssue = await handler.checkExistingIssueLabels(
@@ -247,95 +221,75 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     issueNumber
   );
 
+  let autoDetectedLabel: string | undefined;
+
   if (!objectInJsonArray?.github_label) {
     console.log(
       `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
     );
-    const autoDetectedLabel = handler.autoDetectLabel(jsonArray, issueTitle);
-    if (autoDetectedLabel) {
-      console.log(
-        `Auto-detected label ${autoDetectedLabel} for ${owner}/${repo}#${issueNumber}`
-      );
-      autoDetectedLabelAdded = await handler.maybeAddAPILabel(
-        github,
-        owner,
-        repo,
-        issueNumber,
-        labelsOnIssue,
-        autoDetectedLabel
-      );
-    } else {
-      console.log(
-        `Auto-detect did not add a label for ${owner}/${repo}#${issueNumber}: '${issueTitle}'`
-      );
-    }
-    return;
+    autoDetectedLabel = handler.autoDetectLabel(jsonArray, issueTitle);
   }
+  const colorNumber =
+    jsonArray?.findIndex((object: JSONData) => objectInJsonArray === object) %
+      colorsData.length || 0;
 
-  const colorNumber = jsonArray.findIndex(
-    (object: JSONData) => objectInJsonArray === object
-  );
-  const githubLabel = objectInJsonArray.github_label;
+  const githubLabel = objectInJsonArray?.github_label || autoDetectedLabel;
 
-  const alreadyExists = await handler.checkExistingLabels(
-    github,
-    owner,
-    repo,
-    githubLabel
-  );
-
-  if (alreadyExists === null || alreadyExists === undefined) {
-    handler.createLabel(
+  let alreadyExists;
+  if (githubLabel) {
+    alreadyExists = await handler.checkExistingLabels(
       github,
       owner,
       repo,
-      githubLabel,
-      colorsData[colorNumber].color
+      githubLabel
     );
-  } else {
-    console.log(
-      'This label already exists on the repository, will check if it also exists on the issue'
-    );
-  }
-
-  if (labelsOnIssue) {
-    const found = labelsOnIssue.find(
-      (element: {name: string}) => element.name === githubLabel
-    );
-    const cleanUpOtherLabels = labelsOnIssue.filter(
-      element =>
-        element.name.startsWith('api') &&
-        element.name !== found?.name &&
-        element.name !== autoDetectedLabelAdded
-    );
-    if (found) {
-      console.log('This label already exists on this issue');
-      return;
+    if (alreadyExists === null || alreadyExists === undefined) {
+      handler.createLabel(
+        github,
+        owner,
+        repo,
+        githubLabel,
+        colorsData[colorNumber].color
+      );
     } else {
-      await handler.addLabels(github, owner, repo, issueNumber, [
-        `${objectInJsonArray.github_label}`,
-      ]);
+      console.log(
+        'This label already exists on the repository, will check if it also exists on the issue'
+      );
+    }
+
+    if (labelsOnIssue) {
+      const found = labelsOnIssue.find(
+        (element: {name: string}) => element.name === githubLabel
+      );
+      const cleanUpOtherLabels = labelsOnIssue.filter(
+        element =>
+          element.name.startsWith('api') &&
+          element.name !== found?.name &&
+          element.name !== autoDetectedLabel
+      );
+      if (found) {
+        console.log('This label already exists on this issue');
+        return;
+      } else {
+        await handler.addLabels(github, owner, repo, issueNumber, [
+          githubLabel,
+        ]);
+        wasNotAdded = false;
+      }
+      for (const dirtyLabel of cleanUpOtherLabels) {
+        await github.issues
+          .removeLabel({
+            owner,
+            repo,
+            issue_number: issueNumber,
+            name: dirtyLabel.name,
+          })
+          .catch(console.error);
+      }
+    } else {
+      await handler.addLabels(github, owner, repo, issueNumber, [githubLabel]);
       wasNotAdded = false;
     }
-    for (const dirtyLabel of cleanUpOtherLabels) {
-      await github.issues
-        .removeLabel({
-          owner,
-          repo,
-          issue_number: issueNumber,
-          name: dirtyLabel.name,
-        })
-        .catch(console.error);
-    }
-  } else {
-    await handler.addLabels(github, owner, repo, issueNumber, [
-      `${objectInJsonArray.github_label}`,
-    ]);
-    wasNotAdded = false;
-  }
-
-  if (autoDetectedLabelAdded) {
-    wasNotAdded = false;
   }
 
   return wasNotAdded;
