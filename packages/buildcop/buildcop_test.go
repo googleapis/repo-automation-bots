@@ -15,7 +15,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -23,6 +25,105 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 )
+
+func TestSetDefaults(t *testing.T) {
+	tests := []struct {
+		name   string
+		env    map[string]string
+		in     *config
+		want   *config
+		wantOK bool
+	}{
+		{
+			name: "detect repo and installationID",
+			env: map[string]string{
+				"KOKORO_GITHUB_COMMIT_URL": "https://github.com/GoogleCloudPlatform/golang-samples/commit/1234",
+			},
+			in: &config{
+				commit:   "abc123",
+				buildURL: "google.com",
+			},
+			want: &config{
+				repo:           "GoogleCloudPlatform/golang-samples",
+				installationID: "5943459",
+				commit:         "abc123",
+				buildURL:       "google.com",
+			},
+			wantOK: true,
+		},
+		{
+			name: "detect commit",
+			env: map[string]string{
+				"KOKORO_GIT_COMMIT": "abc123",
+			},
+			in: &config{
+				repo:           "GoogleCloudPlatform/golang-samples",
+				installationID: "5943459",
+				buildURL:       "google.com",
+			},
+			want: &config{
+				repo:           "GoogleCloudPlatform/golang-samples",
+				installationID: "5943459",
+				commit:         "abc123",
+				buildURL:       "google.com",
+			},
+			wantOK: true,
+		},
+		{
+			name: "detect build URL",
+			env: map[string]string{
+				"KOKORO_BUILD_ID": "test",
+			},
+			in: &config{
+				commit:         "abc123",
+				repo:           "GoogleCloudPlatform/golang-samples",
+				installationID: "5943459",
+			},
+			want: &config{
+				repo:           "GoogleCloudPlatform/golang-samples",
+				installationID: "5943459",
+				commit:         "abc123",
+				buildURL:       fmt.Sprintf("[Build Status](https://source.cloud.google.com/results/invocations/test), [Sponge](http://sponge2/test)"),
+			},
+			wantOK: true,
+		},
+		{
+			name:   "empty config and env",
+			in:     &config{},
+			wantOK: false,
+		},
+		{
+			name: "missing commit",
+			in: &config{
+				repo:           "repo",
+				installationID: "123",
+			},
+			wantOK: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			buf := &bytes.Buffer{}
+			log.SetOutput(buf)
+			defer log.SetOutput(os.Stderr)
+			for k, v := range test.env {
+				os.Setenv(k, v)
+				defer os.Unsetenv(k)
+			}
+			cfg := test.in
+			if ok := cfg.setDefaults(); ok != test.wantOK {
+				t.Fatalf("setDefaults got ok=%v, want ok=%v:\n%v", ok, test.wantOK, buf.String())
+			}
+			if !test.wantOK {
+				return
+			}
+			if diff := cmp.Diff(cfg, test.want, cmp.AllowUnexported(config{})); diff != "" {
+				t.Errorf("newConfig got %+v, want %+v. Diff (+want, -got):\n%s", cfg, test.want, diff)
+			}
+		})
+	}
+}
 
 func TestDetectRepo(t *testing.T) {
 	log.SetOutput(ioutil.Discard)

@@ -170,16 +170,4 @@ describe('Label Sync', () => {
     await probot.receive({name: 'label', payload, id: 'abc123'});
     scopes.forEach(s => s.done());
   });
-
-  it('should update all repos when the label list is updated', async () => {
-    const payload = require(path.resolve(fixturesPath, './push.json'));
-    const scopes = [
-      nockRepoList(),
-      nockLabelList(),
-      nockFetchOldLabels([]),
-      nockLabelCreate(newLabels.labels.length + 1),
-    ];
-    await probot.receive({name: 'push', payload, id: 'abc123'});
-    scopes.forEach(s => s.done());
-  });
 });

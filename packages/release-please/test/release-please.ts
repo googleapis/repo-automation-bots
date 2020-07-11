@@ -286,17 +286,24 @@ describe('ReleasePleaseBot', () => {
     });
   });
 
-  describe('release published event', () => {
-    let payload: Webhooks.WebhookPayloadRelease;
-
-    beforeEach(() => {
-      payload = require(resolve(fixturesPath, './release_published'));
-    });
-
+  describe('nightly event', () => {
     it('should try to create a snapshot', async () => {
       let executed = false;
+      const payload = {
+        repository: {
+          name: 'Hello-World',
+          full_name: 'Codertocat/Hello-World',
+          owner: {
+            login: 'Codertocat',
+          },
+        },
+        organization: {
+          login: 'Codertocat',
+        },
+        cron_org: 'Codertocat',
+      };
       Runner.runner = async (pr: ReleasePR) => {
-        assert(pr instanceof Ruby);
+        assert(pr instanceof JavaYoshi);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -309,31 +316,12 @@ describe('ReleasePleaseBot', () => {
         .reply(200, {content: config.toString('base64')});
 
       await probot.receive({
-        name: 'release.published',
+        name: 'schedule.repository',
         payload,
         id: 'abc123',
       });
       requests.done();
       assert(executed, 'should have executed the runner');
-    });
-  });
-
-  describe('release non-publish event', () => {
-    let payload: Webhooks.WebhookPayloadRelease;
-
-    beforeEach(() => {
-      payload = require(resolve(fixturesPath, './release_unpublished'));
-    });
-
-    it('should be ignored', async () => {
-      Runner.runner = async () => {
-        fail('should not be running a release');
-      };
-      await probot.receive({
-        name: 'release.published',
-        payload,
-        id: 'abc123',
-      });
     });
   });
 

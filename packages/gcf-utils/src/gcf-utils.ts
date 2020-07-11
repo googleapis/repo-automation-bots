@@ -15,8 +15,11 @@
 import {createProbot, Probot, ApplicationFunction, Options} from 'probot';
 import {CloudTasksClient} from '@google-cloud/tasks';
 import {v1} from '@google-cloud/secret-manager';
-import {request} from 'gaxios';
 import * as express from 'express';
+import pino from 'pino';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+import SonicBoom from 'sonic-boom';
 
 const client = new CloudTasksClient();
 
@@ -31,6 +34,9 @@ interface Repos {
 
 interface Scheduled {
   repo?: string;
+  installation: {
+    id: number;
+  };
   message?: {[key: string]: string};
 }
 
@@ -39,6 +45,60 @@ interface EnqueueTaskParams {
   signature: string;
   id: string;
   name: string;
+}
+
+interface LogFn {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (msg: string, ...args: any[]): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (obj: object, msg?: string, ...args: any[]): void;
+}
+
+/**
+ * A logger standardized logger for Google Cloud Functions
+ */
+export interface GCFLogger {
+  trace: LogFn;
+  debug: LogFn;
+  info: LogFn;
+  warn: LogFn;
+  error: LogFn;
+  metric: LogFn;
+}
+
+export const logger: GCFLogger = initLogger();
+
+export function initLogger(
+  dest?: NodeJS.WritableStream | SonicBoom
+): GCFLogger {
+  const defaultOptions: pino.LoggerOptions = {
+    customLevels: {
+      metric: 30,
+    },
+    level: 'trace',
+  };
+  const logger = pino(defaultOptions, dest || pino.destination({sync: true}));
+  Object.keys(logger).map(prop => {
+    if (logger[prop] instanceof Function) {
+      logger[prop] = logger[prop].bind(logger);
+    }
+  });
+  return {...logger, metric: logger.metric.bind(logger)};
+}
+
+export interface CronPayload {
+  repository: {
+    name: string;
+    full_name: string;
+    owner: {
+      login: string;
+      name: string;
+    };
+  };
+  organization: {
+    login: string;
+  };
+  cron_org: string;
 }
 
 export class GCFBootstrapper {
@@ -195,15 +255,35 @@ export class GCFBootstrapper {
       // Job was scheduled for a single repository:
       await this.scheduledToTask(body.repo, id, body, eventName, signature);
     } else {
-      // Job should be run on all managed repositories:
-      const url =
-        'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
-      const res = await request<Repos>({url});
-      const {repos} = res.data;
-      for (const repo of repos) {
-        await this.scheduledToTask(repo.repo, id, body, eventName, signature);
+      const octokit = new Octokit({
+        auth: await this.getInstallationToken(body.installation.id),
+      });
+      // Installations API documented here: https://developer.github.com/v3/apps/installations/
+      const installationsPaginated = octokit.paginate.iterator({
+        url: '/installation/repositories',
+        method: 'GET',
+        headers: {
+          Accept: 'application/vnd.github.machine-man-preview+json',
+        },
+      });
+      for await (const response of installationsPaginated) {
+        for (const repo of response.data) {
+          await this.scheduledToTask(
+            repo.full_name,
+            id,
+            body,
+            eventName,
+            signature
+          );
+        }
       }
     }
+  }
+
+  async getInstallationToken(installationId: number) {
+    return await this.probot!.app!.getInstallationAccessToken({
+      installationId,
+    });
   }
 
   private async scheduledToTask(
@@ -221,6 +301,10 @@ export class GCFBootstrapper {
       repository: {
         name: repoName,
         full_name: repoFullName,
+        owner: {
+          login: orgName,
+          name: orgName,
+        },
       },
       organization: {
         login: orgName,

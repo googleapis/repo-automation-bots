@@ -93,6 +93,10 @@ Issues or feature requests? Please
         can set `-service_account` to the path to a service account that has
         Pub/Sub publish access to the `repo-automation-bots` topic
         `passthrough`.
+      * **`-build_url`**: By default, the `buildcop` binary uses the
+        `KOKORO_BUILD_ID` environment to detect the build URLs for the build. If
+        the build is not on Kokoro, use the `-build_url` flag.
+        \[Markdown\](links) are accepted.
 1. Trigger a build and check the logs to make sure everything is working.
 
 ## Contributing

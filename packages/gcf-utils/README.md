@@ -4,6 +4,20 @@
 
 ## Usage
 
+### GCFLogger
+
+`GCFLogger` is a standardized logger for Google Cloud Functions.
+
+```typescript
+import {logger} from 'gcf-utils';
+
+logger.info('An info message');
+logger.debug({ 'debug-property': 'value' });
+logger.metric({ 'metric-property': 'value' });
+```
+
+### GCFBootstrapper
+
 TODO:(orthros)
 
 ## Development Setup
