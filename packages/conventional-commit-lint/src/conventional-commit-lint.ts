@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
+import {Application, Octokit} from 'probot';
 import lint from '@commitlint/lint';
 
 import {rules} from '@commitlint/config-conventional';
@@ -21,9 +21,6 @@ import {rules} from '@commitlint/config-conventional';
 // see: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-conventional/index.js
 delete rules['type-enum'];
 rules['header-max-length'] = [2, 'always', 256];
-
-// eslint-disable-next-line node/no-extraneous-import
-import {PullsListCommitsResponseItem, Response} from '@octokit/rest';
 
 type Conclusion =
   | 'success'
@@ -45,7 +42,9 @@ export = (app: Application) => {
     });
     // Response object has a typed response.data, which has definitions that
     // can be found here: https://unpkg.com/@octokit/rest@16.28.3/index.d.ts
-    let commitsResponse: Response<PullsListCommitsResponseItem[]>;
+    let commitsResponse: Octokit.Response<
+      Octokit.PullsListCommitsResponseItem[]
+    >;
     try {
       commitsResponse = await context.github.pulls.listCommits(commitParams);
     } catch (err) {
