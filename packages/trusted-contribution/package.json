@@ -23,30 +23,21 @@
     "start": "probot run ./build/src/trusted-contribution.js",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
-    "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "fix": "gts fix",
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "1.6.2"
+    "gcf-utils": "^5.0.1"
   },
   "devDependencies": {
-    "@types/bunyan": "^1.8.6",
-    "@types/chai": "^4.1.7",
-    "@types/express": "^4.17.0",
-    "@types/ioredis": "^4.0.13",
-    "@types/lru-cache": "^5.1.0",
-    "@types/mocha": "^7.0.0",
-    "@types/nock": "^11.0.0",
-    "@types/node": "^12.6.1",
-    "c8": "^7.1.0",
-    "chai": "^4.2.0",
-    "cross-env": "^7.0.0",
-    "gts": "^2.0.0",
-    "mocha": "^8.0.0",
-    "nock": "^13.0.0",
-    "snap-shot-it": "^7.8.0",
-    "typescript": "^3.5.3"
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^14.0.22",
+    "c8": "^7.2.0",
+    "cross-env": "^7.0.2",
+    "gts": "^2.0.2",
+    "mocha": "^8.0.1",
+    "nock": "^13.0.2",
+    "typescript": "^3.9.6"
   },
   "engines": {
     "node": ">= 10.13.0"
