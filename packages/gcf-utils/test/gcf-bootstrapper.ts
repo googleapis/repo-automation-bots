@@ -343,17 +343,11 @@ describe('GCFBootstrapper', () => {
   });
 
   describe('buildTriggerInfo', () => {
-    let bootstrapper: GCFBootstrapper;
-
-    beforeEach(() => {
-      bootstrapper = new GCFBootstrapper();
-    });
-
     it('returns correct scheduler trigger info', () => {
       const requestBody = {};
       const github_delivery_guid = '';
       const triggerType = TriggerType.SCHEDULER;
-      const triggerInfo = bootstrapper.buildTriggerInfo(
+      const triggerInfo = GCFBootstrapper['buildTriggerInfo'](
         triggerType,
         github_delivery_guid,
         requestBody
@@ -370,7 +364,7 @@ describe('GCFBootstrapper', () => {
       const requestBody = {};
       const github_delivery_guid = '1234';
       const triggerType = TriggerType.TASK;
-      const triggerInfo: TriggerInfo = bootstrapper.buildTriggerInfo(
+      const triggerInfo: TriggerInfo = GCFBootstrapper['buildTriggerInfo'](
         triggerType,
         github_delivery_guid,
         requestBody
@@ -389,7 +383,7 @@ describe('GCFBootstrapper', () => {
       const requestBody = require('../../test/fixtures/github-webhook-payload-all-info.json');
       const github_delivery_guid = '1234';
       const triggerType = TriggerType.GITHUB;
-      const triggerInfo = bootstrapper.buildTriggerInfo(
+      const triggerInfo = GCFBootstrapper['buildTriggerInfo'](
         triggerType,
         github_delivery_guid,
         requestBody
@@ -414,7 +408,7 @@ describe('GCFBootstrapper', () => {
       const requestBody = require('../../test/fixtures/github-webhook-payload-missing-info.json');
       const github_delivery_guid = '';
       const triggerType = TriggerType.GITHUB;
-      const triggerInfo: TriggerInfo = bootstrapper.buildTriggerInfo(
+      const triggerInfo: TriggerInfo = GCFBootstrapper['buildTriggerInfo'](
         triggerType,
         github_delivery_guid,
         requestBody

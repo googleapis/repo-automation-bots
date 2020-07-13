@@ -64,7 +64,7 @@ export interface GCFLogger {
   warn: LogFn;
   error: LogFn;
   metric: LogFn;
-  flushSync: Function;
+  flushSync: {(): void};
 }
 
 export const logger: GCFLogger = initLogger();
@@ -115,6 +115,9 @@ export interface CronPayload {
   cron_org: string;
 }
 
+/**
+ * Type of function execution trigger
+ */
 export enum TriggerType {
   GITHUB = 'GITHUB_WEBHOOK',
   SCHEDULER = 'SCHEDULER',
@@ -122,6 +125,9 @@ export enum TriggerType {
   UNKNOWN = 'UNKNOWN',
 }
 
+/**
+ * Function trigger information
+ */
 export interface TriggerInfo {
   trigger: {
     trigger_type: TriggerType;
@@ -180,7 +186,11 @@ export class GCFBootstrapper {
     return config as Options;
   }
 
-  parseRequestHeaders(
+  /**
+   * Parse the event name, delivery id, signature and task id from the request headers
+   * @param request incoming trigger request
+   */
+  private static parseRequestHeaders(
     request: express.Request
   ): {name: string; id: string; signature: string; taskId: string} {
     const name =
@@ -202,7 +212,12 @@ export class GCFBootstrapper {
     return {name, id, signature, taskId};
   }
 
-  parseTriggerType(name: string, taskId: string): TriggerType {
+  /**
+   * Determine the type of trigger that started this execution
+   * @param name event name from header
+   * @param taskId task id from header
+   */
+  private static parseTriggerType(name: string, taskId: string): TriggerType {
     if (
       !taskId &&
       (name === 'schedule.repository' || name === 'pubsub.message')
@@ -216,7 +231,13 @@ export class GCFBootstrapper {
     return TriggerType.UNKNOWN;
   }
 
-  buildTriggerInfo(
+  /**
+   * Build a TriggerInfo object for this execution
+   * @param triggerType trigger type for this exeuction
+   * @param github_delivery_guid github delivery id for this exeuction
+   * @param requestBody body of the incoming trigger request
+   */
+  private static buildTriggerInfo(
     triggerType: TriggerType,
     github_delivery_guid: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -265,10 +286,17 @@ export class GCFBootstrapper {
     return async (request: express.Request, response: express.Response) => {
       // Otherwise let's listen handle the payload
       this.probot = this.probot || (await this.loadProbot(appFn));
-      const {name, id, signature, taskId} = this.parseRequestHeaders(request);
-      const triggerType: TriggerType = this.parseTriggerType(name, taskId);
+      const {name, id, signature, taskId} = GCFBootstrapper.parseRequestHeaders(
+        request
+      );
+      const triggerType: TriggerType = GCFBootstrapper.parseTriggerType(
+        name,
+        taskId
+      );
 
-      logger.metric(this.buildTriggerInfo(triggerType, id, request.body));
+      logger.metric(
+        GCFBootstrapper.buildTriggerInfo(triggerType, id, request.body)
+      );
 
       if (triggerType === TriggerType.SCHEDULER) {
         // TODO: currently we assume that scheduled events walk all repos
