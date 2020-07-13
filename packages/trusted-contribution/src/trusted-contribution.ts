@@ -54,8 +54,9 @@ export = (app: Application) => {
       const PR_AUTHOR = context.payload.pull_request.user.login;
 
       const remoteConfiguration =
-        (await context.config(WELL_KNOWN_CONFIGURATION_FILE)) ||
-        (DEFAULT_CONFIGURATION as ConfigurationOptions);
+        (await context.config<ConfigurationOptions>(
+          WELL_KNOWN_CONFIGURATION_FILE
+        )) || DEFAULT_CONFIGURATION;
 
       // TODO: add additional verification that only dependency version changes occurred.
       if (isTrustedContribution(remoteConfiguration, PR_AUTHOR)) {
@@ -63,7 +64,6 @@ export = (app: Application) => {
           issue_number: context.payload.pull_request.number,
           labels: ['kokoro:run'],
         });
-
         await context.github.issues.addLabels(issuesAddLabelsParams);
       }
     }

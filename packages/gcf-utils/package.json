@@ -36,7 +36,7 @@
     "yargs": "^15.0.0"
   },
   "devDependencies": {
-    "@types/mocha": "^7.0.0",
+    "@types/mocha": "^8.0.0",
     "@types/node": "^12.6.1",
     "@types/sinon": "^9.0.0",
     "@types/tmp": "^0.2.0",
