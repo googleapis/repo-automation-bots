@@ -235,27 +235,14 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
 
   const githubLabel = objectInJsonArray?.github_label || autoDetectedLabel;
 
-  let alreadyExists;
   if (githubLabel) {
-    alreadyExists = await handler.checkExistingLabels(
+    handler.createLabel(
       github,
       owner,
       repo,
-      githubLabel
+      githubLabel,
+      colorsData[colorNumber].color
     );
-    if (alreadyExists === null || alreadyExists === undefined) {
-      handler.createLabel(
-        github,
-        owner,
-        repo,
-        githubLabel,
-        colorsData[colorNumber].color
-      );
-    } else {
-      console.log(
-        'This label already exists on the repository, will check if it also exists on the issue'
-      );
-    }
 
     if (labelsOnIssue) {
       const found = labelsOnIssue.find(
