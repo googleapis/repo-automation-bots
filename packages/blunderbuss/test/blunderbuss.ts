@@ -14,14 +14,15 @@
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-import handler from '../src/blunderbuss';
-import {describe, it, beforeEach, after} from 'mocha';
+import * as blunderbuss from '../src/blunderbuss';
+import {describe, it, beforeEach, afterEach} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
+import * as sinon from 'sinon';
 
 nock.disableNetConnect();
 
@@ -31,10 +32,9 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 // https://github.com/probot/probot/pull/926
 global.console.warn = () => {};
 
-const originalSleep = handler.sleep;
-
 describe('Blunderbuss', () => {
   let probot: Probot;
+  const sandbox = sinon.createSandbox();
 
   beforeEach(() => {
     probot = new Probot({
@@ -51,15 +51,11 @@ describe('Blunderbuss', () => {
         return Promise.resolve('abc123');
       },
     };
-    handler.sleep = () => {
-      return new Promise(resolve => setTimeout(resolve, 0));
-    };
-    probot.load(handler);
+    sandbox.stub(blunderbuss, 'sleep').resolves();
+    probot.load(blunderbuss.blunderbuss);
   });
 
-  after(() => {
-    handler.sleep = originalSleep;
-  });
+  afterEach(() => sandbox.restore());
 
   describe('issue tests', () => {
     it('assigns opened issues with no assignees', async () => {
