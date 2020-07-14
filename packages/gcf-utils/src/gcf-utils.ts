@@ -88,6 +88,8 @@ export function initLogger(
   });
 
   const flushSync = () => {
+    // flushSync is only available for SonicBoom,
+    // which is the default destination wrapper for GCFLogger
     if (dest instanceof SonicBoom) {
       dest.flushSync();
     }
