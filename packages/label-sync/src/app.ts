@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './label-sync';
+import {handler} from './label-sync';
 
 const bootstrap = new GCFBootstrapper();
-module.exports.label_sync = bootstrap.gcf(appFn);
+module.exports.label_sync = bootstrap.gcf(handler);
