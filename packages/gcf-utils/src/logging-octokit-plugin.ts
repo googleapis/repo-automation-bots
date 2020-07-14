@@ -10,11 +10,15 @@ enum GitHubActionType {
   ISSUE_DELETE_LABEL = 'ISSUE_DELETE_LABEL',
   ISSUE_UPDATE = 'ISSUE_UPDATE',
   ISSUE_CREATE = 'ISSUE_CREATE',
+  PR_DISMISS_REVIIEW = 'PULL_REQUEST_DISMISS_REVIEW',
+  PR_MERGE = 'PULL_REQUEST_MERGE',
+  PR_UPDATE_BRANCH = 'PULL_REQUEST_UPDATE_BRANCH',
   UNKNOWN = 'UNKNOWN',
 }
 
 enum GitHubObjectType {
   ISSUE = 'ISSUE',
+  PR = 'PULL_REQUEST',
   UNKNOWN = 'UNKNOWN',
 }
 
@@ -74,7 +78,25 @@ const ActionUrlMap: {[url: string]: {[method: string]: GitHubActionType}} = {
   '/repos/:owner/:repo/issues': {
     POST: GitHubActionType.ISSUE_CREATE,
   },
+  '/repos/:owner/:repo/pulls/:pull_number/reviews/:review_id/dismissals': {
+    PUT: GitHubActionType.PR_DISMISS_REVIIEW,
+  },
+  '/repos/:owner/:repo/pulls/:pull_number/merge': {
+    PUT: GitHubActionType.PR_MERGE,
+  },
+  '/repos/:owner/:repo/pulls/:pull_number/update-branch': {
+    PUT: GitHubActionType.PR_UPDATE_BRANCH,
+  },
 };
+
+const allIssueUpdateProps = [
+  'body',
+  'state',
+  'assignees',
+  'labels',
+  'milestone',
+  'title',
+];
 
 /**
  * Parses the outgoing GitHub request to determine the details of the action being taken
@@ -87,14 +109,6 @@ function parseActionDetails(options: {
     ActionUrlMap[options.url][options.method] || GitHubActionType.UNKNOWN;
 
   const details: GitHubActionDetails = {};
-  const allIssueUpdateProps = [
-    'body',
-    'state',
-    'assignees',
-    'labels',
-    'milestone',
-    'title',
-  ];
   const hasIssueUpdateProps = allIssueUpdateProps.filter(
     (prop: string) => options[prop]
   );
@@ -121,11 +135,23 @@ function parseActionDetails(options: {
     case GitHubActionType.ISSUE_CREATE:
       details.value = String(options.title);
       break;
+    case GitHubActionType.PR_DISMISS_REVIIEW:
+      details.value = `dismiss ${options.review_id}: ${options.message}`;
+      break;
+    case GitHubActionType.PR_MERGE:
+    case GitHubActionType.PR_UPDATE_BRANCH:
+      details.value = 'NONE';
+      break;
   }
+
   if (options['issue_number']) {
     details.dstObjType = GitHubObjectType.ISSUE;
     details.dstObjId = options['issue_number'];
+  } else if (options['pull_number']) {
+    details.dstObjType = GitHubObjectType.PR;
+    details.dstObjId = options['pull_number'];
   }
+
   details.repoName = String(options['repo']);
   details.repoOwner = String(options['owner']);
   details.type = actionType;

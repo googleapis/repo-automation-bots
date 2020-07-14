@@ -270,6 +270,93 @@ describe('Logging-Octokit-Plugin', () => {
       });
   });
 
+  it('logs information for pulls.dismissReview', () => {
+    loggingOctokit.pulls
+      .dismissReview({
+        owner: 'fooOwner',
+        repo: 'barRepo',
+        message: 'bazMessage',
+        pull_number: 3,
+        review_id: 34,
+      })
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .catch(e => {
+        /**ignore rejected promise**/
+      })
+      .finally(() => {
+        const expected = {
+          action: {
+            type: 'PULL_REQUEST_DISMISS_REVIEW',
+            value: 'dismiss 34: bazMessage',
+            destination_repo: {
+              repo_name: 'barRepo',
+              owner: 'fooOwner',
+            },
+            destination_object: {
+              object_type: 'PULL_REQUEST',
+              object_id: 3,
+            },
+          },
+        };
+        const actual = logger.lastLogData;
+        assert.deepEqual(actual, expected);
+      });
+  });
+
+  it('logs information for pulls.merge', () => {
+    loggingOctokit.pulls
+      .merge({owner: 'fooOwner', repo: 'barRepo', pull_number: 3})
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .catch(e => {
+        /**ignore rejected promise**/
+      })
+      .finally(() => {
+        const expected = {
+          action: {
+            type: 'PULL_REQUEST_MERGE',
+            value: 'NONE',
+            destination_repo: {
+              repo_name: 'barRepo',
+              owner: 'fooOwner',
+            },
+            destination_object: {
+              object_type: 'PULL_REQUEST',
+              object_id: 3,
+            },
+          },
+        };
+        const actual = logger.lastLogData;
+        assert.deepEqual(actual, expected);
+      });
+  });
+
+  it('logs information for pulls.updateBranch', () => {
+    loggingOctokit.pulls
+      .updateBranch({owner: 'fooOwner', repo: 'barRepo', pull_number: 3})
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .catch(e => {
+        /**ignore rejected promise**/
+      })
+      .finally(() => {
+        const expected = {
+          action: {
+            type: 'PULL_REQUEST_UPDATE_BRANCH',
+            value: 'NONE',
+            destination_repo: {
+              repo_name: 'barRepo',
+              owner: 'fooOwner',
+            },
+            destination_object: {
+              object_type: 'PULL_REQUEST',
+              object_id: 3,
+            },
+          },
+        };
+        const actual = logger.lastLogData;
+        assert.deepEqual(actual, expected);
+      });
+  });
+
   it('does not log information for unknown actions', () => {
     loggingOctokit.issues
       .checkAssignee({owner: 'fooOwner', repo: 'barRepo', assignee: 'bar'})
