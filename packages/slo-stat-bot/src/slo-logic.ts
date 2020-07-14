@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import {GitHubAPI} from 'probot/lib/github';
-import {Context} from 'probot';
 import moment from 'moment';
 
 interface SLOStatus {
@@ -36,13 +35,13 @@ interface SLORules {
     excludedGitHubLabels?: string | string[];
     priority?: Priority;
     issueType?: string;
-    issues: boolean;
-    prs: boolean;
+    issues?: boolean;
+    prs?: boolean;
   };
   complianceSettings: {
     responseTime: string | number;
     resolutionTime: string | number;
-    requiresAssignee: boolean;
+    requiresAssignee?: boolean;
     responders?: {
       owners?: string | string[];
       contributors?: string;
@@ -75,12 +74,26 @@ interface ReposListCollaboratorsItem {
 
 //Checking if slo applies to a given issue
 getSLOStatus.doesSloApply = async function doesSloApply(
+  type: string,
   slo: SLORules,
   issueLabels: string[] | null
 ): Promise<boolean> {
+
+  if (Object.keys(slo.appliesTo).length === 0) {
+    return true;
+  }
+
   if (issueLabels === null || issueLabels.length === 0) {
     return false;
-  } 
+  }
+
+  //Checks if type is applicable depending if slo rule applies to prs or issues 
+  const appliesToIssues = slo.appliesTo.issues;
+  const appliesToPrs = slo.appliesTo.prs;
+  const isValidIssue = await getSLOStatus.isValidIssue(appliesToIssues, appliesToPrs, type);
+  if(!isValidIssue) {
+    return false;
+  }
 
   //Checking if all the githublabels are subset of issue labels
   const githubLabels = slo.appliesTo.gitHubLabels;
@@ -126,6 +139,23 @@ getSLOStatus.doesSloApply = async function doesSloApply(
 
   return true;
 };
+
+getSLOStatus.isValidIssue = async function isValidIssue(
+  issues: boolean | undefined,
+  prs: boolean | undefined,
+  type: string
+): Promise<boolean> {
+   issues = issues === undefined? true : issues;
+   prs = prs === undefined? false : prs;
+
+   if(type === 'pull_request' && prs) {
+      return true;
+   }
+   if(type === 'issue' && issues) {
+     return true;
+   }
+   return false;
+}
 
 getSLOStatus.isValidGithubLabels = async function isValidGithubLabels(
   issueLabels: string[],
@@ -177,7 +207,7 @@ getSLOStatus.isValidRule = async function isValidRule(
   }
 
   rule = rule.toLowerCase();
-  return issueLabels.includes(rule) || issueLabels.includes(title + rule);;
+  return issueLabels.includes(rule) || issueLabels.includes(title + rule);
 };
 
 getSLOStatus.convertToArray = async function convertToArray(
@@ -205,13 +235,8 @@ getSLOStatus.getFilePathContent = async function getFilePathContent(
     const content = Buffer.from(data.content as string, 'base64').toString(
       'utf8'
     );
-
     return content;
   } catch (err) {
-    if (repo === '.github') {
-      //Error if org level does not exist
-      throw `Error in finding org level config file in ${owner} \n ${err}`;
-    }
     return 'not found';
   }
 };
@@ -241,13 +266,8 @@ getSLOStatus.isCompliant = async function isCompliant(
   const reqAssignee = slo.complianceSettings.requiresAssignee;
   const responseTime = slo.complianceSettings.responseTime;
   let responders: Set<string> = new Set();
-  if(reqAssignee === true || responseTime !== 0) {
-    responders = await getSLOStatus.getResponders(
-      github,
-      owner,
-      repo,
-      slo
-    );
+  if (reqAssignee === true || responseTime !== 0) {
+    responders = await getSLOStatus.getResponders(github, owner, repo, slo);
   }
 
   //Checking if issue is assigned if slo claims it must have assignee
@@ -343,7 +363,7 @@ getSLOStatus.getResponders = async function getResponders(
   repo: string,
   slo: SLORules
 ): Promise<Set<string>> {
-  const responders: Set<string> = new Set();
+  let responders: Set<string> = new Set([owner]);
   //Getting list of owners from a uri-reference
   let owners = slo.complianceSettings.responders?.owners;
   if (owners) {
@@ -362,18 +382,23 @@ getSLOStatus.getResponders = async function getResponders(
       });
     }
   }
-
+  //Getting list of contributers by checking collaborator list with correct permissions
   const contributors = slo.complianceSettings.responders?.contributors;
   if (contributors) {
-    await getSLOStatus.addContributers(
+    const collaborators = await getSLOStatus.getCollaborators(
       github,
       owner,
-      repo,
+      repo
+    );
+    responders = await getSLOStatus.getContributers(
+      owner,
       responders,
-      contributors
+      contributors,
+      collaborators
     );
   }
 
+  //Getting valid users who can be responders if valid usernames are listed
   const users = slo.complianceSettings.responders?.users;
   users?.forEach(user => responders.add(user));
 
@@ -381,41 +406,32 @@ getSLOStatus.getResponders = async function getResponders(
 };
 
 //Getting contributers depending on write, admin, and owner
-getSLOStatus.addContributers = async function addContributers(
-  github: GitHubAPI,
+getSLOStatus.getContributers = async function getContributers(
   owner: string,
-  repo: string,
   responders: Set<string>,
-  contributors: string
-) {
+  contributors: string,
+  collaborators: ReposListCollaboratorsItem[] | null
+): Promise<Set<string>> {
+  responders.add(owner);
   if (contributors === 'OWNER') {
-    responders.add(owner);
-    return;
+    return responders;
   }
 
-  const collaboratorList = await getSLOStatus.getCollaborators(
-    github,
-    owner,
-    repo
-  );
-  if (collaboratorList) {
-    for (const collab of collaboratorList) {
+  if (collaborators) {
+    for (const collab of collaborators) {
       if (
         (contributors === 'WRITE' &&
           collab.permissions.pull &&
           collab.permissions.push) ||
-          collab.permissions.admin ||
-          collab.login === owner
+        collab.permissions.admin
       ) {
         responders.add(collab.login);
-      } else if (
-        (contributors === 'ADMIN' && collab.permissions.admin) ||
-        collab.login === owner
-      ) {
+      } else if (contributors === 'ADMIN' && collab.permissions.admin) {
         responders.add(collab.login);
       }
     }
   }
+  return responders;
 };
 
 getSLOStatus.getCollaborators = async function getCollaborators(
@@ -463,30 +479,26 @@ getSLOStatus.isInDuration = async function isInDuration(
 };
 
 export async function getSLOStatus(
-  context: Context,
-  slo: SLORules,
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+  issueCreatedTime: string,
+  assignees: IssueAssignees[],
+  issueNumber: number,
+  type: string,
+  slo: SLORules, //Set default values for issues, prs, & assigned
   labels: string[] | null
 ): Promise<SLOStatus> {
-  const owner = context.payload.repository.owner.login;
-  const repo = context.payload.repository.name;
-
-  let appliesTo: boolean = Object.keys(slo.appliesTo).length === 0;
-  if (!appliesTo) {
-    //Checks if issue applies to slo only if slo has applies to specifications
-    appliesTo = await getSLOStatus.doesSloApply(slo, labels);
-  }
-
+  //Checks if issue applies to slo only if slo has applies to specifications
+  const appliesTo = await getSLOStatus.doesSloApply(type, slo, labels);
   let isCompliant = null;
 
   if (appliesTo) {
-    const issueCreatedTime = context.payload.issue.created_at;
-    const assignees: IssueAssignees[] = context.payload.issue.assignees;
-    const issue_number = context.payload.issue.number;
     isCompliant = await getSLOStatus.isCompliant(
-      context.github,
+      github,
       owner,
       repo,
-      issue_number,
+      issueNumber,
       assignees,
       issueCreatedTime,
       slo

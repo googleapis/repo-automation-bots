@@ -14,30 +14,9 @@
 
 import {Application, Context} from 'probot';
 import {GitHubAPI} from 'probot/lib/github';
-import Ajv, {ErrorObject} from 'ajv';
 import {getSLOStatus} from './slo-logic';
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const schema = require('./../data/schema.json');
-
-type Conclusion =
-  | 'success'
-  | 'failure'
-  | 'neutral'
-  | 'cancelled'
-  | 'timed_out'
-  | 'action_required'
-  | undefined;
-
-interface ValidationResults {
-  isValid: boolean;
-  errors?: ErrorObject[] | null;
-}
-
-interface PullsListFilesResponseItem {
-  filename: string;
-  sha: string;
-}
+import {handle_labeling} from './slo-label'
+import {handle_lint} from './slo-lint'
 
 interface IssueLabelResponseItem {
   name: string;
@@ -55,29 +34,20 @@ function handler(app: Application) {
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
       const pullNumber = context.payload.number;
+      const labelsResponse = context.payload.pull_request.labels;
 
-      const fileList = await handler.listFiles(
-        context.github,
+      //Checks if config file exists and lint and places check on pr
+      await handle_lint(
+        context,
         owner,
         repo,
-        pullNumber,
-        100
-      );
-
-      if (!fileList) {
-        return;
-      }
-
-      for (const file of fileList) {
-        //Checks to see if file is repo level or org level issue_slo_rules.json
-        if (
-          file.filename === '.github/issue_slo_rules.json' ||
-          (repo === '.github' && file.filename === 'issue_slo_rules.json')
-        ) {
-          await handler.handle_slos(context, owner, repo, pullNumber, file.sha);
-          break;
-        }
-      }
+        pullNumber
+      )
+      
+      // Check slo-logic and label issue according to slo status
+      const labels = await handler.getIssueLabels(labelsResponse);
+      const sloString = await handler.getSloFile(context.github, owner, repo);
+      await handler.handle_issues(context, owner, repo, 'pull_request', sloString, labels);
     }
   );
   app.on(['issues.closed'], async (context: Context) => {
@@ -86,13 +56,10 @@ function handler(app: Application) {
     const issueNumber = context.payload.issue.number;
     const labelsResponse = context.payload.issue.labels;
 
-    const labels: string[] = [];
-    labelsResponse.forEach((label: IssueLabelResponseItem) =>
-      labels.push(label.name.toLowerCase())
-    );
+    const labels = await handler.getIssueLabels(labelsResponse);
 
     if (labels?.includes('ooslo')) {
-      await handler.removeIssueLabel(context.github, owner, repo, issueNumber);
+      await handle_labeling.removeIssueLabel(context.github, owner, repo, issueNumber);
     }
   });
   app.on(
@@ -100,22 +67,23 @@ function handler(app: Application) {
       'issues.opened',
       'issues.reopened',
       'issues.labeled',
+      'issues.unlabeled',
       'issues.edited',
       'issues.assigned',
       'issues.unassigned',
     ],
     async (context: Context) => {
+      if (context.payload.issue.state === 'closed') {
+        return;
+      }
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
       const labelsResponse = context.payload.issue.labels;
 
-      const labels: string[] = [];
-      labelsResponse.forEach((label: IssueLabelResponseItem) =>
-        labels.push(label.name.toLowerCase())
-      );
-
+      // Check slo-logic and label issue according to slo status
+      const labels = await handler.getIssueLabels(labelsResponse);
       const sloString = await handler.getSloFile(context.github, owner, repo);
-      await handler.handle_issues(context, owner, repo, sloString, labels);
+      await handler.handle_issues(context, owner, repo, 'issue', sloString, labels);
     }
   );
 }
@@ -125,194 +93,52 @@ handler.handle_issues = async function handle_issues(
   context: Context,
   owner: string,
   repo: string,
+  type: string,
   sloString: string,
   labels: string[] | null
 ) {
   const sloList = JSON.parse(sloString);
 
   for (const slo of sloList) {
-    const issueNumber = context.payload.issue.number;
-    const sloStatus = await getSLOStatus(context, slo, labels);
+    const issueNumber = context.payload[type].number;
+    const issueCreatedTime = context.payload[type].created_at;
+    const assignees = context.payload[type].assignees;
 
+    const sloStatus = await getSLOStatus(
+      context.github,
+      owner,
+      repo,
+      issueCreatedTime,
+      assignees,
+      issueNumber,
+      type,
+      slo,
+      labels
+    );
+
+    //Labeling based on slo status for the given issue
     if (sloStatus.appliesTo) {
-      if (!sloStatus.isCompliant && !labels?.includes('ooslo')) {
-        const isLabelExist = await handler.checkExistingLabel(
-          context.github,
-          owner,
-          repo
-        );
-        let createdLabel = true;
-        if (!isLabelExist) {
-          //Boolean notifies if creating a label was a success or not
-          createdLabel = await handler.createLabel(context.github, owner, repo);
-        }
-        if (createdLabel) {
-          await this.addLabel(context.github, owner, repo, issueNumber);
-        }
-      } else if (sloStatus.isCompliant && labels?.includes('ooslo')) {
-        await handler.removeIssueLabel(
-          context.github,
-          owner,
-          repo,
-          issueNumber
-        );
-      }
+      await handle_labeling(
+        context.github,
+        owner,
+        repo,
+        issueNumber,
+        sloStatus,
+        labels
+      );
     }
   }
 };
 
-// Lints issue_slo_rules.json file and creates a check on PR. If file is invalid it will comment on PR
-handler.handle_slos = async function handle_slos(
-  context: Context,
-  owner: string,
-  repo: string,
-  issue_number: number,
-  file_sha: string
-) {
-  const sloString = await handler.getFileShaContents(
-    context.github,
-    owner,
-    repo,
-    file_sha
+//Get issue label names from webhook event payload
+handler.getIssueLabels = async function getIssueLabels(
+  labelsResponse: IssueLabelResponseItem[]
+): Promise<string[]> {
+  const labels: string[] = [];
+  labelsResponse.forEach((label: IssueLabelResponseItem) =>
+    labels.push(label.name.toLowerCase())
   );
-
-  if (!sloString) {
-    return;
-  }
-
-  const sloData = JSON.parse(sloString);
-  const res = await handler.lint(schema, sloData);
-
-  await handler.commentPR(
-    context.github,
-    owner,
-    repo,
-    issue_number,
-    res.isValid
-  );
-  await handler.createCheck(context, res);
-};
-
-handler.getFileShaContents = async function getFileShaContents(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  file_sha: string
-): Promise<string | null> {
-  try {
-    const blob = await github.git.getBlob({
-      owner,
-      repo,
-      file_sha,
-    });
-    const fileContent = Buffer.from(blob.data.content, 'base64').toString(
-      'utf8'
-    );
-    return fileContent;
-  } catch (err) {
-    console.warn(
-      `Error getting file content in repo:${repo}. error status:${err.status}`
-    );
-    return null;
-  }
-};
-
-handler.listFiles = async function listFiles(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  pull_number: number,
-  per_page: number
-): Promise<PullsListFilesResponseItem[] | null> {
-  try {
-    const listOfFiles = await github.pulls.listFiles({
-      owner,
-      repo,
-      pull_number,
-      per_page,
-    });
-    return listOfFiles.data;
-  } catch (err) {
-    console.warn(
-      `Error getting list of files in repo: ${repo} for issue number: ${pull_number}. error status:${err.status}`
-    );
-    return null;
-  }
-};
-
-//Linting the issue_slo_rules.json against the slo schema
-handler.lint = async function lint(
-  schema: JSON,
-  sloData: JSON
-): Promise<ValidationResults> {
-  const ajv = new Ajv();
-  const validate = await ajv.compile(schema);
-  const isValid = await validate(sloData);
-
-  return {
-    isValid: isValid,
-    errors: validate.errors,
-  } as ValidationResults;
-};
-
-//Comments on PR only if the issue_slo_rules.json is invalid
-handler.commentPR = async function commentPR(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  issue_number: number,
-  isValid: boolean
-) {
-  if (isValid) {
-    return;
-  }
-  const body =
-    'ERROR: "issue_slo_rules.json" file is not valid with JSON schema';
-  try {
-    await github.issues.createComment({
-      owner,
-      repo,
-      issue_number,
-      body,
-    });
-  } catch (err) {
-    console.warn(
-      `Error creating comment in repo: ${repo} for issue number: ${issue_number}. error status: ${err.status}`
-    );
-    return;
-  }
-};
-
-handler.createCheck = async function createCheck(
-  context: Context,
-  validationRes: ValidationResults
-) {
-  let checkParams = context.repo({
-    name: 'slo-rules-check',
-    head_sha: context.payload.pull_request.head.sha,
-    conclusion: 'success' as Conclusion,
-  });
-
-  if (!validationRes.isValid) {
-    checkParams = context.repo({
-      name: 'slo-rules-check',
-      head_sha: context.payload.pull_request.head.sha,
-      conclusion: 'failure' as Conclusion,
-      output: {
-        title: 'Commit message did not follow Conventional Commits',
-        summary: 'issue_slo_rules.json does not follow the slo_rules schema.',
-        text: JSON.stringify(validationRes.errors, null, 4),
-      },
-    });
-  }
-  try {
-    await context.github.checks.create(checkParams);
-  } catch (err) {
-    console.error(
-      `Error creating check in repo ${context.payload.repository.name} \n ${err}`
-    );
-    return;
-  }
+  return labels;
 };
 
 // If the repo level config file does not exist defaults to org config file
@@ -328,6 +154,7 @@ handler.getSloFile = async function getSloFile(
     repo,
     path
   );
+
   if (sloRules === 'not found') {
     path = 'issue_slo_rules.json';
     sloRules = await getSLOStatus.getFilePathContent(
@@ -337,94 +164,11 @@ handler.getSloFile = async function getSloFile(
       path
     );
   }
+  if (sloRules === 'not found') {
+    //Error if org level does not exist
+    throw `Error in finding org level config file in ${owner}`;
+  }
   return sloRules;
-};
-
-handler.checkExistingLabel = async function checkExistingLabel(
-  github: GitHubAPI,
-  owner: string,
-  repo: string
-): Promise<boolean | null> {
-  try {
-    const name = 'OOSLO';
-    const label = await github.issues.getLabel({
-      owner,
-      repo,
-      name,
-    });
-    return label.data.name === 'OOSLO';
-  } catch (err) {
-    return null;
-  }
-};
-
-handler.createLabel = async function createLabel(
-  github: GitHubAPI,
-  owner: string,
-  repo: string
-): Promise<boolean> {
-  try {
-    const name = 'OOSLO';
-    const color = 'ff6f6f';
-    const description = 'Issue is out of slo';
-    await github.issues.createLabel({
-      owner,
-      repo,
-      name,
-      color,
-      description,
-    });
-    return true;
-  } catch (err) {
-    console.error(
-      `Error when creating OOSLO label for repo ${repo} \n ${err.request}`
-    );
-    return false;
-  }
-};
-
-handler.addLabel = async function addLabel(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  issueNumber: number
-) {
-  try {
-    const labels = ['OOSLO'];
-    await github.issues.addLabels({
-      owner,
-      repo,
-      issue_number: issueNumber,
-      labels,
-    });
-  } catch (err) {
-    console.error(
-      `Error adding OOSLO label in repo ${repo} for issue number ${issueNumber}\n ${err.request}`
-    );
-    return;
-  }
-};
-
-handler.removeIssueLabel = async function removeIssueLabel(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  issueNumber: number
-) {
-  try {
-    const name = 'OOSLO';
-    await github.issues.removeLabel({
-      owner,
-      repo,
-      issue_number: issueNumber,
-      name,
-    });
-  } catch (err) {
-    console.error(
-      `Error removing OOSLO label in repo ${repo} for issue number ${issueNumber}\n ${err.request}`
-    );
-    return;
-  }
 };
 
 export = handler;
