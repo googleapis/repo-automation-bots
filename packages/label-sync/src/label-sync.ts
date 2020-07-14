@@ -54,6 +54,9 @@ async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
   return labels;
 }
 
+/**
+ * Fetch the list of static labels from this repository, and cache it.
+ */
 async function refreshLabels(github: GitHubAPI) {
   const data = (
     await github.repos.getContents({
@@ -148,10 +151,8 @@ export const getApiLabels = async (
 };
 
 /**
- * Given a set of available
- * @param github
- * @param owner
- * @param repo
+ * Main method. Fetch a list of required labels, and apply them to a given
+ * repository.
  */
 async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
   const newLabels = await getLabels(github, `${owner}/${repo}`);
