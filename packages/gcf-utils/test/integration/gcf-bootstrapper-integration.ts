@@ -14,9 +14,10 @@
 
 import {GCFBootstrapper} from '../../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
-import {Application} from 'probot';
+import {Application, GitHubAPI} from 'probot';
 import {resolve} from 'path';
 import {config} from 'dotenv';
+import assert from 'assert';
 
 describe('GCFBootstrapper Integration', () => {
   describe('getProbotConfig', () => {
@@ -46,6 +47,24 @@ describe('GCFBootstrapper Integration', () => {
       const pb = await bootstrapper.loadProbot((app: Application) => {
         app.on('foo', async () => {
           console.log('We are called!');
+        });
+      });
+
+      await pb.receive({
+        name: 'foo',
+        id: 'bar',
+        payload: 'baz',
+      });
+    });
+
+    it('provides github with logging plugin', async () => {
+      const pb = await bootstrapper.loadProbot((app: Application) => {
+        app.on('foo', async context => {
+          assert(
+            (context.github as GitHubAPI & {
+              loggingOctokitPluginVersion: string;
+            }).loggingOctokitPluginVersion === '1.0.0'
+          );
         });
       });
 
