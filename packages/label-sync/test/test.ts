@@ -19,8 +19,9 @@ import path from 'path';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
+import * as sinon from 'sinon';
 
-import appFn from '../src/label-sync';
+import * as labelSync from '../src/label-sync';
 
 nock.disableNetConnect();
 const fixturesPath = path.resolve(__dirname, '../../test/fixtures');
@@ -32,26 +33,16 @@ const newLabels = require('../src/labels.json') as {
     }
   ];
 };
-const repos = require('../../test/fixtures/repos.json');
 
-interface GetApiLabelsResponse {
-  apis: Array<{
-    display_name: string; // Access Approval
-    github_label: string; // api: accessapproval
-    api_shortname: string; // accessapproval
-  }>;
-}
-appFn.getApiLabels = async (): Promise<GetApiLabelsResponse> => {
-  return {
-    apis: [
-      {
-        display_name: 'Sprockets',
-        github_label: 'api: sprockets',
-        api_shortname: 'sprockets',
-      },
-    ],
-  };
-};
+sinon.stub(labelSync, 'getApiLabels').resolves({
+  apis: [
+    {
+      display_name: 'Sprockets',
+      github_label: 'api: sprockets',
+      api_shortname: 'sprockets',
+    },
+  ],
+});
 
 function nockLabelList() {
   return nock('https://api.github.com')
@@ -86,12 +77,6 @@ function nockLabelUpdate(name: string) {
     .reply(200);
 }
 
-function nockRepoList() {
-  return nock('https://raw.githubusercontent.com')
-    .get('/googleapis/sloth/master/repos.json')
-    .reply(200, repos);
-}
-
 describe('Label Sync', () => {
   let probot: Probot;
   beforeEach(() => {
@@ -99,7 +84,7 @@ describe('Label Sync', () => {
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
       // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest'),
+      Octokit: require('@octokit/rest').Octokit,
     });
     probot.app = {
       getSignedJsonWebToken() {
@@ -109,7 +94,7 @@ describe('Label Sync', () => {
         return Promise.resolve('abc123');
       },
     };
-    probot.load(appFn);
+    probot.load(labelSync.handler);
   });
 
   it('should sync labels on repo create', async () => {
