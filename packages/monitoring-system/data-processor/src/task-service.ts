@@ -12,9 +12,9 @@ async function handleTask(task: Task, req: express.Request, res: express.Respons
   try {
     const dataProcessor = DataProcessorFactory.getDataProcessor(task);
     await dataProcessor.collectAndProcess();
-    res.status(200).send(`Successfully completed task: ${task}`)
+    res.status(200).send({ status: "success", task: task, msg: "Task was successfully completed" })
   } catch (err) {
-    res.status(500).send(`Error while completing task: ${task}.`)
+    res.status(500).send({ status: "error", task: task , msg: "Error while completing task" })
   }
 }
 
@@ -38,3 +38,6 @@ const port = process.env.PORT || 8080;
 app.listen(port, () => {
   console.log('Data Processor started. Now awaiting task requests.', port);
 });
+
+// for testing purposes
+export default app;
