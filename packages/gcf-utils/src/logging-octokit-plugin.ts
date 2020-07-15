@@ -199,12 +199,14 @@ function logGithubAction(logger: MetricLogger, details: GitHubActionDetails) {
     // don't log unknown action types
     return;
   }
+
+  const UNKNOWN = 'UNKNOWN';
   const general = {
     type: details.type,
-    value: details.value || 'UNKNOWN',
+    value: details.value || UNKNOWN,
     destination_repo: {
-      repo_name: details.repoName || 'UNKNOWN',
-      owner: details.repoOwner || 'UNKNOWN',
+      repo_name: details.repoName || UNKNOWN,
+      owner: details.repoOwner || UNKNOWN,
     },
   };
 
@@ -213,7 +215,7 @@ function logGithubAction(logger: MetricLogger, details: GitHubActionDetails) {
       ? {
           destination_object: {
             object_type: details.destObjType || GitHubObjectType.UNKNOWN,
-            object_id: details.destObjId || 'UNKNOWN',
+            object_id: details.destObjId || UNKNOWN,
           },
         }
       : {};
