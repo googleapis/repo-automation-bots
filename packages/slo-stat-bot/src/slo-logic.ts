@@ -78,7 +78,6 @@ getSLOStatus.doesSloApply = async function doesSloApply(
   slo: SLORules,
   issueLabels: string[] | null
 ): Promise<boolean> {
-
   if (Object.keys(slo.appliesTo).length === 0) {
     return true;
   }
@@ -87,11 +86,15 @@ getSLOStatus.doesSloApply = async function doesSloApply(
     return false;
   }
 
-  //Checks if type is applicable depending if slo rule applies to prs or issues 
+  //Checks if type is applicable depending if slo rule applies to prs or issues
   const appliesToIssues = slo.appliesTo.issues;
   const appliesToPrs = slo.appliesTo.prs;
-  const isValidIssue = await getSLOStatus.isValidIssue(appliesToIssues, appliesToPrs, type);
-  if(!isValidIssue) {
+  const isValidIssue = await getSLOStatus.isValidIssue(
+    appliesToIssues,
+    appliesToPrs,
+    type
+  );
+  if (!isValidIssue) {
     return false;
   }
 
@@ -145,17 +148,17 @@ getSLOStatus.isValidIssue = async function isValidIssue(
   prs: boolean | undefined,
   type: string
 ): Promise<boolean> {
-   issues = issues === undefined? true : issues;
-   prs = prs === undefined? false : prs;
+  issues = issues === undefined ? true : issues;
+  prs = prs === undefined ? false : prs;
 
-   if(type === 'pull_request' && prs) {
-      return true;
-   }
-   if(type === 'issue' && issues) {
-     return true;
-   }
-   return false;
-}
+  if (type === 'pull_request' && prs) {
+    return true;
+  }
+  if (type === 'issue' && issues) {
+    return true;
+  }
+  return false;
+};
 
 getSLOStatus.isValidGithubLabels = async function isValidGithubLabels(
   issueLabels: string[],

@@ -15,8 +15,8 @@
 import {Application, Context} from 'probot';
 import {GitHubAPI} from 'probot/lib/github';
 import {getSLOStatus} from './slo-logic';
-import {handle_labeling} from './slo-label'
-import {handle_lint} from './slo-lint'
+import {handle_labeling} from './slo-label';
+import {handle_lint} from './slo-lint';
 
 interface IssueLabelResponseItem {
   name: string;
@@ -37,17 +37,18 @@ function handler(app: Application) {
       const labelsResponse = context.payload.pull_request.labels;
 
       //Checks if config file exists and lint and places check on pr
-      await handle_lint(
-        context,
-        owner,
-        repo,
-        pullNumber
-      )
-      
+      await handle_lint(context, owner, repo, pullNumber);
       // Check slo-logic and label issue according to slo status
       const labels = await handler.getIssueLabels(labelsResponse);
       const sloString = await handler.getSloFile(context.github, owner, repo);
-      await handler.handle_issues(context, owner, repo, 'pull_request', sloString, labels);
+      await handler.handle_issues(
+        context,
+        owner,
+        repo,
+        'pull_request',
+        sloString,
+        labels
+      );
     }
   );
   app.on(['issues.closed'], async (context: Context) => {
@@ -57,9 +58,15 @@ function handler(app: Application) {
     const labelsResponse = context.payload.issue.labels;
 
     const labels = await handler.getIssueLabels(labelsResponse);
-
-    if (labels?.includes('ooslo')) {
-      await handle_labeling.removeIssueLabel(context.github, owner, repo, issueNumber);
+    const name = await handle_labeling.getLabelName();
+    if (labels?.includes(name)) {
+      await handle_labeling.removeIssueLabel(
+        context.github,
+        owner,
+        repo,
+        issueNumber,
+        name
+      );
     }
   });
   app.on(
@@ -83,7 +90,14 @@ function handler(app: Application) {
       // Check slo-logic and label issue according to slo status
       const labels = await handler.getIssueLabels(labelsResponse);
       const sloString = await handler.getSloFile(context.github, owner, repo);
-      await handler.handle_issues(context, owner, repo, 'issue', sloString, labels);
+      await handler.handle_issues(
+        context,
+        owner,
+        repo,
+        'issue',
+        sloString,
+        labels
+      );
     }
   );
 }

@@ -14,38 +14,30 @@
 
 import {GitHubAPI} from 'probot/lib/github';
 
-// handler.checkExistingLabel = async function checkExistingLabel(
-//   github: GitHubAPI,
-//   owner: string,
-//   repo: string
-// ): Promise<boolean | null> {
-//   try {
-//     const name = 'OOSLO';
-//     const label = await github.issues.getLabel({
-//       owner,
-//       repo,
-//       name,
-//     });
-//     return label.data.name === 'OOSLO';
-//   } catch (err) {
-//     //Error if ooslo label does not exist in repo
-//     throw `Error in getting ooslo label for org ${owner} in repo ${repo} \n ${err}`;
-//   }
-// };
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const config = require('./../data/config.json');
 
 interface SLOStatus {
-    appliesTo: boolean;
-    isCompliant: boolean | null;
+  appliesTo: boolean;
+  isCompliant: boolean | null;
 }
 
+handle_labeling.getLabelName = async function (): Promise<string> {
+  try {
+    return config.name;
+  } catch (err) {
+    throw 'Unable to get ooslo name from config-label file';
+  }
+};
 handle_labeling.addLabel = async function addLabel(
   github: GitHubAPI,
   owner: string,
   repo: string,
-  issueNumber: number
+  issueNumber: number,
+  name: string
 ) {
   try {
-    const labels = ['OOSLO'];
+    const labels = [name];
     await github.issues.addLabels({
       owner,
       repo,
@@ -62,10 +54,10 @@ handle_labeling.removeIssueLabel = async function removeIssueLabel(
   github: GitHubAPI,
   owner: string,
   repo: string,
-  issueNumber: number
+  issueNumber: number,
+  name: string
 ) {
   try {
-    const name = 'OOSLO';
     await github.issues.removeLabel({
       owner,
       repo,
@@ -81,16 +73,25 @@ handle_labeling.removeIssueLabel = async function removeIssueLabel(
 };
 
 export async function handle_labeling(
-    github: GitHubAPI,
-    owner: string,
-    repo: string,
-    issueNumber: number,
-    sloStatus: SLOStatus,
-    labels: string[] | null
-  ) {
-    if (!sloStatus.isCompliant && !labels?.includes('ooslo')) {
-      await handle_labeling.addLabel(github, owner, repo, issueNumber);
-    } else if (sloStatus.isCompliant && labels?.includes('ooslo')) {
-      await handle_labeling.removeIssueLabel(github, owner, repo, issueNumber);
-    }
-  };
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+  issueNumber: number,
+  sloStatus: SLOStatus,
+  labels: string[] | null
+) {
+  const name = await handle_labeling.getLabelName();
+  // Adds ooslo label if slo is not compliant and does not have the label,
+  if (!sloStatus.isCompliant && !labels?.includes(name)) {
+    await handle_labeling.addLabel(github, owner, repo, issueNumber, name);
+    // Removes ooslo label if issue is compliant but has ooslo label
+  } else if (sloStatus.isCompliant && labels?.includes(name)) {
+    await handle_labeling.removeIssueLabel(
+      github,
+      owner,
+      repo,
+      issueNumber,
+      name
+    );
+  }
+}
