@@ -63,7 +63,7 @@
                     "type": "object",
                     "properties": {
                         "owners": {
-                            "description": "",
+                            "description": "A uri reference to a file containing users marked as responders to this SLO",
                             "type": ["string", "array"],
                             "format": "uri-reference",
                             "items": {
@@ -85,7 +85,10 @@
                         }
                     },
                     "minProperties": 1
-                }
+                },
+                "default": {
+                    "contributors": "WRITE"
+                } 
             },
             "required": ["responseTime", "resolutionTime"]
         },
