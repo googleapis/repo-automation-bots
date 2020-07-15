@@ -169,6 +169,11 @@
       "name": "buildcop: quiet",
       "description": "Tells the Build Cop Bot to comment less",
       "color": "86d9d7"
+    },
+    {
+      "name": "samples",
+      "description": "Issues that are directly related to samples.",
+      "color": "9932CC"
     }
   ]
 }
