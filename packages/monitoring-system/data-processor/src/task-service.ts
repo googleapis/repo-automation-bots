@@ -1,35 +1,38 @@
 import express from 'express';
+import {DataProcessorFactory} from './data-processor-factory';
 
 export enum Task {
-  ProcessLogs,
-  ProcessTaskQueue,
-  ProcessGCF,
-  ProcessGitHub,
+  ProcessLogs = 'Process Logs Data',
+  ProcessTaskQueue = 'Process Task Queue Data',
+  ProcessGCF = 'Process Cloud Functions Data',
+  ProcessGitHub = 'Process GitHub Data'
 }
 
-function processLogs(req: express.Request, res: express.Response) {
-  res.send('Process Logs: not implemented');
-}
-
-function processTaskQueue(req: express.Request, res: express.Response) {
-  res.send('Process Task Queue: not implemented');
-}
-
-function processGCF(req: express.Request, res: express.Response) {
-  res.send('Process GCF: not implemented');
-}
-
-function processGitHub(req: express.Request, res: express.Response) {
-  res.send('Process GitHub: not implemented');
+async function handleTask(task: Task, req: express.Request, res: express.Response) {
+  try {
+    const dataProcessor = DataProcessorFactory.getDataProcessor(task);
+    await dataProcessor.collectAndProcess();
+    res.status(200).send(`Successfully completed task: ${task}`)
+  } catch (err) {
+    res.status(500).send(`Error while completing task: ${task}.`)
+  }
 }
 
 const app = express();
-const ROOT_TASK_ENDPOINT = '/task';
+const ROOT = '/task';
 
-app.get(`${ROOT_TASK_ENDPOINT}/process-logs`, processLogs);
-app.get(`${ROOT_TASK_ENDPOINT}/process-task-queue`, processTaskQueue);
-app.get(`${ROOT_TASK_ENDPOINT}/process-gcf`, processGCF);
-app.get(`${ROOT_TASK_ENDPOINT}/process-github`, processGitHub);
+app.get(`${ROOT}/process-logs`, (req, res) =>
+  handleTask(Task.ProcessLogs, req, res)
+);
+app.get(`${ROOT}/process-task-queue`, (req, res) =>
+  handleTask(Task.ProcessTaskQueue, req, res)
+);
+app.get(`${ROOT}/process-gcf`, (req, res) =>
+  handleTask(Task.ProcessGCF, req, res)
+);
+app.get(`${ROOT}/process-github`, (req, res) =>
+  handleTask(Task.ProcessGitHub, req, res)
+);
 
 const port = process.env.PORT || 8080;
 app.listen(port, () => {

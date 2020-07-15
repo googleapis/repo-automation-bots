@@ -8,14 +8,17 @@
     "fix": "gts fix",
     "lint": "gts check",
     "test": "echo No test script defined",
-    "start": "node ./build/src/task-service.js"
+    "start": "node ./build/src/task-service.js",
+    "docker-start-local": "docker run --network=host data-processor:1.0",
+    "docker-build-start-local": "docker build --tag data-processor:1.0 . && npm run docker-start-local"
   },
   "main": "./build/src/task-service.js",
   "author": "asonawalla@google.com",
   "license": "Apache-2.0",
   "dependencies": {
     "express": "^4.17.1",
-    "gts": "^2.0.0"
+    "gts": "^2.0.0",
+    "firebase-admin": "^9.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.7",
