@@ -49,11 +49,11 @@ function randomFrom(items: string[], ignore: string): string | undefined {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-handler.sleep = (ms: number) => {
-  return new Promise(resolve => setTimeout(resolve, ms));
+export const sleep = (ms: number) => {
+  return new Promise(r => setTimeout(r, ms));
 };
 
-function handler(app: Application) {
+export function blunderbuss(app: Application) {
   app.on(
     [
       'issues.opened',
@@ -165,7 +165,7 @@ function handler(app: Application) {
         // It is possible that blunderbuss is running before other bots have
         // a chance to add extra labels. Wait and re-pull fresh labels
         // before comparing against the config.
-        await handler.sleep(10_000);
+        await sleep(10_000);
         const labelResp = await context.github.issues.listLabelsOnIssue({
           number: issue.number,
           owner: context.payload.repository.owner.login,
@@ -207,8 +207,6 @@ function handler(app: Application) {
     }
   );
 }
-
-export = handler;
 
 function findAssignees(
   config: ByConfig[] | undefined,
