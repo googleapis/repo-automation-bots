@@ -15,6 +15,9 @@
 import {Octokit} from '@octokit/rest';
 import {logger} from './gcf-utils';
 
+/**
+ * Types of actions taken on GitHub
+ */
 enum GitHubActionType {
   ISSUE_CREATE_LABEL = 'ISSUE_CREATE_LABEL',
   ISSUE_ADD_LABELS = 'ISSUE_ADD_LABELS',
@@ -30,12 +33,18 @@ enum GitHubActionType {
   UNKNOWN = 'UNKNOWN',
 }
 
+/**
+ * Destination objects for actions
+ */
 enum GitHubObjectType {
   ISSUE = 'ISSUE',
   PR = 'PULL_REQUEST',
   UNKNOWN = 'UNKNOWN',
 }
 
+/**
+ * Log object for a GitHub Action
+ */
 interface GitHubActionLog {
   action: {
     type: GitHubActionType;
@@ -51,15 +60,21 @@ interface GitHubActionLog {
   };
 }
 
+/**
+ * Parsed details of GitHub action
+ */
 interface GitHubActionDetails {
   type?: GitHubActionType;
   value?: string;
-  dstObjType?: GitHubObjectType;
-  dstObjId?: string | number;
+  destObjType?: GitHubObjectType;
+  destObjId?: string | number;
   repoName?: string;
   repoOwner?: string;
 }
 
+/**
+ * A logger with a metric endpoint
+ */
 interface MetricLogger {
   metric: {(data: GitHubActionLog): void};
 }
@@ -67,7 +82,7 @@ interface MetricLogger {
 /**
  * Maps GitHub API endpoints to a GitHubActionType
  */
-const ActionUrlMap: {[url: string]: {[method: string]: GitHubActionType}} = {
+const ActionEndpoints: {[url: string]: {[method: string]: GitHubActionType}} = {
   '/repos/:owner/:repo/issues/:issue_number/labels': {
     POST: GitHubActionType.ISSUE_ADD_LABELS,
   },
@@ -103,14 +118,48 @@ const ActionUrlMap: {[url: string]: {[method: string]: GitHubActionType}} = {
   },
 };
 
-const allIssueUpdateProps = [
-  'body',
-  'state',
-  'assignees',
-  'labels',
-  'milestone',
-  'title',
-];
+function parseActionValue(
+  actionType: GitHubActionType,
+  options: {
+    [key: string]: string | number;
+  }
+): string {
+  // optional properties for issues.update
+  const allIssueUpdateProps = [
+    'body',
+    'state',
+    'assignees',
+    'labels',
+    'milestone',
+    'title',
+  ];
+  const hasIssueUpdateProps = allIssueUpdateProps.filter(
+    (prop: string) => options[prop]
+  );
+
+  switch (actionType) {
+    case GitHubActionType.ISSUE_ADD_LABELS:
+      return String(options.labels);
+    case GitHubActionType.ISSUE_CREATE_COMMENT:
+      return String(options.body);
+    case GitHubActionType.ISSUE_REMOVE_LABEL:
+    case GitHubActionType.ISSUE_CREATE_LABEL:
+    case GitHubActionType.ISSUE_DELETE_LABEL:
+      return String(options.name);
+    case GitHubActionType.ISSUE_UPDATE_LABEL:
+      return `${options.current_name} to ${options.name}`;
+    case GitHubActionType.ISSUE_UPDATE:
+      return 'updated: ' + hasIssueUpdateProps.join(',');
+    case GitHubActionType.ISSUE_CREATE:
+      return String(options.title);
+    case GitHubActionType.PR_DISMISS_REVIIEW:
+      return `dismiss ${options.review_id}: ${options.message}`;
+    case GitHubActionType.PR_MERGE:
+    case GitHubActionType.PR_UPDATE_BRANCH:
+    default:
+      return 'NONE';
+  }
+}
 
 /**
  * Parses the outgoing GitHub request to determine the details of the action being taken
@@ -120,50 +169,17 @@ function parseActionDetails(options: {
   [key: string]: string | number;
 }): GitHubActionDetails {
   const actionType: GitHubActionType =
-    ActionUrlMap[options.url][options.method] || GitHubActionType.UNKNOWN;
+    ActionEndpoints[options.url][options.method] || GitHubActionType.UNKNOWN;
 
   const details: GitHubActionDetails = {};
-  const hasIssueUpdateProps = allIssueUpdateProps.filter(
-    (prop: string) => options[prop]
-  );
-
-  switch (actionType) {
-    case GitHubActionType.ISSUE_ADD_LABELS:
-      details.value = String(options.labels);
-      break;
-    case GitHubActionType.ISSUE_CREATE_COMMENT:
-      details.value = String(options.body);
-      break;
-    case GitHubActionType.ISSUE_REMOVE_LABEL:
-    case GitHubActionType.ISSUE_CREATE_LABEL:
-    case GitHubActionType.ISSUE_DELETE_LABEL:
-      details.value = String(options.name);
-      break;
-    case GitHubActionType.ISSUE_UPDATE_LABEL:
-      details.value = `${options.current_name} to ${options.name}`;
-      break;
-    case GitHubActionType.ISSUE_UPDATE:
-      details.value = 'updated: ';
-      details.value += hasIssueUpdateProps.join(',');
-      break;
-    case GitHubActionType.ISSUE_CREATE:
-      details.value = String(options.title);
-      break;
-    case GitHubActionType.PR_DISMISS_REVIIEW:
-      details.value = `dismiss ${options.review_id}: ${options.message}`;
-      break;
-    case GitHubActionType.PR_MERGE:
-    case GitHubActionType.PR_UPDATE_BRANCH:
-      details.value = 'NONE';
-      break;
-  }
+  details.value = parseActionValue(actionType, options);
 
   if (options['issue_number']) {
-    details.dstObjType = GitHubObjectType.ISSUE;
-    details.dstObjId = options['issue_number'];
+    details.destObjType = GitHubObjectType.ISSUE;
+    details.destObjId = options['issue_number'];
   } else if (options['pull_number']) {
-    details.dstObjType = GitHubObjectType.PR;
-    details.dstObjId = options['pull_number'];
+    details.destObjType = GitHubObjectType.PR;
+    details.destObjId = options['pull_number'];
   }
 
   details.repoName = String(options['repo']);
@@ -193,11 +209,11 @@ function logGithubAction(logger: MetricLogger, details: GitHubActionDetails) {
   };
 
   const destination_object =
-    details.dstObjType || details.dstObjId
+    details.destObjType || details.destObjId
       ? {
           destination_object: {
-            object_type: details.dstObjType || GitHubObjectType.UNKNOWN,
-            object_id: details.dstObjId || 'UNKNOWN',
+            object_type: details.destObjType || GitHubObjectType.UNKNOWN,
+            object_id: details.destObjId || 'UNKNOWN',
           },
         }
       : {};
