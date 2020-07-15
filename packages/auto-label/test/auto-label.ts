@@ -67,8 +67,6 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
-        .reply(200)
         .post('/repos/testOwner/testRepo/labels')
         .reply(200, [
           {
@@ -94,13 +92,6 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
-        .reply(200, [
-          {
-            name: 'myGitHubLabel',
-            color: 'C9FFE5',
-          },
-        ])
         .get('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200, [
           {
@@ -117,13 +108,6 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
-        .reply(200, [
-          {
-            name: 'myGitHubLabel',
-            color: 'C9FFE5',
-          },
-        ])
         .get('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200)
         .post('/repos/testOwner/testRepo/issues/5/labels')
@@ -243,12 +227,12 @@ describe('auto-label', () => {
     it('responds to a scheduled event', async () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/issues')
-        .reply(200, {
-          number: 1,
-        })
+        .reply(200, [
+          {
+            number: 1,
+          },
+        ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
-        .reply(200)
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
         .reply(200)
         .post('/repos/testOwner/testRepo/labels', {
           name: 'myGitHubLabel',
@@ -283,13 +267,13 @@ describe('auto-label', () => {
     it('deletes extraneous labels', async () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/issues')
-        .reply(200, {
-          number: 1,
-        })
+        .reply(200, [
+          {
+            number: 1,
+          },
+        ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200, [{name: 'api:theWrongLabel'}])
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
-        .reply(200)
         .post('/repos/testOwner/testRepo/labels', {
           name: 'myGitHubLabel',
           color: 'FEFEFA',
@@ -331,13 +315,13 @@ describe('auto-label', () => {
     it('will not create labels that already exist', async () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/issues')
-        .reply(200, {
-          number: 1,
-        })
+        .reply(200, [
+          {
+            number: 1,
+          },
+        ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200)
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
-        .reply(200, {name: 'myGithubLabel'})
         .post('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200, [
           {
@@ -370,8 +354,6 @@ describe('auto-label', () => {
           number: 1,
         })
         .get('/repos/testOwner/testRepo/issues/1/labels')
-        .reply(200)
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
         .reply(200)
         .post('/repos/testOwner/testRepo/labels', {
           name: 'myGitHubLabel',
