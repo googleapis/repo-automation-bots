@@ -16,6 +16,7 @@
 import {Application, GitHubAPI, Octokit} from 'probot';
 import {createHash} from 'crypto';
 import {Storage} from '@google-cloud/storage';
+import * as util from 'util';
 
 const storage = new Storage();
 
@@ -42,6 +43,14 @@ async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
   } as Labels;
   const apiLabelsRes = await getApiLabels(repoPath);
   apiLabelsRes.apis.forEach(api => {
+    if (!api.github_label || !api.api_shortname) {
+      console.log(`
+        Missing expected fields for a given API label returned from GCS.
+        This object was expected to have a 'github_label' and 'api_shortname'
+        property, but it is missing at least one of them.`);
+      console.log(util.inspect(api));
+      return;
+    }
     labels.labels.push({
       name: api.github_label,
       description: `Issues related to the ${api.display_name} API.`,
@@ -147,7 +156,9 @@ export const getApiLabels = async (
     .bucket('devrel-prod-settings')
     .file('apis.json')
     .download();
-  return JSON.parse(apis[0].toString()) as GetApiLabelsResponse;
+  const parsedResponse = JSON.parse(apis[0].toString()) as GetApiLabelsResponse;
+  console.log(`Detected ${parsedResponse.apis.length} API labels from DRIFT.`);
+  return parsedResponse;
 };
 
 /**
