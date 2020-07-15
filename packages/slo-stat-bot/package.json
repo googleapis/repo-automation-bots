@@ -1,5 +1,5 @@
 {
-  "name": "slo-stat-label",
+  "name": "slo-bot",
   "version": "0.0.1",
   "description": "Labels SLO status on Issues and PRs",
   "private": true,
@@ -21,7 +21,7 @@
   ],
   "scripts": {
     "compile": "tsc -p .",
-    "start": "probot run ./build/src/slo-stat-label.js",
+    "start": "probot run ./build/src/slo-bot.js",
     "start:local": "node ./build/src/local.js",
     "prepare": "npm run compile",
     "pretest": "npm run compile",

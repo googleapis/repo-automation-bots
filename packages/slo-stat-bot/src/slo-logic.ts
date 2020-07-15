@@ -311,16 +311,18 @@ getSLOStatus.isCompliant = async function isCompliant(
       issueUpdateTime
     );
     if (!isInResTime) {
+      console.log("Not in resolutions time");
       return false;
     }
   }
 
   const responders = await getSLOStatus.getResponders(github, owner, repo, slo);
-
+  console.log(responders);
   const reqAssignee = slo.complianceSettings.requiresAssignee;
   if (reqAssignee === true) {
     const isAssigned = await getSLOStatus.isAssigned(responders, assignees);
     if (!isAssigned) {
+      console.log("Does not have valid assignee");
       return false;
     }
   }
@@ -340,6 +342,7 @@ getSLOStatus.isCompliant = async function isCompliant(
       issueUpdateTime
     );
     if (!isInResponseTime) {
+      console.log("Not in response time");
       return false;
     }
   }
