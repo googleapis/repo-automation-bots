@@ -22,6 +22,13 @@ interface IssueLabelResponseItem {
   name: string;
 }
 
+/**
+ * Function will run slo logic and handle labeling when issues or pull request event prompted,
+ * Will delete ooslo label on closes issues,
+ * Will lint issue_slo_rules.json on pull request
+ * @param app type probot
+ * @returns void
+ */
 function handler(app: Application) {
   app.on(
     [
@@ -36,9 +43,7 @@ function handler(app: Application) {
       const pullNumber = context.payload.number;
       const labelsResponse = context.payload.pull_request.labels;
 
-      //Checks if config file exists and lint and places check on pr
       await handle_lint(context, owner, repo, pullNumber);
-      // Check slo-logic and label issue according to slo status
       const labels = await handler.getIssueLabels(labelsResponse);
       const sloString = await handler.getSloFile(context.github, owner, repo);
       await handler.handle_issues(
@@ -102,7 +107,16 @@ function handler(app: Application) {
   );
 }
 
-// Labels OOSLO if issue applies to slo and is not compliant. It also removes OOSLO label if it is compliant
+/**
+ * Function handles labeling ooslo if issue applies to the given slo
+ * @param context of issue or pr
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @param type specifies if event is issue or pr
+ * @param sloString json string of the slo rules
+ * @param labels on the given issue or pr
+ * @returns void
+ */
 handler.handle_issues = async function handle_issues(
   context: Context,
   owner: string,
@@ -144,7 +158,11 @@ handler.handle_issues = async function handle_issues(
   }
 };
 
-//Get issue label names from webhook event payload
+/**
+ * Function gets labels from issue or pr
+ * @param labelsResponse of issue or pr
+ * @returns array of names of the labels on the issue or pr
+ */
 handler.getIssueLabels = async function getIssueLabels(
   labelsResponse: IssueLabelResponseItem[]
 ): Promise<string[]> {
@@ -155,7 +173,13 @@ handler.getIssueLabels = async function getIssueLabels(
   return labels;
 };
 
-// If the repo level config file does not exist defaults to org config file
+/**
+ * Function gets content of slo rules from checking repo config file. If repo config file is missing defaults to org config file
+ * @param github unique installation id for each function
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @returns json string of the slo rules
+ */
 handler.getSloFile = async function getSloFile(
   github: GitHubAPI,
   owner: string,

@@ -38,6 +38,15 @@ interface PullsListFilesResponseItem {
   sha: string;
 }
 
+/**
+ * Function gets list of files changed on the pr
+ * @param github unique installation id for each function
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @param pull_number of issue or pr
+ * @param per_page number of files that is listed per API call
+ * @returns an array of PullsListFilesResponseItem containing the filename and sha
+ */
 handle_lint.listFiles = async function listFiles(
   github: GitHubAPI,
   owner: string,
@@ -61,7 +70,15 @@ handle_lint.listFiles = async function listFiles(
   }
 };
 
-// Lints issue_slo_rules.json file and creates a check on PR. If file is invalid it will comment on PR
+/**
+ * Function lints issue_slo_rules.json file and creates a check on PR. If file is invalid it will comment on PR
+ * @param context of issue or pr
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @param issue_number of issue or pr
+ * @param file_sha number of files that is listed per API call
+ * @returns void
+ */
 handle_lint.handle_slos = async function handle_slos(
   context: Context,
   owner: string,
@@ -93,6 +110,15 @@ handle_lint.handle_slos = async function handle_slos(
   await handle_lint.createCheck(context, res);
 };
 
+/**
+ * Function gets file sha of issue_slo_rules.json and its content
+ * @param context of issue or pr
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @param issue_number of issue or pr
+ * @param file_sha number of files that is listed per API call
+ * @returns json string of the slo rules content
+ */
 handle_lint.getFileShaContents = async function getFileShaContents(
   github: GitHubAPI,
   owner: string,
@@ -117,7 +143,12 @@ handle_lint.getFileShaContents = async function getFileShaContents(
   }
 };
 
-//Linting the issue_slo_rules.json against the slo schema
+/**
+ * Function lints the issue_slo_rules.json against the slo schema
+ * @param schema of slo rules from data folder
+ * @param sloData object of slo rules
+ * @returns validation results of a boolean value if its valid and an error object of it is invalid
+ */
 handle_lint.lint = async function lint(
   schema: JSON,
   sloData: JSON
@@ -132,7 +163,15 @@ handle_lint.lint = async function lint(
   } as ValidationResults;
 };
 
-//Comments on PR only if the issue_slo_rules.json is invalid
+/**
+ * Function comments on PR only if issue_slo_rules.json is invalid
+ * @param github unique installation id for each function
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @param issue_number of issue or pr
+ * @param isValid determines if slo rules are valid or not against the shema
+ * @returns void
+ */
 handle_lint.commentPR = async function commentPR(
   github: GitHubAPI,
   owner: string,
@@ -160,6 +199,13 @@ handle_lint.commentPR = async function commentPR(
   }
 };
 
+/**
+ * Function creates a success or failure check on pr based on validation results
+ * @param context of issue or pr
+ * @param validationRes with the boolean value if slo rules are valid and an error object if its invalid
+ * @returns void
+ */
+// Creates a check on PR and if it fails to lint concludes failure check
 handle_lint.createCheck = async function createCheck(
   context: Context,
   validationRes: ValidationResults
@@ -192,6 +238,15 @@ handle_lint.createCheck = async function createCheck(
   }
 };
 
+/**
+ * Function checks for existence of changed issue_slo_rules.json file either on repo or org level.
+ * If it exists, then it handles logic for linting, creating check, and commenting on failed PRs
+ * @param context of issue or pr
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @param pullNumber of issue or pr
+ * @returns void
+ */
 export async function handle_lint(
   context: Context,
   owner: string,
@@ -211,7 +266,6 @@ export async function handle_lint(
   }
 
   for (const file of fileList) {
-    //Checks to see if file is repo level or org level issue_slo_rules.json
     if (
       file.filename === '.github/issue_slo_rules.json' ||
       (repo === '.github' && file.filename === 'issue_slo_rules.json')

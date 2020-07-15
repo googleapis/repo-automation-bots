@@ -22,6 +22,10 @@ interface SLOStatus {
   isCompliant: boolean | null;
 }
 
+/**
+ * Function gets ooslo label name in repo from the config file
+ * @returns the name of ooslo label
+ */
 handle_labeling.getLabelName = async function (): Promise<string> {
   try {
     return config.name;
@@ -29,6 +33,17 @@ handle_labeling.getLabelName = async function (): Promise<string> {
     throw 'Unable to get ooslo name from config-label file';
   }
 };
+
+/**
+ * Function adds ooslo label to the given issue or pr.
+ * Throws an error if label does not exist in repo
+ * @param github unique installation id for each function
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @param issueNumber number of issue pr
+ * @param name of ooslo label in repo
+ * @returns void
+ */
 handle_labeling.addLabel = async function addLabel(
   github: GitHubAPI,
   owner: string,
@@ -50,6 +65,15 @@ handle_labeling.addLabel = async function addLabel(
   }
 };
 
+/**
+ * Function removes ooslo label from the given issue or pr.
+ * @param github unique installation id for each function
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @param issueNumber number of issue pr
+ * @param name of ooslo label in repo
+ * @returns void
+ */
 handle_labeling.removeIssueLabel = async function removeIssueLabel(
   github: GitHubAPI,
   owner: string,
@@ -72,6 +96,18 @@ handle_labeling.removeIssueLabel = async function removeIssueLabel(
   }
 };
 
+/**
+ * Function handles adding and removing labels according to slo status.
+ * If slo is not compliant and does not habe ooslo label, adds it to issue.
+ * If slo is compliant but has ooslo label, removes it from issue
+ * @param github unique installation id for each function
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @param issueNumber number of issue pr
+ * @param sloStatus if issue applies to given issue and if it is compliant with the issue
+ * @param labels on the issue or pr
+ * @returns void
+ */
 export async function handle_labeling(
   github: GitHubAPI,
   owner: string,
@@ -81,10 +117,8 @@ export async function handle_labeling(
   labels: string[] | null
 ) {
   const name = await handle_labeling.getLabelName();
-  // Adds ooslo label if slo is not compliant and does not have the label,
   if (!sloStatus.isCompliant && !labels?.includes(name)) {
     await handle_labeling.addLabel(github, owner, repo, issueNumber, name);
-    // Removes ooslo label if issue is compliant but has ooslo label
   } else if (sloStatus.isCompliant && labels?.includes(name)) {
     await handle_labeling.removeIssueLabel(
       github,

@@ -218,7 +218,7 @@ describe('getResponders', () => {
       new Set<string>(['user1', 'user2', 'user3', 'testOwner'])
     );
   });
-  it('SLO does not have contributers defined', async () => {
+  it('SLO does not have contributers defined then defaults to write', async () => {
     const slo = {
       appliesTo: {
         issues: true,
@@ -239,6 +239,21 @@ describe('getResponders', () => {
       .returns(['.github/CODEOWNERS', 'collabs/owners.json']);
     fileContentStub.onCall(0).returns('@owner1  @owner2');
     fileContentStub.onCall(1).returns('@coder-cat @tester');
+    getCollaboratorStub
+      .onCall(0)
+      .returns([
+        {login: 'user3', permissions: {pull: true, push: true, admin: false}},
+      ]);
+    getContributorsStub.onCall(0).returns(
+      new Set<string>([
+        'owner1',
+        'owner2',
+        'coder-cat',
+        'tester',
+        'user3',
+        'testOwner',
+      ])
+    );
     const responders = await getSLOStatus.getResponders(
       githubAPI,
       'testOwner',
@@ -248,14 +263,15 @@ describe('getResponders', () => {
 
     sinon.assert.calledOnce(convertToArrayStub);
     sinon.assert.calledTwice(fileContentStub);
-    sinon.assert.notCalled(getCollaboratorStub);
-    sinon.assert.notCalled(getContributorsStub);
+    sinon.assert.calledOnce(getCollaboratorStub);
+    sinon.assert.calledOnce(getContributorsStub);
     assert.deepEqual(
       responders,
       new Set<string>([
         'testOwner',
         'user1',
         'user2',
+        'user3',
         'owner1',
         'owner2',
         'coder-cat',

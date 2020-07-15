@@ -72,7 +72,13 @@ interface ReposListCollaboratorsItem {
   };
 }
 
-//Checking if slo applies to a given issue
+/**
+ * Function gets list of files changed on the pr
+ * @param type specifies if event is issue or pr
+ * @param slo rules
+ * @param issueLabels of issue or pr
+ * @returns true if slo applies to issue else false
+ */
 getSLOStatus.doesSloApply = async function doesSloApply(
   type: string,
   slo: SLORules,
@@ -86,7 +92,6 @@ getSLOStatus.doesSloApply = async function doesSloApply(
     return false;
   }
 
-  //Checks if type is applicable depending if slo rule applies to prs or issues
   const appliesToIssues = slo.appliesTo.issues;
   const appliesToPrs = slo.appliesTo.prs;
   const isValidIssue = await getSLOStatus.isValidIssue(
@@ -98,7 +103,6 @@ getSLOStatus.doesSloApply = async function doesSloApply(
     return false;
   }
 
-  //Checking if all the githublabels are subset of issue labels
   const githubLabels = slo.appliesTo.gitHubLabels;
   const isValidGithubLabels = await getSLOStatus.isValidGithubLabels(
     issueLabels,
@@ -108,7 +112,6 @@ getSLOStatus.doesSloApply = async function doesSloApply(
     return false;
   }
 
-  //Checking if all the excluded github labels are not in issue labels
   const excludedGitHubLabels = slo.appliesTo.excludedGitHubLabels;
   const isValidExcludeLabels = await getSLOStatus.isValidExcludedLabels(
     issueLabels,
@@ -118,7 +121,6 @@ getSLOStatus.doesSloApply = async function doesSloApply(
     return false;
   }
 
-  //Checking if priority is present and matches in issue labels
   const priority = String(slo.appliesTo.priority);
   const isValidPriority = await getSLOStatus.isValidRule(
     issueLabels,
@@ -129,7 +131,6 @@ getSLOStatus.doesSloApply = async function doesSloApply(
     return false;
   }
 
-  //Checking if issue type is present and matches in issue labels
   const issueType = slo.appliesTo.issueType;
   const isValidIssueType = await getSLOStatus.isValidRule(
     issueLabels,
@@ -143,6 +144,13 @@ getSLOStatus.doesSloApply = async function doesSloApply(
   return true;
 };
 
+/**
+ * Function determines if the type of issue applies to slo
+ * @param issues slo rule if it applies to issues
+ * @param prs slo rule if it applies to prs
+ * @param type specifies if event is issue or pr
+ * @returns true if type applies to issues else false
+ */
 getSLOStatus.isValidIssue = async function isValidIssue(
   issues: boolean | undefined,
   prs: boolean | undefined,
@@ -160,6 +168,12 @@ getSLOStatus.isValidIssue = async function isValidIssue(
   return false;
 };
 
+/**
+ * Function checks if all the githublabels are subset of issue labels
+ * @param issueLabels of the issue
+ * @param githubLabels is slo rule for github labels that must exist in issue
+ * @returns true if githubLabels applies to issues else false
+ */
 getSLOStatus.isValidGithubLabels = async function isValidGithubLabels(
   issueLabels: string[],
   githubLabels: string | string[] | undefined
@@ -179,6 +193,12 @@ getSLOStatus.isValidGithubLabels = async function isValidGithubLabels(
   return true;
 };
 
+/**
+ * Function checks if all the excluded github labels is not in issue labels
+ * @param issueLabels of the issue
+ * @param excludedGitHubLabels is slo rule for excluded github labels that must exist in issue
+ * @returns true if excludedGitHubLabels applies to issues else false
+ */
 getSLOStatus.isValidExcludedLabels = async function isValidExcludedLabels(
   issueLabels: string[],
   excludedGitHubLabels: string | string[] | undefined
@@ -200,6 +220,13 @@ getSLOStatus.isValidExcludedLabels = async function isValidExcludedLabels(
   return true;
 };
 
+/**
+ * Function checks if the rule (priority or type) exists in issue labels
+ * @param issueLabels of the issue
+ * @param rule is either priority or type (ex: bug, enhancement) of issue
+ * @param title of the rule
+ * @returns true if rule applies to issue else false
+ */
 getSLOStatus.isValidRule = async function isValidRule(
   issueLabels: string[],
   rule: string | undefined,
@@ -213,6 +240,11 @@ getSLOStatus.isValidRule = async function isValidRule(
   return issueLabels.includes(rule) || issueLabels.includes(title + rule);
 };
 
+/**
+ * Function converts a string variable to an array
+ * @param variable can either be array or string
+ * @returns an array
+ */
 getSLOStatus.convertToArray = async function convertToArray(
   variable: string[] | string
 ): Promise<string[]> {
@@ -222,6 +254,14 @@ getSLOStatus.convertToArray = async function convertToArray(
   return variable;
 };
 
+/**
+ * Function gets the file contents
+ * @param github unique installation id for each function
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @param path of the file
+ * @returns string of the content in the file
+ */
 getSLOStatus.getFilePathContent = async function getFilePathContent(
   github: GitHubAPI,
   owner: string,
@@ -244,7 +284,17 @@ getSLOStatus.getFilePathContent = async function getFilePathContent(
   }
 };
 
-//Checking if issue is compliant with slo
+/**
+ * Function checks if issue is compliant with slo
+ * @param github unique installation id for each function
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @param issueNumber of the issue or pr
+ * @param assignees of the issue or pr
+ * @param issueUpdateTime of the issue or pr
+ * @param slo rule
+ * @returns true if issue is compliant with slo else false
+ */
 getSLOStatus.isCompliant = async function isCompliant(
   github: GitHubAPI,
   owner: string,
@@ -254,7 +304,6 @@ getSLOStatus.isCompliant = async function isCompliant(
   issueUpdateTime: string,
   slo: SLORules
 ): Promise<boolean> {
-  //Checking if issue is resolved within resolution time
   const resTime = slo.complianceSettings.resolutionTime;
   if (resTime !== 0) {
     const isInResTime = await getSLOStatus.isInDuration(
@@ -266,14 +315,9 @@ getSLOStatus.isCompliant = async function isCompliant(
     }
   }
 
-  const reqAssignee = slo.complianceSettings.requiresAssignee;
-  const responseTime = slo.complianceSettings.responseTime;
-  let responders: Set<string> = new Set();
-  if (reqAssignee === true || responseTime !== 0) {
-    responders = await getSLOStatus.getResponders(github, owner, repo, slo);
-  }
+  const responders = await getSLOStatus.getResponders(github, owner, repo, slo);
 
-  //Checking if issue is assigned if slo claims it must have assignee
+  const reqAssignee = slo.complianceSettings.requiresAssignee;
   if (reqAssignee === true) {
     const isAssigned = await getSLOStatus.isAssigned(responders, assignees);
     if (!isAssigned) {
@@ -281,7 +325,7 @@ getSLOStatus.isCompliant = async function isCompliant(
     }
   }
 
-  //Checking if issue is responded within response time
+  const responseTime = slo.complianceSettings.responseTime;
   if (responseTime !== 0) {
     const listIssueComments = await getSLOStatus.getIssueCommentsList(
       github,
@@ -299,14 +343,21 @@ getSLOStatus.isCompliant = async function isCompliant(
       return false;
     }
   }
-
   return true;
 };
 
+/**
+ * Function checks if a valid responder commented on issue within response time
+ * @param responders that are valid for issue or pr
+ * @param listIssueComments of issue or pr
+ * @param responseTime of issue or pr
+ * @param issueCreatedTime of the issue or pr
+ * @returns true if valid responder responded in time else false
+ */
 getSLOStatus.isInResponseTime = async function isInResponseTime(
   responders: Set<string>,
   listIssueComments: IssuesListCommentsItem[] | null,
-  resolutionTime: string | number,
+  responseTime: string | number,
   issueCreatedTime: string
 ): Promise<boolean> {
   if (!listIssueComments) {
@@ -315,7 +366,7 @@ getSLOStatus.isInResponseTime = async function isInResponseTime(
   for (const comment of listIssueComments) {
     if (responders.has(comment.user.login)) {
       const isValidTime = await getSLOStatus.isInDuration(
-        resolutionTime,
+        responseTime,
         issueCreatedTime,
         comment.created_at
       );
@@ -327,6 +378,12 @@ getSLOStatus.isInResponseTime = async function isInResponseTime(
   return false;
 };
 
+/**
+ * Function checks if a valid responder is assigned to the issue
+ * @param responders that are valid for issue or pr
+ * @param assignees of issue or pr
+ * @returns true if valid responder was assigned the issue
+ */
 getSLOStatus.isAssigned = async function isAssigned(
   responders: Set<string>,
   assignees: IssueAssignees[]
@@ -339,6 +396,14 @@ getSLOStatus.isAssigned = async function isAssigned(
   return false;
 };
 
+/**
+ * Function gets list of issue comments
+ * @param github github unique installation id for each function
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @param issueNumber of issue or pr
+ * @returns an array of IssuesListCommentsItem with id number, user login, updated time, and created time
+ */
 getSLOStatus.getIssueCommentsList = async function getIssueCommentsList(
   github: GitHubAPI,
   owner: string,
@@ -360,6 +425,14 @@ getSLOStatus.getIssueCommentsList = async function getIssueCommentsList(
   }
 };
 
+/**
+ * Function gets list of valid responders from the owners (uri-reference of code owners), contributers (defaults to WRITE), and array of users
+ * @param github github unique installation id for each function
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @param slo rule
+ * @returns a set of valid responders
+ */
 getSLOStatus.getResponders = async function getResponders(
   github: GitHubAPI,
   owner: string,
@@ -367,7 +440,7 @@ getSLOStatus.getResponders = async function getResponders(
   slo: SLORules
 ): Promise<Set<string>> {
   let responders: Set<string> = new Set([owner]);
-  //Getting list of owners from a uri-reference
+
   let owners = slo.complianceSettings.responders?.owners;
   if (owners) {
     owners = await getSLOStatus.convertToArray(owners);
@@ -385,30 +458,37 @@ getSLOStatus.getResponders = async function getResponders(
       });
     }
   }
-  //Getting list of contributers by checking collaborator list with correct permissions
-  const contributors = slo.complianceSettings.responders?.contributors;
-  if (contributors) {
-    const collaborators = await getSLOStatus.getCollaborators(
-      github,
-      owner,
-      repo
-    );
-    responders = await getSLOStatus.getContributers(
-      owner,
-      responders,
-      contributors,
-      collaborators
-    );
-  }
 
-  //Getting valid users who can be responders if valid usernames are listed
+  let contributors = slo.complianceSettings.responders?.contributors;
+  if (!contributors) {
+    contributors = 'WRITE';
+  }
+  const collaborators = await getSLOStatus.getCollaborators(
+    github,
+    owner,
+    repo
+  );
+  responders = await getSLOStatus.getContributers(
+    owner,
+    responders,
+    contributors,
+    collaborators
+  );
+
   const users = slo.complianceSettings.responders?.users;
   users?.forEach(user => responders.add(user));
 
   return responders;
 };
 
-//Getting contributers depending on write, admin, and owner
+/**
+ * Function gets contributers depending on write, admin, and owner permissions
+ * @param owner of issue or pr
+ * @param responders that are valid
+ * @param contributors either 'WRITE', 'ADMIN', or 'OWNER'
+ * @param collaborators of ReposListCollaboratorsItems that specifies user login, and their permissions (pull, push, admin)
+ * @returns set of valid responders usernames
+ */
 getSLOStatus.getContributers = async function getContributers(
   owner: string,
   responders: Set<string>,
@@ -437,6 +517,13 @@ getSLOStatus.getContributers = async function getContributers(
   return responders;
 };
 
+/**
+ * Function gets list of collaborators on the repo
+ * @param github unique installation id for each function
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @returns of ReposListCollaboratorsItems that specifies user login, and their permissions (pull, push, admin)
+ */
 getSLOStatus.getCollaborators = async function getCollaborators(
   github: GitHubAPI,
   owner: string,
@@ -454,6 +541,14 @@ getSLOStatus.getCollaborators = async function getCollaborators(
   }
 };
 
+/**
+ * Function determines if difference between start and end time is within the duration time of the slo
+ * Defaults to seconds if no unit specified
+ * @param duration rule defined in slo either in: days(d), hours(h), minutes(m), seconds(s)
+ * @param startTime of issue or pr
+ * @param endTime of issue or pr. If end time is missing gets the current time
+ * @returns true if it is in duration else false
+ */
 getSLOStatus.isInDuration = async function isInDuration(
   duration: string | number,
   startTime: string,
@@ -481,6 +576,18 @@ getSLOStatus.isInDuration = async function isInDuration(
   return diff <= duration;
 };
 
+/**
+ * Function gets the slo status
+ * @param github unique installation id for each function
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @param issueCreatedTime of the issue or pr
+ * @param assignees of the issue or pr
+ * @param issueNumber of the issue or pr
+ * @param slo rule
+ * @param labels on issue or pr
+ * @returns the slo status if slo applies to issue and if it is complaint with issue (if issue does not apply isCompliant is set to null)
+ */
 export async function getSLOStatus(
   github: GitHubAPI,
   owner: string,
@@ -489,10 +596,9 @@ export async function getSLOStatus(
   assignees: IssueAssignees[],
   issueNumber: number,
   type: string,
-  slo: SLORules, //Set default values for issues, prs, & assigned
+  slo: SLORules,
   labels: string[] | null
 ): Promise<SLOStatus> {
-  //Checks if issue applies to slo only if slo has applies to specifications
   const appliesTo = await getSLOStatus.doesSloApply(type, slo, labels);
   let isCompliant = null;
 
