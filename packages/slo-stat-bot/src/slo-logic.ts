@@ -311,7 +311,7 @@ getSLOStatus.isCompliant = async function isCompliant(
       issueUpdateTime
     );
     if (!isInResTime) {
-      console.log("Not in resolutions time");
+      console.log(`Not in resolutions time for issue ${issueNumber} in repo ${repo}`);
       return false;
     }
   }
@@ -322,7 +322,7 @@ getSLOStatus.isCompliant = async function isCompliant(
   if (reqAssignee === true) {
     const isAssigned = await getSLOStatus.isAssigned(responders, assignees);
     if (!isAssigned) {
-      console.log("Does not have valid assignee");
+      console.log(`Does not have valid assignee for issue ${issueNumber} in repo ${repo}`);
       return false;
     }
   }
@@ -342,7 +342,7 @@ getSLOStatus.isCompliant = async function isCompliant(
       issueUpdateTime
     );
     if (!isInResponseTime) {
-      console.log("Not in response time");
+      console.log(`Not in response time for issue ${issueNumber} in repo ${repo}`);
       return false;
     }
   }
