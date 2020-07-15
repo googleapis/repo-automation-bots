@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFBootstrapper} from '../src/gcf-utils';
+import {GCFBootstrapper, TriggerType, TriggerInfo} from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {GitHubAPI} from 'probot/lib/github';
 import {Options} from 'probot';
@@ -339,6 +339,93 @@ describe('GCFBootstrapper', () => {
       process.env.GCF_SHORT_FUNCTION_NAME = 'bar';
       const latest = bootstrapper.getSecretName();
       assert.strictEqual(latest, 'projects/foo/secrets/bar');
+    });
+  });
+
+  describe('buildTriggerInfo', () => {
+    it('returns correct scheduler trigger info', () => {
+      const requestBody = {};
+      const github_delivery_guid = '';
+      const triggerType = TriggerType.SCHEDULER;
+      const triggerInfo = GCFBootstrapper['buildTriggerInfo'](
+        triggerType,
+        github_delivery_guid,
+        requestBody
+      );
+      const expectedInfo = {
+        trigger: {
+          trigger_type: 'SCHEDULER',
+        },
+      };
+      assert.deepEqual(triggerInfo, expectedInfo);
+    });
+
+    it('returns correct task trigger info', () => {
+      const requestBody = {};
+      const github_delivery_guid = '1234';
+      const triggerType = TriggerType.TASK;
+      const triggerInfo: TriggerInfo = GCFBootstrapper['buildTriggerInfo'](
+        triggerType,
+        github_delivery_guid,
+        requestBody
+      );
+      const expectedInfo: TriggerInfo = {
+        trigger: {
+          trigger_type: TriggerType.TASK,
+          github_delivery_guid: '1234',
+        },
+      };
+      assert.deepEqual(triggerInfo, expectedInfo);
+    });
+
+    it('returns correct Github trigger info', () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const requestBody = require('../../test/fixtures/github-webhook-payload-all-info.json');
+      const github_delivery_guid = '1234';
+      const triggerType = TriggerType.GITHUB;
+      const triggerInfo = GCFBootstrapper['buildTriggerInfo'](
+        triggerType,
+        github_delivery_guid,
+        requestBody
+      );
+      const expectedInfo = {
+        trigger: {
+          trigger_type: 'GITHUB_WEBHOOK',
+          trigger_sender: 'testUser2',
+          github_delivery_guid: '1234',
+          trigger_source_repo: {
+            owner: 'testOwner',
+            owner_type: 'User',
+            repo_name: 'testRepo',
+          },
+        },
+      };
+      assert.deepEqual(triggerInfo, expectedInfo);
+    });
+
+    it('returns UNKNOWN for Github trigger info when information is unavailable', () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const requestBody = require('../../test/fixtures/github-webhook-payload-missing-info.json');
+      const github_delivery_guid = '';
+      const triggerType = TriggerType.GITHUB;
+      const triggerInfo: TriggerInfo = GCFBootstrapper['buildTriggerInfo'](
+        triggerType,
+        github_delivery_guid,
+        requestBody
+      );
+      const expectedInfo: TriggerInfo = {
+        trigger: {
+          trigger_type: TriggerType.GITHUB,
+          trigger_sender: 'UNKNOWN',
+          github_delivery_guid: '',
+          trigger_source_repo: {
+            owner: 'UNKNOWN',
+            owner_type: 'UNKNOWN',
+            repo_name: 'UNKNOWN',
+          },
+        },
+      };
+      assert.deepEqual(triggerInfo, expectedInfo);
     });
   });
 });
