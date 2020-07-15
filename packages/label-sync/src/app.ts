@@ -14,6 +14,7 @@
 
 import {GCFBootstrapper} from 'gcf-utils';
 import {handler} from './label-sync';
+require('@google-cloud/debug-agent').start();
 
 const bootstrap = new GCFBootstrapper();
 module.exports.label_sync = bootstrap.gcf(handler);

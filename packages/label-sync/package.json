@@ -26,6 +26,7 @@
     "lint": "gts check"
   },
   "dependencies": {
+    "@google-cloud/debug-agent": "^5.1.2",
     "@google-cloud/storage": "^5.0.0",
     "gcf-utils": "^5.0.1"
   },
