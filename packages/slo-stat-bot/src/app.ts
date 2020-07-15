@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './slo-stat-label';
+import appFn from './slo-bot';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['slo-stat-label'] = bootstrap.gcf(appFn);
+module.exports['slo-bot'] = bootstrap.gcf(appFn);

@@ -21,7 +21,7 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 // eslint-disable-next-line node/no-extraneous-import
 import Webhooks from '@octokit/webhooks';
 import snapshot from 'snap-shot-it';
-import handler from '../src/slo-stat-label';
+import handler from '../src/slo-bot';
 import sinon from 'sinon';
 import {getSLOStatus} from '../src/slo-logic';
 import {handle_labeling} from '../src/slo-label';
