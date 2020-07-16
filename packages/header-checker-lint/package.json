@@ -28,27 +28,21 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "1.6.1",
+    "gcf-utils": "^5.0.1",
     "minimatch": "^3.0.4"
   },
   "devDependencies": {
-    "@types/bunyan": "^1.8.6",
-    "@types/chai": "^4.1.7",
-    "@types/express": "^4.17.0",
-    "@types/ioredis": "^4.0.13",
-    "@types/lru-cache": "^5.1.0",
     "@types/minimatch": "^3.0.3",
     "@types/mocha": "^8.0.0",
     "@types/nock": "^10.0.3",
     "@types/node": "^12.6.1",
     "c8": "^7.1.0",
-    "chai": "^4.2.0",
     "cross-env": "^7.0.0",
     "gts": "^2.0.0",
     "mocha": "^8.0.0",
     "nock": "^13.0.0",
     "snap-shot-it": "^7.8.0",
-    "typescript": "^3.5.3"
+    "typescript": "^3.9.6"
   },
   "engines": {
     "node": ">= 10.13.0"
