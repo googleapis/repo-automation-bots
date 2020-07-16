@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFBootstrapper, TriggerType, TriggerInfo} from '../src/gcf-utils';
+import {
+  GCFBootstrapper,
+  TriggerType,
+  TriggerInfo,
+  WrapOptions,
+} from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {GitHubAPI} from 'probot/lib/github';
 import {Options} from 'probot';
@@ -59,7 +64,7 @@ describe('GCFBootstrapper', () => {
 
     let enqueueTask: sinon.SinonStub;
 
-    beforeEach(async () => {
+    async function mockBootstrapper(wrapOpts?: WrapOptions) {
       req = express.request;
 
       bootstrapper = new GCFBootstrapper();
@@ -69,7 +74,6 @@ describe('GCFBootstrapper', () => {
 
       enqueueTask = sinon.stub(bootstrapper, 'enqueueTask');
       sinon.stub(bootstrapper, 'getInstallationToken');
-
       handler = await bootstrapper.gcf(async app => {
         app.auth = () =>
           new Promise<GitHubAPI>(resolve => {
@@ -78,8 +82,8 @@ describe('GCFBootstrapper', () => {
         app.on('issues', spy);
         app.on('schedule.repository', spy);
         app.on('err', sinon.stub().throws());
-      });
-    });
+      }, wrapOpts);
+    }
 
     afterEach(() => {
       sendStub.reset();
@@ -90,12 +94,14 @@ describe('GCFBootstrapper', () => {
     });
 
     it('calls the event handler', async () => {
+      await mockBootstrapper();
       req.body = {
         installation: {id: 1},
       };
       req.headers = {};
       req.headers['x-github-event'] = 'issues';
       req.headers['x-github-delivery'] = '123';
+      // populated once this job has been executed by cloud tasks:
       req.headers['x-cloudtasks-taskname'] = 'my-task';
 
       await handler(req, response);
@@ -106,7 +112,27 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(spy);
     });
 
+    it('does not schedule task if background option is "false"', async () => {
+      await mockBootstrapper({
+        background: false,
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.calledOnce(sendStub);
+      sinon.assert.calledOnce(spy);
+    });
+
     it('does nothing if there are missing headers', async () => {
+      await mockBootstrapper();
       req.body = {
         installation: {id: 1},
       };
@@ -121,6 +147,7 @@ describe('GCFBootstrapper', () => {
     });
 
     it('returns 500 on errors', async () => {
+      await mockBootstrapper();
       req.body = {
         installtion: {id: 1},
       };
@@ -138,6 +165,7 @@ describe('GCFBootstrapper', () => {
     });
 
     it('ensures that task is enqueued when called by scheduler for one repo', async () => {
+      await mockBootstrapper();
       req.body = {
         installation: {id: 1},
         repo: 'firstRepo',
@@ -153,6 +181,7 @@ describe('GCFBootstrapper', () => {
     });
 
     it('ensures that task is enqueued when called by scheduler for many repos', async () => {
+      await mockBootstrapper();
       req.body = {
         installation: {id: 1},
       };
@@ -168,6 +197,7 @@ describe('GCFBootstrapper', () => {
     });
 
     it('ensures that task is enqueued when called by Github', async () => {
+      await mockBootstrapper();
       req.body = {
         installtion: {id: 1},
       };

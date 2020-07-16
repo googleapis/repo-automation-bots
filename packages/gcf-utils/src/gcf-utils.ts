@@ -67,7 +67,7 @@ export interface GCFLogger {
   flushSync: {(): void};
 }
 
-interface WrapOptions {
+export interface WrapOptions {
   background: boolean;
 }
 
