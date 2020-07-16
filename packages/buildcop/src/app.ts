@@ -17,5 +17,5 @@ import {buildcop} from './buildcop';
 
 const bootstrap = new GCFBootstrapper();
 module.exports.buildcop = bootstrap.gcf(buildcop, {
-  background: false
+  background: false,
 });

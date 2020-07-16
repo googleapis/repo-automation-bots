@@ -290,10 +290,7 @@ export class GCFBootstrapper {
     appFn: ApplicationFunction,
     wrapOptions?: WrapOptions
   ): (request: express.Request, response: express.Response) => Promise<void> {
-    let background = true;
-    if (wrapOptions) {
-      background = wrapOptions.background;
-    }
+    wrapOptions = wrapOptions ?? {background: true};
     return async (request: express.Request, response: express.Response) => {
       // Otherwise let's listen handle the payload
       this.probot = this.probot || (await this.loadProbot(appFn));
@@ -328,7 +325,7 @@ export class GCFBootstrapper {
         });
       } else if (triggerType === TriggerType.GITHUB) {
         try {
-          if (background) {
+          if (wrapOptions?.background) {
             // by default, jobs are run through a background task, this has
             // the benefit of supporting retries, and giving us more insight
             // into failing payloads:
