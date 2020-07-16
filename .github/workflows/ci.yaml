@@ -5,7 +5,7 @@ on:
   pull_request:
 name: ci
 jobs:
-  director:
+  changeFinder:
     runs-on: ubuntu-latest
     outputs:
       nodePaths: ${{ steps.interrogate.outputs.nodePaths }}
@@ -21,11 +21,11 @@ jobs:
         run: node ./.github/workflows/interrogate.js
   test:
     runs-on: ubuntu-latest
-    needs: director
+    needs: changeFinder
     strategy:
       fail-fast: false
       matrix:
-        package: ${{fromJson(needs.director.outputs.nodePaths)}}
+        package: ${{fromJson(needs.changeFinder.outputs.nodePaths)}}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module: ${{fromJson(needs.director.outputs.goPaths)}}
+        module: ${{fromJson(needs.changeFinder.outputs.goPaths)}}
     steps:
     - name: Install Go
       uses: actions/setup-go@v2-beta
@@ -71,7 +71,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module: ${{fromJson(needs.director.outputs.bashPaths)}}
+        module: ${{fromJson(needs.changeFinder.outputs.bashPaths)}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -81,11 +81,11 @@ jobs:
         working-directory: ./${{ matrix.module }}
   finale:
     runs-on: ubuntu-latest
-    needs: director
+    needs: changeFinder
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
           node-version: 12
       - run: npm install
-      - run: node ./.github/workflows/finale.js '${{needs.director.outputs.requiredJobs}}' ${{secrets.GITHUB_TOKEN}}
+      - run: node ./.github/workflows/finale.js '${{needs.changeFinder.outputs.requiredJobs}}' ${{secrets.GITHUB_TOKEN}}

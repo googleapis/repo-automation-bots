@@ -20,7 +20,11 @@ const repo = process.env.GITHUB_REPOSITORY;
 const githubToken = args[1];
 
 async function main() {
-  for (;;) {
+  // Do not wait longer than 20 minutes for all jobs to finish.
+  // This loop goes 5 seconds at a time.
+  // 20 minutes * 60 seconds/min / 5 seconds per loop.
+  const iterations = 20 * 60 / 5
+  for (let i=0; i<iterations; i++) {
     const url = `https://api.github.com/repos/${repo}/actions/runs/${runId}/jobs`;
     const res = await request({
       url,
