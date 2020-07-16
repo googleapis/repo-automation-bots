@@ -67,6 +67,10 @@ export interface GCFLogger {
   flushSync: {(): void};
 }
 
+export interface WrapOptions {
+  background: boolean;
+}
+
 export const logger: GCFLogger = initLogger();
 
 export function initLogger(
@@ -283,8 +287,10 @@ export class GCFBootstrapper {
   }
 
   gcf(
-    appFn: ApplicationFunction
+    appFn: ApplicationFunction,
+    wrapOptions?: WrapOptions
   ): (request: express.Request, response: express.Response) => Promise<void> {
+    wrapOptions = wrapOptions ?? {background: true};
     return async (request: express.Request, response: express.Response) => {
       // Otherwise let's listen handle the payload
       this.probot = this.probot || (await this.loadProbot(appFn));
@@ -319,12 +325,27 @@ export class GCFBootstrapper {
         });
       } else if (triggerType === TriggerType.GITHUB) {
         try {
-          await this.enqueueTask({
-            id,
-            name,
-            signature,
-            body: JSON.stringify(request.body),
-          });
+          if (wrapOptions?.background) {
+            // by default, jobs are run through a background task, this has
+            // the benefit of supporting retries, and giving us more insight
+            // into failing payloads:
+            console.info('scheduling cloud task');
+            await this.enqueueTask({
+              id,
+              name,
+              signature,
+              body: JSON.stringify(request.body),
+            });
+          } else {
+            // a bot can opt out of running through tasks, some bots do this
+            // due to large payload sizes:
+            console.info('skipping cloud tasks');
+            await this.probot.receive({
+              name,
+              id,
+              payload: request.body,
+            });
+          }
         } catch (err) {
           response.status(500).send({
             body: JSON.stringify({message: err}),
