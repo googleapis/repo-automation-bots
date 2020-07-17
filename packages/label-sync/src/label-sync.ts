@@ -13,12 +13,11 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
-import {request} from 'gaxios';
-// eslint-disable-next-line node/no-extraneous-import
-import {GitHubAPI} from 'probot/lib/github';
+import {Application, GitHubAPI, Octokit} from 'probot';
 import {createHash} from 'crypto';
 import {Storage} from '@google-cloud/storage';
+import * as util from 'util';
+
 const storage = new Storage();
 
 interface Labels {
@@ -27,15 +26,6 @@ interface Labels {
       name: string;
       description: string;
       color: string;
-    }
-  ];
-}
-
-interface Repos {
-  repos: [
-    {
-      language: string;
-      repo: string;
     }
   ];
 }
@@ -51,8 +41,16 @@ async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
   const labels = {
     labels: labelsCache.labels.slice(0),
   } as Labels;
-  const apiLabelsRes = await handler.getApiLabels(repoPath);
+  const apiLabelsRes = await getApiLabels(repoPath);
   apiLabelsRes.apis.forEach(api => {
+    if (!api.github_label || !api.api_shortname) {
+      console.log(`
+        Missing expected fields for a given API label returned from GCS.
+        This object was expected to have a 'github_label' and 'api_shortname'
+        property, but it is missing at least one of them.`);
+      console.log(util.inspect(api));
+      return;
+    }
     labels.labels.push({
       name: api.github_label,
       description: `Issues related to the ${api.display_name} API.`,
@@ -65,6 +63,9 @@ async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
   return labels;
 }
 
+/**
+ * Fetch the list of static labels from this repository, and cache it.
+ */
 async function refreshLabels(github: GitHubAPI) {
   const data = (
     await github.repos.getContents({
@@ -78,37 +79,27 @@ async function refreshLabels(github: GitHubAPI) {
   );
 }
 
-function handler(app: Application) {
+export function handler(app: Application) {
   const events = [
     'repository.created',
     'repository.transferred',
     'label.edited',
     'label.deleted',
+    'schedule.repository',
   ];
 
   app.on(events, async c => {
-    const {owner, repo} = c.repo();
+    const [owner, repo] = c.payload.repository.full_name.split('/');
     await reconcileLabels(c.github, owner, repo);
   });
 
-  app.on('push', async context => {
-    const {owner, repo} = context.repo();
-    // TODO: Limit this to pushes that edit `labels.json`
-    if (
-      owner === 'googleapis' &&
-      repo === 'repo-automation-bots' &&
-      context.payload.ref === 'refs/heads/master'
-    ) {
-      await refreshLabels(context.github);
-      const url =
-        'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
-      const res = await request<Repos>({url});
-      const {repos} = res.data;
-      for (const r of repos) {
-        const [owner, repo] = r.repo.split('/');
-        await reconcileLabels(context.github, owner, repo);
-      }
-    }
+  app.on('installation_repositories.added', async c => {
+    await Promise.all(
+      c.payload.repositories_added.map(r => {
+        const [owner, repo] = r.full_name.split('/');
+        return reconcileLabels(c.github, owner, repo);
+      })
+    );
   });
 }
 
@@ -127,18 +118,22 @@ interface PublicReposResponse {
   }>;
 }
 
-handler.getApiLabels = async (
+/**
+ * Reach out to GCS and get a list of all available repositories and products.
+ * For split repositories, only add the `api: product` label for that specific
+ * product.  For monorepos, add an `api: product` label for all available
+ * products.  Return the list of labels that should be added.
+ * @param repoPath
+ */
+export const getApiLabels = async (
   repoPath: string
 ): Promise<GetApiLabelsResponse> => {
   const publicRepos = await storage
     .bucket('devrel-prod-settings')
     .file('public_repos.json')
     .download();
-  const repo = (JSON.parse(
-    publicRepos[0].toString()
-  ) as PublicReposResponse).repos.find(repo => {
-    return repo.repo === repoPath && repo.github_label !== '';
-  });
+  const {repos}: PublicReposResponse = JSON.parse(publicRepos[0].toString());
+  const repo = repos.find(r => r.repo === repoPath && r.github_label !== '');
 
   if (repo) {
     // for split-repos we populate only the label associated with the
@@ -153,28 +148,33 @@ handler.getApiLabels = async (
         },
       ],
     };
-  } else {
-    // for mono-repos we populate a list of all apis and products,
-    // since each repo might include multiple products:
-    console.log(`populating all api labels for ${repoPath}`);
-    const apis = await storage
-      .bucket('devrel-prod-settings')
-      .file('apis.json')
-      .download();
-    return JSON.parse(apis[0].toString()) as GetApiLabelsResponse;
   }
+  // for mono-repos we populate a list of all apis and products,
+  // since each repo might include multiple products:
+  console.log(`populating all api labels for ${repoPath}`);
+  const apis = await storage
+    .bucket('devrel-prod-settings')
+    .file('apis.json')
+    .download();
+  const parsedResponse = JSON.parse(apis[0].toString()) as GetApiLabelsResponse;
+  console.log(`Detected ${parsedResponse.apis.length} API labels from DRIFT.`);
+  return parsedResponse;
 };
 
-export = handler;
-
+/**
+ * Main method. Fetch a list of required labels, and apply them to a given
+ * repository.
+ */
 async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
   const newLabels = await getLabels(github, `${owner}/${repo}`);
-  const res = await github.issues.listLabelsForRepo({
+  const options = github.issues.listLabelsForRepo.endpoint.merge({
     owner,
     repo,
     per_page: 100,
   });
-  const oldLabels = res.data;
+  const oldLabels: Octokit.IssuesListLabelsForRepoResponseItem[] = await github.paginate(
+    options
+  );
   for (const l of newLabels.labels) {
     // try to find a label with the same name
     const match = oldLabels.find(

@@ -74,7 +74,8 @@ async function createReleasePR(
   repoUrl: string,
   github: GitHubAPI,
   releaseLabels?: string[],
-  bumpMinorPreMajor?: boolean
+  bumpMinorPreMajor?: boolean,
+  snapshot?: boolean
 ) {
   const buildOptions: BuildOptions = {
     packageName,
@@ -87,6 +88,7 @@ async function createReleasePR(
       request: github.request,
     },
     bumpMinorPreMajor,
+    snapshot,
   };
   if (releaseLabels) {
     buildOptions.label = releaseLabels.join(',');
@@ -173,13 +175,7 @@ export = (app: Application) => {
     }
   });
 
-  app.on('release.published', async context => {
-    if (context.payload.action !== 'published') {
-      app.log.info(
-        `ignoring non-publish release action (${context.payload.action})`
-      );
-      return;
-    }
+  app.on('schedule.repository', async context => {
     const repoUrl = context.payload.repository.full_name;
     const repoName = context.payload.repository.name;
 
@@ -198,11 +194,11 @@ export = (app: Application) => {
       ...remoteConfiguration,
     };
 
-    app.log.info(`release.published (${repoUrl})`);
+    app.log.info(`schedule.repository (${repoUrl})`);
 
     const releaseType = configuration.releaseType
       ? configuration.releaseType
-      : releaseTypeFromRepoLanguage(context.payload.repository.language);
+      : 'java-yoshi';
 
     // TODO: this should be refactored into an interface.
     await createReleasePR(
@@ -211,7 +207,8 @@ export = (app: Application) => {
       repoUrl,
       context.github,
       configuration.releaseLabels,
-      configuration.bumpMinorPreMajor
+      configuration.bumpMinorPreMajor,
+      true
     );
   });
 

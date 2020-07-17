@@ -40,7 +40,6 @@ function nockUpdateRepoSettings(
   squashBoolean: boolean
 ) {
   return nock('https://api.github.com')
-    .log(console.log)
     .patch(`/repos/googleapis/${repo}`, {
       name: `${repo}`,
       allow_merge_commit: false,
@@ -172,8 +171,6 @@ describe('Sync repo settings', () => {
         'google-api-java-client',
         [
           'Kokoro - Test: Binary Compatibility',
-          'Kokoro - Test: Code Format',
-          'Kokoro - Test: Dependencies',
           'Kokoro - Test: Java 11',
           'Kokoro - Test: Java 7',
           'Kokoro - Test: Java 8',
@@ -253,6 +250,50 @@ describe('Sync repo settings', () => {
       payload: {
         repository: {
           name: 'nodejs-dialogflow',
+        },
+        organization: {
+          login: 'googleapis',
+        },
+        cron_org: 'googleapis',
+      },
+      id: 'abc123',
+    });
+    scopes.forEach(s => s.done());
+  });
+
+  it('should add extra teams specified in teams.json', async () => {
+    const scopes = [
+      nockUpdateRepoSettings('java-asset', false, true),
+      nockUpdateBranchProtection(
+        'java-asset',
+        [
+          'dependencies (8)',
+          'dependencies (11)',
+          'linkage-monitor',
+          'lint',
+          'clirr',
+          'units (7)',
+          'units (8)',
+          'units (11)',
+          'Kokoro - Test: Integration',
+          'cla/google',
+        ],
+        false
+      ),
+      nockUpdateTeamMembership('yoshi-admins', 'googleapis', 'java-asset'),
+      nockUpdateTeamMembership('yoshi-java-admins', 'googleapis', 'java-asset'),
+      nockUpdateTeamMembership('yoshi-java', 'googleapis', 'java-asset'),
+      nockUpdateTeamMembership(
+        'java-samples-reviewers',
+        'googleapis',
+        'java-asset'
+      ),
+    ];
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: {
+        repository: {
+          name: 'java-asset',
         },
         organization: {
           login: 'googleapis',

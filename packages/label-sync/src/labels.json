@@ -169,6 +169,56 @@
       "name": "buildcop: quiet",
       "description": "Tells the Build Cop Bot to comment less",
       "color": "86d9d7"
+    },
+    {
+      "name": "samples",
+      "description": "Issues that are directly related to samples.",
+      "color": "9932CC"
+    },
+    {
+      "name": "lang: nodejs",
+      "description": "Issues specific to JavaScript or TypeScript.",
+      "color": "68A063"
+    },
+    {
+      "name": "lang: ruby",
+      "description": "Issues specific to Ruby.",
+      "color": "E0115F"
+    },
+    {
+      "name": "lang: elixir",
+      "description": "Issues specific to Elixir.",
+      "color": "301934"
+    },
+    {
+      "name": "lang: php",
+      "description": "Issues specific to PHP",
+      "color": "c281f7"
+    },
+    {
+      "name": "lang: python",
+      "description": "Issues specific to Python.",
+      "color": "2576a8"
+    },
+    {
+      "name": "lang: java",
+      "description": "Issues specific to Java.",
+      "color": "d49713"
+    },
+    {
+      "name": "lang: dotnet",
+      "description": "Issues specific to .NET.",
+      "color": "b905fa"
+    },
+    {
+      "name": "lang: cpp",
+      "description": "Issues specific to C++.",
+      "color": "002fff"
+    },
+    {
+      "name": "lang: go",
+      "description": "Issues specific to Go.",
+      "color": "2fe0da"
     }
   ]
 }

@@ -15,14 +15,13 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
-import {describe, it, beforeEach} from 'mocha';
+import {Probot, Octokit} from 'probot';
+import {describe, it, beforeEach, afterEach} from 'mocha';
 import nock from 'nock';
-import {expect} from 'chai';
+import * as assert from 'assert';
 import {resolve} from 'path';
 import fs from 'fs';
 import snapshot from 'snap-shot-it';
-
 import handler, {autoDetectLabel} from '../src/auto-label';
 
 nock.disableNetConnect();
@@ -67,19 +66,11 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
-        .reply(200)
         .post('/repos/testOwner/testRepo/labels')
         .reply(200, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
             color: 'C9FFE5',
-            default: false,
-            description: null,
           },
         ])
         .get('/repos/testOwner/testRepo/issues/5/labels')
@@ -87,14 +78,8 @@ describe('auto-label', () => {
         .post('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
             color: 'C9FFE5',
-            default: false,
-            description: null,
           },
         ]);
       handler.callStorage = async () => downloadedFile;
@@ -106,30 +91,11 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
-        .reply(200, [
-          {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
-            name: 'myGitHubLabel',
-            color: 'C9FFE5',
-            default: false,
-            description: null,
-          },
-        ])
         .get('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
             color: 'C9FFE5',
-            default: false,
-            description: null,
           },
         ]);
       handler.callStorage = async () => downloadedFile;
@@ -141,32 +107,13 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
-        .reply(200, [
-          {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
-            name: 'myGitHubLabel',
-            color: 'C9FFE5',
-            default: false,
-            description: null,
-          },
-        ])
         .get('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200)
         .post('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200, [
           {
-            id: 1811802233,
-            node_id: 'MDU6TGFiZWwxODExODAyMjMz',
-            url:
-              'https://api.github.com/repos/sofisl/mergeOnGreenTest/labels/anotherLabel',
             name: 'myGitHubLabel',
             color: 'C9FFE5',
-            default: false,
-            description: null,
           },
         ]);
       handler.callStorage = async () => downloadedFile;
@@ -179,11 +126,10 @@ describe('auto-label', () => {
 
       const ghRequests = nock('https://api.github.com');
       handler.callStorage = async () => emptyFile;
-      expect(
-        await handler.checkIfFileIsEmpty(
-          await handler.callStorage('my-bucket', 'my-file')
-        )
-      ).to.be.a('null');
+      const isFileEmpty = await handler.checkIfFileIsEmpty(
+        await handler.callStorage('my-bucket', 'my-file')
+      );
+      assert.strictEqual(isFileEmpty, null);
 
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
@@ -193,18 +139,17 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
       const ghRequests = nock('https://api.github.com');
       handler.callStorage = async () => downloadedFile;
-      expect(
-        handler.checkIfElementIsInArray(
-          [
-            {
-              github_label: '',
-              repo: 'firebase/FirebaseUI-Android',
-            },
-          ],
-          'notThere',
-          'notThere'
-        )
-      ).to.be.an('undefined');
+      const isInArray = handler.checkIfElementIsInArray(
+        [
+          {
+            github_label: '',
+            repo: 'firebase/FirebaseUI-Android',
+          },
+        ],
+        'notThere',
+        'notThere'
+      );
+      assert.strictEqual(isInArray, undefined);
 
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
@@ -275,20 +220,163 @@ describe('auto-label', () => {
     });
   });
 
-  it('responds to backfill label event, backfilling issues with labels', async () => {
-    const payload = require(resolve(fixturesPath, './events/issue-labeled'));
-    const ghRequests = nock('https://api.github.com')
-      .get('/repos/testOwner/testRepo/issues')
-      .reply(200, [
-        {
-          number: 1,
+  describe('schedule repository', () => {
+    it('responds to a scheduled event', async () => {
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, [
+          {
+            number: 1,
+          },
+        ])
+        .get('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200)
+        .post('/repos/testOwner/testRepo/labels', {
+          name: 'myGitHubLabel',
+          color: 'FEFEFA',
+        })
+        .reply(201, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ])
+        .post('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ]);
+      handler.callStorage = async () => downloadedFile;
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: {
+          organization: {login: 'testOwner'},
+          repository: {name: 'testRepo'},
+          cron_org: 'testOwner',
         },
-      ])
-      .delete('/repos/testOwner/testRepo/issues/1/labels/auto-label:backfill')
-      .reply(200);
-    handler.callStorage = async () => downloadedFile;
-    await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
-    ghRequests.done();
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
+    it('deletes extraneous labels', async () => {
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, [
+          {
+            number: 1,
+          },
+        ])
+        .get('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [{name: 'api:theWrongLabel'}])
+        .post('/repos/testOwner/testRepo/labels', {
+          name: 'myGitHubLabel',
+          color: 'FEFEFA',
+        })
+        .reply(201, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ])
+        .post('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ])
+        .delete('/repos/testOwner/testRepo/issues/1/labels/api:theWrongLabel')
+        .reply(200, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ]);
+
+      handler.callStorage = async () => downloadedFile;
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: {
+          organization: {login: 'testOwner'},
+          repository: {name: 'testRepo'},
+          cron_org: 'testOwner',
+        },
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
+    it('will not create labels that already exist', async () => {
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, [
+          {
+            number: 1,
+          },
+        ])
+        .get('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200)
+        .post('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ]);
+
+      handler.callStorage = async () => downloadedFile;
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: {
+          organization: {login: 'testOwner'},
+          repository: {name: 'testRepo'},
+          cron_org: 'testOwner',
+        },
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+  });
+
+  describe('installation', async () => {
+    it('responds to an installation event', async () => {
+      const payload = require(resolve(fixturesPath, './events/installation'));
+
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, {
+          number: 1,
+        })
+        .get('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200)
+        .post('/repos/testOwner/testRepo/labels', {
+          name: 'myGitHubLabel',
+          color: 'FEFEFA',
+        })
+        .reply(201, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ])
+        .post('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ]);
+      handler.callStorage = async () => downloadedFile;
+      await probot.receive({
+        name: 'installation.created',
+        payload,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
   });
 
   describe('autoDetectLabel', () => {
@@ -305,7 +393,7 @@ describe('auto-label', () => {
         {title: 'spanner with no separator', want: undefined},
       ];
       for (const test of tests) {
-        expect(autoDetectLabel(data, test.title)).to.equal(test.want);
+        assert.strictEqual(autoDetectLabel(data, test.title), test.want);
       }
     });
   });

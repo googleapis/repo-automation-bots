@@ -24,6 +24,7 @@ const COMMENT_INTERVAL_LOW = 1000 * 60 * 60 * 3; // 3 hours
 const COMMENT_INTERVAL_HIGH = 1000 * 60 * 60 * 3.067; // 3 hours and 4 minutes, the amount of time it takes Cloud Scheduler to run
 //limiting this time interval makes it so that the bot will only comment once as it will only run once during the 3 to 3 hour and 4 min mark
 const MERGE_ON_GREEN_LABEL = 'automerge';
+const MERGE_ON_GREEN_LABEL_SECURE = 'automerge: exact';
 const WORKER_SIZE = 4;
 
 interface WatchPR {
@@ -139,7 +140,7 @@ function handler(app: Application) {
               wp.owner,
               wp.repo,
               wp.number,
-              MERGE_ON_GREEN_LABEL,
+              [MERGE_ON_GREEN_LABEL, MERGE_ON_GREEN_LABEL_SECURE],
               wp.state,
               context.github
             );
@@ -162,7 +163,9 @@ function handler(app: Application) {
     // if missing the label, skip
     if (
       !context.payload.pull_request.labels.some(
-        label => label.name === MERGE_ON_GREEN_LABEL
+        label =>
+          label.name === MERGE_ON_GREEN_LABEL ||
+          label.name === MERGE_ON_GREEN_LABEL_SECURE
       )
     ) {
       app.log.info(
