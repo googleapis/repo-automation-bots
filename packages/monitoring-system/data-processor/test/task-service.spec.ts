@@ -25,7 +25,7 @@ chai.use(chaiHttp);
 chai.should();
 
 class MockDataProcessor implements DataProcessor {
-  firestore!: FirebaseFirestore.Firestore;
+  static firestore: FirebaseFirestore.Firestore;
 
   shouldThrowError = false;
 

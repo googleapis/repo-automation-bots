@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 import express from 'express';
-import {DataProcessorFactory, Factory} from './data-processor-factory';
+import {Factory, DataProcessorFactory} from './data-processor-factory';
 
 /**
  * Data Processing Tasks

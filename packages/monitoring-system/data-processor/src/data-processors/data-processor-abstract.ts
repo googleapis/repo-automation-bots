@@ -16,11 +16,14 @@ import firebaseAdmin from 'firebase-admin';
 type Firestore = firebaseAdmin.firestore.Firestore;
 
 export abstract class DataProcessor {
-  firestore: Firestore;
+
+  static firestore: Firestore;
 
   constructor() {
-    firebaseAdmin.initializeApp(); // may need to pass credentials here
-    this.firestore = firebaseAdmin.firestore();
+    if (!DataProcessor.firestore) {
+      firebaseAdmin.initializeApp(); // may need to pass credentials here
+      DataProcessor.firestore = firebaseAdmin.firestore();
+    }
   }
 
   /**
