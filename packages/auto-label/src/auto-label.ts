@@ -206,13 +206,16 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   jsonArray: JSONData[],
   github: GitHubAPI
 ) {
+
+  if (!jsonArray) {
+    console.log('terminating execution of auto-label since JSON file is empty');
+    return;
+  }
   const objectInJsonArray = handler.checkIfElementIsInArray(
     jsonArray,
     owner,
     repo
   );
-
-  let wasNotAdded = true;
 
   const labelsOnIssue = await handler.checkExistingIssueLabels(
     github,
@@ -221,6 +224,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     issueNumber
   );
 
+  let wasNotAdded = true;
   let autoDetectedLabel: string | undefined;
 
   if (!objectInJsonArray?.github_label) {
@@ -241,7 +245,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   const githubLabel = objectInJsonArray?.github_label || autoDetectedLabel;
 
   if (githubLabel) {
-    console.log(`The label being added is ${githubLabel}`);
+    //will create label regardless, gets a 422 if label already exists on repo
     await handler.createLabel(
       github,
       owner,
@@ -249,6 +253,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       githubLabel,
       colorsData[colorNumber].color
     );
+    console.log(`Label added to ${owner}/${repo} is ${githubLabel}`);
     if (labelsOnIssue) {
       const foundAPIName = labelsOnIssue.find(
         (element: {name: string}) => element.name === githubLabel
@@ -265,6 +270,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
         await handler.addLabels(github, owner, repo, issueNumber, [
           githubLabel,
         ]);
+        console.log(`Label added to ${owner}/${repo} for issue ${issueNumber} is ${githubLabel}`);
         wasNotAdded = false;
       }
       for (const dirtyLabel of cleanUpOtherLabels) {
@@ -279,6 +285,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       }
     } else {
       await handler.addLabels(github, owner, repo, issueNumber, [githubLabel]);
+      console.log(`Label added to ${owner}/${repo} for issue ${issueNumber} is ${githubLabel}`);
       wasNotAdded = false;
     }
   }
@@ -290,9 +297,6 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     );
   }
   if (!foundSamplesTag && repo.includes('sample')) {
-    console.log(
-      `Issue ${issueNumber} is in a samples repo but does not have a sample tag, will add now`
-    );
     await handler.createLabel(
       github,
       owner,
@@ -301,6 +305,9 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       colorsData[colorNumber].color
     );
     await handler.addLabels(github, owner, repo, issueNumber, ['sample']);
+    console.log(
+      `Issue ${issueNumber} is in a samples repo but does not have a sample tag, adding it to the repo and issue`
+    );
     wasNotAdded = false;
   }
 
@@ -344,7 +351,7 @@ function handler(app: Application) {
           );
           if (wasNotAdded) {
             console.log(
-              `label for ${issue.number} in ${owner / repo} was not added`
+              `label for ${issue.number} in ${owner}/${repo} was not added`
             );
             labelWasNotAddedCount++;
           }
