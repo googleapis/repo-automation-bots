@@ -231,32 +231,36 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   }
   const colorNumber =
     jsonArray?.findIndex((object: JSONData) => objectInJsonArray === object) %
-      colorsData.length || 0;
+      colorsData.length >=
+    0
+      ? jsonArray?.findIndex(
+          (object: JSONData) => objectInJsonArray === object
+        ) % colorsData.length
+      : 0;
 
   const githubLabel = objectInJsonArray?.github_label || autoDetectedLabel;
 
   if (githubLabel) {
-    handler.createLabel(
+    console.log( `The label being added is ${githubLabel}`)
+    await handler.createLabel(
       github,
       owner,
       repo,
       githubLabel,
       colorsData[colorNumber].color
     );
-
     if (labelsOnIssue) {
-      const found = labelsOnIssue.find(
+      const foundAPIName = labelsOnIssue.find(
         (element: {name: string}) => element.name === githubLabel
       );
       const cleanUpOtherLabels = labelsOnIssue.filter(
         element =>
           element.name.startsWith('api') &&
-          element.name !== found?.name &&
+          element.name !== foundAPIName?.name &&
           element.name !== autoDetectedLabel
       );
-      if (found) {
-        console.log('This label already exists on this issue');
-        return;
+      if (foundAPIName) {
+        console.log('The label already exists on this issue');
       } else {
         await handler.addLabels(github, owner, repo, issueNumber, [
           githubLabel,
@@ -275,9 +279,29 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       }
     } else {
       await handler.addLabels(github, owner, repo, issueNumber, [githubLabel]);
-      wasNotAdded = false;
+      wasNotAdded = false;      
     }
   }
+
+  let foundSamplesTag = undefined;
+  if(labelsOnIssue) {
+    foundSamplesTag = labelsOnIssue.find(
+      (element: {name: string}) => element.name === 'sample'
+    );
+    }
+    if (!foundSamplesTag && repo.includes('sample')) {
+      console.log(`Issue ${issueNumber} is in a samples repo but does not have a sample tag, will add now`)
+      await handler.createLabel(
+        github,
+        owner,
+        repo,
+        "sample",
+        colorsData[colorNumber].color);
+      await handler.addLabels(github, owner, repo, issueNumber, ['sample']);
+      wasNotAdded = false;
+    }
+
+
 
   return wasNotAdded;
 };

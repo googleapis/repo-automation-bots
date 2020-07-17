@@ -342,6 +342,58 @@ describe('auto-label', () => {
       });
       ghRequests.done();
     });
+
+    it('will add a samples tag for a samples repo', async () => {
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo-samples/issues')
+        .reply(200, [
+          {
+            number: 1,
+            title: 'spanner: ignored'
+          },
+        ])
+        .post('/repos/testOwner/testRepo-samples/labels')
+        .reply(201,[
+          {
+            name: 'api: spanner',
+            color: 'C9FFE5',
+          }
+        ])
+        .get('/repos/testOwner/testRepo-samples/issues/1/labels')
+        .reply(200)
+        .post('/repos/testOwner/testRepo-samples/issues/1/labels')
+        .reply(200, [
+          {
+            name: 'api: spanner',
+            color: 'C9FFE5',
+          }
+        ])
+        .post('/repos/testOwner/testRepo-samples/labels')
+        .reply(201,[
+          {
+            name: 'sample'
+          },
+        ])  
+        .post('/repos/testOwner/testRepo-samples/issues/1/labels')
+        .reply(200, [
+          {
+            name: 'sample'
+          },
+        ])
+        ;
+
+      handler.callStorage = async () => downloadedFile;
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: {
+          organization: {login: 'testOwner'},
+          repository: {name: 'testRepo-samples'},
+          cron_org: 'testOwner',
+        },
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
   });
 
   describe('installation', async () => {
