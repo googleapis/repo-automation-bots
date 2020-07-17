@@ -349,15 +349,15 @@ describe('auto-label', () => {
         .reply(200, [
           {
             number: 1,
-            title: 'spanner: ignored'
+            title: 'spanner: ignored',
           },
         ])
         .post('/repos/testOwner/testRepo-samples/labels')
-        .reply(201,[
+        .reply(201, [
           {
             name: 'api: spanner',
             color: 'C9FFE5',
-          }
+          },
         ])
         .get('/repos/testOwner/testRepo-samples/issues/1/labels')
         .reply(200)
@@ -366,22 +366,20 @@ describe('auto-label', () => {
           {
             name: 'api: spanner',
             color: 'C9FFE5',
-          }
+          },
         ])
         .post('/repos/testOwner/testRepo-samples/labels')
-        .reply(201,[
+        .reply(201, [
           {
-            name: 'sample'
+            name: 'sample',
           },
-        ])  
+        ])
         .post('/repos/testOwner/testRepo-samples/issues/1/labels')
         .reply(200, [
           {
-            name: 'sample'
+            name: 'sample',
           },
-        ])
-        ;
-
+        ]);
       handler.callStorage = async () => downloadedFile;
       await probot.receive({
         name: 'schedule.repository',
