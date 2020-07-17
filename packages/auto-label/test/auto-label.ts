@@ -15,14 +15,13 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
-import {describe, it, beforeEach} from 'mocha';
+import {Probot, Octokit} from 'probot';
+import {describe, it, beforeEach, afterEach} from 'mocha';
 import nock from 'nock';
-import {expect} from 'chai';
+import * as assert from 'assert';
 import {resolve} from 'path';
 import fs from 'fs';
 import snapshot from 'snap-shot-it';
-
 import handler, {autoDetectLabel} from '../src/auto-label';
 
 nock.disableNetConnect();
@@ -142,11 +141,10 @@ describe('auto-label', () => {
 
       const ghRequests = nock('https://api.github.com');
       handler.callStorage = async () => emptyFile;
-      expect(
-        await handler.checkIfFileIsEmpty(
-          await handler.callStorage('my-bucket', 'my-file')
-        )
-      ).to.be.a('null');
+      const isFileEmpty = await handler.checkIfFileIsEmpty(
+        await handler.callStorage('my-bucket', 'my-file')
+      );
+      assert.strictEqual(isFileEmpty, null);
 
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
@@ -162,18 +160,18 @@ describe('auto-label', () => {
         .reply(200);
 
       handler.callStorage = async () => downloadedFile;
-      expect(
-        handler.checkIfElementIsInArray(
-          [
-            {
-              github_label: '',
-              repo: 'firebase/FirebaseUI-Android',
-            },
-          ],
-          'testOwner',
-          'notThere'
-        )
-      ).to.be.an('undefined');
+
+      const isInArray = handler.checkIfElementIsInArray(
+        [
+          {
+            github_label: '',
+            repo: 'firebase/FirebaseUI-Android',
+          },
+        ],
+        'notThere',
+        'notThere'
+      );
+      assert.strictEqual(isInArray, undefined);
 
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
@@ -522,7 +520,7 @@ describe('auto-label', () => {
         {title: 'spanner with no separator', want: undefined},
       ];
       for (const test of tests) {
-        expect(autoDetectLabel(data, test.title)).to.equal(test.want);
+        assert.strictEqual(autoDetectLabel(data, test.title), test.want);
       }
     });
   });
