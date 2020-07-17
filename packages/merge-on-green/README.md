@@ -16,7 +16,7 @@ This bot uses nock for mocking requests to GitHub.
 
 Once installed, this bot merges PRs once reviews have been approved and tests have passed. Briefly speaking, the bot does the following:
 
-- User kicks off a PR, adds an ‘automerge’ label or ‘automerge: secure’ label. The ‘automerge: secure’ label makes 
+- User kicks off a PR, adds an ‘automerge’ label or ‘automerge: exact’ label. The ‘automerge: exact’ label makes 
 sure that further commits cannot be pushed to the PR while tests are waiting to pass. If further commits are pushed, the bot will re-request the reviewers' approval.
 - Bot listens to PR and checks to see if appropriate label was added. If so, the PR info is added to Datastore as an entry
 - *A cron job will run the logic below every four minutes, until it hits two hours. Once it hits two hours, the job will pass in a status called ‘stop’, which the logic will then use to determine an outcome*
