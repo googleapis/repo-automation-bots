@@ -13,16 +13,12 @@
 // limitations under the License.
 //
 import {describe, it, beforeEach} from 'mocha';
-import chai from 'chai';
-import chaiHttp from 'chai-http';
+import request from 'supertest';
 import {TaskService, Task, TaskEndpoints} from '../src/task-service';
 import {Factory} from '../src/data-processor-factory';
 import {DataProcessor} from '../src/data-processors/data-processor-abstract';
 import express from 'express';
 import assert from 'assert';
-
-chai.use(chaiHttp);
-chai.should();
 
 class MockDataProcessor implements DataProcessor {
   static firestore: FirebaseFirestore.Firestore;
@@ -81,93 +77,39 @@ describe('Task Service', () => {
 
   describe('404 responses for bad endpoint', () => {
     it('returns 404 for a GET request to a non-existent endpoint', done => {
-      chai
-        .request(app)
-        .get('/foo-bad-endpoint')
-        .end((err, res) => {
-          res.should.have.status(404);
-          done();
-        });
+      request(app).get('/foo-bad-endpoint').expect(404, done);
     });
 
     it('returns 404 for a PUT request to a non-existent endpoint', done => {
-      chai
-        .request(app)
-        .put('/foo-bad-endpoint')
-        .end((err, res) => {
-          res.should.have.status(404);
-          done();
-        });
+      request(app).put('/foo-bad-endpoint').expect(404, done);
     });
 
     it('returns 404 for a DELETE request to a non-existent endpoint', done => {
-      chai
-        .request(app)
-        .delete('/foo-bad-endpoint')
-        .end((err, res) => {
-          res.should.have.status(404);
-          done();
-        });
+      request(app).delete('/foo-bad-endpoint').expect(404, done);
     });
 
     it('returns 404 for a PATCH request to a non-existent endpoint', done => {
-      chai
-        .request(app)
-        .patch('/foo-bad-endpoint')
-        .end((err, res) => {
-          res.should.have.status(404);
-          done();
-        });
+      request(app).patch('/foo-bad-endpoint').expect(404, done);
     });
 
     it('returns 404 for a POST request to a non-existent endpoint', done => {
-      chai
-        .request(app)
-        .post('/foo-bad-endpoint')
-        .end((err, res) => {
-          res.should.have.status(404);
-          done();
-        });
+      request(app).post('/foo-bad-endpoint').expect(404, done);
     });
   });
 
   describe('404 responses for bad method', () => {
     for (const endpoint of Object.keys(TaskEndpoints)) {
       it(`returns 404 for a PUT request to ${endpoint}`, done => {
-        chai
-          .request(app)
-          .put(endpoint)
-          .end((err, res) => {
-            res.should.have.status(404);
-            done();
-          });
+        request(app)['put'](endpoint).expect(404, done);
       });
       it(`returns 404 for a POST request to ${endpoint}`, done => {
-        chai
-          .request(app)
-          .post(endpoint)
-          .end((err, res) => {
-            res.should.have.status(404);
-            done();
-          });
+        request(app).post(endpoint).expect(404, done);
       });
       it(`returns 404 for a PATCH request to ${endpoint}`, done => {
-        chai
-          .request(app)
-          .patch(endpoint)
-          .end((err, res) => {
-            res.should.have.status(404);
-            done();
-          });
+        request(app).patch(endpoint).expect(404, done);
       });
       it(`returns 404 for a DELETE request to ${endpoint}`, done => {
-        chai
-          .request(app)
-          .delete(endpoint)
-          .end((err, res) => {
-            res.should.have.status(404);
-            done();
-          });
+        request(app).delete(endpoint).expect(404, done);
       });
     }
   });
@@ -175,11 +117,10 @@ describe('Task Service', () => {
   describe('200 responses for successful tasks', () => {
     for (const endpoint of Object.keys(TaskEndpoints)) {
       it(`returns 200 after successfully completing task: ${TaskEndpoints[endpoint]}`, done => {
-        chai
-          .request(app)
+        request(app)
           .get(endpoint)
-          .end((err, res) => {
-            res.should.have.status(200);
+          .expect(200)
+          .end(() => {
             assert.equal(mockFactory.givenTask, TaskEndpoints[endpoint]);
             done();
           });
@@ -194,11 +135,10 @@ describe('Task Service', () => {
 
     for (const endpoint of Object.keys(TaskEndpoints)) {
       it(`returns 500 if no processor found for task: ${TaskEndpoints[endpoint]}`, done => {
-        chai
-          .request(app)
+        request(app)
           .get(endpoint)
-          .end((err, res) => {
-            res.should.have.status(500);
+          .expect(500)
+          .end(() => {
             assert.equal(mockFactory.givenTask, TaskEndpoints[endpoint]);
             done();
           });
@@ -213,11 +153,10 @@ describe('Task Service', () => {
 
     for (const endpoint of Object.keys(TaskEndpoints)) {
       it(`returns 500 on processing error for task: ${TaskEndpoints[endpoint]}`, done => {
-        chai
-          .request(app)
+        request(app)
           .get(endpoint)
-          .end((err, res) => {
-            res.should.have.status(500);
+          .expect(500)
+          .end(() => {
             assert.equal(mockFactory.givenTask, TaskEndpoints[endpoint]);
             done();
           });
