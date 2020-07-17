@@ -15,9 +15,7 @@
 
 import {Storage} from '@google-cloud/storage';
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
-// eslint-disable-next-line node/no-extraneous-import
-import {GitHubAPI} from 'probot/lib/github';
+import {Application, GitHubAPI} from 'probot';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const colorsData = require('./colors.json');
@@ -29,10 +27,6 @@ interface JSONData {
 
 interface Label {
   name: string;
-}
-
-interface Repository {
-  full_name: string;
 }
 
 const storage = new Storage();
