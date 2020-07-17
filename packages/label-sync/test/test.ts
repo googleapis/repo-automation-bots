@@ -14,13 +14,14 @@
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-import {describe, it, beforeEach} from 'mocha';
+import {describe, it, beforeEach, afterEach} from 'mocha';
 import path from 'path';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
-
-import appFn from '../src/label-sync';
+import * as sinon from 'sinon';
+import * as labelSync from '../src/label-sync';
+import * as assert from 'assert';
 
 nock.disableNetConnect();
 const fixturesPath = path.resolve(__dirname, '../../test/fixtures');
@@ -31,26 +32,6 @@ const newLabels = require('../src/labels.json') as {
       color: string;
     }
   ];
-};
-const repos = require('../../test/fixtures/repos.json');
-
-interface GetApiLabelsResponse {
-  apis: Array<{
-    display_name: string; // Access Approval
-    github_label: string; // api: accessapproval
-    api_shortname: string; // accessapproval
-  }>;
-}
-appFn.getApiLabels = async (): Promise<GetApiLabelsResponse> => {
-  return {
-    apis: [
-      {
-        display_name: 'Sprockets',
-        github_label: 'api: sprockets',
-        api_shortname: 'sprockets',
-      },
-    ],
-  };
 };
 
 function nockLabelList() {
@@ -86,20 +67,16 @@ function nockLabelUpdate(name: string) {
     .reply(200);
 }
 
-function nockRepoList() {
-  return nock('https://raw.githubusercontent.com')
-    .get('/googleapis/sloth/master/repos.json')
-    .reply(200, repos);
-}
-
 describe('Label Sync', () => {
   let probot: Probot;
+  const sandbox = sinon.createSandbox();
+  let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
   beforeEach(() => {
     probot = new Probot({
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
       // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest'),
+      Octokit: require('@octokit/rest').Octokit,
     });
     probot.app = {
       getSignedJsonWebToken() {
@@ -109,8 +86,18 @@ describe('Label Sync', () => {
         return Promise.resolve('abc123');
       },
     };
-    probot.load(appFn);
+    probot.load(labelSync.handler);
+    getApiLabelsStub = sandbox.stub(labelSync, 'getApiLabels').resolves({
+      apis: [
+        {
+          display_name: 'Sprockets',
+          github_label: 'api: sprockets',
+          api_shortname: 'sprockets',
+        },
+      ],
+    });
   });
+  afterEach(() => sandbox.restore());
 
   it('should sync labels on repo create', async () => {
     const payload = require(path.resolve(
@@ -169,5 +156,31 @@ describe('Label Sync', () => {
     ];
     await probot.receive({name: 'label', payload, id: 'abc123'});
     scopes.forEach(s => s.done());
+  });
+
+  it('should handle missing properties on data from GCS', async () => {
+    // Simulate the results coming back from DRIFT having missing fields.
+    // In this case, the `apishort_name` property is explitly missing.
+    getApiLabelsStub.restore();
+    getApiLabelsStub = sandbox.stub(labelSync, 'getApiLabels').resolves({
+      apis: [
+        {
+          display_name: 'Sprockets',
+          github_label: 'api: sprockets',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+      ],
+    });
+    const payload = require(path.resolve(
+      fixturesPath,
+      './repository_created.json'
+    ));
+    const scopes = [
+      nockFetchOldLabels([]),
+      nockLabelCreate(newLabels.labels.length),
+    ];
+    await probot.receive({name: 'repository', payload, id: 'abc123'});
+    scopes.forEach(s => s.done());
+    assert.ok(getApiLabelsStub.calledOnce);
   });
 });

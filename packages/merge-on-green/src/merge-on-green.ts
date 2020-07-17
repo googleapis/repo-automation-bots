@@ -24,7 +24,7 @@ const COMMENT_INTERVAL_LOW = 1000 * 60 * 60 * 3; // 3 hours
 const COMMENT_INTERVAL_HIGH = 1000 * 60 * 60 * 3.067; // 3 hours and 4 minutes, the amount of time it takes Cloud Scheduler to run
 //limiting this time interval makes it so that the bot will only comment once as it will only run once during the 3 to 3 hour and 4 min mark
 const MERGE_ON_GREEN_LABEL = 'automerge';
-const MERGE_ON_GREEN_LABEL_SECURE = 'automerge: secure';
+const MERGE_ON_GREEN_LABEL_SECURE = 'automerge: exact';
 const WORKER_SIZE = 4;
 
 interface WatchPR {

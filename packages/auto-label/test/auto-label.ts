@@ -15,14 +15,13 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
-import {describe, it, beforeEach} from 'mocha';
+import {Probot, Octokit} from 'probot';
+import {describe, it, beforeEach, afterEach} from 'mocha';
 import nock from 'nock';
-import {expect} from 'chai';
+import * as assert from 'assert';
 import {resolve} from 'path';
 import fs from 'fs';
 import snapshot from 'snap-shot-it';
-
 import handler, {autoDetectLabel} from '../src/auto-label';
 
 nock.disableNetConnect();
@@ -67,8 +66,6 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
-        .reply(200)
         .post('/repos/testOwner/testRepo/labels')
         .reply(200, [
           {
@@ -94,13 +91,6 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
-        .reply(200, [
-          {
-            name: 'myGitHubLabel',
-            color: 'C9FFE5',
-          },
-        ])
         .get('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200, [
           {
@@ -117,13 +107,6 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
-        .reply(200, [
-          {
-            name: 'myGitHubLabel',
-            color: 'C9FFE5',
-          },
-        ])
         .get('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200)
         .post('/repos/testOwner/testRepo/issues/5/labels')
@@ -143,11 +126,10 @@ describe('auto-label', () => {
 
       const ghRequests = nock('https://api.github.com');
       handler.callStorage = async () => emptyFile;
-      expect(
-        await handler.checkIfFileIsEmpty(
-          await handler.callStorage('my-bucket', 'my-file')
-        )
-      ).to.be.a('null');
+      const isFileEmpty = await handler.checkIfFileIsEmpty(
+        await handler.callStorage('my-bucket', 'my-file')
+      );
+      assert.strictEqual(isFileEmpty, null);
 
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
@@ -157,18 +139,17 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
       const ghRequests = nock('https://api.github.com');
       handler.callStorage = async () => downloadedFile;
-      expect(
-        handler.checkIfElementIsInArray(
-          [
-            {
-              github_label: '',
-              repo: 'firebase/FirebaseUI-Android',
-            },
-          ],
-          'notThere',
-          'notThere'
-        )
-      ).to.be.an('undefined');
+      const isInArray = handler.checkIfElementIsInArray(
+        [
+          {
+            github_label: '',
+            repo: 'firebase/FirebaseUI-Android',
+          },
+        ],
+        'notThere',
+        'notThere'
+      );
+      assert.strictEqual(isInArray, undefined);
 
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
@@ -243,12 +224,12 @@ describe('auto-label', () => {
     it('responds to a scheduled event', async () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/issues')
-        .reply(200, {
-          number: 1,
-        })
+        .reply(200, [
+          {
+            number: 1,
+          },
+        ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
-        .reply(200)
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
         .reply(200)
         .post('/repos/testOwner/testRepo/labels', {
           name: 'myGitHubLabel',
@@ -283,13 +264,13 @@ describe('auto-label', () => {
     it('deletes extraneous labels', async () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/issues')
-        .reply(200, {
-          number: 1,
-        })
+        .reply(200, [
+          {
+            number: 1,
+          },
+        ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200, [{name: 'api:theWrongLabel'}])
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
-        .reply(200)
         .post('/repos/testOwner/testRepo/labels', {
           name: 'myGitHubLabel',
           color: 'FEFEFA',
@@ -331,13 +312,13 @@ describe('auto-label', () => {
     it('will not create labels that already exist', async () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/issues')
-        .reply(200, {
-          number: 1,
-        })
+        .reply(200, [
+          {
+            number: 1,
+          },
+        ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200)
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
-        .reply(200, {name: 'myGithubLabel'})
         .post('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200, [
           {
@@ -370,8 +351,6 @@ describe('auto-label', () => {
           number: 1,
         })
         .get('/repos/testOwner/testRepo/issues/1/labels')
-        .reply(200)
-        .get('/repos/testOwner/testRepo/labels/myGitHubLabel')
         .reply(200)
         .post('/repos/testOwner/testRepo/labels', {
           name: 'myGitHubLabel',
@@ -414,7 +393,7 @@ describe('auto-label', () => {
         {title: 'spanner with no separator', want: undefined},
       ];
       for (const test of tests) {
-        expect(autoDetectLabel(data, test.title)).to.equal(test.want);
+        assert.strictEqual(autoDetectLabel(data, test.title), test.want);
       }
     });
   });
