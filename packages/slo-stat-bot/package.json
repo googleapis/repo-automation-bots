@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "ajv": "^6.12.2",
-    "gcf-utils": "1.6.2",
+    "gcf-utils": "5.0.1",
     "probot": "^9.11.3"
   },
   "devDependencies": {
