@@ -19,6 +19,28 @@ import {resolve} from 'path';
 import {config} from 'dotenv';
 import assert from 'assert';
 
+/**
+ * How to run these tests:
+ *
+ * 1. Create a GitHub personal access token:
+ *    https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token
+ * 2. Create a test GitHub App and give it the necessary permissions
+ * 3. Navigate to https://github.com/settings/apps/{your-app} to find
+ *    the necessary information for step 4
+ * 4. Enable secret manager on your GCP project and create a new secret
+ *    with the following values:
+ *    {
+ *      "id": <your GitHub app id>,
+ *      "cert": <your GitHub app private key at the bottom of the page>,
+ *      "secret": <your GitHub app's webhook secret (not client secret)>,
+ *      "githubToken": <your personal access token from step 1>
+ *    }
+ * 5. Create a file in gcf-utils root directory called ".env" with the following:
+ *    PROJECT_ID=<your GCP project id>
+ *    GCF_SHORT_FUNCTION_NAME=<the name of your secret>
+ * 6. Run these tests by calling 'npm run system-test'
+ */
+
 describe('GCFBootstrapper Integration', () => {
   describe('getProbotConfig', () => {
     let bootstrapper: GCFBootstrapper;
@@ -44,9 +66,11 @@ describe('GCFBootstrapper Integration', () => {
     });
 
     it('is called properly', async () => {
+      let called = false;
       const pb = await bootstrapper.loadProbot((app: Application) => {
         app.on('foo', async () => {
           console.log('We are called!');
+          called = true;
         });
       });
 
@@ -55,9 +79,12 @@ describe('GCFBootstrapper Integration', () => {
         id: 'bar',
         payload: 'baz',
       });
+
+      assert(called);
     });
 
     it('provides github with logging plugin', async () => {
+      let called = false;
       const pb = await bootstrapper.loadProbot((app: Application) => {
         app.on('foo', async context => {
           assert(
@@ -65,6 +92,7 @@ describe('GCFBootstrapper Integration', () => {
               loggingOctokitPluginVersion: string;
             }).loggingOctokitPluginVersion === '1.0.0'
           );
+          called = true;
         });
       });
 
@@ -73,6 +101,8 @@ describe('GCFBootstrapper Integration', () => {
         id: 'bar',
         payload: 'baz',
       });
+
+      assert(called);
     });
   });
 });
