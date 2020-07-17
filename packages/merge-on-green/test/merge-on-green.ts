@@ -219,7 +219,7 @@ describe('merge-on-green', () => {
       scopes.forEach(s => s.done());
     });
 
-    it('merges a PR on green with a secure label', async () => {
+    it('merges a PR on green with an exact label', async () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(['Special Check']),
@@ -232,7 +232,7 @@ describe('merge-on-green', () => {
           },
         ]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge: secure'}]),
+        getMogLabel([{name: 'automerge: exact'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
@@ -715,7 +715,7 @@ describe('merge-on-green', () => {
       scopes.forEach(s => s.done());
     });
 
-    it('dismisses reviews if the label is set to secure', async () => {
+    it('dismisses reviews if the label is set to exact', async () => {
       const scopes = [
         getPR(true, 'clean', 'open'),
         getBranchProtection(['Special Check']),
@@ -740,7 +740,7 @@ describe('merge-on-green', () => {
           },
         ]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge: secure'}]),
+        getMogLabel([{name: 'automerge: exact'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
