@@ -7,12 +7,15 @@
     "pretest": "npm run compile",
     "fix": "gts fix",
     "lint": "gts check",
-    "test": "echo No test script defined",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit ./build/test",
     "start": "node ./build/src/task-service.js",
     "docker-start-local": "docker run --network=host data-processor:1.0",
     "docker-build-local": "docker build --tag data-processor:1.0 .",
     "local-docker": "npm run compile && npm run docker-build-local && npm run docker-start-local"
   },
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "main": "./build/src/task-service.js",
   "author": "asonawalla@google.com",
   "license": "Apache-2.0",
@@ -25,10 +28,15 @@
     "@types/chai-http": "^4.2.0",
     "@types/express": "^4.17.7",
     "@types/mocha": "^8.0.0",
+    "c8": "^7.2.1",
     "chai": "^4.2.0",
     "chai-http": "^4.3.0",
+    "cross-env": "^7.0.2",
     "gts": "^2.0.0",
-    "mocha": "^8.0.1",
+    "mocha": "^8.0.0",
     "typescript": "^3.9.6"
-  }
+  },
+  "files": [
+    "build/src"
+  ]
 }
