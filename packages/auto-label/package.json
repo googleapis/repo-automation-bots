@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^5.0.0",
-    "gcf-utils": "^5.0.1"
+    "gcf-utils": "^5.2.2"
   },
   "devDependencies": {
     "@types/mocha": "^8.0.0",
