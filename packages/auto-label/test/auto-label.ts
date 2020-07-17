@@ -88,8 +88,8 @@ describe('auto-label', () => {
       ghRequests.done();
     });
 
-      //should get a 422 error when creating the label on the repo, we're mocking it already exists
-      it('responds to issues and does not create labels if they are not needed', async () => {
+    //should get a 422 error when creating the label on the repo, we're mocking it already exists
+    it('responds to issues and does not create labels if they are not needed', async () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
       const ghRequests = nock('https://api.github.com')
         .post('/repos/testOwner/testRepo/labels')
@@ -111,7 +111,7 @@ describe('auto-label', () => {
       ghRequests.done();
     });
 
-      //should get a 422 error when creating the label on the repo, we're mocking it already exists
+    //should get a 422 error when creating the label on the repo, we're mocking it already exists
     it('responds to issues and adds a label to an issue, even if the label already exists on the repo', async () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
@@ -153,10 +153,13 @@ describe('auto-label', () => {
     });
 
     it('returns null if there is no match on the repo', async () => {
-      const payload = require(resolve(fixturesPath, './events/issue_opened_no_match_repo'));
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened_no_match_repo'
+      ));
       const ghRequests = nock('https://api.github.com')
-      .get('/repos/testOwner/notThere/issues/5/labels')
-      .reply(200);
+        .get('/repos/testOwner/notThere/issues/5/labels')
+        .reply(200);
 
       handler.callStorage = async () => downloadedFile;
       expect(
@@ -188,7 +191,7 @@ describe('auto-label', () => {
         .post('/repos/GoogleCloudPlatform/golang-samples/labels')
         .reply(200, [
           {
-            name: 'api: spanner'
+            name: 'api: spanner',
           },
         ])
         .post(
@@ -202,15 +205,13 @@ describe('auto-label', () => {
         .post('/repos/GoogleCloudPlatform/golang-samples/labels')
         .reply(200, [
           {
-            name: 'sample'
+            name: 'sample',
           },
         ])
-        .post(
-          '/repos/GoogleCloudPlatform/golang-samples/issues/5/labels'
-        )
+        .post('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
         .reply(200, [
           {
-            name: 'sample'
+            name: 'sample',
           },
         ]);
       handler.callStorage = async () => downloadedFile;
@@ -226,36 +227,34 @@ describe('auto-label', () => {
       payload['issue']['title'] = 'Cloud IoT: TestDeploy failed';
 
       const ghRequests = nock('https://api.github.com')
-      .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
-      .reply(200)
-      .post('/repos/GoogleCloudPlatform/golang-samples/labels')
-      .reply(200, [
-        {
-          name: 'api: spanner'
-        },
-      ])
-      .post(
-        '/repos/GoogleCloudPlatform/golang-samples/issues/5/labels',
-        body => {
-          snapshot(body);
-          return true;
-        }
-      )
-      .reply(200)
-      .post('/repos/GoogleCloudPlatform/golang-samples/labels')
-      .reply(200, [
-        {
-          name: 'sample'
-        },
-      ])
-      .post(
-        '/repos/GoogleCloudPlatform/golang-samples/issues/5/labels'
-      )
-      .reply(200, [
-        {
-          name: 'sample'
-        },
-      ]);
+        .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
+        .reply(200)
+        .post('/repos/GoogleCloudPlatform/golang-samples/labels')
+        .reply(200, [
+          {
+            name: 'api: spanner',
+          },
+        ])
+        .post(
+          '/repos/GoogleCloudPlatform/golang-samples/issues/5/labels',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200)
+        .post('/repos/GoogleCloudPlatform/golang-samples/labels')
+        .reply(200, [
+          {
+            name: 'sample',
+          },
+        ])
+        .post('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
+        .reply(200, [
+          {
+            name: 'sample',
+          },
+        ]);
       handler.callStorage = async () => downloadedFile;
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
@@ -269,32 +268,30 @@ describe('auto-label', () => {
       payload['issue']['title'] = 'spanner: this is actually about App Engine';
 
       const ghRequests = nock('https://api.github.com')
-      .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
-      .reply(200, [
-        {
-          name: 'api: spanner'
-        },
-      ])
-      .post('/repos/GoogleCloudPlatform/golang-samples/labels')
-      .reply(200, [
-        {
-          name: 'api: spanner'
-        },
-      ])
-      .post('/repos/GoogleCloudPlatform/golang-samples/labels')
-      .reply(200, [
-        {
-          name: 'sample'
-        },
-      ])
-      .post(
-        '/repos/GoogleCloudPlatform/golang-samples/issues/5/labels'
-      )
-      .reply(200, [
-        {
-          name: 'sample'
-        },
-      ]);
+        .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
+        .reply(200, [
+          {
+            name: 'api: spanner',
+          },
+        ])
+        .post('/repos/GoogleCloudPlatform/golang-samples/labels')
+        .reply(200, [
+          {
+            name: 'api: spanner',
+          },
+        ])
+        .post('/repos/GoogleCloudPlatform/golang-samples/labels')
+        .reply(200, [
+          {
+            name: 'sample',
+          },
+        ])
+        .post('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
+        .reply(200, [
+          {
+            name: 'sample',
+          },
+        ]);
 
       handler.callStorage = async () => downloadedFile;
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
