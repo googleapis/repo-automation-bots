@@ -16,7 +16,6 @@ import firebaseAdmin from 'firebase-admin';
 type Firestore = firebaseAdmin.firestore.Firestore;
 
 export abstract class DataProcessor {
-
   static firestore: Firestore;
 
   constructor() {
