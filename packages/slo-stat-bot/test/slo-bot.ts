@@ -21,10 +21,10 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 // eslint-disable-next-line node/no-extraneous-import
 import Webhooks from '@octokit/webhooks';
 import handler from '../src/slo-bot';
-import {getSLOStatus} from '../src/slo-logic';
-import {handle_labeling} from '../src/slo-label';
+import {getSloStatus} from '../src/slo-logic';
+import {handleLabeling} from '../src/slo-label';
 import sinon from 'sinon';
-import {handle_lint} from '../src/slo-lint';
+import {handleLint} from '../src/slo-lint';
 
 nock.disableNetConnect();
 
@@ -58,7 +58,7 @@ describe('slo-status-label', () => {
     beforeEach(() => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
-      handleIssueStub = sinon.stub(handler, 'handle_issues');
+      handleIssueStub = sinon.stub(handler, 'handleIssues');
     });
 
     afterEach(() => {
@@ -97,7 +97,7 @@ describe('slo-status-label', () => {
       requests.done();
     });
   });
-  describe('handle_issues', () => {
+  describe('handleIssues', () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
     let getSloFileStub: sinon.SinonStub;
     let doesApplyStub: sinon.SinonStub;
@@ -105,11 +105,11 @@ describe('slo-status-label', () => {
     let labelStub: sinon.SinonStub;
 
     beforeEach(() => {
-      //handleLabelStub = sinon.spy(handle_labeling);
+      //handleLabelStub = sinon.spy(handleLabeling);
       getSloFileStub = sinon.stub(handler, 'getSloFile');
-      doesApplyStub = sinon.stub(getSLOStatus, 'doesSloApply');
-      isCompliantStub = sinon.stub(getSLOStatus, 'isCompliant');
-      labelStub = sinon.stub(handle_labeling, 'addLabel');
+      doesApplyStub = sinon.stub(getSloStatus, 'doesSloApply');
+      isCompliantStub = sinon.stub(getSloStatus, 'isCompliant');
+      labelStub = sinon.stub(handleLabeling, 'addLabel');
     });
     afterEach(() => {
       sinon.restore();
@@ -124,7 +124,7 @@ describe('slo-status-label', () => {
           'events',
           'pull_request_opened'
         ));
-        lintFileStub = sinon.stub(handle_lint, 'listFiles');
+        lintFileStub = sinon.stub(handleLint, 'listFiles');
       });
       it('triggers handle label if slo applies to issue', async () => {
         getSloFileStub.onCall(0).returns('[{}]');

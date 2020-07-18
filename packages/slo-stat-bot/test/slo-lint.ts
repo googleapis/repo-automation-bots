@@ -25,7 +25,7 @@ import Webhooks from '@octokit/webhooks';
 import snapshot from 'snap-shot-it';
 import handler from '../src/slo-bot';
 import sinon from 'sinon';
-import {handle_lint} from '../src/slo-lint';
+import {handleLint} from '../src/slo-lint';
 
 nock.disableNetConnect();
 
@@ -60,8 +60,8 @@ describe('slo-status-label', () => {
     beforeEach(() => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'pull_request_opened'));
-      handleSloStub = sinon.stub(handle_lint, 'handle_slos');
-      handleIssueStub = sinon.stub(handler, 'handle_issues');
+      handleSloStub = sinon.stub(handleLint, 'handleSlos');
+      handleIssueStub = sinon.stub(handler, 'handleIssues');
     });
 
     afterEach(() => {
@@ -69,7 +69,7 @@ describe('slo-status-label', () => {
       nock.cleanAll;
     });
 
-    it('Error is logged when getting the list of files fails and handle_issues is called', async () => {
+    it('Error is logged when getting the list of files fails and handleIssues is called', async () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(404)
@@ -86,7 +86,7 @@ describe('slo-status-label', () => {
       sinon.assert.calledOnce(handleIssueStub);
     });
 
-    it('triggers handle_slos function since issue_slo_rules.json is present and handle_issues is called', async () => {
+    it('triggers handleSlos function since issue_slo_rules.json is present and handleIssues is called', async () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(200, [
@@ -109,7 +109,7 @@ describe('slo-status-label', () => {
       requests.done();
     });
 
-    it('does not trigger handle_slos function since issue_slo_rules.json is not present. Calls handle_issues', async () => {
+    it('does not trigger handleSlos function since issue_slo_rules.json is not present. Calls handleIssues', async () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(200, [{filname: 'hello.json'}])
@@ -135,7 +135,7 @@ describe('slo-status-label', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'pull_request_opened'));
       getSloFileStub = sinon.stub(handler, 'getSloFile');
-      handleIssueStub = sinon.stub(handler, 'handle_issues');
+      handleIssueStub = sinon.stub(handler, 'handleIssues');
     });
 
     afterEach(() => {
@@ -143,7 +143,7 @@ describe('slo-status-label', () => {
       sinon.restore();
     });
 
-    it('Error is logged if getting file content fails and calls handle_issues', async () => {
+    it('Error is logged if getting file content fails and calls handleIssues', async () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(202, [
@@ -326,7 +326,7 @@ describe('slo-status-label', () => {
           'valid_slos',
           fileName
         ));
-        const validRes = await handle_lint.lint(schema, slo);
+        const validRes = await handleLint.lint(schema, slo);
         const isValid = await validRes.isValid;
 
         assert.strictEqual(isValid, true);
@@ -347,7 +347,7 @@ describe('slo-status-label', () => {
           'invalid_slos',
           fileName
         ));
-        const validRes = await handle_lint.lint(schema, slo);
+        const validRes = await handleLint.lint(schema, slo);
         const isValid = await validRes.isValid;
 
         assert.strictEqual(isValid, false);

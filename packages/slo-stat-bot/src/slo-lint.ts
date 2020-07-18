@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GitHubAPI} from 'probot/lib/github';
+import {GitHubAPI, Context} from 'probot';
 import Ajv, {ErrorObject} from 'ajv';
-import {Context} from 'probot';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const schema = require('./../data/schema.json');
@@ -47,7 +46,7 @@ interface PullsListFilesResponseItem {
  * @param per_page number of files that is listed per API call
  * @returns an array of PullsListFilesResponseItem containing the filename and sha
  */
-handle_lint.listFiles = async function listFiles(
+handleLint.listFiles = async function listFiles(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -79,14 +78,14 @@ handle_lint.listFiles = async function listFiles(
  * @param file_sha number of files that is listed per API call
  * @returns void
  */
-handle_lint.handle_slos = async function handle_slos(
+handleLint.handleSlos = async function handleSlos(
   context: Context,
   owner: string,
   repo: string,
   issue_number: number,
   file_sha: string
 ) {
-  const sloString = await handle_lint.getFileShaContents(
+  const sloString = await handleLint.getFileShaContents(
     context.github,
     owner,
     repo,
@@ -98,16 +97,16 @@ handle_lint.handle_slos = async function handle_slos(
   }
 
   const sloData = JSON.parse(sloString);
-  const res = await handle_lint.lint(schema, sloData);
+  const res = await handleLint.lint(schema, sloData);
 
-  await handle_lint.commentPR(
+  await handleLint.commentPR(
     context.github,
     owner,
     repo,
     issue_number,
     res.isValid
   );
-  await handle_lint.createCheck(context, res);
+  await handleLint.createCheck(context, res);
 };
 
 /**
@@ -119,7 +118,7 @@ handle_lint.handle_slos = async function handle_slos(
  * @param file_sha number of files that is listed per API call
  * @returns json string of the slo rules content
  */
-handle_lint.getFileShaContents = async function getFileShaContents(
+handleLint.getFileShaContents = async function getFileShaContents(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -149,7 +148,7 @@ handle_lint.getFileShaContents = async function getFileShaContents(
  * @param sloData object of slo rules
  * @returns validation results of a boolean value if its valid and an error object of it is invalid
  */
-handle_lint.lint = async function lint(
+handleLint.lint = async function lint(
   schema: JSON,
   sloData: JSON
 ): Promise<ValidationResults> {
@@ -172,7 +171,7 @@ handle_lint.lint = async function lint(
  * @param isValid determines if slo rules are valid or not against the shema
  * @returns void
  */
-handle_lint.commentPR = async function commentPR(
+handleLint.commentPR = async function commentPR(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -206,7 +205,7 @@ handle_lint.commentPR = async function commentPR(
  * @returns void
  */
 // Creates a check on PR and if it fails to lint concludes failure check
-handle_lint.createCheck = async function createCheck(
+handleLint.createCheck = async function createCheck(
   context: Context,
   validationRes: ValidationResults
 ) {
@@ -247,13 +246,13 @@ handle_lint.createCheck = async function createCheck(
  * @param pullNumber of issue or pr
  * @returns void
  */
-export async function handle_lint(
+export async function handleLint(
   context: Context,
   owner: string,
   repo: string,
   pullNumber: number
 ) {
-  const fileList = await handle_lint.listFiles(
+  const fileList = await handleLint.listFiles(
     context.github,
     owner,
     repo,
@@ -270,7 +269,7 @@ export async function handle_lint(
       file.filename === '.github/issue_slo_rules.json' ||
       (repo === '.github' && file.filename === 'issue_slo_rules.json')
     ) {
-      await handle_lint.handle_slos(context, owner, repo, pullNumber, file.sha);
+      await handleLint.handleSlos(context, owner, repo, pullNumber, file.sha);
       break;
     }
   }

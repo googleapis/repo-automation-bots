@@ -1,4 +1,4 @@
-# slo-stat-label
+# SLO Bot
 
 Lints for slo rules (issue_slo_rules.json) file and creates a check on the PR. Comments on the PR if it is invalid.
 

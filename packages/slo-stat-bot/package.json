@@ -32,18 +32,11 @@
   },
   "dependencies": {
     "ajv": "^6.12.2",
-    "gcf-utils": "5.0.0",
-    "moment": "^2.27.0",
-    "probot": "^9.11.3",
-    "ts-auto-mock": "^2.3.2"
+    "gcf-utils": "5.0.1",
+    "moment": "^2.27.0"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
-    "@types/bunyan": "^1.8.6",
-    "@types/dotenv": "^6.1.1",
-    "@types/express": "^4.17.0",
-    "@types/ioredis": "^4.0.13",
-    "@types/lru-cache": "^5.1.0",
     "@types/mocha": "^7.0.0",
     "@types/nock": "^10.0.3",
     "@types/node": "^12.6.1",
@@ -57,7 +50,7 @@
     "nock": "^12.0.3",
     "smee-client": "^1.1.0",
     "snap-shot-it": "^7.8.0",
-    "typescript": "^3.8.5",
+    "typescript": "^3.9.6",
     "sinon": "^9.0.2"
   },
   "engines": {

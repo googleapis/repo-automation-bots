@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GitHubAPI} from 'probot/lib/github';
+import {GitHubAPI} from 'probot';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const config = require('./../data/config.json');
@@ -26,11 +26,12 @@ interface SLOStatus {
  * Function gets ooslo label name in repo from the config file
  * @returns the name of ooslo label
  */
-handle_labeling.getLabelName = async function (): Promise<string> {
+handleLabeling.getLabelName = function ():string {
   try {
     return config.name;
   } catch (err) {
-    throw 'Unable to get ooslo name from config-label file';
+    err.message = `Unable to get ooslo name from config-label file \n ${err.message} \n ${err}`;
+    throw err;
   }
 };
 
@@ -44,7 +45,7 @@ handle_labeling.getLabelName = async function (): Promise<string> {
  * @param name of ooslo label in repo
  * @returns void
  */
-handle_labeling.addLabel = async function addLabel(
+handleLabeling.addLabel = async function addLabel(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -61,7 +62,8 @@ handle_labeling.addLabel = async function addLabel(
     });
   } catch (err) {
     //Error if ooslo label does not exist in repo
-    throw `Error in adding ooslo label for org ${owner} in repo ${repo} since it does not exist \n ${err}`;
+    err.message = `Error in adding ooslo label for org ${owner} in repo ${repo} since it does not exist \n ${err.message} \n ${err}`;
+    throw err;
   }
 };
 
@@ -74,7 +76,7 @@ handle_labeling.addLabel = async function addLabel(
  * @param name of ooslo label in repo
  * @returns void
  */
-handle_labeling.removeIssueLabel = async function removeIssueLabel(
+handleLabeling.removeIssueLabel = async function removeIssueLabel(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -92,7 +94,6 @@ handle_labeling.removeIssueLabel = async function removeIssueLabel(
     console.error(
       `Error removing OOSLO label in repo ${repo} for issue number ${issueNumber}\n ${err.request}`
     );
-    return;
   }
 };
 
@@ -108,7 +109,7 @@ handle_labeling.removeIssueLabel = async function removeIssueLabel(
  * @param labels on the issue or pr
  * @returns void
  */
-export async function handle_labeling(
+export async function handleLabeling(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -116,11 +117,11 @@ export async function handle_labeling(
   sloStatus: SLOStatus,
   labels: string[] | null
 ) {
-  const name = await handle_labeling.getLabelName();
+  const name = handleLabeling.getLabelName();
   if (!sloStatus.isCompliant && !labels?.includes(name)) {
-    await handle_labeling.addLabel(github, owner, repo, issueNumber, name);
+    await handleLabeling.addLabel(github, owner, repo, issueNumber, name);
   } else if (sloStatus.isCompliant && labels?.includes(name)) {
-    await handle_labeling.removeIssueLabel(
+    await handleLabeling.removeIssueLabel(
       github,
       owner,
       repo,

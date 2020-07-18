@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Application, Context} from 'probot';
-import {GitHubAPI} from 'probot/lib/github';
-import {getSLOStatus} from './slo-logic';
-import {handle_labeling} from './slo-label';
-import {handle_lint} from './slo-lint';
+import {Application, Context, GitHubAPI} from 'probot';
+import {getSloStatus} from './slo-logic';
+import {handleLabeling} from './slo-label';
+import {handleLint} from './slo-lint';
 
 interface IssueLabelResponseItem {
   name: string;
@@ -43,10 +42,10 @@ function handler(app: Application) {
       const pullNumber = context.payload.number;
       const labelsResponse = context.payload.pull_request.labels;
 
-      await handle_lint(context, owner, repo, pullNumber);
-      const labels = await handler.getIssueLabels(labelsResponse);
+      await handleLint(context, owner, repo, pullNumber);
+      const labels = labelsResponse.map((label: IssueLabelResponseItem) => label.name.toLowerCase());
       const sloString = await handler.getSloFile(context.github, owner, repo);
-      await handler.handle_issues(
+      await handler.handleIssues(
         context,
         owner,
         repo,
@@ -62,10 +61,10 @@ function handler(app: Application) {
     const issueNumber = context.payload.issue.number;
     const labelsResponse = context.payload.issue.labels;
 
-    const labels = await handler.getIssueLabels(labelsResponse);
-    const name = await handle_labeling.getLabelName();
+    const labels = labelsResponse.map((label: IssueLabelResponseItem) => label.name.toLowerCase());
+    const name = handleLabeling.getLabelName();
     if (labels?.includes(name)) {
-      await handle_labeling.removeIssueLabel(
+      await handleLabeling.removeIssueLabel(
         context.github,
         owner,
         repo,
@@ -93,9 +92,9 @@ function handler(app: Application) {
       const labelsResponse = context.payload.issue.labels;
 
       // Check slo-logic and label issue according to slo status
-      const labels = await handler.getIssueLabels(labelsResponse);
+      const labels = labelsResponse.map((label: IssueLabelResponseItem) => label.name.toLowerCase());
       const sloString = await handler.getSloFile(context.github, owner, repo);
-      await handler.handle_issues(
+      await handler.handleIssues(
         context,
         owner,
         repo,
@@ -117,7 +116,7 @@ function handler(app: Application) {
  * @param labels on the given issue or pr
  * @returns void
  */
-handler.handle_issues = async function handle_issues(
+handler.handleIssues = async function handleIssues(
   context: Context,
   owner: string,
   repo: string,
@@ -132,7 +131,7 @@ handler.handle_issues = async function handle_issues(
     const issueCreatedTime = context.payload[type].created_at;
     const assignees = context.payload[type].assignees;
 
-    const sloStatus = await getSLOStatus(
+    const sloStatus = await getSloStatus(
       context.github,
       owner,
       repo,
@@ -146,7 +145,7 @@ handler.handle_issues = async function handle_issues(
 
     //Labeling based on slo status for the given issue
     if (sloStatus.appliesTo) {
-      await handle_labeling(
+      await handleLabeling(
         context.github,
         owner,
         repo,
@@ -156,21 +155,6 @@ handler.handle_issues = async function handle_issues(
       );
     }
   }
-};
-
-/**
- * Function gets labels from issue or pr
- * @param labelsResponse of issue or pr
- * @returns array of names of the labels on the issue or pr
- */
-handler.getIssueLabels = async function getIssueLabels(
-  labelsResponse: IssueLabelResponseItem[]
-): Promise<string[]> {
-  const labels: string[] = [];
-  labelsResponse.forEach((label: IssueLabelResponseItem) =>
-    labels.push(label.name.toLowerCase())
-  );
-  return labels;
 };
 
 /**
@@ -186,7 +170,7 @@ handler.getSloFile = async function getSloFile(
   repo: string
 ): Promise<string> {
   let path = '.github/issue_slo_rules.json';
-  let sloRules: string = await getSLOStatus.getFilePathContent(
+  let sloRules = await getSloStatus.getFilePathContent(
     github,
     owner,
     repo,
@@ -195,7 +179,7 @@ handler.getSloFile = async function getSloFile(
 
   if (sloRules === 'not found') {
     path = 'issue_slo_rules.json';
-    sloRules = await getSLOStatus.getFilePathContent(
+    sloRules = await getSloStatus.getFilePathContent(
       github,
       owner,
       '.github',
@@ -204,7 +188,7 @@ handler.getSloFile = async function getSloFile(
   }
   if (sloRules === 'not found') {
     //Error if org level does not exist
-    throw `Error in finding org level config file in ${owner}`;
+    throw new Error(`Error in finding org level config file in ${owner}`);
   }
   return sloRules;
 };

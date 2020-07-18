@@ -23,8 +23,8 @@ import Webhooks from '@octokit/webhooks';
 import snapshot from 'snap-shot-it';
 import handler from '../src/slo-bot';
 import sinon from 'sinon';
-import {getSLOStatus} from '../src/slo-logic';
-import {handle_labeling} from '../src/slo-label';
+import {getSloStatus} from '../src/slo-logic';
+import {handleLabeling} from '../src/slo-label';
 
 nock.disableNetConnect();
 
@@ -55,16 +55,12 @@ describe('slo-status-label', () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
     let doesApplyStub: sinon.SinonStub;
     let isCompliantStub: sinon.SinonStub;
-    let issueLabelsStub: sinon.SinonStub;
     let getLabelNameStub: sinon.SinonStub;
 
     beforeEach(() => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
-      doesApplyStub = sinon.stub(getSLOStatus, 'doesSloApply');
-      isCompliantStub = sinon.stub(getSLOStatus, 'isCompliant');
-      issueLabelsStub = sinon.stub(handler, 'getIssueLabels');
-      getLabelNameStub = sinon.stub(handle_labeling, 'getLabelName');
+      doesApplyStub = sinon.stub(getSloStatus, 'doesSloApply');
+      isCompliantStub = sinon.stub(getSloStatus, 'isCompliant');
+      getLabelNameStub = sinon.stub(handleLabeling, 'getLabelName');
     });
 
     afterEach(() => {
@@ -73,6 +69,8 @@ describe('slo-status-label', () => {
     });
 
     it('labels ooslo if issue is not compliant and is missing ooslo label', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
         .reply(200, {
@@ -85,7 +83,6 @@ describe('slo-status-label', () => {
         })
         .reply(200);
 
-      issueLabelsStub.onCall(0).returns(['bug', 'p0', 'bot: merge']);
       doesApplyStub.onCall(0).returns(true);
       isCompliantStub.onCall(0).returns(false);
       getLabelNameStub.onCall(0).returns('ooslo');
@@ -99,6 +96,8 @@ describe('slo-status-label', () => {
       requests.done();
     });
     it('does not relabel ooslo if issue is not compliant and has ooslo label', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      payload = require(resolve(fixturesPath, 'events', 'issue_ooslo'));
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
         .reply(200, {
@@ -106,7 +105,6 @@ describe('slo-status-label', () => {
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         });
 
-      issueLabelsStub.onCall(0).returns(['bug', 'p0', 'bot: merge', 'ooslo']);
       doesApplyStub.onCall(0).returns(true);
       isCompliantStub.onCall(0).returns(false);
       getLabelNameStub.onCall(0).returns('ooslo');
@@ -119,6 +117,9 @@ describe('slo-status-label', () => {
       requests.done();
     });
     it('does not label ooslo if issue is compliant', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
+
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
         .reply(200, {
@@ -126,7 +127,6 @@ describe('slo-status-label', () => {
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         });
 
-      issueLabelsStub.onCall(0).returns(['bug', 'p0', 'bot: merge']);
       doesApplyStub.onCall(0).returns(true);
       isCompliantStub.onCall(0).returns(true);
       getLabelNameStub.onCall(0).returns('ooslo');
@@ -140,6 +140,8 @@ describe('slo-status-label', () => {
       requests.done();
     });
     it('removes ooslo label if issue is compliant and has ooslo label', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      payload = require(resolve(fixturesPath, 'events', 'issue_ooslo'));
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
         .reply(200, {
@@ -148,7 +150,7 @@ describe('slo-status-label', () => {
         })
         .delete('/repos/testOwner/testRepo/issues/5/labels/ooslo')
         .reply(200);
-      issueLabelsStub.onCall(0).returns(['bug', 'p0', 'bot: merge', 'ooslo']);
+
       doesApplyStub.onCall(0).returns(true);
       isCompliantStub.onCall(0).returns(true);
       getLabelNameStub.onCall(0).returns('ooslo');

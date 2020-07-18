@@ -16,13 +16,13 @@
 import * as assert from 'assert';
 import {GitHubAPI} from 'probot/lib/github';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-import {getSLOStatus} from '../src/slo-logic';
+import {getSloStatus} from '../src/slo-logic';
 import sinon from 'sinon';
 
 describe('durationTime', () => {
   describe('duration is in days', () => {
     it('returns true since time difference is within duration', async () => {
-      const isInDuration = await getSLOStatus.isInDuration(
+      const isInDuration = await getSloStatus.isInDuration(
         '5d',
         '2020-07-22T03:04:47Z',
         '2020-07-27T03:04:46Z'
@@ -30,7 +30,7 @@ describe('durationTime', () => {
       assert.strictEqual(isInDuration, true);
     });
     it('returns false since time difference is not within duration', async () => {
-      const isInDuration = await getSLOStatus.isInDuration(
+      const isInDuration = await getSloStatus.isInDuration(
         '5d',
         '2020-07-22T03:04:47Z',
         '2020-07-28T07:04:48Z'
@@ -40,7 +40,7 @@ describe('durationTime', () => {
   });
   describe('duration is in hours', () => {
     it('returns true since time difference is within duration', async () => {
-      const isInDuration = await getSLOStatus.isInDuration(
+      const isInDuration = await getSloStatus.isInDuration(
         '4h',
         '2020-07-22T03:04:47Z',
         '2020-07-22T07:04:46Z'
@@ -48,7 +48,7 @@ describe('durationTime', () => {
       assert.strictEqual(isInDuration, true);
     });
     it('returns false since time difference is not within duration', async () => {
-      const isInDuration = await getSLOStatus.isInDuration(
+      const isInDuration = await getSloStatus.isInDuration(
         '4h',
         '2020-07-22T03:04:47Z',
         '2020-07-22T07:04:48Z'
@@ -58,7 +58,7 @@ describe('durationTime', () => {
   });
   describe('duration is in minutes', () => {
     it('returns true since time difference is within duration', async () => {
-      const isInDuration = await getSLOStatus.isInDuration(
+      const isInDuration = await getSloStatus.isInDuration(
         '4m',
         '2020-07-22T03:04:47Z',
         '2020-07-22T03:08:47Z'
@@ -66,7 +66,7 @@ describe('durationTime', () => {
       assert.strictEqual(isInDuration, true);
     });
     it('returns false since time difference is not within duration', async () => {
-      const isInDuration = await getSLOStatus.isInDuration(
+      const isInDuration = await getSloStatus.isInDuration(
         '4m',
         '2020-07-22T03:04:47Z',
         '2020-07-22T03:18:47Z'
@@ -76,7 +76,7 @@ describe('durationTime', () => {
   });
   describe('duration is in seconds', () => {
     it('returns true since time difference is within duration', async () => {
-      const isInDuration = await getSLOStatus.isInDuration(
+      const isInDuration = await getSloStatus.isInDuration(
         '520s',
         '2020-07-22T03:04:00Z',
         '2020-07-22T03:11:47Z'
@@ -84,7 +84,7 @@ describe('durationTime', () => {
       assert.strictEqual(isInDuration, true);
     });
     it('returns false since time difference is not within duration', async () => {
-      const isInDuration = await getSLOStatus.isInDuration(
+      const isInDuration = await getSloStatus.isInDuration(
         '520s',
         '2020-07-22T03:04:00Z',
         '2020-07-22T04:11:47Z'
@@ -94,7 +94,7 @@ describe('durationTime', () => {
   });
   describe('duration is a number', () => {
     it('returns true since time difference is within duration', async () => {
-      const isInDuration = await getSLOStatus.isInDuration(
+      const isInDuration = await getSloStatus.isInDuration(
         520,
         '2020-07-22T03:04:00Z',
         '2020-07-22T03:11:47Z'
@@ -102,7 +102,7 @@ describe('durationTime', () => {
       assert.strictEqual(isInDuration, true);
     });
     it('returns false since time difference is not within duration', async () => {
-      const isInDuration = await getSLOStatus.isInDuration(
+      const isInDuration = await getSloStatus.isInDuration(
         520,
         '2020-07-22T03:04:00Z',
         '2020-07-22T04:11:47Z'
@@ -113,7 +113,7 @@ describe('durationTime', () => {
 });
 describe('getContributers', () => {
   it('Contributer is write', async () => {
-    const responders = await getSLOStatus.getContributers(
+    const responders = await getSloStatus.getContributers(
       'testOwner',
       new Set<string>(['coder-cat']),
       'WRITE',
@@ -128,7 +128,7 @@ describe('getContributers', () => {
     );
   });
   it('Contributer is admin', async () => {
-    const responders = await getSLOStatus.getContributers(
+    const responders = await getSloStatus.getContributers(
       'testOwner',
       new Set<string>(),
       'ADMIN',
@@ -143,7 +143,7 @@ describe('getContributers', () => {
     );
   });
   it('Contributer is owner', async () => {
-    const responders = await getSLOStatus.getContributers(
+    const responders = await getSloStatus.getContributers(
       'testOwner',
       new Set<string>(['user2']),
       'OWNER',
@@ -166,10 +166,10 @@ describe('getResponders', () => {
   let getContributorsStub: sinon.SinonStub;
 
   beforeEach(() => {
-    convertToArrayStub = sinon.stub(getSLOStatus, 'convertToArray');
-    fileContentStub = sinon.stub(getSLOStatus, 'getFilePathContent');
-    getCollaboratorStub = sinon.stub(getSLOStatus, 'getCollaborators');
-    getContributorsStub = sinon.stub(getSLOStatus, 'getContributers');
+    convertToArrayStub = sinon.stub(getSloStatus, 'convertToArray');
+    fileContentStub = sinon.stub(getSloStatus, 'getFilePathContent');
+    getCollaboratorStub = sinon.stub(getSloStatus, 'getCollaborators');
+    getContributorsStub = sinon.stub(getSloStatus, 'getContributers');
   });
 
   afterEach(() => {
@@ -202,7 +202,7 @@ describe('getResponders', () => {
     getContributorsStub.onCall(0).returns(
       new Set<string>(['user3', 'testOwner'])
     );
-    const responders = await getSLOStatus.getResponders(
+    const responders = await getSloStatus.getResponders(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -254,7 +254,7 @@ describe('getResponders', () => {
         'testOwner',
       ])
     );
-    const responders = await getSLOStatus.getResponders(
+    const responders = await getSloStatus.getResponders(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -305,7 +305,7 @@ describe('getResponders', () => {
     getContributorsStub.onCall(0).returns(
       new Set<string>(['owner1', 'owner2', 'admin1', 'testOwner'])
     );
-    const responders = await getSLOStatus.getResponders(
+    const responders = await getSloStatus.getResponders(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -350,7 +350,7 @@ describe('getResponders', () => {
     getContributorsStub.onCall(0).returns(
       new Set<string>(['owner1', 'owner2', 'collab1', 'testOwner'])
     );
-    const responders = await getSLOStatus.getResponders(
+    const responders = await getSloStatus.getResponders(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -377,21 +377,21 @@ describe('getResponders', () => {
 });
 describe('isAssigned', () => {
   it('return true if valid responder was assigned the issue', async () => {
-    const isValid = await getSLOStatus.isAssigned(
+    const isValid = await getSloStatus.isAssigned(
       new Set<string>(['user1', 'testOwner', 'admin1']),
       [{login: 'random1'}, {login: 'user1'}]
     );
     assert.strictEqual(isValid, true);
   });
   it('return false if list of assignees was empty was empty', async () => {
-    const isValid = await getSLOStatus.isAssigned(
+    const isValid = await getSloStatus.isAssigned(
       new Set<string>(['user1', 'testOwner', 'admin1']),
       []
     );
     assert.strictEqual(isValid, false);
   });
   it('return false if valid responder was not assigned the issue', async () => {
-    const isValid = await getSLOStatus.isAssigned(
+    const isValid = await getSloStatus.isAssigned(
       new Set<string>(['testOwner']),
       [{login: 'user1'}, {login: 'admin1'}]
     );
@@ -402,7 +402,7 @@ describe('isInResponseTime', () => {
   let isInDurationStub: sinon.SinonStub;
 
   beforeEach(() => {
-    isInDurationStub = sinon.stub(getSLOStatus, 'isInDuration');
+    isInDurationStub = sinon.stub(getSloStatus, 'isInDuration');
   });
 
   afterEach(() => {
@@ -429,7 +429,7 @@ describe('isInResponseTime', () => {
     ];
     isInDurationStub.onCall(0).returns(false);
     isInDurationStub.onCall(1).returns(true);
-    const isValid = await getSLOStatus.isInResponseTime(
+    const isValid = await getSloStatus.isInResponseTime(
       new Set<string>(['testOwner', 'user1', 'admin1']),
       issueComments,
       '4d',
@@ -450,7 +450,7 @@ describe('isInResponseTime', () => {
       },
     ];
     isInDurationStub.onCall(0).returns(false);
-    const isValid = await getSLOStatus.isInResponseTime(
+    const isValid = await getSloStatus.isInResponseTime(
       new Set<string>(['testOwner', 'user1', 'admin1']),
       issueComments,
       '4d',
@@ -470,7 +470,7 @@ describe('isInResponseTime', () => {
         updated_at: '2020-07-23T03:04:00Z',
       },
     ];
-    const isValid = await getSLOStatus.isInResponseTime(
+    const isValid = await getSloStatus.isInResponseTime(
       new Set<string>(['testOwner', 'user1', 'admin1']),
       issueComments,
       '4d',
@@ -489,11 +489,11 @@ describe('isCompliant given slo applies to issue', () => {
   let isInResponseStub: sinon.SinonStub;
 
   beforeEach(() => {
-    isInDurationStub = sinon.stub(getSLOStatus, 'isInDuration');
-    getRespondersStub = sinon.stub(getSLOStatus, 'getResponders');
-    isAssignedStub = sinon.stub(getSLOStatus, 'isAssigned');
-    getCommentsStub = sinon.stub(getSLOStatus, 'getIssueCommentsList');
-    isInResponseStub = sinon.stub(getSLOStatus, 'isInResponseTime');
+    isInDurationStub = sinon.stub(getSloStatus, 'isInDuration');
+    getRespondersStub = sinon.stub(getSloStatus, 'getResponders');
+    isAssignedStub = sinon.stub(getSloStatus, 'isAssigned');
+    getCommentsStub = sinon.stub(getSloStatus, 'getIssueCommentsList');
+    isInResponseStub = sinon.stub(getSloStatus, 'isInResponseTime');
   });
 
   afterEach(() => {
@@ -517,7 +517,7 @@ describe('isCompliant given slo applies to issue', () => {
     };
 
     isInDurationStub.onCall(0).returns(false);
-    const isValid = await getSLOStatus.isCompliant(
+    const isValid = await getSloStatus.isCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -555,7 +555,7 @@ describe('isCompliant given slo applies to issue', () => {
       new Set<string>(['testOwner', 'admin1', 'user1'])
     );
     isAssignedStub.onCall(0).returns(false);
-    const isValid = await getSLOStatus.isCompliant(
+    const isValid = await getSloStatus.isCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -595,7 +595,7 @@ describe('isCompliant given slo applies to issue', () => {
     isAssignedStub.onCall(0).returns(true);
     getCommentsStub.onCall(0).returns([]);
     isInResponseStub.onCall(0).returns(false);
-    const isValid = await getSLOStatus.isCompliant(
+    const isValid = await getSloStatus.isCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -644,7 +644,7 @@ describe('isCompliant given slo applies to issue', () => {
       },
     ]);
     isInResponseStub.onCall(0).returns(true);
-    const isValid = await getSLOStatus.isCompliant(
+    const isValid = await getSloStatus.isCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -691,7 +691,7 @@ describe('isCompliant given slo applies to issue', () => {
       },
     ]);
     isInResponseStub.onCall(0).returns(true);
-    const isValid = await getSLOStatus.isCompliant(
+    const isValid = await getSloStatus.isCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -728,7 +728,7 @@ describe('isCompliant given slo applies to issue', () => {
       new Set<string>(['testOwner', 'user1', 'user2'])
     );
     isAssignedStub.onCall(0).returns(true);
-    const isValid = await getSLOStatus.isCompliant(
+    const isValid = await getSloStatus.isCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
