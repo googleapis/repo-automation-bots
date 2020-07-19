@@ -14,7 +14,6 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context} from 'probot';
-import {request} from 'gaxios';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const languageConfig: LanguageConfig = require('./required-checks.json');
@@ -53,26 +52,6 @@ interface Repo {
   repo: string;
 }
 
-interface GetReposResponse {
-  repos: Repo[];
-}
-
-/**
- * Acquire a list of repositories from sloth.
- * Cache the result.
- */
-let _repos: GetReposResponse;
-handler.getRepos = async function getRepos(): Promise<GetReposResponse> {
-  if (!_repos) {
-    const res = await request<GetReposResponse>({
-      url:
-        'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json',
-    });
-    _repos = res.data;
-  }
-  return _repos;
-};
-
 /**
  * Main.  On a nightly cron, update the settings for a given repository.
  */
@@ -83,15 +62,39 @@ function handler(app: Application) {
     const name = context.payload.repository.name;
     const repo = `${owner}/${name}`;
 
-    // find the repo record in repos.json
-    const repos = await handler.getRepos();
-    const yoshiRepo = repos.repos.find(x => x.repo === repo);
-    console.log(yoshiRepo?.repo);
-    if (!yoshiRepo) {
+    // Fetch the list of languages used in this repository
+    const langRes = await context.github.repos.listLanguages({
+      owner,
+      repo: name,
+    });
+
+    // Given an object like this:
+    // {
+    //   python: 24
+    //   javascript: 22
+    // }
+    // Sort the keys based on instance count.
+    const languages = Object.entries(langRes.data).sort((a, b) => {
+      return a[1] > b[1] ? -1 : a[1] < b[1] ? 1 : 0;
+    });
+
+    // If GitHub says this doesn't have a language ...
+    if (languages.length === 0) {
       return;
     }
-    if (languageConfig[yoshiRepo.language]) {
-      const ignored = languageConfig[yoshiRepo.language].ignoredRepos?.find(
+
+    // Use the language with the highest line count
+    let language = languages[0][0].toLowerCase();
+
+    // Add a little hackery for node
+    if (language === 'javascript' || language === 'typescript') {
+      language = 'nodejs';
+    }
+    console.log(`Determined ${repo} is ${language}`);
+
+    // Check for repositories we're specifically configured to skip
+    if (languageConfig[language]) {
+      const ignored = languageConfig[language].ignoredRepos?.find(
         x => x === repo
       );
       if (ignored) {
@@ -105,6 +108,7 @@ function handler(app: Application) {
       return;
     }
 
+    const yoshiRepo = {repo, language};
     const start = new Date().getTime();
     // update each settings section
     await Promise.all([
