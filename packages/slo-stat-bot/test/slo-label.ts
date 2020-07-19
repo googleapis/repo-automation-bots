@@ -30,7 +30,7 @@ nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-describe('slo-status-label', () => {
+describe('slo-label', () => {
   let probot: Probot;
 
   beforeEach(() => {

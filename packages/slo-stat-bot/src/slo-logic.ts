@@ -317,7 +317,7 @@ getSloStatus.isCompliant = async function isCompliant(
   }
 
   const responders = await getSloStatus.getResponders(github, owner, repo, slo);
-  console.log(responders);
+
   const reqAssignee = slo.complianceSettings.requiresAssignee;
   if (reqAssignee === true) {
     const isAssigned = await getSloStatus.isAssigned(responders, assignees);
@@ -329,16 +329,13 @@ getSloStatus.isCompliant = async function isCompliant(
 
   const responseTime = slo.complianceSettings.responseTime;
   if (responseTime !== 0) {
-    const listIssueComments = await getSloStatus.getIssueCommentsList(
+    const isInResponseTime = await getSloStatus.isInResponseTime(
       github,
       owner,
       repo,
-      issueNumber
-    );
-    const isInResponseTime = await getSloStatus.isInResponseTime(
+      issueNumber,
       responders,
-      listIssueComments,
-      slo.complianceSettings.responseTime,
+      responseTime,
       issueUpdateTime
     );
     if (!isInResponseTime) {
@@ -351,34 +348,48 @@ getSloStatus.isCompliant = async function isCompliant(
 
 /**
  * Function checks if a valid responder commented on issue within response time
+ * @param github 
+ * @param owner
+ * @param repo
+ * @param issueNumber
  * @param responders that are valid for issue or pr
- * @param listIssueComments of issue or pr
  * @param responseTime of issue or pr
  * @param issueCreatedTime of the issue or pr
  * @returns true if valid responder responded in time else false
  */
 getSloStatus.isInResponseTime = async function isInResponseTime(
+  github: GitHubAPI,
+  owner: string,
+  repo: string,
+  issueNumber: number,
   responders: Set<string>,
-  listIssueComments: IssuesListCommentsItem[] | null,
   responseTime: string | number,
   issueCreatedTime: string
 ): Promise<boolean> {
-  if (!listIssueComments) {
-    return true; //If API call to list issue comments failed, does not attempt to label the issue
-  }
-  for (const comment of listIssueComments) {
-    if (responders.has(comment.user.login)) {
-      const isValidTime = await getSloStatus.isInDuration(
-        responseTime,
-        issueCreatedTime,
-        comment.created_at
-      );
-      if (isValidTime) {
+
+  const isInResTime =  await getSloStatus.isInDuration(responseTime, issueCreatedTime);
+
+  if(!isInResTime) {
+    const listIssueComments = await getSloStatus.getIssueCommentsList(
+      github,
+      owner,
+      repo,
+      issueNumber
+    );
+
+    //API calls that fail to get list of issue comments will return true but log the error
+    if(!listIssueComments) {
+      return true; 
+    }
+
+    for (const comment of listIssueComments) {
+      if (responders.has(comment.user.login)) {
         return true;
       }
     }
   }
-  return false;
+ 
+  return isInResTime;
 };
 
 /**
@@ -463,20 +474,22 @@ getSloStatus.getResponders = async function getResponders(
   }
 
   let contributors = slo.complianceSettings.responders?.contributors;
-  if (!contributors) {
+  if (!slo.complianceSettings.responders) {
     contributors = 'WRITE';
   }
-  const collaborators = await getSloStatus.getCollaborators(
-    github,
-    owner,
-    repo
-  );
-  responders = await getSloStatus.getContributers(
-    owner,
-    responders,
-    contributors,
-    collaborators
-  );
+  if(contributors) {
+    const collaborators = await getSloStatus.getCollaborators(
+      github,
+      owner,
+      repo
+    );
+    responders = await getSloStatus.getContributers(
+      owner,
+      responders,
+      contributors,
+      collaborators
+    );
+  }
 
   const users = slo.complianceSettings.responders?.users;
   users?.forEach(user => responders.add(user));

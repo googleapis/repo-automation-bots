@@ -22,91 +22,6 @@ interface IssueLabelResponseItem {
 }
 
 /**
- * Function will run slo logic and handle labeling when issues or pull request event prompted,
- * Will delete ooslo label on closes issues,
- * Will lint issue_slo_rules.json on pull request
- * @param app type probot
- * @returns void
- */
-function handler(app: Application) {
-  app.on(
-    [
-      'pull_request.opened',
-      'pull_request.reopened',
-      'pull_request.edited',
-      'pull_request.synchronize',
-    ],
-    async (context: Context) => {
-      const owner = context.payload.repository.owner.login;
-      const repo = context.payload.repository.name;
-      const pullNumber = context.payload.number;
-      const labelsResponse = context.payload.pull_request.labels;
-
-      await handleLint(context, owner, repo, pullNumber);
-      const labels = labelsResponse.map((label: IssueLabelResponseItem) => label.name.toLowerCase());
-      const sloString = await handler.getSloFile(context.github, owner, repo);
-      await handler.handleIssues(
-        context,
-        owner,
-        repo,
-        'pull_request',
-        sloString,
-        labels
-      );
-    }
-  );
-  app.on(['issues.closed'], async (context: Context) => {
-    const owner = context.payload.repository.owner.login;
-    const repo = context.payload.repository.name;
-    const issueNumber = context.payload.issue.number;
-    const labelsResponse = context.payload.issue.labels;
-
-    const labels = labelsResponse.map((label: IssueLabelResponseItem) => label.name.toLowerCase());
-    const name = handleLabeling.getLabelName();
-    if (labels?.includes(name)) {
-      await handleLabeling.removeIssueLabel(
-        context.github,
-        owner,
-        repo,
-        issueNumber,
-        name
-      );
-    }
-  });
-  app.on(
-    [
-      'issues.opened',
-      'issues.reopened',
-      'issues.labeled',
-      'issues.unlabeled',
-      'issues.edited',
-      'issues.assigned',
-      'issues.unassigned',
-    ],
-    async (context: Context) => {
-      if (context.payload.issue.state === 'closed') {
-        return;
-      }
-      const owner = context.payload.repository.owner.login;
-      const repo = context.payload.repository.name;
-      const labelsResponse = context.payload.issue.labels;
-
-      // Check slo-logic and label issue according to slo status
-      const labels = labelsResponse.map((label: IssueLabelResponseItem) => label.name.toLowerCase());
-      const sloString = await handler.getSloFile(context.github, owner, repo);
-      await handler.handleIssues(
-        context,
-        owner,
-        repo,
-        'issue',
-        sloString,
-        labels
-      );
-    }
-  );
-}
-
-/**
  * Function handles labeling ooslo if issue applies to the given slo
  * @param context of issue or pr
  * @param owner of issue or pr
@@ -116,7 +31,7 @@ function handler(app: Application) {
  * @param labels on the given issue or pr
  * @returns void
  */
-handler.handleIssues = async function handleIssues(
+async function handleIssues(
   context: Context,
   owner: string,
   repo: string,
@@ -164,7 +79,7 @@ handler.handleIssues = async function handleIssues(
  * @param repo of issue or pr
  * @returns json string of the slo rules
  */
-handler.getSloFile = async function getSloFile(
+async function getSloFile(
   github: GitHubAPI,
   owner: string,
   repo: string
@@ -193,4 +108,87 @@ handler.getSloFile = async function getSloFile(
   return sloRules;
 };
 
-export = handler;
+/**
+ * Function will run slo logic and handle labeling when issues or pull request event prompted,
+ * Will delete ooslo label on closes issues,
+ * Will lint issue_slo_rules.json on pull request
+ * @param app type probot
+ * @returns void
+ */
+export = function handler(app: Application) {
+  app.on(
+    [
+      'pull_request.opened',
+      'pull_request.reopened',
+      'pull_request.edited',
+      'pull_request.synchronize',
+    ],
+    async (context: Context) => {
+      const owner = context.payload.repository.owner.login;
+      const repo = context.payload.repository.name;
+      const pullNumber = context.payload.number;
+      const labelsResponse = context.payload.pull_request.labels;
+
+      await handleLint(context, owner, repo, pullNumber);
+      const labels = labelsResponse.map((label: IssueLabelResponseItem) => label.name.toLowerCase());
+      const sloString = await getSloFile(context.github, owner, repo);
+      await handleIssues(
+        context,
+        owner,
+        repo,
+        'pull_request',
+        sloString,
+        labels
+      );
+    }
+  );
+  app.on(['issues.closed'], async (context: Context) => {
+    const owner = context.payload.repository.owner.login;
+    const repo = context.payload.repository.name;
+    const issueNumber = context.payload.issue.number;
+    const labelsResponse = context.payload.issue.labels;
+
+    const labels = labelsResponse.map((label: IssueLabelResponseItem) => label.name.toLowerCase());
+    const name = handleLabeling.getLabelName();
+    if (labels?.includes(name)) {
+      await handleLabeling.removeIssueLabel(
+        context.github,
+        owner,
+        repo,
+        issueNumber,
+        name
+      );
+    }
+  });
+  app.on(
+    [
+      'issues.opened',
+      'issues.reopened',
+      'issues.labeled',
+      'issues.unlabeled',
+      'issues.edited',
+      'issues.assigned',
+      'issues.unassigned',
+    ],
+    async (context: Context) => {
+      if (context.payload.issue.state === 'closed') {
+        return;
+      }
+      const owner = context.payload.repository.owner.login;
+      const repo = context.payload.repository.name;
+      const labelsResponse = context.payload.issue.labels;
+
+      // Check slo-logic and label issue according to slo status
+      const labels = labelsResponse.map((label: IssueLabelResponseItem) => label.name.toLowerCase());
+      const sloString = await getSloFile(context.github, owner, repo);
+      await handleIssues(
+        context,
+        owner,
+        repo,
+        'issue',
+        sloString,
+        labels
+      );
+    }
+  );
+}

@@ -175,7 +175,47 @@ describe('getResponders', () => {
   afterEach(() => {
     sinon.restore();
   });
+  it('SLO does not have responders defined, then defaults to write contributer', async () => {
+    const slo = {
+      appliesTo: {
+        issues: true,
+        prs: false,
+      },
+      complianceSettings: {
+        responseTime: 0,
+        resolutionTime: 0,
+        requiresAssignee: false
+      },
+    };
+    getCollaboratorStub
+      .onCall(0)
+      .returns([
+        {login: 'user3', permissions: {pull: true, push: true, admin: false}},
+      ]);
+    getContributorsStub.onCall(0).returns(
+      new Set<string>([
+        'user3',
+        'testOwner',
+      ])
+    );
+    const responders = await getSloStatus.getResponders(
+      githubAPI,
+      'testOwner',
+      'testRepo',
+      slo
+    );
 
+    sinon.assert.notCalled(fileContentStub);
+    sinon.assert.calledOnce(getCollaboratorStub);
+    sinon.assert.calledOnce(getContributorsStub);
+    assert.deepEqual(
+      responders,
+      new Set<string>([
+        'testOwner',
+        'user3'
+      ])
+    );
+  })
   it('SLO does not have owners defined', async () => {
     const slo = {
       appliesTo: {
@@ -218,7 +258,7 @@ describe('getResponders', () => {
       new Set<string>(['user1', 'user2', 'user3', 'testOwner'])
     );
   });
-  it('SLO does not have contributers defined then defaults to write', async () => {
+  it('SLO does not have contributers defined', async () => {
     const slo = {
       appliesTo: {
         issues: true,
@@ -239,18 +279,13 @@ describe('getResponders', () => {
       .returns(['.github/CODEOWNERS', 'collabs/owners.json']);
     fileContentStub.onCall(0).returns('@owner1  @owner2');
     fileContentStub.onCall(1).returns('@coder-cat @tester');
-    getCollaboratorStub
-      .onCall(0)
-      .returns([
-        {login: 'user3', permissions: {pull: true, push: true, admin: false}},
-      ]);
+    
     getContributorsStub.onCall(0).returns(
       new Set<string>([
         'owner1',
         'owner2',
         'coder-cat',
         'tester',
-        'user3',
         'testOwner',
       ])
     );
@@ -263,15 +298,14 @@ describe('getResponders', () => {
 
     sinon.assert.calledOnce(convertToArrayStub);
     sinon.assert.calledTwice(fileContentStub);
-    sinon.assert.calledOnce(getCollaboratorStub);
-    sinon.assert.calledOnce(getContributorsStub);
+    sinon.assert.notCalled(getCollaboratorStub);
+    sinon.assert.notCalled(getContributorsStub);
     assert.deepEqual(
       responders,
       new Set<string>([
         'testOwner',
         'user1',
         'user2',
-        'user3',
         'owner1',
         'owner2',
         'coder-cat',
@@ -399,16 +433,35 @@ describe('isAssigned', () => {
   });
 });
 describe('isInResponseTime', () => {
+  const github = GitHubAPI();
   let isInDurationStub: sinon.SinonStub;
-
+  let getIssueCommentsStub: sinon.SinonStub;
+  
   beforeEach(() => {
     isInDurationStub = sinon.stub(getSloStatus, 'isInDuration');
+    getIssueCommentsStub = sinon.stub(getSloStatus, 'getIssueCommentsList');
   });
 
   afterEach(() => {
     sinon.restore();
   });
-  it('returns true if there exists a valid responder comments and it is in duration', async () => {
+  it('returns true if issue is within response time', async() => {
+    isInDurationStub.onCall(0).returns(true);
+    const isValid = await getSloStatus.isInResponseTime(
+      github,
+      "testOwner",
+      "testRepo",
+      3,
+      new Set<string>(['testOwner', 'user1', 'admin1']),
+      '4d',
+      '2020-07-22T03:04:00Z'
+    );
+    
+    sinon.assert.calledOnce(isInDurationStub);
+    sinon.assert.notCalled(getIssueCommentsStub);
+    assert.strictEqual(isValid, true);
+  });
+  it('returns true if it is not in response time but a valid responder commented', async() => {
     const issueComments = [
       {
         id: 5,
@@ -428,17 +481,21 @@ describe('isInResponseTime', () => {
       },
     ];
     isInDurationStub.onCall(0).returns(false);
-    isInDurationStub.onCall(1).returns(true);
+    getIssueCommentsStub.onCall(0).returns(issueComments);
     const isValid = await getSloStatus.isInResponseTime(
+      github,
+      "testOwner",
+      "testRepo",
+      3,
       new Set<string>(['testOwner', 'user1', 'admin1']),
-      issueComments,
       '4d',
       '2020-07-22T03:04:00Z'
     );
-    sinon.assert.calledTwice(isInDurationStub);
+    sinon.assert.calledOnce(isInDurationStub);
+    sinon.assert.calledOnce(getIssueCommentsStub);
     assert.strictEqual(isValid, true);
   });
-  it('returns false if a valid responder comments and it is not in duration', async () => {
+  it('returns false if issue is not in response time and no valid responder commented', async() => {
     const issueComments = [
       {
         id: 5,
@@ -450,33 +507,18 @@ describe('isInResponseTime', () => {
       },
     ];
     isInDurationStub.onCall(0).returns(false);
+    getIssueCommentsStub.onCall(0).returns(issueComments);
     const isValid = await getSloStatus.isInResponseTime(
-      new Set<string>(['testOwner', 'user1', 'admin1']),
-      issueComments,
+      github,
+      "testOwner",
+      "testRepo",
+      3,
+      new Set<string>(['user1', 'admin1']),
       '4d',
       '2020-07-22T03:04:00Z'
     );
     sinon.assert.calledOnce(isInDurationStub);
-    assert.strictEqual(isValid, false);
-  });
-  it('returns false if a valid responder does not comment', async () => {
-    const issueComments = [
-      {
-        id: 5,
-        user: {
-          login: 'customer1',
-        },
-        created_at: '2020-07-23T03:04:00Z',
-        updated_at: '2020-07-23T03:04:00Z',
-      },
-    ];
-    const isValid = await getSloStatus.isInResponseTime(
-      new Set<string>(['testOwner', 'user1', 'admin1']),
-      issueComments,
-      '4d',
-      '2020-07-22T03:04:00Z'
-    );
-    sinon.assert.notCalled(isInDurationStub);
+    sinon.assert.calledOnce(getIssueCommentsStub);
     assert.strictEqual(isValid, false);
   });
 });
@@ -485,14 +527,12 @@ describe('isCompliant given slo applies to issue', () => {
   let isInDurationStub: sinon.SinonStub;
   let getRespondersStub: sinon.SinonStub;
   let isAssignedStub: sinon.SinonStub;
-  let getCommentsStub: sinon.SinonStub;
   let isInResponseStub: sinon.SinonStub;
 
   beforeEach(() => {
     isInDurationStub = sinon.stub(getSloStatus, 'isInDuration');
     getRespondersStub = sinon.stub(getSloStatus, 'getResponders');
     isAssignedStub = sinon.stub(getSloStatus, 'isAssigned');
-    getCommentsStub = sinon.stub(getSloStatus, 'getIssueCommentsList');
     isInResponseStub = sinon.stub(getSloStatus, 'isInResponseTime');
   });
 
@@ -530,7 +570,6 @@ describe('isCompliant given slo applies to issue', () => {
     sinon.assert.calledOnce(isInDurationStub);
     sinon.assert.notCalled(getRespondersStub);
     sinon.assert.notCalled(isAssignedStub);
-    sinon.assert.notCalled(getCommentsStub);
     sinon.assert.notCalled(isInResponseStub);
     assert.strictEqual(isValid, false);
   });
@@ -568,7 +607,6 @@ describe('isCompliant given slo applies to issue', () => {
     sinon.assert.calledOnce(isInDurationStub);
     sinon.assert.calledOnce(getRespondersStub);
     sinon.assert.calledOnce(isAssignedStub);
-    sinon.assert.notCalled(getCommentsStub);
     sinon.assert.notCalled(isInResponseStub);
     assert.strictEqual(isValid, false);
   });
@@ -593,7 +631,6 @@ describe('isCompliant given slo applies to issue', () => {
       new Set<string>(['testOwner', 'admin1', 'user1'])
     );
     isAssignedStub.onCall(0).returns(true);
-    getCommentsStub.onCall(0).returns([]);
     isInResponseStub.onCall(0).returns(false);
     const isValid = await getSloStatus.isCompliant(
       githubAPI,
@@ -608,7 +645,6 @@ describe('isCompliant given slo applies to issue', () => {
     sinon.assert.calledOnce(isInDurationStub);
     sinon.assert.calledOnce(getRespondersStub);
     sinon.assert.calledOnce(isAssignedStub);
-    sinon.assert.calledOnce(getCommentsStub);
     sinon.assert.calledOnce(isInResponseStub);
     assert.strictEqual(isValid, false);
   });
@@ -633,16 +669,6 @@ describe('isCompliant given slo applies to issue', () => {
       new Set<string>(['testOwner', 'admin1', 'user1'])
     );
     isAssignedStub.onCall(0).returns(true);
-    getCommentsStub.onCall(0).returns([
-      {
-        id: 1,
-        user: {
-          login: 'testOwner',
-        },
-        created_at: '2020-07-22T03:05:00Z',
-        updated_at: '2020-07-22T03:05:00Z',
-      },
-    ]);
     isInResponseStub.onCall(0).returns(true);
     const isValid = await getSloStatus.isCompliant(
       githubAPI,
@@ -657,7 +683,6 @@ describe('isCompliant given slo applies to issue', () => {
     sinon.assert.notCalled(isInDurationStub);
     sinon.assert.calledOnce(getRespondersStub);
     sinon.assert.calledOnce(isAssignedStub);
-    sinon.assert.calledOnce(getCommentsStub);
     sinon.assert.calledOnce(isInResponseStub);
     assert.strictEqual(isValid, true);
   });
@@ -680,16 +705,6 @@ describe('isCompliant given slo applies to issue', () => {
     getRespondersStub.onCall(0).returns(
       new Set<string>(['testOwner', 'user1', 'user2'])
     );
-    getCommentsStub.onCall(0).returns([
-      {
-        id: 1,
-        user: {
-          login: 'testOwner',
-        },
-        created_at: '2020-07-22T03:05:00Z',
-        updated_at: '2020-07-22T03:05:00Z',
-      },
-    ]);
     isInResponseStub.onCall(0).returns(true);
     const isValid = await getSloStatus.isCompliant(
       githubAPI,
@@ -704,7 +719,6 @@ describe('isCompliant given slo applies to issue', () => {
     sinon.assert.calledOnce(isInDurationStub);
     sinon.assert.calledOnce(getRespondersStub);
     sinon.assert.notCalled(isAssignedStub);
-    sinon.assert.calledOnce(getCommentsStub);
     sinon.assert.calledOnce(isInResponseStub);
     assert.strictEqual(isValid, true);
   });
@@ -741,7 +755,6 @@ describe('isCompliant given slo applies to issue', () => {
     sinon.assert.calledOnce(isInDurationStub);
     sinon.assert.calledOnce(getRespondersStub);
     sinon.assert.calledOnce(isAssignedStub);
-    sinon.assert.notCalled(getCommentsStub);
     sinon.assert.notCalled(isInResponseStub);
     assert.strictEqual(isValid, true);
   });

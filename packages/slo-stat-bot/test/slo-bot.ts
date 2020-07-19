@@ -20,17 +20,17 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 
 // eslint-disable-next-line node/no-extraneous-import
 import Webhooks from '@octokit/webhooks';
-import handler from '../src/slo-bot';
-import {getSloStatus} from '../src/slo-logic';
-import {handleLabeling} from '../src/slo-label';
 import sinon from 'sinon';
-import {handleLint} from '../src/slo-lint';
+import handler from '../src/slo-bot';
+import * as sloLint from '../src/slo-lint';
+import * as sloLogic from '../src/slo-logic';
+import * as sloLabel from '../src/slo-label';
 
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-describe('slo-status-label', () => {
+describe('slo-bot', () => {
   let probot: Probot;
 
   beforeEach(() => {
@@ -53,12 +53,12 @@ describe('slo-status-label', () => {
   });
   describe('getSloFile', () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
-    let handleIssueStub: sinon.SinonStub;
+    let getSloStatusStub: sinon.SinonStub;
 
     beforeEach(() => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
-      handleIssueStub = sinon.stub(handler, 'handleIssues');
+      getSloStatusStub = sinon.stub(sloLogic, 'getSloStatus');
     });
 
     afterEach(() => {
@@ -69,15 +69,16 @@ describe('slo-status-label', () => {
     it('triggers handle slo if config file exists in repo level', async () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
-        .reply(200, {content: 'QHVzZXIxIEBDb2Rlci1jYXQuCkBvd25lci4yCg==\n'});
-
+        .reply(200, {content: 'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n'});
+      
+      getSloStatusStub.onCall(0).returns({appliesTo: false, isCompliant: null});
       await probot.receive({
         name: 'issues.opened',
         payload,
         id: 'abc123',
       });
 
-      sinon.assert.calledOnce(handleIssueStub);
+      sinon.assert.calledOnce(getSloStatusStub);
       requests.done();
     });
     it('triggers handle slo if config file exists in org level', async () => {
@@ -85,38 +86,34 @@ describe('slo-status-label', () => {
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
         .reply(404)
         .get('/repos/testOwner/.github/contents/issue_slo_rules.json')
-        .reply(200, {content: 'QHVzZXIxIEBDb2Rlci1jYXQuCkBvd25lci4yCg==\n'});
-
+        .reply(200, {content: 'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n'});
+      
+      getSloStatusStub.onCall(0).returns({appliesTo: false, isCompliant: null});
       await probot.receive({
         name: 'issues.opened',
         payload,
         id: 'abc123',
       });
 
-      sinon.assert.calledOnce(handleIssueStub);
+      sinon.assert.calledOnce(getSloStatusStub);
       requests.done();
     });
   });
   describe('handleIssues', () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
-    let getSloFileStub: sinon.SinonStub;
-    let doesApplyStub: sinon.SinonStub;
-    let isCompliantStub: sinon.SinonStub;
+    let getSloStatusStub: sinon.SinonStub;
     let labelStub: sinon.SinonStub;
 
     beforeEach(() => {
-      //handleLabelStub = sinon.spy(handleLabeling);
-      getSloFileStub = sinon.stub(handler, 'getSloFile');
-      doesApplyStub = sinon.stub(getSloStatus, 'doesSloApply');
-      isCompliantStub = sinon.stub(getSloStatus, 'isCompliant');
-      labelStub = sinon.stub(handleLabeling, 'addLabel');
+      getSloStatusStub = sinon.stub(sloLogic, 'getSloStatus');
+      labelStub = sinon.stub(sloLabel, 'handleLabeling');
     });
     afterEach(() => {
       sinon.restore();
     });
 
     describe('pull request opened', () => {
-      let lintFileStub: sinon.SinonStub;
+      let lintStub: sinon.SinonStub;
       beforeEach(() => {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         payload = require(resolve(
@@ -124,37 +121,39 @@ describe('slo-status-label', () => {
           'events',
           'pull_request_opened'
         ));
-        lintFileStub = sinon.stub(handleLint, 'listFiles');
+        lintStub = sinon.stub(sloLint, 'handleLint');
       });
       it('triggers handle label if slo applies to issue', async () => {
-        getSloFileStub.onCall(0).returns('[{}]');
-        doesApplyStub.onCall(0).returns(true);
-        isCompliantStub.onCall(0).returns(false);
+        const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .reply(200, {content: 'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n'});
+        getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: false});
 
         await probot.receive({
           name: 'pull_request.opened',
           payload,
           id: 'abc123',
         });
-        sinon.assert.calledOnce(lintFileStub);
-        sinon.assert.calledOnce(getSloFileStub);
-        sinon.assert.calledOnce(doesApplyStub);
-        sinon.assert.calledOnce(isCompliantStub);
+        sinon.assert.calledOnce(lintStub);
+        sinon.assert.calledOnce(getSloStatusStub);
         sinon.assert.calledOnce(labelStub);
+        requests.done();
       });
       it('does not trigger handle label if slo does not apply to issue', async () => {
-        getSloFileStub.onCall(0).returns('[{}]');
-        doesApplyStub.onCall(0).returns(false);
+        const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .reply(200, {content: 'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n'});
+        
+        getSloStatusStub.onCall(0).returns({appliesTo: false, isCompliant: null});
 
         await probot.receive({
           name: 'pull_request.opened',
           payload,
           id: 'abc123',
         });
-        sinon.assert.calledOnce(lintFileStub);
-        sinon.assert.calledOnce(getSloFileStub);
-        sinon.assert.calledOnce(doesApplyStub);
+        sinon.assert.calledOnce(getSloStatusStub);
         sinon.assert.notCalled(labelStub);
+        requests.done();
       });
     });
     describe('issue_opened', () => {
@@ -163,9 +162,10 @@ describe('slo-status-label', () => {
         payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
       });
       it('triggers handle label if slo applies to issue', async () => {
-        getSloFileStub.onCall(0).returns('[{}]');
-        doesApplyStub.onCall(0).returns(true);
-        isCompliantStub.onCall(0).returns(false);
+        const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .reply(200, {content: 'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n'});
+        getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: false});
 
         await probot.receive({
           name: 'issues.opened',
@@ -173,14 +173,15 @@ describe('slo-status-label', () => {
           id: 'abc123',
         });
 
-        sinon.assert.calledOnce(getSloFileStub);
-        sinon.assert.calledOnce(doesApplyStub);
-        sinon.assert.calledOnce(isCompliantStub);
+        sinon.assert.calledOnce(getSloStatusStub);
         sinon.assert.calledOnce(labelStub);
+        requests.done();
       });
       it('does not trigger handle label if slo does not apply to issue', async () => {
-        getSloFileStub.onCall(0).returns('[{}]');
-        doesApplyStub.onCall(0).returns(false);
+        const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .reply(200, {content: 'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n'});
+        getSloStatusStub.onCall(0).returns({appliesTo: false, isCompliant: null});
 
         await probot.receive({
           name: 'issues.opened',
@@ -188,9 +189,9 @@ describe('slo-status-label', () => {
           id: 'abc123',
         });
 
-        sinon.assert.calledOnce(getSloFileStub);
-        sinon.assert.calledOnce(doesApplyStub);
+        sinon.assert.calledOnce(getSloStatusStub);
         sinon.assert.notCalled(labelStub);
+        requests.done();
       });
     });
   });

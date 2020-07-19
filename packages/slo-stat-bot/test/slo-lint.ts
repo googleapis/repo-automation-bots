@@ -26,12 +26,13 @@ import snapshot from 'snap-shot-it';
 import handler from '../src/slo-bot';
 import sinon from 'sinon';
 import {handleLint} from '../src/slo-lint';
+import * as sloLogic from '../src/slo-logic';
 
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-describe('slo-status-label', () => {
+describe('slo-lint', () => {
   let probot: Probot;
 
   beforeEach(() => {
@@ -55,13 +56,14 @@ describe('slo-status-label', () => {
 
   describe('opened or reopened pull request', () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
+    let getSloStatusStub: sinon.SinonStub;
     let handleSloStub: sinon.SinonStub;
-    let handleIssueStub: sinon.SinonStub;
+
     beforeEach(() => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'pull_request_opened'));
+      getSloStatusStub = sinon.stub(sloLogic, 'getSloStatus')
       handleSloStub = sinon.stub(handleLint, 'handleSlos');
-      handleIssueStub = sinon.stub(handler, 'handleIssues');
     });
 
     afterEach(() => {
@@ -74,7 +76,9 @@ describe('slo-status-label', () => {
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(404)
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
-        .reply(200, {content: 'QHVzZXIxIEBDb2Rlci1jYXQuCkBvd25lci4yCg==\n'});
+        .reply(200, {content: 'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n'});
+      
+      getSloStatusStub.onCall(0).returns({appliesTo: false, isCompliant: null});
       await probot.receive({
         name: 'pull_request.opened',
         payload,
@@ -83,7 +87,7 @@ describe('slo-status-label', () => {
       requests.done();
 
       sinon.assert.notCalled(handleSloStub);
-      sinon.assert.calledOnce(handleIssueStub);
+      sinon.assert.calledOnce(getSloStatusStub);
     });
 
     it('triggers handleSlos function since issue_slo_rules.json is present and handleIssues is called', async () => {
@@ -96,8 +100,9 @@ describe('slo-status-label', () => {
           },
         ])
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
-        .reply(200, {content: 'QHVzZXIxIEBDb2Rlci1jYXQuCkBvd25lci4yCg==\n'});
+        .reply(200, {content: 'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n'});
 
+      getSloStatusStub.onCall(0).returns({appliesTo: false, isCompliant: null});
       await probot.receive({
         name: 'pull_request.opened',
         payload,
@@ -105,7 +110,7 @@ describe('slo-status-label', () => {
       });
 
       sinon.assert.calledOnce(handleSloStub);
-      sinon.assert.calledOnce(handleIssueStub);
+      sinon.assert.calledOnce(getSloStatusStub);
       requests.done();
     });
 
@@ -114,7 +119,9 @@ describe('slo-status-label', () => {
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(200, [{filname: 'hello.json'}])
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
-        .reply(200, {content: 'QHVzZXIxIEBDb2Rlci1jYXQuCkBvd25lci4yCg==\n'});
+        .reply(200, {content: 'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n'});
+      
+      getSloStatusStub.onCall(0).returns({appliesTo: false, isCompliant: null});
       await probot.receive({
         name: 'pull_request.opened',
         payload,
@@ -122,20 +129,19 @@ describe('slo-status-label', () => {
       });
 
       sinon.assert.notCalled(handleSloStub);
-      sinon.assert.calledOnce(handleIssueStub);
+      sinon.assert.calledOnce(getSloStatusStub);
       requests.done();
     });
   });
 
   describe('handleSLOs is triggered', async () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
-    let getSloFileStub: sinon.SinonStub;
-    let handleIssueStub: sinon.SinonStub;
+    let getSloStatusStub: sinon.SinonStub;
+
     beforeEach(() => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'pull_request_opened'));
-      getSloFileStub = sinon.stub(handler, 'getSloFile');
-      handleIssueStub = sinon.stub(handler, 'handleIssues');
+      getSloStatusStub = sinon.stub(sloLogic, 'getSloStatus');
     });
 
     afterEach(() => {
@@ -155,16 +161,19 @@ describe('slo-status-label', () => {
         .get(
           '/repos/testOwner/testRepo/git/blobs/1d8be9e05d65e03a5e81a1c3c1bf229dce950e25'
         )
-        .reply(404, {});
-
+        .reply(404, {})
+        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .reply(200, {content: 'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n'});
+      
+      getSloStatusStub.onCall(0).returns({appliesTo: false, isCompliant: null});
       await probot.receive({
         name: 'pull_request.opened',
         payload,
         id: 'abc123',
       });
       requests.done();
-      sinon.assert.calledOnce(getSloFileStub);
-      sinon.assert.calledOnce(handleIssueStub);
+
+      sinon.assert.calledOnce(getSloStatusStub);
     });
 
     it('Error is logged if commenting on PR fails and calls handle issues', async () => {
@@ -188,16 +197,18 @@ describe('slo-status-label', () => {
           snapshot(body);
           return true;
         })
-        .reply(404);
-
+        .reply(404)
+        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .reply(200, {content: 'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n'});
+      
+      getSloStatusStub.onCall(0).returns({appliesTo: false, isCompliant: null});
       await probot.receive({
         name: 'pull_request.opened',
         payload,
         id: 'abc123',
       });
       requests.done();
-      sinon.assert.calledOnce(getSloFileStub);
-      sinon.assert.calledOnce(handleIssueStub);
+      sinon.assert.calledOnce(getSloStatusStub);
     });
 
     it('Error is logged if creating check on PR fails and calls handle issues', async () => {
@@ -226,15 +237,18 @@ describe('slo-status-label', () => {
           snapshot(body);
           return true;
         })
-        .reply(404);
-
+        .reply(404)
+        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .reply(200, {content: 'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n'});
+      
+      getSloStatusStub.onCall(0).returns({appliesTo: false, isCompliant: null});
       await probot.receive({
         name: 'pull_request.opened',
         payload,
         id: 'abc123',
       });
       requests.done();
-      sinon.assert.calledOnce(handleIssueStub);
+      sinon.assert.calledOnce(getSloStatusStub);
     });
 
     it('An error comment and failure check is made on PR if issue_slo_rules lint is not valid', async () => {
@@ -263,16 +277,18 @@ describe('slo-status-label', () => {
           snapshot(body);
           return true;
         })
-        .reply(200);
+        .reply(200)
+        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .reply(200, {content: 'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n'});
 
+      getSloStatusStub.onCall(0).returns({appliesTo: false, isCompliant: null});
       await probot.receive({
         name: 'pull_request.opened',
         payload,
         id: 'abc123',
       });
       requests.done();
-      sinon.assert.calledOnce(getSloFileStub);
-      sinon.assert.calledOnce(handleIssueStub);
+      sinon.assert.calledOnce(getSloStatusStub);
     });
 
     it('Leaves no comment on PR and sets success check if issue_slo_rules lint is valid', async () => {
@@ -296,16 +312,18 @@ describe('slo-status-label', () => {
           snapshot(body);
           return true;
         })
-        .reply(200);
+        .reply(200)
+        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .reply(200, {content: 'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n'});
 
+      getSloStatusStub.onCall(0).returns({appliesTo: false, isCompliant: null});
       await probot.receive({
         name: 'pull_request.opened',
         payload,
         id: 'abc123',
       });
       requests.done();
-      sinon.assert.calledOnce(getSloFileStub);
-      sinon.assert.calledOnce(handleIssueStub);
+      sinon.assert.calledOnce(getSloStatusStub);
     });
   });
   describe('checking validation by using linter', () => {
