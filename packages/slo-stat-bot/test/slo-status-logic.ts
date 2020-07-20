@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import {GitHubAPI} from 'probot/lib/github';
+// eslint-disable-next-line node/no-extraneous-import
+import {GitHubAPI} from 'probot';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sloLogic from '../src/slo-logic';
 import sinon from 'sinon';

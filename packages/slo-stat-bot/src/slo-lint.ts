@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI, Context} from 'probot';
 import Ajv, {ErrorObject} from 'ajv';
 
@@ -99,13 +100,7 @@ export const handleSlos = async function handleSlos(
   const sloData = JSON.parse(sloString);
   const res = await lint(schema, sloData);
 
-  await commentPR(
-    context.github,
-    owner,
-    repo,
-    issue_number,
-    res.isValid
-  );
+  await commentPR(context.github, owner, repo, issue_number, res.isValid);
   await createCheck(context, res);
 };
 
@@ -146,14 +141,14 @@ export const getFileShaContents = async function getFileShaContents(
  * Function lints the issue_slo_rules.json against the slo schema
  * @param schema of slo rules from data folder
  * @param sloData object of slo rules
- * @returns validation results of a boolean value if its valid and an error object of it is invalid
+ * @returns validation results object that contains a boolean value if its valid or not and an error object if it is invalid
  */
 export const lint = async function lint(
   schema: JSON,
   sloData: JSON
 ): Promise<ValidationResults> {
   const ajv = new Ajv();
-  const validate = await ajv.compile(schema);
+  const validate = ajv.compile(schema);
   const isValid = await validate(sloData);
 
   return {
@@ -168,7 +163,7 @@ export const lint = async function lint(
  * @param owner of issue or pr
  * @param repo of issue or pr
  * @param issue_number of issue or pr
- * @param isValid determines if slo rules are valid or not against the shema
+ * @param isValid determines if slo rules are valid or invalid with the schema
  * @returns void
  */
 export const commentPR = async function commentPR(
@@ -201,7 +196,7 @@ export const commentPR = async function commentPR(
 /**
  * Function creates a success or failure check on pr based on validation results
  * @param context of issue or pr
- * @param validationRes with the boolean value if slo rules are valid and an error object if its invalid
+ * @param validationRes validation results object that contains a boolean value if its valid or not and an error object if it is invalid
  * @returns void
  */
 export const createCheck = async function createCheck(

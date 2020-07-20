@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -26,7 +27,7 @@ interface SLOStatus {
  * Function gets ooslo label name in repo from the config file
  * @returns the name of ooslo label
  */
-export const getLabelName = function ():string {
+export const getLabelName = function (): string {
   try {
     return config.name;
   } catch (err) {
@@ -99,7 +100,7 @@ export const removeIssueLabel = async function removeIssueLabel(
 
 /**
  * Function handles adding and removing labels according to slo status.
- * If slo is not compliant and does not habe ooslo label, adds it to issue.
+ * If slo is not compliant and does not have ooslo label, adds it to issue.
  * If slo is compliant but has ooslo label, removes it from issue
  * @param github unique installation id for each function
  * @param owner of issue or pr
@@ -118,15 +119,10 @@ export async function handleLabeling(
   labels: string[] | null
 ) {
   const name = getLabelName();
+
   if (!sloStatus.isCompliant && !labels?.includes(name)) {
     await addLabel(github, owner, repo, issueNumber, name);
   } else if (sloStatus.isCompliant && labels?.includes(name)) {
-    await removeIssueLabel(
-      github,
-      owner,
-      repo,
-      issueNumber,
-      name
-    );
+    await removeIssueLabel(github, owner, repo, issueNumber, name);
   }
 }

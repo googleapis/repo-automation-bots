@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot';
 import moment from 'moment';
 
@@ -88,26 +89,23 @@ export const doesSloApply = async function doesSloApply(
     return true;
   }
 
-  if (issueLabels === null || issueLabels.length === 0) {
+  if (issueLabels === null) {
+    return false;
+  }
+
+  if (issueLabels.length === 0) {
     return false;
   }
 
   const appliesToIssues = slo.appliesTo.issues;
   const appliesToPrs = slo.appliesTo.prs;
-  const appliesToType = await isValidIssue(
-    appliesToIssues,
-    appliesToPrs,
-    type
-  );
+  const appliesToType = await isValidType(appliesToIssues, appliesToPrs, type);
   if (!appliesToType) {
     return false;
   }
 
   const githubLabels = slo.appliesTo.gitHubLabels;
-  const hasGithubLabels = await isValidGithubLabels(
-    issueLabels,
-    githubLabels
-  );
+  const hasGithubLabels = await isValidGithubLabels(issueLabels, githubLabels);
   if (!hasGithubLabels) {
     return false;
   }
@@ -122,21 +120,13 @@ export const doesSloApply = async function doesSloApply(
   }
 
   const priority = String(slo.appliesTo.priority);
-  const hasPriority = await isValidRule(
-    issueLabels,
-    priority,
-    'priority: '
-  );
+  const hasPriority = await isValidRule(issueLabels, priority, 'priority: ');
   if (!hasPriority) {
     return false;
   }
 
   const issueType = slo.appliesTo.issueType;
-  const hasIssueType = await isValidRule(
-    issueLabels,
-    issueType,
-    'type: '
-  );
+  const hasIssueType = await isValidRule(issueLabels, issueType, 'type: ');
   if (!hasIssueType) {
     return false;
   }
@@ -151,7 +141,7 @@ export const doesSloApply = async function doesSloApply(
  * @param type specifies if event is issue or pr
  * @returns true if type applies to issues else false
  */
-export const isValidIssue = async function isValidIssue(
+export const isValidType = async function isValidType(
   issues: boolean | undefined,
   prs: boolean | undefined,
   type: string
@@ -187,10 +177,7 @@ export const isValidGithubLabels = async function isValidGithubLabels(
   const isSubSet = githubLabels.every((label: string) =>
     issueLabels.includes(label)
   );
-  if (!isSubSet) {
-    return false;
-  }
-  return true;
+  return isSubSet;
 };
 
 /**
@@ -207,17 +194,12 @@ export const isValidExcludedLabels = async function isValidExcludedLabels(
     return true;
   }
 
-  excludedGitHubLabels = await convertToArray(
-    excludedGitHubLabels
-  );
+  excludedGitHubLabels = await convertToArray(excludedGitHubLabels);
   excludedGitHubLabels.forEach((label: string) => label.toLowerCase());
   const isElementExist = excludedGitHubLabels.some((label: string) =>
     issueLabels.includes(label)
   );
-  if (isElementExist) {
-    return false;
-  }
-  return true;
+  return !isElementExist;
 };
 
 /**
@@ -237,22 +219,27 @@ export const isValidRule = async function isValidRule(
   }
 
   rule = rule.toLowerCase();
-  return issueLabels.includes(rule) || issueLabels.includes(title + rule);
+
+  if (issueLabels.includes(rule)) {
+    return true;
+  }
+  if (issueLabels.includes(title + rule)) {
+    return true;
+  }
+  return false;
 };
 
 /**
- * Function converts a string variable to an array
+ * Function converts the variable to an array if it is a string
  * @param variable can either be array or string
  * @returns an array
  */
-async function convertToArray(
-  variable: string[] | string
-): Promise<string[]> {
+async function convertToArray(variable: string[] | string): Promise<string[]> {
   if (typeof variable === 'string') {
     return [variable];
   }
   return variable;
-};
+}
 
 /**
  * Function gets the file contents
@@ -306,12 +293,11 @@ export const isIssueCompliant = async function isIssueCompliant(
 ): Promise<boolean> {
   const resTime = slo.complianceSettings.resolutionTime;
   if (resTime !== 0) {
-    const result = await isInDuration(
-      resTime,
-      issueUpdateTime
-    );
+    const result = await isInDuration(resTime, issueUpdateTime);
     if (!result) {
-      console.log(`Not in resolutions time for issue ${issueNumber} in repo ${repo}`);
+      console.log(
+        `Not in resolutions time for issue ${issueNumber} in repo ${repo}`
+      );
       return false;
     }
   }
@@ -322,7 +308,9 @@ export const isIssueCompliant = async function isIssueCompliant(
   if (reqAssignee === true) {
     const result = await isAssigned(responders, assignees);
     if (!result) {
-      console.log(`Does not have valid assignee for issue ${issueNumber} in repo ${repo}`);
+      console.log(
+        `Does not have valid assignee for issue ${issueNumber} in repo ${repo}`
+      );
       return false;
     }
   }
@@ -339,7 +327,9 @@ export const isIssueCompliant = async function isIssueCompliant(
       issueUpdateTime
     );
     if (!result) {
-      console.log(`Not in response time for issue ${issueNumber} in repo ${repo}`);
+      console.log(
+        `Not in response time for issue ${issueNumber} in repo ${repo}`
+      );
       return false;
     }
   }
@@ -348,10 +338,10 @@ export const isIssueCompliant = async function isIssueCompliant(
 
 /**
  * Function checks if a valid responder commented on issue within response time
- * @param github 
- * @param owner
- * @param repo
- * @param issueNumber
+ * @param github of issue or pr
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @param issueNumber of issue or pr
  * @param responders that are valid for issue or pr
  * @param responseTime of issue or pr
  * @param issueCreatedTime of the issue or pr
@@ -366,10 +356,9 @@ export const isInResponseTime = async function isInResponseTime(
   responseTime: string | number,
   issueCreatedTime: string
 ): Promise<boolean> {
+  const isInResTime = await isInDuration(responseTime, issueCreatedTime);
 
-  const isInResTime =  await isInDuration(responseTime, issueCreatedTime);
-
-  if(!isInResTime) {
+  if (!isInResTime) {
     const listIssueComments = await getIssueCommentsList(
       github,
       owner,
@@ -378,8 +367,8 @@ export const isInResponseTime = async function isInResponseTime(
     );
 
     //API calls that fail to get list of issue comments will return true but log the error
-    if(!listIssueComments) {
-      return true; 
+    if (!listIssueComments) {
+      return true;
     }
 
     for (const comment of listIssueComments) {
@@ -388,7 +377,7 @@ export const isInResponseTime = async function isInResponseTime(
       }
     }
   }
- 
+
   return isInResTime;
 };
 
@@ -459,12 +448,7 @@ export const getResponders = async function getResponders(
   if (owners) {
     owners = await convertToArray(owners);
     for (const ownerPath of owners) {
-      const content = await getFilePathContent(
-        github,
-        owner,
-        repo,
-        ownerPath
-      );
+      const content = await getFilePathContent(github, owner, repo, ownerPath);
       const users = content.match(/@([^\s]+)/g);
 
       users?.forEach(user => {
@@ -477,12 +461,8 @@ export const getResponders = async function getResponders(
   if (!slo.complianceSettings.responders) {
     contributors = 'WRITE';
   }
-  if(contributors) {
-    const collaborators = await getCollaborators(
-      github,
-      owner,
-      repo
-    );
+  if (contributors) {
+    const collaborators = await getCollaborators(github, owner, repo);
     responders = await getContributers(
       owner,
       responders,
@@ -512,6 +492,7 @@ export const getContributers = async function getContributers(
   collaborators: ReposListCollaboratorsItem[] | null
 ): Promise<Set<string>> {
   responders.add(owner);
+
   if (contributors === 'OWNER') {
     return responders;
   }

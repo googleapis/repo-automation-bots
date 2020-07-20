@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// eslint-disable-next-line node/no-extraneous-import
 import {Application, Context, GitHubAPI} from 'probot';
 import * as sloLogic from './slo-logic';
 import {removeIssueLabel, handleLabeling, getLabelName} from './slo-label';
@@ -22,7 +23,7 @@ interface IssueLabelResponseItem {
 }
 
 /**
- * Function handles labeling ooslo if issue applies to the given slo
+ * Function handles labeling ooslo based on compliancy if issue applies to the given slo
  * @param context of issue or pr
  * @param owner of issue or pr
  * @param repo of issue or pr
@@ -58,7 +59,6 @@ async function handleIssues(
       labels
     );
 
-    //Labeling based on slo status for the given issue
     if (sloStatus.appliesTo) {
       await handleLabeling(
         context.github,
@@ -70,7 +70,7 @@ async function handleIssues(
       );
     }
   }
-};
+}
 
 /**
  * Function gets content of slo rules from checking repo config file. If repo config file is missing defaults to org config file
@@ -85,12 +85,7 @@ async function getSloFile(
   repo: string
 ): Promise<string> {
   let path = '.github/issue_slo_rules.json';
-  let sloRules = await sloLogic.getFilePathContent(
-    github,
-    owner,
-    repo,
-    path
-  );
+  let sloRules = await sloLogic.getFilePathContent(github, owner, repo, path);
 
   if (sloRules === 'not found') {
     path = 'issue_slo_rules.json';
@@ -106,12 +101,12 @@ async function getSloFile(
     throw new Error(`Error in finding org level config file in ${owner}`);
   }
   return sloRules;
-};
+}
 
 /**
  * Function will run slo logic and handle labeling when issues or pull request event prompted,
- * Will delete ooslo label on closes issues,
- * Will lint issue_slo_rules.json on pull request
+ * Deletes ooslo label on closed issues,
+ * Lints issue_slo_rules.json on pull request
  * @param app type probot
  * @returns void
  */
@@ -127,10 +122,29 @@ export = function handler(app: Application) {
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
       const pullNumber = context.payload.number;
-      const labelsResponse = context.payload.pull_request.labels;
 
       await handleLint(context, owner, repo, pullNumber);
-      const labels = labelsResponse.map((label: IssueLabelResponseItem) => label.name.toLowerCase());
+    }
+  );
+  app.on(
+    [
+      'pull_request.opened',
+      'pull_request.reopened',
+      'pull_request.edited',
+      'pull_request.synchronize',
+      'pull_request.labeled',
+      'pull_request.unlabeled',
+      'pull_request.assigned',
+      'pull_request.unassigned',
+    ],
+    async (context: Context) => {
+      const owner = context.payload.repository.owner.login;
+      const repo = context.payload.repository.name;
+      const labelsResponse = context.payload.pull_request.labels;
+
+      const labels = labelsResponse.map((label: IssueLabelResponseItem) =>
+        label.name.toLowerCase()
+      );
       const sloString = await getSloFile(context.github, owner, repo);
       await handleIssues(
         context,
@@ -142,22 +156,20 @@ export = function handler(app: Application) {
       );
     }
   );
-  app.on(['issues.closed'], async (context: Context) => {
+  app.on(['issues.closed', 'pull_request.closed'], async (context: Context) => {
+    const type = context.payload.issue !== undefined ? 'issue' : 'pull_request';
+
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
-    const issueNumber = context.payload.issue.number;
-    const labelsResponse = context.payload.issue.labels;
+    const issueNumber = context.payload[type].number;
+    const labelsResponse = context.payload[type].labels;
 
-    const labels = labelsResponse.map((label: IssueLabelResponseItem) => label.name.toLowerCase());
+    const labels = labelsResponse.map((label: IssueLabelResponseItem) =>
+      label.name.toLowerCase()
+    );
     const name = getLabelName();
     if (labels?.includes(name)) {
-      await removeIssueLabel(
-        context.github,
-        owner,
-        repo,
-        issueNumber,
-        name
-      );
+      await removeIssueLabel(context.github, owner, repo, issueNumber, name);
     }
   });
   app.on(
@@ -179,16 +191,11 @@ export = function handler(app: Application) {
       const labelsResponse = context.payload.issue.labels;
 
       // Check slo-logic and label issue according to slo status
-      const labels = labelsResponse.map((label: IssueLabelResponseItem) => label.name.toLowerCase());
-      const sloString = await getSloFile(context.github, owner, repo);
-      await handleIssues(
-        context,
-        owner,
-        repo,
-        'issue',
-        sloString,
-        labels
+      const labels = labelsResponse.map((label: IssueLabelResponseItem) =>
+        label.name.toLowerCase()
       );
+      const sloString = await getSloFile(context.github, owner, repo);
+      await handleIssues(context, owner, repo, 'issue', sloString, labels);
     }
   );
-}
+};

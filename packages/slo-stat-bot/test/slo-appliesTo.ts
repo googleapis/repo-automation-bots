@@ -21,37 +21,29 @@ import sinon from 'sinon';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-describe('isValidIssue', () => {
+describe('isValidType', () => {
   it('returns true if type is issue and issue is undefined', async () => {
-    const isValid = await sloLogic.isValidIssue(undefined, false, 'issue');
+    const isValid = await sloLogic.isValidType(undefined, false, 'issue');
     assert.strictEqual(isValid, true);
   });
   it('returns true if type is pr and prs is true', async () => {
-    const isValid = await sloLogic.isValidIssue(true, true, 'pull_request');
+    const isValid = await sloLogic.isValidType(true, true, 'pull_request');
     assert.strictEqual(isValid, true);
   });
   it('returns true if type is issue and issue is true', async () => {
-    const isValid = await sloLogic.isValidIssue(true, false, 'issue');
+    const isValid = await sloLogic.isValidType(true, false, 'issue');
     assert.strictEqual(isValid, true);
   });
   it('returns false if type is pr and prs is undefined', async () => {
-    const isValid = await sloLogic.isValidIssue(
-      true,
-      undefined,
-      'pull_request'
-    );
+    const isValid = await sloLogic.isValidType(true, undefined, 'pull_request');
     assert.strictEqual(isValid, false);
   });
   it('returns false if type is pr and prs is false', async () => {
-    const isValid = await sloLogic.isValidIssue(
-      true,
-      false,
-      'pull_request'
-    );
+    const isValid = await sloLogic.isValidType(true, false, 'pull_request');
     assert.strictEqual(isValid, false);
   });
   it('returns false if type is issue and issue is false', async () => {
-    const isValid = await sloLogic.isValidIssue(false, true, 'issue');
+    const isValid = await sloLogic.isValidType(false, true, 'issue');
     assert.strictEqual(isValid, false);
   });
 });
@@ -151,7 +143,7 @@ describe('isValidRule', () => {
   });
 });
 describe('doesSloApply', () => {
-  let isValidIssueStub: sinon.SinonStub;
+  let isValidTypeStub: sinon.SinonStub;
   let isValidGitLabelsStub: sinon.SinonStub;
   let isValidExLabelsStub: sinon.SinonStub;
   let isValidRuleStub: sinon.SinonStub;
@@ -159,7 +151,7 @@ describe('doesSloApply', () => {
   const slo = require(resolve(fixturesPath, 'events', 'slo.json'));
 
   beforeEach(() => {
-    isValidIssueStub = sinon.stub(sloLogic, 'isValidIssue');
+    isValidTypeStub = sinon.stub(sloLogic, 'isValidType');
     isValidGitLabelsStub = sinon.stub(sloLogic, 'isValidGithubLabels');
     isValidExLabelsStub = sinon.stub(sloLogic, 'isValidExcludedLabels');
     isValidRuleStub = sinon.stub(sloLogic, 'isValidRule');
@@ -170,14 +162,14 @@ describe('doesSloApply', () => {
   });
 
   it('returns false if issue is not applicable depending on if its pr or issue', async () => {
-    isValidIssueStub.onCall(0).returns(false);
+    isValidTypeStub.onCall(0).returns(false);
     const isValid = await sloLogic.doesSloApply('pr', slo, [
       'bot:auto label',
       'p0',
     ]);
 
-    sinon.assert.calledOnce(isValidIssueStub);
-    sinon.assert.calledOnce(isValidIssueStub);
+    sinon.assert.calledOnce(isValidTypeStub);
+    sinon.assert.calledOnce(isValidTypeStub);
     sinon.assert.notCalled(isValidGitLabelsStub);
     sinon.assert.notCalled(isValidExLabelsStub);
     sinon.assert.notCalled(isValidRuleStub);
@@ -185,21 +177,21 @@ describe('doesSloApply', () => {
   });
 
   it('returns false if githubLables is not subset', async () => {
-    isValidIssueStub.onCall(0).returns(true);
+    isValidTypeStub.onCall(0).returns(true);
     isValidGitLabelsStub.onCall(0).returns(false);
     const isValid = await sloLogic.doesSloApply('issue', slo, [
       'bot:auto label',
       'p0',
     ]);
 
-    sinon.assert.calledOnce(isValidIssueStub);
+    sinon.assert.calledOnce(isValidTypeStub);
     sinon.assert.calledOnce(isValidGitLabelsStub);
     sinon.assert.notCalled(isValidExLabelsStub);
     sinon.assert.notCalled(isValidRuleStub);
     assert.strictEqual(isValid, false);
   });
   it('returns false if excluded labels is in issue', async () => {
-    isValidIssueStub.onCall(0).returns(true);
+    isValidTypeStub.onCall(0).returns(true);
     isValidGitLabelsStub.onCall(0).returns(true);
     isValidExLabelsStub.onCall(0).returns(false);
     const isValid = await sloLogic.doesSloApply('issue', slo, [
@@ -208,14 +200,14 @@ describe('doesSloApply', () => {
       'bug',
     ]);
 
-    sinon.assert.calledOnce(isValidIssueStub);
+    sinon.assert.calledOnce(isValidTypeStub);
     sinon.assert.calledOnce(isValidGitLabelsStub);
     sinon.assert.calledOnce(isValidExLabelsStub);
     sinon.assert.notCalled(isValidRuleStub);
     assert.strictEqual(isValid, false);
   });
   it('returns false if priority is not in issue', async () => {
-    isValidIssueStub.onCall(0).returns(true);
+    isValidTypeStub.onCall(0).returns(true);
     isValidGitLabelsStub.onCall(0).returns(true);
     isValidExLabelsStub.onCall(0).returns(true);
     isValidRuleStub.onCall(0).returns(false);
@@ -225,14 +217,14 @@ describe('doesSloApply', () => {
       'bug',
     ]);
 
-    sinon.assert.calledOnce(isValidIssueStub);
+    sinon.assert.calledOnce(isValidTypeStub);
     sinon.assert.calledOnce(isValidGitLabelsStub);
     sinon.assert.calledOnce(isValidExLabelsStub);
     sinon.assert.calledOnce(isValidRuleStub);
     assert.strictEqual(isValid, false);
   });
   it('returns false if issue type is not in slo', async () => {
-    isValidIssueStub.onCall(0).returns(true);
+    isValidTypeStub.onCall(0).returns(true);
     isValidGitLabelsStub.onCall(0).returns(true);
     isValidExLabelsStub.onCall(0).returns(true);
     isValidRuleStub.onCall(0).returns(true);
@@ -243,7 +235,7 @@ describe('doesSloApply', () => {
       'bug',
     ]);
 
-    sinon.assert.calledOnce(isValidIssueStub);
+    sinon.assert.calledOnce(isValidTypeStub);
     sinon.assert.calledOnce(isValidGitLabelsStub);
     sinon.assert.calledOnce(isValidExLabelsStub);
     sinon.assert.calledTwice(isValidRuleStub);
@@ -263,14 +255,14 @@ describe('doesSloApply', () => {
       ['bot:auto label', 'p0']
     );
 
-    sinon.assert.notCalled(isValidIssueStub);
+    sinon.assert.notCalled(isValidTypeStub);
     sinon.assert.notCalled(isValidGitLabelsStub);
     sinon.assert.notCalled(isValidExLabelsStub);
     sinon.assert.notCalled(isValidRuleStub);
     assert.strictEqual(isValid, true);
   });
   it('returns true if all properties are satisfied', async () => {
-    isValidIssueStub.onCall(0).returns(true);
+    isValidTypeStub.onCall(0).returns(true);
     isValidGitLabelsStub.onCall(0).returns(true);
     isValidExLabelsStub.onCall(0).returns(true);
     isValidRuleStub.onCall(0).returns(true);
@@ -281,7 +273,7 @@ describe('doesSloApply', () => {
       'bug',
     ]);
 
-    sinon.assert.calledOnce(isValidIssueStub);
+    sinon.assert.calledOnce(isValidTypeStub);
     sinon.assert.calledOnce(isValidGitLabelsStub);
     sinon.assert.calledOnce(isValidExLabelsStub);
     sinon.assert.calledTwice(isValidRuleStub);

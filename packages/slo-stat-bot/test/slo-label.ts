@@ -14,6 +14,7 @@
 //
 
 import {resolve} from 'path';
+// eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
 import nock from 'nock';
 import {describe, it, beforeEach, afterEach} from 'mocha';
@@ -123,7 +124,7 @@ describe('slo-label', () => {
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         });
 
-        getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: true});
+      getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: true});
       getLabelNameStub.onCall(0).returns('ooslo');
 
       await probot.receive({

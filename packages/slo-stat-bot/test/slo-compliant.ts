@@ -14,7 +14,8 @@
 //
 
 import * as assert from 'assert';
-import {GitHubAPI} from 'probot/lib/github';
+// eslint-disable-next-line node/no-extraneous-import
+import {GitHubAPI} from 'probot';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sloLogic from '../src/slo-logic';
 import sinon from 'sinon';
@@ -184,7 +185,7 @@ describe('getResponders', () => {
       complianceSettings: {
         responseTime: 0,
         resolutionTime: 0,
-        requiresAssignee: false
+        requiresAssignee: false,
       },
     };
     getCollaboratorStub
@@ -193,10 +194,7 @@ describe('getResponders', () => {
         {login: 'user3', permissions: {pull: true, push: true, admin: false}},
       ]);
     getContributorsStub.onCall(0).returns(
-      new Set<string>([
-        'user3',
-        'testOwner',
-      ])
+      new Set<string>(['user3', 'testOwner'])
     );
     const responders = await sloLogic.getResponders(
       githubAPI,
@@ -210,12 +208,9 @@ describe('getResponders', () => {
     sinon.assert.calledOnce(getContributorsStub);
     assert.deepEqual(
       responders,
-      new Set<string>([
-        'testOwner',
-        'user3'
-      ])
+      new Set<string>(['testOwner', 'user3'])
     );
-  })
+  });
   it('SLO does not have owners defined', async () => {
     const slo = {
       appliesTo: {
@@ -279,15 +274,9 @@ describe('getResponders', () => {
     //   .returns(['.github/CODEOWNERS', 'collabs/owners.json']);
     fileContentStub.onCall(0).returns('@owner1  @owner2');
     fileContentStub.onCall(1).returns('@coder-cat @tester');
-    
+
     getContributorsStub.onCall(0).returns(
-      new Set<string>([
-        'owner1',
-        'owner2',
-        'coder-cat',
-        'tester',
-        'testOwner',
-      ])
+      new Set<string>(['owner1', 'owner2', 'coder-cat', 'tester', 'testOwner'])
     );
     const responders = await sloLogic.getResponders(
       githubAPI,
@@ -436,7 +425,7 @@ describe('isInResponseTime', () => {
   const github = GitHubAPI();
   let isInDurationStub: sinon.SinonStub;
   let getIssueCommentsStub: sinon.SinonStub;
-  
+
   beforeEach(() => {
     isInDurationStub = sinon.stub(sloLogic, 'isInDuration');
     getIssueCommentsStub = sinon.stub(sloLogic, 'getIssueCommentsList');
@@ -445,23 +434,23 @@ describe('isInResponseTime', () => {
   afterEach(() => {
     sinon.restore();
   });
-  it('returns true if issue is within response time', async() => {
+  it('returns true if issue is within response time', async () => {
     isInDurationStub.onCall(0).returns(true);
     const isValid = await sloLogic.isInResponseTime(
       github,
-      "testOwner",
-      "testRepo",
+      'testOwner',
+      'testRepo',
       3,
       new Set<string>(['testOwner', 'user1', 'admin1']),
       '4d',
       '2020-07-22T03:04:00Z'
     );
-    
+
     sinon.assert.calledOnce(isInDurationStub);
     sinon.assert.notCalled(getIssueCommentsStub);
     assert.strictEqual(isValid, true);
   });
-  it('returns true if it is not in response time but a valid responder commented', async() => {
+  it('returns true if it is not in response time but a valid responder commented', async () => {
     const issueComments = [
       {
         id: 5,
@@ -484,8 +473,8 @@ describe('isInResponseTime', () => {
     getIssueCommentsStub.onCall(0).returns(issueComments);
     const isValid = await sloLogic.isInResponseTime(
       github,
-      "testOwner",
-      "testRepo",
+      'testOwner',
+      'testRepo',
       3,
       new Set<string>(['testOwner', 'user1', 'admin1']),
       '4d',
@@ -495,7 +484,7 @@ describe('isInResponseTime', () => {
     sinon.assert.calledOnce(getIssueCommentsStub);
     assert.strictEqual(isValid, true);
   });
-  it('returns false if issue is not in response time and no valid responder commented', async() => {
+  it('returns false if issue is not in response time and no valid responder commented', async () => {
     const issueComments = [
       {
         id: 5,
@@ -510,8 +499,8 @@ describe('isInResponseTime', () => {
     getIssueCommentsStub.onCall(0).returns(issueComments);
     const isValid = await sloLogic.isInResponseTime(
       github,
-      "testOwner",
-      "testRepo",
+      'testOwner',
+      'testRepo',
       3,
       new Set<string>(['user1', 'admin1']),
       '4d',
