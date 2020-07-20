@@ -79,7 +79,7 @@ interface ReposListCollaboratorsItem {
  * @param issueLabels of issue or pr
  * @returns true if slo applies to issue else false
  */
-getSloStatus.doesSloApply = async function doesSloApply(
+export const doesSloApply = async function doesSloApply(
   type: string,
   slo: SLORules,
   issueLabels: string[] | null
@@ -94,50 +94,50 @@ getSloStatus.doesSloApply = async function doesSloApply(
 
   const appliesToIssues = slo.appliesTo.issues;
   const appliesToPrs = slo.appliesTo.prs;
-  const isValidIssue = await getSloStatus.isValidIssue(
+  const appliesToType = await isValidIssue(
     appliesToIssues,
     appliesToPrs,
     type
   );
-  if (!isValidIssue) {
+  if (!appliesToType) {
     return false;
   }
 
   const githubLabels = slo.appliesTo.gitHubLabels;
-  const isValidGithubLabels = await getSloStatus.isValidGithubLabels(
+  const hasGithubLabels = await isValidGithubLabels(
     issueLabels,
     githubLabels
   );
-  if (!isValidGithubLabels) {
+  if (!hasGithubLabels) {
     return false;
   }
 
   const excludedGitHubLabels = slo.appliesTo.excludedGitHubLabels;
-  const isValidExcludeLabels = await getSloStatus.isValidExcludedLabels(
+  const hasNoExLabels = await isValidExcludedLabels(
     issueLabels,
     excludedGitHubLabels
   );
-  if (!isValidExcludeLabels) {
+  if (!hasNoExLabels) {
     return false;
   }
 
   const priority = String(slo.appliesTo.priority);
-  const isValidPriority = await getSloStatus.isValidRule(
+  const hasPriority = await isValidRule(
     issueLabels,
     priority,
     'priority: '
   );
-  if (!isValidPriority) {
+  if (!hasPriority) {
     return false;
   }
 
   const issueType = slo.appliesTo.issueType;
-  const isValidIssueType = await getSloStatus.isValidRule(
+  const hasIssueType = await isValidRule(
     issueLabels,
     issueType,
     'type: '
   );
-  if (!isValidIssueType) {
+  if (!hasIssueType) {
     return false;
   }
 
@@ -151,7 +151,7 @@ getSloStatus.doesSloApply = async function doesSloApply(
  * @param type specifies if event is issue or pr
  * @returns true if type applies to issues else false
  */
-getSloStatus.isValidIssue = async function isValidIssue(
+export const isValidIssue = async function isValidIssue(
   issues: boolean | undefined,
   prs: boolean | undefined,
   type: string
@@ -174,7 +174,7 @@ getSloStatus.isValidIssue = async function isValidIssue(
  * @param githubLabels is slo rule for github labels that must exist in issue
  * @returns true if githubLabels applies to issues else false
  */
-getSloStatus.isValidGithubLabels = async function isValidGithubLabels(
+export const isValidGithubLabels = async function isValidGithubLabels(
   issueLabels: string[],
   githubLabels: string | string[] | undefined
 ): Promise<boolean> {
@@ -182,7 +182,7 @@ getSloStatus.isValidGithubLabels = async function isValidGithubLabels(
     return true;
   }
 
-  githubLabels = await getSloStatus.convertToArray(githubLabels);
+  githubLabels = await convertToArray(githubLabels);
   githubLabels.forEach((label: string) => label.toLowerCase());
   const isSubSet = githubLabels.every((label: string) =>
     issueLabels.includes(label)
@@ -199,7 +199,7 @@ getSloStatus.isValidGithubLabels = async function isValidGithubLabels(
  * @param excludedGitHubLabels is slo rule for excluded github labels that must exist in issue
  * @returns true if excludedGitHubLabels applies to issues else false
  */
-getSloStatus.isValidExcludedLabels = async function isValidExcludedLabels(
+export const isValidExcludedLabels = async function isValidExcludedLabels(
   issueLabels: string[],
   excludedGitHubLabels: string | string[] | undefined
 ): Promise<boolean> {
@@ -207,7 +207,7 @@ getSloStatus.isValidExcludedLabels = async function isValidExcludedLabels(
     return true;
   }
 
-  excludedGitHubLabels = await getSloStatus.convertToArray(
+  excludedGitHubLabels = await convertToArray(
     excludedGitHubLabels
   );
   excludedGitHubLabels.forEach((label: string) => label.toLowerCase());
@@ -227,7 +227,7 @@ getSloStatus.isValidExcludedLabels = async function isValidExcludedLabels(
  * @param title of the rule
  * @returns true if rule applies to issue else false
  */
-getSloStatus.isValidRule = async function isValidRule(
+export const isValidRule = async function isValidRule(
   issueLabels: string[],
   rule: string | undefined,
   title: string
@@ -245,7 +245,7 @@ getSloStatus.isValidRule = async function isValidRule(
  * @param variable can either be array or string
  * @returns an array
  */
-getSloStatus.convertToArray = async function convertToArray(
+async function convertToArray(
   variable: string[] | string
 ): Promise<string[]> {
   if (typeof variable === 'string') {
@@ -262,7 +262,7 @@ getSloStatus.convertToArray = async function convertToArray(
  * @param path of the file
  * @returns string of the content in the file
  */
-getSloStatus.getFilePathContent = async function getFilePathContent(
+export const getFilePathContent = async function getFilePathContent(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -295,7 +295,7 @@ getSloStatus.getFilePathContent = async function getFilePathContent(
  * @param slo rule
  * @returns true if issue is compliant with slo else false
  */
-getSloStatus.isCompliant = async function isCompliant(
+export const isIssueCompliant = async function isIssueCompliant(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -306,22 +306,22 @@ getSloStatus.isCompliant = async function isCompliant(
 ): Promise<boolean> {
   const resTime = slo.complianceSettings.resolutionTime;
   if (resTime !== 0) {
-    const isInResTime = await getSloStatus.isInDuration(
+    const result = await isInDuration(
       resTime,
       issueUpdateTime
     );
-    if (!isInResTime) {
+    if (!result) {
       console.log(`Not in resolutions time for issue ${issueNumber} in repo ${repo}`);
       return false;
     }
   }
 
-  const responders = await getSloStatus.getResponders(github, owner, repo, slo);
+  const responders = await getResponders(github, owner, repo, slo);
 
   const reqAssignee = slo.complianceSettings.requiresAssignee;
   if (reqAssignee === true) {
-    const isAssigned = await getSloStatus.isAssigned(responders, assignees);
-    if (!isAssigned) {
+    const result = await isAssigned(responders, assignees);
+    if (!result) {
       console.log(`Does not have valid assignee for issue ${issueNumber} in repo ${repo}`);
       return false;
     }
@@ -329,7 +329,7 @@ getSloStatus.isCompliant = async function isCompliant(
 
   const responseTime = slo.complianceSettings.responseTime;
   if (responseTime !== 0) {
-    const isInResponseTime = await getSloStatus.isInResponseTime(
+    const result = await isInResponseTime(
       github,
       owner,
       repo,
@@ -338,7 +338,7 @@ getSloStatus.isCompliant = async function isCompliant(
       responseTime,
       issueUpdateTime
     );
-    if (!isInResponseTime) {
+    if (!result) {
       console.log(`Not in response time for issue ${issueNumber} in repo ${repo}`);
       return false;
     }
@@ -357,7 +357,7 @@ getSloStatus.isCompliant = async function isCompliant(
  * @param issueCreatedTime of the issue or pr
  * @returns true if valid responder responded in time else false
  */
-getSloStatus.isInResponseTime = async function isInResponseTime(
+export const isInResponseTime = async function isInResponseTime(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -367,10 +367,10 @@ getSloStatus.isInResponseTime = async function isInResponseTime(
   issueCreatedTime: string
 ): Promise<boolean> {
 
-  const isInResTime =  await getSloStatus.isInDuration(responseTime, issueCreatedTime);
+  const isInResTime =  await isInDuration(responseTime, issueCreatedTime);
 
   if(!isInResTime) {
-    const listIssueComments = await getSloStatus.getIssueCommentsList(
+    const listIssueComments = await getIssueCommentsList(
       github,
       owner,
       repo,
@@ -398,7 +398,7 @@ getSloStatus.isInResponseTime = async function isInResponseTime(
  * @param assignees of issue or pr
  * @returns true if valid responder was assigned the issue
  */
-getSloStatus.isAssigned = async function isAssigned(
+export const isAssigned = async function isAssigned(
   responders: Set<string>,
   assignees: IssueAssignees[]
 ): Promise<boolean> {
@@ -418,7 +418,7 @@ getSloStatus.isAssigned = async function isAssigned(
  * @param issueNumber of issue or pr
  * @returns an array of IssuesListCommentsItem with id number, user login, updated time, and created time
  */
-getSloStatus.getIssueCommentsList = async function getIssueCommentsList(
+export const getIssueCommentsList = async function getIssueCommentsList(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -447,7 +447,7 @@ getSloStatus.getIssueCommentsList = async function getIssueCommentsList(
  * @param slo rule
  * @returns a set of valid responders
  */
-getSloStatus.getResponders = async function getResponders(
+export const getResponders = async function getResponders(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -457,9 +457,9 @@ getSloStatus.getResponders = async function getResponders(
 
   let owners = slo.complianceSettings.responders?.owners;
   if (owners) {
-    owners = await getSloStatus.convertToArray(owners);
+    owners = await convertToArray(owners);
     for (const ownerPath of owners) {
-      const content = await getSloStatus.getFilePathContent(
+      const content = await getFilePathContent(
         github,
         owner,
         repo,
@@ -478,12 +478,12 @@ getSloStatus.getResponders = async function getResponders(
     contributors = 'WRITE';
   }
   if(contributors) {
-    const collaborators = await getSloStatus.getCollaborators(
+    const collaborators = await getCollaborators(
       github,
       owner,
       repo
     );
-    responders = await getSloStatus.getContributers(
+    responders = await getContributers(
       owner,
       responders,
       contributors,
@@ -505,7 +505,7 @@ getSloStatus.getResponders = async function getResponders(
  * @param collaborators of ReposListCollaboratorsItems that specifies user login, and their permissions (pull, push, admin)
  * @returns set of valid responders usernames
  */
-getSloStatus.getContributers = async function getContributers(
+export const getContributers = async function getContributers(
   owner: string,
   responders: Set<string>,
   contributors: string,
@@ -540,7 +540,7 @@ getSloStatus.getContributers = async function getContributers(
  * @param repo of issue or pr
  * @returns of ReposListCollaboratorsItems that specifies user login, and their permissions (pull, push, admin)
  */
-getSloStatus.getCollaborators = async function getCollaborators(
+export const getCollaborators = async function getCollaborators(
   github: GitHubAPI,
   owner: string,
   repo: string
@@ -565,7 +565,7 @@ getSloStatus.getCollaborators = async function getCollaborators(
  * @param endTime of issue or pr. If end time is missing gets the current time
  * @returns true if it is in duration else false
  */
-getSloStatus.isInDuration = async function isInDuration(
+export const isInDuration = async function isInDuration(
   duration: string | number,
   startTime: string,
   endTime?: string
@@ -615,11 +615,11 @@ export async function getSloStatus(
   slo: SLORules,
   labels: string[] | null
 ): Promise<SLOStatus> {
-  const appliesTo = await getSloStatus.doesSloApply(type, slo, labels);
+  const appliesTo = await doesSloApply(type, slo, labels);
   let isCompliant = null;
 
   if (appliesTo) {
-    isCompliant = await getSloStatus.isCompliant(
+    isCompliant = await isIssueCompliant(
       github,
       owner,
       repo,

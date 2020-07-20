@@ -25,7 +25,7 @@ import Webhooks from '@octokit/webhooks';
 import snapshot from 'snap-shot-it';
 import handler from '../src/slo-bot';
 import sinon from 'sinon';
-import {handleLint} from '../src/slo-lint';
+import * as sloLint from '../src/slo-lint';
 import * as sloLogic from '../src/slo-logic';
 
 nock.disableNetConnect();
@@ -63,7 +63,7 @@ describe('slo-lint', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'pull_request_opened'));
       getSloStatusStub = sinon.stub(sloLogic, 'getSloStatus')
-      handleSloStub = sinon.stub(handleLint, 'handleSlos');
+      handleSloStub = sinon.stub(sloLint, 'handleSlos');
     });
 
     afterEach(() => {
@@ -344,7 +344,7 @@ describe('slo-lint', () => {
           'valid_slos',
           fileName
         ));
-        const validRes = await handleLint.lint(schema, slo);
+        const validRes = await sloLint.lint(schema, slo);
         const isValid = await validRes.isValid;
 
         assert.strictEqual(isValid, true);
@@ -365,7 +365,7 @@ describe('slo-lint', () => {
           'invalid_slos',
           fileName
         ));
-        const validRes = await handleLint.lint(schema, slo);
+        const validRes = await sloLint.lint(schema, slo);
         const isValid = await validRes.isValid;
 
         assert.strictEqual(isValid, false);

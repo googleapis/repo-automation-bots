@@ -15,10 +15,10 @@
 import * as assert from 'assert';
 import {GitHubAPI} from 'probot/lib/github';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-import {getSloStatus} from '../src/slo-logic';
+import * as sloLogic from '../src/slo-logic';
 import sinon from 'sinon';
 
-describe('getSloStatus', () => {
+describe('sloLogic', () => {
   const githubAPI: GitHubAPI = GitHubAPI();
   const slo = {
     appliesTo: {},
@@ -32,8 +32,8 @@ describe('getSloStatus', () => {
   let isCompliantStub: sinon.SinonStub;
 
   beforeEach(() => {
-    doesApplyStub = sinon.stub(getSloStatus, 'doesSloApply');
-    isCompliantStub = sinon.stub(getSloStatus, 'isCompliant');
+    doesApplyStub = sinon.stub(sloLogic, 'doesSloApply');
+    isCompliantStub = sinon.stub(sloLogic, 'isIssueCompliant');
   });
 
   afterEach(() => {
@@ -42,7 +42,7 @@ describe('getSloStatus', () => {
   it('returns appliesTo to be true and isCompliant to be false if issue applies to slo but not compliant', async () => {
     doesApplyStub.onCall(0).returns(true);
     isCompliantStub.onCall(0).returns(false);
-    const result = await getSloStatus(
+    const result = await sloLogic.getSloStatus(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -61,7 +61,7 @@ describe('getSloStatus', () => {
   it('returns appliesTo to be true if appliesTo has no rules and isCompliant to be true if it is compliant', async () => {
     doesApplyStub.onCall(0).returns(true);
     isCompliantStub.onCall(0).returns(true);
-    const result = await getSloStatus(
+    const result = await sloLogic.getSloStatus(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -79,7 +79,7 @@ describe('getSloStatus', () => {
   });
   it('returns appliesTo to be false and isCompliant to be null if issue does not apply to slo', async () => {
     doesApplyStub.onCall(0).returns(false);
-    const result = await getSloStatus(
+    const result = await sloLogic.getSloStatus(
       githubAPI,
       'testOwner',
       'testRepo',

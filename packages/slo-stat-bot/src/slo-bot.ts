@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import {Application, Context, GitHubAPI} from 'probot';
-import {getSloStatus} from './slo-logic';
-import {handleLabeling} from './slo-label';
+import * as sloLogic from './slo-logic';
+import {removeIssueLabel, handleLabeling, getLabelName} from './slo-label';
 import {handleLint} from './slo-lint';
 
 interface IssueLabelResponseItem {
@@ -46,7 +46,7 @@ async function handleIssues(
     const issueCreatedTime = context.payload[type].created_at;
     const assignees = context.payload[type].assignees;
 
-    const sloStatus = await getSloStatus(
+    const sloStatus = await sloLogic.getSloStatus(
       context.github,
       owner,
       repo,
@@ -85,7 +85,7 @@ async function getSloFile(
   repo: string
 ): Promise<string> {
   let path = '.github/issue_slo_rules.json';
-  let sloRules = await getSloStatus.getFilePathContent(
+  let sloRules = await sloLogic.getFilePathContent(
     github,
     owner,
     repo,
@@ -94,7 +94,7 @@ async function getSloFile(
 
   if (sloRules === 'not found') {
     path = 'issue_slo_rules.json';
-    sloRules = await getSloStatus.getFilePathContent(
+    sloRules = await sloLogic.getFilePathContent(
       github,
       owner,
       '.github',
@@ -149,9 +149,9 @@ export = function handler(app: Application) {
     const labelsResponse = context.payload.issue.labels;
 
     const labels = labelsResponse.map((label: IssueLabelResponseItem) => label.name.toLowerCase());
-    const name = handleLabeling.getLabelName();
+    const name = getLabelName();
     if (labels?.includes(name)) {
-      await handleLabeling.removeIssueLabel(
+      await removeIssueLabel(
         context.github,
         owner,
         repo,

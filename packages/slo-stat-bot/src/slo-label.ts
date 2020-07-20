@@ -26,7 +26,7 @@ interface SLOStatus {
  * Function gets ooslo label name in repo from the config file
  * @returns the name of ooslo label
  */
-handleLabeling.getLabelName = function ():string {
+export const getLabelName = function ():string {
   try {
     return config.name;
   } catch (err) {
@@ -45,7 +45,7 @@ handleLabeling.getLabelName = function ():string {
  * @param name of ooslo label in repo
  * @returns void
  */
-handleLabeling.addLabel = async function addLabel(
+export const addLabel = async function addLabel(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -76,7 +76,7 @@ handleLabeling.addLabel = async function addLabel(
  * @param name of ooslo label in repo
  * @returns void
  */
-handleLabeling.removeIssueLabel = async function removeIssueLabel(
+export const removeIssueLabel = async function removeIssueLabel(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -117,11 +117,11 @@ export async function handleLabeling(
   sloStatus: SLOStatus,
   labels: string[] | null
 ) {
-  const name = handleLabeling.getLabelName();
+  const name = getLabelName();
   if (!sloStatus.isCompliant && !labels?.includes(name)) {
-    await handleLabeling.addLabel(github, owner, repo, issueNumber, name);
+    await addLabel(github, owner, repo, issueNumber, name);
   } else if (sloStatus.isCompliant && labels?.includes(name)) {
-    await handleLabeling.removeIssueLabel(
+    await removeIssueLabel(
       github,
       owner,
       repo,

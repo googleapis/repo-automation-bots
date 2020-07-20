@@ -16,13 +16,13 @@
 import * as assert from 'assert';
 import {GitHubAPI} from 'probot/lib/github';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-import {getSloStatus} from '../src/slo-logic';
+import * as sloLogic from '../src/slo-logic';
 import sinon from 'sinon';
 
 describe('durationTime', () => {
   describe('duration is in days', () => {
     it('returns true since time difference is within duration', async () => {
-      const isInDuration = await getSloStatus.isInDuration(
+      const isInDuration = await sloLogic.isInDuration(
         '5d',
         '2020-07-22T03:04:47Z',
         '2020-07-27T03:04:46Z'
@@ -30,7 +30,7 @@ describe('durationTime', () => {
       assert.strictEqual(isInDuration, true);
     });
     it('returns false since time difference is not within duration', async () => {
-      const isInDuration = await getSloStatus.isInDuration(
+      const isInDuration = await sloLogic.isInDuration(
         '5d',
         '2020-07-22T03:04:47Z',
         '2020-07-28T07:04:48Z'
@@ -40,7 +40,7 @@ describe('durationTime', () => {
   });
   describe('duration is in hours', () => {
     it('returns true since time difference is within duration', async () => {
-      const isInDuration = await getSloStatus.isInDuration(
+      const isInDuration = await sloLogic.isInDuration(
         '4h',
         '2020-07-22T03:04:47Z',
         '2020-07-22T07:04:46Z'
@@ -48,7 +48,7 @@ describe('durationTime', () => {
       assert.strictEqual(isInDuration, true);
     });
     it('returns false since time difference is not within duration', async () => {
-      const isInDuration = await getSloStatus.isInDuration(
+      const isInDuration = await sloLogic.isInDuration(
         '4h',
         '2020-07-22T03:04:47Z',
         '2020-07-22T07:04:48Z'
@@ -58,7 +58,7 @@ describe('durationTime', () => {
   });
   describe('duration is in minutes', () => {
     it('returns true since time difference is within duration', async () => {
-      const isInDuration = await getSloStatus.isInDuration(
+      const isInDuration = await sloLogic.isInDuration(
         '4m',
         '2020-07-22T03:04:47Z',
         '2020-07-22T03:08:47Z'
@@ -66,7 +66,7 @@ describe('durationTime', () => {
       assert.strictEqual(isInDuration, true);
     });
     it('returns false since time difference is not within duration', async () => {
-      const isInDuration = await getSloStatus.isInDuration(
+      const isInDuration = await sloLogic.isInDuration(
         '4m',
         '2020-07-22T03:04:47Z',
         '2020-07-22T03:18:47Z'
@@ -76,7 +76,7 @@ describe('durationTime', () => {
   });
   describe('duration is in seconds', () => {
     it('returns true since time difference is within duration', async () => {
-      const isInDuration = await getSloStatus.isInDuration(
+      const isInDuration = await sloLogic.isInDuration(
         '520s',
         '2020-07-22T03:04:00Z',
         '2020-07-22T03:11:47Z'
@@ -84,7 +84,7 @@ describe('durationTime', () => {
       assert.strictEqual(isInDuration, true);
     });
     it('returns false since time difference is not within duration', async () => {
-      const isInDuration = await getSloStatus.isInDuration(
+      const isInDuration = await sloLogic.isInDuration(
         '520s',
         '2020-07-22T03:04:00Z',
         '2020-07-22T04:11:47Z'
@@ -94,7 +94,7 @@ describe('durationTime', () => {
   });
   describe('duration is a number', () => {
     it('returns true since time difference is within duration', async () => {
-      const isInDuration = await getSloStatus.isInDuration(
+      const isInDuration = await sloLogic.isInDuration(
         520,
         '2020-07-22T03:04:00Z',
         '2020-07-22T03:11:47Z'
@@ -102,7 +102,7 @@ describe('durationTime', () => {
       assert.strictEqual(isInDuration, true);
     });
     it('returns false since time difference is not within duration', async () => {
-      const isInDuration = await getSloStatus.isInDuration(
+      const isInDuration = await sloLogic.isInDuration(
         520,
         '2020-07-22T03:04:00Z',
         '2020-07-22T04:11:47Z'
@@ -113,7 +113,7 @@ describe('durationTime', () => {
 });
 describe('getContributers', () => {
   it('Contributer is write', async () => {
-    const responders = await getSloStatus.getContributers(
+    const responders = await sloLogic.getContributers(
       'testOwner',
       new Set<string>(['coder-cat']),
       'WRITE',
@@ -128,7 +128,7 @@ describe('getContributers', () => {
     );
   });
   it('Contributer is admin', async () => {
-    const responders = await getSloStatus.getContributers(
+    const responders = await sloLogic.getContributers(
       'testOwner',
       new Set<string>(),
       'ADMIN',
@@ -143,7 +143,7 @@ describe('getContributers', () => {
     );
   });
   it('Contributer is owner', async () => {
-    const responders = await getSloStatus.getContributers(
+    const responders = await sloLogic.getContributers(
       'testOwner',
       new Set<string>(['user2']),
       'OWNER',
@@ -160,16 +160,16 @@ describe('getContributers', () => {
 });
 describe('getResponders', () => {
   const githubAPI: GitHubAPI = GitHubAPI();
-  let convertToArrayStub: sinon.SinonStub;
+  //let convertToArrayStub: sinon.SinonStub;
   let fileContentStub: sinon.SinonStub;
   let getCollaboratorStub: sinon.SinonStub;
   let getContributorsStub: sinon.SinonStub;
 
   beforeEach(() => {
-    convertToArrayStub = sinon.stub(getSloStatus, 'convertToArray');
-    fileContentStub = sinon.stub(getSloStatus, 'getFilePathContent');
-    getCollaboratorStub = sinon.stub(getSloStatus, 'getCollaborators');
-    getContributorsStub = sinon.stub(getSloStatus, 'getContributers');
+    //convertToArrayStub = sinon.stub(sloLogic, 'convertToArray');
+    fileContentStub = sinon.stub(sloLogic, 'getFilePathContent');
+    getCollaboratorStub = sinon.stub(sloLogic, 'getCollaborators');
+    getContributorsStub = sinon.stub(sloLogic, 'getContributers');
   });
 
   afterEach(() => {
@@ -198,7 +198,7 @@ describe('getResponders', () => {
         'testOwner',
       ])
     );
-    const responders = await getSloStatus.getResponders(
+    const responders = await sloLogic.getResponders(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -242,14 +242,14 @@ describe('getResponders', () => {
     getContributorsStub.onCall(0).returns(
       new Set<string>(['user3', 'testOwner'])
     );
-    const responders = await getSloStatus.getResponders(
+    const responders = await sloLogic.getResponders(
       githubAPI,
       'testOwner',
       'testRepo',
       slo
     );
 
-    sinon.assert.notCalled(convertToArrayStub);
+    //sinon.assert.notCalled(convertToArrayStub);
     sinon.assert.notCalled(fileContentStub);
     sinon.assert.calledOnce(getCollaboratorStub);
     sinon.assert.calledOnce(getContributorsStub);
@@ -274,9 +274,9 @@ describe('getResponders', () => {
         },
       },
     };
-    convertToArrayStub
-      .onCall(0)
-      .returns(['.github/CODEOWNERS', 'collabs/owners.json']);
+    // convertToArrayStub
+    //   .onCall(0)
+    //   .returns(['.github/CODEOWNERS', 'collabs/owners.json']);
     fileContentStub.onCall(0).returns('@owner1  @owner2');
     fileContentStub.onCall(1).returns('@coder-cat @tester');
     
@@ -289,14 +289,14 @@ describe('getResponders', () => {
         'testOwner',
       ])
     );
-    const responders = await getSloStatus.getResponders(
+    const responders = await sloLogic.getResponders(
       githubAPI,
       'testOwner',
       'testRepo',
       slo
     );
 
-    sinon.assert.calledOnce(convertToArrayStub);
+    //sinon.assert.calledOnce(convertToArrayStub);
     sinon.assert.calledTwice(fileContentStub);
     sinon.assert.notCalled(getCollaboratorStub);
     sinon.assert.notCalled(getContributorsStub);
@@ -329,7 +329,7 @@ describe('getResponders', () => {
         },
       },
     };
-    convertToArrayStub.onCall(0).returns(['.github/CODEOWNERS']);
+    // convertToArrayStub.onCall(0).returns(['.github/CODEOWNERS']);
     fileContentStub.onCall(0).returns('@owner1  @owner2');
     getCollaboratorStub
       .onCall(0)
@@ -339,14 +339,14 @@ describe('getResponders', () => {
     getContributorsStub.onCall(0).returns(
       new Set<string>(['owner1', 'owner2', 'admin1', 'testOwner'])
     );
-    const responders = await getSloStatus.getResponders(
+    const responders = await sloLogic.getResponders(
       githubAPI,
       'testOwner',
       'testRepo',
       slo
     );
 
-    sinon.assert.calledOnce(convertToArrayStub);
+    //sinon.assert.calledOnce(convertToArrayStub);
     sinon.assert.calledOnce(fileContentStub);
     sinon.assert.calledOnce(getCollaboratorStub);
     sinon.assert.calledOnce(getContributorsStub);
@@ -372,7 +372,7 @@ describe('getResponders', () => {
         },
       },
     };
-    convertToArrayStub.onCall(0).returns(['.github/CODEOWNERS']);
+    //convertToArrayStub.onCall(0).returns(['.github/CODEOWNERS']);
     fileContentStub.onCall(0).returns('@owner1  @owner2');
     getCollaboratorStub.onCall(0).returns([
       {login: 'collab1', permissions: {pull: true, push: true, admin: false}},
@@ -384,14 +384,14 @@ describe('getResponders', () => {
     getContributorsStub.onCall(0).returns(
       new Set<string>(['owner1', 'owner2', 'collab1', 'testOwner'])
     );
-    const responders = await getSloStatus.getResponders(
+    const responders = await sloLogic.getResponders(
       githubAPI,
       'testOwner',
       'testRepo',
       slo
     );
 
-    sinon.assert.calledOnce(convertToArrayStub);
+    //sinon.assert.calledOnce(convertToArrayStub);
     sinon.assert.calledOnce(fileContentStub);
     sinon.assert.calledOnce(getCollaboratorStub);
     sinon.assert.calledOnce(getContributorsStub);
@@ -411,21 +411,21 @@ describe('getResponders', () => {
 });
 describe('isAssigned', () => {
   it('return true if valid responder was assigned the issue', async () => {
-    const isValid = await getSloStatus.isAssigned(
+    const isValid = await sloLogic.isAssigned(
       new Set<string>(['user1', 'testOwner', 'admin1']),
       [{login: 'random1'}, {login: 'user1'}]
     );
     assert.strictEqual(isValid, true);
   });
   it('return false if list of assignees was empty was empty', async () => {
-    const isValid = await getSloStatus.isAssigned(
+    const isValid = await sloLogic.isAssigned(
       new Set<string>(['user1', 'testOwner', 'admin1']),
       []
     );
     assert.strictEqual(isValid, false);
   });
   it('return false if valid responder was not assigned the issue', async () => {
-    const isValid = await getSloStatus.isAssigned(
+    const isValid = await sloLogic.isAssigned(
       new Set<string>(['testOwner']),
       [{login: 'user1'}, {login: 'admin1'}]
     );
@@ -438,8 +438,8 @@ describe('isInResponseTime', () => {
   let getIssueCommentsStub: sinon.SinonStub;
   
   beforeEach(() => {
-    isInDurationStub = sinon.stub(getSloStatus, 'isInDuration');
-    getIssueCommentsStub = sinon.stub(getSloStatus, 'getIssueCommentsList');
+    isInDurationStub = sinon.stub(sloLogic, 'isInDuration');
+    getIssueCommentsStub = sinon.stub(sloLogic, 'getIssueCommentsList');
   });
 
   afterEach(() => {
@@ -447,7 +447,7 @@ describe('isInResponseTime', () => {
   });
   it('returns true if issue is within response time', async() => {
     isInDurationStub.onCall(0).returns(true);
-    const isValid = await getSloStatus.isInResponseTime(
+    const isValid = await sloLogic.isInResponseTime(
       github,
       "testOwner",
       "testRepo",
@@ -482,7 +482,7 @@ describe('isInResponseTime', () => {
     ];
     isInDurationStub.onCall(0).returns(false);
     getIssueCommentsStub.onCall(0).returns(issueComments);
-    const isValid = await getSloStatus.isInResponseTime(
+    const isValid = await sloLogic.isInResponseTime(
       github,
       "testOwner",
       "testRepo",
@@ -508,7 +508,7 @@ describe('isInResponseTime', () => {
     ];
     isInDurationStub.onCall(0).returns(false);
     getIssueCommentsStub.onCall(0).returns(issueComments);
-    const isValid = await getSloStatus.isInResponseTime(
+    const isValid = await sloLogic.isInResponseTime(
       github,
       "testOwner",
       "testRepo",
@@ -530,10 +530,10 @@ describe('isCompliant given slo applies to issue', () => {
   let isInResponseStub: sinon.SinonStub;
 
   beforeEach(() => {
-    isInDurationStub = sinon.stub(getSloStatus, 'isInDuration');
-    getRespondersStub = sinon.stub(getSloStatus, 'getResponders');
-    isAssignedStub = sinon.stub(getSloStatus, 'isAssigned');
-    isInResponseStub = sinon.stub(getSloStatus, 'isInResponseTime');
+    isInDurationStub = sinon.stub(sloLogic, 'isInDuration');
+    getRespondersStub = sinon.stub(sloLogic, 'getResponders');
+    isAssignedStub = sinon.stub(sloLogic, 'isAssigned');
+    isInResponseStub = sinon.stub(sloLogic, 'isInResponseTime');
   });
 
   afterEach(() => {
@@ -557,7 +557,7 @@ describe('isCompliant given slo applies to issue', () => {
     };
 
     isInDurationStub.onCall(0).returns(false);
-    const isValid = await getSloStatus.isCompliant(
+    const isValid = await sloLogic.isIssueCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -594,7 +594,7 @@ describe('isCompliant given slo applies to issue', () => {
       new Set<string>(['testOwner', 'admin1', 'user1'])
     );
     isAssignedStub.onCall(0).returns(false);
-    const isValid = await getSloStatus.isCompliant(
+    const isValid = await sloLogic.isIssueCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -632,7 +632,7 @@ describe('isCompliant given slo applies to issue', () => {
     );
     isAssignedStub.onCall(0).returns(true);
     isInResponseStub.onCall(0).returns(false);
-    const isValid = await getSloStatus.isCompliant(
+    const isValid = await sloLogic.isIssueCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -670,7 +670,7 @@ describe('isCompliant given slo applies to issue', () => {
     );
     isAssignedStub.onCall(0).returns(true);
     isInResponseStub.onCall(0).returns(true);
-    const isValid = await getSloStatus.isCompliant(
+    const isValid = await sloLogic.isIssueCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -706,7 +706,7 @@ describe('isCompliant given slo applies to issue', () => {
       new Set<string>(['testOwner', 'user1', 'user2'])
     );
     isInResponseStub.onCall(0).returns(true);
-    const isValid = await getSloStatus.isCompliant(
+    const isValid = await sloLogic.isIssueCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -742,7 +742,7 @@ describe('isCompliant given slo applies to issue', () => {
       new Set<string>(['testOwner', 'user1', 'user2'])
     );
     isAssignedStub.onCall(0).returns(true);
-    const isValid = await getSloStatus.isCompliant(
+    const isValid = await sloLogic.isIssueCompliant(
       githubAPI,
       'testOwner',
       'testRepo',

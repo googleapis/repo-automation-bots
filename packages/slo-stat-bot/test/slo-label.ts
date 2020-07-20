@@ -23,8 +23,8 @@ import Webhooks from '@octokit/webhooks';
 import snapshot from 'snap-shot-it';
 import handler from '../src/slo-bot';
 import sinon from 'sinon';
-import {getSloStatus} from '../src/slo-logic';
-import {handleLabeling} from '../src/slo-label';
+import * as sloLogic from '../src/slo-logic';
+import * as sloLabel from '../src/slo-label';
 
 nock.disableNetConnect();
 
@@ -53,14 +53,12 @@ describe('slo-label', () => {
   });
   describe('handle_labels', () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
-    let doesApplyStub: sinon.SinonStub;
-    let isCompliantStub: sinon.SinonStub;
     let getLabelNameStub: sinon.SinonStub;
+    let getSloStatusStub: sinon.SinonStub;
 
     beforeEach(() => {
-      doesApplyStub = sinon.stub(getSloStatus, 'doesSloApply');
-      isCompliantStub = sinon.stub(getSloStatus, 'isCompliant');
-      getLabelNameStub = sinon.stub(handleLabeling, 'getLabelName');
+      getSloStatusStub = sinon.stub(sloLogic, 'getSloStatus');
+      getLabelNameStub = sinon.stub(sloLabel, 'getLabelName');
     });
 
     afterEach(() => {
@@ -83,8 +81,7 @@ describe('slo-label', () => {
         })
         .reply(200);
 
-      doesApplyStub.onCall(0).returns(true);
-      isCompliantStub.onCall(0).returns(false);
+      getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: false});
       getLabelNameStub.onCall(0).returns('ooslo');
 
       await probot.receive({
@@ -105,8 +102,7 @@ describe('slo-label', () => {
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         });
 
-      doesApplyStub.onCall(0).returns(true);
-      isCompliantStub.onCall(0).returns(false);
+      getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: false});
       getLabelNameStub.onCall(0).returns('ooslo');
       await probot.receive({
         name: 'issues.opened',
@@ -127,8 +123,7 @@ describe('slo-label', () => {
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         });
 
-      doesApplyStub.onCall(0).returns(true);
-      isCompliantStub.onCall(0).returns(true);
+        getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: true});
       getLabelNameStub.onCall(0).returns('ooslo');
 
       await probot.receive({
@@ -151,8 +146,7 @@ describe('slo-label', () => {
         .delete('/repos/testOwner/testRepo/issues/5/labels/ooslo')
         .reply(200);
 
-      doesApplyStub.onCall(0).returns(true);
-      isCompliantStub.onCall(0).returns(true);
+      getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: true});
       getLabelNameStub.onCall(0).returns('ooslo');
 
       await probot.receive({
