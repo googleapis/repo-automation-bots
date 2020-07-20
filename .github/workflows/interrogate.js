@@ -14,7 +14,9 @@
 
 const {execSync} = require('child_process');
 execSync('git fetch origin master');
-const status = execSync('git diff --name-only origin/master', { encoding: 'utf-8'});
+const baseRef = process.env.GITHUB_BASE_REF;
+console.log(`base ref: ${baseRef}`);
+const status = execSync(`git diff --name-only ${baseRef}`, { encoding: 'utf-8'});
 console.log(status);
 const changes = status.split('\n');
 let nodePaths = new Set();
