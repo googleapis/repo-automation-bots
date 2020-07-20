@@ -13,9 +13,22 @@
 // limitations under the License.
 //
 import {DataProcessor} from './data-processor-abstract';
+import {CloudTasksClient, v2} from '@google-cloud/tasks';
 
 export class CloudTasksProcessor extends DataProcessor {
+  private tasksClient: v2.CloudTasksClient;
+  
+  constructor() {
+    super();
+    this.tasksClient = new CloudTasksClient();
+  }
+
   public async collectAndProcess(): Promise<void> {
     throw new Error('Method not implemented.');
+  }
+
+  private static getQueueNames(): Promise<string[]> {
+    const root = this.fsRoot();
+    root.doc('Bot')
   }
 }
