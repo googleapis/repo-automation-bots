@@ -55,7 +55,7 @@ interface Repo {
 /**
  * Main.  On a nightly cron, update the settings for a given repository.
  */
-function handler(app: Application) {
+export function handler(app: Application) {
   app.on(['schedule.repository'], async (context: Context) => {
     console.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
@@ -93,14 +93,11 @@ function handler(app: Application) {
     console.log(`Determined ${repo} is ${language}`);
 
     // Check for repositories we're specifically configured to skip
-    if (languageConfig[language]) {
-      const ignored = languageConfig[language].ignoredRepos?.find(
-        x => x === repo
-      );
-      if (ignored) {
-        console.log(`ignoring repo ${repo}`);
-        return;
-      }
+    const ignored = languageConfig[language]?.ignoredRepos?.find(
+      x => x === repo
+    );
+    if (ignored) {
+      console.log(`ignoring repo ${repo}`);
     }
 
     if (context.payload.cron_org !== owner) {
@@ -110,15 +107,30 @@ function handler(app: Application) {
 
     const yoshiRepo = {repo, language};
     const start = new Date().getTime();
-    // update each settings section
-    await Promise.all([
-      handler.updateRepoOptions(yoshiRepo, context),
-      handler.updateMasterBranchProtection(yoshiRepo, context),
-      handler.updateRepoTeams(yoshiRepo, context),
-    ]);
-
+    // For all repositories, we are going to try to add the appropriate language
+    // focused team, even if it is flagged as "ignored". Generally folks use this
+    // flag to prevent status checks or repo settings from propagating, and team
+    // management isn't an actual issue.
+    const jobs = [updateRepoTeams(yoshiRepo, context)];
+    if (!ignored) {
+      jobs.push(
+        updateRepoOptions(yoshiRepo, context),
+        updateMasterBranchProtection(yoshiRepo, context)
+      );
+    }
+    const results = await Promise.all(jobs);
     const end = new Date().getTime();
     console.log(`Execution finished in ${end - start} ms.`);
+
+    // When running in development mode, treat any exceptions thrown in worker
+    // functions as errors to surface.
+    if (process.env.NODE_ENV !== 'production') {
+      for (const result of results) {
+        if (result instanceof Error) {
+          throw result;
+        }
+      }
+    }
   });
 }
 
@@ -126,10 +138,10 @@ function handler(app: Application) {
  * Enable master branch protection, and required status checks
  * @param repos List of repos to iterate.
  */
-handler.updateMasterBranchProtection = async function updateMasterBranchProtection(
+async function updateMasterBranchProtection(
   repo: Repo,
   context: Context
-) {
+): Promise<Error | void> {
   console.log(`Updating master branch protection for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
 
@@ -168,11 +180,12 @@ handler.updateMasterBranchProtection = async function updateMasterBranchProtecti
     console.log(
       `Error updating master protection for ${repo.repo} error status: ${err.status}`
     );
+    return err;
   }
-};
+}
 
-handler.defaultLanguageTeams = function (language: string): TeamPermission[] {
-  return [
+function getRepoTeams(language: string): TeamPermission[] {
+  const teams = [
     {
       slug: 'yoshi-admins',
       permission: 'admin',
@@ -185,30 +198,24 @@ handler.defaultLanguageTeams = function (language: string): TeamPermission[] {
       slug: `yoshi-${language}`,
       permission: 'push',
     },
-  ];
-};
-
-handler.getRepoTeams = function (repo: Repo): TeamPermission[] {
-  const language = repo.language;
-  const teams = handler.defaultLanguageTeams(language);
+  ] as TeamPermission[];
   if (language in languageTeams) {
     teams.push(...languageTeams[language]);
   }
   return teams;
-};
+}
 
 /**
  * Ensure the correct teams are added to the repository
  * @param repos List of repos to iterate.
  */
-handler.updateRepoTeams = async function updateRepoTeams(
+async function updateRepoTeams(
   repo: Repo,
   context: Context
-) {
+): Promise<Error | void> {
   console.log(`Update team access for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
-  const teamsToAdd = handler.getRepoTeams(repo);
-
+  const teamsToAdd = getRepoTeams(repo.language);
   for (const membership of teamsToAdd) {
     try {
       await context.github.teams.addOrUpdateRepoInOrg({
@@ -223,18 +230,19 @@ handler.updateRepoTeams = async function updateRepoTeams(
       console.log(
         `Error updating repo in org for ${repo.repo} error status: ${err.status}`
       );
+      return err;
     }
   }
-};
+}
 
 /**
  * Update the main repository options
  * @param repos List of repos to iterate.
  */
-handler.updateRepoOptions = async function updateRepoOptions(
+async function updateRepoOptions(
   repo: Repo,
   context: Context
-) {
+): Promise<Error | void> {
   console.log(`Updating commit settings for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
   const config = languageConfig[repo.language];
@@ -244,7 +252,7 @@ handler.updateRepoOptions = async function updateRepoOptions(
   console.log(`name: ${name}`);
   console.log(`owner: ${owner}`);
   console.log(`enable rebase? ${config.enableRebaseMerge}`);
-  console.log(`enable sqaush? ${config.enableSquashMerge}`);
+  console.log(`enable squash? ${config.enableSquashMerge}`);
 
   try {
     await context.github.repos.update({
@@ -261,7 +269,6 @@ handler.updateRepoOptions = async function updateRepoOptions(
     console.log(
       `Error updating repo options for  ${repo.repo} error status: ${err.status}`
     );
+    return err;
   }
-};
-
-export = handler;
+}
