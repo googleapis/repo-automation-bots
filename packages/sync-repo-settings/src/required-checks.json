@@ -198,7 +198,7 @@
       "cla/google"
     ],
     "repoOverrides": [
-    {
+      {
         "repo": "googleapis/proto-plus-python",
         "requiredStatusChecks": [
           "ci/circleci: docs",
@@ -212,7 +212,7 @@
           "cla/google"
         ]
       },
-    ]
+    ],
     "ignoredRepos": [
       "GoogleCloudPlatform/python-docs-samples",
       "GoogleCloudPlatform/getting-started-python",
