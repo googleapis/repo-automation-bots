@@ -211,7 +211,7 @@
           "ci/circleci: unit-cpp-3.7",
           "cla/google"
         ]
-      },
+      }
     ],
     "ignoredRepos": [
       "GoogleCloudPlatform/python-docs-samples",
