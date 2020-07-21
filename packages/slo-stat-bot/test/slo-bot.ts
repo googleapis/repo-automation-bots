@@ -229,5 +229,54 @@ describe('slo-bot', () => {
         requests.done();
       });
     });
+    describe('schedule repository event', () => {
+      const payload = {
+          repository: {
+            name: 'testRepo',
+          },
+          organization: {
+            login: 'testOwner',
+          },
+          cron_org: 'testOwner',
+      }
+  
+      it('getIssueList() and call handleIssues() for each issue', async() => {
+        const requests = nock('https://api.github.com')
+          .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+          .reply(200, {content: 
+            'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n'})
+          .get('/repos/testOwner/testRepo/issues?state=open')
+          .reply(200, [{
+                       number: 1,
+                       labels: [
+                        {name: "bot: header-check"},
+                        {name: "help wanted"},
+                        {name: "priority: P0"}
+                      ],
+                       assignees: [
+                        {
+                          login: "owner1",
+                          type: "User",
+                          site_admin: false
+                        }
+                       ],
+                       created_at: "",
+                       updated_at: ""
+                      }]
+           ); 
+        
+        getSloStatusStub
+        .onCall(0)
+        .returns({appliesTo: true, isCompliant: false});
+  
+        await probot.receive({
+          name: 'schedule.repository',
+          payload,
+          id: 'abc123',
+        });
+  
+        requests.done();
+      })
+    })
   });
 });
