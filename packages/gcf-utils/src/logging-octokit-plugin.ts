@@ -126,6 +126,9 @@ function parseActionValue(
     [key: string]: string | number;
   }
 ): string {
+
+  const NO_ACTION_VALUE = 'NONE';
+
   // optional properties for issues.update
   const allIssueUpdateProps = [
     'body',
@@ -159,7 +162,7 @@ function parseActionValue(
     case GitHubActionType.PR_MERGE:
     case GitHubActionType.PR_UPDATE_BRANCH:
     default:
-      return 'NONE';
+      return NO_ACTION_VALUE;
   }
 }
 
