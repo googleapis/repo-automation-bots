@@ -15,6 +15,8 @@
 import {Octokit} from '@octokit/rest';
 import {logger} from './gcf-utils';
 
+export const VERSION = '1.0.0';
+
 /**
  * Types of actions taken on GitHub
  */
@@ -168,8 +170,9 @@ function parseActionValue(
 function parseActionDetails(options: {
   [key: string]: string | number;
 }): GitHubActionDetails {
+  const endpointMethods = ActionEndpoints[options.url] || {};
   const actionType: GitHubActionType =
-    ActionEndpoints[options.url][options.method] || GitHubActionType.UNKNOWN;
+    endpointMethods[options.method] || GitHubActionType.UNKNOWN;
 
   const details: GitHubActionDetails = {};
   details.value = parseActionValue(actionType, options);
@@ -243,5 +246,5 @@ module.exports = (
 
   (octokit as Octokit & {
     loggingOctokitPluginVersion: string;
-  }).loggingOctokitPluginVersion = '1.0.0';
+  }).loggingOctokitPluginVersion = VERSION;
 };

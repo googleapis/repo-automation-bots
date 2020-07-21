@@ -47,9 +47,9 @@ describe('Logging-Octokit-Plugin', () => {
         repo: 'barRepo',
         labels: ['a', 'b'],
       })
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch(e => {
-        /**ignore rejected promise**/
+        // ignore HTTP Errors since Octokit is unauthenticated
+        if (e.name !== 'HttpError') throw e;
       })
       .finally(() => {
         const expected = {
@@ -79,9 +79,9 @@ describe('Logging-Octokit-Plugin', () => {
         repo: 'barRepo',
         body: 'comment body',
       })
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch(e => {
-        /**ignore rejected promise**/
+        // ignore HTTP Errors since Octokit is unauthenticated
+        if (e.name !== 'HttpError') throw e;
       })
       .finally(() => {
         const expected = {
@@ -111,9 +111,9 @@ describe('Logging-Octokit-Plugin', () => {
         name: 'labelName',
         color: 'blue',
       })
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch(e => {
-        /**ignore rejected promise**/
+        // ignore HTTP Errors since Octokit is unauthenticated
+        if (e.name !== 'HttpError') throw e;
       })
       .finally(() => {
         const expected = {
@@ -139,9 +139,9 @@ describe('Logging-Octokit-Plugin', () => {
         issue_number: 3,
         name: 'labelName',
       })
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch(e => {
-        /**ignore rejected promise**/
+        // ignore HTTP Errors since Octokit is unauthenticated
+        if (e.name !== 'HttpError') throw e;
       })
       .finally(() => {
         const expected = {
@@ -166,9 +166,9 @@ describe('Logging-Octokit-Plugin', () => {
   it('logs information for issues.deleteLabel', () => {
     loggingOctokit.issues
       .deleteLabel({owner: 'fooOwner', repo: 'barRepo', name: 'labelName'})
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch(e => {
-        /**ignore rejected promise**/
+        // ignore HTTP Errors since Octokit is unauthenticated
+        if (e.name !== 'HttpError') throw e;
       })
       .finally(() => {
         const expected = {
@@ -194,9 +194,9 @@ describe('Logging-Octokit-Plugin', () => {
         current_name: 'currName',
         name: 'labelName',
       })
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch(e => {
-        /**ignore rejected promise**/
+        // ignore HTTP Errors since Octokit is unauthenticated
+        if (e.name !== 'HttpError') throw e;
       })
       .finally(() => {
         const expected = {
@@ -223,9 +223,9 @@ describe('Logging-Octokit-Plugin', () => {
         body: 'issue body',
         state: 'open',
       })
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch(e => {
-        /**ignore rejected promise**/
+        // ignore HTTP Errors since Octokit is unauthenticated
+        if (e.name !== 'HttpError') throw e;
       })
       .finally(() => {
         const expected = {
@@ -250,9 +250,9 @@ describe('Logging-Octokit-Plugin', () => {
   it('logs information for issues.create', () => {
     loggingOctokit.issues
       .create({owner: 'fooOwner', repo: 'barRepo', title: 'new issue'})
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch(e => {
-        /**ignore rejected promise**/
+        // ignore HTTP Errors since Octokit is unauthenticated
+        if (e.name !== 'HttpError') throw e;
       })
       .finally(() => {
         const expected = {
@@ -279,9 +279,9 @@ describe('Logging-Octokit-Plugin', () => {
         pull_number: 3,
         review_id: 34,
       })
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch(e => {
-        /**ignore rejected promise**/
+        // ignore HTTP Errors since Octokit is unauthenticated
+        if (e.name !== 'HttpError') throw e;
       })
       .finally(() => {
         const expected = {
@@ -306,9 +306,9 @@ describe('Logging-Octokit-Plugin', () => {
   it('logs information for pulls.merge', () => {
     loggingOctokit.pulls
       .merge({owner: 'fooOwner', repo: 'barRepo', pull_number: 3})
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch(e => {
-        /**ignore rejected promise**/
+        // ignore HTTP Errors since Octokit is unauthenticated
+        if (e.name !== 'HttpError') throw e;
       })
       .finally(() => {
         const expected = {
@@ -333,9 +333,9 @@ describe('Logging-Octokit-Plugin', () => {
   it('logs information for pulls.updateBranch', () => {
     loggingOctokit.pulls
       .updateBranch({owner: 'fooOwner', repo: 'barRepo', pull_number: 3})
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch(e => {
-        /**ignore rejected promise**/
+        // ignore HTTP Errors since Octokit is unauthenticated
+        if (e.name !== 'HttpError') throw e;
       })
       .finally(() => {
         const expected = {
@@ -360,9 +360,9 @@ describe('Logging-Octokit-Plugin', () => {
   it('does not log information for unknown actions', () => {
     loggingOctokit.issues
       .checkAssignee({owner: 'fooOwner', repo: 'barRepo', assignee: 'bar'})
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch(e => {
-        /**ignore rejected promise**/
+        // ignore HTTP Errors since Octokit is unauthenticated
+        if (e.name !== 'HttpError') throw e;
       })
       .finally(() => {
         const expected = undefined;
