@@ -474,9 +474,11 @@ describe('auto-label', () => {
 
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/issues')
-        .reply(200, [{
-          number: 1,
-        }])
+        .reply(200, [
+          {
+            number: 1,
+          },
+        ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200)
         .post('/repos/testOwner/testRepo/labels', {
