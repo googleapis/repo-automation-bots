@@ -47,7 +47,7 @@ interface PullsListFilesResponseItem {
  * @param per_page number of files that is listed per API call
  * @returns an array of PullsListFilesResponseItem containing the filename and sha
  */
-export const listFiles = async function listFiles(
+async function listFiles(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -113,7 +113,7 @@ export const handleSlos = async function handleSlos(
  * @param file_sha number of files that is listed per API call
  * @returns json string of the slo rules content
  */
-export const getFileShaContents = async function getFileShaContents(
+async function getFileShaContents(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -166,7 +166,7 @@ export const lint = async function lint(
  * @param isValid determines if slo rules are valid or invalid with the schema
  * @returns void
  */
-export const commentPR = async function commentPR(
+async function commentPR(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -199,7 +199,7 @@ export const commentPR = async function commentPR(
  * @param validationRes validation results object that contains a boolean value if its valid or not and an error object if it is invalid
  * @returns void
  */
-export const createCheck = async function createCheck(
+async function createCheck(
   context: Context,
   validationRes: ValidationResults
 ) {

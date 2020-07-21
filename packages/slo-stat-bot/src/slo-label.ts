@@ -46,7 +46,7 @@ export const getLabelName = function (): string {
  * @param name of ooslo label in repo
  * @returns void
  */
-export const addLabel = async function addLabel(
+async function addLabel(
   github: GitHubAPI,
   owner: string,
   repo: string,
