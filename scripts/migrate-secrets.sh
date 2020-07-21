@@ -29,7 +29,7 @@ KEY_RING=$4
 cd "packages" || exit 1
 for f in *; do
     # Skip symlinks and our gcf-utils/generate-bot directory as it is not a function
-    if [[ -d "$f" && ! -L "$f" && "$f" != "gcf-utils" && "$f" != "generate-bot" ]]; then
+    if [[ -d "$f" && ! -L "$f" && "$f" != "gcf-utils" && "$f" != "generate-bot" && "$f" != "monitoring-system" ]]; then
          # Subshell to avoid having to cd back
         (
         cd "$f" || exit 1
