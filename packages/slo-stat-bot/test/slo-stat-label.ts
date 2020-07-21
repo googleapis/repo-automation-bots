@@ -24,7 +24,7 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 import Webhooks from '@octokit/webhooks';
 import snapshot from 'snap-shot-it';
 import handler from '../src/slo-stat-label';
-const sinon = require ('sinon');
+import sinon from 'sinon';
 
 nock.disableNetConnect();
 
