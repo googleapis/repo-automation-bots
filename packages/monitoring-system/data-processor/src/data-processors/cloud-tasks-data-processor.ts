@@ -13,43 +13,90 @@
 // limitations under the License.
 //
 import {DataProcessor, Firestore} from './data-processor-abstract';
-import {CloudTasksClient, v2} from '@google-cloud/tasks';
+import {CloudTasksClient, protos, v2} from '@google-cloud/tasks';
 
+type CloudTasksListResponse = [protos.google.cloud.tasks.v2.ITask[], protos.google.cloud.tasks.v2.IListTasksRequest | null, protos.google.cloud.tasks.v2.IListTasksResponse];
+
+interface QueueStatus {
+  [queueName: string]: number;
+}
+
+/**
+ * Collects the current status of Cloud Task queues associated
+ * with repo automation bots and inserts it into Firestore
+ */
 export class CloudTasksProcessor extends DataProcessor {
+
+  private PROJECT_ID = 'repo-automation-bots';
+  private LOCATION = 'us-central1';
+
   private tasksClient: v2.CloudTasksClient;
 
-  constructor(firestore?: Firestore) {
+  /**
+   * Create a Cloud Tasks data processor
+   * @param firestore (optional) a custom Firestore client
+   * @param tasksClient (optional) a custom Cloud Tasks client
+   */
+  constructor(firestore?: Firestore, tasksClient?: v2.CloudTasksClient) {
     super(firestore);
-    this.tasksClient = new CloudTasksClient();
+    this.tasksClient = tasksClient || new CloudTasksClient();
   }
 
   public async collectAndProcess(): Promise<void> {
-    // TODO
-    throw new Error('Method not implemented.');
+    return new Promise<void>((resolve, reject) => {
+      this.getBotNames()
+      .then(botNames => {
+        // assumes that queue name == bot name
+        return this.getTaskQueueStatus(this.PROJECT_ID, this.LOCATION, botNames);
+      })
+      .then(queueStatus => {
+        return this.insertTaskQueueStatus(queueStatus);
+      })
+      .then(resolve)
+      .catch(error => {
+        reject(`Failed to collect and process Cloud Tasks data: ${error}`)
+      });
+    });
   }
 
-  private getBotNames(): Promise<string[]> {
-    return new Promise<string[]>(resolve => {
+  private async getBotNames(): Promise<string[]> {
+    return new Promise<string[]>((resolve, reject) => {
       this.firestore
         .collection('Bot')
         .get()
         .then(botDocument => {
           const subDocs = botDocument.docs;
           resolve(subDocs.map(doc => doc.data().bot_name));
-        });
+        })
+        .catch(error => reject(error));
     });
   }
 
-  private getTaskQueueStatus(project: string, location: string, queueNames: string[]): {[queueName: string]: number} {
-    let queueStatus = {};
-    for (let name of queueNames) {
-      const queuePath = this.tasksClient.queuePath(project, location, name);
-      const tasks = this.tasksClient.listTasks({ pageToken: queuePath });
-    }
-    return queueStatus;
+  private async getTaskQueueStatus(project: string, location: string, queueNames: string[]): Promise<QueueStatus> {
+    return new Promise<QueueStatus>((resolve, reject) => {
+      let queueStatus: QueueStatus = {};
+      let taskListPromises: {[queueName: string]: Promise<CloudTasksListResponse>} = {};
+
+      for (let name of queueNames) {
+        const queuePath = this.tasksClient.queuePath(project, location, name);
+        taskListPromises[name] = this.tasksClient.listTasks({ parent: queuePath });
+
+        taskListPromises[name]
+        .then(taskList => {
+          queueStatus[name] = taskList[0].length;
+        })
+        .catch(error => reject(error))
+      }
+
+      Promise.all(Object.values(taskListPromises))
+      .then(() => {
+        resolve(queueStatus);
+      })
+      .catch(error => reject(error));
+    });
   }
   
-  private insertTaskQueueStatus() {
+  private async insertTaskQueueStatus(queueStatus: QueueStatus): Promise<void> {
     // TODO
     throw new Error('Method not implemented.');
   }
