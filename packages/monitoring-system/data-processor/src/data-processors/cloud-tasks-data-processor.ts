@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,11 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+import {DataProcessor} from './data-processor-abstract';
 
-// define types for a few modules used by probot that do not have their
-// own definitions published. Before taking this step, folks should first
-// check whether type bindings are already published.
-declare module 'promise-events' {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  class EventEmitter {}
+export class CloudTasksProcessor extends DataProcessor {
+  public async collectAndProcess(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
 }

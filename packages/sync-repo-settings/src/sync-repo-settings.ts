@@ -14,10 +14,11 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context} from 'probot';
-import {request} from 'gaxios';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const languageConfig: LanguageConfig = require('./required-checks.json');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const languageTeams: LanguageTeamConfig = require('./teams.json');
 
 interface LanguageConfig {
   [index: string]: {
@@ -35,56 +36,68 @@ interface LanguageConfig {
   };
 }
 
+type Permission = 'pull' | 'push' | 'admin' | 'maintain' | 'triage';
+
+interface TeamPermission {
+  slug: string;
+  permission: Permission;
+}
+
+interface LanguageTeamConfig {
+  [index: string]: [TeamPermission];
+}
+
 interface Repo {
   language: string;
   repo: string;
 }
 
-interface GetReposResponse {
-  repos: Repo[];
-}
-
-/**
- * Acquire a list of repositories from sloth.
- * Cache the result.
- */
-let _repos: GetReposResponse;
-handler.getRepos = async function getRepos(): Promise<GetReposResponse> {
-  if (!_repos) {
-    const res = await request<GetReposResponse>({
-      url:
-        'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json',
-    });
-    _repos = res.data;
-  }
-  return _repos;
-};
-
 /**
  * Main.  On a nightly cron, update the settings for a given repository.
  */
-function handler(app: Application) {
+export function handler(app: Application) {
   app.on(['schedule.repository'], async (context: Context) => {
     console.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
     const name = context.payload.repository.name;
     const repo = `${owner}/${name}`;
 
-    // find the repo record in repos.json
-    const repos = await handler.getRepos();
-    const yoshiRepo = repos.repos.find(x => x.repo === repo);
-    console.log(yoshiRepo?.repo);
-    if (!yoshiRepo) {
+    // Fetch the list of languages used in this repository
+    const langRes = await context.github.repos.listLanguages({
+      owner,
+      repo: name,
+    });
+
+    // Given an object like this:
+    // {
+    //   python: 24
+    //   javascript: 22
+    // }
+    // Sort the keys based on instance count.
+    const languages = Object.entries(langRes.data).sort((a, b) => {
+      return a[1] > b[1] ? -1 : a[1] < b[1] ? 1 : 0;
+    });
+
+    // If GitHub says this doesn't have a language ...
+    if (languages.length === 0) {
       return;
     }
-    if (languageConfig[yoshiRepo.language]) {
-      const ignored = languageConfig[yoshiRepo.language].ignoredRepos?.find(
-        x => x === repo
-      );
-      if (ignored) {
-        console.log(`ignoring repo ${repo}`);
-        return;
-      }
+
+    // Use the language with the highest line count
+    let language = languages[0][0].toLowerCase();
+
+    // Add a little hackery for node
+    if (language === 'javascript' || language === 'typescript') {
+      language = 'nodejs';
+    }
+    console.log(`Determined ${repo} is ${language}`);
+
+    // Check for repositories we're specifically configured to skip
+    const ignored = languageConfig[language]?.ignoredRepos?.find(
+      x => x === repo
+    );
+    if (ignored) {
+      console.log(`ignoring repo ${repo}`);
     }
 
     if (context.payload.cron_org !== owner) {
@@ -92,14 +105,20 @@ function handler(app: Application) {
       return;
     }
 
+    const yoshiRepo = {repo, language};
     const start = new Date().getTime();
-    // update each settings section
-    await Promise.all([
-      handler.updateRepoOptions(yoshiRepo, context),
-      handler.updateMasterBranchProtection(yoshiRepo, context),
-      handler.updateRepoTeams(yoshiRepo, context),
-    ]);
-
+    // For all repositories, we are going to try to add the appropriate language
+    // focused team, even if it is flagged as "ignored". Generally folks use this
+    // flag to prevent status checks or repo settings from propagating, and team
+    // management isn't an actual issue.
+    const jobs = [updateRepoTeams(yoshiRepo, context)];
+    if (!ignored) {
+      jobs.push(
+        updateRepoOptions(yoshiRepo, context),
+        updateMasterBranchProtection(yoshiRepo, context)
+      );
+    }
+    await Promise.all(jobs);
     const end = new Date().getTime();
     console.log(`Execution finished in ${end - start} ms.`);
   });
@@ -109,10 +128,7 @@ function handler(app: Application) {
  * Enable master branch protection, and required status checks
  * @param repos List of repos to iterate.
  */
-handler.updateMasterBranchProtection = async function updateMasterBranchProtection(
-  repo: Repo,
-  context: Context
-) {
+async function updateMasterBranchProtection(repo: Repo, context: Context) {
   console.log(`Updating master branch protection for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
 
@@ -130,81 +146,72 @@ handler.updateMasterBranchProtection = async function updateMasterBranchProtecti
       checks = customConfig.requiredStatusChecks;
     }
   }
-  try {
-    await context.github.repos.updateBranchProtection({
-      branch: 'master',
-      owner,
-      repo: name,
-      required_pull_request_reviews: {
-        dismiss_stale_reviews: false,
-        require_code_owner_reviews: false,
-      },
-      required_status_checks: {
-        contexts: checks,
-        strict: config.requireUpToDateBranch,
-      },
-      enforce_admins: true,
-      restrictions: null!,
-    });
-    console.log(`Success updating master branch protection for ${repo.repo}`);
-  } catch (err) {
-    console.log(
-      `Error updating master protection for ${repo.repo} error status: ${err.status}`
-    );
-  }
-};
+  await context.github.repos.updateBranchProtection({
+    branch: 'master',
+    owner,
+    repo: name,
+    required_pull_request_reviews: {
+      dismiss_stale_reviews: false,
+      require_code_owner_reviews: false,
+    },
+    required_status_checks: {
+      contexts: checks,
+      strict: config.requireUpToDateBranch,
+    },
+    enforce_admins: true,
+    restrictions: null!,
+  });
+  console.log(`Success updating master branch protection for ${repo.repo}`);
+}
 
-/**
- * Ensure the correct teams are added to the repository
- * @param repos List of repos to iterate.
- */
-handler.updateRepoTeams = async function updateRepoTeams(
-  repo: Repo,
-  context: Context
-) {
-  console.log(`Update team access for ${repo.repo}`);
-  const [owner, name] = repo.repo.split('/');
-  const teamsToAdd = [
+function getRepoTeams(language: string): TeamPermission[] {
+  const teams = [
     {
       slug: 'yoshi-admins',
       permission: 'admin',
     },
     {
-      slug: `yoshi-${repo.language}-admins`,
+      slug: `yoshi-${language}-admins`,
       permission: 'admin',
     },
     {
-      slug: `yoshi-${repo.language}`,
+      slug: `yoshi-${language}`,
       permission: 'push',
     },
-  ];
+  ] as TeamPermission[];
+  if (language in languageTeams) {
+    teams.push(...languageTeams[language]);
+  }
+  return teams;
+}
 
-  for (const membership of teamsToAdd) {
-    try {
-      await context.github.teams.addOrUpdateRepoInOrg({
+/**
+ * Ensure the correct teams are added to the repository
+ * @param repos List of repos to iterate.
+ */
+async function updateRepoTeams(repo: Repo, context: Context) {
+  console.log(`Update team access for ${repo.repo}`);
+  const [owner, name] = repo.repo.split('/');
+  const teamsToAdd = getRepoTeams(repo.language);
+  await Promise.all(
+    teamsToAdd.map(membership => {
+      return context.github.teams.addOrUpdateRepoInOrg({
         team_slug: membership.slug,
         owner,
         org: owner,
         permission: membership.permission as 'push',
         repo: name,
       });
-      console.log(`Success updating repo in org for ${repo.repo}`);
-    } catch (err) {
-      console.log(
-        `Error updating repo in org for ${repo.repo} error status: ${err.status}`
-      );
-    }
-  }
-};
+    })
+  );
+  console.log(`Success updating repo in org for ${repo.repo}`);
+}
 
 /**
  * Update the main repository options
  * @param repos List of repos to iterate.
  */
-handler.updateRepoOptions = async function updateRepoOptions(
-  repo: Repo,
-  context: Context
-) {
+async function updateRepoOptions(repo: Repo, context: Context) {
   console.log(`Updating commit settings for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
   const config = languageConfig[repo.language];
@@ -214,24 +221,15 @@ handler.updateRepoOptions = async function updateRepoOptions(
   console.log(`name: ${name}`);
   console.log(`owner: ${owner}`);
   console.log(`enable rebase? ${config.enableRebaseMerge}`);
-  console.log(`enable sqaush? ${config.enableSquashMerge}`);
+  console.log(`enable squash? ${config.enableSquashMerge}`);
 
-  try {
-    await context.github.repos.update({
-      name,
-      repo: name,
-      owner,
-      allow_merge_commit: false,
-      allow_rebase_merge: config.enableRebaseMerge,
-      allow_squash_merge: config.enableSquashMerge,
-    });
-    console.log(`Success updating repo options for ${repo.repo}`);
-  } catch (err) {
-    console.log(err);
-    console.log(
-      `Error updating repo options for  ${repo.repo} error status: ${err.status}`
-    );
-  }
-};
-
-export = handler;
+  await context.github.repos.update({
+    name,
+    repo: name,
+    owner,
+    allow_merge_commit: false,
+    allow_rebase_merge: config.enableRebaseMerge,
+    allow_squash_merge: config.enableSquashMerge,
+  });
+  console.log(`Success updating repo options for ${repo.repo}`);
+}

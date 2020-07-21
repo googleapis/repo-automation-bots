@@ -4,7 +4,8 @@
     "enableRebaseMerge": false,
     "requireUpToDateBranch": false,
     "requiredStatusChecks": [
-      "dependencies",
+      "dependencies (8)",
+      "dependencies (11)",
       "linkage-monitor",
       "lint",
       "clirr",
@@ -25,7 +26,8 @@
         "repo": "googleapis/java-cloud-bom",
         "requiredStatusChecks": [
           "Kokoro - Test: BOM Upper Bounds",
-          "dependencies",
+          "dependencies (8)",
+          "dependencies (11)",
           "linkage-monitor",
           "lint",
           "clirr",
@@ -49,7 +51,8 @@
       {
         "repo": "googleapis/java-conformance-tests",
         "requiredStatusChecks": [
-          "dependencies",
+          "dependencies (8)",
+          "dependencies (11)",
           "linkage-monitor",
           "lint",
           "clirr",
@@ -101,8 +104,6 @@
         "repo": "googleapis/google-api-java-client",
         "requiredStatusChecks": [
           "Kokoro - Test: Binary Compatibility",
-          "Kokoro - Test: Code Format",
-          "Kokoro - Test: Dependencies",
           "Kokoro - Test: Java 11",
           "Kokoro - Test: Java 7",
           "Kokoro - Test: Java 8",
@@ -127,8 +128,6 @@
         "repo": "googleapis/google-oauth-java-client",
         "requiredStatusChecks": [
           "Kokoro - Test: Binary Compatibility",
-          "Kokoro - Test: Code Format",
-          "Kokoro - Test: Dependencies",
           "Kokoro - Test: Java 11",
           "Kokoro - Test: Java 7",
           "Kokoro - Test: Java 8",
@@ -163,7 +162,8 @@
       {
         "repo": "googleapis/java-pubsublite",
         "requiredStatusChecks": [
-          "dependencies",
+          "dependencies (8)",
+          "dependencies (11)",
           "linkage-monitor",
           "lint",
           "clirr",
@@ -196,6 +196,22 @@
     "requiredStatusChecks": [
       "Kokoro",
       "cla/google"
+    ],
+    "repoOverrides": [
+      {
+        "repo": "googleapis/proto-plus-python",
+        "requiredStatusChecks": [
+          "ci/circleci: docs",
+          "ci/circleci: style-check",
+          "ci/circleci: unit-3.5",
+          "ci/circleci: unit-3.6",
+          "ci/circleci: unit-3.7",
+          "ci/circleci: unit-cpp-3.5",
+          "ci/circleci: unit-cpp-3.6",
+          "ci/circleci: unit-cpp-3.7",
+          "cla/google"
+        ]
+      }
     ],
     "ignoredRepos": [
       "GoogleCloudPlatform/python-docs-samples",

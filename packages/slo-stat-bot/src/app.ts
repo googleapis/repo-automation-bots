@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {GCFBootstrapper} from 'gcf-utils';
+
 import appFn from './slo-bot';
 
 const bootstrap = new GCFBootstrapper();

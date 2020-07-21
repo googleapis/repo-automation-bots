@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
+import {Application, Octokit} from 'probot';
 import lint from '@commitlint/lint';
 
 import {rules} from '@commitlint/config-conventional';
@@ -21,9 +21,6 @@ import {rules} from '@commitlint/config-conventional';
 // see: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-conventional/index.js
 delete rules['type-enum'];
 rules['header-max-length'] = [2, 'always', 256];
-
-// eslint-disable-next-line node/no-extraneous-import
-import {PullsListCommitsResponseItem, Response} from '@octokit/rest';
 
 type Conclusion =
   | 'success'
@@ -34,6 +31,8 @@ type Conclusion =
   | 'action_required'
   | undefined;
 
+const AUTOMERGE_LABEL = 'automerge';
+
 export = (app: Application) => {
   app.on('pull_request', async context => {
     // Fetch last 100 commits stored on a specific PR.
@@ -43,7 +42,9 @@ export = (app: Application) => {
     });
     // Response object has a typed response.data, which has definitions that
     // can be found here: https://unpkg.com/@octokit/rest@16.28.3/index.d.ts
-    let commitsResponse: Response<PullsListCommitsResponseItem[]>;
+    let commitsResponse: Octokit.Response<
+      Octokit.PullsListCommitsResponseItem[]
+    >;
     try {
       commitsResponse = await context.github.pulls.listCommits(commitParams);
     } catch (err) {
@@ -53,9 +54,16 @@ export = (app: Application) => {
     const commits = commitsResponse.data;
 
     let message = context.payload.pull_request.title;
-    // if there is only one commit, lint the commit rather than
-    // the pull request title:
-    if (commits.length === 1) {
+    const hasAutomergeLabel = context.payload.pull_request.labels
+      .map(label => {
+        return label.name;
+      })
+      .includes(AUTOMERGE_LABEL);
+    // if there is only one commit, and we're not not using automerge
+    // to land the pull request, lint the commit rather than the title.
+    // This is done because GitHub uses the commit title, rather than the
+    // issue title, if there is only one commit:
+    if (commits.length === 1 && !hasAutomergeLabel) {
       message = commits[0].commit.message;
     }
 

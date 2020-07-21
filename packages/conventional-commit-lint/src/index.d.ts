@@ -16,6 +16,7 @@
 // own definitions published. Before taking this step, folks should first
 // check whether type bindings are already published.
 declare module 'promise-events' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   class EventEmitter {}
 }
 
@@ -32,9 +33,11 @@ declare module '@commitlint/lint' {
     message: string;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export default function (commit: string, rules: any): ILint;
 }
 
 declare module '@commitlint/config-conventional' {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export const rules: any;
 }
