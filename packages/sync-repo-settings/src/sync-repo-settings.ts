@@ -118,19 +118,9 @@ export function handler(app: Application) {
         updateMasterBranchProtection(yoshiRepo, context)
       );
     }
-    const results = await Promise.all(jobs);
+    await Promise.all(jobs);
     const end = new Date().getTime();
     console.log(`Execution finished in ${end - start} ms.`);
-
-    // When running in development mode, treat any exceptions thrown in worker
-    // functions as errors to surface.
-    if (process.env.NODE_ENV !== 'production') {
-      for (const result of results) {
-        if (result instanceof Error) {
-          throw result;
-        }
-      }
-    }
   });
 }
 
@@ -138,10 +128,7 @@ export function handler(app: Application) {
  * Enable master branch protection, and required status checks
  * @param repos List of repos to iterate.
  */
-async function updateMasterBranchProtection(
-  repo: Repo,
-  context: Context
-): Promise<Error | void> {
+async function updateMasterBranchProtection(repo: Repo, context: Context) {
   console.log(`Updating master branch protection for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
 
@@ -159,29 +146,22 @@ async function updateMasterBranchProtection(
       checks = customConfig.requiredStatusChecks;
     }
   }
-  try {
-    await context.github.repos.updateBranchProtection({
-      branch: 'master',
-      owner,
-      repo: name,
-      required_pull_request_reviews: {
-        dismiss_stale_reviews: false,
-        require_code_owner_reviews: false,
-      },
-      required_status_checks: {
-        contexts: checks,
-        strict: config.requireUpToDateBranch,
-      },
-      enforce_admins: true,
-      restrictions: null!,
-    });
-    console.log(`Success updating master branch protection for ${repo.repo}`);
-  } catch (err) {
-    console.log(
-      `Error updating master protection for ${repo.repo} error status: ${err.status}`
-    );
-    return err;
-  }
+  await context.github.repos.updateBranchProtection({
+    branch: 'master',
+    owner,
+    repo: name,
+    required_pull_request_reviews: {
+      dismiss_stale_reviews: false,
+      require_code_owner_reviews: false,
+    },
+    required_status_checks: {
+      contexts: checks,
+      strict: config.requireUpToDateBranch,
+    },
+    enforce_admins: true,
+    restrictions: null!,
+  });
+  console.log(`Success updating master branch protection for ${repo.repo}`);
 }
 
 function getRepoTeams(language: string): TeamPermission[] {
@@ -209,40 +189,29 @@ function getRepoTeams(language: string): TeamPermission[] {
  * Ensure the correct teams are added to the repository
  * @param repos List of repos to iterate.
  */
-async function updateRepoTeams(
-  repo: Repo,
-  context: Context
-): Promise<Error | void> {
+async function updateRepoTeams(repo: Repo, context: Context) {
   console.log(`Update team access for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
   const teamsToAdd = getRepoTeams(repo.language);
-  for (const membership of teamsToAdd) {
-    try {
-      await context.github.teams.addOrUpdateRepoInOrg({
+  await Promise.all(
+    teamsToAdd.map(membership => {
+      return context.github.teams.addOrUpdateRepoInOrg({
         team_slug: membership.slug,
         owner,
         org: owner,
         permission: membership.permission as 'push',
         repo: name,
       });
-      console.log(`Success updating repo in org for ${repo.repo}`);
-    } catch (err) {
-      console.log(
-        `Error updating repo in org for ${repo.repo} error status: ${err.status}`
-      );
-      return err;
-    }
-  }
+    })
+  );
+  console.log(`Success updating repo in org for ${repo.repo}`);
 }
 
 /**
  * Update the main repository options
  * @param repos List of repos to iterate.
  */
-async function updateRepoOptions(
-  repo: Repo,
-  context: Context
-): Promise<Error | void> {
+async function updateRepoOptions(repo: Repo, context: Context) {
   console.log(`Updating commit settings for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
   const config = languageConfig[repo.language];
@@ -254,21 +223,13 @@ async function updateRepoOptions(
   console.log(`enable rebase? ${config.enableRebaseMerge}`);
   console.log(`enable squash? ${config.enableSquashMerge}`);
 
-  try {
-    await context.github.repos.update({
-      name,
-      repo: name,
-      owner,
-      allow_merge_commit: false,
-      allow_rebase_merge: config.enableRebaseMerge,
-      allow_squash_merge: config.enableSquashMerge,
-    });
-    console.log(`Success updating repo options for ${repo.repo}`);
-  } catch (err) {
-    console.log(err);
-    console.log(
-      `Error updating repo options for  ${repo.repo} error status: ${err.status}`
-    );
-    return err;
-  }
+  await context.github.repos.update({
+    name,
+    repo: name,
+    owner,
+    allow_merge_commit: false,
+    allow_rebase_merge: config.enableRebaseMerge,
+    allow_squash_merge: config.enableSquashMerge,
+  });
+  console.log(`Success updating repo options for ${repo.repo}`);
 }
