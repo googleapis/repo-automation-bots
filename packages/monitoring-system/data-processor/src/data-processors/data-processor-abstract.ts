@@ -13,16 +13,23 @@
 // limitations under the License.
 //
 import firebaseAdmin from 'firebase-admin';
-type Firestore = firebaseAdmin.firestore.Firestore;
+export type Firestore = firebaseAdmin.firestore.Firestore; // TODO: try @google-cloud/Firestore
 
 export abstract class DataProcessor {
-  static firestore: Firestore;
+  protected firestore: Firestore;
 
-  constructor() {
-    if (!DataProcessor.firestore) {
-      firebaseAdmin.initializeApp(); // may need to pass credentials here
-      DataProcessor.firestore = firebaseAdmin.firestore();
+  constructor(firestore?: Firestore) {
+    this.firestore = firestore || this.initFirestore();
+  }
+
+  /**
+   * Create an authenticated Firestore client
+   */
+  protected initFirestore(): Firestore {
+    if (firebaseAdmin.apps.length == 0) {
+      firebaseAdmin.initializeApp();
     }
+    return firebaseAdmin.firestore();
   }
 
   /**

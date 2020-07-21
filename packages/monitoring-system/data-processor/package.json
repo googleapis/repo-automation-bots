@@ -7,7 +7,7 @@
     "pretest": "npm run compile",
     "fix": "gts fix",
     "lint": "gts check",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit ./build/test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit --recursive ./build/test",
     "start": "node ./build/src/task-service.js",
     "docker-start-local": "docker run --network=host data-processor:1.0",
     "docker-build-local": "docker build --tag data-processor:1.0 .",
@@ -20,6 +20,7 @@
   "author": "asonawalla@google.com",
   "license": "Apache-2.0",
   "dependencies": {
+    "@google-cloud/tasks": "^2.1.0",
     "express": "^4.17.1",
     "firebase-admin": "^9.0.0"
   },

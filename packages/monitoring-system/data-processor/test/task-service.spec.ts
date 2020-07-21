@@ -20,9 +20,7 @@ import {DataProcessor} from '../src/data-processors/data-processor-abstract';
 import express from 'express';
 import assert from 'assert';
 
-class MockDataProcessor implements DataProcessor {
-  static firestore: FirebaseFirestore.Firestore;
-
+class MockDataProcessor extends DataProcessor {
   shouldThrowError = false;
 
   throwError() {
