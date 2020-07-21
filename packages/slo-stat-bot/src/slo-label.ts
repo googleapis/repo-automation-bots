@@ -66,7 +66,7 @@ async function addLabel(
     err.message = `Error in adding ooslo label for org ${owner} in repo ${repo} since it does not exist \n ${err.message} \n ${err}`;
     throw err;
   }
-};
+}
 
 /**
  * Function removes ooslo label from the given issue or pr.

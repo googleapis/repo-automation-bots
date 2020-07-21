@@ -23,20 +23,20 @@ interface IssueLabelResponseItem {
 }
 
 interface IssueAssigneesItem {
-  login: string,
-  type: string,
-  site_admin: boolean
+  login: string;
+  type: string;
+  site_admin: boolean;
 }
 
 interface IssueListForRepoItem {
-  number: number,
+  number: number;
   user: {
-    login: string
-  },
-  labels: IssueLabelResponseItem[],
-  assignees: IssueAssigneesItem[],
-  created_at: string,
-  updated_at: string
+    login: string;
+  };
+  labels: IssueLabelResponseItem[];
+  assignees: IssueAssigneesItem[];
+  created_at: string;
+  updated_at: string;
 }
 
 /**
@@ -79,14 +79,7 @@ async function handleIssues(
     );
 
     if (sloStatus.appliesTo) {
-      await handleLabeling(
-        github,
-        owner,
-        repo,
-        number,
-        sloStatus,
-        labels
-      );
+      await handleLabeling(github, owner, repo, number, sloStatus, labels);
     }
   }
 }
@@ -139,11 +132,13 @@ async function getIssueList(
     const issueList = await github.issues.listForRepo({
       owner,
       repo,
-      state
+      state,
     });
     return issueList.data;
   } catch (err) {
-    console.error(`Error in getting list of issues from repo for repo ${repo} \n ${err}`);
+    console.error(
+      `Error in getting list of issues from repo for repo ${repo} \n ${err}`
+    );
     return null;
   }
 }
@@ -265,21 +260,21 @@ export = function handler(app: Application) {
   app.on(['schedule.repository'], async (context: Context) => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
-    
+
     const issueList = await getIssueList(context.github, owner, repo);
 
-    if(!issueList) {
+    if (!issueList) {
       return;
     }
 
-    for(const issue of issueList) {
+    for (const issue of issueList) {
       const number = issue.number;
       const createdAt = issue.created_at;
       const assignees = issue.assignees;
 
       const labels = issue.labels.map((label: IssueLabelResponseItem) =>
-      label.name.toLowerCase()
-    );
+        label.name.toLowerCase()
+      );
       const sloString = await getSloFile(context.github, owner, repo);
 
       await handleIssues(
@@ -294,5 +289,5 @@ export = function handler(app: Application) {
         labels
       );
     }
-  })
+  });
 };

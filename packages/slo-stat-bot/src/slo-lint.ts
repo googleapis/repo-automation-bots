@@ -68,7 +68,7 @@ async function listFiles(
     );
     return null;
   }
-};
+}
 
 /**
  * Function lints issue_slo_rules.json file and creates a check on PR. If file is invalid it will comment on PR
@@ -135,7 +135,7 @@ async function getFileShaContents(
     );
     return null;
   }
-};
+}
 
 /**
  * Function lints the issue_slo_rules.json against the slo schema
@@ -191,7 +191,7 @@ async function commentPR(
     );
     return;
   }
-};
+}
 
 /**
  * Function creates a success or failure check on pr based on validation results
@@ -199,10 +199,7 @@ async function commentPR(
  * @param validationRes validation results object that contains a boolean value if its valid or not and an error object if it is invalid
  * @returns void
  */
-async function createCheck(
-  context: Context,
-  validationRes: ValidationResults
-) {
+async function createCheck(context: Context, validationRes: ValidationResults) {
   let checkParams = context.repo({
     name: 'slo-rules-check',
     head_sha: context.payload.pull_request.head.sha,
@@ -229,7 +226,7 @@ async function createCheck(
     );
     return;
   }
-};
+}
 
 /**
  * Function checks for existence of changed issue_slo_rules.json file either on repo or org level.
