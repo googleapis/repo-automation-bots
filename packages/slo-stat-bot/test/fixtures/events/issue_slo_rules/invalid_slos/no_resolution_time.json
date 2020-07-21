@@ -1,0 +1,10 @@
+[
+    {
+        "appliesTo": {
+            "gitHubLabels": ["priority: P2", "bug"]
+        },
+        "complianceSettings": {
+            "responseTime": 0
+        }
+    }
+]

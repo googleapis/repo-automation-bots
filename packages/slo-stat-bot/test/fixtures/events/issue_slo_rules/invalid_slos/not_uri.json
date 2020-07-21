@@ -1,0 +1,14 @@
+[
+    {
+        "appliesTo": {
+            "issues": true
+        },
+        "complianceSettings": {
+            "responseTime": "4h",
+            "resolutionTime": 0,
+            "responders": {
+                "owners": ["has spaces"]
+            }
+        }
+    }
+]

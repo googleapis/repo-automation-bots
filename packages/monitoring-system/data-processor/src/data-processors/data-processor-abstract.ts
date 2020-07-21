@@ -11,9 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+import firebaseAdmin from 'firebase-admin';
+type Firestore = firebaseAdmin.firestore.Firestore;
 
-import {GCFBootstrapper} from 'gcf-utils';
-import {handler} from './sync-repo-settings';
+export abstract class DataProcessor {
+  static firestore: Firestore;
 
-const bootstrap = new GCFBootstrapper();
-module.exports['sync_repo_settings'] = bootstrap.gcf(handler);
+  constructor() {
+    if (!DataProcessor.firestore) {
+      firebaseAdmin.initializeApp(); // may need to pass credentials here
+      DataProcessor.firestore = firebaseAdmin.firestore();
+    }
+  }
+
+  /**
+   * Collect new data from data source, process it, and store it in the database
+   * @throws if there is an error while processing data source
+   */
+  public abstract async collectAndProcess(): Promise<void>;
+}

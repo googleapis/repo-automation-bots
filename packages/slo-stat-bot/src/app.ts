@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {GCFBootstrapper} from 'gcf-utils';
-import {handler} from './sync-repo-settings';
+import appFn from './slo-stat-label';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['sync_repo_settings'] = bootstrap.gcf(handler);
+module.exports['slo-stat-label'] = bootstrap.gcf(appFn);

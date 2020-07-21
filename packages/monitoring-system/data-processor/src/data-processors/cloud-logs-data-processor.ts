@@ -11,9 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+import {DataProcessor} from './data-processor-abstract';
 
-import {GCFBootstrapper} from 'gcf-utils';
-import {handler} from './sync-repo-settings';
-
-const bootstrap = new GCFBootstrapper();
-module.exports['sync_repo_settings'] = bootstrap.gcf(handler);
+export class CloudLogsProcessor extends DataProcessor {
+  public async collectAndProcess(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+}
