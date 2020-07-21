@@ -126,7 +126,6 @@ function parseActionValue(
     [key: string]: string | number;
   }
 ): string {
-
   const NO_ACTION_VALUE = 'NONE';
 
   // optional properties for issues.update
