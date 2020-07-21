@@ -14,14 +14,15 @@
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-import myProbotApp from '../src/blunderbuss';
-import {describe, it, beforeEach} from 'mocha';
+import * as blunderbuss from '../src/blunderbuss';
+import {describe, it, beforeEach, afterEach} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
+import * as sinon from 'sinon';
 
 nock.disableNetConnect();
 
@@ -33,6 +34,7 @@ global.console.warn = () => {};
 
 describe('Blunderbuss', () => {
   let probot: Probot;
+  const sandbox = sinon.createSandbox();
 
   beforeEach(() => {
     probot = new Probot({
@@ -49,8 +51,11 @@ describe('Blunderbuss', () => {
         return Promise.resolve('abc123');
       },
     };
-    probot.load(myProbotApp);
+    sandbox.stub(blunderbuss, 'sleep').resolves();
+    probot.load(blunderbuss.blunderbuss);
   });
+
+  afterEach(() => sandbox.restore());
 
   describe('issue tests', () => {
     it('assigns opened issues with no assignees', async () => {
@@ -217,7 +222,9 @@ describe('Blunderbuss', () => {
           snapshot(body);
           return true;
         })
-        .reply(200);
+        .reply(200)
+        .get('/repos/testOwner/testRepo/issues/5/labels')
+        .reply(200, [{name: 'api: foo'}]);
 
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       requests.done();

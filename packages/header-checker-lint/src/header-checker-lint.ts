@@ -13,15 +13,8 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
+import {Application, Octokit} from 'probot';
 import {LicenseType, detectLicenseHeader} from './header-parser';
-import {
-  ChecksCreateParams,
-  PullsListFilesResponse,
-  PullsListFilesResponseItem,
-  Response,
-  // eslint-disable-next-line node/no-extraneous-import
-} from '@octokit/rest';
 import * as minimatch from 'minimatch';
 
 type Conclusion =
@@ -90,7 +83,7 @@ export = (app: Application) => {
     const pullRequestCommitSha = context.payload.pull_request.head.sha;
 
     // TODO: handle pagination
-    let filesResponse: Response<PullsListFilesResponse>;
+    let filesResponse: Octokit.Response<Octokit.PullsListFilesResponse>;
     try {
       filesResponse = await context.github.pulls.listFiles(listFilesParams);
     } catch (err) {
@@ -98,7 +91,7 @@ export = (app: Application) => {
       app.log.error(err);
       return;
     }
-    const files: PullsListFilesResponseItem[] = filesResponse.data;
+    const files: Octokit.PullsListFilesResponseItem[] = filesResponse.data;
     const remoteConfiguration: ConfigurationOptions =
       ((await context.config(
         WELL_KNOWN_CONFIGURATION_FILE
@@ -180,7 +173,7 @@ export = (app: Application) => {
       }
     }
 
-    const checkParams: ChecksCreateParams = context.repo({
+    const checkParams: Octokit.ChecksCreateParams = context.repo({
       name: 'header-check',
       conclusion: 'success' as Conclusion,
       head_sha: pullRequestCommitSha,

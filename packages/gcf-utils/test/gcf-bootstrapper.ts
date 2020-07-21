@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFBootstrapper} from '../src/gcf-utils';
+import {
+  GCFBootstrapper,
+  TriggerType,
+  TriggerInfo,
+  WrapOptions,
+} from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {GitHubAPI} from 'probot/lib/github';
 import {Options} from 'probot';
@@ -22,15 +27,15 @@ import nock from 'nock';
 import assert from 'assert';
 import {v1} from '@google-cloud/secret-manager';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const repos = require('../../test/fixtures/repos.json');
-
 nock.disableNetConnect();
 
-function nockRepoList() {
-  return nock('https://raw.githubusercontent.com')
-    .get('/googleapis/sloth/master/repos.json')
-    .reply(200, repos);
+function nockListInstallationRepos() {
+  return (
+    nock('https://api.github.com/')
+      .get('/installation/repositories')
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      .reply(200, require('../../test/fixtures/installations.json'))
+  );
 }
 
 describe('GCFBootstrapper', () => {
@@ -59,7 +64,7 @@ describe('GCFBootstrapper', () => {
 
     let enqueueTask: sinon.SinonStub;
 
-    beforeEach(async () => {
+    async function mockBootstrapper(wrapOpts?: WrapOptions) {
       req = express.request;
 
       bootstrapper = new GCFBootstrapper();
@@ -68,7 +73,7 @@ describe('GCFBootstrapper', () => {
         .resolves({id: 1234, secret: 'foo', webhookPath: 'bar'});
 
       enqueueTask = sinon.stub(bootstrapper, 'enqueueTask');
-
+      sinon.stub(bootstrapper, 'getInstallationToken');
       handler = await bootstrapper.gcf(async app => {
         app.auth = () =>
           new Promise<GitHubAPI>(resolve => {
@@ -77,8 +82,8 @@ describe('GCFBootstrapper', () => {
         app.on('issues', spy);
         app.on('schedule.repository', spy);
         app.on('err', sinon.stub().throws());
-      });
-    });
+      }, wrapOpts);
+    }
 
     afterEach(() => {
       sendStub.reset();
@@ -89,12 +94,14 @@ describe('GCFBootstrapper', () => {
     });
 
     it('calls the event handler', async () => {
+      await mockBootstrapper();
       req.body = {
         installation: {id: 1},
       };
       req.headers = {};
       req.headers['x-github-event'] = 'issues';
       req.headers['x-github-delivery'] = '123';
+      // populated once this job has been executed by cloud tasks:
       req.headers['x-cloudtasks-taskname'] = 'my-task';
 
       await handler(req, response);
@@ -105,7 +112,27 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(spy);
     });
 
+    it('does not schedule task if background option is "false"', async () => {
+      await mockBootstrapper({
+        background: false,
+      });
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.calledOnce(sendStub);
+      sinon.assert.calledOnce(spy);
+    });
+
     it('does nothing if there are missing headers', async () => {
+      await mockBootstrapper();
       req.body = {
         installation: {id: 1},
       };
@@ -120,6 +147,7 @@ describe('GCFBootstrapper', () => {
     });
 
     it('returns 500 on errors', async () => {
+      await mockBootstrapper();
       req.body = {
         installtion: {id: 1},
       };
@@ -137,8 +165,9 @@ describe('GCFBootstrapper', () => {
     });
 
     it('ensures that task is enqueued when called by scheduler for one repo', async () => {
+      await mockBootstrapper();
       req.body = {
-        installtion: {id: 1},
+        installation: {id: 1},
         repo: 'firstRepo',
       };
       req.headers = {};
@@ -152,14 +181,15 @@ describe('GCFBootstrapper', () => {
     });
 
     it('ensures that task is enqueued when called by scheduler for many repos', async () => {
+      await mockBootstrapper();
       req.body = {
-        installtion: {id: 1},
+        installation: {id: 1},
       };
       req.headers = {};
       req.headers['x-github-event'] = 'schedule.repository';
       req.headers['x-github-delivery'] = '123';
       req.headers['x-cloudtasks-taskname'] = '';
-      nockRepoList();
+      nockListInstallationRepos();
 
       await handler(req, response);
 
@@ -167,6 +197,7 @@ describe('GCFBootstrapper', () => {
     });
 
     it('ensures that task is enqueued when called by Github', async () => {
+      await mockBootstrapper();
       req.body = {
         installtion: {id: 1},
       };
@@ -338,6 +369,93 @@ describe('GCFBootstrapper', () => {
       process.env.GCF_SHORT_FUNCTION_NAME = 'bar';
       const latest = bootstrapper.getSecretName();
       assert.strictEqual(latest, 'projects/foo/secrets/bar');
+    });
+  });
+
+  describe('buildTriggerInfo', () => {
+    it('returns correct scheduler trigger info', () => {
+      const requestBody = {};
+      const github_delivery_guid = '';
+      const triggerType = TriggerType.SCHEDULER;
+      const triggerInfo = GCFBootstrapper['buildTriggerInfo'](
+        triggerType,
+        github_delivery_guid,
+        requestBody
+      );
+      const expectedInfo = {
+        trigger: {
+          trigger_type: 'SCHEDULER',
+        },
+      };
+      assert.deepEqual(triggerInfo, expectedInfo);
+    });
+
+    it('returns correct task trigger info', () => {
+      const requestBody = {};
+      const github_delivery_guid = '1234';
+      const triggerType = TriggerType.TASK;
+      const triggerInfo: TriggerInfo = GCFBootstrapper['buildTriggerInfo'](
+        triggerType,
+        github_delivery_guid,
+        requestBody
+      );
+      const expectedInfo: TriggerInfo = {
+        trigger: {
+          trigger_type: TriggerType.TASK,
+          github_delivery_guid: '1234',
+        },
+      };
+      assert.deepEqual(triggerInfo, expectedInfo);
+    });
+
+    it('returns correct Github trigger info', () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const requestBody = require('../../test/fixtures/github-webhook-payload-all-info.json');
+      const github_delivery_guid = '1234';
+      const triggerType = TriggerType.GITHUB;
+      const triggerInfo = GCFBootstrapper['buildTriggerInfo'](
+        triggerType,
+        github_delivery_guid,
+        requestBody
+      );
+      const expectedInfo = {
+        trigger: {
+          trigger_type: 'GITHUB_WEBHOOK',
+          trigger_sender: 'testUser2',
+          github_delivery_guid: '1234',
+          trigger_source_repo: {
+            owner: 'testOwner',
+            owner_type: 'User',
+            repo_name: 'testRepo',
+          },
+        },
+      };
+      assert.deepEqual(triggerInfo, expectedInfo);
+    });
+
+    it('returns UNKNOWN for Github trigger info when information is unavailable', () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const requestBody = require('../../test/fixtures/github-webhook-payload-missing-info.json');
+      const github_delivery_guid = '';
+      const triggerType = TriggerType.GITHUB;
+      const triggerInfo: TriggerInfo = GCFBootstrapper['buildTriggerInfo'](
+        triggerType,
+        github_delivery_guid,
+        requestBody
+      );
+      const expectedInfo: TriggerInfo = {
+        trigger: {
+          trigger_type: TriggerType.GITHUB,
+          trigger_sender: 'UNKNOWN',
+          github_delivery_guid: '',
+          trigger_source_repo: {
+            owner: 'UNKNOWN',
+            owner_type: 'UNKNOWN',
+            repo_name: 'UNKNOWN',
+          },
+        },
+      };
+      assert.deepEqual(triggerInfo, expectedInfo);
     });
   });
 });

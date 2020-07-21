@@ -15,8 +15,11 @@
 import {createProbot, Probot, ApplicationFunction, Options} from 'probot';
 import {CloudTasksClient} from '@google-cloud/tasks';
 import {v1} from '@google-cloud/secret-manager';
-import {request} from 'gaxios';
 import * as express from 'express';
+import pino from 'pino';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+import SonicBoom from 'sonic-boom';
 
 const client = new CloudTasksClient();
 
@@ -31,6 +34,9 @@ interface Repos {
 
 interface Scheduled {
   repo?: string;
+  installation: {
+    id: number;
+  };
   message?: {[key: string]: string};
 }
 
@@ -39,6 +45,106 @@ interface EnqueueTaskParams {
   signature: string;
   id: string;
   name: string;
+}
+
+interface LogFn {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (msg: string, ...args: any[]): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (obj: object, msg?: string, ...args: any[]): void;
+}
+
+/**
+ * A logger standardized logger for Google Cloud Functions
+ */
+export interface GCFLogger {
+  trace: LogFn;
+  debug: LogFn;
+  info: LogFn;
+  warn: LogFn;
+  error: LogFn;
+  metric: LogFn;
+  flushSync: {(): void};
+}
+
+export interface WrapOptions {
+  background: boolean;
+}
+
+export const logger: GCFLogger = initLogger();
+
+export function initLogger(
+  dest?: NodeJS.WritableStream | SonicBoom
+): GCFLogger {
+  const defaultOptions: pino.LoggerOptions = {
+    customLevels: {
+      metric: 30,
+    },
+    level: 'trace',
+  };
+
+  dest = dest || pino.destination({sync: true});
+  const logger = pino(defaultOptions, dest);
+  Object.keys(logger).map(prop => {
+    if (logger[prop] instanceof Function) {
+      logger[prop] = logger[prop].bind(logger);
+    }
+  });
+
+  const flushSync = () => {
+    // flushSync is only available for SonicBoom,
+    // which is the default destination wrapper for GCFLogger
+    if (dest instanceof SonicBoom) {
+      dest.flushSync();
+    }
+  };
+
+  return {
+    ...logger,
+    metric: logger.metric.bind(logger),
+    flushSync: flushSync,
+  };
+}
+
+export interface CronPayload {
+  repository: {
+    name: string;
+    full_name: string;
+    owner: {
+      login: string;
+      name: string;
+    };
+  };
+  organization: {
+    login: string;
+  };
+  cron_org: string;
+}
+
+/**
+ * Type of function execution trigger
+ */
+export enum TriggerType {
+  GITHUB = 'GITHUB_WEBHOOK',
+  SCHEDULER = 'SCHEDULER',
+  TASK = 'TASK',
+  UNKNOWN = 'UNKNOWN',
+}
+
+/**
+ * Function trigger information
+ */
+export interface TriggerInfo {
+  trigger: {
+    trigger_type: TriggerType;
+    trigger_sender?: string;
+    github_delivery_guid?: string;
+    trigger_source_repo?: {
+      owner: string;
+      owner_type: string;
+      repo_name: string;
+    };
+  };
 }
 
 export class GCFBootstrapper {
@@ -86,35 +192,121 @@ export class GCFBootstrapper {
     return config as Options;
   }
 
+  /**
+   * Parse the event name, delivery id, signature and task id from the request headers
+   * @param request incoming trigger request
+   */
+  private static parseRequestHeaders(
+    request: express.Request
+  ): {name: string; id: string; signature: string; taskId: string} {
+    const name =
+      request.get('x-github-event') || request.get('X-GitHub-Event') || '';
+    const id =
+      request.get('x-github-delivery') ||
+      request.get('X-GitHub-Delivery') ||
+      '';
+    // TODO: add test to validate this signature is used on the initial
+    // webhook from GitHub:
+    const signature =
+      request.get('x-github-delivery') ||
+      request.get('X-GitHub-Delivery') ||
+      '';
+    const taskId =
+      request.get('X-CloudTasks-TaskName') ||
+      request.get('x-cloudtasks-taskname') ||
+      '';
+    return {name, id, signature, taskId};
+  }
+
+  /**
+   * Determine the type of trigger that started this execution
+   * @param name event name from header
+   * @param taskId task id from header
+   */
+  private static parseTriggerType(name: string, taskId: string): TriggerType {
+    if (
+      !taskId &&
+      (name === 'schedule.repository' || name === 'pubsub.message')
+    ) {
+      return TriggerType.SCHEDULER;
+    } else if (!taskId && name) {
+      return TriggerType.GITHUB;
+    } else if (name) {
+      return TriggerType.TASK;
+    }
+    return TriggerType.UNKNOWN;
+  }
+
+  /**
+   * Build a TriggerInfo object for this execution
+   * @param triggerType trigger type for this exeuction
+   * @param github_delivery_guid github delivery id for this exeuction
+   * @param requestBody body of the incoming trigger request
+   */
+  private static buildTriggerInfo(
+    triggerType: TriggerType,
+    github_delivery_guid: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    requestBody: {[key: string]: any}
+  ): TriggerInfo {
+    const triggerInfo: TriggerInfo = {
+      trigger: {
+        trigger_type: triggerType,
+      },
+    };
+
+    if (
+      triggerType === TriggerType.GITHUB ||
+      triggerType === TriggerType.TASK
+    ) {
+      triggerInfo.trigger.github_delivery_guid = github_delivery_guid;
+    }
+
+    if (triggerType === TriggerType.GITHUB) {
+      const sourceRepo = requestBody['repository'] || {};
+      const repoName: string = sourceRepo['name'] || 'UNKNOWN';
+      const repoOwner = sourceRepo['owner'] || {};
+      const ownerName: string = repoOwner['login'] || 'UNKNOWN';
+      const ownerType: string = repoOwner['type'] || 'UNKNOWN';
+      const sender = requestBody['sender'] || {};
+      const senderLogin: string = sender['login'] || 'UNKNOWN';
+
+      const webhookProperties = {
+        trigger_source_repo: {
+          repo_name: repoName,
+          owner: ownerName,
+          owner_type: ownerType,
+        },
+        trigger_sender: senderLogin,
+      };
+
+      triggerInfo.trigger = {...webhookProperties, ...triggerInfo.trigger};
+    }
+
+    return triggerInfo;
+  }
+
   gcf(
-    appFn: ApplicationFunction
+    appFn: ApplicationFunction,
+    wrapOptions?: WrapOptions
   ): (request: express.Request, response: express.Response) => Promise<void> {
+    wrapOptions = wrapOptions ?? {background: true};
     return async (request: express.Request, response: express.Response) => {
       // Otherwise let's listen handle the payload
       this.probot = this.probot || (await this.loadProbot(appFn));
+      const {name, id, signature, taskId} = GCFBootstrapper.parseRequestHeaders(
+        request
+      );
+      const triggerType: TriggerType = GCFBootstrapper.parseTriggerType(
+        name,
+        taskId
+      );
 
-      // Determine incoming webhook event type
-      const name =
-        request.get('x-github-event') || request.get('X-GitHub-Event') || '';
-      const id =
-        request.get('x-github-delivery') ||
-        request.get('X-GitHub-Delivery') ||
-        '';
-      // TODO: add test to validate this signature is used on the initial
-      // webhook from GitHub:
-      const signature =
-        request.get('x-github-delivery') ||
-        request.get('X-GitHub-Delivery') ||
-        '';
-      const taskId =
-        request.get('X-CloudTasks-TaskName') ||
-        request.get('x-cloudtasks-taskname') ||
-        '';
-      if (
-        !taskId &&
-        (name === 'schedule.repository' || name === 'pubsub.message')
-      ) {
-        // We have come in from a scheduler:
+      logger.metric(
+        GCFBootstrapper.buildTriggerInfo(triggerType, id, request.body)
+      );
+
+      if (triggerType === TriggerType.SCHEDULER) {
         // TODO: currently we assume that scheduled events walk all repos
         // managed by the client libraries team, it would be good to get more
         // clever and instead pull up a list of repos we're installed on by
@@ -131,15 +323,29 @@ export class GCFBootstrapper {
           statusCode: 200,
           body: JSON.stringify({message: 'Executed'}),
         });
-      } else if (!taskId && name) {
-        // We have come in from a GitHub webhook:
+      } else if (triggerType === TriggerType.GITHUB) {
         try {
-          await this.enqueueTask({
-            id,
-            name,
-            signature,
-            body: JSON.stringify(request.body),
-          });
+          if (wrapOptions?.background) {
+            // by default, jobs are run through a background task, this has
+            // the benefit of supporting retries, and giving us more insight
+            // into failing payloads:
+            console.info('scheduling cloud task');
+            await this.enqueueTask({
+              id,
+              name,
+              signature,
+              body: JSON.stringify(request.body),
+            });
+          } else {
+            // a bot can opt out of running through tasks, some bots do this
+            // due to large payload sizes:
+            console.info('skipping cloud tasks');
+            await this.probot.receive({
+              name,
+              id,
+              payload: request.body,
+            });
+          }
         } catch (err) {
           response.status(500).send({
             body: JSON.stringify({message: err}),
@@ -151,8 +357,7 @@ export class GCFBootstrapper {
           body: JSON.stringify({message: 'Executed'}),
         });
         return;
-      } else if (name) {
-        // we have come in from our task:
+      } else if (triggerType === TriggerType.TASK) {
         try {
           await this.probot.receive({
             name,
@@ -173,6 +378,7 @@ export class GCFBootstrapper {
       } else {
         response.sendStatus(400);
       }
+      logger.flushSync();
     };
   }
 
@@ -195,15 +401,35 @@ export class GCFBootstrapper {
       // Job was scheduled for a single repository:
       await this.scheduledToTask(body.repo, id, body, eventName, signature);
     } else {
-      // Job should be run on all managed repositories:
-      const url =
-        'https://raw.githubusercontent.com/googleapis/sloth/master/repos.json';
-      const res = await request<Repos>({url});
-      const {repos} = res.data;
-      for (const repo of repos) {
-        await this.scheduledToTask(repo.repo, id, body, eventName, signature);
+      const octokit = new Octokit({
+        auth: await this.getInstallationToken(body.installation.id),
+      });
+      // Installations API documented here: https://developer.github.com/v3/apps/installations/
+      const installationsPaginated = octokit.paginate.iterator({
+        url: '/installation/repositories',
+        method: 'GET',
+        headers: {
+          Accept: 'application/vnd.github.machine-man-preview+json',
+        },
+      });
+      for await (const response of installationsPaginated) {
+        for (const repo of response.data) {
+          await this.scheduledToTask(
+            repo.full_name,
+            id,
+            body,
+            eventName,
+            signature
+          );
+        }
       }
     }
+  }
+
+  async getInstallationToken(installationId: number) {
+    return await this.probot!.app!.getInstallationAccessToken({
+      installationId,
+    });
   }
 
   private async scheduledToTask(
@@ -221,6 +447,10 @@ export class GCFBootstrapper {
       repository: {
         name: repoName,
         full_name: repoFullName,
+        owner: {
+          login: orgName,
+          name: orgName,
+        },
       },
       organization: {
         login: orgName,
