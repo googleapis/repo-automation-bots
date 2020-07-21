@@ -26,7 +26,7 @@ export abstract class DataProcessor {
    * Create an authenticated Firestore client
    */
   protected initFirestore(): Firestore {
-    if (firebaseAdmin.apps.length == 0) {
+    if (firebaseAdmin.apps.length === 0) {
       firebaseAdmin.initializeApp();
     }
     return firebaseAdmin.firestore();

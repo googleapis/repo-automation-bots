@@ -20,25 +20,36 @@ import {CloudTasksProcessor} from '../../src/data-processors/cloud-tasks-data-pr
 describe('Cloud Tasks Data Processor', () => {
   describe('getQueueNames()', () => {
     it('returns queue names from firestore', () => {
-      const app = firebaseAdmin.initializeApp({
-        credential: firebaseAdmin.credential.cert(
-          require(resolve('./test/data-processors/firestore-service-key.json'))
-        ),
-      }, "cloud_tasks_test");
+      const app = firebaseAdmin.initializeApp(
+        {
+          credential: firebaseAdmin.credential.cert(
+            require(resolve(
+              './test/data-processors/firestore-service-key.json'
+            ))
+          ),
+        },
+        'cloud_tasks_test'
+      );
       const firestore = firebaseAdmin.firestore(app);
       const processor = new CloudTasksProcessor(firestore);
       return processor['getBotNames']()
-      .then(names => console.log(names))
-      .catch(error => console.log(error))
+        .then(names => console.log(names))
+        .catch(error => console.log(error));
     });
   });
   describe('getQueueNames()', () => {
     it('gets task queue status from Cloud Task', () => {
-      process.env.GOOGLE_APPLICATION_CREDENTIALS = resolve('test/data-processors/cloud-tasks-service-key.json');
+      process.env.GOOGLE_APPLICATION_CREDENTIALS = resolve(
+        'test/data-processors/cloud-tasks-service-key.json'
+      );
       const processor = new CloudTasksProcessor();
-      return processor['getTaskQueueStatus']('aziz-sonawalla-test', 'us-east1', ['sample-bot-queue'])
-      .then(status => console.log(status))
-      .catch(error => console.log(error))
+      return processor['getTaskQueueStatus'](
+        'aziz-sonawalla-test',
+        'us-east1',
+        ['sample-bot-queue']
+      )
+        .then(status => console.log(status))
+        .catch(error => console.log(error));
     });
   });
 });
