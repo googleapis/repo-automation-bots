@@ -29,7 +29,7 @@
       "lint": "gts check"
     },
     "dependencies": {
-      "gcf-utils": "5.0.1",
+      "gcf-utils": "5.2.2",
       "@octokit/rest": "^18.0.0",
       "probot": "^9.11.3"
     },
