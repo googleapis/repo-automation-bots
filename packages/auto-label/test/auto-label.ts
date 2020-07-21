@@ -16,7 +16,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Octokit} from 'probot';
-import {describe, it, beforeEach, afterEach} from 'mocha';
+import {describe, it, beforeEach} from 'mocha';
 import nock from 'nock';
 import * as assert from 'assert';
 import {resolve} from 'path';
@@ -474,9 +474,9 @@ describe('auto-label', () => {
 
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/issues')
-        .reply(200, {
+        .reply(200, [{
           number: 1,
-        })
+        }])
         .get('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200)
         .post('/repos/testOwner/testRepo/labels', {
