@@ -16,7 +16,7 @@ import {describe, it, beforeEach} from 'mocha';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
-import handler from '../src/sync-repo-settings';
+import {handler} from '../src/sync-repo-settings';
 
 nock.disableNetConnect();
 
@@ -87,21 +87,29 @@ describe('Sync repo settings', () => {
   });
 
   it('should ignore repos in ignored repos in required-checks.json', async () => {
-    const scope = nockLanguagesList('googleapis', 'api-common-java', {java: 1});
+    const org = 'googleapis';
+    const repo = 'api-common-java';
+    const scopes = [
+      nockLanguagesList(org, repo, {java: 1}),
+      nockUpdateTeamMembership('yoshi-admins', org, repo),
+      nockUpdateTeamMembership('yoshi-java-admins', org, repo),
+      nockUpdateTeamMembership('yoshi-java', org, repo),
+      nockUpdateTeamMembership('java-samples-reviewers', org, repo),
+    ];
     await probot.receive({
       name: 'schedule.repository',
       payload: {
         repository: {
-          name: 'api-common-java',
+          name: repo,
         },
         organization: {
-          login: 'googleapis',
+          login: org,
         },
-        cron_org: 'googleapis',
+        cron_org: org,
       },
       id: 'abc123',
     });
-    scope.done();
+    scopes.forEach(x => x.done());
   });
 
   it('should skip for the wrong context', async () => {
@@ -150,11 +158,13 @@ describe('Sync repo settings', () => {
   });
 
   it('should override master branch protection if the repo is overridden', async () => {
+    const org = 'googleapis';
+    const repo = 'google-api-java-client';
     const scopes = [
-      nockLanguagesList('googleapis', 'google-api-java-client', {java: 1}),
-      nockUpdateRepoSettings('google-api-java-client', false, true),
+      nockLanguagesList(org, repo, {java: 1}),
+      nockUpdateRepoSettings(repo, false, true),
       nockUpdateBranchProtection(
-        'google-api-java-client',
+        repo,
         [
           'Kokoro - Test: Binary Compatibility',
           'Kokoro - Test: Java 11',
@@ -165,21 +175,10 @@ describe('Sync repo settings', () => {
         ],
         false
       ),
-      nockUpdateTeamMembership(
-        'yoshi-admins',
-        'googleapis',
-        'google-api-java-client'
-      ),
-      nockUpdateTeamMembership(
-        'yoshi-java-admins',
-        'googleapis',
-        'google-api-java-client'
-      ),
-      nockUpdateTeamMembership(
-        'yoshi-java',
-        'googleapis',
-        'google-api-java-client'
-      ),
+      nockUpdateTeamMembership('yoshi-admins', org, repo),
+      nockUpdateTeamMembership('yoshi-java-admins', org, repo),
+      nockUpdateTeamMembership('yoshi-java', org, repo),
+      nockUpdateTeamMembership('java-samples-reviewers', org, repo),
     ];
     await probot.receive({
       name: 'schedule.repository',
