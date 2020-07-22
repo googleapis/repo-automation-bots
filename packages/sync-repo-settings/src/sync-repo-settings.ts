@@ -146,21 +146,34 @@ async function updateMasterBranchProtection(repo: Repo, context: Context) {
       checks = customConfig.requiredStatusChecks;
     }
   }
-  await context.github.repos.updateBranchProtection({
-    branch: 'master',
-    owner,
-    repo: name,
-    required_pull_request_reviews: {
-      dismiss_stale_reviews: false,
-      require_code_owner_reviews: false,
-    },
-    required_status_checks: {
-      contexts: checks,
-      strict: config.requireUpToDateBranch,
-    },
-    enforce_admins: true,
-    restrictions: null!,
-  });
+  try {
+    await context.github.repos.updateBranchProtection({
+      branch: 'master',
+      owner,
+      repo: name,
+      required_pull_request_reviews: {
+        dismiss_stale_reviews: false,
+        require_code_owner_reviews: false,
+      },
+      required_status_checks: {
+        contexts: checks,
+        strict: config.requireUpToDateBranch,
+      },
+      enforce_admins: true,
+      restrictions: null!,
+    });
+  } catch (err) {
+    if (err.status === 401) {
+      console.warn(
+        `updateMasterBranchProtection: warning received ${err.status} updating ${owner}/${name}`
+      );
+    } else {
+      console.error(
+        `updateMasterBranchProtection: error received ${err.status} updating ${owner}/${name}`
+      );
+      throw err;
+    }
+  }
   console.log(`Success updating master branch protection for ${repo.repo}`);
 }
 
@@ -193,17 +206,34 @@ async function updateRepoTeams(repo: Repo, context: Context) {
   console.log(`Update team access for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
   const teamsToAdd = getRepoTeams(repo.language);
-  await Promise.all(
-    teamsToAdd.map(membership => {
-      return context.github.teams.addOrUpdateRepoInOrg({
-        team_slug: membership.slug,
-        owner,
-        org: owner,
-        permission: membership.permission as 'push',
-        repo: name,
-      });
-    })
-  );
+  try {
+    await Promise.all(
+      teamsToAdd.map(membership => {
+        return context.github.teams.addOrUpdateRepoInOrg({
+          team_slug: membership.slug,
+          owner,
+          org: owner,
+          permission: membership.permission as 'push',
+          repo: name,
+        });
+      })
+    );
+  } catch (err) {
+    const knownErrors = [
+      401, // bot does not have permission to access this repository.
+      404, // team being added does not exist on repo.
+    ];
+    if (knownErrors.includes(err.status)) {
+      console.warn(
+        `updateRepoTeams: warning received ${err.status} updating ${owner}/${name}`
+      );
+    } else {
+      console.error(
+        `updateRepoTeams: error received ${err.status} updating ${owner}/${name}`
+      );
+      throw err;
+    }
+  }
   console.log(`Success updating repo in org for ${repo.repo}`);
 }
 
@@ -223,13 +253,30 @@ async function updateRepoOptions(repo: Repo, context: Context) {
   console.log(`enable rebase? ${config.enableRebaseMerge}`);
   console.log(`enable squash? ${config.enableSquashMerge}`);
 
-  await context.github.repos.update({
-    name,
-    repo: name,
-    owner,
-    allow_merge_commit: false,
-    allow_rebase_merge: config.enableRebaseMerge,
-    allow_squash_merge: config.enableSquashMerge,
-  });
+  try {
+    await context.github.repos.update({
+      name,
+      repo: name,
+      owner,
+      allow_merge_commit: false,
+      allow_rebase_merge: config.enableRebaseMerge,
+      allow_squash_merge: config.enableSquashMerge,
+    });
+  } catch (err) {
+    const knownErrors = [
+      401, // bot does not have permission to access this repository.
+      403, // thrown if repo is archived.
+    ];
+    if (knownErrors.includes(err.status)) {
+      console.warn(
+        `updateRepoOptions: warning received ${err.status} updating ${owner}/${name}`
+      );
+    } else {
+      console.error(
+        `updateRepoOptions: error received ${err.status} updating ${owner}/${name}`
+      );
+      throw err;
+    }
+  }
   console.log(`Success updating repo options for ${repo.repo}`);
 }
