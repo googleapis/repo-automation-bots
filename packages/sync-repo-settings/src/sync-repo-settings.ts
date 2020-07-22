@@ -165,11 +165,11 @@ async function updateMasterBranchProtection(repo: Repo, context: Context) {
   } catch (err) {
     if (err.status === 401) {
       console.warn(
-        `updateMasterBranchProtection: received 401 error updating ${owner}/${name}`
+        `updateMasterBranchProtection: warning received ${err.status} updating ${owner}/${name}`
       );
     } else {
       console.error(
-        `updateMasterBranchProtection: received ${err.status} error updating ${owner}/${name}`
+        `updateMasterBranchProtection: error received ${err.status} updating ${owner}/${name}`
       );
       throw err;
     }
@@ -225,11 +225,11 @@ async function updateRepoTeams(repo: Repo, context: Context) {
     ];
     if (knownErrors.includes(err.status)) {
       console.warn(
-        `updateRepoTeams: received 401 error updating ${owner}/${name}`
+        `updateRepoTeams: warning received ${err.status} updating ${owner}/${name}`
       );
     } else {
       console.error(
-        `updateRepoTeams: received ${err.status} error updating ${owner}/${name}`
+        `updateRepoTeams: error received ${err.status} updating ${owner}/${name}`
       );
       throw err;
     }
@@ -263,13 +263,17 @@ async function updateRepoOptions(repo: Repo, context: Context) {
       allow_squash_merge: config.enableSquashMerge,
     });
   } catch (err) {
-    if (err.status === 401) {
+    const knownErrors = [
+      401, // bot does not have permission to access this repository.
+      403, // thrown if repo is archived.
+    ];
+    if (knownErrors.includes(err.status)) {
       console.warn(
-        `updateRepoOptions: received 401 error updating ${owner}/${name}`
+        `updateRepoOptions: warning received ${err.status} updating ${owner}/${name}`
       );
     } else {
       console.error(
-        `updateRepoOptions: received ${err.status} error updating ${owner}/${name}`
+        `updateRepoOptions: error received ${err.status} updating ${owner}/${name}`
       );
       throw err;
     }
