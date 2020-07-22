@@ -36,6 +36,10 @@
     "probot": "^9.11.3"
   },
   "devDependencies": {
+<<<<<<< HEAD
+=======
+    "@types/sinon": "^9.0.4",
+>>>>>>> 74f078382dd9377655874adc3044c48e02ad8550
     "@types/body-parser": "^1.17.0",
     "@types/bunyan": "^1.8.6",
     "@types/dotenv": "^6.1.1",
