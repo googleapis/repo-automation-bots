@@ -43,31 +43,33 @@ async function handleIssues(
   const sloList = JSON.parse(sloString);
 
   for (const slo of sloList) {
-    const issueNumber = context.payload[type].number;
-    const issueCreatedTime = context.payload[type].created_at;
+    const number = context.payload[type].number;
+    const createdAt = context.payload[type].created_at;
     const assignees = context.payload[type].assignees;
 
     const sloStatus = await sloLogic.getSloStatus(
       context.github,
       owner,
       repo,
-      issueCreatedTime,
+      createdAt,
       assignees,
-      issueNumber,
+      number,
       type,
       slo,
       labels
     );
 
     if (sloStatus.appliesTo) {
-      await handleLabeling(
-        context.github,
-        owner,
-        repo,
-        issueNumber,
-        sloStatus,
-        labels
+      await handleLabeling(context, owner, repo, number, sloStatus, labels);
+    }
+
+    if (sloStatus.isCompliant === false) {
+      console.log(
+        `Issue number ${number} is not compliant for slo: \n ${JSON.stringify(
+          slo
+        )}`
       );
+      break;
     }
   }
 }
@@ -121,9 +123,9 @@ export = function handler(app: Application) {
     async (context: Context) => {
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
-      const pullNumber = context.payload.number;
+      const number = context.payload.number;
 
-      await handleLint(context, owner, repo, pullNumber);
+      await handleLint(context, owner, repo, number);
     }
   );
   app.on(
@@ -161,15 +163,16 @@ export = function handler(app: Application) {
 
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
-    const issueNumber = context.payload[type].number;
+    const number = context.payload[type].number;
     const labelsResponse = context.payload[type].labels;
 
     const labels = labelsResponse.map((label: IssueLabelResponseItem) =>
       label.name.toLowerCase()
     );
-    const name = getLabelName();
+
+    const name = await getLabelName(context);
     if (labels?.includes(name)) {
-      await removeIssueLabel(context.github, owner, repo, issueNumber, name);
+      await removeIssueLabel(context.github, owner, repo, number, name);
     }
   });
   app.on(

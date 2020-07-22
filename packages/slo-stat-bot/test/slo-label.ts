@@ -17,6 +17,7 @@ import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
 import nock from 'nock';
+import * as fs from 'fs';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 
 // eslint-disable-next-line node/no-extraneous-import
@@ -53,13 +54,15 @@ describe('slo-label', () => {
     probot.load(handler);
   });
   describe('handle_labels', () => {
+    const config = fs.readFileSync(
+      resolve(fixturesPath, 'config', 'label_name.yml')
+    );
+
     let payload: Webhooks.WebhookPayloadPullRequest;
-    let getLabelNameStub: sinon.SinonStub;
     let getSloStatusStub: sinon.SinonStub;
 
     beforeEach(() => {
       getSloStatusStub = sinon.stub(sloLogic, 'getSloStatus');
-      getLabelNameStub = sinon.stub(sloLabel, 'getLabelName');
     });
 
     afterEach(() => {
@@ -71,11 +74,14 @@ describe('slo-label', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
       const requests = nock('https://api.github.com')
+        .log(console.log)
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         })
+        .get('/repos/testOwner/testRepo/contents/.github/label_name.yml')
+        .reply(200, {content: config.toString('base64')})
         .post('/repos/testOwner/testRepo/issues/5/labels', body => {
           snapshot(body);
           return true;
@@ -83,8 +89,6 @@ describe('slo-label', () => {
         .reply(200);
 
       getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: false});
-      getLabelNameStub.onCall(0).returns('ooslo');
-
       await probot.receive({
         name: 'issues.opened',
         payload,
@@ -101,10 +105,11 @@ describe('slo-label', () => {
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
-        });
+        })
+        .get('/repos/testOwner/testRepo/contents/.github/label_name.yml')
+        .reply(200, {content: config.toString('base64')});
 
       getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: false});
-      getLabelNameStub.onCall(0).returns('ooslo');
       await probot.receive({
         name: 'issues.opened',
         payload,
@@ -122,11 +127,11 @@ describe('slo-label', () => {
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
-        });
+        })
+        .get('/repos/testOwner/testRepo/contents/.github/label_name.yml')
+        .reply(200, {content: config.toString('base64')});
 
       getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: true});
-      getLabelNameStub.onCall(0).returns('ooslo');
-
       await probot.receive({
         name: 'issues.opened',
         payload,
@@ -145,11 +150,11 @@ describe('slo-label', () => {
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         })
         .delete('/repos/testOwner/testRepo/issues/5/labels/ooslo')
-        .reply(200);
+        .reply(200)
+        .get('/repos/testOwner/testRepo/contents/.github/label_name.yml')
+        .reply(200, {content: config.toString('base64')});
 
       getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: true});
-      getLabelNameStub.onCall(0).returns('ooslo');
-
       await probot.receive({
         name: 'issues.opened',
         payload,

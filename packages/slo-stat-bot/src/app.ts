@@ -16,4 +16,4 @@ import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './slo-bot';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['slo-bot'] = bootstrap.gcf(appFn);
+module.exports.slo_stat_bot = bootstrap.gcf(appFn);
