@@ -170,7 +170,7 @@ handler.autoDetectLabel = (
   jsonArray: JSONData[],
   title: string
 ): string | undefined => {
-  if (!jsonArray) {
+  if (!jsonArray || !title) {
     return undefined;
   }
   let firstPart = title.split(':')[0]; // Before the colon, if there is one.
@@ -402,16 +402,19 @@ function handler(app: Application) {
 
       //goes through issues in repository, adds labels as necessary
       for await (const response of context.github.paginate.iterator(issues)) {
-        const issue = response.data;
-        if (!issue.pull_request) {
-          await handler.addLabeltoRepoAndIssue(
-            owner,
-            repo,
-            issue.number,
-            issue.title,
-            jsonArray,
-            context.github
-          );
+        const issues = response.data;
+        //goes through each issue in each page
+        for (const issue of issues) {
+          if (!issue.pull_request) {
+            await handler.addLabeltoRepoAndIssue(
+              owner,
+              repo,
+              issue.number,
+              issue.title,
+              jsonArray,
+              context.github
+            );
+          }
         }
       }
     }
