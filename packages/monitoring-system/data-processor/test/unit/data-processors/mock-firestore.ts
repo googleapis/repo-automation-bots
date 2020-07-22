@@ -20,25 +20,30 @@ import {
   DocumentData,
 } from '@google-cloud/firestore';
 
-interface mockQuerySnapshot {
-  docs: mockQueryDocumentSnapshot[];
+export interface Data {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
 }
 
-interface mockQueryDocumentSnapshot {
+interface MockQuerySnapshot {
+  docs: MockQueryDocumentSnapshot[];
+}
+
+interface MockQueryDocumentSnapshot {
   exists: boolean;
-  data: () => {[key: string]: any};
+  data: () => Data;
 }
 
 /**
  * A class to mimic Firestore's NodeJS library
  */
 export class MockFirestore extends Firestore {
-  mockData: {[key: string]: any};
-  queryDelayMs: number = 50;
-  collectionShouldThrow: boolean = false;
-  setShouldThrow: boolean = false;
+  mockData: Data;
+  queryDelayMs = 50;
+  collectionShouldThrow = false;
+  setShouldThrow = false;
 
-  constructor(mockData?: {[key: string]: any}, settings?: Settings) {
+  constructor(mockData?: Data, settings?: Settings) {
     super(settings);
     this.mockData = mockData || {};
   }
@@ -47,7 +52,7 @@ export class MockFirestore extends Firestore {
    * Set the internal mock data to be returned by MockFirestore
    * @param mockData the mock data
    */
-  setMockData(mockData: {[key: string]: any}) {
+  setMockData(mockData: Data) {
     this.mockData = mockData;
   }
 
@@ -69,7 +74,6 @@ export class MockFirestore extends Firestore {
   }
 
   public collection(collectionPath: string): CollectionReference<DocumentData> {
-    
     if (this.collectionShouldThrow) {
       throw new Error('Mock error');
     }
@@ -78,7 +82,7 @@ export class MockFirestore extends Firestore {
       get: () => this.resolveAfterDelay(this.getQuerySnapshot(collectionPath)),
       doc: (docPath: string) => {
         return {
-          set: (data: {[key: string]: any}) => {
+          set: (data: Data) => {
             if (this.setShouldThrow) {
               this.rejectAfterDelay(null);
             }
@@ -94,22 +98,23 @@ export class MockFirestore extends Firestore {
     };
 
     // recast as unknown to avoid mocking all internal objects
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (collection as unknown) as any;
   }
 
-  private resolveAfterDelay(result: any): Promise<any> {
+  private resolveAfterDelay(result: Data | null): Promise<Data | null> {
     return new Promise(resolve => {
       setTimeout(() => resolve(result), this.queryDelayMs);
     });
   }
 
-  private rejectAfterDelay(result: any): Promise<any> {
+  private rejectAfterDelay(result: Data | null): Promise<Data | null> {
     return new Promise(reject => {
       setTimeout(() => reject(result), this.queryDelayMs);
     });
   }
 
-  private getDocFromPath(root: {[key: string]: any}, path: string) {
+  private getDocFromPath(root: Data, path: string) {
     const parts = path.split('/');
     let doc = root;
     for (const key of parts) {
@@ -121,13 +126,13 @@ export class MockFirestore extends Firestore {
     return doc;
   }
 
-  private getQuerySnapshot(collectionPath: string): mockQuerySnapshot {
+  private getQuerySnapshot(collectionPath: string): MockQuerySnapshot {
     const collection = this.getDocFromPath(this.mockData, collectionPath);
     return {docs: collection ? this.createQuerySnapshot(collection) : []};
   }
 
-  private createQuerySnapshot(data: any): mockQueryDocumentSnapshot[] {
-    const snapshot: mockQueryDocumentSnapshot[] = [];
+  private createQuerySnapshot(data: Data): MockQueryDocumentSnapshot[] {
+    const snapshot: MockQueryDocumentSnapshot[] = [];
 
     if (!data || Object.keys(data).length === 0) {
       return snapshot;

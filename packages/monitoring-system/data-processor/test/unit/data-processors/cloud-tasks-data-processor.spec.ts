@@ -17,14 +17,13 @@ import assert from 'assert';
 import {CloudTasksProcessor} from '../../../src/data-processors/cloud-tasks-data-processor';
 import {CloudTasksClient, protos} from '@google-cloud/tasks';
 import sinon from 'sinon';
-import {MockFirestore} from './mock-firestore';
+import {MockFirestore, Data} from './mock-firestore';
 
 class DummyTask implements protos.google.cloud.tasks.v2.ITask {}
 let MockTaskQueueData: {[parent: string]: [DummyTask, null, null]};
-let mockFirestoreData1: {[key: string]: any};
-let mockFirestoreData2: {[key: string]: any};
-let mockFirestoreData3: {[key: string]: any};
-
+let mockFirestoreData1: Data;
+let mockFirestoreData2: Data;
+let mockFirestoreData3: Data;
 
 function resetMockData() {
   MockTaskQueueData = {
@@ -34,7 +33,7 @@ function resetMockData() {
       null,
     ],
   };
-  
+
   mockFirestoreData1 = {
     Bot: {
       ID1: {
@@ -48,11 +47,11 @@ function resetMockData() {
       },
     },
   };
-  
+
   mockFirestoreData2 = {
     Bot: {},
   };
-  
+
   mockFirestoreData3 = {
     Task_Queue_Status: {},
   };
@@ -96,7 +95,7 @@ describe('Cloud Tasks Data Processor', () => {
       mockFirestore.throwOnCollection();
 
       return processor['getBotNames']()
-        .catch(error => {
+        .catch(() => {
           thrown = true;
         })
         .finally(() => {
@@ -154,28 +153,28 @@ describe('Cloud Tasks Data Processor', () => {
         queue3: 50,
       };
       return processor['storeTaskQueueStatus'](queueStatus1)
-      .then(() => {
-        return processor['storeTaskQueueStatus'](queueStatus2)
-      })
-      .then(() => {
-        const root = mockFirestoreData3.Task_Queue_Status;
-        const entry_keys = Object.keys(root);
-        assert(entry_keys.length === 6);
-        for (const key of entry_keys) {
-          const parts = key.split('_');
-          const name = root[key].queue_name;
-          const timestamp = root[key].timestamp;
-          const in_queue = root[key].in_queue;
+        .then(() => {
+          return processor['storeTaskQueueStatus'](queueStatus2);
+        })
+        .then(() => {
+          const root = mockFirestoreData3.Task_Queue_Status;
+          const entry_keys = Object.keys(root);
+          assert(entry_keys.length === 6);
+          for (const key of entry_keys) {
+            const parts = key.split('_');
+            const name = root[key].queue_name;
+            const timestamp = root[key].timestamp;
+            const in_queue = root[key].in_queue;
 
-          assert.equal(name, parts[0]);
-          assert.equal(timestamp, parts[1]);
-          assert(Object.keys(queueStatus1).indexOf(name) > -1);
-          assert.equal(queueStatus1[name], in_queue);
-        }
-      });
+            assert.equal(name, parts[0]);
+            assert.equal(timestamp, parts[1]);
+            assert(Object.keys(queueStatus1).indexOf(name) > -1);
+            assert.equal(queueStatus1[name], in_queue);
+          }
+        });
     });
   });
-  
+
   describe('getTaskQueueStatus()', () => {
     it('gets task queue status from Cloud Task', () => {
       const mockTasksClient = new CloudTasksClient();
@@ -184,7 +183,7 @@ describe('Cloud Tasks Data Processor', () => {
         .callsFake((project, location, queue) => {
           return `${project}/${location}/${queue}`;
         });
-      sinon.stub(mockTasksClient, 'listTasks').callsFake((request, options) => {
+      sinon.stub(mockTasksClient, 'listTasks').callsFake(request => {
         const result = request?.parent ? MockTaskQueueData[request.parent] : [];
         return new Promise(resolve => resolve(result));
       });

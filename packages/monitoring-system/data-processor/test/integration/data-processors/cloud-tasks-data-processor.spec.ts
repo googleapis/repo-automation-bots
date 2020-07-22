@@ -23,6 +23,7 @@ describe('Cloud Tasks Data Processor', () => {
       const app = firebaseAdmin.initializeApp(
         {
           credential: firebaseAdmin.credential.cert(
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
             require(resolve(
               './test/integration/data-processors/firestore-service-key.json'
             ))
@@ -57,6 +58,7 @@ describe('Cloud Tasks Data Processor', () => {
       const app = firebaseAdmin.initializeApp(
         {
           credential: firebaseAdmin.credential.cert(
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
             require(resolve(
               './test/integration/data-processors/firestore-service-key.json'
             ))

@@ -125,8 +125,7 @@ export class CloudTasksProcessor extends DataProcessor {
 
     for (const queueName of Object.keys(queueStatus)) {
       const docKey = `${queueName}_${currentTimestamp}`;
-      const writePromise = collectionRef.doc(docKey)
-      .set({
+      const writePromise = collectionRef.doc(docKey).set({
         timestamp: currentTimestamp,
         queue_name: queueName,
         in_queue: queueStatus[queueName],
