@@ -15,7 +15,7 @@
 import {describe, it} from 'mocha';
 import firebaseAdmin from 'firebase-admin';
 import {resolve} from 'path';
-import {CloudTasksProcessor} from '../../src/data-processors/cloud-tasks-data-processor';
+import {CloudTasksProcessor} from '../../../src/data-processors/cloud-tasks-data-processor';
 
 describe('Cloud Tasks Data Processor', () => {
   describe('getQueueNames()', () => {
@@ -24,7 +24,7 @@ describe('Cloud Tasks Data Processor', () => {
         {
           credential: firebaseAdmin.credential.cert(
             require(resolve(
-              './test/data-processors/firestore-service-key.json'
+              './test/integration/data-processors/firestore-service-key.json'
             ))
           ),
         },
@@ -40,7 +40,7 @@ describe('Cloud Tasks Data Processor', () => {
   describe('getQueueNames()', () => {
     it('gets task queue status from Cloud Task', () => {
       process.env.GOOGLE_APPLICATION_CREDENTIALS = resolve(
-        'test/data-processors/cloud-tasks-service-key.json'
+        'test/integration/data-processors/cloud-tasks-service-key.json'
       );
       const processor = new CloudTasksProcessor();
       return processor['getTaskQueueStatus'](
@@ -50,6 +50,27 @@ describe('Cloud Tasks Data Processor', () => {
       )
         .then(status => console.log(status))
         .catch(error => console.log(error));
+    }).timeout(5000);
+  });
+  describe('storeTaskQueueStatus()', () => {
+    it('stores task queue status', () => {
+      const app = firebaseAdmin.initializeApp(
+        {
+          credential: firebaseAdmin.credential.cert(
+            require(resolve(
+              './test/integration/data-processors/firestore-service-key.json'
+            ))
+          ),
+        },
+        'cloud_tasks_test_2'
+      );
+      const firestore = firebaseAdmin.firestore(app);
+      const processor = new CloudTasksProcessor(firestore);
+      return processor['storeTaskQueueStatus']({
+        queue1: 5,
+        queue2: 10,
+        queue4: 100,
+      }).catch(error => console.log(error));
     });
   });
 });

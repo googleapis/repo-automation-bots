@@ -14,9 +14,9 @@
 //
 import {describe, it, beforeEach} from 'mocha';
 import request from 'supertest';
-import {TaskService, Task, TaskEndpoints} from '../src/task-service';
-import {Factory} from '../src/data-processor-factory';
-import {DataProcessor} from '../src/data-processors/data-processor-abstract';
+import {TaskService, Task, TaskEndpoints} from '../../src/task-service';
+import {Factory} from '../../src/data-processor-factory';
+import {DataProcessor} from '../../src/data-processors/data-processor-abstract';
 import express from 'express';
 import assert from 'assert';
 

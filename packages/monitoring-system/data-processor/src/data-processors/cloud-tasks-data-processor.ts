@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {DataProcessor, Firestore} from './data-processor-abstract';
+import {DataProcessor} from './data-processor-abstract';
+import {Firestore} from '@google-cloud/firestore';
 import {CloudTasksClient, protos, v2} from '@google-cloud/tasks';
 
 type CloudTasksListResponse = [
@@ -57,9 +58,9 @@ export class CloudTasksProcessor extends DataProcessor {
           );
         })
         .then(queueStatus => {
-          return this.insertTaskQueueStatus(queueStatus);
+          return this.storeTaskQueueStatus(queueStatus);
         })
-        .then(resolve)
+        .then(() => resolve())
         .catch(error => {
           reject(`Failed to collect and process Cloud Tasks data: ${error}`);
         });
@@ -86,24 +87,24 @@ export class CloudTasksProcessor extends DataProcessor {
   ): Promise<QueueStatus> {
     return new Promise<QueueStatus>((resolve, reject) => {
       const queueStatus: QueueStatus = {};
-      const taskListPromises: {
-        [queueName: string]: Promise<CloudTasksListResponse>;
-      } = {};
+      const taskListPromises: Promise<CloudTasksListResponse>[] = [];
 
       for (const name of queueNames) {
         const queuePath = this.tasksClient.queuePath(project, location, name);
-        taskListPromises[name] = this.tasksClient.listTasks({
+        const taskListPromise = this.tasksClient.listTasks({
           parent: queuePath,
         });
 
-        taskListPromises[name]
+        taskListPromise
           .then(taskList => {
             queueStatus[name] = taskList[0].length;
           })
           .catch(error => reject(error));
+
+        taskListPromises.push(taskListPromise);
       }
 
-      Promise.all(Object.values(taskListPromises))
+      Promise.all(taskListPromises)
         .then(() => {
           resolve(queueStatus);
         })
@@ -111,8 +112,23 @@ export class CloudTasksProcessor extends DataProcessor {
     });
   }
 
-  private async insertTaskQueueStatus(queueStatus: QueueStatus): Promise<void> {
-    // TODO
-    throw new Error('Method not implemented.');
+  private async storeTaskQueueStatus(
+    queueStatus: QueueStatus
+  ): Promise<FirebaseFirestore.WriteResult[]> {
+    const currentTimestamp = new Date().getTime();
+    const collectionRef = this.firestore.collection('Task_Queue_Status');
+    const writePromises: Promise<FirebaseFirestore.WriteResult>[] = [];
+
+    for (const queueName of Object.keys(queueStatus)) {
+      const docKey = `${queueName}_${currentTimestamp}`;
+      const writePromise = collectionRef.doc(docKey).set({
+        timestamp: currentTimestamp,
+        queue_name: queueName,
+        in_queue: queueStatus[queueName],
+      });
+      writePromises.push(writePromise);
+    }
+
+    return Promise.all(writePromises);
   }
 }
