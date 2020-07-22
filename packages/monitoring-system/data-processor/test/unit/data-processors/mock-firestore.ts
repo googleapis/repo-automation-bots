@@ -1,256 +1,147 @@
-// import {
-//   Firestore,
-//   DocumentReference,
-//   DocumentData,
-//   CollectionReference,
-//   Query,
-//   FirestoreDataConverter,
-//   WriteResult,
-//   SetOptions,
-//   UpdateData,
-//   Precondition,
-//   FieldPath,
-//   DocumentSnapshot,
-//   Settings,
-//   QuerySnapshot,
-//   WhereFilterOp,
-//   OrderByDirection,
-// } from '@google-cloud/firestore';
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
-// export class MockDocumentSnapshot<T = DocumentData> extends DocumentSnapshot<T> {
-//   mockData: T;
-//   constructor(mockData: T) {
-//     super();
-//     this.mockData = mockData;
-//   }
-//   data(): T {
-//     return this.mockData;
-//   }
-// }
+import {
+  Firestore,
+  Settings,
+  CollectionReference,
+  DocumentData,
+} from '@google-cloud/firestore';
 
-// export class MockQuerySnapshot<T = DocumentData> {
-  
-//     query: Query<T>;
+interface mockQuerySnapshot {
+  docs: mockQueryDocumentSnapshot[];
+}
 
-//     docs: Array<QueryDocumentSnapshot<T>>;
-//     size: number;
-//     empty: boolean;
-//     readTime: Timestamp;
+interface mockQueryDocumentSnapshot {
+  exists: boolean;
+  data: () => {[key: string]: any};
+}
 
-//     constructor(docs: T) {
-//       this.docs = docs;
+/**
+ * A class to mimic Firestore's NodeJS library
+ */
+export class MockFirestore extends Firestore {
+  mockData: {[key: string]: any};
+  queryDelayMs: number = 50;
+  collectionShouldThrow: boolean = false;
+  setShouldThrow: boolean = false;
 
-//     }
+  constructor(mockData?: {[key: string]: any}, settings?: Settings) {
+    super(settings);
+    this.mockData = mockData || {};
+  }
 
-//     docChanges(): DocumentChange[] {
-//       throw new Error('Not Supported');
-//     }
+  /**
+   * Set the internal mock data to be returned by MockFirestore
+   * @param mockData the mock data
+   */
+  setMockData(mockData: {[key: string]: any}) {
+    this.mockData = mockData;
+  }
+
+  /**
+   * Set the artifical delay for returning query results.
+   * Default delay is 50ms
+   * @param ms the delay time in milliseconds.
+   */
+  setQueryDelay(ms: number) {
+    this.queryDelayMs = ms;
+  }
+
+  throwOnCollection() {
+    this.collectionShouldThrow = true;
+  }
+
+  throwOnSet() {
+    this.setShouldThrow = true;
+  }
+
+  public collection(collectionPath: string): CollectionReference<DocumentData> {
     
-//     forEach(
-//       callback: (result: QueryDocumentSnapshot<T>) => void,
-//       thisArg?: any
-//     ): void {
-//       throw new Error('Not Supported');
-//     }
-    
-//     isEqual(other: QuerySnapshot<T>): boolean {
-//       throw new Error('Not Supported');
-//     }
-// }
+    if (this.collectionShouldThrow) {
+      throw new Error('Mock error');
+    }
 
-// export class MockDocumentReference<T = DocumentData> {
-//   readonly id: string = '';
+    const collection = {
+      get: () => this.resolveAfterDelay(this.getQuerySnapshot(collectionPath)),
+      doc: (docPath: string) => {
+        return {
+          set: (data: {[key: string]: any}) => {
+            if (this.setShouldThrow) {
+              this.rejectAfterDelay(null);
+            }
+            const collection = this.getDocFromPath(
+              this.mockData,
+              collectionPath
+            );
+            collection[docPath] = data;
+            return this.resolveAfterDelay(null);
+          },
+        };
+      },
+    };
 
-//   firestore: Firestore;
+    // recast as unknown to avoid mocking all internal objects
+    return (collection as unknown) as any;
+  }
 
-//   parent: CollectionReference<T>;
+  private resolveAfterDelay(result: any): Promise<any> {
+    return new Promise(resolve => {
+      setTimeout(() => resolve(result), this.queryDelayMs);
+    });
+  }
 
-//   path = '';
+  private rejectAfterDelay(result: any): Promise<any> {
+    return new Promise(reject => {
+      setTimeout(() => reject(result), this.queryDelayMs);
+    });
+  }
 
-//   mockDocument: T;
+  private getDocFromPath(root: {[key: string]: any}, path: string) {
+    const parts = path.split('/');
+    let doc = root;
+    for (const key of parts) {
+      doc = doc[key];
+      if (!doc) {
+        break;
+      }
+    }
+    return doc;
+  }
 
-//   constructor(firestore: Firestore, parent: CollectionReference<T>, data: T) {
-//     this.firestore = firestore;
-//     this.parent = parent;
-//     this.mockDocument = data;
-//   }
+  private getQuerySnapshot(collectionPath: string): mockQuerySnapshot {
+    const collection = this.getDocFromPath(this.mockData, collectionPath);
+    return {docs: collection ? this.createQuerySnapshot(collection) : []};
+  }
 
-//   collection(collectionPath: string): CollectionReference<DocumentData> {
-//     throw new Error('Not Supported');
-//   }
+  private createQuerySnapshot(data: any): mockQueryDocumentSnapshot[] {
+    const snapshot: mockQueryDocumentSnapshot[] = [];
 
-//   listCollections(): Promise<Array<CollectionReference<DocumentData>>> {
-//     throw new Error('Not Supported');
-//   }
+    if (!data || Object.keys(data).length === 0) {
+      return snapshot;
+    }
 
-//   create(data: T): Promise<WriteResult> {
-//     throw new Error('Not Supported');
-//   }
+    for (const key of Object.keys(data)) {
+      snapshot.push({
+        exists: true,
+        data: () => {
+          return data[key];
+        },
+      });
+    }
 
-//   set(data: Partial<T>, options?: SetOptions): Promise<WriteResult> {
-//     throw new Error('Not Supported');
-//   }
-
-//   update(
-//     dataOrField: UpdateData | string | FieldPath,
-//     ...preconditionOrValues: Array<
-//       unknown | string | FieldPath | Precondition
-//     >
-//   ): Promise<WriteResult> {
-//     throw new Error('Not Supported');
-//   }
-
-//   delete(precondition?: Precondition): Promise<WriteResult> {
-//     throw new Error('Not Supported');
-//   }
-
-//   get(): Promise<DocumentSnapshot<T>> {
-//     return new Promise((resolve) => {
-//       setTimeout(() => resolve(new MockDocumentSnapshot(this.mockDocument)), 100)
-//     });
-//   }
-
-//   onSnapshot(
-//     onNext: (snapshot: DocumentSnapshot<T>) => void,
-//     onError?: (error: Error) => void
-//   ): () => void {
-//     throw new Error('Not Supported');
-//   }
-
-//   isEqual(other: DocumentReference<T>): boolean {
-//     throw new Error('Not Supported');
-//   }
-
-//   withConverter<U>(converter: FirestoreDataConverter<U>): DocumentReference<U> {
-//     throw new Error('Not Supported');
-//   }
-// }
-
-// export class MockCollectionReference<T = DocumentData> {
-//   mockCollection: any;
-//   firestore: Firestore;
-//   id = '';
-//   parent: DocumentReference<DocumentData> | null = null;
-//   path = '';
-
-//   constructor(mockCollection: any, firestore: Firestore) {
-//     this.mockCollection = mockCollection;
-//     this.firestore = firestore;
-//   }
-
-//   where(
-//     fieldPath: string | FieldPath,
-//     opStr: WhereFilterOp,
-//     value: any
-//   ): Query<T>  {
-//     throw new Error('Not Supported');
-//   }
-
-//   orderBy(
-//     fieldPath: string | FieldPath,
-//     directionStr?: OrderByDirection
-//   ): Query<T>  {
-//     throw new Error('Not Supported');
-//   }
-
-//   limit(limit: number): Query<T>  {
-//     throw new Error('Not Supported');
-//   }
-  
-//   limitToLast(limit: number): Query<T>  {
-//     throw new Error('Not Supported');
-//   }
-  
-//   offset(offset: number): Query<T>  {
-//     throw new Error('Not Supported');
-//   }
-  
-//   select(...field: (string | FieldPath)[]): Query<T>  {
-//     throw new Error('Not Supported');
-//   }
-  
-//   startAt(snapshot?: DocumentSnapshot<any>, ...fieldValues: any[]): Query<T>  {
-//     throw new Error('Not Supported');
-//   }
-  
-//   startAfter(snapshot?: DocumentSnapshot<any>, ...fieldValues: any[]): Query<T>  {
-//     throw new Error('Not Supported');
-//   }
-  
-//   endBefore(snapshot?: DocumentSnapshot<any>, ...fieldValues: any[]): Query<T>  {
-//     throw new Error('Not Supported');
-//   }
-
-//   endAt(snapshot?: DocumentSnapshot<any>, ...fieldValues: any[]): Query<T> {
-//     throw new Error('Not Supported');
-//   }
-
-//   get(): Promise<QuerySnapshot<T>> {
-//     return new Promise((resolve) => {
-//       setTimeout(() => resolve(), 100)
-//     });
-//   }
-
-//   stream(): NodeJS.ReadableStream  {
-//     throw new Error('Not Supported');
-//   }
-  
-//   onSnapshot(
-//     onNext: (snapshot: QuerySnapshot<T>) => void,
-//     onError?: (error: Error) => void
-//   ): () => void  {
-//     throw new Error('Not Supported');
-//   }
-
-//   listDocuments(): Promise<Array<DocumentReference<T>>> {
-//     throw new Error('Not Supported');
-//   }
-
-//   doc(documentPath?: string): DocumentReference<T> {
-//     if (!documentPath) {
-//       throw new Error('Not Supported');
-//     }
-//     const parts = documentPath.split('/');
-//     if (parts.length !== 1) {
-//       throw new Error('Not supported');
-//     }
-//     return new MockDocumentReference(
-//       this.firestore,
-//       this,
-//       this.mockCollection[parts[0]]
-//     );
-//   }
-
-//   add(data: T): Promise<DocumentReference<T>> {
-//     throw new Error('Not Supported');
-//   }
-
-//   isEqual(other: CollectionReference<T>): boolean {
-//     throw new Error('Not Supported');
-//   }
-
-//   withConverter<U>(
-//     converter: FirestoreDataConverter<U>
-//   ): CollectionReference<U> {
-//     throw new Error('Not Supported');
-//   }
-// }
-
-// export class MockFirestore extends Firestore {
-//   mockData: any;
-
-//   constructor(mockData: any, settings?: Settings) {
-//     super(settings);
-//     this.mockData = mockData;
-//   }
-
-//   public collection(
-//     collectionPath: string
-//   ): MockCollectionReference<DocumentData> {
-//     const parts = collectionPath.split('/');
-//     if (parts.length !== 1) {
-//       throw new Error('Not supported');
-//     }
-//     return new MockCollectionReference(this.mockData[parts[0]], this);
-//   }
-// }
+    return snapshot;
+  }
+}

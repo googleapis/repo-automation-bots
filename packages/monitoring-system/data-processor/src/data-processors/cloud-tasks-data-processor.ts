@@ -73,6 +73,10 @@ export class CloudTasksProcessor extends DataProcessor {
         .collection('Bot')
         .get()
         .then(botDocument => {
+          if (!botDocument) {
+            reject('Got falsy results from Firestore');
+            return;
+          }
           const subDocs = botDocument.docs;
           resolve(subDocs.map(doc => doc.data().bot_name));
         })
@@ -121,7 +125,8 @@ export class CloudTasksProcessor extends DataProcessor {
 
     for (const queueName of Object.keys(queueStatus)) {
       const docKey = `${queueName}_${currentTimestamp}`;
-      const writePromise = collectionRef.doc(docKey).set({
+      const writePromise = collectionRef.doc(docKey)
+      .set({
         timestamp: currentTimestamp,
         queue_name: queueName,
         in_queue: queueStatus[queueName],
