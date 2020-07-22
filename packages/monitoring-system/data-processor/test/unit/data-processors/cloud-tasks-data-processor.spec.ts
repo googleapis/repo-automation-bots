@@ -15,23 +15,33 @@
 import {describe, it, beforeEach} from 'mocha';
 import assert from 'assert';
 import {CloudTasksProcessor} from '../../../src/data-processors/cloud-tasks-data-processor';
-import {CloudTasksClient, protos} from '@google-cloud/tasks';
-import sinon from 'sinon';
-import {MockFirestore, Data} from './mock-firestore';
+import {protos} from '@google-cloud/tasks';
+import {MockFirestore, FirestoreData} from './mock-firestore';
+import {MockCloudTasksClient, TaskQueueData} from './mock-cloud-tasks-client';
 
 class DummyTask implements protos.google.cloud.tasks.v2.ITask {}
-let MockTaskQueueData: {[parent: string]: [DummyTask, null, null]};
-let mockFirestoreData1: Data;
-let mockFirestoreData2: Data;
-let mockFirestoreData3: Data;
+let MockTaskQueueData: TaskQueueData;
+let mockFirestoreData1: FirestoreData;
+let mockFirestoreData2: FirestoreData;
+let mockFirestoreData3: FirestoreData;
 
 function resetMockData() {
   MockTaskQueueData = {
-    'projectFoo/locationBar/queue1': [
-      [new DummyTask(), new DummyTask(), new DummyTask()],
-      null,
-      null,
-    ],
+    projectFoo: {
+      locationBar: {
+        queue1: [
+          [new DummyTask(), new DummyTask(), new DummyTask()],
+          null,
+          {tasks: null, nextPageToken: null},
+        ],
+        queue2: [[new DummyTask()], null, {tasks: null, nextPageToken: null}],
+        queue3: [
+          [new DummyTask(), new DummyTask()],
+          null,
+          {tasks: null, nextPageToken: null},
+        ],
+      },
+    },
   };
 
   mockFirestoreData1 = {
@@ -176,22 +186,99 @@ describe('Cloud Tasks Data Processor', () => {
   });
 
   describe('getTaskQueueStatus()', () => {
-    it('gets task queue status from Cloud Task', () => {
-      const mockTasksClient = new CloudTasksClient();
-      sinon
-        .stub(mockTasksClient, 'queuePath')
-        .callsFake((project, location, queue) => {
-          return `${project}/${location}/${queue}`;
-        });
-      sinon.stub(mockTasksClient, 'listTasks').callsFake(request => {
-        const result = request?.parent ? MockTaskQueueData[request.parent] : [];
-        return new Promise(resolve => resolve(result));
-      });
+    it('gets task queue status from Cloud Task for 1 queue', () => {
+      const mockTasksClient = new MockCloudTasksClient(MockTaskQueueData);
       return new CloudTasksProcessor(undefined, mockTasksClient)
         ['getTaskQueueStatus']('projectFoo', 'locationBar', ['queue1'])
-        .then(status => console.log(status));
+        .then(status => {
+          assert.deepEqual(status, {queue1: 3});
+        });
     });
 
-    it('throws an appropriate error when cannot reach Firestore');
+    it('gets task queue status from Cloud Tasks for >1 queue', () => {
+      const mockTasksClient = new MockCloudTasksClient(MockTaskQueueData);
+      return new CloudTasksProcessor(undefined, mockTasksClient)
+        ['getTaskQueueStatus']('projectFoo', 'locationBar', [
+          'queue1',
+          'queue2',
+          'queue3',
+        ])
+        .then(status => {
+          assert.deepEqual(status, {queue1: 3, queue2: 1, queue3: 2});
+        });
+    });
+
+    it('returns an empty object if queueNames is empty', () => {
+      const mockTasksClient = new MockCloudTasksClient(MockTaskQueueData);
+      return new CloudTasksProcessor(undefined, mockTasksClient)
+        ['getTaskQueueStatus']('projectFoo', 'locationBar', [])
+        .then(status => {
+          assert.deepEqual(status, {});
+        });
+    });
+
+    it('throws an error if the project is incorrect', () => {
+      let thrown = false;
+      const mockTasksClient = new MockCloudTasksClient(MockTaskQueueData);
+      return new CloudTasksProcessor(undefined, mockTasksClient)
+        ['getTaskQueueStatus']('projectFooWrong', 'locationBar', [
+          'queue1',
+          'queue2',
+          'queue3',
+        ])
+        .catch(() => {
+          thrown = true;
+        })
+        .finally(() => {
+          assert(thrown, 'Expected error to be thrown');
+        });
+    });
+
+    it('throws an error if the location is incorrect', () => {
+      let thrown = false;
+      const mockTasksClient = new MockCloudTasksClient(MockTaskQueueData);
+      return new CloudTasksProcessor(undefined, mockTasksClient)
+        ['getTaskQueueStatus']('projectFoo', 'locationBarWrong', [
+          'queue1',
+          'queue2',
+          'queue3',
+        ])
+        .catch(() => {
+          thrown = true;
+        })
+        .finally(() => {
+          assert(thrown, 'Expected error to be thrown');
+        });
+    });
+
+    it('throws an error if the queue name is incorrect', () => {
+      let thrown = false;
+      const mockTasksClient = new MockCloudTasksClient(MockTaskQueueData);
+      return new CloudTasksProcessor(undefined, mockTasksClient)
+        ['getTaskQueueStatus']('projectFoo', 'locationBar', ['queue1Wrong'])
+        .catch(() => {
+          thrown = true;
+        })
+        .finally(() => {
+          assert(thrown, 'Expected error to be thrown');
+        });
+    });
+
+    it('throws an error if there is one incorrect queuename among other correct ones', () => {
+      let thrown = false;
+      const mockTasksClient = new MockCloudTasksClient(MockTaskQueueData);
+      return new CloudTasksProcessor(undefined, mockTasksClient)
+        ['getTaskQueueStatus']('projectFoo', 'locationBar', [
+          'queue1Wrong',
+          'queue2',
+          'queue3',
+        ])
+        .catch(() => {
+          thrown = true;
+        })
+        .finally(() => {
+          assert(thrown, 'Expected error to be thrown');
+        });
+    });
   });
 });

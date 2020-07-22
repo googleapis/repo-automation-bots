@@ -20,7 +20,7 @@ import {
   DocumentData,
 } from '@google-cloud/firestore';
 
-export interface Data {
+export interface FirestoreData {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
@@ -31,19 +31,19 @@ interface MockQuerySnapshot {
 
 interface MockQueryDocumentSnapshot {
   exists: boolean;
-  data: () => Data;
+  data: () => FirestoreData;
 }
 
 /**
  * A class to mimic Firestore's NodeJS library
  */
 export class MockFirestore extends Firestore {
-  mockData: Data;
+  mockData: FirestoreData;
   queryDelayMs = 50;
   collectionShouldThrow = false;
   setShouldThrow = false;
 
-  constructor(mockData?: Data, settings?: Settings) {
+  constructor(mockData?: FirestoreData, settings?: Settings) {
     super(settings);
     this.mockData = mockData || {};
   }
@@ -52,7 +52,7 @@ export class MockFirestore extends Firestore {
    * Set the internal mock data to be returned by MockFirestore
    * @param mockData the mock data
    */
-  setMockData(mockData: Data) {
+  setMockData(mockData: FirestoreData) {
     this.mockData = mockData;
   }
 
@@ -82,7 +82,7 @@ export class MockFirestore extends Firestore {
       get: () => this.resolveAfterDelay(this.getQuerySnapshot(collectionPath)),
       doc: (docPath: string) => {
         return {
-          set: (data: Data) => {
+          set: (data: FirestoreData) => {
             if (this.setShouldThrow) {
               this.rejectAfterDelay(null);
             }
@@ -102,19 +102,23 @@ export class MockFirestore extends Firestore {
     return (collection as unknown) as any;
   }
 
-  private resolveAfterDelay(result: Data | null): Promise<Data | null> {
+  private resolveAfterDelay(
+    result: FirestoreData | null
+  ): Promise<FirestoreData | null> {
     return new Promise(resolve => {
       setTimeout(() => resolve(result), this.queryDelayMs);
     });
   }
 
-  private rejectAfterDelay(result: Data | null): Promise<Data | null> {
+  private rejectAfterDelay(
+    result: FirestoreData | null
+  ): Promise<FirestoreData | null> {
     return new Promise(reject => {
       setTimeout(() => reject(result), this.queryDelayMs);
     });
   }
 
-  private getDocFromPath(root: Data, path: string) {
+  private getDocFromPath(root: FirestoreData, path: string) {
     const parts = path.split('/');
     let doc = root;
     for (const key of parts) {
@@ -131,7 +135,9 @@ export class MockFirestore extends Firestore {
     return {docs: collection ? this.createQuerySnapshot(collection) : []};
   }
 
-  private createQuerySnapshot(data: Data): MockQueryDocumentSnapshot[] {
+  private createQuerySnapshot(
+    data: FirestoreData
+  ): MockQueryDocumentSnapshot[] {
     const snapshot: MockQueryDocumentSnapshot[] = [];
 
     if (!data || Object.keys(data).length === 0) {
