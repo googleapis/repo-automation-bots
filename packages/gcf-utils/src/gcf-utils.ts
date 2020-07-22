@@ -314,7 +314,19 @@ export class GCFBootstrapper {
         // clever and instead pull up a list of repos we're installed on by
         // installation ID:
         try {
-          await this.handleScheduled(id, request, name, signature);
+          if (wrapOptions?.background) {
+            console.info(`${id}: scheduling cloud task`);
+            await this.handleScheduled(id, request, name, signature);
+          } else {
+            // a bot can opt out of running through tasks, some bots do this
+            // due to large payload sizes:
+            console.info(`${id}: skipping cloud tasks`);
+            await this.probot.receive({
+              name,
+              id,
+              payload: request.body,
+            });
+          }
         } catch (err) {
           response.status(500).send({
             body: JSON.stringify({message: err}),
