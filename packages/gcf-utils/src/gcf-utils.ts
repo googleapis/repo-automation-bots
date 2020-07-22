@@ -17,9 +17,10 @@ import {CloudTasksClient} from '@google-cloud/tasks';
 import {v1} from '@google-cloud/secret-manager';
 import * as express from 'express';
 import pino from 'pino';
-// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import SonicBoom from 'sonic-boom';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const LoggingOctokitPlugin = require('../src/logging-octokit-plugin.js');
 
 const client = new CloudTasksClient();
 
@@ -189,7 +190,8 @@ export class GCFBootstrapper {
       throw Error('did not retrieve a payload from SecretManager.');
     }
     const config = JSON.parse(payload);
-    return config as Options;
+    const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin);
+    return {...config, Octokit: LoggingOctokit} as Options;
   }
 
   /**
