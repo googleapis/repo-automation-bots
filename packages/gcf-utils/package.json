@@ -43,7 +43,7 @@
     "@types/sinon": "^9.0.0",
     "@types/tmp": "^0.2.0",
     "@types/yargs": "^15.0.0",
-    "@octokit/rest": "^16.43.1",
+    "@octokit/rest": "^18.0.0",
     "c8": "^7.1.0",
     "cross-env": "^7.0.0",
     "dotenv": "^8.0.0",
