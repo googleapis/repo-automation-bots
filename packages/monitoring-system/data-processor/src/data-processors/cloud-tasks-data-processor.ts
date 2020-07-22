@@ -104,7 +104,6 @@ export class CloudTasksProcessor extends DataProcessor {
             queueStatus[name] = taskList[0].length;
           })
           .catch(error => reject(error));
-
         taskListPromises.push(taskListPromise);
       }
 

@@ -20,6 +20,9 @@ import {
   DocumentData,
 } from '@google-cloud/firestore';
 
+/**
+ * Key-value data in Firestore
+ */
 export interface FirestoreData {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
@@ -36,6 +39,7 @@ interface MockQueryDocumentSnapshot {
 
 /**
  * A class to mimic Firestore's NodeJS library
+ * Note: not all behaviours are supported
  */
 export class MockFirestore extends Firestore {
   mockData: FirestoreData;
@@ -43,6 +47,11 @@ export class MockFirestore extends Firestore {
   collectionShouldThrow = false;
   setShouldThrow = false;
 
+  /**
+   * Create a mock client
+   * @param mockData mock data returned by client
+   * @param settings settings for the underlying Firestore client
+   */
   constructor(mockData?: FirestoreData, settings?: Settings) {
     super(settings);
     this.mockData = mockData || {};
@@ -65,14 +74,24 @@ export class MockFirestore extends Firestore {
     this.queryDelayMs = ms;
   }
 
+  /**
+   * Throw an error when collections() is called
+   */
   throwOnCollection() {
     this.collectionShouldThrow = true;
   }
 
+  /**
+   * Throw an error when set() is called
+   */
   throwOnSet() {
     this.setShouldThrow = true;
   }
 
+  /**
+   * Return the specified collection from the mock data
+   * @param collectionPath path to the collection
+   */
   public collection(collectionPath: string): CollectionReference<DocumentData> {
     if (this.collectionShouldThrow) {
       throw new Error('Mock error');

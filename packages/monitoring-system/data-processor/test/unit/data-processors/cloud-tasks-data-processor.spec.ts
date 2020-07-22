@@ -15,28 +15,26 @@
 import {describe, it, beforeEach} from 'mocha';
 import assert from 'assert';
 import {CloudTasksProcessor} from '../../../src/data-processors/cloud-tasks-data-processor';
-import {protos} from '@google-cloud/tasks';
 import {MockFirestore, FirestoreData} from './mock-firestore';
-import {MockCloudTasksClient, TaskQueueData} from './mock-cloud-tasks-client';
+import {MockCloudTasksClient, MockTaskQueueData, MockTask} from './mock-cloud-tasks-client';
 
-class DummyTask implements protos.google.cloud.tasks.v2.ITask {}
-let MockTaskQueueData: TaskQueueData;
-let mockFirestoreData1: FirestoreData;
-let mockFirestoreData2: FirestoreData;
-let mockFirestoreData3: FirestoreData;
+let MockTaskQueueData: MockTaskQueueData;
+let MockFirestoreData1: FirestoreData;
+let MockFirestoreData2: FirestoreData;
+let MockFirestoreData3: FirestoreData;
 
 function resetMockData() {
   MockTaskQueueData = {
     projectFoo: {
       locationBar: {
         queue1: [
-          [new DummyTask(), new DummyTask(), new DummyTask()],
+          [new MockTask(), new MockTask(), new MockTask()],
           null,
           {tasks: null, nextPageToken: null},
         ],
-        queue2: [[new DummyTask()], null, {tasks: null, nextPageToken: null}],
+        queue2: [[new MockTask()], null, {tasks: null, nextPageToken: null}],
         queue3: [
-          [new DummyTask(), new DummyTask()],
+          [new MockTask(), new MockTask()],
           null,
           {tasks: null, nextPageToken: null},
         ],
@@ -44,7 +42,7 @@ function resetMockData() {
     },
   };
 
-  mockFirestoreData1 = {
+  MockFirestoreData1 = {
     Bot: {
       ID1: {
         bot_name: 'bot_a',
@@ -58,11 +56,11 @@ function resetMockData() {
     },
   };
 
-  mockFirestoreData2 = {
+  MockFirestoreData2 = {
     Bot: {},
   };
 
-  mockFirestoreData3 = {
+  MockFirestoreData3 = {
     Task_Queue_Status: {},
   };
 }
@@ -79,14 +77,14 @@ describe('Cloud Tasks Data Processor', () => {
 
   describe('getBotNames()', () => {
     it('gets the correct bot names from Firestore when there are 3 bots', () => {
-      mockFirestore.setMockData(mockFirestoreData1);
+      mockFirestore.setMockData(MockFirestoreData1);
       return processor['getBotNames']().then(names => {
         assert.deepEqual(names, ['bot_a', 'bot_b', 'bot_c']);
       });
     });
 
     it('returns an empty list when there are no bots in Firestore', () => {
-      mockFirestore.setMockData(mockFirestoreData2);
+      mockFirestore.setMockData(MockFirestoreData2);
       return processor['getBotNames']().then(names => {
         assert(names.length === 0);
       });
@@ -99,9 +97,9 @@ describe('Cloud Tasks Data Processor', () => {
       });
     });
 
-    it('throws an appropriate error if there is an error connecting to Firestore', () => {
+    it('throws an appropriate error if there is an error from Firestore', () => {
       let thrown = false;
-      mockFirestore.setMockData(mockFirestoreData1);
+      mockFirestore.setMockData(MockFirestoreData1);
       mockFirestore.throwOnCollection();
 
       return processor['getBotNames']()
@@ -109,21 +107,22 @@ describe('Cloud Tasks Data Processor', () => {
           thrown = true;
         })
         .finally(() => {
-          assert(thrown, 'Expected an error to be thrown for timeout');
+          assert(thrown, 'Expected an error to be thrown');
         });
     });
   });
 
   describe('storeTaskQueueStatus()', () => {
     it('stores task queue status correctly for 1 or more queues', () => {
-      mockFirestore.setMockData(mockFirestoreData3);
+      mockFirestore.setMockData(MockFirestoreData3);
       const queueStatus: {[name: string]: number} = {
         queue1: 0,
         queue2: 10,
         queue3: 50,
       };
+      
       return processor['storeTaskQueueStatus'](queueStatus).then(() => {
-        const root = mockFirestoreData3.Task_Queue_Status;
+        const root = MockFirestoreData3.Task_Queue_Status;
         const entry_keys = Object.keys(root);
         assert(entry_keys.length === 3);
         for (const key of entry_keys) {
@@ -141,17 +140,17 @@ describe('Cloud Tasks Data Processor', () => {
     });
 
     it('does not set any data in Firestore if no queue status to store', () => {
-      mockFirestore.setMockData(mockFirestoreData3);
+      mockFirestore.setMockData(MockFirestoreData3);
       const queueStatus: {[name: string]: number} = {};
       return processor['storeTaskQueueStatus'](queueStatus).then(() => {
-        const root = mockFirestoreData3.Task_Queue_Status;
+        const root = MockFirestoreData3.Task_Queue_Status;
         const entry_keys = Object.keys(root);
         assert(entry_keys.length === 0);
       });
     });
 
     it('does not overwrite previous status for same queue', () => {
-      mockFirestore.setMockData(mockFirestoreData3);
+      mockFirestore.setMockData(MockFirestoreData3);
       const queueStatus1: {[name: string]: number} = {
         queue1: 0,
         queue2: 10,
@@ -167,7 +166,7 @@ describe('Cloud Tasks Data Processor', () => {
           return processor['storeTaskQueueStatus'](queueStatus2);
         })
         .then(() => {
-          const root = mockFirestoreData3.Task_Queue_Status;
+          const root = MockFirestoreData3.Task_Queue_Status;
           const entry_keys = Object.keys(root);
           assert(entry_keys.length === 6);
           for (const key of entry_keys) {

@@ -20,7 +20,15 @@ type ITask = protos.google.cloud.tasks.v2.ITask;
 type IListTasksRequest = protos.google.cloud.tasks.v2.IListTasksRequest;
 type IListTasksResponse = protos.google.cloud.tasks.v2.IListTasksResponse;
 
-export interface TaskQueueData {
+/**
+ * A mock implementation of ITask
+ */
+export class MockTask implements ITask {}
+
+/**
+ * An interface for mock task queue data
+ */
+export interface MockTaskQueueData {
   [project: string]: {
     [location: string]: {
       [queueName: string]: [
@@ -32,22 +40,48 @@ export interface TaskQueueData {
   };
 }
 
+/**
+ * A mock client to mimic Cloud Tasks Client behaviour
+ */
 export class MockCloudTasksClient extends CloudTasksClient {
-  mockData: TaskQueueData;
+  mockData: MockTaskQueueData;
 
-  constructor(mockData?: TaskQueueData, opts?: ClientOptions) {
+  /**
+   * Create a mock client
+   * @param mockData mock data to be returned by client
+   * @param opts options for the underlying Cloud Tasks Client
+   */
+  constructor(mockData?: MockTaskQueueData, opts?: ClientOptions) {
     super(opts);
     this.mockData = mockData || {};
   }
 
-  setMockData(mockData: TaskQueueData) {
+  /**
+   * Set the mock data to be returned by this client
+   * @param mockData mock task queue data
+   */
+  setMockData(mockData: MockTaskQueueData) {
     this.mockData = mockData;
   }
 
+  /**
+   * Returns a path to the given queue.
+   * Note: this is a mock implementation that only works with 
+   * the mock client
+   * @param project project in which queue exists
+   * @param location location of the queue
+   * @param queue the queue name
+   */
   queuePath(project: string, location: string, queue: string): string {
     return `${project}/${location}/${queue}`;
   }
 
+  /**
+   * Lists the tasks for a queue in the mock data
+   * @param request a list request with a parent param that has the queue path
+   * @param optionsOrCallback (unused param)
+   * @param callback (unused param)
+   */
   listTasks(
     request: IListTasksRequest,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
