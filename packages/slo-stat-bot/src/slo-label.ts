@@ -13,25 +13,31 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {GitHubAPI} from 'probot';
+import {GitHubAPI, Context} from 'probot';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const config = require('./../data/config.json');
+const CONFIGURATION_FILE_PATH = 'label_name.yml';
 
 interface SLOStatus {
   appliesTo: boolean;
   isCompliant: boolean | null;
 }
 
+interface IssueLabelResponseItem {
+  name: string;
+}
+
 /**
  * Function gets ooslo label name in repo from the config file
  * @returns the name of ooslo label
  */
-export const getLabelName = function (): string {
+export const getLabelName = async function (context: Context): Promise<string> {
   try {
-    return config.name;
+    const labelName = (await context.config(
+      CONFIGURATION_FILE_PATH
+    )) as IssueLabelResponseItem;
+    return labelName.name;
   } catch (err) {
-    err.message = `Unable to get ooslo name from config-label file \n ${err.message} \n ${err}`;
+    err.message = `Unable to get ooslo name from config-label file \n ${err.message}`;
     throw err;
   }
 };
@@ -102,7 +108,7 @@ export const removeIssueLabel = async function removeIssueLabel(
  * Function handles adding and removing labels according to slo status.
  * If slo is not compliant and does not have ooslo label, adds it to issue.
  * If slo is compliant but has ooslo label, removes it from issue
- * @param github unique installation id for each function
+ * @param context of issue or pr
  * @param owner of issue or pr
  * @param repo of issue or pr
  * @param issueNumber number of issue pr
@@ -111,18 +117,17 @@ export const removeIssueLabel = async function removeIssueLabel(
  * @returns void
  */
 export async function handleLabeling(
-  github: GitHubAPI,
+  context: Context,
   owner: string,
   repo: string,
   issueNumber: number,
   sloStatus: SLOStatus,
   labels: string[] | null
 ) {
-  const name = getLabelName();
-
+  const name = await getLabelName(context);
   if (!sloStatus.isCompliant && !labels?.includes(name)) {
-    await addLabel(github, owner, repo, issueNumber, name);
+    await addLabel(context.github, owner, repo, issueNumber, name);
   } else if (sloStatus.isCompliant && labels?.includes(name)) {
-    await removeIssueLabel(github, owner, repo, issueNumber, name);
+    await removeIssueLabel(context.github, owner, repo, issueNumber, name);
   }
 }

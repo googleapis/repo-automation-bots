@@ -41,7 +41,7 @@ interface IssueListForRepoItem {
 
 /**
  * Function handles labeling ooslo based on compliancy if issue applies to the given slo
- * @param github unique installation id for each function
+ * @param context of issue or pr
  * @param owner of issue or pr
  * @param repo of issue or pr
  * @param type specifies if event is issue or pr
@@ -53,7 +53,7 @@ interface IssueListForRepoItem {
  * @returns void
  */
 async function handleIssues(
-  github: GitHubAPI,
+  context: Context,
   owner: string,
   repo: string,
   type: string,
@@ -67,7 +67,7 @@ async function handleIssues(
 
   for (const slo of sloList) {
     const sloStatus = await sloLogic.getSloStatus(
-      github,
+      context.github,
       owner,
       repo,
       createdAt,
@@ -79,7 +79,16 @@ async function handleIssues(
     );
 
     if (sloStatus.appliesTo) {
-      await handleLabeling(github, owner, repo, number, sloStatus, labels);
+      await handleLabeling(context, owner, repo, number, sloStatus, labels);
+    }
+
+    if (sloStatus.isCompliant === false) {
+      console.log(
+        `Issue number ${number} is not compliant for slo: \n ${JSON.stringify(
+          slo
+        )}`
+      );
+      break;
     }
   }
 }
@@ -190,7 +199,7 @@ export = function handler(app: Application) {
       );
       const sloString = await getSloFile(context.github, owner, repo);
       await handleIssues(
-        context.github,
+        context,
         owner,
         repo,
         'pull_request',
@@ -213,7 +222,8 @@ export = function handler(app: Application) {
     const labels = labelsResponse.map((label: IssueLabelResponseItem) =>
       label.name.toLowerCase()
     );
-    const name = getLabelName();
+
+    const name = await getLabelName(context);
     if (labels?.includes(name)) {
       await removeIssueLabel(context.github, owner, repo, number, name);
     }
@@ -245,7 +255,7 @@ export = function handler(app: Application) {
       );
       const sloString = await getSloFile(context.github, owner, repo);
       await handleIssues(
-        context.github,
+        context,
         owner,
         repo,
         'issue',
@@ -278,7 +288,7 @@ export = function handler(app: Application) {
       const sloString = await getSloFile(context.github, owner, repo);
 
       await handleIssues(
-        context.github,
+        context,
         owner,
         repo,
         'issue',
