@@ -315,12 +315,12 @@ export class GCFBootstrapper {
         // installation ID:
         try {
           if (wrapOptions?.background) {
-            console.info('scheduling cloud task');
+            console.info(`${id}: scheduling cloud task`);
             await this.handleScheduled(id, request, name, signature);
           } else {
             // a bot can opt out of running through tasks, some bots do this
             // due to large payload sizes:
-            console.info('skipping cloud tasks');
+            console.info(`${id}: skipping cloud tasks`);
             await this.probot.receive({
               name,
               id,
