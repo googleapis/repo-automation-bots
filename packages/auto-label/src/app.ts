@@ -17,4 +17,7 @@ import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './auto-label';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['auto_label'] = bootstrap.gcf(appFn, {background: true, logging: true});
+module.exports['auto_label'] = bootstrap.gcf(appFn, {
+  background: true,
+  logging: true,
+});
