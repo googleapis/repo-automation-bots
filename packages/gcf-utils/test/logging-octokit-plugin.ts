@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {describe, beforeEach, it} from 'mocha';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import assert from 'assert';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
