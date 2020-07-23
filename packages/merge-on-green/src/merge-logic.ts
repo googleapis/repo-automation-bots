@@ -180,7 +180,7 @@ mergeOnGreen.hasMOGLabel = async function hasMOGLabel(
     )?.name;
     return mog;
   } catch (err) {
-    console.log(`Error in getting MOG label: ${err}`);
+    console.error(`Error in getting MOG label: ${err}`);
     return undefined;
   }
 };
@@ -210,7 +210,7 @@ mergeOnGreen.getBranchProtection = async function getBranchProtection(
     );
     return branchProtection;
   } catch (err) {
-    console.log(`Error in getting branch protection: ${err}`);
+    console.error(`Error in getting branch protection: ${err}`);
     return [];
   }
 };
@@ -249,7 +249,7 @@ mergeOnGreen.getStatusi = async function getStatusi(
     );
     return data;
   } catch (err) {
-    console.log(`Error in getting statuses: ${err}`);
+    console.error(`Error in getting statuses: ${err}`);
     return [];
   }
 };
@@ -472,7 +472,8 @@ mergeOnGreen.getReviewsCompleted = async function getReviewsCompleted(
     });
     return reviewsCompleted.data;
   } catch (err) {
-    console.log(`Error getting reviews completed ${err}`);
+    console.error(`Error getting reviews completed ${err}`);
+    console.error(err);
     return [];
   }
 };
@@ -559,7 +560,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
               message:
                 'This review does not reference the most recent commit, and you are using the secure version of merge-on-green. Please re-review the most recent commit.',
             })
-            .catch(err => console.log(err));
+            .catch(err => console.error(err));
           reviewsPassed = false;
         }
       });
@@ -625,7 +626,8 @@ mergeOnGreen.updateBranch = async function updateBranch(
     ).data as Update;
     return update;
   } catch (err) {
-    console.log(`Error in updating branch: ${err}`);
+    console.error(`Error in updating branch: ${err}`);
+    console.error(err);
     return null;
   }
 };
@@ -655,7 +657,8 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
     });
     return data;
   } catch (err) {
-    console.log(`There was an issue commenting on ${owner}/${repo} PR ${pr}`);
+    console.error(`There was an issue commenting on ${owner}/${repo} PR ${pr}`);
+    console.error(err);
     return null;
   }
 };
@@ -684,9 +687,10 @@ mergeOnGreen.removeLabel = async function removeLabel(
       name,
     });
   } catch (err) {
-    console.log(
+    console.error(
       `There was an issue removing the automerge label on ${owner}/${repo} PR ${issue_number}`
     );
+    console.error(err);
   }
 };
 

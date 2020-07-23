@@ -40,7 +40,7 @@ export class DataProcessorFactory implements Factory {
       case Task.ProcessGitHub:
         return new GitHubProcessor();
       default:
-        console.log(`Couldn't identify a data processor for task: ${task}`)
+        console.error(`Couldn't identify a data processor for task: ${task}`)
         throw new Error(`Couldn't identify a data processor for task: ${task}`);
     }
   }

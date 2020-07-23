@@ -44,11 +44,11 @@ async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
   const apiLabelsRes = await getApiLabels(repoPath);
   apiLabelsRes.apis.forEach(api => {
     if (!api.github_label || !api.api_shortname) {
-      console.log(`
+      console.error(`
         Missing expected fields for a given API label returned from GCS.
         This object was expected to have a 'github_label' and 'api_shortname'
         property, but it is missing at least one of them.`);
-      console.log(util.inspect(api));
+      console.error(util.inspect(api));
       return;
     }
     labels.labels.push({
