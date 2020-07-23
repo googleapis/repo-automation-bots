@@ -58,7 +58,7 @@ describe('GCFBootstrapper', () => {
     let req: express.Request;
 
     const spy: sinon.SinonStub = sinon.stub();
-    let configStub: sinon.SinonStub<[], Promise<Options>>;
+    let configStub: sinon.SinonStub<[boolean?], Promise<Options>>;
 
     let bootstrapper: GCFBootstrapper;
 
@@ -115,6 +115,7 @@ describe('GCFBootstrapper', () => {
     it('does not schedule task if background option is "false"', async () => {
       await mockBootstrapper({
         background: false,
+        logging: true,
       });
       req.body = {
         installation: {id: 1},
@@ -214,7 +215,7 @@ describe('GCFBootstrapper', () => {
 
   describe('loadProbot', () => {
     let bootstrapper: GCFBootstrapper;
-    let configStub: sinon.SinonStub<[], Promise<Options>>;
+    let configStub: sinon.SinonStub<[boolean?], Promise<Options>>;
 
     beforeEach(() => {
       bootstrapper = new GCFBootstrapper();

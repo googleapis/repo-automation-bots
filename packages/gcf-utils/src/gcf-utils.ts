@@ -17,6 +17,7 @@ import {CloudTasksClient} from '@google-cloud/tasks';
 import {v1} from '@google-cloud/secret-manager';
 import * as express from 'express';
 import pino from 'pino';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import SonicBoom from 'sonic-boom';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -70,6 +71,7 @@ export interface GCFLogger {
 
 export interface WrapOptions {
   background: boolean;
+  logging: boolean;
 }
 
 export const logger: GCFLogger = initLogger();
@@ -157,9 +159,12 @@ export class GCFBootstrapper {
     this.secretsClient = secretsClient || new v1.SecretManagerServiceClient();
   }
 
-  async loadProbot(appFn: ApplicationFunction): Promise<Probot> {
+  async loadProbot(
+    appFn: ApplicationFunction,
+    logging?: boolean
+  ): Promise<Probot> {
     if (!this.probot) {
-      const cfg = await this.getProbotConfig();
+      const cfg = await this.getProbotConfig(logging);
       this.probot = createProbot(cfg);
     }
 
@@ -179,7 +184,7 @@ export class GCFBootstrapper {
     return `${secretName}/versions/latest`;
   }
 
-  async getProbotConfig(): Promise<Options> {
+  async getProbotConfig(logging?: boolean): Promise<Options> {
     const name = this.getLatestSecretVersionName();
     const [version] = await this.secretsClient.accessSecretVersion({
       name: name,
@@ -190,8 +195,14 @@ export class GCFBootstrapper {
       throw Error('did not retrieve a payload from SecretManager.');
     }
     const config = JSON.parse(payload);
-    const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin);
-    return {...config, Octokit: LoggingOctokit} as Options;
+    if (logging) {
+      console.info('custom logging instance enabled');
+      const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin);
+      return {...config, Octokit: LoggingOctokit} as Options;
+    } else {
+      console.info('custom logging instance not enabled');
+      return config as Options;
+    }
   }
 
   /**
@@ -292,10 +303,11 @@ export class GCFBootstrapper {
     appFn: ApplicationFunction,
     wrapOptions?: WrapOptions
   ): (request: express.Request, response: express.Response) => Promise<void> {
-    wrapOptions = wrapOptions ?? {background: true};
+    wrapOptions = wrapOptions ?? {background: true, logging: false};
     return async (request: express.Request, response: express.Response) => {
       // Otherwise let's listen handle the payload
-      this.probot = this.probot || (await this.loadProbot(appFn));
+      this.probot =
+        this.probot || (await this.loadProbot(appFn, wrapOptions?.logging));
       const {name, id, signature, taskId} = GCFBootstrapper.parseRequestHeaders(
         request
       );
