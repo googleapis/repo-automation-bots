@@ -27,8 +27,8 @@ import snapshot from 'snap-shot-it';
 import handler from '../src/slo-bot';
 import sinon from 'sinon';
 import * as sloLint from '../src/slo-lint';
-import * as sloLogic from '../src/slo-appliesTo';
-import * as sloCompliant from   '../src/slo-compliant';
+import * as sloAppliesTo from '../src/slo-appliesTo';
+import * as sloCompliant from '../src/slo-compliant';
 
 nock.disableNetConnect();
 
@@ -65,7 +65,7 @@ describe('slo-lint', () => {
     beforeEach(() => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'pull_request_opened'));
-      appliesToStub = sinon.stub(sloLogic, 'doesSloApply');
+      appliesToStub = sinon.stub(sloAppliesTo, 'doesSloApply');
       isCompliantStub = sinon.stub(sloCompliant, 'isIssueCompliant');
       handleSloStub = sinon.stub(sloLint, 'handleSlos');
     });
@@ -145,7 +145,7 @@ describe('slo-lint', () => {
 
       sinon.assert.notCalled(handleSloStub);
       sinon.assert.calledOnce(appliesToStub);
-        sinon.assert.notCalled(isCompliantStub);
+      sinon.assert.notCalled(isCompliantStub);
       requests.done();
     });
   });
@@ -158,7 +158,7 @@ describe('slo-lint', () => {
     beforeEach(() => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'pull_request_opened'));
-      appliesToStub = sinon.stub(sloLogic, 'doesSloApply');
+      appliesToStub = sinon.stub(sloAppliesTo, 'doesSloApply');
       isCompliantStub = sinon.stub(sloCompliant, 'isIssueCompliant');
     });
 

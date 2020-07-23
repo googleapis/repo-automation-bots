@@ -25,9 +25,8 @@ import sinon from 'sinon';
 import handler from '../src/slo-bot';
 import * as sloLint from '../src/slo-lint';
 import * as sloAppliesTo from '../src/slo-appliesTo';
-import * as sloCompliant from '../src/slo-compliant'
+import * as sloCompliant from '../src/slo-compliant';
 import * as sloLabel from '../src/slo-label';
-import { SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION } from 'constants';
 
 nock.disableNetConnect();
 

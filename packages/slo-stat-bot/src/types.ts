@@ -13,31 +13,40 @@
 // limitations under the License.
 
 enum Priority {
-    'P0',
-    'P1',
-    'P2',
-    'P3',
-    'P4',
-    'P5',
-  }
-  
+  'P0',
+  'P1',
+  'P2',
+  'P3',
+  'P4',
+  'P5',
+}
+
 export interface SLORules {
-    appliesTo: {
-        gitHubLabels?: string | string[];
-        excludedGitHubLabels?: string | string[];
-        priority?: Priority;
-        issueType?: string;
-        issues?: boolean;
-        prs?: boolean;
+  appliesTo: {
+    gitHubLabels?: string | string[];
+    excludedGitHubLabels?: string | string[];
+    priority?: Priority;
+    issueType?: string;
+    issues?: boolean;
+    prs?: boolean;
+  };
+  complianceSettings: {
+    responseTime: string | number;
+    resolutionTime: string | number;
+    requiresAssignee?: boolean;
+    responders?: {
+      owners?: string | string[];
+      contributors?: string;
+      users?: string[];
     };
-    complianceSettings: {
-        responseTime: string | number;
-        resolutionTime: string | number;
-        requiresAssignee?: boolean;
-        responders?: {
-        owners?: string | string[];
-        contributors?: string;
-        users?: string[];
-        };
-    };
+  };
+}
+
+export interface IssuesListCommentsItem {
+  id: number;
+  user: {
+    login: string;
+  };
+  created_at: string;
+  updated_at: string;
 }

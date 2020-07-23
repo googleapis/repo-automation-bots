@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {SLORules} from './slo-rules';
+import {SLORules} from './types';
 
 /**
  * Function determines if the type of issue applies to slo
@@ -115,12 +115,14 @@ export const isValidRule = async function isValidRule(
  * @param variable can either be array or string
  * @returns an array
  */
-export const convertToArray = async function convertToArray(variable: string[] | string): Promise<string[]> {
+export const convertToArray = async function convertToArray(
+  variable: string[] | string
+): Promise<string[]> {
   if (typeof variable === 'string') {
     return [variable];
   }
   return variable;
-}
+};
 
 /**
  * Function gets list of files changed on the pr
@@ -161,7 +163,7 @@ export const doesSloApply = async function doesSloApply(
   const appliesToType = await isValidType(appliesToIssues, appliesToPrs, type);
   if (!appliesToType) {
     console.info(
-      `Skipping issue ${number} for rule ${sloString} \n as it does not apply to ${type}`
+      `Skipping issue ${number} for rule ${sloString} \n as it does not apply to type`
     );
     return false;
   }

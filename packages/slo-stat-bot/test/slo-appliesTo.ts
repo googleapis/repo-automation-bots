@@ -16,58 +16,62 @@
 import {resolve} from 'path';
 import * as assert from 'assert';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-import * as sloLogic from '../src/slo-appliesTo';
+import * as sloAppliesTo from '../src/slo-appliesTo';
 import sinon from 'sinon';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 describe('isValidType', () => {
   it('returns true if type is issue and issue is undefined', async () => {
-    const isValid = await sloLogic.isValidType(undefined, false, 'issue');
+    const isValid = await sloAppliesTo.isValidType(undefined, false, 'issue');
     assert.strictEqual(isValid, true);
   });
   it('returns true if type is pr and prs is true', async () => {
-    const isValid = await sloLogic.isValidType(true, true, 'pull_request');
+    const isValid = await sloAppliesTo.isValidType(true, true, 'pull_request');
     assert.strictEqual(isValid, true);
   });
   it('returns true if type is issue and issue is true', async () => {
-    const isValid = await sloLogic.isValidType(true, false, 'issue');
+    const isValid = await sloAppliesTo.isValidType(true, false, 'issue');
     assert.strictEqual(isValid, true);
   });
   it('returns false if type is pr and prs is undefined', async () => {
-    const isValid = await sloLogic.isValidType(true, undefined, 'pull_request');
+    const isValid = await sloAppliesTo.isValidType(
+      true,
+      undefined,
+      'pull_request'
+    );
     assert.strictEqual(isValid, false);
   });
   it('returns false if type is pr and prs is false', async () => {
-    const isValid = await sloLogic.isValidType(true, false, 'pull_request');
+    const isValid = await sloAppliesTo.isValidType(true, false, 'pull_request');
     assert.strictEqual(isValid, false);
   });
   it('returns false if type is issue and issue is false', async () => {
-    const isValid = await sloLogic.isValidType(false, true, 'issue');
+    const isValid = await sloAppliesTo.isValidType(false, true, 'issue');
     assert.strictEqual(isValid, false);
   });
 });
 describe('isValidGithubLabel', () => {
   it('returns true if excluded github labels is undefined', async () => {
-    const isValid = await sloLogic.isValidGithubLabels(
+    const isValid = await sloAppliesTo.isValidGithubLabels(
       ['p3', 'bot: updates', 'bug'],
       undefined
     );
     assert.strictEqual(isValid, true);
   });
   it('returns true if github labels is a subset of issue labels', async () => {
-    const isValid = await sloLogic.isValidGithubLabels(
+    const isValid = await sloAppliesTo.isValidGithubLabels(
       ['enhancement', 'bug', 'p1'],
       ['bug', 'p1']
     );
     assert.strictEqual(isValid, true);
   });
   it('returns true if github labels is empty', async () => {
-    const isValid = await sloLogic.isValidGithubLabels(['bug', 'p3'], []);
+    const isValid = await sloAppliesTo.isValidGithubLabels(['bug', 'p3'], []);
     assert.strictEqual(isValid, true);
   });
   it('returns false if github labels is not a subset of issue labels', async () => {
-    const isValid = await sloLogic.isValidGithubLabels(
+    const isValid = await sloAppliesTo.isValidGithubLabels(
       ['enhancement', 'bug', 'p1'],
       ['bug', 'p3']
     );
@@ -76,25 +80,25 @@ describe('isValidGithubLabel', () => {
 });
 describe('isValidExcludedLabels', () => {
   it('returns true if excluded github labels is undefined', async () => {
-    const isValid = await sloLogic.isValidExcludedLabels(
+    const isValid = await sloAppliesTo.isValidExcludedLabels(
       ['p3', 'bot: updates', 'bug'],
       undefined
     );
     assert.strictEqual(isValid, true);
   });
   it('returns true if excluded github labels is not in issue labels', async () => {
-    const isValid = await sloLogic.isValidExcludedLabels(
+    const isValid = await sloAppliesTo.isValidExcludedLabels(
       ['enhancement', 'bug', 'p1'],
       ['p3', 'bot: updates']
     );
     assert.strictEqual(isValid, true);
   });
   it('returns true if excluded github labels is empty', async () => {
-    const isValid = await sloLogic.isValidGithubLabels(['bug', 'p3'], []);
+    const isValid = await sloAppliesTo.isValidGithubLabels(['bug', 'p3'], []);
     assert.strictEqual(isValid, true);
   });
   it('returns false if excluded github labels is in github labels', async () => {
-    const isValid = await sloLogic.isValidExcludedLabels(
+    const isValid = await sloAppliesTo.isValidExcludedLabels(
       ['enhancement', 'bug', 'p1'],
       ['p3', 'bot: updates', 'bug']
     );
@@ -103,7 +107,7 @@ describe('isValidExcludedLabels', () => {
 });
 describe('isValidRule', () => {
   it('returns true if priority is undefined', async () => {
-    const isValid = await sloLogic.isValidRule(
+    const isValid = await sloAppliesTo.isValidRule(
       ['p3', 'bot: updates', 'bug'],
       undefined,
       'priority: '
@@ -111,7 +115,7 @@ describe('isValidRule', () => {
     assert.strictEqual(isValid, true);
   });
   it('returns true if the rule is present in issue label', async () => {
-    const isValid = await sloLogic.isValidRule(
+    const isValid = await sloAppliesTo.isValidRule(
       ['p3', 'bot: updates', 'bug'],
       'p3',
       'priority: '
@@ -119,7 +123,7 @@ describe('isValidRule', () => {
     assert.strictEqual(isValid, true);
   });
   it('returns true if a string (title: rule) is present in issue label', async () => {
-    const isValid = await sloLogic.isValidRule(
+    const isValid = await sloAppliesTo.isValidRule(
       ['priority: p3', 'bot: updates', 'bug'],
       'p3',
       'priority: '
@@ -127,14 +131,14 @@ describe('isValidRule', () => {
     assert.strictEqual(isValid, true);
   });
   it('returns true if rule is empty', async () => {
-    const isValid = await sloLogic.isValidGithubLabels(
+    const isValid = await sloAppliesTo.isValidGithubLabels(
       ['bug', 'p3'],
       undefined
     );
     assert.strictEqual(isValid, true);
   });
   it('returns false if neither rule or title plus rule is present in issue labels', async () => {
-    const isValid = await sloLogic.isValidRule(
+    const isValid = await sloAppliesTo.isValidRule(
       ['priority: p3', 'bot: updates', 'bug'],
       'enhancement',
       'type: '
@@ -151,10 +155,10 @@ describe('doesSloApply', () => {
   const slo = require(resolve(fixturesPath, 'events', 'slo.json'));
 
   beforeEach(() => {
-    isValidTypeStub = sinon.stub(sloLogic, 'isValidType');
-    isValidGitLabelsStub = sinon.stub(sloLogic, 'isValidGithubLabels');
-    isValidExLabelsStub = sinon.stub(sloLogic, 'isValidExcludedLabels');
-    isValidRuleStub = sinon.stub(sloLogic, 'isValidRule');
+    isValidTypeStub = sinon.stub(sloAppliesTo, 'isValidType');
+    isValidGitLabelsStub = sinon.stub(sloAppliesTo, 'isValidGithubLabels');
+    isValidExLabelsStub = sinon.stub(sloAppliesTo, 'isValidExcludedLabels');
+    isValidRuleStub = sinon.stub(sloAppliesTo, 'isValidRule');
   });
 
   afterEach(() => {
@@ -163,7 +167,7 @@ describe('doesSloApply', () => {
 
   it('returns false if issue is not applicable depending on if its pr or issue', async () => {
     isValidTypeStub.onCall(0).returns(false);
-    const isValid = await sloLogic.doesSloApply(
+    const isValid = await sloAppliesTo.doesSloApply(
       'pr',
       slo,
       ['bot:auto label', 'p0'],
@@ -181,7 +185,7 @@ describe('doesSloApply', () => {
   it('returns false if githubLables is not subset', async () => {
     isValidTypeStub.onCall(0).returns(true);
     isValidGitLabelsStub.onCall(0).returns(false);
-    const isValid = await sloLogic.doesSloApply(
+    const isValid = await sloAppliesTo.doesSloApply(
       'issue',
       slo,
       ['bot:auto label', 'p0'],
@@ -198,7 +202,7 @@ describe('doesSloApply', () => {
     isValidTypeStub.onCall(0).returns(true);
     isValidGitLabelsStub.onCall(0).returns(true);
     isValidExLabelsStub.onCall(0).returns(false);
-    const isValid = await sloLogic.doesSloApply(
+    const isValid = await sloAppliesTo.doesSloApply(
       'issue',
       slo,
       ['bot:auto label', 'p0', 'bug'],
@@ -216,7 +220,7 @@ describe('doesSloApply', () => {
     isValidGitLabelsStub.onCall(0).returns(true);
     isValidExLabelsStub.onCall(0).returns(true);
     isValidRuleStub.onCall(0).returns(false);
-    const isValid = await sloLogic.doesSloApply(
+    const isValid = await sloAppliesTo.doesSloApply(
       'issue',
       slo,
       ['bot:auto label', 'p0', 'bug'],
@@ -235,7 +239,7 @@ describe('doesSloApply', () => {
     isValidExLabelsStub.onCall(0).returns(true);
     isValidRuleStub.onCall(0).returns(true);
     isValidRuleStub.onCall(1).returns(false);
-    const isValid = await sloLogic.doesSloApply(
+    const isValid = await sloAppliesTo.doesSloApply(
       'issue',
       slo,
       ['bot:auto label', 'p0', 'bug'],
@@ -249,7 +253,7 @@ describe('doesSloApply', () => {
     assert.strictEqual(isValid, false);
   });
   it('returns true if appliesTo has no rules', async () => {
-    const isValid = await sloLogic.doesSloApply(
+    const isValid = await sloAppliesTo.doesSloApply(
       'issue',
       {
         appliesTo: {},
@@ -275,7 +279,7 @@ describe('doesSloApply', () => {
     isValidExLabelsStub.onCall(0).returns(true);
     isValidRuleStub.onCall(0).returns(true);
     isValidRuleStub.onCall(1).returns(true);
-    const isValid = await sloLogic.doesSloApply(
+    const isValid = await sloAppliesTo.doesSloApply(
       'issue',
       slo,
       ['bot:auto label', 'p0', 'bug'],

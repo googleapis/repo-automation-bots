@@ -18,6 +18,7 @@ import {doesSloApply} from './slo-appliesTo';
 import {isIssueCompliant, getFilePathContent} from './slo-compliant';
 import {removeLabel, handleLabeling, getOoSloLabelName} from './slo-label';
 import {handleLint} from './slo-lint';
+import {IssuesListCommentsItem} from './types';
 
 interface IssueLabelResponseItem {
   name: string;
@@ -31,6 +32,7 @@ interface IssueLabelResponseItem {
  * @param type specifies if event is issue or pr
  * @param sloString json string of the slo rules
  * @param labels on the given issue or pr
+ * @param comment login of the user who commented on the pr
  * @returns void
  */
 async function handleIssues(
@@ -39,7 +41,8 @@ async function handleIssues(
   repo: string,
   type: string,
   sloString: string,
-  labels: string[] | null
+  labels: string[] | null,
+  comment?: IssuesListCommentsItem
 ) {
   const sloList = JSON.parse(sloString);
 
@@ -51,7 +54,16 @@ async function handleIssues(
     const appliesToIssue = await doesSloApply(type, slo, labels, number);
 
     if (appliesToIssue) {
-      const isCompliant = await isIssueCompliant(context.github, owner, repo, number, assignees, createdAt, slo);
+      const isCompliant = await isIssueCompliant(
+        context.github,
+        owner,
+        repo,
+        number,
+        assignees,
+        createdAt,
+        slo,
+        comment
+      );
       await handleLabeling(context, owner, repo, number, isCompliant, labels);
 
       // Keep OOSLO label if issue is not compliant with any one of the slos
@@ -79,15 +91,9 @@ async function getSloFile(
 
   if (sloRules === 'not found') {
     path = 'issue_slo_rules.json';
-    sloRules = await getFilePathContent(
-      github,
-      owner,
-      '.github',
-      path
-    );
+    sloRules = await getFilePathContent(github, owner, '.github', path);
   }
   if (sloRules === 'not found') {
-    //Error if org level does not exist
     throw new Error(`Error in finding org level config file in ${owner}`);
   }
   return sloRules;
@@ -171,7 +177,8 @@ export = function handler(app: Application) {
       'issues.unlabeled',
       'issues.edited',
       'issues.assigned',
-      'issues.unassigned'
+      'issues.unassigned',
+      'issue_comment.created',
     ],
     async (context: Context) => {
       if (context.payload.issue.state === 'closed') {
@@ -180,13 +187,22 @@ export = function handler(app: Application) {
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
       const labelsResponse = context.payload.issue.labels;
+      const comment = context.payload.issue.comment;
 
       // Check slo-logic and label issue according to slo status
       const labels = labelsResponse.map((label: IssueLabelResponseItem) =>
         label.name.toLowerCase()
       );
       const sloString = await getSloFile(context.github, owner, repo);
-      await handleIssues(context, owner, repo, 'issue', sloString, labels);
+      await handleIssues(
+        context,
+        owner,
+        repo,
+        'issue',
+        sloString,
+        labels,
+        comment
+      );
     }
   );
 };
