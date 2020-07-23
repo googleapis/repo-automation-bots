@@ -15,7 +15,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context, GitHubAPI} from 'probot';
 import * as sloLogic from './slo-logic';
-import {removeIssueLabel, handleLabeling, getOoSloLabelName} from './slo-label';
+import {removeLabel, handleLabeling, getOoSloLabelName} from './slo-label';
 import {handleLint} from './slo-lint';
 
 interface IssueLabelResponseItem {
@@ -167,7 +167,7 @@ export = function handler(app: Application) {
 
     const name = await getOoSloLabelName(context);
     if (labels?.includes(name)) {
-      await removeIssueLabel(context.github, owner, repo, number, name);
+      await removeLabel(context.github, owner, repo, number, name);
     }
   });
   app.on(
@@ -178,7 +178,7 @@ export = function handler(app: Application) {
       'issues.unlabeled',
       'issues.edited',
       'issues.assigned',
-      'issues.unassigned',
+      'issues.unassigned'
     ],
     async (context: Context) => {
       if (context.payload.issue.state === 'closed') {

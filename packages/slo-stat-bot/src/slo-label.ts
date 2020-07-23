@@ -38,7 +38,6 @@ export const getOoSloLabelName = async function (
 ): Promise<string> {
   try {
     const labelName = (await context.config(CONFIGURATION_FILE_PATH)) as Config;
-
     return labelName.name;
   } catch (err) {
     console.warn(
@@ -88,7 +87,7 @@ async function addLabel(
  * @param name of ooslo label in repo
  * @returns void
  */
-export const removeIssueLabel = async function removeIssueLabel(
+export const removeLabel = async function removeLabel(
   github: GitHubAPI,
   owner: string,
   repo: string,
@@ -134,6 +133,6 @@ export async function handleLabeling(
   if (!sloStatus.isCompliant && !labels?.includes(name)) {
     await addLabel(context.github, owner, repo, number, name);
   } else if (sloStatus.isCompliant && labels?.includes(name)) {
-    await removeIssueLabel(context.github, owner, repo, number, name);
+    await removeLabel(context.github, owner, repo, number, name);
   }
 }

@@ -87,20 +87,22 @@ export const doesSloApply = async function doesSloApply(
   issueLabels: string[] | null,
   number: number
 ): Promise<boolean> {
+  const sloString = JSON.stringify(slo, null, 4);
+
   if (Object.keys(slo.appliesTo).length === 0) {
     return true;
   }
 
   if (issueLabels === null) {
     console.info(
-      `Skipping issue ${number} for rule ${JSON.stringify(slo,null,4)} \n as it does not apply`
+      `Skipping issue ${number} for rule ${sloString} \n as it does not apply`
     );
     return false;
   }
 
   if (issueLabels.length === 0) {
     console.info(
-      `Skipping issue ${number} for rule ${JSON.stringify(slo,null,4)} \n as it does not apply`
+      `Skipping issue ${number} for rule ${sloString} \n as it does not apply`
     );
     return false;
   }
@@ -110,7 +112,7 @@ export const doesSloApply = async function doesSloApply(
   const appliesToType = await isValidType(appliesToIssues, appliesToPrs, type);
   if (!appliesToType) {
     console.info(
-      `Skipping issue ${number} for rule ${JSON.stringify(slo,null,4)} \n as it does not apply to ${type}`
+      `Skipping issue ${number} for rule ${sloString} \n as it does not apply to ${type}`
     );
     return false;
   }
@@ -119,8 +121,7 @@ export const doesSloApply = async function doesSloApply(
   const hasGithubLabels = await isValidGithubLabels(issueLabels, githubLabels);
   if (!hasGithubLabels) {
     console.info(`
-    Skipping issue ${number} for rule ${JSON.stringify(slo,null,4)} \n as it does not apply to gitHubLabels`
-    );
+    Skipping issue ${number} for rule ${sloString} \n as it does not apply to gitHubLabels`);
     return false;
   }
 
@@ -131,7 +132,7 @@ export const doesSloApply = async function doesSloApply(
   );
   if (!hasNoExLabels) {
     console.info(
-      `Skipping issue ${number} for rule ${JSON.stringify(slo,null,4)} \n as it does not apply to excludedGitHubLabels`
+      `Skipping issue ${number} for rule ${sloString} \n as it does not apply to excludedGitHubLabels`
     );
     return false;
   }
@@ -140,7 +141,7 @@ export const doesSloApply = async function doesSloApply(
   const hasPriority = await isValidRule(issueLabels, priority, 'priority: ');
   if (!hasPriority) {
     console.info(
-      `Skipping issue ${number} for rule ${JSON.stringify(slo,null,4)} \n as it does not apply to priority`
+      `Skipping issue ${number} for rule ${sloString} \n as it does not apply to priority`
     );
     return false;
   }
@@ -149,7 +150,7 @@ export const doesSloApply = async function doesSloApply(
   const hasIssueType = await isValidRule(issueLabels, issueType, 'type: ');
   if (!hasIssueType) {
     console.info(
-      `Skipping issue ${number} for rule ${JSON.stringify(slo,null,4)} \n as it does not apply to issue type`
+      `Skipping issue ${number} for rule ${sloString} \n as it does not apply to issue type`
     );
     return false;
   }
@@ -314,12 +315,14 @@ export const isIssueCompliant = async function isIssueCompliant(
   createdAt: string,
   slo: SLORules
 ): Promise<boolean> {
+  const sloString = JSON.stringify(slo, null, 4);
+
   const resTime = slo.complianceSettings.resolutionTime;
   if (resTime !== 0) {
     const result = await isInDuration(resTime, createdAt);
     if (!result) {
       console.info(
-        `Issue ${number} in repo ${repo} is not compliant for slo: \n ${JSON.stringify(slo,null,4)} \n Reason: It is not in resolution time`
+        `Issue ${number} in repo ${repo} is not compliant for slo: \n ${sloString} \n Reason: It is not in resolution time`
       );
       return false;
     }
@@ -332,7 +335,7 @@ export const isIssueCompliant = async function isIssueCompliant(
     const result = await isAssigned(responders, assignees);
     if (!result) {
       console.info(
-        `Issue ${number} in repo ${repo} is not compliant for slo: \n ${JSON.stringify(slo,null,4)} \n Reason: Does not have a valid assignee`
+        `Issue ${number} in repo ${repo} is not compliant for slo: \n ${sloString} \n Reason: Does not have a valid assignee`
       );
       return false;
     }
@@ -351,7 +354,7 @@ export const isIssueCompliant = async function isIssueCompliant(
     );
     if (!result) {
       console.info(
-        `Issue ${number} in repo ${repo} is not compliant for slo: \n ${JSON.stringify(slo,null,4)} \n Reason: No valid responder commented within response time`
+        `Issue ${number} in repo ${repo} is not compliant for slo: \n ${sloString} \n Reason: No valid responder commented within response time`
       );
       return false;
     }

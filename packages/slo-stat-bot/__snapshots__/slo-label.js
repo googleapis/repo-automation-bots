@@ -13,8 +13,8 @@
 // limitations under the License.
 //
 
-exports['slo-label handle_labels labels ooslo if issue is not compliant and is missing ooslo label 1'] = {
-  "labels": [
-    "ooslo"
-  ]
-}
+exports[
+  'slo-label handle_labels labels ooslo if issue is not compliant and is missing ooslo label 1'
+] = {
+  labels: ['ooslo'],
+};
