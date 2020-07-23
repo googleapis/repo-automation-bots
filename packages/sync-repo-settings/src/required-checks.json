@@ -245,7 +245,8 @@
       "googleapis/repo-automation-bots",
       "googleapis/google-cloud-node",
       "googleapis/gapic-generator-typescript",
-      "googleapis/aip"
+      "googleapis/aip",
+      "googleapis/release-please"
     ]
   },
   "ruby": {
