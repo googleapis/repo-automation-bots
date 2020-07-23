@@ -13,6 +13,8 @@
 // limitations under the License.
 //
 import {DataProcessor} from './data-processor-abstract';
+import {Octokit} from '@octokit/rest';
+import { Firestore } from '@google-cloud/firestore';
 
 interface GitHubRepository {
   name: string,
@@ -32,24 +34,51 @@ interface GitHubEvent {
  */
 export class GitHubProcessor extends DataProcessor {
   
+  octokit: Octokit;
+
+  constructor(firestore?: Firestore, octokit?: Octokit) {
+    super(firestore);
+    this.octokit = octokit || new Octokit();
+  }
+  
+  /**
+   * Collect and process GitHub Events data
+   */
   public async collectAndProcess(): Promise<void> {
     throw new Error('Method not implemented.');
   }
 
+  /**
+   * List the GitHub repositories that have triggered 
+   * bot executions in the past
+   */
   private async listRepositories(): Promise<GitHubRepository[]> {
     throw new Error('Method not implemented.');
   }
 
-  private async getPublicEventsForRepository(repository: GitHubRepository): Promise<GitHubEvent[]> {
+  /**
+   * Get all the publicly visible Events on the given repository
+   * @param repository repository for which to get events
+   */
+  private async listPublicEventsForRepository(repository: GitHubRepository): Promise<GitHubEvent[]> {
     // https://octokit.github.io/rest.js/v18#activity-list-repo-events
     throw new Error('Method not implemented.');
   }
 
+  /**
+   * Store the given events data into Firestore. Existing events with the same payload
+   * hash will be overwritten
+   * @param events events data to store
+   */
   private async storeEventsData(events: GitHubEvent[]): Promise<void> {
     throw new Error('Method not implemented.');
   }
 
-  private iso8601TimeToEpoch(iso8601Timestamp: string): number {
+  /**
+   * Convert the given ISO 8601 timestamp (in UTC) to UNIX time
+   * @param iso8601Timestamp 
+   */
+  private iso8601ToUnixTime(iso8601Timestamp: string): number {
     throw new Error('Method not implemented.');
   }
 
