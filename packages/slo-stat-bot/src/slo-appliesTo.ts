@@ -125,7 +125,7 @@ export const convertToArray = async function convertToArray(
 };
 
 /**
- * Function gets list of files changed on the pr
+ * Function determines if slo applies to the issue
  * @param type specifies if event is issue or pr
  * @param slo rules
  * @param issueLabels of issue or pr

@@ -26,6 +26,7 @@ interface Config {
 
 /**
  * Function gets ooslo label name in repo from the config file. Defaults to rotating light OOSLO label name if config file does not exist
+ * @param context of issue or pr
  * @returns the name of ooslo label
  */
 export const getOoSloLabelName = async function (

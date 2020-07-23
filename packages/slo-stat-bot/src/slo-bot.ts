@@ -189,7 +189,6 @@ export = function handler(app: Application) {
       const labelsResponse = context.payload.issue.labels;
       const comment = context.payload.issue.comment;
 
-      // Check slo-logic and label issue according to slo status
       const labels = labelsResponse.map((label: IssueLabelResponseItem) =>
         label.name.toLowerCase()
       );
