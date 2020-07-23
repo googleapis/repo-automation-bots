@@ -15,7 +15,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, Octokit} from 'probot';
+import {Probot} from 'probot';
 import {describe, it, beforeEach} from 'mocha';
 import nock from 'nock';
 import * as assert from 'assert';

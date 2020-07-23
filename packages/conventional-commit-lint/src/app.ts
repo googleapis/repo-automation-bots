@@ -16,4 +16,7 @@ import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './conventional-commit-lint';
 
 const bootstrap = new GCFBootstrapper();
-module.exports.conventional_commit_lint = bootstrap.gcf(appFn);
+module.exports.conventional_commit_lint = bootstrap.gcf(appFn, {
+  background: true,
+  logging: true,
+});

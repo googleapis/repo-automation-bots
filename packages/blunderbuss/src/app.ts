@@ -16,4 +16,7 @@ import {GCFBootstrapper} from 'gcf-utils';
 import {blunderbuss} from './blunderbuss';
 
 const bootstrap = new GCFBootstrapper();
-module.exports.blunderbuss = bootstrap.gcf(blunderbuss);
+module.exports.blunderbuss = bootstrap.gcf(blunderbuss, {
+  background: true,
+  logging: true,
+});
