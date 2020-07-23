@@ -13,10 +13,10 @@
 // limitations under the License.
 //
 import {DataProcessor} from './data-processor-abstract';
-import {Firestore} from '@google-cloud/firestore';
+import {Firestore, WriteResult} from '@google-cloud/firestore';
 import {CloudTasksClient, protos, v2} from '@google-cloud/tasks';
 
-type CloudTasksListResponse = [
+type CloudTasksList = [
   protos.google.cloud.tasks.v2.ITask[],
   protos.google.cloud.tasks.v2.IListTasksRequest | null,
   protos.google.cloud.tasks.v2.IListTasksResponse
@@ -91,21 +91,20 @@ export class CloudTasksProcessor extends DataProcessor {
   ): Promise<QueueStatus> {
     return new Promise<QueueStatus>((resolve, reject) => {
       const queueStatus: QueueStatus = {};
-      const taskListPromises: Promise<CloudTasksListResponse>[] = [];
 
-      for (const name of queueNames) {
-        const queuePath = this.tasksClient.queuePath(project, location, name);
-        const taskListPromise = this.tasksClient.listTasks({
-          parent: queuePath,
-        });
-
-        taskListPromise
-          .then(taskList => {
-            queueStatus[name] = taskList[0].length;
+      const taskListPromises: Promise<void>[] = queueNames.map(queueName => {
+        const queuePath = this.tasksClient.queuePath(
+          project,
+          location,
+          queueName
+        );
+        return this.tasksClient
+          .listTasks({parent: queuePath})
+          .then((taskList: CloudTasksList) => {
+            queueStatus[queueName] = taskList[0].length;
           })
           .catch(error => reject(error));
-        taskListPromises.push(taskListPromise);
-      }
+      });
 
       Promise.all(taskListPromises)
         .then(() => {
@@ -120,17 +119,16 @@ export class CloudTasksProcessor extends DataProcessor {
   ): Promise<number> {
     const currentTimestamp = new Date().getTime();
     const collectionRef = this.firestore.collection('Task_Queue_Status');
-    const writePromises: Promise<FirebaseFirestore.WriteResult>[] = [];
+    const queueNames = Object.keys(queueStatus);
 
-    for (const queueName of Object.keys(queueStatus)) {
+    const writePromises: Promise<WriteResult>[] = queueNames.map(queueName => {
       const docKey = `${queueName}_${currentTimestamp}`;
-      const writePromise = collectionRef.doc(docKey).set({
+      return collectionRef.doc(docKey).set({
         timestamp: currentTimestamp,
         queue_name: queueName,
         in_queue: queueStatus[queueName],
       });
-      writePromises.push(writePromise);
-    }
+    });
 
     return new Promise((resolve, reject) => {
       Promise.all(writePromises)
