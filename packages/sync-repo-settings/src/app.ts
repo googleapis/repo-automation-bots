@@ -16,4 +16,7 @@ import {GCFBootstrapper} from 'gcf-utils';
 import {handler} from './sync-repo-settings';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['sync_repo_settings'] = bootstrap.gcf(handler);
+module.exports['sync_repo_settings'] = bootstrap.gcf(handler, {
+  background: true,
+  logging: true,
+});
