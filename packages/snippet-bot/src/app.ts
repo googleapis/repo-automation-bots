@@ -16,4 +16,7 @@ import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './snippet-bot';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['snippet_bot'] = bootstrap.gcf(appFn);
+module.exports['snippet_bot'] = bootstrap.gcf(appFn, {
+  background: true,
+  logging: true,
+});
