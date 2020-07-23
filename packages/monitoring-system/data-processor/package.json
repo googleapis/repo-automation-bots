@@ -10,9 +10,10 @@
     "lint": "gts check",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit --recursive ./build/test/unit",
     "start": "node ./build/src/task-service.js",
-    "docker-start-local": "docker run --network=host data-processor:1.0",
+    "docker-start-local": "docker run --network=host -d data-processor:1.0",
     "docker-build-local": "docker build --tag data-processor:1.0 .",
-    "local-docker": "npm run compile && npm run docker-build-local && npm run docker-start-local"
+    "local-docker": "npm run compile && npm run docker-build-local && npm run docker-start-local",
+    "integration-test": ""
   },
   "repository": "https://github.com/googleapis/repo-automation-bots.git",
   "homepage": "https://github.com/googleapis/repo-automation-bots",
