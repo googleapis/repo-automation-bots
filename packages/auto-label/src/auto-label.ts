@@ -201,7 +201,9 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   github: GitHubAPI
 ) {
   if (!jsonArray) {
-    console.error('terminating execution of auto-label since JSON file is empty');
+    console.error(
+      'terminating execution of auto-label since JSON file is empty'
+    );
     return;
   }
   const objectInJsonArray = handler.checkIfElementIsInArray(
