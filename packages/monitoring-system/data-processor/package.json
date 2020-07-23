@@ -9,11 +9,11 @@
     "fix": "gts fix",
     "lint": "gts check",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit --recursive ./build/test/unit",
+    "integration-test": "cross-env LOG_LEVEL=fatal c8 mocha --exit --recursive ./build/test/integration",
     "start": "node ./build/src/task-service.js",
     "docker-start-local": "docker run --network=host -d data-processor:1.0",
     "docker-build-local": "docker build --tag data-processor:1.0 .",
-    "local-docker": "npm run compile && npm run docker-build-local && npm run docker-start-local",
-    "integration-test": ""
+    "local-docker": "npm run compile && npm run docker-build-local && npm run docker-start-local"
   },
   "repository": "https://github.com/googleapis/repo-automation-bots.git",
   "homepage": "https://github.com/googleapis/repo-automation-bots",
@@ -27,6 +27,7 @@
     "express": "^4.17.1"
   },
   "devDependencies": {
+    "@firebase/testing": "^0.20.7",
     "@types/express": "^4.17.7",
     "@types/mocha": "^8.0.0",
     "@types/supertest": "^2.0.10",
