@@ -117,7 +117,7 @@ export class CloudTasksProcessor extends DataProcessor {
 
   private async storeTaskQueueStatus(
     queueStatus: QueueStatus
-  ): Promise<FirebaseFirestore.WriteResult[]> {
+  ): Promise<number> {
     const currentTimestamp = new Date().getTime();
     const collectionRef = this.firestore.collection('Task_Queue_Status');
     const writePromises: Promise<FirebaseFirestore.WriteResult>[] = [];
@@ -132,6 +132,10 @@ export class CloudTasksProcessor extends DataProcessor {
       writePromises.push(writePromise);
     }
 
-    return Promise.all(writePromises);
+    return new Promise((resolve, reject) => {
+      Promise.all(writePromises)
+        .then(() => resolve(currentTimestamp))
+        .catch(reject);
+    });
   }
 }

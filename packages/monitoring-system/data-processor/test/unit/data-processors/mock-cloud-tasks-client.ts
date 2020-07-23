@@ -21,11 +21,6 @@ type IListTasksRequest = protos.google.cloud.tasks.v2.IListTasksRequest;
 type IListTasksResponse = protos.google.cloud.tasks.v2.IListTasksResponse;
 
 /**
- * A mock implementation of ITask
- */
-export class MockTask implements ITask {}
-
-/**
  * An interface for mock task queue data
  */
 export interface MockTaskQueueData {
@@ -66,7 +61,7 @@ export class MockCloudTasksClient extends CloudTasksClient {
 
   /**
    * Returns a path to the given queue.
-   * Note: this is a mock implementation that only works with 
+   * Note: this is a mock implementation that only works with
    * the mock client
    * @param project project in which queue exists
    * @param location location of the queue
