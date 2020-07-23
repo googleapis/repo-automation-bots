@@ -17,6 +17,7 @@ import {CloudTasksClient} from '@google-cloud/tasks';
 import {v1} from '@google-cloud/secret-manager';
 import * as express from 'express';
 import pino from 'pino';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import SonicBoom from 'sonic-boom';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -200,7 +201,7 @@ export class GCFBootstrapper {
       return {...config, Octokit: LoggingOctokit} as Options;
     } else {
       console.info('custom logging instance not enabled');
-      return config;
+      return config as Options;
     }
   }
 
