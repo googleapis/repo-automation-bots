@@ -78,22 +78,30 @@ interface ReposListCollaboratorsItem {
  * @param type specifies if event is issue or pr
  * @param slo rules
  * @param issueLabels of issue or pr
+ * @param number of issue or pr
  * @returns true if slo applies to issue else false
  */
 export const doesSloApply = async function doesSloApply(
   type: string,
   slo: SLORules,
-  issueLabels: string[] | null
+  issueLabels: string[] | null,
+  number: number
 ): Promise<boolean> {
   if (Object.keys(slo.appliesTo).length === 0) {
     return true;
   }
 
   if (issueLabels === null) {
+    console.info(
+      `Skipping issue ${number} for rule ${JSON.stringify(slo,null,4)} \n as it does not apply`
+    );
     return false;
   }
 
   if (issueLabels.length === 0) {
+    console.info(
+      `Skipping issue ${number} for rule ${JSON.stringify(slo,null,4)} \n as it does not apply`
+    );
     return false;
   }
 
@@ -101,12 +109,18 @@ export const doesSloApply = async function doesSloApply(
   const appliesToPrs = slo.appliesTo.prs;
   const appliesToType = await isValidType(appliesToIssues, appliesToPrs, type);
   if (!appliesToType) {
+    console.info(
+      `Skipping issue ${number} for rule ${JSON.stringify(slo,null,4)} \n as it does not apply to ${type}`
+    );
     return false;
   }
 
   const githubLabels = slo.appliesTo.gitHubLabels;
   const hasGithubLabels = await isValidGithubLabels(issueLabels, githubLabels);
   if (!hasGithubLabels) {
+    console.info(`
+    Skipping issue ${number} for rule ${JSON.stringify(slo,null,4)} \n as it does not apply to gitHubLabels`
+    );
     return false;
   }
 
@@ -116,18 +130,27 @@ export const doesSloApply = async function doesSloApply(
     excludedGitHubLabels
   );
   if (!hasNoExLabels) {
+    console.info(
+      `Skipping issue ${number} for rule ${JSON.stringify(slo,null,4)} \n as it does not apply to excludedGitHubLabels`
+    );
     return false;
   }
 
   const priority = String(slo.appliesTo.priority);
   const hasPriority = await isValidRule(issueLabels, priority, 'priority: ');
   if (!hasPriority) {
+    console.info(
+      `Skipping issue ${number} for rule ${JSON.stringify(slo,null,4)} \n as it does not apply to priority`
+    );
     return false;
   }
 
   const issueType = slo.appliesTo.issueType;
   const hasIssueType = await isValidRule(issueLabels, issueType, 'type: ');
   if (!hasIssueType) {
+    console.info(
+      `Skipping issue ${number} for rule ${JSON.stringify(slo,null,4)} \n as it does not apply to issue type`
+    );
     return false;
   }
 
@@ -276,9 +299,9 @@ export const getFilePathContent = async function getFilePathContent(
  * @param github unique installation id for each function
  * @param owner of issue or pr
  * @param repo of issue or pr
- * @param issueNumber of the issue or pr
+ * @param number of the issue or pr
  * @param assignees of the issue or pr
- * @param issueUpdateTime of the issue or pr
+ * @param createdAt time of the issue or pr
  * @param slo rule
  * @returns true if issue is compliant with slo else false
  */
@@ -286,17 +309,17 @@ export const isIssueCompliant = async function isIssueCompliant(
   github: GitHubAPI,
   owner: string,
   repo: string,
-  issueNumber: number,
+  number: number,
   assignees: IssueAssignees[],
-  issueUpdateTime: string,
+  createdAt: string,
   slo: SLORules
 ): Promise<boolean> {
   const resTime = slo.complianceSettings.resolutionTime;
   if (resTime !== 0) {
-    const result = await isInDuration(resTime, issueUpdateTime);
+    const result = await isInDuration(resTime, createdAt);
     if (!result) {
-      console.log(
-        `Not in resolutions time for issue ${issueNumber} in repo ${repo}`
+      console.info(
+        `Issue ${number} in repo ${repo} is not compliant for slo: \n ${JSON.stringify(slo,null,4)} \n Reason: It is not in resolution time`
       );
       return false;
     }
@@ -308,8 +331,8 @@ export const isIssueCompliant = async function isIssueCompliant(
   if (reqAssignee === true) {
     const result = await isAssigned(responders, assignees);
     if (!result) {
-      console.log(
-        `Does not have valid assignee for issue ${issueNumber} in repo ${repo}`
+      console.info(
+        `Issue ${number} in repo ${repo} is not compliant for slo: \n ${JSON.stringify(slo,null,4)} \n Reason: Does not have a valid assignee`
       );
       return false;
     }
@@ -321,14 +344,14 @@ export const isIssueCompliant = async function isIssueCompliant(
       github,
       owner,
       repo,
-      issueNumber,
+      number,
       responders,
       responseTime,
-      issueUpdateTime
+      createdAt
     );
     if (!result) {
-      console.log(
-        `Not in response time for issue ${issueNumber} in repo ${repo}`
+      console.info(
+        `Issue ${number} in repo ${repo} is not compliant for slo: \n ${JSON.stringify(slo,null,4)} \n Reason: No valid responder commented within response time`
       );
       return false;
     }
@@ -341,29 +364,29 @@ export const isIssueCompliant = async function isIssueCompliant(
  * @param github of issue or pr
  * @param owner of issue or pr
  * @param repo of issue or pr
- * @param issueNumber of issue or pr
+ * @param number of issue or pr
  * @param responders that are valid for issue or pr
  * @param responseTime of issue or pr
- * @param issueCreatedTime of the issue or pr
+ * @param createdAt time issue or pr
  * @returns true if valid responder responded in time else false
  */
 export const isInResponseTime = async function isInResponseTime(
   github: GitHubAPI,
   owner: string,
   repo: string,
-  issueNumber: number,
+  number: number,
   responders: Set<string>,
   responseTime: string | number,
-  issueCreatedTime: string
+  createdAt: string
 ): Promise<boolean> {
-  const isInResTime = await isInDuration(responseTime, issueCreatedTime);
+  const isInResTime = await isInDuration(responseTime, createdAt);
 
   if (!isInResTime) {
     const listIssueComments = await getIssueCommentsList(
       github,
       owner,
       repo,
-      issueNumber
+      number
     );
 
     //API calls that fail to get list of issue comments will return true but log the error
@@ -404,25 +427,25 @@ export const isAssigned = async function isAssigned(
  * @param github github unique installation id for each function
  * @param owner of issue or pr
  * @param repo of issue or pr
- * @param issueNumber of issue or pr
+ * @param number of issue or pr
  * @returns an array of IssuesListCommentsItem with id number, user login, updated time, and created time
  */
 export const getIssueCommentsList = async function getIssueCommentsList(
   github: GitHubAPI,
   owner: string,
   repo: string,
-  issueNumber: number
+  number: number
 ): Promise<IssuesListCommentsItem[] | null> {
   try {
     const listComments = await github.issues.listComments({
       owner,
       repo,
-      issue_number: issueNumber,
+      issue_number: number,
     });
     return listComments.data;
   } catch (err) {
     console.error(
-      `Error in getting issue comments for number ${issueNumber}\n ${err.request}`
+      `Error in getting issue comments for number ${number}\n ${err.message}`
     );
     return null;
   }
@@ -533,7 +556,7 @@ export const getCollaborators = async function getCollaborators(
     });
     return collaboratorList.data;
   } catch (err) {
-    console.warn(`Error in getting list of collaborators \n ${err.request}`);
+    console.warn(`Error in getting list of collaborators \n ${err.message}`);
     return null;
   }
 };
@@ -578,9 +601,9 @@ export const isInDuration = async function isInDuration(
  * @param github unique installation id for each function
  * @param owner of issue or pr
  * @param repo of issue or pr
- * @param issueCreatedTime of the issue or pr
+ * @param createdAt time issue or pr
  * @param assignees of the issue or pr
- * @param issueNumber of the issue or pr
+ * @param number of the issue or pr
  * @param slo rule
  * @param labels on issue or pr
  * @returns the slo status if slo applies to issue and if it is complaint with issue (if issue does not apply isCompliant is set to null)
@@ -589,14 +612,14 @@ export async function getSloStatus(
   github: GitHubAPI,
   owner: string,
   repo: string,
-  issueCreatedTime: string,
+  createdAt: string,
   assignees: IssueAssignees[],
-  issueNumber: number,
+  number: number,
   type: string,
   slo: SLORules,
   labels: string[] | null
 ): Promise<SLOStatus> {
-  const appliesTo = await doesSloApply(type, slo, labels);
+  const appliesTo = await doesSloApply(type, slo, labels, number);
   let isCompliant = null;
 
   if (appliesTo) {
@@ -604,9 +627,9 @@ export async function getSloStatus(
       github,
       owner,
       repo,
-      issueNumber,
+      number,
       assignees,
-      issueCreatedTime,
+      createdAt,
       slo
     );
   }

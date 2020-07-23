@@ -15,7 +15,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context, GitHubAPI} from 'probot';
 import * as sloLogic from './slo-logic';
-import {removeIssueLabel, handleLabeling, getLabelName} from './slo-label';
+import {removeIssueLabel, handleLabeling, getOoSloLabelName} from './slo-label';
 import {handleLint} from './slo-lint';
 
 interface IssueLabelResponseItem {
@@ -64,11 +64,6 @@ async function handleIssues(
     }
 
     if (sloStatus.isCompliant === false) {
-      console.log(
-        `Issue number ${number} is not compliant for slo: \n ${JSON.stringify(
-          slo
-        )}`
-      );
       break;
     }
   }
@@ -170,7 +165,7 @@ export = function handler(app: Application) {
       label.name.toLowerCase()
     );
 
-    const name = await getLabelName(context);
+    const name = await getOoSloLabelName(context);
     if (labels?.includes(name)) {
       await removeIssueLabel(context.github, owner, repo, number, name);
     }

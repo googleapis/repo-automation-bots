@@ -163,10 +163,12 @@ describe('doesSloApply', () => {
 
   it('returns false if issue is not applicable depending on if its pr or issue', async () => {
     isValidTypeStub.onCall(0).returns(false);
-    const isValid = await sloLogic.doesSloApply('pr', slo, [
-      'bot:auto label',
-      'p0',
-    ]);
+    const isValid = await sloLogic.doesSloApply(
+      'pr',
+      slo,
+      ['bot:auto label', 'p0'],
+      3
+    );
 
     sinon.assert.calledOnce(isValidTypeStub);
     sinon.assert.calledOnce(isValidTypeStub);
@@ -179,10 +181,12 @@ describe('doesSloApply', () => {
   it('returns false if githubLables is not subset', async () => {
     isValidTypeStub.onCall(0).returns(true);
     isValidGitLabelsStub.onCall(0).returns(false);
-    const isValid = await sloLogic.doesSloApply('issue', slo, [
-      'bot:auto label',
-      'p0',
-    ]);
+    const isValid = await sloLogic.doesSloApply(
+      'issue',
+      slo,
+      ['bot:auto label', 'p0'],
+      3
+    );
 
     sinon.assert.calledOnce(isValidTypeStub);
     sinon.assert.calledOnce(isValidGitLabelsStub);
@@ -194,11 +198,12 @@ describe('doesSloApply', () => {
     isValidTypeStub.onCall(0).returns(true);
     isValidGitLabelsStub.onCall(0).returns(true);
     isValidExLabelsStub.onCall(0).returns(false);
-    const isValid = await sloLogic.doesSloApply('issue', slo, [
-      'bot:auto label',
-      'p0',
-      'bug',
-    ]);
+    const isValid = await sloLogic.doesSloApply(
+      'issue',
+      slo,
+      ['bot:auto label', 'p0', 'bug'],
+      3
+    );
 
     sinon.assert.calledOnce(isValidTypeStub);
     sinon.assert.calledOnce(isValidGitLabelsStub);
@@ -211,11 +216,12 @@ describe('doesSloApply', () => {
     isValidGitLabelsStub.onCall(0).returns(true);
     isValidExLabelsStub.onCall(0).returns(true);
     isValidRuleStub.onCall(0).returns(false);
-    const isValid = await sloLogic.doesSloApply('issue', slo, [
-      'bot:auto label',
-      'p0',
-      'bug',
-    ]);
+    const isValid = await sloLogic.doesSloApply(
+      'issue',
+      slo,
+      ['bot:auto label', 'p0', 'bug'],
+      3
+    );
 
     sinon.assert.calledOnce(isValidTypeStub);
     sinon.assert.calledOnce(isValidGitLabelsStub);
@@ -229,11 +235,12 @@ describe('doesSloApply', () => {
     isValidExLabelsStub.onCall(0).returns(true);
     isValidRuleStub.onCall(0).returns(true);
     isValidRuleStub.onCall(1).returns(false);
-    const isValid = await sloLogic.doesSloApply('issue', slo, [
-      'bot:auto label',
-      'p0',
-      'bug',
-    ]);
+    const isValid = await sloLogic.doesSloApply(
+      'issue',
+      slo,
+      ['bot:auto label', 'p0', 'bug'],
+      3
+    );
 
     sinon.assert.calledOnce(isValidTypeStub);
     sinon.assert.calledOnce(isValidGitLabelsStub);
@@ -252,7 +259,8 @@ describe('doesSloApply', () => {
           requiresAssignee: false,
         },
       },
-      ['bot:auto label', 'p0']
+      ['bot:auto label', 'p0'],
+      3
     );
 
     sinon.assert.notCalled(isValidTypeStub);
@@ -267,11 +275,12 @@ describe('doesSloApply', () => {
     isValidExLabelsStub.onCall(0).returns(true);
     isValidRuleStub.onCall(0).returns(true);
     isValidRuleStub.onCall(1).returns(true);
-    const isValid = await sloLogic.doesSloApply('issue', slo, [
-      'bot:auto label',
-      'p0',
-      'bug',
-    ]);
+    const isValid = await sloLogic.doesSloApply(
+      'issue',
+      slo,
+      ['bot:auto label', 'p0', 'bug'],
+      3
+    );
 
     sinon.assert.calledOnce(isValidTypeStub);
     sinon.assert.calledOnce(isValidGitLabelsStub);

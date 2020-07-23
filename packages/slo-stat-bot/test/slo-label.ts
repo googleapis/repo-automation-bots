@@ -26,7 +26,6 @@ import snapshot from 'snap-shot-it';
 import handler from '../src/slo-bot';
 import sinon from 'sinon';
 import * as sloLogic from '../src/slo-logic';
-import * as sloLabel from '../src/slo-label';
 
 nock.disableNetConnect();
 
@@ -55,7 +54,7 @@ describe('slo-label', () => {
   });
   describe('handle_labels', () => {
     const config = fs.readFileSync(
-      resolve(fixturesPath, 'config', 'label_name.yml')
+      resolve(fixturesPath, 'config', 'slo-stat-bot.yaml')
     );
 
     let payload: Webhooks.WebhookPayloadPullRequest;
@@ -74,13 +73,12 @@ describe('slo-label', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
       const requests = nock('https://api.github.com')
-        .log(console.log)
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         })
-        .get('/repos/testOwner/testRepo/contents/.github/label_name.yml')
+        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')})
         .post('/repos/testOwner/testRepo/issues/5/labels', body => {
           snapshot(body);
@@ -106,7 +104,7 @@ describe('slo-label', () => {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         })
-        .get('/repos/testOwner/testRepo/contents/.github/label_name.yml')
+        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')});
 
       getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: false});
@@ -128,7 +126,7 @@ describe('slo-label', () => {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         })
-        .get('/repos/testOwner/testRepo/contents/.github/label_name.yml')
+        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')});
 
       getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: true});
@@ -151,7 +149,7 @@ describe('slo-label', () => {
         })
         .delete('/repos/testOwner/testRepo/issues/5/labels/ooslo')
         .reply(200)
-        .get('/repos/testOwner/testRepo/contents/.github/label_name.yml')
+        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')});
 
       getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: true});

@@ -7,7 +7,7 @@ Lints for slo rules (issue_slo_rules.json) file and creates a check on the PR. C
 This bot uses nock for mocking requests to GitHub, and snap-shot-it for capturing responses; This allows updates to the API surface to be treated as a visual diff, rather than tediously asserting against each field.
 
 ## Usage:
-Create Out of SLO label in the repo. Update `label_name.yml` with the name of OOSLO label. 
+Create Out of SLO label in the repo. Update `slo-stat-bot.yaml` with the name of OOSLO label. 
 
 Example:
 

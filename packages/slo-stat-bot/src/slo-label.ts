@@ -15,30 +15,36 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI, Context} from 'probot';
 
-const CONFIGURATION_FILE_PATH = 'label_name.yml';
+const CONFIGURATION_FILE_PATH = 'slo-stat-bot.yaml';
+const DEFAULT_CONFIGURATION: Config = {
+  name: ':rotating_light:',
+};
 
 interface SLOStatus {
   appliesTo: boolean;
   isCompliant: boolean | null;
 }
 
-interface IssueLabelResponseItem {
+interface Config {
   name: string;
 }
 
 /**
- * Function gets ooslo label name in repo from the config file
+ * Function gets ooslo label name in repo from the config file. Defaults to rotating light OOSLO label name if config file does not exist
  * @returns the name of ooslo label
  */
-export const getLabelName = async function (context: Context): Promise<string> {
+export const getOoSloLabelName = async function (
+  context: Context
+): Promise<string> {
   try {
-    const labelName = (await context.config(
-      CONFIGURATION_FILE_PATH
-    )) as IssueLabelResponseItem;
+    const labelName = (await context.config(CONFIGURATION_FILE_PATH)) as Config;
+
     return labelName.name;
   } catch (err) {
-    err.message = `Unable to get ooslo name from config-label file \n ${err.message}`;
-    throw err;
+    console.warn(
+      `Unable to get ooslo name from config-label file \n ${err.message}. \n Using default config for OOSLO label name.`
+    );
+    return DEFAULT_CONFIGURATION.name;
   }
 };
 
@@ -48,7 +54,7 @@ export const getLabelName = async function (context: Context): Promise<string> {
  * @param github unique installation id for each function
  * @param owner of issue or pr
  * @param repo of issue or pr
- * @param issueNumber number of issue pr
+ * @param number of issue pr
  * @param name of ooslo label in repo
  * @returns void
  */
@@ -56,7 +62,7 @@ async function addLabel(
   github: GitHubAPI,
   owner: string,
   repo: string,
-  issueNumber: number,
+  number: number,
   name: string
 ) {
   try {
@@ -64,12 +70,11 @@ async function addLabel(
     await github.issues.addLabels({
       owner,
       repo,
-      issue_number: issueNumber,
+      issue_number: number,
       labels,
     });
   } catch (err) {
-    //Error if ooslo label does not exist in repo
-    err.message = `Error in adding ooslo label for org ${owner} in repo ${repo} since it does not exist \n ${err.message} \n ${err}`;
+    err.message = `Error in adding ooslo label: ${name}, for org ${owner} in repo ${repo} since it does not exist \n ${err.message}`;
     throw err;
   }
 }
@@ -79,7 +84,7 @@ async function addLabel(
  * @param github unique installation id for each function
  * @param owner of issue or pr
  * @param repo of issue or pr
- * @param issueNumber number of issue pr
+ * @param number of issue pr
  * @param name of ooslo label in repo
  * @returns void
  */
@@ -87,19 +92,19 @@ export const removeIssueLabel = async function removeIssueLabel(
   github: GitHubAPI,
   owner: string,
   repo: string,
-  issueNumber: number,
+  number: number,
   name: string
 ) {
   try {
     await github.issues.removeLabel({
       owner,
       repo,
-      issue_number: issueNumber,
+      issue_number: number,
       name,
     });
   } catch (err) {
     console.error(
-      `Error removing OOSLO label in repo ${repo} for issue number ${issueNumber}\n ${err.request}`
+      `Error removing label: ${name}, in repo ${repo} for issue number ${number}\n ${err.message}`
     );
   }
 };
@@ -111,7 +116,7 @@ export const removeIssueLabel = async function removeIssueLabel(
  * @param context of issue or pr
  * @param owner of issue or pr
  * @param repo of issue or pr
- * @param issueNumber number of issue pr
+ * @param number of issue pr
  * @param sloStatus if issue applies to given issue and if it is compliant with the issue
  * @param labels on the issue or pr
  * @returns void
@@ -120,14 +125,15 @@ export async function handleLabeling(
   context: Context,
   owner: string,
   repo: string,
-  issueNumber: number,
+  number: number,
   sloStatus: SLOStatus,
   labels: string[] | null
 ) {
-  const name = await getLabelName(context);
+  const name = await getOoSloLabelName(context);
+
   if (!sloStatus.isCompliant && !labels?.includes(name)) {
-    await addLabel(context.github, owner, repo, issueNumber, name);
+    await addLabel(context.github, owner, repo, number, name);
   } else if (sloStatus.isCompliant && labels?.includes(name)) {
-    await removeIssueLabel(context.github, owner, repo, issueNumber, name);
+    await removeIssueLabel(context.github, owner, repo, number, name);
   }
 }

@@ -43,28 +43,28 @@ interface PullsListFilesResponseItem {
  * @param github unique installation id for each function
  * @param owner of issue or pr
  * @param repo of issue or pr
- * @param pull_number of issue or pr
- * @param per_page number of files that is listed per API call
+ * @param number of issue or pr
+ * @param perPage number of files that is listed per API call
  * @returns an array of PullsListFilesResponseItem containing the filename and sha
  */
 async function listFiles(
   github: GitHubAPI,
   owner: string,
   repo: string,
-  pull_number: number,
+  number: number,
   per_page: number
 ): Promise<PullsListFilesResponseItem[] | null> {
   try {
     const listOfFiles = await github.pulls.listFiles({
       owner,
       repo,
-      pull_number,
+      pull_number: number,
       per_page,
     });
     return listOfFiles.data;
   } catch (err) {
     console.warn(
-      `Error getting list of files in repo: ${repo} for issue number: ${pull_number}. error status:${err.status}`
+      `Error getting list of files in repo: ${repo} for issue number: ${number}. error status:${err.status}`
     );
     return null;
   }
@@ -75,22 +75,22 @@ async function listFiles(
  * @param context of issue or pr
  * @param owner of issue or pr
  * @param repo of issue or pr
- * @param issue_number of issue or pr
- * @param file_sha number of files that is listed per API call
+ * @param number of issue or pr
+ * @param fileSha number of files that is listed per API call
  * @returns void
  */
 export const handleSlos = async function handleSlos(
   context: Context,
   owner: string,
   repo: string,
-  issue_number: number,
-  file_sha: string
+  number: number,
+  fileSha: string
 ) {
   const sloString = await getFileShaContents(
     context.github,
     owner,
     repo,
-    file_sha
+    fileSha
   );
 
   if (!sloString) {
@@ -100,30 +100,29 @@ export const handleSlos = async function handleSlos(
   const sloData = JSON.parse(sloString);
   const res = await lint(schema, sloData);
 
-  await commentPR(context.github, owner, repo, issue_number, res.isValid);
+  await commentPR(context.github, owner, repo, number, res.isValid);
   await createCheck(context, res);
 };
 
 /**
  * Function gets file sha of issue_slo_rules.json and its content
- * @param context of issue or pr
+ * @param github unique installation id for each function
  * @param owner of issue or pr
  * @param repo of issue or pr
- * @param issue_number of issue or pr
- * @param file_sha number of files that is listed per API call
+ * @param fileSha number of files that is listed per API call
  * @returns json string of the slo rules content
  */
 async function getFileShaContents(
   github: GitHubAPI,
   owner: string,
   repo: string,
-  file_sha: string
+  fileSha: string
 ): Promise<string | null> {
   try {
     const blob = await github.git.getBlob({
       owner,
       repo,
-      file_sha,
+      file_sha: fileSha,
     });
     const fileContent = Buffer.from(blob.data.content, 'base64').toString(
       'utf8'
@@ -162,7 +161,7 @@ export const lint = async function lint(
  * @param github unique installation id for each function
  * @param owner of issue or pr
  * @param repo of issue or pr
- * @param issue_number of issue or pr
+ * @param number of issue or pr
  * @param isValid determines if slo rules are valid or invalid with the schema
  * @returns void
  */
@@ -170,7 +169,7 @@ async function commentPR(
   github: GitHubAPI,
   owner: string,
   repo: string,
-  issue_number: number,
+  number: number,
   isValid: boolean
 ) {
   if (isValid) {
@@ -182,12 +181,12 @@ async function commentPR(
     await github.issues.createComment({
       owner,
       repo,
-      issue_number,
+      issue_number: number,
       body,
     });
   } catch (err) {
     console.warn(
-      `Error creating comment in repo: ${repo} for issue number: ${issue_number}. error status: ${err.status}`
+      `Error creating comment in repo: ${repo} for issue number: ${number}. error status: ${err.status}`
     );
     return;
   }
@@ -222,7 +221,7 @@ async function createCheck(context: Context, validationRes: ValidationResults) {
     await context.github.checks.create(checkParams);
   } catch (err) {
     console.error(
-      `Error creating check in repo ${context.payload.repository.name} \n ${err}`
+      `Error creating check in repo ${context.payload.repository.name} \n ${err.message}`
     );
     return;
   }
@@ -234,22 +233,16 @@ async function createCheck(context: Context, validationRes: ValidationResults) {
  * @param context of issue or pr
  * @param owner of issue or pr
  * @param repo of issue or pr
- * @param pullNumber of issue or pr
+ * @param number of issue or pr
  * @returns void
  */
 export async function handleLint(
   context: Context,
   owner: string,
   repo: string,
-  pullNumber: number
+  number: number
 ) {
-  const fileList = await listFiles(
-    context.github,
-    owner,
-    repo,
-    pullNumber,
-    100
-  );
+  const fileList = await listFiles(context.github, owner, repo, number, 100);
 
   if (!fileList) {
     return;
@@ -260,7 +253,7 @@ export async function handleLint(
       file.filename === '.github/issue_slo_rules.json' ||
       (repo === '.github' && file.filename === 'issue_slo_rules.json')
     ) {
-      await handleSlos(context, owner, repo, pullNumber, file.sha);
+      await handleSlos(context, owner, repo, number, file.sha);
       break;
     }
   }
