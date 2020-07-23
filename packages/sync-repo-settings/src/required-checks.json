@@ -18,6 +18,7 @@
     "ignoredRepos": [
       "googleapis/api-common-java",
       "googleapis/gapic-generator",
+      "googleapis/gapic-generator-java",
       "GoogleCloudPlatform/java-docs-samples",
       "GoogleCloudPlatform/getting-started-java"
     ],
