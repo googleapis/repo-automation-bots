@@ -16,4 +16,7 @@ import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './release-please';
 
 const bootstrap = new GCFBootstrapper();
-module.exports.release_please = bootstrap.gcf(appFn);
+module.exports.release_please = bootstrap.gcf(appFn, {
+  background: true, // release please should be scheduled in tasks.
+  logging: false, // the custom logger instance does not yet work with release-please
+});
