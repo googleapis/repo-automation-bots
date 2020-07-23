@@ -16,4 +16,8 @@ import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './merge-on-green';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['merge_on_green'] = bootstrap.gcf(appFn);
+module.exports['merge_on_green'] = bootstrap.gcf(appFn, {
+  // By default jobs are managed in background cloud tasks queue, we
+  // shouldn't do this for merge on green, as it already retries on a cron:
+  background: false,
+});
