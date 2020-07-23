@@ -51,7 +51,14 @@ export = (app: Application) => {
       app.log.error(err);
       return;
     }
+
     const commits = commitsResponse.data;
+    if (commits.length === 0) {
+      console.error(
+        `Pull request ${context.payload.pull_request.html_url} has no commits!`
+      );
+      return;
+    }
 
     let message = context.payload.pull_request.title;
     const hasAutomergeLabel = context.payload.pull_request.labels

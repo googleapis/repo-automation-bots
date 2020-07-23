@@ -93,6 +93,18 @@ describe('ConventionalCommitLint', () => {
     requests.done();
   });
 
+  it('should handle a PR with no commits', async () => {
+    const payload = require(resolve(
+      fixturesPath,
+      './pull_request_synchronize'
+    ));
+    const requests = nock('https://api.github.com')
+      .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
+      .reply(200, []);
+    await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+    requests.done();
+  });
+
   describe('PR With Multiple Commits', () => {
     it('has a valid pull request title', async () => {
       const payload = require(resolve(
