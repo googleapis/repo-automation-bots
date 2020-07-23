@@ -20,11 +20,6 @@ const DEFAULT_CONFIGURATION: Config = {
   name: ':rotating_light:',
 };
 
-interface SLOStatus {
-  appliesTo: boolean;
-  isCompliant: boolean | null;
-}
-
 interface Config {
   name: string;
 }
@@ -125,14 +120,14 @@ export async function handleLabeling(
   owner: string,
   repo: string,
   number: number,
-  sloStatus: SLOStatus,
+  isCompliant: boolean,
   labels: string[] | null
 ) {
   const name = await getOoSloLabelName(context);
 
-  if (!sloStatus.isCompliant && !labels?.includes(name)) {
+  if (!isCompliant && !labels?.includes(name)) {
     await addLabel(context.github, owner, repo, number, name);
-  } else if (sloStatus.isCompliant && labels?.includes(name)) {
+  } else if (isCompliant && labels?.includes(name)) {
     await removeLabel(context.github, owner, repo, number, name);
   }
 }

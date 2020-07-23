@@ -14,7 +14,8 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context, GitHubAPI} from 'probot';
-import * as sloLogic from './slo-logic';
+import {doesSloApply} from './slo-appliesTo';
+import {isIssueCompliant, getFilePathContent} from './slo-compliant';
 import {removeLabel, handleLabeling, getOoSloLabelName} from './slo-label';
 import {handleLint} from './slo-lint';
 
@@ -47,24 +48,16 @@ async function handleIssues(
     const createdAt = context.payload[type].created_at;
     const assignees = context.payload[type].assignees;
 
-    const sloStatus = await sloLogic.getSloStatus(
-      context.github,
-      owner,
-      repo,
-      createdAt,
-      assignees,
-      number,
-      type,
-      slo,
-      labels
-    );
+    const appliesToIssue = await doesSloApply(type, slo, labels, number);
 
-    if (sloStatus.appliesTo) {
-      await handleLabeling(context, owner, repo, number, sloStatus, labels);
-    }
+    if (appliesToIssue) {
+      const isCompliant = await isIssueCompliant(context.github, owner, repo, number, assignees, createdAt, slo);
+      await handleLabeling(context, owner, repo, number, isCompliant, labels);
 
-    if (sloStatus.isCompliant === false) {
-      break;
+      // Keep OOSLO label if issue is not compliant with any one of the slos
+      if (!isCompliant) {
+        break;
+      }
     }
   }
 }
@@ -82,11 +75,11 @@ async function getSloFile(
   repo: string
 ): Promise<string> {
   let path = '.github/issue_slo_rules.json';
-  let sloRules = await sloLogic.getFilePathContent(github, owner, repo, path);
+  let sloRules = await getFilePathContent(github, owner, repo, path);
 
   if (sloRules === 'not found') {
     path = 'issue_slo_rules.json';
-    sloRules = await sloLogic.getFilePathContent(
+    sloRules = await getFilePathContent(
       github,
       owner,
       '.github',

@@ -24,8 +24,10 @@ import Webhooks from '@octokit/webhooks';
 import sinon from 'sinon';
 import handler from '../src/slo-bot';
 import * as sloLint from '../src/slo-lint';
-import * as sloLogic from '../src/slo-logic';
+import * as sloAppliesTo from '../src/slo-appliesTo';
+import * as sloCompliant from '../src/slo-compliant'
 import * as sloLabel from '../src/slo-label';
+import { SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION } from 'constants';
 
 nock.disableNetConnect();
 
@@ -54,12 +56,14 @@ describe('slo-bot', () => {
   });
   describe('getSloFile', () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
-    let getSloStatusStub: sinon.SinonStub;
+    let appliesToStub: sinon.SinonStub;
+    let isCompliantStub: sinon.SinonStub;
 
     beforeEach(() => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
-      getSloStatusStub = sinon.stub(sloLogic, 'getSloStatus');
+      appliesToStub = sinon.stub(sloAppliesTo, 'doesSloApply');
+      isCompliantStub = sinon.stub(sloCompliant, 'isIssueCompliant');
     });
 
     afterEach(() => {
@@ -75,14 +79,15 @@ describe('slo-bot', () => {
             'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n',
         });
 
-      getSloStatusStub.onCall(0).returns({appliesTo: false, isCompliant: null});
+      appliesToStub.onCall(0).returns(false);
       await probot.receive({
         name: 'issues.opened',
         payload,
         id: 'abc123',
       });
 
-      sinon.assert.calledOnce(getSloStatusStub);
+      sinon.assert.calledOnce(appliesToStub);
+      sinon.assert.notCalled(isCompliantStub);
       requests.done();
     });
     it('triggers handle slo if config file exists in org level', async () => {
@@ -95,24 +100,27 @@ describe('slo-bot', () => {
             'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n',
         });
 
-      getSloStatusStub.onCall(0).returns({appliesTo: false, isCompliant: null});
+      appliesToStub.onCall(0).returns(false);
       await probot.receive({
         name: 'issues.opened',
         payload,
         id: 'abc123',
       });
 
-      sinon.assert.calledOnce(getSloStatusStub);
+      sinon.assert.calledOnce(appliesToStub);
+      sinon.assert.notCalled(isCompliantStub);
       requests.done();
     });
   });
   describe('handleIssues', () => {
     let payload: Webhooks.WebhookPayloadPullRequest;
-    let getSloStatusStub: sinon.SinonStub;
+    let appliesToStub: sinon.SinonStub;
+    let isCompliantStub: sinon.SinonStub;
     let labelStub: sinon.SinonStub;
 
     beforeEach(() => {
-      getSloStatusStub = sinon.stub(sloLogic, 'getSloStatus');
+      appliesToStub = sinon.stub(sloAppliesTo, 'doesSloApply');
+      isCompliantStub = sinon.stub(sloCompliant, 'isIssueCompliant');
       labelStub = sinon.stub(sloLabel, 'handleLabeling');
     });
     afterEach(() => {
@@ -139,9 +147,8 @@ describe('slo-bot', () => {
             content:
               'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n',
           });
-        getSloStatusStub
-          .onCall(0)
-          .returns({appliesTo: true, isCompliant: false});
+        appliesToStub.onCall(0).returns(true);
+        isCompliantStub.onCall(0).returns(false);
 
         await probot.receive({
           name: 'pull_request.opened',
@@ -149,7 +156,8 @@ describe('slo-bot', () => {
           id: 'abc123',
         });
         sinon.assert.calledOnce(lintStub);
-        sinon.assert.calledOnce(getSloStatusStub);
+        sinon.assert.calledOnce(appliesToStub);
+        sinon.assert.calledOnce(isCompliantStub);
         sinon.assert.calledOnce(labelStub);
         requests.done();
       });
@@ -163,16 +171,15 @@ describe('slo-bot', () => {
               'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n',
           });
 
-        getSloStatusStub
-          .onCall(0)
-          .returns({appliesTo: false, isCompliant: null});
+        appliesToStub.onCall(0).returns(false);
 
         await probot.receive({
           name: 'pull_request.opened',
           payload,
           id: 'abc123',
         });
-        sinon.assert.calledOnce(getSloStatusStub);
+        sinon.assert.calledOnce(appliesToStub);
+        sinon.assert.notCalled(isCompliantStub);
         sinon.assert.notCalled(labelStub);
         requests.done();
       });
@@ -191,9 +198,8 @@ describe('slo-bot', () => {
             content:
               'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n',
           });
-        getSloStatusStub
-          .onCall(0)
-          .returns({appliesTo: true, isCompliant: false});
+        appliesToStub.onCall(0).returns(true);
+        isCompliantStub.onCall(0).returns(false);
 
         await probot.receive({
           name: 'issues.opened',
@@ -201,7 +207,8 @@ describe('slo-bot', () => {
           id: 'abc123',
         });
 
-        sinon.assert.calledOnce(getSloStatusStub);
+        sinon.assert.calledOnce(appliesToStub);
+        sinon.assert.calledOnce(isCompliantStub);
         sinon.assert.calledOnce(labelStub);
         requests.done();
       });
@@ -214,9 +221,7 @@ describe('slo-bot', () => {
             content:
               'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n',
           });
-        getSloStatusStub
-          .onCall(0)
-          .returns({appliesTo: false, isCompliant: null});
+        appliesToStub.onCall(0).returns(false);
 
         await probot.receive({
           name: 'issues.opened',
@@ -224,7 +229,8 @@ describe('slo-bot', () => {
           id: 'abc123',
         });
 
-        sinon.assert.calledOnce(getSloStatusStub);
+        sinon.assert.calledOnce(appliesToStub);
+        sinon.assert.notCalled(isCompliantStub);
         sinon.assert.notCalled(labelStub);
         requests.done();
       });

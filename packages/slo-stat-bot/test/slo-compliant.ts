@@ -17,7 +17,7 @@ import * as assert from 'assert';
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-import * as sloLogic from '../src/slo-logic';
+import * as sloLogic from '../src/slo-compliant';
 import sinon from 'sinon';
 
 describe('durationTime', () => {

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
+//s
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
@@ -25,7 +25,8 @@ import Webhooks from '@octokit/webhooks';
 import snapshot from 'snap-shot-it';
 import handler from '../src/slo-bot';
 import sinon from 'sinon';
-import * as sloLogic from '../src/slo-logic';
+import * as sloAppliesTo from '../src/slo-appliesTo';
+import * as sloCompliant from '../src/slo-compliant';
 
 nock.disableNetConnect();
 
@@ -58,10 +59,12 @@ describe('slo-label', () => {
     );
 
     let payload: Webhooks.WebhookPayloadPullRequest;
-    let getSloStatusStub: sinon.SinonStub;
+    let appliesToStub: sinon.SinonStub;
+    let isCompliantStub: sinon.SinonStub;
 
     beforeEach(() => {
-      getSloStatusStub = sinon.stub(sloLogic, 'getSloStatus');
+      appliesToStub = sinon.stub(sloAppliesTo, 'doesSloApply');
+      isCompliantStub = sinon.stub(sloCompliant, 'isIssueCompliant');
     });
 
     afterEach(() => {
@@ -80,7 +83,8 @@ describe('slo-label', () => {
         .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(404);
 
-      getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: true});
+      appliesToStub.onCall(0).returns(true);
+      isCompliantStub.onCall(0).returns(true);
       await probot.receive({
         name: 'issues.opened',
         payload,
@@ -106,7 +110,8 @@ describe('slo-label', () => {
         })
         .reply(200);
 
-      getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: false});
+      appliesToStub.onCall(0).returns(true);
+      isCompliantStub.onCall(0).returns(false);
       await probot.receive({
         name: 'issues.opened',
         payload,
@@ -127,7 +132,8 @@ describe('slo-label', () => {
         .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')});
 
-      getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: false});
+      appliesToStub.onCall(0).returns(true);
+      isCompliantStub.onCall(0).returns(false);
       await probot.receive({
         name: 'issues.opened',
         payload,
@@ -149,7 +155,8 @@ describe('slo-label', () => {
         .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')});
 
-      getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: true});
+      appliesToStub.onCall(0).returns(true);
+      isCompliantStub.onCall(0).returns(true);
       await probot.receive({
         name: 'issues.opened',
         payload,
@@ -172,7 +179,8 @@ describe('slo-label', () => {
         .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')});
 
-      getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: true});
+      appliesToStub.onCall(0).returns(true);
+      isCompliantStub.onCall(0).returns(true);
       await probot.receive({
         name: 'issues.opened',
         payload,

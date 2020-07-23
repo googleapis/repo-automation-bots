@@ -16,7 +16,7 @@
 import {resolve} from 'path';
 import * as assert from 'assert';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-import * as sloLogic from '../src/slo-logic';
+import * as sloLogic from '../src/slo-appliesTo';
 import sinon from 'sinon';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
