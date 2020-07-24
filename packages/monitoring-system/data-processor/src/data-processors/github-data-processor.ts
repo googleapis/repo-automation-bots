@@ -62,6 +62,7 @@ export class GitHubProcessor extends DataProcessor {
    */
   private async listPublicEventsForRepository(repository: GitHubRepository): Promise<GitHubEvent[]> {
     // https://octokit.github.io/rest.js/v18#activity-list-repo-events
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString
     throw new Error('Method not implemented.');
   }
 
@@ -71,14 +72,6 @@ export class GitHubProcessor extends DataProcessor {
    * @param events events data to store
    */
   private async storeEventsData(events: GitHubEvent[]): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
-
-  /**
-   * Convert the given ISO 8601 timestamp (in UTC) to UNIX time
-   * @param iso8601Timestamp 
-   */
-  private iso8601ToUnixTime(iso8601Timestamp: string): number {
     throw new Error('Method not implemented.');
   }
 

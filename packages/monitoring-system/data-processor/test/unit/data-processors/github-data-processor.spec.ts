@@ -19,5 +19,4 @@ describe('GitHub Data Processor', () => {
     describe('listRepositories()');
     describe('listPublicEventsForRepository()');
     describe('storeEventsData()');
-    describe('iso8601ToUnixTime()');
 });
