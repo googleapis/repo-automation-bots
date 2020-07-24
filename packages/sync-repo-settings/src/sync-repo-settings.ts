@@ -14,6 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context} from 'probot';
+import {logger} from 'gcf-utils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const languageConfig: LanguageConfig = require('./required-checks.json');
@@ -57,7 +58,7 @@ interface Repo {
  */
 export function handler(app: Application) {
   app.on(['schedule.repository'], async (context: Context) => {
-    console.info(`running for org ${context.payload.cron_org}`);
+    logger.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
     const name = context.payload.repository.name;
     const repo = `${owner}/${name}`;
@@ -90,18 +91,18 @@ export function handler(app: Application) {
     if (language === 'javascript' || language === 'typescript') {
       language = 'nodejs';
     }
-    console.log(`Determined ${repo} is ${language}`);
+    logger.info(`Determined ${repo} is ${language}`);
 
     // Check for repositories we're specifically configured to skip
     const ignored = languageConfig[language]?.ignoredRepos?.find(
       x => x === repo
     );
     if (ignored) {
-      console.log(`ignoring repo ${repo}`);
+      logger.info(`ignoring repo ${repo}`);
     }
 
     if (context.payload.cron_org !== owner) {
-      console.log(`skipping run for ${context.payload.cron_org}`);
+      logger.info(`skipping run for ${context.payload.cron_org}`);
       return;
     }
 
@@ -120,7 +121,7 @@ export function handler(app: Application) {
     }
     await Promise.all(jobs);
     const end = new Date().getTime();
-    console.log(`Execution finished in ${end - start} ms.`);
+    logger.info(`Execution finished in ${end - start} ms.`);
   });
 }
 
@@ -129,7 +130,7 @@ export function handler(app: Application) {
  * @param repos List of repos to iterate.
  */
 async function updateMasterBranchProtection(repo: Repo, context: Context) {
-  console.log(`Updating master branch protection for ${repo.repo}`);
+  logger.info(`Updating master branch protection for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
 
   // get the status checks defined at either the language level, or at the
@@ -164,17 +165,17 @@ async function updateMasterBranchProtection(repo: Repo, context: Context) {
     });
   } catch (err) {
     if (err.status === 401) {
-      console.warn(
+      logger.warn(
         `updateMasterBranchProtection: warning received ${err.status} updating ${owner}/${name}`
       );
     } else {
-      console.error(
+      logger.error(
         `updateMasterBranchProtection: error received ${err.status} updating ${owner}/${name}`
       );
       throw err;
     }
   }
-  console.log(`Success updating master branch protection for ${repo.repo}`);
+  logger.info(`Success updating master branch protection for ${repo.repo}`);
 }
 
 function getRepoTeams(language: string): TeamPermission[] {
@@ -203,7 +204,7 @@ function getRepoTeams(language: string): TeamPermission[] {
  * @param repos List of repos to iterate.
  */
 async function updateRepoTeams(repo: Repo, context: Context) {
-  console.log(`Update team access for ${repo.repo}`);
+  logger.info(`Update team access for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
   const teamsToAdd = getRepoTeams(repo.language);
   try {
@@ -224,17 +225,17 @@ async function updateRepoTeams(repo: Repo, context: Context) {
       404, // team being added does not exist on repo.
     ];
     if (knownErrors.includes(err.status)) {
-      console.warn(
+      logger.warn(
         `updateRepoTeams: warning received ${err.status} updating ${owner}/${name}`
       );
     } else {
-      console.error(
+      logger.error(
         `updateRepoTeams: error received ${err.status} updating ${owner}/${name}`
       );
       throw err;
     }
   }
-  console.log(`Success updating repo in org for ${repo.repo}`);
+  logger.info(`Success updating repo in org for ${repo.repo}`);
 }
 
 /**
@@ -242,16 +243,16 @@ async function updateRepoTeams(repo: Repo, context: Context) {
  * @param repos List of repos to iterate.
  */
 async function updateRepoOptions(repo: Repo, context: Context) {
-  console.log(`Updating commit settings for ${repo.repo}`);
+  logger.info(`Updating commit settings for ${repo.repo}`);
   const [owner, name] = repo.repo.split('/');
   const config = languageConfig[repo.language];
   if (!config) {
     return;
   }
-  console.log(`name: ${name}`);
-  console.log(`owner: ${owner}`);
-  console.log(`enable rebase? ${config.enableRebaseMerge}`);
-  console.log(`enable squash? ${config.enableSquashMerge}`);
+  logger.info(`name: ${name}`);
+  logger.info(`owner: ${owner}`);
+  logger.info(`enable rebase? ${config.enableRebaseMerge}`);
+  logger.info(`enable squash? ${config.enableSquashMerge}`);
 
   try {
     await context.github.repos.update({
@@ -268,15 +269,15 @@ async function updateRepoOptions(repo: Repo, context: Context) {
       403, // thrown if repo is archived.
     ];
     if (knownErrors.includes(err.status)) {
-      console.warn(
+      logger.warn(
         `updateRepoOptions: warning received ${err.status} updating ${owner}/${name}`
       );
     } else {
-      console.error(
+      logger.error(
         `updateRepoOptions: error received ${err.status} updating ${owner}/${name}`
       );
       throw err;
     }
   }
-  console.log(`Success updating repo options for ${repo.repo}`);
+  logger.info(`Success updating repo options for ${repo.repo}`);
 }
