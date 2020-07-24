@@ -14,6 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {SLORules} from './types';
+import {logger} from 'gcf-utils';
 
 /**
  * Function determines if the type of issue applies to slo
@@ -144,15 +145,8 @@ export const doesSloApply = async function doesSloApply(
     return true;
   }
 
-  if (issueLabels === null) {
-    console.info(
-      `Skipping issue ${number} for rule ${sloString} \n as it does not apply`
-    );
-    return false;
-  }
-
-  if (issueLabels.length === 0) {
-    console.info(
+  if (!issueLabels) {
+    logger.info(
       `Skipping issue ${number} for rule ${sloString} \n as it does not apply`
     );
     return false;
@@ -162,7 +156,7 @@ export const doesSloApply = async function doesSloApply(
   const appliesToPrs = slo.appliesTo.prs;
   const appliesToType = await isValidType(appliesToIssues, appliesToPrs, type);
   if (!appliesToType) {
-    console.info(
+    logger.info(
       `Skipping issue ${number} for rule ${sloString} \n as it does not apply to type`
     );
     return false;
@@ -171,7 +165,7 @@ export const doesSloApply = async function doesSloApply(
   const githubLabels = slo.appliesTo.gitHubLabels;
   const hasGithubLabels = await isValidGithubLabels(issueLabels, githubLabels);
   if (!hasGithubLabels) {
-    console.info(`
+    logger.info(`
     Skipping issue ${number} for rule ${sloString} \n as it does not apply to gitHubLabels`);
     return false;
   }
@@ -182,7 +176,7 @@ export const doesSloApply = async function doesSloApply(
     excludedGitHubLabels
   );
   if (!hasNoExLabels) {
-    console.info(
+    logger.info(
       `Skipping issue ${number} for rule ${sloString} \n as it does not apply to excludedGitHubLabels`
     );
     return false;
@@ -191,7 +185,7 @@ export const doesSloApply = async function doesSloApply(
   const priority = String(slo.appliesTo.priority);
   const hasPriority = await isValidRule(issueLabels, priority, 'priority: ');
   if (!hasPriority) {
-    console.info(
+    logger.info(
       `Skipping issue ${number} for rule ${sloString} \n as it does not apply to priority`
     );
     return false;
@@ -200,7 +194,7 @@ export const doesSloApply = async function doesSloApply(
   const issueType = slo.appliesTo.issueType;
   const hasIssueType = await isValidRule(issueLabels, issueType, 'type: ');
   if (!hasIssueType) {
-    console.info(
+    logger.info(
       `Skipping issue ${number} for rule ${sloString} \n as it does not apply to issue type`
     );
     return false;

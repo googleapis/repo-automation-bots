@@ -15,6 +15,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI, Context} from 'probot';
 import Ajv, {ErrorObject} from 'ajv';
+import {logger} from 'gcf-utils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const schema = require('./../data/schema.json');
@@ -63,7 +64,7 @@ async function listFiles(
     });
     return listOfFiles.data;
   } catch (err) {
-    console.warn(
+    logger.warn(
       `Error getting list of files in repo: ${repo} for issue number: ${number}. error status:${err.status}`
     );
     return null;
@@ -129,7 +130,7 @@ async function getFileShaContents(
     );
     return fileContent;
   } catch (err) {
-    console.warn(
+    logger.warn(
       `Error getting file content in repo:${repo}. error status:${err.status}`
     );
     return null;
@@ -185,7 +186,7 @@ async function commentPR(
       body,
     });
   } catch (err) {
-    console.warn(
+    logger.warn(
       `Error creating comment in repo: ${repo} for issue number: ${number}. error status: ${err.status}`
     );
     return;
@@ -220,7 +221,7 @@ async function createCheck(context: Context, validationRes: ValidationResults) {
   try {
     await context.github.checks.create(checkParams);
   } catch (err) {
-    console.error(
+    logger.error(
       `Error creating check in repo ${context.payload.repository.name} \n ${err.message}`
     );
     return;

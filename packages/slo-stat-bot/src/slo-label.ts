@@ -14,6 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI, Context} from 'probot';
+import {logger} from 'gcf-utils';
 
 const CONFIGURATION_FILE_PATH = 'slo-stat-bot.yaml';
 const DEFAULT_CONFIGURATION: Config = {
@@ -36,7 +37,7 @@ export const getOoSloLabelName = async function (
     const labelName = (await context.config(CONFIGURATION_FILE_PATH)) as Config;
     return labelName.name;
   } catch (err) {
-    console.warn(
+    logger.warn(
       `Unable to get ooslo name from config-label file \n ${err.message}. \n Using default config for OOSLO label name.`
     );
     return DEFAULT_CONFIGURATION.name;
@@ -98,7 +99,7 @@ export const removeLabel = async function removeLabel(
       name,
     });
   } catch (err) {
-    console.error(
+    logger.error(
       `Error removing label: ${name}, in repo ${repo} for issue number ${number}\n ${err.message}`
     );
   }

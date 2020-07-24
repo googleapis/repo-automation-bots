@@ -17,6 +17,7 @@ import {GitHubAPI} from 'probot';
 import moment from 'moment';
 import {SLORules, IssuesListCommentsItem} from './types';
 import {convertToArray} from './slo-appliesTo';
+import {logger} from 'gcf-utils';
 
 interface IssueAssignees {
   login: string;
@@ -44,7 +45,7 @@ export const getFilePathContent = async function getFilePathContent(
   owner: string,
   repo: string,
   path: string
-): Promise<string> {
+): Promise<string | null> {
   try {
     const fileResponse = await github.repos.getContents({
       owner,
@@ -57,7 +58,8 @@ export const getFilePathContent = async function getFilePathContent(
     );
     return content;
   } catch (err) {
-    return 'not found';
+    logger.info(`Could not retrieve file content for path ${path} in repo ${repo} \n ${err.message}`);
+    return null;
   }
 };
 
@@ -154,7 +156,7 @@ export const getIssueCommentsList = async function getIssueCommentsList(
     });
     return listComments.data;
   } catch (err) {
-    console.error(
+    logger.error(
       `Error in getting issue comments for number ${number}\n ${err.message}`
     );
     return null;
@@ -182,7 +184,7 @@ export const getResponders = async function getResponders(
     owners = await convertToArray(owners);
     for (const ownerPath of owners) {
       const content = await getFilePathContent(github, owner, repo, ownerPath);
-      const users = content.match(/@([^\s]+)/g);
+      const users = content?.match(/@([^\s]+)/g);
 
       users?.forEach(user => {
         if (user.length > 1) responders.add(user.substr(1));
@@ -266,7 +268,7 @@ export const getCollaborators = async function getCollaborators(
     });
     return collaboratorList.data;
   } catch (err) {
-    console.warn(`Error in getting list of collaborators \n ${err.message}`);
+    logger.warn(`Error in getting list of collaborators \n ${err.message}`);
     return null;
   }
 };
@@ -334,7 +336,7 @@ export const isIssueCompliant = async function isIssueCompliant(
   if (resTime !== 0) {
     const result = await isInDuration(resTime, createdAt);
     if (!result) {
-      console.info(
+      logger.info(
         `Issue ${number} in repo ${repo} is not compliant for slo: \n ${sloString} \n Reason: It is not in resolution time`
       );
       return false;
@@ -347,7 +349,7 @@ export const isIssueCompliant = async function isIssueCompliant(
   if (reqAssignee === true) {
     const result = await isAssigned(responders, assignees);
     if (!result) {
-      console.info(
+      logger.info(
         `Issue ${number} in repo ${repo} is not compliant for slo: \n ${sloString} \n Reason: Does not have a valid assignee`
       );
       return false;
@@ -367,7 +369,7 @@ export const isIssueCompliant = async function isIssueCompliant(
       comment
     );
     if (!result) {
-      console.info(
+      logger.info(
         `Issue ${number} in repo ${repo} is not compliant for slo: \n ${sloString} \n Reason: No valid responder commented within response time`
       );
       return false;

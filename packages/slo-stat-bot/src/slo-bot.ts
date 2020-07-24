@@ -89,11 +89,11 @@ async function getSloFile(
   let path = '.github/issue_slo_rules.json';
   let sloRules = await getFilePathContent(github, owner, repo, path);
 
-  if (sloRules === 'not found') {
+  if (!sloRules) {
     path = 'issue_slo_rules.json';
     sloRules = await getFilePathContent(github, owner, '.github', path);
   }
-  if (sloRules === 'not found') {
+  if (!sloRules) {
     throw new Error(`Error in finding org level config file in ${owner}`);
   }
   return sloRules;
