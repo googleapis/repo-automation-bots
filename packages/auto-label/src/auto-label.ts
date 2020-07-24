@@ -48,7 +48,7 @@ handler.addLabels = async function addLabels(
     });
     return data;
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return null;
   }
 };
@@ -68,7 +68,7 @@ handler.checkExistingLabels = async function checkExistingLabels(
     });
     return data.data.name;
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return null;
   }
 };
@@ -90,7 +90,7 @@ handler.createLabel = async function createLabel(
     });
     return data;
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return null;
   }
 };
@@ -114,7 +114,7 @@ handler.checkExistingIssueLabels = async function checkExistingIssueLabels(
       return data.data;
     }
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return null;
   }
 };
@@ -137,7 +137,9 @@ handler.checkIfFileIsEmpty = async function checkIfFileIsEmpty(
   jsonData: string
 ) {
   if (jsonData.length === 0) {
-    console.log('JSON file downloaded from Cloud Storage was empty');
+    console.error(
+      new Error('JSON file downloaded from Cloud Storage was empty')
+    );
     return null;
   } else {
     const jsonArray = JSON.parse(jsonData).repos;
@@ -201,7 +203,9 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   github: GitHubAPI
 ) {
   if (!jsonArray) {
-    console.log('terminating execution of auto-label since JSON file is empty');
+    console.error(
+      'terminating execution of auto-label since JSON file is empty'
+    );
     return;
   }
   const objectInJsonArray = handler.checkIfElementIsInArray(

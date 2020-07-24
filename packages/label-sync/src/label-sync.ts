@@ -44,11 +44,11 @@ async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
   const apiLabelsRes = await getApiLabels(repoPath);
   apiLabelsRes.apis.forEach(api => {
     if (!api.github_label || !api.api_shortname) {
-      console.log(`
+      console.error(`
         Missing expected fields for a given API label returned from GCS.
         This object was expected to have a 'github_label' and 'api_shortname'
         property, but it is missing at least one of them.`);
-      console.log(util.inspect(api));
+      console.error(util.inspect(api));
       return;
     }
     labels.labels.push({
@@ -196,8 +196,8 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
             color: l.color,
           })
           .catch(e => {
-            console.error(`Error updating label ${l.name} in ${owner}/${repo}`);
-            console.error(e.stack);
+            e.message = `Error updating label ${l.name} in ${owner}/${repo}\n\n${e.message}`;
+            console.error(e);
           });
       }
     } else {
@@ -217,8 +217,8 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
             !Array.isArray(e.errors) ||
             e.errors[0].code !== 'already_exists'
           ) {
-            console.error(`Error creating label ${l.name} in ${owner}/${repo}`);
-            console.error(e.stack);
+            e.message = `Error creating label ${l.name} in ${owner}/${repo}\n\n${e.message}`;
+            console.error(e);
           }
         });
     }
@@ -245,8 +245,8 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
           console.log(`Deleted '${l.name}' from ${owner}/${repo}`);
         })
         .catch(e => {
-          console.error(`Error deleting label ${l.name} in ${owner}/${repo}`);
-          console.error(e.stack);
+          e.message = `Error deleting label ${l.name} in ${owner}/${repo}\n\n${e.message}`;
+          console.error(e);
         });
     }
   }

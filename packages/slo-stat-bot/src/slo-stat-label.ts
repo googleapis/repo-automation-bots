@@ -229,9 +229,8 @@ handler.createCheck = async function createCheck(
   try {
     await context.github.checks.create(checkParams);
   } catch (err) {
-    console.error(
-      `Error creating check in repo ${context.payload.repository.name} \n ${err}`
-    );
+    err.message = `Error creating check in repo ${context.payload.repository.name} \n\n${err.message}`;
+    console.error(err);
     return;
   }
 };
