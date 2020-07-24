@@ -17,7 +17,7 @@ import {Application, GitHubAPI, Octokit} from 'probot';
 import {createHash} from 'crypto';
 import {Storage} from '@google-cloud/storage';
 import * as util from 'util';
-import { logger } from 'gcf-utils';
+import {logger} from 'gcf-utils';
 
 const storage = new Storage();
 

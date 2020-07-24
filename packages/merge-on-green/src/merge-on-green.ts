@@ -16,7 +16,7 @@
 import {Application} from 'probot';
 import {Datastore} from '@google-cloud/datastore';
 import {mergeOnGreen} from './merge-logic';
-import { logger } from 'gcf-utils';
+import {logger} from 'gcf-utils';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();

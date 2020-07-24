@@ -14,7 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot/lib/github';
-import { logger } from 'gcf-utils';
+import {logger} from 'gcf-utils';
 
 interface CheckRun {
   name: string;

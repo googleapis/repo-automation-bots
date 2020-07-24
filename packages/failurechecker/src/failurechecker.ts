@@ -20,7 +20,7 @@
 import {Application} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot/lib/github';
-import { logger } from 'gcf-utils';
+import {logger} from 'gcf-utils';
 // labels indicative of the fact that a release has not completed yet.
 const RELEASE_LABELS = [
   'autorelease: pending',

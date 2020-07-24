@@ -16,7 +16,7 @@
 import {Storage} from '@google-cloud/storage';
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, GitHubAPI} from 'probot';
-import { logger } from 'gcf-utils';
+import {logger} from 'gcf-utils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const colorsData = require('./colors.json');

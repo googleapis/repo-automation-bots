@@ -17,7 +17,7 @@ import {Application, Octokit} from 'probot';
 import lint from '@commitlint/lint';
 
 import {rules} from '@commitlint/config-conventional';
-import { logger } from 'gcf-utils';
+import {logger} from 'gcf-utils';
 // modify rules slightly:
 // see: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-conventional/index.js
 delete rules['type-enum'];
