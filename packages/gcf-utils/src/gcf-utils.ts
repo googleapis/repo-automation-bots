@@ -79,11 +79,18 @@ export const logger: GCFLogger = initLogger();
 export function initLogger(
   dest?: NodeJS.WritableStream | SonicBoom
 ): GCFLogger {
+  const DEFAULT_LOG_LEVEL = 'trace';
   const defaultOptions: pino.LoggerOptions = {
+    formatters: {
+      level: pinoLevelToCloudLoggingSeverity,
+    },
     customLevels: {
       metric: 30,
     },
-    level: 'trace',
+    base: null,
+    messageKey: 'message',
+    timestamp: false,
+    level: DEFAULT_LOG_LEVEL,
   };
 
   dest = dest || pino.destination({sync: true});
@@ -107,6 +114,28 @@ export function initLogger(
     metric: logger.metric.bind(logger),
     flushSync: flushSync,
   };
+}
+
+/**
+ * Maps Pino's number-based levels to Google Cloud Logging's string-based severity.
+ * This allows Pino logs to show up with the correct severity in Logs Viewer.
+ * Also preserves the original Pino level
+ * @param label the label used by Pino for the level property
+ * @param level the numbered level from Pino
+ */
+function pinoLevelToCloudLoggingSeverity(
+  label: string,
+  level: number
+): {[label: string]: number | string} {
+  const severityMap: {[level: number]: string} = {
+    10: 'DEBUG',
+    20: 'DEBUG',
+    30: 'INFO',
+    40: 'WARNING',
+    50: 'ERROR',
+  };
+  const UNKNOWN_SEVERITY = 'DEFAULT';
+  return {severity: severityMap[level] || UNKNOWN_SEVERITY, level: level};
 }
 
 export interface CronPayload {
