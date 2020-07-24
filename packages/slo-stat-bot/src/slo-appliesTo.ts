@@ -17,108 +17,13 @@ import {SLORules} from './types';
 import {logger} from 'gcf-utils';
 
 /**
- * Function determines if the type of issue applies to slo
- * @param issues slo rule if it applies to issues
- * @param prs slo rule if it applies to prs
- * @param type specifies if event is issue or pr
- * @returns true if type applies to issues else false
- */
-export const isValidType = async function isValidType(
-  issues: boolean | undefined,
-  prs: boolean | undefined,
-  type: string
-): Promise<boolean> {
-  issues = issues === undefined ? true : issues;
-  prs = prs === undefined ? false : prs;
-
-  if (type === 'pull_request' && prs) {
-    return true;
-  }
-  if (type === 'issue' && issues) {
-    return true;
-  }
-  return false;
-};
-
-/**
- * Function checks if all the githublabels are subset of issue labels
- * @param issueLabels of the issue
- * @param githubLabels is slo rule for github labels that must exist in issue
- * @returns true if githubLabels applies to issues else false
- */
-export const isValidGithubLabels = async function isValidGithubLabels(
-  issueLabels: string[],
-  githubLabels: string | string[] | undefined
-): Promise<boolean> {
-  if (!githubLabels) {
-    return true;
-  }
-
-  githubLabels = await convertToArray(githubLabels);
-  githubLabels.forEach((label: string) => label.toLowerCase());
-  const isSubSet = githubLabels.every((label: string) =>
-    issueLabels.includes(label)
-  );
-  return isSubSet;
-};
-
-/**
- * Function checks if all the excluded github labels is not in issue labels
- * @param issueLabels of the issue
- * @param excludedGitHubLabels is slo rule for excluded github labels that must exist in issue
- * @returns true if excludedGitHubLabels applies to issues else false
- */
-export const isValidExcludedLabels = async function isValidExcludedLabels(
-  issueLabels: string[],
-  excludedGitHubLabels: string | string[] | undefined
-): Promise<boolean> {
-  if (!excludedGitHubLabels) {
-    return true;
-  }
-
-  excludedGitHubLabels = await convertToArray(excludedGitHubLabels);
-  excludedGitHubLabels.forEach((label: string) => label.toLowerCase());
-  const isElementExist = excludedGitHubLabels.some((label: string) =>
-    issueLabels.includes(label)
-  );
-  return !isElementExist;
-};
-
-/**
- * Function checks if the rule (priority or type) exists in issue labels
- * @param issueLabels of the issue
- * @param rule is either priority or type (ex: bug, enhancement) of issue
- * @param title of the rule
- * @returns true if rule applies to issue else false
- */
-export const isValidRule = async function isValidRule(
-  issueLabels: string[],
-  rule: string | undefined,
-  title: string
-) {
-  if (!rule) {
-    return true;
-  }
-
-  rule = rule.toLowerCase();
-
-  if (issueLabels.includes(rule)) {
-    return true;
-  }
-  if (issueLabels.includes(title + rule)) {
-    return true;
-  }
-  return false;
-};
-
-/**
  * Function converts the variable to an array if it is a string
  * @param variable can either be array or string
  * @returns an array
  */
 export const convertToArray = async function convertToArray(
-  variable: string[] | string
-): Promise<string[]> {
+  variable?: string[] | string
+): Promise<string[] | undefined> {
   if (typeof variable === 'string') {
     return [variable];
   }
@@ -145,57 +50,43 @@ export const doesSloApply = async function doesSloApply(
     return true;
   }
 
-  if (!issueLabels) {
+  // Checking if the type of issue applies to the prs or issues
+  const issues =
+    slo.appliesTo.issues === undefined ? true : slo.appliesTo.issues;
+  const prs = slo.appliesTo.prs === undefined ? false : slo.appliesTo.prs;
+
+  if ((type === 'pull_request' && !prs) || (type === 'issue' && !issues)) {
     logger.info(
-      `Skipping issue ${number} for rule ${sloString} \n as it does not apply`
+      `Skipping issue ${number} for rule ${sloString} \n as it does not apply to the given type ${type}`
     );
     return false;
   }
 
-  const appliesToIssues = slo.appliesTo.issues;
-  const appliesToPrs = slo.appliesTo.prs;
-  const appliesToType = await isValidType(appliesToIssues, appliesToPrs, type);
-  if (!appliesToType) {
-    logger.info(
-      `Skipping issue ${number} for rule ${sloString} \n as it does not apply to type`
-    );
-    return false;
-  }
+  //Checking if all the githublabels are subset of issue labels
+  const githubLabels = await convertToArray(slo.appliesTo.gitHubLabels);
 
-  const githubLabels = slo.appliesTo.gitHubLabels;
-  const hasGithubLabels = await isValidGithubLabels(issueLabels, githubLabels);
-  if (!hasGithubLabels) {
+  const isSubSet = githubLabels?.every((label: string) =>
+    issueLabels?.includes(label)
+  );
+
+  if (!isSubSet && githubLabels) {
     logger.info(`
     Skipping issue ${number} for rule ${sloString} \n as it does not apply to gitHubLabels`);
     return false;
   }
 
-  const excludedGitHubLabels = slo.appliesTo.excludedGitHubLabels;
-  const hasNoExLabels = await isValidExcludedLabels(
-    issueLabels,
-    excludedGitHubLabels
+  //Checking that no excludedlabel is in issue labels
+  const excludedGitHubLabels = await convertToArray(
+    slo.appliesTo.excludedGitHubLabels
   );
-  if (!hasNoExLabels) {
+
+  const isElementExist = excludedGitHubLabels?.some((label: string) => {
+    issueLabels?.includes(label);
+  });
+
+  if (isElementExist && excludedGitHubLabels) {
     logger.info(
       `Skipping issue ${number} for rule ${sloString} \n as it does not apply to excludedGitHubLabels`
-    );
-    return false;
-  }
-
-  const priority = String(slo.appliesTo.priority);
-  const hasPriority = await isValidRule(issueLabels, priority, 'priority: ');
-  if (!hasPriority) {
-    logger.info(
-      `Skipping issue ${number} for rule ${sloString} \n as it does not apply to priority`
-    );
-    return false;
-  }
-
-  const issueType = slo.appliesTo.issueType;
-  const hasIssueType = await isValidRule(issueLabels, issueType, 'type: ');
-  if (!hasIssueType) {
-    logger.info(
-      `Skipping issue ${number} for rule ${sloString} \n as it does not apply to issue type`
     );
     return false;
   }

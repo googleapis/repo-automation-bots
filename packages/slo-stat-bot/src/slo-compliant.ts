@@ -58,7 +58,9 @@ export const getFilePathContent = async function getFilePathContent(
     );
     return content;
   } catch (err) {
-    logger.info(`Could not retrieve file content for path ${path} in repo ${repo} \n ${err.message}`);
+    logger.info(
+      `Could not retrieve file content for path ${path} in repo ${repo} \n ${err.message}`
+    );
     return null;
   }
 };
@@ -179,9 +181,10 @@ export const getResponders = async function getResponders(
 ): Promise<Set<string>> {
   let responders: Set<string> = new Set([owner]);
 
-  let owners = slo.complianceSettings.responders?.owners;
+  const owners = await convertToArray(
+    slo.complianceSettings.responders?.owners
+  );
   if (owners) {
-    owners = await convertToArray(owners);
     for (const ownerPath of owners) {
       const content = await getFilePathContent(github, owner, repo, ownerPath);
       const users = content?.match(/@([^\s]+)/g);

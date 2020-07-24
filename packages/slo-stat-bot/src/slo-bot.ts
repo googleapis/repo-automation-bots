@@ -134,12 +134,15 @@ export = function handler(app: Application) {
       'pull_request.unassigned',
     ],
     async (context: Context) => {
+      if (context.payload.pull_request.state === 'closed') {
+        return;
+      }
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
       const labelsResponse = context.payload.pull_request.labels;
 
-      const labels = labelsResponse.map((label: IssueLabelResponseItem) =>
-        label.name.toLowerCase()
+      const labels = labelsResponse.map(
+        (label: IssueLabelResponseItem) => label.name
       );
       const sloString = await getSloFile(context.github, owner, repo);
       await handleIssues(
@@ -161,7 +164,7 @@ export = function handler(app: Application) {
     const labelsResponse = context.payload[type].labels;
 
     const labels = labelsResponse.map((label: IssueLabelResponseItem) =>
-      label.name.toLowerCase()
+      label.name
     );
 
     const name = await getOoSloLabelName(context);
@@ -189,8 +192,8 @@ export = function handler(app: Application) {
       const labelsResponse = context.payload.issue.labels;
       const comment = context.payload.issue.comment;
 
-      const labels = labelsResponse.map((label: IssueLabelResponseItem) =>
-        label.name.toLowerCase()
+      const labels = labelsResponse.map(
+        (label: IssueLabelResponseItem) => label.name
       );
       const sloString = await getSloFile(context.github, owner, repo);
       await handleIssues(

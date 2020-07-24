@@ -15,15 +15,6 @@
                     "description": "Exclude issues/PRs with these GitHub labels",
                     "type": ["string", "array"]
                 },
-                "priority": { 
-                    "description": "Match issues/PRs with this priority",
-                    "type": "string",
-                    "enum": ["P0", "P1", "P2", "P3", "P4", "P5"]
-                },
-                "issueType": { 
-                    "description": "Match issues/PRs of this type",
-                    "type": "string"
-                },
                 "issues": { 
                     "description": "Match issues",
                     "type": "boolean", 
