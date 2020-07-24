@@ -17,7 +17,7 @@
     ],
     "ignoredRepos": [
       "googleapis/api-common-java",
-      'googleapis/disco-to-proto3-converter',
+      "googleapis/disco-to-proto3-converter",
       "googleapis/gapic-generator",
       "googleapis/gapic-generator-java",
       "GoogleCloudPlatform/java-docs-samples",
