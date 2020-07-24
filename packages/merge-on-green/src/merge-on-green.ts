@@ -168,11 +168,12 @@ function handler(app: Application) {
           label.name === MERGE_ON_GREEN_LABEL_SECURE
       )
     ) {
-      app.log.info(
-        `ignoring non-force label action (${context.payload.pull_request.labels.join(
-          ', '
-        )})`
-      );
+      const labels = context.payload.pull_request.labels
+        .map(label => {
+          return JSON.stringify(label);
+        })
+        .join(', ');
+      app.log.info(`ignoring non-force label action (${labels})`);
       return;
     }
     const prNumber = context.payload.pull_request.number;
