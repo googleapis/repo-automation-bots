@@ -14,11 +14,15 @@
 //
 import {Firestore} from '@google-cloud/firestore';
 
+export interface ProcessorOptions {
+  firestore?: Firestore;
+}
+
 export abstract class DataProcessor {
   protected firestore: Firestore;
 
-  constructor(firestore?: Firestore) {
-    this.firestore = firestore || new Firestore();
+  constructor(options?: ProcessorOptions) {
+    this.firestore = options?.firestore || new Firestore();
   }
 
   /**
