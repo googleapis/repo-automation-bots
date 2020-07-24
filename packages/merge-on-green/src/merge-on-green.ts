@@ -148,7 +148,7 @@ function handler(app: Application) {
               handler.removePR(wp.url);
             }
           } catch (err) {
-            console.error(`Error in merge-on-green: ${err}`);
+            err.message = `Error in merge-on-green: \n\n${err.message}`;
             console.error(err);
             if (wp.state === 'stop') {
               handler.removePR(wp.url);

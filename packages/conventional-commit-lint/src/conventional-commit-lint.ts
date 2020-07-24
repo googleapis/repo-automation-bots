@@ -54,7 +54,7 @@ export = (app: Application) => {
 
     const commits = commitsResponse.data;
     if (commits.length === 0) {
-      console.error(
+      console.log(
         `Pull request ${context.payload.pull_request.html_url} has no commits!`
       );
       return;

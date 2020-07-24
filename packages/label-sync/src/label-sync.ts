@@ -196,8 +196,8 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
             color: l.color,
           })
           .catch(e => {
-            console.error(`Error updating label ${l.name} in ${owner}/${repo}`);
-            console.error(e.stack);
+            e.message = `Error updating label ${l.name} in ${owner}/${repo}\n\n${e.message}`;
+            console.error(e);
           });
       }
     } else {
@@ -217,8 +217,8 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
             !Array.isArray(e.errors) ||
             e.errors[0].code !== 'already_exists'
           ) {
-            console.error(`Error creating label ${l.name} in ${owner}/${repo}`);
-            console.error(e.stack);
+            e.message = `Error creating label ${l.name} in ${owner}/${repo}\n\n${e.message}`;
+            console.error(e);
           }
         });
     }
@@ -245,8 +245,8 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
           console.log(`Deleted '${l.name}' from ${owner}/${repo}`);
         })
         .catch(e => {
-          console.error(`Error deleting label ${l.name} in ${owner}/${repo}`);
-          console.error(e.stack);
+          e.message = `Error deleting label ${l.name} in ${owner}/${repo}\n\n${e.message}`;
+          console.error(e);
         });
     }
   }
