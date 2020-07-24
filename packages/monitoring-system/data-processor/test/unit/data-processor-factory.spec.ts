@@ -48,6 +48,20 @@ describe('Data Processor Factory', () => {
       );
       assert(processor instanceof CloudTasksProcessor);
     });
+    it('correctly applies configuration for CloudTasksProcessor', () => {
+      const config = {
+        task_queue_processor: {
+          task_queue_project_id: 'foo-id',
+          task_queue_location: 'bar-location',
+        },
+      };
+      const processor: DataProcessor = new DataProcessorFactory(
+        config
+      ).getDataProcessor(Task.ProcessTaskQueue);
+      assert(processor instanceof CloudTasksProcessor);
+      assert.equal(processor.getTasksProjectId(), 'foo-id');
+      assert.equal(processor.getTasksProjectLocation(), 'bar-location');
+    });
     it('throws an error for unknown task types', () => {
       try {
         new DataProcessorFactory().getDataProcessor('unsupported task' as Task);

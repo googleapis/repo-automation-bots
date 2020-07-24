@@ -32,6 +32,16 @@ export interface CloudTasksProcessorOptions extends ProcessorOptions {
   taskQueueLocation: string;
 }
 
+interface BotDocument {
+  bot_name: string;
+}
+
+interface TaskQueueDocument {
+  timestamp: number;
+  queue_name: string;
+  in_queue: number;
+}
+
 /**
  * Collects the current status of Cloud Task queues associated
  * with repo automation bots and inserts it into Firestore
@@ -51,6 +61,14 @@ export class CloudTasksProcessor extends DataProcessor {
     this.projectId = options.taskQueueProjectId;
     this.location = options.taskQueueLocation;
     this.tasksClient = options.tasksClient || new CloudTasksClient();
+  }
+
+  public getTasksProjectId(): string {
+    return this.projectId;
+  }
+
+  public getTasksProjectLocation(): string {
+    return this.location;
   }
 
   public async collectAndProcess(): Promise<void> {
@@ -79,13 +97,15 @@ export class CloudTasksProcessor extends DataProcessor {
       this.firestore
         .collection('Bot')
         .get()
-        .then(botDocument => {
-          if (!botDocument) {
+        .then(botCollection => {
+          if (!botCollection) {
             reject('Got falsy results from Firestore');
             return;
           }
-          const subDocs = botDocument.docs;
-          resolve(subDocs.map(doc => doc.data().bot_name));
+          const botDocuments: BotDocument[] = botCollection.docs.map(
+            doc => doc.data() as BotDocument
+          );
+          resolve(botDocuments.map(doc => doc.bot_name));
         })
         .catch(error => reject(error));
     });
@@ -129,12 +149,13 @@ export class CloudTasksProcessor extends DataProcessor {
     const queueNames = Object.keys(queueStatus);
 
     const writePromises: Promise<WriteResult>[] = queueNames.map(queueName => {
-      const docKey = `${queueName}_${currentTimestamp}`;
-      return collectionRef.doc(docKey).set({
+      const documentKey = `${queueName}_${currentTimestamp}`;
+      const documentData: TaskQueueDocument = {
         timestamp: currentTimestamp,
         queue_name: queueName,
         in_queue: queueStatus[queueName],
-      });
+      };
+      return collectionRef.doc(documentKey).set(documentData);
     });
 
     return new Promise((resolve, reject) => {
