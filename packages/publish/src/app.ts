@@ -17,4 +17,7 @@ import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './publish';
 
 const bootstrap = new GCFBootstrapper();
-module.exports.publish = bootstrap.gcf(appFn);
+module.exports.publish = bootstrap.gcf(appFn, {
+  background: true,
+  logging: true,
+});

@@ -79,11 +79,18 @@ export const logger: GCFLogger = initLogger();
 export function initLogger(
   dest?: NodeJS.WritableStream | SonicBoom
 ): GCFLogger {
+  const DEFAULT_LOG_LEVEL = 'trace';
   const defaultOptions: pino.LoggerOptions = {
+    formatters: {
+      level: pinoLevelToCloudLoggingSeverity,
+    },
     customLevels: {
       metric: 30,
     },
-    level: 'trace',
+    base: null,
+    messageKey: 'message',
+    timestamp: false,
+    level: DEFAULT_LOG_LEVEL,
   };
 
   dest = dest || pino.destination({sync: true});
@@ -107,6 +114,28 @@ export function initLogger(
     metric: logger.metric.bind(logger),
     flushSync: flushSync,
   };
+}
+
+/**
+ * Maps Pino's number-based levels to Google Cloud Logging's string-based severity.
+ * This allows Pino logs to show up with the correct severity in Logs Viewer.
+ * Also preserves the original Pino level
+ * @param label the label used by Pino for the level property
+ * @param level the numbered level from Pino
+ */
+function pinoLevelToCloudLoggingSeverity(
+  label: string,
+  level: number
+): {[label: string]: number | string} {
+  const severityMap: {[level: number]: string} = {
+    10: 'DEBUG',
+    20: 'DEBUG',
+    30: 'INFO',
+    40: 'WARNING',
+    50: 'ERROR',
+  };
+  const UNKNOWN_SEVERITY = 'DEFAULT';
+  return {severity: severityMap[level] || UNKNOWN_SEVERITY, level: level};
 }
 
 export interface CronPayload {
@@ -196,11 +225,11 @@ export class GCFBootstrapper {
     }
     const config = JSON.parse(payload);
     if (logging) {
-      console.info('custom logging instance enabled');
+      logger.info('custom logging instance enabled');
       const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin);
       return {...config, Octokit: LoggingOctokit} as Options;
     } else {
-      console.info('custom logging instance not enabled');
+      logger.info('custom logging instance not enabled');
       return config as Options;
     }
   }
@@ -327,12 +356,12 @@ export class GCFBootstrapper {
         // installation ID:
         try {
           if (wrapOptions?.background) {
-            console.info(`${id}: scheduling cloud task`);
+            logger.info(`${id}: scheduling cloud task`);
             await this.handleScheduled(id, request, name, signature);
           } else {
             // a bot can opt out of running through tasks, some bots do this
             // due to large payload sizes:
-            console.info(`${id}: skipping cloud tasks`);
+            logger.info(`${id}: skipping cloud tasks`);
             await this.probot.receive({
               name,
               id,
@@ -355,7 +384,7 @@ export class GCFBootstrapper {
             // by default, jobs are run through a background task, this has
             // the benefit of supporting retries, and giving us more insight
             // into failing payloads:
-            console.info('scheduling cloud task');
+            logger.info('scheduling cloud task');
             await this.enqueueTask({
               id,
               name,
@@ -365,7 +394,7 @@ export class GCFBootstrapper {
           } else {
             // a bot can opt out of running through tasks, some bots do this
             // due to large payload sizes:
-            console.info('skipping cloud tasks');
+            logger.info('skipping cloud tasks');
             await this.probot.receive({
               name,
               id,
@@ -490,7 +519,7 @@ export class GCFBootstrapper {
         body: JSON.stringify(payload),
       });
     } catch (err) {
-      console.warn(err.message);
+      logger.warn(err.message);
     }
   }
 
@@ -506,7 +535,7 @@ export class GCFBootstrapper {
     const queuePath = client.queuePath(projectId, location, queueName);
     // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green:
     const url = `https://${location}-${projectId}.cloudfunctions.net/${process.env.GCF_SHORT_FUNCTION_NAME}`;
-    console.info(`scheduling task in queue ${queueName}`);
+    logger.info(`scheduling task in queue ${queueName}`);
     if (params.body) {
       await client.createTask({
         parent: queuePath,

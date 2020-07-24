@@ -16,4 +16,7 @@ import {GCFBootstrapper} from 'gcf-utils';
 import {failureChecker} from './failurechecker';
 
 const bootstrap = new GCFBootstrapper();
-module.exports.failurechecker = bootstrap.gcf(failureChecker);
+module.exports.failurechecker = bootstrap.gcf(failureChecker, {
+  background: true,
+  logging: true,
+});
