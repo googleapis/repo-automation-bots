@@ -17,13 +17,13 @@ import * as assert from 'assert';
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-import * as sloLogic from '../src/slo-logic';
+import * as sloCompliant from '../src/slo-compliant';
 import sinon from 'sinon';
 
 describe('durationTime', () => {
   describe('duration is in days', () => {
     it('returns true since time difference is within duration', async () => {
-      const isInDuration = await sloLogic.isInDuration(
+      const isInDuration = await sloCompliant.isInDuration(
         '5d',
         '2020-07-22T03:04:47Z',
         '2020-07-27T03:04:46Z'
@@ -31,7 +31,7 @@ describe('durationTime', () => {
       assert.strictEqual(isInDuration, true);
     });
     it('returns false since time difference is not within duration', async () => {
-      const isInDuration = await sloLogic.isInDuration(
+      const isInDuration = await sloCompliant.isInDuration(
         '5d',
         '2020-07-22T03:04:47Z',
         '2020-07-28T07:04:48Z'
@@ -41,7 +41,7 @@ describe('durationTime', () => {
   });
   describe('duration is in hours', () => {
     it('returns true since time difference is within duration', async () => {
-      const isInDuration = await sloLogic.isInDuration(
+      const isInDuration = await sloCompliant.isInDuration(
         '4h',
         '2020-07-22T03:04:47Z',
         '2020-07-22T07:04:46Z'
@@ -49,7 +49,7 @@ describe('durationTime', () => {
       assert.strictEqual(isInDuration, true);
     });
     it('returns false since time difference is not within duration', async () => {
-      const isInDuration = await sloLogic.isInDuration(
+      const isInDuration = await sloCompliant.isInDuration(
         '4h',
         '2020-07-22T03:04:47Z',
         '2020-07-22T07:04:48Z'
@@ -59,7 +59,7 @@ describe('durationTime', () => {
   });
   describe('duration is in minutes', () => {
     it('returns true since time difference is within duration', async () => {
-      const isInDuration = await sloLogic.isInDuration(
+      const isInDuration = await sloCompliant.isInDuration(
         '4m',
         '2020-07-22T03:04:47Z',
         '2020-07-22T03:08:47Z'
@@ -67,7 +67,7 @@ describe('durationTime', () => {
       assert.strictEqual(isInDuration, true);
     });
     it('returns false since time difference is not within duration', async () => {
-      const isInDuration = await sloLogic.isInDuration(
+      const isInDuration = await sloCompliant.isInDuration(
         '4m',
         '2020-07-22T03:04:47Z',
         '2020-07-22T03:18:47Z'
@@ -77,7 +77,7 @@ describe('durationTime', () => {
   });
   describe('duration is in seconds', () => {
     it('returns true since time difference is within duration', async () => {
-      const isInDuration = await sloLogic.isInDuration(
+      const isInDuration = await sloCompliant.isInDuration(
         '520s',
         '2020-07-22T03:04:00Z',
         '2020-07-22T03:11:47Z'
@@ -85,7 +85,7 @@ describe('durationTime', () => {
       assert.strictEqual(isInDuration, true);
     });
     it('returns false since time difference is not within duration', async () => {
-      const isInDuration = await sloLogic.isInDuration(
+      const isInDuration = await sloCompliant.isInDuration(
         '520s',
         '2020-07-22T03:04:00Z',
         '2020-07-22T04:11:47Z'
@@ -95,7 +95,7 @@ describe('durationTime', () => {
   });
   describe('duration is a number', () => {
     it('returns true since time difference is within duration', async () => {
-      const isInDuration = await sloLogic.isInDuration(
+      const isInDuration = await sloCompliant.isInDuration(
         520,
         '2020-07-22T03:04:00Z',
         '2020-07-22T03:11:47Z'
@@ -103,7 +103,7 @@ describe('durationTime', () => {
       assert.strictEqual(isInDuration, true);
     });
     it('returns false since time difference is not within duration', async () => {
-      const isInDuration = await sloLogic.isInDuration(
+      const isInDuration = await sloCompliant.isInDuration(
         520,
         '2020-07-22T03:04:00Z',
         '2020-07-22T04:11:47Z'
@@ -114,7 +114,7 @@ describe('durationTime', () => {
 });
 describe('getContributers', () => {
   it('Contributer is write', async () => {
-    const responders = await sloLogic.getContributers(
+    const responders = await sloCompliant.getContributers(
       'testOwner',
       new Set<string>(['coder-cat']),
       'WRITE',
@@ -129,7 +129,7 @@ describe('getContributers', () => {
     );
   });
   it('Contributer is admin', async () => {
-    const responders = await sloLogic.getContributers(
+    const responders = await sloCompliant.getContributers(
       'testOwner',
       new Set<string>(),
       'ADMIN',
@@ -144,7 +144,7 @@ describe('getContributers', () => {
     );
   });
   it('Contributer is owner', async () => {
-    const responders = await sloLogic.getContributers(
+    const responders = await sloCompliant.getContributers(
       'testOwner',
       new Set<string>(['user2']),
       'OWNER',
@@ -167,10 +167,10 @@ describe('getResponders', () => {
   let getContributorsStub: sinon.SinonStub;
 
   beforeEach(() => {
-    //convertToArrayStub = sinon.stub(sloLogic, 'convertToArray');
-    fileContentStub = sinon.stub(sloLogic, 'getFilePathContent');
-    getCollaboratorStub = sinon.stub(sloLogic, 'getCollaborators');
-    getContributorsStub = sinon.stub(sloLogic, 'getContributers');
+    //convertToArrayStub = sinon.stub(sloCompliant, 'convertToArray');
+    fileContentStub = sinon.stub(sloCompliant, 'getFilePathContent');
+    getCollaboratorStub = sinon.stub(sloCompliant, 'getCollaborators');
+    getContributorsStub = sinon.stub(sloCompliant, 'getContributers');
   });
 
   afterEach(() => {
@@ -196,7 +196,7 @@ describe('getResponders', () => {
     getContributorsStub.onCall(0).returns(
       new Set<string>(['user3', 'testOwner'])
     );
-    const responders = await sloLogic.getResponders(
+    const responders = await sloCompliant.getResponders(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -237,7 +237,7 @@ describe('getResponders', () => {
     getContributorsStub.onCall(0).returns(
       new Set<string>(['user3', 'testOwner'])
     );
-    const responders = await sloLogic.getResponders(
+    const responders = await sloCompliant.getResponders(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -278,7 +278,7 @@ describe('getResponders', () => {
     getContributorsStub.onCall(0).returns(
       new Set<string>(['owner1', 'owner2', 'coder-cat', 'tester', 'testOwner'])
     );
-    const responders = await sloLogic.getResponders(
+    const responders = await sloCompliant.getResponders(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -328,7 +328,7 @@ describe('getResponders', () => {
     getContributorsStub.onCall(0).returns(
       new Set<string>(['owner1', 'owner2', 'admin1', 'testOwner'])
     );
-    const responders = await sloLogic.getResponders(
+    const responders = await sloCompliant.getResponders(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -373,7 +373,7 @@ describe('getResponders', () => {
     getContributorsStub.onCall(0).returns(
       new Set<string>(['owner1', 'owner2', 'collab1', 'testOwner'])
     );
-    const responders = await sloLogic.getResponders(
+    const responders = await sloCompliant.getResponders(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -400,21 +400,21 @@ describe('getResponders', () => {
 });
 describe('isAssigned', () => {
   it('return true if valid responder was assigned the issue', async () => {
-    const isValid = await sloLogic.isAssigned(
+    const isValid = await sloCompliant.isAssigned(
       new Set<string>(['user1', 'testOwner', 'admin1']),
       [{login: 'random1'}, {login: 'user1'}]
     );
     assert.strictEqual(isValid, true);
   });
   it('return false if list of assignees was empty was empty', async () => {
-    const isValid = await sloLogic.isAssigned(
+    const isValid = await sloCompliant.isAssigned(
       new Set<string>(['user1', 'testOwner', 'admin1']),
       []
     );
     assert.strictEqual(isValid, false);
   });
   it('return false if valid responder was not assigned the issue', async () => {
-    const isValid = await sloLogic.isAssigned(
+    const isValid = await sloCompliant.isAssigned(
       new Set<string>(['testOwner']),
       [{login: 'user1'}, {login: 'admin1'}]
     );
@@ -427,88 +427,133 @@ describe('isInResponseTime', () => {
   let getIssueCommentsStub: sinon.SinonStub;
 
   beforeEach(() => {
-    isInDurationStub = sinon.stub(sloLogic, 'isInDuration');
-    getIssueCommentsStub = sinon.stub(sloLogic, 'getIssueCommentsList');
+    isInDurationStub = sinon.stub(sloCompliant, 'isInDuration');
+    getIssueCommentsStub = sinon.stub(sloCompliant, 'getIssueCommentsList');
   });
 
   afterEach(() => {
     sinon.restore();
   });
-  it('returns true if issue is within response time', async () => {
-    isInDurationStub.onCall(0).returns(true);
-    const isValid = await sloLogic.isInResponseTime(
-      github,
-      'testOwner',
-      'testRepo',
-      3,
-      new Set<string>(['testOwner', 'user1', 'admin1']),
-      '4d',
-      '2020-07-22T03:04:00Z'
-    );
+  describe('issue_comment created with comment', () => {
+    it('returns true if comment is not undefined and from a valid responder', async () => {
+      const isValid = await sloCompliant.isInResponseTime(
+        github,
+        'testOwner',
+        'testRepo',
+        3,
+        new Set<string>(['testOwner', 'user1', 'admin1']),
+        '4d',
+        '2020-07-22T03:04:00Z',
+        {id: 3, user: {login: 'user1'}, created_at: '', updated_at: ''}
+      );
+      sinon.assert.notCalled(getIssueCommentsStub);
+      assert.strictEqual(isValid, true);
+    });
+    it('if comment is not undefined and not from a valid responder it gets list of commenters to check for valid responnder', async () => {
+      const issueComments = [
+        {
+          id: 5,
+          user: {
+            login: 'testOwner',
+          },
+          created_at: '2020-07-27T03:04:00Z',
+          updated_at: '2020-07-27T03:04:00Z',
+        },
+      ];
+      isInDurationStub.onCall(0).returns(false);
+      getIssueCommentsStub.onCall(0).returns(issueComments);
+      const isValid = await sloCompliant.isInResponseTime(
+        github,
+        'testOwner',
+        'testRepo',
+        3,
+        new Set<string>(['testOwner', 'user1', 'admin1']),
+        '4d',
+        '2020-07-22T03:04:00Z',
+        {id: 3, user: {login: 'invalid_user'}, created_at: '', updated_at: ''}
+      );
+      sinon.assert.calledOnce(isInDurationStub);
+      sinon.assert.calledOnce(getIssueCommentsStub);
+      assert.strictEqual(isValid, true);
+    });
+  });
+  describe('issues with no comment', () => {
+    it('returns true if issue is within response time', async () => {
+      isInDurationStub.onCall(0).returns(true);
+      const isValid = await sloCompliant.isInResponseTime(
+        github,
+        'testOwner',
+        'testRepo',
+        3,
+        new Set<string>(['testOwner', 'user1', 'admin1']),
+        '4d',
+        '2020-07-22T03:04:00Z'
+      );
 
-    sinon.assert.calledOnce(isInDurationStub);
-    sinon.assert.notCalled(getIssueCommentsStub);
-    assert.strictEqual(isValid, true);
-  });
-  it('returns true if it is not in response time but a valid responder commented', async () => {
-    const issueComments = [
-      {
-        id: 5,
-        user: {
-          login: 'testOwner',
+      sinon.assert.calledOnce(isInDurationStub);
+      sinon.assert.notCalled(getIssueCommentsStub);
+      assert.strictEqual(isValid, true);
+    });
+    it('returns true if it is not in response time but a valid responder commented', async () => {
+      const issueComments = [
+        {
+          id: 5,
+          user: {
+            login: 'testOwner',
+          },
+          created_at: '2020-07-27T03:04:00Z',
+          updated_at: '2020-07-27T03:04:00Z',
         },
-        created_at: '2020-07-27T03:04:00Z',
-        updated_at: '2020-07-27T03:04:00Z',
-      },
-      {
-        id: 5,
-        user: {
-          login: 'user1',
+        {
+          id: 5,
+          user: {
+            login: 'user1',
+          },
+          created_at: '2020-07-23T03:04:00Z',
+          updated_at: '2020-07-23T03:04:00Z',
         },
-        created_at: '2020-07-23T03:04:00Z',
-        updated_at: '2020-07-23T03:04:00Z',
-      },
-    ];
-    isInDurationStub.onCall(0).returns(false);
-    getIssueCommentsStub.onCall(0).returns(issueComments);
-    const isValid = await sloLogic.isInResponseTime(
-      github,
-      'testOwner',
-      'testRepo',
-      3,
-      new Set<string>(['testOwner', 'user1', 'admin1']),
-      '4d',
-      '2020-07-22T03:04:00Z'
-    );
-    sinon.assert.calledOnce(isInDurationStub);
-    sinon.assert.calledOnce(getIssueCommentsStub);
-    assert.strictEqual(isValid, true);
-  });
-  it('returns false if issue is not in response time and no valid responder commented', async () => {
-    const issueComments = [
-      {
-        id: 5,
-        user: {
-          login: 'testOwner',
+      ];
+      isInDurationStub.onCall(0).returns(false);
+      getIssueCommentsStub.onCall(0).returns(issueComments);
+      const isValid = await sloCompliant.isInResponseTime(
+        github,
+        'testOwner',
+        'testRepo',
+        3,
+        new Set<string>(['testOwner', 'user1', 'admin1']),
+        '4d',
+        '2020-07-22T03:04:00Z'
+      );
+      sinon.assert.calledOnce(isInDurationStub);
+      sinon.assert.calledOnce(getIssueCommentsStub);
+      assert.strictEqual(isValid, true);
+    });
+    it('returns false if issue is not in response time and no valid responder commented', async () => {
+      const issueComments = [
+        {
+          id: 5,
+          user: {
+            login: 'testOwner',
+          },
+          created_at: '2020-07-27T03:04:00Z',
+          updated_at: '2020-07-27T03:04:00Z',
         },
-        created_at: '2020-07-27T03:04:00Z',
-        updated_at: '2020-07-27T03:04:00Z',
-      },
-    ];
-    isInDurationStub.onCall(0).returns(false);
-    getIssueCommentsStub.onCall(0).returns(issueComments);
-    const isValid = await sloLogic.isInResponseTime(
-      github,
-      'testOwner',
-      'testRepo',
-      3,
-      new Set<string>(['user1', 'admin1']),
-      '4d',
-      '2020-07-22T03:04:00Z'
-    );
-    sinon.assert.calledOnce(isInDurationStub);
-    sinon.assert.calledOnce(getIssueCommentsStub);
-    assert.strictEqual(isValid, false);
+      ];
+      isInDurationStub.onCall(0).returns(false);
+      getIssueCommentsStub.onCall(0).returns(issueComments);
+      const isValid = await sloCompliant.isInResponseTime(
+        github,
+        'testOwner',
+        'testRepo',
+        3,
+        new Set<string>(['user1', 'admin1']),
+        '4d',
+        '2020-07-22T03:04:00Z'
+      );
+      sinon.assert.calledOnce(isInDurationStub);
+      sinon.assert.calledOnce(getIssueCommentsStub);
+      assert.strictEqual(isValid, false);
+    });
   });
 });
 describe('isCompliant given slo applies to issue', () => {
@@ -519,10 +564,10 @@ describe('isCompliant given slo applies to issue', () => {
   let isInResponseStub: sinon.SinonStub;
 
   beforeEach(() => {
-    isInDurationStub = sinon.stub(sloLogic, 'isInDuration');
-    getRespondersStub = sinon.stub(sloLogic, 'getResponders');
-    isAssignedStub = sinon.stub(sloLogic, 'isAssigned');
-    isInResponseStub = sinon.stub(sloLogic, 'isInResponseTime');
+    isInDurationStub = sinon.stub(sloCompliant, 'isInDuration');
+    getRespondersStub = sinon.stub(sloCompliant, 'getResponders');
+    isAssignedStub = sinon.stub(sloCompliant, 'isAssigned');
+    isInResponseStub = sinon.stub(sloCompliant, 'isInResponseTime');
   });
 
   afterEach(() => {
@@ -546,7 +591,7 @@ describe('isCompliant given slo applies to issue', () => {
     };
 
     isInDurationStub.onCall(0).returns(false);
-    const isValid = await sloLogic.isIssueCompliant(
+    const isValid = await sloCompliant.isIssueCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -583,7 +628,7 @@ describe('isCompliant given slo applies to issue', () => {
       new Set<string>(['testOwner', 'admin1', 'user1'])
     );
     isAssignedStub.onCall(0).returns(false);
-    const isValid = await sloLogic.isIssueCompliant(
+    const isValid = await sloCompliant.isIssueCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -621,7 +666,7 @@ describe('isCompliant given slo applies to issue', () => {
     );
     isAssignedStub.onCall(0).returns(true);
     isInResponseStub.onCall(0).returns(false);
-    const isValid = await sloLogic.isIssueCompliant(
+    const isValid = await sloCompliant.isIssueCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -659,7 +704,7 @@ describe('isCompliant given slo applies to issue', () => {
     );
     isAssignedStub.onCall(0).returns(true);
     isInResponseStub.onCall(0).returns(true);
-    const isValid = await sloLogic.isIssueCompliant(
+    const isValid = await sloCompliant.isIssueCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -695,7 +740,7 @@ describe('isCompliant given slo applies to issue', () => {
       new Set<string>(['testOwner', 'user1', 'user2'])
     );
     isInResponseStub.onCall(0).returns(true);
-    const isValid = await sloLogic.isIssueCompliant(
+    const isValid = await sloCompliant.isIssueCompliant(
       githubAPI,
       'testOwner',
       'testRepo',
@@ -731,7 +776,7 @@ describe('isCompliant given slo applies to issue', () => {
       new Set<string>(['testOwner', 'user1', 'user2'])
     );
     isAssignedStub.onCall(0).returns(true);
-    const isValid = await sloLogic.isIssueCompliant(
+    const isValid = await sloCompliant.isIssueCompliant(
       githubAPI,
       'testOwner',
       'testRepo',

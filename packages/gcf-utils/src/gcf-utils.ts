@@ -17,6 +17,7 @@ import {CloudTasksClient} from '@google-cloud/tasks';
 import {v1} from '@google-cloud/secret-manager';
 import * as express from 'express';
 import pino from 'pino';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import SonicBoom from 'sonic-boom';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -70,6 +71,7 @@ export interface GCFLogger {
 
 export interface WrapOptions {
   background: boolean;
+  logging: boolean;
 }
 
 export const logger: GCFLogger = initLogger();
@@ -77,11 +79,18 @@ export const logger: GCFLogger = initLogger();
 export function initLogger(
   dest?: NodeJS.WritableStream | SonicBoom
 ): GCFLogger {
+  const DEFAULT_LOG_LEVEL = 'trace';
   const defaultOptions: pino.LoggerOptions = {
+    formatters: {
+      level: pinoLevelToCloudLoggingSeverity,
+    },
     customLevels: {
       metric: 30,
     },
-    level: 'trace',
+    base: null,
+    messageKey: 'message',
+    timestamp: false,
+    level: DEFAULT_LOG_LEVEL,
   };
 
   dest = dest || pino.destination({sync: true});
@@ -105,6 +114,28 @@ export function initLogger(
     metric: logger.metric.bind(logger),
     flushSync: flushSync,
   };
+}
+
+/**
+ * Maps Pino's number-based levels to Google Cloud Logging's string-based severity.
+ * This allows Pino logs to show up with the correct severity in Logs Viewer.
+ * Also preserves the original Pino level
+ * @param label the label used by Pino for the level property
+ * @param level the numbered level from Pino
+ */
+function pinoLevelToCloudLoggingSeverity(
+  label: string,
+  level: number
+): {[label: string]: number | string} {
+  const severityMap: {[level: number]: string} = {
+    10: 'DEBUG',
+    20: 'DEBUG',
+    30: 'INFO',
+    40: 'WARNING',
+    50: 'ERROR',
+  };
+  const UNKNOWN_SEVERITY = 'DEFAULT';
+  return {severity: severityMap[level] || UNKNOWN_SEVERITY, level: level};
 }
 
 export interface CronPayload {
@@ -157,9 +188,12 @@ export class GCFBootstrapper {
     this.secretsClient = secretsClient || new v1.SecretManagerServiceClient();
   }
 
-  async loadProbot(appFn: ApplicationFunction): Promise<Probot> {
+  async loadProbot(
+    appFn: ApplicationFunction,
+    logging?: boolean
+  ): Promise<Probot> {
     if (!this.probot) {
-      const cfg = await this.getProbotConfig();
+      const cfg = await this.getProbotConfig(logging);
       this.probot = createProbot(cfg);
     }
 
@@ -179,7 +213,7 @@ export class GCFBootstrapper {
     return `${secretName}/versions/latest`;
   }
 
-  async getProbotConfig(): Promise<Options> {
+  async getProbotConfig(logging?: boolean): Promise<Options> {
     const name = this.getLatestSecretVersionName();
     const [version] = await this.secretsClient.accessSecretVersion({
       name: name,
@@ -190,8 +224,14 @@ export class GCFBootstrapper {
       throw Error('did not retrieve a payload from SecretManager.');
     }
     const config = JSON.parse(payload);
-    const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin);
-    return {...config, Octokit: LoggingOctokit} as Options;
+    if (logging) {
+      logger.info('custom logging instance enabled');
+      const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin);
+      return {...config, Octokit: LoggingOctokit} as Options;
+    } else {
+      logger.info('custom logging instance not enabled');
+      return config as Options;
+    }
   }
 
   /**
@@ -292,10 +332,11 @@ export class GCFBootstrapper {
     appFn: ApplicationFunction,
     wrapOptions?: WrapOptions
   ): (request: express.Request, response: express.Response) => Promise<void> {
-    wrapOptions = wrapOptions ?? {background: true};
+    wrapOptions = wrapOptions ?? {background: true, logging: false};
     return async (request: express.Request, response: express.Response) => {
       // Otherwise let's listen handle the payload
-      this.probot = this.probot || (await this.loadProbot(appFn));
+      this.probot =
+        this.probot || (await this.loadProbot(appFn, wrapOptions?.logging));
       const {name, id, signature, taskId} = GCFBootstrapper.parseRequestHeaders(
         request
       );
@@ -314,7 +355,19 @@ export class GCFBootstrapper {
         // clever and instead pull up a list of repos we're installed on by
         // installation ID:
         try {
-          await this.handleScheduled(id, request, name, signature);
+          if (wrapOptions?.background) {
+            logger.info(`${id}: scheduling cloud task`);
+            await this.handleScheduled(id, request, name, signature);
+          } else {
+            // a bot can opt out of running through tasks, some bots do this
+            // due to large payload sizes:
+            logger.info(`${id}: skipping cloud tasks`);
+            await this.probot.receive({
+              name,
+              id,
+              payload: request.body,
+            });
+          }
         } catch (err) {
           response.status(500).send({
             body: JSON.stringify({message: err}),
@@ -331,7 +384,7 @@ export class GCFBootstrapper {
             // by default, jobs are run through a background task, this has
             // the benefit of supporting retries, and giving us more insight
             // into failing payloads:
-            console.info('scheduling cloud task');
+            logger.info('scheduling cloud task');
             await this.enqueueTask({
               id,
               name,
@@ -341,7 +394,7 @@ export class GCFBootstrapper {
           } else {
             // a bot can opt out of running through tasks, some bots do this
             // due to large payload sizes:
-            console.info('skipping cloud tasks');
+            logger.info('skipping cloud tasks');
             await this.probot.receive({
               name,
               id,
@@ -466,7 +519,7 @@ export class GCFBootstrapper {
         body: JSON.stringify(payload),
       });
     } catch (err) {
-      console.warn(err.message);
+      logger.warn(err.message);
     }
   }
 
@@ -482,7 +535,7 @@ export class GCFBootstrapper {
     const queuePath = client.queuePath(projectId, location, queueName);
     // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green:
     const url = `https://${location}-${projectId}.cloudfunctions.net/${process.env.GCF_SHORT_FUNCTION_NAME}`;
-    console.info(`scheduling task in queue ${queueName}`);
+    logger.info(`scheduling task in queue ${queueName}`);
     if (params.body) {
       await client.createTask({
         parent: queuePath,

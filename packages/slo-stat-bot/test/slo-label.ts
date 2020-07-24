@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
+//s
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
@@ -25,8 +25,8 @@ import Webhooks from '@octokit/webhooks';
 import snapshot from 'snap-shot-it';
 import handler from '../src/slo-bot';
 import sinon from 'sinon';
-import * as sloLogic from '../src/slo-logic';
-import * as sloLabel from '../src/slo-label';
+import * as sloAppliesTo from '../src/slo-appliesTo';
+import * as sloCompliant from '../src/slo-compliant';
 
 nock.disableNetConnect();
 
@@ -55,32 +55,54 @@ describe('slo-label', () => {
   });
   describe('handle_labels', () => {
     const config = fs.readFileSync(
-      resolve(fixturesPath, 'config', 'label_name.yml')
+      resolve(fixturesPath, 'config', 'slo-stat-bot.yaml')
     );
 
     let payload: Webhooks.WebhookPayloadPullRequest;
-    let getSloStatusStub: sinon.SinonStub;
+    let appliesToStub: sinon.SinonStub;
+    let isCompliantStub: sinon.SinonStub;
 
     beforeEach(() => {
-      getSloStatusStub = sinon.stub(sloLogic, 'getSloStatus');
+      appliesToStub = sinon.stub(sloAppliesTo, 'doesSloApply');
+      isCompliantStub = sinon.stub(sloCompliant, 'isIssueCompliant');
     });
 
     afterEach(() => {
       nock.cleanAll;
       sinon.restore();
     });
-
-    it('labels ooslo if issue is not compliant and is missing ooslo label', async () => {
+    it('defaults to rotating light bulb emoji label if config yaml file is missing', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
       const requests = nock('https://api.github.com')
-        .log(console.log)
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         })
-        .get('/repos/testOwner/testRepo/contents/.github/label_name.yml')
+        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
+        .reply(404);
+
+      appliesToStub.onCall(0).returns(true);
+      isCompliantStub.onCall(0).returns(true);
+      await probot.receive({
+        name: 'issues.opened',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+    });
+    it('labels ooslo if issue is not compliant and is missing ooslo label', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .reply(200, {
+          content:
+            'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
+        })
+        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')})
         .post('/repos/testOwner/testRepo/issues/5/labels', body => {
           snapshot(body);
@@ -88,7 +110,8 @@ describe('slo-label', () => {
         })
         .reply(200);
 
-      getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: false});
+      appliesToStub.onCall(0).returns(true);
+      isCompliantStub.onCall(0).returns(false);
       await probot.receive({
         name: 'issues.opened',
         payload,
@@ -106,10 +129,11 @@ describe('slo-label', () => {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         })
-        .get('/repos/testOwner/testRepo/contents/.github/label_name.yml')
+        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')});
 
-      getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: false});
+      appliesToStub.onCall(0).returns(true);
+      isCompliantStub.onCall(0).returns(false);
       await probot.receive({
         name: 'issues.opened',
         payload,
@@ -128,10 +152,11 @@ describe('slo-label', () => {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         })
-        .get('/repos/testOwner/testRepo/contents/.github/label_name.yml')
+        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')});
 
-      getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: true});
+      appliesToStub.onCall(0).returns(true);
+      isCompliantStub.onCall(0).returns(true);
       await probot.receive({
         name: 'issues.opened',
         payload,
@@ -151,10 +176,11 @@ describe('slo-label', () => {
         })
         .delete('/repos/testOwner/testRepo/issues/5/labels/ooslo')
         .reply(200)
-        .get('/repos/testOwner/testRepo/contents/.github/label_name.yml')
+        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')});
 
-      getSloStatusStub.onCall(0).returns({appliesTo: true, isCompliant: true});
+      appliesToStub.onCall(0).returns(true);
+      isCompliantStub.onCall(0).returns(true);
       await probot.receive({
         name: 'issues.opened',
         payload,

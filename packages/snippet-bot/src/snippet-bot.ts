@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {Application} from 'probot';
+import {logger} from 'gcf-utils';
 
 const CONFIGURATION_FILE_PATH = 'snippet-bot.yml';
 
@@ -31,7 +32,7 @@ export = (app: Application) => {
       (context.payload.pull_request || context.payload.issue) &&
       config.randomBoolean
     ) {
-      context.log.info('The bot is alive!');
+      logger.info('The bot is alive!');
       return;
     }
   });
