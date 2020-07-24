@@ -17,10 +17,11 @@
     ],
     "ignoredRepos": [
       "googleapis/api-common-java",
+      'googleapis/disco-to-proto3-converter',
       "googleapis/gapic-generator",
       "googleapis/gapic-generator-java",
       "GoogleCloudPlatform/java-docs-samples",
-      "GoogleCloudPlatform/getting-started-java"
+      "GoogleCloudPlatform/getting-started-java",
     ],
     "repoOverrides": [
       {
