@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {DataProcessor} from './data-processor-abstract';
-import {Firestore, WriteResult} from '@google-cloud/firestore';
+import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
+import {WriteResult} from '@google-cloud/firestore';
 import {CloudTasksClient, protos, v2} from '@google-cloud/tasks';
 
 type CloudTasksList = [
@@ -26,14 +26,19 @@ interface QueueStatus {
   [queueName: string]: number;
 }
 
+export interface CloudTasksProcessorOptions extends ProcessorOptions {
+  tasksClient?: v2.CloudTasksClient;
+  taskQueueProjectId: string;
+  taskQueueLocation: string;
+}
+
 /**
  * Collects the current status of Cloud Task queues associated
  * with repo automation bots and inserts it into Firestore
  */
 export class CloudTasksProcessor extends DataProcessor {
-  private PROJECT_ID = 'repo-automation-bots';
-  private LOCATION = 'us-central1';
-
+  private projectId: string;
+  private location: string;
   private tasksClient: v2.CloudTasksClient;
 
   /**
@@ -41,9 +46,11 @@ export class CloudTasksProcessor extends DataProcessor {
    * @param firestore (optional) a custom Firestore client
    * @param tasksClient (optional) a custom Cloud Tasks client
    */
-  constructor(firestore?: Firestore, tasksClient?: v2.CloudTasksClient) {
-    super(firestore);
-    this.tasksClient = tasksClient || new CloudTasksClient();
+  constructor(options: CloudTasksProcessorOptions) {
+    super(options);
+    this.projectId = options.taskQueueProjectId;
+    this.location = options.taskQueueLocation;
+    this.tasksClient = options.tasksClient || new CloudTasksClient();
   }
 
   public async collectAndProcess(): Promise<void> {
@@ -52,8 +59,8 @@ export class CloudTasksProcessor extends DataProcessor {
         .then(botNames => {
           // assumes that queue name == bot name
           return this.getTaskQueueStatus(
-            this.PROJECT_ID,
-            this.LOCATION,
+            this.projectId,
+            this.location,
             botNames
           );
         })

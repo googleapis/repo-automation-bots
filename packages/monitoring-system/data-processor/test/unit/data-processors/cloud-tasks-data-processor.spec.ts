@@ -67,7 +67,12 @@ describe('Cloud Tasks Data Processor', () => {
   beforeEach(() => {
     mockFirestore = new MockFirestore();
     mockTasksClient = new MockCloudTasksClient();
-    processor = new CloudTasksProcessor(mockFirestore, mockTasksClient);
+    processor = new CloudTasksProcessor({
+      firestore: mockFirestore,
+      tasksClient: mockTasksClient,
+      taskQueueProjectId: 'foo',
+      taskQueueLocation: 'bar',
+    });
     resetMockData();
   });
 

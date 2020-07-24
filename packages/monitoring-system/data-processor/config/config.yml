@@ -1,0 +1,6 @@
+project-id: &default-project-id 'repo-automation-bots'
+project-location: &default-project-location 'us-central1'
+
+task-queue-processor:
+  task-queue-project-id: *default-project-id
+  task-queue-location: *default-project-location

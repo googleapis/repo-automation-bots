@@ -18,12 +18,23 @@ import {CloudLogsProcessor} from './data-processors/cloud-logs-data-processor';
 import {GCFProcessor} from './data-processors/cloud-functions-data-processor';
 import {CloudTasksProcessor} from './data-processors/cloud-tasks-data-processor';
 import {GitHubProcessor} from './data-processors/github-data-processor';
+import * as yaml from 'yaml';
+import {resolve} from 'path';
+import * as fs from 'fs';
 
 export interface Factory {
   getDataProcessor(task: Task): DataProcessor;
 }
 
 export class DataProcessorFactory implements Factory {
+  private DEFAULT_CONFIG_PATH = resolve('./config/config.yml');
+  private config: {[key: string]: any};
+
+  constructor() {
+    const configFile = fs.readFileSync(this.DEFAULT_CONFIG_PATH, "utf-8");
+    this.config = yaml.parse(configFile);
+  }
+
   /**
    * Return a relevant data processor for the given task
    * @param task a processing task
@@ -36,7 +47,10 @@ export class DataProcessorFactory implements Factory {
       case Task.ProcessGCF:
         return new GCFProcessor();
       case Task.ProcessTaskQueue:
-        return new CloudTasksProcessor();
+        return new CloudTasksProcessor({
+          taskQueueProjectId: this.config.taskQueueProjectId,
+          taskQueueLocation: this.config.taskQueueLocation
+        });
       case Task.ProcessGitHub:
         return new GitHubProcessor();
       default:
