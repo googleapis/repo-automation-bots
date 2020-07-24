@@ -180,7 +180,8 @@ mergeOnGreen.hasMOGLabel = async function hasMOGLabel(
     )?.name;
     return mog;
   } catch (err) {
-    console.log(`Error in getting MOG label: ${err}`);
+    err.message = `Error in getting MOG label\n\n ${err.message}`;
+    console.error(err);
     return undefined;
   }
 };
@@ -210,7 +211,8 @@ mergeOnGreen.getBranchProtection = async function getBranchProtection(
     );
     return branchProtection;
   } catch (err) {
-    console.log(`Error in getting branch protection: ${err}`);
+    err.message = `Error in getting branch protection\n\n${err.message}`;
+    console.error(err);
     return [];
   }
 };
@@ -249,7 +251,8 @@ mergeOnGreen.getStatusi = async function getStatusi(
     );
     return data;
   } catch (err) {
-    console.log(`Error in getting statuses: ${err}`);
+    err.message = `Error in getting statuses\n\n${err.message}`;
+    console.error(err);
     return [];
   }
 };
@@ -472,7 +475,8 @@ mergeOnGreen.getReviewsCompleted = async function getReviewsCompleted(
     });
     return reviewsCompleted.data;
   } catch (err) {
-    console.log(`Error getting reviews completed ${err}`);
+    err.message = `Error getting reviews completed\n\n${err.message}`;
+    console.error(err);
     return [];
   }
 };
@@ -559,7 +563,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
               message:
                 'This review does not reference the most recent commit, and you are using the secure version of merge-on-green. Please re-review the most recent commit.',
             })
-            .catch(err => console.log(err));
+            .catch(console.error);
           reviewsPassed = false;
         }
       });
@@ -625,7 +629,8 @@ mergeOnGreen.updateBranch = async function updateBranch(
     ).data as Update;
     return update;
   } catch (err) {
-    console.log(`Error in updating branch: ${err}`);
+    err.message = `Error in updating branch: \n\n${err.message}`;
+    console.error(err);
     return null;
   }
 };
@@ -655,7 +660,8 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
     });
     return data;
   } catch (err) {
-    console.log(`There was an issue commenting on ${owner}/${repo} PR ${pr}`);
+    err.message = `There was an issue commenting on ${owner}/${repo} PR ${pr} \n\n${err.message}`;
+    console.error(err);
     return null;
   }
 };
@@ -684,9 +690,8 @@ mergeOnGreen.removeLabel = async function removeLabel(
       name,
     });
   } catch (err) {
-    console.log(
-      `There was an issue removing the automerge label on ${owner}/${repo} PR ${issue_number}`
-    );
+    err.message = `There was an issue removing the automerge label on ${owner}/${repo} PR ${issue_number}\n\n${err.message}`;
+    console.error(err);
   }
 };
 
@@ -799,17 +804,15 @@ export async function mergeOnGreen(
       console.info(
         `Is ${owner}/${repo}/${pr} mergeable?: ${prInfo.mergeable} Mergeable_state?: ${prInfo.mergeable_state}`
       );
-      console.error(
-        `failed to merge "${err.message}: " ${owner}/${repo}/${pr}`
-      );
+      err.message = `Failed to merge "${err.message}: " ${owner}/${repo}/${pr}\n\n${err.message}`;
+      console.error(err);
       if (prInfo.mergeable_state === 'behind') {
         console.info(`Attempting to update branch ${owner}/${repo}/${pr}`);
         try {
           await mergeOnGreen.updateBranch(owner, repo, pr, github);
         } catch (err) {
-          console.error(
-            `failed to update branch "${err.message}" ${owner}/${repo}/${pr}`
-          );
+          err.message = `failed to update branch ${owner}/${repo}/${pr}\n\n${err.message}`;
+          console.error(err);
         }
       } else if (prInfo.mergeable_state === 'dirty') {
         console.info(
