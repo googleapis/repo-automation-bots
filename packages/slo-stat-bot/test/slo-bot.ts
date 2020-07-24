@@ -275,9 +275,8 @@ describe('slo-bot', () => {
             },
           ]);
 
-        getSloStatusStub
-          .onCall(0)
-          .returns({appliesTo: true, isCompliant: false});
+        appliesToStub.onCall(0).returns(true)
+        isCompliantStub.onCall(0).returns(false);
 
         await probot.receive({
           name: 'schedule.repository',
