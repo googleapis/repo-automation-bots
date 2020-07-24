@@ -137,7 +137,9 @@ handler.checkIfFileIsEmpty = async function checkIfFileIsEmpty(
   jsonData: string
 ) {
   if (jsonData.length === 0) {
-    console.error(new Error('JSON file downloaded from Cloud Storage was empty'));
+    console.error(
+      new Error('JSON file downloaded from Cloud Storage was empty')
+    );
     return null;
   } else {
     const jsonArray = JSON.parse(jsonData).repos;
