@@ -17,6 +17,7 @@ import {Application, Octokit} from 'probot';
 import lint from '@commitlint/lint';
 
 import {rules} from '@commitlint/config-conventional';
+import { logger } from 'gcf-utils';
 // modify rules slightly:
 // see: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-conventional/index.js
 delete rules['type-enum'];
@@ -54,7 +55,7 @@ export = (app: Application) => {
 
     const commits = commitsResponse.data;
     if (commits.length === 0) {
-      console.log(
+      logger.info(
         `Pull request ${context.payload.pull_request.html_url} has no commits!`
       );
       return;
