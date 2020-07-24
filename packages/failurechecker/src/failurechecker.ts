@@ -20,6 +20,7 @@
 import {Application} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot/lib/github';
+import {logger} from 'gcf-utils';
 // labels indicative of the fact that a release has not completed yet.
 const RELEASE_LABELS = [
   'autorelease: pending',
@@ -78,7 +79,7 @@ export function failureChecker(app: Application) {
       }
       app.log(`it's alive! event for ${repo}`);
     } catch (err) {
-      console.info(err);
+      logger.info(err);
       app.log.error(`${err.message} processing ${repo}`);
     }
   });

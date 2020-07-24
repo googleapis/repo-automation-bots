@@ -17,6 +17,7 @@ import {Application, GitHubAPI, Octokit} from 'probot';
 import {createHash} from 'crypto';
 import {Storage} from '@google-cloud/storage';
 import * as util from 'util';
+import {logger} from 'gcf-utils';
 
 const storage = new Storage();
 
@@ -44,11 +45,11 @@ async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
   const apiLabelsRes = await getApiLabels(repoPath);
   apiLabelsRes.apis.forEach(api => {
     if (!api.github_label || !api.api_shortname) {
-      console.log(`
+      logger.error(`
         Missing expected fields for a given API label returned from GCS.
         This object was expected to have a 'github_label' and 'api_shortname'
         property, but it is missing at least one of them.`);
-      console.log(util.inspect(api));
+      logger.error(util.inspect(api));
       return;
     }
     labels.labels.push({
@@ -138,7 +139,7 @@ export const getApiLabels = async (
   if (repo) {
     // for split-repos we populate only the label associated with the
     // product the repo is associated with:
-    console.log(`populating ${repo.github_label} label for ${repoPath}`);
+    logger.info(`populating ${repo.github_label} label for ${repoPath}`);
     return {
       apis: [
         {
@@ -151,13 +152,13 @@ export const getApiLabels = async (
   }
   // for mono-repos we populate a list of all apis and products,
   // since each repo might include multiple products:
-  console.log(`populating all api labels for ${repoPath}`);
+  logger.info(`populating all api labels for ${repoPath}`);
   const apis = await storage
     .bucket('devrel-prod-settings')
     .file('apis.json')
     .download();
   const parsedResponse = JSON.parse(apis[0].toString()) as GetApiLabelsResponse;
-  console.log(`Detected ${parsedResponse.apis.length} API labels from DRIFT.`);
+  logger.info(`Detected ${parsedResponse.apis.length} API labels from DRIFT.`);
   return parsedResponse;
 };
 
@@ -183,7 +184,7 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
     if (match) {
       // check to see if the color matches
       if (match.color !== l.color || match.description !== l.description) {
-        console.log(
+        logger.info(
           `Updating ${match.name} from ${match.color} to ${l.color} and ${match.description} to ${l.description}.`
         );
         await github.issues
@@ -196,13 +197,13 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
             color: l.color,
           })
           .catch(e => {
-            console.error(`Error updating label ${l.name} in ${owner}/${repo}`);
-            console.error(e.stack);
+            e.message = `Error updating label ${l.name} in ${owner}/${repo}\n\n${e.message}`;
+            logger.error(e);
           });
       }
     } else {
       // there was no match, go ahead and add it
-      console.log(`Creating label for ${l.name}.`);
+      logger.info(`Creating label for ${l.name}.`);
       await github.issues
         .createLabel({
           repo,
@@ -217,8 +218,8 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
             !Array.isArray(e.errors) ||
             e.errors[0].code !== 'already_exists'
           ) {
-            console.error(`Error creating label ${l.name} in ${owner}/${repo}`);
-            console.error(e.stack);
+            e.message = `Error creating label ${l.name} in ${owner}/${repo}\n\n${e.message}`;
+            logger.error(e);
           }
         });
     }
@@ -242,11 +243,11 @@ async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
           repo,
         })
         .then(() => {
-          console.log(`Deleted '${l.name}' from ${owner}/${repo}`);
+          logger.info(`Deleted '${l.name}' from ${owner}/${repo}`);
         })
         .catch(e => {
-          console.error(`Error deleting label ${l.name} in ${owner}/${repo}`);
-          console.error(e.stack);
+          e.message = `Error deleting label ${l.name} in ${owner}/${repo}\n\n${e.message}`;
+          logger.error(e);
         });
     }
   }
