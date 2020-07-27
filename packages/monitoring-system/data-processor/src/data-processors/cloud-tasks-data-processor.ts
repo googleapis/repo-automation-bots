@@ -75,11 +75,11 @@ export class CloudTasksProcessor extends DataProcessor {
     return new Promise<void>((resolve, reject) => {
       this.getBotNames()
         .then(botNames => {
-          // assumes that queue name == bot name
+          const queueNames = botNames.map(this.botNameToQueueName);
           return this.getTaskQueueStatus(
             this.projectId,
             this.location,
-            botNames
+            queueNames
           );
         })
         .then(queueStatus => {
@@ -174,5 +174,11 @@ export class CloudTasksProcessor extends DataProcessor {
           reject(error);
         });
     });
+  }
+
+  // Assumes that queue name == bot name with the exception
+  // that all "_" (underscore) are replaced by "-" (hyphen)
+  private botNameToQueueName(botName: string): string {
+    return botName.replace(/_/gi, '-');
   }
 }

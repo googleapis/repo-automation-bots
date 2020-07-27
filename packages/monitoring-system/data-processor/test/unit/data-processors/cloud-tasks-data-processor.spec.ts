@@ -280,4 +280,16 @@ describe('Cloud Tasks Data Processor', () => {
         });
     });
   });
+
+  describe('botNameToQueueName', () => {
+    it('returns a string without underscores unchanged', () => {
+      assert.equal(processor['botNameToQueueName']('foo'), 'foo');
+    });
+    it('replaces all underscores in a string', () => {
+      assert.equal(
+        processor['botNameToQueueName']('foo_bar_baz'),
+        'foo-bar-baz'
+      );
+    });
+  });
 });
