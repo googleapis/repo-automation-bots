@@ -174,20 +174,6 @@
           "Kokoro - Test: Integration",
           "cla/google"
         ]
-      },
-      {
-        "repo": "googleapis/java-spanner",
-        "requiredStatusChecks": [
-          "Kokoro - Test: Binary Compatibility",
-          "Kokoro - Test: Code Format",
-          "Kokoro - Test: Dependencies",
-          "Kokoro - Test: Integration",
-          "Kokoro - Test: Java 11",
-          "Kokoro - Test: Java 8",
-          "Kokoro - Test: Java 7",
-          "Kokoro - Test: Linkage Monitor",
-          "cla/google"
-        ]
       }
     ]
   },
