@@ -18,6 +18,9 @@ import {resolve} from 'path';
 import * as fs from 'fs';
 
 export interface Config {
+  firestore: {
+    project_id: string;
+  };
   task_queue_processor: {
     task_queue_project_id: string;
     task_queue_location: string;

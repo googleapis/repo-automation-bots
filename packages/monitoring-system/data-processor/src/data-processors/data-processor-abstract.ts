@@ -13,6 +13,7 @@
 // limitations under the License.
 //
 import {Firestore} from '@google-cloud/firestore';
+import {ConfigUtil} from '../config-util';
 
 export interface ProcessorOptions {
   firestore?: Firestore;
@@ -22,7 +23,11 @@ export abstract class DataProcessor {
   protected firestore: Firestore;
 
   constructor(options?: ProcessorOptions) {
-    this.firestore = options?.firestore || new Firestore();
+    this.firestore =
+      options?.firestore ||
+      new Firestore({
+        projectId: ConfigUtil.getConfig().firestore.project_id,
+      });
   }
 
   /**
