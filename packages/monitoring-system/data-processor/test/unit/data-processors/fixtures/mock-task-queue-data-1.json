@@ -1,0 +1,39 @@
+{
+    "projectFoo": {
+        "locationBar": {
+            "queue1": [
+                [
+                    {},
+                    {},
+                    {}
+                ],
+                null,
+                {
+                    "tasks": null,
+                    "nextPageToken": null
+                }
+            ],
+            "queue2": [
+                [
+                    {}
+                ],
+                null,
+                {
+                    "tasks": null,
+                    "nextPageToken": null
+                }
+            ],
+            "queue3": [
+                [
+                    {},
+                    {}
+                ],
+                null,
+                {
+                    "tasks": null,
+                    "nextPageToken": null
+                }
+            ]
+        }
+    }
+}
