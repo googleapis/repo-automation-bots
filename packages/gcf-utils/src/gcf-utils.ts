@@ -413,7 +413,7 @@ export class GCFBootstrapper {
     eventName: string,
     signature: string
   ) {
-    let body: Scheduled = this.parseRequestBody(req);
+    const body: Scheduled = this.parseRequestBody(req);
     if (body.repo) {
       // Job was scheduled for a single repository:
       await this.scheduledToTask(body.repo, id, body, eventName, signature);
