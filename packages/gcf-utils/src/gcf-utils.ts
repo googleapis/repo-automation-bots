@@ -365,7 +365,7 @@ export class GCFBootstrapper {
           if (!wrapOptions?.background) {
             // a bot can opt out of running through tasks, some bots do this
             // due to large payload sizes:
-            logger.info(`${id}: skipping cloud tasks`);
+            logger.info(`${id}: skipping Cloud Tasks`);
           }
           let payload = request.body;
           if (triggerType === TriggerType.PUBSUB) {
