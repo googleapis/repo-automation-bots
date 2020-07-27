@@ -14,13 +14,33 @@
 
 import assert from 'assert';
 
-export const logLevels: {[index: string]: number} = {
-  trace: 10,
-  debug: 20,
-  info: 30,
-  metric: 30,
-  warn: 40,
-  error: 50,
+export const logLevels: {
+  [index: string]: {pino: number; cloudLogging: string};
+} = {
+  trace: {
+    pino: 10,
+    cloudLogging: 'DEBUG',
+  },
+  debug: {
+    pino: 20,
+    cloudLogging: 'DEBUG',
+  },
+  info: {
+    pino: 30,
+    cloudLogging: 'INFO',
+  },
+  metric: {
+    pino: 30,
+    cloudLogging: 'INFO',
+  },
+  warn: {
+    pino: 40,
+    cloudLogging: 'WARNING',
+  },
+  error: {
+    pino: 50,
+    cloudLogging: 'ERROR',
+  },
 };
 
 export interface LogLine {
@@ -28,6 +48,10 @@ export interface LogLine {
   level: number;
   [index: string]: string | number;
 }
+
+const MESSAGE_KEY = 'message';
+const PINO_LEVEL_KEY = 'level';
+const CLOUD_LOGGING_SEVERITY_KEY = 'severity';
 
 /**
  * Asserts the correctness of the provided log entries based on params given
@@ -42,7 +66,7 @@ export function validateLogs(
   expectedLineCount?: number,
   expectedMessages?: string[],
   expectedProperties?: Array<{[idx: string]: string}>,
-  expectedLogLevel?: number
+  expectedLogLevel?: {pino: number; cloudLogging: string}
 ): void {
   if (expectedLineCount) {
     assert.equal(
@@ -54,9 +78,9 @@ export function validateLogs(
   if (expectedMessages) {
     for (let i = 0; i < expectedMessages.length; i++) {
       assert.equal(
-        logs[i]['msg'],
+        logs[i][MESSAGE_KEY],
         expectedMessages[i],
-        `expected log message to be ${expectedMessages[i]} but was instead ${logs[i]['msg']}`
+        `expected log message to be ${expectedMessages[i]} but was instead ${logs[i][MESSAGE_KEY]}`
       );
     }
   }
@@ -74,9 +98,14 @@ export function validateLogs(
   if (expectedLogLevel) {
     for (const line of logs) {
       assert.equal(
-        line['level'],
-        expectedLogLevel,
-        `expected logs to have level ${expectedLogLevel}`
+        line[PINO_LEVEL_KEY],
+        expectedLogLevel.pino,
+        `expected logs to have Pino level ${expectedLogLevel.pino}`
+      );
+      assert.equal(
+        line[CLOUD_LOGGING_SEVERITY_KEY],
+        expectedLogLevel.cloudLogging,
+        `expected logs to have Cloud Logging Severity ${expectedLogLevel.cloudLogging}`
       );
     }
   }

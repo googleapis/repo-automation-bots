@@ -14,6 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot/lib/github';
+import {logger} from 'gcf-utils';
 
 interface CheckRun {
   name: string;
@@ -172,7 +173,7 @@ mergeOnGreen.hasMOGLabel = async function hasMOGLabel(
       issue_number: pr,
     });
     const labelArray = labels.data;
-    console.info(
+    logger.info(
       `checked hasMOGLabel in ${Date.now() - start}ms ${owner}/${repo}/${pr}`
     );
     const mog = labelArray?.find(prLabel =>
@@ -180,7 +181,8 @@ mergeOnGreen.hasMOGLabel = async function hasMOGLabel(
     )?.name;
     return mog;
   } catch (err) {
-    console.log(`Error in getting MOG label: ${err}`);
+    err.message = `Error in getting MOG label\n\n ${err.message}`;
+    logger.error(err);
     return undefined;
   }
 };
@@ -205,12 +207,13 @@ mergeOnGreen.getBranchProtection = async function getBranchProtection(
         branch: 'master',
       })
     ).data.required_status_checks.contexts;
-    console.log(
+    logger.info(
       `checking branch protection for ${owner}/${repo}: ${branchProtection}`
     );
     return branchProtection;
   } catch (err) {
-    console.log(`Error in getting branch protection: ${err}`);
+    err.message = `Error in getting branch protection\n\n${err.message}`;
+    logger.error(err);
     return [];
   }
 };
@@ -241,15 +244,16 @@ mergeOnGreen.getStatusi = async function getStatusi(
       page: num,
     });
     if (!data[0]?.context) {
-      console.info('no further page data');
+      logger.info('no further page data');
       return [];
     }
-    console.info(
+    logger.info(
       `called getStatuses in ${Date.now() - start}ms ${owner}/${repo}`
     );
     return data;
   } catch (err) {
-    console.log(`Error in getting statuses: ${err}`);
+    err.message = `Error in getting statuses\n\n${err.message}`;
+    logger.error(err);
     return [];
   }
 };
@@ -305,10 +309,10 @@ mergeOnGreen.getCheckRuns = async function getCheckRuns(
       page: num,
     });
     if (!checkRuns.data.check_runs[0]) {
-      console.info('no further page data');
+      logger.info('no further page data');
       return [];
     }
-    console.info(
+    logger.info(
       `called getCheckRuns in ${Date.now() - start}ms ${owner}/${repo}`
     );
     return checkRuns.data.check_runs;
@@ -398,16 +402,16 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
     github,
     headSha
   );
-  console.info(
+  logger.info(
     `fetched statusesForRef in ${Date.now() - start}ms ${owner}/${repo}/${pr}`
   );
 
   let mergeable = true;
   let checkRuns;
   if (headSha.length !== 0) {
-    console.info(`=== checking required checks for ${owner}/${repo}/${pr} ===`);
+    logger.info(`=== checking required checks for ${owner}/${repo}/${pr} ===`);
     for (const check of requiredChecks) {
-      console.log(
+      logger.info(
         `Looking for required checks in status checks for ${owner}/${repo}/${pr}.`
       );
       //since find function finds the value of the first element in the array, that will take care of the chronological order of the tests
@@ -415,7 +419,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
         element.context.startsWith(check)
       );
       if (!checkCompleted) {
-        console.log(
+        logger.info(
           'The status checks do not include your required checks. We will check in check runs.'
         );
         //if we can't find it in the statuses, let's check under check runs
@@ -429,20 +433,20 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
         }
         mergeable = mergeOnGreen.checkForRequiredSC(checkRuns, check);
         if (!mergeable) {
-          console.log(
+          logger.info(
             'We could not find your required checks in check runs. You have no statuses or checks that match your required checks.'
           );
           return false;
         }
       } else if (checkCompleted.state !== 'success') {
-        console.info(
+        logger.info(
           `Setting mergeable false due to ${checkCompleted.context} = ${checkCompleted.state}`
         );
         return false;
       }
     }
   } else {
-    console.log(
+    logger.info(
       `Either you have no head sha, or no required checks for ${owner}/${repo} PR ${pr}`
     );
     return false;
@@ -472,7 +476,8 @@ mergeOnGreen.getReviewsCompleted = async function getReviewsCompleted(
     });
     return reviewsCompleted.data;
   } catch (err) {
-    console.log(`Error getting reviews completed ${err}`);
+    err.message = `Error getting reviews completed\n\n${err.message}`;
+    logger.error(err);
     return [];
   }
 };
@@ -519,7 +524,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
   github: GitHubAPI
 ): Promise<boolean> {
   const start = Date.now();
-  console.info(`=== checking required reviews ${owner}/${repo}/${pr} ===`);
+  logger.info(`=== checking required reviews ${owner}/${repo}/${pr} ===`);
   const reviewsCompletedDirty = await mergeOnGreen.getReviewsCompleted(
     owner,
     repo,
@@ -528,7 +533,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
   );
   let reviewsPassed = true;
   const reviewsCompleted = mergeOnGreen.cleanReviews(reviewsCompletedDirty);
-  console.info(
+  logger.info(
     `fetched completed reviews in ${
       Date.now() - start
     }ms ${owner}/${repo}/${pr}`
@@ -536,7 +541,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
   if (reviewsCompleted.length !== 0) {
     reviewsCompleted.forEach(review => {
       if (review.state !== 'APPROVED' && review.user.login !== author) {
-        console.log(
+        logger.info(
           `One of your reviewers did not approve the PR ${owner}/${repo}/${pr} state = ${review.state}`
         );
         reviewsPassed = false;
@@ -547,7 +552,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
       //if we get to here, it means that all the reviews are in the approved state
       reviewsCompleted.forEach(async review => {
         if (review.commit_id !== headSha) {
-          console.log(
+          logger.info(
             `${review.user.login} didn't review the latest commit for ${owner}/${repo}/${pr} commit = ${headSha}; will dismiss review.`
           );
           await github.pulls
@@ -559,14 +564,14 @@ mergeOnGreen.checkReviews = async function checkReviews(
               message:
                 'This review does not reference the most recent commit, and you are using the secure version of merge-on-green. Please re-review the most recent commit.',
             })
-            .catch(err => console.log(err));
+            .catch(logger.error);
           reviewsPassed = false;
         }
       });
     }
   } else {
     //if no one has reviewed it, fail the merge
-    console.log(`No one has reviewed your PR ${owner}/${repo}/${pr}`);
+    logger.info(`No one has reviewed your PR ${owner}/${repo}/${pr}`);
     return false;
   }
   return reviewsPassed;
@@ -625,7 +630,8 @@ mergeOnGreen.updateBranch = async function updateBranch(
     ).data as Update;
     return update;
   } catch (err) {
-    console.log(`Error in updating branch: ${err}`);
+    err.message = `Error in updating branch: \n\n${err.message}`;
+    logger.error(err);
     return null;
   }
 };
@@ -655,7 +661,8 @@ mergeOnGreen.commentOnPR = async function commentOnPR(
     });
     return data;
   } catch (err) {
-    console.log(`There was an issue commenting on ${owner}/${repo} PR ${pr}`);
+    err.message = `There was an issue commenting on ${owner}/${repo} PR ${pr} \n\n${err.message}`;
+    logger.error(err);
     return null;
   }
 };
@@ -684,9 +691,8 @@ mergeOnGreen.removeLabel = async function removeLabel(
       name,
     });
   } catch (err) {
-    console.log(
-      `There was an issue removing the automerge label on ${owner}/${repo} PR ${issue_number}`
-    );
+    err.message = `There was an issue removing the automerge label on ${owner}/${repo} PR ${issue_number}\n\n${err.message}`;
+    logger.error(err);
   }
 };
 
@@ -709,7 +715,7 @@ export async function mergeOnGreen(
   state: string,
   github: GitHubAPI
 ): Promise<boolean | undefined> {
-  console.info(`${owner}/${repo} checking merge on green PR status`);
+  logger.info(`${owner}/${repo} checking merge on green PR status`);
   const [prInfo, requiredChecks, mogLabel, headSha] = await Promise.all([
     await mergeOnGreen.getPR(owner, repo, pr, github),
     await mergeOnGreen.getBranchProtection(owner, repo, github),
@@ -718,11 +724,11 @@ export async function mergeOnGreen(
   ]);
 
   if (prInfo.state === 'closed') {
-    console.log(`${owner}/${repo}/${pr} is closed`);
+    logger.info(`${owner}/${repo}/${pr} is closed`);
     return true;
   }
   if (requiredChecks.length === 0) {
-    console.log(`${owner}/${repo}/${pr} has no required status checks`);
+    logger.info(`${owner}/${repo}/${pr} has no required status checks`);
     await mergeOnGreen.commentOnPR(
       owner,
       repo,
@@ -734,7 +740,7 @@ export async function mergeOnGreen(
   }
 
   if (!mogLabel) {
-    console.log(`${owner}/${repo}/${pr} does not have the required labels`);
+    logger.info(`${owner}/${repo}/${pr} does not have the required labels`);
     return true;
   }
 
@@ -769,14 +775,14 @@ export async function mergeOnGreen(
   const notAuthorizedMessage =
     'Merge-on-green is not authorized to push to this branch. Visit https://help.github.com/en/github/administering-a-repository/enabling-branch-restrictions to give gcf-merge-on-green permission to push to this branch.';
 
-  console.info(
+  logger.info(
     `checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state} ${owner}/${repo}/${pr}`
   );
 
   if (checkReview === true && checkStatus === true) {
     let merged = false;
     try {
-      console.info(`attempt to merge ${owner}/${repo}/${pr}`);
+      logger.info(`attempt to merge ${owner}/${repo}/${pr}`);
       await mergeOnGreen.merge(owner, repo, pr, prInfo, github);
       merged = true;
     } catch (err) {
@@ -796,23 +802,21 @@ export async function mergeOnGreen(
           );
         }
       }
-      console.info(
+      logger.info(
         `Is ${owner}/${repo}/${pr} mergeable?: ${prInfo.mergeable} Mergeable_state?: ${prInfo.mergeable_state}`
       );
-      console.error(
-        `failed to merge "${err.message}: " ${owner}/${repo}/${pr}`
-      );
+      err.message = `Failed to merge "${err.message}: " ${owner}/${repo}/${pr}\n\n${err.message}`;
+      logger.error(err);
       if (prInfo.mergeable_state === 'behind') {
-        console.info(`Attempting to update branch ${owner}/${repo}/${pr}`);
+        logger.info(`Attempting to update branch ${owner}/${repo}/${pr}`);
         try {
           await mergeOnGreen.updateBranch(owner, repo, pr, github);
         } catch (err) {
-          console.error(
-            `failed to update branch "${err.message}" ${owner}/${repo}/${pr}`
-          );
+          err.message = `failed to update branch ${owner}/${repo}/${pr}\n\n${err.message}`;
+          logger.error(err);
         }
       } else if (prInfo.mergeable_state === 'dirty') {
-        console.info(
+        logger.info(
           `There are conflicts in the base branch of ${owner}/${repo}/${pr}`
         );
         const isCommented = commentsOnPR?.find(element =>
@@ -831,7 +835,7 @@ export async function mergeOnGreen(
     }
     return merged;
   } else if (state === 'stop') {
-    console.log(
+    logger.info(
       `${owner}/${repo}/${pr} timed out before its statuses & reviews passed`
     );
     await mergeOnGreen.commentOnPR(owner, repo, pr, failedMesssage, github);
@@ -844,10 +848,10 @@ export async function mergeOnGreen(
     if (!isCommented) {
       await mergeOnGreen.commentOnPR(owner, repo, pr, continueMesssage, github);
     }
-    console.log(`${owner}/${repo}/${pr} is halfway through its check`);
+    logger.info(`${owner}/${repo}/${pr} is halfway through its check`);
     return false;
   } else {
-    console.log(
+    logger.info(
       `Statuses and/or checks failed for ${owner}/${repo}/${pr}, will check again`
     );
     return false;
