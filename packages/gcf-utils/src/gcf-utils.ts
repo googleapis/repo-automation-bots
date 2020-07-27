@@ -157,10 +157,11 @@ export interface CronPayload {
  * Type of function execution trigger
  */
 export enum TriggerType {
-  GITHUB = 'GITHUB_WEBHOOK',
-  SCHEDULER = 'SCHEDULER',
-  TASK = 'TASK',
-  UNKNOWN = 'UNKNOWN',
+  GITHUB = 'GitHub Webhook',
+  SCHEDULER = 'Cloud Scheduler',
+  TASK = 'Cloud Task',
+  PUBSUB = 'Pub/Sub',
+  UNKNOWN = 'Unknown',
 }
 
 /**
@@ -176,6 +177,7 @@ export interface TriggerInfo {
       owner_type: string;
       repo_name: string;
     };
+    message: string;
   };
 }
 
@@ -266,11 +268,10 @@ export class GCFBootstrapper {
    * @param taskId task id from header
    */
   private static parseTriggerType(name: string, taskId: string): TriggerType {
-    if (
-      !taskId &&
-      (name === 'schedule.repository' || name === 'pubsub.message')
-    ) {
+    if (!taskId && name === 'schedule.repository') {
       return TriggerType.SCHEDULER;
+    } else if (!taskId && name === 'pubsub.message') {
+      return TriggerType.PUBSUB;
     } else if (!taskId && name) {
       return TriggerType.GITHUB;
     } else if (name) {
@@ -294,6 +295,7 @@ export class GCFBootstrapper {
     const triggerInfo: TriggerInfo = {
       trigger: {
         trigger_type: triggerType,
+        message: `Execution started by ${triggerType}`,
       },
     };
 
@@ -332,14 +334,16 @@ export class GCFBootstrapper {
     appFn: ApplicationFunction,
     wrapOptions?: WrapOptions
   ): (request: express.Request, response: express.Response) => Promise<void> {
-    wrapOptions = wrapOptions ?? {background: true, logging: false};
     return async (request: express.Request, response: express.Response) => {
-      // Otherwise let's listen handle the payload
+      wrapOptions = wrapOptions ?? {background: true, logging: false};
+
       this.probot =
         this.probot || (await this.loadProbot(appFn, wrapOptions?.logging));
+
       const {name, id, signature, taskId} = GCFBootstrapper.parseRequestHeaders(
         request
       );
+
       const triggerType: TriggerType = GCFBootstrapper.parseTriggerType(
         name,
         taskId
@@ -349,90 +353,59 @@ export class GCFBootstrapper {
         GCFBootstrapper.buildTriggerInfo(triggerType, id, request.body)
       );
 
-      if (triggerType === TriggerType.SCHEDULER) {
-        // TODO: currently we assume that scheduled events walk all repos
-        // managed by the client libraries team, it would be good to get more
-        // clever and instead pull up a list of repos we're installed on by
-        // installation ID:
-        try {
-          if (wrapOptions?.background) {
-            logger.info(`${id}: scheduling cloud task`);
-            await this.handleScheduled(id, request, name, signature);
-          } else {
+      try {
+        if (triggerType === TriggerType.UNKNOWN) {
+          response.sendStatus(400);
+          return;
+        } else if (
+          triggerType === TriggerType.TASK ||
+          triggerType === TriggerType.PUBSUB ||
+          !wrapOptions?.background
+        ) {
+          if (!wrapOptions?.background) {
             // a bot can opt out of running through tasks, some bots do this
             // due to large payload sizes:
             logger.info(`${id}: skipping cloud tasks`);
-            await this.probot.receive({
-              name,
-              id,
-              payload: request.body,
-            });
           }
-        } catch (err) {
-          response.status(500).send({
-            body: JSON.stringify({message: err}),
-          });
-          return;
-        }
-        response.send({
-          statusCode: 200,
-          body: JSON.stringify({message: 'Executed'}),
-        });
-      } else if (triggerType === TriggerType.GITHUB) {
-        try {
-          if (wrapOptions?.background) {
-            // by default, jobs are run through a background task, this has
-            // the benefit of supporting retries, and giving us more insight
-            // into failing payloads:
-            logger.info('scheduling cloud task');
-            await this.enqueueTask({
-              id,
-              name,
-              signature,
-              body: JSON.stringify(request.body),
-            });
-          } else {
-            // a bot can opt out of running through tasks, some bots do this
-            // due to large payload sizes:
-            logger.info('skipping cloud tasks');
-            await this.probot.receive({
-              name,
-              id,
-              payload: request.body,
-            });
+          let payload = request.body;
+          if (triggerType === TriggerType.PUBSUB) {
+            payload = {
+              ...payload,
+              ...this.buildRepositoryDetails(payload.repo),
+            };
           }
-        } catch (err) {
-          response.status(500).send({
-            body: JSON.stringify({message: err}),
-          });
-          return;
-        }
-        response.send({
-          statusCode: 200,
-          body: JSON.stringify({message: 'Executed'}),
-        });
-        return;
-      } else if (triggerType === TriggerType.TASK) {
-        try {
           await this.probot.receive({
             name,
             id,
-            payload: request.body,
+            payload: payload,
           });
-        } catch (err) {
-          response.status(500).send({
-            statusCode: 500,
-            body: JSON.stringify({message: err.message}),
+        } else if (triggerType === TriggerType.SCHEDULER) {
+          // TODO: currently we assume that scheduled events walk all repos
+          // managed by the client libraries team, it would be good to get more
+          // clever and instead pull up a list of repos we're installed on by
+          // installation ID:
+          await this.handleScheduled(id, request, name, signature);
+        } else if (triggerType === TriggerType.GITHUB) {
+          await this.enqueueTask({
+            id,
+            name,
+            signature,
+            body: JSON.stringify(request.body),
           });
-          return;
         }
+
         response.send({
           statusCode: 200,
           body: JSON.stringify({message: 'Executed'}),
         });
-      } else {
-        response.sendStatus(400);
+      } catch (err) {
+        response.status(500).send({
+          statusCode: 500,
+          body: JSON.stringify({message: err.message}),
+        });
+        return;
       }
+
       logger.flushSync();
     };
   }
@@ -497,20 +470,10 @@ export class GCFBootstrapper {
     // The payload from the scheduler is updated with additional information
     // providing context about the organization/repo that the event is
     // firing for.
-    const [orgName, repoName] = repoFullName.split('/');
-    const payload = Object.assign({}, body, {
-      repository: {
-        name: repoName,
-        full_name: repoFullName,
-        owner: {
-          login: orgName,
-          name: orgName,
-        },
-      },
-      organization: {
-        login: orgName,
-      },
-    });
+    const payload = {
+      ...body,
+      ...this.buildRepositoryDetails(repoFullName),
+    };
     try {
       await this.enqueueTask({
         id,
@@ -523,7 +486,25 @@ export class GCFBootstrapper {
     }
   }
 
+  private buildRepositoryDetails(repoFullName: string): {} {
+    const [orgName, repoName] = repoFullName.split('/');
+    return {
+      repository: {
+        name: repoName,
+        full_name: repoFullName,
+        owner: {
+          login: orgName,
+          name: orgName,
+        },
+      },
+      organization: {
+        login: orgName,
+      },
+    };
+  }
+
   async enqueueTask(params: EnqueueTaskParams) {
+    logger.info('scheduling cloud task');
     // Make a task here and return 200 as this is coming from GitHub
     const projectId = process.env.PROJECT_ID || '';
     const location = process.env.GCF_LOCATION || '';
