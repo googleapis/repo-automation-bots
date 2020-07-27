@@ -116,7 +116,7 @@ describe('publish', () => {
 
     let observedPkgPath: string | undefined = undefined;
     handler.publish = async (opts: PublishOpts) => {
-      const {npmRc, pkgPath, app, prerelease} = opts;
+      const {npmRc, pkgPath} = opts;
       snapshot(npmRc);
       observedPkgPath = pkgPath;
     };
@@ -197,7 +197,7 @@ describe('publish', () => {
 
     let observedPkgPath: string | undefined = undefined;
     handler.publish = async (opts: PublishOpts) => {
-      const {npmRc, pkgPath, app, prerelease} = opts;
+      const {npmRc, pkgPath, prerelease} = opts;
       snapshot(npmRc);
       expect(prerelease).to.equal(true);
       observedPkgPath = pkgPath;
@@ -266,7 +266,7 @@ describe('publish', () => {
 
     let observedPkgPath: string | undefined = undefined;
     handler.publish = async (opts: PublishOpts) => {
-      const {npmRc, pkgPath, app, prerelease} = opts;
+      const {npmRc, pkgPath, prerelease} = opts;
       snapshot(npmRc);
       expect(prerelease).to.equal(true);
       observedPkgPath = pkgPath;
