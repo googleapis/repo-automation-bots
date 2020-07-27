@@ -369,10 +369,7 @@ export class GCFBootstrapper {
           }
           let payload = request.body;
           if (triggerType === TriggerType.PUBSUB) {
-            payload = {
-              ...payload,
-              ...this.buildRepositoryDetails(payload.repo),
-            };
+            payload = this.parsePubSubPayload(request);
           }
           await this.probot.receive({
             name,
@@ -416,15 +413,7 @@ export class GCFBootstrapper {
     eventName: string,
     signature: string
   ) {
-    let body = (Buffer.isBuffer(req.body)
-      ? JSON.parse(req.body.toString('utf8'))
-      : req.body) as Scheduled;
-    // PubSub messages have their payload encoded in body.message.data
-    // as a base64 blob.
-    if (body.message && body.message.data) {
-      body = JSON.parse(Buffer.from(body.message.data, 'base64').toString());
-    }
-
+    let body: Scheduled = this.parseRequestBody(req);
     if (body.repo) {
       // Job was scheduled for a single repository:
       await this.scheduledToTask(body.repo, id, body, eventName, signature);
@@ -484,6 +473,26 @@ export class GCFBootstrapper {
     } catch (err) {
       logger.warn(err.message);
     }
+  }
+
+  private parsePubSubPayload(req: express.Request) {
+    const body = this.parseRequestBody(req);
+    return {
+      ...body,
+      ...(body.repo ? this.buildRepositoryDetails(body.repo) : {}),
+    };
+  }
+
+  private parseRequestBody(req: express.Request): Scheduled {
+    let body = (Buffer.isBuffer(req.body)
+      ? JSON.parse(req.body.toString('utf8'))
+      : req.body) as Scheduled;
+    // PubSub messages have their payload encoded in body.message.data
+    // as a base64 blob.
+    if (body.message && body.message.data) {
+      body = JSON.parse(Buffer.from(body.message.data, 'base64').toString());
+    }
+    return body;
   }
 
   private buildRepositoryDetails(repoFullName: string): {} {
