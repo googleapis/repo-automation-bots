@@ -16,6 +16,7 @@
 import {Application} from 'probot';
 import {Datastore} from '@google-cloud/datastore';
 import {mergeOnGreen} from './merge-logic';
+import {logger} from 'gcf-utils';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
@@ -89,7 +90,7 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
 handler.removePR = async function removePR(url: string) {
   const key = datastore.key([TABLE, url]);
   await datastore.delete(key);
-  console.log(`PR ${url} was removed`);
+  logger.info(`PR ${url} was removed`);
 };
 
 /**
@@ -126,7 +127,7 @@ function handler(app: Application) {
   app.on(['schedule.repository'], async context => {
     const watchedPRs = await handler.listPRs();
     const start = Date.now();
-    console.info(`running for org ${context.payload.org}`);
+    logger.info(`running for org ${context.payload.org}`);
     const filteredPRs = watchedPRs.filter(value => {
       return value.owner.startsWith(context.payload.org);
     });
@@ -134,7 +135,7 @@ function handler(app: Application) {
       const work = filteredPRs.splice(0, WORKER_SIZE);
       await Promise.all(
         work.map(async wp => {
-          console.log(`checking ${wp.url}`);
+          logger.info(`checking ${wp.url}`);
           try {
             const remove = await mergeOnGreen(
               wp.owner,
@@ -149,7 +150,7 @@ function handler(app: Application) {
             }
           } catch (err) {
             err.message = `Error in merge-on-green: \n\n${err.message}`;
-            console.error(err);
+            logger.error(err);
             if (wp.state === 'stop') {
               handler.removePR(wp.url);
             }
@@ -157,7 +158,7 @@ function handler(app: Application) {
         })
       );
     }
-    console.info(`mergeOnGreen check took ${Date.now() - start}ms`);
+    logger.info(`mergeOnGreen check took ${Date.now() - start}ms`);
   });
 
   app.on('pull_request.labeled', async context => {
@@ -180,7 +181,7 @@ function handler(app: Application) {
     const prNumber = context.payload.pull_request.number;
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
-    console.info(`${prNumber} ${owner} ${repo}`);
+    logger.info(`${prNumber} ${owner} ${repo}`);
     //TODO: we can likely split the database functionality into its own file and
     //import these helper functions for use in the main bot event handling.
     await handler.addPR(

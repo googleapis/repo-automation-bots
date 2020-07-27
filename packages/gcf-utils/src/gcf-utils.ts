@@ -225,11 +225,11 @@ export class GCFBootstrapper {
     }
     const config = JSON.parse(payload);
     if (logging) {
-      console.info('custom logging instance enabled');
+      logger.info('custom logging instance enabled');
       const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin);
       return {...config, Octokit: LoggingOctokit} as Options;
     } else {
-      console.info('custom logging instance not enabled');
+      logger.info('custom logging instance not enabled');
       return config as Options;
     }
   }
@@ -356,12 +356,12 @@ export class GCFBootstrapper {
         // installation ID:
         try {
           if (wrapOptions?.background) {
-            console.info(`${id}: scheduling cloud task`);
+            logger.info(`${id}: scheduling cloud task`);
             await this.handleScheduled(id, request, name, signature);
           } else {
             // a bot can opt out of running through tasks, some bots do this
             // due to large payload sizes:
-            console.info(`${id}: skipping cloud tasks`);
+            logger.info(`${id}: skipping cloud tasks`);
             await this.probot.receive({
               name,
               id,
@@ -384,7 +384,7 @@ export class GCFBootstrapper {
             // by default, jobs are run through a background task, this has
             // the benefit of supporting retries, and giving us more insight
             // into failing payloads:
-            console.info('scheduling cloud task');
+            logger.info('scheduling cloud task');
             await this.enqueueTask({
               id,
               name,
@@ -394,7 +394,7 @@ export class GCFBootstrapper {
           } else {
             // a bot can opt out of running through tasks, some bots do this
             // due to large payload sizes:
-            console.info('skipping cloud tasks');
+            logger.info('skipping cloud tasks');
             await this.probot.receive({
               name,
               id,
@@ -519,7 +519,7 @@ export class GCFBootstrapper {
         body: JSON.stringify(payload),
       });
     } catch (err) {
-      console.warn(err.message);
+      logger.warn(err.message);
     }
   }
 
@@ -535,7 +535,7 @@ export class GCFBootstrapper {
     const queuePath = client.queuePath(projectId, location, queueName);
     // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green:
     const url = `https://${location}-${projectId}.cloudfunctions.net/${process.env.GCF_SHORT_FUNCTION_NAME}`;
-    console.info(`scheduling task in queue ${queueName}`);
+    logger.info(`scheduling task in queue ${queueName}`);
     if (params.body) {
       await client.createTask({
         parent: queuePath,
