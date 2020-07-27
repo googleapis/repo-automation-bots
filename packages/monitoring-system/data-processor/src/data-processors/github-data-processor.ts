@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {DataProcessor} from './data-processor-abstract';
+import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {Octokit} from '@octokit/rest';
-import { Firestore } from '@google-cloud/firestore';
+
+export interface GitHubProcessorOptions extends ProcessorOptions {
+  octokit?: Octokit
+}
 
 interface GitHubRepository {
   name: string,
@@ -36,9 +39,9 @@ export class GitHubProcessor extends DataProcessor {
   
   octokit: Octokit;
 
-  constructor(firestore?: Firestore, octokit?: Octokit) {
-    super(firestore);
-    this.octokit = octokit || new Octokit();
+  constructor(options?: GitHubProcessorOptions) {
+    super(options);
+    this.octokit = options?.octokit || new Octokit();
   }
   
   /**
