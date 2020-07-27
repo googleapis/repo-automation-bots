@@ -75,11 +75,11 @@ export class CloudTasksProcessor extends DataProcessor {
     return new Promise<void>((resolve, reject) => {
       this.getBotNames()
         .then(botNames => {
-          // assumes that queue name == bot name
+          const queueNames = botNames.map(this.botNameToQueueName);
           return this.getTaskQueueStatus(
             this.projectId,
             this.location,
-            botNames
+            queueNames
           );
         })
         .then(queueStatus => {
@@ -87,6 +87,7 @@ export class CloudTasksProcessor extends DataProcessor {
         })
         .then(() => resolve())
         .catch(error => {
+          console.trace(error);
           reject(`Failed to collect and process Cloud Tasks data: ${error}`);
         });
     });
@@ -107,7 +108,10 @@ export class CloudTasksProcessor extends DataProcessor {
           );
           resolve(botDocuments.map(doc => doc.bot_name));
         })
-        .catch(error => reject(error));
+        .catch(error => {
+          console.trace(error);
+          reject(error);
+        });
     });
   }
 
@@ -133,11 +137,15 @@ export class CloudTasksProcessor extends DataProcessor {
           .catch(error => reject(error));
       });
 
+      // Note: this will reject if even one of the calls fails
       Promise.all(taskListPromises)
         .then(() => {
           resolve(queueStatus);
         })
-        .catch(error => reject(error));
+        .catch(error => {
+          console.trace(error);
+          reject(error);
+        });
     });
   }
 
@@ -161,7 +169,16 @@ export class CloudTasksProcessor extends DataProcessor {
     return new Promise((resolve, reject) => {
       Promise.all(writePromises)
         .then(() => resolve(currentTimestamp))
-        .catch(reject);
+        .catch(error => {
+          console.trace(error);
+          reject(error);
+        });
     });
+  }
+
+  // Assumes that queue name == bot name with the exception
+  // that all "_" (underscore) are replaced by "-" (hyphen)
+  private botNameToQueueName(botName: string): string {
+    return botName.replace(/_/gi, '-');
   }
 }

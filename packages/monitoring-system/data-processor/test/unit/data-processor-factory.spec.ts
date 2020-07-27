@@ -54,6 +54,9 @@ describe('Data Processor Factory', () => {
           task_queue_project_id: 'foo-id',
           task_queue_location: 'bar-location',
         },
+        firestore: {
+          project_id: 'firestore-foo',
+        },
       };
       const processor: DataProcessor = new DataProcessorFactory(
         config

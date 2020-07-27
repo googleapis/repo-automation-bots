@@ -17,17 +17,32 @@ import * as yaml from 'yaml';
 import {resolve} from 'path';
 import * as fs from 'fs';
 
+/**
+ * Configuration for Data Processor
+ */
 export interface Config {
+  firestore: {
+    project_id: string;
+  };
   task_queue_processor: {
     task_queue_project_id: string;
     task_queue_location: string;
   };
 }
 
+/**
+ * Util class to retrieve configuration from config files
+ * and environment variables
+ */
 export class ConfigUtil {
   private static DEFAULT_CONFIG_PATH = resolve('./config/config.yml');
   private static configs: {[path: string]: Config} = {};
 
+  /**
+   * Get the application config from the specified file or the default
+   * config file location.
+   * @param path (optional) specify a config file path
+   */
   public static getConfig(path?: string): Config {
     path = path ?? this.DEFAULT_CONFIG_PATH;
     if (!this.configs[path]) {
