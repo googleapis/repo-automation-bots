@@ -16,34 +16,33 @@ import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {Octokit} from '@octokit/rest';
 
 export interface GitHubProcessorOptions extends ProcessorOptions {
-  octokit?: Octokit
+  octokit?: Octokit;
 }
 
 interface GitHubRepository {
-  name: string,
-  owner: string
+  name: string;
+  owner: string;
 }
 
 interface GitHubEvent {
-  payloadHash: string,
-  repository: GitHubRepository,
-  event_type: string,
-  timestamp: number,
-  actor: string
+  payloadHash: string;
+  repository: GitHubRepository;
+  event_type: string;
+  timestamp: number;
+  actor: string;
 }
 
 /**
  * Collects and processes Events data from GitHub
  */
 export class GitHubProcessor extends DataProcessor {
-  
   octokit: Octokit;
 
   constructor(options?: GitHubProcessorOptions) {
     super(options);
     this.octokit = options?.octokit || new Octokit();
   }
-  
+
   /**
    * Collect and process GitHub Events data
    */
@@ -52,7 +51,7 @@ export class GitHubProcessor extends DataProcessor {
   }
 
   /**
-   * List the GitHub repositories that have triggered 
+   * List the GitHub repositories that have triggered
    * bot executions in the past
    */
   private async listRepositories(): Promise<GitHubRepository[]> {
@@ -63,7 +62,9 @@ export class GitHubProcessor extends DataProcessor {
    * Get all the publicly visible Events on the given repository
    * @param repository repository for which to get events
    */
-  private async listPublicEventsForRepository(repository: GitHubRepository): Promise<GitHubEvent[]> {
+  private async listPublicEventsForRepository(
+    repository: GitHubRepository
+  ): Promise<GitHubEvent[]> {
     // https://octokit.github.io/rest.js/v18#activity-list-repo-events
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString
     throw new Error('Method not implemented.');
@@ -77,5 +78,4 @@ export class GitHubProcessor extends DataProcessor {
   private async storeEventsData(events: GitHubEvent[]): Promise<void> {
     throw new Error('Method not implemented.');
   }
-
 }

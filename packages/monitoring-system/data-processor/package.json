@@ -25,10 +25,7 @@
   "dependencies": {
     "@google-cloud/firestore": "^4.1.1",
     "@google-cloud/tasks": "^2.1.0",
-<<<<<<< HEAD
     "@octokit/rest": "^18.0.2",
-=======
->>>>>>> upstream/master
     "express": "^4.17.1",
     "yaml": "^1.10.0"
   },

@@ -14,29 +14,32 @@
 //
 import {describe, it, beforeEach} from 'mocha';
 import assert from 'assert';
-import { Octokit } from '@octokit/rest';
-import {resolve} from 'path';
-import { OctokitMiddleware, GitHubActionType } from './octokit-middleware'
+import {OctokitMiddleware, GitHubActionType} from './octokit-middleware';
+import {Octokit} from '@octokit/rest';
 
 describe('GitHub Data Processor', () => {
-    // describe('listRepositories()');
-    describe('listPublicEventsForRepository()', () => {
-
-        beforeEach(() => {
-            const TestOctokit = Octokit.plugin(require(resolve('./build/test/unit/data-processors/mock-octokit-plugin.js')));
-            const testOctokit: Octokit = new TestOctokit();
-            OctokitMiddleware.getInstance().setMockResponse({
-                type: GitHubActionType.REPO_LIST_EVENTS,
-                repoName: 'foo-repo',
-                repoOwner: 'bar-owner'
-            }, {type: 'resolve', value: {'hello': 'world'}})
-            return testOctokit.activity.listRepoEvents({
-                repo: 'foo-repo',
-                owner: 'bar-owner'
-            }).then((response) => console.log(response));
+  // describe('listRepositories()');
+  describe('listPublicEventsForRepository()', () => {
+    let mockOctokit: Octokit;
+    beforeEach(() => {
+      mockOctokit = OctokitMiddleware.getMockOctokit();
+      OctokitMiddleware.getMiddleware().setMockResponse(
+        {
+          type: GitHubActionType.REPO_LIST_EVENTS,
+          repoName: 'foo-repo',
+          repoOwner: 'bar-owner',
+        },
+        {type: 'resolve', value: {hello: 'world'}}
+      );
+      return mockOctokit.activity
+        .listRepoEvents({
+          repo: 'foo-repo',
+          owner: 'bar-owner',
         })
-
-        it('test', () => console.log('test'))
+        .then(response => console.log(response));
     });
-    // describe('storeEventsData()');
+
+    it('test', () => console.log('test'));
+  });
+  // describe('storeEventsData()');
 });

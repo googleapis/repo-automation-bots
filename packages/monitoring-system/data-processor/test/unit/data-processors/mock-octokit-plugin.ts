@@ -14,17 +14,15 @@
 //
 // eslint-disable-next-line node/no-extraneous-import
 
-import { Octokit } from "@octokit/rest";
-import { OctokitMiddleware } from "./octokit-middleware";
+import {Octokit} from '@octokit/rest';
+import {OctokitMiddleware} from './octokit-middleware';
 
 /**
  * Hooks into outgoing requests from Octokit to log metrics
  */
-module.exports = (
-    octokit: Octokit
-) => {
-    octokit.hook.wrap('request', async (request, options) => {
-        const middleware = OctokitMiddleware.getInstance();
-        return await middleware.getMockResponse(options);
-    });
+module.exports = (octokit: Octokit) => {
+  octokit.hook.wrap('request', async (request, options) => {
+    const middleware = OctokitMiddleware.getMiddleware();
+    return await middleware.getMockResponse(options);
+  });
 };
