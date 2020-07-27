@@ -1,0 +1,9 @@
+project_id: &default_project_id 'repo-automation-bots'
+project_location: &default_project_location 'us-central1'
+
+firestore:
+  project_id: 'repo-automation-bots-metrics'
+  
+task_queue_processor:
+  task_queue_project_id: *default_project_id
+  task_queue_location: *default_project_location
