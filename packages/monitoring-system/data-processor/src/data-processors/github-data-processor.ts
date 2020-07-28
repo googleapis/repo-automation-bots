@@ -48,7 +48,23 @@ export class GitHubProcessor extends DataProcessor {
    * Collect and process GitHub Events data
    */
   public async collectAndProcess(): Promise<void> {
-    throw new Error('Method not implemented.');
+    return new Promise((resolve, reject) => {
+      this.listRepositories()
+      .then(repos => {
+        return Promise.all(repos.map(repo => {
+          return this.listPublicEventsForRepository(repo)
+        }));
+      })
+      .then((allRepoEvents: GitHubEvent[][]) => {
+        const allRepoEventsFlattened = ([] as GitHubEvent[])
+        .concat(...allRepoEvents);
+        return this.storeEventsData(allRepoEventsFlattened);
+      })
+      .then(resolve)
+      .catch(error => {
+        reject(`Failed to process GitHub Events data: ${error}`);
+      });
+    })
   }
 
   /**
