@@ -104,7 +104,8 @@ async function createReleasePR(
 async function createGitHubRelease(
   packageName: string,
   repoUrl: string,
-  github: GitHubAPI
+  github: GitHubAPI,
+  path?: string
 ) {
   const releaseOptions: GitHubReleaseOptions = {
     label: 'autorelease: pending',
@@ -117,6 +118,7 @@ async function createGitHubRelease(
       graphql: github.graphql,
       request: github.request,
     },
+    path
   };
   const ghr = new GitHubRelease(releaseOptions);
   await Runner.releaser(ghr);
@@ -175,7 +177,8 @@ export = (app: Application) => {
       createGitHubRelease(
         configuration.packageName || repoName,
         repoUrl,
-        context.github
+        context.github,
+        path: configuration.path,
       );
     }
   });
