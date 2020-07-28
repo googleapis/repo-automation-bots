@@ -20,7 +20,6 @@
  * module and import it here instead
  */
 
-
 /**
  * Types of actions taken on GitHub
  */
@@ -63,7 +62,7 @@ export interface GitHubActionDetails {
   repoOwner?: string;
 }
 
-type HTTPMethod = "GET" | "POST" | "DELETE" | "PATCH" | "PUT";
+type HTTPMethod = 'GET' | 'POST' | 'DELETE' | 'PATCH' | 'PUT';
 
 /**
  * Maps GitHub API endpoints to a GitHubActionType
@@ -108,9 +107,9 @@ const ActionEndpoints: {[url: string]: {[method: string]: GitHubActionType}} = {
 };
 
 export interface OctokitRequestOptions {
-  [key: string]: string | number,
-  url: string,
-  method: HTTPMethod
+  [key: string]: string | number;
+  url: string;
+  method: HTTPMethod;
 }
 
 /**
@@ -121,7 +120,9 @@ export class OctokitRequestParser {
    * Parses the outgoing GitHub request to determine the details of the action being taken
    * @param options options from outgoing request
    */
-  public static parseActionDetails(options: OctokitRequestOptions): GitHubActionDetails {
+  public static parseActionDetails(
+    options: OctokitRequestOptions
+  ): GitHubActionDetails {
     const actionType = this.getAction(options.url, options.method);
     const details: GitHubActionDetails = {};
     details.value = this.parseActionValue(actionType, options);
@@ -144,7 +145,7 @@ export class OctokitRequestParser {
   private static getAction(url: string, method: HTTPMethod): GitHubActionType {
     // newer versions of Octokit have urls like /repos/{repo}
     // whereas older versions have urls like /repos/:repo
-    url = url.replace(/{/g, ":").replace(/}/g, "");
+    url = url.replace(/{/g, ':').replace(/}/g, '');
     const endpointMethods = ActionEndpoints[url] || {};
     return endpointMethods[method] || GitHubActionType.UNKNOWN;
   }

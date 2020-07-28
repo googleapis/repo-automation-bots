@@ -22,13 +22,13 @@ export interface GitHubProcessorOptions extends ProcessorOptions {
 interface GitHubRepository {
   name: string;
   owner: string;
-  ownerType: 'org' | 'user';
+  ownerType?: 'org' | 'user';
 }
 
-interface GitHubEvent {
+export interface GitHubEvent {
   payloadHash: string;
   repository: GitHubRepository;
-  event_type: string;
+  eventType: string;
   timestamp: number;
   actor: string;
 }
@@ -37,7 +37,7 @@ interface GitHubEvent {
  * Collects and processes Events data from GitHub
  */
 export class GitHubProcessor extends DataProcessor {
-  octokit: Octokit;
+  private octokit: Octokit;
 
   constructor(options?: GitHubProcessorOptions) {
     super(options);

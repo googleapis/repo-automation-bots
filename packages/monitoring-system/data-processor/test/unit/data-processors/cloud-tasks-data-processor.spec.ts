@@ -123,7 +123,7 @@ describe('Cloud Tasks Data Processor', () => {
       };
 
       return processor['storeTaskQueueStatus'](queueStatus).then(timestamp => {
-        const actual = MockFirestoreData3.Task_Queue_Status;
+        const actual = mockFirestore.getMockData().Task_Queue_Status;
         const expected: StoredQueueStatus = {};
         Object.keys(queueStatus).forEach(key => {
           expected[`${key}_${timestamp}`] = {
@@ -140,7 +140,7 @@ describe('Cloud Tasks Data Processor', () => {
       mockFirestore.setMockData(MockFirestoreData3);
       const queueStatus: InputQueueStatus = {};
       return processor['storeTaskQueueStatus'](queueStatus).then(() => {
-        const actual = MockFirestoreData3.Task_Queue_Status;
+        const actual = mockFirestore.getMockData().Task_Queue_Status;
         const expected: StoredQueueStatus = {};
         assert.deepEqual(actual, expected);
       });
@@ -165,7 +165,7 @@ describe('Cloud Tasks Data Processor', () => {
           return processor['storeTaskQueueStatus'](queueStatus2);
         })
         .then(returnedTimestamp2 => {
-          const actual = MockFirestoreData3.Task_Queue_Status;
+          const actual = mockFirestore.getMockData().Task_Queue_Status;
           const expected: StoredQueueStatus = {};
           Object.keys(queueStatus1).forEach(key => {
             expected[`${key}_${returnedTimestamp1}`] = {

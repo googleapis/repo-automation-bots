@@ -42,10 +42,10 @@ interface MockQueryDocumentSnapshot {
  * Note: not all behaviours are supported
  */
 export class MockFirestore extends Firestore {
-  mockData: FirestoreData;
-  queryDelayMs = 50;
-  collectionShouldThrow = false;
-  setShouldThrow = false;
+  private mockData: FirestoreData;
+  private queryDelayMs = 50;
+  private collectionShouldThrow = false;
+  private setShouldThrow = false;
 
   /**
    * Create a mock client
@@ -55,6 +55,10 @@ export class MockFirestore extends Firestore {
   constructor(mockData?: FirestoreData, settings?: Settings) {
     super(settings);
     this.mockData = mockData || {};
+  }
+
+  public getMockData(): FirestoreData {
+    return this.mockData;
   }
 
   /**
