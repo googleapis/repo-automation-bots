@@ -79,7 +79,7 @@ export class MockFirestore extends Firestore {
   }
 
   /**
-   * Throw an error when collections() is called
+   * Throw an error when collection() is called
    */
   throwOnCollection() {
     this.collectionShouldThrow = true;

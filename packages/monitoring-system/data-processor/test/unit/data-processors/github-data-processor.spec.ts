@@ -29,6 +29,124 @@ const PATH_TO_FIXTURES = 'test/unit/data-processors/fixtures';
 describe('GitHub Data Processor', () => {
   let processor: GitHubProcessor;
 
+  describe('collectAndProcess()', () => {
+    let mockFirestore: MockFirestore;
+    const mockOctokit: Octokit = OctokitMiddleware.getMockOctokit();
+    const middleware = OctokitMiddleware.getMiddleware();
+
+    beforeEach(() => {
+      mockFirestore = new MockFirestore();
+      processor = new GitHubProcessor({
+        firestore: mockFirestore,
+        octokit: mockOctokit,
+      });
+    });
+
+    it('collects GitHub Events data and stores it in Firestore', () => {
+      mockFirestore.setMockData({
+        GitHub_Repository: {
+          'repo-automation-bots_googleapis_org': {
+            repo_name: 'repo-automation-bots',
+            owner_name: 'googleapis',
+            owner_type: 'org',
+          },
+        },
+        GitHub_Event: {},
+      });
+
+      const mockGitHubEventsPayload = require(resolve(
+        PATH_TO_FIXTURES,
+        'mock-github-events-data-1.json'
+      ));
+      middleware.setMockResponse(
+        {
+          type: GitHubActionType.REPO_LIST_EVENTS,
+          repoName: 'repo-automation-bots',
+          repoOwner: 'googleapis',
+        },
+        {type: 'resolve', value: mockGitHubEventsPayload}
+      );
+      const expectedData = {
+        '321819b7d55c424881dad753e7aa753d': {
+          payload_hash: '321819b7d55c424881dad753e7aa753d',
+          repository: 'repo-automation-bots_googleapis_org',
+          event_type: 'IssueCommentEvent',
+          timestamp: 1595948777000,
+          actor: 'azizsonawalla',
+        },
+        '99b6d59369ccb78e33b8a2d09e81a133': {
+          payload_hash: '99b6d59369ccb78e33b8a2d09e81a133',
+          repository: 'repo-automation-bots_googleapis_org',
+          event_type: 'IssueCommentEvent',
+          timestamp: 1595948383000,
+          actor: 'tbpg',
+        },
+        'efd2dd423f968d55874cb681b018b286': {
+          payload_hash: 'efd2dd423f968d55874cb681b018b286',
+          repository: 'repo-automation-bots_googleapis_org',
+          event_type: 'IssuesEvent',
+          timestamp: 1595948233000,
+          actor: 'tbpg',
+        },
+      };
+
+      return processor.collectAndProcess().then(() => {
+        assert.deepEqual(
+          mockFirestore.getMockData().GitHub_Event,
+          expectedData
+        );
+      });
+    });
+
+    it('throws an error if there is an error with GitHub', () => {
+      mockFirestore.setMockData({
+        GitHub_Repository: {
+          'repo-automation-bots_googleapis_org': {
+            repo_name: 'repo-automation-bots',
+            owner_name: 'googleapis',
+            owner_type: 'org',
+          },
+        },
+        GitHub_Event: {},
+      });
+
+      middleware.rejectOnAction({
+        type: GitHubActionType.REPO_LIST_EVENTS,
+        repoName: 'repo-automation-bots',
+        repoOwner: 'googleapis',
+      });
+
+      let thrown = false;
+      return processor
+        .collectAndProcess()
+        .catch(() => (thrown = true))
+        .finally(() => assert(thrown, 'Expected an error to be thrown'));
+    });
+
+    it('throws an error if there is an error with Firestore', () => {
+      mockFirestore.throwOnCollection();
+
+      const mockGitHubEventsPayload = require(resolve(
+        PATH_TO_FIXTURES,
+        'mock-github-events-data-1.json'
+      ));
+      middleware.setMockResponse(
+        {
+          type: GitHubActionType.REPO_LIST_EVENTS,
+          repoName: 'repo-automation-bots',
+          repoOwner: 'googleapis',
+        },
+        {type: 'resolve', value: mockGitHubEventsPayload}
+      );
+
+      let thrown = false;
+      return processor
+        .collectAndProcess()
+        .catch(() => (thrown = true))
+        .finally(() => assert(thrown, 'Expected an error to be thrown'));
+    });
+  });
+
   describe('listRepositories()', () => {
     let mockFirestore: MockFirestore;
 
@@ -59,9 +177,9 @@ describe('GitHub Data Processor', () => {
       });
 
       const expectedRepos = [
-        {name: 'repo1', owner: 'owner1', ownerType: 'user'},
-        {name: 'repo2', owner: 'owner1', ownerType: 'user'},
-        {name: 'repo1', owner: 'owner2', ownerType: 'org'},
+        {repo_name: 'repo1', owner_name: 'owner1', owner_type: 'user'},
+        {repo_name: 'repo2', owner_name: 'owner1', owner_type: 'user'},
+        {repo_name: 'repo1', owner_name: 'owner2', owner_type: 'org'},
       ];
 
       return processor['listRepositories']().then(repos =>
@@ -100,35 +218,36 @@ describe('GitHub Data Processor', () => {
         PATH_TO_FIXTURES,
         'mock-github-events-data-1.json'
       ));
+      
       const expectedEvents = [
         {
-          payloadHash: 'dad86ba8f8aa87940b15c28f7853ead0',
+          payload_hash: '321819b7d55c424881dad753e7aa753d',
           repository: {
-            name: 'repo-automation-bots',
-            owner: 'googleapis',
-            ownerType: 'org',
+            repo_name: 'repo-automation-bots',
+            owner_name: 'googleapis',
+            owner_type: 'org',
           },
           event_type: 'IssueCommentEvent',
           timestamp: 1595948777000,
           actor: 'azizsonawalla',
         },
         {
-          payloadHash: '175cda693355c442c546e851951e0d37',
+          payload_hash: '99b6d59369ccb78e33b8a2d09e81a133',
           repository: {
-            name: 'repo-automation-bots',
-            owner: 'googleapis',
-            ownerType: 'org',
+            repo_name: 'repo-automation-bots',
+            owner_name: 'googleapis',
+            owner_type: 'org',
           },
           event_type: 'IssueCommentEvent',
           timestamp: 1595948383000,
           actor: 'tbpg',
         },
         {
-          payloadHash: '1759db40c417977b723197f43f5506c3',
+          payload_hash: 'efd2dd423f968d55874cb681b018b286',
           repository: {
-            name: 'repo-automation-bots',
-            owner: 'googleapis',
-            ownerType: 'org',
+            repo_name: 'repo-automation-bots',
+            owner_name: 'googleapis',
+            owner_type: 'org',
           },
           event_type: 'IssuesEvent',
           timestamp: 1595948233000,
@@ -144,8 +263,8 @@ describe('GitHub Data Processor', () => {
         {type: 'resolve', value: mockGitHubEventsPayload}
       );
       return processor['listPublicEventsForRepository']({
-        name: 'repo-automation-bots',
-        owner: 'googleapis',
+        repo_name: 'repo-automation-bots',
+        owner_name: 'googleapis',
       }).then(events => assert.deepEqual(events, expectedEvents));
     });
 
@@ -161,8 +280,8 @@ describe('GitHub Data Processor', () => {
         {type: 'resolve', value: mockGitHubEventsPayload}
       );
       return processor['listPublicEventsForRepository']({
-        name: 'repo-automation-bots',
-        owner: 'googleapis',
+        repo_name: 'repo-automation-bots',
+        owner_name: 'googleapis',
       }).then(events => assert.deepEqual(events, expectedEvents));
     });
 
@@ -173,11 +292,11 @@ describe('GitHub Data Processor', () => {
       ));
       const expectedEvents = [
         {
-          payloadHash: 'dad86ba8f8aa87940b15c28f7853ead0',
+          payload_hash: '321819b7d55c424881dad753e7aa753d',
           repository: {
-            name: 'repo-automation-bots',
-            owner: 'googleapis',
-            ownerType: 'org',
+            repo_name: 'repo-automation-bots',
+            owner_name: 'googleapis',
+            owner_type: 'org',
           },
           event_type: 'IssueCommentEvent',
           timestamp: 1595948777000,
@@ -193,8 +312,8 @@ describe('GitHub Data Processor', () => {
         {type: 'resolve', value: mockGitHubEventsPayload}
       );
       return processor['listPublicEventsForRepository']({
-        name: 'repo-automation-bots',
-        owner: 'googleapis',
+        repo_name: 'repo-automation-bots',
+        owner_name: 'googleapis',
       }).then(events => assert.deepEqual(events, expectedEvents));
     });
 
@@ -206,8 +325,8 @@ describe('GitHub Data Processor', () => {
       });
       let thrown = false;
       return processor['listPublicEventsForRepository']({
-        name: 'repo-automation-bots',
-        owner: 'googleapis',
+        repo_name: 'repo-automation-bots',
+        owner_name: 'googleapis',
       })
         .catch(() => (thrown = true))
         .finally(() => assert(thrown, 'Expected error to be thrown'));
@@ -233,13 +352,13 @@ describe('GitHub Data Processor', () => {
 
       const mockEventsData: GitHubEvent[] = [
         {
-          payloadHash: 'hash1',
+          payload_hash: 'hash1',
           repository: {
-            name: 'repo1',
-            owner: 'owner1',
-            ownerType: 'user',
+            repo_name: 'repo1',
+            owner_name: 'owner1',
+            owner_type: 'user',
           },
-          eventType: 'event_type1',
+          event_type: 'event_type1',
           timestamp: 12345678,
           actor: 'actor1',
         },
@@ -279,13 +398,13 @@ describe('GitHub Data Processor', () => {
 
       const mockEventsData: GitHubEvent[] = [
         {
-          payloadHash: 'hash1',
+          payload_hash: 'hash1',
           repository: {
-            name: 'repo1',
-            owner: 'owner1',
-            ownerType: 'user',
+            repo_name: 'repo1',
+            owner_name: 'owner1',
+            owner_type: 'user',
           },
-          eventType: 'event_type1',
+          event_type: 'event_type1',
           timestamp: 12345678,
           actor: 'actor1',
         },
