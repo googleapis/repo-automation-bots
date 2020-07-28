@@ -18,7 +18,7 @@
     "probot-app"
   ],
   "scripts": {
-    "compile": "tsc -p . && cp ./src/required-checks.json ./build/src/required-checks.json.json && cp ./src/teams.json ./build/src/teams.json.json",
+    "compile": "tsc -p . && cp ./src/required-checks.json ./build/src/required-checks.json.json",
     "start": "probot run ./build/src/sync-repo-settings",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
@@ -40,6 +40,6 @@
     "typescript": "^3.9.6"
   },
   "engines": {
-    "node": ">= 10.13.0"
+    "node": ">= 10.17.0"
   }
 }

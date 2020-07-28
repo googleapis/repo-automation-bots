@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import firebaseAdmin from 'firebase-admin';
-type Firestore = firebaseAdmin.firestore.Firestore;
+import {Firestore} from '@google-cloud/firestore';
+
+export interface ProcessorOptions {
+  firestore?: Firestore;
+}
 
 export abstract class DataProcessor {
-  static firestore: Firestore;
+  protected firestore: Firestore;
 
-  constructor() {
-    if (!DataProcessor.firestore) {
-      firebaseAdmin.initializeApp(); // may need to pass credentials here
-      DataProcessor.firestore = firebaseAdmin.firestore();
-    }
+  constructor(options?: ProcessorOptions) {
+    this.firestore = options?.firestore || new Firestore();
   }
 
   /**
