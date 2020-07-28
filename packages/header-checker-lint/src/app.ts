@@ -16,4 +16,7 @@ import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './header-checker-lint';
 
 const bootstrap = new GCFBootstrapper();
-module.exports.header_checker_lint = bootstrap.gcf(appFn);
+module.exports.header_checker_lint = bootstrap.gcf(appFn, {
+  background: true,
+  logging: true,
+});

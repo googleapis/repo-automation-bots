@@ -15,8 +15,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, Octokit} from 'probot';
-import {describe, it, beforeEach, afterEach} from 'mocha';
+import {Probot} from 'probot';
+import {describe, it, beforeEach} from 'mocha';
 import nock from 'nock';
 import * as assert from 'assert';
 import {resolve} from 'path';
@@ -48,7 +48,7 @@ describe('auto-label', () => {
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
       // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest'),
+      Octokit: require('@octokit/rest').Octokit,
     });
     probot.app = {
       getSignedJsonWebToken() {
@@ -474,9 +474,11 @@ describe('auto-label', () => {
 
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/issues')
-        .reply(200, {
-          number: 1,
-        })
+        .reply(200, [
+          {
+            number: 1,
+          },
+        ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200)
         .post('/repos/testOwner/testRepo/labels', {

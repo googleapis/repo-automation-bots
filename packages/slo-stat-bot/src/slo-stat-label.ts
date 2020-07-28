@@ -15,6 +15,7 @@
 import {Application, Context} from 'probot';
 import {GitHubAPI} from 'probot/lib/github';
 import Ajv, {ErrorObject} from 'ajv';
+import { logger } from 'gcf-utils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const schema = require('./../data/schema.json');
@@ -131,7 +132,7 @@ handler.getFileContents = async function getFileContents(
     );
     return fileContent;
   } catch (err) {
-    console.warn(
+    logger.warn(
       `Error getting file content in repo:${repo}. error status:${err.status}`
     );
     return null;
@@ -154,7 +155,7 @@ handler.listFiles = async function listFiles(
     });
     return listOfFiles.data;
   } catch (err) {
-    console.warn(
+    logger.warn(
       `Error getting list of files in repo: ${repo} for issue number: ${pull_number}. error status:${err.status}`
     );
     return null;
@@ -197,7 +198,7 @@ handler.commentPR = async function commentPR(
       body,
     });
   } catch (err) {
-    console.warn(
+    logger.warn(
       `Error creating comment in repo: ${repo} for issue number: ${issue_number}. error status: ${err.status}`
     );
     return;
@@ -229,9 +230,8 @@ handler.createCheck = async function createCheck(
   try {
     await context.github.checks.create(checkParams);
   } catch (err) {
-    console.error(
-      `Error creating check in repo ${context.payload.repository.name} \n ${err}`
-    );
+    err.message = `Error creating check in repo ${context.payload.repository.name} \n\n${err.message}`;
+    logger.error(err);
     return;
   }
 };

@@ -16,6 +16,7 @@
 import {Storage} from '@google-cloud/storage';
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, GitHubAPI} from 'probot';
+import {logger} from 'gcf-utils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const colorsData = require('./colors.json');
@@ -48,7 +49,7 @@ handler.addLabels = async function addLabels(
     });
     return data;
   } catch (err) {
-    console.log(err);
+    logger.error(err);
     return null;
   }
 };
@@ -68,7 +69,7 @@ handler.checkExistingLabels = async function checkExistingLabels(
     });
     return data.data.name;
   } catch (err) {
-    console.log(err);
+    logger.error(err);
     return null;
   }
 };
@@ -90,7 +91,7 @@ handler.createLabel = async function createLabel(
     });
     return data;
   } catch (err) {
-    console.log(err);
+    logger.error(err);
     return null;
   }
 };
@@ -114,7 +115,7 @@ handler.checkExistingIssueLabels = async function checkExistingIssueLabels(
       return data.data;
     }
   } catch (err) {
-    console.log(err);
+    logger.error(err);
     return null;
   }
 };
@@ -137,7 +138,9 @@ handler.checkIfFileIsEmpty = async function checkIfFileIsEmpty(
   jsonData: string
 ) {
   if (jsonData.length === 0) {
-    console.log('JSON file downloaded from Cloud Storage was empty');
+    logger.error(
+      new Error('JSON file downloaded from Cloud Storage was empty')
+    );
     return null;
   } else {
     const jsonArray = JSON.parse(jsonData).repos;
@@ -170,7 +173,7 @@ handler.autoDetectLabel = (
   jsonArray: JSONData[],
   title: string
 ): string | undefined => {
-  if (!jsonArray) {
+  if (!jsonArray || !title) {
     return undefined;
   }
   let firstPart = title.split(':')[0]; // Before the colon, if there is one.
@@ -201,7 +204,9 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   github: GitHubAPI
 ) {
   if (!jsonArray) {
-    console.log('terminating execution of auto-label since JSON file is empty');
+    logger.error(
+      'terminating execution of auto-label since JSON file is empty'
+    );
     return;
   }
   const objectInJsonArray = handler.checkIfElementIsInArray(
@@ -221,7 +226,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   let autoDetectedLabel: string | undefined;
 
   if (!objectInJsonArray?.github_label) {
-    console.log(
+    logger.info(
       `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
     );
     autoDetectedLabel = handler.autoDetectLabel(jsonArray, issueTitle);
@@ -242,7 +247,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       githubLabel,
       colorsData[colorNumber].color
     );
-    console.log(`Label added to ${owner}/${repo} is ${githubLabel}`);
+    logger.info(`Label added to ${owner}/${repo} is ${githubLabel}`);
     if (labelsOnIssue) {
       const foundAPIName = labelsOnIssue.find(
         (element: Label) => element.name === githubLabel
@@ -254,12 +259,12 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
           element.name !== autoDetectedLabel
       );
       if (foundAPIName) {
-        console.log('The label already exists on this issue');
+        logger.info('The label already exists on this issue');
       } else {
         await handler.addLabels(github, owner, repo, issueNumber, [
           githubLabel,
         ]);
-        console.log(
+        logger.info(
           `Label added to ${owner}/${repo} for issue ${issueNumber} is ${githubLabel}`
         );
         wasNotAdded = false;
@@ -272,11 +277,11 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
             issue_number: issueNumber,
             name: dirtyLabel.name,
           })
-          .catch(console.error);
+          .catch(logger.error);
       }
     } else {
       await handler.addLabels(github, owner, repo, issueNumber, [githubLabel]);
-      console.log(
+      logger.info(
         `Label added to ${owner}/${repo} for issue ${issueNumber} is ${githubLabel}`
       );
       wasNotAdded = false;
@@ -298,7 +303,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       colorsData[colorNumber].color
     );
     await handler.addLabels(github, owner, repo, issueNumber, ['sample']);
-    console.log(
+    logger.info(
       `Issue ${issueNumber} is in a samples repo but does not have a sample tag, adding it to the repo and issue`
     );
     wasNotAdded = false;
@@ -311,11 +316,11 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
 function handler(app: Application) {
   //nightly cron that backfills and corrects api labels
   app.on(['schedule.repository'], async context => {
-    console.info(`running for org ${context.payload.cron_org}`);
+    logger.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
     if (context.payload.cron_org !== owner) {
-      console.log(`skipping run for ${context.payload.cron_org}`);
+      logger.info(`skipping run for ${context.payload.cron_org}`);
       return;
     }
     const jsonData = await handler.callStorage(
@@ -343,14 +348,14 @@ function handler(app: Application) {
             context.github
           );
           if (wasNotAdded) {
-            console.log(
+            logger.info(
               `label for ${issue.number} in ${owner}/${repo} was not added`
             );
             labelWasNotAddedCount++;
           }
         }
         if (labelWasNotAddedCount > 5) {
-          console.log(
+          logger.info(
             `${
               owner / repo
             } has 5 issues where labels were not added; skipping the rest of this repo check.`
@@ -402,16 +407,19 @@ function handler(app: Application) {
 
       //goes through issues in repository, adds labels as necessary
       for await (const response of context.github.paginate.iterator(issues)) {
-        const issue = response.data;
-        if (!issue.pull_request) {
-          await handler.addLabeltoRepoAndIssue(
-            owner,
-            repo,
-            issue.number,
-            issue.title,
-            jsonArray,
-            context.github
-          );
+        const issues = response.data;
+        //goes through each issue in each page
+        for (const issue of issues) {
+          if (!issue.pull_request) {
+            await handler.addLabeltoRepoAndIssue(
+              owner,
+              repo,
+              issue.number,
+              issue.title,
+              jsonArray,
+              context.github
+            );
+          }
         }
       }
     }
