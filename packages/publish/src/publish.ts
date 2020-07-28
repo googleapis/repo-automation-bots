@@ -105,7 +105,9 @@ function handler(app: Application) {
       });
       // Allow a path other than the root directory to be specified for publication
       // this allows us to publish from a folder, e.g., packages/gcf-utils:
-      let pkgPath = remoteConfiguration.path ? `${unpackPath}/${remoteConfiguration.path}` : unpackPath;
+      let pkgPath = remoteConfiguration.path
+        ? `${unpackPath}/${remoteConfiguration.path}`
+        : unpackPath;
       if (files.length === 1 && files[0].isDirectory()) {
         pkgPath = `${pkgPath}/${files[0].name}`;
       }

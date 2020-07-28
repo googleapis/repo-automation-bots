@@ -77,7 +77,7 @@ async function createReleasePR(
   releaseLabels?: string[],
   bumpMinorPreMajor?: boolean,
   snapshot?: boolean,
-  path?: string,
+  path?: string
 ) {
   const buildOptions: BuildOptions = {
     packageName,
@@ -91,7 +91,7 @@ async function createReleasePR(
     },
     bumpMinorPreMajor,
     snapshot,
-    path
+    path,
   };
   if (releaseLabels) {
     buildOptions.label = releaseLabels.join(',');
@@ -118,7 +118,7 @@ async function createGitHubRelease(
       graphql: github.graphql,
       request: github.request,
     },
-    path
+    path,
   };
   const ghr = new GitHubRelease(releaseOptions);
   await Runner.releaser(ghr);
@@ -167,7 +167,7 @@ export = (app: Application) => {
       configuration.releaseLabels,
       configuration.bumpMinorPreMajor,
       false,
-      configuration.path,
+      configuration.path
     );
 
     // release-please can handle creating a release on GitHub, we opt not to do
@@ -178,7 +178,7 @@ export = (app: Application) => {
         configuration.packageName || repoName,
         repoUrl,
         context.github,
-        path: configuration.path,
+        configuration.path
       );
     }
   });
