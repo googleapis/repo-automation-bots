@@ -112,7 +112,7 @@ function handler(app: Application) {
         pkgPath = `${pkgPath}/${files[0].name}`;
       }
       if (remoteConfiguration.path) {
-        pkgPath = `${pkgPath}/${remoteConfiguration.path}`
+        pkgPath = `${pkgPath}/${remoteConfiguration.path}`;
       }
 
       const secret: Secret = await handler.getPublicationSecrets(
