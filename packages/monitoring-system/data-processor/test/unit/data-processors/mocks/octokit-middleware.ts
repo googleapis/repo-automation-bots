@@ -37,7 +37,7 @@ interface GitHubActionDetailsStrict {
 
 export interface MockResponse {
   type: 'resolve' | 'reject';
-  value: {};
+  value: {} | [];
 }
 
 interface MockResponses {
@@ -60,7 +60,7 @@ interface MockResponses {
  */
 export class OctokitMiddleware {
   private static PATH_TO_PLUGIN =
-    './build/test/unit/data-processors/mock-octokit-plugin.js';
+    './build/test/unit/data-processors/mocks/mock-octokit-plugin.js';
 
   private static instance: OctokitMiddleware;
   private mockResponses: MockResponses = {};
@@ -148,6 +148,13 @@ export class OctokitMiddleware {
       type: 'reject',
       value: {Error: 'A mock error'},
     });
+  }
+
+  /**
+   * Erases all previously set mock responses
+   */
+  public resetResponses() {
+    this.mockResponses = {};
   }
 
   private getStrictDetails(

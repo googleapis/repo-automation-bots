@@ -22,6 +22,7 @@ export interface GitHubProcessorOptions extends ProcessorOptions {
 interface GitHubRepository {
   name: string;
   owner: string;
+  ownerType: 'org' | 'user';
 }
 
 interface GitHubEvent {
