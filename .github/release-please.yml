@@ -1,0 +1,3 @@
+releaseType: node
+handleGHRelease: true
+path: packages/gcf-utils
