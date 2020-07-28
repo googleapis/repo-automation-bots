@@ -14,7 +14,8 @@
 //
 import {describe, it, beforeEach} from 'mocha';
 import assert from 'assert';
-import {OctokitMiddleware, GitHubActionType} from './octokit-middleware';
+import {GitHubActionType} from './octokit-request-parser';
+import {OctokitMiddleware} from './octokit-middleware';
 import {Octokit} from '@octokit/rest';
 
 describe('GitHub Data Processor', () => {
