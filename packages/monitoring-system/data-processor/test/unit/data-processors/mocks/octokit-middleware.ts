@@ -59,32 +59,21 @@ interface MockResponses {
  * return predefined responses instead.
  */
 export class OctokitMiddleware {
-  private static PATH_TO_PLUGIN =
+  private PATH_TO_PLUGIN =
     './build/test/unit/data-processors/mocks/mock-octokit-plugin.js';
 
-  private static instance: OctokitMiddleware;
   private mockResponses: MockResponses = {};
 
   /**
    * Returns a mock Octokit instance with OctokitMiddleware
    * injected into it.
    */
-  public static getMockOctokit(): Octokit {
+  public getMockOctokit(): Octokit {
     const OctokitWithMiddleware = Octokit.plugin(
       /* eslint-disable @typescript-eslint/no-var-requires */
       require(resolve(this.PATH_TO_PLUGIN))
     );
-    return new OctokitWithMiddleware();
-  }
-
-  /**
-   * Returns the singleton instance of OctokitMiddleware
-   */
-  public static getMiddleware(): OctokitMiddleware {
-    if (!this.instance) {
-      this.instance = new OctokitMiddleware();
-    }
-    return this.instance;
+    return new OctokitWithMiddleware({middleware: this});
   }
 
   /**

@@ -53,14 +53,17 @@ const LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS = {
 
 describe('GitHub Data Processor', () => {
   let processor: GitHubProcessor;
+  let middleware: OctokitMiddleware;
+  let mockOctokit: Octokit;
+  let mockFirestore: MockFirestore;
 
-  beforeEach(resetMockData);
+  beforeEach(() => {
+    resetMockData();
+    middleware = new OctokitMiddleware();
+    mockOctokit = middleware.getMockOctokit();
+  });
 
   describe('collectAndProcess()', () => {
-    let mockFirestore: MockFirestore;
-    const mockOctokit: Octokit = OctokitMiddleware.getMockOctokit();
-    const middleware = OctokitMiddleware.getMiddleware();
-
     beforeEach(() => {
       mockFirestore = new MockFirestore();
       processor = new GitHubProcessor({
@@ -110,8 +113,6 @@ describe('GitHub Data Processor', () => {
   });
 
   describe('listRepositories()', () => {
-    let mockFirestore: MockFirestore;
-
     beforeEach(() => {
       mockFirestore = new MockFirestore();
       processor = new GitHubProcessor({firestore: mockFirestore});
@@ -150,9 +151,6 @@ describe('GitHub Data Processor', () => {
   });
 
   describe('listPublicEventsForRepository()', () => {
-    const mockOctokit: Octokit = OctokitMiddleware.getMockOctokit();
-    const middleware = OctokitMiddleware.getMiddleware();
-
     beforeEach(() => {
       processor = new GitHubProcessor({octokit: mockOctokit});
     });
@@ -204,13 +202,9 @@ describe('GitHub Data Processor', () => {
     it('throws an error if Octokit returns a non-200 response', () => {
       // TODO
     });
-
-    afterEach(middleware.resetResponses);
   });
 
   describe('storeEventsData()', () => {
-    let mockFirestore: MockFirestore;
-
     beforeEach(() => {
       mockFirestore = new MockFirestore();
       processor = new GitHubProcessor({firestore: mockFirestore});
