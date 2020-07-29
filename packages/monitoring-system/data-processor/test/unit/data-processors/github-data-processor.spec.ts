@@ -22,7 +22,7 @@ import {
   GitHubEvent,
 } from '../../../src/data-processors/github-data-processor';
 import {MockFirestore, FirestoreData} from './mocks/mock-firestore';
-import {loadFixture, copy} from './util/test-util';
+import {loadFixture} from './util/test-util';
 
 interface GitHubProcessorTestFixture {
   preTestFirestoreData: {};
@@ -36,14 +36,20 @@ let fixture2: GitHubProcessorTestFixture;
 let mockFirestoreData1: FirestoreData;
 
 function resetMockData() {
-  fixture1 = copy(
-    loadFixture('github-processor-fixture-1.json')
+  fixture1 = loadFixture(
+    'github-processor-fixture-1.json'
   ) as GitHubProcessorTestFixture;
-  fixture2 = copy(
-    loadFixture('github-processor-fixture-2.json')
+  fixture2 = loadFixture(
+    'github-processor-fixture-2.json'
   ) as GitHubProcessorTestFixture;
-  mockFirestoreData1 = copy(loadFixture('mock-firestore-data-1.json'));
+  mockFirestoreData1 = loadFixture('mock-firestore-data-1.json');
 }
+
+const LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS = {
+  type: GitHubActionType.REPO_LIST_EVENTS,
+  repoName: 'repo-automation-bots',
+  repoOwner: 'googleapis',
+};
 
 describe('GitHub Data Processor', () => {
   let processor: GitHubProcessor;
@@ -65,14 +71,10 @@ describe('GitHub Data Processor', () => {
 
     it('collects GitHub Events data and stores it in Firestore', () => {
       mockFirestore.setMockData(fixture1.preTestFirestoreData);
-      middleware.setMockResponse(
-        {
-          type: GitHubActionType.REPO_LIST_EVENTS,
-          repoName: 'repo-automation-bots',
-          repoOwner: 'googleapis',
-        },
-        {type: 'resolve', value: fixture1.githubEventsResponse}
-      );
+      middleware.setMockResponse(LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS, {
+        type: 'resolve',
+        value: fixture1.githubEventsResponse,
+      });
       return processor.collectAndProcess().then(() => {
         assert.deepEqual(
           mockFirestore.getMockData(),
@@ -83,11 +85,7 @@ describe('GitHub Data Processor', () => {
 
     it('throws an error if there is an error with GitHub', () => {
       mockFirestore.setMockData(fixture1.preTestFirestoreData);
-      middleware.rejectOnAction({
-        type: GitHubActionType.REPO_LIST_EVENTS,
-        repoName: 'repo-automation-bots',
-        repoOwner: 'googleapis',
-      });
+      middleware.rejectOnAction(LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS);
 
       let thrown = false;
       return processor
@@ -98,14 +96,10 @@ describe('GitHub Data Processor', () => {
 
     it('throws an error if there is an error with Firestore', () => {
       mockFirestore.throwOnCollection();
-      middleware.setMockResponse(
-        {
-          type: GitHubActionType.REPO_LIST_EVENTS,
-          repoName: 'repo-automation-bots',
-          repoOwner: 'googleapis',
-        },
-        {type: 'resolve', value: fixture1.githubEventsResponse}
-      );
+      middleware.setMockResponse(LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS, {
+        type: 'resolve',
+        value: fixture1.githubEventsResponse,
+      });
 
       let thrown = false;
       return processor
@@ -164,14 +158,10 @@ describe('GitHub Data Processor', () => {
     });
 
     it('returns events for repository when events exist', () => {
-      middleware.setMockResponse(
-        {
-          type: GitHubActionType.REPO_LIST_EVENTS,
-          repoName: 'repo-automation-bots',
-          repoOwner: 'googleapis',
-        },
-        {type: 'resolve', value: fixture1.githubEventsResponse}
-      );
+      middleware.setMockResponse(LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS, {
+        type: 'resolve',
+        value: fixture1.githubEventsResponse,
+      });
       return processor['listPublicEventsForRepository']({
         repo_name: 'repo-automation-bots',
         owner_name: 'googleapis',
@@ -179,14 +169,10 @@ describe('GitHub Data Processor', () => {
     });
 
     it('returns empty array when no repository events exist', () => {
-      middleware.setMockResponse(
-        {
-          type: GitHubActionType.REPO_LIST_EVENTS,
-          repoName: 'repo-automation-bots',
-          repoOwner: 'googleapis',
-        },
-        {type: 'resolve', value: {data: []}}
-      );
+      middleware.setMockResponse(LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS, {
+        type: 'resolve',
+        value: {data: []},
+      });
       return processor['listPublicEventsForRepository']({
         repo_name: 'repo-automation-bots',
         owner_name: 'googleapis',
@@ -194,14 +180,10 @@ describe('GitHub Data Processor', () => {
     });
 
     it('returns events with default value if data is missing from GitHub', () => {
-      middleware.setMockResponse(
-        {
-          type: GitHubActionType.REPO_LIST_EVENTS,
-          repoName: 'repo-automation-bots',
-          repoOwner: 'googleapis',
-        },
-        {type: 'resolve', value: fixture2.githubEventsResponse}
-      );
+      middleware.setMockResponse(LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS, {
+        type: 'resolve',
+        value: fixture2.githubEventsResponse,
+      });
       return processor['listPublicEventsForRepository']({
         repo_name: 'repo-automation-bots',
         owner_name: 'googleapis',
@@ -209,11 +191,7 @@ describe('GitHub Data Processor', () => {
     });
 
     it('throws an error if there is an error from Octokit', () => {
-      middleware.rejectOnAction({
-        type: GitHubActionType.REPO_LIST_EVENTS,
-        repoName: 'repo-automation-bots',
-        repoOwner: 'googleapis',
-      });
+      middleware.rejectOnAction(LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS);
       let thrown = false;
       return processor['listPublicEventsForRepository']({
         repo_name: 'repo-automation-bots',
@@ -227,9 +205,7 @@ describe('GitHub Data Processor', () => {
       // TODO
     });
 
-    afterEach(() => {
-      middleware.resetResponses();
-    });
+    afterEach(middleware.resetResponses);
   });
 
   describe('storeEventsData()', () => {

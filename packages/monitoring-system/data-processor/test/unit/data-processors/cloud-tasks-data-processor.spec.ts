@@ -20,7 +20,7 @@ import {
   MockCloudTasksClient,
   MockTaskQueueData,
 } from './mocks/mock-cloud-tasks-client';
-import {loadFixture, copy} from './util/test-util';
+import {loadFixture} from './util/test-util';
 
 interface InputQueueStatus {
   [name: string]: number;
@@ -43,7 +43,7 @@ describe('Cloud Tasks Data Processor', () => {
     MockTaskQueueData1 = loadFixture('mock-task-queue-data-1.json');
     MockFirestoreData1 = loadFixture('mock-firestore-data-1.json');
     MockFirestoreData2 = loadFixture('mock-firestore-data-2.json');
-    MockFirestoreData3 = copy(loadFixture('mock-firestore-data-3.json'));
+    MockFirestoreData3 = loadFixture('mock-firestore-data-3.json');
   }
 
   beforeEach(() => {
