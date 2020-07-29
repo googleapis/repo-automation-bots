@@ -12,9 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {DataProcessor} from './data-processor-abstract';
+import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
+import {Subscription} from '@google-cloud/pubsub';
+
+export interface CloudLogsProcessorOptions extends ProcessorOptions {
+  subscription: Subscription;
+}
 
 export class CloudLogsProcessor extends DataProcessor {
+  private subscription: Subscription;
+
+  constructor(options: CloudLogsProcessorOptions) {
+    super(options);
+    this.subscription = options.subscription;
+  }
+
   public async collectAndProcess(): Promise<void> {
     throw new Error('Method not implemented.');
   }

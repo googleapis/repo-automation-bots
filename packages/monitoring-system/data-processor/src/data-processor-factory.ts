@@ -17,7 +17,10 @@ import {
   DataProcessor,
   ProcessorOptions,
 } from './data-processors/data-processor-abstract';
-import {CloudLogsProcessor} from './data-processors/cloud-logs-data-processor';
+import {
+  CloudLogsProcessor,
+  CloudLogsProcessorOptions,
+} from './data-processors/cloud-logs-data-processor';
 import {GCFProcessor} from './data-processors/cloud-functions-data-processor';
 import {
   CloudTasksProcessor,
@@ -26,6 +29,7 @@ import {
 import {GitHubProcessor} from './data-processors/github-data-processor';
 import {ConfigUtil, Config} from './config-util';
 import {Firestore} from '@google-cloud/firestore';
+import {PubSub} from '@google-cloud/pubsub';
 
 export interface Factory {
   getDataProcessor(task: Task): DataProcessor;
@@ -46,7 +50,7 @@ export class DataProcessorFactory implements Factory {
   public getDataProcessor(task: Task): DataProcessor {
     switch (task) {
       case Task.ProcessLogs:
-        return new CloudLogsProcessor();
+        return new CloudLogsProcessor(this.getLogsProcessorOptions());
       case Task.ProcessGCF:
         return new GCFProcessor();
       case Task.ProcessTaskQueue:
@@ -54,9 +58,16 @@ export class DataProcessorFactory implements Factory {
       case Task.ProcessGitHub:
         return new GitHubProcessor();
       default:
-        console.error(`Couldn't identify a data processor for task: ${task}`)
+        console.error(`Couldn't identify a data processor for task: ${task}`);
         throw new Error(`Couldn't identify a data processor for task: ${task}`);
     }
+  }
+
+  private getLogsProcessorOptions(): CloudLogsProcessorOptions {
+    return {
+      subscription: new PubSub().subscription('TODO'),
+      ...this.getProcessorOptions(),
+    };
   }
 
   private getTaskProcessorOptions(): CloudTasksProcessorOptions {
