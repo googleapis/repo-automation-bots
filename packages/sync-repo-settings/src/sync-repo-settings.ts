@@ -176,6 +176,9 @@ async function updateMasterBranchProtection(
       },
       enforce_admins: rule.isAdminEnforced!,
       restrictions: null!,
+      headers: {
+        accept: 'application/vnd.github.luke-cage-preview+json',
+      },
     });
   } catch (err) {
     if (err.status === 401) {
