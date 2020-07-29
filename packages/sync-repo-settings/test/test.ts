@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {describe, it, beforeEach} from 'mocha';
+import {describe, it, beforeEach, afterEach} from 'mocha';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
+// eslint-disable-next-line node/no-unsupported-features/node-builtins
+import {promises as fs} from 'fs';
 import {handler} from '../src/sync-repo-settings';
 
 nock.disableNetConnect();
+
+const org = 'googleapis';
+let probot: Probot;
 
 function nockLanguagesList(org: string, repo: string, data: {}) {
   return nock('https://api.github.com')
@@ -30,6 +35,14 @@ function nockUpdateTeamMembership(team: string, org: string, repo: string) {
   return nock('https://api.github.com')
     .put(`/orgs/${org}/teams/${team}/repos/${org}/${repo}`)
     .reply(200);
+}
+
+function nockConfig404(org = 'googleapis', repo = 'api-common-java') {
+  return nock('https://api.github.com')
+    .get(`/repos/${org}/${repo}/contents/.github/sync-repo-settings.yaml`)
+    .reply(404)
+    .get(`/repos/${org}/.github/contents/.github/sync-repo-settings.yaml`)
+    .reply(404);
 }
 
 function nockUpdateRepoSettings(
@@ -50,13 +63,15 @@ function nockUpdateRepoSettings(
 function nockUpdateBranchProtection(
   repo: string,
   contexts: string[],
-  requireUpToDateBranch: boolean
+  requireUpToDateBranch: boolean,
+  requireCodeOwners = false
 ) {
   return nock('https://api.github.com')
     .put(`/repos/googleapis/${repo}/branches/master/protection`, {
       required_pull_request_reviews: {
+        required_approving_review_count: 1,
         dismiss_stale_reviews: false,
-        require_code_owner_reviews: false,
+        require_code_owner_reviews: requireCodeOwners,
       },
       required_status_checks: {
         contexts,
@@ -68,8 +83,26 @@ function nockUpdateBranchProtection(
     .reply(200);
 }
 
+async function receive(org: string, repo: string, cronOrg?: string) {
+  await probot.receive({
+    name: 'schedule.repository',
+    payload: {
+      repository: {
+        name: repo,
+        owner: {
+          login: org,
+        },
+      },
+      organization: {
+        login: org,
+      },
+      cron_org: cronOrg || org,
+    },
+    id: 'abc123',
+  });
+}
+
 describe('Sync repo settings', () => {
-  let probot: Probot;
   beforeEach(() => {
     probot = new Probot({
       // eslint-disable-next-line node/no-extraneous-require
@@ -86,81 +119,41 @@ describe('Sync repo settings', () => {
     probot.load(handler);
   });
 
+  afterEach(() => {
+    nock.cleanAll();
+  });
+
   it('should ignore repos in ignored repos in required-checks.json', async () => {
-    const org = 'googleapis';
     const repo = 'api-common-java';
     const scopes = [
+      nockConfig404(org, repo),
       nockLanguagesList(org, repo, {java: 1}),
       nockUpdateTeamMembership('yoshi-admins', org, repo),
       nockUpdateTeamMembership('yoshi-java-admins', org, repo),
       nockUpdateTeamMembership('yoshi-java', org, repo),
       nockUpdateTeamMembership('java-samples-reviewers', org, repo),
     ];
-    await probot.receive({
-      name: 'schedule.repository',
-      payload: {
-        repository: {
-          name: repo,
-        },
-        organization: {
-          login: org,
-        },
-        cron_org: org,
-      },
-      id: 'abc123',
-    });
+    await receive('googleapis', 'api-common-java');
     scopes.forEach(x => x.done());
   });
 
   it('should skip for the wrong context', async () => {
-    const scope = nockLanguagesList('googleapis', 'api-common-java', {java: 1});
-    await probot.receive({
-      name: 'schedule.repository',
-      payload: {
-        repository: {
-          name: 'api-common-java',
-        },
-        organization: {
-          login: 'googleapis',
-        },
-        cron_org: 'GoogleCloudPlatform',
-      },
-      id: 'abc123',
-    });
-    scope.done();
+    await receive('googleapis', 'api-common-java', 'GoogleCloudPlatform');
   });
 
   it('should ignore repos not represented in required-checks.json', async () => {
     const scopes = [
+      nockConfig404('Codertocat', 'Hello-World'),
       nockLanguagesList('Codertocat', 'Hello-World', {kotlin: 1}),
-      nockUpdateTeamMembership('yoshi-admins', 'Codertocat', 'Hello-World'),
-      nockUpdateTeamMembership(
-        'yoshi-kotlin-admins',
-        'Codertocat',
-        'Hello-World'
-      ),
-      nockUpdateTeamMembership('yoshi-kotlin', 'Codertocat', 'Hello-World'),
     ];
-    await probot.receive({
-      name: 'schedule.repository',
-      payload: {
-        repository: {
-          name: 'Hello-World',
-        },
-        organization: {
-          login: 'Codertocat',
-        },
-        cron_org: 'Codertocat',
-      },
-      id: 'abc123',
-    });
+    await receive('Codertocat', 'Hello-World');
     scopes.forEach(s => s.done());
   });
 
   it('should override master branch protection if the repo is overridden', async () => {
-    const org = 'googleapis';
     const repo = 'google-api-java-client';
     const scopes = [
+      nockConfig404(org, repo),
       nockLanguagesList(org, repo, {java: 1}),
       nockUpdateRepoSettings(repo, false, true),
       nockUpdateBranchProtection(
@@ -180,24 +173,13 @@ describe('Sync repo settings', () => {
       nockUpdateTeamMembership('yoshi-java', org, repo),
       nockUpdateTeamMembership('java-samples-reviewers', org, repo),
     ];
-    await probot.receive({
-      name: 'schedule.repository',
-      payload: {
-        repository: {
-          name: 'google-api-java-client',
-        },
-        organization: {
-          login: 'googleapis',
-        },
-        cron_org: 'googleapis',
-      },
-      id: 'abc123',
-    });
+    await receive('googleapis', 'google-api-java-client');
     scopes.forEach(s => s.done());
   });
 
   it('should update settings for a known repository', async () => {
     const scopes = [
+      nockConfig404(org, 'nodejs-dialogflow'),
       nockLanguagesList('googleapis', 'nodejs-dialogflow', {
         groovy: 33,
         typescript: 100,
@@ -217,6 +199,7 @@ describe('Sync repo settings', () => {
           'cla/google',
           'windows',
         ],
+        true,
         true
       ),
       nockUpdateTeamMembership(
@@ -235,81 +218,35 @@ describe('Sync repo settings', () => {
         'nodejs-dialogflow'
       ),
     ];
-    await probot.receive({
-      name: 'schedule.repository',
-      payload: {
-        repository: {
-          name: 'nodejs-dialogflow',
-        },
-        organization: {
-          login: 'googleapis',
-        },
-        cron_org: 'googleapis',
-      },
-      id: 'abc123',
-    });
+    await receive('googleapis', 'nodejs-dialogflow');
     scopes.forEach(s => s.done());
   });
 
-  it('should add extra teams specified in teams.json', async () => {
-    const scopes = [
-      nockLanguagesList('googleapis', 'java-asset', {java: 1}),
-      nockUpdateRepoSettings('java-asset', false, true),
-      nockUpdateBranchProtection(
-        'java-asset',
-        [
-          'dependencies (8)',
-          'dependencies (11)',
-          'linkage-monitor',
-          'lint',
-          'clirr',
-          'units (7)',
-          'units (8)',
-          'units (11)',
-          'Kokoro - Test: Integration',
-          'cla/google',
-        ],
-        false
-      ),
-      nockUpdateTeamMembership('yoshi-admins', 'googleapis', 'java-asset'),
-      nockUpdateTeamMembership('yoshi-java-admins', 'googleapis', 'java-asset'),
-      nockUpdateTeamMembership('yoshi-java', 'googleapis', 'java-asset'),
-      nockUpdateTeamMembership(
-        'java-samples-reviewers',
-        'googleapis',
-        'java-asset'
-      ),
-    ];
-    await probot.receive({
-      name: 'schedule.repository',
-      payload: {
-        repository: {
-          name: 'java-asset',
-        },
-        organization: {
-          login: 'googleapis',
-        },
-        cron_org: 'googleapis',
-      },
-      id: 'abc123',
-    });
-    scopes.forEach(s => s.done());
-  });
   it('should nope out if github returns no languages', async () => {
-    const scope = nockLanguagesList('Codertocat', 'Hello-World', {});
-    await probot.receive({
-      name: 'schedule.repository',
-      payload: {
-        repository: {
-          name: 'Hello-World',
-        },
-        organization: {
-          login: 'Codertocat',
-        },
-        cron_org: 'googleapis',
-      },
-      id: 'abc123',
-    });
-    scope.done();
+    const scopes = [
+      nockConfig404('Codertocat', 'Hello-World'),
+      nockLanguagesList('Codertocat', 'Hello-World', {}),
+    ];
+    await receive('Codertocat', 'Hello-World');
+    scopes.forEach(x => x.done());
+  });
+
+  it('should use localized config if available', async () => {
+    const org = 'googleapis';
+    const repo = 'fake';
+    const content = await fs.readFile(
+      './test/fixtures/localConfig.yaml',
+      'base64'
+    );
+    const scopes = [
+      nock('https://api.github.com')
+        .get(`/repos/${org}/${repo}/contents/.github/sync-repo-settings.yaml`)
+        .reply(200, {content}),
+      nockUpdateRepoSettings(repo, false, true),
+      nockUpdateBranchProtection(repo, ['check1', 'check2'], false, true),
+      nockUpdateTeamMembership('team1', org, repo),
+    ];
+    await receive(org, repo);
+    scopes.forEach(x => x.done());
   });
 });

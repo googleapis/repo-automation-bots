@@ -32,6 +32,7 @@ const CONFIGURATION_FILE_PATH = 'publish.yml';
 interface Configuration {
   project?: string;
   secretId?: string;
+  path?: string;
 }
 
 interface PublishConfig {
@@ -102,9 +103,16 @@ function handler(app: Application) {
       const files = await fs.readdir(unpackPath, {
         withFileTypes: true,
       });
+      // Allow a path other than the root directory to be specified for publication
+      // this allows us to publish from a folder, e.g., packages/gcf-utils:
       let pkgPath = unpackPath;
+      // Tarballs returned by GitHub are nested a folder deep, we should traverse
+      // into this folder:
       if (files.length === 1 && files[0].isDirectory()) {
         pkgPath = `${pkgPath}/${files[0].name}`;
+      }
+      if (remoteConfiguration.path) {
+        pkgPath = `${pkgPath}/${remoteConfiguration.path}`;
       }
 
       const secret: Secret = await handler.getPublicationSecrets(
@@ -399,6 +407,7 @@ handler.publish = async (opts: PublishOpts) => {
     );
   } catch (err) {
     app.log.error(err);
+    throw err;
   }
 };
 

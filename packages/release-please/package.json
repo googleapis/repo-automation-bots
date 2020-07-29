@@ -30,9 +30,9 @@
   "dependencies": {
     "@octokit/rest": "^18.0.0",
     "@octokit/webhooks": "^7.1.1",
-    "gcf-utils": "^5.2.6",
+    "gcf-utils": "^5.3.0",
     "probot": "^9.11.2",
-    "release-please": "^5.5.0"
+    "release-please": "^5.6.0"
   },
   "devDependencies": {
     "@types/bunyan": "^1.8.6",
