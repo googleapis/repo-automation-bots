@@ -71,6 +71,7 @@ export class OctokitMiddleware {
    */
   public static getMockOctokit(): Octokit {
     const OctokitWithMiddleware = Octokit.plugin(
+      /* eslint-disable @typescript-eslint/no-var-requires */
       require(resolve(this.PATH_TO_PLUGIN))
     );
     return new OctokitWithMiddleware();

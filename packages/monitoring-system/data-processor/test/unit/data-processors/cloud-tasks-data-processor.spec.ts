@@ -14,15 +14,14 @@
 //
 import {describe, it, beforeEach} from 'mocha';
 import assert from 'assert';
-import {resolve} from 'path';
 import {CloudTasksProcessor} from '../../../src/data-processors/cloud-tasks-data-processor';
 import {MockFirestore, FirestoreData} from './mocks/mock-firestore';
 import {
   MockCloudTasksClient,
   MockTaskQueueData,
 } from './mocks/mock-cloud-tasks-client';
+import {loadFixture} from './util/test-util';
 
-const PATH_TO_FIXTURES = 'test/unit/data-processors/fixtures';
 interface InputQueueStatus {
   [name: string]: number;
 }
@@ -41,23 +40,10 @@ describe('Cloud Tasks Data Processor', () => {
   let MockFirestoreData3: FirestoreData;
 
   function resetMockData() {
-    /* eslint-disable @typescript-eslint/no-var-requires */
-    MockTaskQueueData1 = require(resolve(
-      PATH_TO_FIXTURES,
-      'mock-task-queue-data-1.json'
-    ));
-    MockFirestoreData1 = require(resolve(
-      PATH_TO_FIXTURES,
-      'mock-firestore-data-1.json'
-    ));
-    MockFirestoreData2 = require(resolve(
-      PATH_TO_FIXTURES,
-      'mock-firestore-data-2.json'
-    ));
-    MockFirestoreData3 = copy(
-      require(resolve(PATH_TO_FIXTURES, 'mock-firestore-data-3.json'))
-    );
-    /* eslint-enable @typescript-eslint/no-var-requires */
+    MockTaskQueueData1 = loadFixture('mock-task-queue-data-1.json');
+    MockFirestoreData1 = loadFixture('mock-firestore-data-1.json');
+    MockFirestoreData2 = loadFixture('mock-firestore-data-2.json');
+    MockFirestoreData3 = copy(loadFixture('mock-firestore-data-3.json'));
   }
 
   function copy(data: {}): {} {

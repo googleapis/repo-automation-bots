@@ -17,14 +17,12 @@ import assert from 'assert';
 import {GitHubActionType} from './mocks/octokit-request-parser';
 import {OctokitMiddleware} from './mocks/octokit-middleware';
 import {Octokit} from '@octokit/rest';
-import {resolve} from 'path';
 import {
   GitHubProcessor,
   GitHubEvent,
 } from '../../../src/data-processors/github-data-processor';
 import {MockFirestore} from './mocks/mock-firestore';
-
-const PATH_TO_FIXTURES = 'test/unit/data-processors/fixtures';
+import {loadFixture} from './util/test-util';
 
 describe('GitHub Data Processor', () => {
   let processor: GitHubProcessor;
@@ -54,10 +52,9 @@ describe('GitHub Data Processor', () => {
         GitHub_Event: {},
       });
 
-      const mockGitHubEventsPayload = require(resolve(
-        PATH_TO_FIXTURES,
+      const mockGitHubEventsPayload = loadFixture(
         'mock-github-events-data-1.json'
-      ));
+      );
       middleware.setMockResponse(
         {
           type: GitHubActionType.REPO_LIST_EVENTS,
@@ -81,7 +78,7 @@ describe('GitHub Data Processor', () => {
           timestamp: 1595948383000,
           actor: 'tbpg',
         },
-        'efd2dd423f968d55874cb681b018b286': {
+        efd2dd423f968d55874cb681b018b286: {
           payload_hash: 'efd2dd423f968d55874cb681b018b286',
           repository: 'repo-automation-bots_googleapis_org',
           event_type: 'IssuesEvent',
@@ -126,10 +123,9 @@ describe('GitHub Data Processor', () => {
     it('throws an error if there is an error with Firestore', () => {
       mockFirestore.throwOnCollection();
 
-      const mockGitHubEventsPayload = require(resolve(
-        PATH_TO_FIXTURES,
+      const mockGitHubEventsPayload = loadFixture(
         'mock-github-events-data-1.json'
-      ));
+      );
       middleware.setMockResponse(
         {
           type: GitHubActionType.REPO_LIST_EVENTS,
@@ -214,11 +210,10 @@ describe('GitHub Data Processor', () => {
     });
 
     it('returns events for repository when events exist', () => {
-      const mockGitHubEventsPayload = require(resolve(
-        PATH_TO_FIXTURES,
+      const mockGitHubEventsPayload = loadFixture(
         'mock-github-events-data-1.json'
-      ));
-      
+      );
+
       const expectedEvents = [
         {
           payload_hash: '321819b7d55c424881dad753e7aa753d',
@@ -286,10 +281,9 @@ describe('GitHub Data Processor', () => {
     });
 
     it('returns events with default value if data is missing from GitHub', () => {
-      const mockGitHubEventsPayload = require(resolve(
-        PATH_TO_FIXTURES,
+      const mockGitHubEventsPayload = loadFixture(
         'mock-github-events-data-2.json'
-      ));
+      );
       const expectedEvents = [
         {
           payload_hash: '321819b7d55c424881dad753e7aa753d',
