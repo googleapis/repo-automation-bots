@@ -15,7 +15,6 @@
 import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {Octokit} from '@octokit/rest';
 import {WriteResult} from '@google-cloud/firestore';
-import {logger} from 'gcf-utils';
 import md5 from 'md5';
 
 export interface GitHubProcessorOptions extends ProcessorOptions {
@@ -82,7 +81,7 @@ export class GitHubProcessor extends DataProcessor {
         })
         .then(() => resolve())
         .catch(error => {
-          logger.error({'Failed to process GitHub Events data': error });
+          console.error(`Failed to process GitHub Events data: ${error}`);
           reject(new Error(`Failed to process GitHub Events data: ${error}`));
         });
     });
@@ -117,11 +116,13 @@ export class GitHubProcessor extends DataProcessor {
         owner: repository.owner_name,
       })
       .then(eventsPayload => {
-        if (!(eventsPayload instanceof Array)) {
-          throw new Error(`Unexpected payload from Octokit: ${eventsPayload}`);
+        if (!(eventsPayload.data instanceof Array)) {
+          throw new Error(
+            `Unexpected payload from Octokit: ${JSON.stringify(eventsPayload)}`
+          );
         }
         const gitHubEvents: GitHubEvent[] = [];
-        for (const event of eventsPayload) {
+        for (const event of eventsPayload.data) {
           gitHubEvents.push(
             this.githubEventResponseToEvent(
               (event as unknown) as GitHubEventResponse
@@ -138,7 +139,7 @@ export class GitHubProcessor extends DataProcessor {
     const {type, repo, payload, created_at, org, user} = eventResponse;
 
     if (!payload) {
-      logger.error({'Invalid event response from GitHub': eventResponse });
+      console.error(`Invalid event response from GitHub: ${eventResponse}`);
       throw new Error(`Invalid event response from GitHub: ${eventResponse}`);
     }
     const payload_hash = md5(JSON.stringify(payload));

@@ -21,3 +21,7 @@ export function loadFixture(filename: string): {} {
   /* eslint-disable @typescript-eslint/no-var-requires */
   return require(resolve(PATH_TO_FIXTURES, filename));
 }
+
+export function copy(data: {}): {} {
+  return JSON.parse(JSON.stringify(data));
+}

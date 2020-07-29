@@ -21,11 +21,34 @@ import {
   GitHubProcessor,
   GitHubEvent,
 } from '../../../src/data-processors/github-data-processor';
-import {MockFirestore} from './mocks/mock-firestore';
-import {loadFixture} from './util/test-util';
+import {MockFirestore, FirestoreData} from './mocks/mock-firestore';
+import {loadFixture, copy} from './util/test-util';
+
+interface GitHubProcessorTestFixture {
+  preTestFirestoreData: {};
+  githubEventsResponse: [];
+  githubEventsObjects: [];
+  postTestFirestoreData: {};
+}
+
+let fixture1: GitHubProcessorTestFixture;
+let fixture2: GitHubProcessorTestFixture;
+let mockFirestoreData1: FirestoreData;
+
+function resetMockData() {
+  fixture1 = copy(
+    loadFixture('github-processor-fixture-1.json')
+  ) as GitHubProcessorTestFixture;
+  fixture2 = copy(
+    loadFixture('github-processor-fixture-2.json')
+  ) as GitHubProcessorTestFixture;
+  mockFirestoreData1 = copy(loadFixture('mock-firestore-data-1.json'));
+}
 
 describe('GitHub Data Processor', () => {
   let processor: GitHubProcessor;
+
+  beforeEach(resetMockData);
 
   describe('collectAndProcess()', () => {
     let mockFirestore: MockFirestore;
@@ -41,72 +64,25 @@ describe('GitHub Data Processor', () => {
     });
 
     it('collects GitHub Events data and stores it in Firestore', () => {
-      mockFirestore.setMockData({
-        GitHub_Repository: {
-          'repo-automation-bots_googleapis_org': {
-            repo_name: 'repo-automation-bots',
-            owner_name: 'googleapis',
-            owner_type: 'org',
-          },
-        },
-        GitHub_Event: {},
-      });
-
-      const mockGitHubEventsPayload = loadFixture(
-        'mock-github-events-data-1.json'
-      );
+      mockFirestore.setMockData(fixture1.preTestFirestoreData);
       middleware.setMockResponse(
         {
           type: GitHubActionType.REPO_LIST_EVENTS,
           repoName: 'repo-automation-bots',
           repoOwner: 'googleapis',
         },
-        {type: 'resolve', value: mockGitHubEventsPayload}
+        {type: 'resolve', value: fixture1.githubEventsResponse}
       );
-      const expectedData = {
-        '321819b7d55c424881dad753e7aa753d': {
-          payload_hash: '321819b7d55c424881dad753e7aa753d',
-          repository: 'repo-automation-bots_googleapis_org',
-          event_type: 'IssueCommentEvent',
-          timestamp: 1595948777000,
-          actor: 'azizsonawalla',
-        },
-        '99b6d59369ccb78e33b8a2d09e81a133': {
-          payload_hash: '99b6d59369ccb78e33b8a2d09e81a133',
-          repository: 'repo-automation-bots_googleapis_org',
-          event_type: 'IssueCommentEvent',
-          timestamp: 1595948383000,
-          actor: 'tbpg',
-        },
-        efd2dd423f968d55874cb681b018b286: {
-          payload_hash: 'efd2dd423f968d55874cb681b018b286',
-          repository: 'repo-automation-bots_googleapis_org',
-          event_type: 'IssuesEvent',
-          timestamp: 1595948233000,
-          actor: 'tbpg',
-        },
-      };
-
       return processor.collectAndProcess().then(() => {
         assert.deepEqual(
-          mockFirestore.getMockData().GitHub_Event,
-          expectedData
+          mockFirestore.getMockData(),
+          fixture1.postTestFirestoreData
         );
       });
     });
 
     it('throws an error if there is an error with GitHub', () => {
-      mockFirestore.setMockData({
-        GitHub_Repository: {
-          'repo-automation-bots_googleapis_org': {
-            repo_name: 'repo-automation-bots',
-            owner_name: 'googleapis',
-            owner_type: 'org',
-          },
-        },
-        GitHub_Event: {},
-      });
-
+      mockFirestore.setMockData(fixture1.preTestFirestoreData);
       middleware.rejectOnAction({
         type: GitHubActionType.REPO_LIST_EVENTS,
         repoName: 'repo-automation-bots',
@@ -122,17 +98,13 @@ describe('GitHub Data Processor', () => {
 
     it('throws an error if there is an error with Firestore', () => {
       mockFirestore.throwOnCollection();
-
-      const mockGitHubEventsPayload = loadFixture(
-        'mock-github-events-data-1.json'
-      );
       middleware.setMockResponse(
         {
           type: GitHubActionType.REPO_LIST_EVENTS,
           repoName: 'repo-automation-bots',
           repoOwner: 'googleapis',
         },
-        {type: 'resolve', value: mockGitHubEventsPayload}
+        {type: 'resolve', value: fixture1.githubEventsResponse}
       );
 
       let thrown = false;
@@ -152,25 +124,7 @@ describe('GitHub Data Processor', () => {
     });
 
     it('returns the repositories from Firestore in the correct format', () => {
-      mockFirestore.setMockData({
-        GitHub_Repository: {
-          repo1_owner1_user: {
-            repo_name: 'repo1',
-            owner_name: 'owner1',
-            owner_type: 'user',
-          },
-          repo2_owner1_user: {
-            repo_name: 'repo2',
-            owner_name: 'owner1',
-            owner_type: 'user',
-          },
-          repo1_owner2_org: {
-            repo_name: 'repo1',
-            owner_name: 'owner2',
-            owner_type: 'org',
-          },
-        },
-      });
+      mockFirestore.setMockData(mockFirestoreData1);
 
       const expectedRepos = [
         {repo_name: 'repo1', owner_name: 'owner1', owner_type: 'user'},
@@ -210,105 +164,48 @@ describe('GitHub Data Processor', () => {
     });
 
     it('returns events for repository when events exist', () => {
-      const mockGitHubEventsPayload = loadFixture(
-        'mock-github-events-data-1.json'
-      );
-
-      const expectedEvents = [
-        {
-          payload_hash: '321819b7d55c424881dad753e7aa753d',
-          repository: {
-            repo_name: 'repo-automation-bots',
-            owner_name: 'googleapis',
-            owner_type: 'org',
-          },
-          event_type: 'IssueCommentEvent',
-          timestamp: 1595948777000,
-          actor: 'azizsonawalla',
-        },
-        {
-          payload_hash: '99b6d59369ccb78e33b8a2d09e81a133',
-          repository: {
-            repo_name: 'repo-automation-bots',
-            owner_name: 'googleapis',
-            owner_type: 'org',
-          },
-          event_type: 'IssueCommentEvent',
-          timestamp: 1595948383000,
-          actor: 'tbpg',
-        },
-        {
-          payload_hash: 'efd2dd423f968d55874cb681b018b286',
-          repository: {
-            repo_name: 'repo-automation-bots',
-            owner_name: 'googleapis',
-            owner_type: 'org',
-          },
-          event_type: 'IssuesEvent',
-          timestamp: 1595948233000,
-          actor: 'tbpg',
-        },
-      ];
       middleware.setMockResponse(
         {
           type: GitHubActionType.REPO_LIST_EVENTS,
           repoName: 'repo-automation-bots',
           repoOwner: 'googleapis',
         },
-        {type: 'resolve', value: mockGitHubEventsPayload}
+        {type: 'resolve', value: fixture1.githubEventsResponse}
       );
       return processor['listPublicEventsForRepository']({
         repo_name: 'repo-automation-bots',
         owner_name: 'googleapis',
-      }).then(events => assert.deepEqual(events, expectedEvents));
+      }).then(events => assert.deepEqual(events, fixture1.githubEventsObjects));
     });
 
     it('returns empty array when no repository events exist', () => {
-      const mockGitHubEventsPayload: [] = [];
-      const expectedEvents: [] = [];
       middleware.setMockResponse(
         {
           type: GitHubActionType.REPO_LIST_EVENTS,
           repoName: 'repo-automation-bots',
           repoOwner: 'googleapis',
         },
-        {type: 'resolve', value: mockGitHubEventsPayload}
+        {type: 'resolve', value: {data: []}}
       );
       return processor['listPublicEventsForRepository']({
         repo_name: 'repo-automation-bots',
         owner_name: 'googleapis',
-      }).then(events => assert.deepEqual(events, expectedEvents));
+      }).then(events => assert.deepEqual(events, []));
     });
 
     it('returns events with default value if data is missing from GitHub', () => {
-      const mockGitHubEventsPayload = loadFixture(
-        'mock-github-events-data-2.json'
-      );
-      const expectedEvents = [
-        {
-          payload_hash: '321819b7d55c424881dad753e7aa753d',
-          repository: {
-            repo_name: 'repo-automation-bots',
-            owner_name: 'googleapis',
-            owner_type: 'org',
-          },
-          event_type: 'IssueCommentEvent',
-          timestamp: 1595948777000,
-          actor: 'Unknown',
-        },
-      ];
       middleware.setMockResponse(
         {
           type: GitHubActionType.REPO_LIST_EVENTS,
           repoName: 'repo-automation-bots',
           repoOwner: 'googleapis',
         },
-        {type: 'resolve', value: mockGitHubEventsPayload}
+        {type: 'resolve', value: fixture2.githubEventsResponse}
       );
       return processor['listPublicEventsForRepository']({
         repo_name: 'repo-automation-bots',
         owner_name: 'googleapis',
-      }).then(events => assert.deepEqual(events, expectedEvents));
+      }).then(events => assert.deepEqual(events, fixture2.githubEventsObjects));
     });
 
     it('throws an error if there is an error from Octokit', () => {
@@ -326,6 +223,10 @@ describe('GitHub Data Processor', () => {
         .finally(() => assert(thrown, 'Expected error to be thrown'));
     });
 
+    it('throws an error if Octokit returns a non-200 response', () => {
+      // TODO
+    });
+
     afterEach(() => {
       middleware.resetResponses();
     });
@@ -340,38 +241,13 @@ describe('GitHub Data Processor', () => {
     });
 
     it('stores the given events data in the correct format in Firestore', () => {
-      mockFirestore.setMockData({
-        GitHub_Event: {},
-      });
-
-      const mockEventsData: GitHubEvent[] = [
-        {
-          payload_hash: 'hash1',
-          repository: {
-            repo_name: 'repo1',
-            owner_name: 'owner1',
-            owner_type: 'user',
-          },
-          event_type: 'event_type1',
-          timestamp: 12345678,
-          actor: 'actor1',
-        },
-      ];
-
-      const expectedData = {
-        hash1: {
-          payload_hash: 'hash1',
-          repository: 'repo1_owner1_user',
-          event_type: 'event_type1',
-          timestamp: 12345678,
-          actor: 'actor1',
-        },
-      };
-
-      return processor['storeEventsData'](mockEventsData).then(() => {
-        const writtenData = mockFirestore.getMockData().GitHub_Event;
-        assert.deepEqual(writtenData, expectedData);
-      });
+      mockFirestore.setMockData(fixture1.preTestFirestoreData);
+      return processor['storeEventsData'](fixture1.githubEventsObjects).then(
+        () => {
+          const writtenData = mockFirestore.getMockData();
+          assert.deepEqual(writtenData, fixture1.postTestFirestoreData);
+        }
+      );
     });
 
     it('does not store anything in Firestore if given events is empty', () => {
@@ -390,22 +266,8 @@ describe('GitHub Data Processor', () => {
     it('throws an error if Firestore throws an error', () => {
       mockFirestore.throwOnSet();
 
-      const mockEventsData: GitHubEvent[] = [
-        {
-          payload_hash: 'hash1',
-          repository: {
-            repo_name: 'repo1',
-            owner_name: 'owner1',
-            owner_type: 'user',
-          },
-          event_type: 'event_type1',
-          timestamp: 12345678,
-          actor: 'actor1',
-        },
-      ];
-
       let thrown = false;
-      return processor['storeEventsData'](mockEventsData)
+      return processor['storeEventsData'](fixture1.githubEventsObjects)
         .catch(() => (thrown = true))
         .finally(() => assert(thrown, 'Expected error to be thrown'));
     });

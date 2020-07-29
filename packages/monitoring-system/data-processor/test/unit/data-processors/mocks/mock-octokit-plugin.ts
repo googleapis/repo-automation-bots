@@ -18,7 +18,7 @@ import {Octokit} from '@octokit/rest';
 import {OctokitMiddleware} from './octokit-middleware';
 
 /**
- * Intercepts outgoing Octokit requests and reroutes 
+ * Intercepts outgoing Octokit requests and reroutes
  * them to OctokitMiddleware
  */
 module.exports = (octokit: Octokit) => {
