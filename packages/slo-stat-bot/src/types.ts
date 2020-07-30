@@ -12,11 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './slo-bot';
+export interface SLORules {
+  appliesTo: {
+    gitHubLabels?: string | string[];
+    excludedGitHubLabels?: string | string[];
+    issues?: boolean;
+    prs?: boolean;
+  };
+  complianceSettings: {
+    responseTime: string | number;
+    resolutionTime: string | number;
+    requiresAssignee?: boolean;
+    responders?: {
+      owners?: string | string[];
+      contributors?: string;
+      users?: string[];
+    };
+  };
+}
 
-const bootstrap = new GCFBootstrapper();
-module.exports.slo_stat_bot = bootstrap.gcf(appFn, {
-  background: true,
-  logging: true,
-});
+export interface IssuesListCommentsItem {
+  id: number;
+  user: {
+    login: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
