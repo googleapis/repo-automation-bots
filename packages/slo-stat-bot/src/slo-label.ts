@@ -16,6 +16,37 @@
 import {GitHubAPI, Context} from 'probot';
 import {logger} from 'gcf-utils';
 
+<<<<<<< HEAD
+=======
+const CONFIGURATION_FILE_PATH = 'slo-stat-bot.yaml';
+const DEFAULT_CONFIGURATION: Config = {
+  name: ':rotating_light:',
+};
+
+interface Config {
+  name: string;
+}
+
+/**
+ * Function gets ooslo label name in repo from the config file. Defaults to rotating light OOSLO label name if config file does not exist
+ * @param context of issue or pr
+ * @returns the name of ooslo label
+ */
+export const getOoSloLabelName = async function (
+  context: Context
+): Promise<string> {
+  try {
+    const labelName = (await context.config(CONFIGURATION_FILE_PATH)) as Config;
+    return labelName.name;
+  } catch (err) {
+    logger.warn(
+      `Unable to get ooslo name from config-label file \n ${err.message}. \n Using default config for OOSLO label name.`
+    );
+    return DEFAULT_CONFIGURATION.name;
+  }
+};
+
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
 /**
  * Function adds ooslo label to the given issue or pr.
  * Throws an error if label does not exist in repo
@@ -81,12 +112,19 @@ export const removeLabel = async function removeLabel(
  * Function handles adding and removing labels according to slo status.
  * If slo is not compliant and does not have ooslo label, adds it to issue.
  * If slo is compliant but has ooslo label, removes it from issue
+<<<<<<< HEAD
+=======
+ * @param context of issue or pr
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
  * @param owner of issue or pr
  * @param repo of issue or pr
  * @param number of issue pr
  * @param sloStatus if issue applies to given issue and if it is compliant with the issue
  * @param labels on the issue or pr
+<<<<<<< HEAD
  * @param name of OOSLO label in repo
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
  * @returns void
  */
 export async function handleLabeling(
@@ -95,9 +133,16 @@ export async function handleLabeling(
   repo: string,
   number: number,
   isCompliant: boolean,
+<<<<<<< HEAD
   labels: string[] | null,
   name: string
 ) {
+=======
+  labels: string[] | null
+) {
+  const name = await getOoSloLabelName(context);
+
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
   if (!isCompliant && !labels?.includes(name)) {
     await addLabel(context.github, owner, repo, number, name);
   } else if (isCompliant && labels?.includes(name)) {

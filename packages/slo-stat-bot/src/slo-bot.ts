@@ -166,10 +166,12 @@ export = function handler(app: Application) {
       'pull_request.unassigned',
     ],
     async (context: Context) => {
+      //Igrnores labeling issues that are closed
       if (context.payload.pull_request.state === 'closed') {
         return;
       }
 
+      //Ignores re-computing slo status if OOSLO label was added or removed
       const name = await getOoSloLabelName(context);
       if (context.payload.label?.name === name) {
         return;
@@ -223,10 +225,12 @@ export = function handler(app: Application) {
       'issue_comment.created',
     ],
     async (context: Context) => {
+      //Igrnores labeling issues that are closed
       if (context.payload.issue.state === 'closed') {
         return;
       }
 
+      //Ignores re-computing slo status if OOSLO label was added or removed
       const name = await getOoSloLabelName(context);
       if (context.payload.label?.name === name) {
         return;

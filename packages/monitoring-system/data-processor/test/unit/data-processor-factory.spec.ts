@@ -14,13 +14,13 @@
 //
 import {describe, it} from 'mocha';
 import assert from 'assert';
-import {Task} from '../src/task-service';
-import {DataProcessorFactory} from '../src/data-processor-factory';
-import {DataProcessor} from '../src/data-processors/data-processor-abstract';
-import {CloudLogsProcessor} from '../src/data-processors/cloud-logs-data-processor';
-import {GCFProcessor} from '../src/data-processors/cloud-functions-data-processor';
-import {GitHubProcessor} from '../src/data-processors/github-data-processor';
-import {CloudTasksProcessor} from '../src/data-processors/cloud-tasks-data-processor';
+import {Task} from '../../src/task-service';
+import {DataProcessorFactory} from '../../src/data-processor-factory';
+import {DataProcessor} from '../../src/data-processors/data-processor-abstract';
+import {CloudLogsProcessor} from '../../src/data-processors/cloud-logs-data-processor';
+import {GCFProcessor} from '../../src/data-processors/cloud-functions-data-processor';
+import {GitHubProcessor} from '../../src/data-processors/github-data-processor';
+import {CloudTasksProcessor} from '../../src/data-processors/cloud-tasks-data-processor';
 
 describe('Data Processor Factory', () => {
   describe('getDataProcessor()', () => {
@@ -47,6 +47,23 @@ describe('Data Processor Factory', () => {
         Task.ProcessTaskQueue
       );
       assert(processor instanceof CloudTasksProcessor);
+    });
+    it('correctly applies configuration for CloudTasksProcessor', () => {
+      const config = {
+        task_queue_processor: {
+          task_queue_project_id: 'foo-id',
+          task_queue_location: 'bar-location',
+        },
+        firestore: {
+          project_id: 'firestore-foo',
+        },
+      };
+      const processor: DataProcessor = new DataProcessorFactory(
+        config
+      ).getDataProcessor(Task.ProcessTaskQueue);
+      assert(processor instanceof CloudTasksProcessor);
+      assert.equal(processor.getTasksProjectId(), 'foo-id');
+      assert.equal(processor.getTasksProjectLocation(), 'bar-location');
     });
     it('throws an error for unknown task types', () => {
       try {

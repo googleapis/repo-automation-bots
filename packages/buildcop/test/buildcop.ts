@@ -431,6 +431,22 @@ describe('buildcop', () => {
         scopes.forEach(s => s.done());
       });
 
+      it('opens an issue [Ruby]', async () => {
+        const payload = buildPayload(
+          'ruby_one_failed.xml',
+          'ruby-docs-samples'
+        );
+
+        const scopes = [
+          nockIssues('ruby-docs-samples'),
+          nockNewIssue('ruby-docs-samples'),
+        ];
+
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+
+        scopes.forEach(s => s.done());
+      });
+
       it('comments on existing issue', async () => {
         const payload = buildPayload('one_failed.xml', 'golang-samples');
 

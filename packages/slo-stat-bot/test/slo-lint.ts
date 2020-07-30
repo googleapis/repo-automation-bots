@@ -37,11 +37,14 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 describe('slo-lint', () => {
   let probot: Probot;
 
+<<<<<<< HEAD
   const config = fs.readFileSync(
     resolve(fixturesPath, 'config', 'slo-stat-bot.yaml')
   );
 
 
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
   beforeEach(() => {
     probot = new Probot({
       // use a bare instance of octokit, the default version
@@ -82,8 +85,11 @@ describe('slo-lint', () => {
 
     it('Error is logged when getting the list of files fails and handleIssues is called', async () => {
       const requests = nock('https://api.github.com')
+<<<<<<< HEAD
         .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')})  
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(404)
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
@@ -107,8 +113,11 @@ describe('slo-lint', () => {
 
     it('triggers handleSlos function since issue_slo_rules.json is present and handleIssues is called', async () => {
       const requests = nock('https://api.github.com')
+<<<<<<< HEAD
         .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')})
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(200, [
           {
@@ -137,8 +146,11 @@ describe('slo-lint', () => {
 
     it('does not trigger handleSlos function since issue_slo_rules.json is not present. Calls handleIssues', async () => {
       const requests = nock('https://api.github.com')
+<<<<<<< HEAD
         .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')})
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(200, [{filname: 'hello.json'}])
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
@@ -180,8 +192,11 @@ describe('slo-lint', () => {
 
     it('Error is logged if getting file content fails and calls handleIssues', async () => {
       const requests = nock('https://api.github.com')
+<<<<<<< HEAD
         .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')})
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(202, [
           {
@@ -217,8 +232,11 @@ describe('slo-lint', () => {
           'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
       };
       const requests = nock('https://api.github.com')
+<<<<<<< HEAD
         .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')})
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(202, [
           {
@@ -235,11 +253,14 @@ describe('slo-lint', () => {
           return true;
         })
         .reply(404)
+<<<<<<< HEAD
         .post('/repos/testOwner/testRepo/check-runs', body => {
           snapshot(body);
           return true;
         })
         .reply(200)
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
         .reply(200, {
           content:
@@ -263,8 +284,11 @@ describe('slo-lint', () => {
           'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
       };
       const requests = nock('https://api.github.com')
+<<<<<<< HEAD
         .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')})
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(202, [
           {
@@ -309,8 +333,11 @@ describe('slo-lint', () => {
           'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
       };
       const requests = nock('https://api.github.com')
+<<<<<<< HEAD
         .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')})
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(200, [
           {
@@ -355,8 +382,11 @@ describe('slo-lint', () => {
           'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMCIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAsCiAgICAgICAgICAgICJyZXNvbHV0aW9u\nVGltZSI6IDQzMjAwLAogICAgICAgICAgICAicmVxdWlyZXNBc3NpZ25lZSI6\nIHRydWUKICAgICAgICB9CiAgICB9CiBdCiAKIAogCiAKIAo=\n',
       };
       const requests = nock('https://api.github.com')
+<<<<<<< HEAD
         .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
         .reply(200, {content: config.toString('base64')})
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(200, [
           {
