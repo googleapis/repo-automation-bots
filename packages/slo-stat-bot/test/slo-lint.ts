@@ -41,7 +41,6 @@ describe('slo-lint', () => {
     resolve(fixturesPath, 'config', 'slo-stat-bot.yaml')
   );
 
-
   beforeEach(() => {
     probot = new Probot({
       // use a bare instance of octokit, the default version
@@ -83,7 +82,7 @@ describe('slo-lint', () => {
     it('Error is logged when getting the list of files fails and handleIssues is called', async () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-        .reply(200, {content: config.toString('base64')})  
+        .reply(200, {content: config.toString('base64')})
         .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
         .reply(404)
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')

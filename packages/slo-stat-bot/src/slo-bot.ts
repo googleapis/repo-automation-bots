@@ -54,7 +54,7 @@ async function handleIssues(
   sloString: string,
   labels: string[] | null,
   labelName: string,
-  comment?: IssuesListCommentsItem,
+  comment?: IssuesListCommentsItem
 ) {
   const sloList = JSON.parse(sloString);
 
@@ -76,7 +76,15 @@ async function handleIssues(
         slo,
         comment
       );
-      await handleLabeling(context, owner, repo, number, isCompliant, labels, labelName);
+      await handleLabeling(
+        context,
+        owner,
+        repo,
+        number,
+        isCompliant,
+        labels,
+        labelName
+      );
 
       // Keep OOSLO label if issue is not compliant with any one of the slos
       if (!isCompliant) {
@@ -91,9 +99,7 @@ async function handleIssues(
  * @param context of issue or pr
  * @returns the name of ooslo label
  */
-async function getOoSloLabelName(
-  context: Context
-): Promise<string> {
+async function getOoSloLabelName(context: Context): Promise<string> {
   try {
     const labelName = (await context.config(CONFIGURATION_FILE_PATH)) as Config;
     return labelName.name;
@@ -103,7 +109,7 @@ async function getOoSloLabelName(
     );
     return DEFAULT_CONFIGURATION.name;
   }
-};
+}
 
 /**
  * Function gets content of slo rules from checking repo config file. If repo config file is missing defaults to org config file
@@ -203,8 +209,8 @@ export = function handler(app: Application) {
     const number = context.payload[type].number;
     const labelsResponse = context.payload[type].labels;
 
-    const labels = labelsResponse.map((label: IssueLabelResponseItem) =>
-      label.name
+    const labels = labelsResponse.map(
+      (label: IssueLabelResponseItem) => label.name
     );
 
     const labelName = await getOoSloLabelName(context);
