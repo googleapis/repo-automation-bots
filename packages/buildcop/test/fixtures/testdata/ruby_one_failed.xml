@@ -1,0 +1,23 @@
+<testsuite>
+<testcase classname="Minitest::Result" name="test_0001_creates a logging client" time="0.042767159999982596" assertions="1"></testcase>
+<testcase classname="Minitest::Result" name="test_0001_changes the destination of a sink" time="5.077616300000045" assertions="2"></testcase>
+<testcase classname="Minitest::Result" name="test_0001_writes a log entry" time="120.28082069800001" assertions="2"></testcase>
+<testcase classname="Minitest::Result" name="test_0001_creates a new log entry" time="120.08190159999998" assertions="2"></testcase>
+<testcase classname="Minitest::Result" name="test_0001_creates a log sink" time="2.869683899999984" assertions="4"></testcase>
+<testcase classname="Minitest::Result" name="test_0001_lists the log sinks" time="2.7439611350000064" assertions="2"></testcase>
+<testcase classname="Minitest::Result" name="test_0001_writes an entry to a log" time="120.02962853899999" assertions="3"></testcase>
+<testcase classname="Minitest::Result" name="test_0001_changes the destination of a sink" time="3.315922103999924" assertions="3"></testcase>
+<testcase classname="Minitest::Result" name="test_0001_deletes a log" time="429.4346963400001" assertions="3"></testcase>
+<testcase classname="Minitest::Result" name="test_0001_lists entries of a log" time="233.43151779999994" assertions="1"><failure message="Failure:&#10;Logging Samples::list_log_entries#test_0001_lists entries of a log [/tmpfs/src/github/ruby-docs-samples/logging/acceptance/sample_test.rb:126]:&#10;Expected false to be truthy.&#10;">/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/assertions.rb:183:in `assert'
+/tmpfs/src/github/ruby-docs-samples/logging/acceptance/sample_test.rb:126:in `block (3 levels) in &lt;top (required)&gt;'
+/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:98:in `block (3 levels) in run'
+/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:195:in `capture_exceptions'
+/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:95:in `block (2 levels) in run'
+/usr/local/bundle/gems/minitest-5.14.1/lib/minitest.rb:272:in `time_it'
+/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:94:in `block in run'
+/usr/local/bundle/gems/minitest-5.14.1/lib/minitest.rb:367:in `on_signal'
+/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:211:in `with_info_handler'
+/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:93:in `run'
+/usr/local/bundle/gems/minitest-5.14.1/lib/minitest.rb:1029:in `run_one_method'
+/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/parallel.rb:33:in `block (2 levels) in start'</failure></testcase>
+</testsuite>
