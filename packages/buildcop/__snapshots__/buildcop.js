@@ -252,3 +252,13 @@ exports['buildcop app xunitXML Grouped issues closes an individual issue and kee
 exports['buildcop app xunitXML Grouped issues closes an individual issue and keeps grouped issue open 3'] = {
   "state": "closed"
 }
+
+exports['buildcop app xunitXML opens an issue [Ruby] 1'] = {
+  "title": "Minitest::Result: test_0001_lists entries of a log failed",
+  "body": "This test failed!\n\nTo configure my behavior, see [the Build Cop Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop).\n\nIf I'm commenting on this issue too often, add the `buildcop: quiet` label and\nI will stop commenting.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed\n<details><summary>Test output</summary><br><pre>/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/assertions.rb:183:in `assert'\n/tmpfs/src/github/ruby-docs-samples/logging/acceptance/sample_test.rb:126:in `block (3 levels) in <top (required)>'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:98:in `block (3 levels) in run'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:195:in `capture_exceptions'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:95:in `block (2 levels) in run'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest.rb:272:in `time_it'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:94:in `block in run'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest.rb:367:in `on_signal'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:211:in `with_info_handler'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:93:in `run'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest.rb:1029:in `run_one_method'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/parallel.rb:33:in `block (2 levels) in start'</pre></details>",
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue"
+  ]
+}
