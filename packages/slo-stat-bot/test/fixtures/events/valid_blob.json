@@ -1,9 +1,0 @@
-{
-    "sha": "2a02b35a54e926f39a413018de2cd789050043f4",
-    "node_id": "MDQ6QmxvYjI3MTM3MjYxNToyYTAyYjM1YTU0ZTkyNmYzOWE0MTMwMThkZTJjZDc4OTA1MDA0M2Y0",
-    "size": 260,
-    "url": "https://api.github.com/repos/testOwner/testRepo/git/blobs/2a02b35a54e926f39a413018de2cd789050043f4",
-    "content": "WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMCIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAsCiAgICAgICAgICAgICJyZXNvbHV0aW9u\nVGltZSI6IDQzMjAwLAogICAgICAgICAgICAicmVxdWlyZXNBc3NpZ25lZSI6\nIHRydWUKICAgICAgICB9CiAgICB9CiBdCiAKIAogCiAKIAo=\n",
-    "encoding": "base64"
-}
-
