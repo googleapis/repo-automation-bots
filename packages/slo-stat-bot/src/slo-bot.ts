@@ -24,6 +24,7 @@ interface IssueLabelResponseItem {
   name: string;
 }
 
+<<<<<<< HEAD
 interface IssueAssigneesItem {
   login: string;
   type: string;
@@ -41,15 +42,20 @@ interface IssueListForRepoItem {
   updated_at: string;
 }
 
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
 /**
  * Function handles labeling ooslo based on compliancy if issue applies to the given slo
  * @param context of issue or pr
  * @param owner of issue or pr
  * @param repo of issue or pr
  * @param type specifies if event is issue or pr
+<<<<<<< HEAD
  * @param number of issue or pr
  * @param createdAt time of issue or pr
  * @param assigness of issue or pr
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
  * @param sloString json string of the slo rules
  * @param labels on the given issue or pr
  * @param comment login of the user who commented on the pr
@@ -60,9 +66,12 @@ async function handleIssues(
   owner: string,
   repo: string,
   type: string,
+<<<<<<< HEAD
   number: number,
   createdAt: string,
   assignees: IssueAssigneesItem[],
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
   sloString: string,
   labels: string[] | null,
   comment?: IssuesListCommentsItem
@@ -70,6 +79,13 @@ async function handleIssues(
   const sloList = JSON.parse(sloString);
 
   for (const slo of sloList) {
+<<<<<<< HEAD
+=======
+    const number = context.payload[type].number;
+    const createdAt = context.payload[type].created_at;
+    const assignees = context.payload[type].assignees;
+
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
     const appliesToIssue = await doesSloApply(type, slo, labels, number);
 
     if (appliesToIssue) {
@@ -119,6 +135,7 @@ async function getSloFile(
 }
 
 /**
+<<<<<<< HEAD
  * Function gets list of open issues from the repository
  * @param github unique installation id for each function
  * @param owner of issue or pr
@@ -147,6 +164,8 @@ async function getIssueList(
 }
 
 /**
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
  * Function will run slo logic and handle labeling when issues or pull request event prompted,
  * Deletes ooslo label on closed issues,
  * Lints issue_slo_rules.json on pull request
@@ -186,9 +205,12 @@ export = function handler(app: Application) {
       }
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
+<<<<<<< HEAD
       const number = context.payload.number;
       const createdAt = context.payload.pull_request.created_at;
       const assignees = context.payload.pull_request.assignees;
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
       const labelsResponse = context.payload.pull_request.labels;
 
       const labels = labelsResponse.map(
@@ -200,9 +222,12 @@ export = function handler(app: Application) {
         owner,
         repo,
         'pull_request',
+<<<<<<< HEAD
         number,
         createdAt,
         assignees,
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
         sloString,
         labels
       );
@@ -242,9 +267,12 @@ export = function handler(app: Application) {
       }
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
+<<<<<<< HEAD
       const number = context.payload.issue.number;
       const createdAt = context.payload.issue.created_at;
       const assignees = context.payload.issue.assignees;
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
       const labelsResponse = context.payload.issue.labels;
       const comment = context.payload.issue.comment;
 
@@ -257,15 +285,19 @@ export = function handler(app: Application) {
         owner,
         repo,
         'issue',
+<<<<<<< HEAD
         number,
         createdAt,
         assignees,
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
         sloString,
         labels,
         comment
       );
     }
   );
+<<<<<<< HEAD
   app.on(['schedule.repository'], async (context: Context) => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
@@ -299,4 +331,6 @@ export = function handler(app: Application) {
       );
     }
   });
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
 };

@@ -234,6 +234,7 @@ describe('slo-bot', () => {
         requests.done();
       });
     });
+<<<<<<< HEAD
     describe('schedule repository event', () => {
       const payload = {
         repository: {
@@ -287,5 +288,7 @@ describe('slo-bot', () => {
         requests.done();
       });
     });
+=======
+>>>>>>> fbaceae1f2721593414179a77e092ceee9a52a43
   });
 });

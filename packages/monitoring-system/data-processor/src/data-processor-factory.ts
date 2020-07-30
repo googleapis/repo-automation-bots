@@ -13,17 +13,31 @@
 // limitations under the License.
 //
 import {Task} from './task-service';
-import {DataProcessor} from './data-processors/data-processor-abstract';
+import {
+  DataProcessor,
+  ProcessorOptions,
+} from './data-processors/data-processor-abstract';
 import {CloudLogsProcessor} from './data-processors/cloud-logs-data-processor';
 import {GCFProcessor} from './data-processors/cloud-functions-data-processor';
-import {CloudTasksProcessor} from './data-processors/cloud-tasks-data-processor';
+import {
+  CloudTasksProcessor,
+  CloudTasksProcessorOptions,
+} from './data-processors/cloud-tasks-data-processor';
 import {GitHubProcessor} from './data-processors/github-data-processor';
+import {ConfigUtil, Config} from './config-util';
+import {Firestore} from '@google-cloud/firestore';
 
 export interface Factory {
   getDataProcessor(task: Task): DataProcessor;
 }
 
 export class DataProcessorFactory implements Factory {
+  private config: Config;
+
+  constructor(config?: Config) {
+    this.config = config || ConfigUtil.getConfig();
+  }
+
   /**
    * Return a relevant data processor for the given task
    * @param task a processing task
@@ -36,12 +50,29 @@ export class DataProcessorFactory implements Factory {
       case Task.ProcessGCF:
         return new GCFProcessor();
       case Task.ProcessTaskQueue:
-        return new CloudTasksProcessor();
+        return new CloudTasksProcessor(this.getTaskProcessorOptions());
       case Task.ProcessGitHub:
         return new GitHubProcessor();
       default:
         console.error(`Couldn't identify a data processor for task: ${task}`)
         throw new Error(`Couldn't identify a data processor for task: ${task}`);
     }
+  }
+
+  private getTaskProcessorOptions(): CloudTasksProcessorOptions {
+    return {
+      taskQueueProjectId: this.config.task_queue_processor
+        .task_queue_project_id,
+      taskQueueLocation: this.config.task_queue_processor.task_queue_location,
+      ...this.getProcessorOptions(),
+    };
+  }
+
+  private getProcessorOptions(): ProcessorOptions {
+    return {
+      firestore: new Firestore({
+        projectId: this.config.firestore.project_id,
+      }),
+    };
   }
 }

@@ -809,7 +809,8 @@ buildcop.findTestResults = (xml: string): TestResults => {
     testsuites = [testsuites];
   }
   for (const suite of testsuites) {
-    const testsuiteName = suite['_attributes'].name;
+    // Ruby doesn't always have _attributes.
+    const testsuiteName = suite['_attributes']?.name;
     let testcases = suite['testcase'];
     // If there were no tests in the package, continue.
     if (testcases === undefined) {
@@ -821,7 +822,11 @@ buildcop.findTestResults = (xml: string): TestResults => {
     }
     for (const testcase of testcases) {
       let pkg = testsuiteName;
-      if (testsuiteName === 'pytest' || testsuiteName === 'Mocha Tests') {
+      if (
+        !testsuiteName ||
+        testsuiteName === 'pytest' ||
+        testsuiteName === 'Mocha Tests'
+      ) {
         pkg = testcase['_attributes'].classname;
       }
       // Ignore skipped tests. They didn't pass and they didn't fail.
