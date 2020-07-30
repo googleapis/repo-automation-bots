@@ -35,6 +35,7 @@ interface ConfigurationOptions {
   packageName?: string;
   handleGHRelease?: boolean;
   bumpMinorPreMajor?: boolean;
+  path?: string;
 }
 
 const DEFAULT_API_URL = 'https://api.github.com';
@@ -75,7 +76,8 @@ async function createReleasePR(
   github: GitHubAPI,
   releaseLabels?: string[],
   bumpMinorPreMajor?: boolean,
-  snapshot?: boolean
+  snapshot?: boolean,
+  path?: string
 ) {
   const buildOptions: BuildOptions = {
     packageName,
@@ -89,6 +91,7 @@ async function createReleasePR(
     },
     bumpMinorPreMajor,
     snapshot,
+    path,
   };
   if (releaseLabels) {
     buildOptions.label = releaseLabels.join(',');
@@ -101,7 +104,8 @@ async function createReleasePR(
 async function createGitHubRelease(
   packageName: string,
   repoUrl: string,
-  github: GitHubAPI
+  github: GitHubAPI,
+  path?: string
 ) {
   const releaseOptions: GitHubReleaseOptions = {
     label: 'autorelease: pending',
@@ -114,6 +118,7 @@ async function createGitHubRelease(
       graphql: github.graphql,
       request: github.request,
     },
+    path,
   };
   const ghr = new GitHubRelease(releaseOptions);
   await Runner.releaser(ghr);
@@ -160,7 +165,9 @@ export = (app: Application) => {
       repoUrl,
       context.github,
       configuration.releaseLabels,
-      configuration.bumpMinorPreMajor
+      configuration.bumpMinorPreMajor,
+      false,
+      configuration.path
     );
 
     // release-please can handle creating a release on GitHub, we opt not to do
@@ -170,7 +177,8 @@ export = (app: Application) => {
       createGitHubRelease(
         configuration.packageName || repoName,
         repoUrl,
-        context.github
+        context.github,
+        configuration.path
       );
     }
   });
@@ -208,7 +216,8 @@ export = (app: Application) => {
       context.github,
       configuration.releaseLabels,
       configuration.bumpMinorPreMajor,
-      true
+      true,
+      configuration.path
     );
   });
 
@@ -269,7 +278,9 @@ export = (app: Application) => {
       repoUrl,
       context.github,
       configuration.releaseLabels,
-      configuration.bumpMinorPreMajor
+      configuration.bumpMinorPreMajor,
+      false,
+      configuration.path
     );
   });
 };
