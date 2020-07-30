@@ -15,7 +15,6 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context, GitHubAPI} from 'probot';
 import {logger} from 'gcf-utils';
-
 import {doesSloApply} from './slo-appliesTo';
 import {isIssueCompliant, getFilePathContent} from './slo-compliant';
 import {removeLabel, handleLabeling} from './slo-label';
@@ -44,7 +43,7 @@ interface IssueLabelResponseItem {
  * @param sloString json string of the slo rules
  * @param labels on the given issue or pr
  * @param comment login of the user who commented on the pr
- * @param name of OOSLO label in repo
+ * @param labelName of OOSLO label in repo
  * @returns void
  */
 async function handleIssues(
@@ -54,7 +53,7 @@ async function handleIssues(
   type: string,
   sloString: string,
   labels: string[] | null,
-  name: string,
+  labelName: string,
   comment?: IssuesListCommentsItem,
 ) {
   const sloList = JSON.parse(sloString);
@@ -77,7 +76,7 @@ async function handleIssues(
         slo,
         comment
       );
-      await handleLabeling(context, owner, repo, number, isCompliant, labels, name);
+      await handleLabeling(context, owner, repo, number, isCompliant, labels, labelName);
 
       // Keep OOSLO label if issue is not compliant with any one of the slos
       if (!isCompliant) {
@@ -172,8 +171,8 @@ export = function handler(app: Application) {
       }
 
       //Ignores re-computing slo status if OOSLO label was added or removed
-      const name = await getOoSloLabelName(context);
-      if (context.payload.label?.name === name) {
+      const labelName = await getOoSloLabelName(context);
+      if (context.payload.label?.name === labelName) {
         return;
       }
 
@@ -192,7 +191,7 @@ export = function handler(app: Application) {
         'pull_request',
         sloString,
         labels,
-        name
+        labelName
       );
     }
   );
@@ -208,9 +207,9 @@ export = function handler(app: Application) {
       label.name
     );
 
-    const name = await getOoSloLabelName(context);
-    if (labels?.includes(name)) {
-      await removeLabel(context.github, owner, repo, number, name);
+    const labelName = await getOoSloLabelName(context);
+    if (labels?.includes(labelName)) {
+      await removeLabel(context.github, owner, repo, number, labelName);
     }
   });
   app.on(
@@ -231,8 +230,8 @@ export = function handler(app: Application) {
       }
 
       //Ignores re-computing slo status if OOSLO label was added or removed
-      const name = await getOoSloLabelName(context);
-      if (context.payload.label?.name === name) {
+      const labelName = await getOoSloLabelName(context);
+      if (context.payload.label?.name === labelName) {
         return;
       }
 
@@ -252,7 +251,7 @@ export = function handler(app: Application) {
         'issue',
         sloString,
         labels,
-        name,
+        labelName,
         comment
       );
     }
