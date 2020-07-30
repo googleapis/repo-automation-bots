@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//s
+//
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
@@ -76,6 +76,8 @@ describe('slo-label', () => {
       payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
+        .reply(404)
+        .get('/repos/testOwner/.github/contents/.github/slo-stat-bot.yaml')
         .reply(404)
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
         .reply(200, {
