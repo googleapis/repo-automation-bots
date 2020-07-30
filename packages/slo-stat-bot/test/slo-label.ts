@@ -75,13 +75,13 @@ describe('slo-label', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
       const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
+        .reply(404)
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         })
-        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-        .reply(404);
 
       appliesToStub.onCall(0).returns(true);
       isCompliantStub.onCall(0).returns(true);

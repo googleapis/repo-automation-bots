@@ -14,11 +14,22 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context, GitHubAPI} from 'probot';
+import {logger} from 'gcf-utils';
+
 import {doesSloApply} from './slo-appliesTo';
 import {isIssueCompliant, getFilePathContent} from './slo-compliant';
-import {removeLabel, handleLabeling, getOoSloLabelName} from './slo-label';
+import {removeLabel, handleLabeling} from './slo-label';
 import {handleLint} from './slo-lint';
 import {IssuesListCommentsItem} from './types';
+
+const CONFIGURATION_FILE_PATH = 'slo-stat-bot.yaml';
+const DEFAULT_CONFIGURATION: Config = {
+  name: ':rotating_light:',
+};
+
+interface Config {
+  name: string;
+}
 
 interface IssueLabelResponseItem {
   name: string;
@@ -33,6 +44,7 @@ interface IssueLabelResponseItem {
  * @param sloString json string of the slo rules
  * @param labels on the given issue or pr
  * @param comment login of the user who commented on the pr
+ * @param name of OOSLO label in repo
  * @returns void
  */
 async function handleIssues(
@@ -42,7 +54,8 @@ async function handleIssues(
   type: string,
   sloString: string,
   labels: string[] | null,
-  comment?: IssuesListCommentsItem
+  name: string,
+  comment?: IssuesListCommentsItem,
 ) {
   const sloList = JSON.parse(sloString);
 
@@ -64,7 +77,7 @@ async function handleIssues(
         slo,
         comment
       );
-      await handleLabeling(context, owner, repo, number, isCompliant, labels);
+      await handleLabeling(context, owner, repo, number, isCompliant, labels, name);
 
       // Keep OOSLO label if issue is not compliant with any one of the slos
       if (!isCompliant) {
@@ -73,6 +86,25 @@ async function handleIssues(
     }
   }
 }
+
+/**
+ * Function gets ooslo label name in repo from the config file. Defaults to rotating light OOSLO label name if config file does not exist
+ * @param context of issue or pr
+ * @returns the name of ooslo label
+ */
+async function getOoSloLabelName(
+  context: Context
+): Promise<string> {
+  try {
+    const labelName = (await context.config(CONFIGURATION_FILE_PATH)) as Config;
+    return labelName.name;
+  } catch (err) {
+    logger.warn(
+      `Unable to get ooslo name from config-label file \n ${err.message}. \n Using default config for OOSLO label name.`
+    );
+    return DEFAULT_CONFIGURATION.name;
+  }
+};
 
 /**
  * Function gets content of slo rules from checking repo config file. If repo config file is missing defaults to org config file
@@ -137,6 +169,12 @@ export = function handler(app: Application) {
       if (context.payload.pull_request.state === 'closed') {
         return;
       }
+
+      const name = await getOoSloLabelName(context);
+      if (context.payload.label?.name === name) {
+        return;
+      }
+
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
       const labelsResponse = context.payload.pull_request.labels;
@@ -151,7 +189,8 @@ export = function handler(app: Application) {
         repo,
         'pull_request',
         sloString,
-        labels
+        labels,
+        name
       );
     }
   );
@@ -187,6 +226,12 @@ export = function handler(app: Application) {
       if (context.payload.issue.state === 'closed') {
         return;
       }
+
+      const name = await getOoSloLabelName(context);
+      if (context.payload.label?.name === name) {
+        return;
+      }
+
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
       const labelsResponse = context.payload.issue.labels;
@@ -203,6 +248,7 @@ export = function handler(app: Application) {
         'issue',
         sloString,
         labels,
+        name,
         comment
       );
     }
