@@ -117,7 +117,7 @@ export function handler(app: Application) {
           x => x.repo === repo
         );
         if (customConfig) {
-          console.log(`Discovered override config for ${repo}`):
+          console.log(`Discovered override config for ${repo}`);
           config.branchProtectionRules = customConfig.branchProtectionRules;
         }
       }
