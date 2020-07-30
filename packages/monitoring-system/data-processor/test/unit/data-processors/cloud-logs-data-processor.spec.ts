@@ -12,79 +12,66 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {describe, it, beforeEach} from 'mocha';
+import { describe, it, beforeEach } from 'mocha';
 import assert from 'assert';
-import {MockSubscription} from './mocks/mock-pubsub-subscription';
-import {PubSub} from '@google-cloud/pubsub';
-import {MockFirestore, FirestoreData} from './mock-firestore';
-import {CloudLogsProcessor} from '../../../src/data-processors/cloud-logs-data-processor';
+import { MockSubscription } from './mocks/mock-pubsub-subscription';
+import { PubSub } from '@google-cloud/pubsub';
+import { MockFirestore, MockRecord } from './mock-firestore';
+import { CloudLogsProcessor } from '../../../src/data-processors/cloud-logs-data-processor';
 import { loadFixture } from './util/test-util';
 
-interface BotExecution {
-  [key: string]: string | number | undefined;
-  execution_id: string;
-  bot_id?: string;
-  trigger_id?: string;
-  start_time?: number;
-  end_time?: number;
-  logs_url?: string;
-}
+let mockSubscription: MockSubscription;
+let mockFirestore: MockFirestore;
+let processor: CloudLogsProcessor;
 
-let firestoreData: FirestoreData;
-function resetFirestoreData() {
-  firestoreData = {
-    Bot_Execution: {},
-    Error: {},
-    Trigger: {},
-    Action: {},
-    Action_Type: {},
-    GitHub_Object: {},
-  };
+const MOCK_MESSAGES: { [name: string]: {} } = loadFixture(
+  'mock-pubsub-log-messages.json',
+  false
+);
+
+/**
+ * Returns the given object as a Buffer
+ * @param obj object to convert
+ */
+function asBuffer(obj: {}): Buffer {
+  return Buffer.from(JSON.stringify(obj));
 }
 
 /**
- * Adds the following execution record to mock firestore
- * @param record record to add
+ * Asserts that the given message was properly processed and acked.
+ * @param message message to test
+ * @param expectedRecords expected records in firestore
+ * @param preExistingRecords records to add to firestore before test
  */
-function addExecutionRecord(record: BotExecution) {
-  firestoreData.Bot_Execution[record.execution_id] = record;
-}
-
-/**
- * Asserts there exists an execution record in mock firestore
- * that has all the properties/values as the expected record.
- * The mock record will be allowed to have more properties
- * than the expected record.
- * @param expected expected execution record
- */
-function assertExecutionRecord(expected: BotExecution) {
-  const mockRecord = firestoreData.Bot_Execution[expected.execution_id];
-  assert(mockRecord, `Id ${expected.execution_id} not found in mock firestore`);
-
-  for (const prop of Object.keys(expected)) {
-    if (expected[prop]) {
-      assert.equal(
-        mockRecord[prop],
-        expected[prop],
-        `Expected mock execution record '${expected.execution_id}' ` +
-        `to have property '${prop}' with value '${expected[prop]}'. ` +
-        `Mock execution record: ${JSON.stringify(mockRecord)}`
-      );
-    }
+async function testMessage(
+  message: {},
+  expectedRecords: MockRecord[],
+  preExistingRecords?: MockRecord[]
+): Promise<void> {
+  if (preExistingRecords) {
+    preExistingRecords.forEach(record => mockFirestore.addRecord(record));
   }
+  const processingTask = processor.collectAndProcess();
+  const bufferMsg = asBuffer(message);
+  const messageId = mockSubscription.sendMockMessage(bufferMsg);
+  return processingTask.then(() => {
+    assert(mockSubscription.wasAcked(messageId));
+    expectedRecords.forEach(record => mockFirestore.assertRecord(record));
+  });
 }
-
-const MOCK_MESSAGES: any = loadFixture('mock-pubsub-log-messages.json', false);
 
 describe('Cloud Logs Processor', () => {
   describe('collectAndProcess()', () => {
-    let mockSubscription: MockSubscription;
-    let mockFirestore: MockFirestore;
-    let processor: CloudLogsProcessor;
-
     beforeEach(() => {
-      resetFirestoreData();
-      mockFirestore = new MockFirestore(firestoreData);
+      mockFirestore = new MockFirestore({
+        Bot_Execution: {},
+        Error: {},
+        Trigger: {},
+        Action: {},
+        Action_Type: {},
+        GitHub_Repository: {},
+        GitHub_Object: {},
+      });
       mockSubscription = new MockSubscription(
         new PubSub(),
         'mock-subscription'
@@ -98,36 +85,136 @@ describe('Cloud Logs Processor', () => {
     describe('correctly formed execution start and execution end logs', () => {
       describe('when no execution record exists', () => {
         it('creates a new execution record and stores execution start logs', () => {
-          const processingTask = processor.collectAndProcess();
-          const message = Buffer.from(MOCK_MESSAGES.execution_start);
-          const messageId = mockSubscription.sendMockMessage(message);
-          return processingTask.then(() => {
-            assertExecutionRecord({
-              execution_id: "4ww4alqs7ikq",
-              bot_id: "merge_on_green",
+          const expectedDocument = {
+            '4ww4alqs7ikq': {
+              execution_id: '4ww4alqs7ikq',
+              bot_id: 'merge_on_green',
               start_time: 1595536893000,
-              logs_url: "https://pantheon.corp.google.com/logs/query;query=resource.type%3D%22cloud_function%22%0Alabels.%22execution_id%22%3D%224ww4alqs7ikq%22;timeRange=2020-07-23T20:41:33.701320846Z%2F22020-07-23T20:41:33.701320846Z;summaryFields=:true:32:beginning?project=repo-automation-bots"
-            })
-          })
+              logs_url:
+                'https://pantheon.corp.google.com/logs/query;query=resource.type%3D%22' +
+                'cloud_function%22%0Alabels.%22execution_id%22%3D%224ww4alqs7ikq%22;' +
+                'timeRange=2020-07-23T20:41:33.701320846Z%2F22020-07-23T20:41:33.701320846Z;' +
+                'summaryFields=:true:32:beginning?project=repo-automation-bots',
+            }
+          };
+          return testMessage(MOCK_MESSAGES.execution_start, [{
+            document: expectedDocument,
+            collectionName: 'Bot_Execution',
+          }]);
         });
 
-        it('creates a new execution record and stores execution end logs');
+        it('creates a new execution record and stores execution end logs', () => {
+          const expectedDocument = {
+            '4ww4q2vqvkl1': {
+              execution_id: '4ww4q2vqvkl1',
+              bot_id: 'auto_label',
+              end_time: 1595536887000,
+            }
+          };
+          return testMessage(MOCK_MESSAGES.execution_end, [{
+            document: expectedDocument,
+            collectionName: 'Bot_Execution',
+          }]);
+        });
       });
 
       describe('when an execution record already exists', () => {
-        it('identifies existing record and stores execution start logs');
+        it('identifies existing record and stores execution start logs', () => {
+          const preExistingDocument = {
+            '4ww4alqs7ikq': {
+              execution_id: '4ww4alqs7ikq',
+              end_time: 12345,
+            }
+          };
+          const expectedDocument = {
+            '4ww4alqs7ikq': {
+              execution_id: '4ww4alqs7ikq',
+              bot_id: 'merge_on_green',
+              start_time: 1595536893000,
+              end_time: 12345,
+              logs_url:
+                'https://pantheon.corp.google.com/logs/query;query=resource.type%3D%22' +
+                'cloud_function%22%0Alabels.%22execution_id%22%3D%224ww4alqs7ikq%22;' +
+                'timeRange=2020-07-23T20:41:33.701320846Z%2F22020-07-23T20:41:33.701320846Z;' +
+                'summaryFields=:true:32:beginning?project=repo-automation-bots',
+            }
+          };
+          return testMessage(
+            MOCK_MESSAGES.execution_start,
+            [{ document: expectedDocument, collectionName: 'Bot_Execution' }],
+            [{ document: preExistingDocument, collectionName: 'Bot_Execution' }]
+          );
+        });
 
-        it('identifies existing record and stores execution end logs');
+        it('identifies existing record and stores execution end logs', () => {
+          const preExistingDocument = {
+            '4ww4q2vqvkl1': {
+              execution_id: '4ww4q2vqvkl1',
+              start_time: 12345,
+              logs_url: 'some/url',
+            }
+          };
+          const expectedDocument = {
+            '4ww4q2vqvkl1': {
+              execution_id: '4ww4q2vqvkl1',
+              bot_id: 'auto_label',
+              end_time: 1595536887000,
+              start_time: 12345,
+              logs_url: 'some/url',
+            }
+          };
+          return testMessage(
+            MOCK_MESSAGES.execution_end,
+            [{ document: expectedDocument, collectionName: 'Bot_Execution' }],
+            [{ document: preExistingDocument, collectionName: 'Bot_Execution' }]
+          );
+        });
       });
     });
 
     describe('correctly formed trigger information logs', () => {
       describe('when no execution record exists', () => {
-        it('creates new execution record and stores trigger information logs');
+        it('creates new execution record and stores trigger information logs', () => {
+          const expectedRecord1 = {
+            document: {
+              '1lth8bxqr88v': {
+                execution_id: '1lth8bxqr88v'
+              },
+            }, collectionName: 'Bot_Execution'
+          };
+          const expectedRecord2 = {
+            document: {
+              '1lth8bxqr88v': {
+                execution_id: '1lth8bxqr88v',
+                trigger_type: 'GITHUB_WEBHOOK',
+                github_event: '62eb57323fe7436520941da6d02534d2'
+              }
+            }, collectionName: 'Trigger'
+          };
+          return testMessage(MOCK_MESSAGES.trigger_information, [expectedRecord1, expectedRecord2]);
+        });
       });
 
       describe('when an execution record already exists', () => {
-        it('identifies existing record and stores trigger information logs');
+        it('identifies existing record and stores trigger information logs', () => {
+          const preExistingRecord = {
+            document: {
+              '1lth8bxqr88v': {
+                execution_id: '1lth8bxqr88v'
+              },
+            }, collectionName: 'Bot_Execution'
+          };
+          const expectedRecord1 = {
+            document: {
+              '1lth8bxqr88v': {
+                execution_id: '1lth8bxqr88v',
+                trigger_type: 'GITHUB_WEBHOOK',
+                github_event: '62eb57323fe7436520941da6d02534d2'
+              }
+            }, collectionName: 'Trigger'
+          };
+          return testMessage(MOCK_MESSAGES.trigger_information, [preExistingRecord, expectedRecord1], [preExistingRecord]);
+        });
       });
     });
 

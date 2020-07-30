@@ -51,7 +51,8 @@
                     "owner_type": "Organization",
                     "repo_name": "java-spanner"
                 },
-                "trigger_type": "GITHUB_WEBHOOK"
+                "trigger_type": "GITHUB_WEBHOOK",
+                "github_event": "62eb57323fe7436520941da6d02534d2"
             }
         },
         "labels": {
