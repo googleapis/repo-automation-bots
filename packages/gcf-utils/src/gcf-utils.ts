@@ -396,6 +396,7 @@ export class GCFBootstrapper {
           body: JSON.stringify({message: 'Executed'}),
         });
       } catch (err) {
+        logger.error(err);
         response.status(500).send({
           statusCode: 500,
           body: JSON.stringify({message: err.message}),
@@ -471,7 +472,7 @@ export class GCFBootstrapper {
         body: JSON.stringify(payload),
       });
     } catch (err) {
-      logger.warn(err.message);
+      logger.error(err);
     }
   }
 
