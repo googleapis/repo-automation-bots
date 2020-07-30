@@ -1,5 +1,5 @@
 {
-  "name": "slo-stat-label",
+  "name": "slo-bot",
   "version": "0.0.1",
   "description": "Labels SLO status on Issues and PRs",
   "private": true,
@@ -21,7 +21,7 @@
   ],
   "scripts": {
     "compile": "tsc -p .",
-    "start": "probot run ./build/src/slo-stat-label.js",
+    "start": "probot run ./build/src/slo-bot.js",
     "start:local": "node ./build/src/local.js",
     "prepare": "npm run compile",
     "pretest": "npm run compile",
@@ -33,19 +33,14 @@
   "dependencies": {
     "ajv": "^6.12.2",
     "gcf-utils": "^5.3.0",
-    "probot": "^9.11.3"
+    "moment": "^2.27.0"
   },
   "devDependencies": {
-    "@types/sinon": "^9.0.4",
     "@types/body-parser": "^1.17.0",
-    "@types/bunyan": "^1.8.6",
-    "@types/dotenv": "^6.1.1",
-    "@types/express": "^4.17.0",
-    "@types/ioredis": "^4.0.13",
-    "@types/lru-cache": "^5.1.0",
     "@types/mocha": "^7.0.0",
     "@types/nock": "^10.0.3",
     "@types/node": "^12.6.1",
+    "@types/sinon": "9.0.2",
     "body-parser": "^1.19.0",
     "c8": "^7.1.0",
     "cross-env": "^7.0.0",
@@ -55,7 +50,7 @@
     "nock": "^12.0.3",
     "smee-client": "^1.1.0",
     "snap-shot-it": "^7.8.0",
-    "typescript": "^3.8.5",
+    "typescript": "^3.9.6",
     "sinon": "^9.0.2"
   },
   "engines": {
