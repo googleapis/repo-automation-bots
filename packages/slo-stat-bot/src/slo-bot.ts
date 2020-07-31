@@ -14,11 +14,21 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context, GitHubAPI} from 'probot';
+import {logger} from 'gcf-utils';
 import {doesSloApply} from './slo-appliesTo';
 import {isIssueCompliant, getFilePathContent} from './slo-compliant';
-import {removeLabel, handleLabeling, getOoSloLabelName} from './slo-label';
+import {removeLabel, handleLabeling} from './slo-label';
 import {handleLint} from './slo-lint';
 import {IssuesListCommentsItem} from './types';
+
+const CONFIGURATION_FILE_PATH = 'slo-stat-bot.yaml';
+const DEFAULT_CONFIGURATION: Config = {
+  name: ':rotating_light:',
+};
+
+interface Config {
+  name: string;
+}
 
 interface IssueLabelResponseItem {
   name: string;
@@ -53,6 +63,7 @@ interface IssueListForRepoItem {
  * @param sloString json string of the slo rules
  * @param labels on the given issue or pr
  * @param comment login of the user who commented on the pr
+ * @param labelName of OOSLO label in repo
  * @returns void
  */
 async function handleIssues(
@@ -65,6 +76,7 @@ async function handleIssues(
   assignees: IssueAssigneesItem[],
   sloString: string,
   labels: string[] | null,
+  labelName: string,
   comment?: IssuesListCommentsItem
 ) {
   const sloList = JSON.parse(sloString);
@@ -83,13 +95,38 @@ async function handleIssues(
         slo,
         comment
       );
-      await handleLabeling(context, owner, repo, number, isCompliant, labels);
+      await handleLabeling(
+        context,
+        owner,
+        repo,
+        number,
+        isCompliant,
+        labels,
+        labelName
+      );
 
       // Keep OOSLO label if issue is not compliant with any one of the slos
       if (!isCompliant) {
         break;
       }
     }
+  }
+}
+
+/**
+ * Function gets ooslo label name in repo from the config file. Defaults to rotating light OOSLO label name if config file does not exist
+ * @param context of issue or pr
+ * @returns the name of ooslo label
+ */
+async function getOoSloLabelName(context: Context): Promise<string> {
+  try {
+    const labelName = (await context.config(CONFIGURATION_FILE_PATH)) as Config;
+    return labelName.name;
+  } catch (err) {
+    logger.warn(
+      `Unable to get ooslo name from config-label file \n ${err.message}. \n Using default config for OOSLO label name.`
+    );
+    return DEFAULT_CONFIGURATION.name;
   }
 }
 
@@ -181,9 +218,17 @@ export = function handler(app: Application) {
       'pull_request.unassigned',
     ],
     async (context: Context) => {
+      //Igrnores labeling issues that are closed
       if (context.payload.pull_request.state === 'closed') {
         return;
       }
+
+      //Ignores re-computing slo status if OOSLO label was added or removed
+      const labelName = await getOoSloLabelName(context);
+      if (context.payload.label?.name === labelName) {
+        return;
+      }
+
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
       const number = context.payload.number;
@@ -204,7 +249,8 @@ export = function handler(app: Application) {
         createdAt,
         assignees,
         sloString,
-        labels
+        labels,
+        labelName
       );
     }
   );
@@ -216,13 +262,13 @@ export = function handler(app: Application) {
     const number = context.payload[type].number;
     const labelsResponse = context.payload[type].labels;
 
-    const labels = labelsResponse.map((label: IssueLabelResponseItem) =>
-      label.name
+    const labels = labelsResponse.map(
+      (label: IssueLabelResponseItem) => label.name
     );
 
-    const name = await getOoSloLabelName(context);
-    if (labels?.includes(name)) {
-      await removeLabel(context.github, owner, repo, number, name);
+    const labelName = await getOoSloLabelName(context);
+    if (labels?.includes(labelName)) {
+      await removeLabel(context.github, owner, repo, number, labelName);
     }
   });
   app.on(
@@ -237,9 +283,17 @@ export = function handler(app: Application) {
       'issue_comment.created',
     ],
     async (context: Context) => {
+      //Igrnores labeling issues that are closed
       if (context.payload.issue.state === 'closed') {
         return;
       }
+
+      //Ignores re-computing slo status if OOSLO label was added or removed
+      const labelName = await getOoSloLabelName(context);
+      if (context.payload.label?.name === labelName) {
+        return;
+      }
+
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
       const number = context.payload.issue.number;
@@ -262,6 +316,7 @@ export = function handler(app: Application) {
         assignees,
         sloString,
         labels,
+        labelName,
         comment
       );
     }
