@@ -1,10 +1,10 @@
 {
   "preTestFirestoreData": {
     "GitHub_Repository": {
-      "repo-automation-bots_googleapis_org": {
+      "repo-automation-bots_googleapis_Org": {
         "repo_name": "repo-automation-bots",
         "owner_name": "googleapis",
-        "owner_type": "org"
+        "owner_type": "Org"
       }
     },
     "GitHub_Event": {}
@@ -600,33 +600,21 @@
   "githubEventsObjects": [
     {
       "payload_hash": "321819b7d55c424881dad753e7aa753d",
-      "repository": {
-        "repo_name": "repo-automation-bots",
-        "owner_name": "googleapis",
-        "owner_type": "org"
-      },
+      "repository": "repo-automation-bots_googleapis_Org",
       "event_type": "IssueCommentEvent",
       "timestamp": 1595948777000,
       "actor": "azizsonawalla"
     },
     {
       "payload_hash": "99b6d59369ccb78e33b8a2d09e81a133",
-      "repository": {
-        "repo_name": "repo-automation-bots",
-        "owner_name": "googleapis",
-        "owner_type": "org"
-      },
+      "repository": "repo-automation-bots_googleapis_Org",
       "event_type": "IssueCommentEvent",
       "timestamp": 1595948383000,
       "actor": "tbpg"
     },
     {
       "payload_hash": "efd2dd423f968d55874cb681b018b286",
-      "repository": {
-        "repo_name": "repo-automation-bots",
-        "owner_name": "googleapis",
-        "owner_type": "org"
-      },
+      "repository": "repo-automation-bots_googleapis_Org",
       "event_type": "IssuesEvent",
       "timestamp": 1595948233000,
       "actor": "tbpg"
@@ -634,30 +622,30 @@
   ],
   "postTestFirestoreData": {
     "GitHub_Repository": {
-      "repo-automation-bots_googleapis_org": {
+      "repo-automation-bots_googleapis_Org": {
         "repo_name": "repo-automation-bots",
         "owner_name": "googleapis",
-        "owner_type": "org"
+        "owner_type": "Org"
       }
     },
     "GitHub_Event": {
       "321819b7d55c424881dad753e7aa753d": {
         "payload_hash": "321819b7d55c424881dad753e7aa753d",
-        "repository": "repo-automation-bots_googleapis_org",
+        "repository": "repo-automation-bots_googleapis_Org",
         "event_type": "IssueCommentEvent",
         "timestamp": 1595948777000,
         "actor": "azizsonawalla"
       },
       "99b6d59369ccb78e33b8a2d09e81a133": {
         "payload_hash": "99b6d59369ccb78e33b8a2d09e81a133",
-        "repository": "repo-automation-bots_googleapis_org",
+        "repository": "repo-automation-bots_googleapis_Org",
         "event_type": "IssueCommentEvent",
         "timestamp": 1595948383000,
         "actor": "tbpg"
       },
       "efd2dd423f968d55874cb681b018b286": {
         "payload_hash": "efd2dd423f968d55874cb681b018b286",
-        "repository": "repo-automation-bots_googleapis_org",
+        "repository": "repo-automation-bots_googleapis_Org",
         "event_type": "IssuesEvent",
         "timestamp": 1595948233000,
         "actor": "tbpg"

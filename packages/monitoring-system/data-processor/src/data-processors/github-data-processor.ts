@@ -16,23 +16,17 @@ import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {Octokit} from '@octokit/rest';
 import {WriteResult} from '@google-cloud/firestore';
 import md5 from 'md5';
+import {
+  GitHubRepositoryDocument,
+  OwnerType,
+  getRepositoryPrimaryKey,
+  GitHubEventDocument,
+  UNKNOWN_FIRESTORE_VALUE,
+} from '../firestore-schema';
+const {ORG, USER, UNKNOWN} = OwnerType;
 
 export interface GitHubProcessorOptions extends ProcessorOptions {
   octokit?: Octokit;
-}
-
-interface GitHubRepository {
-  repo_name: string;
-  owner_name: string;
-  owner_type?: 'org' | 'user' | 'Unknown';
-}
-
-export interface GitHubEvent {
-  payload_hash: string;
-  repository: GitHubRepository;
-  event_type: string;
-  timestamp: number;
-  actor: string;
 }
 
 interface GitHubEventResponse {
@@ -73,8 +67,8 @@ export class GitHubProcessor extends DataProcessor {
             })
           );
         })
-        .then((allRepoEvents: GitHubEvent[][]) => {
-          const allRepoEventsFlattened = ([] as GitHubEvent[]).concat(
+        .then((allRepoEvents: GitHubEventDocument[][]) => {
+          const allRepoEventsFlattened = ([] as GitHubEventDocument[]).concat(
             ...allRepoEvents
           );
           return this.storeEventsData(allRepoEventsFlattened);
@@ -91,14 +85,14 @@ export class GitHubProcessor extends DataProcessor {
    * List the GitHub repositories that have triggered
    * bot executions in the past
    */
-  private async listRepositories(): Promise<GitHubRepository[]> {
+  private async listRepositories(): Promise<GitHubRepositoryDocument[]> {
     return this.firestore
       .collection('GitHub_Repository')
       .get()
       .then(repositoryCollection => {
         const repositoryDocs = repositoryCollection.docs;
         return repositoryDocs.map(
-          repoDoc => repoDoc.data() as GitHubRepository
+          repoDoc => repoDoc.data() as GitHubRepositoryDocument
         );
       });
   }
@@ -108,8 +102,8 @@ export class GitHubProcessor extends DataProcessor {
    * @param repository repository for which to get events
    */
   private async listPublicEventsForRepository(
-    repository: GitHubRepository
-  ): Promise<GitHubEvent[]> {
+    repository: GitHubRepositoryDocument
+  ): Promise<GitHubEventDocument[]> {
     return this.octokit.activity
       .listRepoEvents({
         repo: repository.repo_name,
@@ -121,7 +115,7 @@ export class GitHubProcessor extends DataProcessor {
             `Unexpected payload from Octokit: ${JSON.stringify(eventsPayload)}`
           );
         }
-        const gitHubEvents: GitHubEvent[] = [];
+        const gitHubEvents: GitHubEventDocument[] = [];
         for (const event of eventsPayload.data) {
           gitHubEvents.push(
             this.githubEventResponseToEvent(
@@ -133,9 +127,13 @@ export class GitHubProcessor extends DataProcessor {
       });
   }
 
+  /**
+   * Converts GitHub's list event response to a GitHubEventDocument
+   * @param eventResponse list event response from GitHub
+   */
   private githubEventResponseToEvent(
     eventResponse: GitHubEventResponse
-  ): GitHubEvent {
+  ): GitHubEventDocument {
     const {type, repo, payload, created_at, org, user} = eventResponse;
 
     if (!payload) {
@@ -145,18 +143,24 @@ export class GitHubProcessor extends DataProcessor {
     const payload_hash = md5(JSON.stringify(payload));
 
     const [owner_name, repo_name] = repo?.name?.split('/');
+    const owner_type: OwnerType = org ? ORG : user ? USER : UNKNOWN;
     const unixTimestamp = new Date(created_at).getTime();
+
+    const repoIsKnown =
+      owner_name && repo_name && owner_type !== OwnerType.UNKNOWN;
 
     return {
       payload_hash: payload_hash,
-      repository: {
-        repo_name: repo_name || 'Unknown',
-        owner_name: owner_name || 'Unknown',
-        owner_type: org ? 'org' : user ? 'user' : 'Unknown',
-      },
-      event_type: type || 'Unknown',
+      repository: repoIsKnown
+        ? getRepositoryPrimaryKey({
+            repo_name: repo_name,
+            owner_name: owner_name,
+            owner_type: owner_type,
+          })
+        : UNKNOWN_FIRESTORE_VALUE,
+      event_type: type || UNKNOWN_FIRESTORE_VALUE,
       timestamp: unixTimestamp,
-      actor: eventResponse.actor?.login || 'Unknown',
+      actor: eventResponse.actor?.login || UNKNOWN_FIRESTORE_VALUE,
     };
   }
 
@@ -165,19 +169,12 @@ export class GitHubProcessor extends DataProcessor {
    * hash will be overwritten
    * @param events events data to store
    */
-  private async storeEventsData(events: GitHubEvent[]): Promise<WriteResult[]> {
-    const eventsRepoKeyOnly = events.map(event => {
-      const {repo_name, owner_name, owner_type} = event.repository;
-      return {
-        ...event,
-        repository: `${repo_name}_${owner_name}_${owner_type}`,
-      };
-    });
+  private async storeEventsData(
+    events: GitHubEventDocument[]
+  ): Promise<WriteResult[]> {
     const collection = this.firestore.collection('GitHub_Event');
     return Promise.all(
-      eventsRepoKeyOnly.map(event =>
-        collection.doc(event.payload_hash).set(event)
-      )
+      events.map(event => collection.doc(event.payload_hash).set(event))
     );
   }
 }

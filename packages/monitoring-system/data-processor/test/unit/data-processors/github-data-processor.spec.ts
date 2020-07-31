@@ -17,12 +17,10 @@ import assert from 'assert';
 import {GitHubActionType} from './mocks/octokit-request-parser';
 import {OctokitMiddleware} from './mocks/octokit-middleware';
 import {Octokit} from '@octokit/rest';
-import {
-  GitHubProcessor,
-  GitHubEvent,
-} from '../../../src/data-processors/github-data-processor';
+import {GitHubProcessor} from '../../../src/data-processors/github-data-processor';
 import {MockFirestore, FirestoreData} from './mocks/mock-firestore';
 import {loadFixture} from './util/test-util';
+import {OwnerType, GitHubEventDocument} from '../../../src/firestore-schema';
 
 interface GitHubProcessorTestFixture {
   preTestFirestoreData: {};
@@ -122,9 +120,9 @@ describe('GitHub Data Processor', () => {
       mockFirestore.setMockData(mockFirestoreData1);
 
       const expectedRepos = [
-        {repo_name: 'repo1', owner_name: 'owner1', owner_type: 'user'},
-        {repo_name: 'repo2', owner_name: 'owner1', owner_type: 'user'},
-        {repo_name: 'repo1', owner_name: 'owner2', owner_type: 'org'},
+        {repo_name: 'repo1', owner_name: 'owner1', owner_type: 'User'},
+        {repo_name: 'repo2', owner_name: 'owner1', owner_type: 'User'},
+        {repo_name: 'repo1', owner_name: 'owner2', owner_type: 'Org'},
       ];
 
       return processor['listRepositories']().then(repos =>
@@ -163,6 +161,7 @@ describe('GitHub Data Processor', () => {
       return processor['listPublicEventsForRepository']({
         repo_name: 'repo-automation-bots',
         owner_name: 'googleapis',
+        owner_type: OwnerType.ORG,
       }).then(events => assert.deepEqual(events, fixture1.githubEventsObjects));
     });
 
@@ -174,6 +173,7 @@ describe('GitHub Data Processor', () => {
       return processor['listPublicEventsForRepository']({
         repo_name: 'repo-automation-bots',
         owner_name: 'googleapis',
+        owner_type: OwnerType.ORG,
       }).then(events => assert.deepEqual(events, []));
     });
 
@@ -185,6 +185,7 @@ describe('GitHub Data Processor', () => {
       return processor['listPublicEventsForRepository']({
         repo_name: 'repo-automation-bots',
         owner_name: 'googleapis',
+        owner_type: OwnerType.ORG,
       }).then(events => assert.deepEqual(events, fixture2.githubEventsObjects));
     });
 
@@ -194,6 +195,7 @@ describe('GitHub Data Processor', () => {
       return processor['listPublicEventsForRepository']({
         repo_name: 'repo-automation-bots',
         owner_name: 'googleapis',
+        owner_type: OwnerType.ORG,
       })
         .catch(() => (thrown = true))
         .finally(() => assert(thrown, 'Expected error to be thrown'));
@@ -224,7 +226,7 @@ describe('GitHub Data Processor', () => {
       mockFirestore.setMockData({
         GitHub_Event: {},
       });
-      const mockEventsData: GitHubEvent[] = [];
+      const mockEventsData: GitHubEventDocument[] = [];
       const expectedData = {};
 
       return processor['storeEventsData'](mockEventsData).then(() => {
