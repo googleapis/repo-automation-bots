@@ -14,6 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context, GitHubAPI} from 'probot';
+import {logger} from 'gcf-utils';
 import {doesSloApply} from './slo-appliesTo';
 import {isIssueCompliant, getFilePathContent} from './slo-compliant';
 import {removeLabel, handleLabeling, getOoSloLabelName} from './slo-label';
@@ -142,9 +143,8 @@ async function getIssueList(
     });
     return issueList.data;
   } catch (err) {
-    console.error(
-      `Error in getting list of issues from repo for repo ${repo} \n ${err}`
-    );
+    err.message = `Error in getting list of issues from repo ${repo}: ${err.message}`;
+    logger.error(err);
     return null;
   }
 }
