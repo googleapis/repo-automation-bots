@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {describe, it, beforeEach, afterEach} from 'mocha';
+import {describe, it, beforeEach} from 'mocha';
 import assert from 'assert';
 import {GitHubActionType} from './mocks/octokit-request-parser';
 import {OctokitMiddleware} from './mocks/octokit-middleware';

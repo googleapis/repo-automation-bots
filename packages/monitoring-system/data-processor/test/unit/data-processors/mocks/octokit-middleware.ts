@@ -57,6 +57,16 @@ interface MockResponses {
 /**
  * A middleware to intercept outgoing Octokit requests and
  * return predefined responses instead.
+ *
+ * Usage:
+ * let middleware = new OctokitMiddleware();
+ * let mockOctokit = middleware.getMockOctokit();
+ *
+ * const githubActionDetails = // action details for octokit.someaction();
+ * const mockResponse = { hello: 'from mock octokit' };
+ * middleware.setMockResponse(gitHubActionDetails, { type: 'resolve', value: mockResponse })
+ *
+ * console.log(await mockOctokit.someaction()) // prints { hello: 'from mock octokit' }
  */
 export class OctokitMiddleware {
   private PATH_TO_PLUGIN =

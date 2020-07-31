@@ -113,10 +113,11 @@ export function handler(app: Application) {
       }
 
       if (languageConfig[language]?.repoOverrides) {
-        const customConfig = languageConfig[language].repoOverrides!.find(
+        const customConfig = languageConfig[language].repoOverrides?.find(
           x => x.repo === repo
         );
         if (customConfig) {
+          logger.info(`Discovered override config for ${repo}`);
           config.branchProtectionRules = customConfig.branchProtectionRules;
         }
       }

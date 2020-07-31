@@ -12,11 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './slo-bot';
-
-const bootstrap = new GCFBootstrapper();
-module.exports.slo_stat_bot = bootstrap.gcf(appFn, {
-  background: true,
-  logging: true,
-});
+exports[
+  'slo-label handle_labels labels ooslo if issue is not compliant and is missing ooslo label 1'
+] = {
+  labels: ['ooslo'],
+};

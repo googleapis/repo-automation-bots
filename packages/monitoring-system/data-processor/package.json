@@ -26,7 +26,7 @@
   "dependencies": {
     "@google-cloud/firestore": "^4.1.1",
     "@google-cloud/tasks": "^2.1.0",
-    "@octokit/rest": "^18.0.2",
+    "@octokit/rest": "^18.0.3",
     "express": "^4.17.1",
     "md5": "^2.2.1",
     "yaml": "^1.10.0"
