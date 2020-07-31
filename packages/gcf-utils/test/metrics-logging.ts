@@ -93,9 +93,7 @@ describe('buildTriggerInfo', () => {
           owner: 'testOwner',
           owner_type: 'User',
           repo_name: 'testRepo',
-          url: 'https://github.com/testOwner/testRepo',
         },
-        payload_hash: '8f834d7b7a6dfc9a054c78c77a2a4c90',
       },
     };
     assert.deepEqual(triggerInfo, expectedInfo);
@@ -121,9 +119,7 @@ describe('buildTriggerInfo', () => {
           owner: 'UNKNOWN',
           owner_type: 'UNKNOWN',
           repo_name: 'UNKNOWN',
-          url: 'UNKNOWN',
         },
-        payload_hash: '6ceaa9d7875be85cc0796caf4e8da857',
       },
     };
     assert.deepEqual(triggerInfo, expectedInfo);
