@@ -15,7 +15,7 @@
 import {TriggerType} from '../src/gcf-utils';
 import {describe, it} from 'mocha';
 import assert from 'assert';
-import {buildTriggerInfo} from '../src/logging/metrics-logging';
+import {buildTriggerInfo} from '../src/metrics-logging';
 
 describe('buildTriggerInfo', () => {
   it('returns correct pub/sub trigger info', () => {

@@ -18,7 +18,7 @@ import {Application, GitHubAPI} from 'probot';
 import {resolve} from 'path';
 import {config} from 'dotenv';
 import assert from 'assert';
-import {VERSION as OCTOKIT_LOGGING_PLUGIN_VERSION} from '../../src/logging/logging-octokit-plugin';
+import {VERSION as OCTOKIT_LOGGING_PLUGIN_VERSION} from '../../src/logging-octokit-plugin';
 
 /**
  * How to run these tests:

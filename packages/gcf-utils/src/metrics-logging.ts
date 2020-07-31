@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {TriggerType} from '../gcf-utils';
+import {TriggerType} from './gcf-utils';
 import md5 from 'md5';
 
 /**

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFLogger, initLogger} from '../../src/logging/gcf-logger';
+import {GCFLogger, initLogger} from '../../src/gcf-logger';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import pino from 'pino';
 import {validateLogs, LogLine, logLevels} from '../test-helpers';
