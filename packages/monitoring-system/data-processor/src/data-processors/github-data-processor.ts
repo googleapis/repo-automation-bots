@@ -134,31 +134,30 @@ export class GitHubProcessor extends DataProcessor {
   private githubEventResponseToEvent(
     eventResponse: GitHubEventResponse
   ): GitHubEventDocument {
-    const {type, repo, payload, created_at, org, user} = eventResponse;
-
-    if (!payload) {
+    if (!eventResponse.payload) {
       console.error(`Invalid event response from GitHub: ${eventResponse}`);
       throw new Error(`Invalid event response from GitHub: ${eventResponse}`);
     }
-    const payload_hash = md5(JSON.stringify(payload));
 
-    const [owner_name, repo_name] = repo?.name?.split('/');
-    const owner_type: OwnerType = org ? ORG : user ? USER : UNKNOWN;
-    const unixTimestamp = new Date(created_at).getTime();
+    /**
+     * We include a payload hash for GitHub webhook triggers
+     * to be able to map the webhook to the GitHub Event
+     * since they share the same payload
+     */
+    const payloadHash = md5(JSON.stringify(eventResponse.payload));
 
-    const repoIsKnown =
-      owner_name && repo_name && owner_type !== OwnerType.UNKNOWN;
+    const [ownerName, repoName] = eventResponse.repo?.name?.split('/');
+    const ownerType: OwnerType = eventResponse.org ? ORG : eventResponse.user ? USER : UNKNOWN;
+    const unixTimestamp = new Date(eventResponse.created_at).getTime();
 
     return {
-      payload_hash: payload_hash,
-      repository: repoIsKnown
-        ? getRepositoryPrimaryKey({
-            repo_name: repo_name,
-            owner_name: owner_name,
-            owner_type: owner_type,
-          })
-        : UNKNOWN_FIRESTORE_VALUE,
-      event_type: type || UNKNOWN_FIRESTORE_VALUE,
+      payload_hash: payloadHash,
+      repository: getRepositoryPrimaryKey({
+        repo_name: repoName,
+        owner_name: ownerName,
+        owner_type: ownerType,
+      }),
+      event_type: eventResponse.type || UNKNOWN_FIRESTORE_VALUE,
       timestamp: unixTimestamp,
       actor: eventResponse.actor?.login || UNKNOWN_FIRESTORE_VALUE,
     };
