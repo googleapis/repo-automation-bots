@@ -19,7 +19,7 @@ import {doesSloApply} from './slo-appliesTo';
 import {isIssueCompliant, getFilePathContent} from './slo-compliant';
 import {removeLabel, handleLabeling} from './slo-label';
 import {handleLint} from './slo-lint';
-import {IssuesListCommentsItem} from './types';
+import {IssueAssigneesItem, IssueItem} from './types';
 
 const CONFIGURATION_FILE_PATH = 'slo-stat-bot.yaml';
 const DEFAULT_CONFIGURATION: Config = {
@@ -34,12 +34,6 @@ interface IssueLabelResponseItem {
   name: string;
 }
 
-interface IssueAssigneesItem {
-  login: string;
-  type: string;
-  site_admin: boolean;
-}
-
 interface IssueListForRepoItem {
   number: number;
   user: {
@@ -49,59 +43,44 @@ interface IssueListForRepoItem {
   assignees: IssueAssigneesItem[];
   created_at: string;
   updated_at: string;
+  pull_request?: {
+    url: string;
+  };
 }
 
 /**
  * Function handles labeling ooslo based on compliancy if issue applies to the given slo
- * @param context of issue or pr
- * @param owner of issue or pr
- * @param repo of issue or pr
- * @param type specifies if event is issue or pr
- * @param number of issue or pr
- * @param createdAt time of issue or pr
- * @param assigness of issue or pr
+ * @param github unique installation id for each function
+ * @param issueItem is an object that has issue owner, repo, number, type, created time of issue, assignees, labels, and comments
  * @param sloString json string of the slo rules
- * @param labels on the given issue or pr
- * @param comment login of the user who commented on the pr
  * @param labelName of OOSLO label in repo
  * @returns void
  */
 async function handleIssues(
-  context: Context,
-  owner: string,
-  repo: string,
-  type: string,
-  number: number,
-  createdAt: string,
-  assignees: IssueAssigneesItem[],
+  github: GitHubAPI,
+  issueItem: IssueItem,
   sloString: string,
-  labels: string[] | null,
-  labelName: string,
-  comment?: IssuesListCommentsItem
+  labelName: string
 ) {
   const sloList = JSON.parse(sloString);
 
   for (const slo of sloList) {
-    const appliesToIssue = await doesSloApply(type, slo, labels, number);
+    const appliesToIssue = await doesSloApply(
+      issueItem.type,
+      slo,
+      issueItem.labels,
+      issueItem.number
+    );
 
     if (appliesToIssue) {
-      const isCompliant = await isIssueCompliant(
-        context.github,
-        owner,
-        repo,
-        number,
-        assignees,
-        createdAt,
-        slo,
-        comment
-      );
+      const isCompliant = await isIssueCompliant(github, issueItem, slo);
       await handleLabeling(
-        context,
-        owner,
-        repo,
-        number,
+        github,
+        issueItem.owner,
+        issueItem.repo,
+        issueItem.number,
         isCompliant,
-        labels,
+        issueItem.labels,
         labelName
       );
 
@@ -240,18 +219,17 @@ export = function handler(app: Application) {
         (label: IssueLabelResponseItem) => label.name
       );
       const sloString = await getSloFile(context.github, owner, repo);
-      await handleIssues(
-        context,
+      const issueItem = {
         owner,
         repo,
-        'pull_request',
         number,
+        type: 'pull_request',
         createdAt,
         assignees,
-        sloString,
         labels,
-        labelName
-      );
+      } as IssueItem;
+
+      await handleIssues(context.github, issueItem, sloString, labelName);
     }
   );
   app.on(['issues.closed', 'pull_request.closed'], async (context: Context) => {
@@ -306,19 +284,18 @@ export = function handler(app: Application) {
         (label: IssueLabelResponseItem) => label.name
       );
       const sloString = await getSloFile(context.github, owner, repo);
-      await handleIssues(
-        context,
+      const issueItem = {
         owner,
         repo,
-        'issue',
         number,
+        type: 'issue',
         createdAt,
         assignees,
-        sloString,
         labels,
-        labelName,
-        comment
-      );
+        comment,
+      } as IssueItem;
+
+      await handleIssues(context.github, issueItem, sloString, labelName);
     }
   );
   app.on(['schedule.repository'], async (context: Context) => {
@@ -340,18 +317,20 @@ export = function handler(app: Application) {
         label.name.toLowerCase()
       );
       const sloString = await getSloFile(context.github, owner, repo);
+      const labelName = await getOoSloLabelName(context);
+      const type = issue.pull_request === undefined ? 'issue' : 'pull_request';
 
-      await handleIssues(
-        context,
+      const issueItem = {
         owner,
         repo,
-        'issue',
         number,
+        type,
         createdAt,
         assignees,
-        sloString,
-        labels
-      );
+        labels,
+      } as IssueItem;
+
+      await handleIssues(context.github, issueItem, sloString, labelName);
     }
   });
 };

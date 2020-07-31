@@ -14,7 +14,7 @@
 //
 
 // eslint-disable-next-line node/no-extraneous-import
-import {GitHubAPI, Context} from 'probot';
+import {GitHubAPI} from 'probot';
 import {logger} from 'gcf-utils';
 
 /**
@@ -82,6 +82,7 @@ export const removeLabel = async function removeLabel(
  * Function handles adding and removing labels according to slo status.
  * If slo is not compliant and does not have ooslo label, adds it to issue.
  * If slo is compliant but has ooslo label, removes it from issue
+ * @param github unique installation id for each function
  * @param owner of issue or pr
  * @param repo of issue or pr
  * @param number of issue pr
@@ -91,7 +92,7 @@ export const removeLabel = async function removeLabel(
  * @returns void
  */
 export async function handleLabeling(
-  context: Context,
+  github: GitHubAPI,
   owner: string,
   repo: string,
   number: number,
@@ -100,8 +101,8 @@ export async function handleLabeling(
   name: string
 ) {
   if (!isCompliant && !labels?.includes(name)) {
-    await addLabel(context.github, owner, repo, number, name);
+    await addLabel(github, owner, repo, number, name);
   } else if (isCompliant && labels?.includes(name)) {
-    await removeLabel(context.github, owner, repo, number, name);
+    await removeLabel(github, owner, repo, number, name);
   }
 }

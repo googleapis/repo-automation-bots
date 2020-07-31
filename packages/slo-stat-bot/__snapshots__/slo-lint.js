@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
 exports[
   'slo-lint handleSLOs is triggered Error is logged if commenting on PR fails and calls handle issues 1'
 ] = {

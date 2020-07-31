@@ -15,7 +15,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot';
 import moment from 'moment';
-import {SLORules, IssuesListCommentsItem} from './types';
+import {SLORules, IssuesListCommentsItem, IssueItem} from './types';
 import {convertToArray} from './slo-appliesTo';
 import {logger} from 'gcf-utils';
 
@@ -314,46 +314,41 @@ export const isInDuration = async function isInDuration(
 /**
  * Function checks if issue is compliant with slo
  * @param github unique installation id for each function
- * @param owner of issue or pr
- * @param repo of issue or pr
- * @param number of the issue or pr
- * @param assignees of the issue or pr
- * @param createdAt time of the issue or pr
- * @param comment the login of the user who commented on the pr
+ * @param issueItem is an object that has issue owner, repo, number, type, created time of issue, assignees, labels, and comments
  * @param slo rule
  * @returns true if issue is compliant with slo else false
  */
 export const isIssueCompliant = async function isIssueCompliant(
   github: GitHubAPI,
-  owner: string,
-  repo: string,
-  number: number,
-  assignees: IssueAssignees[],
-  createdAt: string,
-  slo: SLORules,
-  comment?: IssuesListCommentsItem | undefined
+  issueItem: IssueItem,
+  slo: SLORules
 ): Promise<boolean> {
   const sloString = JSON.stringify(slo, null, 4);
 
   const resTime = slo.complianceSettings.resolutionTime;
   if (resTime !== 0) {
-    const result = await isInDuration(resTime, createdAt);
+    const result = await isInDuration(resTime, issueItem.createdAt);
     if (!result) {
       logger.info(
-        `Issue ${number} in repo ${repo} is not compliant for slo: \n ${sloString} \n Reason: It is not in resolution time`
+        `Issue ${issueItem.number} in repo ${issueItem.repo} is not compliant for slo: \n ${sloString} \n Reason: It is not in resolution time`
       );
       return false;
     }
   }
 
-  const responders = await getResponders(github, owner, repo, slo);
+  const responders = await getResponders(
+    github,
+    issueItem.owner,
+    issueItem.repo,
+    slo
+  );
 
   const reqAssignee = slo.complianceSettings.requiresAssignee;
   if (reqAssignee === true) {
-    const result = await isAssigned(responders, assignees);
+    const result = await isAssigned(responders, issueItem.assignees);
     if (!result) {
       logger.info(
-        `Issue ${number} in repo ${repo} is not compliant for slo: \n ${sloString} \n Reason: Does not have a valid assignee`
+        `Issue ${issueItem.number} in repo ${issueItem.repo} is not compliant for slo: \n ${sloString} \n Reason: Does not have a valid assignee`
       );
       return false;
     }
@@ -363,17 +358,17 @@ export const isIssueCompliant = async function isIssueCompliant(
   if (responseTime !== 0) {
     const result = await isInResponseTime(
       github,
-      owner,
-      repo,
-      number,
+      issueItem.owner,
+      issueItem.repo,
+      issueItem.number,
       responders,
       responseTime,
-      createdAt,
-      comment
+      issueItem.createdAt,
+      issueItem.comment
     );
     if (!result) {
       logger.info(
-        `Issue ${number} in repo ${repo} is not compliant for slo: \n ${sloString} \n Reason: No valid responder commented within response time`
+        `Issue ${issueItem.number} in repo ${issueItem.repo} is not compliant for slo: \n ${sloString} \n Reason: No valid responder commented within response time`
       );
       return false;
     }

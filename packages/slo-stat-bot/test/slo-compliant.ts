@@ -558,6 +558,15 @@ describe('isInResponseTime', () => {
 });
 describe('isCompliant given slo applies to issue', () => {
   const githubAPI: GitHubAPI = GitHubAPI();
+  const issueItem = {
+    owner: 'testOwner',
+    repo: 'testRepo',
+    number: 1,
+    type: 'issue',
+    createdAt: '2020-07-22T03:04:00Z',
+    assignees: [{login: 'testOwner', type: '', site_admin: false}],
+    labels: [],
+  };
   let isInDurationStub: sinon.SinonStub;
   let getRespondersStub: sinon.SinonStub;
   let isAssignedStub: sinon.SinonStub;
@@ -593,11 +602,7 @@ describe('isCompliant given slo applies to issue', () => {
     isInDurationStub.onCall(0).returns(false);
     const isValid = await sloCompliant.isIssueCompliant(
       githubAPI,
-      'testOwner',
-      'testRepo',
-      1,
-      [{login: 'testOwner'}],
-      '2020-07-22T03:04:00Z',
+      issueItem,
       slo
     );
 
@@ -630,11 +635,7 @@ describe('isCompliant given slo applies to issue', () => {
     isAssignedStub.onCall(0).returns(false);
     const isValid = await sloCompliant.isIssueCompliant(
       githubAPI,
-      'testOwner',
-      'testRepo',
-      1,
-      [{login: 'testOwner'}],
-      '2020-07-22T03:04:00Z',
+      issueItem,
       slo
     );
 
@@ -668,11 +669,7 @@ describe('isCompliant given slo applies to issue', () => {
     isInResponseStub.onCall(0).returns(false);
     const isValid = await sloCompliant.isIssueCompliant(
       githubAPI,
-      'testOwner',
-      'testRepo',
-      1,
-      [{login: 'testOwner'}],
-      '2020-07-22T03:04:00Z',
+      issueItem,
       slo
     );
 
@@ -706,11 +703,7 @@ describe('isCompliant given slo applies to issue', () => {
     isInResponseStub.onCall(0).returns(true);
     const isValid = await sloCompliant.isIssueCompliant(
       githubAPI,
-      'testOwner',
-      'testRepo',
-      1,
-      [{login: 'testOwner'}],
-      '2020-07-22T03:04:00Z',
+      issueItem,
       slo
     );
 
@@ -742,11 +735,7 @@ describe('isCompliant given slo applies to issue', () => {
     isInResponseStub.onCall(0).returns(true);
     const isValid = await sloCompliant.isIssueCompliant(
       githubAPI,
-      'testOwner',
-      'testRepo',
-      1,
-      [{login: 'testOwner'}],
-      '2020-07-22T03:04:00Z',
+      issueItem,
       slo
     );
 
@@ -778,11 +767,7 @@ describe('isCompliant given slo applies to issue', () => {
     isAssignedStub.onCall(0).returns(true);
     const isValid = await sloCompliant.isIssueCompliant(
       githubAPI,
-      'testOwner',
-      'testRepo',
-      1,
-      [{login: 'testOwner'}],
-      '2020-07-22T03:04:00Z',
+      issueItem,
       slo
     );
 

@@ -264,13 +264,6 @@ describe('slo-bot', () => {
 
       it('getIssueList() and call handleIssues() for each issue', async () => {
         const requests = nock('https://api.github.com')
-          .get(
-            '/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json'
-          )
-          .reply(200, {
-            content:
-              'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
-          })
           .get('/repos/testOwner/testRepo/issues?state=open')
           .reply(200, [
             {
@@ -290,9 +283,16 @@ describe('slo-bot', () => {
               created_at: '',
               updated_at: '',
             },
-          ]);
+          ])
+          .get(
+            '/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json'
+          )
+          .reply(200, {
+            content:
+              'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
+          });
 
-        appliesToStub.onCall(0).returns(true)
+        appliesToStub.onCall(0).returns(true);
         isCompliantStub.onCall(0).returns(false);
 
         await probot.receive({
@@ -301,6 +301,9 @@ describe('slo-bot', () => {
           id: 'abc123',
         });
 
+        sinon.assert.calledOnce(appliesToStub);
+        sinon.assert.calledOnce(isCompliantStub);
+        sinon.assert.calledOnce(labelStub);
         requests.done();
       });
     });
