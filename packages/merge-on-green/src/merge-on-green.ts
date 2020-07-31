@@ -146,13 +146,13 @@ function handler(app: Application) {
               context.github
             );
             if (remove || wp.state === 'stop') {
-              handler.removePR(wp.url);
+              await handler.removePR(wp.url);
             }
           } catch (err) {
             err.message = `Error in merge-on-green: \n\n${err.message}`;
             logger.error(err);
             if (wp.state === 'stop') {
-              handler.removePR(wp.url);
+              await handler.removePR(wp.url);
             }
           }
         })
