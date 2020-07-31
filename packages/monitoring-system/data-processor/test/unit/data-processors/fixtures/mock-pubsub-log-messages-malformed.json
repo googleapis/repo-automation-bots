@@ -1,9 +1,6 @@
 {
-    "execution_start": {
+    "execution_start_missing_execution_id": {
         "insertId": "000000-0322823e-02e9-405c-bbe1-0ca751a85b3e",
-        "labels": {
-            "execution_id": "4ww4alqs7ikq"
-        },
         "logName": "projects/repo-automation-bots/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
         "receiveTimestamp": "2020-07-23T20:41:37.950010366Z",
         "resource": {
@@ -19,13 +16,12 @@
         "timestamp": "2020-07-23T20:41:33.701320846Z",
         "trace": "projects/repo-automation-bots/traces/b6f279f9349d493917052d237de8cffb"
     },
-    "execution_end": {
+    "execution_end_missing_timestamp": {
         "insertId": "000000-d96e3715-b70d-46e8-ad2d-57ad16609824",
         "labels": {
             "execution_id": "4ww4q2vqvkl1"
         },
         "logName": "projects/repo-automation-bots/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
-        "receiveTimestamp": "2020-07-23T20:41:37.950010366Z",
         "resource": {
             "labels": {
                 "function_name": "auto_label",
@@ -36,10 +32,9 @@
         },
         "severity": "DEBUG",
         "textPayload": "Function execution took 46 ms, finished with status code: 200",
-        "timestamp": "2020-07-23T20:41:27.861480917Z",
         "trace": "projects/repo-automation-bots/traces/62eb57323fe7436520941da6d02534d2"
     },
-    "trigger_information": {
+    "trigger_information_missing_type": {
         "insertId": "000000-bae0291a-8c12-4e39-beeb-40e49f2e3a11",
         "jsonPayload": {
             "level": 30,
@@ -51,6 +46,33 @@
                     "owner_type": "Organization",
                     "repo_name": "java-spanner"
                 },
+                "github_event": "62eb57323fe7436520941da6d02534d2"
+            }
+        },
+        "labels": {
+            "execution_id": "1lth8bxqr88v"
+        },
+        "logName": "projects/repo-automation-bots/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+        "receiveTimestamp": "2020-07-30T14:44:10.511134304Z",
+        "resource": {
+            "labels": {
+                "function_name": "buildcop",
+                "project_id": "repo-automation-bots",
+                "region": "us-central1"
+            },
+            "type": "cloud_function"
+        },
+        "severity": "INFO",
+        "timestamp": "2020-07-30T14:44:07.484Z",
+        "trace": "projects/repo-automation-bots/traces/f0ffea1a9688c3b2574fd9101e5b32ea"
+    },
+    "trigger_information_missing_repo": {
+        "insertId": "000000-bae0291a-8c12-4e39-beeb-40e49f2e3a11",
+        "jsonPayload": {
+            "level": 30,
+            "trigger": {
+                "github_delivery_guid": "1e523f00-d273-11ea-859e-dfb8fd073550",
+                "trigger_sender": "olavloite",
                 "trigger_type": "GITHUB_WEBHOOK",
                 "github_event": "62eb57323fe7436520941da6d02534d2"
             }
@@ -72,7 +94,7 @@
         "timestamp": "2020-07-30T14:44:07.484Z",
         "trace": "projects/repo-automation-bots/traces/f0ffea1a9688c3b2574fd9101e5b32ea"
     },
-    "github_action": {
+    "github_action_missing_type": {
         "insertId": "000000-e3239cc3-f11c-44fb-8b73-8f0e9bd69d76",
         "jsonPayload": {
             "action": {
@@ -84,7 +106,6 @@
                     "owner": "googleapis",
                     "repo_name": "python-ndb"
                 },
-                "type": "ISSUE_ADD_LABELS",
                 "value": "kokoro:run"
             },
             "level": 30
@@ -106,7 +127,7 @@
         "timestamp": "2020-07-30T14:17:48.017Z",
         "trace": "projects/repo-automation-bots/traces/1d0661e3a7d1a16153f52e2ac17598a0"
     },
-    "error": {
+    "error_missing_execution_id": {
         "textPayload": "TypeError: Cannot read property 'name' of undefined",
         "insertId": "000001-6f8170ba-58bd-488b-a358-fdce7ff4a78c",
         "resource": {
@@ -119,31 +140,8 @@
         },
         "timestamp": "2020-07-30T15:39:27.270Z",
         "severity": "ERROR",
-        "labels": {
-            "execution_id": "pb86861bj247"
-        },
         "logName": "projects/repo-automation-bots/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
         "trace": "projects/repo-automation-bots/traces/568473f1ce6a0f1e51dfe9163fe23037",
         "receiveTimestamp": "2020-07-30T15:39:29.172246968Z"
-    },
-    "randomTextPayload": {
-        "insertId": "000000-0322823e-02e9-405c-bbe1-0ca751a85b3e",
-        "labels": {
-            "execution_id": "4ww4alqs7ikq"
-        },
-        "logName": "projects/repo-automation-bots/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
-        "receiveTimestamp": "2020-07-23T20:41:37.950010366Z",
-        "resource": {
-            "labels": {
-                "function_name": "merge_on_green",
-                "project_id": "repo-automation-bots",
-                "region": "us-central1"
-            },
-            "type": "cloud_function"
-        },
-        "severity": "DEBUG",
-        "textPayload": "This is a random debug message",
-        "timestamp": "2020-07-23T20:41:33.701320846Z",
-        "trace": "projects/repo-automation-bots/traces/b6f279f9349d493917052d237de8cffb"
     }
 }
