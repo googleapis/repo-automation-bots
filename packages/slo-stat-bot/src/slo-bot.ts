@@ -147,9 +147,8 @@ async function getIssueList(
     });
     return issueList.data;
   } catch (err) {
-    console.error(
-      `Error in getting list of issues from repo for repo ${repo} \n ${err}`
-    );
+    err.message = `Error in getting list of issues from repo ${repo}: ${err.message}`;
+    logger.error(err);
     return null;
   }
 }

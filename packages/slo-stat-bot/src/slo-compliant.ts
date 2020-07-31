@@ -77,7 +77,7 @@ export const isInResponseTime = async function isInResponseTime(
   github: GitHubAPI,
   issueItem: IssueItem,
   responders: Set<string>,
-  responseTime: string | number,
+  responseTime: string | number
 ): Promise<boolean> {
   const isInResTime = await isInDuration(responseTime, issueItem.createdAt);
 

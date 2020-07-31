@@ -255,6 +255,9 @@ describe('slo-bot', () => {
       const payload = {
         repository: {
           name: 'testRepo',
+          owner: {
+            login: 'testOwner',
+          },
         },
         organization: {
           login: 'testOwner',
@@ -290,7 +293,9 @@ describe('slo-bot', () => {
           .reply(200, {
             content:
               'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
-          });
+          })
+          .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
+          .reply(200, {content: config.toString('base64')});
 
         appliesToStub.onCall(0).returns(true);
         isCompliantStub.onCall(0).returns(false);
