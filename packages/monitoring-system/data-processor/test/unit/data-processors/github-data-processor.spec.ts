@@ -20,7 +20,7 @@ import {Octokit} from '@octokit/rest';
 import {GitHubProcessor} from '../../../src/data-processors/github-data-processor';
 import {MockFirestore, FirestoreData} from './mocks/mock-firestore';
 import {loadFixture} from './util/test-util';
-import {OwnerType, GitHubEventDocument} from '../../../src/firestore-schema';
+import {OwnerType, GitHubEventDocument, GitHubRepositoryDocument} from '../../../src/firestore-schema';
 
 interface GitHubProcessorTestFixture {
   preTestFirestoreData: {};
@@ -43,7 +43,7 @@ function resetMockData() {
   mockFirestoreData1 = loadFixture('mock-firestore-data-1.json');
 }
 
-const LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS = {
+const LIST_REPO_EVENTS_ACTION = {
   type: GitHubActionType.REPO_LIST_EVENTS,
   repoName: 'repo-automation-bots',
   repoOwner: 'googleapis',
@@ -72,7 +72,7 @@ describe('GitHub Data Processor', () => {
 
     it('collects GitHub Events data and stores it in Firestore', () => {
       mockFirestore.setMockData(fixture1.preTestFirestoreData);
-      middleware.setMockResponse(LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS, {
+      middleware.setMockResponse(LIST_REPO_EVENTS_ACTION, {
         type: 'resolve',
         value: fixture1.githubEventsResponse,
       });
@@ -86,7 +86,7 @@ describe('GitHub Data Processor', () => {
 
     it('throws an error if there is an error with GitHub', () => {
       mockFirestore.setMockData(fixture1.preTestFirestoreData);
-      middleware.rejectOnAction(LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS);
+      middleware.rejectOnAction(LIST_REPO_EVENTS_ACTION);
 
       let thrown = false;
       return processor
@@ -97,7 +97,7 @@ describe('GitHub Data Processor', () => {
 
     it('throws an error if there is an error with Firestore', () => {
       mockFirestore.throwOnCollection();
-      middleware.setMockResponse(LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS, {
+      middleware.setMockResponse(LIST_REPO_EVENTS_ACTION, {
         type: 'resolve',
         value: fixture1.githubEventsResponse,
       });
@@ -149,54 +149,45 @@ describe('GitHub Data Processor', () => {
   });
 
   describe('listPublicEventsForRepository()', () => {
+
+    const repository = {
+      repo_name: 'repo-automation-bots',
+      owner_name: 'googleapis',
+      owner_type: 'Org',
+    } as GitHubRepositoryDocument;
+
     beforeEach(() => {
       processor = new GitHubProcessor({octokit: mockOctokit});
     });
 
     it('returns events for repository when events exist', () => {
-      middleware.setMockResponse(LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS, {
+      middleware.setMockResponse(LIST_REPO_EVENTS_ACTION, {
         type: 'resolve',
         value: fixture1.githubEventsResponse,
       });
-      return processor['listPublicEventsForRepository']({
-        repo_name: 'repo-automation-bots',
-        owner_name: 'googleapis',
-        owner_type: OwnerType.ORG,
-      }).then(events => assert.deepEqual(events, fixture1.githubEventsObjects));
+      return processor['listPublicEventsForRepository'](repository).then(events => assert.deepEqual(events, fixture1.githubEventsObjects));
     });
 
     it('returns empty array when no repository events exist', () => {
-      middleware.setMockResponse(LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS, {
+      middleware.setMockResponse(LIST_REPO_EVENTS_ACTION, {
         type: 'resolve',
         value: {data: []},
       });
-      return processor['listPublicEventsForRepository']({
-        repo_name: 'repo-automation-bots',
-        owner_name: 'googleapis',
-        owner_type: OwnerType.ORG,
-      }).then(events => assert.deepEqual(events, []));
+      return processor['listPublicEventsForRepository'](repository).then(events => assert.deepEqual(events, []));
     });
 
     it('returns events with default value if data is missing from GitHub', () => {
-      middleware.setMockResponse(LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS, {
+      middleware.setMockResponse(LIST_REPO_EVENTS_ACTION, {
         type: 'resolve',
         value: fixture2.githubEventsResponse,
       });
-      return processor['listPublicEventsForRepository']({
-        repo_name: 'repo-automation-bots',
-        owner_name: 'googleapis',
-        owner_type: OwnerType.ORG,
-      }).then(events => assert.deepEqual(events, fixture2.githubEventsObjects));
+      return processor['listPublicEventsForRepository'](repository).then(events => assert.deepEqual(events, fixture2.githubEventsObjects));
     });
 
     it('throws an error if there is an error from Octokit', () => {
-      middleware.rejectOnAction(LIST_REPO_EVENTS_FOR_REPO_AUTOMATION_BOTS);
+      middleware.rejectOnAction(LIST_REPO_EVENTS_ACTION);
       let thrown = false;
-      return processor['listPublicEventsForRepository']({
-        repo_name: 'repo-automation-bots',
-        owner_name: 'googleapis',
-        owner_type: OwnerType.ORG,
-      })
+      return processor['listPublicEventsForRepository'](repository)
         .catch(() => (thrown = true))
         .finally(() => assert(thrown, 'Expected error to be thrown'));
     });
