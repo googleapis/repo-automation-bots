@@ -39,6 +39,9 @@ interface IssueListForRepoItem {
   assignees: IssueAssigneesItem[];
   created_at: string;
   updated_at: string;
+  pull_request?: {
+    url: string;
+  };
 }
 
 /**
@@ -216,8 +219,8 @@ export = function handler(app: Application) {
     const number = context.payload[type].number;
     const labelsResponse = context.payload[type].labels;
 
-    const labels = labelsResponse.map((label: IssueLabelResponseItem) =>
-      label.name
+    const labels = labelsResponse.map(
+      (label: IssueLabelResponseItem) => label.name
     );
 
     const name = await getOoSloLabelName(context);
@@ -284,13 +287,14 @@ export = function handler(app: Application) {
       const labels = issue.labels.map((label: IssueLabelResponseItem) =>
         label.name.toLowerCase()
       );
+      const type = issue.pull_request === undefined ? 'issue' : 'pull_request';
       const sloString = await getSloFile(context.github, owner, repo);
 
       await handleIssues(
         context,
         owner,
         repo,
-        'issue',
+        type,
         number,
         createdAt,
         assignees,

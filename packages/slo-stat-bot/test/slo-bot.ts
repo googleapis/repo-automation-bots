@@ -275,7 +275,7 @@ describe('slo-bot', () => {
             },
           ]);
 
-        appliesToStub.onCall(0).returns(true)
+        appliesToStub.onCall(0).returns(true);
         isCompliantStub.onCall(0).returns(false);
 
         await probot.receive({
