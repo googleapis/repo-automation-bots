@@ -20,7 +20,10 @@ import {Octokit} from '@octokit/rest';
 import {GitHubProcessor} from '../../../src/data-processors/github-data-processor';
 import {MockFirestore, FirestoreData} from './mocks/mock-firestore';
 import {loadFixture} from './util/test-util';
-import {OwnerType, GitHubEventDocument, GitHubRepositoryDocument} from '../../../src/firestore-schema';
+import {
+  GitHubEventDocument,
+  GitHubRepositoryDocument,
+} from '../../../src/firestore-schema';
 
 interface GitHubProcessorTestFixture {
   preTestFirestoreData: {};
@@ -149,7 +152,6 @@ describe('GitHub Data Processor', () => {
   });
 
   describe('listPublicEventsForRepository()', () => {
-
     const repository = {
       repo_name: 'repo-automation-bots',
       owner_name: 'googleapis',
@@ -165,7 +167,9 @@ describe('GitHub Data Processor', () => {
         type: 'resolve',
         value: fixture1.githubEventsResponse,
       });
-      return processor['listPublicEventsForRepository'](repository).then(events => assert.deepEqual(events, fixture1.githubEventsObjects));
+      return processor['listPublicEventsForRepository'](
+        repository
+      ).then(events => assert.deepEqual(events, fixture1.githubEventsObjects));
     });
 
     it('returns empty array when no repository events exist', () => {
@@ -173,7 +177,9 @@ describe('GitHub Data Processor', () => {
         type: 'resolve',
         value: {data: []},
       });
-      return processor['listPublicEventsForRepository'](repository).then(events => assert.deepEqual(events, []));
+      return processor['listPublicEventsForRepository'](
+        repository
+      ).then(events => assert.deepEqual(events, []));
     });
 
     it('returns events with default value if data is missing from GitHub', () => {
@@ -181,7 +187,9 @@ describe('GitHub Data Processor', () => {
         type: 'resolve',
         value: fixture2.githubEventsResponse,
       });
-      return processor['listPublicEventsForRepository'](repository).then(events => assert.deepEqual(events, fixture2.githubEventsObjects));
+      return processor['listPublicEventsForRepository'](
+        repository
+      ).then(events => assert.deepEqual(events, fixture2.githubEventsObjects));
     });
 
     it('throws an error if there is an error from Octokit', () => {
