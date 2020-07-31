@@ -82,155 +82,224 @@ describe('Cloud Logs Processor', () => {
       });
     });
 
+    // TODO: existing records / double-processing of logs
+
     describe('correctly formed execution start and execution end logs', () => {
+
+      // what the execution record would look like after receiving just the start log
+      const executionRecordStart = {
+        document: {
+          '4ww4alqs7ikq': {
+            execution_id: '4ww4alqs7ikq',
+            bot_id: 'merge_on_green',
+            start_time: 1595536893000,
+            logs_url:
+              'https://pantheon.corp.google.com/logs/query;query=resource.type%3D%22' +
+              'cloud_function%22%0Alabels.%22execution_id%22%3D%224ww4alqs7ikq%22;' +
+              'timeRange=2020-07-23T20:41:33.701320846Z%2F22020-07-23T20:41:33.701320846Z;' +
+              'summaryFields=:true:32:beginning?project=repo-automation-bots',
+          },
+        }, collectionName: "Bot_Execution"
+      };
+
+      // what the execution record would look like after receiving just the end log
+      const executionRecordEnd = {
+        document: {
+          '4ww4alqs7ikq': {
+            execution_id: '4ww4q2vqvkl1',
+            bot_id: 'auto_label',
+            end_time: 1595536887000,
+          },
+        }, collectionName: "Bot_Execution"
+      };
+
+      // what the execution record would look like after receiving start + end logs
+      const executionRecordBoth = {
+        document: { ...executionRecordStart.document, ...executionRecordEnd.document },
+        collectionName: "Bot_Execution"
+      }
+
       describe('when no execution record exists', () => {
         it('creates a new execution record and stores execution start logs', () => {
-          const expectedDocument = {
-            '4ww4alqs7ikq': {
-              execution_id: '4ww4alqs7ikq',
-              bot_id: 'merge_on_green',
-              start_time: 1595536893000,
-              logs_url:
-                'https://pantheon.corp.google.com/logs/query;query=resource.type%3D%22' +
-                'cloud_function%22%0Alabels.%22execution_id%22%3D%224ww4alqs7ikq%22;' +
-                'timeRange=2020-07-23T20:41:33.701320846Z%2F22020-07-23T20:41:33.701320846Z;' +
-                'summaryFields=:true:32:beginning?project=repo-automation-bots',
-            }
-          };
-          return testMessage(MOCK_MESSAGES.execution_start, [{
-            document: expectedDocument,
-            collectionName: 'Bot_Execution',
-          }]);
+          return testMessage(
+            MOCK_MESSAGES.execution_start,
+            [executionRecordStart]
+          );
         });
 
         it('creates a new execution record and stores execution end logs', () => {
-          const expectedDocument = {
-            '4ww4q2vqvkl1': {
-              execution_id: '4ww4q2vqvkl1',
-              bot_id: 'auto_label',
-              end_time: 1595536887000,
-            }
-          };
-          return testMessage(MOCK_MESSAGES.execution_end, [{
-            document: expectedDocument,
-            collectionName: 'Bot_Execution',
-          }]);
+          return testMessage(
+            MOCK_MESSAGES.execution_end,
+            [executionRecordEnd]
+          );
         });
       });
 
       describe('when an execution record already exists', () => {
         it('identifies existing record and stores execution start logs', () => {
-          const preExistingDocument = {
-            '4ww4alqs7ikq': {
-              execution_id: '4ww4alqs7ikq',
-              end_time: 12345,
-            }
-          };
-          const expectedDocument = {
-            '4ww4alqs7ikq': {
-              execution_id: '4ww4alqs7ikq',
-              bot_id: 'merge_on_green',
-              start_time: 1595536893000,
-              end_time: 12345,
-              logs_url:
-                'https://pantheon.corp.google.com/logs/query;query=resource.type%3D%22' +
-                'cloud_function%22%0Alabels.%22execution_id%22%3D%224ww4alqs7ikq%22;' +
-                'timeRange=2020-07-23T20:41:33.701320846Z%2F22020-07-23T20:41:33.701320846Z;' +
-                'summaryFields=:true:32:beginning?project=repo-automation-bots',
-            }
-          };
           return testMessage(
             MOCK_MESSAGES.execution_start,
-            [{ document: expectedDocument, collectionName: 'Bot_Execution' }],
-            [{ document: preExistingDocument, collectionName: 'Bot_Execution' }]
+            [executionRecordBoth],
+            [executionRecordEnd]
           );
         });
 
         it('identifies existing record and stores execution end logs', () => {
-          const preExistingDocument = {
-            '4ww4q2vqvkl1': {
-              execution_id: '4ww4q2vqvkl1',
-              start_time: 12345,
-              logs_url: 'some/url',
-            }
-          };
-          const expectedDocument = {
-            '4ww4q2vqvkl1': {
-              execution_id: '4ww4q2vqvkl1',
-              bot_id: 'auto_label',
-              end_time: 1595536887000,
-              start_time: 12345,
-              logs_url: 'some/url',
-            }
-          };
           return testMessage(
             MOCK_MESSAGES.execution_end,
-            [{ document: expectedDocument, collectionName: 'Bot_Execution' }],
-            [{ document: preExistingDocument, collectionName: 'Bot_Execution' }]
+            [executionRecordBoth],
+            [executionRecordEnd]
           );
         });
       });
     });
 
     describe('correctly formed trigger information logs', () => {
-      describe('when no execution record exists', () => {
-        it('creates new execution record and stores trigger information logs', () => {
-          const expectedRecord1 = {
-            document: {
-              '1lth8bxqr88v': {
-                execution_id: '1lth8bxqr88v'
-              },
-            }, collectionName: 'Bot_Execution'
-          };
-          const expectedRecord2 = {
-            document: {
-              '1lth8bxqr88v': {
-                execution_id: '1lth8bxqr88v',
-                trigger_type: 'GITHUB_WEBHOOK',
-                github_event: '62eb57323fe7436520941da6d02534d2'
-              }
-            }, collectionName: 'Trigger'
-          };
-          return testMessage(MOCK_MESSAGES.trigger_information, [expectedRecord1, expectedRecord2]);
+
+      const executionRecord = {
+        document: {
+          '1lth8bxqr88v': {
+            execution_id: '1lth8bxqr88v',
+          },
+        },
+        collectionName: 'Bot_Execution',
+      };
+
+      const triggerRecord = {
+        document: {
+          '1lth8bxqr88v': {
+            execution_id: '1lth8bxqr88v',
+            trigger_type: 'GITHUB_WEBHOOK',
+            github_event: '62eb57323fe7436520941da6d02534d2',
+          },
+        },
+        collectionName: 'Trigger',
+      };
+
+      const repositoryRecord = {
+        document: {
+          'java-spanner_googleapis_org': {
+            repo_name: 'java-spanner',
+            owner_name: 'googleapis',
+            owner_type: 'org'
+          }
+        },
+        collectionName: 'GitHub_Repository',
+      }
+
+      describe('when no execution and repository record exists', () => {
+        it('creates new execution and repository record and stores trigger information logs', () => {
+          return testMessage(
+            MOCK_MESSAGES.trigger_information,
+            [executionRecord, triggerRecord, repositoryRecord]
+          );
         });
       });
 
-      describe('when an execution record already exists', () => {
+      describe('when an execution and repository record already exist', () => {
         it('identifies existing record and stores trigger information logs', () => {
-          const preExistingRecord = {
-            document: {
-              '1lth8bxqr88v': {
-                execution_id: '1lth8bxqr88v'
-              },
-            }, collectionName: 'Bot_Execution'
-          };
-          const expectedRecord1 = {
-            document: {
-              '1lth8bxqr88v': {
-                execution_id: '1lth8bxqr88v',
-                trigger_type: 'GITHUB_WEBHOOK',
-                github_event: '62eb57323fe7436520941da6d02534d2'
-              }
-            }, collectionName: 'Trigger'
-          };
-          return testMessage(MOCK_MESSAGES.trigger_information, [preExistingRecord, expectedRecord1], [preExistingRecord]);
+          return testMessage(
+            MOCK_MESSAGES.trigger_information,
+            [executionRecord, triggerRecord, repositoryRecord],
+            [executionRecord, repositoryRecord]
+          );
         });
       });
     });
 
     describe('correctly formed GitHub action logs', () => {
-      describe('when no execution record exists', () => {
-        it('creates a new execution record and stores GitHub action logs');
+
+      const executionRecord = {
+        document: {
+          'g36ouppwsu6z': {
+            execution_id: 'g36ouppwsu6z',
+          },
+        },
+        collectionName: 'Bot_Execution',
+      };
+
+      const actionRecord = {
+        document: {
+          'g36ouppwsu6z_ISSUE_ADD_LABELS_1596118668017': {
+            execution_id: 'g36ouppwsu6z',
+            action_type: 'ISSUE_ADD_LABELS',
+            timestamp: 1596118668017,
+            destination_object: 'ISSUE_python-ndb_googleapis_org_489',
+            destination_repo: 'python-ndb_googleapis_org',
+            value: 'kokoro:run',
+          },
+        },
+        collectionName: 'Action',
+      };
+
+      const repositoryRecord = {
+        document: {
+          'python-ndb_googleapis_org': {
+            repo_name: 'python-ndb',
+            owner_name: 'googleapis',
+            owner_type: 'org'
+          },
+        },
+        collectionName: 'GitHub_Repository',
+      };
+
+      const objectRecord = {
+        document: {
+          'python-ndb_googleapis_org': {
+            repo_name: 'python-ndb',
+            owner_name: 'googleapis',
+            owner_type: 'org'
+          },
+        },
+        collectionName: 'GitHub_Object',
+      };
+
+      describe('when no execution/repository/object record exists', () => {
+        it('creates a new execution/repository/object record and stores GitHub action logs', () => {
+          return testMessage(
+            MOCK_MESSAGES.github_action,
+            [executionRecord, actionRecord, objectRecord, repositoryRecord]
+          );
+        });
       });
 
-      describe('when an execution record already exists', () => {
-        it('identifies existing record and stores GitHub action logs');
+      describe('when an execution/repository/object record already exists', () => {
+        it('identifies execution/repository/object record and stores GitHub action logs', () => {
+          return testMessage(
+            MOCK_MESSAGES.github_action,
+            [executionRecord, objectRecord, repositoryRecord],
+            [actionRecord]
+          );
+        });
       });
     });
 
     describe('correctly formed error logs', () => {
       describe('when no execution record exists', () => {
-        it('creates a new execution record and stores error logs');
+        it('creates a new execution record and stores error logs', () => {
+          const expectedRecord1 = {
+            document: {
+              'pb86861bj247': {
+                execution_id: 'pb86861bj247',
+              },
+            },
+            collectionName: 'Bot_Execution',
+          };
+          const expectedRecord2 = {
+            document: {
+              'pb86861bj247_1596123567270': {
+                execution_id: 'pb86861bj247',
+                timestamp: 1596123567270,
+                error_msg: 'TypeError: Cannot read property \'name\' of undefined'
+              },
+            },
+            collectionName: 'Error',
+          };
+          return testMessage(MOCK_MESSAGES.error, [
+            expectedRecord1,
+            expectedRecord2,
+          ]);
+        });
       });
 
       describe('when an execution record already exists', () => {

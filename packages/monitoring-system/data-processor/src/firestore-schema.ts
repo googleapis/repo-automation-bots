@@ -16,21 +16,36 @@ export interface TaskQueueStatusDocument {
   in_queue?: number;
 }
 
-export interface ErrorDocument {}
-
-export interface TriggerDocument {
-    execution_id: string, // Primary Key
-    github_event: string,
-    trigger_type: string,
+export interface ErrorDocument {
+  execution_id: string; // Primary Key
+  timestamp: number; // Primary Key
+  error_msg: string;
 }
 
-export interface ActionDocument {}
+export interface TriggerDocument {
+  execution_id: string; // Primary Key
+  github_event?: string;
+  trigger_type?: string;
+}
+
+export interface ActionDocument {
+  execution_id: string; // Primary Key
+  action_type: string; // Primary Key
+  timestamp: number; // Primary Key
+  destination_object?: string;
+  destination_repo?: string;
+  value?: string;
+}
+
+export interface GitHubRepositoryDocument {
+  repo_name: string, // Primary Key
+  owner_name: string, // Primary Key
+  owner_type: 'org' | 'user', // Primary Key
+}
 
 export interface ActionTypeDocument {}
 
 export interface GitHubEventDocument {}
-
-export interface GitHubRepositoryDocument {}
 
 export interface GitHubObjectDocument {}
 

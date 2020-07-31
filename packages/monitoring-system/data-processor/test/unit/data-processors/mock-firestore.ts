@@ -108,7 +108,9 @@ export class MockFirestore extends Firestore {
       );
     }
 
-    const expectedProps = expected.document[expectedDocumentKey] as FirestoreData;
+    const expectedProps = expected.document[
+      expectedDocumentKey
+    ] as FirestoreData;
     const foundProps = foundDocument as FirestoreData;
     for (const prop of Object.keys(expectedProps)) {
       if (expectedProps[prop]) {
