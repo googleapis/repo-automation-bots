@@ -18,7 +18,7 @@ import {v1} from '@google-cloud/secret-manager';
 import * as express from 'express';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import {buildTriggerInfo} from './logging/trigger-parser';
+import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger, initLogger} from './logging/gcf-logger';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
