@@ -368,7 +368,14 @@ export class GCFBootstrapper {
             logger.info(`${id}: skipping Cloud Tasks`);
           }
           let payload = request.body;
-          if (triggerType === TriggerType.PUBSUB) {
+          if (
+            triggerType === TriggerType.PUBSUB ||
+            triggerType === TriggerType.SCHEDULER
+          ) {
+            // TODO(sofisl): investigate why TriggerType.SCHEDULER sometimes has a Buffer
+            // for its payload, and other times has an already parsed object.
+            //
+            // TODO: add unit tests for both forms of payload.
             payload = this.parsePubSubPayload(request);
           }
           await this.probot.receive({
@@ -396,6 +403,7 @@ export class GCFBootstrapper {
           body: JSON.stringify({message: 'Executed'}),
         });
       } catch (err) {
+        logger.error(err);
         response.status(500).send({
           statusCode: 500,
           body: JSON.stringify({message: err.message}),
@@ -471,7 +479,7 @@ export class GCFBootstrapper {
         body: JSON.stringify(payload),
       });
     } catch (err) {
-      logger.warn(err.message);
+      logger.error(err);
     }
   }
 
