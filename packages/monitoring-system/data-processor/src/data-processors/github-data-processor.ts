@@ -147,7 +147,11 @@ export class GitHubProcessor extends DataProcessor {
     const payloadHash = md5(JSON.stringify(eventResponse.payload));
 
     const [ownerName, repoName] = eventResponse.repo?.name?.split('/');
-    const ownerType: OwnerType = eventResponse.org ? ORG : eventResponse.user ? USER : UNKNOWN;
+    const ownerType: OwnerType = eventResponse.org
+      ? ORG
+      : eventResponse.user
+      ? USER
+      : UNKNOWN;
     const unixTimestamp = new Date(eventResponse.created_at).getTime();
 
     return {
