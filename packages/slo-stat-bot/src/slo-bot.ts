@@ -74,15 +74,7 @@ async function handleIssues(
 
     if (appliesToIssue) {
       const isCompliant = await isIssueCompliant(github, issueItem, slo);
-      await handleLabeling(
-        github,
-        issueItem.owner,
-        issueItem.repo,
-        issueItem.number,
-        isCompliant,
-        issueItem.labels,
-        labelName
-      );
+      await handleLabeling(github, issueItem, isCompliant, labelName);
 
       // Keep OOSLO label if issue is not compliant with any one of the slos
       if (!isCompliant) {

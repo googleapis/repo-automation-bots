@@ -17,8 +17,22 @@ import * as assert from 'assert';
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot';
 import {describe, it, beforeEach, afterEach} from 'mocha';
+import {IssuesListCommentsItem} from '../src/types';
 import * as sloCompliant from '../src/slo-compliant';
 import sinon from 'sinon';
+
+function getIssueItem(comment?: IssuesListCommentsItem) {
+  return {
+    owner: 'testOwner',
+    repo: 'testRepo',
+    number: 3,
+    type: 'issue',
+    createdAt: '2020-07-22T03:04:00Z',
+    assignees: [{login: 'testOwner', type: '', site_admin: false}],
+    labels: [],
+    comment: comment,
+  };
+}
 
 describe('durationTime', () => {
   describe('duration is in days', () => {
@@ -161,13 +175,11 @@ describe('getContributers', () => {
 });
 describe('getResponders', () => {
   const githubAPI: GitHubAPI = GitHubAPI();
-  //let convertToArrayStub: sinon.SinonStub;
   let fileContentStub: sinon.SinonStub;
   let getCollaboratorStub: sinon.SinonStub;
   let getContributorsStub: sinon.SinonStub;
 
   beforeEach(() => {
-    //convertToArrayStub = sinon.stub(sloCompliant, 'convertToArray');
     fileContentStub = sinon.stub(sloCompliant, 'getFilePathContent');
     getCollaboratorStub = sinon.stub(sloCompliant, 'getCollaborators');
     getContributorsStub = sinon.stub(sloCompliant, 'getContributers');
@@ -244,7 +256,6 @@ describe('getResponders', () => {
       slo
     );
 
-    //sinon.assert.notCalled(convertToArrayStub);
     sinon.assert.notCalled(fileContentStub);
     sinon.assert.calledOnce(getCollaboratorStub);
     sinon.assert.calledOnce(getContributorsStub);
@@ -269,9 +280,6 @@ describe('getResponders', () => {
         },
       },
     };
-    // convertToArrayStub
-    //   .onCall(0)
-    //   .returns(['.github/CODEOWNERS', 'collabs/owners.json']);
     fileContentStub.onCall(0).returns('@owner1  @owner2');
     fileContentStub.onCall(1).returns('@coder-cat @tester');
 
@@ -285,7 +293,6 @@ describe('getResponders', () => {
       slo
     );
 
-    //sinon.assert.calledOnce(convertToArrayStub);
     sinon.assert.calledTwice(fileContentStub);
     sinon.assert.notCalled(getCollaboratorStub);
     sinon.assert.notCalled(getContributorsStub);
@@ -318,7 +325,7 @@ describe('getResponders', () => {
         },
       },
     };
-    // convertToArrayStub.onCall(0).returns(['.github/CODEOWNERS']);
+
     fileContentStub.onCall(0).returns('@owner1  @owner2');
     getCollaboratorStub
       .onCall(0)
@@ -335,7 +342,6 @@ describe('getResponders', () => {
       slo
     );
 
-    //sinon.assert.calledOnce(convertToArrayStub);
     sinon.assert.calledOnce(fileContentStub);
     sinon.assert.calledOnce(getCollaboratorStub);
     sinon.assert.calledOnce(getContributorsStub);
@@ -361,7 +367,6 @@ describe('getResponders', () => {
         },
       },
     };
-    //convertToArrayStub.onCall(0).returns(['.github/CODEOWNERS']);
     fileContentStub.onCall(0).returns('@owner1  @owner2');
     getCollaboratorStub.onCall(0).returns([
       {login: 'collab1', permissions: {pull: true, push: true, admin: false}},
@@ -380,7 +385,6 @@ describe('getResponders', () => {
       slo
     );
 
-    //sinon.assert.calledOnce(convertToArrayStub);
     sinon.assert.calledOnce(fileContentStub);
     sinon.assert.calledOnce(getCollaboratorStub);
     sinon.assert.calledOnce(getContributorsStub);
@@ -436,15 +440,17 @@ describe('isInResponseTime', () => {
   });
   describe('issue_comment created with comment', () => {
     it('returns true if comment is not undefined and from a valid responder', async () => {
+      const issueItem = getIssueItem({
+        id: 3,
+        user: {login: 'user1'},
+        created_at: '',
+        updated_at: '',
+      });
       const isValid = await sloCompliant.isInResponseTime(
         github,
-        'testOwner',
-        'testRepo',
-        3,
+        issueItem,
         new Set<string>(['testOwner', 'user1', 'admin1']),
-        '4d',
-        '2020-07-22T03:04:00Z',
-        {id: 3, user: {login: 'user1'}, created_at: '', updated_at: ''}
+        '4d'
       );
       sinon.assert.notCalled(getIssueCommentsStub);
       assert.strictEqual(isValid, true);
@@ -460,17 +466,19 @@ describe('isInResponseTime', () => {
           updated_at: '2020-07-27T03:04:00Z',
         },
       ];
+      const issueItem = getIssueItem({
+        id: 3,
+        user: {login: 'invalid_user'},
+        created_at: '',
+        updated_at: '',
+      });
       isInDurationStub.onCall(0).returns(false);
       getIssueCommentsStub.onCall(0).returns(issueComments);
       const isValid = await sloCompliant.isInResponseTime(
         github,
-        'testOwner',
-        'testRepo',
-        3,
+        issueItem,
         new Set<string>(['testOwner', 'user1', 'admin1']),
-        '4d',
-        '2020-07-22T03:04:00Z',
-        {id: 3, user: {login: 'invalid_user'}, created_at: '', updated_at: ''}
+        '4d'
       );
       sinon.assert.calledOnce(isInDurationStub);
       sinon.assert.calledOnce(getIssueCommentsStub);
@@ -480,14 +488,17 @@ describe('isInResponseTime', () => {
   describe('issues with no comment', () => {
     it('returns true if issue is within response time', async () => {
       isInDurationStub.onCall(0).returns(true);
+      const issueItem = getIssueItem({
+        id: 3,
+        user: {login: 'invalid_user'},
+        created_at: '',
+        updated_at: '',
+      });
       const isValid = await sloCompliant.isInResponseTime(
         github,
-        'testOwner',
-        'testRepo',
-        3,
+        issueItem,
         new Set<string>(['testOwner', 'user1', 'admin1']),
-        '4d',
-        '2020-07-22T03:04:00Z'
+        '4d'
       );
 
       sinon.assert.calledOnce(isInDurationStub);
@@ -515,14 +526,18 @@ describe('isInResponseTime', () => {
       ];
       isInDurationStub.onCall(0).returns(false);
       getIssueCommentsStub.onCall(0).returns(issueComments);
+
+      const issueItem = getIssueItem({
+        id: 3,
+        user: {login: 'invalid_user'},
+        created_at: '',
+        updated_at: '',
+      });
       const isValid = await sloCompliant.isInResponseTime(
         github,
-        'testOwner',
-        'testRepo',
-        3,
+        issueItem,
         new Set<string>(['testOwner', 'user1', 'admin1']),
-        '4d',
-        '2020-07-22T03:04:00Z'
+        '4d'
       );
       sinon.assert.calledOnce(isInDurationStub);
       sinon.assert.calledOnce(getIssueCommentsStub);
@@ -541,14 +556,18 @@ describe('isInResponseTime', () => {
       ];
       isInDurationStub.onCall(0).returns(false);
       getIssueCommentsStub.onCall(0).returns(issueComments);
+
+      const issueItem = getIssueItem({
+        id: 3,
+        user: {login: 'invalid_user'},
+        created_at: '',
+        updated_at: '',
+      });
       const isValid = await sloCompliant.isInResponseTime(
         github,
-        'testOwner',
-        'testRepo',
-        3,
+        issueItem,
         new Set<string>(['user1', 'admin1']),
-        '4d',
-        '2020-07-22T03:04:00Z'
+        '4d'
       );
       sinon.assert.calledOnce(isInDurationStub);
       sinon.assert.calledOnce(getIssueCommentsStub);

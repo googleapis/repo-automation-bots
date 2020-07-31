@@ -16,6 +16,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {GitHubAPI} from 'probot';
 import {logger} from 'gcf-utils';
+import {IssueItem} from './types';
 
 /**
  * Function adds ooslo label to the given issue or pr.
@@ -83,26 +84,32 @@ export const removeLabel = async function removeLabel(
  * If slo is not compliant and does not have ooslo label, adds it to issue.
  * If slo is compliant but has ooslo label, removes it from issue
  * @param github unique installation id for each function
- * @param owner of issue or pr
- * @param repo of issue or pr
- * @param number of issue pr
- * @param sloStatus if issue applies to given issue and if it is compliant with the issue
- * @param labels on the issue or pr
+ * @param issueItem is an object that has issue owner, repo, number, type, created time of issue, assignees, labels, and comments
+ * @param isCompliant boolean to see if issue is compliant with slo
  * @param name of OOSLO label in repo
  * @returns void
  */
 export async function handleLabeling(
   github: GitHubAPI,
-  owner: string,
-  repo: string,
-  number: number,
+  issueItem: IssueItem,
   isCompliant: boolean,
-  labels: string[] | null,
   name: string
 ) {
-  if (!isCompliant && !labels?.includes(name)) {
-    await addLabel(github, owner, repo, number, name);
-  } else if (isCompliant && labels?.includes(name)) {
-    await removeLabel(github, owner, repo, number, name);
+  if (!isCompliant && !issueItem.labels?.includes(name)) {
+    await addLabel(
+      github,
+      issueItem.owner,
+      issueItem.repo,
+      issueItem.number,
+      name
+    );
+  } else if (isCompliant && issueItem.labels?.includes(name)) {
+    await removeLabel(
+      github,
+      issueItem.owner,
+      issueItem.repo,
+      issueItem.number,
+      name
+    );
   }
 }

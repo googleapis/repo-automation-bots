@@ -68,39 +68,31 @@ export const getFilePathContent = async function getFilePathContent(
 /**
  * Function checks if a valid responder commented on issue within response time
  * @param github of issue or pr
- * @param owner of issue or pr
- * @param repo of issue or pr
- * @param number of issue or pr
+ * @param issueItem is an object that has issue owner, repo, number, type, created time of issue, assignees, labels, and comments
  * @param responders that are valid for issue or pr
  * @param responseTime of issue or pr
- * @param createdAt time issue or pr
- * @param comment login of the user who commented on the pr
  * @returns true if valid responder responded in time else false
  */
 export const isInResponseTime = async function isInResponseTime(
   github: GitHubAPI,
-  owner: string,
-  repo: string,
-  number: number,
+  issueItem: IssueItem,
   responders: Set<string>,
   responseTime: string | number,
-  createdAt: string,
-  comment?: IssuesListCommentsItem
 ): Promise<boolean> {
-  const isInResTime = await isInDuration(responseTime, createdAt);
+  const isInResTime = await isInDuration(responseTime, issueItem.createdAt);
 
   if (!isInResTime) {
     //If the comment from the webhook event is a valid responder returns true
-    if (comment && responders.has(comment.user.login)) {
+    if (issueItem.comment && responders.has(issueItem.comment.user.login)) {
       return true;
     }
 
     //If either the comment is undefined or not from a valid responder, checks the list of comments on the issue for a valid responder
     const listIssueComments = await getIssueCommentsList(
       github,
-      owner,
-      repo,
-      number
+      issueItem.owner,
+      issueItem.repo,
+      issueItem.number
     );
 
     //API calls that fail to get list of issue comments will return true but log the error
@@ -358,13 +350,9 @@ export const isIssueCompliant = async function isIssueCompliant(
   if (responseTime !== 0) {
     const result = await isInResponseTime(
       github,
-      issueItem.owner,
-      issueItem.repo,
-      issueItem.number,
+      issueItem,
       responders,
-      responseTime,
-      issueItem.createdAt,
-      issueItem.comment
+      responseTime
     );
     if (!result) {
       logger.info(
