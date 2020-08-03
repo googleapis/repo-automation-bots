@@ -67,7 +67,14 @@ export function handler(app: Application) {
      * Check the `.github/sync-repo-settings.yaml` file, and if available,
      * use that config over any config broadly provided here.
      */
-    let config = await context.config<RepoConfig>('sync-repo-settings.yaml');
+    let config!: RepoConfig | null;
+    try {
+      config = await context.config<RepoConfig>('sync-repo-settings.yaml');
+    } catch (err) {
+      err.message = `Error reading configuration: ${err.message}`;
+      logger.error(err);
+    }
+
     if (!config) {
       logger.info(`no local config found for ${repo}, checking global config`);
       // Fetch the list of languages used in this repository
@@ -124,7 +131,7 @@ export function handler(app: Application) {
     }
 
     const jobs: Promise<void>[] = [];
-    if (config.permissionRules) {
+    if (config!.permissionRules) {
       jobs.push(updateRepoTeams(repo, context, config.permissionRules));
     }
     if (!ignored) {
