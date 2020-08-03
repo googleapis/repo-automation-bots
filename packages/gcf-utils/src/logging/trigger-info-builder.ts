@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 import {TriggerType} from '../gcf-utils';
-import md5 from 'md5';
+import crypto from 'crypto';
 
 /**
  * Information on GCF execution trigger
@@ -117,5 +117,5 @@ function getPayloadHash(
       toHash[prop] = requestBody[prop];
     }
   }
-  return md5(JSON.stringify(toHash));
+  return crypto.createHash('md5').update(JSON.stringify(toHash)).digest('hex');
 }
