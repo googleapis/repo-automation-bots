@@ -16,11 +16,11 @@ import {describe, it, beforeEach} from 'mocha';
 import assert from 'assert';
 import {resolve} from 'path';
 import {CloudTasksProcessor} from '../../../src/data-processors/cloud-tasks-data-processor';
-import {MockFirestore, FirestoreData} from './mock-firestore';
+import {MockFirestore, FirestoreData} from './mocks/mock-firestore';
 import {
   MockCloudTasksClient,
   MockTaskQueueData,
-} from './mock-cloud-tasks-client';
+} from './mocks/mock-cloud-tasks-client';
 
 const PATH_TO_FIXTURES = 'test/unit/data-processors/fixtures';
 interface InputQueueStatus {

@@ -27,6 +27,7 @@
     "@google-cloud/pubsub": "^2.3.0",
     "@google-cloud/tasks": "^2.1.0",
     "@types/pino": "^6.3.0",
+    "@octokit/rest": "^18.0.3",
     "express": "^4.17.1",
     "pino": "^6.4.1",
     "yaml": "^1.10.0"
