@@ -184,16 +184,16 @@ export class GCFBootstrapper {
   /**
    * Binds the trigger info to the logger so that every logged statement
    * includes the trigger info. Does not bind the message property.
-   * 
+   *
    * NOTE: statements logged before this method is called will not include
    * the trigger info
    * NOTE: this method modifies the triggerInfo parameter given
-   * 
+   *
    * @param triggerInfo trigger information for current execution
    */
   private static bindTriggerInfoToLogger(triggerInfo: TriggerInfo) {
     delete triggerInfo.message;
-    logger = initLogger({bindings: triggerInfo});
+    logger = logger.child(triggerInfo);
   }
 
   gcf(
