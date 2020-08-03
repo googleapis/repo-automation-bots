@@ -14,7 +14,8 @@
     "docker-start-local": "docker run --network=host -d data-processor:1.0",
     "docker-build-local": "docker build --tag data-processor:1.0 .",
     "local-docker": "npm run compile && npm run docker-build-local && npm run docker-start-local",
-    "deploy": "npm run compile && gcloud config set project repo-automation-bots && gcloud builds submit --tag gcr.io/repo-automation-bots/data-processor && gcloud run deploy --image gcr.io/repo-automation-bots/data-processor --platform managed"
+    "deploy": "npm run compile && gcloud config set project repo-automation-bots && gcloud builds submit --tag gcr.io/repo-automation-bots/data-processor && gcloud run deploy --image gcr.io/repo-automation-bots/data-processor --platform managed",
+    "gcurl": "curl --header \"Authorization: Bearer $(gcloud auth print-identity-token)\""
   },
   "repository": "https://github.com/googleapis/repo-automation-bots.git",
   "homepage": "https://github.com/googleapis/repo-automation-bots",

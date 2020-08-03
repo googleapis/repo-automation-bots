@@ -15,6 +15,7 @@
 import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {WriteResult} from '@google-cloud/firestore';
 import {CloudTasksClient, protos, v2} from '@google-cloud/tasks';
+import {BotDocument, TaskQueueStatusDocument} from '../firestore-schema';
 
 type CloudTasksList = [
   protos.google.cloud.tasks.v2.ITask[],
@@ -30,16 +31,6 @@ export interface CloudTasksProcessorOptions extends ProcessorOptions {
   tasksClient?: v2.CloudTasksClient;
   taskQueueProjectId: string;
   taskQueueLocation: string;
-}
-
-interface BotDocument {
-  bot_name: string;
-}
-
-interface TaskQueueDocument {
-  timestamp: number;
-  queue_name: string;
-  in_queue: number;
 }
 
 /**
@@ -158,7 +149,7 @@ export class CloudTasksProcessor extends DataProcessor {
 
     const writePromises: Promise<WriteResult>[] = queueNames.map(queueName => {
       const documentKey = `${queueName}_${currentTimestamp}`;
-      const documentData: TaskQueueDocument = {
+      const documentData: TaskQueueStatusDocument = {
         timestamp: currentTimestamp,
         queue_name: queueName,
         in_queue: queueStatus[queueName],
