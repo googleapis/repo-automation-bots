@@ -68,25 +68,18 @@ interface GCFLoggerJsonPayload {
 }
 
 interface TriggerInfoPayload extends GCFLoggerJsonPayload {
+  message: string;
   trigger: {
-    trigger_type: TriggerType;
+    trigger_type: string;
     trigger_sender?: string;
     github_delivery_guid?: string;
-
-    /**
-     * We include a payload hash for GitHub webhook triggers
-     * to be able to map the webhook to the GitHub Event
-     * since they share the same payload
-     */
     payload_hash?: string;
-
     trigger_source_repo?: {
       owner: string;
       owner_type: string;
       repo_name: string;
       url: string;
     };
-    message: string;
   };
 }
 
