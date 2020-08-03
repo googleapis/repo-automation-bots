@@ -105,6 +105,12 @@ export class GitHubProcessor extends DataProcessor {
     repository: GitHubRepositoryDocument
   ): Promise<GitHubEventDocument[]> {
     return this.octokit.activity
+      /**
+       * We only fetch the first page (last 100) events given
+       * that this process will run at most every 5 mins. However,
+       * this should be reconsidered if the rate of new events
+       * increases in the future.
+       */
       .listRepoEvents({
         repo: repository.repo_name,
         owner: repository.owner_name,
