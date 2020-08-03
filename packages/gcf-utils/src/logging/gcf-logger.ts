@@ -32,12 +32,17 @@ export interface GCFLogger {
   warn: LogFn;
   error: LogFn;
   metric: LogFn;
+  bindings: {(): {[key: string]: any}};
   flushSync: {(): void};
 }
 
-export function initLogger(
-  dest?: NodeJS.WritableStream | SonicBoom
-): GCFLogger {
+export interface GCFLoggerOptions {
+  destination?: NodeJS.WritableStream | SonicBoom,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  bindings?: {[key: string]: any}
+}
+
+export function initLogger(options?: GCFLoggerOptions): GCFLogger {
   const DEFAULT_LOG_LEVEL = 'trace';
   const defaultOptions: pino.LoggerOptions = {
     formatters: {
@@ -52,8 +57,13 @@ export function initLogger(
     level: DEFAULT_LOG_LEVEL,
   };
 
-  dest = dest || pino.destination({sync: true});
-  const logger = pino(defaultOptions, dest);
+  const destination = options?.destination || pino.destination({sync: true});
+  let logger = pino(defaultOptions, destination);
+
+  if (options?.bindings) {
+    logger = logger.child(options.bindings);
+  }
+
   Object.keys(logger).map(prop => {
     if (logger[prop] instanceof Function) {
       logger[prop] = logger[prop].bind(logger);
@@ -63,8 +73,8 @@ export function initLogger(
   const flushSync = () => {
     // flushSync is only available for SonicBoom,
     // which is the default destination wrapper for GCFLogger
-    if (dest instanceof SonicBoom) {
-      dest.flushSync();
+    if (destination instanceof SonicBoom) {
+      destination.flushSync();
     }
   };
 
@@ -72,6 +82,7 @@ export function initLogger(
     ...logger,
     metric: logger.metric.bind(logger),
     flushSync: flushSync,
+    bindings: logger.bindings
   };
 }
 

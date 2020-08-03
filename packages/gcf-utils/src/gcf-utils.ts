@@ -18,7 +18,7 @@ import {v1} from '@google-cloud/secret-manager';
 import * as express from 'express';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import {buildTriggerInfo} from './logging/trigger-info-builder';
+import {buildTriggerInfo, TriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger, initLogger} from './logging/gcf-logger';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
@@ -54,7 +54,7 @@ export interface WrapOptions {
   logging: boolean;
 }
 
-export const logger: GCFLogger = initLogger();
+export let logger: GCFLogger = initLogger();
 
 export interface CronPayload {
   repository: {
@@ -181,6 +181,21 @@ export class GCFBootstrapper {
     return TriggerType.UNKNOWN;
   }
 
+  /**
+   * Binds the trigger info to the logger so that every logged statement
+   * includes the trigger info. Does not bind the message property.
+   * 
+   * NOTE: statements logged before this method is called will not include
+   * the trigger info
+   * NOTE: this method modifies the triggerInfo parameter given
+   * 
+   * @param triggerInfo trigger information for current execution
+   */
+  private static bindTriggerInfoToLogger(triggerInfo: TriggerInfo) {
+    delete triggerInfo.message;
+    logger = initLogger({bindings: triggerInfo});
+  }
+
   gcf(
     appFn: ApplicationFunction,
     wrapOptions?: WrapOptions
@@ -200,7 +215,9 @@ export class GCFBootstrapper {
         taskId
       );
 
-      logger.metric(buildTriggerInfo(triggerType, id, request.body));
+      const triggerInfo = buildTriggerInfo(triggerType, id, request.body);
+      logger.metric(triggerInfo);
+      GCFBootstrapper.bindTriggerInfoToLogger(triggerInfo);
 
       try {
         if (triggerType === TriggerType.UNKNOWN) {

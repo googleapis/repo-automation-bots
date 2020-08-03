@@ -69,7 +69,7 @@ describe('GCFLogger Integration', () => {
 
   beforeEach(() => {
     destination = pino.destination(testStreamPath);
-    logger = initLogger(destination) as GCFLogger & {[key: string]: Function};
+    logger = initLogger({destination: destination}) as GCFLogger & {[key: string]: Function};
   });
 
   testAllLevels();
