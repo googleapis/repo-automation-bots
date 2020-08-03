@@ -234,5 +234,13 @@ export interface FirestoreSchema {
 }
 
 export function getRepositoryPrimaryKey(doc: GitHubRepositoryDocument): string {
-  return `${doc.repo_name}_${doc.owner_name}_${doc.owner_type}`;
+  if (
+    doc.repo_name &&
+    doc.owner_name &&
+    doc.owner_type &&
+    doc.owner_type !== OwnerType.UNKNOWN
+  ) {
+    return `${doc.repo_name}_${doc.owner_name}_${doc.owner_type}`;
+  }
+  return UNKNOWN_FIRESTORE_VALUE;
 }

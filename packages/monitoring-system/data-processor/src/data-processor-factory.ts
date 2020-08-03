@@ -56,7 +56,7 @@ export class DataProcessorFactory implements Factory {
       case Task.ProcessTaskQueue:
         return new CloudTasksProcessor(this.getTaskProcessorOptions());
       case Task.ProcessGitHub:
-        return new GitHubProcessor();
+        return new GitHubProcessor(this.getProcessorOptions());
       default:
         console.error(`Couldn't identify a data processor for task: ${task}`);
         throw new Error(`Couldn't identify a data processor for task: ${task}`);
