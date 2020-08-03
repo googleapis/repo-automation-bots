@@ -16,7 +16,7 @@ import {describe, it, beforeEach} from 'mocha';
 import assert from 'assert';
 import {MockSubscription} from './mocks/mock-pubsub-subscription';
 import {PubSub} from '@google-cloud/pubsub';
-import {MockFirestore, MockRecord} from './mock-firestore';
+import {MockFirestore, MockRecord} from './mocks/mock-firestore';
 import {CloudLogsProcessor} from '../../../src/data-processors/cloud-logs-data-processor';
 import {loadFixture} from './util/test-util';
 import {ObjectWritableMock} from 'stream-mock';
