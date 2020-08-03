@@ -28,13 +28,11 @@
     "@google-cloud/tasks": "^2.1.0",
     "@octokit/rest": "^18.0.3",
     "express": "^4.17.1",
-    "md5": "^2.2.1",
     "yaml": "^1.10.0"
   },
   "devDependencies": {
     "@firebase/testing": "^0.20.7",
     "@types/express": "^4.17.7",
-    "@types/md5": "^2.2.0",
     "@types/mocha": "^8.0.0",
     "@types/supertest": "^2.0.10",
     "c8": "^7.2.1",

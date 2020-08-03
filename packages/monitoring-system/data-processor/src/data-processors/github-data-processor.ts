@@ -15,7 +15,7 @@
 import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {Octokit} from '@octokit/rest';
 import {WriteResult} from '@google-cloud/firestore';
-import md5 from 'md5';
+import crypto from 'crypto';
 import {
   GitHubRepositoryDocument,
   OwnerType,
@@ -144,7 +144,10 @@ export class GitHubProcessor extends DataProcessor {
      * to be able to map the webhook to the GitHub Event
      * since they share the same payload
      */
-    const payloadHash = md5(JSON.stringify(eventResponse.payload));
+    const payloadHash = crypto
+      .createHash('md5')
+      .update(JSON.stringify(eventResponse.payload))
+      .digest('hex');
 
     const [ownerName, repoName] = eventResponse.repo?.name?.split('/');
     const ownerType: OwnerType = eventResponse.org
