@@ -9,5 +9,5 @@ require (
 	github.com/google/uuid v1.1.1
 	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
-	google.golang.org/genproto v0.0.0-20200729003335-053ba62fc06f
+	google.golang.org/genproto v0.0.0-20200731012542-8145dea6a485
 )
