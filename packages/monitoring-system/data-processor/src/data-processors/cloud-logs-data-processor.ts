@@ -14,20 +14,106 @@
 //
 import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {Subscription} from '@google-cloud/pubsub';
+import {PubsubMessage} from '@google-cloud/pubsub/build/src/publisher';
 
 export interface CloudLogsProcessorOptions extends ProcessorOptions {
   subscription: Subscription;
 }
 
+/**
+ * Categories of incoming log messages
+ */
+enum LogType {
+  EXECUTION_START,
+  EXECUTION_END,
+  TRIGGER_INFO,
+  GITHUB_ACTION,
+  ERROR,
+  MALFORMED,
+  OTHER,
+}
+
+/**
+ * Cloud Logging / Stackdriver log statement structure
+ */
+interface LogMessage {
+  [key: string]: any; // logs may have other unexpected properties
+  insertId: string;
+  jsonPayload?: GCFLoggerJsonPayload | {};
+  textPayload?: string;
+  resource: {
+    type: string;
+    labels: {
+      function_name: string;
+      project_id: string;
+      region: string;
+    };
+  };
+  timestamp: string;
+  severity: string;
+  labels: {
+    execution_id: string;
+  };
+  logName: string;
+  trace: string;
+  receiveTimestamp: string;
+}
+
+/**
+ * The default structure of a GCFLogger JSON payload
+ */
+interface GCFLoggerJsonPayload {
+  level: number;
+  message?: string;
+}
+
+interface TriggerInfoPayload extends GCFLoggerJsonPayload {
+  trigger: {
+    trigger_type: TriggerType;
+    trigger_sender?: string;
+    github_delivery_guid?: string;
+
+    /**
+     * We include a payload hash for GitHub webhook triggers
+     * to be able to map the webhook to the GitHub Event
+     * since they share the same payload
+     */
+    payload_hash?: string;
+
+    trigger_source_repo?: {
+      owner: string;
+      owner_type: string;
+      repo_name: string;
+      url: string;
+    };
+    message: string;
+  };
+}
+
+
+/**
+ * Pull new logs via a PubSub queue and process them
+ */
 export class CloudLogsProcessor extends DataProcessor {
   private subscription: Subscription;
 
+  /**
+   * Create a Cloud Logs processor instance
+   * @param options cloud logs processor options
+   */
   constructor(options: CloudLogsProcessorOptions) {
     super(options);
     this.subscription = options.subscription;
   }
 
+  /**
+   * Start the collection and processing task
+   */
   public async collectAndProcess(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  private async pubSubMessageHandler(message: PubsubMessage) {
     throw new Error('Method not implemented.');
   }
 }
