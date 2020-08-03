@@ -104,33 +104,37 @@ export class GitHubProcessor extends DataProcessor {
   private async listPublicEventsForRepository(
     repository: GitHubRepositoryDocument
   ): Promise<GitHubEventDocument[]> {
-    return this.octokit.activity
-      /**
-       * We only fetch the first page (last 100) events given
-       * that this process will run at most every 5 mins. However,
-       * this should be reconsidered if the rate of new events
-       * increases in the future.
-       */
-      .listRepoEvents({
-        repo: repository.repo_name,
-        owner: repository.owner_name,
-      })
-      .then(eventsPayload => {
-        if (!(eventsPayload.data instanceof Array)) {
-          throw new Error(
-            `Unexpected payload from Octokit: ${JSON.stringify(eventsPayload)}`
-          );
-        }
-        const gitHubEvents: GitHubEventDocument[] = [];
-        for (const event of eventsPayload.data) {
-          gitHubEvents.push(
-            this.githubEventResponseToEvent(
-              (event as unknown) as GitHubEventResponse
-            )
-          );
-        }
-        return gitHubEvents;
-      });
+    return (
+      this.octokit.activity
+        /**
+         * We only fetch the first page (last 100) events given
+         * that this process will run at most every 5 mins. However,
+         * this should be reconsidered if the rate of new events
+         * increases in the future.
+         */
+        .listRepoEvents({
+          repo: repository.repo_name,
+          owner: repository.owner_name,
+        })
+        .then(eventsPayload => {
+          if (!(eventsPayload.data instanceof Array)) {
+            throw new Error(
+              `Unexpected payload from Octokit: ${JSON.stringify(
+                eventsPayload
+              )}`
+            );
+          }
+          const gitHubEvents: GitHubEventDocument[] = [];
+          for (const event of eventsPayload.data) {
+            gitHubEvents.push(
+              this.githubEventResponseToEvent(
+                (event as unknown) as GitHubEventResponse
+              )
+            );
+          }
+          return gitHubEvents;
+        })
+    );
   }
 
   /**

@@ -18,6 +18,9 @@ import randomString from 'randomstring';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type MessageHandler = (...args: any[]) => void;
 
+/**
+ * A mock PubSub message
+ */
 class MockMessage {
   public data: Buffer;
   public id: string;
@@ -43,6 +46,10 @@ class MockMessage {
   }
 }
 
+/**
+ * A class to mimic a PubSub subscription for testing purposes
+ * Note: not all PubSub Subscription functionalities are supported
+ */
 export class MockSubscription extends Subscription {
   private messageHandler?: MessageHandler;
   private queuedMessages: MockMessage[] = [];

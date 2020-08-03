@@ -127,11 +127,7 @@ async function testMalformedMessage(
  * @returns promise with message id
  */
 async function startAndSendMessage(message: {}): Promise<string> {
-  const processingTask = processor.collectAndProcess();
-  const messageId = mockSubscription.sendMockMessage(asBuffer(message));
-  return processingTask.then(() => {
-    return messageId;
-  });
+  return startAndSendMultipleMessages([message]).then(ids => ids[0]);
 }
 
 /**
@@ -534,13 +530,13 @@ describe('Cloud Logs Processor', () => {
 
       it('ignores log statements with an unidentified format', () => {
         const copyOfBlankData = JSON.parse(
-          JSON.stringify(mockFirestore.mockData)
+          JSON.stringify(mockFirestore.getMockData())
         );
         return startAndSendMessage(VALID_MESSAGES.randomTextPayload).then(
           messageId => {
             assert(mockSubscription.wasAcked(messageId));
             assert.deepEqual(
-              mockFirestore.mockData,
+              mockFirestore.getMockData(),
               copyOfBlankData,
               'Expected no writes on Firestore'
             );
