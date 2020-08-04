@@ -168,6 +168,8 @@ async function updateMasterBranchProtection(
   // Combine user settings with a lax set of defaults
   rule = Object.assign({}, branchProtectionDefaults, rule);
 
+  logger.debug(`Required status checks ${rule.requiredStatusCheckContexts}`);
+
   try {
     await context.github.repos.updateBranchProtection({
       branch: rule.pattern,
