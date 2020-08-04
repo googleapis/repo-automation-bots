@@ -45,7 +45,6 @@ enum LogEntryType {
   TRIGGER_INFO,
   GITHUB_ACTION,
   ERROR,
-  MALFORMED,
   OTHER,
 }
 
@@ -159,8 +158,14 @@ export class CloudLogsProcessor extends DataProcessor {
    * @param message incoming PubSub message
    */
   private async processMessage(message: PubsubMessage) {
-    // todo: add promise to messagesBeingProcessed
-    throw new Error('Method not implemented.');
+    this.messagesBeingProcessed.push(new Promise((resolve, reject) => {
+      try {
+        const logEntry = this.getLogEntryFromMessage(message);
+        const logEntryType = this.parseLogEntryType(logEntry);
+      } catch (error) {
+        this.logger.error(`Failed to `)
+      }
+    }))
   }
 
   /**
@@ -206,6 +211,22 @@ export class CloudLogsProcessor extends DataProcessor {
    * @param entry log entry with trigger information
    */
   private async processTriggerInfoLog(entry: LogEntry): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  /**
+   * Processes a log entry with information on a GitHub action
+   * @param entry log entry with GitHub action info
+   */
+  private async processGitHubActionLog(entry: LogEntry): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  /**
+   * Processes a log entry with an execution error
+   * @param entry log entry with error
+   */
+  private async processErrorLog(entry: LogEntry): Promise<void> {
     throw new Error('Method not implemented.');
   }
 

@@ -22,9 +22,11 @@ export interface ProcessorOptions {
 
 export abstract class DataProcessor {
   protected firestore: Firestore;
+  protected logger: pino.Logger;
 
   constructor(options?: ProcessorOptions) {
     this.firestore = options?.firestore || new Firestore();
+    this.logger = options?.logger || this.initLogger();
   }
 
   /**
@@ -32,4 +34,17 @@ export abstract class DataProcessor {
    * @throws if there is an error while processing data source
    */
   public abstract async collectAndProcess(): Promise<void>;
+
+  private initLogger(): pino.Logger {
+    const DEFAULT_LOG_LEVEL = 'trace';
+    const defaultOptions: pino.LoggerOptions = {
+      base: null,
+      messageKey: 'message',
+      timestamp: false,
+      level: DEFAULT_LOG_LEVEL,
+    };
+  
+    const dest = pino.destination({sync: true});
+    return pino(defaultOptions, dest);
+  }
 }
