@@ -14,6 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context} from 'probot';
+import extend from 'extend';
 import {
   LanguageConfig,
   RepoConfig,
@@ -121,7 +122,7 @@ export function handler(app: Application) {
       }
       logger.info(`Determined ${repo} is ${language}`);
 
-      config = languageConfig[language];
+      config = extend(true, {}, languageConfig)[language];
       if (!config) {
         logger.info(`no config for language ${language}`);
         return;
@@ -182,7 +183,7 @@ async function updateMasterBranchProtection(
   logger.debug(rule);
 
   // Combine user settings with a lax set of defaults
-  rule = Object.assign({}, branchProtectionDefaults, rule);
+  rule = extend(true, {}, branchProtectionDefaults, rule);
 
   logger.debug('Rules after applying defaults:');
   logger.debug(rule);
@@ -278,7 +279,7 @@ async function updateRepoOptions(
 ) {
   logger.info(`Updating commit settings for ${repo}`);
   const [owner, name] = repo.split('/');
-  config = Object.assign({}, repoConfigDefaults, config);
+  config = extend(true, {}, repoConfigDefaults, config);
   logger.info(`name: ${name}`);
   logger.info(`owner: ${owner}`);
   logger.info(`enable rebase? ${config.rebaseMergeAllowed}`);
