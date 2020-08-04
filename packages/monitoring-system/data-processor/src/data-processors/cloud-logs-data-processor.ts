@@ -15,6 +15,8 @@
 import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {Subscription} from '@google-cloud/pubsub';
 import {PubsubMessage} from '@google-cloud/pubsub/build/src/publisher';
+import { BotExecutionDocument } from '../firestore-schema';
+import { WriteResult } from '@google-cloud/firestore';
 
 export interface CloudLogsProcessorOptions extends ProcessorOptions {
   /**
@@ -37,7 +39,7 @@ export interface CloudLogsProcessorOptions extends ProcessorOptions {
 /**
  * Categories of incoming log messages
  */
-enum LogType {
+enum LogEntryType {
   EXECUTION_START,
   EXECUTION_END,
   TRIGGER_INFO,
@@ -48,7 +50,7 @@ enum LogType {
 }
 
 /**
- * Cloud Logging / Stackdriver log statement structure
+ * Cloud Logging / Stackdriver log entry structure
  */
 interface LogEntry {
   [key: string]: any; // logs may have other properties
@@ -153,10 +155,11 @@ export class CloudLogsProcessor extends DataProcessor {
   }
 
   /**
-   * Process an incoming PubSub message
+   * Processes an incoming PubSub message
    * @param message incoming PubSub message
    */
   private async processMessage(message: PubsubMessage) {
+    // todo: add promise to messagesBeingProcessed
     throw new Error('Method not implemented.');
   }
 
@@ -172,5 +175,47 @@ export class CloudLogsProcessor extends DataProcessor {
     }
     const jsonData = JSON.parse(bufferData.toString());
     return jsonData as LogEntry;
+  }
+
+  /**
+   * Determines the LogEntryType for the given LogEntry
+   * @param entry LogEntry to parse
+   */
+  private parseLogEntryType(entry: LogEntry): LogEntryType {
+    throw new Error('Method not implemented.');
+  }
+
+  /**
+   * Processes a log entry marking the start of the execution
+   * @param entry execution start log entry
+   */
+  private async processExecutionStartLog(entry: LogEntry): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  /**
+   * Processes a log entry marking the end of the execution
+   * @param entry execution end log entry
+   */
+  private async processExecutionEndLog(entry: LogEntry): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  /**
+   * Processes a log entry with trigger information for the execution
+   * @param entry log entry with trigger information
+   */
+  private async processTriggerInfoLog(entry: LogEntry): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  /**
+   * Inserts the given bot execution information into Firestore:
+   * - if a document with the same key already exists, updates the fields with those in `doc`
+   * - if no document with the same key exists, creates a new document with fields from `doc`
+   * @param doc BotExecutionDocument containing new information to insert into Firestore
+   */
+  private async storeBotExecutionDoc(doc: BotExecutionDocument): Promise<WriteResult> {
+    throw new Error('Method not implemented.');
   }
 }
