@@ -237,7 +237,87 @@ export class CloudLogsProcessor extends DataProcessor {
    * @param entry LogEntry to parse
    */
   private parseLogEntryType(entry: LogEntry): LogEntryType {
+    if (!this.isValidLogEntry(entry)) {
+      return LogEntryType.MALFORMED;
+    }
+    try {
+      if (this.isErrorLog(entry)) {
+        return LogEntryType.ERROR;
+      }
+      if (this.isExecutionStartEntry(entry)) {
+        return LogEntryType.EXECUTION_START;
+      }
+      if (this.isExecutionEndEntry(entry)) {
+        return LogEntryType.EXECUTION_END;
+      }
+      if (this.isTriggerInfoEntry(entry)) {
+        return LogEntryType.TRIGGER_INFO;
+      }
+      if (this.isGitHubActionEntry(entry)) {
+        return LogEntryType.GITHUB_ACTION;
+      }
+      return LogEntryType.NON_METRIC;
+    } catch (error) {
+      return LogEntryType.MALFORMED;
+    }
+  }
+
+  /**
+   * Determines if the given log entry has the fields required
+   * to make it a valid entry.
+   * @param entry entry to check
+   * @returns true if entry is valid, false otherwise
+   */
+  private isValidLogEntry(entry: LogEntry): boolean {
     // TODO: log error for malformed entries
+    throw new Error('Method not implemented.');
+  }
+
+  /**
+   * Check if the given log entry is of type ERROR
+   * @param entry entry to check
+   * @throws if entry is an erroneous log but has no
+   * textPayload or jsonPayload
+   */
+  private isErrorLog(entry: LogEntry): boolean {
+    // TODO check text or json payload
+    const ERRORONEOUS_SEVERITIES = ['ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'];
+    return ERRORONEOUS_SEVERITIES.includes(entry.severity);
+  }
+
+  /**
+   * Check if the given log entry is of type EXECUTION_START
+   * @param entry entry to check
+   */
+  private isExecutionStartEntry(entry: LogEntry): boolean {
+    const REGEX = /Function execution started/;
+    return !!entry.textPayload?.match(REGEX);
+  }
+
+  /**
+   * Check if the given log entry is of type EXECUTION_END
+   * @param entry entry to check
+   */
+  private isExecutionEndEntry(entry: LogEntry): boolean {
+    const REGEX = /Function execution took [0-9]{1,2} ms, finished with status code: [0-9]{3}/;
+    return !!entry.textPayload?.match(REGEX);
+  }
+
+  /**
+   * Check if the given log entry is of type TRIGGER_INFO
+   * @param entry entry to check
+   * @throws if entry is an incomplete trigger info entry
+   */
+  private isTriggerInfoEntry(entry: LogEntry): boolean {
+    throw new Error('Method not implemented.');
+  }
+
+  /**
+   * Check if the given log entry is of type GITHUB_ACTION
+   * @param entry entry to check
+   * @throws if entry is an incomplete GitHub action entry
+   */
+  private isGitHubActionEntry(entry: LogEntry): boolean {
     throw new Error('Method not implemented.');
   }
 
