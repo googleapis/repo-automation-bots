@@ -17,7 +17,21 @@ import {Subscription} from '@google-cloud/pubsub';
 import {PubsubMessage} from '@google-cloud/pubsub/build/src/publisher';
 
 export interface CloudLogsProcessorOptions extends ProcessorOptions {
+  /**
+   * The PubSub subscription to listen to
+   */
   subscription: Subscription;
+
+  /**
+   * The time (in seconds) for which the processor should listen
+   * for new messages per task run.
+   * 
+   * Note: Cloud Run tasks can run for a maximum of 15 minutes
+   * (900 seconds) but it is not recommended to set this as the 
+   * listenLimit - once the processor stops listening it must
+   * still finish processing the pending messages.
+   */
+  listenLimit: number;
 }
 
 /**
@@ -36,8 +50,8 @@ enum LogType {
 /**
  * Cloud Logging / Stackdriver log statement structure
  */
-interface LogMessage {
-  [key: string]: any; // logs may have other unexpected properties
+interface LogEntry {
+  [key: string]: any; // logs may have other properties
   insertId: string;
   jsonPayload?: GCFLoggerJsonPayload | {};
   textPayload?: string;
@@ -63,10 +77,14 @@ interface LogMessage {
  * The default structure of a GCFLogger JSON payload
  */
 interface GCFLoggerJsonPayload {
+  [key: string]: any; // payload may have other properties
   level: number;
   message?: string;
 }
 
+/**
+ * JSON Payload for trigger information logs
+ */
 interface TriggerInfoPayload extends GCFLoggerJsonPayload {
   message: string;
   trigger: {
@@ -83,12 +101,33 @@ interface TriggerInfoPayload extends GCFLoggerJsonPayload {
   };
 }
 
+/**
+ * JSON Payload for GitHub action logs
+ */
+interface GitHubActionPayload extends GCFLoggerJsonPayload {
+  action: {
+    type: string;
+    value: string;
+    destination_object?: {
+      object_type: string;
+      object_id: string | number;
+    };
+    destination_repo: {
+      repo_name: string;
+      owner: string;
+    };
+  };
+}
+
 
 /**
  * Pull new logs via a PubSub queue and process them
  */
 export class CloudLogsProcessor extends DataProcessor {
+
+  private messagesBeingProcessed: Promise<void>[] = [];
   private subscription: Subscription;
+  private listenLimit: number;
 
   /**
    * Create a Cloud Logs processor instance
@@ -97,16 +136,41 @@ export class CloudLogsProcessor extends DataProcessor {
   constructor(options: CloudLogsProcessorOptions) {
     super(options);
     this.subscription = options.subscription;
+    this.listenLimit = options.listenLimit;
   }
 
   /**
    * Start the collection and processing task
    */
   public async collectAndProcess(): Promise<void> {
+    return new Promise(() => {
+      this.subscription.on('message', this.processMessage);
+      setTimeout(() => {
+        this.subscription.removeAllListeners();  // todo implement this in the mock
+        return Promise.all(this.messagesBeingProcessed);
+      }, this.listenLimit);
+    })
+  }
+
+  /**
+   * Process an incoming PubSub message
+   * @param message incoming PubSub message
+   */
+  private async processMessage(message: PubsubMessage) {
     throw new Error('Method not implemented.');
   }
 
-  private async pubSubMessageHandler(message: PubsubMessage) {
-    throw new Error('Method not implemented.');
+  /**
+   * Parses the LogEntry object from the given PubSub message
+   * @param message PubSub message with log entry
+   * @throws error if PubSub message does not contain any data
+   */
+  private getLogEntryFromMessage(message: PubsubMessage): LogEntry {
+    const bufferData = message.data;
+    if (!bufferData) {
+      throw new Error('PubSub message did not contain any data');
+    }
+    const jsonData = JSON.parse(bufferData.toString());
+    return jsonData as LogEntry;
   }
 }
