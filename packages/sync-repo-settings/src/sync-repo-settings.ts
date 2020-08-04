@@ -22,16 +22,30 @@ import {
 } from './types';
 import {logger} from 'gcf-utils';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const languageConfig: LanguageConfig = require('./required-checks.json');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function deepFreeze(object: any) {
+  const propNames = Object.getOwnPropertyNames(object);
+  for (const name of propNames) {
+    const value = object[name];
+    if (value && typeof value === 'object') {
+      deepFreeze(value);
+    }
+  }
+  return Object.freeze(object);
+}
 
-const repoConfigDefaults: RepoConfig = {
+const languageConfig: LanguageConfig = deepFreeze(
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require('./required-checks.json')
+);
+
+const repoConfigDefaults: RepoConfig = deepFreeze({
   mergeCommitAllowed: false,
   squashMergeAllowed: true,
   rebaseMergeAllowed: true,
-};
+});
 
-const branchProtectionDefaults: BranchProtectionRule = {
+const branchProtectionDefaults = deepFreeze({
   pattern: 'master',
   dismissesStaleReviews: false,
   isAdminEnforced: true,
@@ -43,7 +57,7 @@ const branchProtectionDefaults: BranchProtectionRule = {
   restrictsPushes: false,
   restrictsReviewDismissals: false,
   requiredStatusCheckContexts: [],
-};
+});
 
 /**
  * Main.  On a nightly cron, update the settings for a given repository.
@@ -120,7 +134,7 @@ export function handler(app: Application) {
       }
 
       if (languageConfig[language]?.repoOverrides) {
-        const customConfig = languageConfig[language].repoOverrides?.find(
+        const customConfig = languageConfig[language].repoOverrides!.find(
           x => x.repo === repo
         );
         if (customConfig) {
@@ -164,9 +178,14 @@ async function updateMasterBranchProtection(
 
   // TODO: add support for mutiple rules
   let rule = rules[0];
+  logger.debug('Rules before applying defaults:');
+  logger.debug(rule);
 
   // Combine user settings with a lax set of defaults
   rule = Object.assign({}, branchProtectionDefaults, rule);
+
+  logger.debug('Rules after applying defaults:');
+  logger.debug(rule);
 
   logger.debug(`Required status checks ${rule.requiredStatusCheckContexts}`);
 
