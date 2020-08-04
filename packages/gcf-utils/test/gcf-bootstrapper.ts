@@ -21,7 +21,6 @@ import sinon from 'sinon';
 import nock from 'nock';
 import assert from 'assert';
 import {v1} from '@google-cloud/secret-manager';
-import {TriggerInfo} from '../src/logging/trigger-info-builder';
 
 nock.disableNetConnect();
 
@@ -369,8 +368,8 @@ describe('GCFBootstrapper', () => {
     });
   });
 
-  describe('bindTriggerInfoToLogger', () => {
-    it('binds all trigger info properties except message', () => {
+  describe('bindPropertiesToLogger', () => {
+    it('binds given properties', () => {
       const triggerInfoWithoutMessage = {
         trigger: {
           trigger_type: 'GITHUB_WEBHOOK',
@@ -386,12 +385,7 @@ describe('GCFBootstrapper', () => {
         },
       };
 
-      const triggerInfo = {
-        ...triggerInfoWithoutMessage,
-        message: 'some message',
-      };
-
-      GCFBootstrapper['bindTriggerInfoToLogger'](triggerInfo as TriggerInfo);
+      GCFBootstrapper['bindPropertiesToLogger'](triggerInfoWithoutMessage);
       assert.deepEqual(logger.bindings(), triggerInfoWithoutMessage);
     });
   });

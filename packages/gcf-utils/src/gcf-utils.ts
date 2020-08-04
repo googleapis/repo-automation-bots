@@ -18,7 +18,7 @@ import {v1} from '@google-cloud/secret-manager';
 import * as express from 'express';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import {buildTriggerInfo, TriggerInfo} from './logging/trigger-info-builder';
+import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger, initLogger} from './logging/gcf-logger';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
@@ -182,18 +182,16 @@ export class GCFBootstrapper {
   }
 
   /**
-   * Binds the trigger info to the logger so that every logged statement
-   * includes the trigger info. Does not bind the message property.
+   * Binds the given properties to the logger so that every logged statement
+   * includes these properties.
    *
    * NOTE: statements logged before this method is called will not include
-   * the trigger info
-   * NOTE: this method modifies the triggerInfo parameter given
+   * this information
    *
-   * @param triggerInfo trigger information for current execution
+   * @param bindings object containing properties to bind to the logger
    */
-  private static bindTriggerInfoToLogger(triggerInfo: TriggerInfo) {
-    delete triggerInfo.message;
-    logger = logger.child(triggerInfo);
+  private static bindPropertiesToLogger(bindings: {}) {
+    logger = logger.child(bindings);
   }
 
   gcf(
@@ -217,7 +215,9 @@ export class GCFBootstrapper {
 
       const triggerInfo = buildTriggerInfo(triggerType, id, request.body);
       logger.metric(triggerInfo);
-      GCFBootstrapper.bindTriggerInfoToLogger(triggerInfo);
+
+      delete triggerInfo.message; // we don't want to bind the message to every log entry
+      GCFBootstrapper.bindPropertiesToLogger(triggerInfo);
 
       try {
         if (triggerType === TriggerType.UNKNOWN) {
