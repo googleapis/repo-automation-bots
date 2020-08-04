@@ -214,10 +214,12 @@ export class GCFBootstrapper {
       );
 
       const triggerInfo = buildTriggerInfo(triggerType, id, request.body);
-      logger.metric(triggerInfo);
+      GCFBootstrapper.bindPropertiesToLogger(triggerInfo); // no message in triggerInfo
 
-      delete triggerInfo.message; // we don't want to bind the message to every log entry
-      GCFBootstrapper.bindPropertiesToLogger(triggerInfo);
+      logger.metric({
+        message: `Execution started by ${triggerType}`,
+        ...triggerInfo,
+      });
 
       try {
         if (triggerType === TriggerType.UNKNOWN) {
