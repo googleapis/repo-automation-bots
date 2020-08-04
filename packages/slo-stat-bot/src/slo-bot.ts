@@ -299,6 +299,9 @@ export = function handler(app: Application) {
       return;
     }
 
+    const sloString = await getSloFile(context.github, owner, repo);
+    const labelName = await getOoSloLabelName(context);
+
     for (const issue of issueList) {
       const number = issue.number;
       const createdAt = issue.created_at;
@@ -307,10 +310,7 @@ export = function handler(app: Application) {
       const labels = issue.labels.map((label: IssueLabelResponseItem) =>
         label.name.toLowerCase()
       );
-      const sloString = await getSloFile(context.github, owner, repo);
-      const labelName = await getOoSloLabelName(context);
       const type = issue.pull_request === undefined ? 'issue' : 'pull_request';
-
       const issueItem = {
         owner,
         repo,
