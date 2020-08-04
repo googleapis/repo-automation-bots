@@ -171,7 +171,7 @@ describe('Cloud Logs Processor', () => {
         processor = new CloudLogsProcessor({
           firestore: mockFirestore,
           subscription: mockSubscription,
-          listenLimit: 2
+          listenLimit: 2,
         });
       });
 
@@ -444,7 +444,7 @@ describe('Cloud Logs Processor', () => {
           firestore: mockFirestore,
           subscription: mockSubscription,
           logger: getMockLogger(mockWriteStream),
-          listenLimit: 2
+          listenLimit: 2,
         });
       });
 
@@ -556,7 +556,7 @@ describe('Cloud Logs Processor', () => {
           firestore: mockFirestore,
           subscription: mockSubscription,
           logger: getMockLogger(mockWriteStream),
-          listenLimit: 2
+          listenLimit: 2,
         });
       });
 

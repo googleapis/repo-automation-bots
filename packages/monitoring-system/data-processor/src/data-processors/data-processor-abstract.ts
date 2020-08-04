@@ -43,7 +43,7 @@ export abstract class DataProcessor {
       timestamp: false,
       level: DEFAULT_LOG_LEVEL,
     };
-  
+
     const dest = pino.destination({sync: true});
     return pino(defaultOptions, dest);
   }
