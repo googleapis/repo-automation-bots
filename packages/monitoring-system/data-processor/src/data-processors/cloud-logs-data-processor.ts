@@ -184,9 +184,16 @@ export class CloudLogsProcessor extends DataProcessor {
    * @param message an incoming PubSub message
    */
   private async processMessage(message: Message) {
-    const logEntry = this.getLogEntryFromMessage(message);
-    const logEntryType = this.parseLogEntryType(logEntry);
+    const logEntry = this.getJSONFromMessage(message);
+    if (!this.instanceOfLogEntry(logEntry)) {
+      this.logger.error({
+        message: 'JSON from PubSub message is not a valid log entry',
+        json: logEntry,
+      });
+      return;
+    }
 
+    const logEntryType = this.parseLogEntryType(logEntry);
     const messageProcessingTask = this.routeLogEntryToHandler(
       logEntry,
       logEntryType
@@ -212,23 +219,69 @@ export class CloudLogsProcessor extends DataProcessor {
   }
 
   /**
-   * Parses the LogEntry object from the given PubSub message
+   * Parses the JSON object from the given PubSub message
    *
-   * @param pubSubMessage PubSub message with log entry
-   * @returns parsed log entry from the PubSub message or an
+   * @param pubSubMessage PubSub message with JSON data
+   * @returns parsed JSON from the PubSub message or an
    * empty object if there's no data in the message
    */
-  private getLogEntryFromMessage(pubSubMessage: Message): LogEntry {
+  private getJSONFromMessage(pubSubMessage: Message): {} {
     const bufferData = pubSubMessage.data;
     if (!bufferData) {
       this.logger.error({
         message: 'PubSub message contains no data',
         entry: pubSubMessage,
       });
-      return {} as LogEntry;
+      return {};
     } else {
-      return JSON.parse(bufferData.toString()) as LogEntry;
+      return JSON.parse(bufferData.toString());
     }
+  }
+
+  /**
+   * Determines if the given object is of type LogEntry
+   * @param object object to check
+   * @returns true if object is a LogEntry, false otherwise
+   */
+  private instanceOfLogEntry(object: {}): object is LogEntry {
+    // interface LogEntry {
+    //   [key: string]: any; // logs may have other properties
+    //   insertId: string;
+    //   jsonPayload?: GCFLoggerJsonPayload | {};
+    //   textPayload?: string;
+    //   resource: {
+    //     type: string;
+    //     labels: {
+    //       function_name: string;
+    //       project_id: string;
+    //       region: string;
+    //     };
+    //   };
+    //   timestamp: string;
+    //   severity: string;
+    //   labels: {
+    //     execution_id: string;
+    //   };
+    //   logName: string;
+    //   trace: string;
+    //   receiveTimestamp: string;
+    // }
+    const requiredTopLevelProps = {
+      'insertId': 'string',
+      'resource': 'object',
+      'timestamp': 'string',
+      'severity': 'string',
+      'labels': 'object',
+      'logName': 'string',
+      'trace': 'string',
+      'receiveTimestamp': 'string',
+    };
+    for (const propName of Object.keys(requiredTopLevelProps)) {
+      if (!object[propName] || (typeof object[propName] !== requiredTopLevelProps[propName])) {
+        return false;
+      }
+    }
+    throw new Error('Method not implemented.');
   }
 
   /**
@@ -237,9 +290,6 @@ export class CloudLogsProcessor extends DataProcessor {
    * @param entry LogEntry to parse
    */
   private parseLogEntryType(entry: LogEntry): LogEntryType {
-    if (!this.isValidLogEntry(entry)) {
-      return LogEntryType.MALFORMED;
-    }
     try {
       if (this.isErrorLog(entry)) {
         return LogEntryType.ERROR;
@@ -263,24 +313,12 @@ export class CloudLogsProcessor extends DataProcessor {
   }
 
   /**
-   * Determines if the given log entry has the fields required
-   * to make it a valid entry.
-   * @param entry entry to check
-   * @returns true if entry is valid, false otherwise
-   */
-  private isValidLogEntry(entry: LogEntry): boolean {
-    // TODO: log error for malformed entries
-    throw new Error('Method not implemented.');
-  }
-
-  /**
    * Check if the given log entry is of type ERROR
    * @param entry entry to check
    * @throws if entry is an erroneous log but has no
    * textPayload or jsonPayload
    */
   private isErrorLog(entry: LogEntry): boolean {
-    // TODO check text or json payload
     const ERRORONEOUS_SEVERITIES = ['ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'];
     return ERRORONEOUS_SEVERITIES.includes(entry.severity);
   }
@@ -356,6 +394,7 @@ export class CloudLogsProcessor extends DataProcessor {
       case LogEntryType.ERROR:
         return this.processErrorLog(entry);
       case LogEntryType.MALFORMED:
+        return Promise.resolve(ProcessingResult.FAIL);
       default:
         this.logger.error({
           message: 'Could not identify a handler for the log entry',
