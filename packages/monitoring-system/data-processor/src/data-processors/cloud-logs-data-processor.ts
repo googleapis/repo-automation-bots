@@ -16,7 +16,13 @@ import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {Subscription, Message} from '@google-cloud/pubsub';
 import {BotExecutionDocument} from '../firestore-schema';
 import {WriteResult} from '@google-cloud/firestore';
-import {isString, isStringIndexed, isObject} from '../type-check-util';
+import {
+  isString,
+  isStringIndexed,
+  isObject,
+  hasStringProperties,
+  hasObjectProperties,
+} from '../type-check-util';
 
 export interface CloudLogsProcessorOptions extends ProcessorOptions {
   /**
@@ -188,39 +194,48 @@ export class CloudLogsProcessor extends DataProcessor {
    *
    * Malformed messages are logged and acknowledged immediately.
    *
-   * @param message an incoming PubSub message
+   * @param pubSubMessage an incoming PubSub message
    */
-  private async processMessage(message: Message) {
-    const logEntry = this.parseJSON(message);
+  private async processMessage(pubSubMessage: Message) {
+    const logEntry: object = this.parseJSON(pubSubMessage);
 
     if (!this.instanceOfLogEntry(logEntry)) {
       this.logger.error({
         message: 'JSON from PubSub message is not a valid log entry',
-        json: logEntry,
+        messageId: pubSubMessage.id,
+        pubSubMessage: pubSubMessage,
       });
       return;
     }
 
     const logEntryType = this.parseLogEntryType(logEntry);
-    const task = this.routeLogEntryToHandler(logEntry, logEntryType);
+    const processingTask = this.processLogEntry(logEntry, logEntryType);
 
-    task
-      .then(result => {
-        if (result === ProcessingResult.SUCCESS) {
-          message.ack();
-        } else {
-          message.nack();
-        }
-      })
+    processingTask
+      .then(result => this.ackIfSuccess(result, pubSubMessage))
       .catch(error => {
         this.logger.error({
           message: 'Runtime error while processing message',
-          messageId: message.id,
+          messageId: pubSubMessage.id,
           error: error,
+          pubSubMessage: pubSubMessage,
         });
       });
 
-    this.tasksInProgress.push(task);
+    this.tasksInProgress.push(processingTask);
+  }
+
+  /**
+   * Calls ack() on the message if the result is SUCCESS, else calls nack()
+   * @param result processing result
+   * @param pubSubMessage PubSub message
+   */
+  private ackIfSuccess(result: ProcessingResult, pubSubMessage: Message) {
+    if (result === ProcessingResult.SUCCESS) {
+      pubSubMessage.ack();
+    } else {
+      pubSubMessage.nack();
+    }
   }
 
   /**
@@ -230,7 +245,7 @@ export class CloudLogsProcessor extends DataProcessor {
    * @returns parsed JSON from the PubSub message or an
    * empty object if there's no data in the message
    */
-  private parseJSON(pubSubMessage: Message): {} {
+  private parseJSON(pubSubMessage: Message): object {
     const bufferData = pubSubMessage.data;
     if (!bufferData) {
       this.logger.error({
@@ -365,10 +380,8 @@ export class CloudLogsProcessor extends DataProcessor {
         return false;
       }
       const stringProps = ['owner', 'owner_type', 'repo_name', 'url'];
-      for (const prop of stringProps) {
-        if (!sourceRepo[prop] || !isString(sourceRepo[prop])) {
-          return false;
-        }
+      if (!hasStringProperties(sourceRepo, stringProps)) {
+        return false;
       }
     }
 
@@ -406,7 +419,42 @@ export class CloudLogsProcessor extends DataProcessor {
   private isGitHubActionPayload(
     payload: object
   ): payload is GitHubActionPayload {
-    throw new Error('Method not implemented.');
+    if (!isObject(payload) || !isStringIndexed(payload)) {
+      return false;
+    }
+
+    const action = payload.action;
+    if (!isObject(action) || !isStringIndexed(action)) {
+      return false;
+    }
+
+    if (!hasStringProperties(action, ['type', 'value'])) {
+      return false;
+    }
+
+    if (!hasObjectProperties(action, ['destination_repo'])) {
+      return false;
+    }
+
+    const dstRepo = action.destination_repo;
+    if (!hasStringProperties(dstRepo, ['repo_name', 'owner'])) {
+      return false;
+    }
+
+    const dstObj = action.destination_object;
+    if (dstObj) {
+      if (!dstObj.object_type || typeof dstObj.object_type !== 'string') {
+        return false;
+      }
+      if (
+        !dstObj.object_id ||
+        !['string', 'number'].includes(typeof dstObj.object_id)
+      ) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /**
@@ -422,10 +470,7 @@ export class CloudLogsProcessor extends DataProcessor {
    *   log entry type returns a Promise that resolves immediately with a FAIL status.
    * - Promises only reject for runtime errors.
    */
-  private routeLogEntryToHandler(
-    entry: LogEntry,
-    type: LogEntryType
-  ): ProcessingTask {
+  private processLogEntry(entry: LogEntry, type: LogEntryType): ProcessingTask {
     switch (type) {
       case LogEntryType.NON_METRIC:
         this.logger.debug({
@@ -508,11 +553,11 @@ export class CloudLogsProcessor extends DataProcessor {
 
   /**
    * Determines if the given object is of type LogEntry
-   * @param object object to check
+   * @param toCheck object to check
    * @returns true if object is a LogEntry, false otherwise
    */
-  private instanceOfLogEntry(object: object): object is LogEntry {
-    if (!isStringIndexed(object)) {
+  private instanceOfLogEntry(toCheck: object): toCheck is LogEntry {
+    if (!isStringIndexed(toCheck)) {
       return false;
     }
 
@@ -524,28 +569,22 @@ export class CloudLogsProcessor extends DataProcessor {
       'trace',
       'receiveTimestamp',
     ];
-    for (const prop of topLevelStringProps) {
-      if (!object[prop] || !isString(object[prop])) {
-        return false;
-      }
-    }
-
-    const topLevelObjectProps = ['resource', 'labels'];
-    for (const prop of topLevelObjectProps) {
-      if (!object[prop] || !isObject(object[prop])) {
-        return false;
-      }
+    if (
+      !hasStringProperties(toCheck, topLevelStringProps) ||
+      !hasObjectProperties(toCheck, ['resource', 'labels'])
+    ) {
+      return false;
     }
 
     const validJSONPayload =
-      object.jsonPayload && isStringIndexed(object.jsonPayload);
+      toCheck.jsonPayload && isStringIndexed(toCheck.jsonPayload);
     const validTextPayload =
-      object.textPayload && typeof object.textPayload === 'string';
+      toCheck.textPayload && isString(toCheck.textPayload);
     if (!validJSONPayload && !validTextPayload) {
       return false;
     }
 
-    const resource = object.resource;
+    const resource = toCheck.resource;
     if (!resource.type || !isString(resource.type)) {
       return false;
     }
@@ -553,15 +592,12 @@ export class CloudLogsProcessor extends DataProcessor {
       return false;
     }
 
-    const resourceLabels = resource.labels;
     const resourceLabelProperties = ['function_name', 'project_id', 'region'];
-    for (const prop of resourceLabelProperties) {
-      if (!resourceLabels[prop] || !isString(resourceLabels[prop])) {
-        return false;
-      }
+    if (!hasStringProperties(resource.labels, resourceLabelProperties)) {
+      return false;
     }
 
-    const execution_id = object.labels.execution_id;
+    const execution_id = toCheck.labels.execution_id;
     if (!execution_id || !isString(execution_id)) {
       return false;
     }

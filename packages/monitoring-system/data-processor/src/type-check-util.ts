@@ -41,3 +41,49 @@ export function isObject(toCheck: any): toCheck is object {
 export function isString(toCheck: any): toCheck is string {
   return typeof toCheck === 'string';
 }
+
+/**
+ * Returns true if for every property in 'properties' object has a key with
+ * that name and the value is of type string.
+ * @param object object to check
+ * @param properties properties to assert
+ */
+export function hasStringProperties(
+  object: {[key: string]: any},
+  properties: string[]
+): boolean {
+  return hasPropertiesOfType(object, properties, 'string');
+}
+
+/**
+ * Returns true if for every property in 'properties' object has a key with
+ * that name and the value is of type object.
+ * @param object object to check
+ * @param properties properties to assert
+ */
+export function hasObjectProperties(
+  object: {[key: string]: any},
+  properties: string[]
+): boolean {
+  return hasPropertiesOfType(object, properties, 'object');
+}
+
+/**
+ * Returns true if for every property in 'properties' object has a key with
+ * that name and the value is of type 'type'.
+ * @param object object to check
+ * @param properties properties to assert
+ * @param type expected value type
+ */
+export function hasPropertiesOfType(
+  object: {[key: string]: any},
+  properties: string[],
+  type: string
+): boolean {
+  for (const prop of properties) {
+    if (!object[prop] || typeof object[prop] !== type) {
+      return false;
+    }
+  }
+  return true;
+}
