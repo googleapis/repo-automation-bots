@@ -54,7 +54,7 @@ export interface WrapOptions {
   logging: boolean;
 }
 
-export const logger: GCFLogger = initLogger();
+export let logger: GCFLogger = initLogger();
 
 export interface CronPayload {
   repository: {
@@ -181,6 +181,19 @@ export class GCFBootstrapper {
     return TriggerType.UNKNOWN;
   }
 
+  /**
+   * Binds the given properties to the logger so that every logged statement
+   * includes these properties.
+   *
+   * NOTE: statements logged before this method is called will not include
+   * this information
+   *
+   * @param bindings object containing properties to bind to the logger
+   */
+  private static bindPropertiesToLogger(bindings: {}) {
+    logger = logger.child(bindings);
+  }
+
   gcf(
     appFn: ApplicationFunction,
     wrapOptions?: WrapOptions
@@ -200,7 +213,9 @@ export class GCFBootstrapper {
         taskId
       );
 
-      logger.metric(buildTriggerInfo(triggerType, id, request.body));
+      const triggerInfo = buildTriggerInfo(triggerType, id, request.body);
+      GCFBootstrapper.bindPropertiesToLogger(triggerInfo);
+      logger.metric(`Execution started by ${triggerType}`);
 
       try {
         if (triggerType === TriggerType.UNKNOWN) {
