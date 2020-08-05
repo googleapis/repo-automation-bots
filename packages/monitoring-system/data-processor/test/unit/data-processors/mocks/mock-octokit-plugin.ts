@@ -12,22 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
-import {Subscription} from '@google-cloud/pubsub';
+// eslint-disable-next-line node/no-extraneous-import
 
-export interface CloudLogsProcessorOptions extends ProcessorOptions {
-  subscription: Subscription;
-}
+import {Octokit} from '@octokit/rest';
+import {OctokitMiddleware} from './octokit-middleware';
 
-export class CloudLogsProcessor extends DataProcessor {
-  private subscription: Subscription;
-
-  constructor(options: CloudLogsProcessorOptions) {
-    super(options);
-    this.subscription = options.subscription;
-  }
-
-  public async collectAndProcess(): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
-}
+/**
+ * Intercepts outgoing Octokit requests and reroutes
+ * them to OctokitMiddleware
+ */
+module.exports = (
+  octokit: Octokit,
+  pluginOptions: {middleware: OctokitMiddleware}
+) => {
+  octokit.hook.wrap('request', async (request, options) => {
+    return await pluginOptions.middleware.getMockResponse(options);
+  });
+};

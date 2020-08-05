@@ -16,12 +16,12 @@ import {createProbot, Probot, ApplicationFunction, Options} from 'probot';
 import {CloudTasksClient} from '@google-cloud/tasks';
 import {v1} from '@google-cloud/secret-manager';
 import * as express from 'express';
-import pino from 'pino';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import SonicBoom from 'sonic-boom';
+import {buildTriggerInfo} from './logging/trigger-info-builder';
+import {GCFLogger, initLogger} from './logging/gcf-logger';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const LoggingOctokitPlugin = require('../src/logging-octokit-plugin.js');
+const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
 
 const client = new CloudTasksClient();
 
@@ -49,94 +49,12 @@ interface EnqueueTaskParams {
   name: string;
 }
 
-interface LogFn {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (msg: string, ...args: any[]): void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (obj: object, msg?: string, ...args: any[]): void;
-}
-
-/**
- * A logger standardized logger for Google Cloud Functions
- */
-export interface GCFLogger {
-  trace: LogFn;
-  debug: LogFn;
-  info: LogFn;
-  warn: LogFn;
-  error: LogFn;
-  metric: LogFn;
-  flushSync: {(): void};
-}
-
 export interface WrapOptions {
   background: boolean;
   logging: boolean;
 }
 
-export const logger: GCFLogger = initLogger();
-
-export function initLogger(
-  dest?: NodeJS.WritableStream | SonicBoom
-): GCFLogger {
-  const DEFAULT_LOG_LEVEL = 'trace';
-  const defaultOptions: pino.LoggerOptions = {
-    formatters: {
-      level: pinoLevelToCloudLoggingSeverity,
-    },
-    customLevels: {
-      metric: 30,
-    },
-    base: null,
-    messageKey: 'message',
-    timestamp: false,
-    level: DEFAULT_LOG_LEVEL,
-  };
-
-  dest = dest || pino.destination({sync: true});
-  const logger = pino(defaultOptions, dest);
-  Object.keys(logger).map(prop => {
-    if (logger[prop] instanceof Function) {
-      logger[prop] = logger[prop].bind(logger);
-    }
-  });
-
-  const flushSync = () => {
-    // flushSync is only available for SonicBoom,
-    // which is the default destination wrapper for GCFLogger
-    if (dest instanceof SonicBoom) {
-      dest.flushSync();
-    }
-  };
-
-  return {
-    ...logger,
-    metric: logger.metric.bind(logger),
-    flushSync: flushSync,
-  };
-}
-
-/**
- * Maps Pino's number-based levels to Google Cloud Logging's string-based severity.
- * This allows Pino logs to show up with the correct severity in Logs Viewer.
- * Also preserves the original Pino level
- * @param label the label used by Pino for the level property
- * @param level the numbered level from Pino
- */
-function pinoLevelToCloudLoggingSeverity(
-  label: string,
-  level: number
-): {[label: string]: number | string} {
-  const severityMap: {[level: number]: string} = {
-    10: 'DEBUG',
-    20: 'DEBUG',
-    30: 'INFO',
-    40: 'WARNING',
-    50: 'ERROR',
-  };
-  const UNKNOWN_SEVERITY = 'DEFAULT';
-  return {severity: severityMap[level] || UNKNOWN_SEVERITY, level: level};
-}
+export let logger: GCFLogger = initLogger();
 
 export interface CronPayload {
   repository: {
@@ -162,23 +80,6 @@ export enum TriggerType {
   TASK = 'Cloud Task',
   PUBSUB = 'Pub/Sub',
   UNKNOWN = 'Unknown',
-}
-
-/**
- * Function trigger information
- */
-export interface TriggerInfo {
-  trigger: {
-    trigger_type: TriggerType;
-    trigger_sender?: string;
-    github_delivery_guid?: string;
-    trigger_source_repo?: {
-      owner: string;
-      owner_type: string;
-      repo_name: string;
-    };
-    message: string;
-  };
 }
 
 export class GCFBootstrapper {
@@ -281,53 +182,16 @@ export class GCFBootstrapper {
   }
 
   /**
-   * Build a TriggerInfo object for this execution
-   * @param triggerType trigger type for this exeuction
-   * @param github_delivery_guid github delivery id for this exeuction
-   * @param requestBody body of the incoming trigger request
+   * Binds the given properties to the logger so that every logged statement
+   * includes these properties.
+   *
+   * NOTE: statements logged before this method is called will not include
+   * this information
+   *
+   * @param bindings object containing properties to bind to the logger
    */
-  private static buildTriggerInfo(
-    triggerType: TriggerType,
-    github_delivery_guid: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    requestBody: {[key: string]: any}
-  ): TriggerInfo {
-    const triggerInfo: TriggerInfo = {
-      trigger: {
-        trigger_type: triggerType,
-        message: `Execution started by ${triggerType}`,
-      },
-    };
-
-    if (
-      triggerType === TriggerType.GITHUB ||
-      triggerType === TriggerType.TASK
-    ) {
-      triggerInfo.trigger.github_delivery_guid = github_delivery_guid;
-    }
-
-    if (triggerType === TriggerType.GITHUB) {
-      const sourceRepo = requestBody['repository'] || {};
-      const repoName: string = sourceRepo['name'] || 'UNKNOWN';
-      const repoOwner = sourceRepo['owner'] || {};
-      const ownerName: string = repoOwner['login'] || 'UNKNOWN';
-      const ownerType: string = repoOwner['type'] || 'UNKNOWN';
-      const sender = requestBody['sender'] || {};
-      const senderLogin: string = sender['login'] || 'UNKNOWN';
-
-      const webhookProperties = {
-        trigger_source_repo: {
-          repo_name: repoName,
-          owner: ownerName,
-          owner_type: ownerType,
-        },
-        trigger_sender: senderLogin,
-      };
-
-      triggerInfo.trigger = {...webhookProperties, ...triggerInfo.trigger};
-    }
-
-    return triggerInfo;
+  private static bindPropertiesToLogger(bindings: {}) {
+    logger = logger.child(bindings);
   }
 
   gcf(
@@ -349,9 +213,9 @@ export class GCFBootstrapper {
         taskId
       );
 
-      logger.metric(
-        GCFBootstrapper.buildTriggerInfo(triggerType, id, request.body)
-      );
+      const triggerInfo = buildTriggerInfo(triggerType, id, request.body);
+      GCFBootstrapper.bindPropertiesToLogger(triggerInfo);
+      logger.metric(`Execution started by ${triggerType}`);
 
       try {
         if (triggerType === TriggerType.UNKNOWN) {
@@ -368,7 +232,14 @@ export class GCFBootstrapper {
             logger.info(`${id}: skipping Cloud Tasks`);
           }
           let payload = request.body;
-          if (triggerType === TriggerType.PUBSUB) {
+          if (
+            triggerType === TriggerType.PUBSUB ||
+            triggerType === TriggerType.SCHEDULER
+          ) {
+            // TODO(sofisl): investigate why TriggerType.SCHEDULER sometimes has a Buffer
+            // for its payload, and other times has an already parsed object.
+            //
+            // TODO: add unit tests for both forms of payload.
             payload = this.parsePubSubPayload(request);
           }
           await this.probot.receive({
@@ -396,6 +267,7 @@ export class GCFBootstrapper {
           body: JSON.stringify({message: 'Executed'}),
         });
       } catch (err) {
+        logger.error(err);
         response.status(500).send({
           statusCode: 500,
           body: JSON.stringify({message: err.message}),
@@ -471,7 +343,7 @@ export class GCFBootstrapper {
         body: JSON.stringify(payload),
       });
     } catch (err) {
-      logger.warn(err.message);
+      logger.error(err);
     }
   }
 

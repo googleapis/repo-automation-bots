@@ -14,15 +14,14 @@
 //
 import {describe, it, beforeEach} from 'mocha';
 import assert from 'assert';
-import {resolve} from 'path';
 import {CloudTasksProcessor} from '../../../src/data-processors/cloud-tasks-data-processor';
-import {MockFirestore, FirestoreData} from './mock-firestore';
+import {MockFirestore, FirestoreData} from './mocks/mock-firestore';
 import {
   MockCloudTasksClient,
   MockTaskQueueData,
-} from './mock-cloud-tasks-client';
+} from './mocks/mock-cloud-tasks-client';
+import {loadFixture} from './util/test-util';
 
-const PATH_TO_FIXTURES = 'test/unit/data-processors/fixtures';
 interface InputQueueStatus {
   [name: string]: number;
 }
@@ -41,27 +40,22 @@ describe('Cloud Tasks Data Processor', () => {
   let MockFirestoreData3: FirestoreData;
 
   function resetMockData() {
-    /* eslint-disable @typescript-eslint/no-var-requires */
-    MockTaskQueueData1 = require(resolve(
-      PATH_TO_FIXTURES,
-      'mock-task-queue-data-1.json'
-    ));
-    MockFirestoreData1 = require(resolve(
-      PATH_TO_FIXTURES,
-      'mock-firestore-data-1.json'
-    ));
-    MockFirestoreData2 = require(resolve(
-      PATH_TO_FIXTURES,
-      'mock-firestore-data-2.json'
-    ));
-    MockFirestoreData3 = copy(
-      require(resolve(PATH_TO_FIXTURES, 'mock-firestore-data-3.json'))
+    MockTaskQueueData1 = loadFixture(
+      ['task-queue', 'mock-task-queue-data-1.json'],
+      true
     );
-    /* eslint-enable @typescript-eslint/no-var-requires */
-  }
-
-  function copy(data: {}): {} {
-    return JSON.parse(JSON.stringify(data));
+    MockFirestoreData1 = loadFixture(
+      ['firestore', 'mock-firestore-data-1.json'],
+      true
+    );
+    MockFirestoreData2 = loadFixture(
+      ['firestore', 'mock-firestore-data-2.json'],
+      true
+    );
+    MockFirestoreData3 = loadFixture(
+      ['firestore', 'mock-firestore-data-3.json'],
+      true
+    );
   }
 
   beforeEach(() => {
@@ -123,7 +117,7 @@ describe('Cloud Tasks Data Processor', () => {
       };
 
       return processor['storeTaskQueueStatus'](queueStatus).then(timestamp => {
-        const actual = MockFirestoreData3.Task_Queue_Status;
+        const actual = mockFirestore.getMockData().Task_Queue_Status;
         const expected: StoredQueueStatus = {};
         Object.keys(queueStatus).forEach(key => {
           expected[`${key}_${timestamp}`] = {
@@ -140,7 +134,7 @@ describe('Cloud Tasks Data Processor', () => {
       mockFirestore.setMockData(MockFirestoreData3);
       const queueStatus: InputQueueStatus = {};
       return processor['storeTaskQueueStatus'](queueStatus).then(() => {
-        const actual = MockFirestoreData3.Task_Queue_Status;
+        const actual = mockFirestore.getMockData().Task_Queue_Status;
         const expected: StoredQueueStatus = {};
         assert.deepEqual(actual, expected);
       });
@@ -165,7 +159,7 @@ describe('Cloud Tasks Data Processor', () => {
           return processor['storeTaskQueueStatus'](queueStatus2);
         })
         .then(returnedTimestamp2 => {
-          const actual = MockFirestoreData3.Task_Queue_Status;
+          const actual = mockFirestore.getMockData().Task_Queue_Status;
           const expected: StoredQueueStatus = {};
           Object.keys(queueStatus1).forEach(key => {
             expected[`${key}_${returnedTimestamp1}`] = {

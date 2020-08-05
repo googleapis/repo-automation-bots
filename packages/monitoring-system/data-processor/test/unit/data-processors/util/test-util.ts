@@ -12,22 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
-import {Subscription} from '@google-cloud/pubsub';
 
-export interface CloudLogsProcessorOptions extends ProcessorOptions {
-  subscription: Subscription;
+import {resolve} from 'path';
+
+const PATH_TO_FIXTURES = 'test/unit/data-processors/fixtures';
+
+export function loadFixture(pathSegments: string[], copy?: boolean): {} {
+  /* eslint-disable @typescript-eslint/no-var-requires */
+  const fixture = require(resolve(PATH_TO_FIXTURES, ...pathSegments));
+  return copy ? deepCopy(fixture) : fixture;
 }
 
-export class CloudLogsProcessor extends DataProcessor {
-  private subscription: Subscription;
-
-  constructor(options: CloudLogsProcessorOptions) {
-    super(options);
-    this.subscription = options.subscription;
-  }
-
-  public async collectAndProcess(): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
+function deepCopy(data: {}): {} {
+  return JSON.parse(JSON.stringify(data));
 }

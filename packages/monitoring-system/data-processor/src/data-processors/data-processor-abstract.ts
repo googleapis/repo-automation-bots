@@ -13,9 +13,11 @@
 // limitations under the License.
 //
 import {Firestore} from '@google-cloud/firestore';
+import pino from 'pino';
 
 export interface ProcessorOptions {
   firestore?: Firestore;
+  logger?: pino.Logger; // TODO: would like to use GCFLogger here but would have to import all of gcf-utils which causes issues with promise-events
 }
 
 export abstract class DataProcessor {

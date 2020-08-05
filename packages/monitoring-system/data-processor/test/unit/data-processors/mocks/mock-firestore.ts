@@ -19,6 +19,7 @@ import {
   CollectionReference,
   DocumentData,
 } from '@google-cloud/firestore';
+import assert from 'assert';
 
 /**
  * Key-value data in Firestore
@@ -37,15 +38,20 @@ interface MockQueryDocumentSnapshot {
   data: () => FirestoreData;
 }
 
+export interface MockRecord {
+  document: FirestoreData;
+  collectionName: string;
+}
+
 /**
  * A class to mimic Firestore's NodeJS library
  * Note: not all behaviours are supported
  */
 export class MockFirestore extends Firestore {
-  mockData: FirestoreData;
-  queryDelayMs = 50;
-  collectionShouldThrow = false;
-  setShouldThrow = false;
+  private mockData: FirestoreData;
+  private queryDelayMs = 50;
+  private collectionShouldThrow = false;
+  private setShouldThrow = false;
 
   /**
    * Create a mock client
@@ -57,12 +63,70 @@ export class MockFirestore extends Firestore {
     this.mockData = mockData || {};
   }
 
+  public getMockData(): FirestoreData {
+    return this.mockData;
+  }
+
   /**
    * Set the internal mock data to be returned by MockFirestore
    * @param mockData the mock data
    */
   setMockData(mockData: FirestoreData) {
     this.mockData = mockData;
+  }
+
+  /**
+   * Adds the following record to the data
+   * @param record record to add
+   * @param collection collection in which to add record
+   */
+  addRecord(record: MockRecord) {
+    let collection = this.mockData[record.collectionName];
+    if (!collection) {
+      throw new Error(
+        `Collection ${record.collectionName} does not exist in MockFirestore`
+      );
+    }
+    collection = {...collection, ...record.document};
+  }
+
+  /**
+   * Asserts there exists a record in mock firestore
+   * that has all the properties/values as the expected record.
+   * The mock record will be allowed to have more properties
+   * than the expected record.
+   * @param expected expected record
+   */
+  assertRecord(expected: MockRecord) {
+    const expectedDocumentKey = Object.keys(expected.document)[0];
+    const collection = this.mockData[expected.collectionName];
+    if (!collection) {
+      throw new Error(
+        `Collection ${expected.collectionName} does not exist in MockFirestore`
+      );
+    }
+    const foundDocument = collection[expectedDocumentKey];
+    if (!foundDocument) {
+      throw new Error(
+        `${expected.collectionName}/${expectedDocumentKey} not found in mock firestore`
+      );
+    }
+
+    const expectedProps = expected.document[
+      expectedDocumentKey
+    ] as FirestoreData;
+    const foundProps = foundDocument as FirestoreData;
+    for (const prop of Object.keys(expectedProps)) {
+      if (expectedProps[prop]) {
+        assert.equal(
+          foundProps[prop],
+          expectedProps[prop],
+          `Expected mock execution record '${expectedDocumentKey}' ` +
+            `to have property '${prop}' with value '${expectedProps[prop]}'. ` +
+            `Mock execution record: ${JSON.stringify(foundDocument)}`
+        );
+      }
+    }
   }
 
   /**
@@ -75,7 +139,7 @@ export class MockFirestore extends Firestore {
   }
 
   /**
-   * Throw an error when collections() is called
+   * Throw an error when collection() is called
    */
   throwOnCollection() {
     this.collectionShouldThrow = true;

@@ -12,12 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  GCFBootstrapper,
-  TriggerType,
-  TriggerInfo,
-  WrapOptions,
-} from '../src/gcf-utils';
+import {GCFBootstrapper, WrapOptions, logger} from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {GitHubAPI} from 'probot/lib/github';
 import {Options} from 'probot';
@@ -373,112 +368,25 @@ describe('GCFBootstrapper', () => {
     });
   });
 
-  describe('buildTriggerInfo', () => {
-    it('returns correct pub/sub trigger info', () => {
-      const requestBody = {};
-      const github_delivery_guid = '';
-      const triggerType = TriggerType.PUBSUB;
-      const triggerInfo = GCFBootstrapper['buildTriggerInfo'](
-        triggerType,
-        github_delivery_guid,
-        requestBody
-      );
-      const expectedInfo = {
+  describe('bindPropertiesToLogger', () => {
+    it('binds given properties', () => {
+      const triggerInfoWithoutMessage = {
         trigger: {
-          trigger_type: 'Pub/Sub',
-          message: 'Execution started by Pub/Sub',
-        },
-      };
-      assert.deepEqual(triggerInfo, expectedInfo);
-    });
+          trigger_type: 'GITHUB_WEBHOOK',
+          trigger_sender: 'some sender',
+          payload_hash: '123456',
 
-    it('returns correct scheduler trigger info', () => {
-      const requestBody = {};
-      const github_delivery_guid = '';
-      const triggerType = TriggerType.SCHEDULER;
-      const triggerInfo = GCFBootstrapper['buildTriggerInfo'](
-        triggerType,
-        github_delivery_guid,
-        requestBody
-      );
-      const expectedInfo = {
-        trigger: {
-          trigger_type: 'Cloud Scheduler',
-          message: 'Execution started by Cloud Scheduler',
-        },
-      };
-      assert.deepEqual(triggerInfo, expectedInfo);
-    });
-
-    it('returns correct task trigger info', () => {
-      const requestBody = {};
-      const github_delivery_guid = '1234';
-      const triggerType = TriggerType.TASK;
-      const triggerInfo: TriggerInfo = GCFBootstrapper['buildTriggerInfo'](
-        triggerType,
-        github_delivery_guid,
-        requestBody
-      );
-      const expectedInfo = {
-        trigger: {
-          trigger_type: 'Cloud Task',
-          github_delivery_guid: '1234',
-          message: 'Execution started by Cloud Task',
-        },
-      };
-      assert.deepEqual(triggerInfo, expectedInfo);
-    });
-
-    it('returns correct Github trigger info', () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const requestBody = require('../../test/fixtures/github-webhook-payload-all-info.json');
-      const github_delivery_guid = '1234';
-      const triggerType = TriggerType.GITHUB;
-      const triggerInfo = GCFBootstrapper['buildTriggerInfo'](
-        triggerType,
-        github_delivery_guid,
-        requestBody
-      );
-      const expectedInfo = {
-        trigger: {
-          trigger_type: 'GitHub Webhook',
-          trigger_sender: 'testUser2',
-          github_delivery_guid: '1234',
-          message: 'Execution started by GitHub Webhook',
           trigger_source_repo: {
-            owner: 'testOwner',
-            owner_type: 'User',
-            repo_name: 'testRepo',
+            owner: 'foo owner',
+            owner_type: 'Org',
+            repo_name: 'bar name',
+            url: 'some url',
           },
         },
       };
-      assert.deepEqual(triggerInfo, expectedInfo);
-    });
 
-    it('returns UNKNOWN for Github trigger info when information is unavailable', () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const requestBody = require('../../test/fixtures/github-webhook-payload-missing-info.json');
-      const github_delivery_guid = '';
-      const triggerType = TriggerType.GITHUB;
-      const triggerInfo: TriggerInfo = GCFBootstrapper['buildTriggerInfo'](
-        triggerType,
-        github_delivery_guid,
-        requestBody
-      );
-      const expectedInfo = {
-        trigger: {
-          trigger_type: 'GitHub Webhook',
-          message: 'Execution started by GitHub Webhook',
-          trigger_sender: 'UNKNOWN',
-          github_delivery_guid: '',
-          trigger_source_repo: {
-            owner: 'UNKNOWN',
-            owner_type: 'UNKNOWN',
-            repo_name: 'UNKNOWN',
-          },
-        },
-      };
-      assert.deepEqual(triggerInfo, expectedInfo);
+      GCFBootstrapper['bindPropertiesToLogger'](triggerInfoWithoutMessage);
+      assert.deepEqual(logger.bindings(), triggerInfoWithoutMessage);
     });
   });
 });

@@ -12,15 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFLogger, initLogger} from '../src/gcf-utils';
+import {logger} from '../src/gcf-utils';
+import {GCFLogger, initLogger} from '../src/logging/gcf-logger';
 import {describe, beforeEach, it} from 'mocha';
 import {ObjectWritableMock} from 'stream-mock';
 import {validateLogs, LogLine, logLevels} from './test-helpers';
 
 describe('GCFLogger', () => {
+  describe('gcf-util', () => {
+    it('exports a GCFLogger', () => {
+      logger.info('successfully imported logger from gcf-utils');
+    });
+  });
   describe('logger instance', () => {
     let destination: ObjectWritableMock;
-    let logger: GCFLogger & {[key: string]: Function};
+    let loggerNoBindings: GCFLogger & {[key: string]: Function};
+    let loggerWithBindings: GCFLogger & {[key: string]: Function};
+    const bindings = {foo: 'bar-binding'};
 
     function readLogsAsObjects(writeStream: ObjectWritableMock): LogLine[] {
       try {
@@ -35,13 +43,13 @@ describe('GCFLogger', () => {
     function testAllLevels() {
       for (const level of Object.keys(logLevels)) {
         it(`logs ${level} level string`, () => {
-          logger[level]('hello world');
+          loggerNoBindings[level]('hello world');
           const loggedLines: LogLine[] = readLogsAsObjects(destination);
           validateLogs(loggedLines, 1, ['hello world'], [], logLevels[level]);
         });
 
         it(`logs ${level} level json`, () => {
-          logger[level]({hello: 'world'});
+          loggerNoBindings[level]({hello: 'world'});
           const loggedLines: LogLine[] = readLogsAsObjects(destination);
           validateLogs(
             loggedLines,
@@ -51,12 +59,41 @@ describe('GCFLogger', () => {
             logLevels[level]
           );
         });
+
+        it(`logs ${level} level string with bindings`, () => {
+          loggerWithBindings[level]('hello world');
+          const loggedLines: LogLine[] = readLogsAsObjects(destination);
+          validateLogs(
+            loggedLines,
+            1,
+            ['hello world'],
+            [bindings],
+            logLevels[level]
+          );
+        });
+
+        it(`logs ${level} level json with bindings`, () => {
+          loggerWithBindings[level]({hello: 'world'});
+          const loggedLines: LogLine[] = readLogsAsObjects(destination);
+          validateLogs(
+            loggedLines,
+            1,
+            [],
+            [{...bindings, hello: 'world'}],
+            logLevels[level]
+          );
+        });
       }
     }
 
     beforeEach(() => {
       destination = new ObjectWritableMock();
-      logger = initLogger(destination) as GCFLogger & {[key: string]: Function};
+      loggerNoBindings = initLogger({destination}) as GCFLogger & {
+        [key: string]: Function;
+      };
+      loggerWithBindings = loggerNoBindings.child(bindings) as GCFLogger & {
+        [key: string]: Function;
+      };
     });
 
     testAllLevels();
