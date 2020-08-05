@@ -26,9 +26,11 @@
     "lint": "gts check"
   },
   "dependencies": {
+    "extend": "^3.0.2",
     "gcf-utils": "^5.3.0"
   },
   "devDependencies": {
+    "@types/extend": "^3.0.1",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.11.6",
     "c8": "^7.1.0",
