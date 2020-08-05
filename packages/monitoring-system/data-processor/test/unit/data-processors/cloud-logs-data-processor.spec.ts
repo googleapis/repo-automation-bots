@@ -199,19 +199,22 @@ describe('Cloud Logs Processor', () => {
           collectionName: 'Bot_Execution',
         };
 
+        const executionStartLog = loadFixture([
+          'cloud-logs',
+          'execution-start.json',
+        ]);
+        const executionEndLog = loadFixture([
+          'cloud-logs',
+          'execution-start.json',
+        ]);
+
         describe('when no execution record exists', () => {
           it('creates a new execution record and stores execution start logs', () => {
-            return testValidMessage(
-              loadFixture(['cloud-logs', 'execution-start.json']),
-              [executionRecordStart]
-            );
+            return testValidMessage(executionStartLog, [executionRecordStart]);
           });
 
           it('creates a new execution record and stores execution end logs', () => {
-            return testValidMessage(
-              loadFixture(['cloud-logs', 'execution-end.json']),
-              [executionRecordEnd]
-            );
+            return testValidMessage(executionEndLog, [executionRecordEnd]);
           });
         });
 
@@ -221,17 +224,11 @@ describe('Cloud Logs Processor', () => {
           });
 
           it('identifies existing record and stores execution start logs', () => {
-            return testValidMessage(
-              loadFixture(['cloud-logs', 'execution-start.json']),
-              [executionRecordBoth]
-            );
+            return testValidMessage(executionStartLog, [executionRecordBoth]);
           });
 
           it('identifies existing record and stores execution end logs', () => {
-            return testValidMessage(
-              loadFixture(['cloud-logs', 'execution-end.json']),
-              [executionRecordBoth]
-            );
+            return testValidMessage(executionEndLog, [executionRecordBoth]);
           });
         });
 
@@ -241,17 +238,11 @@ describe('Cloud Logs Processor', () => {
           });
 
           it('identifies existing record and stores execution start logs', () => {
-            return testValidMessage(
-              loadFixture(['cloud-logs', 'execution-start.json']),
-              [executionRecordBoth]
-            );
+            return testValidMessage(executionStartLog, [executionRecordBoth]);
           });
 
           it('identifies existing record and stores execution end logs', () => {
-            return testValidMessage(
-              loadFixture(['cloud-logs', 'execution-end.json']),
-              [executionRecordBoth]
-            );
+            return testValidMessage(executionEndLog, [executionRecordBoth]);
           });
         });
       });
