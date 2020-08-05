@@ -17,10 +17,10 @@ import {resolve} from 'path';
 
 const PATH_TO_FIXTURES = 'test/unit/data-processors/fixtures';
 
-export function loadFixture(filename: string, copy?: boolean): {} {
+export function loadFixture(pathSegments: string[], copy?: boolean): {} {
   /* eslint-disable @typescript-eslint/no-var-requires */
-  const fixture = require(resolve(PATH_TO_FIXTURES, filename));
-  return copy === undefined || copy === true ? deepCopy(fixture) : fixture;
+  const fixture = require(resolve(PATH_TO_FIXTURES, ...pathSegments));
+  return copy ? deepCopy(fixture) : fixture;
 }
 
 function deepCopy(data: {}): {} {

@@ -26,16 +26,6 @@ let mockSubscription: MockSubscription;
 let mockFirestore: MockFirestore;
 let processor: CloudLogsProcessor;
 
-const VALID_MESSAGES: {[name: string]: {}} = loadFixture(
-  'mock-pubsub-log-messages.json',
-  false
-);
-
-const MALFORMED_MESSAGES: {[name: string]: {}} = loadFixture(
-  'mock-pubsub-log-messages-malformed.json',
-  false
-);
-
 /**
  * Returns the given object as a Buffer
  * @param obj object to convert
@@ -93,12 +83,8 @@ function assertErrorLogged(
  */
 async function testValidMessage(
   message: {},
-  expectedRecords: MockRecord[],
-  preExistingRecords?: MockRecord[]
+  expectedRecords: MockRecord[]
 ): Promise<void> {
-  if (preExistingRecords) {
-    preExistingRecords.forEach(record => mockFirestore.addRecord(record));
-  }
   return startAndSendMessage(message).then(messageId => {
     assert(mockSubscription.wasAcked(messageId));
     expectedRecords.forEach(record => mockFirestore.assertRecord(record));
@@ -183,7 +169,7 @@ describe('Cloud Logs Processor', () => {
               bot_id: 'merge_on_green',
               start_time: 1595536893000,
               logs_url:
-                'https://pantheon.corp.google.com/logs/query;query=resource.type%3D%22' +
+                'https://console.cloud.google.com/logs/query;query=resource.type%3D%22' +
                 'cloud_function%22%0Alabels.%22execution_id%22%3D%224ww4alqs7ikq%22;' +
                 'timeRange=2020-07-23T20:41:33.701320846Z%2F22020-07-23T20:41:33.701320846Z;' +
                 'summaryFields=:true:32:beginning?project=repo-automation-bots',
@@ -196,8 +182,8 @@ describe('Cloud Logs Processor', () => {
         const executionRecordEnd = {
           document: {
             '4ww4alqs7ikq': {
-              execution_id: '4ww4q2vqvkl1',
-              bot_id: 'auto_label',
+              execution_id: '4ww4alqs7ikq',
+              bot_id: 'merge_on_green',
               end_time: 1595536887000,
             },
           },
@@ -215,49 +201,55 @@ describe('Cloud Logs Processor', () => {
 
         describe('when no execution record exists', () => {
           it('creates a new execution record and stores execution start logs', () => {
-            return testValidMessage(VALID_MESSAGES.execution_start, [
-              executionRecordStart,
-            ]);
+            return testValidMessage(
+              loadFixture(['cloud-logs', 'execution-start.json']),
+              [executionRecordStart]
+            );
           });
 
           it('creates a new execution record and stores execution end logs', () => {
-            return testValidMessage(VALID_MESSAGES.execution_end, [
-              executionRecordEnd,
-            ]);
+            return testValidMessage(
+              loadFixture(['cloud-logs', 'execution-end.json']),
+              [executionRecordEnd]
+            );
           });
         });
 
         describe('when a part execution record already exists', () => {
-          it('identifies existing record and stores execution start logs', () => {
-            return testValidMessage(
-              VALID_MESSAGES.execution_start,
-              [executionRecordBoth],
-              [executionRecordEnd]
-            );
+          beforeEach(() => {
+            mockFirestore.addRecord(executionRecordEnd);
           });
 
-          it('identifies existing record and stores execution end logs', () => {
-            return testValidMessage(
-              VALID_MESSAGES.execution_end,
-              [executionRecordBoth],
-              [executionRecordEnd]
-            );
-          });
-        });
-
-        describe('when a full execution record already exists', () => {
           it('identifies existing record and stores execution start logs', () => {
             return testValidMessage(
-              VALID_MESSAGES.execution_start,
-              [executionRecordBoth],
+              loadFixture(['cloud-logs', 'execution-start.json']),
               [executionRecordBoth]
             );
           });
 
           it('identifies existing record and stores execution end logs', () => {
             return testValidMessage(
-              VALID_MESSAGES.execution_end,
-              [executionRecordBoth],
+              loadFixture(['cloud-logs', 'execution-end.json']),
+              [executionRecordBoth]
+            );
+          });
+        });
+
+        describe('when a full execution record already exists', () => {
+          beforeEach(() => {
+            mockFirestore.addRecord(executionRecordBoth);
+          });
+
+          it('identifies existing record and stores execution start logs', () => {
+            return testValidMessage(
+              loadFixture(['cloud-logs', 'execution-start.json']),
+              [executionRecordBoth]
+            );
+          });
+
+          it('identifies existing record and stores execution end logs', () => {
+            return testValidMessage(
+              loadFixture(['cloud-logs', 'execution-end.json']),
               [executionRecordBoth]
             );
           });
@@ -296,9 +288,14 @@ describe('Cloud Logs Processor', () => {
           collectionName: 'GitHub_Repository',
         };
 
+        const triggerInfoLog = loadFixture([
+          'cloud-logs',
+          'trigger-information.json',
+        ]);
+
         describe('when no execution and repository record exists', () => {
           it('creates new execution and repository record and stores trigger information logs', () => {
-            return testValidMessage(VALID_MESSAGES.trigger_information, [
+            return testValidMessage(triggerInfoLog, [
               executionRecord,
               triggerRecord,
               repositoryRecord,
@@ -307,12 +304,17 @@ describe('Cloud Logs Processor', () => {
         });
 
         describe('when an execution and repository record already exist', () => {
+          beforeEach(() => {
+            mockFirestore.addRecord(executionRecord);
+            mockFirestore.addRecord(repositoryRecord);
+          });
+
           it('identifies existing record and stores trigger information logs', () => {
-            return testValidMessage(
-              VALID_MESSAGES.trigger_information,
-              [executionRecord, triggerRecord, repositoryRecord],
-              [executionRecord, repositoryRecord]
-            );
+            return testValidMessage(triggerInfoLog, [
+              executionRecord,
+              triggerRecord,
+              repositoryRecord,
+            ]);
           });
         });
       });
@@ -363,9 +365,14 @@ describe('Cloud Logs Processor', () => {
           collectionName: 'GitHub_Object',
         };
 
+        const gitHubActionLog = loadFixture([
+          'cloud-logs',
+          'github-action.json',
+        ]);
+
         describe('when no execution/repository/object record exists', () => {
           it('creates a new execution/repository/object record and stores GitHub action logs', () => {
-            return testValidMessage(VALID_MESSAGES.github_action, [
+            return testValidMessage(gitHubActionLog, [
               executionRecord,
               actionRecord,
               objectRecord,
@@ -375,12 +382,16 @@ describe('Cloud Logs Processor', () => {
         });
 
         describe('when an execution/repository/object record already exists', () => {
+          beforeEach(() => {
+            mockFirestore.addRecord(actionRecord);
+          });
+
           it('identifies execution/repository/object record and stores GitHub action logs', () => {
-            return testValidMessage(
-              VALID_MESSAGES.github_action,
-              [executionRecord, objectRecord, repositoryRecord],
-              [actionRecord]
-            );
+            return testValidMessage(gitHubActionLog, [
+              executionRecord,
+              objectRecord,
+              repositoryRecord,
+            ]);
           });
         });
       });
@@ -406,22 +417,21 @@ describe('Cloud Logs Processor', () => {
           collectionName: 'Error',
         };
 
+        const errorLog = loadFixture(['cloud-logs', 'error.json']);
+
         describe('when no execution record exists', () => {
           it('creates a new execution record and stores error logs', () => {
-            return testValidMessage(VALID_MESSAGES.error, [
-              executionRecord,
-              errorRecord,
-            ]);
+            return testValidMessage(errorLog, [executionRecord, errorRecord]);
           });
         });
 
         describe('when an execution record already exists', () => {
+          beforeEach(() => {
+            mockFirestore.addRecord(errorRecord);
+          });
+
           it('identifies existing record and stores error logs', () => {
-            return testValidMessage(
-              VALID_MESSAGES.error,
-              [executionRecord],
-              [errorRecord]
-            );
+            return testValidMessage(errorLog, [executionRecord]);
           });
         });
       });
@@ -447,48 +457,48 @@ describe('Cloud Logs Processor', () => {
       });
 
       it('logs error for malformed execution start logs', () => {
-        testMalformedMessage(
-          MALFORMED_MESSAGES.execution_start_missing_execution_id,
+        return testMalformedMessage(
+          loadFixture(['cloud-logs', 'execution-start-missing-id.json']),
           'Detected malformed execution start logs',
           mockWriteStream
         );
       });
 
       it('logs error for malformed execution end logs', () => {
-        testMalformedMessage(
-          MALFORMED_MESSAGES.execution_end_missing_timestamp,
+        return testMalformedMessage(
+          loadFixture(['cloud-logs', 'execution-end-missing-timestamp.json']),
           'Detected malformed execution end logs',
           mockWriteStream
         );
       });
 
       it('logs error for malformed trigger information logs', () => {
-        testMalformedMessage(
-          MALFORMED_MESSAGES.trigger_information_missing_type,
+        return testMalformedMessage(
+          loadFixture(['cloud-logs', 'trigger-information-missing-type.json']),
           'Detected malformed trigger information logs',
           mockWriteStream
         );
       });
 
       it('logs error for malformed trigger information logs', () => {
-        testMalformedMessage(
-          MALFORMED_MESSAGES.trigger_information_missing_repo,
+        return testMalformedMessage(
+          loadFixture(['cloud-logs', 'trigger-information-missing-repo.json']),
           'Detected malformed trigger information logs',
           mockWriteStream
         );
       });
 
       it('logs error for malformed GitHub action logs', () => {
-        testMalformedMessage(
-          MALFORMED_MESSAGES.github_action_missing_type,
+        return testMalformedMessage(
+          loadFixture(['cloud-logs', 'github-action-missing-type.json']),
           'Detected malformed GitHub action logs',
           mockWriteStream
         );
       });
 
       it('logs error for malformed execution error logs', () => {
-        testMalformedMessage(
-          MALFORMED_MESSAGES.error_missing_execution_id,
+        return testMalformedMessage(
+          loadFixture(['cloud-logs', 'error-missing-id.json']),
           'Detected malformed execution error logs',
           mockWriteStream
         );
@@ -518,9 +528,9 @@ describe('Cloud Logs Processor', () => {
 
       it('processes other valid messages when one message is malformed', () => {
         return startAndSendMultipleMessages([
-          VALID_MESSAGES.trigger_information,
-          MALFORMED_MESSAGES.error_missing_execution_id,
-          VALID_MESSAGES.execution_end,
+          loadFixture(['cloud-logs', 'trigger-information.json']),
+          loadFixture(['cloud-logs', 'error-missing-id.json']),
+          loadFixture(['cloud-logs', 'execution-end.json']),
         ]).then((messageIds: string[]) => {
           messageIds.forEach(id => assert(mockSubscription.wasAcked(id)));
           mockFirestore.assertRecord(triggerRecord);
@@ -528,20 +538,20 @@ describe('Cloud Logs Processor', () => {
         });
       });
 
-      it('ignores log statements with an unidentified format', () => {
+      it('ignores log statements with no metrics information', () => {
         const copyOfBlankData = JSON.parse(
           JSON.stringify(mockFirestore.getMockData())
         );
-        return startAndSendMessage(VALID_MESSAGES.randomTextPayload).then(
-          messageId => {
-            assert(mockSubscription.wasAcked(messageId));
-            assert.deepEqual(
-              mockFirestore.getMockData(),
-              copyOfBlankData,
-              'Expected no writes on Firestore'
-            );
-          }
-        );
+        return startAndSendMessage(
+          loadFixture(['cloud-logs', 'non-metric.json'])
+        ).then(messageId => {
+          assert(mockSubscription.wasAcked(messageId));
+          assert.deepEqual(
+            mockFirestore.getMockData(),
+            copyOfBlankData,
+            'Expected no writes on Firestore'
+          );
+        });
       });
     });
 
@@ -557,26 +567,26 @@ describe('Cloud Logs Processor', () => {
         });
       });
 
+      const executionStartLog = loadFixture([
+        'cloud-logs',
+        'execution-start.json',
+      ]);
+
       it('calls nack() on message if there is an error in processing and logs it', () => {
         mockFirestore.throwOnCollection();
-        return startAndSendMessage(VALID_MESSAGES.execution_start).then(
-          messageId => {
-            assert(
-              mockSubscription.wasNacked(messageId),
-              'Expected processor to nack() message on firestore error'
-            );
-            assertErrorLogged(
-              'Error while processing message',
-              mockWriteStream
-            );
-          }
-        );
+        return startAndSendMessage(executionStartLog).then(messageId => {
+          assert(
+            mockSubscription.wasNacked(messageId),
+            'Expected processor to nack() message on firestore error'
+          );
+          assertErrorLogged('Error while processing message', mockWriteStream);
+        });
       });
 
       it('throws an error when cannot pull messages from PubSub', () => {
         mockSubscription.throwErrorOnSetHandler();
         let thrown = false;
-        return startAndSendMessage(VALID_MESSAGES.execution_start)
+        return startAndSendMessage(executionStartLog)
           .catch(() => {
             thrown = true;
           })
@@ -588,7 +598,7 @@ describe('Cloud Logs Processor', () => {
       it('throws an error when cannot acknowledge a processed PubSub message', () => {
         mockSubscription.throwErrorOnAck();
         let thrown = false;
-        return startAndSendMessage(VALID_MESSAGES.execution_start)
+        return startAndSendMessage(executionStartLog)
           .catch(() => {
             thrown = true;
           })

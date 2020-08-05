@@ -38,12 +38,17 @@ let mockFirestoreData1: FirestoreData;
 
 function resetMockData() {
   fixture1 = loadFixture(
-    'github-processor-fixture-1.json'
+    ['github-processor', 'github-processor-fixture-1.json'],
+    true
   ) as GitHubProcessorTestFixture;
   fixture2 = loadFixture(
-    'github-processor-fixture-2.json'
+    ['github-processor', 'github-processor-fixture-2.json'],
+    true
   ) as GitHubProcessorTestFixture;
-  mockFirestoreData1 = loadFixture('mock-firestore-data-1.json');
+  mockFirestoreData1 = loadFixture(
+    ['firestore', 'mock-firestore-data-1.json'],
+    true
+  );
 }
 
 const LIST_REPO_EVENTS_ACTION = {
