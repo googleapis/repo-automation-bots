@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFBootstrapper, WrapOptions} from '../src/gcf-utils';
+import {GCFBootstrapper, WrapOptions, logger} from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {GitHubAPI} from 'probot/lib/github';
 import {Options} from 'probot';
@@ -365,6 +365,28 @@ describe('GCFBootstrapper', () => {
       process.env.GCF_SHORT_FUNCTION_NAME = 'bar';
       const latest = bootstrapper.getSecretName();
       assert.strictEqual(latest, 'projects/foo/secrets/bar');
+    });
+  });
+
+  describe('bindPropertiesToLogger', () => {
+    it('binds given properties', () => {
+      const triggerInfoWithoutMessage = {
+        trigger: {
+          trigger_type: 'GITHUB_WEBHOOK',
+          trigger_sender: 'some sender',
+          payload_hash: '123456',
+
+          trigger_source_repo: {
+            owner: 'foo owner',
+            owner_type: 'Org',
+            repo_name: 'bar name',
+            url: 'some url',
+          },
+        },
+      };
+
+      GCFBootstrapper['bindPropertiesToLogger'](triggerInfoWithoutMessage);
+      assert.deepEqual(logger.bindings(), triggerInfoWithoutMessage);
     });
   });
 });
