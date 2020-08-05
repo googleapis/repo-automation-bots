@@ -20,7 +20,9 @@ import SonicBoom from 'sonic-boom';
 import fs from 'fs';
 
 describe('GCFLogger Integration', () => {
-  let logger: GCFLogger & {[key: string]: Function};
+  let loggerNoBindings: GCFLogger & {[key: string]: Function};
+  let loggerWithBindings: GCFLogger & {[key: string]: Function};
+  const bindings = {foo: 'bar-binding'};
   const testStreamPath = './test-stream.txt';
   let destination: SonicBoom;
 
@@ -42,7 +44,7 @@ describe('GCFLogger Integration', () => {
   function testAllLevels() {
     for (const level of Object.keys(logLevels)) {
       it(`logs ${level} level string`, done => {
-        logger[level]('hello world');
+        loggerNoBindings[level]('hello world');
         destination.on('ready', () => {
           const loggedLines: LogLine[] = readLogsAsObjects(destination);
           validateLogs(loggedLines, 1, ['hello world'], [], logLevels[level]);
@@ -51,7 +53,7 @@ describe('GCFLogger Integration', () => {
       });
 
       it(`logs ${level} level json`, done => {
-        logger[level]({hello: 'world'});
+        loggerNoBindings[level]({hello: 'world'});
         destination.on('ready', () => {
           const loggedLines: LogLine[] = readLogsAsObjects(destination);
           validateLogs(
@@ -64,12 +66,41 @@ describe('GCFLogger Integration', () => {
           done();
         });
       });
+
+      it(`logs ${level} level string with bindings`, () => {
+        loggerWithBindings[level]('hello world');
+        const loggedLines: LogLine[] = readLogsAsObjects(destination);
+        validateLogs(
+          loggedLines,
+          1,
+          ['hello world'],
+          [bindings],
+          logLevels[level]
+        );
+      });
+
+      it(`logs ${level} level json with bindings`, () => {
+        loggerWithBindings[level]({hello: 'world'});
+        const loggedLines: LogLine[] = readLogsAsObjects(destination);
+        validateLogs(
+          loggedLines,
+          1,
+          [],
+          [{...bindings, hello: 'world'}],
+          logLevels[level]
+        );
+      });
     }
   }
 
   beforeEach(() => {
     destination = pino.destination(testStreamPath);
-    logger = initLogger(destination) as GCFLogger & {[key: string]: Function};
+    loggerNoBindings = initLogger({destination: destination}) as GCFLogger & {
+      [key: string]: Function;
+    };
+    loggerWithBindings = loggerNoBindings.child(bindings) as GCFLogger & {
+      [key: string]: Function;
+    };
   });
 
   testAllLevels();

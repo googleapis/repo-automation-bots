@@ -14,6 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context} from 'probot';
+import extend from 'extend';
 import {
   LanguageConfig,
   RepoConfig,
@@ -22,16 +23,30 @@ import {
 } from './types';
 import {logger} from 'gcf-utils';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const languageConfig: LanguageConfig = require('./required-checks.json');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function deepFreeze(object: any) {
+  const propNames = Object.getOwnPropertyNames(object);
+  for (const name of propNames) {
+    const value = object[name];
+    if (value && typeof value === 'object') {
+      deepFreeze(value);
+    }
+  }
+  return Object.freeze(object);
+}
 
-const repoConfigDefaults: RepoConfig = {
+const languageConfig: LanguageConfig = deepFreeze(
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require('./required-checks.json')
+);
+
+const repoConfigDefaults: RepoConfig = deepFreeze({
   mergeCommitAllowed: false,
   squashMergeAllowed: true,
   rebaseMergeAllowed: true,
-};
+});
 
-const branchProtectionDefaults: BranchProtectionRule = {
+const branchProtectionDefaults = deepFreeze({
   pattern: 'master',
   dismissesStaleReviews: false,
   isAdminEnforced: true,
@@ -43,7 +58,7 @@ const branchProtectionDefaults: BranchProtectionRule = {
   restrictsPushes: false,
   restrictsReviewDismissals: false,
   requiredStatusCheckContexts: [],
-};
+});
 
 /**
  * Main.  On a nightly cron, update the settings for a given repository.
@@ -107,7 +122,7 @@ export function handler(app: Application) {
       }
       logger.info(`Determined ${repo} is ${language}`);
 
-      config = languageConfig[language];
+      config = extend(true, {}, languageConfig)[language];
       if (!config) {
         logger.info(`no config for language ${language}`);
         return;
@@ -120,7 +135,7 @@ export function handler(app: Application) {
       }
 
       if (languageConfig[language]?.repoOverrides) {
-        const customConfig = languageConfig[language].repoOverrides?.find(
+        const customConfig = languageConfig[language].repoOverrides!.find(
           x => x.repo === repo
         );
         if (customConfig) {
@@ -164,9 +179,16 @@ async function updateMasterBranchProtection(
 
   // TODO: add support for mutiple rules
   let rule = rules[0];
+  logger.debug('Rules before applying defaults:');
+  logger.debug(rule);
 
   // Combine user settings with a lax set of defaults
-  rule = Object.assign({}, branchProtectionDefaults, rule);
+  rule = extend(true, {}, branchProtectionDefaults, rule);
+
+  logger.debug('Rules after applying defaults:');
+  logger.debug(rule);
+
+  logger.debug(`Required status checks ${rule.requiredStatusCheckContexts}`);
 
   try {
     await context.github.repos.updateBranchProtection({
@@ -257,7 +279,7 @@ async function updateRepoOptions(
 ) {
   logger.info(`Updating commit settings for ${repo}`);
   const [owner, name] = repo.split('/');
-  config = Object.assign({}, repoConfigDefaults, config);
+  config = extend(true, {}, repoConfigDefaults, config);
   logger.info(`name: ${name}`);
   logger.info(`owner: ${owner}`);
   logger.info(`enable rebase? ${config.rebaseMergeAllowed}`);

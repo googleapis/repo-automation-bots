@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
 exports[
   'slo-lint handleSLOs is triggered Error is logged if commenting on PR fails and calls handle issues 1'
@@ -64,4 +65,18 @@ exports[
   name: 'slo-rules-check',
   head_sha: 'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
   conclusion: 'success',
+};
+
+exports[
+  'slo-lint handleSLOs is triggered Error is logged if commenting on PR fails and calls handle issues 2'
+] = {
+  name: 'slo-rules-check',
+  head_sha: 'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
+  conclusion: 'failure',
+  output: {
+    title: 'Commit message did not follow Conventional Commits',
+    summary: 'issue_slo_rules.json does not follow the slo_rules schema.',
+    text:
+      '[\n    {\n        "keyword": "required",\n        "dataPath": "[0].complianceSettings",\n        "schemaPath": "#/definitions/complianceSettings/required",\n        "params": {\n            "missingProperty": "resolutionTime"\n        },\n        "message": "should have required property \'resolutionTime\'"\n    }\n]',
+  },
 };

@@ -18,7 +18,7 @@ import crypto from 'crypto';
 /**
  * Information on GCF execution trigger
  */
-interface TriggerInfo {
+export interface TriggerInfo {
   trigger: {
     trigger_type: TriggerType;
     trigger_sender?: string;
@@ -37,7 +37,6 @@ interface TriggerInfo {
       repo_name: string;
       url: string;
     };
-    message: string;
   };
 }
 
@@ -58,7 +57,6 @@ export function buildTriggerInfo(
   const triggerInfo: TriggerInfo = {
     trigger: {
       trigger_type: triggerType,
-      message: `Execution started by ${triggerType}`,
     },
   };
 
