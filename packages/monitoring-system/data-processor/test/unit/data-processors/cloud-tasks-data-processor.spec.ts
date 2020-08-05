@@ -40,10 +40,22 @@ describe('Cloud Tasks Data Processor', () => {
   let MockFirestoreData3: FirestoreData;
 
   function resetMockData() {
-    MockTaskQueueData1 = loadFixture('mock-task-queue-data-1.json');
-    MockFirestoreData1 = loadFixture('mock-firestore-data-1.json');
-    MockFirestoreData2 = loadFixture('mock-firestore-data-2.json');
-    MockFirestoreData3 = loadFixture('mock-firestore-data-3.json');
+    MockTaskQueueData1 = loadFixture(
+      ['task-queue', 'mock-task-queue-data-1.json'],
+      true
+    );
+    MockFirestoreData1 = loadFixture(
+      ['firestore', 'mock-firestore-data-1.json'],
+      true
+    );
+    MockFirestoreData2 = loadFixture(
+      ['firestore', 'mock-firestore-data-2.json'],
+      true
+    );
+    MockFirestoreData3 = loadFixture(
+      ['firestore', 'mock-firestore-data-3.json'],
+      true
+    );
   }
 
   beforeEach(() => {
