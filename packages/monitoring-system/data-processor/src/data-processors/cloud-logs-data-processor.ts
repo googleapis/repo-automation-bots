@@ -16,6 +16,7 @@ import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {Subscription, Message} from '@google-cloud/pubsub';
 import {BotExecutionDocument} from '../firestore-schema';
 import {WriteResult} from '@google-cloud/firestore';
+import {isString, isStringIndexed, isObject} from '../type-check-util';
 
 export interface CloudLogsProcessorOptions extends ProcessorOptions {
   /**
@@ -44,10 +45,11 @@ enum ProcessingResult {
 }
 
 /**
- * Represents the processing task for an incoming PubSub
- * entry. Resolves with either a SUCCESS or FAIL result
- * depending on the outcome of the processing. Rejects
- * only for runtime errors.
+ * Represents the processing task for an incoming PubSub message.
+ *
+ * Resolve with SUCCESS = the message was successfully processed
+ * Resolve with FAIL = processing failed due to bad message
+ * Rejected = processing failed due to runtime error (eg. pubsub issue)
  */
 type ProcessingTask = Promise<ProcessingResult>;
 
@@ -70,7 +72,7 @@ enum LogEntryType {
 interface LogEntry {
   [key: string]: any; // logs may have other properties
   insertId: string;
-  jsonPayload?: GCFLoggerJsonPayload | {};
+  jsonPayload?: GCFLoggerJsonPayload;
   textPayload?: string;
   resource: {
     type: string;
@@ -167,8 +169,13 @@ export class CloudLogsProcessor extends DataProcessor {
   public async collectAndProcess(): Promise<void> {
     return new Promise(() => {
       this.subscription.on('message', this.processMessage);
+      this.logger.debug('Now listening for PubSub messages');
+
       setTimeout(() => {
         this.subscription.removeAllListeners(); // TODO implement this in the mock
+        this.logger.debug(
+          `Stopped listening to PubSub after ${this.listenLimit}s`
+        );
         return Promise.all(this.tasksInProgress);
       }, this.listenLimit);
     });
@@ -184,7 +191,8 @@ export class CloudLogsProcessor extends DataProcessor {
    * @param message an incoming PubSub message
    */
   private async processMessage(message: Message) {
-    const logEntry = this.getJSONFromMessage(message);
+    const logEntry = this.parseJSON(message);
+
     if (!this.instanceOfLogEntry(logEntry)) {
       this.logger.error({
         message: 'JSON from PubSub message is not a valid log entry',
@@ -194,12 +202,9 @@ export class CloudLogsProcessor extends DataProcessor {
     }
 
     const logEntryType = this.parseLogEntryType(logEntry);
-    const messageProcessingTask = this.routeLogEntryToHandler(
-      logEntry,
-      logEntryType
-    );
+    const task = this.routeLogEntryToHandler(logEntry, logEntryType);
 
-    messageProcessingTask
+    task
       .then(result => {
         if (result === ProcessingResult.SUCCESS) {
           message.ack();
@@ -215,7 +220,7 @@ export class CloudLogsProcessor extends DataProcessor {
         });
       });
 
-    this.tasksInProgress.push(messageProcessingTask);
+    this.tasksInProgress.push(task);
   }
 
   /**
@@ -225,7 +230,7 @@ export class CloudLogsProcessor extends DataProcessor {
    * @returns parsed JSON from the PubSub message or an
    * empty object if there's no data in the message
    */
-  private getJSONFromMessage(pubSubMessage: Message): {} {
+  private parseJSON(pubSubMessage: Message): {} {
     const bufferData = pubSubMessage.data;
     if (!bufferData) {
       this.logger.error({
@@ -236,52 +241,6 @@ export class CloudLogsProcessor extends DataProcessor {
     } else {
       return JSON.parse(bufferData.toString());
     }
-  }
-
-  /**
-   * Determines if the given object is of type LogEntry
-   * @param object object to check
-   * @returns true if object is a LogEntry, false otherwise
-   */
-  private instanceOfLogEntry(object: {}): object is LogEntry {
-    // interface LogEntry {
-    //   [key: string]: any; // logs may have other properties
-    //   insertId: string;
-    //   jsonPayload?: GCFLoggerJsonPayload | {};
-    //   textPayload?: string;
-    //   resource: {
-    //     type: string;
-    //     labels: {
-    //       function_name: string;
-    //       project_id: string;
-    //       region: string;
-    //     };
-    //   };
-    //   timestamp: string;
-    //   severity: string;
-    //   labels: {
-    //     execution_id: string;
-    //   };
-    //   logName: string;
-    //   trace: string;
-    //   receiveTimestamp: string;
-    // }
-    const requiredTopLevelProps = {
-      'insertId': 'string',
-      'resource': 'object',
-      'timestamp': 'string',
-      'severity': 'string',
-      'labels': 'object',
-      'logName': 'string',
-      'trace': 'string',
-      'receiveTimestamp': 'string',
-    };
-    for (const propName of Object.keys(requiredTopLevelProps)) {
-      if (!object[propName] || (typeof object[propName] !== requiredTopLevelProps[propName])) {
-        return false;
-      }
-    }
-    throw new Error('Method not implemented.');
   }
 
   /**
@@ -308,6 +267,10 @@ export class CloudLogsProcessor extends DataProcessor {
       }
       return LogEntryType.NON_METRIC;
     } catch (error) {
+      this.logger.error({
+        message: `Invalid log entry: ${error}`,
+        entry: entry,
+      });
       return LogEntryType.MALFORMED;
     }
   }
@@ -315,8 +278,6 @@ export class CloudLogsProcessor extends DataProcessor {
   /**
    * Check if the given log entry is of type ERROR
    * @param entry entry to check
-   * @throws if entry is an erroneous log but has no
-   * textPayload or jsonPayload
    */
   private isErrorLog(entry: LogEntry): boolean {
     const ERRORONEOUS_SEVERITIES = ['ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'];
@@ -344,18 +305,107 @@ export class CloudLogsProcessor extends DataProcessor {
   /**
    * Check if the given log entry is of type TRIGGER_INFO
    * @param entry entry to check
-   * @throws if entry is an incomplete trigger info entry
+   * @throws if the jsonPayload has a 'trigger' property but the
+   * payload is not a valid TriggerInfoPayload
    */
   private isTriggerInfoEntry(entry: LogEntry): boolean {
-    throw new Error('Method not implemented.');
+    const payload = entry.jsonPayload;
+
+    if (!payload) {
+      return false;
+    }
+
+    const isTriggerPayload = this.isTriggerInfoPayload(payload);
+    if (payload['trigger'] && !isTriggerPayload) {
+      throw new Error(
+        "jsonPayload has 'trigger' property but" +
+          'is not a valid trigger info log entry'
+      );
+    }
+
+    return isTriggerPayload;
+  }
+
+  /**
+   * Returns true if the given payload implements TriggerInfoPayload
+   * @param payload payload to check
+   */
+  private isTriggerInfoPayload(payload: object): payload is TriggerInfoPayload {
+    if (!isObject(payload) || !isStringIndexed(payload)) {
+      return false;
+    }
+
+    if (!payload.message || !isString(payload.message)) {
+      return false;
+    }
+
+    const trigger = payload.trigger;
+    if (!isObject(trigger) || !isStringIndexed(trigger)) {
+      return false;
+    }
+
+    if (!trigger.trigger_type || !isString(trigger.trigger_type)) {
+      return false;
+    }
+
+    const optionalStringProps = [
+      'trigger_sender',
+      'github_delivery_guid',
+      'payload_hash',
+    ];
+    for (const prop of optionalStringProps) {
+      if (trigger[prop] && !isString(trigger[prop])) {
+        return false;
+      }
+    }
+
+    const sourceRepo = trigger.trigger_source_repo;
+    if (sourceRepo) {
+      if (!isObject(sourceRepo) || !isStringIndexed(sourceRepo)) {
+        return false;
+      }
+      const stringProps = ['owner', 'owner_type', 'repo_name', 'url'];
+      for (const prop of stringProps) {
+        if (!sourceRepo[prop] || !isString(sourceRepo[prop])) {
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 
   /**
    * Check if the given log entry is of type GITHUB_ACTION
    * @param entry entry to check
-   * @throws if entry is an incomplete GitHub action entry
+   * @throws if the jsonPayload has an 'action' property but the
+   * payload is not a valid GitHubActionPayload
    */
   private isGitHubActionEntry(entry: LogEntry): boolean {
+    const payload = entry.jsonPayload;
+
+    if (!payload) {
+      return false;
+    }
+
+    const isActionPayload = this.isGitHubActionPayload(payload);
+    if (payload['action'] && !isActionPayload) {
+      throw new Error(
+        "jsonPayload has 'action' property but" +
+          'is not a valid GitHub action log entry'
+      );
+    }
+
+    return isActionPayload;
+  }
+
+  /**
+   * Returns true if the given payload implements GitHubActionPayload
+   * @param payload payload to check
+   */
+  private isGitHubActionPayload(
+    payload: object
+  ): payload is GitHubActionPayload {
     throw new Error('Method not implemented.');
   }
 
@@ -454,5 +504,68 @@ export class CloudLogsProcessor extends DataProcessor {
     doc: BotExecutionDocument
   ): Promise<WriteResult> {
     throw new Error('Method not implemented.');
+  }
+
+  /**
+   * Determines if the given object is of type LogEntry
+   * @param object object to check
+   * @returns true if object is a LogEntry, false otherwise
+   */
+  private instanceOfLogEntry(object: object): object is LogEntry {
+    if (!isStringIndexed(object)) {
+      return false;
+    }
+
+    const topLevelStringProps = [
+      'insertId',
+      'timestamp',
+      'severity',
+      'logName',
+      'trace',
+      'receiveTimestamp',
+    ];
+    for (const prop of topLevelStringProps) {
+      if (!object[prop] || !isString(object[prop])) {
+        return false;
+      }
+    }
+
+    const topLevelObjectProps = ['resource', 'labels'];
+    for (const prop of topLevelObjectProps) {
+      if (!object[prop] || !isObject(object[prop])) {
+        return false;
+      }
+    }
+
+    const validJSONPayload =
+      object.jsonPayload && isStringIndexed(object.jsonPayload);
+    const validTextPayload =
+      object.textPayload && typeof object.textPayload === 'string';
+    if (!validJSONPayload && !validTextPayload) {
+      return false;
+    }
+
+    const resource = object.resource;
+    if (!resource.type || !isString(resource.type)) {
+      return false;
+    }
+    if (!resource.labels || !isObject(resource.labels)) {
+      return false;
+    }
+
+    const resourceLabels = resource.labels;
+    const resourceLabelProperties = ['function_name', 'project_id', 'region'];
+    for (const prop of resourceLabelProperties) {
+      if (!resourceLabels[prop] || !isString(resourceLabels[prop])) {
+        return false;
+      }
+    }
+
+    const execution_id = object.labels.execution_id;
+    if (!execution_id || !isString(execution_id)) {
+      return false;
+    }
+
+    return true;
   }
 }
