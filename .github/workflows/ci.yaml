@@ -23,6 +23,7 @@ jobs:
           'merge-on-green',
           'publish',
           'release-please',
+          'slo-stat-bot',
           'snippet-bot',
           'sync-repo-settings',
           'trusted-contribution'
