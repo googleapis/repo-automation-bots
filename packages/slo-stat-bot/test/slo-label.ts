@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//s
+//
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
@@ -75,13 +75,15 @@ describe('slo-label', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
       const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
+        .reply(404)
+        .get('/repos/testOwner/.github/contents/.github/slo-stat-bot.yaml')
+        .reply(404)
         .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
-        })
-        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-        .reply(404);
+        });
 
       appliesToStub.onCall(0).returns(true);
       isCompliantStub.onCall(0).returns(true);

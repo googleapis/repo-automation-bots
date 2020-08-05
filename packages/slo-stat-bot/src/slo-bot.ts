@@ -14,63 +14,90 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context, GitHubAPI} from 'probot';
+import {logger} from 'gcf-utils';
 import {doesSloApply} from './slo-appliesTo';
 import {isIssueCompliant, getFilePathContent} from './slo-compliant';
-import {removeLabel, handleLabeling, getOoSloLabelName} from './slo-label';
+import {removeLabel, handleLabeling} from './slo-label';
 import {handleLint} from './slo-lint';
-import {IssuesListCommentsItem} from './types';
+import {IssueAssigneesItem, IssueItem} from './types';
+
+const CONFIGURATION_FILE_PATH = 'slo-stat-bot.yaml';
+const DEFAULT_CONFIGURATION: Config = {
+  name: ':rotating_light:',
+};
+
+interface Config {
+  name: string;
+}
 
 interface IssueLabelResponseItem {
   name: string;
 }
 
+interface IssueListForRepoItem {
+  number: number;
+  user: {
+    login: string;
+  };
+  labels: IssueLabelResponseItem[];
+  assignees: IssueAssigneesItem[];
+  created_at: string;
+  updated_at: string;
+  pull_request?: {
+    url: string;
+  };
+}
+
 /**
  * Function handles labeling ooslo based on compliancy if issue applies to the given slo
- * @param context of issue or pr
- * @param owner of issue or pr
- * @param repo of issue or pr
- * @param type specifies if event is issue or pr
+ * @param github unique installation id for each function
+ * @param issueItem is an object that has issue owner, repo, number, type, created time of issue, assignees, labels, and comments
  * @param sloString json string of the slo rules
- * @param labels on the given issue or pr
- * @param comment login of the user who commented on the pr
+ * @param labelName of OOSLO label in repo
  * @returns void
  */
 async function handleIssues(
-  context: Context,
-  owner: string,
-  repo: string,
-  type: string,
+  github: GitHubAPI,
+  issueItem: IssueItem,
   sloString: string,
-  labels: string[] | null,
-  comment?: IssuesListCommentsItem
+  labelName: string
 ) {
   const sloList = JSON.parse(sloString);
 
   for (const slo of sloList) {
-    const number = context.payload[type].number;
-    const createdAt = context.payload[type].created_at;
-    const assignees = context.payload[type].assignees;
-
-    const appliesToIssue = await doesSloApply(type, slo, labels, number);
+    const appliesToIssue = await doesSloApply(
+      issueItem.type,
+      slo,
+      issueItem.labels,
+      issueItem.number
+    );
 
     if (appliesToIssue) {
-      const isCompliant = await isIssueCompliant(
-        context.github,
-        owner,
-        repo,
-        number,
-        assignees,
-        createdAt,
-        slo,
-        comment
-      );
-      await handleLabeling(context, owner, repo, number, isCompliant, labels);
+      const isCompliant = await isIssueCompliant(github, issueItem, slo);
+      await handleLabeling(github, issueItem, isCompliant, labelName);
 
       // Keep OOSLO label if issue is not compliant with any one of the slos
       if (!isCompliant) {
         break;
       }
     }
+  }
+}
+
+/**
+ * Function gets ooslo label name in repo from the config file. Defaults to rotating light OOSLO label name if config file does not exist
+ * @param context of issue or pr
+ * @returns the name of ooslo label
+ */
+async function getOoSloLabelName(context: Context): Promise<string> {
+  try {
+    const labelName = (await context.config(CONFIGURATION_FILE_PATH)) as Config;
+    return labelName.name;
+  } catch (err) {
+    logger.warn(
+      `Unable to get ooslo name from config-label file \n ${err.message}. \n Using default config for OOSLO label name.`
+    );
+    return DEFAULT_CONFIGURATION.name;
   }
 }
 
@@ -97,6 +124,33 @@ async function getSloFile(
     throw new Error(`Error in finding org level config file in ${owner}`);
   }
   return sloRules;
+}
+
+/**
+ * Function gets list of open issues from the repository
+ * @param github unique installation id for each function
+ * @param owner of issue or pr
+ * @param repo of issue or pr
+ * @returns IssueListForRepoItem which contains issue number, user login, labels, assignees, issue created time, & issue updated time
+ */
+async function getIssueList(
+  github: GitHubAPI,
+  owner: string,
+  repo: string
+): Promise<IssueListForRepoItem[] | null> {
+  try {
+    const state = 'open';
+    const issueList = await github.issues.listForRepo({
+      owner,
+      repo,
+      state,
+    });
+    return issueList.data;
+  } catch (err) {
+    err.message = `Error in getting list of issues from repo ${repo}: ${err.message}`;
+    logger.error(err);
+    return null;
+  }
 }
 
 /**
@@ -134,25 +188,39 @@ export = function handler(app: Application) {
       'pull_request.unassigned',
     ],
     async (context: Context) => {
+      //Igrnores labeling issues that are closed
       if (context.payload.pull_request.state === 'closed') {
         return;
       }
+
+      //Ignores re-computing slo status if OOSLO label was added or removed
+      const labelName = await getOoSloLabelName(context);
+      if (context.payload.label?.name === labelName) {
+        return;
+      }
+
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
+      const number = context.payload.number;
+      const createdAt = context.payload.pull_request.created_at;
+      const assignees = context.payload.pull_request.assignees;
       const labelsResponse = context.payload.pull_request.labels;
 
       const labels = labelsResponse.map(
         (label: IssueLabelResponseItem) => label.name
       );
       const sloString = await getSloFile(context.github, owner, repo);
-      await handleIssues(
-        context,
+      const issueItem = {
         owner,
         repo,
-        'pull_request',
-        sloString,
-        labels
-      );
+        number,
+        type: 'pull_request',
+        createdAt,
+        assignees,
+        labels,
+      } as IssueItem;
+
+      await handleIssues(context.github, issueItem, sloString, labelName);
     }
   );
   app.on(['issues.closed', 'pull_request.closed'], async (context: Context) => {
@@ -163,13 +231,13 @@ export = function handler(app: Application) {
     const number = context.payload[type].number;
     const labelsResponse = context.payload[type].labels;
 
-    const labels = labelsResponse.map((label: IssueLabelResponseItem) =>
-      label.name
+    const labels = labelsResponse.map(
+      (label: IssueLabelResponseItem) => label.name
     );
 
-    const name = await getOoSloLabelName(context);
-    if (labels?.includes(name)) {
-      await removeLabel(context.github, owner, repo, number, name);
+    const labelName = await getOoSloLabelName(context);
+    if (labels?.includes(labelName)) {
+      await removeLabel(context.github, owner, repo, number, labelName);
     }
   });
   app.on(
@@ -184,11 +252,22 @@ export = function handler(app: Application) {
       'issue_comment.created',
     ],
     async (context: Context) => {
+      //Igrnores labeling issues that are closed
       if (context.payload.issue.state === 'closed') {
         return;
       }
+
+      //Ignores re-computing slo status if OOSLO label was added or removed
+      const labelName = await getOoSloLabelName(context);
+      if (context.payload.label?.name === labelName) {
+        return;
+      }
+
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
+      const number = context.payload.issue.number;
+      const createdAt = context.payload.issue.created_at;
+      const assignees = context.payload.issue.assignees;
       const labelsResponse = context.payload.issue.labels;
       const comment = context.payload.issue.comment;
 
@@ -196,15 +275,53 @@ export = function handler(app: Application) {
         (label: IssueLabelResponseItem) => label.name
       );
       const sloString = await getSloFile(context.github, owner, repo);
-      await handleIssues(
-        context,
+      const issueItem = {
         owner,
         repo,
-        'issue',
-        sloString,
+        number,
+        type: 'issue',
+        createdAt,
+        assignees,
         labels,
-        comment
-      );
+        comment,
+      } as IssueItem;
+
+      await handleIssues(context.github, issueItem, sloString, labelName);
     }
   );
+  app.on(['schedule.repository'], async (context: Context) => {
+    const owner = context.payload.organization.login;
+    const repo = context.payload.repository.name;
+
+    const issueList = await getIssueList(context.github, owner, repo);
+
+    if (!issueList) {
+      return;
+    }
+
+    const sloString = await getSloFile(context.github, owner, repo);
+    const labelName = await getOoSloLabelName(context);
+
+    for (const issue of issueList) {
+      const number = issue.number;
+      const createdAt = issue.created_at;
+      const assignees = issue.assignees;
+
+      const labels = issue.labels.map((label: IssueLabelResponseItem) =>
+        label.name.toLowerCase()
+      );
+      const type = issue.pull_request === undefined ? 'issue' : 'pull_request';
+      const issueItem = {
+        owner,
+        repo,
+        number,
+        type,
+        createdAt,
+        assignees,
+        labels,
+      } as IssueItem;
+
+      await handleIssues(context.github, issueItem, sloString, labelName);
+    }
+  });
 };
