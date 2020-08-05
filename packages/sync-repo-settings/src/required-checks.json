@@ -342,7 +342,8 @@
       "googleapis/google-cloud-node",
       "googleapis/gapic-generator-typescript",
       "googleapis/aip",
-      "googleapis/release-please"
+      "googleapis/release-please",
+      "google-cloudevents-nodejs"
     ]
   },
   "ruby": {
