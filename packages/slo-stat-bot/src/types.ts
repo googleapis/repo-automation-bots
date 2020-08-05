@@ -39,3 +39,20 @@ export interface IssuesListCommentsItem {
   created_at: string;
   updated_at: string;
 }
+
+export interface IssueItem {
+  owner: string;
+  repo: string;
+  number: number;
+  type: string;
+  createdAt: string;
+  assignees: IssueAssigneesItem[];
+  labels: string[] | null;
+  comment?: IssuesListCommentsItem;
+}
+
+export interface IssueAssigneesItem {
+  login: string;
+  type: string;
+  site_admin: boolean;
+}
