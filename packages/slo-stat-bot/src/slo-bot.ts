@@ -125,7 +125,7 @@ async function getSloFile(
   }
   if (!sloRules) {
     logger.warn(`Error in finding org level config file in org ${owner}`);
-    sloRules = '';
+    return '[]';
   }
   return sloRules;
 }
