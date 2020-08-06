@@ -26,12 +26,40 @@ interface LogFn {
  * A logger standardized logger for Google Cloud Functions
  */
 export interface GCFLogger {
+  /**
+   * Log at the trace level
+   */
   trace: LogFn;
+
+  /**
+   * Log at the debug level
+   */
   debug: LogFn;
+
+  /**
+   * Log at the info level
+   */
   info: LogFn;
+
+  /**
+   * Log at the warn level
+   */
   warn: LogFn;
+
+  /**
+   * Log at the error level
+   */
   error: LogFn;
+
+  /**
+   * Log at the metric level
+   */
   metric: LogFn;
+
+  /**
+   * Synchronously flush the buffer for this logger.
+   * NOTE: Only supported for SonicBoom destinations
+   */
   flushSync: {(): void};
 }
 
