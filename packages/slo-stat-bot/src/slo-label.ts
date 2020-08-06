@@ -45,7 +45,7 @@ async function addLabel(
     });
   } catch (err) {
     err.message = `Error in adding ooslo label: ${name}, for org ${owner} in repo ${repo} since it does not exist \n ${err.message}`;
-    throw err;
+    logger.error(err);
   }
 }
 
