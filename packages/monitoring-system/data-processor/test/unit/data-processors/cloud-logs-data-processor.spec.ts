@@ -91,11 +91,10 @@ async function testValidMessage(
   message: {},
   expectedRecords: MockRecord[]
 ): Promise<void> {
-  return startAndSendMessage(message)
-    .then(messageId => {
-      assert(mockSubscription.wasAcked(messageId));
-      expectedRecords.forEach(record => mockFirestore.assertRecord(record));
-    })
+  return startAndSendMessage(message).then(messageId => {
+    assert(mockSubscription.wasAcked(messageId));
+    expectedRecords.forEach(record => mockFirestore.assertRecord(record));
+  });
 }
 
 /**
@@ -108,11 +107,10 @@ async function testMalformedMessage(
   expectedErrorMsg: string,
   writeStream: ObjectWritableMock
 ): Promise<void> {
-  return startAndSendMessage(malformedMessage)
-    .then(messageId => {
-      assert(mockSubscription.wasAcked(messageId));
-      assertErrorLogged(expectedErrorMsg, writeStream);
-    })
+  return startAndSendMessage(malformedMessage).then(messageId => {
+    assert(mockSubscription.wasAcked(messageId));
+    assertErrorLogged(expectedErrorMsg, writeStream);
+  });
 }
 
 /**

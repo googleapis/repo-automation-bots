@@ -22,7 +22,7 @@ import {
   getRepositoryPrimaryKey,
   GitHubEventDocument,
   UNKNOWN_FIRESTORE_VALUE,
-} from '../firestore-schema';
+} from '../types/firestore-schema';
 const {ORG, USER, UNKNOWN} = OwnerType;
 
 export interface GitHubProcessorOptions extends ProcessorOptions {

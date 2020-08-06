@@ -15,7 +15,7 @@
 import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {WriteResult} from '@google-cloud/firestore';
 import {CloudTasksClient, protos, v2} from '@google-cloud/tasks';
-import {BotDocument, TaskQueueStatusDocument} from '../firestore-schema';
+import {BotDocument, TaskQueueStatusDocument} from '../types/firestore-schema';
 
 type CloudTasksList = [
   protos.google.cloud.tasks.v2.ITask[],
