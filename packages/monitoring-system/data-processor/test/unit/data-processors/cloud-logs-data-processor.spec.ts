@@ -30,7 +30,7 @@ let processor: CloudLogsProcessor;
  * Number of seconds that the test Cloud Logs processor should
  * listen to the mock subscription for.
  */
-const LISTEN_LIMIT = 3;
+const LISTEN_LIMIT = 1.5;
 
 /**
  * Returns the given object as a Buffer
@@ -91,10 +91,11 @@ async function testValidMessage(
   message: {},
   expectedRecords: MockRecord[]
 ): Promise<void> {
-  return startAndSendMessage(message).then(messageId => {
-    assert(mockSubscription.wasAcked(messageId));
-    expectedRecords.forEach(record => mockFirestore.assertRecord(record));
-  });
+  return startAndSendMessage(message)
+    .then(messageId => {
+      assert(mockSubscription.wasAcked(messageId));
+      expectedRecords.forEach(record => mockFirestore.assertRecord(record));
+    })
 }
 
 /**
@@ -107,10 +108,11 @@ async function testMalformedMessage(
   expectedErrorMsg: string,
   writeStream: ObjectWritableMock
 ): Promise<void> {
-  return startAndSendMessage(malformedMessage).then(messageId => {
-    assert(mockSubscription.wasAcked(messageId));
-    assertErrorLogged(expectedErrorMsg, writeStream);
-  });
+  return startAndSendMessage(malformedMessage)
+    .then(messageId => {
+      assert(mockSubscription.wasAcked(messageId));
+      assertErrorLogged(expectedErrorMsg, writeStream);
+    })
 }
 
 /**

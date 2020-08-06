@@ -94,6 +94,15 @@ export class MockSubscription extends Subscription {
   }
 
   /**
+   * Removes the listener for mock messages
+   * @param event parameter is ignored
+   */
+  public removeAllListeners(event?: string | symbol): this {
+    this.messageHandler = undefined;
+    return this;
+  }
+
+  /**
    * Send a mock message to all listeners
    * @param messageData data to be included in the message
    */

@@ -23,7 +23,7 @@ export function isStringIndexed(
   if (!toCheck || !isObject(toCheck)) {
     return false;
   }
-  return !Object.keys(toCheck).every(isString);
+  return Object.keys(toCheck).every(isString);
 }
 
 /**

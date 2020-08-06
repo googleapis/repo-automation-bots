@@ -174,16 +174,16 @@ export class CloudLogsProcessor extends DataProcessor {
    */
   public async collectAndProcess(): Promise<void> {
     return new Promise(() => {
-      this.subscription.on('message', this.processMessage);
+      this.subscription.on('message', this.processMessage.bind(this));
       this.logger.debug('Now listening for PubSub messages');
 
       setTimeout(() => {
-        this.subscription.removeAllListeners(); // TODO implement this in the mock
+        this.subscription.removeAllListeners();
         this.logger.debug(
           `Stopped listening to PubSub after ${this.listenLimit}s`
         );
         return Promise.all(this.tasksInProgress);
-      }, this.listenLimit);
+      }, this.listenLimit * 1000);
     });
   }
 
@@ -204,14 +204,28 @@ export class CloudLogsProcessor extends DataProcessor {
         message: 'JSON from PubSub message is not a valid log entry',
         messageId: pubSubMessage.id,
         pubSubMessage: pubSubMessage,
+        parsedJSON: logEntry
       });
       return;
     }
 
     const logEntryType = this.parseLogEntryType(logEntry);
-    const processingTask = this.processLogEntry(logEntry, logEntryType);
+    if (logEntryType === LogEntryType.NON_METRIC) {
+      this.logger.debug({
+        message: 'Ignoring log entry with no metrics',
+        entry: logEntry,
+      });
+      return;
+    }
+    if (logEntryType === LogEntryType.MALFORMED) {
+      this.logger.error({
+        message: 'Detected malformed log entry',
+        entry: logEntry,
+      });
+      return;
+    }
 
-    processingTask
+    const processingTask = this.processLogEntry(logEntry, logEntryType)
       .then(result => this.ackIfSuccess(result, pubSubMessage))
       .catch(error => {
         this.logger.error({
@@ -220,6 +234,7 @@ export class CloudLogsProcessor extends DataProcessor {
           error: error,
           pubSubMessage: pubSubMessage,
         });
+        throw error;
       });
 
     this.tasksInProgress.push(processingTask);
@@ -229,13 +244,18 @@ export class CloudLogsProcessor extends DataProcessor {
    * Calls ack() on the message if the result is SUCCESS, else calls nack()
    * @param result processing result
    * @param pubSubMessage PubSub message
+   * @returns the result given
    */
-  private ackIfSuccess(result: ProcessingResult, pubSubMessage: Message) {
+  private ackIfSuccess(
+    result: ProcessingResult,
+    pubSubMessage: Message
+  ): ProcessingResult {
     if (result === ProcessingResult.SUCCESS) {
       pubSubMessage.ack();
     } else {
       pubSubMessage.nack();
     }
+    return result;
   }
 
   /**
@@ -282,10 +302,6 @@ export class CloudLogsProcessor extends DataProcessor {
       }
       return LogEntryType.NON_METRIC;
     } catch (error) {
-      this.logger.error({
-        message: `Invalid log entry: ${error}`,
-        entry: entry,
-      });
       return LogEntryType.MALFORMED;
     }
   }
@@ -325,7 +341,6 @@ export class CloudLogsProcessor extends DataProcessor {
    */
   private isTriggerInfoEntry(entry: LogEntry): boolean {
     const payload = entry.jsonPayload;
-
     if (!payload) {
       return false;
     }
@@ -349,7 +364,6 @@ export class CloudLogsProcessor extends DataProcessor {
     if (!isObject(payload) || !isStringIndexed(payload)) {
       return false;
     }
-
     if (!payload.message || !isString(payload.message)) {
       return false;
     }
@@ -358,7 +372,6 @@ export class CloudLogsProcessor extends DataProcessor {
     if (!isObject(trigger) || !isStringIndexed(trigger)) {
       return false;
     }
-
     if (!trigger.trigger_type || !isString(trigger.trigger_type)) {
       return false;
     }
@@ -427,11 +440,9 @@ export class CloudLogsProcessor extends DataProcessor {
     if (!isObject(action) || !isStringIndexed(action)) {
       return false;
     }
-
     if (!hasStringProperties(action, ['type', 'value'])) {
       return false;
     }
-
     if (!hasObjectProperties(action, ['destination_repo'])) {
       return false;
     }
@@ -443,7 +454,7 @@ export class CloudLogsProcessor extends DataProcessor {
 
     const dstObj = action.destination_object;
     if (dstObj) {
-      if (!dstObj.object_type || typeof dstObj.object_type !== 'string') {
+      if (!dstObj.object_type || !isString(dstObj.object_type)) {
         return false;
       }
       if (
@@ -464,20 +475,10 @@ export class CloudLogsProcessor extends DataProcessor {
    * @param entry entry to route
    * @param type type of the log entry
    * @returns A promise for the processing task with a processing result.
-   * - If the log entry type is NON_METRIC, returns a Promise that immediately
-   *   resolves with a SUCCESS status.
-   * - If the log entry type is MALFORMED or there is no handler available for
-   *   log entry type returns a Promise that resolves immediately with a FAIL status.
-   * - Promises only reject for runtime errors.
+   * If no handler is set for the given log entry type, returns a rejected promise.
    */
   private processLogEntry(entry: LogEntry, type: LogEntryType): ProcessingTask {
     switch (type) {
-      case LogEntryType.NON_METRIC:
-        this.logger.debug({
-          message: 'Ignoring log entry with no metrics',
-          entry: entry,
-        });
-        return Promise.resolve(ProcessingResult.SUCCESS);
       case LogEntryType.EXECUTION_START:
         return this.processExecutionStartLog(entry);
       case LogEntryType.EXECUTION_END:
@@ -488,11 +489,9 @@ export class CloudLogsProcessor extends DataProcessor {
         return this.processGitHubActionLog(entry);
       case LogEntryType.ERROR:
         return this.processErrorLog(entry);
-      case LogEntryType.MALFORMED:
-        return Promise.resolve(ProcessingResult.FAIL);
       default:
         this.logger.error({
-          message: 'Could not identify a handler for the log entry',
+          message: 'No handler set for the given log entry type',
           entry: entry,
         });
         return Promise.resolve(ProcessingResult.FAIL);
@@ -558,6 +557,7 @@ export class CloudLogsProcessor extends DataProcessor {
    */
   private instanceOfLogEntry(toCheck: object): toCheck is LogEntry {
     if (!isStringIndexed(toCheck)) {
+      this.logger.debug(`Log entry is not string indexed`);
       return false;
     }
 
@@ -573,6 +573,7 @@ export class CloudLogsProcessor extends DataProcessor {
       !hasStringProperties(toCheck, topLevelStringProps) ||
       !hasObjectProperties(toCheck, ['resource', 'labels'])
     ) {
+      this.logger.debug(`Log entry is missing required properties`);
       return false;
     }
 
@@ -581,6 +582,7 @@ export class CloudLogsProcessor extends DataProcessor {
     const validTextPayload =
       toCheck.textPayload && isString(toCheck.textPayload);
     if (!validJSONPayload && !validTextPayload) {
+      this.logger.debug(`Log entry has no payload`);
       return false;
     }
 
