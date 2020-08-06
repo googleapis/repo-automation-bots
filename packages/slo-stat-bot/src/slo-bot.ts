@@ -118,8 +118,8 @@ async function getSloFile(
 
   if (!sloRules) {
     path = 'issue_slo_rules.json';
-    logger.error(
-      `Error in finding repo level config file in repo ${repo} for org ${owner}`
+    logger.warn(
+      `Could not find repo level config file in repo ${repo} for org ${owner}`
     );
     sloRules = await getFilePathContent(github, owner, '.github', path);
   }
