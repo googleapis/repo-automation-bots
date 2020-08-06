@@ -36,7 +36,7 @@ proxyurl=$(gcloud beta run services describe serverless-scheduler-proxy \
 cd packages || exit 1
 for f in *; do
     # Skip symlinks and our gcf-utils/generate-bot directory as it is not a function
-    if [[ -d "$f" && ! -L "$f" && "$f" != "gcf-utils" && "$f" != "generate-bot" && "$f" != "monitoring-system" && "$f" != "slo-stat-bot" ]]; then
+    if [[ -d "$f" && ! -L "$f" && "$f" != "gcf-utils" && "$f" != "generate-bot" && "$f" != "monitoring-system" ]]; then
         cd "$f" || exit 1
         echo "$f"
         for fx in *; do
