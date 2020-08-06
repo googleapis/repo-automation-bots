@@ -22,86 +22,22 @@ interface LogFn {
   (obj: object, msg?: string, ...args: any[]): void;
 }
 
-interface Bindings {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-}
-
 /**
  * A logger standardized logger for Google Cloud Functions
  */
 export interface GCFLogger {
-  /**
-   * Log at the trace level
-   */
   trace: LogFn;
-
-  /**
-   * Log at the debug level
-   */
   debug: LogFn;
-
-  /**
-   * Log at the info level
-   */
   info: LogFn;
-
-  /**
-   * Log at the warn level
-   */
   warn: LogFn;
-
-  /**
-   * Log at the error level
-   */
   error: LogFn;
-
-  /**
-   * Log at the metric level
-   */
   metric: LogFn;
-
-  /**
-   * Create a child logger
-   * @param bindings static properties that will be included
-   * in all statements logged from the child logger
-   */
-  child: {(bindings: Bindings): GCFLogger};
-
-  /**
-   * Get the bindings associated with this logger
-   */
-  bindings: {(): Bindings};
-
-  /**
-   * Synchronously flush the buffer for this logger.
-   * NOTE: Only supported for SonicBoom destinations
-   */
   flushSync: {(): void};
 }
 
-/**
- * GCFLogger customization options
- */
-export interface GCFLoggerOptions {
-  /**
-   * An alternate destination to write logs.
-   * Default is stdout wrapped in SonicBoom
-   */
-  destination?: NodeJS.WritableStream | SonicBoom;
-
-  /**
-   * static properties that will be included
-   * in all statements logged
-   */
-  bindings?: Bindings;
-}
-
-/**
- * Initialize a GCFLogger instance
- * @param options options for instance initialization
- */
-export function initLogger(options?: GCFLoggerOptions): GCFLogger {
+export function initLogger(
+  dest?: NodeJS.WritableStream | SonicBoom
+): GCFLogger {
   const DEFAULT_LOG_LEVEL = 'trace';
   const defaultOptions: pino.LoggerOptions = {
     formatters: {
@@ -116,58 +52,26 @@ export function initLogger(options?: GCFLoggerOptions): GCFLogger {
     level: DEFAULT_LOG_LEVEL,
   };
 
-  const destination = options?.destination || pino.destination({sync: true});
-  let logger = pino(defaultOptions, destination);
-
-  if (options?.bindings) {
-    logger = logger.child(options.bindings);
-  }
-
-  bindPinoFunctions(logger);
-
-  const flushSync = () => {
-    // flushSync is only available for SonicBoom,
-    // which is the default destination wrapper for GCFLogger
-    if (destination instanceof SonicBoom) {
-      destination.flushSync();
-    }
-  };
-
-  return pinoToGCFLogger(logger, flushSync);
-}
-
-/**
- * Binds the given logger instance to Pino logger functions
- * @param logger instance to bind
- */
-function bindPinoFunctions(logger: pino.Logger): pino.Logger {
+  dest = dest || pino.destination({sync: true});
+  const logger = pino(defaultOptions, dest);
   Object.keys(logger).map(prop => {
     if (logger[prop] instanceof Function) {
       logger[prop] = logger[prop].bind(logger);
     }
   });
-  return logger;
-}
 
-/**
- * Converts a Pino logger instance to a GCFLogger instance
- * @param pinoLogger pino logger to convert
- * @param flushSync the flushSync function to apply to the returned GCFLogger
- */
-function pinoToGCFLogger(
-  pinoLogger: pino.Logger,
-  flushSync: {(): void}
-): GCFLogger {
+  const flushSync = () => {
+    // flushSync is only available for SonicBoom,
+    // which is the default destination wrapper for GCFLogger
+    if (dest instanceof SonicBoom) {
+      dest.flushSync();
+    }
+  };
+
   return {
-    ...pinoLogger,
-    metric: pinoLogger.metric.bind(pinoLogger),
+    ...logger,
+    metric: logger.metric.bind(logger),
     flushSync: flushSync,
-    bindings: pinoLogger.bindings,
-    child: (bindings: Bindings) => {
-      const child = pinoLogger.child(bindings);
-      bindPinoFunctions(child);
-      return pinoToGCFLogger(child, flushSync);
-    },
   };
 }
 

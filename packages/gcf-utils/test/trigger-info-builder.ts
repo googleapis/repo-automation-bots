@@ -30,6 +30,7 @@ describe('buildTriggerInfo', () => {
     const expectedInfo = {
       trigger: {
         trigger_type: 'Pub/Sub',
+        message: 'Execution started by Pub/Sub',
       },
     };
     assert.deepEqual(triggerInfo, expectedInfo);
@@ -47,6 +48,7 @@ describe('buildTriggerInfo', () => {
     const expectedInfo = {
       trigger: {
         trigger_type: 'Cloud Scheduler',
+        message: 'Execution started by Cloud Scheduler',
       },
     };
     assert.deepEqual(triggerInfo, expectedInfo);
@@ -65,6 +67,7 @@ describe('buildTriggerInfo', () => {
       trigger: {
         trigger_type: 'Cloud Task',
         github_delivery_guid: '1234',
+        message: 'Execution started by Cloud Task',
       },
     };
     assert.deepEqual(triggerInfo, expectedInfo);
@@ -85,6 +88,7 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser2',
         github_delivery_guid: '1234',
+        message: 'Execution started by GitHub Webhook',
         trigger_source_repo: {
           owner: 'testOwner',
           owner_type: 'User',
@@ -110,6 +114,7 @@ describe('buildTriggerInfo', () => {
     const expectedInfo = {
       trigger: {
         trigger_type: 'GitHub Webhook',
+        message: 'Execution started by GitHub Webhook',
         trigger_sender: 'UNKNOWN',
         github_delivery_guid: '',
         trigger_source_repo: {
