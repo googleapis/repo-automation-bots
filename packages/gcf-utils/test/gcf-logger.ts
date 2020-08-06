@@ -26,9 +26,7 @@ describe('GCFLogger', () => {
   });
   describe('logger instance', () => {
     let destination: ObjectWritableMock;
-    let loggerNoBindings: GCFLogger & {[key: string]: Function};
-    let loggerWithBindings: GCFLogger & {[key: string]: Function};
-    const bindings = {foo: 'bar-binding'};
+    let logger: GCFLogger & {[key: string]: Function};
 
     function readLogsAsObjects(writeStream: ObjectWritableMock): LogLine[] {
       try {
@@ -43,13 +41,13 @@ describe('GCFLogger', () => {
     function testAllLevels() {
       for (const level of Object.keys(logLevels)) {
         it(`logs ${level} level string`, () => {
-          loggerNoBindings[level]('hello world');
+          logger[level]('hello world');
           const loggedLines: LogLine[] = readLogsAsObjects(destination);
           validateLogs(loggedLines, 1, ['hello world'], [], logLevels[level]);
         });
 
         it(`logs ${level} level json`, () => {
-          loggerNoBindings[level]({hello: 'world'});
+          logger[level]({hello: 'world'});
           const loggedLines: LogLine[] = readLogsAsObjects(destination);
           validateLogs(
             loggedLines,
@@ -59,41 +57,12 @@ describe('GCFLogger', () => {
             logLevels[level]
           );
         });
-
-        it(`logs ${level} level string with bindings`, () => {
-          loggerWithBindings[level]('hello world');
-          const loggedLines: LogLine[] = readLogsAsObjects(destination);
-          validateLogs(
-            loggedLines,
-            1,
-            ['hello world'],
-            [bindings],
-            logLevels[level]
-          );
-        });
-
-        it(`logs ${level} level json with bindings`, () => {
-          loggerWithBindings[level]({hello: 'world'});
-          const loggedLines: LogLine[] = readLogsAsObjects(destination);
-          validateLogs(
-            loggedLines,
-            1,
-            [],
-            [{...bindings, hello: 'world'}],
-            logLevels[level]
-          );
-        });
       }
     }
 
     beforeEach(() => {
       destination = new ObjectWritableMock();
-      loggerNoBindings = initLogger({destination}) as GCFLogger & {
-        [key: string]: Function;
-      };
-      loggerWithBindings = loggerNoBindings.child(bindings) as GCFLogger & {
-        [key: string]: Function;
-      };
+      logger = initLogger(destination) as GCFLogger & {[key: string]: Function};
     });
 
     testAllLevels();
