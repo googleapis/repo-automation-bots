@@ -233,14 +233,75 @@ export interface FirestoreSchema {
   };
 }
 
-export function getRepositoryPrimaryKey(doc: GitHubRepositoryDocument): string {
-  if (
-    doc.repo_name &&
-    doc.owner_name &&
-    doc.owner_type &&
-    doc.owner_type !== OwnerType.UNKNOWN
-  ) {
-    return `${doc.repo_name}_${doc.owner_name}_${doc.owner_type}`;
+/**
+ * Returns the primary key for the given document belonging to the
+ * given collection name.
+ * @param doc document to generate primary key for
+ * @param collectionName the name of the collection for this document
+ */
+export function getPrimaryKey(doc: {}, collectionName: string): string {
+  switch (collectionName) {
+    case 'Bot':
+      const botDoc = doc as BotDocument;
+      if (botDoc.bot_name) {
+        return botDoc.bot_name;
+      }
+      throw new Error('doc is not a BotDocument');
+    case 'Bot_Execution':
+      const botExecDoc = doc as BotExecutionDocument;
+      if (botExecDoc.execution_id) {
+        return botExecDoc.execution_id;
+      }
+      throw new Error('doc is not a BotExecutionDocument');
+    case 'Task_Queue_Status':
+      const taskQueueStatusDoc = doc as TaskQueueStatusDocument;
+      if (taskQueueStatusDoc.queue_name && taskQueueStatusDoc.timestamp) {
+        return `${taskQueueStatusDoc.queue_name}_${taskQueueStatusDoc.timestamp}`;
+      }
+      throw new Error('doc is not a TaskQueueStatusDocument');
+    case 'Error':
+      const errorDoc = doc as ErrorDocument;
+      if (errorDoc.execution_id && errorDoc.timestamp) {
+        return `${errorDoc.execution_id}_${errorDoc.timestamp}`;
+      }
+      throw new Error('doc is not a ErrorDocument');
+    case 'Trigger':
+      const triggerDoc = doc as TriggerDocument;
+      if (triggerDoc.execution_id) {
+        return triggerDoc.execution_id;
+      }
+      throw new Error('doc is not a TriggerDocument');
+    case 'Action':
+      const actionDoc = doc as ActionDocument;
+      if (actionDoc.execution_id && actionDoc.action_type && actionDoc.timestamp) {
+        return `${actionDoc.execution_id}_${actionDoc.action_type}_${actionDoc.timestamp}`;
+      }
+      throw new Error('doc is not a ActionDocument');
+    case 'Action_Type':
+      const actionTypeDoc = doc as ActionTypeDocument;
+      if (actionTypeDoc.name) {
+        return actionTypeDoc.name;
+      }
+      throw new Error('doc is not a ActionTypeDocument');
+    case 'GitHub_Event':
+      const githubEventDoc = doc as GitHubEventDocument;
+      if (githubEventDoc.payload_hash) {
+        return githubEventDoc.payload_hash;
+      }
+      throw new Error('doc is not a GitHubEventDocument');
+    case 'GitHub_Repository':
+      const githubRepoDoc = doc as GitHubRepositoryDocument;
+      if (githubRepoDoc.repo_name && githubRepoDoc.owner_name && githubRepoDoc.owner_type) {
+        return `${githubRepoDoc.repo_name}_${githubRepoDoc.owner_name}_${githubRepoDoc.owner_type}`;
+      }
+      throw new Error('doc is not a GitHubRepositoryDocument');
+    case 'GitHub_Object':
+      const githubObjectDoc = doc as GitHubObjectDocument;
+      if (githubObjectDoc.object_type && githubObjectDoc.repository && githubObjectDoc.object_id) {
+        return `${githubObjectDoc.object_type}_${githubObjectDoc.repository}_${githubObjectDoc.object_id}`;
+      }
+      throw new Error('doc is not a GitHubObjectDocument');
+    default:
+      throw new Error(`Could not identify collection name: ${collectionName}`);
   }
-  return UNKNOWN_FIRESTORE_VALUE;
 }
