@@ -395,45 +395,45 @@ describe('Cloud Logs Processor', () => {
         });
       });
 
-      // describe('error logs', () => {
-      //   const executionRecord = {
-      //     document: {
-      //       pb86861bj247: {
-      //         execution_id: 'pb86861bj247',
-      //       },
-      //     },
-      //     collectionName: 'Bot_Execution',
-      //   };
+      describe('error logs', () => {
+        const executionRecord = {
+          document: {
+            pb86861bj247: {
+              execution_id: 'pb86861bj247',
+            },
+          },
+          collectionName: 'Bot_Execution',
+        };
 
-      //   const errorRecord = {
-      //     document: {
-      //       pb86861bj247_1596123567270: {
-      //         execution_id: 'pb86861bj247',
-      //         timestamp: 1596123567270,
-      //         error_msg: "TypeError: Cannot read property 'name' of undefined",
-      //       },
-      //     },
-      //     collectionName: 'Error',
-      //   };
+        const errorRecord = {
+          document: {
+            pb86861bj247_1596123567270: {
+              execution_id: 'pb86861bj247',
+              timestamp: 1596123567270,
+              error_msg: "TypeError: Cannot read property 'name' of undefined",
+            },
+          },
+          collectionName: 'Error',
+        };
 
-      //   const errorLog = loadFixture(['cloud-logs', 'error.json']);
+        const errorLog = loadFixture(['cloud-logs', 'error.json']);
 
-      //   describe('when no execution record exists', () => {
-      //     it('creates a new execution record and stores error logs', () => {
-      //       return testValidMessage(errorLog, [executionRecord, errorRecord]);
-      //     });
-      //   });
+        describe('when no execution record exists', () => {
+          it('creates a new execution record and stores error logs', () => {
+            return testValidMessage(errorLog, [executionRecord, errorRecord]);
+          });
+        });
 
-      //   describe('when an execution record already exists', () => {
-      //     beforeEach(() => {
-      //       mockFirestore.addRecord(errorRecord);
-      //     });
+        describe('when an execution record already exists', () => {
+          beforeEach(() => {
+            mockFirestore.addRecord(errorRecord);
+          });
 
-      //     it('identifies existing record and stores error logs', () => {
-      //       return testValidMessage(errorLog, [executionRecord]);
-      //     });
-      //   });
-      // });
+          it('identifies existing record and stores error logs', () => {
+            return testValidMessage(errorLog, [executionRecord]);
+          });
+        });
+      });
     });
 
     // describe('unidentifiable or malformed logs', () => {
