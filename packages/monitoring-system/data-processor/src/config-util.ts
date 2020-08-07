@@ -28,6 +28,10 @@ export interface Config {
     task_queue_project_id: string;
     task_queue_location: string;
   };
+  cloud_logs_processor: {
+    pub_sub_subscription: string;
+    pub_sub_listen_limit: number;
+  };
 }
 
 /**

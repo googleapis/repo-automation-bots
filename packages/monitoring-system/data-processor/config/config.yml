@@ -7,3 +7,7 @@ firestore:
 task_queue_processor:
   task_queue_project_id: *default_project_id
   task_queue_location: *default_project_location
+
+cloud_logs_processor:
+  pub_sub_subscription: 'projects/repo-automation-bots/subscriptions/data-processor'
+  pub_sub_listen_limit: 5 * 60;
