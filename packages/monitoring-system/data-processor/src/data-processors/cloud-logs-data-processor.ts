@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
-import {Subscription, Message} from '@google-cloud/pubsub';
+import { DataProcessor, ProcessorOptions } from './data-processor-abstract';
+import { Subscription, Message } from '@google-cloud/pubsub';
 import {
   BotExecutionDocument,
   getPrimaryKey,
@@ -146,6 +146,8 @@ export class CloudLogsProcessor extends DataProcessor {
     }
 
     const logEntryType = parseLogEntryType(logEntry);
+    this.logger.debug(`Message ${pubSubMessage.id} is a ${logEntryType}`);
+
     if (logEntryType === LogEntryType.NON_METRIC) {
       this.logger.debug({
         message: 'Ignoring log entry with no metrics',
@@ -188,8 +190,10 @@ export class CloudLogsProcessor extends DataProcessor {
   ): ProcessingResult {
     if (result === ProcessingResult.SUCCESS) {
       pubSubMessage.ack();
+      this.logger.debug(`${pubSubMessage.id} was acked`);
     } else {
       pubSubMessage.nack();
+      this.logger.debug(`${pubSubMessage.id} was nacked`);
     }
     return result;
   }
@@ -253,9 +257,24 @@ export class CloudLogsProcessor extends DataProcessor {
       execution_id: entry.labels.execution_id,
       bot_name: entry.resource.labels.function_name,
       start_time: new Date(entry.timestamp).getTime(),
+      logs_url: this.buildExecutionLogsUrl(entry)
     };
 
     return this.updateFirestore(botExecDoc, FSCollection.BotExecution);
+  }
+
+  private buildExecutionLogsUrl(entry: LogEntry): string {
+    const TIME_RANGE_MILLISECONDS = 5*1000;
+    const domain = `pantheon.corp.google.com`; // should be console.google.com but the redirect wipes the query
+    const executionId = entry.labels.execution_id;
+    const project = entry.resource.labels.project_id;
+    const start = new Date(entry.timestamp).getTime() - TIME_RANGE_MILLISECONDS;
+    const end = new Date(entry.timestamp).getTime() + TIME_RANGE_MILLISECONDS;
+
+    return `https://${domain}/logs/query;query=`+
+    `labels.execution_id%3D%22${executionId}%22;`+
+    `timeRange=${new Date(start).toISOString()}%2F${new Date(end).toISOString()}`+
+    `?project=${project}&query=%0A`;
   }
 
   /**
@@ -293,6 +312,7 @@ export class CloudLogsProcessor extends DataProcessor {
       github_event: payload.trigger.payload_hash,
       trigger_type: payload.trigger.trigger_type,
     };
+    this.logger.debug(triggerDoc);
     updates.push(this.updateFirestore(triggerDoc, FSCollection.Trigger));
 
     const sourceRepo = payload.trigger.trigger_source_repo;
@@ -350,6 +370,7 @@ export class CloudLogsProcessor extends DataProcessor {
     const actionDoc: ActionDocument = {
       execution_id: entry.labels.execution_id,
       action_type: payload.action.type,
+      value: payload.action.value,
       timestamp: new Date(entry.timestamp).getTime(),
       destination_repo: getPrimaryKey(repoDoc, FSCollection.GitHubRepository),
     };
@@ -413,7 +434,7 @@ export class CloudLogsProcessor extends DataProcessor {
   ): ProcessingTask {
     const docKey = getPrimaryKey(doc, collection);
     const collectionRef = this.firestore.collection(collection);
-    const mergeStore = collectionRef.doc(docKey).set(doc, {merge: true});
+    const mergeStore = collectionRef.doc(docKey).set(doc, { merge: true });
 
     return mergeStore
       .then(() => ProcessingResult.SUCCESS)

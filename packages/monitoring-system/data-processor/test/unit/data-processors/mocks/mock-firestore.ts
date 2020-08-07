@@ -88,7 +88,7 @@ export class MockFirestore extends Firestore {
         `Collection ${record.collectionName} does not exist in MockFirestore`
       );
     }
-    collection = {...collection, ...record.document};
+    this.mockData[record.collectionName] = {...collection, ...record.document};
   }
 
   /**
@@ -122,7 +122,7 @@ export class MockFirestore extends Firestore {
         assert.equal(
           foundProps[prop],
           expectedProps[prop],
-          `Expected mock execution record '${expectedDocumentKey}' ` +
+          `Expected ${expected.collectionName} record '${expectedDocumentKey}' ` +
             `to have property '${prop}' with value '${expectedProps[prop]}'. ` +
             `Mock execution record: ${JSON.stringify(foundDocument)}`
         );
@@ -175,7 +175,7 @@ export class MockFirestore extends Firestore {
               collectionPath
             );
             if (options?.merge) {
-              const oldData = collection[docPath];
+              const oldData = collection[docPath] || {};
               data = {...oldData, ...data};
             }
             collection[docPath] = data;

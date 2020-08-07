@@ -29,8 +29,10 @@ let processor: CloudLogsProcessor;
 /**
  * Number of seconds that the test Cloud Logs processor should
  * listen to the mock subscription for.
+ * 
+ * NOTE: Increasing this will have a significant impact on test run times
  */
-const LISTEN_LIMIT = 1;
+const LISTEN_LIMIT = 0.5;
 
 /**
  * Returns the given object as a Buffer
@@ -180,10 +182,9 @@ describe('Cloud Logs Processor', () => {
               bot_name: 'merge_on_green',
               start_time: 1595536893701,
               logs_url:
-                'https://console.cloud.google.com/logs/query;query=resource.type%3D%22' +
-                'cloud_function%22%0Alabels.%22execution_id%22%3D%224ww4alqs7ikq%22;' +
-                'timeRange=2020-07-23T20:41:33.701320846Z%2F22020-07-23T20:41:33.701320846Z;' +
-                'summaryFields=:true:32:beginning?project=repo-automation-bots',
+                `https://pantheon.corp.google.com/logs/query;query=labels.execution_id`+
+                `%3D%224ww4alqs7ikq%22;timeRange=2020-07-23T20:41:28.701Z%2F2020-07-23T20:41:38.701Z`+
+                `?project=repo-automation-bots&query=%0A`,
             },
           },
           collectionName: 'Bot_Execution',
@@ -195,7 +196,7 @@ describe('Cloud Logs Processor', () => {
             '4ww4alqs7ikq': {
               execution_id: '4ww4alqs7ikq',
               bot_name: 'merge_on_green',
-              end_time: 1595536887000,
+              end_time: 1595536887861,
             },
           },
           collectionName: 'Bot_Execution',
@@ -216,7 +217,7 @@ describe('Cloud Logs Processor', () => {
         ]);
         const executionEndLog = loadFixture([
           'cloud-logs',
-          'execution-start.json',
+          'execution-end.json',
         ]);
 
         describe('when no execution record exists', () => {
@@ -230,15 +231,13 @@ describe('Cloud Logs Processor', () => {
         });
 
         describe('when a part execution record already exists', () => {
-          beforeEach(() => {
-            mockFirestore.addRecord(executionRecordEnd);
-          });
-
           it('identifies existing record and stores execution start logs', () => {
+            mockFirestore.addRecord(executionRecordEnd);
             return testValidMessage(executionStartLog, [executionRecordBoth]);
           });
 
           it('identifies existing record and stores execution end logs', () => {
+            mockFirestore.addRecord(executionRecordStart);
             return testValidMessage(executionEndLog, [executionRecordBoth]);
           });
         });
@@ -258,145 +257,143 @@ describe('Cloud Logs Processor', () => {
         });
       });
 
-      // describe('trigger information logs', () => {
-      //   const executionRecord = {
-      //     document: {
-      //       '1lth8bxqr88v': {
-      //         execution_id: '1lth8bxqr88v',
-      //       },
-      //     },
-      //     collectionName: 'Bot_Execution',
-      //   };
+      describe('trigger information logs', () => {
+        const executionRecord = {
+          document: {
+            '1lth8bxqr88v': {
+              execution_id: '1lth8bxqr88v',
+            },
+          },
+          collectionName: 'Bot_Execution',
+        };
 
-      //   const triggerRecord = {
-      //     document: {
-      //       '1lth8bxqr88v': {
-      //         execution_id: '1lth8bxqr88v',
-      //         trigger_type: 'GITHUB_WEBHOOK',
-      //         github_event: '62eb57323fe7436520941da6d02534d2',
-      //       },
-      //     },
-      //     collectionName: 'Trigger',
-      //   };
+        const triggerRecord = {
+          document: {
+            '1lth8bxqr88v': {
+              execution_id: '1lth8bxqr88v',
+              trigger_type: 'GitHub Webhook',
+              github_event: '62eb57323fe7436520941da6d02534d2',
+            },
+          },
+          collectionName: 'Trigger',
+        };
 
-      //   const repositoryRecord = {
-      //     document: {
-      //       'java-spanner_googleapis_org': {
-      //         repo_name: 'java-spanner',
-      //         owner_name: 'googleapis',
-      //         owner_type: 'org',
-      //       },
-      //     },
-      //     collectionName: 'GitHub_Repository',
-      //   };
+        const repositoryRecord = {
+          document: {
+            'java-spanner_googleapis': {
+              repo_name: 'java-spanner',
+              owner_name: 'googleapis',
+            },
+          },
+          collectionName: 'GitHub_Repository',
+        };
 
-      //   const triggerInfoLog = loadFixture([
-      //     'cloud-logs',
-      //     'trigger-information.json',
-      //   ]);
+        const triggerInfoLog = loadFixture([
+          'cloud-logs',
+          'trigger-information.json',
+        ]);
 
-      //   describe('when no execution and repository record exists', () => {
-      //     it('creates new execution and repository record and stores trigger information logs', () => {
-      //       return testValidMessage(triggerInfoLog, [
-      //         executionRecord,
-      //         triggerRecord,
-      //         repositoryRecord,
-      //       ]);
-      //     });
-      //   });
+        describe('when no execution and repository record exists', () => {
+          it('creates new execution and repository record and stores trigger information logs', () => {
+            return testValidMessage(triggerInfoLog, [
+              executionRecord,
+              triggerRecord,
+              repositoryRecord,
+            ]);
+          });
+        });
 
-      //   describe('when an execution and repository record already exist', () => {
-      //     beforeEach(() => {
-      //       mockFirestore.addRecord(executionRecord);
-      //       mockFirestore.addRecord(repositoryRecord);
-      //     });
+        describe('when an execution and repository record already exist', () => {
+          beforeEach(() => {
+            mockFirestore.addRecord(executionRecord);
+            mockFirestore.addRecord(repositoryRecord);
+          });
 
-      //     it('identifies existing record and stores trigger information logs', () => {
-      //       return testValidMessage(triggerInfoLog, [
-      //         executionRecord,
-      //         triggerRecord,
-      //         repositoryRecord,
-      //       ]);
-      //     });
-      //   });
-      // });
+          it('identifies existing record and stores trigger information logs', () => {
+            return testValidMessage(triggerInfoLog, [
+              executionRecord,
+              triggerRecord,
+              repositoryRecord,
+            ]);
+          });
+        });
+      });
 
-      // describe('GitHub action logs', () => {
-      //   const executionRecord = {
-      //     document: {
-      //       g36ouppwsu6z: {
-      //         execution_id: 'g36ouppwsu6z',
-      //       },
-      //     },
-      //     collectionName: 'Bot_Execution',
-      //   };
+      describe('GitHub action logs', () => {
+        const executionRecord = {
+          document: {
+            g36ouppwsu6z: {
+              execution_id: 'g36ouppwsu6z',
+            },
+          },
+          collectionName: 'Bot_Execution',
+        };
 
-      //   const actionRecord = {
-      //     document: {
-      //       g36ouppwsu6z_ISSUE_ADD_LABELS_1596118668017: {
-      //         execution_id: 'g36ouppwsu6z',
-      //         action_type: 'ISSUE_ADD_LABELS',
-      //         timestamp: 1596118668017,
-      //         destination_object: 'ISSUE_python-ndb_googleapis_org_489',
-      //         destination_repo: 'python-ndb_googleapis_org',
-      //         value: 'kokoro:run',
-      //       },
-      //     },
-      //     collectionName: 'Action',
-      //   };
+        const actionRecord = {
+          document: {
+            g36ouppwsu6z_ISSUE_ADD_LABELS_1596118668017: {
+              execution_id: 'g36ouppwsu6z',
+              action_type: 'ISSUE_ADD_LABELS',
+              timestamp: 1596118668017,
+              destination_object: 'ISSUE_python-ndb_googleapis_489',
+              destination_repo: 'python-ndb_googleapis',
+              value: 'kokoro:run',
+            },
+          },
+          collectionName: 'Action',
+        };
 
-      //   const repositoryRecord = {
-      //     document: {
-      //       'python-ndb_googleapis_org': {
-      //         repo_name: 'python-ndb',
-      //         owner_name: 'googleapis',
-      //         owner_type: 'org',
-      //       },
-      //     },
-      //     collectionName: 'GitHub_Repository',
-      //   };
+        const repositoryRecord = {
+          document: {
+            'python-ndb_googleapis': {
+              repo_name: 'python-ndb',
+              owner_name: 'googleapis',
+            },
+          },
+          collectionName: 'GitHub_Repository',
+        };
 
-      //   const objectRecord = {
-      //     document: {
-      //       'python-ndb_googleapis_org': {
-      //         repo_name: 'python-ndb',
-      //         owner_name: 'googleapis',
-      //         owner_type: 'org',
-      //       },
-      //     },
-      //     collectionName: 'GitHub_Object',
-      //   };
+        const objectRecord = {
+          document: {
+            'ISSUE_python-ndb_googleapis_489': {
+              object_type: "ISSUE",
+              repository: "python-ndb_googleapis",
+              object_id: 489
+            },
+          },
+          collectionName: 'GitHub_Object',
+        };
 
-      //   const gitHubActionLog = loadFixture([
-      //     'cloud-logs',
-      //     'github-action.json',
-      //   ]);
+        const gitHubActionLog = loadFixture([
+          'cloud-logs',
+          'github-action.json',
+        ]);
 
-      //   describe('when no execution/repository/object record exists', () => {
-      //     it('creates a new execution/repository/object record and stores GitHub action logs', () => {
-      //       return testValidMessage(gitHubActionLog, [
-      //         executionRecord,
-      //         actionRecord,
-      //         objectRecord,
-      //         repositoryRecord,
-      //       ]);
-      //     });
-      //   });
+        describe('when no execution/repository/object record exists', () => {
+          it('creates a new execution/repository/object record and stores GitHub action logs', () => {
+            return testValidMessage(gitHubActionLog, [
+              executionRecord,
+              actionRecord,
+              objectRecord,
+              repositoryRecord,
+            ]);
+          });
+        });
 
-      //   describe('when an execution/repository/object record already exists', () => {
-      //     beforeEach(() => {
-      //       mockFirestore.addRecord(actionRecord);
-      //     });
+        describe('when an execution/repository/object record already exists', () => {
+          beforeEach(() => {
+            mockFirestore.addRecord(actionRecord);
+          });
 
-      //     it('identifies execution/repository/object record and stores GitHub action logs', () => {
-      //       return testValidMessage(gitHubActionLog, [
-      //         executionRecord,
-      //         objectRecord,
-      //         repositoryRecord,
-      //       ]);
-      //     });
-      //   });
-      // });
+          it('identifies execution/repository/object record and stores GitHub action logs', () => {
+            return testValidMessage(gitHubActionLog, [
+              executionRecord,
+              objectRecord,
+              repositoryRecord,
+            ]);
+          });
+        });
+      });
 
       // describe('error logs', () => {
       //   const executionRecord = {
@@ -511,7 +508,7 @@ describe('Cloud Logs Processor', () => {
     //     document: {
     //       '1lth8bxqr88v': {
     //         execution_id: '1lth8bxqr88v',
-    //         trigger_type: 'GITHUB_WEBHOOK',
+    //         trigger_type: 'GitHub Webhook',
     //         github_event: '62eb57323fe7436520941da6d02534d2',
     //       },
     //     },

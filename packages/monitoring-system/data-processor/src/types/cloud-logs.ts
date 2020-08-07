@@ -20,18 +20,26 @@ import {
   hasStringProperties,
   hasObjectProperties,
 } from './type-check-util';
+import pino from 'pino';
+
+const logger = pino({
+  base: null,
+  messageKey: 'message',
+  timestamp: false,
+  level: 'trace',
+})
 
 /**
  * Categories of incoming log messages
  */
 export enum LogEntryType {
-  EXECUTION_START,
-  EXECUTION_END,
-  TRIGGER_INFO,
-  GITHUB_ACTION,
-  ERROR,
-  NON_METRIC,
-  MALFORMED,
+  EXECUTION_START = 'Execution Start Log',
+  EXECUTION_END = 'Execution End Log',
+  TRIGGER_INFO = 'Trigger Information Log',
+  GITHUB_ACTION = 'GitHub Action Log',
+  ERROR = 'Error Log',
+  NON_METRIC = 'Non-metric Log',
+  MALFORMED = 'Malformed Log',
 }
 
 /**
@@ -70,12 +78,23 @@ export interface GCFLoggerJsonPayload {
 }
 
 /**
+ * Type of function execution trigger
+ */
+export enum TriggerType {
+  GITHUB = 'GitHub Webhook',
+  SCHEDULER = 'Cloud Scheduler',
+  TASK = 'Cloud Task',
+  PUBSUB = 'Pub/Sub',
+  UNKNOWN = 'Unknown',
+}
+
+/**
  * JSON Payload for trigger information logs
  */
 export interface TriggerInfoPayload extends GCFLoggerJsonPayload {
   message: string;
   trigger: {
-    trigger_type: string;
+    trigger_type: TriggerType;
     trigger_sender?: string;
     github_delivery_guid?: string;
     payload_hash?: string;
@@ -144,6 +163,7 @@ export function parseLogEntryType(entry: LogEntry): LogEntryType {
     }
     return LogEntryType.NON_METRIC;
   } catch (error) {
+    logger.error(error);
     return LogEntryType.MALFORMED;
   }
 }
@@ -190,7 +210,7 @@ function isTriggerInfoEntry(entry: LogEntry): entry is TriggerInfoLogEntry {
   const isTriggerPayload = isTriggerInfoPayload(payload);
   if (payload['trigger'] && !isTriggerPayload) {
     throw new Error(
-      "jsonPayload has 'trigger' property but" +
+      "jsonPayload has 'trigger' property but " +
         'is not a valid trigger info log entry'
     );
   }
@@ -206,41 +226,48 @@ export function isTriggerInfoPayload(
   payload: object
 ): payload is TriggerInfoPayload {
   if (!isObject(payload) || !isStringIndexed(payload)) {
+    logger.debug('Payload is not a string indexed object');
     return false;
   }
   if (!payload.message || !isString(payload.message)) {
+    logger.debug('Payload does not have a string message');
     return false;
   }
 
   const trigger = payload.trigger;
   if (!isObject(trigger) || !isStringIndexed(trigger)) {
-    return false;
-  }
-  if (!trigger.trigger_type || !isString(trigger.trigger_type)) {
+    logger.debug('"trigger" is not a string indexed object');
     return false;
   }
 
-  const optionalStringProps = [
-    'trigger_sender',
-    'github_delivery_guid',
-    'payload_hash',
-  ];
-  for (const prop of optionalStringProps) {
-    if (trigger[prop] && !isString(trigger[prop])) {
+  const triggerType: TriggerType = trigger.trigger_type;
+  if (!triggerType || !isString(triggerType) || !Object.values(TriggerType).includes(triggerType)) {
+    logger.debug(`trigger_type "${triggerType}" is not valid`);
+    return false;
+  }
+
+  if (triggerType === TriggerType.GITHUB) {
+    const requiredStringProps = [
+      'trigger_sender',
+      'github_delivery_guid',
+      'payload_hash',
+    ];
+    if (!hasStringProperties(trigger, requiredStringProps)) {
+      logger.debug(`GitHub trigger info is missing required properties`);
       return false;
     }
-  }
 
-  const sourceRepo = trigger.trigger_source_repo;
-  if (sourceRepo) {
+    const sourceRepo = trigger.trigger_source_repo;
     if (!isObject(sourceRepo) || !isStringIndexed(sourceRepo)) {
+      logger.debug('"trigger_source_repo" is not a string indexed object');
       return false;
     }
     const stringProps = ['owner', 'owner_type', 'repo_name', 'url'];
     if (!hasStringProperties(sourceRepo, stringProps)) {
+      logger.debug('"trigger_source_repo" is missing required properties');
       return false;
     }
-  }
+  } 
 
   return true;
 }
