@@ -291,6 +291,19 @@
             ]
           }
         ]
+      },
+      {
+        "repo": "googleapis/python-crc32c",
+        "branchProtectionRules": [
+          {
+            "requiredStatusCheckContexts": [
+              "Kokoro - Linux",
+              "Kokoro - OS X",
+              "Kokoro - Windows",
+              "cla/google"
+            ]
+          }
+        ]
       }
     ],
     "ignoredRepos": [
