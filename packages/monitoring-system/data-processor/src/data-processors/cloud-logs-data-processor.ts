@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import { DataProcessor, ProcessorOptions } from './data-processor-abstract';
-import { Subscription, Message } from '@google-cloud/pubsub';
+import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
+import {Subscription, Message} from '@google-cloud/pubsub';
 import {
   BotExecutionDocument,
   getPrimaryKey,
@@ -257,24 +257,28 @@ export class CloudLogsProcessor extends DataProcessor {
       execution_id: entry.labels.execution_id,
       bot_name: entry.resource.labels.function_name,
       start_time: new Date(entry.timestamp).getTime(),
-      logs_url: this.buildExecutionLogsUrl(entry)
+      logs_url: this.buildExecutionLogsUrl(entry),
     };
 
     return this.updateFirestore(botExecDoc, FSCollection.BotExecution);
   }
 
   private buildExecutionLogsUrl(entry: LogEntry): string {
-    const TIME_RANGE_MILLISECONDS = 5*1000;
-    const domain = `pantheon.corp.google.com`; // should be console.google.com but the redirect wipes the query
+    const TIME_RANGE_MILLISECONDS = 5 * 1000;
+    const domain = 'pantheon.corp.google.com'; // should be console.google.com but the redirect wipes the query
     const executionId = entry.labels.execution_id;
     const project = entry.resource.labels.project_id;
     const start = new Date(entry.timestamp).getTime() - TIME_RANGE_MILLISECONDS;
     const end = new Date(entry.timestamp).getTime() + TIME_RANGE_MILLISECONDS;
 
-    return `https://${domain}/logs/query;query=`+
-    `labels.execution_id%3D%22${executionId}%22;`+
-    `timeRange=${new Date(start).toISOString()}%2F${new Date(end).toISOString()}`+
-    `?project=${project}&query=%0A`;
+    return (
+      `https://${domain}/logs/query;query=` +
+      `labels.execution_id%3D%22${executionId}%22;` +
+      `timeRange=${new Date(start).toISOString()}%2F${new Date(
+        end
+      ).toISOString()}` +
+      `?project=${project}&query=%0A`
+    );
   }
 
   /**
@@ -434,7 +438,7 @@ export class CloudLogsProcessor extends DataProcessor {
   ): ProcessingTask {
     const docKey = getPrimaryKey(doc, collection);
     const collectionRef = this.firestore.collection(collection);
-    const mergeStore = collectionRef.doc(docKey).set(doc, { merge: true });
+    const mergeStore = collectionRef.doc(docKey).set(doc, {merge: true});
 
     return mergeStore
       .then(() => ProcessingResult.SUCCESS)

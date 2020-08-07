@@ -82,7 +82,7 @@ export class MockFirestore extends Firestore {
    * @param collection collection in which to add record
    */
   addRecord(record: MockRecord) {
-    let collection = this.mockData[record.collectionName];
+    const collection = this.mockData[record.collectionName];
     if (!collection) {
       throw new Error(
         `Collection ${record.collectionName} does not exist in MockFirestore`

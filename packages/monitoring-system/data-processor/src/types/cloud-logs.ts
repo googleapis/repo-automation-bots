@@ -27,7 +27,7 @@ const logger = pino({
   messageKey: 'message',
   timestamp: false,
   level: 'trace',
-})
+});
 
 /**
  * Categories of incoming log messages
@@ -241,7 +241,11 @@ export function isTriggerInfoPayload(
   }
 
   const triggerType: TriggerType = trigger.trigger_type;
-  if (!triggerType || !isString(triggerType) || !Object.values(TriggerType).includes(triggerType)) {
+  if (
+    !triggerType ||
+    !isString(triggerType) ||
+    !Object.values(TriggerType).includes(triggerType)
+  ) {
     logger.debug(`trigger_type "${triggerType}" is not valid`);
     return false;
   }
@@ -253,7 +257,7 @@ export function isTriggerInfoPayload(
       'payload_hash',
     ];
     if (!hasStringProperties(trigger, requiredStringProps)) {
-      logger.debug(`GitHub trigger info is missing required properties`);
+      logger.debug('GitHub trigger info is missing required properties');
       return false;
     }
 
@@ -267,7 +271,7 @@ export function isTriggerInfoPayload(
       logger.debug('"trigger_source_repo" is missing required properties');
       return false;
     }
-  } 
+  }
 
   return true;
 }

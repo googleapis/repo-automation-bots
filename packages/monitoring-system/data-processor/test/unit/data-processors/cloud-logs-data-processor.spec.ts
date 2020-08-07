@@ -29,7 +29,7 @@ let processor: CloudLogsProcessor;
 /**
  * Number of seconds that the test Cloud Logs processor should
  * listen to the mock subscription for.
- * 
+ *
  * NOTE: Increasing this will have a significant impact on test run times
  */
 const LISTEN_LIMIT = 0.5;
@@ -94,13 +94,13 @@ async function testValidMessage(
   expectedRecords: MockRecord[]
 ): Promise<void> {
   return startAndSendMessage(message)
-  .then(messageId => {
-    assert(mockSubscription.wasAcked(messageId));
-    expectedRecords.forEach(record => mockFirestore.assertRecord(record));
-  })
-  .catch(error => {
-    assert.fail(error);
-  });
+    .then(messageId => {
+      assert(mockSubscription.wasAcked(messageId));
+      expectedRecords.forEach(record => mockFirestore.assertRecord(record));
+    })
+    .catch(error => {
+      assert.fail(error);
+    });
 }
 
 /**
@@ -182,9 +182,9 @@ describe('Cloud Logs Processor', () => {
               bot_name: 'merge_on_green',
               start_time: 1595536893701,
               logs_url:
-                `https://pantheon.corp.google.com/logs/query;query=labels.execution_id`+
-                `%3D%224ww4alqs7ikq%22;timeRange=2020-07-23T20:41:28.701Z%2F2020-07-23T20:41:38.701Z`+
-                `?project=repo-automation-bots&query=%0A`,
+                'https://pantheon.corp.google.com/logs/query;query=labels.execution_id' +
+                '%3D%224ww4alqs7ikq%22;timeRange=2020-07-23T20:41:28.701Z%2F2020-07-23T20:41:38.701Z' +
+                '?project=repo-automation-bots&query=%0A',
             },
           },
           collectionName: 'Bot_Execution',
@@ -356,9 +356,9 @@ describe('Cloud Logs Processor', () => {
         const objectRecord = {
           document: {
             'ISSUE_python-ndb_googleapis_489': {
-              object_type: "ISSUE",
-              repository: "python-ndb_googleapis",
-              object_id: 489
+              object_type: 'ISSUE',
+              repository: 'python-ndb_googleapis',
+              object_id: 489,
             },
           },
           collectionName: 'GitHub_Object',
