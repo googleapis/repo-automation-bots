@@ -99,12 +99,11 @@ export class CloudLogsProcessor extends DataProcessor {
    * communication to PubSub.
    */
   public async collectAndProcess(): Promise<void> {
-    this.logger.debug('Starting logs collection and processing');
-    return new Promise((resolve, reject) => {
-      this.subscription.on('message', this.processMessage.bind(this));
-      this.logger.debug('Now listening for PubSub messages');
+    this.subscription.on('message', this.processMessage.bind(this));
+    this.logger.debug('Now listening for PubSub messages');
 
-      setTimeout(() => {
+    return new Promise((resolve, reject) => {
+      const stopListening = () => {
         this.subscription.removeAllListeners();
         this.logger.debug(`Stopped listening after ${this.listenLimit}s`);
 
@@ -117,7 +116,9 @@ export class CloudLogsProcessor extends DataProcessor {
             this.logger.error('Some messages could not be processed');
             reject(error);
           });
-      }, this.listenLimit * 1000);
+      };
+
+      setTimeout(stopListening, this.listenLimit * 1000);
     });
   }
 
@@ -132,16 +133,16 @@ export class CloudLogsProcessor extends DataProcessor {
    */
   private async processMessage(pubSubMessage: Message) {
     this.logger.debug(`Processing message ${pubSubMessage.id}`);
-
     const logEntry: object = this.parsePubSubData(pubSubMessage);
 
     if (!instanceOfLogEntry(logEntry)) {
       this.logger.error({
-        message: 'JSON from PubSub message is not a valid log entry',
+        message: 'Detected malformed log entry',
         messageId: pubSubMessage.id,
         pubSubMessage: pubSubMessage,
         parsedJSON: logEntry,
       });
+      pubSubMessage.ack();
       return;
     }
 
@@ -153,6 +154,7 @@ export class CloudLogsProcessor extends DataProcessor {
         message: 'Ignoring log entry with no metrics',
         entry: logEntry,
       });
+      pubSubMessage.ack();
       return;
     }
     if (logEntryType === LogEntryType.MALFORMED) {
@@ -160,6 +162,7 @@ export class CloudLogsProcessor extends DataProcessor {
         message: 'Detected malformed log entry',
         entry: logEntry,
       });
+      pubSubMessage.ack();
       return;
     }
 
@@ -172,6 +175,8 @@ export class CloudLogsProcessor extends DataProcessor {
           error: error,
           pubSubMessage: pubSubMessage,
         });
+        pubSubMessage.nack();
+        this.logger.debug(`${pubSubMessage.id} was nacked`);
         throw error;
       });
 
@@ -436,19 +441,22 @@ export class CloudLogsProcessor extends DataProcessor {
     doc: FirestoreDocument,
     collection: FSCollection
   ): ProcessingTask {
-    const docKey = getPrimaryKey(doc, collection);
-    const collectionRef = this.firestore.collection(collection);
-    const mergeStore = collectionRef.doc(docKey).set(doc, {merge: true});
+    return new Promise<ProcessingResult>(resolve => {
+      const docKey = getPrimaryKey(doc, collection);
 
-    return mergeStore
-      .then(() => ProcessingResult.SUCCESS)
-      .catch(error => {
-        this.logger.error({
-          message: `Failed to insert document into Firestore: ${error}`,
-          document: doc,
-          collection: collection,
+      this.firestore
+        .collection(collection)
+        .doc(docKey)
+        .set(doc, {merge: true})
+        .then(() => resolve(ProcessingResult.SUCCESS))
+        .catch(error => {
+          this.logger.error({
+            message: `Failed to insert document into Firestore: ${error}`,
+            document: doc,
+            collection: collection,
+          });
+          return resolve(ProcessingResult.FAIL);
         });
-        return ProcessingResult.FAIL;
-      });
+    });
   }
 }

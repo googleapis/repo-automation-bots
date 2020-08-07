@@ -55,7 +55,7 @@ export class MockSubscription extends Subscription {
   private queuedMessages: MockMessage[] = [];
   private sentMessages: {[id: string]: MockMessage} = {};
   private onShouldThrow = false;
-  private ackShouldThrow = false;
+  public ackShouldThrow = false;
 
   constructor(pubsub: PubSub, name: string, options?: SubscriptionOptions) {
     super(pubsub, name, options);

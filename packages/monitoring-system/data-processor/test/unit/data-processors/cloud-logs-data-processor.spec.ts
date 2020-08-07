@@ -32,7 +32,7 @@ let processor: CloudLogsProcessor;
  *
  * NOTE: Increasing this will have a significant impact on test run times
  */
-const LISTEN_LIMIT = 0.5;
+const LISTEN_LIMIT_SECS = 0.1;
 
 /**
  * Returns the given object as a Buffer
@@ -77,7 +77,7 @@ function assertErrorLogged(
       foundErrorLog = isErrorLevel && hasCorrectMsg;
       if (foundErrorLog) break;
     }
-    assert(foundErrorLog, 'No relevant errors were logged');
+    assert(foundErrorLog, `No relevant errors were logged: ${jsonLines}`);
   } catch (error) {
     throw new Error(`Failed to read stream: ${error}`);
   }
@@ -169,7 +169,7 @@ describe('Cloud Logs Processor', () => {
         processor = new CloudLogsProcessor({
           firestore: mockFirestore,
           subscription: mockSubscription,
-          listenLimit: LISTEN_LIMIT,
+          listenLimit: LISTEN_LIMIT_SECS,
         });
       });
 
@@ -436,177 +436,177 @@ describe('Cloud Logs Processor', () => {
       });
     });
 
-    // describe('unidentifiable or malformed logs', () => {
-    //   /**
-    //    * Note: Malformed logs are logs that are similar to
-    //    * expected logs but with slight differences. On the
-    //    * other hand, unidentifiable logs are logs that differ
-    //    * significantly from any recognized format
-    //    */
+    describe('unidentifiable or malformed logs', () => {
+      /**
+       * Note: Malformed logs are logs that are similar to
+       * expected logs but with slight differences. On the
+       * other hand, unidentifiable logs are logs that differ
+       * significantly from any recognized format
+       */
 
-    //   let mockWriteStream: ObjectWritableMock;
+      let mockWriteStream: ObjectWritableMock;
 
-    //   beforeEach(() => {
-    //     mockWriteStream = new ObjectWritableMock();
-    //     processor = new CloudLogsProcessor({
-    //       firestore: mockFirestore,
-    //       subscription: mockSubscription,
-    //       logger: getMockLogger(mockWriteStream),
-    //       listenLimit: LISTEN_LIMIT,
-    //     });
-    //   });
+      beforeEach(() => {
+        mockWriteStream = new ObjectWritableMock();
+        processor = new CloudLogsProcessor({
+          firestore: mockFirestore,
+          subscription: mockSubscription,
+          logger: getMockLogger(mockWriteStream),
+          listenLimit: LISTEN_LIMIT_SECS,
+        });
+      });
 
-    //   it('logs error for malformed execution start logs', () => {
-    //     return testMalformedMessage(
-    //       loadFixture(['cloud-logs', 'execution-start-missing-id.json']),
-    //       'Detected malformed execution start logs',
-    //       mockWriteStream
-    //     );
-    //   });
+      it('logs error for malformed execution start logs', () => {
+        return testMalformedMessage(
+          loadFixture(['cloud-logs', 'execution-start-missing-id.json']),
+          'Detected malformed log entry',
+          mockWriteStream
+        );
+      });
 
-    //   it('logs error for malformed execution end logs', () => {
-    //     return testMalformedMessage(
-    //       loadFixture(['cloud-logs', 'execution-end-missing-timestamp.json']),
-    //       'Detected malformed execution end logs',
-    //       mockWriteStream
-    //     );
-    //   });
+      it('logs error for malformed execution end logs', () => {
+        return testMalformedMessage(
+          loadFixture(['cloud-logs', 'execution-end-missing-timestamp.json']),
+          'Detected malformed log entry',
+          mockWriteStream
+        );
+      });
 
-    //   it('logs error for malformed trigger information logs', () => {
-    //     return testMalformedMessage(
-    //       loadFixture(['cloud-logs', 'trigger-information-missing-type.json']),
-    //       'Detected malformed trigger information logs',
-    //       mockWriteStream
-    //     );
-    //   });
+      it('logs error for malformed trigger information logs', () => {
+        return testMalformedMessage(
+          loadFixture(['cloud-logs', 'trigger-information-missing-type.json']),
+          'Detected malformed log entry',
+          mockWriteStream
+        );
+      });
 
-    //   it('logs error for malformed trigger information logs', () => {
-    //     return testMalformedMessage(
-    //       loadFixture(['cloud-logs', 'trigger-information-missing-repo.json']),
-    //       'Detected malformed trigger information logs',
-    //       mockWriteStream
-    //     );
-    //   });
+      it('logs error for malformed trigger information logs', () => {
+        return testMalformedMessage(
+          loadFixture(['cloud-logs', 'trigger-information-missing-repo.json']),
+          'Detected malformed log entry',
+          mockWriteStream
+        );
+      });
 
-    //   it('logs error for malformed GitHub action logs', () => {
-    //     return testMalformedMessage(
-    //       loadFixture(['cloud-logs', 'github-action-missing-type.json']),
-    //       'Detected malformed GitHub action logs',
-    //       mockWriteStream
-    //     );
-    //   });
+      it('logs error for malformed GitHub action logs', () => {
+        return testMalformedMessage(
+          loadFixture(['cloud-logs', 'github-action-missing-type.json']),
+          'Detected malformed log entry',
+          mockWriteStream
+        );
+      });
 
-    //   it('logs error for malformed execution error logs', () => {
-    //     return testMalformedMessage(
-    //       loadFixture(['cloud-logs', 'error-missing-id.json']),
-    //       'Detected malformed execution error logs',
-    //       mockWriteStream
-    //     );
-    //   });
+      it('logs error for malformed execution error logs', () => {
+        return testMalformedMessage(
+          loadFixture(['cloud-logs', 'error-missing-id.json']),
+          'Detected malformed log entry',
+          mockWriteStream
+        );
+      });
 
-    //   const triggerRecord = {
-    //     document: {
-    //       '1lth8bxqr88v': {
-    //         execution_id: '1lth8bxqr88v',
-    //         trigger_type: 'GitHub Webhook',
-    //         github_event: '62eb57323fe7436520941da6d02534d2',
-    //       },
-    //     },
-    //     collectionName: 'Trigger',
-    //   };
+      const triggerRecord = {
+        document: {
+          '1lth8bxqr88v': {
+            execution_id: '1lth8bxqr88v',
+            trigger_type: 'GitHub Webhook',
+            github_event: '62eb57323fe7436520941da6d02534d2',
+          },
+        },
+        collectionName: 'Trigger',
+      };
 
-    //   const executionRecordEnd = {
-    //     document: {
-    //       '4ww4alqs7ikq': {
-    //         execution_id: '4ww4q2vqvkl1',
-    //         bot_name: 'auto_label',
-    //         end_time: 1595536887000,
-    //       },
-    //     },
-    //     collectionName: 'Bot_Execution',
-    //   };
+      const executionRecordEnd = {
+        document: {
+          '4ww4alqs7ikq': {
+            execution_id: '4ww4alqs7ikq',
+            bot_name: 'merge_on_green',
+            end_time: 1595536887861,
+          },
+        },
+        collectionName: 'Bot_Execution',
+      };
 
-    //   it('processes other valid messages when one message is malformed', () => {
-    //     return startAndSendMultipleMessages([
-    //       loadFixture(['cloud-logs', 'trigger-information.json']),
-    //       loadFixture(['cloud-logs', 'error-missing-id.json']),
-    //       loadFixture(['cloud-logs', 'execution-end.json']),
-    //     ]).then((messageIds: string[]) => {
-    //       messageIds.forEach(id => assert(mockSubscription.wasAcked(id)));
-    //       mockFirestore.assertRecord(triggerRecord);
-    //       mockFirestore.assertRecord(executionRecordEnd);
-    //     });
-    //   });
+      it('processes other valid messages when one message is malformed', () => {
+        return startAndSendMultipleMessages([
+          loadFixture(['cloud-logs', 'trigger-information.json']),
+          loadFixture(['cloud-logs', 'error-missing-id.json']),
+          loadFixture(['cloud-logs', 'execution-end.json']),
+        ]).then((messageIds: string[]) => {
+          messageIds.forEach(id => assert(mockSubscription.wasAcked(id)));
+          mockFirestore.assertRecord(triggerRecord);
+          mockFirestore.assertRecord(executionRecordEnd);
+        });
+      });
 
-    //   it('ignores log statements with no metrics information', () => {
-    //     const copyOfBlankData = JSON.parse(
-    //       JSON.stringify(mockFirestore.getMockData())
-    //     );
-    //     return startAndSendMessage(
-    //       loadFixture(['cloud-logs', 'non-metric.json'])
-    //     ).then(messageId => {
-    //       assert(mockSubscription.wasAcked(messageId));
-    //       assert.deepEqual(
-    //         mockFirestore.getMockData(),
-    //         copyOfBlankData,
-    //         'Expected no writes on Firestore'
-    //       );
-    //     });
-    //   });
-    // });
+      it('ignores log statements with no metrics information', () => {
+        const copyOfBlankData = JSON.parse(
+          JSON.stringify(mockFirestore.getMockData())
+        );
+        return startAndSendMessage(
+          loadFixture(['cloud-logs', 'non-metric.json'])
+        ).then(messageId => {
+          assert(mockSubscription.wasAcked(messageId));
+          assert.deepEqual(
+            mockFirestore.getMockData(),
+            copyOfBlankData,
+            'Expected no writes on Firestore'
+          );
+        });
+      });
+    });
 
-    // describe('PubSub error handling', () => {
-    //   let mockWriteStream: ObjectWritableMock;
+    describe('PubSub error handling', () => {
+      let mockWriteStream: ObjectWritableMock;
 
-    //   beforeEach(() => {
-    //     mockWriteStream = new ObjectWritableMock();
-    //     processor = new CloudLogsProcessor({
-    //       firestore: mockFirestore,
-    //       subscription: mockSubscription,
-    //       logger: getMockLogger(mockWriteStream),
-    //       listenLimit: LISTEN_LIMIT,
-    //     });
-    //   });
+      beforeEach(() => {
+        mockWriteStream = new ObjectWritableMock();
+        processor = new CloudLogsProcessor({
+          firestore: mockFirestore,
+          subscription: mockSubscription,
+          logger: getMockLogger(mockWriteStream),
+          listenLimit: LISTEN_LIMIT_SECS,
+        });
+      });
 
-    //   const executionStartLog = loadFixture([
-    //     'cloud-logs',
-    //     'execution-start.json',
-    //   ]);
+      const executionStartLog = loadFixture([
+        'cloud-logs',
+        'execution-start.json',
+      ]);
 
-    //   it('calls nack() on message if there is an error in processing and logs it', () => {
-    //     mockFirestore.throwOnCollection();
-    //     return startAndSendMessage(executionStartLog).then(messageId => {
-    //       assert(
-    //         mockSubscription.wasNacked(messageId),
-    //         'Expected processor to nack() message on firestore error'
-    //       );
-    //       assertErrorLogged('Error while processing message', mockWriteStream);
-    //     });
-    //   });
+      // it('calls nack() on message if there is an error in processing and logs it', () => {
+      //   mockFirestore.throwOnSet();
+      //   return startAndSendMessage(executionStartLog).then(messageId => {
+      //     assert(
+      //       mockSubscription.wasNacked(messageId),
+      //       `Expected processor to nack() message ${messageId} on firestore error`
+      //     );
+      //     assertErrorLogged('Error while processing message', mockWriteStream);
+      //   });
+      // });
 
-    //   it('throws an error when cannot pull messages from PubSub', () => {
-    //     mockSubscription.throwErrorOnSetHandler();
-    //     let thrown = false;
-    //     return startAndSendMessage(executionStartLog)
-    //       .catch(() => {
-    //         thrown = true;
-    //       })
-    //       .finally(() =>
-    //         assert(thrown, 'Expected error to be thrown for PubSub issues')
-    //       );
-    //   });
+      it('throws an error when cannot pull messages from PubSub', () => {
+        mockSubscription.throwErrorOnSetHandler();
+        let thrown = false;
+        return startAndSendMessage(executionStartLog)
+          .catch(() => {
+            thrown = true;
+          })
+          .finally(() =>
+            assert(thrown, 'Expected error to be thrown for PubSub issues')
+          );
+      });
 
-    //   it('throws an error when cannot acknowledge a processed PubSub message', () => {
-    //     mockSubscription.throwErrorOnAck();
-    //     let thrown = false;
-    //     return startAndSendMessage(executionStartLog)
-    //       .catch(() => {
-    //         thrown = true;
-    //       })
-    //       .finally(() =>
-    //         assert(thrown, 'Expected error to be thrown for PubSub issues')
-    //       );
-    //   });
-    // });
+      it('throws an error when cannot acknowledge a processed PubSub message', () => {
+        mockSubscription.throwErrorOnAck();
+        let thrown = false;
+        return startAndSendMessage(executionStartLog)
+          .catch(() => {
+            thrown = true;
+          })
+          .finally(() =>
+            assert(thrown, 'Expected error to be thrown for PubSub issues')
+          );
+      });
+    });
   });
 });
