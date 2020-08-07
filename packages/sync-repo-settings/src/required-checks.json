@@ -304,6 +304,18 @@
             ]
           }
         ]
+      },
+      {
+        "repo": "googleapis/python-bigtable",
+        "branchProtectionRules": [
+          {
+            "requiresStrictStatusChecks": false,
+            "requiredStatusCheckContexts": [
+              "Kokoro",
+              "cla/google"
+            ]
+          }
+        ]
       }
     ],
     "ignoredRepos": [
