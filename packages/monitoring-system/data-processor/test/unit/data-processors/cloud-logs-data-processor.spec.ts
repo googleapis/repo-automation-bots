@@ -77,7 +77,7 @@ function assertErrorLogged(
       foundErrorLog = isErrorLevel && hasCorrectMsg;
       if (foundErrorLog) break;
     }
-    assert(foundErrorLog, `No relevant errors were logged: ${jsonLines}`);
+    assert(foundErrorLog, `No relevant errors were logged: ${lines}`);
   } catch (error) {
     throw new Error(`Failed to read stream: ${error}`);
   }
@@ -139,9 +139,7 @@ async function startAndSendMultipleMessages(
   const processingTask = processor.collectAndProcess();
   const allMessages: Array<Promise<string>> = messages.map(message => {
     const messageId = mockSubscription.sendMockMessage(asBuffer(message));
-    return processingTask.then(() => {
-      return messageId;
-    });
+    return processingTask.then(() => messageId);
   });
   return Promise.all(allMessages);
 }
@@ -555,7 +553,7 @@ describe('Cloud Logs Processor', () => {
       });
     });
 
-    describe('PubSub error handling', () => {
+    describe('Runtime error handling', () => {
       let mockWriteStream: ObjectWritableMock;
 
       beforeEach(() => {
@@ -573,16 +571,20 @@ describe('Cloud Logs Processor', () => {
         'execution-start.json',
       ]);
 
-      // it('calls nack() on message if there is an error in processing and logs it', () => {
-      //   mockFirestore.throwOnSet();
-      //   return startAndSendMessage(executionStartLog).then(messageId => {
-      //     assert(
-      //       mockSubscription.wasNacked(messageId),
-      //       `Expected processor to nack() message ${messageId} on firestore error`
-      //     );
-      //     assertErrorLogged('Error while processing message', mockWriteStream);
-      //   });
-      // });
+      it('calls nack() on message if there is an error in processing throws error', () => {
+        mockFirestore.throwOnCollection();
+        const processingTask = processor.collectAndProcess();
+        const messageId = mockSubscription.sendMockMessage(asBuffer(executionStartLog));
+
+        let thrown = false;
+        return processingTask.catch(() => thrown=true).finally(() => {
+          assert(
+            mockSubscription.wasNacked(messageId),
+            `Expected processor to nack() message ${messageId} on firestore error`
+          );
+          assert(thrown, 'Expected error to be thrown for Firestore issues')
+        });
+      });
 
       it('throws an error when cannot pull messages from PubSub', () => {
         mockSubscription.throwErrorOnSetHandler();

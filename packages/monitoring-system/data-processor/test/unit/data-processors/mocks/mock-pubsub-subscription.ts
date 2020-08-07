@@ -42,6 +42,7 @@ class MockMessage {
   }
 
   nack() {
+    console.log(`${this.id} was nacked()`)
     this.nackWasCalled = true;
   }
 }
