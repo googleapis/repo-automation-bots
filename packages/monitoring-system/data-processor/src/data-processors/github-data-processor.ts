@@ -19,9 +19,10 @@ import crypto from 'crypto';
 import {
   GitHubRepositoryDocument,
   OwnerType,
-  getRepositoryPrimaryKey,
+  getPrimaryKey,
   GitHubEventDocument,
   UNKNOWN_FIRESTORE_VALUE,
+  FirestoreCollection,
 } from '../types/firestore-schema';
 const {ORG, USER, UNKNOWN} = OwnerType;
 
@@ -87,7 +88,7 @@ export class GitHubProcessor extends DataProcessor {
    */
   private async listRepositories(): Promise<GitHubRepositoryDocument[]> {
     return this.firestore
-      .collection('GitHub_Repository')
+      .collection(FirestoreCollection.GitHubRepository)
       .get()
       .then(repositoryCollection => {
         const repositoryDocs = repositoryCollection.docs;
@@ -169,11 +170,14 @@ export class GitHubProcessor extends DataProcessor {
 
     return {
       payload_hash: payloadHash,
-      repository: getRepositoryPrimaryKey({
-        repo_name: repoName,
-        owner_name: ownerName,
-        owner_type: ownerType,
-      }),
+      repository: getPrimaryKey(
+        {
+          repo_name: repoName,
+          owner_name: ownerName,
+          owner_type: ownerType,
+        },
+        FirestoreCollection.GitHubRepository
+      ),
       event_type: eventResponse.type || UNKNOWN_FIRESTORE_VALUE,
       timestamp: unixTimestamp,
       actor: eventResponse.actor?.login || UNKNOWN_FIRESTORE_VALUE,
@@ -188,9 +192,14 @@ export class GitHubProcessor extends DataProcessor {
   private async storeEventsData(
     events: GitHubEventDocument[]
   ): Promise<WriteResult[]> {
-    const collection = this.firestore.collection('GitHub_Event');
+    const collection = this.firestore.collection(
+      FirestoreCollection.GitHubEvent
+    );
     return Promise.all(
-      events.map(event => collection.doc(event.payload_hash).set(event))
+      events.map(event => {
+        const docKey = getPrimaryKey(event, FirestoreCollection.GitHubEvent);
+        return collection.doc(docKey).set(event);
+      })
     );
   }
 }

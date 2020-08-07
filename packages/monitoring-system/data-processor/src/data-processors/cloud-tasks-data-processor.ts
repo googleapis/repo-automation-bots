@@ -15,7 +15,12 @@
 import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {WriteResult} from '@google-cloud/firestore';
 import {CloudTasksClient, protos, v2} from '@google-cloud/tasks';
-import {BotDocument, TaskQueueStatusDocument} from '../types/firestore-schema';
+import {
+  BotDocument,
+  TaskQueueStatusDocument,
+  FirestoreCollection,
+  getPrimaryKey,
+} from '../types/firestore-schema';
 
 type CloudTasksList = [
   protos.google.cloud.tasks.v2.ITask[],
@@ -87,7 +92,7 @@ export class CloudTasksProcessor extends DataProcessor {
   private async getBotNames(): Promise<string[]> {
     return new Promise<string[]>((resolve, reject) => {
       this.firestore
-        .collection('Bot')
+        .collection(FirestoreCollection.Bot)
         .get()
         .then(botCollection => {
           if (!botCollection) {
@@ -144,16 +149,21 @@ export class CloudTasksProcessor extends DataProcessor {
     queueStatus: QueueStatus
   ): Promise<number> {
     const currentTimestamp = new Date().getTime();
-    const collectionRef = this.firestore.collection('Task_Queue_Status');
+    const collectionRef = this.firestore.collection(
+      FirestoreCollection.TaskQueueStatus
+    );
     const queueNames = Object.keys(queueStatus);
 
     const writePromises: Promise<WriteResult>[] = queueNames.map(queueName => {
-      const documentKey = `${queueName}_${currentTimestamp}`;
       const documentData: TaskQueueStatusDocument = {
         timestamp: currentTimestamp,
         queue_name: queueName,
         in_queue: queueStatus[queueName],
       };
+      const documentKey = getPrimaryKey(
+        documentData,
+        FirestoreCollection.TaskQueueStatus
+      );
       return collectionRef.doc(documentKey).set(documentData);
     });
 

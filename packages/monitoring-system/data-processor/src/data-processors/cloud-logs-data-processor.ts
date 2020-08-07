@@ -14,13 +14,25 @@
 //
 import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {Subscription, Message} from '@google-cloud/pubsub';
-import {BotExecutionDocument} from '../types/firestore-schema';
-import {WriteResult} from '@google-cloud/firestore';
+import {
+  BotExecutionDocument,
+  getPrimaryKey,
+  FirestoreCollection as FSCollection,
+  TriggerDocument,
+  GitHubRepositoryDocument,
+  OwnerType,
+  FirestoreDocument,
+  ActionDocument,
+  GitHubObjectDocument,
+  ErrorDocument,
+} from '../types/firestore-schema';
 import {
   instanceOfLogEntry,
   parseLogEntryType,
   LogEntryType,
   LogEntry,
+  TriggerInfoLogEntry,
+  GitHubActionLogEntry,
 } from '../types/cloud-logs';
 
 export interface CloudLogsProcessorOptions extends ProcessorOptions {
@@ -87,16 +99,24 @@ export class CloudLogsProcessor extends DataProcessor {
    * communication to PubSub.
    */
   public async collectAndProcess(): Promise<void> {
-    return new Promise(() => {
+    this.logger.debug('Starting logs collection and processing');
+    return new Promise((resolve, reject) => {
       this.subscription.on('message', this.processMessage.bind(this));
       this.logger.debug('Now listening for PubSub messages');
 
       setTimeout(() => {
         this.subscription.removeAllListeners();
-        this.logger.debug(
-          `Stopped listening to PubSub after ${this.listenLimit}s`
-        );
-        return Promise.all(this.tasksInProgress);
+        this.logger.debug(`Stopped listening after ${this.listenLimit}s`);
+
+        Promise.all(this.tasksInProgress)
+          .then(() => {
+            this.logger.debug('All messages processed');
+            resolve();
+          })
+          .catch(error => {
+            this.logger.error('Some messages could not be processed');
+            reject(error);
+          });
       }, this.listenLimit * 1000);
     });
   }
@@ -111,6 +131,8 @@ export class CloudLogsProcessor extends DataProcessor {
    * @param pubSubMessage an incoming PubSub message
    */
   private async processMessage(pubSubMessage: Message) {
+    this.logger.debug(`Processing message ${pubSubMessage.id}`);
+
     const logEntry: object = this.parsePubSubData(pubSubMessage);
 
     if (!instanceOfLogEntry(logEntry)) {
@@ -208,9 +230,9 @@ export class CloudLogsProcessor extends DataProcessor {
       case LogEntryType.EXECUTION_END:
         return this.processExecutionEndLog(entry);
       case LogEntryType.TRIGGER_INFO:
-        return this.processTriggerInfoLog(entry);
+        return this.processTriggerInfoLog(entry as TriggerInfoLogEntry);
       case LogEntryType.GITHUB_ACTION:
-        return this.processGitHubActionLog(entry);
+        return this.processGitHubActionLog(entry as GitHubActionLogEntry);
       case LogEntryType.ERROR:
         return this.processErrorLog(entry);
       default:
@@ -227,7 +249,13 @@ export class CloudLogsProcessor extends DataProcessor {
    * @param entry execution start log entry
    */
   private async processExecutionStartLog(entry: LogEntry): ProcessingTask {
-    throw new Error('Method not implemented.');
+    const botExecDoc: BotExecutionDocument = {
+      execution_id: entry.labels.execution_id,
+      bot_name: entry.resource.labels.function_name,
+      start_time: new Date(entry.timestamp).getTime(),
+    };
+
+    return this.updateFirestore(botExecDoc, FSCollection.BotExecution);
   }
 
   /**
@@ -235,23 +263,110 @@ export class CloudLogsProcessor extends DataProcessor {
    * @param entry execution end log entry
    */
   private async processExecutionEndLog(entry: LogEntry): ProcessingTask {
-    throw new Error('Method not implemented.');
+    const botExecDoc: BotExecutionDocument = {
+      execution_id: entry.labels.execution_id,
+      bot_name: entry.resource.labels.function_name,
+      end_time: new Date(entry.timestamp).getTime(),
+    };
+
+    return this.updateFirestore(botExecDoc, FSCollection.BotExecution);
   }
 
   /**
    * Processes a log entry with trigger information for the execution
    * @param entry log entry with trigger information
    */
-  private async processTriggerInfoLog(entry: LogEntry): ProcessingTask {
-    throw new Error('Method not implemented.');
+  private async processTriggerInfoLog(
+    entry: TriggerInfoLogEntry
+  ): ProcessingTask {
+    const updates: ProcessingTask[] = [];
+
+    const botExecDoc: BotExecutionDocument = {
+      execution_id: entry.labels.execution_id,
+      bot_name: entry.resource.labels.function_name,
+    };
+    updates.push(this.updateFirestore(botExecDoc, FSCollection.BotExecution));
+
+    const payload = entry.jsonPayload;
+    const triggerDoc: TriggerDocument = {
+      execution_id: entry.labels.execution_id,
+      github_event: payload.trigger.payload_hash,
+      trigger_type: payload.trigger.trigger_type,
+    };
+    updates.push(this.updateFirestore(triggerDoc, FSCollection.Trigger));
+
+    const sourceRepo = payload.trigger.trigger_source_repo;
+    if (sourceRepo) {
+      const repoDoc: GitHubRepositoryDocument = {
+        repo_name: sourceRepo.repo_name,
+        owner_name: sourceRepo.owner,
+        owner_type: sourceRepo.owner_type as OwnerType,
+      };
+      updates.push(
+        this.updateFirestore(repoDoc, FSCollection.GitHubRepository)
+      );
+    }
+
+    return Promise.all(updates).then(results => {
+      const allSuccess = results.every(
+        result => result === ProcessingResult.SUCCESS
+      );
+      return allSuccess ? ProcessingResult.SUCCESS : ProcessingResult.FAIL;
+    });
   }
 
   /**
    * Processes a log entry with information on a GitHub action
    * @param entry log entry with GitHub action info
    */
-  private async processGitHubActionLog(entry: LogEntry): ProcessingTask {
-    throw new Error('Method not implemented.');
+  private async processGitHubActionLog(
+    entry: GitHubActionLogEntry
+  ): ProcessingTask {
+    const updates: ProcessingTask[] = [];
+    const payload = entry.jsonPayload;
+
+    const botExecDoc: BotExecutionDocument = {
+      execution_id: entry.labels.execution_id,
+      bot_name: entry.resource.labels.function_name,
+    };
+    updates.push(this.updateFirestore(botExecDoc, FSCollection.BotExecution));
+
+    const repoDoc: GitHubRepositoryDocument = {
+      repo_name: payload.action.destination_repo.repo_name,
+      owner_name: payload.action.destination_repo.owner,
+    };
+    updates.push(this.updateFirestore(repoDoc, FSCollection.GitHubRepository));
+
+    let objectDoc: GitHubObjectDocument | undefined = undefined;
+    if (payload.action.destination_object) {
+      objectDoc = {
+        object_type: payload.action.destination_object.object_type,
+        object_id: payload.action.destination_object.object_id,
+        repository: getPrimaryKey(repoDoc, FSCollection.GitHubRepository),
+      };
+      updates.push(this.updateFirestore(objectDoc, FSCollection.GitHubObject));
+    }
+
+    const actionDoc: ActionDocument = {
+      execution_id: entry.labels.execution_id,
+      action_type: payload.action.type,
+      timestamp: new Date(entry.timestamp).getTime(),
+      destination_repo: getPrimaryKey(repoDoc, FSCollection.GitHubRepository),
+    };
+    if (objectDoc) {
+      actionDoc.destination_object = getPrimaryKey(
+        objectDoc,
+        FSCollection.GitHubObject
+      );
+    }
+    updates.push(this.updateFirestore(actionDoc, FSCollection.Action));
+
+    return Promise.all(updates).then(results => {
+      const allSuccess = results.every(
+        result => result === ProcessingResult.SUCCESS
+      );
+      return allSuccess ? ProcessingResult.SUCCESS : ProcessingResult.FAIL;
+    });
   }
 
   /**
@@ -259,18 +374,56 @@ export class CloudLogsProcessor extends DataProcessor {
    * @param entry log entry with error
    */
   private async processErrorLog(entry: LogEntry): ProcessingTask {
-    throw new Error('Method not implemented.');
+    const updates: ProcessingTask[] = [];
+    const payload = entry.jsonPayload;
+
+    const botExecDoc: BotExecutionDocument = {
+      execution_id: entry.labels.execution_id,
+      bot_name: entry.resource.labels.function_name,
+    };
+    updates.push(this.updateFirestore(botExecDoc, FSCollection.BotExecution));
+
+    const errorDoc: ErrorDocument = {
+      execution_id: entry.labels.execution_id,
+      timestamp: new Date(entry.timestamp).getTime(),
+      error_msg: entry.textPayload,
+    };
+    updates.push(this.updateFirestore(errorDoc, FSCollection.Error));
+
+    return Promise.all(updates).then(results => {
+      const allSuccess = results.every(
+        result => result === ProcessingResult.SUCCESS
+      );
+      return allSuccess ? ProcessingResult.SUCCESS : ProcessingResult.FAIL;
+    });
   }
 
   /**
-   * Inserts the given bot execution information into Firestore:
+   * Inserts the given document into the specified collection in Firestore, following these rules:
    * - if a document with the same key already exists, updates the fields with those in `doc`
    * - if no document with the same key exists, creates a new document with fields from `doc`
-   * @param doc BotExecutionDocument containing new information to insert into Firestore
+   * @param doc Firestore document to insert
+   * @param collection collection in which document belongs
+   * @param docKey (optional) the primary key for the given document
+   * @throws if doc is invalid or doesn't match given collection
    */
-  private async storeBotExecutionDoc(
-    doc: BotExecutionDocument
-  ): Promise<WriteResult> {
-    throw new Error('Method not implemented.');
+  private async updateFirestore(
+    doc: FirestoreDocument,
+    collection: FSCollection
+  ): ProcessingTask {
+    const docKey = getPrimaryKey(doc, collection);
+    const collectionRef = this.firestore.collection(collection);
+    const mergeStore = collectionRef.doc(docKey).set(doc, {merge: true});
+
+    return mergeStore
+      .then(() => ProcessingResult.SUCCESS)
+      .catch(error => {
+        this.logger.error({
+          message: `Failed to insert document into Firestore: ${error}`,
+          document: doc,
+          collection: collection,
+        });
+        return ProcessingResult.FAIL;
+      });
   }
 }

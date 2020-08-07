@@ -13,6 +13,8 @@
 // limitations under the License.
 //
 
+import {isStringIndexed, hasProperties} from './type-check-util';
+
 /**
  * Placeholder value for unknown fields
  */
@@ -142,7 +144,7 @@ export interface GitHubRepositoryDocument {
   /* The name of the user/org that owns the repository */
   owner_name: string;
   /* The account type of the owner. See OwnerType */
-  owner_type: OwnerType;
+  owner_type?: OwnerType;
 }
 
 /**
@@ -194,7 +196,23 @@ export interface GitHubObjectDocument {
   /* References a GitHubRepositoryDocument */
   repository: string;
   /* The ID associated with the object */
-  object_id: number;
+  object_id: number | string;
+}
+
+/**
+ * Enum constants for Firestore Collection keys
+ */
+export enum FirestoreCollection {
+  Bot = 'Bot',
+  BotExecution = 'Bot_Execution',
+  TaskQueueStatus = 'Task_Queue_Status',
+  Error = 'Error',
+  Trigger = 'Trigger',
+  Action = 'Action',
+  ActionType = 'Action_Type',
+  GitHubEvent = 'GitHub_Event',
+  GitHubRepository = 'GitHub_Repository',
+  GitHubObject = 'GitHub_Object',
 }
 
 /**
@@ -233,75 +251,63 @@ export interface FirestoreSchema {
   };
 }
 
+export type FirestoreDocument =
+  | BotDocument
+  | BotExecutionDocument
+  | TaskQueueStatusDocument
+  | ErrorDocument
+  | TriggerDocument
+  | ActionDocument
+  | ActionTypeDocument
+  | GitHubEventDocument
+  | GitHubRepositoryDocument
+  | GitHubObjectDocument;
+
+/**
+ * Properties of a document in collectionName that form the primary key (in order)
+ * eg. ['propA', 'propB'] means primary key = `${doc.propA}_${doc.propB}` where
+ * doc is a document in collectionName
+ */
+const KEY_PROPERTIES: {
+  [collection in FirestoreCollection]: string[];
+} = {
+  Bot: ['bot_name'],
+  Bot_Execution: ['execution_id'],
+  Task_Queue_Status: ['queue_name', 'timestamp'],
+  Error: ['execution_id', 'timestamp'],
+  Trigger: ['execution_id'],
+  Action: ['execution_id', 'action_type', 'timestamp'],
+  Action_Type: ['name'],
+  GitHub_Event: ['payload_hash'],
+  GitHub_Repository: ['repo_name', 'owner_name'],
+  GitHub_Object: ['object_type', 'repository', 'object_id'],
+};
+
 /**
  * Returns the primary key for the given document belonging to the
  * given collection name.
  * @param doc document to generate primary key for
  * @param collectionName the name of the collection for this document
+ * @throws if the collectionName is invalid or the doc does not match
+ * the property requirements for the given collection
  */
-export function getPrimaryKey(doc: {}, collectionName: string): string {
-  switch (collectionName) {
-    case 'Bot':
-      const botDoc = doc as BotDocument;
-      if (botDoc.bot_name) {
-        return botDoc.bot_name;
-      }
-      throw new Error('doc is not a BotDocument');
-    case 'Bot_Execution':
-      const botExecDoc = doc as BotExecutionDocument;
-      if (botExecDoc.execution_id) {
-        return botExecDoc.execution_id;
-      }
-      throw new Error('doc is not a BotExecutionDocument');
-    case 'Task_Queue_Status':
-      const taskQueueStatusDoc = doc as TaskQueueStatusDocument;
-      if (taskQueueStatusDoc.queue_name && taskQueueStatusDoc.timestamp) {
-        return `${taskQueueStatusDoc.queue_name}_${taskQueueStatusDoc.timestamp}`;
-      }
-      throw new Error('doc is not a TaskQueueStatusDocument');
-    case 'Error':
-      const errorDoc = doc as ErrorDocument;
-      if (errorDoc.execution_id && errorDoc.timestamp) {
-        return `${errorDoc.execution_id}_${errorDoc.timestamp}`;
-      }
-      throw new Error('doc is not a ErrorDocument');
-    case 'Trigger':
-      const triggerDoc = doc as TriggerDocument;
-      if (triggerDoc.execution_id) {
-        return triggerDoc.execution_id;
-      }
-      throw new Error('doc is not a TriggerDocument');
-    case 'Action':
-      const actionDoc = doc as ActionDocument;
-      if (actionDoc.execution_id && actionDoc.action_type && actionDoc.timestamp) {
-        return `${actionDoc.execution_id}_${actionDoc.action_type}_${actionDoc.timestamp}`;
-      }
-      throw new Error('doc is not a ActionDocument');
-    case 'Action_Type':
-      const actionTypeDoc = doc as ActionTypeDocument;
-      if (actionTypeDoc.name) {
-        return actionTypeDoc.name;
-      }
-      throw new Error('doc is not a ActionTypeDocument');
-    case 'GitHub_Event':
-      const githubEventDoc = doc as GitHubEventDocument;
-      if (githubEventDoc.payload_hash) {
-        return githubEventDoc.payload_hash;
-      }
-      throw new Error('doc is not a GitHubEventDocument');
-    case 'GitHub_Repository':
-      const githubRepoDoc = doc as GitHubRepositoryDocument;
-      if (githubRepoDoc.repo_name && githubRepoDoc.owner_name && githubRepoDoc.owner_type) {
-        return `${githubRepoDoc.repo_name}_${githubRepoDoc.owner_name}_${githubRepoDoc.owner_type}`;
-      }
-      throw new Error('doc is not a GitHubRepositoryDocument');
-    case 'GitHub_Object':
-      const githubObjectDoc = doc as GitHubObjectDocument;
-      if (githubObjectDoc.object_type && githubObjectDoc.repository && githubObjectDoc.object_id) {
-        return `${githubObjectDoc.object_type}_${githubObjectDoc.repository}_${githubObjectDoc.object_id}`;
-      }
-      throw new Error('doc is not a GitHubObjectDocument');
-    default:
-      throw new Error(`Could not identify collection name: ${collectionName}`);
+export function getPrimaryKey(
+  doc: {},
+  collectionName: FirestoreCollection
+): string {
+  const keyProperties = KEY_PROPERTIES[collectionName];
+
+  if (!keyProperties) {
+    throw new Error(
+      `${collectionName} has no associated primary key properties`
+    );
   }
+
+  if (!isStringIndexed(doc) || !hasProperties(doc, keyProperties)) {
+    throw new Error(
+      `doc does not match the requirements for ${collectionName}: ${doc}`
+    );
+  }
+
+  return keyProperties.map(key => doc[key]).join('_');
 }

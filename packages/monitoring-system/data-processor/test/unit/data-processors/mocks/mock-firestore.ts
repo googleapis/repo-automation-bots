@@ -18,6 +18,7 @@ import {
   Settings,
   CollectionReference,
   DocumentData,
+  SetOptions,
 } from '@google-cloud/firestore';
 import assert from 'assert';
 
@@ -165,7 +166,7 @@ export class MockFirestore extends Firestore {
       get: () => this.resolveAfterDelay(this.getQuerySnapshot(collectionPath)),
       doc: (docPath: string) => {
         return {
-          set: (data: FirestoreData) => {
+          set: (data: FirestoreData, options?: SetOptions) => {
             if (this.setShouldThrow) {
               this.rejectAfterDelay(null);
             }
@@ -173,6 +174,10 @@ export class MockFirestore extends Firestore {
               this.mockData,
               collectionPath
             );
+            if (options?.merge) {
+              const oldData = collection[docPath];
+              data = {...oldData, ...data};
+            }
             collection[docPath] = data;
             return this.resolveAfterDelay(null);
           },

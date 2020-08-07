@@ -89,6 +89,13 @@ export interface TriggerInfoPayload extends GCFLoggerJsonPayload {
 }
 
 /**
+ * A log entry that holds trigger information in the JSON payload
+ */
+export interface TriggerInfoLogEntry extends LogEntry {
+  jsonPayload: TriggerInfoPayload;
+}
+
+/**
  * JSON Payload for GitHub action logs
  */
 export interface GitHubActionPayload extends GCFLoggerJsonPayload {
@@ -104,6 +111,13 @@ export interface GitHubActionPayload extends GCFLoggerJsonPayload {
       owner: string;
     };
   };
+}
+
+/**
+ * A log entry that holds GitHub action information in the JSON payload
+ */
+export interface GitHubActionLogEntry extends LogEntry {
+  jsonPayload: GitHubActionPayload;
 }
 
 /**
@@ -167,7 +181,7 @@ export function isExecutionEndEntry(entry: LogEntry): boolean {
  * @throws if the jsonPayload has a 'trigger' property but the
  * payload is not a valid TriggerInfoPayload
  */
-function isTriggerInfoEntry(entry: LogEntry): boolean {
+function isTriggerInfoEntry(entry: LogEntry): entry is TriggerInfoLogEntry {
   const payload = entry.jsonPayload;
   if (!payload) {
     return false;
@@ -237,7 +251,9 @@ export function isTriggerInfoPayload(
  * @throws if the jsonPayload has an 'action' property but the
  * payload is not a valid GitHubActionPayload
  */
-export function isGitHubActionEntry(entry: LogEntry): boolean {
+export function isGitHubActionEntry(
+  entry: LogEntry
+): entry is GitHubActionLogEntry {
   const payload = entry.jsonPayload;
 
   if (!payload) {

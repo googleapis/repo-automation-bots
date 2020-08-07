@@ -80,10 +80,20 @@ export function hasPropertiesOfType(
   properties: string[],
   type: string
 ): boolean {
-  for (const prop of properties) {
-    if (!object[prop] || typeof object[prop] !== type) {
-      return false;
-    }
-  }
-  return true;
+  return properties.every(prop => {
+    return object[prop] && typeof object[prop] === type;
+  });
+}
+
+/**
+ * Returns true if for every property in 'properties' object
+ * has a key with that name
+ * @param object object to check
+ * @param properties properties to assert
+ */
+export function hasProperties(
+  object: {[key: string]: any},
+  properties: string[]
+): boolean {
+  return properties.every(prop => object[prop]);
 }
