@@ -25,7 +25,7 @@ export const UNKNOWN_FIRESTORE_VALUE = 'Unknown';
  */
 export enum OwnerType {
   /* Repository is owned by an organization */
-  ORG = 'Org',
+  ORG = 'Organization',
   /* Repository is owned by a user */
   USER = 'User',
   /* Repository ownership type is unknown */

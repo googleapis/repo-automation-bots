@@ -21,6 +21,7 @@ import {
   hasObjectProperties,
 } from './type-check-util';
 import pino from 'pino';
+import { OwnerType } from './firestore-schema';
 
 const logger = pino({
   base: null,
@@ -269,6 +270,10 @@ export function isTriggerInfoPayload(
     const stringProps = ['owner', 'owner_type', 'repo_name', 'url'];
     if (!hasStringProperties(sourceRepo, stringProps)) {
       logger.debug('"trigger_source_repo" is missing required properties');
+      return false;
+    }
+    if (!Object.values(OwnerType).includes(sourceRepo.owner_type)) {
+      logger.debug(`Invalid owner_type: ${sourceRepo.owner_type}`);
       return false;
     }
   }
