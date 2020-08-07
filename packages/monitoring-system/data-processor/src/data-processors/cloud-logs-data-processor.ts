@@ -405,7 +405,6 @@ export class CloudLogsProcessor extends DataProcessor {
    */
   private async processErrorLog(entry: LogEntry): ProcessingTask {
     const updates: ProcessingTask[] = [];
-    const payload = entry.jsonPayload;
 
     const botExecDoc: BotExecutionDocument = {
       execution_id: entry.labels.execution_id,

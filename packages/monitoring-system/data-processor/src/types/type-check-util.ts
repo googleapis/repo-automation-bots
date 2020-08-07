@@ -19,6 +19,7 @@
  */
 export function isStringIndexed(
   toCheck: object
+  /* eslint-disable @typescript-eslint/no-explicit-any */
 ): toCheck is {[key: string]: any} {
   if (!toCheck || !isObject(toCheck)) {
     return false;
@@ -30,6 +31,7 @@ export function isStringIndexed(
  * Returns true if the given paramter has type 'object'
  * @param toCheck object to check
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function isObject(toCheck: any): toCheck is object {
   return typeof toCheck === 'object';
 }
@@ -38,6 +40,7 @@ export function isObject(toCheck: any): toCheck is object {
  * Returns true if the given parameter has type 'string'
  * @param toCheck string to check
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function isString(toCheck: any): toCheck is string {
   return typeof toCheck === 'string';
 }
@@ -49,6 +52,7 @@ export function isString(toCheck: any): toCheck is string {
  * @param properties properties to assert
  */
 export function hasStringProperties(
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   object: {[key: string]: any},
   properties: string[]
 ): boolean {
@@ -62,6 +66,7 @@ export function hasStringProperties(
  * @param properties properties to assert
  */
 export function hasObjectProperties(
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   object: {[key: string]: any},
   properties: string[]
 ): boolean {
@@ -76,6 +81,7 @@ export function hasObjectProperties(
  * @param type expected value type
  */
 export function hasPropertiesOfType(
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   object: {[key: string]: any},
   properties: string[],
   type: string
@@ -92,6 +98,7 @@ export function hasPropertiesOfType(
  * @param properties properties to assert
  */
 export function hasProperties(
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   object: {[key: string]: any},
   properties: string[]
 ): boolean {

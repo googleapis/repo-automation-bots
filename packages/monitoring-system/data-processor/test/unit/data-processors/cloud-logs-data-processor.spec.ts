@@ -256,63 +256,209 @@ describe('Cloud Logs Processor', () => {
       });
 
       describe('trigger information logs', () => {
-        const executionRecord = {
-          document: {
-            '1lth8bxqr88v': {
-              execution_id: '1lth8bxqr88v',
+        describe('GitHub trigger', () => {
+          const executionRecord = {
+            document: {
+              '1lth8bxqr88v': {
+                execution_id: '1lth8bxqr88v',
+              },
             },
-          },
-          collectionName: 'Bot_Execution',
-        };
+            collectionName: 'Bot_Execution',
+          };
 
-        const triggerRecord = {
-          document: {
-            '1lth8bxqr88v': {
-              execution_id: '1lth8bxqr88v',
-              trigger_type: 'GitHub Webhook',
-              github_event: '62eb57323fe7436520941da6d02534d2',
+          const triggerRecord = {
+            document: {
+              '1lth8bxqr88v': {
+                execution_id: '1lth8bxqr88v',
+                trigger_type: 'GitHub Webhook',
+                github_event: '62eb57323fe7436520941da6d02534d2',
+              },
             },
-          },
-          collectionName: 'Trigger',
-        };
+            collectionName: 'Trigger',
+          };
 
-        const repositoryRecord = {
-          document: {
-            'java-spanner_googleapis': {
-              repo_name: 'java-spanner',
-              owner_name: 'googleapis',
+          const repositoryRecord = {
+            document: {
+              'java-spanner_googleapis': {
+                repo_name: 'java-spanner',
+                owner_name: 'googleapis',
+              },
             },
-          },
-          collectionName: 'GitHub_Repository',
-        };
+            collectionName: 'GitHub_Repository',
+          };
 
-        const triggerInfoLog = loadFixture([
-          'cloud-logs',
-          'trigger-information.json',
-        ]);
+          const triggerInfoLog = loadFixture([
+            'cloud-logs',
+            'trigger-information-github.json',
+          ]);
 
-        describe('when no execution and repository record exists', () => {
-          it('creates new execution and repository record and stores trigger information logs', () => {
-            return testValidMessage(triggerInfoLog, [
-              executionRecord,
-              triggerRecord,
-              repositoryRecord,
-            ]);
+          describe('when no execution and repository record exists', () => {
+            it('creates new execution and repository record and stores trigger information logs', () => {
+              return testValidMessage(triggerInfoLog, [
+                executionRecord,
+                triggerRecord,
+                repositoryRecord,
+              ]);
+            });
+          });
+
+          describe('when an execution and repository record already exist', () => {
+            beforeEach(() => {
+              mockFirestore.addRecord(executionRecord);
+              mockFirestore.addRecord(repositoryRecord);
+            });
+
+            it('identifies existing record and stores trigger information logs', () => {
+              return testValidMessage(triggerInfoLog, [
+                executionRecord,
+                triggerRecord,
+                repositoryRecord,
+              ]);
+            });
           });
         });
 
-        describe('when an execution and repository record already exist', () => {
-          beforeEach(() => {
-            mockFirestore.addRecord(executionRecord);
-            mockFirestore.addRecord(repositoryRecord);
+        describe('Cloud Tasks trigger', () => {
+          const executionRecord = {
+            document: {
+              '7k8pdtbcrkty': {
+                execution_id: '7k8pdtbcrkty',
+              },
+            },
+            collectionName: 'Bot_Execution',
+          };
+
+          const triggerRecord = {
+            document: {
+              '7k8pdtbcrkty': {
+                execution_id: '7k8pdtbcrkty',
+                trigger_type: 'Cloud Task',
+              },
+            },
+            collectionName: 'Trigger',
+          };
+
+          const triggerInfoLog = loadFixture([
+            'cloud-logs',
+            'trigger-information-task.json',
+          ]);
+
+          describe('when no execution record exists', () => {
+            it('creates new execution and repository record and stores trigger information logs', () => {
+              return testValidMessage(triggerInfoLog, [
+                executionRecord,
+                triggerRecord,
+              ]);
+            });
           });
 
-          it('identifies existing record and stores trigger information logs', () => {
-            return testValidMessage(triggerInfoLog, [
-              executionRecord,
-              triggerRecord,
-              repositoryRecord,
-            ]);
+          describe('when an execution record already exist', () => {
+            beforeEach(() => {
+              mockFirestore.addRecord(executionRecord);
+            });
+
+            it('identifies existing record and stores trigger information logs', () => {
+              return testValidMessage(triggerInfoLog, [
+                executionRecord,
+                triggerRecord,
+              ]);
+            });
+          });
+        });
+
+        describe('Cloud Scheduler trigger', () => {
+          const executionRecord = {
+            document: {
+              '7k8p96qqkv79': {
+                execution_id: '7k8p96qqkv79',
+              },
+            },
+            collectionName: 'Bot_Execution',
+          };
+
+          const triggerRecord = {
+            document: {
+              '7k8p96qqkv79': {
+                execution_id: '7k8p96qqkv79',
+                trigger_type: 'Cloud Scheduler',
+              },
+            },
+            collectionName: 'Trigger',
+          };
+
+          const triggerInfoLog = loadFixture([
+            'cloud-logs',
+            'trigger-information-scheduler.json',
+          ]);
+
+          describe('when no execution record exists', () => {
+            it('creates new execution and repository record and stores trigger information logs', () => {
+              return testValidMessage(triggerInfoLog, [
+                executionRecord,
+                triggerRecord,
+              ]);
+            });
+          });
+
+          describe('when an execution record already exist', () => {
+            beforeEach(() => {
+              mockFirestore.addRecord(executionRecord);
+            });
+
+            it('identifies existing record and stores trigger information logs', () => {
+              return testValidMessage(triggerInfoLog, [
+                executionRecord,
+                triggerRecord,
+              ]);
+            });
+          });
+        });
+
+        describe('Pub/Sub trigger', () => {
+          const executionRecord = {
+            document: {
+              jrin6sei8cai: {
+                execution_id: 'jrin6sei8cai',
+              },
+            },
+            collectionName: 'Bot_Execution',
+          };
+
+          const triggerRecord = {
+            document: {
+              jrin6sei8cai: {
+                execution_id: 'jrin6sei8cai',
+                trigger_type: 'Pub/Sub',
+              },
+            },
+            collectionName: 'Trigger',
+          };
+
+          const triggerInfoLog = loadFixture([
+            'cloud-logs',
+            'trigger-information-pubsub.json',
+          ]);
+
+          describe('when no execution record exists', () => {
+            it('creates new execution and repository record and stores trigger information logs', () => {
+              return testValidMessage(triggerInfoLog, [
+                executionRecord,
+                triggerRecord,
+              ]);
+            });
+          });
+
+          describe('when an execution record already exist', () => {
+            beforeEach(() => {
+              mockFirestore.addRecord(executionRecord);
+            });
+
+            it('identifies existing record and stores trigger information logs', () => {
+              return testValidMessage(triggerInfoLog, [
+                executionRecord,
+                triggerRecord,
+              ]);
+            });
           });
         });
       });
@@ -526,7 +672,7 @@ describe('Cloud Logs Processor', () => {
 
       it('processes other valid messages when one message is malformed', () => {
         return startAndSendMultipleMessages([
-          loadFixture(['cloud-logs', 'trigger-information.json']),
+          loadFixture(['cloud-logs', 'trigger-information-github.json']),
           loadFixture(['cloud-logs', 'error-missing-id.json']),
           loadFixture(['cloud-logs', 'execution-end.json']),
         ]).then((messageIds: string[]) => {
@@ -574,16 +720,20 @@ describe('Cloud Logs Processor', () => {
       it('calls nack() on message if there is an error in processing throws error', () => {
         mockFirestore.throwOnCollection();
         const processingTask = processor.collectAndProcess();
-        const messageId = mockSubscription.sendMockMessage(asBuffer(executionStartLog));
+        const messageId = mockSubscription.sendMockMessage(
+          asBuffer(executionStartLog)
+        );
 
         let thrown = false;
-        return processingTask.catch(() => thrown=true).finally(() => {
-          assert(
-            mockSubscription.wasNacked(messageId),
-            `Expected processor to nack() message ${messageId} on firestore error`
-          );
-          assert(thrown, 'Expected error to be thrown for Firestore issues')
-        });
+        return processingTask
+          .catch(() => (thrown = true))
+          .finally(() => {
+            assert(
+              mockSubscription.wasNacked(messageId),
+              `Expected processor to nack() message ${messageId} on firestore error`
+            );
+            assert(thrown, 'Expected error to be thrown for Firestore issues');
+          });
       });
 
       it('throws an error when cannot pull messages from PubSub', () => {

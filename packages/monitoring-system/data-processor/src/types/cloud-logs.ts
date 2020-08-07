@@ -21,7 +21,7 @@ import {
   hasObjectProperties,
 } from './type-check-util';
 import pino from 'pino';
-import { OwnerType } from './firestore-schema';
+import {OwnerType} from './firestore-schema';
 
 const logger = pino({
   base: null,
@@ -47,7 +47,6 @@ export enum LogEntryType {
  * Cloud Logging / Stackdriver log entry structure
  */
 export interface LogEntry {
-  [key: string]: any; // logs may have other properties
   insertId: string;
   jsonPayload?: GCFLoggerJsonPayload;
   textPayload?: string;
@@ -73,7 +72,7 @@ export interface LogEntry {
  * The default structure of a GCFLogger JSON payload
  */
 export interface GCFLoggerJsonPayload {
-  [key: string]: any; // payload may have other properties
+  [key: string]: string | number | {} | [] | undefined;
   level: number;
   message?: string;
 }

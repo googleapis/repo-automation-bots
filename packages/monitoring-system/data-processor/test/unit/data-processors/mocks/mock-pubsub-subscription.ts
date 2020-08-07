@@ -42,7 +42,7 @@ class MockMessage {
   }
 
   nack() {
-    console.log(`${this.id} was nacked()`)
+    console.log(`${this.id} was nacked()`);
     this.nackWasCalled = true;
   }
 }
@@ -96,10 +96,12 @@ export class MockSubscription extends Subscription {
 
   /**
    * Removes the listener for mock messages
-   * @param event parameter is ignored
+   * @param event the event to remove listeners for. Events other than 'message' are ignored.
    */
   public removeAllListeners(event?: string | symbol): this {
-    this.messageHandler = undefined;
+    if (!event || event === 'message') {
+      this.messageHandler = undefined;
+    }
     return this;
   }
 
