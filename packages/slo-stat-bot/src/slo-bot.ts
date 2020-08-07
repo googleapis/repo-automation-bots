@@ -308,7 +308,7 @@ export = function handler(app: Application) {
       const assignees = issue.assignees;
 
       const labels = issue.labels.map((label: IssueLabelResponseItem) =>
-        label.name.toLowerCase()
+        label.name
       );
       const type = issue.pull_request === undefined ? 'issue' : 'pull_request';
       const issueItem = {
