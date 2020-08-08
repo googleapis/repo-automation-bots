@@ -15,7 +15,6 @@
 
 import {
   isObject,
-  isStringIndexed,
   isString,
   hasStringProperties,
   hasObjectProperties,
@@ -225,18 +224,19 @@ function isTriggerInfoEntry(entry: LogEntry): entry is TriggerInfoLogEntry {
 export function isTriggerInfoPayload(
   payload: object
 ): payload is TriggerInfoPayload {
-  if (!isObject(payload) || !isStringIndexed(payload)) {
+  if (!isObject(payload)) {
     logger.debug('Payload is not a string indexed object');
     return false;
   }
+  
   if (!payload.message || !isString(payload.message)) {
     logger.debug('Payload does not have a string message');
     return false;
   }
 
   const trigger = payload.trigger;
-  if (!isObject(trigger) || !isStringIndexed(trigger)) {
-    logger.debug('"trigger" is not a string indexed object');
+  if (!isObject(trigger)) {
+    logger.debug('"trigger" is not a valid object');
     return false;
   }
 
@@ -262,8 +262,8 @@ export function isTriggerInfoPayload(
     }
 
     const sourceRepo = trigger.trigger_source_repo;
-    if (!isObject(sourceRepo) || !isStringIndexed(sourceRepo)) {
-      logger.debug('"trigger_source_repo" is not a string indexed object');
+    if (!isObject(sourceRepo)) {
+      logger.debug('"trigger_source_repo" is not a valid object');
       return false;
     }
     const stringProps = ['owner', 'owner_type', 'repo_name', 'url'];
@@ -313,12 +313,12 @@ export function isGitHubActionEntry(
 export function isGitHubActionPayload(
   payload: object
 ): payload is GitHubActionPayload {
-  if (!isObject(payload) || !isStringIndexed(payload)) {
+  if (!isObject(payload)) {
     return false;
   }
 
   const action = payload.action;
-  if (!isObject(action) || !isStringIndexed(action)) {
+  if (!isObject(action)) {
     return false;
   }
   if (!hasStringProperties(action, ['type', 'value'])) {
@@ -355,7 +355,8 @@ export function isGitHubActionPayload(
  * @returns true if object is a LogEntry, false otherwise
  */
 export function instanceOfLogEntry(toCheck: object): toCheck is LogEntry {
-  if (!isStringIndexed(toCheck)) {
+  if (!isObject(toCheck)) {
+    logger.debug("Object is not a Log Entry: not a valid object");
     return false;
   }
 
@@ -371,18 +372,21 @@ export function instanceOfLogEntry(toCheck: object): toCheck is LogEntry {
     !hasStringProperties(toCheck, topLevelStringProps) ||
     !hasObjectProperties(toCheck, ['resource', 'labels'])
   ) {
+    logger.debug("Object is not a Log Entry: missing required properties");
     return false;
   }
 
   const validJSONPayload =
-    toCheck.jsonPayload && isStringIndexed(toCheck.jsonPayload);
+    toCheck.jsonPayload && isObject(toCheck.jsonPayload);
   const validTextPayload = toCheck.textPayload && isString(toCheck.textPayload);
   if (!validJSONPayload && !validTextPayload) {
+    logger.debug("Object is not a Log Entry: does not have a payload");
     return false;
   }
 
   const resource = toCheck.resource;
   if (!resource.type || !isString(resource.type)) {
+    logger.debug("Object is not a Log Entry: invalid resources value");
     return false;
   }
   if (!resource.labels || !isObject(resource.labels)) {
@@ -391,11 +395,13 @@ export function instanceOfLogEntry(toCheck: object): toCheck is LogEntry {
 
   const resourceLabelProperties = ['function_name', 'project_id', 'region'];
   if (!hasStringProperties(resource.labels, resourceLabelProperties)) {
+    logger.debug("Object is not a Log Entry: resources is missing required values");
     return false;
   }
 
   const execution_id = toCheck.labels.execution_id;
   if (!execution_id || !isString(execution_id)) {
+    logger.debug("Object is not a Log Entry: missing or invalid execution_id");
     return false;
   }
 

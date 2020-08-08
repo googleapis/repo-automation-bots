@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-import {isStringIndexed, hasProperties} from './type-check-util';
+import {hasProperties, isObject} from './type-check-util';
 
 /**
  * Placeholder value for unknown fields
@@ -303,7 +303,7 @@ export function getPrimaryKey(
     );
   }
 
-  if (!isStringIndexed(doc) || !hasProperties(doc, keyProperties)) {
+  if (!isObject(doc) || !hasProperties(doc, keyProperties)) {
     throw new Error(
       `doc does not match the requirements for ${collectionName}: ${doc}`
     );

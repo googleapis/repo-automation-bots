@@ -14,25 +14,11 @@
 //
 
 /**
- * Returns true if object is truthy, has type 'object' and all it's keys are strings
- * @param toCheck object to test
- */
-export function isStringIndexed(
-  toCheck: object
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-): toCheck is {[key: string]: any} {
-  if (!toCheck || !isObject(toCheck)) {
-    return false;
-  }
-  return Object.keys(toCheck).every(isString);
-}
-
-/**
  * Returns true if the given paramter has type 'object'
  * @param toCheck object to check
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export function isObject(toCheck: any): toCheck is object {
+export function isObject(toCheck: any): toCheck is {[key: string]: any} {
   return typeof toCheck === 'object';
 }
 

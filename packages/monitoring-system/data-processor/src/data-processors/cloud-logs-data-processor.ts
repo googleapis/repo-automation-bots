@@ -124,8 +124,8 @@ export class CloudLogsProcessor extends DataProcessor {
 
   /**
    * Parses the LogEntry from the message, determines its type, and routes
-   * valid log entries to the correct handler. Handling tasks added to the
-   * inProcess queue for asynchronous completion.
+   * valid log entries to the correct handler. Handling tasks are added to the
+   * tasksInProgress queue for asynchronous completion.
    *
    * Malformed messages are logged and acknowledged immediately.
    *
@@ -136,47 +136,27 @@ export class CloudLogsProcessor extends DataProcessor {
     const logEntry: object = this.parsePubSubData(pubSubMessage);
 
     if (!instanceOfLogEntry(logEntry)) {
-      this.logger.error({
-        message: 'Detected malformed log entry',
-        messageId: pubSubMessage.id,
-        pubSubMessage: pubSubMessage,
-        parsedJSON: logEntry,
-      });
-      pubSubMessage.ack();
-      return;
+      this.logError('Detected malformed log entry', pubSubMessage);
+      return pubSubMessage.ack();
     }
 
     const logEntryType = parseLogEntryType(logEntry);
     this.logger.debug(`Message ${pubSubMessage.id} is a ${logEntryType}`);
 
     if (logEntryType === LogEntryType.NON_METRIC) {
-      this.logger.debug({
-        message: 'Ignoring log entry with no metrics',
-        entry: logEntry,
-      });
-      pubSubMessage.ack();
-      return;
+      this.logger.debug(`Ignoring non-metric log entry`);
+      return pubSubMessage.ack();
     }
     if (logEntryType === LogEntryType.MALFORMED) {
-      this.logger.error({
-        message: 'Detected malformed log entry',
-        entry: logEntry,
-      });
-      pubSubMessage.ack();
-      return;
+      this.logError('Detected malformed log entry', pubSubMessage);
+      return pubSubMessage.ack();
     }
 
     const processingTask = this.processLogEntry(logEntry, logEntryType)
       .then(result => this.ackIfSuccess(result, pubSubMessage))
       .catch(error => {
-        this.logger.error({
-          message: 'Runtime error while processing message',
-          messageId: pubSubMessage.id,
-          error: error,
-          pubSubMessage: pubSubMessage,
-        });
+        this.logError('Runtime error while processing message', pubSubMessage, error);
         pubSubMessage.nack();
-        this.logger.debug(`${pubSubMessage.id} was nacked`);
         throw error;
       });
 
@@ -203,6 +183,16 @@ export class CloudLogsProcessor extends DataProcessor {
     return result;
   }
 
+  private logError(errorMsg: string, pubSubMessage: Message, error?: Error) {
+    this.logger.error({
+      message: errorMsg,
+      messageId: pubSubMessage.id,
+      error: error,
+      pubSubMessage: pubSubMessage,
+      pubSubMessageData: this.parsePubSubData(pubSubMessage)
+    });
+  }
+
   /**
    * Parses the JSON object from the given PubSub message
    *
@@ -213,10 +203,7 @@ export class CloudLogsProcessor extends DataProcessor {
   private parsePubSubData(pubSubMessage: Message): object {
     const bufferData = pubSubMessage.data;
     if (!bufferData) {
-      this.logger.error({
-        message: 'PubSub message contains no data',
-        entry: pubSubMessage,
-      });
+      this.logError('PubSub message contains no data', pubSubMessage);
       return {};
     } else {
       return JSON.parse(bufferData.toString());
@@ -264,7 +251,6 @@ export class CloudLogsProcessor extends DataProcessor {
       start_time: new Date(entry.timestamp).getTime(),
       logs_url: this.buildExecutionLogsUrl(entry),
     };
-
     return this.updateFirestore(botExecDoc, FSCollection.BotExecution);
   }
 
@@ -273,15 +259,13 @@ export class CloudLogsProcessor extends DataProcessor {
     const domain = 'pantheon.corp.google.com'; // should be console.google.com but the redirect wipes the query
     const executionId = entry.labels.execution_id;
     const project = entry.resource.labels.project_id;
-    const start = new Date(entry.timestamp).getTime() - TIME_RANGE_MILLISECONDS;
-    const end = new Date(entry.timestamp).getTime() + TIME_RANGE_MILLISECONDS;
+    const start = new Date(new Date(entry.timestamp).getTime() - TIME_RANGE_MILLISECONDS);
+    const end = new Date(new Date(entry.timestamp).getTime() + TIME_RANGE_MILLISECONDS);
 
     return (
       `https://${domain}/logs/query;query=` +
       `labels.execution_id%3D%22${executionId}%22;` +
-      `timeRange=${new Date(start).toISOString()}%2F${new Date(
-        end
-      ).toISOString()}` +
+      `timeRange=${start.toISOString()}%2F${end.toISOString()}` +
       `?project=${project}&query=%0A`
     );
   }
@@ -296,7 +280,6 @@ export class CloudLogsProcessor extends DataProcessor {
       bot_name: entry.resource.labels.function_name,
       end_time: new Date(entry.timestamp).getTime(),
     };
-
     return this.updateFirestore(botExecDoc, FSCollection.BotExecution);
   }
 
@@ -415,7 +398,7 @@ export class CloudLogsProcessor extends DataProcessor {
     const errorDoc: ErrorDocument = {
       execution_id: entry.labels.execution_id,
       timestamp: new Date(entry.timestamp).getTime(),
-      error_msg: entry.textPayload,
+      error_msg: entry.textPayload,                    // TODO: error may be in text or json
     };
     updates.push(this.updateFirestore(errorDoc, FSCollection.Error));
 
@@ -442,6 +425,9 @@ export class CloudLogsProcessor extends DataProcessor {
   ): ProcessingTask {
     return new Promise<ProcessingResult>(resolve => {
       const docKey = getPrimaryKey(doc, collection);
+
+      // TODO: check if any document values are undefined
+      // Firestore will throw an error for undefined values
 
       this.firestore
         .collection(collection)
