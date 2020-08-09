@@ -565,21 +565,34 @@ describe('Cloud Logs Processor', () => {
             pb86861bj247_1596123567270: {
               execution_id: 'pb86861bj247',
               timestamp: 1596123567270,
-              error_msg: "{\"Error\":\"TypeError: Cannot read property \'name\' of undefined\"}",
+              error_msg:
+                '{"Error":"TypeError: Cannot read property \'name\' of undefined"}',
             },
           },
           collectionName: 'Error',
         };
 
-        const errorTextLog = loadFixture(['cloud-logs', 'error-textPayload.json']);
-        const errorJsonLog = loadFixture(['cloud-logs', 'error-jsonPayload.json']);
+        const errorTextLog = loadFixture([
+          'cloud-logs',
+          'error-textPayload.json',
+        ]);
+        const errorJsonLog = loadFixture([
+          'cloud-logs',
+          'error-jsonPayload.json',
+        ]);
 
         describe('when no execution record exists', () => {
           it('creates a new execution record and stores text error logs', () => {
-            return testValidMessage(errorTextLog, [executionRecord, errorTextRecord]);
+            return testValidMessage(errorTextLog, [
+              executionRecord,
+              errorTextRecord,
+            ]);
           });
           it('creates a new execution record and stores json error logs', () => {
-            return testValidMessage(errorJsonLog, [executionRecord, errorJsonRecord]);
+            return testValidMessage(errorJsonLog, [
+              executionRecord,
+              errorJsonRecord,
+            ]);
           });
         });
 
@@ -592,7 +605,10 @@ describe('Cloud Logs Processor', () => {
             return testValidMessage(errorTextLog, [executionRecord]);
           });
           it('creates a new execution record and stores json error logs', () => {
-            return testValidMessage(errorJsonLog, [executionRecord, errorJsonRecord]);
+            return testValidMessage(errorJsonLog, [
+              executionRecord,
+              errorJsonRecord,
+            ]);
           });
         });
       });

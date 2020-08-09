@@ -263,7 +263,10 @@ export type FirestoreDocument =
   | GitHubRepositoryDocument
   | GitHubObjectDocument;
 
-export type FirestoreRecord = {doc: FirestoreDocument, collection: FirestoreCollection};
+export type FirestoreRecord = {
+  doc: FirestoreDocument;
+  collection: FirestoreCollection;
+};
 
 /**
  * Properties of a document in collectionName that form the primary key (in order)

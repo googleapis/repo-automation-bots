@@ -14,8 +14,12 @@
 //
 import {Firestore, WriteResult} from '@google-cloud/firestore';
 import pino from 'pino';
-import { FirestoreDocument, getPrimaryKey, FirestoreCollection as FSCollection } from '../types/firestore-schema';
-import { hasUndefinedValues } from '../types/type-check-util';
+import {
+  FirestoreDocument,
+  getPrimaryKey,
+  FirestoreCollection as FSCollection,
+} from '../types/firestore-schema';
+import {hasUndefinedValues} from '../types/type-check-util';
 
 export interface ProcessorOptions {
   firestore?: Firestore;
@@ -63,13 +67,12 @@ export abstract class DataProcessor {
     doc: FirestoreDocument,
     collection: FSCollection
   ): Promise<WriteResult> {
-
     if (hasUndefinedValues(doc)) {
       this.logger.error({
-        message: "Firestore doc cannot have undefined values",
+        message: 'Firestore doc cannot have undefined values',
         invalidDoc: doc,
-        collection: collection.toString()
-      })
+        collection: collection.toString(),
+      });
       return Promise.reject();
     }
 

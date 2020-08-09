@@ -35,7 +35,7 @@ import {
   TriggerInfoLogEntry,
   GitHubActionLogEntry,
 } from '../types/cloud-logs';
-import { hasUndefinedValues } from '../types/type-check-util';
+import {hasUndefinedValues} from '../types/type-check-util';
 
 export interface CloudLogsProcessorOptions extends ProcessorOptions {
   /**
@@ -136,7 +136,7 @@ export class CloudLogsProcessor extends DataProcessor {
   private async processMessage(pubSubMessage: Message) {
     this.logger.debug(`Processing message ${pubSubMessage.id}`);
     const logEntry: object = this.parsePubSubData(pubSubMessage);
-    this.logger.debug({messageId: pubSubMessage.id, logEntry: logEntry})
+    this.logger.debug({messageId: pubSubMessage.id, logEntry: logEntry});
 
     if (!instanceOfLogEntry(logEntry)) {
       this.logError('Detected malformed log entry', pubSubMessage);
@@ -147,7 +147,7 @@ export class CloudLogsProcessor extends DataProcessor {
     this.logger.debug(`Message ${pubSubMessage.id} is a ${logEntryType}`);
 
     if (logEntryType === LogEntryType.NON_METRIC) {
-      this.logger.debug(`Ignoring non-metric log entry`);
+      this.logger.debug('Ignoring non-metric log entry');
       return pubSubMessage.ack();
     }
     if (logEntryType === LogEntryType.MALFORMED) {
@@ -158,7 +158,11 @@ export class CloudLogsProcessor extends DataProcessor {
     const processingTask = this.processLogEntry(logEntry, logEntryType)
       .then(result => this.ackIfSuccess(result, pubSubMessage))
       .catch(error => {
-        this.logError('Runtime error while processing message', pubSubMessage, error);
+        this.logError(
+          'Runtime error while processing message',
+          pubSubMessage,
+          error
+        );
         pubSubMessage.nack();
         throw error;
       });
@@ -191,7 +195,7 @@ export class CloudLogsProcessor extends DataProcessor {
       message: errorMsg,
       messageId: pubSubMessage.id,
       error: error,
-      pubSubMessageData: this.parsePubSubData(pubSubMessage)
+      pubSubMessageData: this.parsePubSubData(pubSubMessage),
     });
   }
 
@@ -253,7 +257,9 @@ export class CloudLogsProcessor extends DataProcessor {
       start_time: new Date(entry.timestamp).getTime(),
       logs_url: this.buildExecutionLogsUrl(entry),
     };
-    return this.updateFirestoreRecords([{doc: botExecDoc, collection: FSCollection.BotExecution}]);
+    return this.updateFirestoreRecords([
+      {doc: botExecDoc, collection: FSCollection.BotExecution},
+    ]);
   }
 
   private buildExecutionLogsUrl(entry: LogEntry): string {
@@ -261,8 +267,12 @@ export class CloudLogsProcessor extends DataProcessor {
     const domain = 'pantheon.corp.google.com'; // should be console.google.com but the redirect wipes the query
     const executionId = entry.labels.execution_id;
     const project = entry.resource.labels.project_id;
-    const start = new Date(new Date(entry.timestamp).getTime() - TIME_RANGE_MILLISECONDS);
-    const end = new Date(new Date(entry.timestamp).getTime() + TIME_RANGE_MILLISECONDS);
+    const start = new Date(
+      new Date(entry.timestamp).getTime() - TIME_RANGE_MILLISECONDS
+    );
+    const end = new Date(
+      new Date(entry.timestamp).getTime() + TIME_RANGE_MILLISECONDS
+    );
 
     return (
       `https://${domain}/logs/query;query=` +
@@ -282,7 +292,9 @@ export class CloudLogsProcessor extends DataProcessor {
       bot_name: entry.resource.labels.function_name,
       end_time: new Date(entry.timestamp).getTime(),
     };
-    return this.updateFirestoreRecords([{doc: botExecDoc, collection: FSCollection.BotExecution}]);
+    return this.updateFirestoreRecords([
+      {doc: botExecDoc, collection: FSCollection.BotExecution},
+    ]);
   }
 
   /**
@@ -316,9 +328,7 @@ export class CloudLogsProcessor extends DataProcessor {
         owner_name: sourceRepo.owner,
         owner_type: sourceRepo.owner_type as OwnerType,
       };
-      updates.push(
-        {doc: repoDoc, collection: FSCollection.GitHubRepository}
-      );
+      updates.push({doc: repoDoc, collection: FSCollection.GitHubRepository});
     }
 
     return this.updateFirestoreRecords(updates);
@@ -390,7 +400,7 @@ export class CloudLogsProcessor extends DataProcessor {
     const errorDoc: ErrorDocument = {
       execution_id: entry.labels.execution_id,
       timestamp: new Date(entry.timestamp).getTime(),
-      error_msg: entry.textPayload || JSON.stringify(entry.jsonPayload)
+      error_msg: entry.textPayload || JSON.stringify(entry.jsonPayload),
     };
     updates.push({doc: errorDoc, collection: FSCollection.Error});
 
@@ -406,10 +416,10 @@ export class CloudLogsProcessor extends DataProcessor {
   private async updateFirestoreRecords(
     records: FirestoreRecord[]
   ): ProcessingTask {
-
     const updates: ProcessingTask[] = records.map(record => {
-      return this.updateFirestore(record.doc, record.collection)
-      .then(() => {return ProcessingResult.SUCCESS})
+      return this.updateFirestore(record.doc, record.collection).then(() => {
+        return ProcessingResult.SUCCESS;
+      });
     });
 
     return Promise.all(updates).then(results => {
