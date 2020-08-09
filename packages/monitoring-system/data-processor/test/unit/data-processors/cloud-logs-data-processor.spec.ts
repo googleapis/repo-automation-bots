@@ -549,7 +549,7 @@ describe('Cloud Logs Processor', () => {
           collectionName: 'Bot_Execution',
         };
 
-        const errorRecord = {
+        const errorTextRecord = {
           document: {
             pb86861bj247_1596123567270: {
               execution_id: 'pb86861bj247',
@@ -560,21 +560,39 @@ describe('Cloud Logs Processor', () => {
           collectionName: 'Error',
         };
 
-        const errorLog = loadFixture(['cloud-logs', 'error.json']);
+        const errorJsonRecord = {
+          document: {
+            pb86861bj247_1596123567270: {
+              execution_id: 'pb86861bj247',
+              timestamp: 1596123567270,
+              error_msg: "{\"Error\":\"TypeError: Cannot read property \'name\' of undefined\"}",
+            },
+          },
+          collectionName: 'Error',
+        };
+
+        const errorTextLog = loadFixture(['cloud-logs', 'error-textPayload.json']);
+        const errorJsonLog = loadFixture(['cloud-logs', 'error-jsonPayload.json']);
 
         describe('when no execution record exists', () => {
-          it('creates a new execution record and stores error logs', () => {
-            return testValidMessage(errorLog, [executionRecord, errorRecord]);
+          it('creates a new execution record and stores text error logs', () => {
+            return testValidMessage(errorTextLog, [executionRecord, errorTextRecord]);
+          });
+          it('creates a new execution record and stores json error logs', () => {
+            return testValidMessage(errorJsonLog, [executionRecord, errorJsonRecord]);
           });
         });
 
         describe('when an execution record already exists', () => {
           beforeEach(() => {
-            mockFirestore.addRecord(errorRecord);
+            mockFirestore.addRecord(errorTextRecord);
           });
 
           it('identifies existing record and stores error logs', () => {
-            return testValidMessage(errorLog, [executionRecord]);
+            return testValidMessage(errorTextLog, [executionRecord]);
+          });
+          it('creates a new execution record and stores json error logs', () => {
+            return testValidMessage(errorJsonLog, [executionRecord, errorJsonRecord]);
           });
         });
       });

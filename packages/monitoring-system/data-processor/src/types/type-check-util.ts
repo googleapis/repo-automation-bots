@@ -13,6 +13,8 @@
 // limitations under the License.
 //
 
+// TODO: Write tests for these
+
 /**
  * Returns true if the given paramter has type 'object'
  * @param toCheck object to check
@@ -89,4 +91,12 @@ export function hasProperties(
   properties: string[]
 ): boolean {
   return properties.every(prop => object[prop]);
+}
+
+/**
+ * Returns true if any value of the object is undefined
+ * @param object object to check
+ */
+export function hasUndefinedValues(object: {[key: string]: any}): boolean {
+  return !Object.values(object).every(val => typeof val !== undefined)
 }

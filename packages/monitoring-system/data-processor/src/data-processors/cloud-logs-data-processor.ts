@@ -25,6 +25,7 @@ import {
   ActionDocument,
   GitHubObjectDocument,
   ErrorDocument,
+  FirestoreRecord,
 } from '../types/firestore-schema';
 import {
   instanceOfLogEntry,
@@ -34,6 +35,7 @@ import {
   TriggerInfoLogEntry,
   GitHubActionLogEntry,
 } from '../types/cloud-logs';
+import { hasUndefinedValues } from '../types/type-check-util';
 
 export interface CloudLogsProcessorOptions extends ProcessorOptions {
   /**
@@ -134,6 +136,7 @@ export class CloudLogsProcessor extends DataProcessor {
   private async processMessage(pubSubMessage: Message) {
     this.logger.debug(`Processing message ${pubSubMessage.id}`);
     const logEntry: object = this.parsePubSubData(pubSubMessage);
+    this.logger.debug({messageId: pubSubMessage.id, logEntry: logEntry})
 
     if (!instanceOfLogEntry(logEntry)) {
       this.logError('Detected malformed log entry', pubSubMessage);
@@ -188,7 +191,6 @@ export class CloudLogsProcessor extends DataProcessor {
       message: errorMsg,
       messageId: pubSubMessage.id,
       error: error,
-      pubSubMessage: pubSubMessage,
       pubSubMessageData: this.parsePubSubData(pubSubMessage)
     });
   }
@@ -251,7 +253,7 @@ export class CloudLogsProcessor extends DataProcessor {
       start_time: new Date(entry.timestamp).getTime(),
       logs_url: this.buildExecutionLogsUrl(entry),
     };
-    return this.updateFirestore(botExecDoc, FSCollection.BotExecution);
+    return this.updateFirestoreRecords([{doc: botExecDoc, collection: FSCollection.BotExecution}]);
   }
 
   private buildExecutionLogsUrl(entry: LogEntry): string {
@@ -280,7 +282,7 @@ export class CloudLogsProcessor extends DataProcessor {
       bot_name: entry.resource.labels.function_name,
       end_time: new Date(entry.timestamp).getTime(),
     };
-    return this.updateFirestore(botExecDoc, FSCollection.BotExecution);
+    return this.updateFirestoreRecords([{doc: botExecDoc, collection: FSCollection.BotExecution}]);
   }
 
   /**
@@ -290,13 +292,13 @@ export class CloudLogsProcessor extends DataProcessor {
   private async processTriggerInfoLog(
     entry: TriggerInfoLogEntry
   ): ProcessingTask {
-    const updates: ProcessingTask[] = [];
+    const updates: FirestoreRecord[] = [];
 
     const botExecDoc: BotExecutionDocument = {
       execution_id: entry.labels.execution_id,
       bot_name: entry.resource.labels.function_name,
     };
-    updates.push(this.updateFirestore(botExecDoc, FSCollection.BotExecution));
+    updates.push({doc: botExecDoc, collection: FSCollection.BotExecution});
 
     const payload = entry.jsonPayload;
     const triggerDoc: TriggerDocument = {
@@ -305,7 +307,7 @@ export class CloudLogsProcessor extends DataProcessor {
       trigger_type: payload.trigger.trigger_type,
     };
     this.logger.debug(triggerDoc);
-    updates.push(this.updateFirestore(triggerDoc, FSCollection.Trigger));
+    updates.push({doc: triggerDoc, collection: FSCollection.Trigger});
 
     const sourceRepo = payload.trigger.trigger_source_repo;
     if (sourceRepo) {
@@ -315,16 +317,11 @@ export class CloudLogsProcessor extends DataProcessor {
         owner_type: sourceRepo.owner_type as OwnerType,
       };
       updates.push(
-        this.updateFirestore(repoDoc, FSCollection.GitHubRepository)
+        {doc: repoDoc, collection: FSCollection.GitHubRepository}
       );
     }
 
-    return Promise.all(updates).then(results => {
-      const allSuccess = results.every(
-        result => result === ProcessingResult.SUCCESS
-      );
-      return allSuccess ? ProcessingResult.SUCCESS : ProcessingResult.FAIL;
-    });
+    return this.updateFirestoreRecords(updates);
   }
 
   /**
@@ -334,20 +331,20 @@ export class CloudLogsProcessor extends DataProcessor {
   private async processGitHubActionLog(
     entry: GitHubActionLogEntry
   ): ProcessingTask {
-    const updates: ProcessingTask[] = [];
+    const updates: FirestoreRecord[] = [];
     const payload = entry.jsonPayload;
 
     const botExecDoc: BotExecutionDocument = {
       execution_id: entry.labels.execution_id,
       bot_name: entry.resource.labels.function_name,
     };
-    updates.push(this.updateFirestore(botExecDoc, FSCollection.BotExecution));
+    updates.push({doc: botExecDoc, collection: FSCollection.BotExecution});
 
     const repoDoc: GitHubRepositoryDocument = {
       repo_name: payload.action.destination_repo.repo_name,
       owner_name: payload.action.destination_repo.owner,
     };
-    updates.push(this.updateFirestore(repoDoc, FSCollection.GitHubRepository));
+    updates.push({doc: repoDoc, collection: FSCollection.GitHubRepository});
 
     let objectDoc: GitHubObjectDocument | undefined = undefined;
     if (payload.action.destination_object) {
@@ -356,7 +353,7 @@ export class CloudLogsProcessor extends DataProcessor {
         object_id: payload.action.destination_object.object_id,
         repository: getPrimaryKey(repoDoc, FSCollection.GitHubRepository),
       };
-      updates.push(this.updateFirestore(objectDoc, FSCollection.GitHubObject));
+      updates.push({doc: objectDoc, collection: FSCollection.GitHubObject});
     }
 
     const actionDoc: ActionDocument = {
@@ -372,14 +369,9 @@ export class CloudLogsProcessor extends DataProcessor {
         FSCollection.GitHubObject
       );
     }
-    updates.push(this.updateFirestore(actionDoc, FSCollection.Action));
+    updates.push({doc: actionDoc, collection: FSCollection.Action});
 
-    return Promise.all(updates).then(results => {
-      const allSuccess = results.every(
-        result => result === ProcessingResult.SUCCESS
-      );
-      return allSuccess ? ProcessingResult.SUCCESS : ProcessingResult.FAIL;
-    });
+    return this.updateFirestoreRecords(updates);
   }
 
   /**
@@ -387,61 +379,44 @@ export class CloudLogsProcessor extends DataProcessor {
    * @param entry log entry with error
    */
   private async processErrorLog(entry: LogEntry): ProcessingTask {
-    const updates: ProcessingTask[] = [];
+    const updates: FirestoreRecord[] = [];
 
     const botExecDoc: BotExecutionDocument = {
       execution_id: entry.labels.execution_id,
       bot_name: entry.resource.labels.function_name,
     };
-    updates.push(this.updateFirestore(botExecDoc, FSCollection.BotExecution));
+    updates.push({doc: botExecDoc, collection: FSCollection.BotExecution});
 
     const errorDoc: ErrorDocument = {
       execution_id: entry.labels.execution_id,
       timestamp: new Date(entry.timestamp).getTime(),
-      error_msg: entry.textPayload,                    // TODO: error may be in text or json
+      error_msg: entry.textPayload || JSON.stringify(entry.jsonPayload)
     };
-    updates.push(this.updateFirestore(errorDoc, FSCollection.Error));
+    updates.push({doc: errorDoc, collection: FSCollection.Error});
+
+    return this.updateFirestoreRecords(updates);
+  }
+
+  /**
+   * Updates all the given records in Firestore.
+   * - Resolves with SUCCESS if all records were successfully updates
+   * - else resolves with FAIL
+   * @param records documents to update with their collection name
+   */
+  private async updateFirestoreRecords(
+    records: FirestoreRecord[]
+  ): ProcessingTask {
+
+    const updates: ProcessingTask[] = records.map(record => {
+      return this.updateFirestore(record.doc, record.collection)
+      .then(() => {return ProcessingResult.SUCCESS})
+    });
 
     return Promise.all(updates).then(results => {
       const allSuccess = results.every(
         result => result === ProcessingResult.SUCCESS
       );
       return allSuccess ? ProcessingResult.SUCCESS : ProcessingResult.FAIL;
-    });
-  }
-
-  /**
-   * Inserts the given document into the specified collection in Firestore, following these rules:
-   * - if a document with the same key already exists, updates the fields with those in `doc`
-   * - if no document with the same key exists, creates a new document with fields from `doc`
-   * @param doc Firestore document to insert
-   * @param collection collection in which document belongs
-   * @param docKey (optional) the primary key for the given document
-   * @throws if doc is invalid or doesn't match given collection
-   */
-  private async updateFirestore(
-    doc: FirestoreDocument,
-    collection: FSCollection
-  ): ProcessingTask {
-    return new Promise<ProcessingResult>(resolve => {
-      const docKey = getPrimaryKey(doc, collection);
-
-      // TODO: check if any document values are undefined
-      // Firestore will throw an error for undefined values
-
-      this.firestore
-        .collection(collection)
-        .doc(docKey)
-        .set(doc, {merge: true})
-        .then(() => resolve(ProcessingResult.SUCCESS))
-        .catch(error => {
-          this.logger.error({
-            message: `Failed to insert document into Firestore: ${error}`,
-            document: doc,
-            collection: collection,
-          });
-          return resolve(ProcessingResult.FAIL);
-        });
     });
   }
 }

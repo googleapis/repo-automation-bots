@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {Firestore} from '@google-cloud/firestore';
+import {Firestore, WriteResult} from '@google-cloud/firestore';
 import pino from 'pino';
+import { FirestoreDocument, getPrimaryKey, FirestoreCollection as FSCollection } from '../types/firestore-schema';
+import { hasUndefinedValues } from '../types/type-check-util';
 
 export interface ProcessorOptions {
   firestore?: Firestore;
@@ -46,5 +48,44 @@ export abstract class DataProcessor {
 
     const dest = pino.destination({sync: true});
     return pino(defaultOptions, dest);
+  }
+
+  /**
+   * Inserts the given document into the specified collection in Firestore, following these rules:
+   * - if a document with the same key already exists, updates the fields with those in `doc`
+   * - if no document with the same key exists, creates a new document with fields from `doc`
+   * @param doc Firestore document to insert. Cannot contain undefined values.
+   * @param collection collection in which document belongs
+   * @param docKey (optional) the primary key for the given document
+   * @throws if doc is invalid or doesn't match given collection
+   */
+  protected async updateFirestore(
+    doc: FirestoreDocument,
+    collection: FSCollection
+  ): Promise<WriteResult> {
+
+    if (hasUndefinedValues(doc)) {
+      this.logger.error({
+        message: "Firestore doc cannot have undefined values",
+        invalidDoc: doc,
+        collection: collection.toString()
+      })
+      return Promise.reject();
+    }
+
+    const docKey = getPrimaryKey(doc, collection);
+
+    return this.firestore
+      .collection(collection)
+      .doc(docKey)
+      .set(doc, {merge: true})
+      .catch(error => {
+        this.logger.error({
+          message: `Failed to insert document into Firestore: ${error}`,
+          document: doc,
+          collection: collection,
+        });
+        throw error;
+      });
   }
 }

@@ -263,6 +263,8 @@ export type FirestoreDocument =
   | GitHubRepositoryDocument
   | GitHubObjectDocument;
 
+export type FirestoreRecord = {doc: FirestoreDocument, collection: FirestoreCollection};
+
 /**
  * Properties of a document in collectionName that form the primary key (in order)
  * eg. ['propA', 'propB'] means primary key = `${doc.propA}_${doc.propB}` where
