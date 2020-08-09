@@ -192,14 +192,12 @@ export class GitHubProcessor extends DataProcessor {
   private async storeEventsData(
     events: GitHubEventDocument[]
   ): Promise<WriteResult[]> {
-    const collection = this.firestore.collection(
-      FirestoreCollection.GitHubEvent
-    );
-    return Promise.all(
-      events.map(event => {
-        const docKey = getPrimaryKey(event, FirestoreCollection.GitHubEvent);
-        return collection.doc(docKey).set(event);
+    const updates = events.map(event =>
+      this.updateFirestore({
+        doc: event,
+        collection: FirestoreCollection.GitHubEvent,
       })
     );
+    return Promise.all(updates);
   }
 }

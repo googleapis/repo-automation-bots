@@ -98,5 +98,5 @@ export function hasProperties(
  * @param object object to check
  */
 export function hasUndefinedValues(object: {[key: string]: any}): boolean {
-  return !Object.values(object).every(val => typeof val !== undefined);
+  return !Object.keys(object).every(key => object[key] !== undefined);
 }

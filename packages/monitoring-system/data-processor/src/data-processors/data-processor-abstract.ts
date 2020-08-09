@@ -18,6 +18,7 @@ import {
   FirestoreDocument,
   getPrimaryKey,
   FirestoreCollection as FSCollection,
+  FirestoreRecord,
 } from '../types/firestore-schema';
 import {hasUndefinedValues} from '../types/type-check-util';
 
@@ -58,15 +59,15 @@ export abstract class DataProcessor {
    * Inserts the given document into the specified collection in Firestore, following these rules:
    * - if a document with the same key already exists, updates the fields with those in `doc`
    * - if no document with the same key exists, creates a new document with fields from `doc`
-   * @param doc Firestore document to insert. Cannot contain undefined values.
-   * @param collection collection in which document belongs
-   * @param docKey (optional) the primary key for the given document
+   * @param record the firestore record to update
    * @throws if doc is invalid or doesn't match given collection
    */
   protected async updateFirestore(
-    doc: FirestoreDocument,
-    collection: FSCollection
+    // TODO: add tests for this
+    record: FirestoreRecord
   ): Promise<WriteResult> {
+    const {doc, collection} = record;
+
     if (hasUndefinedValues(doc)) {
       this.logger.error({
         message: 'Firestore doc cannot have undefined values',

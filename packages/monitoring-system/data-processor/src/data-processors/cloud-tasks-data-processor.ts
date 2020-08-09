@@ -105,7 +105,7 @@ export class CloudTasksProcessor extends DataProcessor {
           resolve(botDocuments.map(doc => doc.bot_name));
         })
         .catch(error => {
-          console.trace(error);
+          console.trace(error); // TODO: replace with logger
           reject(error);
         });
     });
@@ -149,9 +149,6 @@ export class CloudTasksProcessor extends DataProcessor {
     queueStatus: QueueStatus
   ): Promise<number> {
     const currentTimestamp = new Date().getTime();
-    const collectionRef = this.firestore.collection(
-      FirestoreCollection.TaskQueueStatus
-    );
     const queueNames = Object.keys(queueStatus);
 
     const writePromises: Promise<WriteResult>[] = queueNames.map(queueName => {
@@ -160,20 +157,14 @@ export class CloudTasksProcessor extends DataProcessor {
         queue_name: queueName,
         in_queue: queueStatus[queueName],
       };
-      const documentKey = getPrimaryKey(
-        documentData,
-        FirestoreCollection.TaskQueueStatus
-      );
-      return collectionRef.doc(documentKey).set(documentData);
+      return this.updateFirestore({
+        doc: documentData,
+        collection: FirestoreCollection.TaskQueueStatus,
+      });
     });
 
-    return new Promise((resolve, reject) => {
-      Promise.all(writePromises)
-        .then(() => resolve(currentTimestamp))
-        .catch(error => {
-          console.trace(error);
-          reject(error);
-        });
+    return new Promise(resolve => {
+      Promise.all(writePromises).then(() => resolve(currentTimestamp));
     });
   }
 

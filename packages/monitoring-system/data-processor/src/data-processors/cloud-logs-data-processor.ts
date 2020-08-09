@@ -34,6 +34,7 @@ import {
   LogEntry,
   TriggerInfoLogEntry,
   GitHubActionLogEntry,
+  TriggerType,
 } from '../types/cloud-logs';
 import {hasUndefinedValues} from '../types/type-check-util';
 
@@ -315,10 +316,11 @@ export class CloudLogsProcessor extends DataProcessor {
     const payload = entry.jsonPayload;
     const triggerDoc: TriggerDocument = {
       execution_id: entry.labels.execution_id,
-      github_event: payload.trigger.payload_hash,
       trigger_type: payload.trigger.trigger_type,
     };
-    this.logger.debug(triggerDoc);
+    if (payload.trigger.payload_hash) {
+      triggerDoc.github_event = payload.trigger.payload_hash;
+    }
     updates.push({doc: triggerDoc, collection: FSCollection.Trigger});
 
     const sourceRepo = payload.trigger.trigger_source_repo;
@@ -417,7 +419,7 @@ export class CloudLogsProcessor extends DataProcessor {
     records: FirestoreRecord[]
   ): ProcessingTask {
     const updates: ProcessingTask[] = records.map(record => {
-      return this.updateFirestore(record.doc, record.collection).then(() => {
+      return this.updateFirestore(record).then(() => {
         return ProcessingResult.SUCCESS;
       });
     });
