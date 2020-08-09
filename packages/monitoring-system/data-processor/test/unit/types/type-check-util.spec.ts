@@ -16,7 +16,49 @@ import {describe, it} from 'mocha';
 import assert from 'assert';
 import {hasUndefinedValues} from '../../../src/types/type-check-util';
 
+// TODO: implement these
+
 describe('type-check-util', () => {
+  describe('isObject', () => {
+    it('returns true for a valid object');
+    it('returns false for an invalid object');
+  });
+
+  describe('isString', () => {
+    it('returns true for a valid string');
+    it('returns false for an invalid string');
+  });
+
+  describe('hasStringProperties', () => {
+    it('returns true if object has all the string properties');
+    it('returns true for empty properties');
+    it(
+      'returns false if object has all the properties but some are not strings'
+    );
+    it('returns false if object has some of the the string properties');
+    it('returns false if object has none of the the string properties');
+    it('returns false for an empty object but non-empty properties');
+  });
+
+  describe('hasObjectProperties', () => {
+    it('returns true if object has all the object properties');
+    it('returns true for empty properties');
+    it(
+      'returns false if object has all the properties but some are not objects'
+    );
+    it('returns false if object has some of the the object properties');
+    it('returns false if object has none of the the object properties');
+    it('returns false for an empty object but non-empty properties');
+  });
+
+  describe('hasProperties', () => {
+    it('returns true if object has all the properties');
+    it('returns true for empty properties');
+    it('returns false if object has some of the the properties');
+    it('returns false if object has none of the the properties');
+    it('returns false for an empty object but non-empty properties');
+  });
+
   describe('hasUndefinedValues', () => {
     it('should return false for object with no undefined values', () => {
       const testObject = {

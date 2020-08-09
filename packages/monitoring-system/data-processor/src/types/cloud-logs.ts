@@ -29,7 +29,7 @@ const logger = pino({
   messageKey: 'message',
   timestamp: false,
   level: 'trace',
-});
+}); // TODO: use centralized logger
 
 /**
  * Categories of incoming log messages
@@ -238,7 +238,7 @@ export function isTriggerInfoPayload(
 
   const trigger = payload.trigger;
   if (!isObject(trigger)) {
-    logger.debug('"trigger" is not a valid object');
+    logger.debug('"trigger" is not defined or is not a valid object');
     return false;
   }
 

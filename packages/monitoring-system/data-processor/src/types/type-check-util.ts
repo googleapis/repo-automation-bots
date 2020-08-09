@@ -13,8 +13,6 @@
 // limitations under the License.
 //
 
-// TODO: Write tests for these
-
 /**
  * Returns true if the given paramter has type 'object'
  * @param toCheck object to check
@@ -36,67 +34,67 @@ export function isString(toCheck: any): toCheck is string {
 /**
  * Returns true if for every property in 'properties' object has a key with
  * that name and the value is of type string.
- * @param object object to check
+ * @param toCheck object to check
  * @param properties properties to assert
  */
 export function hasStringProperties(
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  object: {[key: string]: any},
+  toCheck: {[key: string]: any},
   properties: string[]
 ): boolean {
-  return hasPropertiesOfType(object, properties, 'string');
+  return hasPropertiesOfType(toCheck, properties, 'string');
 }
 
 /**
  * Returns true if for every property in 'properties' object has a key with
  * that name and the value is of type object.
- * @param object object to check
+ * @param toCheck object to check
  * @param properties properties to assert
  */
 export function hasObjectProperties(
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  object: {[key: string]: any},
+  toCheck: {[key: string]: any},
   properties: string[]
 ): boolean {
-  return hasPropertiesOfType(object, properties, 'object');
+  return hasPropertiesOfType(toCheck, properties, 'object');
 }
 
 /**
  * Returns true if for every property in 'properties' object has a key with
  * that name and the value is of type 'type'.
- * @param object object to check
+ * @param toCheck object to check
  * @param properties properties to assert
  * @param type expected value type
  */
 export function hasPropertiesOfType(
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  object: {[key: string]: any},
+  toCheck: {[key: string]: any},
   properties: string[],
   type: string
 ): boolean {
   return properties.every(prop => {
-    return object[prop] && typeof object[prop] === type;
+    return toCheck[prop] && typeof toCheck[prop] === type;
   });
 }
 
 /**
  * Returns true if for every property in 'properties' object
  * has a key with that name
- * @param object object to check
+ * @param toCheck object to check
  * @param properties properties to assert
  */
 export function hasProperties(
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  object: {[key: string]: any},
+  toCheck: {[key: string]: any},
   properties: string[]
 ): boolean {
-  return properties.every(prop => object[prop]);
+  return properties.every(prop => toCheck[prop]);
 }
 
 /**
  * Returns true if any value of the object is undefined
- * @param object object to check
+ * @param toCheck object to check
  */
-export function hasUndefinedValues(object: {[key: string]: any}): boolean {
-  return !Object.keys(object).every(key => object[key] !== undefined);
+export function hasUndefinedValues(toCheck: {[key: string]: any}): boolean {
+  return !Object.keys(toCheck).every(key => toCheck[key] !== undefined);
 }
