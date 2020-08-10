@@ -21,7 +21,6 @@ export interface CloudLogsProcessorOptions extends ProcessorOptions {
    */
   subscription: Subscription;
 
-
   /**
    * The time (in seconds) for which the processor should listen
    * for new messages per task run.
@@ -37,7 +36,6 @@ export interface CloudLogsProcessorOptions extends ProcessorOptions {
 export class CloudLogsProcessor extends DataProcessor {
   private subscription: Subscription;
   private listenLimit: number;
-
 
   /**
    * Create a Cloud Logs processor instance
