@@ -71,7 +71,7 @@ export const doesSloApply = async function doesSloApply(
 
   if (!isSubSet && githubLabels) {
     logger.info(`
-    Skipping issue ${number} for rule ${sloString} \n as it does not apply to gitHubLabels`);
+    Skipping issue ${number} for rule ${sloString} \n as it does not have a label from gitHubLabels`);
     return false;
   }
 
@@ -80,13 +80,13 @@ export const doesSloApply = async function doesSloApply(
     slo.appliesTo.excludedGitHubLabels
   );
 
-  const isElementExist = excludedGitHubLabels?.some((label: string) => {
-    issueLabels?.includes(label);
-  });
+  const isElementExist = excludedGitHubLabels?.some((label: string) =>
+    issueLabels?.includes(label)
+  );
 
   if (isElementExist && excludedGitHubLabels) {
     logger.info(
-      `Skipping issue ${number} for rule ${sloString} \n as it does not apply to excludedGitHubLabels`
+      `Skipping issue ${number} for rule ${sloString} \n as it has a label from excludedGitHubLabels`
     );
     return false;
   }
