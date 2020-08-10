@@ -13,6 +13,8 @@
 // limitations under the License.
 //
 
+import {hasProperties, isObject} from './type-check-util';
+
 /**
  * Placeholder value for unknown fields
  */
@@ -23,7 +25,7 @@ export const UNKNOWN_FIRESTORE_VALUE = 'Unknown';
  */
 export enum OwnerType {
   /* Repository is owned by an organization */
-  ORG = 'Org',
+  ORG = 'Organization',
   /* Repository is owned by a user */
   USER = 'User',
   /* Repository ownership type is unknown */
@@ -142,7 +144,7 @@ export interface GitHubRepositoryDocument {
   /* The name of the user/org that owns the repository */
   owner_name: string;
   /* The account type of the owner. See OwnerType */
-  owner_type: OwnerType;
+  owner_type?: OwnerType;
 }
 
 /**
@@ -194,7 +196,23 @@ export interface GitHubObjectDocument {
   /* References a GitHubRepositoryDocument */
   repository: string;
   /* The ID associated with the object */
-  object_id: number;
+  object_id: number | string;
+}
+
+/**
+ * Enum constants for Firestore Collection keys
+ */
+export enum FirestoreCollection {
+  Bot = 'Bot',
+  BotExecution = 'Bot_Execution',
+  TaskQueueStatus = 'Task_Queue_Status',
+  Error = 'Error',
+  Trigger = 'Trigger',
+  Action = 'Action',
+  ActionType = 'Action_Type',
+  GitHubEvent = 'GitHub_Event',
+  GitHubRepository = 'GitHub_Repository',
+  GitHubObject = 'GitHub_Object',
 }
 
 /**
@@ -233,14 +251,68 @@ export interface FirestoreSchema {
   };
 }
 
-export function getRepositoryPrimaryKey(doc: GitHubRepositoryDocument): string {
-  if (
-    doc.repo_name &&
-    doc.owner_name &&
-    doc.owner_type &&
-    doc.owner_type !== OwnerType.UNKNOWN
-  ) {
-    return `${doc.repo_name}_${doc.owner_name}_${doc.owner_type}`;
+export type FirestoreDocument =
+  | BotDocument
+  | BotExecutionDocument
+  | TaskQueueStatusDocument
+  | ErrorDocument
+  | TriggerDocument
+  | ActionDocument
+  | ActionTypeDocument
+  | GitHubEventDocument
+  | GitHubRepositoryDocument
+  | GitHubObjectDocument;
+
+export type FirestoreRecord = {
+  doc: FirestoreDocument;
+  collection: FirestoreCollection;
+};
+
+/**
+ * Properties of a document in collectionName that form the primary key (in order)
+ * eg. ['propA', 'propB'] means primary key = `${doc.propA}_${doc.propB}` where
+ * doc is a document in collectionName
+ */
+const KEY_PROPERTIES: {
+  [collection in FirestoreCollection]: string[];
+} = {
+  Bot: ['bot_name'],
+  Bot_Execution: ['execution_id'],
+  Task_Queue_Status: ['queue_name', 'timestamp'],
+  Error: ['execution_id', 'timestamp'],
+  Trigger: ['execution_id'],
+  Action: ['execution_id', 'action_type', 'timestamp'],
+  Action_Type: ['name'],
+  GitHub_Event: ['payload_hash'],
+  GitHub_Repository: ['repo_name', 'owner_name'],
+  GitHub_Object: ['object_type', 'repository', 'object_id'],
+};
+
+/**
+ * Returns the primary key for the given document belonging to the
+ * given collection name.
+ * @param doc document to generate primary key for
+ * @param collectionName the name of the collection for this document
+ * @throws if the collectionName is invalid or the doc does not match
+ * the property requirements for the given collection
+ */
+export function getPrimaryKey(
+  doc: {},
+  collectionName: FirestoreCollection
+): string {
+  const keyProperties = KEY_PROPERTIES[collectionName];
+
+  if (!keyProperties) {
+    throw new Error(
+      `${collectionName} has no associated primary key properties`
+    );
   }
-  return UNKNOWN_FIRESTORE_VALUE;
+
+  if (!isObject(doc) || !hasProperties(doc, keyProperties)) {
+    throw new Error(
+      `doc does not match the requirements for ${collectionName}: ${doc}`
+    );
+  }
+
+  return keyProperties.map(key => doc[key]).join('_');
 }
