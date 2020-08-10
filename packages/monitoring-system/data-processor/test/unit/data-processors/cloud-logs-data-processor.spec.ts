@@ -716,14 +716,20 @@ describe('Cloud Logs Processor', () => {
         });
       });
 
+      const nonMetric1 = loadFixture(['cloud-logs', 'non-metric.json']);
+      const nonMetric2 = loadFixture(['cloud-logs', 'no-severity.json']);
+      const nonMetric3 = loadFixture(['cloud-logs', 'no-severity-2.json']);
+
       it('ignores log statements with no metrics information', () => {
         const copyOfBlankData = JSON.parse(
           JSON.stringify(mockFirestore.getMockData())
         );
-        return startAndSendMessage(
-          loadFixture(['cloud-logs', 'non-metric.json'])
-        ).then(messageId => {
-          assert(mockSubscription.wasAcked(messageId));
+        return startAndSendMultipleMessages([
+          nonMetric1,
+          nonMetric2,
+          nonMetric3,
+        ]).then(messageIds => {
+          messageIds.forEach(id => assert(mockSubscription.wasAcked(id)));
           assert.deepEqual(
             mockFirestore.getMockData(),
             copyOfBlankData,
