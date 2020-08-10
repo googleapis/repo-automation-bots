@@ -14,11 +14,7 @@
 //
 import {describe, it} from 'mocha';
 import assert from 'assert';
-import {
-  getPrimaryKey,
-  FirestoreCollection,
-} from '../../src/firestore-schema';
-
+import {getPrimaryKey, FirestoreCollection} from '../../src/firestore-schema';
 
 describe('firestore-schema', () => {
   describe('getPrimaryKey', () => {
@@ -97,7 +93,6 @@ describe('firestore-schema', () => {
         'baz-object_some-repo_3'
       );
     });
-
 
     it('throws an error for mismatched document and collection', () => {
       const document = {payload_hash: 'hash3456'}; // GitHub Event doc

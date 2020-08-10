@@ -23,7 +23,6 @@ import {
   hasProperties,
 } from '../../src/type-check-util';
 
-
 describe('type-check-util', () => {
   describe('isObject', () => {
     it('returns true for a valid object', () => {
@@ -34,7 +33,6 @@ describe('type-check-util', () => {
     });
   });
 
-
   describe('isString', () => {
     it('returns true for a valid string', () => {
       assert(isString('bar'));
@@ -43,7 +41,6 @@ describe('type-check-util', () => {
       assert(!isString({foo: 'bar'}));
     });
   });
-
 
   describe('hasStringProperties', () => {
     it('returns true if object has all the string properties', () => {
@@ -91,7 +88,6 @@ describe('type-check-util', () => {
     });
   });
 
-
   describe('hasObjectProperties', () => {
     it('returns true if object has all the object properties', () => {
       const testObject = {
@@ -138,7 +134,6 @@ describe('type-check-util', () => {
     });
   });
 
-
   describe('hasProperties', () => {
     it('returns true if object has all the properties', () => {
       const testObject = {foo: 1, bar: 2, baz: false};
@@ -162,7 +157,6 @@ describe('type-check-util', () => {
       assert(!hasProperties(testObject, ['foo', 'bar', 'bear']));
     });
   });
-
 
   describe('hasUndefinedValues', () => {
     it('should return false for object with no undefined values', () => {
