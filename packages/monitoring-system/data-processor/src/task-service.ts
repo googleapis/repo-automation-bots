@@ -14,7 +14,7 @@
 //
 import express from 'express';
 import {Factory, DataProcessorFactory} from './data-processor-factory';
-import { logger } from './util/logger';
+import {logger} from './util/logger';
 
 /**
  * Data Processing Tasks

@@ -30,7 +30,7 @@ import {GitHubProcessor} from './data-processors/github-data-processor';
 import {ConfigUtil, Config} from './config-util';
 import {Firestore} from '@google-cloud/firestore';
 import {PubSub} from '@google-cloud/pubsub';
-import { logger } from './util/logger';
+import {logger} from './util/logger';
 
 export interface Factory {
   getDataProcessor(task: Task): DataProcessor;
