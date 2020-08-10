@@ -19,15 +19,18 @@ import crypto from 'crypto';
 import {
   GitHubRepositoryDocument,
   OwnerType,
-  getRepositoryPrimaryKey,
+  getPrimaryKey,
   GitHubEventDocument,
   UNKNOWN_FIRESTORE_VALUE,
+  FirestoreCollection,
 } from '../firestore-schema';
 const {ORG, USER, UNKNOWN} = OwnerType;
+
 
 export interface GitHubProcessorOptions extends ProcessorOptions {
   octokit?: Octokit;
 }
+
 
 interface GitHubEventResponse {
   type: string;
@@ -43,16 +46,19 @@ interface GitHubEventResponse {
   user?: {};
 }
 
+
 /**
  * Collects and processes Events data from GitHub
  */
 export class GitHubProcessor extends DataProcessor {
   private octokit: Octokit;
 
+
   constructor(options?: GitHubProcessorOptions) {
     super(options);
     this.octokit = options?.octokit || new Octokit();
   }
+
 
   /**
    * Collect and process GitHub Events data
@@ -81,13 +87,14 @@ export class GitHubProcessor extends DataProcessor {
     });
   }
 
+
   /**
    * List the GitHub repositories that have triggered
    * bot executions in the past
    */
   private async listRepositories(): Promise<GitHubRepositoryDocument[]> {
     return this.firestore
-      .collection('GitHub_Repository')
+      .collection(FirestoreCollection.GitHubRepository)
       .get()
       .then(repositoryCollection => {
         const repositoryDocs = repositoryCollection.docs;
@@ -96,6 +103,7 @@ export class GitHubProcessor extends DataProcessor {
         );
       });
   }
+
 
   /**
    * Get all the publicly visible Events on the given repository
@@ -137,6 +145,7 @@ export class GitHubProcessor extends DataProcessor {
     );
   }
 
+
   /**
    * Converts GitHub's list event response to a GitHubEventDocument
    * @param eventResponse list event response from GitHub
@@ -149,6 +158,7 @@ export class GitHubProcessor extends DataProcessor {
       throw new Error(`Invalid event response from GitHub: ${eventResponse}`);
     }
 
+
     /**
      * We include a payload hash for GitHub webhook triggers
      * to be able to map the webhook to the GitHub Event
@@ -159,6 +169,7 @@ export class GitHubProcessor extends DataProcessor {
       .update(JSON.stringify(eventResponse.payload))
       .digest('hex');
 
+
     const [ownerName, repoName] = eventResponse.repo?.name?.split('/');
     const ownerType: OwnerType = eventResponse.org
       ? ORG
@@ -167,18 +178,23 @@ export class GitHubProcessor extends DataProcessor {
       : UNKNOWN;
     const unixTimestamp = new Date(eventResponse.created_at).getTime();
 
+
     return {
       payload_hash: payloadHash,
-      repository: getRepositoryPrimaryKey({
-        repo_name: repoName,
-        owner_name: ownerName,
-        owner_type: ownerType,
-      }),
+      repository: getPrimaryKey(
+        {
+          repo_name: repoName,
+          owner_name: ownerName,
+          owner_type: ownerType,
+        },
+        FirestoreCollection.GitHubRepository
+      ),
       event_type: eventResponse.type || UNKNOWN_FIRESTORE_VALUE,
       timestamp: unixTimestamp,
       actor: eventResponse.actor?.login || UNKNOWN_FIRESTORE_VALUE,
     };
   }
+
 
   /**
    * Store the given events data into Firestore. Existing events with the same payload
@@ -188,9 +204,12 @@ export class GitHubProcessor extends DataProcessor {
   private async storeEventsData(
     events: GitHubEventDocument[]
   ): Promise<WriteResult[]> {
-    const collection = this.firestore.collection('GitHub_Event');
-    return Promise.all(
-      events.map(event => collection.doc(event.payload_hash).set(event))
+    const updates = events.map(event =>
+      this.updateFirestore({
+        doc: event,
+        collection: FirestoreCollection.GitHubEvent,
+      })
     );
+    return Promise.all(updates);
   }
 }

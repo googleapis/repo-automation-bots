@@ -13,22 +13,28 @@
 // limitations under the License.
 //
 
+
+import {hasProperties, isObject} from './type-check-util';
+
+
 /**
  * Placeholder value for unknown fields
  */
 export const UNKNOWN_FIRESTORE_VALUE = 'Unknown';
+
 
 /**
  * GitHub repository owner type
  */
 export enum OwnerType {
   /* Repository is owned by an organization */
-  ORG = 'Org',
+  ORG = 'Organization',
   /* Repository is owned by a user */
   USER = 'User',
   /* Repository ownership type is unknown */
   UNKNOWN = 'Unknown',
 }
+
 
 /**
  * A document in the Firestore Bot collection
@@ -40,6 +46,7 @@ export interface BotDocument {
   /* The name of the bot */
   bot_name: string;
 }
+
 
 /**
  * A document in the Firestore Bot_Execution collection
@@ -61,6 +68,7 @@ export interface BotExecutionDocument {
   logs_url?: string;
 }
 
+
 /**
  * A document in the Firestore Task_Queue_Status collection
  * Represents the status of a bot's task queue at a given timestamp
@@ -75,6 +83,7 @@ export interface TaskQueueStatusDocument {
   /* Number of tasks in queue at given timestamp */
   in_queue?: number;
 }
+
 
 /**
  * A document in the Firestore Error collection
@@ -92,6 +101,7 @@ export interface ErrorDocument {
   error_msg?: string;
 }
 
+
 /**
  * A document in the Firestore Trigger collection
  * Represents a bot execution trigger
@@ -107,6 +117,7 @@ export interface TriggerDocument {
   /* The type of trigger that started the execution */
   trigger_type?: string;
 }
+
 
 /**
  * A document in the Firestore Action collection
@@ -130,6 +141,7 @@ export interface ActionDocument {
   value?: string;
 }
 
+
 /**
  * A document in the Firestore GitHub_Repository collection
  * Represents a GitHub Repository
@@ -142,8 +154,9 @@ export interface GitHubRepositoryDocument {
   /* The name of the user/org that owns the repository */
   owner_name: string;
   /* The account type of the owner. See OwnerType */
-  owner_type: OwnerType;
+  owner_type?: OwnerType;
 }
+
 
 /**
  * A document in the Firestore Action_Type collection
@@ -160,6 +173,7 @@ export interface ActionTypeDocument {
   /* The number of dev hours that are saved by type of bot action */
   dev_hours_saved?: number;
 }
+
 
 /**
  * A document in the Firestore GitHub_Event collection
@@ -181,6 +195,7 @@ export interface GitHubEventDocument {
   actor?: string;
 }
 
+
 /**
  * A document in the Firestore GitHub_Object collection
  * Represents a GitHub Object (eg. a GitHub Issue)
@@ -194,8 +209,26 @@ export interface GitHubObjectDocument {
   /* References a GitHubRepositoryDocument */
   repository: string;
   /* The ID associated with the object */
-  object_id: number;
+  object_id: number | string;
 }
+
+
+/**
+ * Enum constants for Firestore Collection keys
+ */
+export enum FirestoreCollection {
+  Bot = 'Bot',
+  BotExecution = 'Bot_Execution',
+  TaskQueueStatus = 'Task_Queue_Status',
+  Error = 'Error',
+  Trigger = 'Trigger',
+  Action = 'Action',
+  ActionType = 'Action_Type',
+  GitHubEvent = 'GitHub_Event',
+  GitHubRepository = 'GitHub_Repository',
+  GitHubObject = 'GitHub_Object',
+}
+
 
 /**
  * The schema for the Data Processor Firestore
@@ -233,14 +266,75 @@ export interface FirestoreSchema {
   };
 }
 
-export function getRepositoryPrimaryKey(doc: GitHubRepositoryDocument): string {
-  if (
-    doc.repo_name &&
-    doc.owner_name &&
-    doc.owner_type &&
-    doc.owner_type !== OwnerType.UNKNOWN
-  ) {
-    return `${doc.repo_name}_${doc.owner_name}_${doc.owner_type}`;
+
+export type FirestoreDocument =
+  | BotDocument
+  | BotExecutionDocument
+  | TaskQueueStatusDocument
+  | ErrorDocument
+  | TriggerDocument
+  | ActionDocument
+  | ActionTypeDocument
+  | GitHubEventDocument
+  | GitHubRepositoryDocument
+  | GitHubObjectDocument;
+
+
+export type FirestoreRecord = {
+  doc: FirestoreDocument;
+  collection: FirestoreCollection;
+};
+
+
+/**
+ * Properties of a document in collectionName that form the primary key (in order)
+ * eg. ['propA', 'propB'] means primary key = `${doc.propA}_${doc.propB}` where
+ * doc is a document in collectionName
+ */
+const KEY_PROPERTIES: {
+  [collection in FirestoreCollection]: string[];
+} = {
+  Bot: ['bot_name'],
+  Bot_Execution: ['execution_id'],
+  Task_Queue_Status: ['queue_name', 'timestamp'],
+  Error: ['execution_id', 'timestamp'],
+  Trigger: ['execution_id'],
+  Action: ['execution_id', 'action_type', 'timestamp'],
+  Action_Type: ['name'],
+  GitHub_Event: ['payload_hash'],
+  GitHub_Repository: ['repo_name', 'owner_name'],
+  GitHub_Object: ['object_type', 'repository', 'object_id'],
+};
+
+
+/**
+ * Returns the primary key for the given document belonging to the
+ * given collection name.
+ * @param doc document to generate primary key for
+ * @param collectionName the name of the collection for this document
+ * @throws if the collectionName is invalid or the doc does not match
+ * the property requirements for the given collection
+ */
+export function getPrimaryKey(
+  doc: {},
+  collectionName: FirestoreCollection
+): string {
+  const keyProperties = KEY_PROPERTIES[collectionName];
+
+
+  if (!keyProperties) {
+    throw new Error(
+      `${collectionName} has no associated primary key properties`
+    );
   }
-  return UNKNOWN_FIRESTORE_VALUE;
+
+
+  if (!isObject(doc) || !hasProperties(doc, keyProperties)) {
+    throw new Error(
+      `doc does not match the requirements for ${collectionName}: ${doc}`
+    );
+  }
+
+
+  return keyProperties.map(key => doc[key]).join('_');
 }

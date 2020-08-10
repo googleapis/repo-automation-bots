@@ -1,7 +1,7 @@
 {
   "preTestFirestoreData": {
     "GitHub_Repository": {
-      "repo-automation-bots_googleapis_Org": {
+      "repo-automation-bots_googleapis": {
         "repo_name": "repo-automation-bots",
         "owner_name": "googleapis",
         "owner_type": "Org"
@@ -234,7 +234,7 @@
   "githubEventsObjects": [
     {
       "payload_hash": "321819b7d55c424881dad753e7aa753d",
-      "repository": "repo-automation-bots_googleapis_Org",
+      "repository": "repo-automation-bots_googleapis",
       "event_type": "IssueCommentEvent",
       "timestamp": 1595948777000,
       "actor": "Unknown"
@@ -242,7 +242,7 @@
   ],
   "postTestFirestoreData": {
     "GitHub_Repository": {
-      "repo-automation-bots_googleapis_Org": {
+      "repo-automation-bots_googleapis": {
         "repo_name": "repo-automation-bots",
         "owner_name": "googleapis",
         "owner_type": "Org"
@@ -251,7 +251,7 @@
     "GitHub_Event": {
       "321819b7d55c424881dad753e7aa753d": {
         "payload_hash": "321819b7d55c424881dad753e7aa753d",
-        "repository": "repo-automation-bots_googleapis_Org",
+        "repository": "repo-automation-bots_googleapis",
         "event_type": "IssueCommentEvent",
         "timestamp": 1595948777000,
         "actor": "Unknown"
