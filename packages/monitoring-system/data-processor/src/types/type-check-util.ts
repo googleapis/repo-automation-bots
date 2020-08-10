@@ -88,7 +88,7 @@ export function hasProperties(
   toCheck: {[key: string]: any},
   properties: string[]
 ): boolean {
-  return properties.every(prop => toCheck[prop]);
+  return properties.every(prop => toCheck[prop] !== undefined);
 }
 
 /**

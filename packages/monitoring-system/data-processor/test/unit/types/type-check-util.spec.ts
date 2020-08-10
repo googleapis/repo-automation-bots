@@ -14,49 +14,150 @@
 //
 import {describe, it} from 'mocha';
 import assert from 'assert';
-import {hasUndefinedValues} from '../../../src/types/type-check-util';
+import {
+  hasUndefinedValues,
+  isObject,
+  isString,
+  hasStringProperties,
+  hasObjectProperties,
+  hasProperties,
+} from '../../../src/types/type-check-util';
 
 // TODO: implement these
 
 describe('type-check-util', () => {
   describe('isObject', () => {
-    it('returns true for a valid object');
-    it('returns false for an invalid object');
+    it('returns true for a valid object', () => {
+      assert(isObject({foo: 'bar'}));
+    });
+    it('returns false for an invalid object', () => {
+      assert(!isObject('bar'));
+    });
   });
 
   describe('isString', () => {
-    it('returns true for a valid string');
-    it('returns false for an invalid string');
+    it('returns true for a valid string', () => {
+      assert(isString('bar'));
+    });
+    it('returns false for an invalid string', () => {
+      assert(!isString({foo: 'bar'}));
+    });
   });
 
   describe('hasStringProperties', () => {
-    it('returns true if object has all the string properties');
-    it('returns true for empty properties');
-    it(
-      'returns false if object has all the properties but some are not strings'
-    );
-    it('returns false if object has some of the the string properties');
-    it('returns false if object has none of the the string properties');
-    it('returns false for an empty object but non-empty properties');
+    it('returns true if object has all the string properties', () => {
+      const testObject = {
+        foo: 1,
+        bar: 'abc',
+        baz: 'xyz',
+      };
+      assert(hasStringProperties(testObject, ['bar', 'baz']));
+    });
+    it('returns true for empty properties', () => {
+      const testObject = {
+        foo: 1,
+        bar: 'abc',
+        baz: 'xyz',
+      };
+      assert(hasStringProperties(testObject, []));
+    });
+    it('returns false if object has all properties but some are not strings', () => {
+      const testObject = {
+        foo: 1,
+        bar: 'abc',
+        baz: 'xyz',
+      };
+      assert(!hasStringProperties(testObject, ['bar', 'baz', 'foo']));
+    });
+    it('returns false if object has some of the the string properties', () => {
+      const testObject = {
+        foo: 1,
+        bar: 'abc',
+        baz: 'xyz',
+      };
+      assert(!hasStringProperties(testObject, ['bar', 'baz', 'far']));
+    });
+    it('returns false if object has none of the the string properties', () => {
+      const testObject = {
+        foo: 1,
+        bar: 'abc',
+        baz: 'xyz',
+      };
+      assert(!hasStringProperties(testObject, ['abc', 'xyz']));
+    });
+    it('returns false for an empty object but non-empty properties', () => {
+      assert(!hasStringProperties({}, ['bar', 'baz']));
+    });
   });
 
   describe('hasObjectProperties', () => {
-    it('returns true if object has all the object properties');
-    it('returns true for empty properties');
-    it(
-      'returns false if object has all the properties but some are not objects'
-    );
-    it('returns false if object has some of the the object properties');
-    it('returns false if object has none of the the object properties');
-    it('returns false for an empty object but non-empty properties');
+    it('returns true if object has all the object properties', () => {
+      const testObject = {
+        foo: 1,
+        bar: {some: 'object'},
+        baz: {another: 'object'},
+      };
+      assert(hasObjectProperties(testObject, ['bar', 'baz']));
+    });
+    it('returns true for empty properties', () => {
+      const testObject = {
+        foo: 1,
+        bar: {some: 'object'},
+        baz: {another: 'object'},
+      };
+      assert(hasObjectProperties(testObject, []));
+    });
+    it('returns false if object has all properties but some are not objects', () => {
+      const testObject = {
+        foo: 1,
+        bar: {some: 'object'},
+        baz: {another: 'object'},
+      };
+      assert(!hasObjectProperties(testObject, ['bar', 'baz', 'foo']));
+    });
+    it('returns false if object has some of the the object properties', () => {
+      const testObject = {
+        foo: 1,
+        bar: {some: 'object'},
+        baz: {another: 'object'},
+      };
+      assert(!hasObjectProperties(testObject, ['bar', 'baz', 'far']));
+    });
+    it('returns false if object has none of the the object properties', () => {
+      const testObject = {
+        foo: 1,
+        bar: {some: 'object'},
+        baz: {another: 'object'},
+      };
+      assert(!hasObjectProperties(testObject, ['abc', 'xyz']));
+    });
+    it('returns false for an empty object but non-empty properties', () => {
+      assert(!hasObjectProperties({}, ['bar', 'baz', 'foo']));
+    });
   });
 
   describe('hasProperties', () => {
-    it('returns true if object has all the properties');
-    it('returns true for empty properties');
-    it('returns false if object has some of the the properties');
-    it('returns false if object has none of the the properties');
-    it('returns false for an empty object but non-empty properties');
+    it('returns true if object has all the properties', () => {
+      const testObject = {foo: 1, bar: 2, baz: false};
+      assert(hasProperties(testObject, ['foo', 'bar']));
+      assert(hasProperties(testObject, ['foo', 'bar', 'baz']));
+    });
+    it('returns true for empty properties', () => {
+      const testObject = {foo: 1, bar: 2, baz: false};
+      assert(hasProperties(testObject, []));
+    });
+    it('returns false if object has some of the the properties', () => {
+      const testObject = {foo: 1, bar: 2, baz: false};
+      assert(!hasProperties(testObject, ['foo', 'bar', 'bear']));
+    });
+    it('returns false if object has none of the the properties', () => {
+      const testObject = {foo: 1, bar: 2, baz: false};
+      assert(!hasProperties(testObject, ['abc', 'def', 'ghi']));
+    });
+    it('returns false for an empty object but non-empty properties', () => {
+      const testObject = {};
+      assert(!hasProperties(testObject, ['foo', 'bar', 'bear']));
+    });
   });
 
   describe('hasUndefinedValues', () => {
