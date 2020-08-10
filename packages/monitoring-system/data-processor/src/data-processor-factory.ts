@@ -27,7 +27,7 @@ import {
   CloudTasksProcessorOptions,
 } from './data-processors/cloud-tasks-data-processor';
 import {GitHubProcessor} from './data-processors/github-data-processor';
-import {ConfigUtil, Config} from './config-util';
+import {ConfigUtil, Config} from './util/config-util';
 import {Firestore} from '@google-cloud/firestore';
 import {PubSub} from '@google-cloud/pubsub';
 

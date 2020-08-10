@@ -15,12 +15,12 @@
 import {Firestore, WriteResult} from '@google-cloud/firestore';
 import pino from 'pino';
 import {
-  FirestoreDocument,
   getPrimaryKey,
   FirestoreCollection as FSCollection,
   FirestoreRecord,
 } from '../types/firestore-schema';
 import {hasUndefinedValues} from '../types/type-check-util';
+import { logger } from '../util/logger';
 
 export interface ProcessorOptions {
   firestore?: Firestore;
@@ -33,7 +33,7 @@ export abstract class DataProcessor {
 
   constructor(options?: ProcessorOptions) {
     this.firestore = options?.firestore || new Firestore();
-    this.logger = options?.logger || this.initLogger();
+    this.logger = options?.logger || logger;
   }
 
   /**
@@ -41,19 +41,6 @@ export abstract class DataProcessor {
    * @throws if there is an error while processing data source
    */
   public abstract async collectAndProcess(): Promise<void>;
-
-  private initLogger(): pino.Logger {
-    const DEFAULT_LOG_LEVEL = 'trace';
-    const defaultOptions: pino.LoggerOptions = {
-      base: null,
-      messageKey: 'message',
-      timestamp: false,
-      level: DEFAULT_LOG_LEVEL,
-    };
-
-    const dest = pino.destination({sync: true});
-    return pino(defaultOptions, dest);
-  }
 
   /**
    * Inserts the given document into the specified collection in Firestore, following these rules:

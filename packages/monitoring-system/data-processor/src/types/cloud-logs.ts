@@ -21,15 +21,8 @@ import {
   hasStringProperties,
   hasObjectProperties,
 } from './type-check-util';
-import pino from 'pino';
 import {OwnerType} from './firestore-schema';
-
-const logger = pino({
-  base: null,
-  messageKey: 'message',
-  timestamp: false,
-  level: 'trace',
-}); // TODO: use centralized logger
+import { logger } from '../util/logger';
 
 /**
  * Categories of incoming log messages
