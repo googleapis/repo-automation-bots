@@ -757,7 +757,7 @@ describe('Cloud Logs Processor', () => {
         'execution-start.json',
       ]);
 
-      it('calls nack() on message if there is an error in processing throws error', () => {
+      it('calls nack() on message for processing error, and rethrows error', () => {
         mockFirestore.throwOnCollection();
         const processingTask = processor.collectAndProcess();
         const messageId = mockSubscription.sendMockMessage(
