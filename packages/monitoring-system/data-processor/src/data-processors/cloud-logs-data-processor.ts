@@ -21,22 +21,18 @@ import {
   TriggerDocument,
   GitHubRepositoryDocument,
   OwnerType,
-  FirestoreDocument,
   ActionDocument,
   GitHubObjectDocument,
   ErrorDocument,
   FirestoreRecord,
 } from '../types/firestore-schema';
 import {
-  instanceOfLogEntry,
   parseLogEntryType,
   LogEntryType,
   LogEntry,
   TriggerInfoLogEntry,
   GitHubActionLogEntry,
-  TriggerType,
 } from '../types/cloud-logs';
-import {hasUndefinedValues} from '../types/type-check-util';
 
 export interface CloudLogsProcessorOptions extends ProcessorOptions {
   /**
@@ -136,23 +132,17 @@ export class CloudLogsProcessor extends DataProcessor {
    */
   private async processMessage(pubSubMessage: Message) {
     this.logger.debug(`Processing message ${pubSubMessage.id}`);
-    const logEntry: object = this.parsePubSubData(pubSubMessage);
+    const pubSubData = this.parsePubSubData(pubSubMessage);
+    const logEntryType = parseLogEntryType(pubSubData);
 
-    if (!instanceOfLogEntry(logEntry)) {
-      this.logError('Detected malformed log entry', pubSubMessage);
-      return pubSubMessage.ack();
-    }
-
-    const logEntryType = parseLogEntryType(logEntry);
-
-    if (logEntryType === LogEntryType.NON_METRIC) {
-      return pubSubMessage.ack();
-    }
     if (logEntryType === LogEntryType.MALFORMED) {
       this.logError('Detected malformed log entry', pubSubMessage);
       return pubSubMessage.ack();
+    } else if (logEntryType === LogEntryType.NON_METRIC) {
+      return pubSubMessage.ack();
     }
 
+    const logEntry = pubSubData as LogEntry;
     const processingTask = this.processLogEntry(logEntry, logEntryType)
       .then(result => this.ackIfSuccess(result, pubSubMessage))
       .catch(error => {

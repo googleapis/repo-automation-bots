@@ -14,13 +14,9 @@
 //
 import {Firestore, WriteResult} from '@google-cloud/firestore';
 import pino from 'pino';
-import {
-  getPrimaryKey,
-  FirestoreCollection as FSCollection,
-  FirestoreRecord,
-} from '../types/firestore-schema';
+import {getPrimaryKey, FirestoreRecord} from '../types/firestore-schema';
 import {hasUndefinedValues} from '../types/type-check-util';
-import { logger } from '../util/logger';
+import {logger} from '../util/logger';
 
 export interface ProcessorOptions {
   firestore?: Firestore;

@@ -22,7 +22,7 @@ import {
   hasObjectProperties,
 } from './type-check-util';
 import {OwnerType} from './firestore-schema';
-import { logger } from '../util/logger';
+import {logger} from '../util/logger';
 
 /**
  * Categories of incoming log messages
@@ -138,8 +138,11 @@ export interface GitHubActionLogEntry extends LogEntry {
  *
  * @param entry LogEntry to parse
  */
-export function parseLogEntryType(entry: LogEntry): LogEntryType {
+export function parseLogEntryType(entry: object): LogEntryType {
   try {
+    if (!instanceOfLogEntry(entry)) {
+      return LogEntryType.MALFORMED;
+    }
     if (isErrorLog(entry)) {
       return LogEntryType.ERROR;
     }

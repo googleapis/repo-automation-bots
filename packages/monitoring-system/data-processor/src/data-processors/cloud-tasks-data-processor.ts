@@ -19,7 +19,6 @@ import {
   BotDocument,
   TaskQueueStatusDocument,
   FirestoreCollection,
-  getPrimaryKey,
 } from '../types/firestore-schema';
 
 type CloudTasksList = [

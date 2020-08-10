@@ -20,19 +20,19 @@ export const logger = initLogger();
  * Initializes a Pino logger
  */
 function initLogger(): pino.Logger {
-    const DEFAULT_LOG_LEVEL = 'trace';
-    const defaultOptions: pino.LoggerOptions = {
-        formatters: {
-          level: pinoLevelToCloudLoggingSeverity,
-        },
-        base: null,
-        messageKey: 'message',
-        timestamp: false,
-        level: DEFAULT_LOG_LEVEL,
-    };
+  const DEFAULT_LOG_LEVEL = 'trace';
+  const defaultOptions: pino.LoggerOptions = {
+    formatters: {
+      level: pinoLevelToCloudLoggingSeverity,
+    },
+    base: null,
+    messageKey: 'message',
+    timestamp: false,
+    level: DEFAULT_LOG_LEVEL,
+  };
 
-    const dest = pino.destination({ sync: true });
-    return pino(defaultOptions, dest);
+  const dest = pino.destination({sync: true});
+  return pino(defaultOptions, dest);
 }
 
 /**
