@@ -62,6 +62,7 @@ export function blunderbuss(app: Application) {
     'issues.labeled',
     'pull_request.opened',
     'pull_request.reopened',
+    'pull_request.edited',
     'pull_request.labeled',
   ];
   app.on(events, async context => {
@@ -83,6 +84,9 @@ export function blunderbuss(app: Application) {
 
     // If this is a PR, and it's in draft mode, don't assign it
     if (issue.draft === true) {
+      logger.info(
+        `Skipping ${issue.owner}/${issue.repo}#${issue.number} as it's a draft PR`
+      );
       return;
     }
 
