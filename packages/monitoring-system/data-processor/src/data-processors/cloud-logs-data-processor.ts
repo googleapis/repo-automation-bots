@@ -137,7 +137,6 @@ export class CloudLogsProcessor extends DataProcessor {
   private async processMessage(pubSubMessage: Message) {
     this.logger.debug(`Processing message ${pubSubMessage.id}`);
     const logEntry: object = this.parsePubSubData(pubSubMessage);
-    this.logger.debug({messageId: pubSubMessage.id, logEntry: logEntry});
 
     if (!instanceOfLogEntry(logEntry)) {
       this.logError('Detected malformed log entry', pubSubMessage);
@@ -145,10 +144,8 @@ export class CloudLogsProcessor extends DataProcessor {
     }
 
     const logEntryType = parseLogEntryType(logEntry);
-    this.logger.debug(`Message ${pubSubMessage.id} is a ${logEntryType}`);
 
     if (logEntryType === LogEntryType.NON_METRIC) {
-      this.logger.debug('Ignoring non-metric log entry');
       return pubSubMessage.ack();
     }
     if (logEntryType === LogEntryType.MALFORMED) {
@@ -183,10 +180,8 @@ export class CloudLogsProcessor extends DataProcessor {
   ): ProcessingResult {
     if (result === ProcessingResult.SUCCESS) {
       pubSubMessage.ack();
-      this.logger.debug(`${pubSubMessage.id} was acked`);
     } else {
       pubSubMessage.nack();
-      this.logger.debug(`${pubSubMessage.id} was nacked`);
     }
     return result;
   }

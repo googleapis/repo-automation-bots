@@ -10,4 +10,5 @@ task_queue_processor:
 
 cloud_logs_processor:
   pub_sub_subscription: 'projects/repo-automation-bots/subscriptions/data-processor'
-  pub_sub_listen_limit: 300
+  pub_sub_listen_limit: 300  # Cloud Run requests timeout after 900s
+  
