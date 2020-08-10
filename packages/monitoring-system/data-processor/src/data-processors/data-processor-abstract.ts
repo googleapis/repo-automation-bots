@@ -20,7 +20,7 @@ import {logger} from '../util/logger';
 
 export interface ProcessorOptions {
   firestore?: Firestore;
-  logger?: pino.Logger; // TODO: would like to use GCFLogger here but would have to import all of gcf-utils which causes issues with promise-events
+  logger?: pino.Logger; // TODO: swap this for GCFLogger when GCFLogger is separated from gcf-utils
 }
 
 export abstract class DataProcessor {
@@ -46,7 +46,6 @@ export abstract class DataProcessor {
    * @throws if doc is invalid or doesn't match given collection
    */
   protected async updateFirestore(
-    // TODO: add tests for this
     record: FirestoreRecord
   ): Promise<WriteResult> {
     const {doc, collection} = record;

@@ -13,8 +13,6 @@
 // limitations under the License.
 //
 
-// TODO: Write tests for these
-
 import {
   isObject,
   isString,

@@ -82,7 +82,7 @@ export class CloudTasksProcessor extends DataProcessor {
         })
         .then(() => resolve())
         .catch(error => {
-          console.trace(error);
+          this.logger.error(error);
           reject(`Failed to collect and process Cloud Tasks data: ${error}`);
         });
     });
@@ -104,7 +104,7 @@ export class CloudTasksProcessor extends DataProcessor {
           resolve(botDocuments.map(doc => doc.bot_name));
         })
         .catch(error => {
-          console.trace(error); // TODO: replace with logger
+          this.logger.error(error);
           reject(error);
         });
     });
@@ -138,7 +138,7 @@ export class CloudTasksProcessor extends DataProcessor {
           resolve(queueStatus);
         })
         .catch(error => {
-          console.trace(error);
+          this.logger.error(error);
           reject(error);
         });
     });

@@ -23,8 +23,6 @@ import {
   hasProperties,
 } from '../../../src/types/type-check-util';
 
-// TODO: implement these
-
 describe('type-check-util', () => {
   describe('isObject', () => {
     it('returns true for a valid object', () => {
