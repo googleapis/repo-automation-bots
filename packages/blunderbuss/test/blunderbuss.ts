@@ -55,7 +55,10 @@ describe('Blunderbuss', () => {
     probot.load(blunderbuss.blunderbuss);
   });
 
-  afterEach(() => sandbox.restore());
+  afterEach(() => {
+    sandbox.restore();
+    nock.cleanAll();
+  });
 
   describe('issue tests', () => {
     it('assigns opened issues with no assignees', async () => {
@@ -338,6 +341,26 @@ describe('Blunderbuss', () => {
         .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
         .reply(200, {content: config.toString('base64')});
 
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123',
+      });
+      requests.done();
+    });
+
+    it('ignores PR when in draft mode', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_draft'
+      ));
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'valid.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
+        .reply(200, {content: config.toString('base64')});
       await probot.receive({
         name: 'pull_request.opened',
         payload,
