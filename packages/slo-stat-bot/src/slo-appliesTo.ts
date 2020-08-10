@@ -81,9 +81,9 @@ export const doesSloApply = async function doesSloApply(
   );
 
   const isElementExist = excludedGitHubLabels?.some((label: string) =>
-    (issueLabels?.includes(label)) 
+    issueLabels?.includes(label)
   );
-  
+
   if (isElementExist && excludedGitHubLabels) {
     logger.info(
       `Skipping issue ${number} for rule ${sloString} \n as it has a label from excludedGitHubLabels`
