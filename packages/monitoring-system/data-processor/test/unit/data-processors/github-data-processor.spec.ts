@@ -160,7 +160,7 @@ describe('GitHub Data Processor', () => {
     const repository = {
       repo_name: 'repo-automation-bots',
       owner_name: 'googleapis',
-      owner_type: 'Org',
+      owner_type: 'Organization',
     } as GitHubRepositoryDocument;
 
     beforeEach(() => {

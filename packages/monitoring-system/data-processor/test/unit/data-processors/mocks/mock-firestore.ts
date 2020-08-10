@@ -18,6 +18,7 @@ import {
   Settings,
   CollectionReference,
   DocumentData,
+  SetOptions,
 } from '@google-cloud/firestore';
 import assert from 'assert';
 
@@ -81,13 +82,13 @@ export class MockFirestore extends Firestore {
    * @param collection collection in which to add record
    */
   addRecord(record: MockRecord) {
-    let collection = this.mockData[record.collectionName];
+    const collection = this.mockData[record.collectionName];
     if (!collection) {
       throw new Error(
         `Collection ${record.collectionName} does not exist in MockFirestore`
       );
     }
-    collection = {...collection, ...record.document};
+    this.mockData[record.collectionName] = {...collection, ...record.document};
   }
 
   /**
@@ -121,7 +122,7 @@ export class MockFirestore extends Firestore {
         assert.equal(
           foundProps[prop],
           expectedProps[prop],
-          `Expected mock execution record '${expectedDocumentKey}' ` +
+          `Expected ${expected.collectionName} record '${expectedDocumentKey}' ` +
             `to have property '${prop}' with value '${expectedProps[prop]}'. ` +
             `Mock execution record: ${JSON.stringify(foundDocument)}`
         );
@@ -165,7 +166,7 @@ export class MockFirestore extends Firestore {
       get: () => this.resolveAfterDelay(this.getQuerySnapshot(collectionPath)),
       doc: (docPath: string) => {
         return {
-          set: (data: FirestoreData) => {
+          set: (data: FirestoreData, options?: SetOptions) => {
             if (this.setShouldThrow) {
               this.rejectAfterDelay(null);
             }
@@ -173,6 +174,10 @@ export class MockFirestore extends Firestore {
               this.mockData,
               collectionPath
             );
+            if (options?.merge) {
+              const oldData = collection[docPath] || {};
+              data = {...oldData, ...data};
+            }
             collection[docPath] = data;
             return this.resolveAfterDelay(null);
           },
