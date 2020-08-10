@@ -128,30 +128,30 @@ export class CloudLogsProcessor extends DataProcessor {
    *
    * Malformed messages are logged and acknowledged immediately.
    *
-   * @param pubSubMessage an incoming PubSub message
+   * @param pubSubMsg an incoming PubSub message
    */
-  private async processMessage(pubSubMessage: Message) {
-    this.logger.debug(`Processing message ${pubSubMessage.id}`);
-    const pubSubData = this.parsePubSubData(pubSubMessage);
+  private async processMessage(pubSubMsg: Message) {
+    this.logger.debug(`Processing message ${pubSubMsg.id}`);
+    const pubSubData = this.parsePubSubData(pubSubMsg);
     const logEntryType = parseLogEntryType(pubSubData);
 
     if (logEntryType === LogEntryType.MALFORMED) {
-      this.logError('Detected malformed log entry', pubSubMessage);
-      return pubSubMessage.ack();
+      this.logError('Detected malformed log entry', pubSubMsg);
+      return pubSubMsg.ack();
     } else if (logEntryType === LogEntryType.NON_METRIC) {
-      return pubSubMessage.ack();
+      return pubSubMsg.ack();
     }
 
     const logEntry = pubSubData as LogEntry;
     const processingTask = this.processLogEntry(logEntry, logEntryType)
-      .then(result => this.ackIfSuccess(result, pubSubMessage))
+      .then(result => this.ackIfSuccess(result, pubSubMsg))
       .catch(error => {
         this.logError(
           'Runtime error while processing message',
-          pubSubMessage,
+          pubSubMsg,
           error
         );
-        pubSubMessage.nack();
+        pubSubMsg.nack();
         throw error;
       });
 
@@ -240,7 +240,7 @@ export class CloudLogsProcessor extends DataProcessor {
     const botExecDoc: BotExecutionDocument = {
       execution_id: entry.labels.execution_id,
       bot_name: entry.resource.labels.function_name,
-      start_time: new Date(entry.timestamp).getTime(),
+      start_time: this.toUNIX(entry.timestamp),
       logs_url: this.buildExecutionLogsUrl(entry),
     };
     return this.updateFirestoreRecords([
@@ -249,22 +249,15 @@ export class CloudLogsProcessor extends DataProcessor {
   }
 
   private buildExecutionLogsUrl(entry: LogEntry): string {
-    const TIME_RANGE_MILLISECONDS = 5 * 1000;
+    const TIME_BUFFER = 5 * 1000;
     const domain = 'pantheon.corp.google.com'; // should be console.google.com but the redirect wipes the query
-    const executionId = entry.labels.execution_id;
-    const project = entry.resource.labels.project_id;
-    const start = new Date(
-      new Date(entry.timestamp).getTime() - TIME_RANGE_MILLISECONDS
-    );
-    const end = new Date(
-      new Date(entry.timestamp).getTime() + TIME_RANGE_MILLISECONDS
-    );
+    const start = this.toISO(this.toUNIX(entry.timestamp) - TIME_BUFFER);
+    const end = this.toISO(this.toUNIX(entry.timestamp) + TIME_BUFFER);
 
     return (
       `https://${domain}/logs/query;query=` +
-      `labels.execution_id%3D%22${executionId}%22;` +
-      `timeRange=${start.toISOString()}%2F${end.toISOString()}` +
-      `?project=${project}&query=%0A`
+      `labels.execution_id%3D%22${entry.labels.execution_id}%22;` +
+      `timeRange=${start}%2F${end}?project=${entry.resource.labels.project_id}&query=%0A`
     );
   }
 
@@ -276,7 +269,7 @@ export class CloudLogsProcessor extends DataProcessor {
     const botExecDoc: BotExecutionDocument = {
       execution_id: entry.labels.execution_id,
       bot_name: entry.resource.labels.function_name,
-      end_time: new Date(entry.timestamp).getTime(),
+      end_time: this.toUNIX(entry.timestamp),
     };
     return this.updateFirestoreRecords([
       {doc: botExecDoc, collection: FSCollection.BotExecution},
@@ -357,7 +350,7 @@ export class CloudLogsProcessor extends DataProcessor {
       execution_id: entry.labels.execution_id,
       action_type: payload.action.type,
       value: payload.action.value,
-      timestamp: new Date(entry.timestamp).getTime(),
+      timestamp: this.toUNIX(entry.timestamp),
       destination_repo: getPrimaryKey(repoDoc, FSCollection.GitHubRepository),
     };
     if (objectDoc) {
@@ -386,7 +379,7 @@ export class CloudLogsProcessor extends DataProcessor {
 
     const errorDoc: ErrorDocument = {
       execution_id: entry.labels.execution_id,
-      timestamp: new Date(entry.timestamp).getTime(),
+      timestamp: this.toUNIX(entry.timestamp),
       error_msg: entry.textPayload || JSON.stringify(entry.jsonPayload),
     };
     updates.push({doc: errorDoc, collection: FSCollection.Error});
@@ -415,5 +408,21 @@ export class CloudLogsProcessor extends DataProcessor {
       );
       return allSuccess ? ProcessingResult.SUCCESS : ProcessingResult.FAIL;
     });
+  }
+
+  /**
+   * Converts the given ISO timestamp to UNIX time
+   * @param isoString an ISO 8601 timestamp
+   */
+  private toUNIX(isoString: string): number {
+    return new Date(isoString).getTime();
+  }
+
+  /**
+   * Converts the given UNIX timestamp to an ISO timestamp
+   * @param unix a UNIX timestamp
+   */
+  private toISO(unix: number): string {
+    return new Date(unix).toISOString();
   }
 }
