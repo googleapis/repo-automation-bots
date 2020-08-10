@@ -223,6 +223,6 @@ describe('doesSloApply', () => {
       ['bot:auto label', 'enhancement', 'help wanted', 'P1'],
       3
     );
-    assert.strictEqual(isValid, true);
+    assert.strictEqual(isValid, false);
   });
 });
