@@ -13,15 +13,12 @@
 // limitations under the License.
 //
 
-
 import {hasProperties, isObject} from './type-check-util';
-
 
 /**
  * Placeholder value for unknown fields
  */
 export const UNKNOWN_FIRESTORE_VALUE = 'Unknown';
-
 
 /**
  * GitHub repository owner type
@@ -35,7 +32,6 @@ export enum OwnerType {
   UNKNOWN = 'Unknown',
 }
 
-
 /**
  * A document in the Firestore Bot collection
  * Represents a repo automation bot
@@ -46,7 +42,6 @@ export interface BotDocument {
   /* The name of the bot */
   bot_name: string;
 }
-
 
 /**
  * A document in the Firestore Bot_Execution collection
@@ -68,7 +63,6 @@ export interface BotExecutionDocument {
   logs_url?: string;
 }
 
-
 /**
  * A document in the Firestore Task_Queue_Status collection
  * Represents the status of a bot's task queue at a given timestamp
@@ -83,7 +77,6 @@ export interface TaskQueueStatusDocument {
   /* Number of tasks in queue at given timestamp */
   in_queue?: number;
 }
-
 
 /**
  * A document in the Firestore Error collection
@@ -101,7 +94,6 @@ export interface ErrorDocument {
   error_msg?: string;
 }
 
-
 /**
  * A document in the Firestore Trigger collection
  * Represents a bot execution trigger
@@ -117,7 +109,6 @@ export interface TriggerDocument {
   /* The type of trigger that started the execution */
   trigger_type?: string;
 }
-
 
 /**
  * A document in the Firestore Action collection
@@ -141,7 +132,6 @@ export interface ActionDocument {
   value?: string;
 }
 
-
 /**
  * A document in the Firestore GitHub_Repository collection
  * Represents a GitHub Repository
@@ -156,7 +146,6 @@ export interface GitHubRepositoryDocument {
   /* The account type of the owner. See OwnerType */
   owner_type?: OwnerType;
 }
-
 
 /**
  * A document in the Firestore Action_Type collection
@@ -173,7 +162,6 @@ export interface ActionTypeDocument {
   /* The number of dev hours that are saved by type of bot action */
   dev_hours_saved?: number;
 }
-
 
 /**
  * A document in the Firestore GitHub_Event collection
@@ -195,7 +183,6 @@ export interface GitHubEventDocument {
   actor?: string;
 }
 
-
 /**
  * A document in the Firestore GitHub_Object collection
  * Represents a GitHub Object (eg. a GitHub Issue)
@@ -212,7 +199,6 @@ export interface GitHubObjectDocument {
   object_id: number | string;
 }
 
-
 /**
  * Enum constants for Firestore Collection keys
  */
@@ -228,7 +214,6 @@ export enum FirestoreCollection {
   GitHubRepository = 'GitHub_Repository',
   GitHubObject = 'GitHub_Object',
 }
-
 
 /**
  * The schema for the Data Processor Firestore
@@ -266,7 +251,6 @@ export interface FirestoreSchema {
   };
 }
 
-
 export type FirestoreDocument =
   | BotDocument
   | BotExecutionDocument
@@ -279,12 +263,10 @@ export type FirestoreDocument =
   | GitHubRepositoryDocument
   | GitHubObjectDocument;
 
-
 export type FirestoreRecord = {
   doc: FirestoreDocument;
   collection: FirestoreCollection;
 };
-
 
 /**
  * Properties of a document in collectionName that form the primary key (in order)
@@ -306,7 +288,6 @@ const KEY_PROPERTIES: {
   GitHub_Object: ['object_type', 'repository', 'object_id'],
 };
 
-
 /**
  * Returns the primary key for the given document belonging to the
  * given collection name.
@@ -321,20 +302,17 @@ export function getPrimaryKey(
 ): string {
   const keyProperties = KEY_PROPERTIES[collectionName];
 
-
   if (!keyProperties) {
     throw new Error(
       `${collectionName} has no associated primary key properties`
     );
   }
 
-
   if (!isObject(doc) || !hasProperties(doc, keyProperties)) {
     throw new Error(
       `doc does not match the requirements for ${collectionName}: ${doc}`
     );
   }
-
 
   return keyProperties.map(key => doc[key]).join('_');
 }
