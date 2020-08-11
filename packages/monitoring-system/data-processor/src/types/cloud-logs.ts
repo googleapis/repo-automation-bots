@@ -168,8 +168,8 @@ export function parseLogEntryType(entry: object): LogEntryType {
  * @param entry entry to check
  */
 export function isErrorLog(entry: LogEntry): boolean {
-  const ERRORONEOUS_SEVERITIES = ['ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'];
-  return ERRORONEOUS_SEVERITIES.includes(entry.severity);
+  const ERRONEOUS_SEVERITIES = ['ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'];
+  return ERRONEOUS_SEVERITIES.includes(entry.severity);
 }
 
 /**
