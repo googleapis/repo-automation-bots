@@ -1,11 +1,11 @@
 # Blunderbuss
 
-> A GitHub App built with [Probot](https://github.com/probot/probot) that assigns issues and prs 
+> A GitHub App built with [Probot](https://github.com/probot/probot) that assigns issues and prs
 randomly to a specific list of users
 
 ## Usage
 
-Blunderbuss randomly assigns from a set of users specified in the config file located at 
+Blunderbuss randomly assigns from a set of users specified in the config file located at
 `.github/blunderbuss.yml` for each repo. All fields are currently optional.
 
 ```yaml
@@ -51,6 +51,8 @@ if no valid assignees are found.
 
 For opened/reopened issues or PRs, Blunderbuss will not assign a user if the issue already has an
 assignee.
+
+Pull Requests will not be assigned a user while in draft mode.
 
 ## Setup
 

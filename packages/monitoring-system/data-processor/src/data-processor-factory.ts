@@ -65,7 +65,8 @@ export class DataProcessorFactory implements Factory {
 
   private getLogsProcessorOptions(): CloudLogsProcessorOptions {
     return {
-      subscription: new PubSub().subscription('TODO'),
+      subscription: new PubSub().subscription('TODO'), // TODO: move this to config
+      listenLimit: 300, // TODO: move this to config
       ...this.getProcessorOptions(),
     };
   }
