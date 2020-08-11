@@ -12,9 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {DataProcessor} from './data-processor-abstract';
+import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
+import {
+  CloudFunctionsServiceClient as CloudFunctionClient,
+  v1,
+} from '@google-cloud/functions';
 
-export class GCFProcessor extends DataProcessor {
+export interface CloudFunctionsProcessorOptions extends ProcessorOptions {
+  // functionsClient?: v1.CloudFunctionsServiceClient;
+  projectId: string;
+  location: string;
+}
+
+export class CloudFunctionsProcessor extends DataProcessor {
+  // private functionsClient: v1.CloudFunctionsServiceClient;
+  private projectId: string;
+  private location: string;
+
+  constructor(options: CloudFunctionsProcessorOptions) {
+    super(options);
+    // this.functionsClient = options.functionsClient || new CloudFunctionClient();
+    this.projectId = options.projectId;
+    this.location = options.location;
+  }
+
   public async collectAndProcess(): Promise<void> {
     throw new Error('Method not implemented.');
   }

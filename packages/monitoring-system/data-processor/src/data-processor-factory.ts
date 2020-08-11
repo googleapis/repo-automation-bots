@@ -21,7 +21,7 @@ import {
   CloudLogsProcessor,
   CloudLogsProcessorOptions,
 } from './data-processors/cloud-logs-data-processor';
-import {GCFProcessor} from './data-processors/cloud-functions-data-processor';
+import {CloudFunctionsProcessor} from './data-processors/cloud-functions-data-processor';
 import {
   CloudTasksProcessor,
   CloudTasksProcessorOptions,
@@ -50,10 +50,13 @@ export class DataProcessorFactory implements Factory {
    */
   public getDataProcessor(task: Task): DataProcessor {
     switch (task) {
-      case Task.ProcessLogs:
+      case Task.ProcessCloudLogs:
         return new CloudLogsProcessor(this.getLogsProcessorOptions());
-      case Task.ProcessGCF:
-        return new GCFProcessor();
+      case Task.ProcessCloudFunctions:
+        return new CloudFunctionsProcessor({
+          projectId: 'TODO',
+          location: 'TODO',
+        });
       case Task.ProcessTaskQueue:
         return new CloudTasksProcessor(this.getTaskProcessorOptions());
       case Task.ProcessGitHub:
