@@ -30,6 +30,7 @@ import {GitHubProcessor} from './data-processors/github-data-processor';
 import {ConfigUtil, Config} from './config-util';
 import {Firestore} from '@google-cloud/firestore';
 import {PubSub} from '@google-cloud/pubsub';
+import {logger} from './util/logger';
 
 export interface Factory {
   getDataProcessor(task: Task): DataProcessor;
@@ -58,7 +59,7 @@ export class DataProcessorFactory implements Factory {
       case Task.ProcessGitHub:
         return new GitHubProcessor(this.getProcessorOptions());
       default:
-        console.error(`Couldn't identify a data processor for task: ${task}`);
+        logger.error(`Couldn't identify a data processor for task: ${task}`);
         throw new Error(`Couldn't identify a data processor for task: ${task}`);
     }
   }
