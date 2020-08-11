@@ -221,7 +221,7 @@ describe('Cloud Logs Processor', () => {
         describe('when no execution record exists', () => {
           it('creates a new execution record and stores execution start logs', () => {
             return testValidMessage(executionStartLog, [executionRecordStart]);
-          }).timeout(5000);
+          });
 
           it('creates a new execution record and stores execution end logs', () => {
             return testValidMessage(executionEndLog, [executionRecordEnd]);
