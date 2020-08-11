@@ -14,9 +14,13 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Octokit} from 'probot';
-import {LicenseType, detectLicenseHeader} from './header-parser';
+import {detectLicenseHeader} from './header-parser';
 import * as minimatch from 'minimatch';
+<<<<<<< HEAD
 import {logger} from 'gcf-utils';
+=======
+import {LicenseType} from './types';
+>>>>>>> 3aa27f7 (feat: build headers to suggest)
 
 type Conclusion =
   | 'success'
@@ -32,6 +36,7 @@ interface ConfigurationOptions {
   allowedLicenses: LicenseType[];
   ignoreFiles: string[];
   sourceFileExtensions: string[];
+  suggestChanges: boolean;
 }
 
 const WELL_KNOWN_CONFIGURATION_FILE = 'header-checker-lint.yml';
@@ -40,6 +45,7 @@ const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   allowedLicenses: ['Apache-2.0', 'MIT', 'BSD-3'],
   ignoreFiles: [],
   sourceFileExtensions: ['ts', 'js', 'java'],
+  suggestChanges: false,
 };
 
 class Configuration {
@@ -64,7 +70,10 @@ class Configuration {
     });
   }
 
-  allowedLicense(license: LicenseType): boolean {
+  allowedLicense(license: LicenseType | undefined): boolean {
+    if (!license) {
+      return false;
+    }
     return this.options.allowedLicenses.includes(license);
   }
 

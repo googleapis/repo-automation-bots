@@ -10,7 +10,8 @@
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "main": "build/src/app.js",
   "files": [
-    "build/src"
+    "build/src",
+    "src/content"
   ],
   "keywords": [
     "probot",
@@ -28,8 +29,10 @@
     "lint": "gts check"
   },
   "dependencies": {
+    "@types/mustache": "^4.0.1",
     "gcf-utils": "^5.3.0",
-    "minimatch": "^3.0.4"
+    "minimatch": "^3.0.4",
+    "mustache": "^4.0.1"
   },
   "devDependencies": {
     "@types/minimatch": "^3.0.3",

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export type LicenseType = 'Apache-2.0' | 'MIT' | 'BSD-3' | undefined;
+import {LicenseType} from './types';
 
 export interface LicenseHeader {
   copyright?: string;
