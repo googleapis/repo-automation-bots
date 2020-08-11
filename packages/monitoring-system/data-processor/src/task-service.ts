@@ -14,6 +14,7 @@
 //
 import express from 'express';
 import {Factory, DataProcessorFactory} from './data-processor-factory';
+import {logger} from './util/logger';
 
 /**
  * Data Processing Tasks
@@ -59,7 +60,7 @@ export class TaskService {
   public async start() {
     const port = process.env.PORT || 8080;
     this.app.listen(port, () => {
-      console.log('Data Processor started. Now awaiting task requests.', port);
+      logger.info('Data Processor started. Now awaiting task requests.', port);
     });
   }
 

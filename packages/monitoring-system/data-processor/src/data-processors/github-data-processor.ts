@@ -76,7 +76,7 @@ export class GitHubProcessor extends DataProcessor {
         })
         .then(() => resolve())
         .catch(error => {
-          console.error(`Failed to process GitHub Events data: ${error}`);
+          this.logger.error(`Failed to process GitHub Events data: ${error}`);
           reject(new Error(`Failed to process GitHub Events data: ${error}`));
         });
     });
@@ -146,7 +146,7 @@ export class GitHubProcessor extends DataProcessor {
     eventResponse: GitHubEventResponse
   ): GitHubEventDocument {
     if (!eventResponse.payload) {
-      console.error(`Invalid event response from GitHub: ${eventResponse}`);
+      this.logger.error(`Invalid event response from GitHub: ${eventResponse}`);
       throw new Error(`Invalid event response from GitHub: ${eventResponse}`);
     }
 
