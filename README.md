@@ -25,6 +25,9 @@ by Google on GitHub.
 
 You need to install node.js version 12 or higher.
 
+To manage multiple Node.js versions, you can use
+[nvm](https://github.com/nvm-sh/nvm).
+
 ## Running the app locally
 
 ### Create a Proxy to Relay Webhooks
