@@ -20,7 +20,7 @@
     "lint"
   ],
   "scripts": {
-    "compile": "tsc -p .",
+    "compile": "tsc -p . && cp -r src/content build/src/",
     "start": "probot run ./build/src/header-checker-lint.js",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
@@ -29,7 +29,10 @@
     "lint": "gts check"
   },
   "dependencies": {
+    "@octokit/rest": "^18.0.1",
     "@types/mustache": "^4.0.1",
+    "@types/pino": "^6.3.0",
+    "code-suggester": "^1.1.0",
     "gcf-utils": "^5.3.0",
     "minimatch": "^3.0.4",
     "mustache": "^4.0.1"

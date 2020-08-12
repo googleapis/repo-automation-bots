@@ -16,11 +16,13 @@
 import {Application, Octokit} from 'probot';
 import {detectLicenseHeader} from './header-parser';
 import * as minimatch from 'minimatch';
-<<<<<<< HEAD
 import {logger} from 'gcf-utils';
-=======
 import {LicenseType} from './types';
->>>>>>> 3aa27f7 (feat: build headers to suggest)
+import {getLicenseContent} from './header-suggester';
+import {createPullRequest} from 'code-suggester';
+import {Octokit as OctokitRest} from '@octokit/rest';
+
+type OctokitType = InstanceType<typeof OctokitRest>;
 
 type Conclusion =
   | 'success'
@@ -206,8 +208,61 @@ export = (app: Application) => {
       };
     }
 
+    if (remoteConfiguration.suggestChanges) {
+      // TODO: integrate with code-suggester
+    }
+
     // post the status of commit linting to the PR, using:
     // https://developer.github.com/v3/checks/
     await context.github.checks.create(checkParams);
+  });
+
+  app.on('push', async context => {
+    if (
+      `refs/heads/${context.payload.repository.default_branch}` !==
+      context.payload.ref
+    ) {
+      // only act on pushes to default branch
+      return;
+    }
+
+    const remoteConfiguration: ConfigurationOptions =
+      ((await context.config(
+        WELL_KNOWN_CONFIGURATION_FILE
+      )) as ConfigurationOptions | null) || DEFAULT_CONFIGURATION;
+
+    if (!remoteConfiguration.suggestChanges) {
+      // don't propose file changes
+      return;
+    }
+
+    // Look for root license file
+    const response = await context.github.repos.getContents(
+      context.repo({
+        path: 'LICENSE',
+      })
+    );
+    if (response.status === 200) {
+      // LICENSE file already exists, nothing to do
+      return;
+    }
+    const content = getLicenseContent('Apache-2.0');
+
+    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+    const changes = new Map<string, any>();
+    changes.set('LICENSE', {
+      mode: '100644',
+      contents: content,
+    });
+
+    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+    const octokit = (context.github as any) as OctokitType;
+    createPullRequest(octokit, changes, {
+      upstreamOwner: context.payload.repository.owner.name!,
+      upstreamRepo: context.payload.repository.name,
+      message: 'chore: create LICENSE',
+      title: 'chore: create LICENSE',
+      description: 'Generating a LICENSE file',
+    });
   });
 };

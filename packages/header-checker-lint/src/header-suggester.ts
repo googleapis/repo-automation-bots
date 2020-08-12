@@ -95,3 +95,10 @@ export function fixFileHeader(
   );
   return injectHeader(content, header, startingLine);
 }
+
+export function getLicenseContent(licenseType: LicenseType): string {
+  return readFileSync(
+    resolve(__dirname, `./content/${TEMPLATE_MAP[licenseType]}/license.txt`),
+    'utf8'
+  );
+}
