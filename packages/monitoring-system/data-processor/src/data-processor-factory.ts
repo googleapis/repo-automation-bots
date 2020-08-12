@@ -21,7 +21,10 @@ import {
   CloudLogsProcessor,
   CloudLogsProcessorOptions,
 } from './data-processors/cloud-logs-data-processor';
-import {CloudFunctionsProcessor} from './data-processors/cloud-functions-data-processor';
+import {
+  CloudFunctionsProcessor,
+  CloudFunctionsProcessorOptions,
+} from './data-processors/cloud-functions-data-processor';
 import {
   CloudTasksProcessor,
   CloudTasksProcessorOptions,
@@ -53,10 +56,7 @@ export class DataProcessorFactory implements Factory {
       case Task.ProcessCloudLogs:
         return new CloudLogsProcessor(this.getLogsProcessorOptions());
       case Task.ProcessCloudFunctions:
-        return new CloudFunctionsProcessor({
-          projectId: 'TODO',
-          location: 'TODO',
-        });
+        return new CloudFunctionsProcessor(this.getFunctionsProcessorOptions());
       case Task.ProcessTaskQueue:
         return new CloudTasksProcessor(this.getTaskProcessorOptions());
       case Task.ProcessGitHub:
@@ -65,6 +65,13 @@ export class DataProcessorFactory implements Factory {
         logger.error(`Couldn't identify a data processor for task: ${task}`);
         throw new Error(`Couldn't identify a data processor for task: ${task}`);
     }
+  }
+
+  private getFunctionsProcessorOptions(): CloudFunctionsProcessorOptions {
+    return {
+      projectId: 'repo-automation-bots', // TODO: move this to config
+      ...this.getProcessorOptions(),
+    };
   }
 
   private getLogsProcessorOptions(): CloudLogsProcessorOptions {

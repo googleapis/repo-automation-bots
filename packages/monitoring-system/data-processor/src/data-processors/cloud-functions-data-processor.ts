@@ -13,34 +13,66 @@
 // limitations under the License.
 //
 import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
-import {
-  CloudFunctionsServiceClient as CloudFunctionClient,
-  v1,
-} from '@google-cloud/functions';
+import {GCF, CloudFunction} from 'googleapis-nodejs-functions';
+import {FirestoreCollection} from '../firestore-schema';
+import {WriteResult} from '@google-cloud/firestore';
 
 export interface CloudFunctionsProcessorOptions extends ProcessorOptions {
-  // functionsClient?: v1.CloudFunctionsServiceClient;
+  functionsClient?: GCF;
   projectId: string;
-  location: string;
 }
 
 export class CloudFunctionsProcessor extends DataProcessor {
-  // private functionsClient: v1.CloudFunctionsServiceClient;
-  private projectId: string;
-  private location: string;
+  private functionsClient: GCF;
 
   constructor(options: CloudFunctionsProcessorOptions) {
     super(options);
-    // this.functionsClient = options.functionsClient || new CloudFunctionClient();
-    this.projectId = options.projectId;
-    this.location = options.location;
+    this.functionsClient =
+      options.functionsClient || new GCF({projectId: options.projectId});
   }
 
   public async collectAndProcess(): Promise<void> {
-    throw new Error('Method not implemented.');
+    return this.getAllGCFNames()
+      .then(names => {
+        return this.storeBotNames(names);
+      })
+      .then(() => {
+        this.logger.info('Finished processing Cloud Functions');
+      })
+      .catch(error => {
+        this.logger.error({
+          message: 'Failed to process Cloud Functions',
+          error: error,
+        });
+        throw error;
+      });
   }
 
-  private getAllGCFNames(): string[] {
-    throw new Error('Method not implemented.');
+  private getAllGCFNames(): Promise<string[]> {
+    const cloudFunctionsPromise = this.functionsClient.getCloudFunctions();
+    if (!cloudFunctionsPromise) {
+      throw new Error('Cloud Functions client returned a void promise');
+    }
+
+    return cloudFunctionsPromise.then(response => {
+      const functions: CloudFunction[] = response[0];
+      if (!functions) {
+        throw new Error('Invalid response from Cloud Functions client');
+      }
+      return functions.map(fn => fn.metadata.entryPoint);
+    });
+  }
+
+  private storeBotNames(names: string[]): Promise<WriteResult[]> {
+    const updates = names.map(name =>
+      this.updateFirestore({
+        doc: {
+          bot_name: name,
+        },
+        collection: FirestoreCollection.Bot,
+      })
+    );
+
+    return Promise.all(updates);
   }
 }

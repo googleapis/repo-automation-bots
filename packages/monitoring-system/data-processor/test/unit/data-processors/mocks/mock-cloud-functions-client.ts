@@ -12,81 +12,58 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {CloudFunctionsServiceClient, protos} from '@google-cloud/functions';
-import {PaginationCallback, CallOptions, ClientOptions} from 'google-gax';
-
-/**
- * Defining types for better readability
- */
-type IRequest = protos.google.cloud.functions.v1.IListFunctionsRequest;
-type IResponse = protos.google.cloud.functions.v1.IListFunctionsResponse;
-type IFunction = protos.google.cloud.functions.v1.ICloudFunction;
-type CallBack = PaginationCallback<
-  IRequest,
-  IResponse | null | undefined,
-  IFunction
->;
-type ReturnValue = [IFunction[], IRequest | null, IResponse];
-
-/**
- * An interface for mock functions data
- */
-export interface MockCloudFunctionsData {
-  [project: string]: {
-    [location: string]: ReturnValue;
-  };
-}
+import {
+  GCF,
+  CloudFunctionQuery,
+  CloudFunctionsCallback,
+  CloudFunction,
+} from 'googleapis-nodejs-functions';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ReturnValue = [CloudFunction[], any];
 
 /**
  * A mock client to mimic CloudFunctionServiceClient
  */
-export class MockCloudFunctionsClient extends CloudFunctionsServiceClient {
-  private mockData: MockCloudFunctionsData;
+export class MockCloudFunctionsClient extends GCF {
+  private mockData: ReturnValue;
+  private getShouldThrow = false;
 
-  constructor(mockData?: MockCloudFunctionsData, options?: ClientOptions) {
-    super(options);
-    this.mockData = mockData || {};
+  constructor(mockData?: ReturnValue) {
+    super();
+    this.mockData = mockData || [[], null];
   }
 
   /**
    * Set the mock data to be returned by this client
    * @param mockData mock data to return
    */
-  public setMockData(mockData: MockCloudFunctionsData) {
+  public setMockData(mockData: ReturnValue) {
     this.mockData = mockData;
   }
 
   /**
-   * Return a fully qualified path to the location
-   * @param project project for this path
-   * @param location location within project
+   * Will cause the next calls to getCloudFunctions to throw an error
    */
-  public locationPath(project: string, location: string): string {
-    return `projects/${project}/locations/${location}`;
+  public throwOnGet() {
+    this.getShouldThrow = true;
   }
 
-  public listFunctions(
-    request: IRequest,
-    optionsOrCallback?: CallOptions | CallBack,
-    callback?: CallBack
-  ): Promise<ReturnValue> {
-    return new Promise((resolve, reject) => {
-      if (!request.parent) {
-        reject('No path found');
-      }
-      const parts = request.parent?.split('/') || [];
-      if (parts.length !== 4) {
-        reject('Invalid path');
-      }
-      const project = this.mockData[parts[1]];
-      if (!project) {
-        reject(`Project ${parts[1]} does not exist`);
-      }
-      const location = project[parts[3]];
-      if (!location) {
-        reject(`Location ${parts[3]} does not exist`);
-      }
-      resolve(location);
+  /**
+   * Returns the mock Cloud Functions set in this client
+   * @param query parameter is ignored
+   * @param callback parameter is ignored
+   */
+  getCloudFunctions(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    query?: CloudFunctionQuery,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    callback?: CloudFunctionsCallback
+  ): void | Promise<ReturnValue> {
+    if (this.getShouldThrow) {
+      throw new Error('This is a mock error');
+    }
+    return new Promise(resolve => {
+      setTimeout(() => resolve(this.mockData), 100); // simulates network delay
     });
   }
 }
