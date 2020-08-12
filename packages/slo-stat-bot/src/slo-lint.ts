@@ -33,12 +33,16 @@ type Conclusion =
 
 interface ValidationResults {
   isValid: boolean;
-  errors?: ErrorObject[] | JSON | null;
+  errors?: ErrorObject[] | ErrorMessage | undefined;
 }
 
 interface PullsListFilesResponseItem {
   filename: string;
   sha: string;
+}
+
+interface ErrorMessage {
+  [index: string]: string;
 }
 
 /**
@@ -161,7 +165,7 @@ export const lint = async function lint(
   }
 
   //Check for contradicting SLOs
-  let errors = null;
+  let errors: ErrorMessage | undefined;
   for (const slo of sloData) {
     isValid = !(await sloContradicts(slo));
 
@@ -186,12 +190,12 @@ export const lint = async function lint(
  * @returns boolean value if slo is self contradicting
  */
 async function sloContradicts(slo: SLORules): Promise<boolean | undefined> {
-  const githubLabels = await convertToArray(slo.appliesTo.gitHubLabels);
-  const excludedGitHubLabels = await convertToArray(
+  const githubLabels = convertToArray(slo.appliesTo.gitHubLabels);
+  const excludedGitHubLabels = convertToArray(
     slo.appliesTo.excludedGitHubLabels
   );
 
-  const isInValid = excludedGitHubLabels?.some((label: string) =>
+  const isInValid = excludedGitHubLabels?.some(label =>
     githubLabels?.includes(label)
   );
 

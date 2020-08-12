@@ -173,7 +173,7 @@ export const getResponders = async function getResponders(
 ): Promise<Set<string>> {
   let responders: Set<string> = new Set([owner]);
 
-  const owners = await convertToArray(
+  const owners = convertToArray(
     slo.complianceSettings.responders?.owners
   );
   if (owners) {
