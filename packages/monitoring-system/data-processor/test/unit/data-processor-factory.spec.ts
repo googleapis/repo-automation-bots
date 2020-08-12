@@ -18,7 +18,7 @@ import {Task} from '../../src/task-service';
 import {DataProcessorFactory} from '../../src/data-processor-factory';
 import {DataProcessor} from '../../src/data-processors/data-processor-abstract';
 import {CloudLogsProcessor} from '../../src/data-processors/cloud-logs-data-processor';
-import {GCFProcessor} from '../../src/data-processors/cloud-functions-data-processor';
+import {CloudFunctionsProcessor} from '../../src/data-processors/cloud-functions-data-processor';
 import {GitHubProcessor} from '../../src/data-processors/github-data-processor';
 import {CloudTasksProcessor} from '../../src/data-processors/cloud-tasks-data-processor';
 
@@ -26,15 +26,15 @@ describe('Data Processor Factory', () => {
   describe('getDataProcessor()', () => {
     it('returns CloudLogsProcessor for ProcessLogs task', () => {
       const processor: DataProcessor = new DataProcessorFactory().getDataProcessor(
-        Task.ProcessLogs
+        Task.ProcessCloudLogs
       );
       assert(processor instanceof CloudLogsProcessor);
     });
     it('returns GCFProcessor for ProcessGCF task', () => {
       const processor: DataProcessor = new DataProcessorFactory().getDataProcessor(
-        Task.ProcessGCF
+        Task.ProcessCloudFunctions
       );
-      assert(processor instanceof GCFProcessor);
+      assert(processor instanceof CloudFunctionsProcessor);
     });
     it('returns GitHubProcessor for ProcessGitHub task', () => {
       const processor: DataProcessor = new DataProcessorFactory().getDataProcessor(
@@ -57,6 +57,9 @@ describe('Data Processor Factory', () => {
         firestore: {
           project_id: 'firestore-foo',
         },
+        cloud_functions_processor: {
+          cloud_functions_project_id: 'functions-baz',
+        },
       };
       const processor: DataProcessor = new DataProcessorFactory(
         config
@@ -64,6 +67,8 @@ describe('Data Processor Factory', () => {
       assert(processor instanceof CloudTasksProcessor);
       assert.equal(processor.getTasksProjectId(), 'foo-id');
       assert.equal(processor.getTasksProjectLocation(), 'bar-location');
+
+      // TODO (asonawalla): add tests for other processor configurations
     });
     it('throws an error for unknown task types', () => {
       try {
