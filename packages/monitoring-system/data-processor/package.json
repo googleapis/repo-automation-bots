@@ -25,7 +25,6 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@google-cloud/firestore": "^4.1.1",
-    "@google-cloud/functions": "^1.0.1",
     "@google-cloud/pubsub": "^2.3.0",
     "@google-cloud/tasks": "^2.1.0",
     "@octokit/rest": "^18.0.3",

@@ -57,6 +57,9 @@ describe('Data Processor Factory', () => {
         firestore: {
           project_id: 'firestore-foo',
         },
+        cloud_functions_processor: {
+          cloud_functions_project_id: 'functions-baz',
+        },
       };
       const processor: DataProcessor = new DataProcessorFactory(
         config
@@ -64,6 +67,8 @@ describe('Data Processor Factory', () => {
       assert(processor instanceof CloudTasksProcessor);
       assert.equal(processor.getTasksProjectId(), 'foo-id');
       assert.equal(processor.getTasksProjectLocation(), 'bar-location');
+
+      // TODO (asonawalla): add tests for other processor configurations
     });
     it('throws an error for unknown task types', () => {
       try {

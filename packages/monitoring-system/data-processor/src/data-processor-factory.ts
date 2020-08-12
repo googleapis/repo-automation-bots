@@ -69,7 +69,8 @@ export class DataProcessorFactory implements Factory {
 
   private getFunctionsProcessorOptions(): CloudFunctionsProcessorOptions {
     return {
-      projectId: 'repo-automation-bots', // TODO: move this to config
+      projectId: this.config.cloud_functions_processor
+        .cloud_functions_project_id,
       ...this.getProcessorOptions(),
     };
   }
