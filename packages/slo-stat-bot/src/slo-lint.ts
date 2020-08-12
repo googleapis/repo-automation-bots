@@ -163,7 +163,7 @@ export const lint = async function lint(
   //Check for contradicting SLOs
   let errors = null;
   for (const slo of sloData) {
-    isValid = await sloNotContradict(slo);
+    isValid = !(await sloContradicts(slo));
 
     if (!isValid) {
       const sloString = JSON.stringify(slo);
@@ -185,7 +185,7 @@ export const lint = async function lint(
  * @param slo rule
  * @returns boolean value if slo is self contradicting
  */
-async function sloNotContradict(slo: SLORules): Promise<boolean | undefined> {
+async function sloContradicts(slo: SLORules): Promise<boolean | undefined> {
   const githubLabels = await convertToArray(slo.appliesTo.gitHubLabels);
   const excludedGitHubLabels = await convertToArray(
     slo.appliesTo.excludedGitHubLabels
@@ -195,7 +195,7 @@ async function sloNotContradict(slo: SLORules): Promise<boolean | undefined> {
     githubLabels?.includes(label)
   );
 
-  return !isInValid;
+  return isInValid;
 }
 
 /**
