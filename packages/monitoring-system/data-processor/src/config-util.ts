@@ -28,6 +28,9 @@ export interface Config {
     task_queue_project_id: string;
     task_queue_location: string;
   };
+  cloud_functions_processor: {
+    cloud_functions_project_id: string;
+  };
 }
 
 /**

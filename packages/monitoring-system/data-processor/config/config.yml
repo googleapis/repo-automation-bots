@@ -7,3 +7,6 @@ firestore:
 task_queue_processor:
   task_queue_project_id: *default_project_id
   task_queue_location: *default_project_location
+
+cloud_functions_processor:
+  cloud_functions_project_id: *default_project_id
