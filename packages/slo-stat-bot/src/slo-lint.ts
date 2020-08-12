@@ -17,7 +17,7 @@ import {GitHubAPI, Context} from 'probot';
 import Ajv, {ErrorObject} from 'ajv';
 import {logger} from 'gcf-utils';
 import {convertToArray} from './slo-appliesTo';
-import { SLORules } from './types';
+import {SLORules} from './types';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const schema = require('./../data/schema.json');
@@ -153,7 +153,7 @@ export const lint = async function lint(
   const validate = ajv.compile(schema);
   let isValid = await validate(sloData);
 
-  if(validate.errors) {
+  if (validate.errors) {
     return {
       isValid: isValid,
       errors: validate.errors,
@@ -161,41 +161,41 @@ export const lint = async function lint(
   }
 
   //Check for contradicting SLOs
-  let errors  = null;
-  for(const slo of sloData) {
+  let errors = null;
+  for (const slo of sloData) {
     isValid = await sloNotContradict(slo);
 
-    if(!isValid) {
+    if (!isValid) {
       const sloString = JSON.stringify(slo);
-      errors = {message: `Same label is in both gitHubLabels and excludedGitHubLabels for slo:  ${sloString}`}
+      errors = {
+        message: `Same label is in both gitHubLabels and excludedGitHubLabels for slo:  ${sloString}`,
+      };
       break;
     }
   }
-  
+
   return {
     isValid: isValid,
     errors: errors,
   } as ValidationResults;
-}
+};
 
 /**
  * Function checks to see if there is a label in both gitHubLabels and excludedGitHubLabels
  * @param slo rule
  * @returns boolean value if slo is self contradicting
  */
-async function sloNotContradict(
-  slo: SLORules
-): Promise<boolean | undefined> {
-    const githubLabels = await convertToArray(slo.appliesTo.gitHubLabels);
-    const excludedGitHubLabels = await convertToArray(
-      slo.appliesTo.excludedGitHubLabels
-    );
+async function sloNotContradict(slo: SLORules): Promise<boolean | undefined> {
+  const githubLabels = await convertToArray(slo.appliesTo.gitHubLabels);
+  const excludedGitHubLabels = await convertToArray(
+    slo.appliesTo.excludedGitHubLabels
+  );
 
-    const isInValid = excludedGitHubLabels?.some((label: string) =>
-      githubLabels?.includes(label)
-    );
+  const isInValid = excludedGitHubLabels?.some((label: string) =>
+    githubLabels?.includes(label)
+  );
 
-    return !isInValid;
+  return !isInValid;
 }
 
 /**
