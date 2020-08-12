@@ -117,6 +117,12 @@ export class CloudLogsProcessor extends DataProcessor {
           });
       };
 
+      /**
+       * We use setTimeout here to enforce the listenLimit
+       * i.e. the maximum amount of time that the processor should
+       * collect messages for. After that, we wait for the messages
+       * already being  processed to finish before returning.
+       */
       setTimeout(stopListening, this.listenLimit * 1000);
     });
   }
