@@ -408,6 +408,22 @@ describe('buildcop', () => {
         scopes.forEach(s => s.done());
       });
 
+      it('opens an issue [Python error]', async () => {
+        const payload = buildPayload(
+          'python_one_error.xml',
+          'python-docs-samples'
+        );
+
+        const scopes = [
+          nockIssues('python-docs-samples'),
+          nockNewIssue('python-docs-samples'),
+        ];
+
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+
+        scopes.forEach(s => s.done());
+      });
+
       it('opens an issue [Java]', async () => {
         const payload = buildPayload('java_one_failed.xml', 'java-vision');
 
