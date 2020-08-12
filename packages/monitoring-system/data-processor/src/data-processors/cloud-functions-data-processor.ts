@@ -14,7 +14,7 @@
 //
 import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {GCF, CloudFunction} from 'googleapis-nodejs-functions';
-import {FirestoreCollection} from '../firestore-schema';
+import {FirestoreCollection} from '../types/firestore-schema';
 import {WriteResult} from '@google-cloud/firestore';
 
 export interface CloudFunctionsProcessorOptions extends ProcessorOptions {
