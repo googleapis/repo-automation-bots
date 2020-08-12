@@ -14,14 +14,15 @@
 //
 import express from 'express';
 import {Factory, DataProcessorFactory} from './data-processor-factory';
+import {logger} from './util/logger';
 
 /**
  * Data Processing Tasks
  */
 export enum Task {
-  ProcessLogs = 'Process Logs Data',
+  ProcessCloudLogs = 'Process Logs Data',
   ProcessTaskQueue = 'Process Task Queue Data',
-  ProcessGCF = 'Process Cloud Functions Data',
+  ProcessCloudFunctions = 'Process Cloud Functions Data',
   ProcessGitHub = 'Process GitHub Data',
 }
 
@@ -29,10 +30,10 @@ export enum Task {
  * HTTP endpoints mapped to the corresponding Task
  */
 export const TaskEndpoints: {[endpoint: string]: Task} = {
-  '/task/process-logs': Task.ProcessLogs,
+  '/task/process-logs': Task.ProcessCloudLogs,
   '/task/process-task-queue': Task.ProcessTaskQueue,
   '/task/process-github': Task.ProcessGitHub,
-  '/task/process-gcf': Task.ProcessGCF,
+  '/task/process-gcf': Task.ProcessCloudFunctions,
 };
 
 /**
@@ -59,7 +60,7 @@ export class TaskService {
   public async start() {
     const port = process.env.PORT || 8080;
     this.app.listen(port, () => {
-      console.log('Data Processor started. Now awaiting task requests.', port);
+      logger.info('Data Processor started. Now awaiting task requests.', port);
     });
   }
 
