@@ -22,7 +22,7 @@ import {
 export type ReturnValue = [CloudFunction[], any];
 
 /**
- * A mock client to mimic CloudFunctionServiceClient
+ * A mock client to mimic googleapis-nodejs-functions/GCF
  */
 export class MockCloudFunctionsClient extends GCF {
   private mockData: ReturnValue;
