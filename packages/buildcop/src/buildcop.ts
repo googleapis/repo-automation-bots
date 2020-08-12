@@ -298,11 +298,11 @@ buildcop.openIssues = async (
       const testString = pkgFailures.length === 1 ? 'test' : 'tests';
       const body = `${
         pkgFailures.length
-        } ${testString} failed in this package for commit ${commit} (${buildURL}).\n\n-----\n${buildcop.formatBody(
-          testCase,
-          commit,
-          buildURL
-        )}`;
+      } ${testString} failed in this package for commit ${commit} (${buildURL}).\n\n-----\n${buildcop.formatBody(
+        testCase,
+        commit,
+        buildURL
+      )}`;
       await context.github.issues.createComment({
         owner,
         repo,
@@ -844,7 +844,7 @@ buildcop.findTestResults = (xml: string): TestResults => {
         continue;
       }
       // Here we must have a failure or an error.
-      let log = (failure === undefined) ? error['_text'] : failure['_text'];
+      let log = failure === undefined ? error['_text'] : failure['_text'];
       // Java puts its test logs in a CDATA element.
       if (log === undefined) {
         log = failure['_cdata'];
