@@ -32,6 +32,9 @@ export interface Config {
     pub_sub_subscription: string;
     pub_sub_listen_limit: number;
   };
+  cloud_functions_processor: {
+    cloud_functions_project_id: string;
+  };
 }
 
 /**
