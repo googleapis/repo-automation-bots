@@ -16,15 +16,36 @@ import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {Subscription} from '@google-cloud/pubsub';
 
 export interface CloudLogsProcessorOptions extends ProcessorOptions {
+  /**
+   * The PubSub subscription to listen to
+   */
   subscription: Subscription;
+
+  /**
+   * The time (in seconds) for which the processor should listen
+   * for new messages per task run.
+   *
+   * Note: Cloud Run tasks can run for a maximum of 15 minutes
+   * (900 seconds) but it is not recommended to set this as the
+   * listenLimit - once the processor stops listening it must
+   * still finish processing the pending messages.
+   */
+  listenLimit: number;
 }
 
 export class CloudLogsProcessor extends DataProcessor {
   private subscription: Subscription;
+  private listenLimit: number;
 
+  /**
+   * Create a Cloud Logs processor instance
+   *
+   * @param options cloud logs processor options
+   */
   constructor(options: CloudLogsProcessorOptions) {
     super(options);
     this.subscription = options.subscription;
+    this.listenLimit = options.listenLimit;
   }
 
   public async collectAndProcess(): Promise<void> {

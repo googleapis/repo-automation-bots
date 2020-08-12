@@ -41,6 +41,13 @@ export function failureChecker(app: Application) {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
 
+    // TODO(SuferJeffAtGoogle, bcoe): investigate whey we are failing to remove
+    // labels from some repositories during the publication process.
+    if (failureChecker.DISABLED) {
+      app.log('failure checker is currently turned off');
+      return;
+    }
+
     // If we're outside of working hours, and we're not in a test context, skip this bot.
     if (utcHour > END_HOUR_UTC && utcHour < START_HOUR_UTC) {
       app.log("skipping run, we're currently outside of working hours");
@@ -122,3 +129,6 @@ export function failureChecker(app: Application) {
     });
   }
 }
+
+// Set this to false again onde we've addressed reporting bug:
+failureChecker.DISABLED = true;
