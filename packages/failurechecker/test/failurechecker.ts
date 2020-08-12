@@ -19,6 +19,7 @@ import nock from 'nock';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sinon from 'sinon';
 import {failureChecker} from '../src/failurechecker';
+failureChecker.DISABLED = false;
 
 nock.disableNetConnect();
 
