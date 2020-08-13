@@ -8,11 +8,11 @@
             "type": "object",
             "properties": {
                 "gitHubLabels": { 
-                    "description": "Match issues/PRs with these GitHub labels",
+                    "description": "Match issues/PRs with all of these GitHub labels",
                     "type": ["string", "array"] 
                 },
                 "excludedGitHubLabels": {
-                    "description": "Exclude issues/PRs with these GitHub labels",
+                    "description": "Exclude issues/PRs with any these GitHub labels. None of the labels should be part of gitHubLabels property",
                     "type": ["string", "array"]
                 },
                 "issues": { 
@@ -29,32 +29,32 @@
             "required": []
         },
         "complianceSettings": {
-            "description": "Settings for the SLI to be found compliant",
+            "description": "Settings for the Service Level Indicator(SLI) to be found compliant. If an issue/PR is closed, it is automatically considered compliant",
             "type": "object",
             "properties": {
                 "responseTime": { 
-                    "description": "Matching issues with no response within this timeframe are non-compliant. A number value represents seconds; a string value should be formatted as a number followed by one of: d, h, m, s where d=days, h=hours, m=minutes and s=seconds. A value of 0 is considered as not needing a response.",
+                    "description": "Matching issues/PRs with no response from a valid responder within this timeframe are non-compliant. A number value represents seconds; a string value should be formatted as a number followed by one of: d, h, m, s where d=days, h=hours, m=minutes and s=seconds. A value of 0 is considered as not needing a response.",
                     "type": ["number", "string"],
                     "minimum": 0,
                     "pattern": "(^([0-9]+[dhms])+)(?!.)"
                 }, 
                 "resolutionTime": { 
-                    "description": "Matching issues open for longer than this timeframe are non-compliant. A number value represents seconds; a string value should be formatted as a number followed by one of: d, h, m, s where d=days, h=hours, m=minutes and s=seconds. A value of 0 is considered as not needing a response.",
+                    "description": "Matching issues/PRs open for longer than this timeframe are non-compliant. A number value represents seconds; a string value should be formatted as a number followed by one of: d, h, m, s where d=days, h=hours, m=minutes and s=seconds. A value of 0 is considered as not needing a response.",
                     "type": ["number", "string"], 
                     "minimum": 0,
                     "pattern": "(^([0-9]+[dhms])+)(?!.)"
                 }, 
                 "requiresAssignee": { 
-                    "description": "Matching issues require an assignee to be compliant",
+                    "description": "Matching issues require a valid assignee (as defined in the responders property) to be compliant",
                     "type": "boolean",
                     "default": false
                 },
                 "responders": {
-                    "description": "Defaults to people with write access to the repository. If specified, at least one field must be defined and all fields not defined default to none/empty",
+                    "description": "Defaults to people with WRITE access to the repository. The OWNER of the repository always is considered a valid responder. If specified, at least one field must be defined and all fields not defined default to none/empty",
                     "type": "object",
                     "properties": {
                         "owners": {
-                            "description": "A uri reference to a file containing users marked as responders to this SLO",
+                            "description": "One or more uri references to a file containing users marked as responders to this SLO. The uri reference path must be relative to the repository. The file must have valid responder's GitHub usernames starting with '@' symbol.",
                             "type": ["string", "array"],
                             "format": "uri-reference",
                             "items": {
@@ -63,7 +63,7 @@
                             }
                         },
                         "contributors": {
-                            "description": "As defined by GitHub, one of: WRITE|ADMIN|OWNER. All users in the designated group are responders",
+                            "description": "One of: WRITE|ADMIN|OWNER. Where WRITE responders have permission for pull and push to the repo. ADMIN responders are all users who are admin of repo. OWNER is the owner of the repo. All users in the designated group are responders",
                             "type": "string",
                             "enum": ["WRITE", "ADMIN", "OWNER"]
                         },
