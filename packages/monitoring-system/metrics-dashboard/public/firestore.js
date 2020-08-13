@@ -1,33 +1,85 @@
 class Firestore {
 
+    static executionCountsByBots = {};
+
     static start() {
         const firestore = this._getAuthenticatedFirestore();
-        this.listenToBotNames(firestore);
+        this.listenToBotNames(firestore); // TODO: fix race condition b/w this line and next
 
-        const oneHour = 60*60*1000;
-        firestore.collection("Bot_Execution").where("start_time", ">", new Date().getTime()-oneHour).onSnapshot(snap => {
-            const executionCountsByBots = {};
-            snap.forEach(doc => {
-                const botName = doc.data().bot_name;
-                if (!executionCountsByBots[botName]) {
-                    executionCountsByBots[botName] = 0;
-                }
-                executionCountsByBots[botName] +=1;
-            })
-            Render.executionsLastHourByBot(executionCountsByBots);
-        })
+        const oneHourAgo = new Date().getTime() - 60 * 60 * 1000;
+        this.listenToBotExecutions(firestore, oneHourAgo);
 
-        firestore.collection("Trigger").onSnapshot(snap => {
-            const executionCountsByTrigger = {};
-            snap.forEach(doc => {
-                const triggerType = doc.data().trigger_type;
-                if (!executionCountsByTrigger[triggerType]) {
-                    executionCountsByTrigger[triggerType] = 0;
-                }
-                executionCountsByTrigger[triggerType] +=1;
+        this.listenToErrors(firestore, oneHourAgo);
+    }
+
+    static listenToErrors(firestore, minTimestamp) {
+        firestore.collection("Error")
+        .where("timestamp", ">", minTimestamp)
+        .limit(10)
+        .orderBy("timestamp")
+        .onSnapshot(querySnapshot => {
+            const errors = querySnapshot.docs.map(doc => {
+                const executionId = doc.data().execution_id;
+                return firestore.collection("Bot_Execution")
+                .doc(executionId).get()
+                .then(executionDoc => {
+                    const msg = doc.data().error_msg;
+                    const time = doc.data().timestamp;
+                    const botName = executionDoc.data().bot_name;
+                    console.log(executionDoc.data());
+                    return {
+                        msg: String(msg).substring(0, 100) + "...",
+                        time: new Date(time).toLocaleTimeString(),
+                        logsUrl: executionDoc.data().logs_url,
+                        botName: botName,
+                    };
+                });                
             })
-            Render.executionsLastHourByTrigger(executionCountsByTrigger);
+            Promise.all(errors).then(errors => {
+                console.log(errors);
+                Render.errors(errors);
+            });
         })
+    }
+
+    /**
+     * Sets a listener for Bot Executions that start after minTimestamp
+     * @param {Firestore} firestore authenticated firestore client
+     * @param {Number} minTimestamp the minimum start time of Bot Executions to listen for
+     */
+    static listenToBotExecutions(firestore, minTimestamp) {
+        firestore.collection("Bot_Execution")
+            .where("start_time", ">", minTimestamp)
+            .onSnapshot(querySnapshot => {
+                const changes = querySnapshot.docChanges()
+                changes.forEach(change => {
+                    const botName = change.doc.data().bot_name;
+                    if (change.type === "added") {
+                        if (!this.executionCountsByBots[botName]) {
+                            this.executionCountsByBots[botName] = 0;
+                        }
+                        this.executionCountsByBots[botName] += 1;
+                    } else if (change.type === "removed") {
+                        if (!this.executionCountsByBots[botName]) {
+                            this.executionCountsByBots[botName] -= 1;
+                        }
+                    }
+                })
+                Render.executionsByBot(this.executionCountsByBots);
+            })
+    }
+
+    /**
+     * Retrieves the list of all bot names and sets the appropriate
+     * labels on the document
+     * @param {Firestore} firestore an authenticated Firestore client
+     */
+    static listenToBotNames(firestore) {
+        firestore.collection("Bot")
+            .onSnapshot(querySnapshot => {
+                const names = querySnapshot.docs.map(doc => doc.data().bot_name);
+                Render.addBotNameLabels(names);
+            })
     }
 
     /**
@@ -35,7 +87,7 @@ class Firestore {
      */
     static _getAuthenticatedFirestore() {
         var firebaseConfig = {
-            apiKey: "REMOVED",
+            apiKey: "AIzaSyCNYD0Pp6wnT36GcdxWkRVE9RTWt_2XfsU",
             authDomain: "repo-automation-bots-metrics.firebaseapp.com",
             databaseURL: "https://repo-automation-bots-metrics.firebaseio.com",
             projectId: "repo-automation-bots-metrics",
@@ -47,22 +99,4 @@ class Firestore {
         firebase.initializeApp(firebaseConfig);
         return firebase.firestore();
     }
-
-    /**
-     * Retrieves the list of all bot names and sets the appropriate
-     * labels on the document
-     * @param firestore an authenticated Firestore client
-     */
-    static listenToBotNames(firestore) {
-        firestore.collection("Bot").onSnapshot(querySnapshot => {
-            const names = querySnapshot.docs.map(doc => doc.data().bot_name);
-            Render.botNameLabels(names);
-        })
-    }
-
-    // static listenToExecutionCounts(firestore) {
-    //     firestore.collection("Bot_Execution").onSnapshot(querySnapshot => {
-
-    //     })
-    // }
 }

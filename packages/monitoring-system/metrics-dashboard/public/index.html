@@ -1,14 +1,15 @@
 <html>
 
 <head>
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700|Google Sans Display:400&display=swap"
+  <link
+    href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700|Google Sans Display:400&display=swap"
     rel="stylesheet">
   <link rel='stylesheet' type="text/css" href="style.css">
   <script src="https://www.gstatic.com/firebasejs/7.17.2/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/7.17.2/firebase-firestore.js"></script>
   <script src="firestore.js"></script>
   <script src="render.js"></script>
-  
+
   <script>
     // Start firestore live queries on page load
     window.onload = (event) => {
@@ -26,19 +27,94 @@
         <hr class="heading_row_divider">
       </td>
     </tr>
+
     <tr class="subheading" id="subheading_row_executions">
       <td colspan="14">
         <h3>By Automation Bot</h3>
       </td>
     </tr>
     <tr class="data" id="stat_executions_last_hour_by_bot">
+      <td>
+        <div class="loading_animation"></div>
+      </td>
     </tr>
+
     <tr class="subheading" id="subheading_row_executions">
       <td colspan="14">
         <h3>By Trigger Type</h3>
       </td>
     </tr>
-    <tr class="data" id="stat_executions_last_hour_by_trigger"></tr>
+    <tr class="data" id="stat_executions_last_hour_by_trigger">
+      <td colspan="14">
+        <h4>Unavailable</h4>
+      </td>
+    </tr>
+
+    <tr class="subheading">
+      <td colspan="14">
+        <h3>Recent Errors</h3>
+      </td>
+    </tr>
+    <tr class="data" id="stat_errors_last_hour">
+      <td colspan="14">
+        <div class="loading_animation"></div>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="14">
+        <h2>Task Queue Status</h2>
+        <hr class="heading_row_divider">
+      </td>
+    </tr>
+    <tr class="subheading">
+      <td colspan="14">
+        <h3>By Automation Bot</h3>
+      </td>
+    </tr>
+    <tr class="data" id="stat_tasks_by_bot">
+      <td>
+        <div class="loading_animation"></div>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="14">
+        <h2>GitHub Activity</h2>
+        <hr class="heading_row_divider">
+      </td>
+    </tr>
+    <tr class="subheading">
+      <td colspan="14">
+        <h3>Repositories with recent interactions</h3>
+      </td>
+    </tr>
+    <tr class="data">
+      <td colspan="14">
+        <h4>Unavailable</h4>
+      </td>
+    </tr>
+    <tr class="subheading">
+      <td colspan="14">
+        <h3>Objects with recent interactions</h3>
+      </td>
+    </tr>
+    <tr class="data">
+      <td colspan="14">
+        <h4>Unavailable</h4>
+      </td>
+    </tr>
+    <tr class="subheading">
+      <td colspan="14">
+        <h3>Actions taken in the last hour</h3>
+      </td>
+    </tr>
+    <tr class="data">
+      <td colspan="14">
+        <h4>Unavailable</h4>
+      </td>
+    </tr>
+
   </table>
 </body>
 

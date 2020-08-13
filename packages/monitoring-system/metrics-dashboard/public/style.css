@@ -1,17 +1,24 @@
 body {
-    background-color: #cf7500;
+    background-color: #f4f4f4;
 }
 
 h1 {
     font-family: 'Google Sans', sans-serif;
     text-align: center;
-    color: #f4f4f4;
+    color: #f0a500;
 }
 
 h2, h3 {
     font-family: 'Google Sans', sans-serif;
     text-align: left;
-    color: #f4f4f4;
+    color: #808080;
+    margin: 30 0 10 0px;
+}
+
+h4 {
+    font-family: 'Google Sans', sans-serif;
+    text-align: left;
+    color: #f0a500;
     margin: 30 0 10 0px;
 }
 
@@ -19,28 +26,28 @@ h2, h3 {
     margin: 20 0 10 0px;
     font-family: 'Google Sans', sans-serif;
     text-align: center;
-    font-size: 40;
-    color: #f4f4f4;
+    font-size: 35;
+    color: #f0a500;
 }
 
 .label {
     margin: 10 0 20 0px;
     font-family: 'Google Sans', sans-serif;
     text-align: center;
-    font-size: 14;
-    color: #f4f4f4;
+    font-size: 12;
+    color: #606060;
 }
 
 #main_table {
     width: 75%;
     margin: auto;
     margin-top: 3%;
-    min-width: 1600px;
+    min-width: 800px;
     padding: 10px;
 }
 
 hr {
-    color: #f4f4f4;
+    color: #cccccc;
     margin-left: 0;
     border-style: solid;
 }
@@ -51,4 +58,41 @@ hr {
 
 .subheading_row_divider {
     width: 50%;
+}
+
+.loading_animation {
+    border: 6px solid #f0a500; /* Light grey */
+    border-top: 6px solid #f4f4f4; /* Blue */
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    margin: 30px auto 30px auto;
+    animation: spin .5s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.error_div {
+    margin: 10 0 20 0px;
+    background-color: rgb(190, 81, 81);
+    border-radius: 10px;
+    padding: 0.5% 2% 0.5% 2%;
+    margin: 2px;
+    max-width: 51%;
+}
+
+.error_div:hover {
+    background-color: rgb(165, 69, 69);
+    cursor: pointer;
+}
+
+.error_text {
+    text-decoration: none !important;
+    font-family: 'Google Sans', sans-serif;
+    text-align: left;
+    font-size: 12;
+    color: #ffffff;
 }
