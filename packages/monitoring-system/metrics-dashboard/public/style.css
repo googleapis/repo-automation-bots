@@ -1,0 +1,54 @@
+body {
+    background-color: #cf7500;
+}
+
+h1 {
+    font-family: 'Google Sans', sans-serif;
+    text-align: center;
+    color: #f4f4f4;
+}
+
+h2, h3 {
+    font-family: 'Google Sans', sans-serif;
+    text-align: left;
+    color: #f4f4f4;
+    margin: 30 0 10 0px;
+}
+
+.stat {
+    margin: 20 0 10 0px;
+    font-family: 'Google Sans', sans-serif;
+    text-align: center;
+    font-size: 40;
+    color: #f4f4f4;
+}
+
+.label {
+    margin: 10 0 20 0px;
+    font-family: 'Google Sans', sans-serif;
+    text-align: center;
+    font-size: 14;
+    color: #f4f4f4;
+}
+
+#main_table {
+    width: 75%;
+    margin: auto;
+    margin-top: 3%;
+    min-width: 1600px;
+    padding: 10px;
+}
+
+hr {
+    color: #f4f4f4;
+    margin-left: 0;
+    border-style: solid;
+}
+
+.heading_row_divider {
+    width: 100%;
+}
+
+.subheading_row_divider {
+    width: 50%;
+}

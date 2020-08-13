@@ -1,0 +1,45 @@
+<html>
+
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700|Google Sans Display:400&display=swap"
+    rel="stylesheet">
+  <link rel='stylesheet' type="text/css" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/7.17.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.17.2/firebase-firestore.js"></script>
+  <script src="firestore.js"></script>
+  <script src="render.js"></script>
+  
+  <script>
+    // Start firestore live queries on page load
+    window.onload = (event) => {
+      Firestore.start();
+    }
+  </script>
+</head>
+
+<body>
+  <h1>Repo Automation Bots - Monitoring Dashboard</h1>
+  <table id="main_table">
+    <tr id="heading_row_executions">
+      <td colspan="14">
+        <h2>Executions in the last hour</h2>
+        <hr class="heading_row_divider">
+      </td>
+    </tr>
+    <tr class="subheading" id="subheading_row_executions">
+      <td colspan="14">
+        <h3>By Automation Bot</h3>
+      </td>
+    </tr>
+    <tr class="data" id="stat_executions_last_hour_by_bot">
+    </tr>
+    <tr class="subheading" id="subheading_row_executions">
+      <td colspan="14">
+        <h3>By Trigger Type</h3>
+      </td>
+    </tr>
+    <tr class="data" id="stat_executions_last_hour_by_trigger"></tr>
+  </table>
+</body>
+
+</html>
