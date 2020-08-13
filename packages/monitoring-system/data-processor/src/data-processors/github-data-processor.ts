@@ -23,7 +23,7 @@ import {
   GitHubEventDocument,
   UNKNOWN_FIRESTORE_VALUE,
   FirestoreCollection,
-} from '../firestore-schema';
+} from '../types/firestore-schema';
 const {ORG, USER, UNKNOWN} = OwnerType;
 
 export interface GitHubProcessorOptions extends ProcessorOptions {

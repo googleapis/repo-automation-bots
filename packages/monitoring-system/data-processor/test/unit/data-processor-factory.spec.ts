@@ -57,6 +57,10 @@ describe('Data Processor Factory', () => {
         firestore: {
           project_id: 'firestore-foo',
         },
+        cloud_logs_processor: {
+          pub_sub_subscription: 'baz-subscription',
+          pub_sub_listen_limit: 1,
+        },
         cloud_functions_processor: {
           cloud_functions_project_id: 'functions-baz',
         },
