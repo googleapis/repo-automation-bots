@@ -52,7 +52,7 @@ class Firestore {
             .where("start_time", ">",  filters.START_TIME)
             .onSnapshot(querySnapshot => {
                 const currentFilterDocs = this.currentFilterExecutions.docs;
-                querySnapshot.docChanges().docs.forEach(change => {
+                querySnapshot.docChanges().forEach(change => {
                     if (change.type === "added") {
                         currentFilterDocs[change.doc.execution_id] = change.doc;
                     } else if (change.type === "removed" && currentFilterDocs[change.doc.execution_id]) {

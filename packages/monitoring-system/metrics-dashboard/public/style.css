@@ -85,7 +85,7 @@ hr {
     border-radius: 10px;
     padding: 0.5% 2% 0.5% 2%;
     margin: 2px;
-    max-width: 51%;
+    max-width: 100%;
 }
 
 .error_div:hover {

@@ -64,7 +64,7 @@ class Render {
         const errorsTd = this.getElementByXpath(xPath);
         var errorsHTML = ''
         for (const error of errors) {
-            const div = `<div class="error_div" onclick="window.open('${error.logsUrl}','blank');"><p class="error_text">(${error.time}) ${error.botName}: ${error.msg}</p></div>`
+            const div = `<div class="error_div" onclick="window.open('${error.logsUrl}','blank');"><p class="error_text"><strong>(${error.time}) ${error.botName}:</strong></br> ${error.msg}</p></div>`
             errorsHTML += div;
         }
         errorsTd.innerHTML = errorsHTML;
