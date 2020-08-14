@@ -262,3 +262,13 @@ exports['buildcop app xunitXML opens an issue [Ruby] 1'] = {
     "buildcop: issue"
   ]
 }
+
+exports['buildcop app xunitXML opens an issue [Python error] 1'] = {
+  "title": "memorystore.redis.cloud_run_deployment.e2e_test: test_end_to_end failed",
+  "body": "This test failed!\n\nTo configure my behavior, see [the Build Cop Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop).\n\nIf I'm commenting on this issue too often, add the `buildcop: quiet` label and\nI will stop commenting.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed\n<details><summary>Test output</summary><br><pre>Traceback (most recent call last):\n  File \"/workspace/memorystore/redis/cloud_run_deployment/e2e_test.py\", line 70, in services\n    subprocess.run(\n  File \"/usr/local/lib/python3.8/subprocess.py\", line 512, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['gcloud', 'redis', 'instances', 'create', 'test-instance-44d74c74c5', '--region=us-central1', '--network', 'test-network-44d74c74c5', '--project', 'python-docs-samples-tests']' returned non-zero exit status 1.</pre></details>",
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue"
+  ]
+}

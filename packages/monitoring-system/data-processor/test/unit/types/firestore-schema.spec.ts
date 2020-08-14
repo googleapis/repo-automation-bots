@@ -14,7 +14,10 @@
 //
 import {describe, it} from 'mocha';
 import assert from 'assert';
-import {getPrimaryKey, FirestoreCollection} from '../../src/firestore-schema';
+import {
+  getPrimaryKey,
+  FirestoreCollection,
+} from '../../../src/types/firestore-schema';
 
 describe('firestore-schema', () => {
   describe('getPrimaryKey', () => {

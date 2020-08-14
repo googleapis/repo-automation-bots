@@ -15,7 +15,7 @@
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import {resolve} from 'path';
-import {ConfigUtil} from '../../src/config-util';
+import {ConfigUtil} from '../../../src/util/config-util';
 
 describe('ConfigUtil', () => {
   it('correctly reads a config file from a path', () => {
