@@ -30,6 +30,10 @@ interface ConfigurationOptions {
   ignoreFiles: string[];
 }
 
+const DEFAULT_CONFIGURATION: ConfigurationOptions = {
+  ignoreFiles: [],
+};
+
 const CONFIGURATION_FILE_PATH = 'snippet-bot.yml';
 
 class Configuration {
@@ -38,11 +42,9 @@ class Configuration {
 
   constructor(options: ConfigurationOptions) {
     this.options = options;
-    this.minimatches = (options as ConfigurationOptions).ignoreFiles.map(
-      pattern => {
-        return new minimatch.Minimatch(pattern);
-      }
-    );
+    this.minimatches = options.ignoreFiles.map(pattern => {
+      return new minimatch.Minimatch(pattern);
+    });
   }
 
   ignoredFile(filename: string): boolean {
@@ -54,11 +56,22 @@ class Configuration {
 
 export = (app: Application) => {
   app.on('pull_request', async context => {
-    const configOptions = (await context.config(
-      CONFIGURATION_FILE_PATH,
-      {}
-    )) as ConfigurationOptions;
-    const configuration = new Configuration(configOptions);
+    let configOptions!: ConfigurationOptions | null;
+    try {
+      configOptions = await context.config(
+        CONFIGURATION_FILE_PATH,
+        DEFAULT_CONFIGURATION
+      );
+    } catch (err) {
+      err.message = `Error reading configuration: ${err.message}`;
+      logger.error(err);
+      // Falling back to default.
+      configOptions = DEFAULT_CONFIGURATION;
+    }
+    const configuration = new Configuration(
+      configOptions as ConfigurationOptions
+    );
+    logger.info({config: configuration});
 
     // List pull request files for the given PR
     // https://developer.github.com/v3/pulls/#list-pull-requests-files
@@ -78,8 +91,6 @@ export = (app: Application) => {
       return;
     }
     const files: Octokit.PullsListFilesResponseItem[] = filesResponse.data;
-
-    logger.info({config: configuration});
 
     let mismatchedTags = false;
     const failureMessages: string[] = [];

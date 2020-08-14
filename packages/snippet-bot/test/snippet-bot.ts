@@ -22,7 +22,7 @@ import {Probot} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
-import {expect} from 'chai';
+import assert from 'assert';
 import {describe, it, beforeEach} from 'mocha';
 
 nock.disableNetConnect();
@@ -49,16 +49,15 @@ describe('snippet-bot', () => {
     probot.load(myProbotApp);
   });
 
-  describe('shows an example of how to use chai library', () => {
-    it('confirms the random boolean is true', async () => {
-      expect(config.toString()).to.include('ignore.py');
+  describe('reads the config file', () => {
+    it('confirms the value in the config file', async () => {
+      assert(config.toString().includes('ignore.py'));
     });
   });
 
   describe('responds to PR', () => {
     it('quits early', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const changedFiles = require(resolve(fixturesPath, './pr_files_test_py'));
       const payload = require(resolve(fixturesPath, './pr_event'));
 
       const requests = nock('https://api.github.com')
@@ -67,7 +66,7 @@ describe('snippet-bot', () => {
         )
         .reply(200, {content: config.toString('base64')})
         .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
-        .reply(404, changedFiles);
+        .reply(404, {});
 
       await probot.receive({
         name: 'pull_request',
@@ -80,7 +79,7 @@ describe('snippet-bot', () => {
 
     it('sets a "failure" context on PR', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const changedFiles = require(resolve(fixturesPath, './pr_files_test_py'));
+      const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
       const payload = require(resolve(fixturesPath, './pr_event'));
       const blob = require(resolve(fixturesPath, './failure_blob'));
 
@@ -95,6 +94,96 @@ describe('snippet-bot', () => {
           '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
         )
         .reply(200, blob)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+    });
+
+    it('sets a "failure" context on PR even when it failed to read the config', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
+      const payload = require(resolve(fixturesPath, './pr_event'));
+      const blob = require(resolve(fixturesPath, './failure_blob'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/.github/snippet-bot.yml'
+        )
+        .reply(403, {content: 'Permission denied'})
+        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+        .reply(200, changedFiles)
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+        )
+        .reply(200, blob)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+    });
+
+    it('sets a "success" context on PR by ignoreFile', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
+      const payload = require(resolve(fixturesPath, './pr_event'));
+
+      const ignoreConfig = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'ignore-config.yml')
+      );
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/.github/snippet-bot.yml'
+        )
+        .reply(200, {content: ignoreConfig.toString('base64')})
+        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+        .reply(200, changedFiles)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+    });
+
+    it('sets a "success" context on PR because the file was just deleted', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const changedFiles = require(resolve(fixturesPath, './pr_files_deleted'));
+      const payload = require(resolve(fixturesPath, './pr_event'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/.github/snippet-bot.yml'
+        )
+        .reply(200, {content: config.toString('base64')})
+        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+        .reply(200, changedFiles)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
