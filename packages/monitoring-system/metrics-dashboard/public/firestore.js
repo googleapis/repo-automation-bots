@@ -1,72 +1,157 @@
 class Firestore {
 
-    static executionCountsByBots = {};
+    /**
+     * Bot_Executions that match the current user filters
+     */
+    static currentFilterExecutions = {
+        docs: {},                     // the execution documents
+        countByBot: {}                // count of number of executions by bot
+    };
 
-    static start() {
-        const firestore = this._getAuthenticatedFirestore();
-        this.listenToBotNames(firestore); // TODO: fix race condition b/w this line and next
-
-        const oneHourAgo = new Date().getTime() - 60 * 60 * 1000;
-        this.listenToBotExecutions(firestore, oneHourAgo);
-
-        this.listenToErrors(firestore, oneHourAgo);
+    static currentFilterErrors = {
+        formattedErrors: {}          // errors formatted with execution info
     }
 
-    static listenToErrors(firestore, minTimestamp) {
+    static currentFilterTriggers = {
+        docs: {}
+    }
+
+    /**
+     * Sets listeners on Firestore based on the current user filters
+     */
+    static start() {   // TODO: rename to something like refreshListeners()
+        const firestore = this._getAuthenticatedFirestore(); // TODO: move to an init() method
+        const filters = this._getCurrentUserFilters();
+        this._listenToBotNames(firestore); // TODO: fix race condition b/w this line and next
+        this._listenToBotExecutions(firestore, filters);
+        this._listenToErrors(firestore, filters);
+    }
+
+    /**
+     * Returns the current data filters set by the user
+     * 
+     * NOTE: NOT IMPLEMENTED
+     * Currently this just returns fixed values
+     */
+    static _getCurrentUserFilters() {
+        return {
+            START_TIME: new Date().getTime() - 60 * 60 * 1000,
+            // REPOSITORY_NAME: "All Repositories",
+            // ORG_NAME: "All Organizations",
+            // BOT_NAME: "All Bots"
+        }
+    }
+
+    /**
+     * Sets a listener for Bot Executions that match the current user filters
+     * @param {Firestore} firestore authenticated firestore client
+     * @param filters the current user filters
+     */
+    static _listenToBotExecutions(firestore, filters) {
+        firestore.collection("Bot_Execution")
+            .where("start_time", ">",  filters.START_TIME)
+            .onSnapshot(querySnapshot => {
+                const currentFilterDocs = this.currentFilterExecutions.docs;
+                querySnapshot.docChanges().docs.forEach(change => {
+                    if (change.type === "added") {
+                        currentFilterDocs[change.doc.execution_id] = change.doc;
+                    } else if (change.type === "removed" && currentFilterDocs[change.doc.execution_id]) {
+                        delete currentFilterDocs[change.doc.execution_id];
+                    }
+                });
+                this._updateExecutionCountsByBot(querySnapshot.docChanges())
+                Render.executionsByBot(this.currentFilterExecutions.countByBot);
+            })
+    }
+
+    /**
+     * Updates currentFilterExecutions.countByBot with the given changes
+     * @param changes Bot_Execution document changes
+     */
+    static _updateExecutionCountsByBot(changes) {
+        const countByBot = this.currentFilterExecutions.countByBot;
+        changes.forEach(change => {
+            const botName = change.doc.data().bot_name;
+            if (!countByBot[botName]) {
+                countByBot[botName] = 0;
+            }
+            const currCount = countByBot[botName];
+            if (change.type === "added") {
+                countByBot[botName] = currCount + 1;
+            } else if (change.type === "removed") {
+                countByBot[botName] = Math.max(0, currCount - 1);
+            }
+        })
+    }
+
+    /**
+     * Updates currentFilterTriggers.docs with the given changes
+     * @param changes Bot_Execution document changes
+     */
+    static _updateExecutionTriggers(changes) {
+        // TODO
+    }
+
+    /**
+     * Sets a listener for execution errors that match the current user filters
+     * @param {Firestore} firestore authenticated firestore client
+     * @param filters the current user filters
+     */
+    static _listenToErrors(firestore, filters) {
         firestore.collection("Error")
-        .where("timestamp", ">", minTimestamp)
-        .limit(10)
+        .where("timestamp", ">", filters.START_TIME)
+        .limit(5)
         .orderBy("timestamp")
         .onSnapshot(querySnapshot => {
-            const errors = querySnapshot.docs.map(doc => {
-                const executionId = doc.data().execution_id;
-                return firestore.collection("Bot_Execution")
-                .doc(executionId).get()
-                .then(executionDoc => {
-                    const msg = doc.data().error_msg;
-                    const time = doc.data().timestamp;
-                    const botName = executionDoc.data().bot_name;
-                    console.log(executionDoc.data());
-                    return {
-                        msg: String(msg).substring(0, 100) + "...",
-                        time: new Date(time).toLocaleTimeString(),
-                        logsUrl: executionDoc.data().logs_url,
-                        botName: botName,
-                    };
-                });                
-            })
-            Promise.all(errors).then(errors => {
-                console.log(errors);
-                Render.errors(errors);
+            const changes = querySnapshot.docChanges();
+            this._updateFormattedErrors(changes, firestore).then(() => {
+                Render.errors(Object.values(this.currentFilterErrors.formattedErrors));
             });
         })
     }
 
     /**
-     * Sets a listener for Bot Executions that start after minTimestamp
-     * @param {Firestore} firestore authenticated firestore client
-     * @param {Number} minTimestamp the minimum start time of Bot Executions to listen for
+     * Updates currentFilterErrors.formattedErrors with the given changes
+     * @param changes Error document changes
+     * @returns a Promise that resolves after all updates are completed
      */
-    static listenToBotExecutions(firestore, minTimestamp) {
-        firestore.collection("Bot_Execution")
-            .where("start_time", ">", minTimestamp)
-            .onSnapshot(querySnapshot => {
-                const changes = querySnapshot.docChanges()
-                changes.forEach(change => {
-                    const botName = change.doc.data().bot_name;
-                    if (change.type === "added") {
-                        if (!this.executionCountsByBots[botName]) {
-                            this.executionCountsByBots[botName] = 0;
-                        }
-                        this.executionCountsByBots[botName] += 1;
-                    } else if (change.type === "removed") {
-                        if (!this.executionCountsByBots[botName]) {
-                            this.executionCountsByBots[botName] -= 1;
-                        }
-                    }
+    static _updateFormattedErrors(changes, firestore) {
+        const formattedErrors = this.currentFilterErrors.formattedErrors;
+        const updates = changes.map(change => {
+            const doc = change.doc.data();
+            const primaryKey = `${doc.execution_id}_${doc.timestamp}`; 
+            if (change.type === "removed" && formattedErrors[primaryKey]) {
+                delete formattedErrors[primaryKey];
+                return Promise.resolve();
+            } else if (change.type === "added") {
+                return this._buildFormattedError(doc, firestore).then(formattedDoc => {
+                    formattedErrors[primaryKey] = formattedDoc;
                 })
-                Render.executionsByBot(this.executionCountsByBots);
-            })
+            } 
+        })
+        return Promise.all(updates);  // TODO will short-circuit
+    }
+
+    /**
+     * Builds a formatted error document from an error document
+     * @param errorDoc error document from Firestore
+     * @returns a Promise that resolves the formatted document
+     */
+    static _buildFormattedError(errorDoc, firestore) {
+        const executionId = errorDoc.execution_id;
+        return firestore.collection("Bot_Execution")  // TODO could check local cache
+            .doc(executionId).get()
+            .then(executionDoc => {
+                const msg = errorDoc.error_msg;
+                const time = errorDoc.timestamp;
+                const botName = executionDoc.data().bot_name;
+                return {
+                    msg: String(msg).substring(0, 200) + "...",
+                    time: new Date(time).toLocaleTimeString(),
+                    logsUrl: executionDoc.data().logs_url,
+                    botName: botName,
+                };
+            });
     }
 
     /**
@@ -74,7 +159,7 @@ class Firestore {
      * labels on the document
      * @param {Firestore} firestore an authenticated Firestore client
      */
-    static listenToBotNames(firestore) {
+    static _listenToBotNames(firestore) {   // TODO: use filters and cache
         firestore.collection("Bot")
             .onSnapshot(querySnapshot => {
                 const names = querySnapshot.docs.map(doc => doc.data().bot_name);

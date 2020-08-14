@@ -5,8 +5,16 @@ class Render {
      * as labels underneath stats
      */
     static statRowsByBot = [
-        'stat_executions_last_hour_by_bot',
+        'stat_executions_by_bot',
         'stat_tasks_by_bot',
+    ]
+
+    /**
+     * Rows that contain statistics 'By Trigger' and need trigger types
+     * as labels underneath stats
+     */
+    static statRowsByTrigger = [
+        'stat_executions_by_trigger'
     ]
 
     /**
@@ -24,13 +32,24 @@ class Render {
         }
     }
 
+    static addTriggerTypeLabels(triggerTypes)  {
+        for (const rowId of this.statRowsByTrigger) {
+            const row = document.getElementById(rowId);
+            row.innerHTML = "";
+            for (const type of triggerTypes) {
+                const labelCell = row.insertCell(-1);
+                labelCell.innerHTML = `<p class="stat" id="${type}">-</p><p class="label" id="${type}">${type}</p>`;
+            }
+        }
+    }
+
     /**
      * Renders the execution counts for given bots
      * @param {[bot_name: string]: number} executionCounts a map of bot_name to execution counts
      */
     static executionsByBot(executionCounts) {
         for (const botName of Object.keys(executionCounts)) {
-            const xPath = `//tr[@id="stat_executions_last_hour_by_bot"]//p[contains(@class, "stat") and @id="${botName}"]`;
+            const xPath = `//tr[@id="stat_executions_by_bot"]//p[contains(@class, "stat") and @id="${botName}"]`;
             const statP = this.getElementByXpath(xPath)
             statP.innerHTML = String(executionCounts[botName])
         }
@@ -41,7 +60,7 @@ class Render {
      * @param {msg: string, botName: string, logsUrl: string, time: string} errors errors to render
      */
     static errors(errors) {
-        const xPath = `//tr[@id="stat_errors_last_hour"]/td`;
+        const xPath = `//tr[@id="stat_errors"]/td`;
         const errorsTd = this.getElementByXpath(xPath);
         var errorsHTML = ''
         for (const error of errors) {
