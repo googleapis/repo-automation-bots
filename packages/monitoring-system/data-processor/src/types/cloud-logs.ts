@@ -350,7 +350,6 @@ export function instanceOfLogEntry(toCheck: object): toCheck is LogEntry {
   const topLevelStringProps = [
     'insertId',
     'timestamp',
-    'severity',
     'logName',
     'trace',
     'receiveTimestamp',
