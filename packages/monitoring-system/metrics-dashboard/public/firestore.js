@@ -9,11 +9,12 @@ class Firestore {
     };
 
     static currentFilterErrors = {
-        formattedErrors: {}          // errors formatted with execution info
+        formattedErrors: {}           // errors formatted with execution info
     }
 
     static currentFilterTriggers = {
-        docs: {}
+        docs: {},
+        countByType: {},
     }
 
     /**
@@ -25,6 +26,7 @@ class Firestore {
         this._listenToBotNames(firestore); // TODO: fix race condition b/w this line and next
         this._listenToBotExecutions(firestore, filters);
         this._listenToErrors(firestore, filters);
+        this._listenToTaskQueueStatus(firestore, filters);
     }
 
     /**
@@ -59,8 +61,39 @@ class Firestore {
                         delete currentFilterDocs[change.doc.execution_id];
                     }
                 });
+
+                // TODO: enabling this breaks the firestore client
+                // this._buildTriggerDocs(querySnapshot.docChanges(), firestore).then(() => {
+                //     Render.executionsByTrigger(this.currentFilterTriggers.countByType);
+                // })
+
                 this._updateExecutionCountsByBot(querySnapshot.docChanges())
                 Render.executionsByBot(this.currentFilterExecutions.countByBot);
+            })
+    }
+
+    /**
+     * Sets a listener for the Task Queue status that match the current user filters
+     * @param {Firestore} firestore authenticated firestore client
+     * @param filters the current user filters
+     */
+    static _listenToTaskQueueStatus(firestore, filters) {
+        // TODO: currently this just grabs the first 20 records
+        // change it so that it finds the latest timestamp and gets
+        // all records with that timestamp
+        firestore.collection("Task_Queue_Status")
+            .orderBy("timestamp", "desc")
+            .limit(20) 
+            .onSnapshot(querySnapshot => {
+                const byBot = {};
+                const docs = querySnapshot.docs.map(doc => doc.data());
+                docs.forEach(doc => {
+                    const botName = doc.queue_name.replace(/-/g, "_");
+                    if (!byBot[botName]) {
+                        byBot[botName] = doc.in_queue;
+                    }
+                });
+                Render.tasksByBot(byBot);
             })
     }
 
@@ -85,11 +118,33 @@ class Firestore {
     }
 
     /**
-     * Updates currentFilterTriggers.docs with the given changes
+     * Builds trigger docs with the given changes and stores them 
+     * in currentFilterTriggers.docs 
      * @param changes Bot_Execution document changes
+     * @returns a Promise that resolves when all trigger docs are built and stored
      */
-    static _updateExecutionTriggers(changes) {
-        // TODO
+    static _buildTriggerDocs(changes, firestore) {
+        const triggerDocs = this.currentFilterTriggers.docs;
+        const countByType = this.currentFilterTriggers.countByType;
+        const updates = changes.map(change => {
+            const executionId = change.doc.data().execution_id;
+            if (change.type === "removed" && triggerDocs[executionId]) {
+                const type = triggerDocs[executionId].trigger_type;
+                countByType[type] -= 1
+                delete triggerDocs[executionId];
+                return Promise.resolve();
+            } else if (change.type === "added") {
+                return firestore.collection("Trigger").doc(executionId).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const type = doc.data().trigger_type;
+                        triggerDocs[executionId] = doc.data();
+                        countByType[type] += 1
+                    }
+                })
+            }
+        })
+        return Promise.all(updates); // TODO will short-circuit
     }
 
     /**
@@ -101,7 +156,7 @@ class Firestore {
         firestore.collection("Error")
         .where("timestamp", ">", filters.START_TIME)
         .limit(5)
-        .orderBy("timestamp")
+        .orderBy("timestamp", "desc")
         .onSnapshot(querySnapshot => {
             const changes = querySnapshot.docChanges();
             this._updateFormattedErrors(changes, firestore).then(() => {

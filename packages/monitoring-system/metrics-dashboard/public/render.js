@@ -55,6 +55,26 @@ class Render {
         }
     }
 
+    // TODO JSDoc
+    static executionsByTrigger(executionCounts) {
+        const types = Object.keys(executionCounts);
+        this.addTriggerTypeLabels(types)  // TODO: optimize instead of rewriting labels each time
+        for (const type of types) {
+            const xPath = `//tr[@id="stat_executions_by_trigger"]//p[contains(@class, "stat") and @id="${type}"]`;
+            const statP = this.getElementByXpath(xPath)
+            statP.innerHTML = String(executionCounts[type])
+        }
+    }
+
+    // TODO JSDoc
+    static tasksByBot(taskCount) {
+        for (const botName of Object.keys(taskCount)) {
+            const xPath = `//tr[@id="stat_tasks_by_bot"]//p[contains(@class, "stat") and @id="${botName}"]`;
+            const statP = this.getElementByXpath(xPath)
+            statP.innerHTML = String(taskCount[botName])
+        }
+    }
+
     /**
      * Renders the given errors
      * @param {msg: string, botName: string, logsUrl: string, time: string} errors errors to render
