@@ -22,7 +22,7 @@ import * as assert from 'assert';
 import {resolve} from 'path';
 import fs from 'fs';
 import snapshot from 'snap-shot-it';
-import handler, {autoDetectLabel} from '../src/auto-label';
+import {autoDetectLabel, handler} from '../src/auto-label';
 
 nock.disableNetConnect();
 
