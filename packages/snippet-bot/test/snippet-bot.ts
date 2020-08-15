@@ -14,6 +14,7 @@
 //
 
 /* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable node/no-extraneous-import */
 
 import myProbotApp from '../src/snippet-bot';
 
