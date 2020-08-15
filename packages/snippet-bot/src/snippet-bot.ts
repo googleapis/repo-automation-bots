@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable node/no-extraneous-import */
+
 import {Application, Octokit} from 'probot';
 import {parseRegionTags} from './region-tag-parser';
 import {logger} from 'gcf-utils';
