@@ -24,6 +24,7 @@ import {
   UNKNOWN_FIRESTORE_VALUE,
   FirestoreCollection,
 } from '../types/firestore-schema';
+import {OctokitResponse} from '@octokit/types';
 const {ORG, USER, UNKNOWN} = OwnerType;
 
 export interface GitHubProcessorOptions extends ProcessorOptions {
@@ -62,11 +63,10 @@ export class GitHubProcessor extends DataProcessor {
     return new Promise((resolve, reject) => {
       this.listRepositories()
         .then(repos => {
-          return Promise.all(
-            repos.map(repo => {
-              return this.listPublicEventsForRepository(repo);
-            })
+          const eventPromises = repos.map(repo =>
+            this.listPublicEventsForRepository(repo)
           );
+          return Promise.all(eventPromises);
         })
         .then((allRepoEvents: GitHubEventDocument[][]) => {
           const allRepoEventsFlattened = ([] as GitHubEventDocument[]).concat(
@@ -84,7 +84,7 @@ export class GitHubProcessor extends DataProcessor {
 
   /**
    * List the GitHub repositories that have triggered
-   * bot executions in the past
+   * bot executions in the past and are not marked as private
    */
   private async listRepositories(): Promise<GitHubRepositoryDocument[]> {
     return this.firestore
@@ -92,50 +92,99 @@ export class GitHubProcessor extends DataProcessor {
       .get()
       .then(repositoryCollection => {
         const repositoryDocs = repositoryCollection.docs;
-        return repositoryDocs.map(
-          repoDoc => repoDoc.data() as GitHubRepositoryDocument
-        );
+        return repositoryDocs
+          .map(repoDoc => repoDoc.data() as GitHubRepositoryDocument)
+          .filter(
+            repoDoc =>
+              repoDoc.private === undefined || repoDoc.private === false
+          );
       });
   }
 
   /**
-   * Get all the publicly visible Events on the given repository
+   * Get recent 100 publicly visible Events on the given repository
    * @param repository repository for which to get events
+   * @returns A Promise with a list of GitHubEventDocuments. Promise
+   * will always resolve - if there is an error, it will resolve with
+   * an empty array and error will be logged.
+   *
+   * NOTE: We only fetch the first page (last 100) events given
+   * that this process will run at most every 5 mins. However,
+   * this should be reconsidered if the rate of new events
+   * increases in the future.
    */
-  private async listPublicEventsForRepository(
+  private listPublicEventsForRepository(
     repository: GitHubRepositoryDocument
   ): Promise<GitHubEventDocument[]> {
-    return (
-      this.octokit.activity
-        /**
-         * We only fetch the first page (last 100) events given
-         * that this process will run at most every 5 mins. However,
-         * this should be reconsidered if the rate of new events
-         * increases in the future.
-         */
-        .listRepoEvents({
-          repo: repository.repo_name,
-          owner: repository.owner_name,
-        })
-        .then(eventsPayload => {
-          if (!(eventsPayload.data instanceof Array)) {
-            throw new Error(
-              `Unexpected payload from Octokit: ${JSON.stringify(
-                eventsPayload
-              )}`
-            );
-          }
-          const gitHubEvents: GitHubEventDocument[] = [];
-          for (const event of eventsPayload.data) {
-            gitHubEvents.push(
-              this.githubEventResponseToEvent(
-                (event as unknown) as GitHubEventResponse
-              )
-            );
-          }
-          return gitHubEvents;
-        })
+    const listRepoOptions = {
+      repo: repository.repo_name,
+      owner: repository.owner_name,
+    };
+
+    const gitHubEventsPromise = this.octokit.activity
+      .listRepoEvents(listRepoOptions)
+      .then(eventsPayload => {
+        this.validateEventsPayload(eventsPayload);
+        const events: object[] = eventsPayload.data;
+        const gitHubEvents = events.map((event: object) => {
+          return this.githubEventResponseToEvent(
+            (event as unknown) as GitHubEventResponse
+          );
+        });
+        return gitHubEvents;
+      });
+
+    return gitHubEventsPromise
+      .then(events => {
+        this.markRepositoryAccessibility(repository, false);
+        return events;
+      })
+      .catch(error => {
+        this.logger.debug(JSON.stringify(error));
+        if (error.HttpError && error.HttpError === 'Not Found') {
+          // We assume that this repository is private,
+          // but it could be non-existant too
+          this.markRepositoryAccessibility(repository, true);
+        } else {
+          const fullname = `${repository.owner_name}/${repository.repo_name}`;
+          this.logger.error(
+            `Failed to fetch events for ${fullname}: ${JSON.stringify(error)}`
+          );
+        }
+        return [];
+      });
+  }
+
+  /**
+   * Marks the given repository as private or public
+   * @param repository a GitHubRepositoryDocument
+   * @param isPrivate if true, repository will be marked as private. Else marked as public
+   */
+  private markRepositoryAccessibility(
+    repository: GitHubRepositoryDocument,
+    isPrivate: boolean
+  ): Promise<WriteResult> {
+    const fullname = `${repository.owner_name}/${repository.repo_name}`;
+    this.logger.debug(
+      `Marking ${fullname} as ${isPrivate ? 'private' : 'public'}`
     );
+    return this.updateFirestore({
+      doc: {...repository, private: isPrivate},
+      collection: FirestoreCollection.GitHubRepository,
+    });
+  }
+
+  /**
+   * Validates the given GitHub events playload. Throws an error for
+   * invalid payloads.
+   * @param eventsPayload list events payload from GitHub
+   */
+  private validateEventsPayload(eventsPayload: OctokitResponse<any>) {
+    if (!(eventsPayload.data instanceof Array)) {
+      throw new Error(
+        `Unexpected payload from Octokit: ${JSON.stringify(eventsPayload)}`
+      );
+    }
   }
 
   /**
@@ -155,10 +204,7 @@ export class GitHubProcessor extends DataProcessor {
      * to be able to map the webhook to the GitHub Event
      * since they share the same payload
      */
-    const payloadHash = crypto
-      .createHash('md5')
-      .update(JSON.stringify(eventResponse.payload))
-      .digest('hex');
+    const payloadHash = this.hashObject(eventResponse.payload);
 
     const [ownerName, repoName] = eventResponse.repo?.name?.split('/');
     const ownerType: OwnerType = eventResponse.org
@@ -182,6 +228,13 @@ export class GitHubProcessor extends DataProcessor {
       timestamp: unixTimestamp,
       actor: eventResponse.actor?.login || UNKNOWN_FIRESTORE_VALUE,
     };
+  }
+
+  /**
+   * Returns an MD5 hash of the object after stringifying it
+   */
+  private hashObject(obj: object) {
+    return crypto.createHash('md5').update(JSON.stringify(obj)).digest('hex');
   }
 
   /**

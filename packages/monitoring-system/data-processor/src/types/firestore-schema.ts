@@ -145,6 +145,8 @@ export interface GitHubRepositoryDocument {
   owner_name: string;
   /* The account type of the owner. See OwnerType */
   owner_type?: OwnerType;
+  /* True if the repository is not publicly accessible */
+  private?: boolean;
 }
 
 /**
