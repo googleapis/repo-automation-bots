@@ -22,6 +22,12 @@ h4 {
     margin: 30 0 10 0px;
 }
 
+.streaming-text {
+    font-family: 'Google Sans', sans-serif;
+    color: rgb(93, 93, 93);
+    padding: 15px 15px 0 0;
+}
+
 .stat {
     margin: 20 0 10 0px;
     font-family: 'Google Sans', sans-serif;
@@ -42,18 +48,36 @@ h4 {
     width: 7%;
 }
 
+.data_div {
+    display: inline-block;
+    min-width: 120px;
+}
+
 #main_table {
     width: 75%;
     margin: auto;
     margin-top: 3%;
-    min-width: 800px;
+    min-width: 400px;
+    max-width: 3000px;
     padding: 10px;
 }
 
+#left_block {
+    width: 45%;
+    vertical-align: top;
+    float: left;
+}
+#right_block {
+    width: 45%;
+    vertical-align: top;
+    float: right;
+}
+
 hr {
-    color: #cccccc;
+    background-color: #cccccc;
     margin-left: 0;
     border-style: solid;
+    border-color: #cccccc;
 }
 
 .heading_row_divider {
@@ -81,16 +105,23 @@ hr {
 
 .error_div {
     margin: 10 0 20 0px;
-    background-color: rgb(190, 81, 81);
-    border-radius: 10px;
+    background-color:transparent;
+    border-radius: 15px;
+    border-width: 2px;
+    border-style: solid;
+    border-color: rgb(190, 81, 81);
     padding: 0.5% 2% 0.5% 2%;
-    margin: 2px;
+    margin: 5 0 5 0px;
     max-width: 100%;
 }
 
 .error_div:hover {
-    background-color: rgb(165, 69, 69);
+    background-color: rgb(190, 81, 81);
     cursor: pointer;
+}
+
+.error_div:hover p {
+    color: white;
 }
 
 .error_text {
@@ -98,5 +129,47 @@ hr {
     font-family: 'Google Sans', sans-serif;
     text-align: left;
     font-size: 12;
-    color: #ffffff;
+    color: rgb(190, 81, 81);
+}
+
+.blinking_dot {
+    border-radius: 50%;
+    width: 10px;
+    height: 10px;
+    opacity: .25;
+    background-color: rgb(190, 81, 81);
+    position: relative;
+    top: 50%;
+    left: 50%;
+    -webkit-animation: blink 1s infinite;
+    -moz-animation: blink 1s infinite;
+    -o-animation: blink 1s infinite;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0% {
+        transform: scale(1);
+        opacity: .25
+    }
+    50% {
+        transform: scale (1, 5);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: .25;
+    }
+}
+
+#streaming_indicator {
+    margin: 0 auto auto auto;
+    vertical-align: middle;
+}
+
+#streaming_indicator td {
+    vertical-align: middle;
+    align-items: center;
+    min-width: 50%;
+    padding: 10px;
 }

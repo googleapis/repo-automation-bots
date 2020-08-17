@@ -20,100 +20,118 @@
 
 <body>
   <h1>Repo Automation Bots - Monitoring Dashboard</h1>
+  <table id="streaming_indicator">
+    <tr>
+      <td>
+        <div class="blinking_dot"></div>
+      </td>
+      <td><span class="streaming-text">Streaming Live Data</span></td>
+    </tr>
+  </table>
+  
   <table id="main_table">
-    <tr id="heading_row_executions">
-      <td colspan="14">
-        <h2>Executions in the last hour</h2>
-        <hr class="heading_row_divider">
-      </td>
-    </tr>
 
-    <tr class="subheading" id="subheading_row_executions">
-      <td colspan="14">
-        <h3>By Automation Bot</h3>
-      </td>
-    </tr>
-    <tr class="data" id="stat_executions_by_bot">
-      <td>
-        <div class="loading_animation"></div>
-      </td>
-    </tr>
+    <tr id="first_section">
+      <td id="left_block" width="50%">
+        <table>
+          <tr id="heading_row_executions">
+            <td colspan="14">
+              <h2>Executions in the last hour</h2>
+              <hr class="heading_row_divider">
+            </td>
+          </tr>
 
-    <!--
-      <tr class="subheading" id="subheading_row_executions">
-        <td colspan="14">
-          <h3>By Trigger Type</h3>
-        </td>
-      </tr>
-      <tr class="data" id="stat_executions_by_trigger">
-        <td colspan="14">
-          <h4>Unavailable</h4>
-        </td>
-      </tr>
-     -->
+          <tr class="subheading" id="subheading_row_executions">
+            <td colspan="14">
+              <h3>By Automation Bot</h3>
+            </td>
+          </tr>
+          <tr class="data" id="stat_executions_by_bot">
+            <td>
+              <div class="loading_animation"></div>
+            </td>
+          </tr>
 
-    <tr class="subheading">
-      <td colspan="14">
-        <h3>Execution Errors</h3>
-      </td>
-    </tr>
-    <tr class="data" id="stat_errors">
-      <td colspan="14">
-        <div class="loading_animation"></div>
-      </td>
-    </tr>
+          <!--
+          <tr class="subheading" id="subheading_row_executions">
+            <td colspan="14">
+              <h3>By Trigger Type</h3>
+            </td>
+          </tr>
+          <tr class="data" id="stat_executions_by_trigger">
+            <td colspan="14">
+              <h4>Unavailable</h4>
+            </td>
+          </tr>
+         -->
 
-    <tr>
-      <td colspan="14">
-        <h2>Task Queue Status</h2>
-        <hr class="heading_row_divider">
+          <tr class="subheading">
+            <td colspan="14">
+              <h3>Execution Errors</h3>
+            </td>
+          </tr>
+          <tr class="data" id="stat_errors">
+            <td colspan="14">
+              <div class="loading_animation"></div>
+            </td>
+          </tr>
+        </table>
       </td>
-    </tr>
-    <tr class="subheading">
-      <td colspan="14">
-        <h3>By Automation Bot</h3>
-      </td>
-    </tr>
-    <tr class="data" id="stat_tasks_by_bot">
-      <td>
-        <div class="loading_animation"></div>
-      </td>
-    </tr>
-
-    <tr>
-      <td colspan="14">
-        <h2>GitHub Activity</h2>
-        <hr class="heading_row_divider">
-      </td>
-    </tr>
-    <tr class="subheading">
-      <td colspan="14">
-        <h3>Repositories with recent interactions</h3>
-      </td>
-    </tr>
-    <tr class="data">
-      <td colspan="14">
-        <h4>Unavailable</h4>
-      </td>
-    </tr>
-    <tr class="subheading">
-      <td colspan="14">
-        <h3>Objects with recent interactions</h3>
-      </td>
-    </tr>
-    <tr class="data">
-      <td colspan="14">
-        <h4>Unavailable</h4>
-      </td>
-    </tr>
-    <tr class="subheading">
-      <td colspan="14">
-        <h3>Actions taken in the last hour</h3>
-      </td>
-    </tr>
-    <tr class="data">
-      <td colspan="14">
-        <h4>Unavailable</h4>
+      <td id="right_block" width="50%">
+        <table>
+          <tr>
+            <td colspan="14">
+              <h2>Task Queue Status</h2>
+              <hr class="heading_row_divider">
+            </td>
+          </tr>
+          <tr class="subheading">
+            <td colspan="14">
+              <h3>By Automation Bot</h3>
+            </td>
+          </tr>
+          <tr class="data" id="stat_tasks_by_bot">
+            <td>
+              <div class="loading_animation"></div>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="14">
+              <h2>GitHub Activity</h2>
+              <hr class="heading_row_divider">
+            </td>
+          </tr>
+          <tr class="subheading">
+            <td colspan="14">
+              <h3>Repositories with recent interactions</h3>
+            </td>
+          </tr>
+          <tr class="data">
+            <td colspan="14">
+              <h4>Unavailable</h4>
+            </td>
+          </tr>
+          <tr class="subheading">
+            <td colspan="14">
+              <h3>Objects with recent interactions</h3>
+            </td>
+          </tr>
+          <tr class="data">
+            <td colspan="14">
+              <h4>Unavailable</h4>
+            </td>
+          </tr>
+          <tr class="subheading">
+            <td colspan="14">
+              <h3>Actions taken in the last hour</h3>
+            </td>
+          </tr>
+          <tr class="data">
+            <td colspan="14">
+              <h4>Unavailable</h4>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
 

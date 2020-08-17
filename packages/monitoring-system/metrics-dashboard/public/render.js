@@ -25,10 +25,12 @@ class Render {
         for (const rowId of this.statRowsByBot) {
             const row = document.getElementById(rowId);
             row.innerHTML = "";
+            const cell = row.insertCell(-1);
+            var cellHTML = '';
             for (const name of botNames) {
-                const labelCell = row.insertCell(-1);
-                labelCell.innerHTML = `<p class="stat" id="${name}">-</p><p class="label" id="${name}">${name}</p>`;
+                cellHTML += `<div class="data_div"><p class="stat" id="${name}">0</p><p class="label" id="${name}">${name}</p></div>`;
             }
+            cell.innerHTML = cellHTML;
         }
     }
 
@@ -82,7 +84,9 @@ class Render {
     static errors(errors) {
         const xPath = `//tr[@id="stat_errors"]/td`;
         const errorsTd = this.getElementByXpath(xPath);
-        var errorsHTML = ''
+        var errorsHTML = '';
+        errors.sort((e1, e2) => new Date(e2.time) - new Date(e1.time));
+        errors = errors.slice(0, 5);
         for (const error of errors) {
             const div = `<div class="error_div" onclick="window.open('${error.logsUrl}','blank');"><p class="error_text"><strong>(${error.time}) ${error.botName}:</strong></br> ${error.msg}</p></div>`
             errorsHTML += div;
