@@ -66,6 +66,11 @@ export class GitHubProcessor extends DataProcessor {
           const eventPromises = repos.map(repo =>
             this.listPublicEventsForRepository(repo)
           );
+          /**
+           * TODO: replace Promise.all with Promise.allSettled to ensure
+           * any rejections don't block successful calls down the line.
+           * Currently, Promise.allSettled is not yet available in TS.
+           */
           return Promise.all(eventPromises);
         })
         .then((allRepoEvents: GitHubEventDocument[][]) => {
@@ -140,18 +145,13 @@ export class GitHubProcessor extends DataProcessor {
         return events;
       })
       .catch(error => {
-        this.logger.debug(JSON.stringify(error));
         if (error.HttpError && error.HttpError === 'Not Found') {
           // We assume that this repository is private,
           // but it could be non-existant too
           this.markRepositoryAccessibility(repository, true);
-        } else {
-          const fullname = `${repository.owner_name}/${repository.repo_name}`;
-          this.logger.error(
-            `Failed to fetch events for ${fullname}: ${JSON.stringify(error)}`
-          );
-        }
-        return [];
+          return [];
+        } 
+        throw error;
       });
   }
 
