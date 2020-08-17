@@ -96,13 +96,14 @@ export class GitHubProcessor extends DataProcessor {
       .collection(FirestoreCollection.GitHubRepository)
       .get()
       .then(repositoryCollection => {
-        const repositoryDocs = repositoryCollection.docs;
-        return repositoryDocs
-          .map(repoDoc => repoDoc.data() as GitHubRepositoryDocument)
-          .filter(
-            repoDoc =>
-              repoDoc.private === undefined || repoDoc.private === false
-          );
+        const firestoreDocs = repositoryCollection.docs;
+        const repositoryDocs = firestoreDocs.map(
+          repoDoc => repoDoc.data() as GitHubRepositoryDocument
+        );
+        const nonPrivateRepos = repositoryDocs.filter(
+          repoDoc => repoDoc.private === undefined || repoDoc.private === false
+        );
+        return nonPrivateRepos;
       });
   }
 
@@ -150,7 +151,7 @@ export class GitHubProcessor extends DataProcessor {
           // but it could be non-existant too
           this.markRepositoryAccessibility(repository, true);
           return [];
-        } 
+        }
         throw error;
       });
   }
@@ -179,6 +180,7 @@ export class GitHubProcessor extends DataProcessor {
    * invalid payloads.
    * @param eventsPayload list events payload from GitHub
    */
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   private validateEventsPayload(eventsPayload: OctokitResponse<any>) {
     if (!(eventsPayload.data instanceof Array)) {
       throw new Error(
