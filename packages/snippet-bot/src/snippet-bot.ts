@@ -58,21 +58,28 @@ class Configuration {
 
 export = (app: Application) => {
   app.on('pull_request', async context => {
+    const repoUrl = context.payload.repository.full_name;
     let configOptions!: ConfigurationOptions | null;
     try {
-      configOptions = await context.config(
-        CONFIGURATION_FILE_PATH,
-        DEFAULT_CONFIGURATION
+      configOptions = await context.config<ConfigurationOptions>(
+        CONFIGURATION_FILE_PATH
       );
     } catch (err) {
       err.message = `Error reading configuration: ${err.message}`;
       logger.error(err);
-      // Falling back to default.
-      configOptions = DEFAULT_CONFIGURATION;
+      // Now this bot is only enabled if it finds the configuration file.
+      // Exiting.
+      return;
     }
-    const configuration = new Configuration(
-      configOptions as ConfigurationOptions
-    );
+
+    if (configOptions === null) {
+      logger.info(`snippet-bot is not configured for ${repoUrl}.`);
+      return;
+    }
+    const configuration = new Configuration({
+      ...DEFAULT_CONFIGURATION,
+      ...configOptions,
+    });
     logger.info({config: configuration});
 
     // List pull request files for the given PR
