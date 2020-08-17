@@ -12,28 +12,138 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Application} from 'probot';
+import {Application, Octokit} from 'probot';
+import {parseRegionTags} from './region-tag-parser';
 import {logger} from 'gcf-utils';
+import * as minimatch from 'minimatch';
+
+type Conclusion =
+  | 'success'
+  | 'failure'
+  | 'neutral'
+  | 'cancelled'
+  | 'timed_out'
+  | 'action_required'
+  | undefined;
+
+interface ConfigurationOptions {
+  ignoreFiles: string[];
+}
+
+const DEFAULT_CONFIGURATION: ConfigurationOptions = {
+  ignoreFiles: [],
+};
 
 const CONFIGURATION_FILE_PATH = 'snippet-bot.yml';
 
-interface Configuration {
-  randomBoolean: boolean;
+class Configuration {
+  private options: ConfigurationOptions;
+  private minimatches: minimatch.IMinimatch[];
+
+  constructor(options: ConfigurationOptions) {
+    this.options = options;
+    this.minimatches = options.ignoreFiles.map(pattern => {
+      return new minimatch.Minimatch(pattern);
+    });
+  }
+
+  ignoredFile(filename: string): boolean {
+    return this.minimatches.some(mm => {
+      return mm.match(filename);
+    });
+  }
 }
 
 export = (app: Application) => {
-  app.on(['issues.opened', 'pull_request.opened'], async context => {
-    const config = (await context.config(
-      CONFIGURATION_FILE_PATH,
-      {}
-    )) as Configuration;
+  app.on('pull_request', async context => {
+    let configOptions!: ConfigurationOptions | null;
+    try {
+      configOptions = await context.config(
+        CONFIGURATION_FILE_PATH,
+        DEFAULT_CONFIGURATION
+      );
+    } catch (err) {
+      err.message = `Error reading configuration: ${err.message}`;
+      logger.error(err);
+      // Falling back to default.
+      configOptions = DEFAULT_CONFIGURATION;
+    }
+    const configuration = new Configuration(
+      configOptions as ConfigurationOptions
+    );
+    logger.info({config: configuration});
 
-    if (
-      (context.payload.pull_request || context.payload.issue) &&
-      config.randomBoolean
-    ) {
-      logger.info('The bot is alive!');
+    // List pull request files for the given PR
+    // https://developer.github.com/v3/pulls/#list-pull-requests-files
+    const listFilesParams = context.repo({
+      pull_number: context.payload.pull_request.number,
+      per_page: 100,
+    });
+    const pullRequestCommitSha = context.payload.pull_request.head.sha;
+    logger.info({sha: pullRequestCommitSha});
+    // TODO: handle pagination
+    let filesResponse: Octokit.Response<Octokit.PullsListFilesResponse>;
+    try {
+      filesResponse = await context.github.pulls.listFiles(listFilesParams);
+    } catch (err) {
+      logger.error('---------------------');
+      logger.error(err);
       return;
     }
+    const files: Octokit.PullsListFilesResponseItem[] = filesResponse.data;
+
+    let mismatchedTags = false;
+    const failureMessages: string[] = [];
+
+    // If we found any new files, verify they all have matching region tags.
+    for (let i = 0; files[i] !== undefined; i++) {
+      const file = files[i];
+
+      if (configuration.ignoredFile(file.filename)) {
+        logger.info('ignoring file from configuration: ' + file.filename);
+        continue;
+      }
+
+      if (file.status === 'removed') {
+        logger.info('ignoring deleted file: ' + file.filename);
+        continue;
+      }
+
+      const blob = await context.github.git.getBlob(
+        context.repo({
+          file_sha: file.sha,
+        })
+      );
+
+      const fileContents = Buffer.from(blob.data.content, 'base64').toString(
+        'utf8'
+      );
+
+      logger.info({fileContents: fileContents});
+      const parseResult = parseRegionTags(fileContents, file.filename);
+      if (!parseResult.result) {
+        mismatchedTags = true;
+        failureMessages.push(parseResult.messages.join('\n'));
+      }
+    }
+
+    const checkParams: Octokit.ChecksCreateParams = context.repo({
+      name: 'Mismatched region tag',
+      conclusion: 'success' as Conclusion,
+      head_sha: pullRequestCommitSha,
+    });
+
+    if (mismatchedTags) {
+      checkParams.conclusion = 'failure';
+      checkParams.output = {
+        title: 'Mismatched region tag detected.',
+        summary: 'Some new files have mismatched region tag',
+        text: failureMessages.join('\n'),
+      };
+    }
+
+    // post the status of commit linting to the PR, using:
+    // https://developer.github.com/v3/checks/
+    await context.github.checks.create(checkParams);
   });
 };
