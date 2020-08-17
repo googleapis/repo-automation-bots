@@ -1,17 +1,18 @@
 body {
-    background-color: #f4f4f4;
+    background-color: #101010;
 }
 
 h1 {
     font-family: 'Google Sans', sans-serif;
     text-align: center;
     color: #f0a500;
+    margin-bottom: 0;
 }
 
 h2, h3 {
     font-family: 'Google Sans', sans-serif;
     text-align: left;
-    color: #808080;
+    color: #c0c0c0;
     margin: 30 0 10 0px;
 }
 
@@ -24,7 +25,7 @@ h4 {
 
 .streaming-text {
     font-family: 'Google Sans', sans-serif;
-    color: rgb(93, 93, 93);
+    color: #c0c0c0;
     padding: 15px 15px 0 0;
 }
 
@@ -40,21 +41,22 @@ h4 {
     margin: 10 0 20 0px;
     font-family: 'Google Sans', sans-serif;
     text-align: center;
-    font-size: 12;
-    color: #606060;
+    font-size: 14;
+    color: #c0c0c0;
 }
 
 .data > td {
     width: 7%;
+    position: relative;
 }
 
 .data_div {
     display: inline-block;
-    min-width: 120px;
+    min-width: 150px;
 }
 
 #main_table {
-    width: 75%;
+    width: 85%;
     margin: auto;
     margin-top: 3%;
     min-width: 400px;
@@ -63,14 +65,16 @@ h4 {
 }
 
 #left_block {
-    width: 45%;
+    max-width: 45%;
     vertical-align: top;
     float: left;
+    position: relative;
 }
 #right_block {
-    width: 45%;
+    max-width: 45%;
     vertical-align: top;
     float: right;
+    position: relative;
 }
 
 hr {
@@ -103,21 +107,33 @@ hr {
     100% { transform: rotate(360deg); }
 }
 
-.error_div {
-    margin: 10 0 20 0px;
-    background-color:transparent;
+.object_div {
+    margin: 5 0 5 0px;
+    padding: 0.5% 2% 0.5% 2%;
     border-radius: 15px;
     border-width: 2px;
     border-style: solid;
+    width: 100%;
+}
+
+.object_div:hover {
+    cursor: pointer;
+}
+
+.object_text {
+    text-decoration: none !important;
+    font-family: 'Google Sans', sans-serif;
+    text-align: left;
+    font-size: 12;
+}
+
+.error_div {
+    background-color:transparent;
     border-color: rgb(190, 81, 81);
-    padding: 0.5% 2% 0.5% 2%;
-    margin: 5 0 5 0px;
-    max-width: 100%;
 }
 
 .error_div:hover {
     background-color: rgb(190, 81, 81);
-    cursor: pointer;
 }
 
 .error_div:hover p {
@@ -125,11 +141,24 @@ hr {
 }
 
 .error_text {
-    text-decoration: none !important;
-    font-family: 'Google Sans', sans-serif;
-    text-align: left;
-    font-size: 12;
     color: rgb(190, 81, 81);
+}
+
+.action_text {
+    color: rgb(0, 189, 101);
+}
+
+.action_div {
+    background-color:transparent;
+    border-color: rgb(0, 189, 101);
+}
+
+.action_div:hover {
+    background-color: rgb(0, 189, 101);
+}
+
+.action_div:hover p {
+    color: white;
 }
 
 .blinking_dot {
