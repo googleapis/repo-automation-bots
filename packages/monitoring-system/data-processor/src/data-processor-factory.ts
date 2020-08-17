@@ -30,7 +30,7 @@ import {
   CloudTasksProcessorOptions,
 } from './data-processors/cloud-tasks-data-processor';
 import {GitHubProcessor} from './data-processors/github-data-processor';
-import {ConfigUtil, Config} from './config-util';
+import {ConfigUtil, Config} from './util/config-util';
 import {Firestore} from '@google-cloud/firestore';
 import {PubSub} from '@google-cloud/pubsub';
 import {logger} from './util/logger';
@@ -76,9 +76,12 @@ export class DataProcessorFactory implements Factory {
   }
 
   private getLogsProcessorOptions(): CloudLogsProcessorOptions {
+    const subscription = this.config.cloud_logs_processor.pub_sub_subscription;
+    const listenLimit = this.config.cloud_logs_processor.pub_sub_listen_limit;
+
     return {
-      subscription: new PubSub().subscription('TODO'), // TODO: move this to config
-      listenLimit: 300, // TODO: move this to config
+      subscription: new PubSub().subscription(subscription),
+      listenLimit: listenLimit,
       ...this.getProcessorOptions(),
     };
   }
