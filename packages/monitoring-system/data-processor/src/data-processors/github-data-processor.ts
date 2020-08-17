@@ -165,6 +165,11 @@ export class GitHubProcessor extends DataProcessor {
     repository: GitHubRepositoryDocument,
     isPrivate: boolean
   ): Promise<WriteResult> {
+    /**
+     * TODO: Add a job to Data Processor to 'refresh' the accessibility status
+     * of repositories on a regular basis. This is to cover the case where a repository
+     * switches from private --> public again.
+     */
     const fullname = `${repository.owner_name}/${repository.repo_name}`;
     this.logger.debug(
       `Marking ${fullname} as ${isPrivate ? 'private' : 'public'}`
