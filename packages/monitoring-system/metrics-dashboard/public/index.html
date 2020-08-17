@@ -32,7 +32,7 @@
   <table id="main_table">
 
     <tr id="first_section">
-      <td id="left_block" width="50%">
+      <td id="left_block">
         <table>
           <tr id="heading_row_executions">
             <td colspan="14">
@@ -52,19 +52,6 @@
             </td>
           </tr>
 
-          <!--
-          <tr class="subheading" id="subheading_row_executions">
-            <td colspan="14">
-              <h3>By Trigger Type</h3>
-            </td>
-          </tr>
-          <tr class="data" id="stat_executions_by_trigger">
-            <td colspan="14">
-              <h4>Unavailable</h4>
-            </td>
-          </tr>
-         -->
-
           <tr class="subheading">
             <td colspan="14">
               <h3>Execution Errors</h3>
@@ -77,7 +64,7 @@
           </tr>
         </table>
       </td>
-      <td id="right_block" width="50%">
+      <td id="right_block">
         <table>
           <tr>
             <td colspan="14">
@@ -103,10 +90,20 @@
           </tr>
           <tr class="subheading">
             <td colspan="14">
+              <h3>Actions taken in the last hour</h3>
+            </td>
+          </tr>
+          <tr class="data" id="stat_actions">
+            <td colspan="14">
+              <div class="loading_animation"></div>
+            </td>
+          </tr>
+          <tr class="subheading">
+            <td colspan="14">
               <h3>Repositories with recent interactions</h3>
             </td>
           </tr>
-          <tr class="data">
+          <tr class="data" id="stat_repositories">
             <td colspan="14">
               <h4>Unavailable</h4>
             </td>
@@ -114,16 +111,6 @@
           <tr class="subheading">
             <td colspan="14">
               <h3>Objects with recent interactions</h3>
-            </td>
-          </tr>
-          <tr class="data">
-            <td colspan="14">
-              <h4>Unavailable</h4>
-            </td>
-          </tr>
-          <tr class="subheading">
-            <td colspan="14">
-              <h3>Actions taken in the last hour</h3>
             </td>
           </tr>
           <tr class="data">

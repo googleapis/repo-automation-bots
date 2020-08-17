@@ -88,10 +88,27 @@ class Render {
         errors.sort((e1, e2) => new Date(e2.time) - new Date(e1.time));
         errors = errors.slice(0, 5);
         for (const error of errors) {
-            const div = `<div class="error_div" onclick="window.open('${error.logsUrl}','blank');"><p class="error_text"><strong>(${error.time}) ${error.botName}:</strong></br> ${error.msg}</p></div>`
+            const div = `<div class="error_div object_div" onclick="window.open('${error.logsUrl}','blank');"><p class="error_text object_text"><strong>(${error.time}) ${error.botName}:</strong></br> ${error.msg}</p></div>`
             errorsHTML += div;
         }
         errorsTd.innerHTML = errorsHTML;
+    }
+
+    /**
+     * Renders the given actions
+     * @param {repoName: string, url: string, action: string, time: string} actions actions to render
+     */
+    static actions(actions) {
+        const xPath = `//tr[@id="stat_actions"]/td`;
+        const actionsTd = this.getElementByXpath(xPath);
+        var actionsHTML = '';
+        actions.sort((a1, a2) => new Date(a2.time) - new Date(a1.time));
+        actions = actions.slice(0, 5);
+        for (const action of actions) {
+            const div = `<div class="action_div object_div" onclick="window.open('${action.url}','blank');"><p class="action_text object_text"><strong>(${action.time}) ${action.action}</strong></br> ${action.repoName}</p></div>`
+            actionsHTML += div;
+        }
+        actionsTd.innerHTML = actionsHTML;
     }
 
     /**

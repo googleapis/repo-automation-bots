@@ -17,6 +17,10 @@ class Firestore {
         countByType: {},
     }
 
+    static currentFilterActions = {
+        formattedActions: {}          // actions formatted with repo info
+    }
+
     /**
      * Sets listeners on Firestore based on the current user filters
      */
@@ -27,6 +31,7 @@ class Firestore {
         this._listenToBotExecutions(firestore, filters);
         this._listenToErrors(firestore, filters);
         this._listenToTaskQueueStatus(firestore, filters);
+        this._listenToActions(firestore, filters);
     }
 
     /**
@@ -44,6 +49,56 @@ class Firestore {
         }
     }
 
+    // TODO: JSDocs
+    static _listenToActions(firestore, filters) {
+        firestore.collection("Action")
+            .where("timestamp", ">", filters.START_TIME)
+            .onSnapshot(querySnapshot => {
+                const changes = querySnapshot.docChanges();
+                this._updateFormattedActions(changes, firestore).then(() => {
+                    Render.actions(Object.values(this.currentFilterActions.formattedActions));
+                });
+            });
+    }
+
+    // TODO: JSDocs
+    static _updateFormattedActions(changes, firestore) {
+        const formattedActions = this.currentFilterActions.formattedActions;
+        const updates = changes.map(change => {
+            const doc = change.doc.data();
+            const primaryKey = `${doc.execution_id}_${doc.action_type}_${doc.timestamp}`;
+            if (change.type === "removed" && formattedActions[primaryKey]) {
+                delete formattedActions[primaryKey];
+                return Promise.resolve();
+            } else if (change.type === "added") {
+                return this._buildFormattedAction(doc, firestore).then(formattedDoc => {
+                    formattedActions[primaryKey] = formattedDoc;
+                })
+            }
+        })
+        return Promise.all(updates);  // TODO will short-circuit
+    }
+
+    static _buildFormattedAction(actionDoc, firestore) {
+        const repo = actionDoc.destination_repo;
+        return firestore.collection("GitHub_Repository")  // TODO could check local cache
+            .doc(repo).get()
+            .then(repoDoc => {
+                const name = `${repoDoc.data().owner_name}/${repoDoc.data().repo_name}`
+                const time = actionDoc.timestamp;
+                const url = `https://github.com/${name}`;
+                if (repoDoc.data().private) {
+                    name = `${name} [private repository]`;
+                }
+                return {
+                    repoName: name,
+                    time: new Date(time).toLocaleTimeString(),
+                    url:url,
+                    action: `${actionDoc.action_type}${actionDoc.value ? ": " + actionDoc.value : ""}`,
+                };
+            });
+    }
+
     /**
      * Sets a listener for Bot Executions that match the current user filters
      * @param {Firestore} firestore authenticated firestore client
@@ -51,7 +106,7 @@ class Firestore {
      */
     static _listenToBotExecutions(firestore, filters) {
         firestore.collection("Bot_Execution")
-            .where("start_time", ">",  filters.START_TIME)
+            .where("start_time", ">", filters.START_TIME)
             .onSnapshot(querySnapshot => {
                 const currentFilterDocs = this.currentFilterExecutions.docs;
                 querySnapshot.docChanges().forEach(change => {
@@ -83,7 +138,7 @@ class Firestore {
         // all records with that timestamp
         firestore.collection("Task_Queue_Status")
             .orderBy("timestamp", "desc")
-            .limit(20) 
+            .limit(20)
             .onSnapshot(querySnapshot => {
                 const byBot = {};
                 const docs = querySnapshot.docs.map(doc => doc.data());
@@ -135,13 +190,13 @@ class Firestore {
                 return Promise.resolve();
             } else if (change.type === "added") {
                 return firestore.collection("Trigger").doc(executionId).get()
-                .then(doc => {
-                    if (doc.exists) {
-                        const type = doc.data().trigger_type;
-                        triggerDocs[executionId] = doc.data();
-                        countByType[type] += 1
-                    }
-                })
+                    .then(doc => {
+                        if (doc.exists) {
+                            const type = doc.data().trigger_type;
+                            triggerDocs[executionId] = doc.data();
+                            countByType[type] += 1
+                        }
+                    })
             }
         })
         return Promise.all(updates); // TODO will short-circuit
@@ -154,15 +209,15 @@ class Firestore {
      */
     static _listenToErrors(firestore, filters) {
         firestore.collection("Error")
-        .where("timestamp", ">", filters.START_TIME)
-        .limit(5)
-        .orderBy("timestamp", "desc")
-        .onSnapshot(querySnapshot => {
-            const changes = querySnapshot.docChanges();
-            this._updateFormattedErrors(changes, firestore).then(() => {
-                Render.errors(Object.values(this.currentFilterErrors.formattedErrors));
-            });
-        })
+            .where("timestamp", ">", filters.START_TIME)
+            .limit(5)
+            .orderBy("timestamp", "desc")
+            .onSnapshot(querySnapshot => {
+                const changes = querySnapshot.docChanges();
+                this._updateFormattedErrors(changes, firestore).then(() => {
+                    Render.errors(Object.values(this.currentFilterErrors.formattedErrors));
+                });
+            })
     }
 
     /**
@@ -174,7 +229,7 @@ class Firestore {
         const formattedErrors = this.currentFilterErrors.formattedErrors;
         const updates = changes.map(change => {
             const doc = change.doc.data();
-            const primaryKey = `${doc.execution_id}_${doc.timestamp}`; 
+            const primaryKey = `${doc.execution_id}_${doc.timestamp}`;
             if (change.type === "removed" && formattedErrors[primaryKey]) {
                 delete formattedErrors[primaryKey];
                 return Promise.resolve();
@@ -182,7 +237,7 @@ class Firestore {
                 return this._buildFormattedError(doc, firestore).then(formattedDoc => {
                     formattedErrors[primaryKey] = formattedDoc;
                 })
-            } 
+            }
         })
         return Promise.all(updates);  // TODO will short-circuit
     }
