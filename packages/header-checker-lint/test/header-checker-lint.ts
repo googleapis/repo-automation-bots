@@ -256,6 +256,20 @@ describe('HeaderCheckerLint', () => {
       requests.done();
     });
 
+    it('handles an invalid configuration file', async () => {
+      const config = readFileSync(
+        resolve(fixturesPath, './invalid_yaml.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
+        )
+        .reply(200, {content: config.toString('base64')});
+
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+      requests.done();
+    });
+
     it('ignores a valid license', async () => {
       const validFiles = require(resolve(
         fixturesPath,

@@ -16,6 +16,7 @@
 import {Application, Octokit} from 'probot';
 import {LicenseType, detectLicenseHeader} from './header-parser';
 import * as minimatch from 'minimatch';
+import { logger } from 'gcf-utils';
 
 type Conclusion =
   | 'success'
@@ -74,6 +75,23 @@ class Configuration {
 
 export = (app: Application) => {
   app.on('pull_request', async context => {
+    let remoteConfiguration: ConfigurationOptions = DEFAULT_CONFIGURATION;
+    try {
+      const canditateConfiguration = await context.config(
+        WELL_KNOWN_CONFIGURATION_FILE
+      );
+      if (canditateConfiguration) {
+        remoteConfiguration = canditateConfiguration as ConfigurationOptions;
+      }
+    } catch (err) {
+      logger.error("Error parsing configuration: " + err);
+      return;
+    }
+    const configuration = new Configuration({
+      ...DEFAULT_CONFIGURATION,
+      ...remoteConfiguration,
+    });
+
     // List pull request files for the given PR
     // https://developer.github.com/v3/pulls/#list-pull-requests-files
     const listFilesParams = context.repo({
@@ -87,19 +105,11 @@ export = (app: Application) => {
     try {
       filesResponse = await context.github.pulls.listFiles(listFilesParams);
     } catch (err) {
-      app.log.error('---------------------');
-      app.log.error(err);
+      logger.error('---------------------');
+      logger.error(err);
       return;
     }
     const files: Octokit.PullsListFilesResponseItem[] = filesResponse.data;
-    const remoteConfiguration: ConfigurationOptions =
-      ((await context.config(
-        WELL_KNOWN_CONFIGURATION_FILE
-      )) as ConfigurationOptions | null) || DEFAULT_CONFIGURATION;
-    const configuration = new Configuration({
-      ...DEFAULT_CONFIGURATION,
-      ...remoteConfiguration,
-    });
 
     let lintError = false;
     const failureMessages: string[] = [];
@@ -109,17 +119,17 @@ export = (app: Application) => {
       const file = files[i];
 
       if (configuration.ignoredFile(file.filename)) {
-        app.log.info('ignoring file from configuration: ' + file.filename);
+        logger.info('ignoring file from configuration: ' + file.filename);
         continue;
       }
 
       if (file.status === 'removed') {
-        app.log.info('ignoring deleted file: ' + file.filename);
+        logger.info('ignoring deleted file: ' + file.filename);
         continue;
       }
 
       if (!configuration.isSourceFile(file.filename)) {
-        app.log.info('ignoring non-source file: ' + file.filename);
+        logger.info('ignoring non-source file: ' + file.filename);
         continue;
       }
 
