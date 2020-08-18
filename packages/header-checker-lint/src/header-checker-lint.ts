@@ -105,7 +105,6 @@ export = (app: Application) => {
     try {
       filesResponse = await context.github.pulls.listFiles(listFilesParams);
     } catch (err) {
-      logger.error('---------------------');
       logger.error(err);
       return;
     }
