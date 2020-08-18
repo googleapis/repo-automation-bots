@@ -40,11 +40,6 @@ repoName="repo-automation-bots"
 # propagate substitution variables to deploy triggers
 substitutions="_BUCKET=${bucket},_FUNCTION_REGION=${functionRegion},_KEY_RING=${keyRing},_REGION=${region},_SCHEDULER_SERVICE_ACCOUNT_EMAIL=${schedulerServiceAccountEmail}"
 
-gcloud version
-# TODO(chingor): remove this once gcr.io/cloud-builders/gcloud returns
-# >= 303.0.0
-gcloud components update beta -q
-
 # find all non-root cloudbuild.yaml configs
 for config in $(find -- */ -name 'cloudbuild.yaml' | sort -u)
 do

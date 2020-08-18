@@ -13,7 +13,7 @@
 # limitations under the License.
 
 steps:
-  - name: gcr.io/cloud-builders/gcloud
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     id: "sync-triggers"
     entrypoint: bash
     args:
