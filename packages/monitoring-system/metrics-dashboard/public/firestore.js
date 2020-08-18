@@ -81,6 +81,7 @@ class Firestore {
 
     static _buildFormattedAction(actionDoc, firestore) {
         const repo = actionDoc.destination_repo;
+        const object = actionDoc.destination_object;
         return firestore.collection("GitHub_Repository")  // TODO could check local cache
             .doc(repo).get()
             .then(repoDoc => {
@@ -94,8 +95,19 @@ class Firestore {
                     repoName: name,
                     time: new Date(time).toLocaleTimeString(),
                     url:url,
-                    action: `${actionDoc.action_type}${actionDoc.value ? ": " + actionDoc.value : ""}`,
+                    action: `${actionDoc.action_type}${actionDoc.value === "NONE" ? "" : ": " + actionDoc.value}`,
                 };
+            })
+            .then(formattedAction => {
+                if (object) {  // TODO: replace with actual call to firestore
+                    const parts = object.split("_");
+                    if (object.includes("PULL_REQUEST")) {
+                        formattedAction.url += `/pulls/${parts[parts.length-1]}`
+                    } else if (object.includes("ISSUE")) {
+                        formattedAction.url += `/issues/${parts[parts.length-1]}`
+                    }
+                }
+                return formattedAction;
             });
     }
 
