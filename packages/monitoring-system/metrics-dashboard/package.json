@@ -5,8 +5,11 @@
   "scripts": {
     "compile": "tsc -p ."
   },
-  "author": "",
-  "license": "ISC",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "author": "asonawalla@google.com",
+  "license": "Apache-2.0",
   "devDependencies": {
     "typescript": "^3.9.7"
   }
