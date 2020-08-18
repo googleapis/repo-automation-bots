@@ -23,14 +23,10 @@
  */
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
+import {Application, GitHubAPI, Octokit} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {LoggerWithTarget} from 'probot/lib/wrap-logger';
-// eslint-disable-next-line node/no-extraneous-import
-import {GitHubAPI} from 'probot/lib/github';
 import xmljs from 'xml-js';
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
 
 const ISSUE_LABEL = 'buildcop: issue';
 const FLAKY_LABEL = 'buildcop: flaky';
