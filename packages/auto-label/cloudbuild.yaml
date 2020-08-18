@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC
+# Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +13,25 @@
 # limitations under the License.
 
 steps:
-  - name: gcr.io/cloud-builders/gcloud
-    id: "sync-triggers"
+  - name: gcr.io/cloud-builders/npm
+    id: "build"
+    waitFor: ["-"]
     entrypoint: bash
     args:
       - "-e"
-      - "./scripts/sync-triggers.sh"
+      - "./scripts/build-function.sh"
+      - "$_DIRECTORY"
+
+  - name: gcr.io/cloud-builders/gcloud
+    id: "publish-function"
+    waitFor: ["build"]
+    entrypoint: bash
+    args:
+      - "-e"
+      - "./scripts/publish-function.sh"
+      - "$_DIRECTORY"
       - "$PROJECT_ID"
       - "$_BUCKET"
-      - "$_FUNCTION_REGION"
+      - "$_KEY_LOCATION"
       - "$_KEY_RING"
-      - "$_REGION"
-      - "$_SCHEDULER_SERVICE_ACCOUNT_EMAIL"
+      - "$_FUNCTION_REGION"
