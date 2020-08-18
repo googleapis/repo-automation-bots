@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Application} from 'probot';
-
+// eslint-disable-next-line node/no-extraneous-import
+import {Application, GitHubAPI} from 'probot';
 // TODO: fix these imports when release-please exports types from the root
 // See https://github.com/googleapis/release-please/issues/249
 import {BuildOptions} from 'release-please/build/src/release-pr';
@@ -24,7 +24,6 @@ import {
   GitHubReleaseOptions,
 } from 'release-please/build/src/github-release';
 import {Runner} from './runner';
-import {GitHubAPI} from 'probot/lib/github';
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
 
@@ -117,7 +116,7 @@ async function createGitHubRelease(
     packageName,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       octokit: (github as any) as OctokitType,
       graphql: github.graphql,
       request: github.request,

@@ -14,11 +14,10 @@
 
 import myProbotApp from '../src/release-please';
 import {Runner} from '../src/runner';
-// eslint-disable-next-line node/no-unpublished-import
 import {describe, it, beforeEach} from 'mocha';
 import {resolve} from 'path';
+// eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
-import Webhooks from '@octokit/webhooks';
 
 import * as fs from 'fs';
 import assert, {fail} from 'assert';
@@ -54,7 +53,7 @@ describe('ReleasePleaseBot', () => {
   });
 
   describe('push to master branch', () => {
-    let payload: Webhooks.WebhookPayloadPush;
+    let payload: {};
 
     beforeEach(() => {
       payload = require(resolve(fixturesPath, './push_to_master'));
@@ -242,7 +241,7 @@ describe('ReleasePleaseBot', () => {
   });
 
   describe('push to non-master branch', () => {
-    let payload: Webhooks.WebhookPayloadPush;
+    let payload: {};
 
     beforeEach(() => {
       payload = require(resolve(fixturesPath, './push_to_non_master'));
@@ -326,7 +325,7 @@ describe('ReleasePleaseBot', () => {
   });
 
   describe('pull-request labeled event', () => {
-    let payload: Webhooks.WebhookPayloadRelease;
+    let payload: {};
 
     it('should try to create a release', async () => {
       payload = require(resolve(fixturesPath, './pull_request_labeled'));
