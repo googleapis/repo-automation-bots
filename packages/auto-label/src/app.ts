@@ -14,10 +14,10 @@
 //
 
 import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './auto-label';
+import {handler} from './auto-label';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['auto_label'] = bootstrap.gcf(appFn, {
+module.exports['auto_label'] = bootstrap.gcf(handler, {
   background: true,
   logging: true,
 });
