@@ -75,13 +75,13 @@ class Configuration {
 
 export = (app: Application) => {
   app.on('pull_request', async context => {
-    let remoteConfiguration: ConfigurationOptions = DEFAULT_CONFIGURATION;
+    let remoteConfiguration = DEFAULT_CONFIGURATION;
     try {
-      const canditateConfiguration = await context.config(
+      const candidateConfiguration = await context.config<ConfigurationOptions>(
         WELL_KNOWN_CONFIGURATION_FILE
       );
-      if (canditateConfiguration) {
-        remoteConfiguration = canditateConfiguration as ConfigurationOptions;
+      if (candidateConfiguration) {
+        remoteConfiguration = candidateConfiguration!;
       }
     } catch (err) {
       logger.error('Error parsing configuration: ' + err);
