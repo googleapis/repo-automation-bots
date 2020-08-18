@@ -1,2 +1,2 @@
 ignoreFiles:
-  - "**/__snapshots__/*.js"
+  - '**/__snapshots__/*.js'
