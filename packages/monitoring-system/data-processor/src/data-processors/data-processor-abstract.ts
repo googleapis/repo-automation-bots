@@ -14,8 +14,9 @@
 //
 import {Firestore, WriteResult} from '@google-cloud/firestore';
 import pino from 'pino';
-import {getPrimaryKey, FirestoreRecord} from '../firestore-schema';
-import {hasUndefinedValues} from '../type-check-util';
+import {getPrimaryKey, FirestoreRecord} from '../types/firestore-schema';
+import {hasUndefinedValues} from '../types/type-check-util';
+import {logger} from '../util/logger';
 
 export interface ProcessorOptions {
   firestore?: Firestore;
@@ -28,7 +29,7 @@ export abstract class DataProcessor {
 
   constructor(options?: ProcessorOptions) {
     this.firestore = options?.firestore || new Firestore();
-    this.logger = options?.logger || pino();
+    this.logger = options?.logger || logger;
   }
 
   /**

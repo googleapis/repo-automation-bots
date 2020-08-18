@@ -57,6 +57,8 @@ function releaseTypeFromRepoLanguage(language: string | null): string {
       return 'node';
     case 'php':
       return 'php-yoshi';
+    case 'go':
+      return 'go-yoshi';
     default: {
       const releasers = getReleaserNames();
       if (releasers.includes(language.toLowerCase())) {
