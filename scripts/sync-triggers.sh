@@ -46,7 +46,7 @@ gcloud version
 gcloud components update beta -q
 
 # find all non-root cloudbuild.yaml configs
-for config in $(find */ -name 'cloudbuild.yaml' | sort -u)
+for config in $(find -- */ -name 'cloudbuild.yaml' | sort -u)
 do
   directory=$(dirname "${config}")
   botName=$(dirname "${config}" | rev | cut -d/ -f1 | rev)
