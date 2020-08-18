@@ -95,7 +95,7 @@ async function createReleasePR(
     },
     bumpMinorPreMajor,
     snapshot,
-    path
+    path,
   };
   if (releaseLabels) {
     buildOptions.label = releaseLabels.join(',');
@@ -124,7 +124,7 @@ async function createGitHubRelease(
       request: github.request,
     },
     path,
-    changelogPath
+    changelogPath,
   };
   const ghr = new GitHubRelease(releaseOptions);
   await Runner.releaser(ghr);
