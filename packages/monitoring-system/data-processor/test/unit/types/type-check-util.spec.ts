@@ -21,7 +21,7 @@ import {
   hasStringProperties,
   hasObjectProperties,
   hasProperties,
-} from '../../src/type-check-util';
+} from '../../../src/types/type-check-util';
 
 describe('type-check-util', () => {
   describe('isObject', () => {

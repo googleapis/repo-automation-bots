@@ -23,7 +23,7 @@ import {loadFixture} from './util/test-util';
 import {
   GitHubEventDocument,
   GitHubRepositoryDocument,
-} from '../../../src/firestore-schema';
+} from '../../../src/types/firestore-schema';
 
 interface GitHubProcessorTestFixture {
   preTestFirestoreData: {};
