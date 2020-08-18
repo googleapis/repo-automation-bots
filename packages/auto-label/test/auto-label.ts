@@ -23,29 +23,24 @@ import {resolve} from 'path';
 import fs from 'fs';
 import snapshot from 'snap-shot-it';
 import * as sinon from 'sinon';
-import {autoDetectLabel, handler} from '../src/auto-label';
+import {autoDetectLabel, handler, DriftRepo} from '../src/auto-label';
 import {logger} from 'gcf-utils';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
-
-const downloadedFile = fs
-  .readFileSync(
-    resolve(__dirname, '../../test/fixtures/events/downloadedfile.json')
+const driftRepos = JSON.parse(
+  fs.readFileSync(
+    resolve(__dirname, '../../test/fixtures/events/downloadedfile.json'),
+    'utf8'
   )
-  .toString();
-
-const emptyFile = fs
-  .readFileSync(
-    resolve(__dirname, '../../test/fixtures/events/emptydownloadedfile.json')
-  )
-  .toString();
+).repos as DriftRepo[];
 
 describe('auto-label', () => {
   let probot: Probot;
   let errorStub: sinon.SinonStub;
+  let repoStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = new Probot({
@@ -66,6 +61,7 @@ describe('auto-label', () => {
 
     // throw and fail the test if we're writing
     errorStub = sandbox.stub(logger, 'error').throwsArg(0);
+    repoStub = sandbox.stub(handler, 'getDriftRepos').resolves(driftRepos);
   });
 
   afterEach(() => {
@@ -94,7 +90,6 @@ describe('auto-label', () => {
             color: 'C9FFE5',
           },
         ]);
-      handler.callStorage = async () => downloadedFile;
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
@@ -117,7 +112,6 @@ describe('auto-label', () => {
             color: 'C9FFE5',
           },
         ]);
-      handler.callStorage = async () => downloadedFile;
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
@@ -143,7 +137,6 @@ describe('auto-label', () => {
             color: 'C9FFE5',
           },
         ]);
-      handler.callStorage = async () => downloadedFile;
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
@@ -151,17 +144,15 @@ describe('auto-label', () => {
     it('ends execution if the JSON file is empty', async () => {
       errorStub.restore();
       errorStub = sandbox.stub(logger, 'error');
+      repoStub.restore();
+      repoStub = sandbox.stub(handler, 'getDriftReposFile').resolves('');
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
-      handler.callStorage = async () => emptyFile;
-      const isFileEmpty = await handler.checkIfFileIsEmpty(
-        await handler.callStorage('my-bucket', 'my-file')
-      );
-      assert.strictEqual(isFileEmpty, null);
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
-      assert.ok(
-        errorStub.calledWith(
-          'terminating execution of auto-label since JSON file is empty'
-        )
+      const loggerArg = errorStub.firstCall.args[0];
+      assert.ok(loggerArg instanceof Error);
+      assert.strictEqual(
+        loggerArg.message,
+        'JSON file downloaded from Cloud Storage was empty'
       );
     });
 
@@ -173,21 +164,6 @@ describe('auto-label', () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/notThere/issues/5/labels')
         .reply(200);
-
-      handler.callStorage = async () => downloadedFile;
-
-      const isInArray = handler.checkIfElementIsInArray(
-        [
-          {
-            github_label: '',
-            repo: 'firebase/FirebaseUI-Android',
-          },
-        ],
-        'notThere',
-        'notThere'
-      );
-      assert.strictEqual(isInArray, undefined);
-
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
@@ -227,7 +203,6 @@ describe('auto-label', () => {
             name: 'sample',
           },
         ]);
-      handler.callStorage = async () => downloadedFile;
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
@@ -268,7 +243,6 @@ describe('auto-label', () => {
             name: 'sample',
           },
         ]);
-      handler.callStorage = async () => downloadedFile;
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
@@ -306,7 +280,6 @@ describe('auto-label', () => {
           },
         ]);
 
-      handler.callStorage = async () => downloadedFile;
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       ghRequests.done();
     });
@@ -340,7 +313,6 @@ describe('auto-label', () => {
             color: 'C9FFE5',
           },
         ]);
-      handler.callStorage = async () => downloadedFile;
       await probot.receive({
         name: 'schedule.repository',
         payload: {
@@ -388,7 +360,6 @@ describe('auto-label', () => {
           },
         ]);
 
-      handler.callStorage = async () => downloadedFile;
       await probot.receive({
         name: 'schedule.repository',
         payload: {
@@ -419,7 +390,6 @@ describe('auto-label', () => {
         .post('/repos/testOwner/testRepo/labels')
         .reply(422);
 
-      handler.callStorage = async () => downloadedFile;
       await probot.receive({
         name: 'schedule.repository',
         payload: {
@@ -469,7 +439,6 @@ describe('auto-label', () => {
             name: 'sample',
           },
         ]);
-      handler.callStorage = async () => downloadedFile;
       await probot.receive({
         name: 'schedule.repository',
         payload: {
@@ -513,7 +482,6 @@ describe('auto-label', () => {
             color: 'C9FFE5',
           },
         ]);
-      handler.callStorage = async () => downloadedFile;
       await probot.receive({
         name: 'installation.created',
         payload,
@@ -525,7 +493,6 @@ describe('auto-label', () => {
 
   describe('autoDetectLabel', () => {
     it('finds the right label', () => {
-      const data = JSON.parse(downloadedFile).repos;
       const tests = [
         {title: 'spanner: ignored', want: 'api: spanner'},
         {title: 'spanner/ignored', want: 'api: spanner'},
@@ -537,7 +504,7 @@ describe('auto-label', () => {
         {title: 'spanner with no separator', want: undefined},
       ];
       for (const test of tests) {
-        assert.strictEqual(autoDetectLabel(data, test.title), test.want);
+        assert.strictEqual(autoDetectLabel(driftRepos, test.title), test.want);
       }
     });
   });
