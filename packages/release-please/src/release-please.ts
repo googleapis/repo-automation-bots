@@ -26,6 +26,8 @@ import {
 import {Runner} from './runner';
 import {GitHubAPI} from 'probot/lib/github';
 import {Octokit} from '@octokit/rest';
+import {logger} from 'gcf-utils';
+
 type OctokitType = InstanceType<typeof Octokit>;
 
 interface ConfigurationOptions {
@@ -138,7 +140,7 @@ export = (app: Application) => {
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
-      app.log.info(`release-please not configured for (${repoUrl})`);
+      logger.info(`release-please not configured for (${repoUrl})`);
       return;
     }
 
@@ -148,7 +150,7 @@ export = (app: Application) => {
     };
 
     if (branch !== configuration.primaryBranch) {
-      app.log.info(
+      logger.info(
         `Not on primary branch (${configuration.primaryBranch}): ${branch}`
       );
       return;
@@ -158,7 +160,7 @@ export = (app: Application) => {
       ? configuration.releaseType
       : releaseTypeFromRepoLanguage(context.payload.repository.language);
 
-    app.log.info(`push (${repoUrl})`);
+    logger.info(`push (${repoUrl})`);
 
     // TODO: this should be refactored into an interface.
     await createReleasePR(
@@ -175,7 +177,7 @@ export = (app: Application) => {
     // release-please can handle creating a release on GitHub, we opt not to do
     // this for our repos that have autorelease enabled.
     if (configuration.handleGHRelease) {
-      app.log.info(`handling GitHub release for (${repoUrl})`);
+      logger.info(`handling GitHub release for (${repoUrl})`);
       createGitHubRelease(
         configuration.packageName || repoName,
         repoUrl,
@@ -195,7 +197,7 @@ export = (app: Application) => {
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
-      app.log.info(`release-please not configured for (${repoUrl})`);
+      logger.info(`release-please not configured for (${repoUrl})`);
       return;
     }
 
@@ -204,7 +206,7 @@ export = (app: Application) => {
       ...remoteConfiguration,
     };
 
-    app.log.info(`schedule.repository (${repoUrl})`);
+    logger.info(`schedule.repository (${repoUrl})`);
 
     const releaseType = configuration.releaseType
       ? configuration.releaseType
@@ -230,7 +232,7 @@ export = (app: Application) => {
         label => label.name === FORCE_RUN_LABEL
       )
     ) {
-      app.log.info(
+      logger.info(
         `ignoring non-force label action (${context.payload.pull_request.labels.join(
           ', '
         )})`
@@ -257,7 +259,7 @@ export = (app: Application) => {
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
-      app.log.info(`release-please not configured for (${repoUrl})`);
+      logger.info(`release-please not configured for (${repoUrl})`);
       return;
     }
 
@@ -266,7 +268,7 @@ export = (app: Application) => {
       ...remoteConfiguration,
     };
 
-    app.log.info(`pull_request.labeled (${repoUrl})`);
+    logger.info(`pull_request.labeled (${repoUrl})`);
 
     // run release-please
     const releaseType = configuration.releaseType
