@@ -25,19 +25,19 @@ then
 fi
 
 directoryName=$1
-botName=$(echo ${directoryName} | rev | cut -d/ -f1 | rev)
+botName=$(echo "${directoryName}" | rev | cut -d/ -f1 | rev)
 
 workdir=$(pwd)
 targetDir="${workdir}/targets/${botName}"
-mkdir -p ${targetDir}
+mkdir -p "${targetDir}"
 
-pushd ${directoryName}
+pushd "${directoryName}"
 
 # compile
 npm install -g typescript
 npm install
 npm run compile
-cp -r build ${targetDir}
+cp -r build "${targetDir}"
 cp package.json "${targetDir}/package.json"
 
 popd

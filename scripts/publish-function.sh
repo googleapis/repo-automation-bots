@@ -27,11 +27,11 @@ keyLocation=$4
 keyRing=$5
 functionRegion=$6
 
-botName=$(echo ${directoryName} | rev | cut -d/ -f1 | rev)
+botName=$(echo "${directoryName}" | rev | cut -d/ -f1 | rev)
 workdir=$(pwd)
 targetDir="${workdir}/targets/${botName}"
 
-pushd ${targetDir}
+pushd "${targetDir}"
 functionName=${botName//-/_}
 queueName=${botName//_/-}
 

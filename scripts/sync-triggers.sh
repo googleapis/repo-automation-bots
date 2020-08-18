@@ -38,7 +38,7 @@ repoOwner="googleapis"
 repoName="repo-automation-bots"
 
 # propagate substitution variables to deploy triggers
-substitutions="_BUCKET=${bucket},_FUNCTION_REGION=${functionRegion},_KEY_RING=${KEY_RING},_REGION=${region},_SCHEDULER_SERVICE_ACCOUNT_EMAIL=${schedulerServiceAccountEmail}"
+substitutions="_BUCKET=${bucket},_FUNCTION_REGION=${functionRegion},_KEY_RING=${keyRing},_REGION=${region},_SCHEDULER_SERVICE_ACCOUNT_EMAIL=${schedulerServiceAccountEmail}"
 
 gcloud version
 # TODO(chingor): remove this once gcr.io/cloud-builders/gcloud returns
@@ -48,12 +48,12 @@ gcloud components update beta -q
 # find all non-root cloudbuild.yaml configs
 for config in $(find */ -name 'cloudbuild.yaml')
 do
-  directory=$(dirname ${config})
-  botName=$(dirname ${config} | rev | cut -d/ -f1 | rev)
-  triggerName=$(dirname ${config} | sed 's/\//-/g')
+  directory=$(dirname "${config}")
+  botName=$(dirname "${config}" | rev | cut -d/ -f1 | rev)
+  triggerName=$(dirname "${config}" | sed 's/\//-/g')
 
   # test to see if the deployment trigger already exists
-  if gcloud beta builds triggers describe ${triggerName} --project=${project} &>/dev/null
+  if gcloud beta builds triggers describe "${triggerName}" --project="${project}" &>/dev/null
   then
     # trigger already exists, skip
     continue
@@ -74,7 +74,7 @@ do
     --substitutions="${substitutions},_DIRECTORY=${directory}"
 
   # trigger the first deployment
-  gcloud beta builds triggers run ${triggerName} \
+  gcloud beta builds triggers run "${triggerName}" \
     --project="${project}" \
     --branch="${branch}"
 done
