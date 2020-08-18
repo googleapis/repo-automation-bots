@@ -1,0 +1,13 @@
+{
+  "name": "metrics-dashboard",
+  "version": "1.0.0",
+  "description": "A dashboard to view repo automation bot metrics",
+  "scripts": {
+    "compile": "tsc -p ."
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^3.9.7"
+  }
+}
