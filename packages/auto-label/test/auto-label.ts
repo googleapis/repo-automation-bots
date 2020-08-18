@@ -16,15 +16,18 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
-import {describe, it, beforeEach} from 'mocha';
+import {describe, it, beforeEach, afterEach} from 'mocha';
 import nock from 'nock';
 import * as assert from 'assert';
 import {resolve} from 'path';
 import fs from 'fs';
 import snapshot from 'snap-shot-it';
+import * as sinon from 'sinon';
 import {autoDetectLabel, handler} from '../src/auto-label';
+import {logger} from 'gcf-utils';
 
 nock.disableNetConnect();
+const sandbox = sinon.createSandbox();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
@@ -42,6 +45,7 @@ const emptyFile = fs
 
 describe('auto-label', () => {
   let probot: Probot;
+  let errorStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = new Probot({
@@ -59,6 +63,14 @@ describe('auto-label', () => {
       },
     };
     probot.load(handler);
+
+    // throw and fail the test if we're writing
+    errorStub = sandbox.stub(logger, 'error').throwsArg(0);
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+    sandbox.restore();
   });
 
   describe('responds to events', () => {
@@ -137,17 +149,20 @@ describe('auto-label', () => {
     });
 
     it('ends execution if the JSON file is empty', async () => {
+      errorStub.restore();
+      errorStub = sandbox.stub(logger, 'error');
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
-
-      const ghRequests = nock('https://api.github.com');
       handler.callStorage = async () => emptyFile;
       const isFileEmpty = await handler.checkIfFileIsEmpty(
         await handler.callStorage('my-bucket', 'my-file')
       );
       assert.strictEqual(isFileEmpty, null);
-
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
-      ghRequests.done();
+      assert.ok(
+        errorStub.calledWith(
+          'terminating execution of auto-label since JSON file is empty'
+        )
+      );
     });
 
     it('returns null if there is no match on the repo', async () => {
