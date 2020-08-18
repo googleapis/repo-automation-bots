@@ -28,6 +28,7 @@
     "@google-cloud/pubsub": "^2.3.0",
     "@google-cloud/tasks": "^2.1.0",
     "@octokit/rest": "^18.0.3",
+    "@octokit/types": "^5.4.0",
     "@types/pino": "^6.3.0",
     "express": "^4.17.1",
     "googleapis-nodejs-functions": "0.0.5",
