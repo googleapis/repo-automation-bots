@@ -34,7 +34,6 @@ mkdir -p "${targetDir}"
 pushd "${directoryName}"
 
 # compile
-npm install -g typescript
 npm install
 npm run compile
 cp -r build "${targetDir}"
