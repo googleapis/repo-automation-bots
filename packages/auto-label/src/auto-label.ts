@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
 import {Storage} from '@google-cloud/storage';
 // eslint-disable-next-line node/no-extraneous-import
@@ -31,94 +30,6 @@ interface Label {
 }
 
 const storage = new Storage();
-
-//adds labels to an issue
-handler.addLabels = async function addLabels(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  issueNumber: number,
-  labels: string[]
-) {
-  try {
-    const data = await github.issues.addLabels({
-      owner,
-      repo,
-      issue_number: issueNumber,
-      labels,
-    });
-    return data;
-  } catch (err) {
-    logger.error(err);
-    return null;
-  }
-};
-
-//checks whether a specific label exists in a repo
-handler.checkExistingLabels = async function checkExistingLabels(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  name: string
-) {
-  try {
-    const data = await github.issues.getLabel({
-      owner,
-      repo,
-      name,
-    });
-    return data.data.name;
-  } catch (err) {
-    logger.error(err);
-    return null;
-  }
-};
-
-//creates a label for a repo
-handler.createLabel = async function createLabel(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  name: string,
-  color: string
-) {
-  try {
-    const data = await github.issues.createLabel({
-      owner,
-      repo,
-      name,
-      color,
-    });
-    return data;
-  } catch (err) {
-    logger.error(err);
-    return null;
-  }
-};
-
-//checks existing labels on an issue
-handler.checkExistingIssueLabels = async function checkExistingIssueLabels(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  issueNumber: number
-): Promise<Label[] | null> {
-  try {
-    const data = await github.issues.listLabelsOnIssue({
-      owner,
-      repo,
-      issue_number: issueNumber,
-    });
-    if (data.data === undefined) {
-      return null;
-    } else {
-      return data.data;
-    }
-  } catch (err) {
-    logger.error(err);
-    return null;
-  }
-};
 
 //gets Storage data that maps api to product name
 handler.callStorage = async function callStorage(
@@ -169,10 +80,10 @@ handler.checkIfElementIsInArray = function checkIfElementIsInArray(
 //
 // For example, an issue titled `spanner/transactions: TestSample failed` would
 // be labeled `api: spanner`.
-handler.autoDetectLabel = (
+export function autoDetectLabel(
   jsonArray: JSONData[],
   title: string
-): string | undefined => {
+): string | undefined {
   if (!jsonArray || !title) {
     return undefined;
   }
@@ -193,7 +104,7 @@ handler.autoDetectLabel = (
       element.github_label === wantLabel ||
       element.github_label === wantLabelCloud
   )?.github_label;
-};
+}
 
 handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   owner: string,
@@ -215,13 +126,14 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     repo
   );
 
-  const labelsOnIssue = await handler.checkExistingIssueLabels(
-    github,
-    owner,
-    repo,
-    issueNumber
-  );
-
+  const res = await github.issues
+    .listLabelsOnIssue({
+      owner,
+      repo,
+      issue_number: issueNumber,
+    })
+    .catch(logger.error);
+  const labelsOnIssue = res ? res.data : undefined;
   let wasNotAdded = true;
   let autoDetectedLabel: string | undefined;
 
@@ -229,7 +141,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     logger.info(
       `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
     );
-    autoDetectedLabel = handler.autoDetectLabel(jsonArray, issueTitle);
+    autoDetectedLabel = autoDetectLabel(jsonArray, issueTitle);
   }
   const index =
     jsonArray?.findIndex((object: JSONData) => objectInJsonArray === object) %
@@ -239,14 +151,15 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   const githubLabel = objectInJsonArray?.github_label || autoDetectedLabel;
 
   if (githubLabel) {
-    //will create label regardless, gets a 422 if label already exists on repo
-    await handler.createLabel(
-      github,
-      owner,
-      repo,
-      githubLabel,
-      colorsData[colorNumber].color
-    );
+    // will create label regardless, gets a 422 if label already exists on repo
+    await github.issues
+      .createLabel({
+        owner,
+        repo,
+        name: githubLabel,
+        color: colorsData[colorNumber].color,
+      })
+      .catch(logger.error);
     logger.info(`Label added to ${owner}/${repo} is ${githubLabel}`);
     if (labelsOnIssue) {
       const foundAPIName = labelsOnIssue.find(
@@ -261,9 +174,14 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       if (foundAPIName) {
         logger.info('The label already exists on this issue');
       } else {
-        await handler.addLabels(github, owner, repo, issueNumber, [
-          githubLabel,
-        ]);
+        await github.issues
+          .addLabels({
+            owner,
+            repo,
+            issue_number: issueNumber,
+            labels: [githubLabel],
+          })
+          .catch(logger.error);
         logger.info(
           `Label added to ${owner}/${repo} for issue ${issueNumber} is ${githubLabel}`
         );
@@ -280,7 +198,14 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
           .catch(logger.error);
       }
     } else {
-      await handler.addLabels(github, owner, repo, issueNumber, [githubLabel]);
+      await github.issues
+        .addLabels({
+          owner,
+          repo,
+          issue_number: issueNumber,
+          labels: [githubLabel],
+        })
+        .catch(logger.error);
       logger.info(
         `Label added to ${owner}/${repo} for issue ${issueNumber} is ${githubLabel}`
       );
@@ -295,14 +220,22 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     );
   }
   if (!foundSamplesTag && repo.includes('sample')) {
-    await handler.createLabel(
-      github,
-      owner,
-      repo,
-      'sample',
-      colorsData[colorNumber].color
-    );
-    await handler.addLabels(github, owner, repo, issueNumber, ['sample']);
+    await github.issues
+      .createLabel({
+        owner,
+        repo,
+        name: 'sample',
+        color: colorsData[colorNumber].color,
+      })
+      .catch(logger.error);
+    await github.issues
+      .addLabels({
+        owner,
+        repo,
+        issue_number: issueNumber,
+        labels: ['sample'],
+      })
+      .catch(logger.error);
     logger.info(
       `Issue ${issueNumber} is in a samples repo but does not have a sample tag, adding it to the repo and issue`
     );
@@ -312,8 +245,10 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   return wasNotAdded;
 };
 
-//main function, responds to label being added
-function handler(app: Application) {
+/**
+ * Main function, responds to label being added
+ */
+export function handler(app: Application) {
   //nightly cron that backfills and corrects api labels
   app.on(['schedule.repository'], async context => {
     logger.info(`running for org ${context.payload.cron_org}`);
@@ -425,4 +360,3 @@ function handler(app: Application) {
     }
   });
 }
-export = handler;
