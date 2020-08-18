@@ -81,7 +81,7 @@ export = (app: Application) => {
         WELL_KNOWN_CONFIGURATION_FILE
       );
       if (candidateConfiguration) {
-        remoteConfiguration = candidateConfiguration!;
+        remoteConfiguration = candidateConfiguration;
       }
     } catch (err) {
       logger.error('Error parsing configuration: ' + err);
