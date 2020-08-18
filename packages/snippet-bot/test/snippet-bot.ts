@@ -110,28 +110,15 @@ describe('snippet-bot', () => {
       requests.done();
     });
 
-    it('sets a "failure" context on PR even when it failed to read the config', async () => {
+    it('exits early when it failed to read the config', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
       const payload = require(resolve(fixturesPath, './pr_event'));
-      const blob = require(resolve(fixturesPath, './failure_blob'));
 
       const requests = nock('https://api.github.com')
         .get(
           '/repos/tmatsuo/repo-automation-bots/contents/.github/snippet-bot.yml'
         )
-        .reply(403, {content: 'Permission denied'})
-        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
-        .reply(200, changedFiles)
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
-        )
-        .reply(200, blob)
-        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
-          snapshot(body);
-          return true;
-        })
-        .reply(200);
+        .reply(403, {content: 'Permission denied'});
 
       await probot.receive({
         name: 'pull_request',
@@ -190,6 +177,28 @@ describe('snippet-bot', () => {
           return true;
         })
         .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+    });
+
+    it('quits early if there is no config file', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const payload = require(resolve(fixturesPath, './pr_event'));
+
+      // probot tries to fetch the org's config too.
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/.github/snippet-bot.yml'
+        )
+        .reply(404, {content: 'Not Found'})
+        .get('/repos/tmatsuo/.github/contents/.github/snippet-bot.yml')
+        .reply(404, {content: 'Not Found'});
 
       await probot.receive({
         name: 'pull_request',
