@@ -16,7 +16,7 @@
 import {Application, Octokit} from 'probot';
 import {LicenseType, detectLicenseHeader} from './header-parser';
 import * as minimatch from 'minimatch';
-import { logger } from 'gcf-utils';
+import {logger} from 'gcf-utils';
 
 type Conclusion =
   | 'success'
@@ -84,7 +84,7 @@ export = (app: Application) => {
         remoteConfiguration = canditateConfiguration as ConfigurationOptions;
       }
     } catch (err) {
-      logger.error("Error parsing configuration: " + err);
+      logger.error('Error parsing configuration: ' + err);
       return;
     }
     const configuration = new Configuration({

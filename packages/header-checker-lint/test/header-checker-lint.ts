@@ -257,9 +257,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('handles an invalid configuration file', async () => {
-      const config = readFileSync(
-        resolve(fixturesPath, './invalid_yaml.yml')
-      );
+      const config = readFileSync(resolve(fixturesPath, './invalid_yaml.yml'));
       const requests = nock('https://api.github.com')
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
