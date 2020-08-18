@@ -151,16 +151,21 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   const githubLabel = objectInJsonArray?.github_label || autoDetectedLabel;
 
   if (githubLabel) {
-    // will create label regardless, gets a 422 if label already exists on repo
-    await github.issues
-      .createLabel({
+    try {
+      await github.issues.createLabel({
         owner,
         repo,
         name: githubLabel,
         color: colorsData[colorNumber].color,
-      })
-      .catch(logger.error);
-    logger.info(`Label added to ${owner}/${repo} is ${githubLabel}`);
+      });
+      logger.info(`Label added to ${owner}/${repo} is ${githubLabel}`);
+    } catch (e) {
+      // HTTP 422 means the label already exists on the repo
+      if (e.status !== 422) {
+        e.message = `Error creating label: ${e.message}`;
+        logger.error(e);
+      }
+    }
     if (labelsOnIssue) {
       const foundAPIName = labelsOnIssue.find(
         (element: Label) => element.name === githubLabel
