@@ -37,6 +37,7 @@ interface ConfigurationOptions {
   handleGHRelease?: boolean;
   bumpMinorPreMajor?: boolean;
   path?: string;
+  changelogPath?: string;
 }
 
 const DEFAULT_API_URL = 'https://api.github.com';
@@ -94,7 +95,7 @@ async function createReleasePR(
     },
     bumpMinorPreMajor,
     snapshot,
-    path,
+    path
   };
   if (releaseLabels) {
     buildOptions.label = releaseLabels.join(',');
@@ -108,7 +109,8 @@ async function createGitHubRelease(
   packageName: string,
   repoUrl: string,
   github: GitHubAPI,
-  path?: string
+  path?: string,
+  changelogPath?: string
 ) {
   const releaseOptions: GitHubReleaseOptions = {
     label: 'autorelease: pending',
@@ -122,6 +124,7 @@ async function createGitHubRelease(
       request: github.request,
     },
     path,
+    changelogPath
   };
   const ghr = new GitHubRelease(releaseOptions);
   await Runner.releaser(ghr);
@@ -177,11 +180,12 @@ export = (app: Application) => {
     // this for our repos that have autorelease enabled.
     if (configuration.handleGHRelease) {
       logger.info(`handling GitHub release for (${repoUrl})`);
-      createGitHubRelease(
-        configuration.packageName || repoName,
+      await createGitHubRelease(
+        configuration.packageName ?? repoName,
         repoUrl,
         context.github,
-        configuration.path
+        configuration.path,
+        configuration.changelogPath ?? 'CHANGELOG.md'
       );
     }
   });
