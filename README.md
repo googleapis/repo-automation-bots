@@ -21,13 +21,21 @@ by Google on GitHub.
 | [sync-repo-settings] | Synchronize repository settings from a centralized config | [install][sync-repo-settings-app] |
 | [trusted-contribution] | Allows Kokoro CI to trigger for trusted contributors | [install][trusted-contribution-app] |
 
-## Testing Locally
+## Development environment
+
+You need to install node.js version 12 or higher.
+
+To manage multiple Node.js versions, you can use
+[nvm](https://github.com/nvm-sh/nvm).
+
+## Running the app locally
 
 ### Create a Proxy to Relay Webhooks
 
 In order to forward to your local machine, you can use smee.io. Visit
 https://smee.io/new and create a proxy for relaying webhooks to your
-local web-service.
+local web-service. After creating the proxy, you'll get the URL of the
+new proxy.
 
 In the root directory of `repo-automation-bots`, run:
 
@@ -77,7 +85,6 @@ at https://github.com/settings/apps/{YOUR_APP}:
    * Alternatively, set the GitHub client ID and secret:
      * `GITHUB_CLIENT_ID`: client ID from the top of the page.
      * `GITHUB_CLIENT_SECRET`: client secret from the top of the page.
-* `PRIVATE_KEY`: private key for application. This is the client secret near the top, `Client secret: a1bc23def4..........5678gh`
 * `WEBHOOK_SECRET`: secret key set in GitHub developer settings. Edit this to a known value in the settings page.
 
 Environment variables set, run:
