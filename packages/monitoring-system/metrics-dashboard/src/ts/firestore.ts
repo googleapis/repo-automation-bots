@@ -13,45 +13,41 @@
 // limitations under the License.
 //
 
-import {Render} from "./render";
+import { Render } from "./render";
+import { ProcessedDataCache as PDCache} from "./processed-data-cache";
 import * as firebase from "firebase/app";
+
+/** Required for Firestore capabilities */
 import 'firebase/firestore';
-import {resolve} from "path";
 
-export class Firestore {
+type Firestore = firebase.firestore.Firestore;
 
-    /**
-     * Bot_Executions that match the current user filters
-     */
-    static currentFilterExecutions = {
-        docs: {},                     // the execution documents
-        countByBot: {}                // count of number of executions by bot
-    };
-
-    static currentFilterErrors = {
-        formattedErrors: {}           // errors formatted with execution info
+/**
+ * Filters on metrics set by the user
+ */
+interface UserFilters {
+    timeRange?: {
+        start?: number, // UNIX timestamp
+        end?: number, // UNIX timestamp
     }
+}
 
-    static currentFilterTriggers = {
-        docs: {},
-        countByType: {},
-    }
+class FirestoreListener {
 
-    static currentFilterActions = {
-        formattedActions: {}          // actions formatted with repo info
-    }
+    private static firestore: Firestore;
 
     /**
      * Sets listeners on Firestore based on the current user filters
      */
-    static start() {   // TODO: rename to something like refreshListeners()
-        const firestore = this._getAuthenticatedFirestore(); // TODO: move to an init() method
-        const filters = this._getCurrentUserFilters();
-        this._listenToBotNames(firestore); // TODO: fix race condition b/w this line and next
-        this._listenToBotExecutions(firestore, filters);
-        this._listenToErrors(firestore, filters);
-        this._listenToTaskQueueStatus(firestore, filters);
-        this._listenToActions(firestore, filters);
+    public static start() {
+        const firestore = this.getAuthenticatedFirestore();
+        const filters = this.getCurrentUserFilters();
+
+        this.listenToBotNames(firestore); // TODO: fix race condition b/w this line and next
+        this.listenToBotExecutions(firestore, filters);
+        this.listenToErrors(firestore, filters);
+        this.listenToTaskQueueStatus(firestore, filters);
+        this.listenToActions(firestore, filters);
     }
 
     /**
@@ -60,30 +56,29 @@ export class Firestore {
      * NOTE: NOT IMPLEMENTED
      * Currently this just returns fixed values
      */
-    static _getCurrentUserFilters() {
+    private static getCurrentUserFilters(): UserFilters {
         return {
-            START_TIME: new Date().getTime() - 60 * 60 * 1000,
-            // REPOSITORY_NAME: "All Repositories",
-            // ORG_NAME: "All Organizations",
-            // BOT_NAME: "All Bots"
+            timeRange: {
+                start: new Date().getTime() - 60 * 60 * 1000
+            }
         }
     }
 
     // TODO: JSDocs
-    static _listenToActions(firestore: any, filters: any) {
+    private static listenToActions(firestore: any, filters: UserFilters) {
         firestore.collection("Action")
-            .where("timestamp", ">", filters.START_TIME)
+            .where("timestamp", ">", filters.timeRange.start)
             .onSnapshot((querySnapshot: any) => {
                 const changes = querySnapshot.docChanges();
-                this._updateFormattedActions(changes, firestore).then(() => {
-                    Render.actions(Object.values(this.currentFilterActions.formattedActions));
+                this.updateFormattedActions(changes, firestore).then(() => {
+                    Render.actions(Object.values(PDCache.currentFilterActions.formattedActions));
                 });
             });
     }
 
     // TODO: JSDocs
-    static _updateFormattedActions(changes: any, firestore: any) {
-        const formattedActions: any = this.currentFilterActions.formattedActions;
+    private static updateFormattedActions(changes: any, firestore: any) {
+        const formattedActions: any = PDCache.currentFilterActions.formattedActions;
         const updates = changes.map((change: any) => {
             const doc = change.doc.data();
             const primaryKey = `${doc.execution_id}_${doc.action_type}_${doc.timestamp}`;
@@ -99,7 +94,7 @@ export class Firestore {
         return Promise.all(updates);  // TODO will short-circuit
     }
 
-    static _buildFormattedAction(actionDoc: any, firestore: any) {
+    private static _buildFormattedAction(actionDoc: any, firestore: any) {
         const repo = actionDoc.destination_repo;
         const object = actionDoc.destination_object;
         return firestore.collection("GitHub_Repository")  // TODO could check local cache
@@ -114,7 +109,7 @@ export class Firestore {
                 return {
                     repoName: name,
                     time: new Date(time).toLocaleTimeString(),
-                    url:url,
+                    url: url,
                     action: `${actionDoc.action_type}${actionDoc.value === "NONE" ? "" : ": " + actionDoc.value}`,
                 };
             })
@@ -122,9 +117,9 @@ export class Firestore {
                 if (object) {  // TODO: replace with actual call to firestore
                     const parts = object.split("_");
                     if (object.includes("PULL_REQUEST")) {
-                        formattedAction.url += `/pulls/${parts[parts.length-1]}`
+                        formattedAction.url += `/pulls/${parts[parts.length - 1]}`
                     } else if (object.includes("ISSUE")) {
-                        formattedAction.url += `/issues/${parts[parts.length-1]}`
+                        formattedAction.url += `/issues/${parts[parts.length - 1]}`
                     }
                 }
                 return formattedAction;
@@ -133,14 +128,14 @@ export class Firestore {
 
     /**
      * Sets a listener for Bot Executions that match the current user filters
-     * @param {Firestore} firestore authenticated firestore client
+     * @param {FirestoreListener} firestore authenticated firestore client
      * @param filters the current user filters
      */
-    static _listenToBotExecutions(firestore: any, filters: any) {
+    private static listenToBotExecutions(firestore: any, filters: UserFilters) {
         firestore.collection("Bot_Execution")
-            .where("start_time", ">", filters.START_TIME)
+            .where("timeRange.start", ">", filters.timeRange.start)
             .onSnapshot((querySnapshot: any) => {
-                const currentFilterDocs: any = this.currentFilterExecutions.docs;
+                const currentFilterDocs: any = PDCache.currentFilterExecutions.docs;
                 querySnapshot.docChanges().forEach((change: any) => {
                     if (change.type === "added") {
                         currentFilterDocs[change.doc.execution_id] = change.doc;
@@ -154,17 +149,17 @@ export class Firestore {
                 //     Render.executionsByTrigger(this.currentFilterTriggers.countByType);
                 // })
 
-                this._updateExecutionCountsByBot(querySnapshot.docChanges())
-                Render.executionsByBot(this.currentFilterExecutions.countByBot);
+                this.updateExecutionCountsByBot(querySnapshot.docChanges())
+                Render.executionsByBot(PDCache.currentFilterExecutions.countByBot);
             })
     }
 
     /**
      * Sets a listener for the Task Queue status that match the current user filters
-     * @param {Firestore} firestore authenticated firestore client
+     * @param {FirestoreListener} firestore authenticated firestore client
      * @param filters the current user filters
      */
-    static _listenToTaskQueueStatus(firestore: any, filters: any) {
+    private static listenToTaskQueueStatus(firestore: any, filters: UserFilters) {
         // TODO: currently this just grabs the first 20 records
         // change it so that it finds the latest timestamp and gets
         // all records with that timestamp
@@ -188,8 +183,8 @@ export class Firestore {
      * Updates currentFilterExecutions.countByBot with the given changes
      * @param changes Bot_Execution document changes
      */
-    static _updateExecutionCountsByBot(changes: any[]) {
-        const countByBot: any = this.currentFilterExecutions.countByBot;
+    private static updateExecutionCountsByBot(changes: any[]) {
+        const countByBot: any = PDCache.currentFilterExecutions.countByBot;
         changes.forEach(change => {
             const botName = change.doc.data().bot_name;
             if (!countByBot[botName]) {
@@ -210,9 +205,9 @@ export class Firestore {
      * @param changes Bot_Execution document changes
      * @returns a Promise that resolves when all trigger docs are built and stored
      */
-    static _buildTriggerDocs(changes: any[], firestore: any) {
-        const triggerDocs: any = this.currentFilterTriggers.docs;
-        const countByType: any = this.currentFilterTriggers.countByType;
+    private static buildTriggerDocs(changes: any[], firestore: any) {
+        const triggerDocs: any = PDCache.currentFilterTriggers.docs;
+        const countByType: any = PDCache.currentFilterTriggers.countByType;
         const updates: any = changes.map(change => {
             const executionId = change.doc.data().execution_id;
             if (change.type === "removed" && triggerDocs[executionId]) {
@@ -236,18 +231,18 @@ export class Firestore {
 
     /**
      * Sets a listener for execution errors that match the current user filters
-     * @param {Firestore} firestore authenticated firestore client
+     * @param {FirestoreListener} firestore authenticated firestore client
      * @param filters the current user filters
      */
-    static _listenToErrors(firestore: any, filters: any) {
+    private static listenToErrors(firestore: any, filters: UserFilters) {
         firestore.collection("Error")
-            .where("timestamp", ">", filters.START_TIME)
+            .where("timestamp", ">", filters.timeRange.start)
             .limit(5)
             .orderBy("timestamp", "desc")
             .onSnapshot((querySnapshot: any) => {
                 const changes = querySnapshot.docChanges();
-                this._updateFormattedErrors(changes, firestore).then(() => {
-                    Render.errors(Object.values(this.currentFilterErrors.formattedErrors));
+                this.updateFormattedErrors(changes, firestore).then(() => {
+                    Render.errors(Object.values(PDCache.currentFilterErrors.formattedErrors));
                 });
             })
     }
@@ -257,8 +252,8 @@ export class Firestore {
      * @param changes Error document changes
      * @returns a Promise that resolves after all updates are completed
      */
-    static _updateFormattedErrors(changes: any[], firestore: any) {
-        const formattedErrors: any = this.currentFilterErrors.formattedErrors;
+    private static updateFormattedErrors(changes: any[], firestore: any) {
+        const formattedErrors: any = PDCache.currentFilterErrors.formattedErrors;
         const updates = changes.map(change => {
             const doc = change.doc.data();
             const primaryKey = `${doc.execution_id}_${doc.timestamp}`;
@@ -266,7 +261,7 @@ export class Firestore {
                 delete formattedErrors[primaryKey];
                 return Promise.resolve();
             } else if (change.type === "added") {
-                return this._buildFormattedError(doc, firestore).then((formattedDoc: any) => {
+                return this.buildFormattedError(doc, firestore).then((formattedDoc: any) => {
                     formattedErrors[primaryKey] = formattedDoc;
                 })
             }
@@ -279,7 +274,7 @@ export class Firestore {
      * @param errorDoc error document from Firestore
      * @returns a Promise that resolves the formatted document
      */
-    static _buildFormattedError(errorDoc: any, firestore: any) {
+    private static buildFormattedError(errorDoc: any, firestore: any) {
         const executionId = errorDoc.execution_id;
         return firestore.collection("Bot_Execution")  // TODO could check local cache
             .doc(executionId).get()
@@ -299,9 +294,9 @@ export class Firestore {
     /**
      * Retrieves the list of all bot names and sets the appropriate
      * labels on the document
-     * @param {Firestore} firestore an authenticated Firestore client
+     * @param {FirestoreListener} firestore an authenticated Firestore client
      */
-    static _listenToBotNames(firestore: any) {   // TODO: use filters and cache
+    private static listenToBotNames(firestore: any) {   // TODO: use filters and cache
         firestore.collection("Bot")
             .onSnapshot((querySnapshot: any) => {
                 const names = querySnapshot.docs.map((doc: any) => doc.data().bot_name);
@@ -310,14 +305,26 @@ export class Firestore {
     }
 
     /**
-     * Creates and returns an authenticated Firestore client
+     * Returns an authenticated Firestore client.
+     * Only initializes one client per session.
      */
-    static _getAuthenticatedFirestore() {
-        firebase.initializeApp(require("./keys/firestore-read-only.json"));
-        return firebase.firestore();
+    private static getAuthenticatedFirestore(): Firestore {
+        if (!this.firestore) {
+            firebase.initializeApp({
+                "apiKey": "AIzaSyCNYD0Pp6wnT36GcdxWkRVE9RTWt_2XfsU",
+                "authDomain": "repo-automation-bots-metrics.firebaseapp.com",
+                "databaseURL": "https://repo-automation-bots-metrics.firebaseio.com",
+                "projectId": "repo-automation-bots-metrics",
+                "storageBucket": "repo-automation-bots-metrics.appspot.com",
+                "messagingSenderId": "888867974133",
+                "appId": "1:888867974133:web:bd9986937d533731ed0ebc"
+            });
+            this.firestore = firebase.firestore();
+        }
+        return this.firestore;
     }
 }
 
-window.onload = (event) => {
-    Firestore.start();
-  }
+window.onload = () => {
+    FirestoreListener.start();
+}
