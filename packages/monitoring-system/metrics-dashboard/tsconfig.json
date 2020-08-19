@@ -2,10 +2,12 @@
   "compilerOptions": {
     "target": "ES2018",
     "module": "commonjs",
+    "resolveJsonModule": true,
     "rootDir": "src/ts",
     "outDir": "build/tsc-compiled"
   },
   "include": [
-    "src/ts/*.ts"
+    "src/ts/**/*.ts",
+    "src/ts/**/*.json"
   ],
 }

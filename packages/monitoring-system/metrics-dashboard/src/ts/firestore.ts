@@ -16,6 +16,7 @@
 import {Render} from "./render";
 import * as firebase from "firebase/app";
 import 'firebase/firestore';
+import {resolve} from "path";
 
 export class Firestore {
 
@@ -312,17 +313,7 @@ export class Firestore {
      * Creates and returns an authenticated Firestore client
      */
     static _getAuthenticatedFirestore() {
-        var firebaseConfig = {
-            apiKey: "AIzaSyCNYD0Pp6wnT36GcdxWkRVE9RTWt_2XfsU",
-            authDomain: "repo-automation-bots-metrics.firebaseapp.com",
-            databaseURL: "https://repo-automation-bots-metrics.firebaseio.com",
-            projectId: "repo-automation-bots-metrics",
-            storageBucket: "repo-automation-bots-metrics.appspot.com",
-            messagingSenderId: "888867974133",
-            appId: "1:888867974133:web:bd9986937d533731ed0ebc"
-        };
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
+        firebase.initializeApp(require("./keys/firestore-read-only.json"));
         return firebase.firestore();
     }
 }
