@@ -181,16 +181,14 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
 
   let foundSamplesTag: Label | undefined;
   if (labelsOnIssue) {
-    foundSamplesTag = labelsOnIssue.find(
-      (element: Label) => element.name === 'sample'
-    );
+    foundSamplesTag = labelsOnIssue.find(e => e.name === 'samples');
   }
-  if (!foundSamplesTag && repo.includes('sample')) {
+  if (!foundSamplesTag && repo.includes('samples')) {
     await github.issues
       .createLabel({
         owner,
         repo,
-        name: 'sample',
+        name: 'samples',
         color: colorsData[colorNumber].color,
       })
       .catch(logger.error);
@@ -199,7 +197,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
         owner,
         repo,
         issue_number: issueNumber,
-        labels: ['sample'],
+        labels: ['samples'],
       })
       .catch(logger.error);
     logger.info(
@@ -238,21 +236,19 @@ export function handler(app: Application) {
     for await (const response of context.github.paginate.iterator(issues)) {
       const issues = response.data;
       for (const issue of issues) {
-        if (!issue.pull_request) {
-          const wasNotAdded = await handler.addLabeltoRepoAndIssue(
-            owner,
-            repo,
-            issue.number,
-            issue.title,
-            driftRepos,
-            context.github
+        const wasNotAdded = await handler.addLabeltoRepoAndIssue(
+          owner,
+          repo,
+          issue.number,
+          issue.title,
+          driftRepos,
+          context.github
+        );
+        if (wasNotAdded) {
+          logger.info(
+            `label for ${issue.number} in ${owner}/${repo} was not added`
           );
-          if (wasNotAdded) {
-            logger.info(
-              `label for ${issue.number} in ${owner}/${repo} was not added`
-            );
-            labelWasNotAddedCount++;
-          }
+          labelWasNotAddedCount++;
         }
         if (labelWasNotAddedCount > 5) {
           logger.info(
@@ -303,16 +299,14 @@ export function handler(app: Application) {
         const issues = response.data;
         //goes through each issue in each page
         for (const issue of issues) {
-          if (!issue.pull_request) {
-            await handler.addLabeltoRepoAndIssue(
-              owner,
-              repo,
-              issue.number,
-              issue.title,
-              driftRepos,
-              context.github
-            );
-          }
+          await handler.addLabeltoRepoAndIssue(
+            owner,
+            repo,
+            issue.number,
+            issue.title,
+            driftRepos,
+            context.github
+          );
         }
       }
     }
