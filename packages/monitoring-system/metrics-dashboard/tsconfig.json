@@ -1,10 +1,9 @@
 {
-  "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
-    "lib": ["es2018", "dom"],
-    "esModuleInterop": true,
+    "target": "ES2018",
+    "module": "commonjs",
     "rootDir": ".",
-    "outDir": "public/js"
+    "outDir": "build-tsc"
   },
   "include": [
     "ts/*.ts"

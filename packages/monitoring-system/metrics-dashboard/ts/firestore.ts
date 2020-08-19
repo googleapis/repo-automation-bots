@@ -55,10 +55,10 @@ export class Firestore {
     }
 
     // TODO: JSDocs
-    static _listenToActions(firestore, filters) {
+    static _listenToActions(firestore: any, filters: any) {
         firestore.collection("Action")
             .where("timestamp", ">", filters.START_TIME)
-            .onSnapshot(querySnapshot => {
+            .onSnapshot((querySnapshot: any) => {
                 const changes = querySnapshot.docChanges();
                 this._updateFormattedActions(changes, firestore).then(() => {
                     Render.actions(Object.values(this.currentFilterActions.formattedActions));
@@ -67,16 +67,16 @@ export class Firestore {
     }
 
     // TODO: JSDocs
-    static _updateFormattedActions(changes, firestore) {
-        const formattedActions = this.currentFilterActions.formattedActions;
-        const updates = changes.map(change => {
+    static _updateFormattedActions(changes: any, firestore: any) {
+        const formattedActions: any = this.currentFilterActions.formattedActions;
+        const updates = changes.map((change: any) => {
             const doc = change.doc.data();
             const primaryKey = `${doc.execution_id}_${doc.action_type}_${doc.timestamp}`;
             if (change.type === "removed" && formattedActions[primaryKey]) {
                 delete formattedActions[primaryKey];
                 return Promise.resolve();
             } else if (change.type === "added") {
-                return this._buildFormattedAction(doc, firestore).then(formattedDoc => {
+                return this._buildFormattedAction(doc, firestore).then((formattedDoc: any) => {
                     formattedActions[primaryKey] = formattedDoc;
                 })
             }
@@ -84,12 +84,12 @@ export class Firestore {
         return Promise.all(updates);  // TODO will short-circuit
     }
 
-    static _buildFormattedAction(actionDoc, firestore) {
+    static _buildFormattedAction(actionDoc: any, firestore: any) {
         const repo = actionDoc.destination_repo;
         const object = actionDoc.destination_object;
         return firestore.collection("GitHub_Repository")  // TODO could check local cache
             .doc(repo).get()
-            .then(repoDoc => {
+            .then((repoDoc: any) => {
                 let name = `${repoDoc.data().owner_name}/${repoDoc.data().repo_name}`
                 const time = actionDoc.timestamp;
                 const url = `https://github.com/${name}`;
@@ -103,7 +103,7 @@ export class Firestore {
                     action: `${actionDoc.action_type}${actionDoc.value === "NONE" ? "" : ": " + actionDoc.value}`,
                 };
             })
-            .then(formattedAction => {
+            .then((formattedAction: any) => {
                 if (object) {  // TODO: replace with actual call to firestore
                     const parts = object.split("_");
                     if (object.includes("PULL_REQUEST")) {
@@ -121,12 +121,12 @@ export class Firestore {
      * @param {Firestore} firestore authenticated firestore client
      * @param filters the current user filters
      */
-    static _listenToBotExecutions(firestore, filters) {
+    static _listenToBotExecutions(firestore: any, filters: any) {
         firestore.collection("Bot_Execution")
             .where("start_time", ">", filters.START_TIME)
-            .onSnapshot(querySnapshot => {
-                const currentFilterDocs = this.currentFilterExecutions.docs;
-                querySnapshot.docChanges().forEach(change => {
+            .onSnapshot((querySnapshot: any) => {
+                const currentFilterDocs: any = this.currentFilterExecutions.docs;
+                querySnapshot.docChanges().forEach((change: any) => {
                     if (change.type === "added") {
                         currentFilterDocs[change.doc.execution_id] = change.doc;
                     } else if (change.type === "removed" && currentFilterDocs[change.doc.execution_id]) {
@@ -149,17 +149,17 @@ export class Firestore {
      * @param {Firestore} firestore authenticated firestore client
      * @param filters the current user filters
      */
-    static _listenToTaskQueueStatus(firestore, filters) {
+    static _listenToTaskQueueStatus(firestore: any, filters: any) {
         // TODO: currently this just grabs the first 20 records
         // change it so that it finds the latest timestamp and gets
         // all records with that timestamp
         firestore.collection("Task_Queue_Status")
             .orderBy("timestamp", "desc")
             .limit(20)
-            .onSnapshot(querySnapshot => {
-                const byBot = {};
-                const docs = querySnapshot.docs.map(doc => doc.data());
-                docs.forEach(doc => {
+            .onSnapshot((querySnapshot: any) => {
+                const byBot: any = {};
+                const docs = querySnapshot.docs.map((doc: any) => doc.data());
+                docs.forEach((doc: any) => {
                     const botName = doc.queue_name.replace(/-/g, "_");
                     if (!byBot[botName]) {
                         byBot[botName] = doc.in_queue;
@@ -173,8 +173,8 @@ export class Firestore {
      * Updates currentFilterExecutions.countByBot with the given changes
      * @param changes Bot_Execution document changes
      */
-    static _updateExecutionCountsByBot(changes) {
-        const countByBot = this.currentFilterExecutions.countByBot;
+    static _updateExecutionCountsByBot(changes: any[]) {
+        const countByBot: any = this.currentFilterExecutions.countByBot;
         changes.forEach(change => {
             const botName = change.doc.data().bot_name;
             if (!countByBot[botName]) {
@@ -195,10 +195,10 @@ export class Firestore {
      * @param changes Bot_Execution document changes
      * @returns a Promise that resolves when all trigger docs are built and stored
      */
-    static _buildTriggerDocs(changes, firestore) {
-        const triggerDocs = this.currentFilterTriggers.docs;
-        const countByType = this.currentFilterTriggers.countByType;
-        const updates = changes.map(change => {
+    static _buildTriggerDocs(changes: any[], firestore: any) {
+        const triggerDocs: any = this.currentFilterTriggers.docs;
+        const countByType: any = this.currentFilterTriggers.countByType;
+        const updates: any = changes.map(change => {
             const executionId = change.doc.data().execution_id;
             if (change.type === "removed" && triggerDocs[executionId]) {
                 const type = triggerDocs[executionId].trigger_type;
@@ -207,7 +207,7 @@ export class Firestore {
                 return Promise.resolve();
             } else if (change.type === "added") {
                 return firestore.collection("Trigger").doc(executionId).get()
-                    .then(doc => {
+                    .then((doc: any) => {
                         if (doc.exists) {
                             const type = doc.data().trigger_type;
                             triggerDocs[executionId] = doc.data();
@@ -224,12 +224,12 @@ export class Firestore {
      * @param {Firestore} firestore authenticated firestore client
      * @param filters the current user filters
      */
-    static _listenToErrors(firestore, filters) {
+    static _listenToErrors(firestore: any, filters: any) {
         firestore.collection("Error")
             .where("timestamp", ">", filters.START_TIME)
             .limit(5)
             .orderBy("timestamp", "desc")
-            .onSnapshot(querySnapshot => {
+            .onSnapshot((querySnapshot: any) => {
                 const changes = querySnapshot.docChanges();
                 this._updateFormattedErrors(changes, firestore).then(() => {
                     Render.errors(Object.values(this.currentFilterErrors.formattedErrors));
@@ -242,8 +242,8 @@ export class Firestore {
      * @param changes Error document changes
      * @returns a Promise that resolves after all updates are completed
      */
-    static _updateFormattedErrors(changes, firestore) {
-        const formattedErrors = this.currentFilterErrors.formattedErrors;
+    static _updateFormattedErrors(changes: any[], firestore: any) {
+        const formattedErrors: any = this.currentFilterErrors.formattedErrors;
         const updates = changes.map(change => {
             const doc = change.doc.data();
             const primaryKey = `${doc.execution_id}_${doc.timestamp}`;
@@ -251,7 +251,7 @@ export class Firestore {
                 delete formattedErrors[primaryKey];
                 return Promise.resolve();
             } else if (change.type === "added") {
-                return this._buildFormattedError(doc, firestore).then(formattedDoc => {
+                return this._buildFormattedError(doc, firestore).then((formattedDoc: any) => {
                     formattedErrors[primaryKey] = formattedDoc;
                 })
             }
@@ -264,11 +264,11 @@ export class Firestore {
      * @param errorDoc error document from Firestore
      * @returns a Promise that resolves the formatted document
      */
-    static _buildFormattedError(errorDoc, firestore) {
+    static _buildFormattedError(errorDoc: any, firestore: any) {
         const executionId = errorDoc.execution_id;
         return firestore.collection("Bot_Execution")  // TODO could check local cache
             .doc(executionId).get()
-            .then(executionDoc => {
+            .then((executionDoc: any) => {
                 const msg = errorDoc.error_msg;
                 const time = errorDoc.timestamp;
                 const botName = executionDoc.data().bot_name;
@@ -286,10 +286,10 @@ export class Firestore {
      * labels on the document
      * @param {Firestore} firestore an authenticated Firestore client
      */
-    static _listenToBotNames(firestore) {   // TODO: use filters and cache
+    static _listenToBotNames(firestore: any) {   // TODO: use filters and cache
         firestore.collection("Bot")
-            .onSnapshot(querySnapshot => {
-                const names = querySnapshot.docs.map(doc => doc.data().bot_name);
+            .onSnapshot((querySnapshot: any) => {
+                const names = querySnapshot.docs.map((doc: any) => doc.data().bot_name);
                 Render.addBotNameLabels(names);
             })
     }
@@ -312,3 +312,7 @@ export class Firestore {
         return firebase.firestore();
     }
 }
+
+window.onload = (event) => {
+    Firestore.start();
+  }

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A dashboard to view repo automation bot metrics",
   "scripts": {
-    "compile": "tsc -p .",
+    "compile": "tsc -p . && webpack",
     "deploy": "firebase deploy"
   },
   "repository": "https://github.com/googleapis/repo-automation-bots.git",
@@ -14,6 +14,8 @@
   "devDependencies": {
     "firebase": "^7.18.0",
     "gts": "^2.0.0",
-    "typescript": "^3.9.7"
+    "typescript": "^3.9.7",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12"
   }
 }
