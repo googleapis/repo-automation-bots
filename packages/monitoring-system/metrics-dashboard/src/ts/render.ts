@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
+import * as d3 from 'd3';
+
 export class Render {
 
     /**
@@ -47,7 +50,7 @@ export class Render {
         }
     }
 
-    static addTriggerTypeLabels(triggerTypes: any)  {
+    static addTriggerTypeLabels(triggerTypes: any) {
         for (const rowId of this.statRowsByTrigger) {
             const row = document.getElementById(rowId) as HTMLTableRowElement;
             row.innerHTML = "";
@@ -127,6 +130,61 @@ export class Render {
             actionsHTML += div;
         }
         actionsTd.innerHTML = actionsHTML;
+    }
+
+    static taskQueueTrend(data) {
+        var width = 300;
+        var height = 300;
+        const div = d3.select('#tasks_by_time')
+        const margin = { top: 50, right: 50, bottom: 90, left: 75 }
+        const maxY = data.map(d => d.y).reduce((a, b) => Math.max(a, b));
+        
+        const svg = div.append('svg')
+            .attr('width', width + margin.left + margin.right)
+          .attr('height', height + margin.top + margin.bottom)
+          .append('g')
+          .attr('transform', `translate(${margin.left}, ${margin.top})`)
+        
+        /*
+         * X and Y scales.
+         */
+        const xScale = d3.scaleLinear()
+            .domain([0, data.length - 1])
+          .range([0, width])
+        
+        const yScale = d3.scaleLinear()
+                .domain([0, maxY])
+            .range([height, 0])
+        
+        /*
+         * The function that describes how the line is drawn.
+         * Notice that we apply the xScale and yScale to the
+         * data in order to keep the data in bounds to our scale.
+         */
+        const line: any = d3.line()
+            .x((d: any) => xScale(d.x))
+          .y((d: any) => yScale(d.y))
+          .curve(d3['curveMonotoneX'])
+        
+        /*
+         * X and Y axis
+         */
+        const xAxis = svg.append('g')
+            .attr('class', 'x axis')
+          .attr('transform', `translate(0, ${height})`)
+          .call(d3.axisBottom(xScale))
+        
+        const yAxis = svg.append('g')
+            .attr('class', 'y axis')
+          .call(d3.axisLeft(yScale))
+        
+        /*
+         * Appending the line to the SVG.
+         */
+        svg.append('path')
+        .datum(data)
+        .attr('class', 'data-line')
+        .attr('d', line)
     }
 
     /**

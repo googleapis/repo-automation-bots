@@ -15,9 +15,13 @@
   "author": "asonawalla@google.com",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@types/d3": "^5.7.2",
     "firebase": "^7.18.0",
     "typescript": "^3.9.7",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12"
+  },
+  "dependencies": {
+    "d3": "^5.16.0"
   }
 }
