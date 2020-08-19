@@ -19,8 +19,11 @@ import * as firebase from "firebase/app";
 
 /** Required for Firestore capabilities */
 import 'firebase/firestore';
+import { FirestoreCollection } from "./firestore-schema";
 
 type Firestore = firebase.firestore.Firestore;
+type DocumentChange<T> = firebase.firestore.DocumentChange;
+type DocumentData = firebase.firestore.DocumentData;
 
 /**
  * Filters on metrics set by the user
@@ -64,9 +67,47 @@ class FirestoreListener {
         }
     }
 
-    // TODO: JSDocs
+    /**
+     * Listens to Bot Execution docs from Firestore that match user filters
+     * @param firestore Firestore client
+     * @param filters current user filters
+     */
+    private static listenToBotExecutions(firestore: Firestore, filters: UserFilters) {
+        firestore.collection(FirestoreCollection.BotExecution)
+            .where("timeRange.start", ">", filters.timeRange.start)
+            .onSnapshot(querySnapshot => {
+                this.updateExecutionCountsByBot(querySnapshot.docChanges())
+                Render.executionsByBot(PDCache.Executions.countByBot);
+            })
+    }
+
+    /**
+     * Updates Execution counts in Processed Data Cache
+     * @param changes Bot_Execution document changes
+     */
+    private static updateExecutionCountsByBot(changes: Array<DocumentChange<DocumentData>>) {
+        const countByBot = PDCache.Executions.countByBot;
+        changes.forEach(change => {
+            const botName = change.doc.data().bot_name;
+            if (!countByBot[botName]) {
+                countByBot[botName] = 0;
+            }
+            const currCount = countByBot[botName];
+            if (change.type === "added") {
+                countByBot[botName] = currCount + 1;
+            } else if (change.type === "removed") {
+                countByBot[botName] = Math.max(0, currCount - 1);
+            }
+        })
+    }
+
+    /**
+     * Listens to Action docs from Firestore that match user filters
+     * @param firestore Firestore client
+     * @param filters current user filters
+     */
     private static listenToActions(firestore: Firestore, filters: UserFilters) {
-        firestore.collection("Action")
+        firestore.collection(FirestoreCollection.Action)
             .where("timestamp", ">", filters.timeRange.start)
             .onSnapshot((querySnapshot: any) => {
                 const changes = querySnapshot.docChanges();
@@ -127,34 +168,6 @@ class FirestoreListener {
     }
 
     /**
-     * Sets a listener for Bot Executions that match the current user filters
-     * @param {FirestoreListener} firestore authenticated firestore client
-     * @param filters the current user filters
-     */
-    private static listenToBotExecutions(firestore: Firestore, filters: UserFilters) {
-        firestore.collection("Bot_Execution")
-            .where("timeRange.start", ">", filters.timeRange.start)
-            .onSnapshot((querySnapshot: any) => {
-                const currentFilterDocs: any = PDCache.currentFilterExecutions.docs;
-                querySnapshot.docChanges().forEach((change: any) => {
-                    if (change.type === "added") {
-                        currentFilterDocs[change.doc.execution_id] = change.doc;
-                    } else if (change.type === "removed" && currentFilterDocs[change.doc.execution_id]) {
-                        delete currentFilterDocs[change.doc.execution_id];
-                    }
-                });
-
-                // TODO: enabling this breaks the firestore client
-                // this._buildTriggerDocs(querySnapshot.docChanges(), firestore).then(() => {
-                //     Render.executionsByTrigger(this.currentFilterTriggers.countByType);
-                // })
-
-                this.updateExecutionCountsByBot(querySnapshot.docChanges())
-                Render.executionsByBot(PDCache.currentFilterExecutions.countByBot);
-            })
-    }
-
-    /**
      * Sets a listener for the Task Queue status that match the current user filters
      * @param {FirestoreListener} firestore authenticated firestore client
      * @param filters the current user filters
@@ -177,26 +190,6 @@ class FirestoreListener {
                 });
                 Render.tasksByBot(byBot);
             })
-    }
-
-    /**
-     * Updates currentFilterExecutions.countByBot with the given changes
-     * @param changes Bot_Execution document changes
-     */
-    private static updateExecutionCountsByBot(changes: any[]) {
-        const countByBot: any = PDCache.currentFilterExecutions.countByBot;
-        changes.forEach(change => {
-            const botName = change.doc.data().bot_name;
-            if (!countByBot[botName]) {
-                countByBot[botName] = 0;
-            }
-            const currCount = countByBot[botName];
-            if (change.type === "added") {
-                countByBot[botName] = currCount + 1;
-            } else if (change.type === "removed") {
-                countByBot[botName] = Math.max(0, currCount - 1);
-            }
-        })
     }
 
     /**

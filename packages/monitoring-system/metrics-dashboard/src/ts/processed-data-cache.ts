@@ -1,5 +1,10 @@
+/**
+ * Processed data for Bot Executions
+ */
 interface ExecutionsCache {
-    docs: {},
+    /**
+     * Count of number of executions by bot
+     */
     countByBot: {
         [botName: string]: number
     }
@@ -7,12 +12,8 @@ interface ExecutionsCache {
 
 export class ProcessedDataCache {
     
-    /**
-     * Bot_Executions that match the current user filters
-     */
-    static currentFilterExecutions = {
-        docs: {},                     // the execution documents
-        countByBot: {}                // count of number of executions by bot
+    static Executions: ExecutionsCache = {
+        countByBot: {}                
     };
 
     static currentFilterErrors = {
