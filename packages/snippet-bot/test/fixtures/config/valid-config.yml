@@ -1,1 +1,2 @@
-randomBoolean: true
+ignoreFiles:
+  - ignore.py

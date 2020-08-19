@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
 import {Storage} from '@google-cloud/storage';
 // eslint-disable-next-line node/no-extraneous-import
@@ -21,7 +20,7 @@ import {logger} from 'gcf-utils';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const colorsData = require('./colors.json');
 
-interface JSONData {
+export interface DriftRepo {
   github_label: string;
   repo: string;
 }
@@ -32,136 +31,23 @@ interface Label {
 
 const storage = new Storage();
 
-//adds labels to an issue
-handler.addLabels = async function addLabels(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  issueNumber: number,
-  labels: string[]
-) {
-  try {
-    const data = await github.issues.addLabels({
-      owner,
-      repo,
-      issue_number: issueNumber,
-      labels,
-    });
-    return data;
-  } catch (err) {
-    logger.error(err);
-    return null;
-  }
+handler.getDriftReposFile = async () => {
+  const bucket = 'devrel-prod-settings';
+  const file = 'public_repos.json';
+  const [contents] = await storage.bucket(bucket).file(file).download();
+  return contents.toString();
 };
 
-//checks whether a specific label exists in a repo
-handler.checkExistingLabels = async function checkExistingLabels(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  name: string
-) {
-  try {
-    const data = await github.issues.getLabel({
-      owner,
-      repo,
-      name,
-    });
-    return data.data.name;
-  } catch (err) {
-    logger.error(err);
-    return null;
-  }
-};
-
-//creates a label for a repo
-handler.createLabel = async function createLabel(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  name: string,
-  color: string
-) {
-  try {
-    const data = await github.issues.createLabel({
-      owner,
-      repo,
-      name,
-      color,
-    });
-    return data;
-  } catch (err) {
-    logger.error(err);
-    return null;
-  }
-};
-
-//checks existing labels on an issue
-handler.checkExistingIssueLabels = async function checkExistingIssueLabels(
-  github: GitHubAPI,
-  owner: string,
-  repo: string,
-  issueNumber: number
-): Promise<Label[] | null> {
-  try {
-    const data = await github.issues.listLabelsOnIssue({
-      owner,
-      repo,
-      issue_number: issueNumber,
-    });
-    if (data.data === undefined) {
-      return null;
-    } else {
-      return data.data;
-    }
-  } catch (err) {
-    logger.error(err);
-    return null;
-  }
-};
-
-//gets Storage data that maps api to product name
-handler.callStorage = async function callStorage(
-  bucketName: string,
-  srcFileName: string
-): Promise<string> {
-  // Downloads the file
-  const jsonData = (
-    await storage.bucket(bucketName).file(srcFileName).download()
-  )[0];
-
-  return jsonData.toString();
-};
-
-//checks if there is no file in the Cloud Storage system
-handler.checkIfFileIsEmpty = async function checkIfFileIsEmpty(
-  jsonData: string
-) {
-  if (jsonData.length === 0) {
+handler.getDriftRepos = async () => {
+  const jsonData = await handler.getDriftReposFile();
+  if (!jsonData) {
     logger.error(
       new Error('JSON file downloaded from Cloud Storage was empty')
     );
     return null;
-  } else {
-    const jsonArray = JSON.parse(jsonData).repos;
-    return jsonArray;
   }
-};
-
-//checks if specific element is in an array of JSON Data
-handler.checkIfElementIsInArray = function checkIfElementIsInArray(
-  jsonArray: JSONData[],
-  owner: string,
-  repo: string
-) {
-  if (jsonArray) {
-    const objectInJsonArray = jsonArray.find(
-      (element: JSONData) => element.repo === owner + '/' + repo
-    );
-    return objectInJsonArray;
-  } else {
-    return null;
-  }
+  const repos = JSON.parse(jsonData).repos as DriftRepo[];
+  return repos;
 };
 
 // autoDetectLabel tries to detect the right api: label based on the issue
@@ -169,10 +55,10 @@ handler.checkIfElementIsInArray = function checkIfElementIsInArray(
 //
 // For example, an issue titled `spanner/transactions: TestSample failed` would
 // be labeled `api: spanner`.
-handler.autoDetectLabel = (
-  jsonArray: JSONData[],
+export function autoDetectLabel(
+  jsonArray: DriftRepo[],
   title: string
-): string | undefined => {
+): string | undefined {
   if (!jsonArray || !title) {
     return undefined;
   }
@@ -193,61 +79,54 @@ handler.autoDetectLabel = (
       element.github_label === wantLabel ||
       element.github_label === wantLabelCloud
   )?.github_label;
-};
+}
 
 handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   owner: string,
   repo: string,
   issueNumber: number,
   issueTitle: string,
-  jsonArray: JSONData[],
+  driftRepos: DriftRepo[],
   github: GitHubAPI
 ) {
-  if (!jsonArray) {
-    logger.error(
-      'terminating execution of auto-label since JSON file is empty'
-    );
-    return;
-  }
-  const objectInJsonArray = handler.checkIfElementIsInArray(
-    jsonArray,
-    owner,
-    repo
-  );
-
-  const labelsOnIssue = await handler.checkExistingIssueLabels(
-    github,
-    owner,
-    repo,
-    issueNumber
-  );
-
+  const driftRepo = driftRepos.find(x => x.repo === `${owner}/${repo}`);
+  const res = await github.issues
+    .listLabelsOnIssue({
+      owner,
+      repo,
+      issue_number: issueNumber,
+    })
+    .catch(logger.error);
+  const labelsOnIssue = res ? res.data : undefined;
   let wasNotAdded = true;
   let autoDetectedLabel: string | undefined;
 
-  if (!objectInJsonArray?.github_label) {
+  if (!driftRepo?.github_label) {
     logger.info(
       `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
     );
-    autoDetectedLabel = handler.autoDetectLabel(jsonArray, issueTitle);
+    autoDetectedLabel = autoDetectLabel(driftRepos, issueTitle);
   }
-  const index =
-    jsonArray?.findIndex((object: JSONData) => objectInJsonArray === object) %
-    colorsData.length;
+  const index = driftRepos?.findIndex(r => driftRepo === r) % colorsData.length;
   const colorNumber = index >= 0 ? index : 0;
-
-  const githubLabel = objectInJsonArray?.github_label || autoDetectedLabel;
+  const githubLabel = driftRepo?.github_label || autoDetectedLabel;
 
   if (githubLabel) {
-    //will create label regardless, gets a 422 if label already exists on repo
-    await handler.createLabel(
-      github,
-      owner,
-      repo,
-      githubLabel,
-      colorsData[colorNumber].color
-    );
-    logger.info(`Label added to ${owner}/${repo} is ${githubLabel}`);
+    try {
+      await github.issues.createLabel({
+        owner,
+        repo,
+        name: githubLabel,
+        color: colorsData[colorNumber].color,
+      });
+      logger.info(`Label added to ${owner}/${repo} is ${githubLabel}`);
+    } catch (e) {
+      // HTTP 422 means the label already exists on the repo
+      if (e.status !== 422) {
+        e.message = `Error creating label: ${e.message}`;
+        logger.error(e);
+      }
+    }
     if (labelsOnIssue) {
       const foundAPIName = labelsOnIssue.find(
         (element: Label) => element.name === githubLabel
@@ -261,9 +140,14 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       if (foundAPIName) {
         logger.info('The label already exists on this issue');
       } else {
-        await handler.addLabels(github, owner, repo, issueNumber, [
-          githubLabel,
-        ]);
+        await github.issues
+          .addLabels({
+            owner,
+            repo,
+            issue_number: issueNumber,
+            labels: [githubLabel],
+          })
+          .catch(logger.error);
         logger.info(
           `Label added to ${owner}/${repo} for issue ${issueNumber} is ${githubLabel}`
         );
@@ -280,7 +164,14 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
           .catch(logger.error);
       }
     } else {
-      await handler.addLabels(github, owner, repo, issueNumber, [githubLabel]);
+      await github.issues
+        .addLabels({
+          owner,
+          repo,
+          issue_number: issueNumber,
+          labels: [githubLabel],
+        })
+        .catch(logger.error);
       logger.info(
         `Label added to ${owner}/${repo} for issue ${issueNumber} is ${githubLabel}`
       );
@@ -295,14 +186,22 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     );
   }
   if (!foundSamplesTag && repo.includes('sample')) {
-    await handler.createLabel(
-      github,
-      owner,
-      repo,
-      'sample',
-      colorsData[colorNumber].color
-    );
-    await handler.addLabels(github, owner, repo, issueNumber, ['sample']);
+    await github.issues
+      .createLabel({
+        owner,
+        repo,
+        name: 'sample',
+        color: colorsData[colorNumber].color,
+      })
+      .catch(logger.error);
+    await github.issues
+      .addLabels({
+        owner,
+        repo,
+        issue_number: issueNumber,
+        labels: ['sample'],
+      })
+      .catch(logger.error);
     logger.info(
       `Issue ${issueNumber} is in a samples repo but does not have a sample tag, adding it to the repo and issue`
     );
@@ -312,8 +211,10 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   return wasNotAdded;
 };
 
-//main function, responds to label being added
-function handler(app: Application) {
+/**
+ * Main function, responds to label being added
+ */
+export function handler(app: Application) {
   //nightly cron that backfills and corrects api labels
   app.on(['schedule.repository'], async context => {
     logger.info(`running for org ${context.payload.cron_org}`);
@@ -323,11 +224,10 @@ function handler(app: Application) {
       logger.info(`skipping run for ${context.payload.cron_org}`);
       return;
     }
-    const jsonData = await handler.callStorage(
-      'devrel-prod-settings',
-      'public_repos.json'
-    );
-    const jsonArray = await handler.checkIfFileIsEmpty(jsonData);
+    const driftRepos = await handler.getDriftRepos();
+    if (!driftRepos) {
+      return;
+    }
     //all the issues in the repository
     const issues = context.github.issues.listForRepo.endpoint.merge({
       owner,
@@ -344,7 +244,7 @@ function handler(app: Application) {
             repo,
             issue.number,
             issue.title,
-            jsonArray,
+            driftRepos,
             context.github
           );
           if (wasNotAdded) {
@@ -371,33 +271,26 @@ function handler(app: Application) {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const issueNumber = context.payload.issue.number;
-
-    const jsonData = await handler.callStorage(
-      'devrel-prod-settings',
-      'public_repos.json'
-    );
-
-    const jsonArray = await handler.checkIfFileIsEmpty(jsonData);
-
+    const driftRepos = await handler.getDriftRepos();
+    if (!driftRepos) {
+      return;
+    }
     await handler.addLabeltoRepoAndIssue(
       owner,
       repo,
       issueNumber,
       context.payload.issue.title,
-      jsonArray,
+      driftRepos,
       context.github
     );
   });
 
   app.on(['installation.created'], async context => {
     const repositories = context.payload.repositories;
-    const jsonData = await handler.callStorage(
-      'devrel-prod-settings',
-      'public_repos.json'
-    );
-
-    const jsonArray = await handler.checkIfFileIsEmpty(jsonData);
-
+    const driftRepos = await handler.getDriftRepos();
+    if (!driftRepos) {
+      return;
+    }
     for await (const repository of repositories) {
       const [owner, repo] = repository.full_name.split('/');
       const issues = context.github.issues.listForRepo.endpoint.merge({
@@ -416,7 +309,7 @@ function handler(app: Application) {
               repo,
               issue.number,
               issue.title,
-              jsonArray,
+              driftRepos,
               context.github
             );
           }
@@ -425,4 +318,3 @@ function handler(app: Application) {
     }
   });
 }
-export = handler;

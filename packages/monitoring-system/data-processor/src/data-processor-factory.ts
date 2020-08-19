@@ -21,13 +21,16 @@ import {
   CloudLogsProcessor,
   CloudLogsProcessorOptions,
 } from './data-processors/cloud-logs-data-processor';
-import {GCFProcessor} from './data-processors/cloud-functions-data-processor';
+import {
+  CloudFunctionsProcessor,
+  CloudFunctionsProcessorOptions,
+} from './data-processors/cloud-functions-data-processor';
 import {
   CloudTasksProcessor,
   CloudTasksProcessorOptions,
 } from './data-processors/cloud-tasks-data-processor';
 import {GitHubProcessor} from './data-processors/github-data-processor';
-import {ConfigUtil, Config} from './config-util';
+import {ConfigUtil, Config} from './util/config-util';
 import {Firestore} from '@google-cloud/firestore';
 import {PubSub} from '@google-cloud/pubsub';
 import {logger} from './util/logger';
@@ -50,10 +53,10 @@ export class DataProcessorFactory implements Factory {
    */
   public getDataProcessor(task: Task): DataProcessor {
     switch (task) {
-      case Task.ProcessLogs:
+      case Task.ProcessCloudLogs:
         return new CloudLogsProcessor(this.getLogsProcessorOptions());
-      case Task.ProcessGCF:
-        return new GCFProcessor();
+      case Task.ProcessCloudFunctions:
+        return new CloudFunctionsProcessor(this.getFunctionsProcessorOptions());
       case Task.ProcessTaskQueue:
         return new CloudTasksProcessor(this.getTaskProcessorOptions());
       case Task.ProcessGitHub:
@@ -64,10 +67,21 @@ export class DataProcessorFactory implements Factory {
     }
   }
 
-  private getLogsProcessorOptions(): CloudLogsProcessorOptions {
+  private getFunctionsProcessorOptions(): CloudFunctionsProcessorOptions {
     return {
-      subscription: new PubSub().subscription('TODO'), // TODO: move this to config
-      listenLimit: 300, // TODO: move this to config
+      projectId: this.config.cloud_functions_processor
+        .cloud_functions_project_id,
+      ...this.getProcessorOptions(),
+    };
+  }
+
+  private getLogsProcessorOptions(): CloudLogsProcessorOptions {
+    const subscription = this.config.cloud_logs_processor.pub_sub_subscription;
+    const listenLimit = this.config.cloud_logs_processor.pub_sub_listen_limit;
+
+    return {
+      subscription: new PubSub().subscription(subscription),
+      listenLimit: listenLimit,
       ...this.getProcessorOptions(),
     };
   }

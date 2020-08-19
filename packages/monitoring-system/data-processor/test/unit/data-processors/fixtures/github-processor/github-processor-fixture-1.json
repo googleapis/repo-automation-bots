@@ -4,7 +4,8 @@
       "repo-automation-bots_googleapis": {
         "repo_name": "repo-automation-bots",
         "owner_name": "googleapis",
-        "owner_type": "Org"
+        "owner_type": "Org",
+        "private": false
       }
     },
     "GitHub_Event": {}
@@ -625,7 +626,8 @@
       "repo-automation-bots_googleapis": {
         "repo_name": "repo-automation-bots",
         "owner_name": "googleapis",
-        "owner_type": "Org"
+        "owner_type": "Org",
+        "private": false
       }
     },
     "GitHub_Event": {

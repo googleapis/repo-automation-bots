@@ -19,7 +19,7 @@ import {
   BotDocument,
   TaskQueueStatusDocument,
   FirestoreCollection,
-} from '../firestore-schema';
+} from '../types/firestore-schema';
 
 type CloudTasksList = [
   protos.google.cloud.tasks.v2.ITask[],

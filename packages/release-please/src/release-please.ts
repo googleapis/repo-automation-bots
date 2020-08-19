@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Application} from 'probot';
-
+// eslint-disable-next-line node/no-extraneous-import
+import {Application, GitHubAPI} from 'probot';
 // TODO: fix these imports when release-please exports types from the root
 // See https://github.com/googleapis/release-please/issues/249
 import {BuildOptions} from 'release-please/build/src/release-pr';
@@ -24,8 +24,9 @@ import {
   GitHubReleaseOptions,
 } from 'release-please/build/src/github-release';
 import {Runner} from './runner';
-import {GitHubAPI} from 'probot/lib/github';
 import {Octokit} from '@octokit/rest';
+import {logger} from 'gcf-utils';
+
 type OctokitType = InstanceType<typeof Octokit>;
 
 interface ConfigurationOptions {
@@ -36,6 +37,7 @@ interface ConfigurationOptions {
   handleGHRelease?: boolean;
   bumpMinorPreMajor?: boolean;
   path?: string;
+  changelogPath?: string;
 }
 
 const DEFAULT_API_URL = 'https://api.github.com';
@@ -57,6 +59,8 @@ function releaseTypeFromRepoLanguage(language: string | null): string {
       return 'node';
     case 'php':
       return 'php-yoshi';
+    case 'go':
+      return 'go-yoshi';
     default: {
       const releasers = getReleaserNames();
       if (releasers.includes(language.toLowerCase())) {
@@ -105,7 +109,8 @@ async function createGitHubRelease(
   packageName: string,
   repoUrl: string,
   github: GitHubAPI,
-  path?: string
+  path?: string,
+  changelogPath?: string
 ) {
   const releaseOptions: GitHubReleaseOptions = {
     label: 'autorelease: pending',
@@ -113,12 +118,13 @@ async function createGitHubRelease(
     packageName,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       octokit: (github as any) as OctokitType,
       graphql: github.graphql,
       request: github.request,
     },
     path,
+    changelogPath,
   };
   const ghr = new GitHubRelease(releaseOptions);
   await Runner.releaser(ghr);
@@ -136,7 +142,7 @@ export = (app: Application) => {
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
-      app.log.info(`release-please not configured for (${repoUrl})`);
+      logger.info(`release-please not configured for (${repoUrl})`);
       return;
     }
 
@@ -146,7 +152,7 @@ export = (app: Application) => {
     };
 
     if (branch !== configuration.primaryBranch) {
-      app.log.info(
+      logger.info(
         `Not on primary branch (${configuration.primaryBranch}): ${branch}`
       );
       return;
@@ -156,7 +162,7 @@ export = (app: Application) => {
       ? configuration.releaseType
       : releaseTypeFromRepoLanguage(context.payload.repository.language);
 
-    app.log.info(`push (${repoUrl})`);
+    logger.info(`push (${repoUrl})`);
 
     // TODO: this should be refactored into an interface.
     await createReleasePR(
@@ -173,12 +179,13 @@ export = (app: Application) => {
     // release-please can handle creating a release on GitHub, we opt not to do
     // this for our repos that have autorelease enabled.
     if (configuration.handleGHRelease) {
-      app.log.info(`handling GitHub release for (${repoUrl})`);
-      createGitHubRelease(
-        configuration.packageName || repoName,
+      logger.info(`handling GitHub release for (${repoUrl})`);
+      await createGitHubRelease(
+        configuration.packageName ?? repoName,
         repoUrl,
         context.github,
-        configuration.path
+        configuration.path,
+        configuration.changelogPath ?? 'CHANGELOG.md'
       );
     }
   });
@@ -193,7 +200,7 @@ export = (app: Application) => {
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
-      app.log.info(`release-please not configured for (${repoUrl})`);
+      logger.info(`release-please not configured for (${repoUrl})`);
       return;
     }
 
@@ -202,7 +209,7 @@ export = (app: Application) => {
       ...remoteConfiguration,
     };
 
-    app.log.info(`schedule.repository (${repoUrl})`);
+    logger.info(`schedule.repository (${repoUrl})`);
 
     const releaseType = configuration.releaseType
       ? configuration.releaseType
@@ -228,7 +235,7 @@ export = (app: Application) => {
         label => label.name === FORCE_RUN_LABEL
       )
     ) {
-      app.log.info(
+      logger.info(
         `ignoring non-force label action (${context.payload.pull_request.labels.join(
           ', '
         )})`
@@ -255,7 +262,7 @@ export = (app: Application) => {
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
-      app.log.info(`release-please not configured for (${repoUrl})`);
+      logger.info(`release-please not configured for (${repoUrl})`);
       return;
     }
 
@@ -264,7 +271,7 @@ export = (app: Application) => {
       ...remoteConfiguration,
     };
 
-    app.log.info(`pull_request.labeled (${repoUrl})`);
+    logger.info(`pull_request.labeled (${repoUrl})`);
 
     // run release-please
     const releaseType = configuration.releaseType
