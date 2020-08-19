@@ -19,7 +19,7 @@ import * as firebase from "firebase/app";
 
 /** Required for Firestore capabilities */
 import 'firebase/firestore';
-import { FirestoreCollection } from "./firestore-schema";
+import { FirestoreCollection, BotExecutionDocument } from "./firestore-schema";
 
 type Firestore = firebase.firestore.Firestore;
 type DocumentChange<T> = firebase.firestore.DocumentChange;
@@ -46,7 +46,6 @@ class FirestoreListener {
         const firestore = this.getAuthenticatedFirestore();
         const filters = this.getCurrentUserFilters();
 
-        this.listenToBotNames(firestore); // TODO: fix race condition b/w this line and next
         this.listenToBotExecutions(firestore, filters);
         this.listenToErrors(firestore, filters);
         this.listenToTaskQueueStatus(firestore, filters);
@@ -74,7 +73,7 @@ class FirestoreListener {
      */
     private static listenToBotExecutions(firestore: Firestore, filters: UserFilters) {
         firestore.collection(FirestoreCollection.BotExecution)
-            .where("timeRange.start", ">", filters.timeRange.start)
+            .where("start_time", ">", filters.timeRange.start)
             .onSnapshot(querySnapshot => {
                 this.updateExecutionCountsByBot(querySnapshot.docChanges())
                 Render.executionsByBot(PDCache.Executions.countByBot);
@@ -88,15 +87,15 @@ class FirestoreListener {
     private static updateExecutionCountsByBot(changes: Array<DocumentChange<DocumentData>>) {
         const countByBot = PDCache.Executions.countByBot;
         changes.forEach(change => {
-            const botName = change.doc.data().bot_name;
+            const botExecutionDoc = change.doc.data() as BotExecutionDocument;
+            const botName = botExecutionDoc.bot_name;
             if (!countByBot[botName]) {
                 countByBot[botName] = 0;
             }
-            const currCount = countByBot[botName];
             if (change.type === "added") {
-                countByBot[botName] = currCount + 1;
+                countByBot[botName]++;
             } else if (change.type === "removed") {
-                countByBot[botName] = Math.max(0, currCount - 1);
+                countByBot[botName]--;
             }
         })
     }
@@ -282,19 +281,6 @@ class FirestoreListener {
                     botName: botName,
                 };
             });
-    }
-
-    /**
-     * Retrieves the list of all bot names and sets the appropriate
-     * labels on the document
-     * @param {FirestoreListener} firestore an authenticated Firestore client
-     */
-    private static listenToBotNames(firestore: Firestore) {   // TODO: use filters and cache
-        firestore.collection("Bot")
-            .onSnapshot((querySnapshot: any) => {
-                const names = querySnapshot.docs.map((doc: any) => doc.data().bot_name);
-                Render.addBotNameLabels(names);
-            })
     }
 
     /**

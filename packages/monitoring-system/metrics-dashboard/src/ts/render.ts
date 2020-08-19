@@ -19,7 +19,6 @@ export class Render {
      * as labels underneath stats
      */
     static statRowsByBot = [
-        'stat_executions_by_bot',
         'stat_tasks_by_bot',
     ]
 
@@ -64,11 +63,15 @@ export class Render {
      * @param {[bot_name: string]: number} executionCounts a map of bot_name to execution counts
      */
     static executionsByBot(executionCounts: any) {
+        const rowId = "stat_executions_by_bot";
+        const row = document.getElementById(rowId) as HTMLTableRowElement;
+        row.innerHTML = "";
+        const cell = row.insertCell(-1);
+        let cellHTML = '';
         for (const botName of Object.keys(executionCounts)) {
-            const xPath = `//tr[@id="stat_executions_by_bot"]//p[contains(@class, "stat") and @id="${botName}"]`;
-            const statP = this.getElementByXpath(xPath) as HTMLElement;
-            statP.innerHTML = String(executionCounts[botName])
+            cellHTML += `<div class="data_div"><p class="stat" id="${botName}">${String(executionCounts[botName])}</p><p class="label" id="${botName}">${botName}</p></div>`;
         }
+        cell.innerHTML = cellHTML;
     }
 
     // TODO JSDoc
@@ -84,6 +87,7 @@ export class Render {
 
     // TODO JSDoc
     static tasksByBot(taskCount: any) {
+        this.addBotNameLabels(Object.keys(taskCount))
         for (const botName of Object.keys(taskCount)) {
             const xPath = `//tr[@id="stat_tasks_by_bot"]//p[contains(@class, "stat") and @id="${botName}"]`;
             const statP = this.getElementByXpath(xPath) as HTMLElement;
