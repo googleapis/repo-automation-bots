@@ -434,6 +434,19 @@ describe('buildcop', () => {
         scopes.forEach(s => s.done());
       });
 
+      it('opens an issue 2 [Java]', async () => {
+        const payload = buildPayload('java_one_error.xml', 'java-datastore');
+
+        const scopes = [
+          nockIssues('java-datastore'),
+          nockNewIssue('java-datastore'),
+        ];
+
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+
+        scopes.forEach(s => s.done());
+      });
+
       it('opens an issue [Node.js]', async () => {
         const payload = buildPayload('node_one_failed.xml', 'nodejs-spanner');
 
