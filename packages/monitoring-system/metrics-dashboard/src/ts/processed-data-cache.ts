@@ -10,11 +10,31 @@ interface ExecutionsCache {
     }
 }
 
+interface ActionsCache {
+    actionInfos: {
+        [primaryKey: string]: ActionInfo
+    }
+}
+
+/**
+ * GitHub Action information 
+ */
+export interface ActionInfo {
+    repoName: string;
+    time: string;
+    url: string;
+    actionDescription: string;
+}
+
 export class ProcessedDataCache {
     
     static Executions: ExecutionsCache = {
         countByBot: {}                
     };
+
+    static Actions: ActionsCache = {
+        actionInfos: {}
+    }
 
     static currentFilterErrors = {
         formattedErrors: {}           // errors formatted with execution info
@@ -23,9 +43,5 @@ export class ProcessedDataCache {
     static currentFilterTriggers = {
         docs: {},
         countByType: {},
-    }
-
-    static currentFilterActions = {
-        formattedActions: {}          // actions formatted with repo info
     }
 }

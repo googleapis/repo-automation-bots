@@ -126,7 +126,7 @@ export class Render {
         actions.sort((a1: any, a2: any) => new Date(a2.time).getTime() - new Date(a1.time).getTime());
         actions = actions.slice(0, 5);
         for (const action of actions) {
-            const div = `<div class="action_div object_div" onclick="window.open('${action.url}','blank');"><p class="action_text object_text"><strong>(${action.time}) ${action.action}</strong></br> ${action.repoName}</p></div>`
+            const div = `<div class="action_div object_div" onclick="window.open('${action.url}','blank');"><p class="action_text object_text"><strong>(${action.time}) ${action.actionDescription}</strong></br> ${action.repoName}</p></div>`
             actionsHTML += div;
         }
         actionsTd.innerHTML = actionsHTML;

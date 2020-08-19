@@ -14,12 +14,12 @@
 //
 
 import { Render } from "./render";
-import { ProcessedDataCache as PDCache} from "./processed-data-cache";
+import { ProcessedDataCache as PDCache, ActionInfo} from "./processed-data-cache";
 import * as firebase from "firebase/app";
 
 /** Required for Firestore capabilities */
 import 'firebase/firestore';
-import { FirestoreCollection, BotExecutionDocument } from "./firestore-schema";
+import { FirestoreCollection, BotExecutionDocument, ActionDocument, GitHubRepositoryDocument } from "./firestore-schema";
 
 type Firestore = firebase.firestore.Firestore;
 type DocumentChange<T> = firebase.firestore.DocumentChange;
@@ -55,7 +55,7 @@ class FirestoreListener {
     /**
      * Returns the current data filters set by the user
      * 
-     * NOTE: NOT IMPLEMENTED
+     * TODO: Implement
      * Currently this just returns fixed values
      */
     private static getCurrentUserFilters(): UserFilters {
@@ -109,61 +109,77 @@ class FirestoreListener {
         firestore.collection(FirestoreCollection.Action)
             .where("timestamp", ">", filters.timeRange.start)
             .onSnapshot((querySnapshot: any) => {
-                const changes = querySnapshot.docChanges();
-                this.updateFormattedActions(changes, firestore).then(() => {
-                    Render.actions(Object.values(PDCache.currentFilterActions.formattedActions));
+                this.updateActionInfos(querySnapshot.docChanges(), firestore).then(() => {
+                    Render.actions(Object.values(PDCache.Actions.actionInfos));
                 });
             });
     }
 
-    // TODO: JSDocs
-    private static updateFormattedActions(changes: any, firestore: Firestore) {
-        const formattedActions: any = PDCache.currentFilterActions.formattedActions;
-        const updates = changes.map((change: any) => {
-            const doc = change.doc.data();
-            const primaryKey = `${doc.execution_id}_${doc.action_type}_${doc.timestamp}`;
-            if (change.type === "removed" && formattedActions[primaryKey]) {
-                delete formattedActions[primaryKey];
-                return Promise.resolve();
+    /**
+     * Updates action info objects in Processed Data Cache
+     * @param changes Action document changes
+     * @param firestore Firestore client
+     */
+    private static updateActionInfos(changes: Array<DocumentChange<DocumentData>>, firestore: Firestore) {
+        const actionInfos = PDCache.Actions.actionInfos;
+        const updates = changes.map(change => {
+            const actionDoc = change.doc.data() as ActionDocument;
+            const key = `${actionDoc.execution_id}_${actionDoc.action_type}_${actionDoc.timestamp}`;
+            
+            if (change.type === "removed" && actionInfos[key]) {
+                delete actionInfos[key];
             } else if (change.type === "added") {
-                return this._buildFormattedAction(doc, firestore).then((formattedDoc: any) => {
-                    formattedActions[primaryKey] = formattedDoc;
+                return this.buildActionInfo(actionDoc, firestore).then(actionInfo => {
+                    actionInfos[key] = actionInfo;
                 })
             }
+
+            return Promise.resolve();
         })
         return Promise.all(updates);  // TODO will short-circuit
     }
 
-    private static _buildFormattedAction(actionDoc: any, firestore: Firestore) {
-        const repo = actionDoc.destination_repo;
-        const object = actionDoc.destination_object;
-        return firestore.collection("GitHub_Repository")  // TODO could check local cache
-            .doc(repo).get()
-            .then((repoDoc: any) => {
-                let name = `${repoDoc.data().owner_name}/${repoDoc.data().repo_name}`
-                const time = actionDoc.timestamp;
-                const url = `https://github.com/${name}`;
-                if (repoDoc.data().private) {
-                    name = `${name} [private repository]`;
+    private static buildActionInfo(actionDoc: ActionDocument, firestore: Firestore): Promise<ActionInfo> {
+        const dstObject = actionDoc.destination_object;
+        return this.getCorrespondingRepoDoc(actionDoc, firestore).then(repoDoc => {
+            let url = `https://github.com/${name}`;
+            if (dstObject) {  // TODO: replace with actual call to firestore
+                const parts = dstObject.split("_");
+                if (dstObject.includes("PULL_REQUEST")) {
+                    url += `/pulls/${parts[parts.length - 1]}`
+                } else if (dstObject.includes("ISSUE")) {
+                    url += `/issues/${parts[parts.length - 1]}`
                 }
-                return {
-                    repoName: name,
-                    time: new Date(time).toLocaleTimeString(),
-                    url: url,
-                    action: `${actionDoc.action_type}${actionDoc.value === "NONE" ? "" : ": " + actionDoc.value}`,
-                };
-            })
-            .then((formattedAction: any) => {
-                if (object) {  // TODO: replace with actual call to firestore
-                    const parts = object.split("_");
-                    if (object.includes("PULL_REQUEST")) {
-                        formattedAction.url += `/pulls/${parts[parts.length - 1]}`
-                    } else if (object.includes("ISSUE")) {
-                        formattedAction.url += `/issues/${parts[parts.length - 1]}`
-                    }
-                }
-                return formattedAction;
-            });
+            }
+            
+            return {
+                repoName: this.getFullRepoName(repoDoc),
+                time: new Date(actionDoc.timestamp).toLocaleTimeString(),
+                url: url,
+                actionDescription: this.getActionDescription(actionDoc),
+            };
+        })
+    }
+
+    private static getCorrespondingRepoDoc(actionDoc: ActionDocument, firestore: Firestore): Promise<GitHubRepositoryDocument> {
+        const repoPrimaryKey = actionDoc.destination_repo;
+        return firestore.collection(FirestoreCollection.GitHubRepository)
+        .doc(repoPrimaryKey).get()
+        .then(document => {
+            return document.data() as GitHubRepositoryDocument;
+        })
+    }
+
+    private static getFullRepoName(repoDoc: GitHubRepositoryDocument): string  {
+        let name = `${repoDoc.owner_name}/${repoDoc.repo_name}`;
+        if (repoDoc.private) {
+            name += " [private repository]";
+        }
+        return name;
+    }
+
+    private static getActionDescription(actionDoc: ActionDocument): string {
+        return `${actionDoc.action_type}${actionDoc.value === "NONE" ? "" : ": " + actionDoc.value}`
     }
 
     /**
