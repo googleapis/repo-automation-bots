@@ -108,7 +108,7 @@ class FirestoreListener {
     private static listenToActions(firestore: Firestore, filters: UserFilters) {
         firestore.collection(FirestoreCollection.Action)
             .where("timestamp", ">", filters.timeRange.start)
-            .onSnapshot((querySnapshot: any) => {
+            .onSnapshot(querySnapshot => {
                 this.updateActionInfos(querySnapshot.docChanges(), firestore).then(() => {
                     Render.actions(Object.values(PDCache.Actions.actionInfos));
                 });
@@ -139,19 +139,19 @@ class FirestoreListener {
         return Promise.all(updates);  // TODO will short-circuit
     }
 
+    /**
+     * Builds an ActionInfo object from the given ActionDocument
+     * @param actionDoc an ActionDocument from Firestore
+     * @param firestore Firestore client
+     */
     private static buildActionInfo(actionDoc: ActionDocument, firestore: Firestore): Promise<ActionInfo> {
         const dstObject = actionDoc.destination_object;
         return this.getCorrespondingRepoDoc(actionDoc, firestore).then(repoDoc => {
             let url = `https://github.com/${name}`;
-            if (dstObject) {  // TODO: replace with actual call to firestore
-                const parts = dstObject.split("_");
-                if (dstObject.includes("PULL_REQUEST")) {
-                    url += `/pulls/${parts[parts.length - 1]}`
-                } else if (dstObject.includes("ISSUE")) {
-                    url += `/issues/${parts[parts.length - 1]}`
-                }
+            // TODO: replace with actual call to firestore
+            if (dstObject) {  
+                url += this.getObjectPath(dstObject);
             }
-            
             return {
                 repoName: this.getFullRepoName(repoDoc),
                 time: new Date(actionDoc.timestamp).toLocaleTimeString(),
@@ -161,6 +161,27 @@ class FirestoreListener {
         })
     }
 
+    /**
+     * Build the url path to the object referenced by dstObject
+     * TODO: this is just a quick-fix and should be replaced with an actual
+     * call to Firestore
+     * @param dstObject primary key of the GitHubObject
+     */
+    private static getObjectPath(dstObject: string): string {
+        const parts = dstObject.split("_");
+        if (dstObject.includes("PULL_REQUEST")) {
+            return `/pulls/${parts[parts.length - 1]}`
+        } else if (dstObject.includes("ISSUE")) {
+            return `/issues/${parts[parts.length - 1]}`
+        }
+        return "";
+    }
+
+    /**
+     * Fetch the GitHubRepository document that corresponds to the given ActionDocument
+     * @param actionDoc an ActionDocument from Firestore
+     * @param firestore Firestore client
+     */
     private static getCorrespondingRepoDoc(actionDoc: ActionDocument, firestore: Firestore): Promise<GitHubRepositoryDocument> {
         const repoPrimaryKey = actionDoc.destination_repo;
         return firestore.collection(FirestoreCollection.GitHubRepository)
@@ -170,6 +191,10 @@ class FirestoreListener {
         })
     }
 
+    /**
+     * Build the full GitHub repository name from the given doc
+     * @param repoDoc a GitHubRepository doc
+     */
     private static getFullRepoName(repoDoc: GitHubRepositoryDocument): string  {
         let name = `${repoDoc.owner_name}/${repoDoc.repo_name}`;
         if (repoDoc.private) {
@@ -178,6 +203,10 @@ class FirestoreListener {
         return name;
     }
 
+    /**
+     * Build a description for the given action
+     * @param actionDoc an ActionDocument
+     */
     private static getActionDescription(actionDoc: ActionDocument): string {
         return `${actionDoc.action_type}${actionDoc.value === "NONE" ? "" : ": " + actionDoc.value}`
     }
@@ -194,7 +223,7 @@ class FirestoreListener {
         firestore.collection("Task_Queue_Status")
             .orderBy("timestamp", "desc")
             .limit(20)
-            .onSnapshot((querySnapshot: any) => {
+            .onSnapshot(querySnapshot => {
                 const byBot: any = {};
                 const docs = querySnapshot.docs.map((doc: any) => doc.data());
                 docs.forEach((doc: any) => {
@@ -247,7 +276,7 @@ class FirestoreListener {
             .where("timestamp", ">", filters.timeRange.start)
             .limit(5)
             .orderBy("timestamp", "desc")
-            .onSnapshot((querySnapshot: any) => {
+            .onSnapshot(querySnapshot => {
                 const changes = querySnapshot.docChanges();
                 this.updateFormattedErrors(changes, firestore).then(() => {
                     Render.errors(Object.values(PDCache.currentFilterErrors.formattedErrors));
