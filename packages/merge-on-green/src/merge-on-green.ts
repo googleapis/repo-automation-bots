@@ -20,7 +20,6 @@ import {logger} from 'gcf-utils';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
-// Making this a variable so that we can change it later down the road if we hit a rate limit
 const MAX_TEST_TIME = 1000 * 60 * 60 * 6; // 6 hr.
 const COMMENT_INTERVAL_LOW = 1000 * 60 * 60 * 3; // 3 hours
 const COMMENT_INTERVAL_HIGH = 1000 * 60 * 60 * 3.067; // 3 hours and 4 minutes, the amount of time it takes Cloud Scheduler to run
