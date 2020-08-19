@@ -93,8 +93,8 @@ hr {
 }
 
 .loading_animation {
-    border: 6px solid #f0a500; /* Light grey */
-    border-top: 6px solid #f4f4f4; /* Blue */
+    border: 6px solid #f0a500;
+    border-top: 6px solid transparent;
     border-radius: 50%;
     width: 25px;
     height: 25px;

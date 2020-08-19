@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "A dashboard to view repo automation bot metrics",
   "scripts": {
-    "compile": "tsc -p ."
+    "compile": "tsc -p .",
+    "deploy": "firebase deploy"
   },
   "repository": "https://github.com/googleapis/repo-automation-bots.git",
   "homepage": "https://github.com/googleapis/repo-automation-bots",
@@ -11,6 +12,8 @@
   "author": "asonawalla@google.com",
   "license": "Apache-2.0",
   "devDependencies": {
+    "firebase": "^7.18.0",
+    "gts": "^2.0.0",
     "typescript": "^3.9.7"
   }
 }
