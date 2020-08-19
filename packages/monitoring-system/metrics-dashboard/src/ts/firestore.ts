@@ -14,9 +14,8 @@
 //
 
 import {Render} from "./render";
-const firebase = require("firebase");
-// Required for side-effects
-require("firebase/firestore");
+import * as firebase from "firebase/app";
+import 'firebase/firestore';
 
 export class Firestore {
 
