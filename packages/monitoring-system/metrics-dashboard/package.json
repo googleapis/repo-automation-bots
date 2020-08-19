@@ -4,6 +4,9 @@
   "description": "A dashboard to view repo automation bot metrics",
   "scripts": {
     "compile": "tsc -p . && webpack",
+    "postcompile": "npm run copy-static && npm run copy-webpack-build",
+    "copy-static": "cp -r ./src/ ./build/public && rm -rf ./build/public/ts",
+    "copy-webpack-build": "mkdir -p ./build/public/js && cp -r ./build/webpack-compiled/* ./build/public/js/",
     "deploy": "firebase deploy"
   },
   "repository": "https://github.com/googleapis/repo-automation-bots.git",
@@ -13,7 +16,6 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "firebase": "^7.18.0",
-    "gts": "^2.0.0",
     "typescript": "^3.9.7",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12"

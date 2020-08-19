@@ -1,9 +1,9 @@
 const path = require('path');
 
 module.exports = {
-  entry: './build-tsc/ts/firestore.js',
+  entry: './build/tsc-compiled/firestore.js',
   output: {
-    path: path.resolve(__dirname, 'public/js'),
+    path: path.resolve(__dirname, 'build/webpack-compiled'),
     filename: 'bundle.js'
   }
 };
