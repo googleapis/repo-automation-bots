@@ -65,7 +65,7 @@ class FirestoreListener {
     }
 
     // TODO: JSDocs
-    private static listenToActions(firestore: any, filters: UserFilters) {
+    private static listenToActions(firestore: Firestore, filters: UserFilters) {
         firestore.collection("Action")
             .where("timestamp", ">", filters.timeRange.start)
             .onSnapshot((querySnapshot: any) => {
@@ -77,7 +77,7 @@ class FirestoreListener {
     }
 
     // TODO: JSDocs
-    private static updateFormattedActions(changes: any, firestore: any) {
+    private static updateFormattedActions(changes: any, firestore: Firestore) {
         const formattedActions: any = PDCache.currentFilterActions.formattedActions;
         const updates = changes.map((change: any) => {
             const doc = change.doc.data();
@@ -94,7 +94,7 @@ class FirestoreListener {
         return Promise.all(updates);  // TODO will short-circuit
     }
 
-    private static _buildFormattedAction(actionDoc: any, firestore: any) {
+    private static _buildFormattedAction(actionDoc: any, firestore: Firestore) {
         const repo = actionDoc.destination_repo;
         const object = actionDoc.destination_object;
         return firestore.collection("GitHub_Repository")  // TODO could check local cache
@@ -131,7 +131,7 @@ class FirestoreListener {
      * @param {FirestoreListener} firestore authenticated firestore client
      * @param filters the current user filters
      */
-    private static listenToBotExecutions(firestore: any, filters: UserFilters) {
+    private static listenToBotExecutions(firestore: Firestore, filters: UserFilters) {
         firestore.collection("Bot_Execution")
             .where("timeRange.start", ">", filters.timeRange.start)
             .onSnapshot((querySnapshot: any) => {
@@ -159,7 +159,7 @@ class FirestoreListener {
      * @param {FirestoreListener} firestore authenticated firestore client
      * @param filters the current user filters
      */
-    private static listenToTaskQueueStatus(firestore: any, filters: UserFilters) {
+    private static listenToTaskQueueStatus(firestore: Firestore, filters: UserFilters) {
         // TODO: currently this just grabs the first 20 records
         // change it so that it finds the latest timestamp and gets
         // all records with that timestamp
@@ -205,7 +205,7 @@ class FirestoreListener {
      * @param changes Bot_Execution document changes
      * @returns a Promise that resolves when all trigger docs are built and stored
      */
-    private static buildTriggerDocs(changes: any[], firestore: any) {
+    private static buildTriggerDocs(changes: any[], firestore: Firestore) {
         const triggerDocs: any = PDCache.currentFilterTriggers.docs;
         const countByType: any = PDCache.currentFilterTriggers.countByType;
         const updates: any = changes.map(change => {
@@ -234,7 +234,7 @@ class FirestoreListener {
      * @param {FirestoreListener} firestore authenticated firestore client
      * @param filters the current user filters
      */
-    private static listenToErrors(firestore: any, filters: UserFilters) {
+    private static listenToErrors(firestore: Firestore, filters: UserFilters) {
         firestore.collection("Error")
             .where("timestamp", ">", filters.timeRange.start)
             .limit(5)
@@ -252,7 +252,7 @@ class FirestoreListener {
      * @param changes Error document changes
      * @returns a Promise that resolves after all updates are completed
      */
-    private static updateFormattedErrors(changes: any[], firestore: any) {
+    private static updateFormattedErrors(changes: any[], firestore: Firestore) {
         const formattedErrors: any = PDCache.currentFilterErrors.formattedErrors;
         const updates = changes.map(change => {
             const doc = change.doc.data();
@@ -274,7 +274,7 @@ class FirestoreListener {
      * @param errorDoc error document from Firestore
      * @returns a Promise that resolves the formatted document
      */
-    private static buildFormattedError(errorDoc: any, firestore: any) {
+    private static buildFormattedError(errorDoc: any, firestore: Firestore) {
         const executionId = errorDoc.execution_id;
         return firestore.collection("Bot_Execution")  // TODO could check local cache
             .doc(executionId).get()
@@ -296,7 +296,7 @@ class FirestoreListener {
      * labels on the document
      * @param {FirestoreListener} firestore an authenticated Firestore client
      */
-    private static listenToBotNames(firestore: any) {   // TODO: use filters and cache
+    private static listenToBotNames(firestore: Firestore) {   // TODO: use filters and cache
         firestore.collection("Bot")
             .onSnapshot((querySnapshot: any) => {
                 const names = querySnapshot.docs.map((doc: any) => doc.data().bot_name);
