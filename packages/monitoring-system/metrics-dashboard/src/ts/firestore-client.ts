@@ -23,8 +23,7 @@ import 'firebase/firestore';
 export type Firestore = firebase.firestore.Firestore;
 
 export class AuthenticatedFirestore {
-
-    private static firestore: Firestore;
+  private static firestore: Firestore;
 
   /**
    * Initializes the static Firestore client if it

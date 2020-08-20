@@ -14,18 +14,12 @@
 //
 
 import {Render} from './render';
-import {
-  ProcessedDataCache as PDCache,
-} from './processed-data-cache';
+import {ProcessedDataCache as PDCache} from './processed-data-cache';
 
-import {
-  FirestoreCollection,
-  ActionDocument,
-  GitHubRepositoryDocument,
-} from './firestore-schema';
+import {FirestoreCollection} from './firestore-schema';
 import {UserFilters} from '.';
-import { ChangeProcessor } from './change-processor';
-import { AuthenticatedFirestore, Firestore } from './firestore-client';
+import {ChangeProcessor} from './change-processor';
+import {AuthenticatedFirestore, Firestore} from './firestore-client';
 
 /**
  * A function returned by a listener that can be called
@@ -102,9 +96,11 @@ export class FirestoreListener {
       .collection(FirestoreCollection.Action)
       .where('timestamp', '>', this.filters.timeRange.start)
       .onSnapshot(querySnapshot => {
-        ChangeProcessor.updateActionInfos(querySnapshot.docChanges()).then(() => {
-          Render.actions(Object.values(PDCache.Actions.actionInfos));
-        });
+        ChangeProcessor.updateActionInfos(querySnapshot.docChanges()).then(
+          () => {
+            Render.actions(Object.values(PDCache.Actions.actionInfos));
+          }
+        );
       });
   }
 

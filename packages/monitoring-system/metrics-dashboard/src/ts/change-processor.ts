@@ -17,8 +17,14 @@ import {
   ProcessedDataCache as PDCache,
   ActionInfo,
 } from './processed-data-cache';
-import { BotExecutionDocument, ActionDocument, getPrimaryKey, FirestoreCollection, GitHubRepositoryDocument } from './firestore-schema';
-import { AuthenticatedFirestore } from './firestore-client';
+import {
+  BotExecutionDocument,
+  ActionDocument,
+  getPrimaryKey,
+  FirestoreCollection,
+  GitHubRepositoryDocument,
+} from './firestore-schema';
+import {AuthenticatedFirestore} from './firestore-client';
 
 /**
  * Type aliases for concise code
@@ -28,16 +34,13 @@ type DocumentData = firebase.firestore.DocumentData;
 export type Changes = Array<DocumentChange<DocumentData>>;
 
 export class ChangeProcessor {
-
   private static firestore = AuthenticatedFirestore.getClient();
 
   /**
    * Updates Execution counts in Processed Data Cache
    * @param changes Bot_Execution document changes
    */
-  public static updateExecutionCountsByBot(
-    changes: Changes
-  ) {
+  public static updateExecutionCountsByBot(changes: Changes) {
     const countByBot = PDCache.Executions.countByBot;
     changes.forEach(change => {
       const botExecutionDoc = change.doc.data() as BotExecutionDocument;
@@ -80,7 +83,9 @@ export class ChangeProcessor {
    * Builds an ActionInfo object from the given ActionDocument
    * @param actionDoc an ActionDocument from Firestore
    */
-  private static buildActionInfo(actionDoc: ActionDocument): Promise<ActionInfo> {
+  private static buildActionInfo(
+    actionDoc: ActionDocument
+  ): Promise<ActionInfo> {
     const githubObjectKey = actionDoc.destination_object;
     return this.getCorrespondingRepoDoc(actionDoc).then(repoDoc => {
       let url = `https://github.com/${name}`;
