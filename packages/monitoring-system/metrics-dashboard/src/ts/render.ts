@@ -13,8 +13,6 @@
 // limitations under the License.
 //
 
-import * as d3 from 'd3';
-
 export class Render {
   /**
    * Rows that contain statistics 'By Bot' and need bot names
@@ -37,7 +35,7 @@ export class Render {
       const row = document.getElementById(rowId) as HTMLTableRowElement;
       row.innerHTML = '';
       const cell = row.insertCell(-1);
-      var cellHTML = '';
+      let cellHTML = '';
       for (const name of botNames) {
         cellHTML += `<div class="data_div"><p class="stat" id="${name}">0</p><p class="label" id="${name}">${name}</p></div>`;
       }
@@ -102,9 +100,10 @@ export class Render {
   static errors(errors: any) {
     const xPath = '//tr[@id="stat_errors"]/td';
     const errorsTd = this.getElementByXpath(xPath) as HTMLElement;
-    var errorsHTML = '';
+    let errorsHTML = '';
     if (errors.length === 0) {
-      errorsHTML = `<div class="error_div object_div"><p class="error_text object_text"><strong>No Errors</p></div>`;
+      errorsHTML =
+        '<div class="error_div object_div"><p class="error_text object_text"><strong>No Errors</p></div>';
     } else {
       errors.sort(
         (e1: any, e2: any) =>
@@ -126,9 +125,10 @@ export class Render {
   static actions(actions: any) {
     const xPath = '//tr[@id="stat_actions"]/td';
     const actionsTd = this.getElementByXpath(xPath) as HTMLElement;
-    var actionsHTML = '';
+    let actionsHTML = '';
     if (actions.length === 0) {
-      actionsHTML = `<div class="action_div object_div"><p class="action_text object_text"><strong>No Actions</strong></p></div>`;
+      actionsHTML =
+        '<div class="action_div object_div"><p class="action_text object_text"><strong>No Actions</strong></p></div>';
     } else {
       actions.sort(
         (a1: any, a2: any) =>
@@ -141,68 +141,6 @@ export class Render {
       }
     }
     actionsTd.innerHTML = actionsHTML;
-  }
-
-  static taskQueueTrend(data) {
-    var width = 500;
-    var height = 300;
-    document.getElementById('tasks_by_time').innerHTML = '';
-    const div = d3.select('#tasks_by_time');
-    const margin = {top: 20, right: 20, bottom: 30, left: 30};
-
-    const minX = data.map(d => d.x).reduce((a, b) => Math.min(a, b));
-    const maxX = data.map(d => d.x).reduce((a, b) => Math.max(a, b));
-    const minY = data.map(d => d.y).reduce((a, b) => Math.min(a, b));
-    const maxY = data.map(d => d.y).reduce((a, b) => Math.max(a, b));
-
-    const svg = div
-      .append('svg')
-      .attr('width', width + margin.left + margin.right)
-      .attr('height', height + margin.top + margin.bottom)
-      .append('g')
-      .attr('transform', `translate(${margin.left}, ${margin.top})`);
-
-    /*
-     * X and Y scales.
-     */
-    const xScale = d3.scaleLinear().domain([minX, maxX]).range([0, width]);
-
-    const yScale = d3.scaleLinear().domain([minY, maxY]).range([height, 0]);
-
-    /*
-     * The function that describes how the line is drawn.
-     * Notice that we apply the xScale and yScale to the
-     * data in order to keep the data in bounds to our scale.
-     */
-    const line: any = d3
-      .line()
-      .x((d: any) => xScale(d.x))
-      .y((d: any) => yScale(d.y))
-      .curve(d3['curveMonotoneX']);
-
-    /*
-     * X and Y axis
-     */
-    const xAxis = svg
-      .append('g')
-      .attr('class', 'x axis')
-      .attr('transform', `translate(0, ${height})`)
-      .call(
-        d3
-          .axisBottom(xScale)
-          .tickFormat((d, i) => new Date(Number(d)).toLocaleTimeString())
-          .ticks(5)
-
-
-    const yAxis = svg
-      .append('g')
-      .attr('class', 'y axis')
-      .call(d3.axisLeft(yScale));
-
-    /*
-     * Appending the line to the SVG.
-     */
-    svg.append('path').datum(data).attr('class', 'data-line').attr('d', line);
   }
 
   /**
