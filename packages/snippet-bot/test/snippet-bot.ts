@@ -110,33 +110,32 @@ describe('snippet-bot', () => {
       requests.done();
     });
 
-    it('does not submit a check on PR if there are no region tags',
-      async () => {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
-        const payload = require(resolve(fixturesPath, './pr_event'));
-        const blob = require(resolve(fixturesPath, './blob_no_region_tags'));
+    it('does not submit a check on PR if there are no region tags', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
+      const payload = require(resolve(fixturesPath, './pr_event'));
+      const blob = require(resolve(fixturesPath, './blob_no_region_tags'));
 
-        const requests = nock('https://api.github.com')
-          .get(
-            '/repos/tmatsuo/repo-automation-bots/contents/.github/snippet-bot.yml'
-          )
-          .reply(200, {content: config.toString('base64')})
-          .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
-          .reply(200, changedFiles)
-          .get(
-            '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
-          )
-          .reply(200, blob);
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/.github/snippet-bot.yml'
+        )
+        .reply(200, {content: config.toString('base64')})
+        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+        .reply(200, changedFiles)
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+        )
+        .reply(200, blob);
 
-        await probot.receive({
-          name: 'pull_request',
-          payload,
-          id: 'abc123',
-        });
-
-        requests.done();
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
       });
+
+      requests.done();
+    });
 
     it('exits early when it failed to read the config', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
