@@ -62,7 +62,13 @@ export function autoDetectLabel(
   if (!jsonArray || !title) {
     return undefined;
   }
-  let firstPart = title.split(':')[0]; // Before the colon, if there is one.
+  // Regex to match the scope of a Conventional Commit message.
+  const conv = /[^(]+\(([^)]+)\):/;
+  const match = title.match(conv);
+
+  let firstPart = match ? match[1] : title;
+
+  firstPart = firstPart.split(':')[0]; // Before the colon, if there is one.
   firstPart = firstPart.split('/')[0]; // Before the slash, if there is one.
   firstPart = firstPart.split('.')[0]; // Before the period, if there is one.
   firstPart = firstPart.toLowerCase(); // Convert to lower case.
@@ -70,7 +76,7 @@ export function autoDetectLabel(
 
   const wantLabel = `api: ${firstPart}`;
   // Some APIs have "cloud" before the name (e.g. cloudkms and cloudiot).
-  // If needed, we could replace common firstParts to known API names.
+  // If needed, we could replace common firstPart values with known API names.
   const wantLabelCloud = `api: cloud${firstPart}`;
   // Assume jsonArray contains all api: labels. Avoids an extra API call to list
   // the labels on a repo.
