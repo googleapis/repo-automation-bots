@@ -50,7 +50,6 @@ class FirestoreListener {
         this.listenToErrors(firestore, filters);
         this.listenToTaskQueueStatus(firestore, filters);
         this.listenToActions(firestore, filters);
-        this.listenToTaskQueueTrend("slo_stat_bot", firestore, filters);
     }
 
     /**
@@ -327,25 +326,6 @@ class FirestoreListener {
                     botName: botName,
                 };
             });
-    }
-
-    private static listenToTaskQueueTrend(botName: string, firestore: Firestore, filters: UserFilters) {
-        const queueName = botName.replace(/_/g, "-")
-        firestore.collection(FirestoreCollection.TaskQueueStatus)
-        .where("queue_name", "==", queueName) 
-        .where("timestamp", ">", filters.timeRange.start)
-        .orderBy("timestamp", "desc")
-        .onSnapshot(querySnapshot => {
-            const data = [];
-            querySnapshot.docs.map(doc => doc.data()).forEach(docData => {
-                const taskQueueDoc = docData as TaskQueueStatusDocument;
-                data.push({
-                    x: taskQueueDoc.timestamp,
-                    y: taskQueueDoc.in_queue
-                })
-            })
-            Render.taskQueueTrend(data);
-        })
     }
 
     /**
