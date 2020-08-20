@@ -96,11 +96,10 @@ export class FirestoreListener {
       .collection(FirestoreCollection.Action)
       .where('timestamp', '>', this.filters.timeRange.start)
       .onSnapshot(querySnapshot => {
-        ChangeProcessor.updateActionInfos(querySnapshot.docChanges()).then(
-          () => {
-            Render.actions(Object.values(PDCache.Actions.actionInfos));
-          }
-        );
+        const changes = querySnapshot.docChanges();
+        ChangeProcessor.updateActionInfos(changes).then(() => {
+          Render.actions(Object.values(PDCache.Actions.actionInfos));
+        });
       });
   }
 
