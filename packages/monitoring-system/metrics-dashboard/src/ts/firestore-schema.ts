@@ -13,6 +13,13 @@
 // limitations under the License.
 //
 
+import {hasProperties, isObject} from './type-check-util';
+
+/**
+ * Placeholder value for unknown fields
+ */
+export const UNKNOWN_FIRESTORE_VALUE = 'Unknown';
+
 /**
  * GitHub repository owner type
  */
@@ -257,3 +264,57 @@ export type FirestoreDocument =
   | GitHubEventDocument
   | GitHubRepositoryDocument
   | GitHubObjectDocument;
+
+export type FirestoreRecord = {
+  doc: FirestoreDocument;
+  collection: FirestoreCollection;
+};
+
+/**
+ * Properties of a document in collectionName that form the primary key (in order)
+ * eg. ['propA', 'propB'] means primary key = `${doc.propA}_${doc.propB}` where
+ * doc is a document in collectionName
+ */
+const KEY_PROPERTIES: {
+  [collection in FirestoreCollection]: string[];
+} = {
+  Bot: ['bot_name'],
+  Bot_Execution: ['execution_id'],
+  Task_Queue_Status: ['queue_name', 'timestamp'],
+  Error: ['execution_id', 'timestamp'],
+  Trigger: ['execution_id'],
+  Action: ['execution_id', 'action_type', 'timestamp'],
+  Action_Type: ['name'],
+  GitHub_Event: ['payload_hash'],
+  GitHub_Repository: ['repo_name', 'owner_name'],
+  GitHub_Object: ['object_type', 'repository', 'object_id'],
+};
+
+/**
+ * Returns the primary key for the given document belonging to the
+ * given collection name.
+ * @param doc document to generate primary key for
+ * @param collectionName the name of the collection for this document
+ * @throws if the collectionName is invalid or the doc does not match
+ * the property requirements for the given collection
+ */
+export function getPrimaryKey(
+  doc: {},
+  collectionName: FirestoreCollection
+): string {
+  const keyProperties = KEY_PROPERTIES[collectionName];
+
+  if (!keyProperties) {
+    throw new Error(
+      `${collectionName} has no associated primary key properties`
+    );
+  }
+
+  if (!isObject(doc) || !hasProperties(doc, keyProperties)) {
+    throw new Error(
+      `doc does not match the requirements for ${collectionName}: ${doc}`
+    );
+  }
+
+  return keyProperties.map(key => doc[key]).join('_');
+}

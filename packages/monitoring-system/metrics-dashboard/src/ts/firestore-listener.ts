@@ -28,6 +28,7 @@ import {
   ActionDocument,
   GitHubRepositoryDocument,
   TaskQueueStatusDocument,
+  getPrimaryKey,
 } from './firestore-schema';
 
 /**
@@ -104,8 +105,6 @@ class FirestoreListener {
 
   /**
    * Listens to Bot Execution docs from Firestore that match user filters
-   * @param firestore Firestore client
-   * @param filters current user filters
    */
   private listenToBotExecutions(): Unsubscriber {
     return this.firestore
@@ -141,8 +140,6 @@ class FirestoreListener {
 
   /**
    * Listens to Action docs from Firestore that match user filters
-   * @param firestore Firestore client
-   * @param filters current user filters
    */
   private listenToActions(): Unsubscriber {
     return this.firestore
@@ -158,19 +155,18 @@ class FirestoreListener {
   /**
    * Updates action info objects in Processed Data Cache
    * @param changes Action document changes
-   * @param firestore Firestore client
    */
   private updateActionInfos(changes: Array<DocumentChange<DocumentData>>) {
     const actionInfos = PDCache.Actions.actionInfos;
     const updates = changes.map(change => {
       const actionDoc = change.doc.data() as ActionDocument;
-      const key = `${actionDoc.execution_id}_${actionDoc.action_type}_${actionDoc.timestamp}`;
+      const actionDocKey = getPrimaryKey(actionDoc, FirestoreCollection.Action);
 
-      if (change.type === 'removed' && actionInfos[key]) {
-        delete actionInfos[key];
+      if (change.type === 'removed' && actionInfos[actionDocKey]) {
+        delete actionInfos[actionDocKey];
       } else if (change.type === 'added') {
         return this.buildActionInfo(actionDoc).then(actionInfo => {
-          actionInfos[key] = actionInfo;
+          actionInfos[actionDocKey] = actionInfo;
         });
       }
 
@@ -182,15 +178,14 @@ class FirestoreListener {
   /**
    * Builds an ActionInfo object from the given ActionDocument
    * @param actionDoc an ActionDocument from Firestore
-   * @param firestore Firestore client
    */
   private buildActionInfo(actionDoc: ActionDocument): Promise<ActionInfo> {
-    const dstObject = actionDoc.destination_object;
+    const githubObjectKey = actionDoc.destination_object;
     return this.getCorrespondingRepoDoc(actionDoc).then(repoDoc => {
       let url = `https://github.com/${name}`;
       // TODO: replace with actual call to firestore
-      if (dstObject) {
-        url += this.getObjectPath(dstObject);
+      if (githubObjectKey) {
+        url += this.getObjectPath(githubObjectKey);
       }
       return {
         repoName: this.getFullRepoName(repoDoc),
@@ -205,13 +200,13 @@ class FirestoreListener {
    * Build the url path to the object referenced by dstObject
    * TODO: this is just a quick-fix and should be replaced with an actual
    * call to Firestore
-   * @param dstObject primary key of the GitHubObject
+   * @param githubObjectKey primary key of the GitHubObject
    */
-  private getObjectPath(dstObject: string): string {
-    const parts = dstObject.split('_');
-    if (dstObject.includes('PULL_REQUEST')) {
+  private getObjectPath(githubObjectKey: string): string {
+    const parts = githubObjectKey.split('_');
+    if (githubObjectKey.includes('PULL_REQUEST')) {
       return `/pulls/${parts[parts.length - 1]}`;
-    } else if (dstObject.includes('ISSUE')) {
+    } else if (githubObjectKey.includes('ISSUE')) {
       return `/issues/${parts[parts.length - 1]}`;
     }
     return '';
@@ -220,7 +215,6 @@ class FirestoreListener {
   /**
    * Fetch the GitHubRepository document that corresponds to the given ActionDocument
    * @param actionDoc an ActionDocument from Firestore
-   * @param firestore Firestore client
    */
   private getCorrespondingRepoDoc(
     actionDoc: ActionDocument
@@ -259,8 +253,6 @@ class FirestoreListener {
 
   /**
    * Sets a listener for the Task Queue status that match the current user filters
-   * @param {FirestoreListener} firestore authenticated firestore client
-   * @param filters the current user filters
    */
   private listenToTaskQueueStatus(): Unsubscriber {
     // TODO: currently this just grabs the first 20 records
@@ -285,8 +277,6 @@ class FirestoreListener {
 
   /**
    * Sets a listener for execution errors that match the current user filters
-   * @param {FirestoreListener} firestore authenticated firestore client
-   * @param filters the current user filters
    */
   private listenToErrors(): Unsubscriber {
     return this.firestore
