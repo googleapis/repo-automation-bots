@@ -38,19 +38,35 @@ type DocumentChange<T> = firebase.firestore.DocumentChange;
 type DocumentData = firebase.firestore.DocumentData;
 
 /**
+ * A function returned by a listener that can be called
+ * to remove that listener
+ */
+type Unsubscriber = () => void;
+
+/**
  * Filters on metrics set by the user
  */
 interface UserFilters {
   timeRange?: {
-    start?: number; // UNIX timestamp
-    end?: number; // UNIX timestamp
+    /* UNIX timestamp */
+    start?: number;
+    /* UNIX timestamp */
+    end?: number;
   };
 }
 
+/**
+ * Listens to data from Firestore and renders results
+ */
 class FirestoreListener {
+  /* Authenticated Firestore client */
   private firestore: Firestore;
 
+  /* The current user filters */
   private filters: UserFilters;
+
+  /* Callback functions to remove current listeners */
+  private unsubscribers: Unsubscriber[] = [];
 
   /**
    * Sets listeners on Firestore based on the current user filters
@@ -59,13 +75,17 @@ class FirestoreListener {
   public resetListeners() {
     this.initFirestoreClient();
 
-    // TODO: remove old listeners
+    this.unsubscribers.forEach(unsubscribe => unsubscribe());
+    this.unsubscribers = [];
 
     this.filters = this.getCurrentUserFilters();
-    this.listenToBotExecutions();
-    this.listenToErrors();
-    this.listenToTaskQueueStatus();
-    this.listenToActions();
+
+    this.unsubscribers.push(
+      this.listenToBotExecutions(),
+      this.listenToErrors(),
+      this.listenToTaskQueueStatus(),
+      this.listenToActions()
+    );
   }
 
   /**
@@ -87,8 +107,8 @@ class FirestoreListener {
    * @param firestore Firestore client
    * @param filters current user filters
    */
-  private listenToBotExecutions() {
-    this.firestore
+  private listenToBotExecutions(): Unsubscriber {
+    return this.firestore
       .collection(FirestoreCollection.BotExecution)
       .where('start_time', '>', this.filters.timeRange.start)
       .onSnapshot(querySnapshot => {
@@ -124,16 +144,14 @@ class FirestoreListener {
    * @param firestore Firestore client
    * @param filters current user filters
    */
-  private listenToActions() {
-    this.firestore
+  private listenToActions(): Unsubscriber {
+    return this.firestore
       .collection(FirestoreCollection.Action)
-      .where('timestamp', '>', filters.timeRange.start)
+      .where('timestamp', '>', this.filters.timeRange.start)
       .onSnapshot(querySnapshot => {
-        this.updateActionInfos(querySnapshot.docChanges(), firestore).then(
-          () => {
-            Render.actions(Object.values(PDCache.Actions.actionInfos));
-          }
-        );
+        this.updateActionInfos(querySnapshot.docChanges()).then(() => {
+          Render.actions(Object.values(PDCache.Actions.actionInfos));
+        });
       });
   }
 
@@ -151,7 +169,7 @@ class FirestoreListener {
       if (change.type === 'removed' && actionInfos[key]) {
         delete actionInfos[key];
       } else if (change.type === 'added') {
-        return this.buildActionInfo(actionDoc, firestore).then(actionInfo => {
+        return this.buildActionInfo(actionDoc).then(actionInfo => {
           actionInfos[key] = actionInfo;
         });
       }
@@ -168,7 +186,7 @@ class FirestoreListener {
    */
   private buildActionInfo(actionDoc: ActionDocument): Promise<ActionInfo> {
     const dstObject = actionDoc.destination_object;
-    return this.getCorrespondingRepoDoc(actionDoc, firestore).then(repoDoc => {
+    return this.getCorrespondingRepoDoc(actionDoc).then(repoDoc => {
       let url = `https://github.com/${name}`;
       // TODO: replace with actual call to firestore
       if (dstObject) {
@@ -208,7 +226,7 @@ class FirestoreListener {
     actionDoc: ActionDocument
   ): Promise<GitHubRepositoryDocument> {
     const repoPrimaryKey = actionDoc.destination_repo;
-    return firestore
+    return this.firestore
       .collection(FirestoreCollection.GitHubRepository)
       .doc(repoPrimaryKey)
       .get()
@@ -244,11 +262,11 @@ class FirestoreListener {
    * @param {FirestoreListener} firestore authenticated firestore client
    * @param filters the current user filters
    */
-  private listenToTaskQueueStatus() {
+  private listenToTaskQueueStatus(): Unsubscriber {
     // TODO: currently this just grabs the first 20 records
     // change it so that it finds the latest timestamp and gets
     // all records with that timestamp
-    this.firestore
+    return this.firestore
       .collection('Task_Queue_Status')
       .orderBy('timestamp', 'desc')
       .limit(20)
@@ -270,8 +288,8 @@ class FirestoreListener {
    * @param {FirestoreListener} firestore authenticated firestore client
    * @param filters the current user filters
    */
-  private listenToErrors() {
-    this.firestore
+  private listenToErrors(): Unsubscriber {
+    return this.firestore
       .collection('Error')
       .where('timestamp', '>', this.filters.timeRange.start)
       .limit(5)
@@ -337,7 +355,6 @@ class FirestoreListener {
    * is not already initialized
    */
   private initFirestoreClient() {
-    // TODO: move this to separate file
     if (!this.firestore) {
       firebase.initializeApp({
         apiKey: 'AIzaSyCNYD0Pp6wnT36GcdxWkRVE9RTWt_2XfsU',
