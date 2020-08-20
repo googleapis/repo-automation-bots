@@ -16,6 +16,7 @@
 export interface ParseResult {
   result: boolean;
   messages: string[];
+  tagsFound: boolean;
 }
 
 const START_TAG_REGEX = /\[START (.*)\]/;
@@ -25,7 +26,7 @@ export function parseRegionTags(
   contents: string,
   filename: string
 ): ParseResult {
-  const result: ParseResult = {result: true, messages: []};
+  const result: ParseResult = {result: true, messages: [], tagsFound: false};
   const tags: Array<[number, string]> = [];
 
   let lineno = 0;
@@ -34,6 +35,8 @@ export function parseRegionTags(
     // Check the start tag
     const startMatch = line.match(START_TAG_REGEX);
     if (startMatch) {
+      // We found the region tag.
+      result.tagsFound = true;
       // startMatch[1] should hold the name of the region tag.
       // If we already have the same tag, it's an error.
       let alreadyStarted = false;
