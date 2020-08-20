@@ -102,6 +102,7 @@ export = (app: Application) => {
     const files: Octokit.PullsListFilesResponseItem[] = filesResponse.data;
 
     let mismatchedTags = false;
+    let tagsFound = false;
     const failureMessages: string[] = [];
 
     // If we found any new files, verify they all have matching region tags.
@@ -134,6 +135,9 @@ export = (app: Application) => {
         mismatchedTags = true;
         failureMessages.push(parseResult.messages.join('\n'));
       }
+      if (parseResult.tagsFound) {
+        tagsFound = true;
+      }
     }
 
     const checkParams: Octokit.ChecksCreateParams = context.repo({
@@ -153,6 +157,8 @@ export = (app: Application) => {
 
     // post the status of commit linting to the PR, using:
     // https://developer.github.com/v3/checks/
-    await context.github.checks.create(checkParams);
+    if (tagsFound) {
+      await context.github.checks.create(checkParams);
+    }
   });
 };

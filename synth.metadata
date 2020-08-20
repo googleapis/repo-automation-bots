@@ -4,15 +4,26 @@
       "git": {
         "name": ".",
         "remote": "https://github.com/googleapis/repo-automation-bots.git",
-        "sha": "3fc0332b987b9738ca9cc61c424bd184c54da1c1"
+        "sha": "5bbdf7c36a41c9456b349b49499fe7fc462429a4"
       }
     },
     {
       "git": {
         "name": "synthtool",
         "remote": "https://github.com/googleapis/synthtool.git",
-        "sha": "3a00b7fea8c4c83eaff8eb207f530a2e3e8e1de3"
+        "sha": "1a60ff2a3975c2f5054431588bd95db9c3b862ba"
       }
     }
+  ],
+  "generatedFiles": [
+    ".gitattributes",
+    ".github/ISSUE_TEMPLATE/bug_report.md",
+    ".github/ISSUE_TEMPLATE/feature_request.md",
+    ".github/ISSUE_TEMPLATE/support_request.md",
+    ".github/PULL_REQUEST_TEMPLATE.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "api-extractor.json"
   ]
 }
