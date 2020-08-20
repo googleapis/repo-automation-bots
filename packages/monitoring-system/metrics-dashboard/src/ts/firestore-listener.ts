@@ -351,12 +351,26 @@ class FirestoreListener {
 
 window.onload = () => {
     FirestoreListener.start();
-    // Render.taskQueueTrend([
-    //     {x: 0, y: 13},
-    //     {x: 1, y: 2},
-    //     {x: 2, y: 33},
-    //     {x: 3, y: 24},
-    //     {x: 4, y: 15},
-    //     {x: 5, y: 3},
-    // ])
+    Render.taskQueueTrend([
+        {x: 0, y: 13},
+        {x: 1, y: 0},
+        {x: 2, y: 33},
+        {x: 3, y: 3},
+        {x: 4, y: 15},
+        {x: 5, y: 0},
+        {x: 6, y: 0},
+        {x: 7, y: 0},
+        {x: 8, y: 20},
+        {x: 9, y: 24},
+        {x: 10, y: 30},
+        {x: 11, y: 7},
+        {x: 12, y: 6},
+        {x: 13, y: 5},
+        {x: 14, y: 3},
+        {x: 15, y: 0},
+        {x: 16, y: 0},
+        {x: 17, y: 4},
+        {x: 18, y: 15},
+        {x: 19, y: 5},
+    ])
 }

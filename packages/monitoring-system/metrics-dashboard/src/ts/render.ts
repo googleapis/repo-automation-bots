@@ -133,10 +133,10 @@ export class Render {
     }
 
     static taskQueueTrend(data) {
-        var width = 300;
+        var width = 500;
         var height = 300;
         const div = d3.select('#tasks_by_time')
-        const margin = { top: 50, right: 50, bottom: 90, left: 75 }
+        const margin = { top: 20, right: 20, bottom: 30, left: 20 }
         const maxY = data.map(d => d.y).reduce((a, b) => Math.max(a, b));
         
         const svg = div.append('svg')
@@ -150,11 +150,11 @@ export class Render {
          */
         const xScale = d3.scaleLinear()
             .domain([0, data.length - 1])
-          .range([0, width])
+            .range([0, width])
         
         const yScale = d3.scaleLinear()
                 .domain([0, maxY])
-            .range([height, 0])
+                .range([height, 0])
         
         /*
          * The function that describes how the line is drawn.

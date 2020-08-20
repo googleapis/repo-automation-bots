@@ -215,7 +215,7 @@ hr {
 
 /** D3 */
 .data-line {
-    stroke: white;
+    stroke: #f0a500;
     stroke-width: 2px;
     fill: none;
 }
@@ -224,4 +224,18 @@ hr {
     width: 400px;
     height: 400px;
 }
+
+.axis line {
+    stroke: #c0c0c0;
+}
+
+.axis path {
+    stroke: #c0c0c0;
+}
+
+.axis text {
+    stroke: #c0c0c0;
+    font-family: 'Google Sans';
+}
+  
 /** D3 */
