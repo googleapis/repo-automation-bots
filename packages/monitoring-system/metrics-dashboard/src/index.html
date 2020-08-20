@@ -49,36 +49,6 @@
               <div class="loading_animation"></div>
             </td>
           </tr>
-        </table>
-      </td>
-      <td id="right_block">
-        <table>
-          <tr>
-            <td colspan="14">
-              <h2>Task Queue Status</h2>
-              <hr class="heading_row_divider">
-            </td>
-          </tr>
-          <tr class="subheading">
-            <td colspan="14">
-              <h3>By Time (auto_label)</h3>
-            </td>
-          </tr>
-          <tr class="data">
-            <td>
-              <div id="tasks_by_time"></div>
-            </td>
-          </tr>
-          <tr class="subheading">
-            <td colspan="14">
-              <h3>By Automation Bot</h3>
-            </td>
-          </tr>
-          <tr class="data" id="stat_tasks_by_bot">
-            <td>
-              <div class="loading_animation"></div>
-            </td>
-          </tr>
           <tr>
             <td colspan="14">
               <h2>GitHub Activity</h2>
@@ -95,7 +65,7 @@
               <div class="loading_animation"></div>
             </td>
           </tr>
-          <tr class="subheading">
+          <!-- <tr class="subheading">
             <td colspan="14">
               <h3>Repositories with recent interactions</h3>
             </td>
@@ -113,6 +83,36 @@
           <tr class="data">
             <td colspan="14">
               <h4>Unavailable</h4>
+            </td>
+          </tr> -->
+        </table>
+      </td>
+      <td id="right_block">
+        <table>
+          <tr>
+            <td colspan="14">
+              <h2>Task Queue Status</h2>
+              <hr class="heading_row_divider">
+            </td>
+          </tr>
+          <tr class="subheading">
+            <td colspan="14">
+              <h3>By Time (slo_stat_bot)</h3>
+            </td>
+          </tr>
+          <tr class="data">
+            <td>
+              <div id="tasks_by_time"><div class="loading_animation"></div></div>
+            </td>
+          </tr>
+          <tr class="subheading">
+            <td colspan="14">
+              <h3>By Automation Bot</h3>
+            </td>
+          </tr>
+          <tr class="data" id="stat_tasks_by_bot">
+            <td>
+              <div class="loading_animation"></div>
             </td>
           </tr>
         </table>

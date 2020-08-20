@@ -106,11 +106,15 @@ export class Render {
         const xPath = `//tr[@id="stat_errors"]/td`;
         const errorsTd = this.getElementByXpath(xPath) as HTMLElement;
         var errorsHTML = '';
-        errors.sort((e1: any, e2: any) => new Date(e2.time).getTime() - new Date(e1.time).getTime());
-        errors = errors.slice(0, 5);
-        for (const error of errors) {
-            const div = `<div class="error_div object_div" onclick="window.open('${error.logsUrl}','blank');"><p class="error_text object_text"><strong>(${error.time}) ${error.botName}:</strong></br> ${error.msg}</p></div>`
-            errorsHTML += div;
+        if (errors.length === 0) {
+            errorsHTML = `<div class="error_div object_div"><p class="error_text object_text"><strong>No Errors</p></div>`
+        } else {
+            errors.sort((e1: any, e2: any) => new Date(e2.time).getTime() - new Date(e1.time).getTime());
+            errors = errors.slice(0, 5);
+            for (const error of errors) {
+                const div = `<div class="error_div object_div" onclick="window.open('${error.logsUrl}','blank');"><p class="error_text object_text"><strong>(${error.time}) ${error.botName}:</strong></br> ${error.msg}</p></div>`
+                errorsHTML += div;
+            }
         }
         errorsTd.innerHTML = errorsHTML;
     }
@@ -123,11 +127,15 @@ export class Render {
         const xPath = `//tr[@id="stat_actions"]/td`;
         const actionsTd = this.getElementByXpath(xPath) as HTMLElement;
         var actionsHTML = '';
-        actions.sort((a1: any, a2: any) => new Date(a2.time).getTime() - new Date(a1.time).getTime());
-        actions = actions.slice(0, 5);
-        for (const action of actions) {
-            const div = `<div class="action_div object_div" onclick="window.open('${action.url}','blank');"><p class="action_text object_text"><strong>(${action.time}) ${action.actionDescription}</strong></br> ${action.repoName}</p></div>`
-            actionsHTML += div;
+        if (actions.length === 0) {
+            actionsHTML = `<div class="action_div object_div"><p class="action_text object_text"><strong>No Actions</strong></p></div>`
+        } else {
+            actions.sort((a1: any, a2: any) => new Date(a2.time).getTime() - new Date(a1.time).getTime());
+            actions = actions.slice(0, 5);
+            for (const action of actions) {
+                const div = `<div class="action_div object_div" onclick="window.open('${action.url}','blank');"><p class="action_text object_text"><strong>(${action.time}) ${action.actionDescription}</strong></br> ${action.repoName}</p></div>`
+                actionsHTML += div;
+            }
         }
         actionsTd.innerHTML = actionsHTML;
     }
@@ -135,8 +143,13 @@ export class Render {
     static taskQueueTrend(data) {
         var width = 500;
         var height = 300;
+        document.getElementById("tasks_by_time").innerHTML = "";
         const div = d3.select('#tasks_by_time')
-        const margin = { top: 20, right: 20, bottom: 30, left: 20 }
+        const margin = { top: 20, right: 20, bottom: 30, left: 30 }
+
+        const minX = data.map(d => d.x).reduce((a, b) => Math.min(a, b));
+        const maxX = data.map(d => d.x).reduce((a, b) => Math.max(a, b));
+        const minY = data.map(d => d.y).reduce((a, b) => Math.min(a, b));
         const maxY = data.map(d => d.y).reduce((a, b) => Math.max(a, b));
         
         const svg = div.append('svg')
@@ -149,11 +162,11 @@ export class Render {
          * X and Y scales.
          */
         const xScale = d3.scaleLinear()
-            .domain([0, data.length - 1])
+            .domain([minX, maxX])
             .range([0, width])
         
         const yScale = d3.scaleLinear()
-                .domain([0, maxY])
+                .domain([minY, maxY])
                 .range([height, 0])
         
         /*
@@ -172,7 +185,7 @@ export class Render {
         const xAxis = svg.append('g')
             .attr('class', 'x axis')
           .attr('transform', `translate(0, ${height})`)
-          .call(d3.axisBottom(xScale))
+          .call(d3.axisBottom(xScale).tickFormat((d, i) => new Date(Number(d)).toLocaleTimeString()).ticks(5))
         
         const yAxis = svg.append('g')
             .attr('class', 'y axis')
