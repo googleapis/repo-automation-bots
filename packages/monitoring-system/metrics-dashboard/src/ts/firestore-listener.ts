@@ -112,7 +112,7 @@ export class FirestoreListener {
     // change it so that it finds the latest timestamp and gets
     // all records with that timestamp
     return this.firestore
-      .collection('Task_Queue_Status')
+      .collection(FirestoreCollection.TaskQueueStatus)
       .orderBy('timestamp', 'desc')
       .limit(20)
       .onSnapshot(querySnapshot => {
@@ -133,7 +133,7 @@ export class FirestoreListener {
    */
   private listenToErrors(): Unsubscriber {
     return this.firestore
-      .collection('Error')
+      .collection(FirestoreCollection.Error)
       .where('timestamp', '>', this.filters.timeRange.start)
       .limit(5)
       .orderBy('timestamp', 'desc')
