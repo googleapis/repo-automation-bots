@@ -9,19 +9,3 @@ exports['snippet-bot responds to PR sets a "failure" context on PR 1'] = {
       "test.py:5, tag `hello` has already started\ntest.py:10, tag `lol` doesn't have a matching start tag\ntest.py:8, tag `world` doesn't have a matching end tag",
   },
 };
-
-exports[
-  'snippet-bot responds to PR sets a "success" context on PR by ignoreFile 1'
-] = {
-  name: 'Mismatched region tag',
-  conclusion: 'success',
-  head_sha: 'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
-};
-
-exports[
-  'snippet-bot responds to PR sets a "success" context on PR because the file was just deleted 1'
-] = {
-  name: 'Mismatched region tag',
-  conclusion: 'success',
-  head_sha: 'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
-};
