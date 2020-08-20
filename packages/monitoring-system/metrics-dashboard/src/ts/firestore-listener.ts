@@ -19,7 +19,7 @@ import * as firebase from "firebase/app";
 
 /** Required for Firestore capabilities */
 import 'firebase/firestore';
-import { FirestoreCollection, BotExecutionDocument, ActionDocument, GitHubRepositoryDocument } from "./firestore-schema";
+import { FirestoreCollection, BotExecutionDocument, ActionDocument, GitHubRepositoryDocument, TaskQueueStatusDocument } from "./firestore-schema";
 
 type Firestore = firebase.firestore.Firestore;
 type DocumentChange<T> = firebase.firestore.DocumentChange;
@@ -50,6 +50,7 @@ class FirestoreListener {
         this.listenToErrors(firestore, filters);
         this.listenToTaskQueueStatus(firestore, filters);
         this.listenToActions(firestore, filters);
+        this.listenToTaskQueueTrend("auto_label", firestore, filters);
     }
 
     /**
@@ -320,12 +321,31 @@ class FirestoreListener {
                 const time = errorDoc.timestamp;
                 const botName = executionDoc.data().bot_name;
                 return {
-                    msg: String(msg).substring(0, 200) + "...",
+                    msg: String(msg).substring(0, 200) + "...",  // TODO: replace with div overflow prop
                     time: new Date(time).toLocaleTimeString(),
                     logsUrl: executionDoc.data().logs_url,
                     botName: botName,
                 };
             });
+    }
+
+    private static listenToTaskQueueTrend(botName: string, firestore: Firestore, filters: UserFilters) {
+        const queueName = botName.replace(/_/g, "-")
+        firestore.collection(FirestoreCollection.TaskQueueStatus)
+        .where("queue_name", "==", queueName) 
+        .where("timestamp", ">", filters.timeRange.start)
+        .orderBy("timestamp", "desc")
+        .onSnapshot(querySnapshot => {
+            const data = [];
+            querySnapshot.docs.map(doc => doc.data()).forEach(docData => {
+                const taskQueueDoc = docData as TaskQueueStatusDocument;
+                data.push({
+                    x: taskQueueDoc.timestamp,
+                    y: taskQueueDoc.in_queue
+                })
+            })
+            Render.taskQueueTrend(data);
+        })
     }
 
     /**
@@ -351,26 +371,26 @@ class FirestoreListener {
 
 window.onload = () => {
     FirestoreListener.start();
-    Render.taskQueueTrend([
-        {x: 0, y: 13},
-        {x: 1, y: 0},
-        {x: 2, y: 33},
-        {x: 3, y: 3},
-        {x: 4, y: 15},
-        {x: 5, y: 0},
-        {x: 6, y: 0},
-        {x: 7, y: 0},
-        {x: 8, y: 20},
-        {x: 9, y: 24},
-        {x: 10, y: 30},
-        {x: 11, y: 7},
-        {x: 12, y: 6},
-        {x: 13, y: 5},
-        {x: 14, y: 3},
-        {x: 15, y: 0},
-        {x: 16, y: 0},
-        {x: 17, y: 4},
-        {x: 18, y: 15},
-        {x: 19, y: 5},
-    ])
+    // Render.taskQueueTrend([
+    //     {x: 0, y: 13},
+    //     {x: 1, y: 0},
+    //     {x: 2, y: 33},
+    //     {x: 3, y: 3},
+    //     {x: 4, y: 15},
+    //     {x: 5, y: 0},
+    //     {x: 6, y: 0},
+    //     {x: 7, y: 0},
+    //     {x: 8, y: 20},
+    //     {x: 9, y: 24},
+    //     {x: 10, y: 30},
+    //     {x: 11, y: 7},
+    //     {x: 12, y: 6},
+    //     {x: 13, y: 5},
+    //     {x: 14, y: 3},
+    //     {x: 15, y: 0},
+    //     {x: 16, y: 0},
+    //     {x: 17, y: 4},
+    //     {x: 18, y: 15},
+    //     {x: 19, y: 5},
+    // ])
 }
