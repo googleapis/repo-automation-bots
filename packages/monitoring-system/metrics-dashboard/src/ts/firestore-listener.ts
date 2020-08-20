@@ -30,6 +30,7 @@ import {
   TaskQueueStatusDocument,
   getPrimaryKey,
 } from './firestore-schema';
+import {UserFilters} from '.';
 
 /**
  * Type aliases for concise code
@@ -45,21 +46,9 @@ type DocumentData = firebase.firestore.DocumentData;
 type Unsubscriber = () => void;
 
 /**
- * Filters on metrics set by the user
- */
-interface UserFilters {
-  timeRange?: {
-    /* UNIX timestamp */
-    start?: number;
-    /* UNIX timestamp */
-    end?: number;
-  };
-}
-
-/**
  * Listens to data from Firestore and renders results
  */
-class FirestoreListener {
+export class FirestoreListener {
   /* Authenticated Firestore client */
   private firestore: Firestore;
 
@@ -73,13 +62,13 @@ class FirestoreListener {
    * Sets listeners on Firestore based on the current user filters
    * and renders the results
    */
-  public resetListeners() {
+  public resetListeners(filters: UserFilters) {
     this.initFirestoreClient();
 
     this.unsubscribers.forEach(unsubscribe => unsubscribe());
     this.unsubscribers = [];
 
-    this.filters = this.getCurrentUserFilters();
+    this.filters = filters;
 
     this.unsubscribers.push(
       this.listenToBotExecutions(),
@@ -87,20 +76,6 @@ class FirestoreListener {
       this.listenToTaskQueueStatus(),
       this.listenToActions()
     );
-  }
-
-  /**
-   * Returns the current data filters set by the user
-   *
-   * TODO: Implement
-   * Currently this just returns fixed values
-   */
-  private getCurrentUserFilters(): UserFilters {
-    return {
-      timeRange: {
-        start: new Date().getTime() - 60 * 60 * 1000,
-      },
-    };
   }
 
   /**
@@ -359,15 +334,3 @@ class FirestoreListener {
     }
   }
 }
-
-/**
- * Start the Firestore listener on page load
- */
-window.onload = () => {
-  new FirestoreListener().resetListeners();
-};
-
-/**
- * TODO: Reset and start the Firestore listener
- * when user filters change
- */
