@@ -31,7 +31,15 @@ import {AuthenticatedFirestore} from './firestore-client';
  */
 type DocumentChange<T> = firebase.firestore.DocumentChange;
 type DocumentData = firebase.firestore.DocumentData;
-export type Changes = Array<DocumentChange<DocumentData>>;
+export type Change = DocumentChange<DocumentData>;
+
+/**
+ * Type of change in Firestore query
+ */
+enum ChangeType {
+  ADDED = 'added',
+  REMOVED = 'removed',
+}
 
 export class ChangeProcessor {
   private static firestore = AuthenticatedFirestore.getClient();
@@ -40,7 +48,7 @@ export class ChangeProcessor {
    * Updates Execution counts in Processed Data Cache
    * @param changes Bot_Execution document changes
    */
-  public static updateExecutionCountsByBot(changes: Changes) {
+  public static processExecutionDocChanges(changes: Change[]) {
     const countByBot = PDCache.Executions.countByBot;
     changes.forEach(change => {
       const botExecutionDoc = change.doc.data() as BotExecutionDocument;
@@ -48,9 +56,9 @@ export class ChangeProcessor {
       if (!countByBot[botName]) {
         countByBot[botName] = 0;
       }
-      if (change.type === 'added') {
+      if (change.type === ChangeType.ADDED) {
         countByBot[botName]++;
-      } else if (change.type === 'removed') {
+      } else if (change.type === ChangeType.REMOVED) {
         countByBot[botName]--;
       }
     });
@@ -60,23 +68,33 @@ export class ChangeProcessor {
    * Updates action info objects in Processed Data Cache
    * @param changes Action document changes
    */
-  public static updateActionInfos(changes: Changes) {
+  public static processActionDocChanges(changes: Change[]): Promise<void> {
+    const updates = changes.map(change => this.updateActionInfos(change));
+    return Promise.allSettled(updates).then(results =>
+      this.logRejectedPromises(results)
+    );
+  }
+
+  /**
+   * Updates Action Info objects in Processed Data storage with the given
+   * change. If the change adds a document, the new Action Info object
+   * is created and cached, else if the change removes a document, then the
+   * relevant Action Info object is removed from cache.
+   * @param change Action Document change
+   */
+  private static updateActionInfos(change: Change): Promise<void> {
     const actionInfos = PDCache.Actions.actionInfos;
-    const updates = changes.map(change => {
-      const actionDoc = change.doc.data() as ActionDocument;
-      const actionDocKey = getPrimaryKey(actionDoc, FirestoreCollection.Action);
+    const actionDoc = change.doc.data() as ActionDocument;
+    const actionDocKey = getPrimaryKey(actionDoc, FirestoreCollection.Action);
 
-      if (change.type === 'removed' && actionInfos[actionDocKey]) {
-        delete actionInfos[actionDocKey];
-      } else if (change.type === 'added') {
-        return this.buildActionInfo(actionDoc).then(actionInfo => {
-          actionInfos[actionDocKey] = actionInfo;
-        });
-      }
-
-      return Promise.resolve();
-    });
-    return Promise.all(updates); // TODO will short-circuit
+    if (change.type === ChangeType.REMOVED && actionInfos[actionDocKey]) {
+      delete actionInfos[actionDocKey];
+    } else if (change.type === ChangeType.ADDED) {
+      return this.buildActionInfo(actionDoc).then(actionInfo => {
+        actionInfos[actionDocKey] = actionInfo;
+      });
+    }
+    return Promise.resolve();
   }
 
   /**
@@ -86,20 +104,31 @@ export class ChangeProcessor {
   private static buildActionInfo(
     actionDoc: ActionDocument
   ): Promise<ActionInfo> {
-    const githubObjectKey = actionDoc.destination_object;
     return this.getCorrespondingRepoDoc(actionDoc).then(repoDoc => {
-      let url = `https://github.com/${name}`;
-      // TODO: replace with actual call to firestore
-      if (githubObjectKey) {
-        url += this.getObjectPath(githubObjectKey);
-      }
       return {
         repoName: this.getFullRepoName(repoDoc),
         time: new Date(actionDoc.timestamp).toLocaleTimeString(),
-        url: url,
+        url: this.buildActionUrl(actionDoc, repoDoc),
         actionDescription: this.getActionDescription(actionDoc),
       };
     });
+  }
+
+  /**
+   * Builds the GitHub Url for the given action and corresponding
+   * repository document
+   * @param actionDoc action document from Firestore
+   * @param repoDoc repository document related to action
+   */
+  private static buildActionUrl(
+    actionDoc: ActionDocument,
+    repoDoc: GitHubRepositoryDocument
+  ): string {
+    const githubObjectKey = actionDoc.destination_object;
+    const objectPath = githubObjectKey
+      ? this.getObjectPath(githubObjectKey)
+      : '';
+    return `https://github.com/${repoDoc.repo_name}${objectPath}`;
   }
 
   /**
@@ -167,10 +196,10 @@ export class ChangeProcessor {
     const updates = changes.map(change => {
       const doc = change.doc.data();
       const primaryKey = `${doc.execution_id}_${doc.timestamp}`;
-      if (change.type === 'removed' && formattedErrors[primaryKey]) {
+      if (change.type === ChangeType.REMOVED && formattedErrors[primaryKey]) {
         delete formattedErrors[primaryKey];
         return Promise.resolve();
-      } else if (change.type === 'added') {
+      } else if (change.type === ChangeType.ADDED) {
         return this.buildFormattedError(doc).then((formattedDoc: any) => {
           formattedErrors[primaryKey] = formattedDoc;
         });
@@ -200,6 +229,20 @@ export class ChangeProcessor {
           logsUrl: executionDoc.data().logs_url,
           botName: botName,
         };
+      });
+  }
+
+  /**
+   * Logs errors from rejected promises
+   * @param results results from a list of promises
+   */
+  private static logRejectedPromises(results: PromiseSettledResult<any>[]) {
+    results
+      .filter(result => result.status === 'rejected')
+      .forEach((result: PromiseRejectedResult) => {
+        console.error(
+          `Failed to build some Action Info objects: ${result.reason}`
+        );
       });
   }
 }

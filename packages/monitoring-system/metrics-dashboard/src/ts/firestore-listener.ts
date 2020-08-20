@@ -16,7 +16,7 @@
 import {Render} from './render';
 import {ProcessedDataCache as PDCache} from './processed-data-cache';
 
-import {FirestoreCollection} from './firestore-schema';
+import {FirestoreCollection, TaskQueueStatusDocument} from './firestore-schema';
 import {UserFilters} from '.';
 import {ChangeProcessor} from './change-processor';
 import {AuthenticatedFirestore, Firestore} from './firestore-client';
@@ -83,7 +83,7 @@ export class FirestoreListener {
       .collection(FirestoreCollection.BotExecution)
       .where('start_time', '>', this.filters.timeRange.start)
       .onSnapshot(querySnapshot => {
-        ChangeProcessor.updateExecutionCountsByBot(querySnapshot.docChanges());
+        ChangeProcessor.processExecutionDocChanges(querySnapshot.docChanges());
         Render.executionsByBot(PDCache.Executions.countByBot);
       });
   }
@@ -97,7 +97,7 @@ export class FirestoreListener {
       .where('timestamp', '>', this.filters.timeRange.start)
       .onSnapshot(querySnapshot => {
         const changes = querySnapshot.docChanges();
-        ChangeProcessor.updateActionInfos(changes).then(() => {
+        ChangeProcessor.processActionDocChanges(changes).then(() => {
           Render.actions(Object.values(PDCache.Actions.actionInfos));
         });
       });
@@ -107,28 +107,48 @@ export class FirestoreListener {
    * Sets a listener for the Task Queue status that match the current user filters
    */
   private listenToTaskQueueStatus(): Unsubscriber {
-    // TODO: currently this just grabs the first 20 records
-    // change it so that it finds the latest timestamp and gets
-    // all records with that timestamp
+    return (
+      this.firestore
+        .collection(FirestoreCollection.TaskQueueStatus)
+        .orderBy('timestamp', 'desc')
+        .limit(1)
+        /* Listens for when the most recent timestamp changes */
+        .onSnapshot(querySnapshot => {
+          const mostRecentDoc = querySnapshot.docs[0].data() as TaskQueueStatusDocument;
+          const mostRecentTimestamp = mostRecentDoc.timestamp;
+          this.getTaskStatusWithTimestamp(mostRecentTimestamp).then(
+            taskStatusDocs => {
+              const byBot: {[botName: string]: number} = {};
+              taskStatusDocs.forEach(doc => {
+                const botName = doc.queue_name.replace(/-/g, '_');
+                byBot[botName] = doc.in_queue;
+              });
+              Render.tasksByBot(byBot);
+            }
+          );
+        })
+    );
+  }
+
+  /**
+   * Gets all the TaskQueueStatusDocuments from firestore with the given timestamp
+   * @param timestamp timestamp to filter by
+   */
+  private getTaskStatusWithTimestamp(
+    timestamp: number
+  ): Promise<TaskQueueStatusDocument[]> {
     return this.firestore
       .collection(FirestoreCollection.TaskQueueStatus)
-      .orderBy('timestamp', 'desc')
-      .limit(20)
-      .onSnapshot(querySnapshot => {
-        const byBot: any = {};
-        const docs = querySnapshot.docs.map((doc: any) => doc.data());
-        docs.forEach((doc: any) => {
-          const botName = doc.queue_name.replace(/-/g, '_');
-          if (!byBot[botName]) {
-            byBot[botName] = doc.in_queue;
-          }
-        });
-        Render.tasksByBot(byBot);
+      .where('timestamp', '==', timestamp)
+      .get()
+      .then(results => {
+        return results.docs.map(doc => doc.data() as TaskQueueStatusDocument);
       });
   }
 
   /**
    * Sets a listener for execution errors that match the current user filters
+   * Limits to 5 errors
    */
   private listenToErrors(): Unsubscriber {
     return this.firestore
