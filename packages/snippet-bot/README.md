@@ -8,7 +8,11 @@ After installing the bot, you have to have `.github/snippet-bot.yml` for actuall
 
 This bot uses nock for mocking requests to GitHub, and snap-shot-it for capturing responses; This allows updates to the API surface to be treated as a visual diff, rather than tediously asserting against each field.
 
-Currently, it only detects mismatched region tags by regex for changed files and report the status as Github Check.
+Currently, the bot does 2 things.
+
+## Checks on PRs
+For PRs, the bot detects mismatched region tags by regex for changed
+files and report the status as Github Check.
 
 For example, the following code:
 
@@ -29,6 +33,20 @@ will result failed check with the following message:
 test.py:5, tag hello has already started
 test.py:10, tag lol doesn't have a matching start tag
 test.py:8, tag world doesn't have a matching end tag
+```
+
+## Full scan
+If you open an issue with `snippet-bot full scan` in its title, the
+bot will scan all the files in the repo and update the issue with the
+result.
+
+## Configuration:
+You can specify `ignoreFiles` in `.github/snippet-bot.yml`. Here is an example:
+
+```yaml
+ignoreFiles:
+  - packages/snippet-bot/README.md
+  - **/__snapshot__/*.js
 ```
 
 ## Running tests:
