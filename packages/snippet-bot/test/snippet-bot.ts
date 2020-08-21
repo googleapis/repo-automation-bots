@@ -37,6 +37,10 @@ describe('snippet-bot', () => {
     resolve(fixturesPath, 'config', 'valid-config.yml')
   );
 
+  const tarBall = fs.readFileSync(
+    resolve(fixturesPath, 'tmatsuo-python-docs-samples-abcde.tar.gz')
+  );
+
   beforeEach(() => {
     probot = new Probot({});
     probot.app = {
@@ -224,6 +228,84 @@ describe('snippet-bot', () => {
       });
 
       requests.done();
+    });
+  });
+  describe('responds to issue', () => {
+    it('quits early because issue title does not contain the command', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const payload = require(resolve(fixturesPath, './issue_event_no_scan'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/python-docs-samples/contents/.github/snippet-bot.yml'
+        )
+        .reply(200, {content: config.toString('base64')});
+
+      await probot.receive({
+        name: 'issues.opened',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+    });
+    it('reports failure upon download failure', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const payload = require(resolve(fixturesPath, './issue_event'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/python-docs-samples/contents/.github/snippet-bot.yml'
+        )
+        .reply(200, {content: config.toString('base64')})
+        .patch('/repos/tmatsuo/python-docs-samples/issues/10', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      const tarBallRequests = nock('https://github.com')
+        .get('/tmatsuo/python-docs-samples/tarball/master')
+        .reply(403, {content: 'Error'});
+
+      await probot.receive({
+        name: 'issues.opened',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+      tarBallRequests.done();
+    });
+    it('reports the scan result', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const payload = require(resolve(fixturesPath, './issue_event'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/python-docs-samples/contents/.github/snippet-bot.yml'
+        )
+        .reply(200, {content: config.toString('base64')})
+        .patch('/repos/tmatsuo/python-docs-samples/issues/10', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      const tarBallRequests = nock('https://github.com')
+        .get('/tmatsuo/python-docs-samples/tarball/master')
+        .reply(200, tarBall, {
+          'Content-Type': 'application/tar+gzip',
+        });
+
+      await probot.receive({
+        name: 'issues.opened',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+      tarBallRequests.done();
     });
   });
 });
