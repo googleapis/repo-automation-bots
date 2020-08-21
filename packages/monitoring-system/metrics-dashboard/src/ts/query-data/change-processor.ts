@@ -111,7 +111,7 @@ export class ChangeProcessor {
         repoName: this.buildFullRepoName(repoDoc),
         time: new Date(actionDoc.timestamp).toLocaleTimeString(),
         url: this.buildActionUrl(actionDoc, repoDoc),
-        actionDescription: this.buildActionDescription(actionDoc),
+        description: this.buildActionDescription(actionDoc),
       };
     });
   }
@@ -129,7 +129,7 @@ export class ChangeProcessor {
     const domain = 'https://github.com';
     const gHObjectKey = actionDoc.destination_object;
     const path = gHObjectKey ? this.getObjectPath(gHObjectKey) : '';
-    return `${domain}/${repoDoc.repo_name}${path}`;
+    return `${domain}/${repoDoc.owner_name}/${repoDoc.repo_name}${path}`;
   }
 
   /**
