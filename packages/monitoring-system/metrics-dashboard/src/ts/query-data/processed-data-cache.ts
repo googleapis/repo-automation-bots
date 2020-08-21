@@ -38,7 +38,7 @@ export interface ActionInfo {
   repoName: string;
   time: string;
   url: string;
-  actionDescription: string;
+  description: string;
 }
 
 interface ErrorCache {

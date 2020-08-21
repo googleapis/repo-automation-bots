@@ -13,10 +13,9 @@
 // limitations under the License.
 //
 
+import {ActionInfo} from '../query-data/processed-data-cache';
 
 export class Render {
-
-
   static executionsByBot(executionCounts: {[botName: string]: number}) {
     const rowId = 'stat_executions_by_bot';
     const row = document.getElementById(rowId) as HTMLTableRowElement;
@@ -24,41 +23,34 @@ export class Render {
     const cell = row.insertCell(-1);
     let cellHTML = '';
     for (const botName of Object.keys(executionCounts)) {
-      cellHTML += this.buildNumericalStatComponent(botName, String(executionCounts[botName]))
+      cellHTML += this.buildNumericalStatComponent(
+        botName,
+        String(executionCounts[botName])
+      );
     }
     cell.innerHTML = cellHTML;
   }
 
-  // TODO JSDoc
-  static tasksByBot(taskCount: any) {
-    const rowId = "stat_tasks_by_bot";
+  static tasksByBot(taskCount: {[botName: string]: number}) {
+    const rowId = 'stat_tasks_by_bot';
     const row = document.getElementById(rowId) as HTMLTableRowElement;
     row.innerHTML = '';
     const cell = row.insertCell(-1);
     let cellHTML = '';
     for (const botName of Object.keys(taskCount)) {
-      cellHTML += `<div class="data_div"><p class="stat" id="${botName}">${taskCount[botName]}</p><p class="label" id="${botName}">${botName}</p></div>`;
+      cellHTML += this.buildNumericalStatComponent(
+        botName,
+        String(taskCount[botName])
+      );
     }
     cell.innerHTML = cellHTML;
   }
 
   /**
-   * Returns the HTML components (as a string) for a numerical stat
-   * @param label the label for the stat
-   * @param value the value of the stat
-   */
-  private static buildNumericalStatComponent(label: string, value: string): string {
-    const statP = `<p class="stat" id="${label}">${value}</p>`;
-    const labelP = `<p class="label" id="${label}">${label}</p>`;
-    return `<div class="data_div">${statP}${labelP}</div>`
-  }
-
-
-  /**
    * Renders the given errors
    * @param {msg: string, botName: string, logsUrl: string, time: string} errors errors to render
    */
-  static errors(errors: any) {
+  public static errors(errors: any) {
     const xPath = '//tr[@id="stat_errors"]/td';
     const errorsTd = this.getElementByXpath(xPath) as HTMLElement;
     let errorsHTML = '';
@@ -79,38 +71,79 @@ export class Render {
     errorsTd.innerHTML = errorsHTML;
   }
 
-
-  /**
-   * Renders the given actions
-   * @param {repoName: string, url: string, action: string, time: string} actions actions to render
-   */
-  static actions(actions: any) {
+  public static actions(actions: ActionInfo[]) {
     const xPath = '//tr[@id="stat_actions"]/td';
     const actionsTd = this.getElementByXpath(xPath) as HTMLElement;
     let actionsHTML = '';
     if (actions.length === 0) {
-      actionsHTML =
-        '<div class="action_div object_div"><p class="action_text object_text"><strong>No Actions</strong></p></div>';
+      actionsHTML = this.buildActionObjectDiv('No Actions', '', '#');
     } else {
-      actions.sort(
-        (a1: any, a2: any) =>
-          new Date(a2.time).getTime() - new Date(a1.time).getTime()
-      );
-      actions = actions.slice(0, 5);
+      actions = this.getMostRecent(5, actions);
       for (const action of actions) {
-        const div = `<div class="action_div object_div" onclick="window.open('${action.url}','blank');"><p class="action_text object_text"><strong>(${action.time}) ${action.actionDescription}</strong></br> ${action.repoName}</p></div>`;
-        actionsHTML += div;
+        actionsHTML += this.buildActionObjectDiv(
+          `(${action.time}) ${action.description}`,
+          action.description,
+          action.url
+        );
       }
     }
     actionsTd.innerHTML = actionsHTML;
   }
 
+  private static getMostRecent(count: number, actions: ActionInfo[]) {
+    actions.sort(
+      (a1: any, a2: any) =>
+        new Date(a2.time).getTime() - new Date(a1.time).getTime()
+    );
+    return actions.slice(0, count);
+  }
+
+  private static buildActionObjectDiv(
+    strongText: string,
+    bodyText: string,
+    url: string
+  ): string {
+    return this.buildObjectDiv(
+      strongText,
+      bodyText,
+      url,
+      ['action_text', 'object_text'],
+      ['action_div', 'object_div']
+    );
+  }
+
+  private static buildObjectDiv(
+    strongText: string,
+    bodyText: string,
+    url: string,
+    textClasses: string[],
+    divClasses: string[]
+  ): string {
+    const textClassesString = textClasses.join(' ');
+    const innerP = `<p class="${textClassesString}"><strong>${strongText}</strong></br>${bodyText}</p>`;
+    const onClick = `onclick="window.open('${url}','blank');"`;
+    return `<div class="${divClasses.join(' ')}" ${onClick}>${innerP}</div>`;
+  }
+
+  /**
+   * Returns the HTML components (as a string) for a numerical stat
+   * @param label the label for the stat
+   * @param value the value of the stat
+   */
+  private static buildNumericalStatComponent(
+    label: string,
+    value: string
+  ): string {
+    const statP = `<p class="stat" id="${label}">${value}</p>`;
+    const labelP = `<p class="label" id="${label}">${label}</p>`;
+    return `<div class="data_div">${statP}${labelP}</div>`;
+  }
 
   /**
    * Finds the element referenced by the given XPath in the document
    * @param {String} xPath XPath reference to node
    */
-  static getElementByXpath(xPath: any) {
+  private static getElementByXpath(xPath: any) {
     return document.evaluate(
       xPath,
       document,

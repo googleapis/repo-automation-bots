@@ -111,7 +111,7 @@ export class ChangeProcessor {
         repoName: this.buildFullRepoName(repoDoc),
         time: new Date(actionDoc.timestamp).toLocaleTimeString(),
         url: this.buildActionUrl(actionDoc, repoDoc),
-        actionDescription: this.buildActionDescription(actionDoc),
+        description: this.buildActionDescription(actionDoc),
       };
     });
   }
