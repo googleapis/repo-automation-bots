@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-import {ActionInfo} from '../query-data/processed-data-cache';
+import {ActionInfo, ErrorInfo} from '../query-data/processed-data-cache';
 
 export class Render {
   static executionsByBot(executionCounts: {[botName: string]: number}) {
@@ -46,34 +46,44 @@ export class Render {
     cell.innerHTML = cellHTML;
   }
 
-  /**
-   * Renders the given errors
-   * @param {msg: string, botName: string, logsUrl: string, time: string} errors errors to render
-   */
-  public static errors(errors: any) {
+  public static errors(errors: ErrorInfo[]) {
     const xPath = '//tr[@id="stat_errors"]/td';
     const errorsTd = this.getElementByXpath(xPath) as HTMLElement;
+
     let errorsHTML = '';
     if (errors.length === 0) {
-      errorsHTML =
-        '<div class="error_div object_div"><p class="error_text object_text"><strong>No Errors</p></div>';
+      errorsHTML = this.buildErrorObjectDiv('No Errors', '', '#');
     } else {
-      errors.sort(
-        (e1: any, e2: any) =>
-          new Date(e2.time).getTime() - new Date(e1.time).getTime()
-      );
-      errors = errors.slice(0, 5);
+      errors = this.getMostRecent(5, errors);
       for (const error of errors) {
-        const div = `<div class="error_div object_div" onclick="window.open('${error.logsUrl}','blank');"><p class="error_text object_text"><strong>(${error.time}) ${error.botName}:</strong></br> ${error.msg}</p></div>`;
-        errorsHTML += div;
+        errorsHTML += this.buildErrorObjectDiv(
+          `(${error.time}) ${error.botName}:`,
+          error.msg,
+          error.logsUrl
+        );
       }
     }
     errorsTd.innerHTML = errorsHTML;
   }
 
+  private static buildErrorObjectDiv(
+    strongText: string,
+    bodyText: string,
+    url: string
+  ): string {
+    return this.buildObjectDiv(
+      strongText,
+      bodyText,
+      url,
+      ['error_text', 'object_text'],
+      ['error_div', 'object_div']
+    );
+  }
+
   public static actions(actions: ActionInfo[]) {
     const xPath = '//tr[@id="stat_actions"]/td';
     const actionsTd = this.getElementByXpath(xPath) as HTMLElement;
+
     let actionsHTML = '';
     if (actions.length === 0) {
       actionsHTML = this.buildActionObjectDiv('No Actions', '', '#');
@@ -82,7 +92,7 @@ export class Render {
       for (const action of actions) {
         actionsHTML += this.buildActionObjectDiv(
           `(${action.time}) ${action.description}`,
-          action.description,
+          action.repoName,
           action.url
         );
       }
@@ -90,7 +100,10 @@ export class Render {
     actionsTd.innerHTML = actionsHTML;
   }
 
-  private static getMostRecent(count: number, actions: ActionInfo[]) {
+  private static getMostRecent<T = ActionInfo | ErrorInfo>(
+    count: number,
+    actions: T[]
+  ): T[] {
     actions.sort(
       (a1: any, a2: any) =>
         new Date(a2.time).getTime() - new Date(a1.time).getTime()
