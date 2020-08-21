@@ -1,0 +1,31 @@
+{
+  "name": "metrics-dashboard",
+  "version": "1.0.0",
+  "description": "A dashboard to view repo automation bot metrics",
+  "scripts": {
+    "compile": "tsc -p . && webpack --mode=production",
+    "postcompile": "npm run copy-static && npm run copy-webpack-build",
+    "copy-static": "rm -rf ./build/public && cp -r ./src/ ./build/public && rm -rf ./build/public/ts",
+    "copy-webpack-build": "mkdir -p ./build/public/js && cp -r ./build/webpack-compiled/* ./build/public/js/",
+    "deploy": "firebase deploy",
+    "fix": "gts fix",
+    "lint": "gts check"
+  },
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "author": "asonawalla@google.com",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/d3": "^5.7.2",
+    "firebase": "^7.18.0",
+    "gts": "^2.0.2",
+    "json-loader": "^0.5.7",
+    "typescript": "^3.9.7",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12"
+  },
+  "engines": {
+    "node": ">=12.9.0"
+  }
+}
