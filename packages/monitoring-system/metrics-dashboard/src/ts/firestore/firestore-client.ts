@@ -16,6 +16,7 @@
 import * as firebase from 'firebase/app';
 /** Required for Firestore capabilities */
 import 'firebase/firestore';
+const firestoreConfig = require("./firestore-config.json");
 
 /**
  * Type aliases for concise code
@@ -31,15 +32,7 @@ export class AuthenticatedFirestore {
    */
   public static getClient(): Firestore {
     if (!this.firestore) {
-      firebase.initializeApp({
-        apiKey: 'AIzaSyCNYD0Pp6wnT36GcdxWkRVE9RTWt_2XfsU',
-        authDomain: 'repo-automation-bots-metrics.firebaseapp.com',
-        databaseURL: 'https://repo-automation-bots-metrics.firebaseio.com', // TODO: load from JSON
-        projectId: 'repo-automation-bots-metrics',
-        storageBucket: 'repo-automation-bots-metrics.appspot.com',
-        messagingSenderId: '888867974133',
-        appId: '1:888867974133:web:bd9986937d533731ed0ebc',
-      });
+      firebase.initializeApp(firestoreConfig);
       this.firestore = firebase.firestore();
     }
     return this.firestore;

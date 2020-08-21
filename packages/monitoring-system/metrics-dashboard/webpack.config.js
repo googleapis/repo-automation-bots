@@ -20,4 +20,13 @@ module.exports = {
     path: path.resolve(__dirname, 'build/webpack-compiled'),
     filename: 'bundle.js',
   },
+  module: {
+    rules: [
+      { 
+        type: 'javascript/auto',
+        test: /\.(json)$/, 
+        loader: "json-loader" 
+      }
+    ]
+  }
 };

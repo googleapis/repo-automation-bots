@@ -20,6 +20,7 @@
     "@types/d3": "^5.7.2",
     "firebase": "^7.18.0",
     "gts": "^2.0.2",
+    "json-loader": "^0.5.7",
     "typescript": "^3.9.7",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12"
