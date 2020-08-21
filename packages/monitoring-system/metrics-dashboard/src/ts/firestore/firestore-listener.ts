@@ -16,7 +16,10 @@
 import {Render} from '../render/render';
 import {ProcessedDataCache as PDCache} from '../query-data/processed-data-cache';
 
-import {FirestoreCollection, TaskQueueStatusDocument} from '../types/firestore-schema';
+import {
+  FirestoreCollection,
+  TaskQueueStatusDocument,
+} from '../types/firestore-schema';
 import {UserFilters} from '..';
 import {ChangeProcessor} from '../query-data/change-processor';
 import {AuthenticatedFirestore, Firestore} from './firestore-client';

@@ -22,11 +22,11 @@ module.exports = {
   },
   module: {
     rules: [
-      { 
+      {
         type: 'javascript/auto',
-        test: /\.(json)$/, 
-        loader: "json-loader" 
-      }
-    ]
-  }
+        test: /\.(json)$/,
+        loader: 'json-loader',
+      },
+    ],
+  },
 };

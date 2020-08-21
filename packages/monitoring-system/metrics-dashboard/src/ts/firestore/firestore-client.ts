@@ -16,7 +16,7 @@
 import * as firebase from 'firebase/app';
 /** Required for Firestore capabilities */
 import 'firebase/firestore';
-const firestoreConfig = require("./firestore-config.json");
+const firestoreConfig = require('./firestore-config.json');
 
 /**
  * Type aliases for concise code
