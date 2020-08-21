@@ -1,5 +1,24 @@
 # auto-label
 
+The auto-label bot automatically adds labels to issues and pull requests.
+
+Product-specific repos are always labeled with the API label for that product.
+
+The product can also be auto-detected from the issue/PR title. The following
+formats are known to work:
+
+Issue title | Label
+----------- | -----
+`spanner: ignored` | `api: spanner`
+`spanner/ignored` | `api: spanner`
+`spanner.ignored` | `api: spanner`
+`SPANNER.IGNORED` | `api: spanner`
+`SPAN ner: ignored` | `api: spanner`
+`feat(spanner): ignored` | `api: spanner`
+`fix(spanner/helper): ignored` | `api: spanner`
+`fix(/spanner/helper): ignored` | `api: spanner`
+`iot: ignored` | `api: cloudiot`
+
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
 
 This bot uses nock for mocking requests to GitHub, and snap-shot-it for capturing responses; This allows updates to the API surface to be treated as a visual diff, rather than tediously asserting against each field.

@@ -68,6 +68,7 @@ export function autoDetectLabel(
 
   let firstPart = match ? match[1] : title;
 
+  if (firstPart.startsWith('/')) firstPart = firstPart.substr(1); // Remove leading /.
   firstPart = firstPart.split(':')[0]; // Before the colon, if there is one.
   firstPart = firstPart.split('/')[0]; // Before the slash, if there is one.
   firstPart = firstPart.split('.')[0]; // Before the period, if there is one.
