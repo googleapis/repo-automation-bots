@@ -14,9 +14,9 @@ Issue title | Label
 `spanner.ignored` | `api: spanner`
 `SPANNER.IGNORED` | `api: spanner`
 `SPAN ner: ignored` | `api: spanner`
-`feat(spanner): ignored` | `api: spanner`
-`fix(spanner/helper): ignored` | `api: spanner`
-`fix(/spanner/helper): ignored` | `api: spanner`
+`ignored(spanner): ignored` | `api: spanner`
+`ignored(spanner/ignored): ignored` | `api: spanner`
+`ignored(/spanner/ignored): ignored` | `api: spanner`
 `iot: ignored` | `api: cloudiot`
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
