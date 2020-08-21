@@ -13,10 +13,12 @@
 // limitations under the License.
 //
 
+/* eslint-disable node/no-unpublished-import */
 import * as firebase from 'firebase/app';
 /** Required for Firestore capabilities */
+/* eslint-disable node/no-unpublished-import */
 import 'firebase/firestore';
-const firestoreConfig = require('./firestore-config.json');
+import firestoreConfig = require('./firestore-config.json');
 
 /**
  * Type aliases for concise code

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A dashboard to view repo automation bot metrics",
   "scripts": {
-    "compile": "tsc -p . && webpack",
+    "compile": "tsc -p . && webpack --mode=production",
     "postcompile": "npm run copy-static && npm run copy-webpack-build",
     "copy-static": "rm -rf ./build/public && cp -r ./src/ ./build/public && rm -rf ./build/public/ts",
     "copy-webpack-build": "mkdir -p ./build/public/js && cp -r ./build/webpack-compiled/* ./build/public/js/",
@@ -25,7 +25,7 @@
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12"
   },
-  "dependencies": {
-    "d3": "^5.16.0"
+  "engines": {
+    "node": ">=12.9.0"
   }
 }
