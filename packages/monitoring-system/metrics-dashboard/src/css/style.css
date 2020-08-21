@@ -186,11 +186,12 @@ hr {
 
 .object_div {
     margin: 5 0 5 0px;
-    padding: 0.5% 2% 0.5% 2%;
+    padding: 10px 20px 10px 20px;
     border-radius: 15px;
     border-width: 2px;
     border-style: solid;
-    width: 100%;
+    width: 90%;
+    max-height: 150px;
 }
 
 .object_div:hover {

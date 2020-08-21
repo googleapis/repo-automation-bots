@@ -26,6 +26,22 @@ export interface ActionInfo {
   actionDescription: string;
 }
 
+interface ErrorCache {
+  errorInfos: {
+    [primaryKey: string]: ErrorInfo;
+  };
+}
+
+/**
+ * Bot Execution Error Information
+ */
+export interface ErrorInfo {
+  msg: string;
+  time: string;
+  logsUrl: string;
+  botName: string;
+}
+
 export class ProcessedDataCache {
   static Executions: ExecutionsCache = {
     countByBot: {},
@@ -35,8 +51,8 @@ export class ProcessedDataCache {
     actionInfos: {},
   };
 
-  static currentFilterErrors = {
-    formattedErrors: {}, // errors formatted with execution info
+  static Errors: ErrorCache = {
+    errorInfos: {},
   };
 
   static currentFilterTriggers = {

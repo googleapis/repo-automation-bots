@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-import {FirestoreListener} from './firestore-listener';
+import {FirestoreListener} from './firestore/firestore-listener';
 
 /**
  * Filters on metrics set by the user

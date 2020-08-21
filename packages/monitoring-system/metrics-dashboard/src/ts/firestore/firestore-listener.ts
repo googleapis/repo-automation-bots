@@ -13,12 +13,12 @@
 // limitations under the License.
 //
 
-import {Render} from './render';
-import {ProcessedDataCache as PDCache} from './processed-data-cache';
+import {Render} from '../render/render';
+import {ProcessedDataCache as PDCache} from '../query-data/processed-data-cache';
 
-import {FirestoreCollection, TaskQueueStatusDocument} from './firestore-schema';
-import {UserFilters} from '.';
-import {ChangeProcessor} from './change-processor';
+import {FirestoreCollection, TaskQueueStatusDocument} from '../types/firestore-schema';
+import {UserFilters} from '..';
+import {ChangeProcessor} from '../query-data/change-processor';
 import {AuthenticatedFirestore, Firestore} from './firestore-client';
 
 /**
@@ -158,10 +158,8 @@ export class FirestoreListener {
       .orderBy('timestamp', 'desc')
       .onSnapshot(querySnapshot => {
         const changes = querySnapshot.docChanges();
-        ChangeProcessor.updateFormattedErrors(changes).then(() => {
-          Render.errors(
-            Object.values(PDCache.currentFilterErrors.formattedErrors)
-          );
+        ChangeProcessor.processErrorDocChanges(changes).then(() => {
+          Render.errors(Object.values(PDCache.Errors.errorInfos));
         });
       });
   }

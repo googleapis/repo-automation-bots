@@ -16,6 +16,7 @@
 import {
   ProcessedDataCache as PDCache,
   ActionInfo,
+  ErrorInfo,
 } from './processed-data-cache';
 import {
   BotExecutionDocument,
@@ -23,8 +24,9 @@ import {
   getPrimaryKey,
   FirestoreCollection,
   GitHubRepositoryDocument,
-} from './firestore-schema';
-import {AuthenticatedFirestore} from './firestore-client';
+  ErrorDocument,
+} from '../types/firestore-schema';
+import {AuthenticatedFirestore} from '../firestore/firestore-client';
 
 /**
  * Type aliases for concise code
@@ -106,10 +108,10 @@ export class ChangeProcessor {
   ): Promise<ActionInfo> {
     return this.getCorrespondingRepoDoc(actionDoc).then(repoDoc => {
       return {
-        repoName: this.getFullRepoName(repoDoc),
+        repoName: this.buildFullRepoName(repoDoc),
         time: new Date(actionDoc.timestamp).toLocaleTimeString(),
         url: this.buildActionUrl(actionDoc, repoDoc),
-        actionDescription: this.getActionDescription(actionDoc),
+        actionDescription: this.buildActionDescription(actionDoc),
       };
     });
   }
@@ -124,42 +126,37 @@ export class ChangeProcessor {
     actionDoc: ActionDocument,
     repoDoc: GitHubRepositoryDocument
   ): string {
-    const githubObjectKey = actionDoc.destination_object;
-    const objectPath = githubObjectKey
-      ? this.getObjectPath(githubObjectKey)
-      : '';
-    return `https://github.com/${repoDoc.repo_name}${objectPath}`;
+    const domain = 'https://github.com';
+    const gHObjectKey = actionDoc.destination_object;
+    const path = gHObjectKey ? this.getObjectPath(gHObjectKey) : '';
+    return `${domain}/${repoDoc.repo_name}${path}`;
   }
 
   /**
    * Build the full GitHub repository name from the given doc
    * @param repoDoc a GitHubRepository doc
    */
-  private static getFullRepoName(repoDoc: GitHubRepositoryDocument): string {
-    let name = `${repoDoc.owner_name}/${repoDoc.repo_name}`;
-    if (repoDoc.private) {
-      name += ' [private repository]';
-    }
-    return name;
+  private static buildFullRepoName(repoDoc: GitHubRepositoryDocument): string {
+    const privateRepo = repoDoc.private ? ' [private repository]' : '';
+    return `${repoDoc.owner_name}/${repoDoc.repo_name}${privateRepo}`;
   }
 
   /**
    * Build a description for the given action
    * @param actionDoc an ActionDocument
    */
-  private static getActionDescription(actionDoc: ActionDocument): string {
-    return `${actionDoc.action_type}${
-      actionDoc.value === 'NONE' ? '' : ': ' + actionDoc.value
-    }`;
+  private static buildActionDescription(actionDoc: ActionDocument): string {
+    const value = actionDoc.value === 'NONE' ? '' : `: ${actionDoc.value}`;
+    return `${actionDoc.action_type}${value}`;
   }
 
   /**
-   * Build the url path to the object referenced by dstObject
-   * TODO: this is just a quick-fix and should be replaced with an actual
-   * call to Firestore
+   * Get the url path to the object referenced by dstObject
    * @param githubObjectKey primary key of the GitHubObject
    */
   private static getObjectPath(githubObjectKey: string): string {
+    // TODO: this is just a quick-fix and should be replaced with an actual
+    // call to Firestore
     const parts = githubObjectKey.split('_');
     if (githubObjectKey.includes('PULL_REQUEST')) {
       return `/pulls/${parts[parts.length - 1]}`;
@@ -187,55 +184,65 @@ export class ChangeProcessor {
   }
 
   /**
-   * Updates currentFilterErrors.formattedErrors with the given changes
+   * Updates Processed Data Cache with the given changes
    * @param changes Error document changes
    * @returns a Promise that resolves after all updates are completed
    */
-  public static updateFormattedErrors(changes: any[]) {
-    const formattedErrors: any = PDCache.currentFilterErrors.formattedErrors;
-    const updates = changes.map(change => {
-      const doc = change.doc.data();
-      const primaryKey = `${doc.execution_id}_${doc.timestamp}`;
-      if (change.type === ChangeType.REMOVED && formattedErrors[primaryKey]) {
-        delete formattedErrors[primaryKey];
-        return Promise.resolve();
-      } else if (change.type === ChangeType.ADDED) {
-        return this.buildFormattedError(doc).then((formattedDoc: any) => {
-          formattedErrors[primaryKey] = formattedDoc;
-        });
-      }
-    });
-    return Promise.all(updates); // TODO will short-circuit
+  public static processErrorDocChanges(changes: Change[]): Promise<void> {
+    const updates = changes.map(change => this.updateErrorInfos(change));
+    return Promise.allSettled(updates).then(results =>
+      this.logRejectedPromises(results)
+    );
+  }
+
+  private static updateErrorInfos(change: Change) {
+    const errorInfos = PDCache.Errors.errorInfos;
+    const errorDoc = change.doc.data() as ErrorDocument;
+    const primaryKey = getPrimaryKey(errorDoc, FirestoreCollection.Error);
+
+    if (change.type === ChangeType.REMOVED && errorInfos[primaryKey]) {
+      delete errorInfos[primaryKey];
+    } else if (change.type === ChangeType.ADDED) {
+      return this.buildErrorInfo(errorDoc).then(errorInfo => {
+        errorInfos[primaryKey] = errorInfo;
+      });
+    }
+    return Promise.resolve();
   }
 
   /**
-   * Builds a formatted error document from an error document
-   * @param errorDoc error document from Firestore
-   * @returns a Promise that resolves the formatted document
+   * Builds an ErrorInfo object from the given ErrorDocument
+   * @param errorDoc ErrorDocument from Firestore
    */
-  private static buildFormattedError(errorDoc: any) {
-    const executionId = errorDoc.execution_id;
+  private static buildErrorInfo(errorDoc: ErrorDocument): Promise<ErrorInfo> {
     return this.firestore
-      .collection('Bot_Execution') // TODO could check local cache
-      .doc(executionId)
+      .collection(FirestoreCollection.BotExecution)
+      .doc(errorDoc.execution_id)
       .get()
-      .then((executionDoc: any) => {
-        const msg = errorDoc.error_msg;
-        const time = errorDoc.timestamp;
-        const botName = executionDoc.data().bot_name;
+      .then(docData => {
+        const executionDoc = docData.data() as BotExecutionDocument;
         return {
-          msg: String(msg).substring(0, 200) + '...', // TODO: replace with div overflow prop
-          time: new Date(time).toLocaleTimeString(),
-          logsUrl: executionDoc.data().logs_url,
-          botName: botName,
+          msg: this.trimErrorMessage(errorDoc.error_msg),
+          time: new Date(errorDoc.timestamp).toLocaleTimeString(),
+          logsUrl: executionDoc.logs_url,
+          botName: executionDoc.bot_name,
         };
       });
+  }
+
+  /**
+   * Trims the given error message to 150 chars and adds elipses
+   * @param message message to trim
+   */
+  private static trimErrorMessage(message: string): string {
+    return message.substring(0, 150) + '...';
   }
 
   /**
    * Logs errors from rejected promises
    * @param results results from a list of promises
    */
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   private static logRejectedPromises(results: PromiseSettledResult<any>[]) {
     results
       .filter(result => result.status === 'rejected')
