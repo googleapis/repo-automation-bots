@@ -19,8 +19,15 @@ interface ObjectWithTime {
   time: string;
 }
 
+/**
+ * A helper class to render statistics on the DOM
+ */
 export class Render {
-  static executionsByBot(executionCounts: {[botName: string]: number}) {
+  /**
+   * Renders the given execution counts by bot
+   * @param executionCounts number of executions by bot
+   */
+  public static executionsByBot(executionCounts: {[botName: string]: number}) {
     const rowId = 'stat_executions_by_bot';
     const row = document.getElementById(rowId) as HTMLTableRowElement;
     row.innerHTML = '';
@@ -35,7 +42,11 @@ export class Render {
     cell.innerHTML = cellHTML;
   }
 
-  static tasksByBot(taskCount: {[botName: string]: number}) {
+  /**
+   * Renders the given tasks count by bot
+   * @param taskCount number of tasks by bot
+   */
+  public static tasksByBot(taskCount: {[botName: string]: number}) {
     const rowId = 'stat_tasks_by_bot';
     const row = document.getElementById(rowId) as HTMLTableRowElement;
     row.innerHTML = '';
@@ -50,6 +61,10 @@ export class Render {
     cell.innerHTML = cellHTML;
   }
 
+  /**
+   * Renders the given ErrorInfo objects
+   * @param errors error info objects to render
+   */
   public static errors(errors: ErrorInfo[]) {
     const xPath = '//tr[@id="stat_errors"]/td';
     const errorsTd = this.getElementByXpath(xPath) as HTMLElement;
@@ -70,6 +85,12 @@ export class Render {
     errorsTd.innerHTML = errorsHTML;
   }
 
+  /**
+   * Returns the HTML components (as a string) for a error object stat
+   * @param strongText text that will be in bold
+   * @param bodyText the body text of the object
+   * @param url the link that will open when the object is clicked
+   */
   private static buildErrorObjectDiv(
     strongText: string,
     bodyText: string,
@@ -84,6 +105,10 @@ export class Render {
     );
   }
 
+  /**
+   * Renders the given ActionInfo objects
+   * @param actions action info objects to render
+   */
   public static actions(actions: ActionInfo[]) {
     const xPath = '//tr[@id="stat_actions"]/td';
     const actionsTd = this.getElementByXpath(xPath) as HTMLElement;
@@ -104,6 +129,11 @@ export class Render {
     actionsTd.innerHTML = actionsHTML;
   }
 
+  /**
+   * Returns the first 'count' infoObjects in order of their timestamp
+   * @param count number of objects to return
+   * @param infoObjects all objects
+   */
   private static getMostRecent<T = ActionInfo | ErrorInfo>(
     count: number,
     infoObjects: T[]
@@ -116,6 +146,12 @@ export class Render {
     return infoObjects.slice(0, count);
   }
 
+  /**
+   * Returns the HTML components (as a string) for a action object stat
+   * @param strongText text that will be in bold
+   * @param bodyText the body text of the object
+   * @param url the link that will open when the object is clicked
+   */
   private static buildActionObjectDiv(
     strongText: string,
     bodyText: string,
@@ -130,6 +166,14 @@ export class Render {
     );
   }
 
+  /**
+   * Returns the HTML components (as a string) for a object stat
+   * @param strongText text that will be in bold
+   * @param bodyText the body text of the object
+   * @param url the link that will open when the object is clicked
+   * @param textClasses classes to apply to the object text
+   * @param divClasses classes to apply to the object div
+   */
   private static buildObjectDiv(
     strongText: string,
     bodyText: string,
@@ -159,7 +203,7 @@ export class Render {
 
   /**
    * Finds the element referenced by the given XPath in the document
-   * @param {String} xPath XPath reference to node
+   * @param {string} xPath XPath reference to node
    */
   private static getElementByXpath(xPath: string) {
     return document.evaluate(
