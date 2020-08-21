@@ -3,3 +3,6 @@
 
 # Firebase cache
 .firebase/
+
+# Credentials
+firestore-config.json
