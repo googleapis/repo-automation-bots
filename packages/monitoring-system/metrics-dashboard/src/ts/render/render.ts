@@ -15,6 +15,10 @@
 
 import {ActionInfo, ErrorInfo} from '../query-data/processed-data-cache';
 
+interface ObjectWithTime {
+  time: string;
+}
+
 export class Render {
   static executionsByBot(executionCounts: {[botName: string]: number}) {
     const rowId = 'stat_executions_by_bot';
@@ -102,13 +106,14 @@ export class Render {
 
   private static getMostRecent<T = ActionInfo | ErrorInfo>(
     count: number,
-    actions: T[]
+    infoObjects: T[]
   ): T[] {
-    actions.sort(
-      (a1: any, a2: any) =>
-        new Date(a2.time).getTime() - new Date(a1.time).getTime()
-    );
-    return actions.slice(0, count);
+    infoObjects.sort((a1, a2) => {
+      const time1 = ((a1 as unknown) as ObjectWithTime).time;
+      const time2 = ((a2 as unknown) as ObjectWithTime).time;
+      return new Date(time2).getTime() - new Date(time1).getTime();
+    });
+    return infoObjects.slice(0, count);
   }
 
   private static buildActionObjectDiv(
@@ -156,7 +161,7 @@ export class Render {
    * Finds the element referenced by the given XPath in the document
    * @param {String} xPath XPath reference to node
    */
-  private static getElementByXpath(xPath: any) {
+  private static getElementByXpath(xPath: string) {
     return document.evaluate(
       xPath,
       document,
