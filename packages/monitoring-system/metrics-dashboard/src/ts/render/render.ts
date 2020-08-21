@@ -26,11 +26,20 @@ export class Render {
     const cell = row.insertCell(-1);
     let cellHTML = '';
     for (const botName of Object.keys(executionCounts)) {
-      cellHTML += `<div class="data_div"><p class="stat" id="${botName}">${String(
-        executionCounts[botName]
-      )}</p><p class="label" id="${botName}">${botName}</p></div>`;
+      cellHTML += this.buildNumericalStatComponent(botName, String(executionCounts[botName]))
     }
     cell.innerHTML = cellHTML;
+  }
+
+  /**
+   * Returns the HTML components (as a string) for a numerical stat
+   * @param label the label for the stat
+   * @param value the value of the stat
+   */
+  private static buildNumericalStatComponent(label: string, value: string): string {
+    const statP = `<p class="stat" id="${label}">${value}</p>`;
+    const labelP = `<p class="label" id="${label}">${label}</p>`;
+    return `<div class="data_div">${statP}${labelP}</div>`
   }
 
   // TODO JSDoc
