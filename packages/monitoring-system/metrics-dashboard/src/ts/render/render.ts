@@ -14,34 +14,12 @@
 //
 
 export class Render {
-  /**
-   * Rows that contain statistics 'By Bot' and need bot names
-   * as labels underneath stats
-   */
-  static statRowsByBot = ['stat_tasks_by_bot'];
 
   /**
    * Rows that contain statistics 'By Trigger' and need trigger types
    * as labels underneath stats
    */
   static statRowsByTrigger = ['stat_executions_by_trigger'];
-
-  /**
-   * Adds the labels for the given bots
-   * @param {Array<string>} botNames names of bots to add labels for
-   */
-  static addBotNameLabels(botNames: any) {
-    for (const rowId of this.statRowsByBot) {
-      const row = document.getElementById(rowId) as HTMLTableRowElement;
-      row.innerHTML = '';
-      const cell = row.insertCell(-1);
-      let cellHTML = '';
-      for (const name of botNames) {
-        cellHTML += `<div class="data_div"><p class="stat" id="${name}">0</p><p class="label" id="${name}">${name}</p></div>`;
-      }
-      cell.innerHTML = cellHTML;
-    }
-  }
 
   static addTriggerTypeLabels(triggerTypes: any) {
     for (const rowId of this.statRowsByTrigger) {
@@ -85,12 +63,15 @@ export class Render {
 
   // TODO JSDoc
   static tasksByBot(taskCount: any) {
-    this.addBotNameLabels(Object.keys(taskCount));
+    const rowId = "stat_tasks_by_bot";
+    const row = document.getElementById(rowId) as HTMLTableRowElement;
+    row.innerHTML = '';
+    const cell = row.insertCell(-1);
+    let cellHTML = '';
     for (const botName of Object.keys(taskCount)) {
-      const xPath = `//tr[@id="stat_tasks_by_bot"]//p[contains(@class, "stat") and @id="${botName}"]`;
-      const statP = this.getElementByXpath(xPath) as HTMLElement;
-      statP.innerHTML = String(taskCount[botName]);
+      cellHTML += `<div class="data_div"><p class="stat" id="${botName}">${taskCount[botName]}</p><p class="label" id="${botName}">${botName}</p></div>`;
     }
+    cell.innerHTML = cellHTML;
   }
 
   /**
