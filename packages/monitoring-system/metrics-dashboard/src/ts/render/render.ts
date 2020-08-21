@@ -16,23 +16,6 @@
 export class Render {
 
   /**
-   * Rows that contain statistics 'By Trigger' and need trigger types
-   * as labels underneath stats
-   */
-  static statRowsByTrigger = ['stat_executions_by_trigger'];
-
-  static addTriggerTypeLabels(triggerTypes: any) {
-    for (const rowId of this.statRowsByTrigger) {
-      const row = document.getElementById(rowId) as HTMLTableRowElement;
-      row.innerHTML = '';
-      for (const type of triggerTypes) {
-        const labelCell = row.insertCell(-1);
-        labelCell.innerHTML = `<p class="stat" id="${type}">-</p><p class="label" id="${type}">${type}</p>`;
-      }
-    }
-  }
-
-  /**
    * Renders the execution counts for given bots
    * @param {[bot_name: string]: number} executionCounts a map of bot_name to execution counts
    */
@@ -48,17 +31,6 @@ export class Render {
       )}</p><p class="label" id="${botName}">${botName}</p></div>`;
     }
     cell.innerHTML = cellHTML;
-  }
-
-  // TODO JSDoc
-  static executionsByTrigger(executionCounts: any) {
-    const types = Object.keys(executionCounts);
-    this.addTriggerTypeLabels(types); // TODO: optimize instead of rewriting labels each time
-    for (const type of types) {
-      const xPath = `//tr[@id="stat_executions_by_trigger"]//p[contains(@class, "stat") and @id="${type}"]`;
-      const statP = this.getElementByXpath(xPath) as HTMLElement;
-      statP.innerHTML = String(executionCounts[type]);
-    }
   }
 
   // TODO JSDoc
