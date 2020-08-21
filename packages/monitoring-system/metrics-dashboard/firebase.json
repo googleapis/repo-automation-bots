@@ -5,7 +5,7 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**",
-      "firebase-config.json"
+      "firestore-config.json"
     ],
     "rewrites": [
       {
