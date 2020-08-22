@@ -160,10 +160,7 @@ export = (app: Application) => {
       ...configOptions,
     });
     logger.info({config: configuration});
-    if (
-      context.payload.issue &&
-      context.payload.issue.title.includes(FULL_SCAN_ISSUE_TITLE)
-    ) {
+    if (context.payload.issue?.title.includes(FULL_SCAN_ISSUE_TITLE)) {
       // full scan start
       const installationId = context.payload.installation.id;
       const commentMark = `<!-- probot comment [${installationId}]-->`;
