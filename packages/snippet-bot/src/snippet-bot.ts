@@ -96,22 +96,6 @@ async function downloadFile(url: string, file: string) {
   throw new Error(`unexpected response ${response.statusText}`);
 }
 
-async function deleteTree(dir: string) {
-  const files = await pfs.readdir(dir);
-  await Promise.all(
-    files.map(async f => {
-      const fullPath = path.join(dir, f);
-      const stat = await pfs.stat(fullPath);
-      if (stat.isDirectory()) {
-        await deleteTree(fullPath);
-      } else {
-        await pfs.unlink(fullPath);
-      }
-    })
-  );
-  await pfs.rmdir(dir);
-}
-
 async function getFiles(dir: string, allFiles: string[]) {
   const files = (await pfs.readdir(dir)).map(f => path.join(dir, f));
   for (const f of files) {
@@ -212,7 +196,7 @@ export = (app: Application) => {
             continue;
           }
           try {
-            const fileContents = fs.readFileSync(`${file}`, 'utf8');
+            const fileContents = await pfs.readFile(file, 'utf-8');
             const parseResult = parseRegionTags(
               fileContents,
               file.replace(archiveDir + '/', '')
@@ -252,11 +236,8 @@ Here is the result:
 ${bodyDetail}`
           ),
         });
-        // Clean up the directory.
-        await deleteTree(tmpDir.name);
       } catch (err) {
-        // Here we also clean up the directory.
-        await deleteTree(tmpDir.name);
+        err.message = `Failed to scan files: ${err.message}`;
         logger.error(err);
         await context.github.issues.update({
           owner: owner,
@@ -268,6 +249,9 @@ ${bodyDetail}`
             `## snippet-bot scan result\nFailed running the full scan: ${err}.`
           ),
         });
+      } finally {
+        // Clean up the directory.
+        await pfs.rmdir(tmpDir.name, {recursive: true});
       }
     } // full scan end.
 
