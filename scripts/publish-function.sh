@@ -38,7 +38,7 @@ queueName=${botName//_/-}
 echo "About to publish function ${functionName}"
 gcloud functions deploy "${functionName}" \
   --trigger-http \
-  --runtime nodejs10 \
+  --runtime nodejs12 \
   --region "${functionRegion}" \
   --set-env-vars DRIFT_PRO_BUCKET="${bucket}",KEY_LOCATION="${keyLocation}",KEY_RING="${keyRing}",GCF_SHORT_FUNCTION_NAME="${functionName}",PROJECT_ID="${project}",GCF_LOCATION="${functionRegion}",PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1'
 
