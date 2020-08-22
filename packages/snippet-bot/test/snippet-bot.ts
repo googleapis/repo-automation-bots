@@ -24,7 +24,7 @@ import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
 import assert from 'assert';
-import {describe, it, beforeEach} from 'mocha';
+import {describe, it, beforeEach, afterEach} from 'mocha';
 
 nock.disableNetConnect();
 
@@ -52,6 +52,10 @@ describe('snippet-bot', () => {
       },
     };
     probot.load(myProbotApp);
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
   });
 
   describe('reads the config file', () => {
@@ -230,6 +234,7 @@ describe('snippet-bot', () => {
       requests.done();
     });
   });
+
   describe('responds to issue', () => {
     it('quits early because issue title does not contain the command', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -250,7 +255,6 @@ describe('snippet-bot', () => {
       requests.done();
     });
     it('reports failure upon download failure', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './issue_event'));
 
       const requests = nock('https://api.github.com')

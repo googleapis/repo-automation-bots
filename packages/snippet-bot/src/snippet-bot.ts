@@ -22,9 +22,11 @@ import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
 import * as minimatch from 'minimatch';
 
-const tar = require('tar');
-const util = require('util');
-const fs = require('fs');
+import tar from 'tar';
+import util from 'util';
+import fs from 'fs';
+import {promises as pfs} from 'fs';
+import path from 'path';
 
 const streamPipeline = util.promisify(require('stream').pipeline);
 
@@ -94,16 +96,35 @@ async function downloadFile(url: string, file: string) {
   throw new Error(`unexpected response ${response.statusText}`);
 }
 
-function getFiles(path: string, files: string[], prefix: string) {
-  fs.readdirSync(path).forEach((file: string) => {
-    const subpath = path + '/' + file;
-    if (fs.lstatSync(subpath).isDirectory()) {
-      getFiles(subpath, files, prefix);
-    } else {
-      // Remove the prefix
-      files.push(subpath.replace(prefix, ''));
+async function deleteTree(dir: string) {
+  const files = await pfs.readdir(dir);
+  await Promise.all(
+    files.map(async f => {
+      const fullPath = path.join(dir, f);
+      const stat = await pfs.stat(fullPath);
+      if (stat.isDirectory()) {
+        await deleteTree(fullPath);
+      } else {
+        await pfs.unlink(fullPath);
+      }
+    })
+  );
+  await pfs.rmdir(dir);
+}
+
+async function getFiles(dir: string, allFiles: string[]) {
+  const files = (await pfs.readdir(dir)).map(f => path.join(dir, f));
+  for (const f of files) {
+    if (!(await pfs.stat(f)).isDirectory()) {
+      allFiles.push(f);
     }
-  });
+  }
+  await Promise.all(
+    files.map(
+      async f => (await pfs.stat(f)).isDirectory() && getFiles(f, allFiles)
+    )
+  );
+  return allFiles;
 }
 
 export = (app: Application) => {
@@ -116,6 +137,7 @@ export = (app: Application) => {
   ];
   app.on(events, async context => {
     const repoUrl = context.payload.repository.full_name;
+    const defaultBranch = context.payload.repository.default_branch;
     let configOptions!: ConfigurationOptions | null;
     try {
       configOptions = await context.config<ConfigurationOptions>(
@@ -149,12 +171,12 @@ export = (app: Application) => {
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
 
-      const url = `https://github.com/${owner}/${repo}/tarball/master`;
+      const url = `https://github.com/${owner}/${repo}/tarball/${defaultBranch}`;
       const tmpDir = tmp.dirSync();
       logger.info(`working directory: ${tmpDir.name}`);
 
       const file = `${tmpDir.name}/${repo}.tar.gz`;
-      // Download the master tarball and run full scan.
+      // Download the default branch tarball and run full scan.
       try {
         await downloadFile(url, file);
         logger.info(`Downloaded to ${file}`);
@@ -164,9 +186,10 @@ export = (app: Application) => {
           sync: true,
         });
         let archiveDir!: string;
-        for (const f of fs.readdirSync(tmpDir.name)) {
+        for (const f of await pfs.readdir(tmpDir.name)) {
           const cur = tmpDir.name + '/' + f;
-          if (fs.lstatSync(cur).isDirectory()) {
+          const stat = await pfs.lstat(cur);
+          if (stat.isDirectory()) {
             archiveDir = cur;
           }
         }
@@ -175,14 +198,13 @@ export = (app: Application) => {
         }
         // Determine the short commit hash from the directory name.
         // We'll use the hash for creating permalink.
-        let commitHash = 'master'; // Defaulting to master
+        let commitHash = defaultBranch; // Defaulting to the default branch.
         const lastDashIndex = archiveDir.lastIndexOf('-');
         if (lastDashIndex !== -1) {
           commitHash = archiveDir.substr(lastDashIndex + 1);
         }
         logger.info(`Using commit hash "${commitHash}"`);
-        const files: string[] = [];
-        getFiles(archiveDir, files, archiveDir + '/');
+        const files = await getFiles(archiveDir, []);
 
         let mismatchedTags = false;
         const failureMessages: string[] = [];
@@ -193,11 +215,11 @@ export = (app: Application) => {
             continue;
           }
           try {
-            const fileContents = fs.readFileSync(
-              `${archiveDir}/${file}`,
-              'utf8'
+            const fileContents = fs.readFileSync(`${file}`, 'utf8');
+            const parseResult = parseRegionTags(
+              fileContents,
+              file.replace(archiveDir + '/', '')
             );
-            const parseResult = parseRegionTags(fileContents, file);
             if (!parseResult.result) {
               mismatchedTags = true;
               for (const message of parseResult.messages) {
@@ -211,7 +233,8 @@ export = (app: Application) => {
               parseResult.messages.join('\n');
             }
           } catch (err) {
-            logger.error(`Failed to read the file: ${err}`);
+            err.message = `Failed to read the file: ${err.message}`;
+            logger.error(err);
             continue;
           }
         }
@@ -233,10 +256,10 @@ ${bodyDetail}`
           ),
         });
         // Clean up the directory.
-        fs.rmdirSync(tmpDir.name, {recursive: true});
+        await deleteTree(tmpDir.name);
       } catch (err) {
         // Here we also clean up the directory.
-        fs.rmdirSync(tmpDir.name, {recursive: true});
+        await deleteTree(tmpDir.name);
         logger.error(err);
         await context.github.issues.update({
           owner: owner,

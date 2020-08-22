@@ -46,7 +46,7 @@ You can specify `ignoreFiles` in `.github/snippet-bot.yml`. Here is an example:
 ```yaml
 ignoreFiles:
   - packages/snippet-bot/README.md
-  - **/__snapshot__/*.js
+  - "**/__snapshot__/*.js"
 ```
 
 ## Running tests:
