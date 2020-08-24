@@ -23,7 +23,7 @@ module.exports = {
     path: path.resolve(__dirname, 'build/webpack-compiled'),
     filename: '[name]-bundle.js',
   },
-  performance: {hints: false},
+  performance: { hints: false },
   module: {
     rules: [
       {
