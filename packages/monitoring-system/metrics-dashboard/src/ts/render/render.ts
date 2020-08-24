@@ -23,19 +23,18 @@ interface ObjectWithTime {
  * A helper class to render statistics on the DOM
  */
 export class Render {
-
   /**
    * Replaces all content with a message warning user
    * that they are unauthorized to view content
    */
   public static showUnauthorizedMessage() {
-    let loadingDivs = document.getElementsByClassName("loading_animation");
-    while(loadingDivs.length > 0) {
+    let loadingDivs = document.getElementsByClassName('loading_animation');
+    while (loadingDivs.length > 0) {
       const div = loadingDivs[0];
       div.setAttribute('class', 'object_div error_div');
-      const message = `You don't have access to this content`;
-      div.innerHTML = `<p class="error_text object_text">${message}</p>`
-      loadingDivs = document.getElementsByClassName("loading_animation");
+      const message = "You don't have access to this content";
+      div.innerHTML = `<p class="error_text object_text">${message}</p>`;
+      loadingDivs = document.getElementsByClassName('loading_animation');
     }
   }
 
