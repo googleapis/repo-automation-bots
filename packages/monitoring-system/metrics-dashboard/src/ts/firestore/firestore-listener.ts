@@ -56,6 +56,7 @@ export class FirestoreListener {
     this.removeOldListeners();
     this.filters = filters;
     this.setNewListeners();
+    
   }
 
   /**
@@ -70,12 +71,16 @@ export class FirestoreListener {
    * Sets new listeners on the Firestore queries
    */
   private setNewListeners() {
-    this.unsubscribers.push(
-      this.listenToBotExecutions(),
-      this.listenToErrors(),
-      this.listenToTaskQueueStatus(),
-      this.listenToActions()
-    );
+    const listeners = [
+      this.listenToBotExecutions,
+      this.listenToErrors,
+      this.listenToTaskQueueStatus,
+      this.listenToActions
+    ]
+
+    for (const listener of listeners) {
+      this.unsubscribers.push(listener.bind(this)());
+    }  
   }
 
   /**
@@ -88,6 +93,10 @@ export class FirestoreListener {
       .onSnapshot(querySnapshot => {
         ChangeProcessor.processExecutionDocChanges(querySnapshot.docChanges());
         Render.executionsByBot(PDCache.Executions.countByBot);
+      },
+      error => {
+        console.log(error);
+        Render.showUnauthorizedMessage();
       });
   }
 
@@ -103,6 +112,10 @@ export class FirestoreListener {
         ChangeProcessor.processActionDocChanges(changes).then(() => {
           Render.actions(Object.values(PDCache.Actions.actionInfos));
         });
+      },
+      error => {
+        console.log(error);
+        Render.showUnauthorizedMessage();
       });
   }
 
@@ -129,6 +142,10 @@ export class FirestoreListener {
               Render.tasksByBot(byBot);
             }
           );
+        },
+        error => {
+          console.log(error);
+          Render.showUnauthorizedMessage();
         })
     );
   }
@@ -164,6 +181,10 @@ export class FirestoreListener {
         ChangeProcessor.processErrorDocChanges(changes).then(() => {
           Render.errors(Object.values(PDCache.Errors.errorInfos));
         });
+      },
+      error => {
+        console.log(error);
+        Render.showUnauthorizedMessage();
       });
   }
 }

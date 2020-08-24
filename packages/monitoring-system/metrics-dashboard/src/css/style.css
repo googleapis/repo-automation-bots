@@ -240,3 +240,37 @@ hr {
 }
 
 /* End of Boxed data (objects) */
+
+
+/* Google Sign-in Button */
+
+.firebaseui-idp-button {
+    padding: 5%;
+}
+
+.firebaseui-idp-button:hover {
+    cursor: pointer;
+}
+
+.firebaseui-list-item {
+    text-align: center;
+}
+
+.firebaseui-idp-icon {
+    max-width: 30px;
+}
+
+#firebaseui-auth-container {
+    padding: 10%;
+}
+
+.firebaseui-idp-icon-wrapper {
+    display: block;
+}
+
+.firebaseui-idp-text {
+    display: block;
+    padding: 10%;
+}
+
+/* End of Google Sign-in Button */

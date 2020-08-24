@@ -15,12 +15,15 @@
 const path = require('path');
 
 module.exports = {
-  entry: './build/tsc-compiled/index.js',
+  entry: {
+    app: './build/tsc-compiled/index.js',
+    auth: './build/tsc-compiled/auth.js',
+  },
   output: {
     path: path.resolve(__dirname, 'build/webpack-compiled'),
-    filename: 'bundle.js',
+    filename: '[name]-bundle.js',
   },
-  performance: { hints: false },
+  performance: {hints: false},
   module: {
     rules: [
       {
