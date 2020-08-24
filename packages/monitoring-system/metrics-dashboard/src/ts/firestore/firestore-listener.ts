@@ -56,7 +56,6 @@ export class FirestoreListener {
     this.removeOldListeners();
     this.filters = filters;
     this.setNewListeners();
-    
   }
 
   /**
@@ -71,16 +70,12 @@ export class FirestoreListener {
    * Sets new listeners on the Firestore queries
    */
   private setNewListeners() {
-    const listeners = [
-      this.listenToBotExecutions,
-      this.listenToErrors,
-      this.listenToTaskQueueStatus,
-      this.listenToActions
-    ]
-
-    for (const listener of listeners) {
-      this.unsubscribers.push(listener.bind(this)());
-    }  
+    this.unsubscribers.push(
+      this.listenToBotExecutions(),
+      this.listenToErrors(),
+      this.listenToTaskQueueStatus(),
+      this.listenToActions()
+    );  
   }
 
   /**
