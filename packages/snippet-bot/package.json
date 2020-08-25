@@ -21,7 +21,6 @@
     "compile": "tsc -p .",
     "start": "probot run ./build/src/snippet-bot.js",
     "start:local": "node ./build/src/local.js",
-    "prepare": "npm run compile",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
@@ -58,6 +57,6 @@
     "typescript": "^3.5.3"
   },
   "engines": {
-    "node": ">= 10.13.0"
+    "node": ">= 12.18.2"
   }
 }
