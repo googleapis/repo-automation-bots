@@ -30,11 +30,11 @@ All data points collected and processed by the Monitoring System are stored in t
 
 ### Bot Developer: Log metrics from your bot
 
-// TODO
-
 #### Trigger Information and GitHub Actions
 
-// TODO
+Execution trigger information (i.e. what caused the execution, source repo, etc.) and GitHub action information (i.e. issues labelled, pull requests closed, etc.) are automatically logged by gcf-utils. For more information on the exact properties that are logged automatically, please refer to the [gcf-utils documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/gcf-utils).
+
+_Note: If your Bot is not automatically logging the information above, please ensure that you are using gcf-utils 5.5.1 or above and you have `logging: true` in the `WrapperOptions` passed to `GCFBootstrapper.gcf()`_
 
 #### Custom Metrics
 

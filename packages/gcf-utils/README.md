@@ -16,6 +16,14 @@ logger.debug({ 'debug-property': 'value' });
 logger.metric({ 'metric-property': 'value' });
 ```
 
+#### Automatically Logged Metrics
+
+// TODO (asonawalla)
+
+#### Manually Log Metrics
+
+// TODO (asonawalla)
+
 ### GCFBootstrapper
 
 TODO:(orthros)
