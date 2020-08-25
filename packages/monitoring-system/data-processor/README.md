@@ -30,9 +30,49 @@ Assign the Data Processor Service Account the role `Firebase Develop Admin` in t
 
 ### Architectural Overview
 
+A class diagram of the Data Processor:
+
 ![Data Processor Class Diagram](docs/assets/class-diagram.png)
 
-// TODO(asonawalla)
+A sequence diagram of a sample processing task:
+
+![Data Processor Sequence Diagram](docs/assets/sequence-diagram.png)
+
+#### Task Service
+
+An ExpressJS server that exposes endpoints to trigger various processing tasks. Currently, these endpoints are triggered on varying schedules by the [Cloud Scheduler instance in the repo-automation-bots GCP project](https://pantheon.corp.google.com/cloudscheduler?project=repo-automation-bots).
+
+> :warning: You will need access to this project to view the Cloud Scheduler jobs
+
+#### Task and Data Processor Factory
+
+The Data Processor Factory returns an appropriate Data Processor for the given task. Currently, there are 4 available data processors that the factory can provide. 
+
+The factory also handles reading the configuration for each of these processors and instantiating them appropriately.
+
+#### Abstract Data Processor
+
+An abstract class with common functionality required by all data processors (eg. Firestore communication). The primary abstract method `collectAndProcess()` is implemented by sub-classes and is the entry-point to start a processing task.
+
+#### Cloud Logs Data Processor
+
+Extends the abstract data processor and implements functionality to ingest and process logs coming from repo-automation-bots.
+
+##### PubSub to route logs
+
+To pipe logs from Cloud Logging to the Cloud Logs Data Processor we create a Cloud Logs sink and configure all logs within the sink to be piped to a [PubSub instance](https://pantheon.corp.google.com/cloudpubsub/topic/detail/repo-automation-bot-logs?project=repo-automation-bots). Cloud Logs Data Processor then pulls the log entries from the PubSub.
+
+#### Cloud Tasks Data Processor
+
+Extends the abstract data processor and implements functionality to poll the task queue status of the bots.
+
+#### Cloud Functions Data Processor
+
+Extends the abstract data processor and implements functionality to check the currently deployed bots.
+
+#### GitHub Data Processor
+
+Extends the abstract data processor and implements functionality to ingest GitHub Events data to be matched with WebHook requests received by the bots
 
 ### Firestore Schema
 
