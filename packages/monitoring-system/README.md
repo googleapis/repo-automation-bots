@@ -8,7 +8,7 @@ A system to collect metrics on GitHub Repo Automation Bot executions and make it
 
 ### Bot SRE: View currently configured metrics
 
-Currently, there are 3 ways to view Automation Bot metrics, each of which are described below. The [roadmap](#Roadmap) for this project
+Currently, there are 3 ways to view Automation Bot metrics, each of which are described below. The [roadmap](#Roadmap) for this project includes supporting all metrics in the [Metrics Dashboard](#Metrics-Dashboard) so you don't have to choose from the 3 methods below.
 
 #### Logs-based metrics in Cloud Logging
 
