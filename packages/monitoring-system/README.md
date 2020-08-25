@@ -2,7 +2,7 @@
 
 A system to collect metrics on GitHub Repo Automation Bot executions and make it easily accessible to bot SREs and developers for debugging and facilitating the development process.
 
-[Read the design document here](http://go/automation-bot-monitoring-system-design)
+[Read the design document here (internal)](http://go/automation-bot-monitoring-system-design)
 
 ## Usage
 
@@ -46,7 +46,11 @@ These metrics are already collected and processed by the Monitoring System by de
 
 [GCF-Logger in gcf-utils](https://github.com/googleapis/repo-automation-bots/tree/master/packages/gcf-utils) also supports logging custom metrics. However, these are not supported by default in the Monitoring System - please view the [Data Processor documentation](data-processor) to learn how to add support for new metrics.
 
-## Overview Components
+## Overview of Components
+
+![Architecture Overview](./docs/assets/architecture-overview.png)
+
+Please see the [full design document (internal)](http://go/automation-bot-monitoring-system-design) for all the details.
 
 ### Data Processor
 
