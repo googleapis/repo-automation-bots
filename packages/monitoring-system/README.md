@@ -44,7 +44,7 @@ These metrics are already collected and processed by the Monitoring System by de
 
 #### Custom Metrics
 
-[GCF-Logger in gcf-utils](https://github.com/googleapis/repo-automation-bots/tree/master/packages/gcf-utils) also supports logging custom metrics. However, these are not supported by default in the Monitoring System - please view the [Data Processor documentation](/data-processor) to learn how to add support for new metrics.
+[GCF-Logger in gcf-utils](https://github.com/googleapis/repo-automation-bots/tree/master/packages/gcf-utils) also supports logging custom metrics. However, these are not supported by default in the Monitoring System - please view the [Data Processor documentation](data-processor) to learn how to add support for new metrics.
 
 ## Overview Components
 
