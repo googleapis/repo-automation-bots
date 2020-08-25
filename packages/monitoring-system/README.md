@@ -14,7 +14,9 @@ The [roadmap](#Roadmap) for this project includes supporting all metrics in the 
 
 #### (Option 1) Cloud Logging: Logs-based metrics only
 
-Logs-based metrics are one of the sources from which the Monitoring System collects data. You can view these metrics directly in Cloud Logging as well in the [repo-automation-bots GCP Project](https://pantheon.corp.google.com/logs/query?project=repo-automation-bots&folder=true&organizationId=true&query=%0A). _Note: You will need access to this project in order to view the logs_
+Logs-based metrics are one of the sources from which the Monitoring System collects data. You can view these metrics directly in Cloud Logging as well in the [repo-automation-bots GCP Project](https://pantheon.corp.google.com/logs/query?project=repo-automation-bots&folder=true&organizationId=true&query=%0A). 
+
+> :warning: You will need access to this project in order to view the logs
 
 For more information on which metrics are emitted via logs, refer to the [gcf-utils documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/gcf-utils).
 
@@ -34,7 +36,7 @@ All data points collected and processed by the Monitoring System are stored in t
 
 Execution trigger information (i.e. what caused the execution, source repo, etc.) and GitHub action information (i.e. issues labelled, pull requests closed, etc.) are automatically logged by gcf-utils. For more information on the exact properties that are logged automatically, please refer to the [gcf-utils documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/gcf-utils).
 
-_Note: If your Bot is not automatically logging the information above, please ensure that you are using gcf-utils 5.5.1 or above and you have `logging: true` in the `WrapperOptions` passed to `GCFBootstrapper.gcf()`_
+> :warning: If your Bot is not automatically logging the information above, please ensure that you are using gcf-utils 5.5.1 or above and you have `logging: true` in the `WrapperOptions` passed to `GCFBootstrapper.gcf()`
 
 #### Custom Metrics
 
