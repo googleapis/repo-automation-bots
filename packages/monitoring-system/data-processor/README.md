@@ -44,7 +44,7 @@ An ExpressJS server that exposes endpoints to trigger various processing tasks. 
 
 > :warning: You will need access to this project to view the Cloud Scheduler jobs
 
-// TODO: implementation link
+[See the implementation here](src/task-service.ts)
 
 #### Task and Data Processor Factory
 
@@ -52,19 +52,19 @@ The Data Processor Factory returns an appropriate Data Processor for the given t
 
 The factory also handles reading the configuration for each of these processors and instantiating them appropriately.
 
-// TODO: implementation link
+[See the implementation here](src/data-processor-factory.ts)
 
 #### Abstract Data Processor
 
 An abstract class with common functionality required by all data processors (eg. Firestore communication). The primary abstract method `collectAndProcess()` is implemented by sub-classes and is the entry-point to start a processing task.
 
-// TODO: implementation link
+[See the implementation here](src/data-processors/data-processor-abstract.ts)
 
 #### Cloud Logs Data Processor
 
 Extends the abstract data processor and implements functionality to ingest and process logs coming from repo-automation-bots.
 
-// TODO: implementation link
+[See the implementation here](src/data-processors/cloud-logs-data-processor.ts)
 
 ##### PubSub to route logs
 
@@ -74,19 +74,19 @@ To pipe logs from Cloud Logging to the Cloud Logs Data Processor we create a Clo
 
 Extends the abstract data processor and implements functionality to poll the task queue status of the bots.
 
-// TODO: implementation link
+[See the implementation here](src/data-processors/cloud-tasks-data-processor.ts)
 
 #### Cloud Functions Data Processor
 
 Extends the abstract data processor and implements functionality to check the currently deployed bots.
 
-// TODO: implementation link
+[See the implementation here](src/data-processors/cloud-functions-data-processor.ts)
 
 #### GitHub Data Processor
 
 Extends the abstract data processor and implements functionality to ingest GitHub Events data to be matched with WebHook requests received by the bots.
 
-// TODO: implementation link
+[See the implementation here](src/data-processors/github-data-processor.ts)
 
 ### Firestore Schema
 
