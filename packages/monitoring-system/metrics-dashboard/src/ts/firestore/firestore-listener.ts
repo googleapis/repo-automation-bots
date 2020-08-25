@@ -85,10 +85,18 @@ export class FirestoreListener {
     return this.firestore
       .collection(FirestoreCollection.BotExecution)
       .where('start_time', '>', this.filters.timeRange.start)
-      .onSnapshot(querySnapshot => {
-        ChangeProcessor.processExecutionDocChanges(querySnapshot.docChanges());
-        Render.executionsByBot(PDCache.Executions.countByBot);
-      });
+      .onSnapshot(
+        querySnapshot => {
+          ChangeProcessor.processExecutionDocChanges(
+            querySnapshot.docChanges()
+          );
+          Render.executionsByBot(PDCache.Executions.countByBot);
+        },
+        error => {
+          console.log(error);
+          Render.showUnauthorizedMessage();
+        }
+      );
   }
 
   /**
@@ -98,12 +106,18 @@ export class FirestoreListener {
     return this.firestore
       .collection(FirestoreCollection.Action)
       .where('timestamp', '>', this.filters.timeRange.start)
-      .onSnapshot(querySnapshot => {
-        const changes = querySnapshot.docChanges();
-        ChangeProcessor.processActionDocChanges(changes).then(() => {
-          Render.actions(Object.values(PDCache.Actions.actionInfos));
-        });
-      });
+      .onSnapshot(
+        querySnapshot => {
+          const changes = querySnapshot.docChanges();
+          ChangeProcessor.processActionDocChanges(changes).then(() => {
+            Render.actions(Object.values(PDCache.Actions.actionInfos));
+          });
+        },
+        error => {
+          console.log(error);
+          Render.showUnauthorizedMessage();
+        }
+      );
   }
 
   /**
@@ -116,20 +130,26 @@ export class FirestoreListener {
         .orderBy('timestamp', 'desc')
         .limit(1)
         /* Listens for when the most recent timestamp changes */
-        .onSnapshot(querySnapshot => {
-          const mostRecentDoc = querySnapshot.docs[0].data() as TaskQueueStatusDocument;
-          const mostRecentTimestamp = mostRecentDoc.timestamp;
-          this.getTaskStatusWithTimestamp(mostRecentTimestamp).then(
-            taskStatusDocs => {
-              const byBot: {[botName: string]: number} = {};
-              taskStatusDocs.forEach(doc => {
-                const botName = doc.queue_name.replace(/-/g, '_');
-                byBot[botName] = doc.in_queue;
-              });
-              Render.tasksByBot(byBot);
-            }
-          );
-        })
+        .onSnapshot(
+          querySnapshot => {
+            const mostRecentDoc = querySnapshot.docs[0].data() as TaskQueueStatusDocument;
+            const mostRecentTimestamp = mostRecentDoc.timestamp;
+            this.getTaskStatusWithTimestamp(mostRecentTimestamp).then(
+              taskStatusDocs => {
+                const byBot: {[botName: string]: number} = {};
+                taskStatusDocs.forEach(doc => {
+                  const botName = doc.queue_name.replace(/-/g, '_');
+                  byBot[botName] = doc.in_queue;
+                });
+                Render.tasksByBot(byBot);
+              }
+            );
+          },
+          error => {
+            console.log(error);
+            Render.showUnauthorizedMessage();
+          }
+        )
     );
   }
 
@@ -159,11 +179,17 @@ export class FirestoreListener {
       .where('timestamp', '>', this.filters.timeRange.start)
       .limit(5)
       .orderBy('timestamp', 'desc')
-      .onSnapshot(querySnapshot => {
-        const changes = querySnapshot.docChanges();
-        ChangeProcessor.processErrorDocChanges(changes).then(() => {
-          Render.errors(Object.values(PDCache.Errors.errorInfos));
-        });
-      });
+      .onSnapshot(
+        querySnapshot => {
+          const changes = querySnapshot.docChanges();
+          ChangeProcessor.processErrorDocChanges(changes).then(() => {
+            Render.errors(Object.values(PDCache.Errors.errorInfos));
+          });
+        },
+        error => {
+          console.log(error);
+          Render.showUnauthorizedMessage();
+        }
+      );
   }
 }

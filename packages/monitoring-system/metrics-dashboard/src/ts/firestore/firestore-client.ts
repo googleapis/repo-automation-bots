@@ -14,7 +14,8 @@
 //
 
 /* eslint-disable node/no-unpublished-import */
-import * as firebase from 'firebase/app';
+import * as firebaseApp from 'firebase/app';
+import * as firebase from 'firebase';
 /** Required for Firestore capabilities */
 /* eslint-disable node/no-unpublished-import */
 import 'firebase/firestore';
@@ -23,10 +24,11 @@ import firestoreConfig = require('./firestore-config.json');
 /**
  * Type aliases for concise code
  */
-export type Firestore = firebase.firestore.Firestore;
+export type Firestore = firebaseApp.firestore.Firestore;
 
 export class AuthenticatedFirestore {
   private static firestore: Firestore;
+  private static session: firebaseApp.auth.Auth;
 
   /**
    * Initializes the static Firestore client if it
@@ -34,9 +36,10 @@ export class AuthenticatedFirestore {
    */
   public static getClient(): Firestore {
     if (!this.firestore) {
-      firebase.initializeApp(firestoreConfig);
-      this.firestore = firebase.firestore();
+      firebaseApp.initializeApp(firestoreConfig);
+      this.firestore = firebaseApp.firestore();
     }
+    this.session = firebase.auth();
     return this.firestore;
   }
 }
