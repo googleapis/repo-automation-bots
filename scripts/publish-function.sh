@@ -15,8 +15,8 @@
 
 set -eo pipefail
 
-if [ $# -ne 6 ]; then
-  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <functionRegion>"
+if [ $# -lt 6 ]; then
+  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <functionRegion> [functionRuntime]"
   exit 1
 fi
 
@@ -26,6 +26,14 @@ bucket=$3
 keyLocation=$4
 keyRing=$5
 functionRegion=$6
+
+# To use a different runtime for a bot, give 7th parameter in bot's
+# cloudbuild.yaml.
+if [ $# -eq 7 ]; then
+    functionRuntime=$7
+else
+    functionRuntime=nodejs10
+fi
 
 botName=$(echo "${directoryName}" | rev | cut -d/ -f1 | rev)
 workdir=$(pwd)
@@ -38,7 +46,7 @@ queueName=${botName//_/-}
 echo "About to publish function ${functionName}"
 gcloud functions deploy "${functionName}" \
   --trigger-http \
-  --runtime nodejs10 \
+  --runtime "${functionRuntime}" \
   --region "${functionRegion}" \
   --set-env-vars DRIFT_PRO_BUCKET="${bucket}",KEY_LOCATION="${keyLocation}",KEY_RING="${keyRing}",GCF_SHORT_FUNCTION_NAME="${functionName}",PROJECT_ID="${project}",GCF_LOCATION="${functionRegion}",PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1'
 
