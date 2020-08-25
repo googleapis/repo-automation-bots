@@ -13,6 +13,8 @@
 // limitations under the License.
 //
 
+/* eslint-disable node/no-unpublished-import */
+import * as firebase from 'firebase/app';
 import {
   ProcessedDataCache as PDCache,
   ActionInfo,
