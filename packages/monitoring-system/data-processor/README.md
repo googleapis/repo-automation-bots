@@ -44,19 +44,27 @@ An ExpressJS server that exposes endpoints to trigger various processing tasks. 
 
 > :warning: You will need access to this project to view the Cloud Scheduler jobs
 
+// TODO: implementation link
+
 #### Task and Data Processor Factory
 
 The Data Processor Factory returns an appropriate Data Processor for the given task. Currently, there are 4 available data processors that the factory can provide. 
 
 The factory also handles reading the configuration for each of these processors and instantiating them appropriately.
 
+// TODO: implementation link
+
 #### Abstract Data Processor
 
 An abstract class with common functionality required by all data processors (eg. Firestore communication). The primary abstract method `collectAndProcess()` is implemented by sub-classes and is the entry-point to start a processing task.
 
+// TODO: implementation link
+
 #### Cloud Logs Data Processor
 
 Extends the abstract data processor and implements functionality to ingest and process logs coming from repo-automation-bots.
+
+// TODO: implementation link
 
 ##### PubSub to route logs
 
@@ -66,13 +74,19 @@ To pipe logs from Cloud Logging to the Cloud Logs Data Processor we create a Clo
 
 Extends the abstract data processor and implements functionality to poll the task queue status of the bots.
 
+// TODO: implementation link
+
 #### Cloud Functions Data Processor
 
 Extends the abstract data processor and implements functionality to check the currently deployed bots.
 
+// TODO: implementation link
+
 #### GitHub Data Processor
 
-Extends the abstract data processor and implements functionality to ingest GitHub Events data to be matched with WebHook requests received by the bots
+Extends the abstract data processor and implements functionality to ingest GitHub Events data to be matched with WebHook requests received by the bots.
+
+// TODO: implementation link
 
 ### Firestore Schema
 
@@ -80,8 +94,18 @@ Refer to [firestore-schema.ts](packages/monitoring-system/data-processor/src/fir
 
 ### Add support for a new metric from an existing data source
 
-// TODO(asonawalla)
+Depending on the nature of the metric, you will need to do some/all of the following:
+
+1. Make changes to the relevant data processor to process data for that metric
+2. Make changes to the Firestore schema (both, the TypeScript module as well as the actual database) to accomodate the new metric
+3. Add queries for the new metric to the Metrics Dashboard
 
 ### Add support for a new data source
 
-// TODO(asonawalla)
+In order to add a new data source for collecting and processing data:
+
+1. Create a new class that extends Abstract Data Processor and implements `collectAndProcess()`
+2. Create a new `Task` that corresponds to this data source
+3. Modify Data Processor Factory to return a configured instance of your new Data Processor when given this `Task`
+4. Expose a new endpoint in `TaskService` that calls Data Processor Factory with the new `Task`
+5. Configure Cloud Scheduler to call your new endpoint at the desired interval
