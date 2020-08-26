@@ -21,7 +21,6 @@
       "compile": "tsc -p .",
       "start": "probot run ./build/src/{{programName}}.js",
       "start:local": "node ./build/src/local.js",
-      "prepare": "npm run compile",
       "pretest": "npm run compile",
       "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
       "test:snap": "SNAPSHOT_UPDATE=1 npm test",
@@ -29,7 +28,7 @@
       "lint": "gts check"
     },
     "dependencies": {
-      "gcf-utils": "^5.2.6"
+      "gcf-utils": "^5.5.1"
     },
     "devDependencies": {
       "@types/mocha": "^8.0.0",
@@ -44,6 +43,6 @@
       "typescript": "^3.9.7"
     },
     "engines": {
-      "node": ">= 10.13.0"
+      "node": ">= 12.18.2"
     }
   }
