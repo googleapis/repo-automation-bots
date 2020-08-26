@@ -6,7 +6,21 @@
 
 ### GCFBootstrapper
 
-TODO:(orthros)
+In `your_bot/src/app.ts`:
+
+```typescript
+import {GCFBootstrapper} from 'gcf-utils';
+import {handler} from './your-bot';        // the handler that will be called for probot events, of type ApplicationFunction
+
+const bootstrap = new GCFBootstrapper();
+
+const wrapOptions =  {
+  background: true,     // enables the use of Cloud Tasks to execute in the background
+  logging: true,        // enables automatic logging of metrics
+}
+
+module.exports['your_bot'] = bootstrap.gcf(handler, wrapOptions);
+```
 
 ### GCFLogger
 
