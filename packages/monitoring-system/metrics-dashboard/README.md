@@ -8,11 +8,13 @@ A web-based dashboard to visualize metrics collected by the Automation Bot Monit
 
 To view the current deployment of the dashboard, visit [repo-automation-bots-metrics.web.app](https://repo-automation-bots-metrics.web.app/)
 
-You will need to use the 'Sign-in with Google' option and log-in with your `@google.com` email to view the data.
+> Note: You will need to use the 'Sign-in with Google' option and log-in with your `@google.com` email to view the data.
 
 ## Development
 
-The dashboard is developed with TypeScript alongside HTML and CSS. It is currently deployed to Firebase Hosting. 
+The dashboard is developed with TypeScript alongside HTML and CSS. It is currently deployed to [Firebase Hosting in the repo-automation-bots-metrics project](https://firebase.corp.google.com/project/repo-automation-bots-metrics). 
+
+> Note: You will need access to this project to view the hosting configuration
 
 ### Compiling for the web
 
@@ -28,9 +30,33 @@ To compile the TypeScript files:
 
 ### Overview of Components
 
-**Firestore Listener**: This module contains all the Firestore queries that are added as 'listeners' to the Firestore instance. 
+#### auth.ts
 
-**Render**: This module renders the results from Firestore on the DOM. This is a temporary solution and eventually will be swapped for a ReactJS app.
+Uses Firebase Auth libraries to handle the authentication workflow and redirect user to the app on successful authentication
+
+#### index.ts
+
+The entry-point for the dashboard app. It initializes the listeners and assigns events for DOM elements.
+
+#### Authenticated Firestore
+
+A singleton class that returns a configured and authenticated Firestore Client
+
+#### Firestore Listener
+
+This module contains all the Firestore queries that are added as 'listeners' to the Firestore instance. 
+
+#### Change Processor
+
+A module to handle changes to the Firestore query as reported by the listeners.
+
+#### Processed Data Cache
+
+An in-memory cache for objects built from Firestore query results
+
+#### Render
+
+This module renders the results from Firestore on the DOM. This is a temporary solution and eventually will be swapped for a ReactJS app.
 
 ### Deploy
 
