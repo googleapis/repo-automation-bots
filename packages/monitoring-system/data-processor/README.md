@@ -90,7 +90,7 @@ Extends the abstract data processor and implements functionality to ingest GitHu
 
 ### Firestore Schema
 
-Refer to [firestore-schema.ts](packages/monitoring-system/data-processor/src/firestore-schema.ts) for a guide on the storage schema for Data Processor.
+Refer to [firestore-schema.ts](src/types/firestore-schema.ts) for a guide on the storage schema for Data Processor.
 
 ### Add support for a new metric from an existing data source
 
