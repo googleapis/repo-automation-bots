@@ -95,15 +95,15 @@ logger.flush()
 |--------------------------|------------|--------------------------------------------------------|-------------------------------------------------------------|
 | message                  | string     | A descriptive message about the trigger                |                                                             |
 | trigger                  | object     | Object containing trigger information                  |                                                             |
-| ____trigger_type         | string     | Trigger source (eg. Github Webhook, Cloud Scheduler)   |                                                             |
-| ____trigger_sender       | string     | GitHub username of user that triggered the webhook     | Only for GitHub WebHook triggers                            |
-| ____github_delivery_guid | string     | GUID of the GitHub WebHook                             | Only for GitHub WebHook triggers and subsequent Cloud Tasks |
-| ____payload_hash         | string     | An MD5 hash of the GitHub Event Payload                | Only for GitHub WebHook triggers                            |
-| ____trigger_source_repo  | object     | Object containing GitHub source repository information | Only for GitHub WebHook triggers                            |
-| ________owner            | string     | Username of the repository owner                       | Only for GitHub WebHook triggers                            |
-| ________owner_type       | string     | The type of owner (eg. 'User' or 'Organization')       | Only for GitHub WebHook triggers                            |
-| ________repo_name        | string     | The name of the GitHub repository                      | Only for GitHub WebHook triggers                            |
-| ________url              | string     | URL to the GitHub repository (may be private)          | Only for GitHub WebHook triggers                            |
+| 	trigger_type         | string     | Trigger source (eg. Github Webhook, Cloud Scheduler)   |                                                             |
+| 	trigger_sender       | string     | GitHub username of user that triggered the webhook     | Only for GitHub WebHook triggers                            |
+| 	github_delivery_guid | string     | GUID of the GitHub WebHook                             | Only for GitHub WebHook triggers and subsequent Cloud Tasks |
+| 	payload_hash         | string     | An MD5 hash of the GitHub Event Payload                | Only for GitHub WebHook triggers                            |
+| 	trigger_source_repo  | object     | Object containing GitHub source repository information | Only for GitHub WebHook triggers                            |
+| 		owner            | string     | Username of the repository owner                       | Only for GitHub WebHook triggers                            |
+| 		owner_type       | string     | The type of owner (eg. 'User' or 'Organization')       | Only for GitHub WebHook triggers                            |
+| 		repo_name        | string     | The name of the GitHub repository                      | Only for GitHub WebHook triggers                            |
+| 		url              | string     | URL to the GitHub repository (may be private)          | Only for GitHub WebHook triggers                            |
 
 ##### GitHub Action Information
 // TODO (asonawalla)
