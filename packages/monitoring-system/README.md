@@ -4,8 +4,6 @@ A system to collect metrics on GitHub Repo Automation Bot executions and make it
 
 [Read the design document here (internal)](http://go/automation-bot-monitoring-system-design)
 
-[Watch the presentation (starting 17m15s)](https://drive.google.com/file/d/1lmMbKiRUkE1BaCo4bR9lWKXJxOdaR01P/view&sa=D&ust=1598459279983000&usg=AFQjCNEA1FGlFyM4XtH2KaMgnvDjiLZT1g)
-
 ## Usage
 
 ### Bot SRE: View currently configured metrics
