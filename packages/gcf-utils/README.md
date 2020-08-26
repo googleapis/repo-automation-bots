@@ -16,6 +16,7 @@ TODO:(orthros)
 * [Cloud Logging Special Fields](https://cloud.google.com/run/docs/logging#special-fields)
 * Both [string logging](#log-a-string-statement) and [JSON structured Logging](#log-a-structured-json)
 * [Synchronous flush](#synchronously-flush-logs)
+* [Logging Custom Metrics](#manually-log-metrics)
 
 `gcf-util` exports a configured instance of `GCFLogger` for bots to use. This instance will be synchronously flushed after the Bot's app function has completed, so you **do not need to flush this in your Bot's code**.
 
@@ -106,11 +107,38 @@ logger.flush()
 | ________url              | string     | URL to the GitHub repository (may be private)          | Only for GitHub WebHook triggers                            |
 
 ##### GitHub Action Information
-// TODO (asonawalla)
+
+`gcf-utils` automatically logs information related to any actions taken by a Bot on GitHub. 
+
+> Note: only calls to GitHub that make a change to any GitHub objects are logged. Calls to GitHub that simply retrieve information are **not logged**. For example, if a Bot retrieves a list of issues from a repository and then adds a label to some issues, only the 'add label' actions will be logged, not the retrieving of the issues.
+
+The following properties are logged:
+
+| Property               | Value Type | Value                                                     | Notes                                                   |
+|------------------------|------------|-----------------------------------------------------------|---------------------------------------------------------|
+| action                 | object     | Object containing action information                      |                                                         |
+| ____type               | string     | The type of action (eg. ISSUE_ADD_LABEL)                  |                                                         |
+| ____value              | string     | The value associated with the action. (eg. name of label) | If action has no associated value, then value is 'NONE' |
+| ____destination_object | object     | The GitHub object that received the action                | Only for actions that have an associated object         |
+| ________object_type    | string     | The type of object (eg. PULL_REQUEST)                     | Only for actions that have an associated object         |
+| ________object_id      | number     | The GitHub ID corresponding to the object                 | Only for actions that have an associated object         |
+| ____destination_repo   | object     | The GitHub repository that received the action            |                                                         |
+| ________repo_name      | string     | The name of the GitHub repository                         |                                                         |
+| ________owner          | string     | The username of the GitHub repository owner               |                                                         |
 
 #### Manually Log Metrics
 
-// TODO (asonawalla)
+`GCFLogger` also allows for custom logs-based metrics in addition to the metrics logged above. 
+
+> Note: To have your Bot's custom metrics collected from Cloud Logging and processed with other metrics, please refer to the [data-processor documentation](https://github.com/azizsonawalla/repo-automation-bots/tree/documentation-1/packages/monitoring-system/data-processor#add-support-for-a-new-metric-from-an-existing-data-source)
+
+To log a metric with field `foo` and value `bar`:
+
+```typescript
+import {logger} from 'gcf-utils'
+
+logger.metric({foo: 'bar'})
+```
 
 ## Development Setup
 
