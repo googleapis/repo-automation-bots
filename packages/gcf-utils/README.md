@@ -149,6 +149,34 @@ npm install
 
 ## Testing
 
+### Run Unit Tests
+
+Run `npm run test` from the root directory to run the unit tests
+
+### Run Integration/System Tests
+
+Additional setup is required to run the `text/integration/gcf-bootstrapper-integration` tests. If you don't wish to run these tests, you can skip this setup. Else, follow these steps:
+
+1. Create a GitHub personal access token: https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token
+2. Create a test GitHub App and give it the necessary permissions
+3. Navigate to https://github.com/settings/apps/{your-app} to find the necessary information for step 4
+4. Enable secret manager on your GCP project and create a new secret with the following values:
+```
+{
+    "id": <your GitHub app id>,
+    "cert": <your GitHub app private key at the bottom of the page>,
+    "secret": <your GitHub app's webhook secret (not client secret)>,
+    "githubToken": <your personal access token from step 1>
+}
+```
+5. Create a file in gcf-utils root directory called ".env" with the following:
+```
+PROJECT_ID=<your GCP project id>
+GCF_SHORT_FUNCTION_NAME=<the name of your secret>
+```
+
+Run `npm run system-test` from the root directory to run the system tests
+
 ## Contributing
 
 If you have suggestions for how gcf-utils could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
