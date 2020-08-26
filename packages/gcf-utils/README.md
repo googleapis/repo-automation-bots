@@ -12,10 +12,10 @@ TODO:(orthros)
 
 `GCFLogger` is a standardized logger for Google Cloud Functions. It has in-built support for:
 
-* Cloud Logging Severity Levels
-* Cloud Logging Special Properties
-* Both string logging and JSON structured Logging
-* Synchronous flush
+* [Cloud Logging Severity Levels](https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#logseverity)
+* [Cloud Logging Special Fields](https://cloud.google.com/run/docs/logging#special-fields)
+* Both [string logging](#log-a-string-statement) and [JSON structured Logging](#log-a-structured-json)
+* [Synchronous flush](#synchronously-flush-logs)
 
 `gcf-util` exports a configured instance of `GCFLogger` for bots to use. This instance will be synchronously flushed after the Bot's app function has completed, so you **do not need to flush this in your Bot's code**.
 
@@ -67,6 +67,20 @@ Cloud Logging output for the lines above:
 }
 ```
 
+#### Synchronously Flush Logs
+
+> :warning: If you are importing `logger` from `gcf-utils` as shown above, you **do not need to call the synchronous flush method**. `gcf-utils` automatically handles this once the Bot's application function completes
+
+> :warning: `GCFLogger.flush()` only works for `SonicBoom` destinations, which is the default destination for this logger
+
+To synchronously flush logs:
+
+```typescript
+import {logger} from 'gcf-utils';
+
+logger.flush()
+```
+
 #### Automatically Logged Metrics
 
 `gcf-utils` logs some metrics automatically with the help of `GCFLogger`. This is completely transparent to the Bot and requires no action from the Bot developer.
@@ -81,15 +95,15 @@ Cloud Logging output for the lines above:
 |--------------------------|------------|--------------------------------------------------------|-------------------------------------------------------------|
 | message                  | string     | A descriptive message about the trigger                |                                                             |
 | trigger                  | object     | Object containing trigger information                  |                                                             |
-|     trigger_type         | string     | Trigger source (eg. Github Webhook, Cloud Scheduler)   |                                                             |
-|     trigger_sender       | string     | GitHub username of user that triggered the webhook     | Only for GitHub WebHook triggers                            |
-|     github_delivery_guid | string     | GUID of the GitHub WebHook                             | Only for GitHub WebHook triggers and subsequent Cloud Tasks |
-|     payload_hash         | string     | An MD5 hash of the GitHub Event Payload                | Only for GitHub WebHook triggers                            |
-|     trigger_source_repo  | object     | Object containing GitHub source repository information | Only for GitHub WebHook triggers                            |
-|         owner            | string     | Username of the repository owner                       | Only for GitHub WebHook triggers                            |
-|         owner_type       | string     | The type of owner (eg. 'User' or 'Organization')       | Only for GitHub WebHook triggers                            |
-|         repo_name        | string     | The name of the GitHub repository                      | Only for GitHub WebHook triggers                            |
-|         url              | string     | URL to the GitHub repository (may be private)          | Only for GitHub WebHook triggers                            |
+| ____trigger_type         | string     | Trigger source (eg. Github Webhook, Cloud Scheduler)   |                                                             |
+| ____trigger_sender       | string     | GitHub username of user that triggered the webhook     | Only for GitHub WebHook triggers                            |
+| ____github_delivery_guid | string     | GUID of the GitHub WebHook                             | Only for GitHub WebHook triggers and subsequent Cloud Tasks |
+| ____payload_hash         | string     | An MD5 hash of the GitHub Event Payload                | Only for GitHub WebHook triggers                            |
+| ____trigger_source_repo  | object     | Object containing GitHub source repository information | Only for GitHub WebHook triggers                            |
+| ________owner            | string     | Username of the repository owner                       | Only for GitHub WebHook triggers                            |
+| ________owner_type       | string     | The type of owner (eg. 'User' or 'Organization')       | Only for GitHub WebHook triggers                            |
+| ________repo_name        | string     | The name of the GitHub repository                      | Only for GitHub WebHook triggers                            |
+| ________url              | string     | URL to the GitHub repository (may be private)          | Only for GitHub WebHook triggers                            |
 
 ##### GitHub Action Information
 // TODO (asonawalla)
