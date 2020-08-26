@@ -19,8 +19,8 @@ export interface ParseResult {
   tagsFound: boolean;
 }
 
-const START_TAG_REGEX = /\[START (.*)\]/;
-const END_TAG_REGEX = /\[END (.*)\]/;
+const START_TAG_REGEX = /\[START ([^\]]*)\]/;
+const END_TAG_REGEX = /\[END ([^\]]*)\]/;
 
 export function parseRegionTags(
   contents: string,
