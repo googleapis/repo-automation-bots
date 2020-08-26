@@ -118,6 +118,7 @@ export = (app: Application) => {
     'pull_request.opened',
     'pull_request.reopened',
     'pull_request.edited',
+    'pull_request.synchronized',
   ];
   app.on(events, async context => {
     const repoUrl = context.payload.repository.full_name;
