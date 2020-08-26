@@ -27,4 +27,4 @@ steps:
     entrypoint: bash
     args:
       - "-e"
-      - "packages/monitoring-system/metrics-dashboard/scripts/deploy.sh  $(cat decrypted-data.txt)"
+      - "./packages/monitoring-system/metrics-dashboard/scripts/deploy.sh  $(cat decrypted-data.txt)"
