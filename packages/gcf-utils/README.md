@@ -169,7 +169,7 @@ Run `npm run test` from the root directory to run the unit tests
 
 ### Run Integration/System Tests
 
-Additional setup is required to run the `text/integration/gcf-bootstrapper-integration` tests. If you don't wish to run these tests, you can skip this setup. Else, follow these steps:
+Additional setup is required to run the `test/integration/gcf-bootstrapper-integration` tests. If you don't wish to run these tests, you can skip this setup. Else, follow these steps:
 
 1. Create a GitHub personal access token: https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token
 2. Create a test GitHub App and give it the necessary permissions
