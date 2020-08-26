@@ -27,4 +27,4 @@ steps:
     entrypoint: bash
     args:
       - "-e"
-      - "./scripts/publish-function.sh < decrypted-data.txt"
+      - "./scripts/publish-function.sh  $(cat decrypted-data.txt)"
