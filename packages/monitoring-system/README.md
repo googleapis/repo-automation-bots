@@ -4,6 +4,8 @@ A system to collect metrics on GitHub Repo Automation Bot executions and make it
 
 [Read the design document here (internal)](http://go/automation-bot-monitoring-system-design)
 
+[Watch the presentation (starting 17m15s)](https://drive.google.com/file/d/1lmMbKiRUkE1BaCo4bR9lWKXJxOdaR01P/view&sa=D&ust=1598459279983000&usg=AFQjCNEA1FGlFyM4XtH2KaMgnvDjiLZT1g)
+
 ## Usage
 
 ### Bot SRE: View currently configured metrics
@@ -16,7 +18,7 @@ The roadmap for this project includes supporting all metrics in the [Metrics Das
 
 Logs-based metrics are one of the sources from which the Monitoring System collects data. You can view these metrics directly in Cloud Logging as well in the [repo-automation-bots GCP Project](https://console.cloud.google.com/logs/query?project=repo-automation-bots&folder=true&organizationId=true&query=%0A). 
 
-> :warning: You will need access to this project in order to view the logs
+> Note: You will need access to this project in order to view the logs
 
 For more information on which metrics are emitted via logs, refer to the [gcf-utils documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/gcf-utils).
 
