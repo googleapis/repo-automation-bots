@@ -18,10 +18,11 @@ import {resolve} from 'path';
 import nock from 'nock';
 import sinon, {SinonStub} from 'sinon';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-
 import handler from '../src/merge-on-green';
 import {logger} from 'gcf-utils';
-import {assert} from 'console';
+import assert from 'assert';
+
+const sandbox = sinon.createSandbox();
 
 interface Label {
   name: string;
@@ -171,7 +172,7 @@ describe('merge-on-green', () => {
   beforeEach(() => {
     probot = new Probot({
       // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest'),
+      Octokit: require('@octokit/rest').Octokit,
     });
     probot.app = {
       getSignedJsonWebToken() {
@@ -182,6 +183,12 @@ describe('merge-on-green', () => {
       },
     };
     probot.load(handler);
+    sandbox.stub(logger, 'error').throwsArg(0);
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+    nock.cleanAll();
   });
 
   describe('merge-logic', () => {
@@ -818,11 +825,7 @@ describe('merge-on-green', () => {
   describe('merge-on-green wrapper logic', () => {
     let stub: SinonStub;
     beforeEach(() => {
-      stub = sinon.stub(handler, 'addPR');
-    });
-
-    afterEach(() => {
-      stub.restore();
+      stub = sandbox.stub(handler, 'addPR');
     });
 
     it('adds a PR when label is added correctly', async () => {
@@ -845,9 +848,7 @@ describe('merge-on-green', () => {
       });
 
       scopes.forEach(s => s.done());
-
       assert(stub.called);
-      logger.info('stub called? ' + stub.called);
     });
 
     //This function is supposed to respond with an error
