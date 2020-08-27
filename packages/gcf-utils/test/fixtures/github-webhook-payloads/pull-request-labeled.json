@@ -14,7 +14,7 @@
     "locked": false,
     "title": "Assign pr",
     "user": {
-      "login": "testuser2",
+      "login": "testUser",
       "id": 31518063,
       "node_id": "MDQ6VXNlcjMxNTE4MDYz",
       "avatar_url": "https://avatars3.githubusercontent.com/u/31518063?v=4",
@@ -48,7 +48,7 @@
         "id": 1515750275,
         "node_id": "MDU6TGFiZWwxNTE1NzUwMjc1",
         "url": "https://api.github.com/repos/testOwner/testRepo/labels/blunderbuss:%20assign",
-        "name": "automerge",
+        "name": "blunderbuss: assign",
         "color": "f9d0c4",
         "default": false
       },
@@ -197,7 +197,7 @@
       "ref": "master",
       "sha": "7dfdda6032153d27e6555482b3e88ded77ae5a6a",
       "user": {
-        "login": "testuser2",
+        "login": "testUser",
         "id": 31518063,
         "node_id": "MDQ6VXNlcjMxNTE4MDYz",
         "avatar_url": "https://avatars3.githubusercontent.com/u/31518063?v=4",
@@ -467,7 +467,7 @@
     "default_branch": "master"
   },
   "sender": {
-    "login": "testuser2",
+    "login": "testUser",
     "id": 31518063,
     "node_id": "MDQ6VXNlcjMxNTE4MDYz",
     "avatar_url": "https://avatars3.githubusercontent.com/u/31518063?v=4",

@@ -12,7 +12,7 @@
     "name": null,
     "draft": false,
     "author": {
-      "login": "Codertocat",
+      "login": "testUser",
       "id": 21031067,
       "node_id": "MDQ6VXNlcjIxMDMxMDY3",
       "avatar_url": "https://avatars1.githubusercontent.com/u/21031067?v=4",
@@ -44,11 +44,11 @@
   "repository": {
     "id": 186853002,
     "node_id": "MDEwOlJlcG9zaXRvcnkxODY4NTMwMDI=",
-    "name": "Hello-World",
-    "full_name": "Codertocat/Hello-World",
+    "name": "testRepo",
+    "full_name": "testOwner/testRepo",
     "private": false,
     "owner": {
-      "login": "Codertocat",
+      "login": "testOwner",
       "id": 21031067,
       "node_id": "MDQ6VXNlcjIxMDMxMDY3",
       "avatar_url": "https://avatars1.githubusercontent.com/u/21031067?v=4",
@@ -136,7 +136,7 @@
     "default_branch": "master"
   },
   "sender": {
-    "login": "Codertocat",
+    "login": "testUser",
     "id": 21031067,
     "node_id": "MDQ6VXNlcjIxMDMxMDY3",
     "avatar_url": "https://avatars1.githubusercontent.com/u/21031067?v=4",

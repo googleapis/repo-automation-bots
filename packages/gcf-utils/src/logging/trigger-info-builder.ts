@@ -45,12 +45,14 @@ interface TriggerInfo {
 /**
  * Build a TriggerInfo object for this execution
  * @param triggerType trigger type for this exeuction
- * @param github_delivery_guid github delivery id for this exeuction
+ * @param githubDeliveryGUID github delivery id for this exeuction
+ * @param githubEventName the value of the X-GitHub-Event header
  * @param requestBody body of the incoming trigger request
  */
 export function buildTriggerInfo(
   triggerType: TriggerType,
-  github_delivery_guid: string,
+  githubDeliveryGUID: string,
+  githubEventName: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   requestBody: {[key: string]: any}
 ): TriggerInfo {
@@ -64,7 +66,7 @@ export function buildTriggerInfo(
   };
 
   if (triggerType === TriggerType.GITHUB || triggerType === TriggerType.TASK) {
-    triggerInfo.trigger.github_delivery_guid = github_delivery_guid;
+    triggerInfo.trigger.github_delivery_guid = githubDeliveryGUID;
   }
 
   if (triggerType === TriggerType.GITHUB) {
@@ -72,7 +74,7 @@ export function buildTriggerInfo(
       trigger_source_repo: getRepositoryDetails(requestBody),
       trigger_sender: requestBody.sender?.login || UNKNOWN,
       payload_hash: getPayloadHash(requestBody),
-      github_event_type: getEventTypeDetails(requestBody),
+      github_event_type: getEventTypeDetails(githubEventName, requestBody.action),
     };
     triggerInfo.trigger = {...webhookProperties, ...triggerInfo.trigger};
   }
@@ -120,10 +122,11 @@ function getRepositoryDetails(
  * @param requestBody the body of the incoming GitHub Webhook request
  */
 function getEventTypeDetails(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  requestBody: {[key: string]: any}
+  eventName: string,
+  actionValue: string
 ): string {
-  throw new Error('Not implemented');
+  eventName = eventName === '' ? 'UNKNOWN': eventName
+  return `${eventName}${actionValue ? `: ${actionValue}` : ``}`
 }
 
 /**

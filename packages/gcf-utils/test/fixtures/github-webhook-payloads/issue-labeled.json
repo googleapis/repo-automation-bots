@@ -12,7 +12,7 @@
       "number": 1,
       "title": "Spelling error in the README file",
       "user": {
-        "login": "Codertocat",
+        "login": "testUser",
         "id": 21031067,
         "node_id": "MDQ6VXNlcjIxMDMxMDY3",
         "avatar_url": "https://avatars1.githubusercontent.com/u/21031067?v=4",
@@ -136,7 +136,7 @@
       "id": 492700400,
       "node_id": "MDEyOklzc3VlQ29tbWVudDQ5MjcwMDQwMA==",
       "user": {
-        "login": "Codertocat",
+        "login": "testUser",
         "id": 21031067,
         "node_id": "MDQ6VXNlcjIxMDMxMDY3",
         "avatar_url": "https://avatars1.githubusercontent.com/u/21031067?v=4",
@@ -255,7 +255,7 @@
       "default_branch": "master"
     },
     "sender": {
-      "login": "Codertocat",
+      "login": "testUser",
       "id": 21031067,
       "node_id": "MDQ6VXNlcjIxMDMxMDY3",
       "avatar_url": "https://avatars1.githubusercontent.com/u/21031067?v=4",
