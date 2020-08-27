@@ -19,6 +19,16 @@ Issue title | Label
 `ignored(/spanner/ignored): ignored` | `api: spanner`
 `iot: ignored` | `api: cloudiot`
 
+Certain prefixes of the above formats are also supported:
+
+Issue title | Label
+----------- | -----
+`com.example.spanner: ignored` | `api: spanner`
+`com.google.spanner.ignored: ignored` | `api: spanner`
+`fix(snippets.spanner.ignored): ignored` | `api: spanner`
+
+-------------------
+
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
 
 This bot uses nock for mocking requests to GitHub, and snap-shot-it for capturing responses; This allows updates to the API surface to be treated as a visual diff, rather than tediously asserting against each field.
