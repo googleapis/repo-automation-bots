@@ -91,7 +91,7 @@ export function autoDetectLabel(
 
   // Some APIs have "cloud" before the name (e.g. cloudkms and cloudiot).
   const possibleLabels = [`api: ${firstPart}`, `api: cloud${firstPart}`];
-  // Assume jsonArray contains all api: labels. Avoids an extra API call to list
+  // Assume repos contains all api: labels. Avoids an extra API call to list
   // the labels on a repo.
   return repos.find(repo => possibleLabels.indexOf(repo.github_label) > -1)
     ?.github_label;
