@@ -188,37 +188,6 @@ mergeOnGreen.hasMOGLabel = async function hasMOGLabel(
 };
 
 /**
- * Function grabs the required checks of the master branch
- * @param owner of pr (from Watch PR)
- * @param repo of pr (from Watch PR)
- * @param github unique installation id for each function
- * @returns a string array of the names of the required checks
- */
-mergeOnGreen.getBranchProtection = async function getBranchProtection(
-  owner: string,
-  repo: string,
-  github: GitHubAPI
-): Promise<string[]> {
-  try {
-    const branchProtection = (
-      await github.repos.getBranchProtection({
-        owner,
-        repo,
-        branch: 'master',
-      })
-    ).data.required_status_checks.contexts;
-    logger.info(
-      `checking branch protection for ${owner}/${repo}: ${branchProtection}`
-    );
-    return branchProtection;
-  } catch (err) {
-    err.message = `Error in getting branch protection\n\n${err.message}`;
-    logger.error(err);
-    return [];
-  }
-};
-
-/**
  * Function grabs the statuses that have run for a given Sha
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
@@ -227,60 +196,31 @@ mergeOnGreen.getBranchProtection = async function getBranchProtection(
  * @param num the number of the page to check
  * @returns an array of Check Statuses that has their names and statuses
  */
-mergeOnGreen.getStatusi = async function getStatusi(
-  owner: string,
-  repo: string,
-  github: GitHubAPI,
-  headSha: string,
-  num: number
-): Promise<CheckStatus[]> {
-  const start = Date.now();
-  try {
-    const {data} = await github.repos.listStatusesForRef({
-      owner,
-      repo,
-      ref: headSha,
-      per_page: 100,
-      page: num,
-    });
-    if (!data[0]?.context) {
-      logger.info('no further page data');
-      return [];
-    }
-    logger.info(
-      `called getStatuses in ${Date.now() - start}ms ${owner}/${repo}`
-    );
-    return data;
-  } catch (err) {
-    err.message = `Error in getting statuses\n\n${err.message}`;
-    logger.error(err);
-    return [];
-  }
-};
-
-/**
- * Function iterates through the multiple pages of check statuses and concatenates them into a large array
- * @param owner of pr (from Watch PR)
- * @param repo of pr (from Watch PR)
- * @param github unique installation id for each function
- * @param headSha the head sha commit
- * @returns an array of Check Statuses that has their names and statuses
- */
-mergeOnGreen.iterateGetStatusi = async function iterateGetStatusi(
+mergeOnGreen.getStatuses = async function getStatuses(
   owner: string,
   repo: string,
   github: GitHubAPI,
   headSha: string
 ): Promise<CheckStatus[]> {
-  let results: CheckStatus[] = [];
-  for (let i = 0; i < 10; i++) {
-    const temp = await mergeOnGreen.getStatusi(owner, repo, github, headSha, i);
-    if (temp.length === 0) {
-      return results;
-    }
-    results = results.concat(temp);
+  const start = Date.now();
+
+  try {
+    const responses = await github.paginate(
+      await github.repos.listStatusesForRef.endpoint.merge({
+        owner,
+        repo,
+        ref: headSha,
+      })
+    );
+    logger.info(
+      `called getStatuses in ${Date.now() - start}ms ${owner}/${repo}`
+    );
+    return responses;
+  } catch (err) {
+    err.message = `Error in getting statuses\n\n${err.message}`;
+    logger.error(err);
+    return [];
   }
-  return results;
 };
 
 /**
@@ -296,60 +236,25 @@ mergeOnGreen.getCheckRuns = async function getCheckRuns(
   owner: string,
   repo: string,
   github: GitHubAPI,
-  headSha: string,
-  num: number
+  headSha: string
 ): Promise<CheckRun[]> {
   const start = Date.now();
+
   try {
-    const checkRuns = await github.checks.listForRef({
-      owner,
-      repo,
-      ref: headSha,
-      per_page: 100,
-      page: num,
-    });
-    if (!checkRuns.data.check_runs[0]) {
-      logger.info('no further page data');
-      return [];
-    }
+    const responses = await github.paginate(
+      await github.checks.listForRef.endpoint.merge({
+        owner,
+        repo,
+        ref: headSha,
+      })
+    );
     logger.info(
       `called getCheckRuns in ${Date.now() - start}ms ${owner}/${repo}`
     );
-    return checkRuns.data.check_runs;
+    return responses;
   } catch (err) {
     return [];
   }
-};
-
-/**
- * Function iterates through the multiple pages of check statuses and concatenates them into a large array
- * @param owner of pr (from Watch PR)
- * @param repo of pr (from Watch PR)
- * @param github unique installation id for each function
- * @param headSha the head sha commit
- * @returns an array of Check Runs that has their names and statuses
- */
-mergeOnGreen.iterateGetCheckRuns = async function iterateGetCheckRuns(
-  owner: string,
-  repo: string,
-  github: GitHubAPI,
-  headSha: string
-): Promise<CheckRun[]> {
-  let results: CheckRun[] = [];
-  for (let i = 0; i < 10; i++) {
-    const temp = await mergeOnGreen.getCheckRuns(
-      owner,
-      repo,
-      github,
-      headSha,
-      i
-    );
-    if (temp.length === 0) {
-      return results;
-    }
-    results = results.concat(temp);
-  }
-  return results;
 };
 
 /**
@@ -396,7 +301,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
   github: GitHubAPI
 ): Promise<boolean> {
   const start = Date.now();
-  const checkStatus = await mergeOnGreen.iterateGetStatusi(
+  const checkStatus = await mergeOnGreen.getStatuses(
     owner,
     repo,
     github,
@@ -424,7 +329,7 @@ mergeOnGreen.statusesForRef = async function statusesForRef(
         );
         //if we can't find it in the statuses, let's check under check runs
         if (!checkRuns) {
-          checkRuns = await mergeOnGreen.iterateGetCheckRuns(
+          checkRuns = await mergeOnGreen.getCheckRuns(
             owner,
             repo,
             github,
@@ -552,6 +457,7 @@ mergeOnGreen.checkReviews = async function checkReviews(
       //if we get to here, it means that all the reviews are in the approved state
       reviewsCompleted.forEach(async review => {
         if (review.commit_id !== headSha) {
+          reviewsPassed = false;
           logger.info(
             `${review.user.login} didn't review the latest commit for ${owner}/${repo}/${pr} commit = ${headSha}; will dismiss review.`
           );
@@ -565,9 +471,9 @@ mergeOnGreen.checkReviews = async function checkReviews(
                 'This review does not reference the most recent commit, and you are using the secure version of merge-on-green. Please re-review the most recent commit.',
             })
             .catch(logger.error);
-          reviewsPassed = false;
         }
       });
+      return reviewsPassed;
     }
   } else {
     //if no one has reviewed it, fail the merge
@@ -713,29 +619,19 @@ export async function mergeOnGreen(
   pr: number,
   labelNames: string[],
   state: string,
+  requiredChecks: string[],
   github: GitHubAPI
 ): Promise<boolean | undefined> {
   logger.info(`${owner}/${repo} checking merge on green PR status`);
-  const [prInfo, requiredChecks, mogLabel, headSha] = await Promise.all([
+  const [prInfo, mogLabel, headSha] = await Promise.all([
     await mergeOnGreen.getPR(owner, repo, pr, github),
-    await mergeOnGreen.getBranchProtection(owner, repo, github),
     await mergeOnGreen.hasMOGLabel(owner, repo, pr, labelNames, github),
     await mergeOnGreen.getLatestCommit(owner, repo, pr, github),
   ]);
+  logger.info(`required checks: ${requiredChecks}`);
 
   if (prInfo.state === 'closed') {
     logger.info(`${owner}/${repo}/${pr} is closed`);
-    return true;
-  }
-  if (requiredChecks.length === 0) {
-    logger.info(`${owner}/${repo}/${pr} has no required status checks`);
-    await mergeOnGreen.commentOnPR(
-      owner,
-      repo,
-      pr,
-      `Your PR doesn't have any required checks. Please add required checks to your master branch and then re-add the ${labelNames[0]} or ${labelNames[1]} label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.`,
-      github
-    );
     return true;
   }
 

@@ -33,6 +33,7 @@ interface WatchPR {
   repo: string;
   owner: string;
   state: 'continue' | 'stop' | 'comment';
+  branchProtection: string[];
   url: string;
 }
 
@@ -75,6 +76,7 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
       repo: pr.repo,
       owner: pr.owner,
       state: state as 'continue' | 'stop' | 'comment',
+      branchProtection: pr.branchProtection,
       url,
     };
     result.push(watchPr);
@@ -108,6 +110,7 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
       owner: wp.owner,
       repo: wp.repo,
       number: wp.number,
+      branchProtection: wp.branchProtection,
     },
     method: 'upsert',
   };
@@ -125,6 +128,14 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
  */
 function handler(app: Application) {
   app.on(['schedule.repository'], async context => {
+    const rateLimit = (await context.github.rateLimit.get()).data.resources.core
+      .remaining;
+    if (rateLimit <= 0) {
+      logger.error(
+        `The rate limit is at ${rateLimit}. We are skipping execution until we reset.`
+      );
+      return;
+    }
     const watchedPRs = await handler.listPRs();
     const start = Date.now();
     logger.info(`running for org ${context.payload.org}`);
@@ -146,6 +157,7 @@ function handler(app: Application) {
               wp.number,
               [MERGE_ON_GREEN_LABEL, MERGE_ON_GREEN_LABEL_SECURE],
               wp.state,
+              wp.branchProtection,
               context.github
             );
             if (remove || wp.state === 'stop') {
@@ -162,6 +174,15 @@ function handler(app: Application) {
   });
 
   app.on('pull_request.labeled', async context => {
+    const rateLimit = (await context.github.rateLimit.get()).data.resources.core
+      .remaining;
+    if (rateLimit <= 0) {
+      logger.error(
+        `The rate limit is at ${rateLimit}. We are skipping execution until we reset.`
+      );
+      return;
+    }
+
     // if missing the label, skip
     if (
       !context.payload.pull_request.labels.some(
@@ -178,22 +199,51 @@ function handler(app: Application) {
       app.log.info(`ignoring non-force label action (${labels})`);
       return;
     }
+
     const prNumber = context.payload.pull_request.number;
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     logger.info(`${prNumber} ${owner} ${repo}`);
     //TODO: we can likely split the database functionality into its own file and
     //import these helper functions for use in the main bot event handling.
-    await handler.addPR(
-      {
-        number: prNumber,
+
+    let branchProtection = undefined;
+    try {
+      branchProtection = (
+        await context.github.repos.getBranchProtection({
+          owner,
+          repo,
+          branch: 'master',
+        })
+      ).data.required_status_checks.contexts;
+      logger.info(
+        `checking branch protection for ${owner}/${repo}: ${branchProtection}`
+      );
+    } catch (err) {
+      err.message = `Error in getting branch protection\n\n${err.message}`;
+      await context.github.issues.createComment({
         owner,
         repo,
-        state: 'continue',
-        url: context.payload.pull_request.html_url,
-      },
-      context.payload.pull_request.html_url
-    );
+        issue_number: prNumber,
+        body:
+          "Your PR doesn't have any required checks. Please add required checks to your master branch and then re-add the label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.",
+      });
+      logger.error(err);
+    }
+
+    if (branchProtection) {
+      await handler.addPR(
+        {
+          number: prNumber,
+          owner,
+          repo,
+          state: 'continue',
+          url: context.payload.pull_request.html_url,
+          branchProtection: branchProtection,
+        },
+        context.payload.pull_request.html_url
+      );
+    }
   });
 }
 
