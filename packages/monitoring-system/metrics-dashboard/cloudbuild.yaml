@@ -19,7 +19,7 @@ steps:
     entrypoint: 'bash'
     args: 
       - '-c'
-      - "gcloud secrets versions access latest --secret=firebase-token-metrics-dashboard --format='get(payload.data)' | tr '_-' '/+' | base64 -d > decrypted-data.txt"
+      - "gcloud secrets versions access latest --secret=firebase-token-metrics-dashboard --format='get(payload.data)' | tr '_-' '/+' | base64 -d > firebase-token.txt"
 
   - name: gcr.io/cloud-builders/npm
     id: "deploy-dashboard"
@@ -27,4 +27,4 @@ steps:
     entrypoint: bash
     args:
       - "-e"
-      - "./packages/monitoring-system/metrics-dashboard/scripts/deploy.sh  $(cat decrypted-data.txt)"
+      - "./scripts/deploy.sh firebase-token.txt"

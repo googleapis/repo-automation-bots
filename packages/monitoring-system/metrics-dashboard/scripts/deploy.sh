@@ -5,7 +5,7 @@ set -eo pipefail  # fail-fast and don't mask errors
 # check token was passed in args
 if [[ $# -ne 1 ]]
 then
-  echo "Usage $0 <firebase-token>"
+  echo "Usage $0 <path-to-token-file>"
   exit 1
 fi
 
@@ -14,4 +14,4 @@ npm install
 npm run compile
 
 # deploy to Firebase
-firebase deploy --token $1
+firebase deploy --token $(cat $1)
