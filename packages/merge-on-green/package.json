@@ -28,8 +28,7 @@
   },
   "dependencies": {
     "@google-cloud/datastore": "^6.1.0",
-    "gcf-utils": "^5.5.1",
-    "probot": "^9.13.0"
+    "gcf-utils": "^5.5.1"
   },
   "devDependencies": {
     "@types/mocha": "^8.0.3",
