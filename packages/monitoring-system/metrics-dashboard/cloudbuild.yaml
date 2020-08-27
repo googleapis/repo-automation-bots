@@ -16,6 +16,7 @@ steps:
   - name: gcr.io/cloud-builders/gcloud
     id: "get-firebase-token"
     waitFor: ["-"]
+    dir: './packages/monitoring-system/metrics-dashboard'
     entrypoint: 'bash'
     args: 
       - '-c'
@@ -24,6 +25,7 @@ steps:
   - name: gcr.io/cloud-builders/npm
     id: "deploy-dashboard"
     waitFor: ["get-firebase-token"]
+    dir: './packages/monitoring-system/metrics-dashboard'
     entrypoint: bash
     args:
       - "-e"
