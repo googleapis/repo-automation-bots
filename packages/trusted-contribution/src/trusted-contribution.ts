@@ -45,7 +45,6 @@ export = (app: Application) => {
 
   app.on(
     [
-      'pull_request.edited',
       'pull_request.opened',
       'pull_request.reopened',
       'pull_request.synchronize',
@@ -66,7 +65,7 @@ export = (app: Application) => {
       if (isTrustedContribution(remoteConfiguration, PR_AUTHOR)) {
         const issuesAddLabelsParams = context.repo({
           issue_number: context.payload.pull_request.number,
-          labels: ['kokoro:run'],
+          labels: ['kokoro:force-run'],
         });
         await context.github.issues.addLabels(issuesAddLabelsParams);
       }

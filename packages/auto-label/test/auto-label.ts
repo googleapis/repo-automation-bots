@@ -499,9 +499,18 @@ describe('auto-label', () => {
         {title: 'spanner.ignored', want: 'api: spanner'},
         {title: 'SPANNER.IGNORED', want: 'api: spanner'},
         {title: 'SPAN ner: ignored', want: 'api: spanner'},
+        {title: 'feat(spanner): ignored', want: 'api: spanner'},
+        {title: 'fix(spanner/helper): ignored', want: 'api: spanner'},
+        {title: 'fix(/spanner/helper): ignored', want: 'api: spanner'},
         {title: 'iot: ignored', want: 'api: cloudiot'},
+        {title: 'com.example.spanner: ignored', want: 'api: spanner'},
+        {title: 'com.google.spanner.helper: ignored', want: 'api: spanner'},
+        {title: 'fix(snippets.spanner.helper): ignored', want: 'api: spanner'},
+        {title: 'snippets.video: ignored', want: 'api: videointelligence'},
         {title: 'unknown: ignored', want: undefined},
         {title: 'spanner with no separator', want: undefined},
+        {title: 'fix(unknown): ignored', want: undefined},
+        {title: 'feat(): ignored', want: undefined},
       ];
       for (const test of tests) {
         assert.strictEqual(autoDetectLabel(driftRepos, test.title), test.want);
