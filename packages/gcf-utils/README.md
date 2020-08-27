@@ -171,9 +171,9 @@ Run `npm run test` from the root directory to run the unit tests
 
 Additional setup is required to run the `test/integration/gcf-bootstrapper-integration` tests. If you don't wish to run these tests, you can skip this setup. Else, follow these steps:
 
-1. Create a GitHub personal access token: https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token
+1. [Create a GitHub personal access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
 2. Create a test GitHub App and give it the necessary permissions
-3. Navigate to https://github.com/settings/apps/{your-app} to find the necessary information for step 4
+3. Navigate to `https://github.com/settings/apps/{your-app}` to find the necessary information for step 4
 4. Enable secret manager on your GCP project and create a new secret with the following values:
 ```
 {
