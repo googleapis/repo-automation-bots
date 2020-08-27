@@ -23,7 +23,6 @@ interface TriggerInfo {
   trigger: {
     trigger_type: TriggerType;
     trigger_sender?: string;
-    github_delivery_guid?: string;
 
     /**
      * We include a payload hash for GitHub webhook triggers
@@ -31,6 +30,7 @@ interface TriggerInfo {
      * since they share the same payload
      */
     payload_hash?: string;
+    github_delivery_guid?: string;
 
     trigger_source_repo?: {
       owner: string;
@@ -67,30 +67,14 @@ export function buildTriggerInfo(
   }
 
   if (triggerType === TriggerType.GITHUB) {
-    const sourceRepo = requestBody['repository'] || {};
-    const repoName: string = sourceRepo['name'] || UNKNOWN;
-
-    const repoOwner = sourceRepo['owner'] || {};
-    const ownerName: string = repoOwner['login'] || UNKNOWN;
-    const ownerType: string = repoOwner['type'] || UNKNOWN;
+    const sourceRepo = getRepositoryDetails(requestBody);
+    const payload_hash = getPayloadHash(requestBody);
 
     const sender = requestBody['sender'] || {};
     const senderLogin: string = sender['login'] || UNKNOWN;
 
-    const repoIsKnown = repoName !== UNKNOWN && ownerName !== UNKNOWN;
-    const url: string = repoIsKnown
-      ? `https://github.com/${ownerName}/${repoName}`
-      : UNKNOWN;
-
-    const payload_hash = getPayloadHash(requestBody);
-
     const webhookProperties = {
-      trigger_source_repo: {
-        repo_name: repoName,
-        owner: ownerName,
-        owner_type: ownerType,
-        url: url,
-      },
+      trigger_source_repo: sourceRepo,
       trigger_sender: senderLogin,
       payload_hash: payload_hash,
     };
@@ -99,6 +83,41 @@ export function buildTriggerInfo(
   }
 
   return triggerInfo;
+}
+
+/**
+ * Parses GitHub event's source repository details
+ * @param requestBody the body of the incoming GitHub Webhook request
+ */
+function getRepositoryDetails(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  requestBody: {[key: string]: any}
+):  {
+  repo_name: string,
+  owner: string,
+  owner_type: string,
+  url: string,
+} {
+  const UNKNOWN = 'UNKNOWN';
+
+  const sourceRepo = requestBody['repository'] || {};
+  const repoName: string = sourceRepo['name'] || UNKNOWN;
+
+  const repoOwner = sourceRepo['owner'] || {};
+  const ownerName: string = repoOwner['login'] || UNKNOWN;
+  const ownerType: string = repoOwner['type'] || UNKNOWN;
+
+  const repoIsKnown = repoName !== UNKNOWN && ownerName !== UNKNOWN;
+  const url: string = repoIsKnown
+    ? `https://github.com/${ownerName}/${repoName}`
+    : UNKNOWN;
+
+  return {
+    repo_name: repoName,
+    owner: ownerName,
+    owner_type: ownerType,
+    url: url,
+  }
 }
 
 /**
