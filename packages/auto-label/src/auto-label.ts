@@ -56,10 +56,10 @@ handler.getDriftRepos = async () => {
 // For example, an issue titled `spanner/transactions: TestSample failed` would
 // be labeled `api: spanner`.
 export function autoDetectLabel(
-  jsonArray: DriftRepo[],
+  repos: DriftRepo[],
   title: string
 ): string | undefined {
-  if (!jsonArray || !title) {
+  if (!repos || !title) {
     return undefined;
   }
   // Regex to match the scope of a Conventional Commit message.
@@ -68,6 +68,15 @@ export function autoDetectLabel(
 
   let firstPart = match ? match[1] : title;
 
+  // Remove common prefixes. For example,
+  // https://github.com/GoogleCloudPlatform/java-docs-samples/issues/3578.
+  const trimPrefixes = ['com.example.', 'com.google.', 'snippets.'];
+  for (const prefix of trimPrefixes) {
+    if (firstPart.startsWith(prefix)) {
+      firstPart = firstPart.slice(prefix.length);
+    }
+  }
+
   if (firstPart.startsWith('/')) firstPart = firstPart.substr(1); // Remove leading /.
   firstPart = firstPart.split(':')[0]; // Before the colon, if there is one.
   firstPart = firstPart.split('/')[0]; // Before the slash, if there is one.
@@ -75,17 +84,17 @@ export function autoDetectLabel(
   firstPart = firstPart.toLowerCase(); // Convert to lower case.
   firstPart = firstPart.replace(/\s/, ''); // Remove spaces.
 
-  const wantLabel = `api: ${firstPart}`;
+  // Replace some known firstPart values with their API name.
+  const commonConversions = new Map();
+  commonConversions.set('video', 'videointelligence');
+  firstPart = commonConversions.get(firstPart) || firstPart;
+
   // Some APIs have "cloud" before the name (e.g. cloudkms and cloudiot).
-  // If needed, we could replace common firstPart values with known API names.
-  const wantLabelCloud = `api: cloud${firstPart}`;
+  const possibleLabels = [`api: ${firstPart}`, `api: cloud${firstPart}`];
   // Assume jsonArray contains all api: labels. Avoids an extra API call to list
   // the labels on a repo.
-  return jsonArray.find(
-    element =>
-      element.github_label === wantLabel ||
-      element.github_label === wantLabelCloud
-  )?.github_label;
+  return repos.find(repo => possibleLabels.indexOf(repo.github_label) > -1)
+    ?.github_label;
 }
 
 handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
