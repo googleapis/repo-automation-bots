@@ -144,7 +144,7 @@ The following properties are logged:
 
 `GCFLogger` also allows for custom logs-based metrics in addition to the metrics logged above. 
 
-> Note: To have your Bot's custom metrics collected from Cloud Logging and processed with other metrics, please refer to the [data-processor documentation](https://github.com/azizsonawalla/repo-automation-bots/tree/documentation-1/packages/monitoring-system/data-processor#add-support-for-a-new-metric-from-an-existing-data-source)
+> Note: To have your Bot's custom metrics collected from Cloud Logging and processed with other metrics, please refer to the [data-processor documentation](../monitoring-system/data-processor#add-support-for-a-new-metric-from-an-existing-data-source)
 
 To log a metric with field `foo` and value `bar`:
 
