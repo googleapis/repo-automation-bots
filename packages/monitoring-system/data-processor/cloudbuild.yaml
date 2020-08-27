@@ -17,23 +17,27 @@ steps:
   - name: gcr.io/cloud-builders/npm
     id: "compile"
     waitFor: ["-"]
+    dir: './packages/monitoring-system/data-processor'
     entrypoint: npm
     args: ['run', 'clean-compile']
 
   - name: gcr.io/cloud-builders/docker
     id: "build-docker"
     waitFor: ["compile"]
+    dir: './packages/monitoring-system/data-processor'
     entrypoint: docker
     args: ['build', '--tag', 'data-processor:1.0', '.']
 
   - name: gcr.io/cloud-builders/gcloud
     id: "submit-docker"
     waitFor: ["build-docker"]
+    dir: './packages/monitoring-system/data-processor'
     entrypoint: gcloud
     args: ['builds', 'submit', '--tag', 'gcr.io/repo-automation-bots/data-processor']
 
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-instance"
     waitFor: ["submit-docker"]
+    dir: './packages/monitoring-system/data-processor'
     entrypoint: gcloud
     args: ['run', 'deploy,' '--image', 'gcr.io/repo-automation-bots/data-processor', '--platform managed']
