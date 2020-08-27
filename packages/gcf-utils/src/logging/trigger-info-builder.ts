@@ -31,6 +31,7 @@ interface TriggerInfo {
      */
     payload_hash?: string;
     github_delivery_guid?: string;
+    github_event_type?: string;
 
     trigger_source_repo?: {
       owner: string;
@@ -67,18 +68,12 @@ export function buildTriggerInfo(
   }
 
   if (triggerType === TriggerType.GITHUB) {
-    const sourceRepo = getRepositoryDetails(requestBody);
-    const payload_hash = getPayloadHash(requestBody);
-
-    const sender = requestBody['sender'] || {};
-    const senderLogin: string = sender['login'] || UNKNOWN;
-
     const webhookProperties = {
-      trigger_source_repo: sourceRepo,
-      trigger_sender: senderLogin,
-      payload_hash: payload_hash,
+      trigger_source_repo: getRepositoryDetails(requestBody),
+      trigger_sender: requestBody.sender?.login || UNKNOWN,
+      payload_hash: getPayloadHash(requestBody),
+      github_event_type: getEventTypeDetails(requestBody),
     };
-
     triggerInfo.trigger = {...webhookProperties, ...triggerInfo.trigger};
   }
 
@@ -92,11 +87,11 @@ export function buildTriggerInfo(
 function getRepositoryDetails(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   requestBody: {[key: string]: any}
-):  {
-  repo_name: string,
-  owner: string,
-  owner_type: string,
-  url: string,
+): {
+  repo_name: string;
+  owner: string;
+  owner_type: string;
+  url: string;
 } {
   const UNKNOWN = 'UNKNOWN';
 
@@ -117,12 +112,23 @@ function getRepositoryDetails(
     owner: ownerName,
     owner_type: ownerType,
     url: url,
-  }
+  };
+}
+
+/**
+ * Returns a description of the GitHub Event type
+ * @param requestBody the body of the incoming GitHub Webhook request
+ */
+function getEventTypeDetails(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  requestBody: {[key: string]: any}
+): string {
+  throw new Error('Not implemented');
 }
 
 /**
  * Return a hash of the GitHub Webhook Payload
- * @param requestBody body of incoming webhook request
+ * @param requestBody the body of the incoming GitHub Webhook request
  */
 function getPayloadHash(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -75,7 +75,7 @@ describe('buildTriggerInfo', () => {
 
   it('returns correct Github trigger info', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const requestBody = require('../../test/fixtures/github-webhook-payload-all-info.json');
+    const requestBody = require('../../test/fixtures/github-webhook-payload-issue-opened.json');
     const github_delivery_guid = '1234';
     const triggerType = TriggerType.GITHUB;
     const triggerInfo = buildTriggerInfo(
