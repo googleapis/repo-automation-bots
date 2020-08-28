@@ -16,10 +16,12 @@
 import {Probot} from 'probot';
 import {resolve} from 'path';
 import nock from 'nock';
-import sinon from 'sinon';
-import {describe, it, beforeEach} from 'mocha';
+import sinon, {SinonStub} from 'sinon';
+import {describe, it, beforeEach, afterEach} from 'mocha';
 
 import handler from '../src/merge-on-green';
+import {logger} from 'gcf-utils';
+import {assert} from 'console';
 
 interface Label {
   name: string;
@@ -68,17 +70,13 @@ function getLatestCommit(response: HeadSha[]) {
 
 function getStatusi(ref: string, response: CheckStatus[]) {
   return nock('https://api.github.com')
-    .get(
-      `/repos/testOwner/testRepo/commits/${ref}/statuses?per_page=100&page=0`
-    )
+    .get(`/repos/testOwner/testRepo/commits/${ref}/statuses`)
     .reply(200, response);
 }
 
 function getRuns(ref: string, response: CheckRuns) {
   return nock('https://api.github.com')
-    .get(
-      `/repos/testOwner/testRepo/commits/${ref}/check-runs?per_page=100&page=0`
-    )
+    .get(`/repos/testOwner/testRepo/commits/${ref}/check-runs`)
     .reply(200, response);
 }
 
@@ -130,12 +128,26 @@ function updateBranch() {
     .reply(200);
 }
 
-function getBranchProtection(requiredStatusChecks: string[]) {
+function getBranchProtection(status: number, requiredStatusChecks: string[]) {
   return nock('https://api.github.com')
     .get('/repos/testOwner/testRepo/branches/master/protection')
-    .reply(200, {
+    .reply(status, {
       required_status_checks: {
         contexts: requiredStatusChecks,
+      },
+    });
+}
+
+function getRateLimit(remaining: number) {
+  return nock('https://api.github.com')
+    .get('/rate_limit')
+    .reply(200, {
+      resources: {
+        core: {
+          limit: 5000,
+          remaining: remaining,
+          reset: 1372700873,
+        },
       },
     });
 }
@@ -176,6 +188,7 @@ describe('merge-on-green', () => {
     handler.removePR = async () => {
       return Promise.resolve(undefined);
     };
+
     handler.getDatastore = async () => {
       const pr = [
         [
@@ -184,6 +197,7 @@ describe('merge-on-green', () => {
             number: 1,
             owner: 'testOwner',
             created: Date.now(),
+            branchProtection: ['Special Check'],
           },
         ],
       ];
@@ -192,8 +206,8 @@ describe('merge-on-green', () => {
 
     it('merges a PR on green', async () => {
       const scopes = [
+        getRateLimit(5000),
         getPR(true, 'clean', 'open'),
-        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -207,6 +221,7 @@ describe('merge-on-green', () => {
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
+        getCommentsOnPr([]),
         merge(),
       ];
 
@@ -221,8 +236,8 @@ describe('merge-on-green', () => {
 
     it('merges a PR on green with an exact label', async () => {
       const scopes = [
+        getRateLimit(5000),
         getPR(true, 'clean', 'open'),
-        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -236,6 +251,7 @@ describe('merge-on-green', () => {
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
+        getCommentsOnPr([]),
         merge(),
       ];
 
@@ -250,8 +266,8 @@ describe('merge-on-green', () => {
 
     it('fails when a review has not been approved', async () => {
       const scopes = [
+        getRateLimit(5000),
         getPR(true, 'clean', 'open'),
-        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -271,6 +287,7 @@ describe('merge-on-green', () => {
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
+        getCommentsOnPr([]),
       ];
 
       await probot.receive({
@@ -284,8 +301,8 @@ describe('merge-on-green', () => {
 
     it('fails if there is no commit', async () => {
       const scopes = [
+        getRateLimit(5000),
         getPR(true, 'clean', 'open'),
-        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -312,8 +329,8 @@ describe('merge-on-green', () => {
 
     it('fails if there is no MOG label', async () => {
       const scopes = [
+        getRateLimit(5000),
         getPR(true, 'clean', 'open'),
-        getBranchProtection(['Special Check']),
         getMogLabel([{name: 'this is not the label you are looking for'}]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
       ];
@@ -329,8 +346,8 @@ describe('merge-on-green', () => {
 
     it('fails if there are no status checks', async () => {
       const scopes = [
+        getRateLimit(5000),
         getPR(true, 'clean', 'open'),
-        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -342,6 +359,7 @@ describe('merge-on-green', () => {
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
+        getCommentsOnPr([]),
       ];
 
       await probot.receive({
@@ -355,8 +373,8 @@ describe('merge-on-green', () => {
 
     it('fails if the status checks have failed', async () => {
       const scopes = [
+        getRateLimit(5000),
         getPR(true, 'clean', 'open'),
-        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -370,6 +388,7 @@ describe('merge-on-green', () => {
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'failure', context: 'Special Check'},
         ]),
+        getCommentsOnPr([]),
       ];
 
       await probot.receive({
@@ -383,8 +402,8 @@ describe('merge-on-green', () => {
 
     it('passes if checks are actually check runs', async () => {
       const scopes = [
+        getRateLimit(5000),
         getPR(true, 'clean', 'open'),
-        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -404,69 +423,7 @@ describe('merge-on-green', () => {
             },
           ],
         }),
-        merge(),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository',
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    it('rejects status checks that do not match the required check', async () => {
-      const scopes = [
-        getPR(true, 'clean', 'open'),
-        getBranchProtection(["this is what we're looking for"]),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge'}]),
-        //Intentionally giving this status check a misleading name. We want subtests to match the beginning
-        //of required status checks, not the other way around. i.e., if the required status check is "passes"
-        //then it should reject a status check called "passe", but pass one called "passesS"
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: "this is what we're looking fo"},
-        ]),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository',
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    it('accepts status checks that match the beginning of the required status check', async () => {
-      const scopes = [
-        getPR(true, 'clean', 'open'),
-        getBranchProtection(["this is what we're looking for"]),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {
-            state: 'success',
-            context: "this is what we're looking for/subtest",
-          },
-        ]),
+        getCommentsOnPr([]),
         merge(),
       ];
 
@@ -481,8 +438,8 @@ describe('merge-on-green', () => {
 
     it('fails if no one has reviewed the PR', async () => {
       const scopes = [
+        getRateLimit(5000),
         getPR(true, 'clean', 'open'),
-        getBranchProtection(['Special Check']),
         getReviewsCompleted([]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
@@ -495,6 +452,7 @@ describe('merge-on-green', () => {
             },
           ],
         }),
+        getCommentsOnPr([]),
       ];
 
       await probot.receive({
@@ -506,10 +464,13 @@ describe('merge-on-green', () => {
       scopes.forEach(s => s.done());
     });
 
-    it('updates a branch if merge returns error', async () => {
+    //This method is supposed to include an error
+    it('updates a branch if merge returns error and branch is behind', async () => {
       const scopes = [
+        getRateLimit(5000),
         getPR(true, 'behind', 'open'),
-        getBranchProtection(['Special Check']),
+        getMogLabel([{name: 'automerge'}]),
+        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -518,11 +479,10 @@ describe('merge-on-green', () => {
             id: 12345,
           },
         ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
+        getCommentsOnPr([]),
         mergeWithError(),
         updateBranch(),
       ];
@@ -536,10 +496,11 @@ describe('merge-on-green', () => {
       scopes.forEach(s => s.done());
     });
 
-    it('comments on PR if branch is dirty', async () => {
+    //This method is supposed to include an error
+    it('comments on PR if branch is dirty and merge returns with error', async () => {
       const scopes = [
+        getRateLimit(5000),
         getPR(true, 'dirty', 'open'),
-        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -548,11 +509,13 @@ describe('merge-on-green', () => {
             id: 12345,
           },
         ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
+        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
+        getCommentsOnPr([]),
+        mergeWithError(),
         commentOnPR(),
       ];
 
@@ -567,8 +530,10 @@ describe('merge-on-green', () => {
 
     it('fails if PR is closed', async () => {
       const scopes = [
+        getRateLimit(5000),
         getPR(true, 'clean', 'closed'),
-        getBranchProtection(['Special Check']),
+        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getMogLabel([{name: 'automerge'}]),
       ];
 
       await probot.receive({
@@ -580,12 +545,81 @@ describe('merge-on-green', () => {
       scopes.forEach(s => s.done());
     });
 
-    it('comments and fails if there are no required status checks', async () => {
+    //This test is supposed to include an error
+    it('does not comment if comment is already on PR and merge errors', async () => {
       const scopes = [
-        getPR(true, 'clean', 'open'),
-        getBranchProtection([]),
-        commentOnPR(),
+        getRateLimit(5000),
+        getPR(true, 'dirty', 'open'),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
+          },
+        ]),
+        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getMogLabel([{name: 'automerge'}]),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          {state: 'success', context: 'Special Check'},
+        ]),
+        getCommentsOnPr([
+          {
+            body:
+              'Your PR has conflicts that you need to resolve before merge-on-green can automerge',
+          },
+        ]),
+        mergeWithError(),
       ];
+
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: {org: 'testOwner'},
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
+    });
+
+    it('dismisses reviews if the label is set to exact', async () => {
+      const scopes = [
+        getRateLimit(5000),
+        getPR(true, 'clean', 'open'),
+        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getMogLabel([{name: 'automerge: exact'}]),
+        getReviewsCompleted([
+          {
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '12345',
+            id: 12345,
+          },
+          {
+            user: {login: 'octokitten'},
+            state: 'APPROVED',
+            commit_id: '12345',
+            id: 12345,
+          },
+        ]),
+        dismissReview(),
+        dismissReview(),
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          {state: 'success', context: 'Special Check'},
+        ]),
+        getCommentsOnPr([]),
+      ];
+
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: {org: 'testOwner'},
+        id: 'abc123',
+      });
+      scopes.forEach(s => s.done());
+    });
+
+    it('does not execute if there is no more space for requests', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const scopes = [getRateLimit(0)];
 
       await probot.receive({
         name: 'schedule.repository',
@@ -605,14 +639,15 @@ describe('merge-on-green', () => {
               number: 1,
               owner: 'testOwner',
               created: -14254782000,
+              branchProtection: ['Special Check'],
             },
           ],
         ];
         return pr;
       };
       const scopes = [
+        getRateLimit(5000),
         getPR(true, 'clean', 'open'),
-        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -626,6 +661,7 @@ describe('merge-on-green', () => {
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'failure', context: 'Special Check'},
         ]),
+        getCommentsOnPr([]),
         commentOnPR(),
         removeMogLabel(),
       ];
@@ -648,14 +684,15 @@ describe('merge-on-green', () => {
               number: 1,
               owner: 'testOwner',
               created: Date.now() - 10920000, // 3 hours ago
+              branchProtection: ['Special Check'],
             },
           ],
         ];
         return pr;
       };
       const scopes = [
+        getRateLimit(5000),
         getPR(true, 'clean', 'open'),
-        getBranchProtection(['Special Check']),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -669,6 +706,7 @@ describe('merge-on-green', () => {
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'failure', context: 'Special Check'},
         ]),
+        getCommentsOnPr([]),
         commentOnPR(),
       ];
 
@@ -681,10 +719,25 @@ describe('merge-on-green', () => {
       scopes.forEach(s => s.done());
     });
 
-    it('does not comment if comment is already on PR', async () => {
+    it('rejects status checks that do not match the required check', async () => {
+      handler.getDatastore = async () => {
+        const pr = [
+          [
+            {
+              repo: 'testRepo',
+              number: 1,
+              owner: 'testOwner',
+              created: Date.now(),
+              branchProtection: ["this is what we're looking for"],
+            },
+          ],
+        ];
+        return pr;
+      };
+
       const scopes = [
-        getPR(true, 'dirty', 'open'),
-        getBranchProtection(['Special Check']),
+        getRateLimit(5000),
+        getPR(true, 'clean', 'open'),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -693,17 +746,63 @@ describe('merge-on-green', () => {
             id: 12345,
           },
         ]),
-        getCommentsOnPr([
+        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        getMogLabel([{name: 'automerge'}]),
+        //Intentionally giving this status check a misleading name. We want subtests to match the beginning
+        //of required status checks, not the other way around. i.e., if the required status check is "passes"
+        //then it should reject a status check called "passe", but pass one called "passesS"
+        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+          {state: 'success', context: "this is what we're looking fo"},
+        ]),
+        getCommentsOnPr([]),
+      ];
+
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: {org: 'testOwner'},
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
+    });
+
+    it('accepts status checks that match the beginning of the required status check', async () => {
+      handler.getDatastore = async () => {
+        const pr = [
+          [
+            {
+              repo: 'testRepo',
+              number: 1,
+              owner: 'testOwner',
+              created: Date.now(),
+              branchProtection: ["this is what we're looking for"],
+            },
+          ],
+        ];
+        return pr;
+      };
+
+      const scopes = [
+        getRateLimit(5000),
+        getPR(true, 'clean', 'open'),
+        getReviewsCompleted([
           {
-            body:
-              'Your PR has conflicts that you need to resolve before merge-on-green can automerge',
+            user: {login: 'octocat'},
+            state: 'APPROVED',
+            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+            id: 12345,
           },
         ]),
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
+          {
+            state: 'success',
+            context: "this is what we're looking for/subtest",
+          },
         ]),
+        getCommentsOnPr([]),
+        merge(),
       ];
 
       await probot.receive({
@@ -714,63 +813,91 @@ describe('merge-on-green', () => {
 
       scopes.forEach(s => s.done());
     });
+  });
 
-    it('dismisses reviews if the label is set to exact', async () => {
-      const scopes = [
-        getPR(true, 'clean', 'open'),
-        getBranchProtection(['Special Check']),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '12345',
-            id: 12345,
-          },
-          {
-            user: {login: 'octokitten'},
-            state: 'APPROVED',
-            commit_id: '12345',
-            id: 12345,
-          },
-        ]),
-        getCommentsOnPr([
-          {
-            body:
-              'Your PR has conflicts that you need to resolve before merge-on-green can automerge',
-          },
-        ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge: exact'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
-        ]),
-        dismissReview(),
-        dismissReview(),
-      ];
+  describe('merge-on-green wrapper logic', () => {
+    let stub: SinonStub;
+    beforeEach(() => {
+      stub = sinon.stub(handler, 'addPR');
+    });
 
-      await probot.receive({
-        name: 'schedule.repository',
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
+    afterEach(() => {
+      stub.restore();
     });
 
     it('adds a PR when label is added correctly', async () => {
+      const scopes = [
+        getRateLimit(5000),
+        getBranchProtection(200, ['Special Check']),
+      ];
+
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
         'events',
         'pull_request_labeled'
       ));
-      const stub = sinon.stub(handler, 'addPR');
+
       await probot.receive({
         name: 'pull_request.labeled',
-        payload,
+        payload: payload,
         id: 'abc123',
       });
-      console.log('stub called? ' + stub.called);
+
+      scopes.forEach(s => s.done());
+
+      assert(stub.called);
+      logger.info('stub called? ' + stub.called);
+    });
+
+    //This function is supposed to respond with an error
+    it('does not add a PR if there is no branch protection and comments', async () => {
+      const scopes = [
+        getRateLimit(5000),
+        getBranchProtection(400, []),
+        commentOnPR(),
+      ];
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_labeled'
+      ));
+
+      await probot.receive({
+        name: 'pull_request.labeled',
+        payload: payload,
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
+
+      assert(!stub.called);
+
+      logger.info('stub called? ' + stub.called);
+    });
+
+    it('does not execute if there is no more space for requests', async () => {
+      const scopes = [getRateLimit(0)];
+
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_labeled'
+      ));
+
+      await probot.receive({
+        name: 'pull_request.labeled',
+        payload: payload,
+        id: 'abc123',
+      });
+
+      scopes.forEach(s => s.done());
+
+      assert(!stub.called);
+
+      logger.info('stub called? ' + stub.called);
     });
   });
 });
