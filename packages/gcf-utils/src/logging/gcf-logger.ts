@@ -15,92 +15,169 @@
 import pino from 'pino';
 import SonicBoom from 'sonic-boom';
 
-interface LogFn {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (msg: string, ...args: any[]): void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (obj: object, msg?: string, ...args: any[]): void;
-}
+type Destination = NodeJS.WritableStream | SonicBoom;
 
 /**
  * A logger standardized logger for Google Cloud Functions
  */
-export interface GCFLogger {
+export class GCFLogger {
+  private destination!: Destination;
+  private pino!: pino.Logger;
+
+  constructor(customDestination?: Destination) {
+    this.initPinoLogger(customDestination);
+  }
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+
   /**
    * Log at the trace level
    */
-  trace: LogFn;
+  public trace(msg: string, ...args: any[]): void;
+  public trace(obj: object, msg?: string, ...args: any[]): void;
+  public trace(
+    objOrMsg: object | string,
+    addMsg?: string,
+    ...args: any[]
+  ): void {
+    this.log('trace', objOrMsg, addMsg, ...args);
+  }
 
   /**
    * Log at the debug level
    */
-  debug: LogFn;
+  public debug(msg: string, ...args: any[]): void;
+  public debug(obj: object, msg?: string, ...args: any[]): void;
+  public debug(
+    objOrMsg: object | string,
+    addMsg?: string,
+    ...args: any[]
+  ): void {
+    this.log('debug', objOrMsg, addMsg, ...args);
+  }
 
   /**
    * Log at the info level
    */
-  info: LogFn;
+  public info(msg: string, ...args: any[]): void;
+  public info(obj: object, msg?: string, ...args: any[]): void;
+  public info(
+    objOrMsg: object | string,
+    addMsg?: string,
+    ...args: any[]
+  ): void {
+    this.log('info', objOrMsg, addMsg, ...args);
+  }
 
   /**
    * Log at the warn level
    */
-  warn: LogFn;
+  public warn(msg: string, ...args: any[]): void;
+  public warn(obj: object, msg?: string, ...args: any[]): void;
+  public warn(
+    objOrMsg: object | string,
+    addMsg?: string,
+    ...args: any[]
+  ): void {
+    this.log('warn', objOrMsg, addMsg, ...args);
+  }
 
   /**
    * Log at the error level
    */
-  error: LogFn;
+  public error(msg: string, ...args: any[]): void;
+  public error(obj: object, msg?: string, ...args: any[]): void;
+  public error(
+    objOrMsg: object | string,
+    addMsg?: string,
+    ...args: any[]
+  ): void {
+    this.log('error', objOrMsg, addMsg, ...args);
+  }
 
   /**
    * Log at the metric level
    */
-  metric: LogFn;
+  public metric(msg: string, ...args: any[]): void;
+  public metric(obj: object, msg?: string, ...args: any[]): void;
+  public metric(
+    objOrMsg: object | string,
+    addMsg?: string,
+    ...args: any[]
+  ): void {
+    this.log('metric', objOrMsg, addMsg, ...args);
+  }
+
+  private log(
+    level: string,
+    objOrMsg: object | string,
+    addMsg?: string,
+    ...args: any[]
+  ): void {
+    if (typeof objOrMsg === 'object') {
+      this.pino[level](objOrMsg, addMsg, ...args);
+    } else {
+      this.pino[level](objOrMsg, ...args);
+    }
+  }
+
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   /**
    * Synchronously flush the buffer for this logger.
    * NOTE: Only supported for SonicBoom destinations
    */
-  flushSync: {(): void};
-}
-
-export function initLogger(
-  dest?: NodeJS.WritableStream | SonicBoom
-): GCFLogger {
-  const DEFAULT_LOG_LEVEL = 'trace';
-  const defaultOptions: pino.LoggerOptions = {
-    formatters: {
-      level: pinoLevelToCloudLoggingSeverity,
-    },
-    customLevels: {
-      metric: 30,
-    },
-    base: null,
-    messageKey: 'message',
-    timestamp: false,
-    level: DEFAULT_LOG_LEVEL,
-  };
-
-  dest = dest || pino.destination({sync: true});
-  const logger = pino(defaultOptions, dest);
-  Object.keys(logger).map(prop => {
-    if (logger[prop] instanceof Function) {
-      logger[prop] = logger[prop].bind(logger);
+  public flushSync() {
+    if (this.destination instanceof SonicBoom) {
+      this.destination.flushSync();
     }
-  });
+  }
 
-  const flushSync = () => {
-    // flushSync is only available for SonicBoom,
-    // which is the default destination wrapper for GCFLogger
-    if (dest instanceof SonicBoom) {
-      dest.flushSync();
-    }
-  };
+  /**
+   * Adds static properties to all logs
+   * @param properties static properties to bind
+   */
+  public addBindings(properties: object) {
+    this.pino = this.pino.child(properties);
+  }
 
-  return {
-    ...logger,
-    metric: logger.metric.bind(logger),
-    flushSync: flushSync,
-  };
+  /**
+   * Return the current bindings
+   */
+  public getBindings(): object {
+    return this.pino.bindings();
+  }
+
+  /**
+   * Remove all current property bindings
+   */
+  public resetBindings() {
+    // Pino provides no way to remove bindings
+    // so we have to throw away the old logger
+    console.log('resetting');
+    this.initPinoLogger(this.destination);
+  }
+
+  private initPinoLogger(dest?: Destination) {
+    const defaultOptions = this.getPinoConfig();
+    this.destination = dest || pino.destination({sync: true});
+    this.pino = pino(defaultOptions, this.destination);
+  }
+
+  private getPinoConfig(): pino.LoggerOptions {
+    return {
+      formatters: {
+        level: pinoLevelToCloudLoggingSeverity,
+      },
+      customLevels: {
+        metric: 30,
+      },
+      base: null,
+      messageKey: 'message',
+      timestamp: false,
+      level: 'trace',
+    };
+  }
 }
 
 /**

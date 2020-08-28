@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {logger} from '../src/gcf-utils';
-import {GCFLogger, initLogger} from '../src/logging/gcf-logger';
+import {GCFLogger} from '../src/logging/gcf-logger';
 import {describe, beforeEach, it} from 'mocha';
 import {ObjectWritableMock} from 'stream-mock';
 import {validateLogs, LogLine, logLevels} from './test-helpers';
@@ -62,7 +62,9 @@ describe('GCFLogger', () => {
 
     beforeEach(() => {
       destination = new ObjectWritableMock();
-      logger = initLogger(destination) as GCFLogger & {[key: string]: Function};
+      logger = new GCFLogger(destination) as GCFLogger & {
+        [key: string]: Function;
+      };
     });
 
     testAllLevels();

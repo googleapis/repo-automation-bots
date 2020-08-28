@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFLogger, initLogger} from '../../src/logging/gcf-logger';
+import {GCFLogger} from '../../src/logging/gcf-logger';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import pino from 'pino';
 import {validateLogs, LogLine, logLevels} from '../test-helpers';
@@ -69,7 +69,9 @@ describe('GCFLogger Integration', () => {
 
   beforeEach(() => {
     destination = pino.destination(testStreamPath);
-    logger = initLogger(destination) as GCFLogger & {[key: string]: Function};
+    logger = new GCFLogger(destination) as GCFLogger & {
+      [key: string]: Function;
+    };
   });
 
   testAllLevels();

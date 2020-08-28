@@ -19,7 +19,7 @@ import * as express from 'express';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
-import {GCFLogger, initLogger} from './logging/gcf-logger';
+import {GCFLogger} from './logging/gcf-logger';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
 
@@ -54,7 +54,7 @@ export interface WrapOptions {
   logging: boolean;
 }
 
-export const logger: GCFLogger = initLogger();
+export const logger = new GCFLogger();
 
 export interface CronPayload {
   repository: {
@@ -200,7 +200,9 @@ export class GCFBootstrapper {
         taskId
       );
 
-      logger.metric(buildTriggerInfo(triggerType, id, request.body));
+      logger.resetBindings();
+      logger.addBindings(buildTriggerInfo(triggerType, id, request.body));
+      logger.metric(`Execution started by ${triggerType}`);
 
       try {
         if (triggerType === TriggerType.UNKNOWN) {
