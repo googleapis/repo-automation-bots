@@ -86,18 +86,24 @@ export function handler(app: Application) {
     'repository.transferred',
     'label.edited',
     'label.deleted',
-    'schedule.repository',
   ];
 
   app.on(events, async c => {
     const [owner, repo] = c.payload.repository.full_name.split('/');
+    await reconcileLabels(c.github, owner, repo);
+  });
+
+  app.on('schedule.repository', async c => {
+    const owner = c.payload.organization.login;
+    const repo = c.payload.repository.name;
+
     logger.info(`running for org ${c.payload.cron_org}`);
-    
+
     if (c.payload.cron_org !== owner) {
       logger.info(`skipping run for ${c.payload.cron_org}`);
       return;
     }
-  
+
     await reconcileLabels(c.github, owner, repo);
   });
 
