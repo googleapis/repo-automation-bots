@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-token-file: &token-file "firebase-token.txt" # intermediary file to save token
-
 steps:
   - name: gcr.io/cloud-builders/gcloud
     id: "get-firebase-token"
@@ -23,11 +21,21 @@ steps:
     args: 
       - "-e"
       - "./scripts/get-token.sh"
-      - *token-file
+      - &token-file "firebase-token.txt"
 
   - name: gcr.io/cloud-builders/npm
-    id: "deploy-dashboard"
+    id: "compile"
     waitFor: ["get-firebase-token"]
+    dir: './packages/monitoring-system/metrics-dashboard'
+    entrypoint: 'bash'
+    args: 
+      - "-c"
+      - "npm install && npm run compile"
+
+    # This image has been deployed from https://cloud.google.com/cloud-build/docs/deploying-builds/deploy-firebase
+  - name: gcr.io/repo-automation-bots/firebase
+    id: "deploy-dashboard"
+    waitFor: ["compile"]
     dir: './packages/monitoring-system/metrics-dashboard'
     entrypoint: bash
     args:

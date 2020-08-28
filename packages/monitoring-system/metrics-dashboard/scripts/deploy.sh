@@ -25,9 +25,5 @@ then
   exit 1
 fi
 
-# compile
-npm install
-npm run compile
-
 # deploy to Firebase
 firebase deploy --token "$(cat $1)"
