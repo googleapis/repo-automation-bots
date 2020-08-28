@@ -12,32 +12,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 steps:
   - name: gcr.io/cloud-builders/npm
     id: "compile"
     waitFor: ["-"]
-    dir: './packages/monitoring-system/data-processor'
+    dir: &workDir './packages/monitoring-system/data-processor'
     entrypoint: npm
     args: ['run', 'clean-compile']
 
-  - name: gcr.io/cloud-builders/docker
+  - name: 'gcr.io/cloud-builders/docker'
     id: "build-docker"
     waitFor: ["compile"]
-    dir: './packages/monitoring-system/data-processor'
+    dir: *workDir
     entrypoint: docker
-    args: ['build', '--tag', 'data-processor:1.0', '.']
-
-  - name: gcr.io/cloud-builders/gcloud
-    id: "submit-docker"
+    args: ['build', '-t', &tag 'gcr.io/repo-automation-bots/data-processor', '.']
+    
+  - name: 'gcr.io/cloud-builders/docker'
+    id: "push-docker"
     waitFor: ["build-docker"]
-    dir: './packages/monitoring-system/data-processor'
-    entrypoint: gcloud
-    args: ['builds', 'submit', '--tag', 'gcr.io/repo-automation-bots/data-processor']
+    dir: *workDir
+    entrypoint: docker
+    args: ['push', *tag]
 
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-instance"
-    waitFor: ["submit-docker"]
-    dir: './packages/monitoring-system/data-processor'
+    waitFor: ["push-docker"]
+    dir: *workDir
     entrypoint: gcloud
-    args: ['run', 'deploy,' '--image', 'gcr.io/repo-automation-bots/data-processor', '--platform managed']
+    args: [
+      'run', 
+      'deploy', 
+      'data-processor', 
+      '--image', 
+      *tag, 
+      '--platform', 
+      'managed', 
+      '--region', 
+      'us-central1'
+    ]
