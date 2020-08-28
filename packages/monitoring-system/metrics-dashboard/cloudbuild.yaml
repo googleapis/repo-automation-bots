@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+token-file: &token-file "firebase-token.txt" # intermediary file to save token
+
 steps:
   - name: gcr.io/cloud-builders/gcloud
     id: "get-firebase-token"
@@ -19,8 +21,9 @@ steps:
     dir: './packages/monitoring-system/metrics-dashboard'
     entrypoint: 'bash'
     args: 
-      - '-c'
-      - "gcloud secrets versions access latest --secret=firebase-token-metrics-dashboard --format='get(payload.data)' | tr '_-' '/+' | base64 -d > firebase-token.txt"
+      - "-e"
+      - "./scripts/get-token.sh"
+      - *token-file
 
   - name: gcr.io/cloud-builders/npm
     id: "deploy-dashboard"
@@ -29,4 +32,5 @@ steps:
     entrypoint: bash
     args:
       - "-e"
-      - "./scripts/deploy.sh firebase-token.txt"
+      - "./scripts/deploy.sh"
+      - *token-file

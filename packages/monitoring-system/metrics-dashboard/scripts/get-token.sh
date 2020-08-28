@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# build and deploy the dashboard from a fresh clone
+# grab token from secret manager and store it locally
 
 set -eo pipefail  # fail-fast and don't mask errors
 
@@ -25,9 +25,9 @@ then
   exit 1
 fi
 
-# compile
-npm install
-npm run compile
+tokenData=$(gcloud secrets versions access latest --secret=firebase-token-metrics-dashboard --format='get(payload.data)')
+trimmedTokenData=$(echo ${tokenData} | tr '_-' '/+')
+decodedToken=$(echo ${trimmedTokenData} | base64 -d)
 
-# deploy to Firebase
-firebase deploy --token "$(cat $1)"
+filePath=$1
+$(echo "${decodedToken}" > "${filePath}")
