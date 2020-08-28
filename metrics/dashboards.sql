@@ -194,7 +194,7 @@ SELECT * FROM (SELECT COUNT(id) as prs, month_start, 3.5 as minutes, 'context-aw
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id, JSON_EXTRACT(payload, '$.pull_request.merged_at') as merged
   FROM `githubarchive.day.20*`
   WHERE
-  _TABLE_SUFFIX BETWEEN '200701' AND '210101' AND
+  _TABLE_SUFFIX BETWEEN '190101' AND '210101' AND
   (
   repo.name LIKE 'googleapis/%' OR
   repo.name LIKE 'GoogleCloudPlatform/%'
