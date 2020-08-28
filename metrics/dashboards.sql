@@ -23,6 +23,18 @@ LANGUAGE js AS """
   return JSON.parse(json).map(x => JSON.stringify(x));
 """;
 
+CREATE TEMP FUNCTION has_key_value(json STRING, key STRING, expected STRING)
+RETURNS BOOL
+LANGUAGE js AS """
+  const parsed = JSON.parse(json)
+  for (const value of parsed) {
+    if (value[key] === expected) {
+      return true;
+    }
+  }
+  return false;
+""";
+
 /*
 Determines monthly releases by looking for "ReleaseEvent"s created by
 the yoshi-automation user.
@@ -145,7 +157,6 @@ WHERE merged IS NOT NULL
 GROUP BY month_start
 ORDER BY month_start ASC)
 
-
 UNION ALL 
 
 /*
@@ -165,6 +176,33 @@ SELECT * FROM (SELECT COUNT(id) as prs, month_start, 4.3 as minutes, 'merged-by-
   JSON_EXTRACT(payload, '$.action') LIKE '"closed"'
   AND JSON_EXTRACT(payload, '$.pull_request.merged_by.login') LIKE '"gcf-merge-on-green[bot]"' 
   AND type = 'PullRequestEvent'
+)
+WHERE merged IS NOT NULL
+GROUP BY month_start
+ORDER BY month_start ASC)
+
+UNION ALL
+
+/*
+Measure autosynth PRs with full context. We ran a survey wiht the Yoshi team,
+which indicated each of these PRs saves 3.5 minutes:
+
+We look for PRs that have a "context: full" label and were merged.
+*/
+
+SELECT * FROM (SELECT COUNT(id) as prs, month_start, 3.5 as minutes, 'context-aware-commit' as type FROM (
+  SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id, JSON_EXTRACT(payload, '$.pull_request.merged_at') as merged
+  FROM `githubarchive.day.20*`
+  WHERE
+  _TABLE_SUFFIX BETWEEN '200701' AND '210101' AND
+  (
+  repo.name LIKE 'googleapis/%' OR
+  repo.name LIKE 'GoogleCloudPlatform/%'
+  ) AND
+  type = 'PullRequestEvent' AND
+  JSON_EXTRACT(payload, '$.pull_request.head.ref') LIKE "%autosynth%" AND
+  JSON_EXTRACT(payload, '$.action') LIKE '"closed"' AND
+  has_key_value(JSON_EXTRACT(payload, '$.pull_request.labels'), 'name', 'context: full') = true
 )
 WHERE merged IS NOT NULL
 GROUP BY month_start
