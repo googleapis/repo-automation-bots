@@ -201,7 +201,7 @@ export class GCFBootstrapper {
       );
 
       logger.resetBindings();
-      logger.addBindings(buildTriggerInfo(triggerType, id, request.body));
+      logger.addBindings(buildTriggerInfo(triggerType, id, name, request.body));
       logger.metric(`Execution started by ${triggerType}`);
 
       try {
