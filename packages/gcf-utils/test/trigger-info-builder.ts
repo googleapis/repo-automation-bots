@@ -21,12 +21,7 @@ describe('buildTriggerInfo', () => {
   it('returns correct pub/sub trigger info', () => {
     const requestBody = {};
     const triggerType = TriggerType.PUBSUB;
-    const triggerInfo = buildTriggerInfo(
-      triggerType,
-      '',
-      '',
-      requestBody
-    );
+    const triggerInfo = buildTriggerInfo(triggerType, '', '', requestBody);
     const expectedInfo = {
       message: 'Execution started by Pub/Sub',
       trigger: {
@@ -39,12 +34,7 @@ describe('buildTriggerInfo', () => {
   it('returns correct scheduler trigger info', () => {
     const requestBody = {};
     const triggerType = TriggerType.SCHEDULER;
-    const triggerInfo = buildTriggerInfo(
-      triggerType,
-      '',
-      '',
-      requestBody
-    );
+    const triggerInfo = buildTriggerInfo(triggerType, '', '', requestBody);
     const expectedInfo = {
       message: 'Execution started by Cloud Scheduler',
       trigger: {
@@ -57,12 +47,7 @@ describe('buildTriggerInfo', () => {
   it('returns correct task trigger info', () => {
     const requestBody = {};
     const triggerType = TriggerType.TASK;
-    const triggerInfo = buildTriggerInfo(
-      triggerType,
-      '1234',
-      '',
-      requestBody
-    );
+    const triggerInfo = buildTriggerInfo(triggerType, '1234', '', requestBody);
     const expectedInfo = {
       message: 'Execution started by Cloud Task',
       trigger: {
@@ -89,14 +74,14 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
         github_delivery_guid: '1234',
-        github_event_type: "issue: opened",
+        github_event_type: 'issue: opened',
         trigger_source_repo: {
           owner: 'testOwner',
           owner_type: 'User',
           repo_name: 'testRepo',
           url: 'https://github.com/testOwner/testRepo',
         },
-        payload_hash: '7a142ffd5cbfe793332b45ed2cd22e5a',
+        payload_hash: '669f4417a11633569ed8b28ad41547fc',
       },
     };
     assert.deepEqual(triggerInfo, expectedInfo);
@@ -118,14 +103,14 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
         github_delivery_guid: '1234',
-        github_event_type: "issue: labeled",
+        github_event_type: 'issue: labeled',
         trigger_source_repo: {
           owner: 'testOwner',
           owner_type: 'User',
           repo_name: 'testRepo',
           url: 'https://github.com/testOwner/testRepo',
         },
-        payload_hash: '869a213d4bf2660eff1659b36554cacc',
+        payload_hash: 'd13a3476a348ae024584736dac212964',
       },
     };
     assert.deepEqual(triggerInfo, expectedInfo);
@@ -147,7 +132,7 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
         github_delivery_guid: '1234',
-        github_event_type: "label: deleted",
+        github_event_type: 'label: deleted',
         trigger_source_repo: {
           owner: 'testOwner',
           owner_type: 'User',
@@ -176,14 +161,14 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
         github_delivery_guid: '1234',
-        github_event_type: "pull_request: labeled",
+        github_event_type: 'pull_request: labeled',
         trigger_source_repo: {
           owner: 'testOwner',
           owner_type: 'User',
           repo_name: 'testRepo',
           url: 'https://github.com/testOwner/testRepo',
         },
-        payload_hash: 'f082fc594443d59f56c096d2380082b1',
+        payload_hash: '49c69366711b5d3d4aad7a9d9afef6fb',
       },
     };
     assert.deepEqual(triggerInfo, expectedInfo);
@@ -205,14 +190,14 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
         github_delivery_guid: '1234',
-        github_event_type: "pull_request: opened",
+        github_event_type: 'pull_request: opened',
         trigger_source_repo: {
           owner: 'testOwner',
           owner_type: 'User',
           repo_name: 'testRepo',
           url: 'https://github.com/testOwner/testRepo',
         },
-        payload_hash: '0fa7bf09fe3dc4d3d5e3cb784b5a5a89',
+        payload_hash: 'fb5cc31a1e4e1d6f871ec8f8173c77ab',
       },
     };
     assert.deepEqual(triggerInfo, expectedInfo);
@@ -234,14 +219,14 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
         github_delivery_guid: '1234',
-        github_event_type: "pull_request: synchronize",
+        github_event_type: 'pull_request: synchronize',
         trigger_source_repo: {
           owner: 'testOwner',
           owner_type: 'User',
           repo_name: 'testRepo',
           url: 'https://github.com/testOwner/testRepo',
         },
-        payload_hash: 'cbb27d7db59ca4d6cdd6116771fd5969',
+        payload_hash: '50faed8c2b56bd41629e9bc2216f9551',
       },
     };
     assert.deepEqual(triggerInfo, expectedInfo);
@@ -263,14 +248,14 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
         github_delivery_guid: '1234',
-        github_event_type: "release: released",
+        github_event_type: 'release: released',
         trigger_source_repo: {
           owner: 'testOwner',
           owner_type: 'User',
           repo_name: 'testRepo',
           url: 'https://github.com/testOwner/testRepo',
         },
-        payload_hash: '9ab5878f727ed29fda2999b240f879c4',
+        payload_hash: '736cf0da3841d4a2e4c0a86f0431c436',
       },
     };
     assert.deepEqual(triggerInfo, expectedInfo);
@@ -292,14 +277,14 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'UNKNOWN',
         github_delivery_guid: '',
-        github_event_type: "issues: opened",
+        github_event_type: 'issues: opened',
         trigger_source_repo: {
           owner: 'UNKNOWN',
           owner_type: 'UNKNOWN',
           repo_name: 'UNKNOWN',
           url: 'UNKNOWN',
         },
-        payload_hash: '6ceaa9d7875be85cc0796caf4e8da857',
+        payload_hash: '2dfaf99ccabc68e6138c86ea543a21ea',
       },
     };
     assert.deepEqual(triggerInfo, expectedInfo);

@@ -74,7 +74,10 @@ export function buildTriggerInfo(
       trigger_source_repo: getRepositoryDetails(requestBody),
       trigger_sender: requestBody.sender?.login || UNKNOWN,
       payload_hash: getPayloadHash(requestBody),
-      github_event_type: getEventTypeDetails(githubEventName, requestBody.action),
+      github_event_type: getEventTypeDetails(
+        githubEventName,
+        requestBody.action
+      ),
     };
     triggerInfo.trigger = {...webhookProperties, ...triggerInfo.trigger};
   }
@@ -121,12 +124,9 @@ function getRepositoryDetails(
  * Returns a description of the GitHub Event type
  * @param requestBody the body of the incoming GitHub Webhook request
  */
-function getEventTypeDetails(
-  eventName: string,
-  actionValue: string
-): string {
-  eventName = eventName === '' ? 'UNKNOWN': eventName
-  return `${eventName}${actionValue ? `: ${actionValue}` : ``}`
+function getEventTypeDetails(eventName: string, actionValue: string): string {
+  eventName = eventName === '' ? 'UNKNOWN' : eventName;
+  return `${eventName}${actionValue ? `: ${actionValue}` : ''}`;
 }
 
 /**

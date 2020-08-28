@@ -1,50 +1,34 @@
 {
-    "action": "opened",
-    "issue": {
-      "url": "https://api.github.com/repos/testOwner/testRepo/issues/5",
-      "repository_url": "https://api.github.com/repos/testOwner/testRepo",
-      "labels_url": "https://api.github.com/repos/testOwner/testRepo/issues/5/labels{/name}",
-      "comments_url": "https://api.github.com/repos/testOwner/testRepo/issues/5/comments",
-      "events_url": "https://api.github.com/repos/testOwner/testRepo/issues/5/events",
-      "html_url": "https://github.com/testOwner/testRepo/issues/5",
-      "id": 483744522,
-      "node_id": "MDU6SXNzdWU0ODM3NDQ1MjI=",
-      "number": 5,
-      "title": "Test Issue #3",
-      "labels": [],
-      "state": "open",
-      "locked": false,
-      "assignee": null,
-      "assignees": [],
-      "milestone": null,
-      "comments": 0,
-      "created_at": "2019-08-22T03:04:47Z",
-      "updated_at": "2019-08-22T03:04:47Z",
-      "closed_at": null,
-      "author_association": "OWNER",
-      "body": ""
-    },
-    "sender": {
-      "id": 31518063,
-      "node_id": "MDQ6VXNlcjMxNTE4MDYz",
-      "avatar_url": "https://avatars3.githubusercontent.com/u/31518063?v=4",
-      "gravatar_id": "",
-      "url": "https://api.github.com/users/testOwner",
-      "html_url": "https://github.com/testOwner",
-      "followers_url": "https://api.github.com/users/testOwner/followers",
-      "following_url": "https://api.github.com/users/testOwner/following{/other_user}",
-      "gists_url": "https://api.github.com/users/testOwner/gists{/gist_id}",
-      "starred_url": "https://api.github.com/users/testOwner/starred{/owner}{/repo}",
-      "subscriptions_url": "https://api.github.com/users/testOwner/subscriptions",
-      "organizations_url": "https://api.github.com/users/testOwner/orgs",
-      "repos_url": "https://api.github.com/users/testOwner/repos",
-      "events_url": "https://api.github.com/users/testOwner/events{/privacy}",
-      "received_events_url": "https://api.github.com/users/testOwner/received_events",
-      "type": "User",
-      "site_admin": false
-    },
-    "installation": {
-      "id": 1219791,
-      "node_id": "MDIzOkludGVncmF0aW9uSW5zdGFsbGF0aW9uMTIxOTc5MQ=="
-    }
+  "action": "opened",
+  "issue": {
+    "url": "https://api.github.com/repos/testOwner/testRepo/issues/5",
+    "id": 483744522,
+    "node_id": "MDU6SXNzdWU0ODM3NDQ1MjI=",
+    "number": 5,
+    "title": "Test Issue #3",
+    "labels": [],
+    "state": "open",
+    "locked": false,
+    "assignee": null,
+    "assignees": [],
+    "milestone": null,
+    "comments": 0,
+    "created_at": "2019-08-22T03:04:47Z",
+    "updated_at": "2019-08-22T03:04:47Z",
+    "closed_at": null,
+    "author_association": "OWNER",
+    "body": ""
+  },
+  "sender": {
+    "id": 31518063,
+    "node_id": "MDQ6VXNlcjMxNTE4MDYz",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/testOwner",
+    "type": "User",
+    "site_admin": false
+  },
+  "installation": {
+    "id": 1219791,
+    "node_id": "MDIzOkludGVncmF0aW9uSW5zdGFsbGF0aW9uMTIxOTc5MQ=="
   }
+}
