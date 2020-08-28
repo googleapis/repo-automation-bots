@@ -74,7 +74,7 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
         github_delivery_guid: '1234',
-        github_event_type: 'issue: opened',
+        github_event_type: 'issue.opened',
         trigger_source_repo: {
           owner: 'testOwner',
           owner_type: 'User',
@@ -103,7 +103,7 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
         github_delivery_guid: '1234',
-        github_event_type: 'issue: labeled',
+        github_event_type: 'issue.labeled',
         trigger_source_repo: {
           owner: 'testOwner',
           owner_type: 'User',
@@ -132,7 +132,7 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
         github_delivery_guid: '1234',
-        github_event_type: 'label: deleted',
+        github_event_type: 'label.deleted',
         trigger_source_repo: {
           owner: 'testOwner',
           owner_type: 'User',
@@ -161,7 +161,7 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
         github_delivery_guid: '1234',
-        github_event_type: 'pull_request: labeled',
+        github_event_type: 'pull_request.labeled',
         trigger_source_repo: {
           owner: 'testOwner',
           owner_type: 'User',
@@ -190,7 +190,7 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
         github_delivery_guid: '1234',
-        github_event_type: 'pull_request: opened',
+        github_event_type: 'pull_request.opened',
         trigger_source_repo: {
           owner: 'testOwner',
           owner_type: 'User',
@@ -219,7 +219,7 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
         github_delivery_guid: '1234',
-        github_event_type: 'pull_request: synchronize',
+        github_event_type: 'pull_request.synchronize',
         trigger_source_repo: {
           owner: 'testOwner',
           owner_type: 'User',
@@ -248,7 +248,7 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
         github_delivery_guid: '1234',
-        github_event_type: 'release: released',
+        github_event_type: 'release.released',
         trigger_source_repo: {
           owner: 'testOwner',
           owner_type: 'User',
@@ -277,7 +277,7 @@ describe('buildTriggerInfo', () => {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'UNKNOWN',
         github_delivery_guid: '',
-        github_event_type: 'issues: opened',
+        github_event_type: 'issues.opened',
         trigger_source_repo: {
           owner: 'UNKNOWN',
           owner_type: 'UNKNOWN',

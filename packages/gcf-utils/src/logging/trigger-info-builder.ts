@@ -126,7 +126,7 @@ function getRepositoryDetails(
  */
 function getEventTypeDetails(eventName: string, actionValue: string): string {
   eventName = eventName === '' ? 'UNKNOWN' : eventName;
-  return `${eventName}${actionValue ? `: ${actionValue}` : ''}`;
+  return `${eventName}${actionValue ? `.${actionValue}` : ''}`;
 }
 
 /**
