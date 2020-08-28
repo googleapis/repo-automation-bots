@@ -17,6 +17,6 @@ import appFn from './trusted-contribution';
 
 const bootstrap = new GCFBootstrapper();
 module.exports.trusted_contribution = bootstrap.gcf(appFn, {
-  background: true,
+  background: false,
   logging: true,
 });
