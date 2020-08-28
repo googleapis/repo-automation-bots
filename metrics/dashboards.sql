@@ -184,7 +184,7 @@ ORDER BY month_start ASC)
 UNION ALL
 
 /*
-Measure autosynth PRs with full context. We ran a survey wiht the Yoshi team,
+Measure autosynth PRs with full context. We ran a survey with the Yoshi team,
 which indicated each of these PRs saves 3.5 minutes:
 
 We look for PRs that have a "context: full" label and were merged.
