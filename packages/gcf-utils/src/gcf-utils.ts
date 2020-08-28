@@ -200,6 +200,10 @@ export class GCFBootstrapper {
         taskId
       );
 
+      /**
+       * Note: any logs written before resetting bindings may contain
+       * bindings from previous executions
+       */
       logger.resetBindings();
       logger.addBindings(buildTriggerInfo(triggerType, id, name, request.body));
       logger.metric(`Execution started by ${triggerType}`);
