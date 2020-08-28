@@ -10,6 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        node: [12]
         package: [
           'auto-label',
           'blunderbuss',
@@ -22,18 +23,20 @@ jobs:
           'label-sync',
           'merge-on-green',
           'monitoring-system/data-processor',
-          'publish',
           'release-please',
           'slo-stat-bot',
           'snippet-bot',
           'sync-repo-settings',
           'trusted-contribution'
         ]
+        include:
+          - node: 10
+            package: 'publish'
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: 12
+          node-version: ${{ matrix.node }}
       - run: echo ./packages/${{ matrix.package }}
       - run: cd ./packages/${{ matrix.package }}
       - run: npm install

@@ -23,7 +23,6 @@
     "compile": "tsc -p .",
     "start": "probot run ./build/src/slo-bot.js",
     "start:local": "node ./build/src/local.js",
-    "prepare": "npm run compile",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
@@ -38,7 +37,7 @@
   "devDependencies": {
     "@types/mocha": "^7.0.0",
     "@types/node": "^12.6.1",
-    "@types/sinon": "9.0.4",
+    "@types/sinon": "^9.0.5",
     "c8": "^7.1.0",
     "cross-env": "^7.0.0",
     "dotenv": "^8.0.0",
@@ -51,6 +50,6 @@
     "sinon": "^9.0.2"
   },
   "engines": {
-    "node": ">= 10.13.0"
+    "node": ">= 12.18.2"
   }
 }

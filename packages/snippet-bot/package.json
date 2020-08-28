@@ -21,7 +21,6 @@
     "compile": "tsc -p .",
     "start": "probot run ./build/src/snippet-bot.js",
     "start:local": "node ./build/src/local.js",
-    "prepare": "npm run compile",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
@@ -30,7 +29,10 @@
   },
   "dependencies": {
     "@octokit/rest": "^16.0.0",
-    "gcf-utils": "^5.5.1"
+    "gcf-utils": "^5.5.1",
+    "node-fetch": "^2.6.0",
+    "tar": "^6.0.5",
+    "tmp-promise": "^3.0.2"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
@@ -44,6 +46,9 @@
     "@types/mocha": "^8.0.0",
     "@types/nock": "^10.0.3",
     "@types/node": "^12.6.1",
+    "@types/node-fetch": "^2.5.7",
+    "@types/tar": "^4.0.3",
+    "@types/tmp": "^0.2.0",
     "body-parser": "^1.19.0",
     "c8": "^7.1.0",
     "chai": "^4.2.0",
@@ -58,6 +63,6 @@
     "typescript": "^3.5.3"
   },
   "engines": {
-    "node": ">= 10.13.0"
+    "node": ">= 12.18.2"
   }
 }

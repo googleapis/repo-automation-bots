@@ -18,7 +18,7 @@ import {Probot} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
-import {expect} from 'chai';
+import * as assert from 'assert';
 import {describe, it, beforeEach} from 'mocha';
 
 import {buildcop} from '../src/buildcop';
@@ -100,7 +100,7 @@ describe('buildcop', () => {
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
       // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest'),
+      Octokit: require('@octokit/rest').Octokit,
     });
     probot.app = {
       getSignedJsonWebToken() {
@@ -122,7 +122,7 @@ describe('buildcop', () => {
         want
       );
       const result = buildcop.extractBuildURL(input);
-      expect(result).to.equal(want);
+      assert.strictEqual(result, want);
     });
   });
 
@@ -133,7 +133,7 @@ describe('buildcop', () => {
         'utf8'
       );
       const results = findTestResults(input);
-      expect(results).to.eql({
+      assert.deepStrictEqual(results, {
         failures: [
           {
             package:
@@ -170,7 +170,7 @@ describe('buildcop', () => {
         'utf8'
       );
       const results = findTestResults(input);
-      expect(results).to.eql({
+      assert.deepStrictEqual(results, {
         failures: [
           {
             package:
@@ -217,7 +217,7 @@ describe('buildcop', () => {
         'utf8'
       );
       const results = findTestResults(input);
-      expect(results).to.eql({
+      assert.deepStrictEqual(results, {
         failures: [],
         passes: [
           {
@@ -241,7 +241,7 @@ describe('buildcop', () => {
         'utf8'
       );
       const results = findTestResults(input);
-      expect(results).to.eql({
+      assert.deepStrictEqual(results, {
         passes: [],
         failures: [],
       });
@@ -253,7 +253,7 @@ describe('buildcop', () => {
         'utf8'
       );
       const results = findTestResults(input);
-      expect(results).to.eql({
+      assert.deepStrictEqual(results, {
         failures: [],
         passes: [
           {
@@ -273,7 +273,7 @@ describe('buildcop', () => {
         testCase: 'TestPublish',
         passed: true,
       });
-      expect(got).to.equal('pubsub: TestPublish failed');
+      assert.strictEqual(got, 'pubsub: TestPublish failed');
     });
 
     it('shortens test with / in name', () => {
@@ -282,7 +282,7 @@ describe('buildcop', () => {
         testCase: 'TestPublish/One',
         passed: true,
       });
-      expect(got).to.equal('pubsub: TestPublish failed');
+      assert.strictEqual(got, 'pubsub: TestPublish failed');
     });
   });
 
@@ -428,6 +428,19 @@ describe('buildcop', () => {
         const payload = buildPayload('java_one_failed.xml', 'java-vision');
 
         const scopes = [nockIssues('java-vision'), nockNewIssue('java-vision')];
+
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('opens an issue 2 [Java]', async () => {
+        const payload = buildPayload('java_one_error.xml', 'java-datastore');
+
+        const scopes = [
+          nockIssues('java-datastore'),
+          nockNewIssue('java-datastore'),
+        ];
 
         await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
 

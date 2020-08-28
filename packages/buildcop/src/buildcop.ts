@@ -23,14 +23,10 @@
  */
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
+import {Application, GitHubAPI, Octokit} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {LoggerWithTarget} from 'probot/lib/wrap-logger';
-// eslint-disable-next-line node/no-extraneous-import
-import {GitHubAPI} from 'probot/lib/github';
 import xmljs from 'xml-js';
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
 
 const ISSUE_LABEL = 'buildcop: issue';
 const FLAKY_LABEL = 'buildcop: flaky';
@@ -833,9 +829,9 @@ buildcop.findTestResults = (xml: string): TestResults => {
       if (testcase['skipped'] !== undefined) {
         continue;
       }
-      const failure = testcase['failure'];
-      const error = testcase['error'];
-      if (failure === undefined && error === undefined) {
+      // Treat errors and failures the same way.
+      const failure = testcase['failure'] || testcase['error'];
+      if (failure === undefined) {
         passes.push({
           package: pkg,
           testCase: testcase['_attributes'].name,
@@ -843,12 +839,8 @@ buildcop.findTestResults = (xml: string): TestResults => {
         });
         continue;
       }
-      // Here we must have a failure or an error.
-      let log = failure === undefined ? error['_text'] : failure['_text'];
-      // Java puts its test logs in a CDATA element.
-      if (log === undefined) {
-        log = failure['_cdata'];
-      }
+      // Java puts its test logs in a CDATA element; other languages use _text.
+      const log = failure['_text'] || failure['_cdata'] || '';
       failures.push({
         package: pkg,
         testCase: testcase['_attributes'].name,

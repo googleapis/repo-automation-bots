@@ -24,7 +24,7 @@ import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
 import assert from 'assert';
-import {describe, it, beforeEach} from 'mocha';
+import {describe, it, beforeEach, afterEach} from 'mocha';
 
 nock.disableNetConnect();
 
@@ -35,6 +35,10 @@ describe('snippet-bot', () => {
 
   const config = fs.readFileSync(
     resolve(fixturesPath, 'config', 'valid-config.yml')
+  );
+
+  const tarBall = fs.readFileSync(
+    resolve(fixturesPath, 'tmatsuo-python-docs-samples-abcde.tar.gz')
   );
 
   beforeEach(() => {
@@ -48,6 +52,10 @@ describe('snippet-bot', () => {
       },
     };
     probot.load(myProbotApp);
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
   });
 
   describe('reads the config file', () => {
@@ -110,6 +118,33 @@ describe('snippet-bot', () => {
       requests.done();
     });
 
+    it('does not submit a check on PR if there are no region tags', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
+      const payload = require(resolve(fixturesPath, './pr_event'));
+      const blob = require(resolve(fixturesPath, './blob_no_region_tags'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/.github/snippet-bot.yml'
+        )
+        .reply(200, {content: config.toString('base64')})
+        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+        .reply(200, changedFiles)
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+        )
+        .reply(200, blob);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+    });
+
     it('exits early when it failed to read the config', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './pr_event'));
@@ -129,7 +164,7 @@ describe('snippet-bot', () => {
       requests.done();
     });
 
-    it('sets a "success" context on PR by ignoreFile', async () => {
+    it('does not submit a check on PR by ignoreFile', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
       const payload = require(resolve(fixturesPath, './pr_event'));
@@ -144,12 +179,7 @@ describe('snippet-bot', () => {
         )
         .reply(200, {content: ignoreConfig.toString('base64')})
         .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
-        .reply(200, changedFiles)
-        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
-          snapshot(body);
-          return true;
-        })
-        .reply(200);
+        .reply(200, changedFiles);
 
       await probot.receive({
         name: 'pull_request',
@@ -160,7 +190,7 @@ describe('snippet-bot', () => {
       requests.done();
     });
 
-    it('sets a "success" context on PR because the file was just deleted', async () => {
+    it('does not submit a check on PR because the file was just deleted', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const changedFiles = require(resolve(fixturesPath, './pr_files_deleted'));
       const payload = require(resolve(fixturesPath, './pr_event'));
@@ -171,12 +201,7 @@ describe('snippet-bot', () => {
         )
         .reply(200, {content: config.toString('base64')})
         .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
-        .reply(200, changedFiles)
-        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
-          snapshot(body);
-          return true;
-        })
-        .reply(200);
+        .reply(200, changedFiles);
 
       await probot.receive({
         name: 'pull_request',
@@ -207,6 +232,84 @@ describe('snippet-bot', () => {
       });
 
       requests.done();
+    });
+  });
+
+  describe('responds to issue', () => {
+    it('quits early because issue title does not contain the command', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const payload = require(resolve(fixturesPath, './issue_event_no_scan'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/python-docs-samples/contents/.github/snippet-bot.yml'
+        )
+        .reply(200, {content: config.toString('base64')});
+
+      await probot.receive({
+        name: 'issues.opened',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+    });
+    it('reports failure upon download failure', async () => {
+      const payload = require(resolve(fixturesPath, './issue_event'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/python-docs-samples/contents/.github/snippet-bot.yml'
+        )
+        .reply(200, {content: config.toString('base64')})
+        .patch('/repos/tmatsuo/python-docs-samples/issues/10', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      const tarBallRequests = nock('https://github.com')
+        .get('/tmatsuo/python-docs-samples/tarball/master')
+        .reply(403, {content: 'Error'});
+
+      await probot.receive({
+        name: 'issues.opened',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+      tarBallRequests.done();
+    });
+    it('reports the scan result', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const payload = require(resolve(fixturesPath, './issue_event'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/python-docs-samples/contents/.github/snippet-bot.yml'
+        )
+        .reply(200, {content: config.toString('base64')})
+        .patch('/repos/tmatsuo/python-docs-samples/issues/10', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      const tarBallRequests = nock('https://github.com')
+        .get('/tmatsuo/python-docs-samples/tarball/master')
+        .reply(200, tarBall, {
+          'Content-Type': 'application/tar+gzip',
+        });
+
+      await probot.receive({
+        name: 'issues.opened',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+      tarBallRequests.done();
     });
   });
 });
