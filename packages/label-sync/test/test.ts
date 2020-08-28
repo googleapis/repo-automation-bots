@@ -109,7 +109,7 @@ describe('Label Sync', () => {
       nockFetchOldLabels([]),
       nockLabelCreate(newLabels.labels.length + 1),
     ];
-    await probot.receive({name: 'repository', payload, id: 'abc123'});
+    await probot.receive({name: 'repository.created', payload, id: 'abc123'});
     scopes.forEach(s => s.done());
   });
 
@@ -139,7 +139,7 @@ describe('Label Sync', () => {
       nockLabelCreate(newLabels.labels.length + 1),
       nockLabelDelete(labelName),
     ];
-    await probot.receive({name: 'repository', payload, id: 'abc123'});
+    await probot.receive({name: 'repository.created', payload, id: 'abc123'});
     scopes.forEach(s => s.done());
   });
 
@@ -154,7 +154,7 @@ describe('Label Sync', () => {
       nockLabelCreate(1),
       nockLabelUpdate(labelName),
     ];
-    await probot.receive({name: 'label', payload, id: 'abc123'});
+    await probot.receive({name: 'label.deleted', payload, id: 'abc123'});
     scopes.forEach(s => s.done());
   });
 
@@ -179,8 +179,27 @@ describe('Label Sync', () => {
       nockFetchOldLabels([]),
       nockLabelCreate(newLabels.labels.length),
     ];
-    await probot.receive({name: 'repository', payload, id: 'abc123'});
+    await probot.receive({name: 'repository.created', payload, id: 'abc123'});
     scopes.forEach(s => s.done());
     assert.ok(getApiLabelsStub.calledOnce);
+  });
+
+  it('should sync labels on cron job', async () => {
+    const scopes = [
+      nockFetchOldLabels([]),
+      nockLabelCreate(newLabels.labels.length + 1),
+    ];
+
+    await probot.receive({
+      name: 'schedule.repository',
+      payload: {
+        cron_org: 'Codertocat',
+        organization: {login: 'Codertocat'},
+        repository: {name: 'Hello-World'},
+      },
+      id: 'abc123',
+    });
+
+    scopes.forEach(s => s.done());
   });
 });
