@@ -200,7 +200,7 @@ export class GCFBootstrapper {
         taskId
       );
 
-      logger.metric(buildTriggerInfo(triggerType, id, request.body));
+      logger.metric(buildTriggerInfo(triggerType, id, name, request.body));
 
       try {
         if (triggerType === TriggerType.UNKNOWN) {

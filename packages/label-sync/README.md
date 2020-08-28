@@ -5,6 +5,8 @@ The bot will find labels that should be created from two sources:
 - Process labels - There is a common set of labels available in [labels.json](https://github.com/googleapis/repo-automation-bots/blob/master/packages/label-sync/src/labels.json).  Those should be automatically added.  Examples here are `priority: p1`, `type: process`, and `external`.
 - API labels - For every API tracked in devrel services, an `api: service_name` label will be created.  You can see the full list of available apis at http://devrel/products (Googlers only link).
 
+Where label-sync creates and cleans up labels in your repository, auto-label adds labels to specific issues based on the product.
+
 **note**: This bot is currently only useful for Googlers. If you're looking for a general purpose label sync bot, we suggest using the [Settings Probot App](https://probot.github.io/apps/settings/).
 
 ## Using the bot

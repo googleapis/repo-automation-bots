@@ -23,7 +23,6 @@ interface TriggerInfo {
   trigger: {
     trigger_type: TriggerType;
     trigger_sender?: string;
-    github_delivery_guid?: string;
 
     /**
      * We include a payload hash for GitHub webhook triggers
@@ -31,6 +30,8 @@ interface TriggerInfo {
      * since they share the same payload
      */
     payload_hash?: string;
+    github_delivery_guid?: string;
+    github_event_type?: string;
 
     trigger_source_repo?: {
       owner: string;
@@ -44,12 +45,14 @@ interface TriggerInfo {
 /**
  * Build a TriggerInfo object for this execution
  * @param triggerType trigger type for this exeuction
- * @param github_delivery_guid github delivery id for this exeuction
+ * @param githubDeliveryGUID github delivery id for this exeuction
+ * @param githubEventName the value of the X-GitHub-Event header
  * @param requestBody body of the incoming trigger request
  */
 export function buildTriggerInfo(
   triggerType: TriggerType,
-  github_delivery_guid: string,
+  githubDeliveryGUID: string,
+  githubEventName: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   requestBody: {[key: string]: any}
 ): TriggerInfo {
@@ -63,38 +66,19 @@ export function buildTriggerInfo(
   };
 
   if (triggerType === TriggerType.GITHUB || triggerType === TriggerType.TASK) {
-    triggerInfo.trigger.github_delivery_guid = github_delivery_guid;
+    triggerInfo.trigger.github_delivery_guid = githubDeliveryGUID;
   }
 
   if (triggerType === TriggerType.GITHUB) {
-    const sourceRepo = requestBody['repository'] || {};
-    const repoName: string = sourceRepo['name'] || UNKNOWN;
-
-    const repoOwner = sourceRepo['owner'] || {};
-    const ownerName: string = repoOwner['login'] || UNKNOWN;
-    const ownerType: string = repoOwner['type'] || UNKNOWN;
-
-    const sender = requestBody['sender'] || {};
-    const senderLogin: string = sender['login'] || UNKNOWN;
-
-    const repoIsKnown = repoName !== UNKNOWN && ownerName !== UNKNOWN;
-    const url: string = repoIsKnown
-      ? `https://github.com/${ownerName}/${repoName}`
-      : UNKNOWN;
-
-    const payload_hash = getPayloadHash(requestBody);
-
     const webhookProperties = {
-      trigger_source_repo: {
-        repo_name: repoName,
-        owner: ownerName,
-        owner_type: ownerType,
-        url: url,
-      },
-      trigger_sender: senderLogin,
-      payload_hash: payload_hash,
+      trigger_source_repo: getRepositoryDetails(requestBody),
+      trigger_sender: requestBody.sender?.login || UNKNOWN,
+      payload_hash: getPayloadHash(requestBody),
+      github_event_type: getEventTypeDetails(
+        githubEventName,
+        requestBody.action
+      ),
     };
-
     triggerInfo.trigger = {...webhookProperties, ...triggerInfo.trigger};
   }
 
@@ -102,8 +86,52 @@ export function buildTriggerInfo(
 }
 
 /**
+ * Parses GitHub event's source repository details
+ * @param requestBody the body of the incoming GitHub Webhook request
+ */
+function getRepositoryDetails(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  requestBody: {[key: string]: any}
+): {
+  repo_name: string;
+  owner: string;
+  owner_type: string;
+  url: string;
+} {
+  const UNKNOWN = 'UNKNOWN';
+
+  const sourceRepo = requestBody['repository'] || {};
+  const repoName: string = sourceRepo['name'] || UNKNOWN;
+
+  const repoOwner = sourceRepo['owner'] || {};
+  const ownerName: string = repoOwner['login'] || UNKNOWN;
+  const ownerType: string = repoOwner['type'] || UNKNOWN;
+
+  const repoIsKnown = repoName !== UNKNOWN && ownerName !== UNKNOWN;
+  const url: string = repoIsKnown
+    ? `https://github.com/${ownerName}/${repoName}`
+    : UNKNOWN;
+
+  return {
+    repo_name: repoName,
+    owner: ownerName,
+    owner_type: ownerType,
+    url: url,
+  };
+}
+
+/**
+ * Returns a description of the GitHub Event type
+ * @param requestBody the body of the incoming GitHub Webhook request
+ */
+function getEventTypeDetails(eventName: string, actionValue: string): string {
+  eventName = eventName === '' ? 'UNKNOWN' : eventName;
+  return `${eventName}${actionValue ? `.${actionValue}` : ''}`;
+}
+
+/**
  * Return a hash of the GitHub Webhook Payload
- * @param requestBody body of incoming webhook request
+ * @param requestBody the body of the incoming GitHub Webhook request
  */
 function getPayloadHash(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
