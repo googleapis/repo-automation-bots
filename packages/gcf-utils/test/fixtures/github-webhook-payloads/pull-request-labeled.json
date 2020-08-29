@@ -1,0 +1,281 @@
+{
+  "action": "labeled",
+  "number": 6,
+  "pull_request": {
+    "url": "https://api.github.com/repos/testOwner/testRepo/pulls/6",
+    "id": 310174209,
+    "node_id": "MDExOlB1bGxSZXF1ZXN0MzEwMTc0MjA5",
+    "number": 6,
+    "state": "open",
+    "locked": false,
+    "title": "Assign pr",
+    "user": {
+      "login": "testUser",
+      "id": 31518063,
+      "node_id": "MDQ6VXNlcjMxNTE4MDYz",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/testuser2",
+      "type": "User",
+      "site_admin": false
+    },
+    "body": "",
+    "created_at": "2019-08-22T23:00:58Z",
+    "updated_at": "2019-08-23T17:14:25Z",
+    "closed_at": null,
+    "merged_at": null,
+    "merge_commit_sha": null,
+    "assignee": null,
+    "assignees": [],
+    "requested_reviewers": [],
+    "requested_teams": [],
+    "labels": [
+      {
+        "id": 1515750275,
+        "node_id": "MDU6TGFiZWwxNTE1NzUwMjc1",
+        "url": "https://api.github.com/repos/testOwner/testRepo/labels/blunderbuss:%20assign",
+        "name": "blunderbuss: assign",
+        "color": "f9d0c4",
+        "default": false
+      },
+      {
+        "id": 1428078872,
+        "node_id": "MDU6TGFiZWwxNDI4MDc4ODcy",
+        "url": "https://api.github.com/repos/testOwner/testRepo/labels/bug",
+        "name": "bug",
+        "color": "d73a4a",
+        "default": true
+      }
+    ],
+    "milestone": null,
+    "head": {
+      "label": "testuser2:assign_pr",
+      "ref": "assign_pr",
+      "sha": "c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a",
+      "user": {
+        "login": "testuser2",
+        "id": 31518063,
+        "node_id": "MDQ6VXNlcjMxNTE4MDYz",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/testuser2",
+        "type": "User",
+        "site_admin": false
+      },
+      "repo": {
+        "id": 194351185,
+        "node_id": "MDEwOlJlcG9zaXRvcnkxOTQzNTExODU=",
+        "name": "testRepo",
+        "full_name": "testOwner/testRepo",
+        "private": true,
+        "owner": {
+          "login": "testOwner",
+          "id": 31518063,
+          "node_id": "MDQ6VXNlcjMxNTE4MDYz",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/testuser2",
+          "type": "User",
+          "site_admin": false
+        },
+        "description": null,
+        "fork": false,
+        "url": "https://api.github.com/repos/testOwner/testRepo",
+        "created_at": "2019-06-29T01:25:49Z",
+        "updated_at": "2019-08-22T21:07:34Z",
+        "pushed_at": "2019-08-22T23:00:58Z",
+        "homepage": null,
+        "size": 14,
+        "stargazers_count": 0,
+        "watchers_count": 0,
+        "language": "Python",
+        "has_issues": true,
+        "has_projects": true,
+        "has_downloads": true,
+        "has_wiki": true,
+        "has_pages": false,
+        "forks_count": 0,
+        "archived": false,
+        "disabled": false,
+        "open_issues_count": 5,
+        "license": {
+          "key": "apache-2.0",
+          "name": "Apache License 2.0",
+          "spdx_id": "Apache-2.0",
+          "url": "https://api.github.com/licenses/apache-2.0",
+          "node_id": "MDc6TGljZW5zZTI="
+        },
+        "forks": 0,
+        "open_issues": 5,
+        "watchers": 0,
+        "default_branch": "master"
+      }
+    },
+    "base": {
+      "label": "testuser2:master",
+      "ref": "master",
+      "sha": "7dfdda6032153d27e6555482b3e88ded77ae5a6a",
+      "user": {
+        "login": "testUser",
+        "id": 31518063,
+        "node_id": "MDQ6VXNlcjMxNTE4MDYz",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/testuser2",
+        "type": "User",
+        "site_admin": false
+      },
+      "repo": {
+        "id": 194351185,
+        "node_id": "MDEwOlJlcG9zaXRvcnkxOTQzNTExODU=",
+        "name": "testRepo",
+        "full_name": "testOwner/testRepo",
+        "private": true,
+        "owner": {
+          "login": "testOwner",
+          "id": 31518063,
+          "node_id": "MDQ6VXNlcjMxNTE4MDYz",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/testuser2",
+          "type": "User",
+          "site_admin": false
+        },
+        "description": null,
+        "fork": false,
+        "url": "https://api.github.com/repos/testOwner/testRepo",
+        "created_at": "2019-06-29T01:25:49Z",
+        "updated_at": "2019-08-22T21:07:34Z",
+        "pushed_at": "2019-08-22T23:00:58Z",
+        "homepage": null,
+        "size": 14,
+        "stargazers_count": 0,
+        "watchers_count": 0,
+        "language": "Python",
+        "has_issues": true,
+        "has_projects": true,
+        "has_downloads": true,
+        "has_wiki": true,
+        "has_pages": false,
+        "forks_count": 0,
+        "archived": false,
+        "disabled": false,
+        "open_issues_count": 5,
+        "license": {
+          "key": "apache-2.0",
+          "name": "Apache License 2.0",
+          "spdx_id": "Apache-2.0",
+          "url": "https://api.github.com/licenses/apache-2.0",
+          "node_id": "MDc6TGljZW5zZTI="
+        },
+        "forks": 0,
+        "open_issues": 5,
+        "watchers": 0,
+        "default_branch": "master"
+      }
+    },
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/testOwner/testRepo/pulls/6"
+      },
+      "html": {
+        "href": "https://github.com/testOwner/testRepo/pull/6"
+      },
+      "issue": {
+        "href": "https://api.github.com/repos/testOwner/testRepo/issues/6"
+      },
+      "comments": {
+        "href": "https://api.github.com/repos/testOwner/testRepo/issues/6/comments"
+      },
+      "review_comments": {
+        "href": "https://api.github.com/repos/testOwner/testRepo/pulls/6/comments"
+      },
+      "review_comment": {
+        "href": "https://api.github.com/repos/testOwner/testRepo/pulls/comments{/number}"
+      },
+      "commits": {
+        "href": "https://api.github.com/repos/testOwner/testRepo/pulls/6/commits"
+      },
+      "statuses": {
+        "href": "https://api.github.com/repos/testOwner/testRepo/statuses/c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a"
+      }
+    },
+    "author_association": "OWNER",
+    "draft": false,
+    "merged": false,
+    "mergeable": false,
+    "rebaseable": false,
+    "mergeable_state": "dirty",
+    "merged_by": null,
+    "comments": 0,
+    "review_comments": 0,
+    "maintainer_can_modify": false,
+    "commits": 2,
+    "additions": 214,
+    "deletions": 1,
+    "changed_files": 3
+  },
+  "label": {
+    "id": 1515750275,
+    "node_id": "MDU6TGFiZWwxNTE1NzUwMjc1",
+    "url": "https://api.github.com/repos/testOwner/testRepo/labels/blunderbuss:%20assign",
+    "name": "blunderbuss: assign",
+    "color": "f9d0c4",
+    "default": false
+  },
+  "repository": {
+    "id": 194351185,
+    "node_id": "MDEwOlJlcG9zaXRvcnkxOTQzNTExODU=",
+    "name": "testRepo",
+    "full_name": "testOwner/testRepo",
+    "private": true,
+    "owner": {
+      "login": "testOwner",
+      "id": 31518063,
+      "node_id": "MDQ6VXNlcjMxNTE4MDYz",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/testuser2",
+      "type": "User",
+      "site_admin": false
+    },
+    "description": null,
+    "fork": false,
+    "url": "https://api.github.com/repos/testOwner/testRepo",
+    "created_at": "2019-06-29T01:25:49Z",
+    "updated_at": "2019-08-22T21:07:34Z",
+    "pushed_at": "2019-08-22T23:00:58Z",
+    "homepage": null,
+    "size": 14,
+    "stargazers_count": 0,
+    "watchers_count": 0,
+    "language": "Python",
+    "has_issues": true,
+    "has_projects": true,
+    "has_downloads": true,
+    "has_wiki": true,
+    "has_pages": false,
+    "forks_count": 0,
+    "archived": false,
+    "disabled": false,
+    "open_issues_count": 5,
+    "license": {
+      "key": "apache-2.0",
+      "name": "Apache License 2.0",
+      "spdx_id": "Apache-2.0",
+      "url": "https://api.github.com/licenses/apache-2.0",
+      "node_id": "MDc6TGljZW5zZTI="
+    },
+    "forks": 0,
+    "open_issues": 5,
+    "watchers": 0,
+    "default_branch": "master"
+  },
+  "sender": {
+    "login": "testUser",
+    "id": 31518063,
+    "node_id": "MDQ6VXNlcjMxNTE4MDYz",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/testuser2",
+    "type": "User",
+    "site_admin": false
+  },
+  "installation": {
+    "id": 1219791,
+    "node_id": "MDIzOkludGVncmF0aW9uSW5zdGFsbGF0aW9uMTIxOTc5MQ=="
+  }
+}

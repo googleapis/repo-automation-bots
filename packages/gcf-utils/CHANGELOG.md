@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [5.6.0](https://www.github.com/googleapis/repo-automation-bots/compare/v5.5.1...v5.6.0) (2020-08-28)
+
+
+### Features
+
+* **gcf-utils:** log event type with trigger information ([#921](https://www.github.com/googleapis/repo-automation-bots/issues/921)) ([023ed12](https://www.github.com/googleapis/repo-automation-bots/commit/023ed126aa478ab80279a27f8a194a88e5aff44d))
+
 ### [5.5.1](https://www.github.com/googleapis/repo-automation-bots/compare/v5.5.0...v5.5.1) (2020-08-06)
 
 
