@@ -499,6 +499,7 @@ describe('auto-label', () => {
         {title: 'spanner.ignored', want: 'api: spanner'},
         {title: 'SPANNER.IGNORED', want: 'api: spanner'},
         {title: 'SPAN ner: ignored', want: 'api: spanner'},
+        {title: 'spanner_ignored: ignored', want: 'api: spanner'},
         {title: 'feat(spanner): ignored', want: 'api: spanner'},
         {title: 'fix(spanner/helper): ignored', want: 'api: spanner'},
         {title: 'fix(/spanner/helper): ignored', want: 'api: spanner'},

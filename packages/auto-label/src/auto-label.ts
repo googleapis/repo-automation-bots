@@ -81,6 +81,7 @@ export function autoDetectLabel(
   firstPart = firstPart.split(':')[0]; // Before the colon, if there is one.
   firstPart = firstPart.split('/')[0]; // Before the slash, if there is one.
   firstPart = firstPart.split('.')[0]; // Before the period, if there is one.
+  firstPart = firstPart.split('_')[0]; // Before the underscore, if there is one.
   firstPart = firstPart.toLowerCase(); // Convert to lower case.
   firstPart = firstPart.replace(/\s/, ''); // Remove spaces.
 
