@@ -8,6 +8,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/google/uuid v1.1.2
 	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6 // indirect
-	google.golang.org/genproto v0.0.0-20200825200019-8632dd797987
+	google.golang.org/genproto v0.0.0-20200829155447-2bf3329a0021
 	google.golang.org/protobuf v1.25.0 // indirect
 )
