@@ -29,6 +29,10 @@ Issue title | Label
 
 -------------------
 
+Bot runs every night, when repositories are created, and when issues are created. So, wait until the next day if you just added the bot to see your issues backlabeled.
+
+Auto-label is different from label-sync, auto-label adds labels to your issues based on the product, where label-sync cleans up labels in your repository.
+
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
 
 This bot uses nock for mocking requests to GitHub, and snap-shot-it for capturing responses; This allows updates to the API surface to be treated as a visual diff, rather than tediously asserting against each field.
