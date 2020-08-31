@@ -168,6 +168,7 @@ function getPR(mergeable: boolean, mergeableState: string, state: string) {
 
 describe('merge-on-green', () => {
   let probot: Probot;
+  const loggerStub = sandbox.stub(logger, 'error').throwsArg(0);
 
   beforeEach(() => {
     probot = new Probot({
@@ -183,11 +184,9 @@ describe('merge-on-green', () => {
       },
     };
     probot.load(handler);
-    sandbox.stub(logger, 'error').throwsArg(0);
   });
 
   afterEach(() => {
-    sandbox.restore();
     nock.cleanAll();
   });
 
@@ -473,6 +472,8 @@ describe('merge-on-green', () => {
 
     //This method is supposed to include an error
     it('updates a branch if merge returns error and branch is behind', async () => {
+      loggerStub.restore();
+
       const scopes = [
         getRateLimit(5000),
         getPR(true, 'behind', 'open'),
@@ -505,6 +506,8 @@ describe('merge-on-green', () => {
 
     //This method is supposed to include an error
     it('comments on PR if branch is dirty and merge returns with error', async () => {
+      loggerStub.restore();
+
       const scopes = [
         getRateLimit(5000),
         getPR(true, 'dirty', 'open'),
@@ -554,6 +557,8 @@ describe('merge-on-green', () => {
 
     //This test is supposed to include an error
     it('does not comment if comment is already on PR and merge errors', async () => {
+      loggerStub.restore();
+
       const scopes = [
         getRateLimit(5000),
         getPR(true, 'dirty', 'open'),
@@ -823,9 +828,13 @@ describe('merge-on-green', () => {
   });
 
   describe('merge-on-green wrapper logic', () => {
-    let stub: SinonStub;
+    let addPRStub: SinonStub;
     beforeEach(() => {
-      stub = sandbox.stub(handler, 'addPR');
+      addPRStub = sandbox.stub(handler, 'addPR');
+    });
+
+    afterEach(() => {
+      addPRStub.restore();
     });
 
     it('adds a PR when label is added correctly', async () => {
@@ -848,11 +857,13 @@ describe('merge-on-green', () => {
       });
 
       scopes.forEach(s => s.done());
-      assert(stub.called);
+      assert(addPRStub.called);
     });
 
     //This function is supposed to respond with an error
     it('does not add a PR if there is no branch protection and comments', async () => {
+      loggerStub.restore();
+
       const scopes = [
         getRateLimit(5000),
         getBranchProtection(400, []),
@@ -873,9 +884,9 @@ describe('merge-on-green', () => {
 
       scopes.forEach(s => s.done());
 
-      assert(!stub.called);
+      assert(!addPRStub.called);
 
-      logger.info('stub called? ' + stub.called);
+      logger.info('stub called? ' + addPRStub.called);
     });
 
     it('does not execute if there is no more space for requests', async () => {
@@ -896,9 +907,9 @@ describe('merge-on-green', () => {
 
       scopes.forEach(s => s.done());
 
-      assert(!stub.called);
+      assert(!addPRStub.called);
 
-      logger.info('stub called? ' + stub.called);
+      logger.info('stub called? ' + addPRStub.called);
     });
   });
 });
