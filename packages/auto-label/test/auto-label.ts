@@ -23,7 +23,7 @@ import {resolve} from 'path';
 import fs from 'fs';
 import snapshot from 'snap-shot-it';
 import * as sinon from 'sinon';
-import {autoDetectLabel, handler, DriftRepo} from '../src/auto-label';
+import {autoDetectLabel, handler, DriftRepo, DriftApi} from '../src/auto-label';
 import {logger} from 'gcf-utils';
 
 nock.disableNetConnect();
@@ -36,6 +36,12 @@ const driftRepos = JSON.parse(
     'utf8'
   )
 ).repos as DriftRepo[];
+const driftApis = JSON.parse(
+  fs.readFileSync(
+    resolve(__dirname, '../../test/fixtures/events/downloadedfile.json'),
+    'utf8'
+  )
+).repos as DriftApi[];
 
 describe('auto-label', () => {
   let probot: Probot;
@@ -62,6 +68,7 @@ describe('auto-label', () => {
     // throw and fail the test if we're writing
     errorStub = sandbox.stub(logger, 'error').throwsArg(0);
     repoStub = sandbox.stub(handler, 'getDriftRepos').resolves(driftRepos);
+    sandbox.stub(handler, 'getDriftApis').resolves(driftApis);
   });
 
   afterEach(() => {
@@ -141,18 +148,19 @@ describe('auto-label', () => {
       ghRequests.done();
     });
 
-    it('ends execution if the JSON file is empty', async () => {
+    it('ends execution if the repo JSON file is empty', async () => {
       errorStub.restore();
       errorStub = sandbox.stub(logger, 'error');
       repoStub.restore();
-      repoStub = sandbox.stub(handler, 'getDriftReposFile').resolves('');
+      const fileStub = sandbox.stub(handler, 'getDriftFile').resolves('');
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      fileStub.restore();
       const loggerArg = errorStub.firstCall.args[0];
       assert.ok(loggerArg instanceof Error);
       assert.strictEqual(
         loggerArg.message,
-        'JSON file downloaded from Cloud Storage was empty'
+        'public_repos.json downloaded from Cloud Storage was empty'
       );
     });
 
@@ -514,6 +522,8 @@ describe('auto-label', () => {
         {title: 'feat(): ignored', want: undefined},
       ];
       for (const test of tests) {
+        // driftRepos has the same format as apis.json. No need for a different
+        // test file.
         assert.strictEqual(autoDetectLabel(driftRepos, test.title), test.want);
       }
     });
