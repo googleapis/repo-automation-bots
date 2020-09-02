@@ -21,9 +21,9 @@ import {logger} from 'gcf-utils';
  * @param variable can either be array or string
  * @returns an array
  */
-export const convertToArray = async function convertToArray(
+export const convertToArray = function convertToArray(
   variable?: string[] | string
-): Promise<string[] | undefined> {
+): string[] | undefined {
   if (typeof variable === 'string') {
     return [variable];
   }
@@ -63,7 +63,7 @@ export const doesSloApply = async function doesSloApply(
   }
 
   //Checking if all the githublabels are subset of issue labels
-  const githubLabels = await convertToArray(slo.appliesTo.gitHubLabels);
+  const githubLabels = convertToArray(slo.appliesTo.gitHubLabels);
 
   const isSubSet = githubLabels?.every((label: string) =>
     issueLabels?.includes(label)
@@ -76,7 +76,7 @@ export const doesSloApply = async function doesSloApply(
   }
 
   //Checking that no excludedlabel is in issue labels
-  const excludedGitHubLabels = await convertToArray(
+  const excludedGitHubLabels = convertToArray(
     slo.appliesTo.excludedGitHubLabels
   );
 
