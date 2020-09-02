@@ -25,29 +25,42 @@ export interface DriftRepo {
   repo: string;
 }
 
+export interface DriftApi {
+  github_label: string;
+}
+
 interface Label {
   name: string;
 }
 
 const storage = new Storage();
 
-handler.getDriftReposFile = async () => {
+handler.getDriftFile = async (file: string) => {
   const bucket = 'devrel-prod-settings';
-  const file = 'public_repos.json';
   const [contents] = await storage.bucket(bucket).file(file).download();
   return contents.toString();
 };
 
 handler.getDriftRepos = async () => {
-  const jsonData = await handler.getDriftReposFile();
+  const jsonData = await handler.getDriftFile('public_repos.json');
   if (!jsonData) {
     logger.error(
-      new Error('JSON file downloaded from Cloud Storage was empty')
+      new Error('public_repos.json downloaded from Cloud Storage was empty')
     );
     return null;
   }
-  const repos = JSON.parse(jsonData).repos as DriftRepo[];
-  return repos;
+  return JSON.parse(jsonData).repos as DriftRepo[];
+};
+
+handler.getDriftApis = async () => {
+  const jsonData = await handler.getDriftFile('apis.json');
+  if (!jsonData) {
+    logger.error(
+      new Error('apis.json downloaded from Cloud Storage was empty')
+    );
+    return null;
+  }
+  return JSON.parse(jsonData).apis as DriftApi[];
 };
 
 // autoDetectLabel tries to detect the right api: label based on the issue
@@ -56,10 +69,10 @@ handler.getDriftRepos = async () => {
 // For example, an issue titled `spanner/transactions: TestSample failed` would
 // be labeled `api: spanner`.
 export function autoDetectLabel(
-  repos: DriftRepo[],
+  apis: DriftApi[] | null,
   title: string
 ): string | undefined {
-  if (!repos || !title) {
+  if (!apis || !title) {
     return undefined;
   }
   // Regex to match the scope of a Conventional Commit message.
@@ -81,6 +94,7 @@ export function autoDetectLabel(
   firstPart = firstPart.split(':')[0]; // Before the colon, if there is one.
   firstPart = firstPart.split('/')[0]; // Before the slash, if there is one.
   firstPart = firstPart.split('.')[0]; // Before the period, if there is one.
+  firstPart = firstPart.split('_')[0]; // Before the underscore, if there is one.
   firstPart = firstPart.toLowerCase(); // Convert to lower case.
   firstPart = firstPart.replace(/\s/, ''); // Remove spaces.
 
@@ -91,9 +105,7 @@ export function autoDetectLabel(
 
   // Some APIs have "cloud" before the name (e.g. cloudkms and cloudiot).
   const possibleLabels = [`api: ${firstPart}`, `api: cloud${firstPart}`];
-  // Assume repos contains all api: labels. Avoids an extra API call to list
-  // the labels on a repo.
-  return repos.find(repo => possibleLabels.indexOf(repo.github_label) > -1)
+  return apis.find(api => possibleLabels.indexOf(api.github_label) > -1)
     ?.github_label;
 }
 
@@ -121,7 +133,8 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     logger.info(
       `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
     );
-    autoDetectedLabel = autoDetectLabel(driftRepos, issueTitle);
+    const apis = await handler.getDriftApis();
+    autoDetectedLabel = autoDetectLabel(apis, issueTitle);
   }
   const index = driftRepos?.findIndex(r => driftRepo === r) % colorsData.length;
   const colorNumber = index >= 0 ? index : 0;
