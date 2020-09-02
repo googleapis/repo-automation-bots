@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFBootstrapper, WrapOptions} from '../src/gcf-utils';
+import {GCFBootstrapper, WrapOptions, logger} from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {GitHubAPI} from 'probot/lib/github';
 import {Options} from 'probot';
@@ -205,6 +205,46 @@ describe('GCFBootstrapper', () => {
       await handler(req, response);
 
       sinon.assert.calledOnce(enqueueTask);
+    });
+
+    it('binds the trigger information to the logger', async () => {
+      await mockBootstrapper();
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+      await handler(req, response);
+
+      const expectedBindings = {
+        trigger: {trigger_type: 'Cloud Task', github_delivery_guid: '123'},
+      };
+      assert.deepEqual(logger.getBindings(), expectedBindings);
+    });
+
+    it('resets the logger on each call', async () => {
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+      const expectedBindings = {
+        trigger: {trigger_type: 'Cloud Task', github_delivery_guid: '123'},
+      };
+
+      await mockBootstrapper();
+
+      await handler(req, response);
+      assert.deepEqual(logger.getBindings(), expectedBindings);
+
+      await handler(req, response);
+      assert.deepEqual(logger.getBindings(), expectedBindings);
     });
   });
 

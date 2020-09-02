@@ -23,7 +23,6 @@ describe('buildTriggerInfo', () => {
     const triggerType = TriggerType.PUBSUB;
     const triggerInfo = buildTriggerInfo(triggerType, '', '', requestBody);
     const expectedInfo = {
-      message: 'Execution started by Pub/Sub',
       trigger: {
         trigger_type: 'Pub/Sub',
       },
@@ -36,7 +35,6 @@ describe('buildTriggerInfo', () => {
     const triggerType = TriggerType.SCHEDULER;
     const triggerInfo = buildTriggerInfo(triggerType, '', '', requestBody);
     const expectedInfo = {
-      message: 'Execution started by Cloud Scheduler',
       trigger: {
         trigger_type: 'Cloud Scheduler',
       },
@@ -49,7 +47,6 @@ describe('buildTriggerInfo', () => {
     const triggerType = TriggerType.TASK;
     const triggerInfo = buildTriggerInfo(triggerType, '1234', '', requestBody);
     const expectedInfo = {
-      message: 'Execution started by Cloud Task',
       trigger: {
         trigger_type: 'Cloud Task',
         github_delivery_guid: '1234',
@@ -69,7 +66,6 @@ describe('buildTriggerInfo', () => {
       requestBody
     );
     const expectedInfo = {
-      message: 'Execution started by GitHub Webhook',
       trigger: {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
@@ -98,7 +94,6 @@ describe('buildTriggerInfo', () => {
       requestBody
     );
     const expectedInfo = {
-      message: 'Execution started by GitHub Webhook',
       trigger: {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
@@ -127,7 +122,6 @@ describe('buildTriggerInfo', () => {
       requestBody
     );
     const expectedInfo = {
-      message: 'Execution started by GitHub Webhook',
       trigger: {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
@@ -156,7 +150,6 @@ describe('buildTriggerInfo', () => {
       requestBody
     );
     const expectedInfo = {
-      message: 'Execution started by GitHub Webhook',
       trigger: {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
@@ -185,7 +178,6 @@ describe('buildTriggerInfo', () => {
       requestBody
     );
     const expectedInfo = {
-      message: 'Execution started by GitHub Webhook',
       trigger: {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
@@ -214,7 +206,6 @@ describe('buildTriggerInfo', () => {
       requestBody
     );
     const expectedInfo = {
-      message: 'Execution started by GitHub Webhook',
       trigger: {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
@@ -243,7 +234,6 @@ describe('buildTriggerInfo', () => {
       requestBody
     );
     const expectedInfo = {
-      message: 'Execution started by GitHub Webhook',
       trigger: {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'testUser',
@@ -272,7 +262,6 @@ describe('buildTriggerInfo', () => {
       requestBody
     );
     const expectedInfo = {
-      message: 'Execution started by GitHub Webhook',
       trigger: {
         trigger_type: 'GitHub Webhook',
         trigger_sender: 'UNKNOWN',
