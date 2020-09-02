@@ -16,6 +16,8 @@
 import {GitHubAPI, Context} from 'probot';
 import Ajv, {ErrorObject} from 'ajv';
 import {logger} from 'gcf-utils';
+import {convertToArray} from './slo-appliesTo';
+import {SLORules} from './types';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const schema = require('./../data/schema.json');
@@ -31,12 +33,16 @@ type Conclusion =
 
 interface ValidationResults {
   isValid: boolean;
-  errors?: ErrorObject[] | null;
+  errors?: ErrorObject[] | ErrorMessage | undefined;
 }
 
 interface PullsListFilesResponseItem {
   filename: string;
   sha: string;
+}
+
+interface ErrorMessage {
+  [index: string]: string;
 }
 
 /**
@@ -145,17 +151,56 @@ async function getFileShaContents(
  */
 export const lint = async function lint(
   schema: JSON,
-  sloData: JSON
+  sloData: SLORules[]
 ): Promise<ValidationResults> {
   const ajv = new Ajv();
   const validate = ajv.compile(schema);
-  const isValid = await validate(sloData);
+  let isValid = await validate(sloData);
+
+  if (validate.errors) {
+    return {
+      isValid: isValid,
+      errors: validate.errors,
+    } as ValidationResults;
+  }
+
+  //Check for contradicting SLOs
+  let errors: ErrorMessage | undefined;
+  for (const slo of sloData) {
+    isValid = !(await sloContradicts(slo));
+
+    if (!isValid) {
+      const sloString = JSON.stringify(slo);
+      errors = {
+        message: `Same label is in both gitHubLabels and excludedGitHubLabels for slo:  ${sloString}`,
+      };
+      break;
+    }
+  }
 
   return {
     isValid: isValid,
-    errors: validate.errors,
+    errors: errors,
   } as ValidationResults;
 };
+
+/**
+ * Function checks to see if there is a label in both gitHubLabels and excludedGitHubLabels
+ * @param slo rule
+ * @returns boolean value if slo is self contradicting
+ */
+async function sloContradicts(slo: SLORules): Promise<boolean | undefined> {
+  const githubLabels = convertToArray(slo.appliesTo.gitHubLabels);
+  const excludedGitHubLabels = convertToArray(
+    slo.appliesTo.excludedGitHubLabels
+  );
+
+  const isInValid = excludedGitHubLabels?.some(label =>
+    githubLabels?.includes(label)
+  );
+
+  return isInValid;
+}
 
 /**
  * Function comments on PR only if issue_slo_rules.json is invalid

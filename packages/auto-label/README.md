@@ -13,6 +13,7 @@ Issue title | Label
 `spanner/ignored` | `api: spanner`
 `spanner.ignored` | `api: spanner`
 `SPANNER.IGNORED` | `api: spanner`
+`spanner_ignored` | `api: spanner`
 `SPAN ner: ignored` | `api: spanner`
 `ignored(spanner): ignored` | `api: spanner`
 `ignored(spanner/ignored): ignored` | `api: spanner`
