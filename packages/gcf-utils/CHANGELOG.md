@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [5.7.0](https://www.github.com/googleapis/repo-automation-bots/compare/v5.6.0...v5.7.0) (2020-09-02)
+
+
+### Features
+
+* bind trigger information to all logs ([#926](https://www.github.com/googleapis/repo-automation-bots/issues/926)) ([dcdd281](https://www.github.com/googleapis/repo-automation-bots/commit/dcdd281b06524203788946470fbb8012179d2c98))
+
 ## [5.6.0](https://www.github.com/googleapis/repo-automation-bots/compare/v5.5.1...v5.6.0) (2020-08-28)
 
 
