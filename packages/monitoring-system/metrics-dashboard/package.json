@@ -18,7 +18,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "firebase": "^7.18.0",
-    "gts": "^2.0.2",
+    "gts": "^3.0.0-alpha.1",
     "json-loader": "^0.5.7",
     "typescript": "^3.9.7",
     "webpack": "^4.44.1",
