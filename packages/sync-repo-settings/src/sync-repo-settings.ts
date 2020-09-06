@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, Context} from 'probot';
+import {Application, Context, Octokit} from 'probot';
 import extend from 'extend';
 import {
   LanguageConfig,
@@ -22,6 +22,14 @@ import {
   PermissionRule,
 } from './types';
 import {logger} from 'gcf-utils';
+import Ajv from 'ajv';
+import yaml from 'js-yaml';
+
+export const configFileName = 'sync-repo-settings.yaml';
+
+// configure the schema validator once
+const schema = require('./schema.json');
+const ajv = new Ajv();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function deepFreeze(object: any) {
@@ -64,6 +72,76 @@ const branchProtectionDefaults = deepFreeze({
  * Main.  On a nightly cron, update the settings for a given repository.
  */
 export function handler(app: Application) {
+
+  // Lint any pull requests that touch configuration
+  app.on(
+    [
+      'pull_request.opened',
+      'pull_request.reopened',
+      'pull_request.synchronize',
+    ],
+    async (context: Context) => {
+      const owner = context.payload.repository.owner.login;
+      const repo = context.payload.repository.name;
+      const number = context.payload.number;
+      const files = await context.github.paginate(
+        context.github.pulls.listFiles.endpoint.merge({
+          owner,
+          repo,
+          pull_number: number,
+          per_page: 100,
+        })
+      );
+      for (const file of files) {
+        if (
+          file.status === 'deleted' ||
+          (file.filename !== `.github/${configFileName}` &&
+          (repo !== '.github' || file.filename !== configFileName))
+        ) {
+          continue;
+        }
+        const blob = await context.github.git.getBlob({
+          owner,
+          repo,
+          file_sha: file.sha,
+        });
+        const configYaml = Buffer.from(blob.data.content, 'base64').toString('utf8');
+        const config = yaml.safeLoad(configYaml, {
+
+        });
+        let isValid = false;
+        let errorText = '';
+        if (typeof config === 'object') {
+          const validateSchema = ajv.compile(schema);
+          isValid = await validateSchema(config);
+          errorText = JSON.stringify(validateSchema.errors, null, 4);
+        } else {
+          errorText = 'sync-repo-settings.yaml is not valid YAML 😱'
+        }
+
+        const checkParams: Octokit.ChecksCreateParams = context.repo({
+          name: 'sync-repo-settings-check',
+          head_sha: context.payload.pull_request.head.sha,
+          conclusion: 'success',
+        });
+        if (!isValid) {
+          checkParams.conclusion = 'failure',
+          checkParams.output = {
+            title: 'Invalid sync-repo-settings.yaml schema 😱',
+            summary: 'sync-repo-settings.yaml does not match the required schema 😱',
+            text: errorText,
+          }
+        }
+        try {
+          await context.github.checks.create(checkParams);
+        } catch (e) {
+          e.message = `Error creating validation status check: ${e.message}`;
+          logger.error(e);
+        }
+      }
+    }
+  );
+
   app.on(['schedule.repository'], async (context: Context) => {
     logger.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
