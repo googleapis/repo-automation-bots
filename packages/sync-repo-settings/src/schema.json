@@ -81,7 +81,7 @@
         "additionalProperties": false,
         "properties": {
           "team": {
-            "description": "team slug to provide access.",
+            "description": "Team slug to provide access.",
             "type": "string"
           },
           "permission": {
