@@ -267,7 +267,7 @@ describe('Sync repo settings', () => {
             sha: fileSha,
             filename: '.github/sync-repo-settings.yaml',
             status: 'added',
-          }
+          },
         ]),
       nock('https://api.github.com')
         .get(`/repos/${org}/${repo}/git/blobs/${fileSha}`)
@@ -294,9 +294,9 @@ describe('Sync repo settings', () => {
         number: 1,
         pull_request: {
           head: {
-            sha: headSha
-          }
-        }
+            sha: headSha,
+          },
+        },
       },
       id: 'abc123',
     });
@@ -320,7 +320,7 @@ describe('Sync repo settings', () => {
             sha: fileSha,
             filename: '.github/sync-repo-settings.yaml',
             status: 'added',
-          }
+          },
         ]),
       nock('https://api.github.com')
         .get(`/repos/${org}/${repo}/git/blobs/${fileSha}`)
@@ -348,9 +348,9 @@ describe('Sync repo settings', () => {
         number: 1,
         pull_request: {
           head: {
-            sha: headSha
-          }
-        }
+            sha: headSha,
+          },
+        },
       },
       id: 'abc123',
     });
@@ -374,7 +374,7 @@ describe('Sync repo settings', () => {
             sha: fileSha,
             filename: '.github/sync-repo-settings.yaml',
             status: 'added',
-          }
+          },
         ]),
       nock('https://api.github.com')
         .get(`/repos/${org}/${repo}/git/blobs/${fileSha}`)
@@ -401,9 +401,9 @@ describe('Sync repo settings', () => {
         number: 1,
         pull_request: {
           head: {
-            sha: headSha
-          }
-        }
+            sha: headSha,
+          },
+        },
       },
       id: 'abc123',
     });

@@ -28,6 +28,7 @@ import yaml from 'js-yaml';
 export const configFileName = 'sync-repo-settings.yaml';
 
 // configure the schema validator once
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const schema = require('./schema.json');
 const ajv = new Ajv();
 
@@ -72,7 +73,6 @@ const branchProtectionDefaults = deepFreeze({
  * Main.  On a nightly cron, update the settings for a given repository.
  */
 export function handler(app: Application) {
-
   // Lint any pull requests that touch configuration
   app.on(
     [
@@ -96,7 +96,7 @@ export function handler(app: Application) {
         if (
           file.status === 'deleted' ||
           (file.filename !== `.github/${configFileName}` &&
-          (repo !== '.github' || file.filename !== configFileName))
+            (repo !== '.github' || file.filename !== configFileName))
         ) {
           continue;
         }
@@ -105,10 +105,10 @@ export function handler(app: Application) {
           repo,
           file_sha: file.sha,
         });
-        const configYaml = Buffer.from(blob.data.content, 'base64').toString('utf8');
-        const config = yaml.safeLoad(configYaml, {
-
-        });
+        const configYaml = Buffer.from(blob.data.content, 'base64').toString(
+          'utf8'
+        );
+        const config = yaml.safeLoad(configYaml);
         let isValid = false;
         let errorText = '';
         if (typeof config === 'object') {
@@ -116,7 +116,7 @@ export function handler(app: Application) {
           isValid = await validateSchema(config);
           errorText = JSON.stringify(validateSchema.errors, null, 4);
         } else {
-          errorText = 'sync-repo-settings.yaml is not valid YAML 😱'
+          errorText = `${configFileName} is not valid YAML 😱`;
         }
 
         const checkParams: Octokit.ChecksCreateParams = context.repo({
@@ -125,12 +125,13 @@ export function handler(app: Application) {
           conclusion: 'success',
         });
         if (!isValid) {
-          checkParams.conclusion = 'failure',
-          checkParams.output = {
-            title: 'Invalid sync-repo-settings.yaml schema 😱',
-            summary: 'sync-repo-settings.yaml does not match the required schema 😱',
-            text: errorText,
-          }
+          (checkParams.conclusion = 'failure'),
+            (checkParams.output = {
+              title: 'Invalid sync-repo-settings.yaml schema 😱',
+              summary:
+                'sync-repo-settings.yaml does not match the required schema 😱',
+              text: errorText,
+            });
         }
         try {
           await context.github.checks.create(checkParams);
