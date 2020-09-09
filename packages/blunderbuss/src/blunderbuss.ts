@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
+import {Application, Context} from 'probot';
 import * as util from 'util';
 import {logger} from 'gcf-utils';
 
@@ -81,12 +81,11 @@ export function blunderbuss(app: Application) {
     config = config || {};
 
     const issue: Issue = context.payload.issue || context.payload.pull_request;
+    const repoName = context.payload.repository.full_name;
 
     // If this is a PR, and it's in draft mode, don't assign it
     if (issue.draft === true) {
-      logger.info(
-        `Skipping ${issue.owner}/${issue.repo}#${issue.number} as it's a draft PR`
-      );
+      logger.info(`Skipping ${repoName}#${issue.number} as it's a draft PR`);
       return;
     }
 
@@ -102,9 +101,8 @@ export function blunderbuss(app: Application) {
         : '"assign_prs"';
       context.log.info(
         util.format(
-          '[%s/%s] #%s ignored: %s not in config',
-          issue.owner,
-          issue.repo,
+          '[%s] #%s ignored: %s not in config',
+          repoName,
           issue.number,
           paramName
         )
@@ -130,9 +128,8 @@ export function blunderbuss(app: Application) {
         issuePayload.assignees?.length
       ) {
         context.log.info(
-          '[%s/%s] #%s ignored: incorrect label ("%s") because it is already assigned',
-          issue.owner,
-          issue.repo,
+          '[%s] #%s ignored: incorrect label ("%s") because it is already assigned',
+          repoName,
           issue.number,
           context.payload.label.name
         );
@@ -149,9 +146,8 @@ export function blunderbuss(app: Application) {
         context.payload.label.name !== ASSIGN_LABEL
       ) {
         context.log.info(
-          '[%s/%s] #%s ignored: incorrect label ("%s")',
-          issue.owner,
-          issue.repo,
+          '[%s] #%s ignored: incorrect label ("%s")',
+          repoName,
           issue.number,
           context.payload.label.name
         );
@@ -169,9 +165,8 @@ export function blunderbuss(app: Application) {
     if (!isLabeled && issuePayload.assignees.length !== 0) {
       context.log.info(
         util.format(
-          '[%s/%s] #%s ignored: already has assignee(s)',
-          issue.owner,
-          issue.repo,
+          '[%s] #%s ignored: already has assignee(s)',
+          repoName,
           issue.number
         )
       );
@@ -194,28 +189,40 @@ export function blunderbuss(app: Application) {
       labels = issue.labels?.map(l => l.name);
     }
     const preferredAssignees = findAssignees(byConfig, labels);
-    const possibleAssignees = preferredAssignees.length
+    let possibleAssignees = preferredAssignees.length
       ? preferredAssignees
       : assignConfig;
+    possibleAssignees = await expandTeams(possibleAssignees, context);
     const assignee = randomFrom(possibleAssignees, issuePayload.user.login);
     if (!assignee) {
       context.log.info(
         util.format(
-          '[%s/%s] #%s not assigned: no valid assignee(s)',
-          issue.owner,
-          issue.repo,
+          '[%s] #%s not assigned: no valid assignee(s)',
+          repoName,
           issue.number
         )
       );
       return;
     }
 
-    await context.github.issues.addAssignees(
+    const resp = await context.github.issues.addAssignees(
       context.issue({assignees: [assignee]})
     );
+    if (resp.status !== 201) {
+      context.log.error(
+        util.format(
+          '[%s] #%s could not be assined to %s: status %d',
+          repoName,
+          issue.number,
+          assignee,
+          resp.status
+        )
+      );
+      return;
+    }
     context.log.info(
       util.format(
-        '[%s/%s] #%s was assigned to %s',
+        '[%s] #%s was assigned to %s',
         issue.owner,
         issue.repo,
         issue.number,
@@ -240,4 +247,30 @@ function findAssignees(
     }
   }
   return assignees;
+}
+
+async function expandTeams(
+  usernames: string[],
+  context: Context
+): Promise<string[]> {
+  const result: string[] = [];
+  for (const user of usernames) {
+    if (user.indexOf('/') === -1) {
+      // Normal user. Not a team.
+      result.push(user);
+      continue;
+    }
+    // There is a slash. Probably a team.
+    const [org, slug] = user.split('/');
+    const members = (
+      await context.github.teams.listMembersInOrg({
+        org,
+        team_slug: slug,
+      })
+    ).data;
+    for (const member of members) {
+      result.push(member.login);
+    }
+  }
+  return result;
 }
