@@ -35,7 +35,7 @@
     "pino": "^6.3.2",
     "probot": "^9.11.2",
     "tmp": "^0.2.0",
-    "yargs": "^15.0.0"
+    "yargs": "^16.0.0"
   },
   "devDependencies": {
     "@types/mocha": "^8.0.0",
