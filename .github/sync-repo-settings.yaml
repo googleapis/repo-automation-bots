@@ -1,0 +1,53 @@
+rebaseMergeAllowed: true
+squashMergeAllowed: true
+mergeCommitAllowed: false
+branchProtectionRules:
+- pattern: master
+  isAdminEnforced: true
+  requiredStatusCheckContexts:
+    - 'ci / test (12, auto-label)'
+    - 'ci / test (12, blunderbuss)'
+    - 'ci / test (12, buildcop)'
+    - 'ci / test (12, conventional-commit-lint)'
+    - 'ci / test (12, failurechecker)'
+    - 'ci / test (12, gcf-utils)'
+    - 'ci / test (12, generate-bot)'
+    - 'ci / test (12, header-checker-lint)'
+    - 'ci / test (12, label-sync)'
+    - 'ci / test (12, merge-on-green)'
+    - 'ci / test (12, monitoring-system/data-processor)'
+    - 'ci / test (12, release-please)'
+    - 'ci / test (12, slo-stat-bot)'
+    - 'ci / test (12, snippet-bot)'
+    - 'ci / test (12, sync-repo-settings)'
+    - 'ci / test (12, trusted-contribution)'
+    - 'ci / test (10, auto-label)'
+    - 'ci / test (10, blunderbuss)'
+    - 'ci / test (10, buildcop)'
+    - 'ci / test (10, conventional-commit-lint)'
+    - 'ci / test (10, failurechecker)'
+    - 'ci / test (10, gcf-utils)'
+    - 'ci / test (10, generate-bot)'
+    - 'ci / test (10, header-checker-lint)'
+    - 'ci / test (10, label-sync)'
+    - 'ci / test (10, merge-on-green)'
+    - 'ci / test (10, monitoring-system/data-processor)'
+    - 'ci / test (10, release-please)'
+    - 'ci / test (10, slo-stat-bot)'
+    - 'ci / test (10, snippet-bot)'
+    - 'ci / test (10, sync-repo-settings)'
+    - 'ci / test (10, trusted-contribution)'
+    - 'ci / Go tests (packages/buildcop)'
+    - 'ci / Go tests (serverless-scheduler-proxy)'
+    - 'ci / Bash tests (scripts)'
+    - 'cla/google'
+  requiredApprovingReviewCount: 1
+  requiresCodeOwnerReviews: true
+  requiresStrictStatusChecks: true
+permissionRules:
+  - team: Googlers
+    permission: pull
+  - team: github-automation
+    permission: push
+  - team: yoshi-admins
+    permission: admin
