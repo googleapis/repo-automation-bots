@@ -1,0 +1,27 @@
+thisShouldNotWork: fingersCrossed
+rebaseMergeAllowed: true
+squashMergeAllowed: true
+mergeCommitAllowed: false
+branchProtectionRules:
+- pattern: master
+  isAdminEnforced: true
+  requiredStatusCheckContexts:
+    - 'ci / test (10) (pull_request)'
+    - 'ci / test (12) (pull_request)'
+    - 'ci / test (13) (pull_request)'
+    - 'ci / windows (pull_request) '
+    - 'ci / lint (pull_request) '
+    - 'ci / docs (pull_request)'
+    - 'ci / Summary Check for ci/kokoro: Samples test (pull_request)'
+    - 'ci / Summary Check for ci/kokoro: System test (pull_request)'
+    - 'cla/google'
+  requiredApprovingReviewCount: 1
+  requiresCodeOwnerReviews: false
+  requiresStrictStatusChecks: true
+permissionRules:
+  - team: yoshi
+    permission: pull
+  - team: yoshi-nodejs
+    permission: push
+  - team: yoshi-admins
+    permission: admin
