@@ -269,6 +269,35 @@ describe('Blunderbuss', () => {
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       requests.done();
     });
+
+    it('expands teams for an issue', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_labeled_for_team'
+      ));
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'on_label.yml')
+      );
+
+      const scopes = [
+        nock('https://api.github.com')
+          .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
+          .reply(200, {content: config.toString('base64')}),
+        nock('https://api.github.com')
+          .get('/orgs/googleapis/teams/team-awesome/members')
+          .reply(200, [{login: 'user123'}]),
+        nock('https://api.github.com')
+          .post('/repos/testOwner/testRepo/issues/4/assignees', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200),
+      ];
+
+      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      scopes.forEach(s => s.done());
+    });
   });
 
   describe('pr tests', () => {
@@ -295,6 +324,35 @@ describe('Blunderbuss', () => {
         name: 'pull_request.opened',
         payload,
         id: 'abc123',
+      });
+      requests.done();
+    });
+
+    it('expands teams for a PR', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_no_assignees'
+      ));
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'pr_with_team.yml')
+      );
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
+        .reply(200, {content: config.toString('base64')})
+        .get('/orgs/googleapis/teams/team-awesome/members')
+        .reply(200, [{login: 'user123'}])
+        .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'user123',
       });
       requests.done();
     });

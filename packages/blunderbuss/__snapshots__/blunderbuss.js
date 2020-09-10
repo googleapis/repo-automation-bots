@@ -45,3 +45,15 @@ exports['Blunderbuss pr tests assigns user to a PR when opened with no assignee,
     'prs1'
   ]
 }
+
+exports['Blunderbuss issue tests expands teams for an issue 1'] = {
+  'assignees': [
+    'user123'
+  ]
+}
+
+exports['Blunderbuss pr tests expands teams for a PR 1'] = {
+  'assignees': [
+    'user123'
+  ]
+}
