@@ -16,9 +16,9 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
-// eslint-disable-next-line node/no-unsupported-features/node-builtins
 import {promises as fs} from 'fs';
 import {handler} from '../src/sync-repo-settings';
+import assert from 'assert';
 
 nock.disableNetConnect();
 
@@ -247,6 +247,166 @@ describe('Sync repo settings', () => {
       nockUpdateTeamMembership('team1', org, repo),
     ];
     await receive(org, repo);
+    scopes.forEach(x => x.done());
+  });
+
+  it('should detect a valid schema', async () => {
+    const org = 'googleapis';
+    const repo = 'fake';
+    const fileSha = 'bbcd538c8e72b8c175046e27cc8f907076331401';
+    const headSha = 'abc123';
+    const content = await fs.readFile(
+      './test/fixtures/localConfig.yaml',
+      'base64'
+    );
+    const scopes = [
+      nock('https://api.github.com')
+        .get(`/repos/${org}/${repo}/pulls/1/files?per_page=100`)
+        .reply(200, [
+          {
+            sha: fileSha,
+            filename: '.github/sync-repo-settings.yaml',
+            status: 'added',
+          },
+        ]),
+      nock('https://api.github.com')
+        .get(`/repos/${org}/${repo}/git/blobs/${fileSha}`)
+        .reply(200, {content}),
+      nock('https://api.github.com')
+        .post(`/repos/${org}/${repo}/check-runs`, body => {
+          assert.strictEqual(body.conclusion, 'success');
+          return true;
+        })
+        .reply(200),
+    ];
+    await probot.receive({
+      name: 'pull_request.opened',
+      payload: {
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+        },
+        organization: {
+          login: org,
+        },
+        number: 1,
+        pull_request: {
+          head: {
+            sha: headSha,
+          },
+        },
+      },
+      id: 'abc123',
+    });
+    scopes.forEach(x => x.done());
+  });
+
+  it('should detect an invalid schema', async () => {
+    const org = 'googleapis';
+    const repo = 'fake';
+    const fileSha = 'bbcd538c8e72b8c175046e27cc8f907076331401';
+    const headSha = 'abc123';
+    const content = await fs.readFile(
+      './test/fixtures/bogusConfig.yaml',
+      'base64'
+    );
+    const scopes = [
+      nock('https://api.github.com')
+        .get(`/repos/${org}/${repo}/pulls/1/files?per_page=100`)
+        .reply(200, [
+          {
+            sha: fileSha,
+            filename: '.github/sync-repo-settings.yaml',
+            status: 'added',
+          },
+        ]),
+      nock('https://api.github.com')
+        .get(`/repos/${org}/${repo}/git/blobs/${fileSha}`)
+        .reply(200, {content}),
+      nock('https://api.github.com')
+        .post(`/repos/${org}/${repo}/check-runs`, body => {
+          assert.strictEqual(body.conclusion, 'failure');
+
+          return true;
+        })
+        .reply(200),
+    ];
+    await probot.receive({
+      name: 'pull_request.opened',
+      payload: {
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+        },
+        organization: {
+          login: org,
+        },
+        number: 1,
+        pull_request: {
+          head: {
+            sha: headSha,
+          },
+        },
+      },
+      id: 'abc123',
+    });
+    scopes.forEach(x => x.done());
+  });
+
+  it('should detect invalid yaml in the schema', async () => {
+    const org = 'googleapis';
+    const repo = 'fake';
+    const fileSha = 'bbcd538c8e72b8c175046e27cc8f907076331401';
+    const headSha = 'abc123';
+    const content = await fs.readFile(
+      './test/fixtures/invalidYamlConfig.yaml',
+      'base64'
+    );
+    const scopes = [
+      nock('https://api.github.com')
+        .get(`/repos/${org}/${repo}/pulls/1/files?per_page=100`)
+        .reply(200, [
+          {
+            sha: fileSha,
+            filename: '.github/sync-repo-settings.yaml',
+            status: 'added',
+          },
+        ]),
+      nock('https://api.github.com')
+        .get(`/repos/${org}/${repo}/git/blobs/${fileSha}`)
+        .reply(200, {content}),
+      nock('https://api.github.com')
+        .post(`/repos/${org}/${repo}/check-runs`, body => {
+          assert.strictEqual(body.conclusion, 'failure');
+          return true;
+        })
+        .reply(200),
+    ];
+    await probot.receive({
+      name: 'pull_request.opened',
+      payload: {
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+        },
+        organization: {
+          login: org,
+        },
+        number: 1,
+        pull_request: {
+          head: {
+            sha: headSha,
+          },
+        },
+      },
+      id: 'abc123',
+    });
     scopes.forEach(x => x.done());
   });
 });
