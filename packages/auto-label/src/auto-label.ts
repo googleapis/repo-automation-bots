@@ -212,7 +212,9 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   if (labelsOnIssue) {
     foundSamplesTag = labelsOnIssue.find(e => e.name === 'samples');
   }
-  if (!foundSamplesTag && repo.includes('samples')) {
+  const isSampleIssue =
+    repo.includes('samples') || issueTitle?.includes('sample');
+  if (!foundSamplesTag && isSampleIssue) {
     await github.issues
       .createLabel({
         owner,

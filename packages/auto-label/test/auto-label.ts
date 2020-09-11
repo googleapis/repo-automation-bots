@@ -458,6 +458,55 @@ describe('auto-label', () => {
       });
       ghRequests.done();
     });
+
+    it('will add a samples tag for a samples issue', async () => {
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, [
+          {
+            number: 1,
+            title: 'samples.spanner: ignored',
+          },
+        ])
+        .post('/repos/testOwner/testRepo/labels')
+        .reply(201, [
+          {
+            name: 'api: spanner',
+            color: 'C9FFE5',
+          },
+        ])
+        .get('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200)
+        .post('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [
+          {
+            name: 'api: spanner',
+            color: 'C9FFE5',
+          },
+        ])
+        .post('/repos/testOwner/testRepo/labels')
+        .reply(201, [
+          {
+            name: 'samples',
+          },
+        ])
+        .post('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [
+          {
+            name: 'samples',
+          },
+        ]);
+      await probot.receive({
+        name: 'schedule.repository',
+        payload: {
+          organization: {login: 'testOwner'},
+          repository: {name: 'testRepo'},
+          cron_org: 'testOwner',
+        },
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
   });
 
   describe('installation', async () => {
