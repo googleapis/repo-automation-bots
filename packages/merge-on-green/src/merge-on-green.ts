@@ -174,15 +174,6 @@ function handler(app: Application) {
   });
 
   app.on('pull_request.labeled', async context => {
-    const rateLimit = (await context.github.rateLimit.get()).data.resources.core
-      .remaining;
-    if (rateLimit <= 0) {
-      logger.error(
-        `The rate limit is at ${rateLimit}. We are skipping execution until we reset.`
-      );
-      return;
-    }
-
     // if missing the label, skip
     if (
       !context.payload.pull_request.labels.some(
@@ -207,7 +198,16 @@ function handler(app: Application) {
     //TODO: we can likely split the database functionality into its own file and
     //import these helper functions for use in the main bot event handling.
 
-    let branchProtection = undefined;
+    const rateLimit = (await context.github.rateLimit.get()).data.resources.core
+      .remaining;
+    if (rateLimit <= 0) {
+      logger.error(
+        `The rate limit is at ${rateLimit}. We are skipping execution until we reset.`
+      );
+      return;
+    }
+
+    let branchProtection: string[] | undefined;
     try {
       branchProtection = (
         await context.github.repos.getBranchProtection({
