@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [5.7.1](https://www.github.com/googleapis/repo-automation-bots/compare/v5.7.0...v5.7.1) (2020-09-14)
+
+
+### Bug Fixes
+
+* **deps:** update dependency yargs to v16 ([#944](https://www.github.com/googleapis/repo-automation-bots/issues/944)) ([1579ab6](https://www.github.com/googleapis/repo-automation-bots/commit/1579ab6694dcbf174aa2d936d5a68d31d6ac5bab))
+
 ## [5.7.0](https://www.github.com/googleapis/repo-automation-bots/compare/v5.6.0...v5.7.0) (2020-09-02)
 
 
