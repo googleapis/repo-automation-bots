@@ -42,7 +42,7 @@
     "typescript": "^3.8.3"
   },
   "dependencies": {
-    "enquirer": "^2.3.2",
+    "enquirer": "^2.3.6",
     "expect": "^26.0.0",
     "handlebars": "^4.5.1"
   }
