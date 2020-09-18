@@ -20,6 +20,7 @@ import * as express from 'express';
 import {Octokit} from '@octokit/rest';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger} from './logging/gcf-logger';
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
 
@@ -133,7 +134,7 @@ export class GCFBootstrapper {
       return {...config, Octokit: LoggingOctokit} as Options;
     } else {
       logger.info('custom logging instance not enabled');
-      return config as Options;
+      return {...config, Octokit} as Options;
     }
   }
 
@@ -233,6 +234,8 @@ export class GCFBootstrapper {
             // TODO: add unit tests for both forms of payload.
             payload = this.parsePubSubPayload(request);
           }
+          // TODO: find out the best way to get this type, and whether we can
+          // keep using a custom event name.
           await this.probot.receive({
             name,
             id,
@@ -306,6 +309,7 @@ export class GCFBootstrapper {
     }
   }
 
+  // TODO: How do we still get access to this installation token?
   async getInstallationToken(installationId: number) {
     return await this.probot!.app!.getInstallationAccessToken({
       installationId,
