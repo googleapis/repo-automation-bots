@@ -18,12 +18,7 @@
       }
     ],
     "ignoredRepos": [
-      "googleapis/api-common-java",
-      "googleapis/disco-to-proto3-converter",
-      "googleapis/gapic-generator",
-      "googleapis/gapic-generator-java",
-      "GoogleCloudPlatform/java-docs-samples",
-      "GoogleCloudPlatform/getting-started-java"
+      "googleapis/gapic-generator-java"
     ],
     "permissionRules": [
       {
@@ -45,40 +40,6 @@
     ],
     "repoOverrides": [
       {
-        "repo": "googleapis/java-cloud-bom",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: BOM Upper Bounds",
-              "dependencies (8)",
-              "dependencies (11)",
-              "linkage-monitor",
-              "lint",
-              "clirr",
-              "units (7)",
-              "units (8)",
-              "units (11)",
-              "Kokoro - Test: Integration",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/gax-java",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "linkage-monitor",
-              "units (7)",
-              "units (8)",
-              "units (11)",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
         "repo": "googleapis/java-conformance-tests",
         "branchProtectionRules": [
           {
@@ -97,116 +58,12 @@
         ]
       },
       {
-        "repo": "GoogleCloudPlatform/getting-started-java",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro CI - Java 8",
-              "Kokoro CI - Lint",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "GoogleCloudPlatform/java-docs-samples",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro CI - Java 11",
-              "Kokoro CI - Java 8",
-              "Kokoro CI - Lint",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/google-auth-library-java",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: Binary Compatibility",
-              "Kokoro - Test: Code Format",
-              "Kokoro - Test: Dependencies",
-              "Kokoro - Test: Java 11",
-              "Kokoro - Test: Java 7",
-              "Kokoro - Test: Java 8",
-              "Kokoro - Test: Linkage Monitor",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
         "repo": "googleapis/google-api-java-client-services",
         "branchProtectionRules": [
           {
             "requiredStatusCheckContexts": [
               "Kokoro - Test: Generator",
               "Kokoro - Test: Java 8",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/google-api-java-client",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: Binary Compatibility",
-              "Kokoro - Test: Java 11",
-              "Kokoro - Test: Java 7",
-              "Kokoro - Test: Java 8",
-              "Kokoro - Test: Linkage Monitor",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/google-http-java-client",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: Binary Compatibility",
-              "Kokoro - Test: Code Format",
-              "Kokoro - Test: Dependencies",
-              "Kokoro - Test: Java 11",
-              "Kokoro - Test: Java 7",
-              "Kokoro - Test: Java 8",
-              "Kokoro - Test: Linkage Monitor",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/google-oauth-java-client",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: Binary Compatibility",
-              "Kokoro - Test: Java 11",
-              "Kokoro - Test: Java 7",
-              "Kokoro - Test: Java 8",
-              "Kokoro - Test: Linkage Monitor",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/google-cloud-java",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: Code Format",
-              "Kokoro - Test: Java 11",
-              "Kokoro - Test: Java 7",
-              "Kokoro - Test: Java 8",
-              "Kokoro - Test: Linkage Monitor",
               "cla/google"
             ]
           }
