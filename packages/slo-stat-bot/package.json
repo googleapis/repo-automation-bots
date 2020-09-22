@@ -35,7 +35,7 @@
     "moment": "^2.27.0"
   },
   "devDependencies": {
-    "@types/mocha": "^7.0.0",
+    "@types/mocha": "^8.0.0",
     "@types/node": "^12.6.1",
     "@types/sinon": "^9.0.5",
     "c8": "^7.1.0",
