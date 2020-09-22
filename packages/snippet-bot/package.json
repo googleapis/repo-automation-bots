@@ -28,7 +28,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@octokit/rest": "^16.0.0",
+    "@octokit/rest": "^18.0.0",
     "gcf-utils": "^5.5.1",
     "node-fetch": "^2.6.0",
     "tar": "^6.0.5",
