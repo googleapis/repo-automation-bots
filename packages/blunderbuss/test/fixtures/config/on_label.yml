@@ -8,5 +8,9 @@ assign_issues_by:
     - 'api: baz'
     to:
     - bar_baz_user
+  - labels:
+    - 'api: team'
+    to:
+    - googleapis/team-awesome
 assign_prs:
-- prs1
+  - prs1

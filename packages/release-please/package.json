@@ -29,9 +29,9 @@
   },
   "dependencies": {
     "@octokit/rest": "^18.0.0",
-    "@octokit/webhooks": "7.11.2",
+    "@octokit/webhooks": "7.11.3",
     "gcf-utils": "^5.5.1",
-    "release-please": "^5.8.0"
+    "release-please": "^6.1.0"
   },
   "devDependencies": {
     "@types/mocha": "^8.0.0",

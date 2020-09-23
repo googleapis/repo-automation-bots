@@ -19,27 +19,11 @@ import nock from 'nock';
 import sinon, {SinonStub} from 'sinon';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import handler from '../src/merge-on-green';
+import {CheckStatus, Reviews, Comment, Label} from '../src/merge-logic';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
 
 const sandbox = sinon.createSandbox();
-
-interface Label {
-  name: string;
-}
-
-interface CheckStatus {
-  context: string;
-  state: string;
-}
-interface Reviews {
-  user: {
-    login: string;
-  };
-  state: string;
-  commit_id: string;
-  id: number;
-}
 
 interface HeadSha {
   sha: string;
@@ -47,10 +31,6 @@ interface HeadSha {
 
 interface CheckRuns {
   check_runs: [{name: string; conclusion: string}];
-}
-
-interface Comments {
-  body: string;
 }
 
 nock.disableNetConnect();
@@ -81,7 +61,7 @@ function getRuns(ref: string, response: CheckRuns) {
     .reply(200, response);
 }
 
-function getCommentsOnPr(response: Comments[]) {
+function getCommentsOnPr(response: Comment[]) {
   return nock('https://api.github.com')
     .get('/repos/testOwner/testRepo/issues/1/comments')
     .reply(200, response);
