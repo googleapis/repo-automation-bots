@@ -124,16 +124,15 @@ describe('Sync repo settings', () => {
   });
 
   it('should ignore repos in ignored repos in required-checks.json', async () => {
-    const repo = 'api-common-java';
+    const repo = 'gax-ruby';
     const scopes = [
       nockConfig404(org, repo),
-      nockLanguagesList(org, repo, {java: 1}),
+      nockLanguagesList(org, repo, {ruby: 1}),
       nockUpdateTeamMembership('yoshi-admins', org, repo),
-      nockUpdateTeamMembership('yoshi-java-admins', org, repo),
-      nockUpdateTeamMembership('yoshi-java', org, repo),
-      nockUpdateTeamMembership('java-samples-reviewers', org, repo),
+      nockUpdateTeamMembership('yoshi-ruby-admins', org, repo),
+      nockUpdateTeamMembership('yoshi-ruby', org, repo),
     ];
-    await receive('googleapis', 'api-common-java');
+    await receive(org, repo);
     scopes.forEach(x => x.done());
   });
 
@@ -151,29 +150,17 @@ describe('Sync repo settings', () => {
   });
 
   it('should override master branch protection if the repo is overridden', async () => {
-    const repo = 'google-api-java-client';
+    const repo = 'python-bigtable';
     const scopes = [
       nockConfig404(org, repo),
-      nockLanguagesList(org, repo, {java: 1}),
-      nockUpdateRepoSettings(repo, false, true),
-      nockUpdateBranchProtection(
-        repo,
-        [
-          'Kokoro - Test: Binary Compatibility',
-          'Kokoro - Test: Java 11',
-          'Kokoro - Test: Java 7',
-          'Kokoro - Test: Java 8',
-          'Kokoro - Test: Linkage Monitor',
-          'cla/google',
-        ],
-        false
-      ),
+      nockLanguagesList(org, repo, {python: 1}),
+      nockUpdateRepoSettings(repo, true, true),
+      nockUpdateBranchProtection(repo, ['Kokoro', 'cla/google'], false),
       nockUpdateTeamMembership('yoshi-admins', org, repo),
-      nockUpdateTeamMembership('yoshi-java-admins', org, repo),
-      nockUpdateTeamMembership('yoshi-java', org, repo),
-      nockUpdateTeamMembership('java-samples-reviewers', org, repo),
+      nockUpdateTeamMembership('yoshi-python-admins', org, repo),
+      nockUpdateTeamMembership('yoshi-python', org, repo),
     ];
-    await receive('googleapis', 'google-api-java-client');
+    await receive(org, repo);
     scopes.forEach(s => s.done());
   });
 

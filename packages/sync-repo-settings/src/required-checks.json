@@ -17,9 +17,6 @@
         ]
       }
     ],
-    "ignoredRepos": [
-      "googleapis/gapic-generator-java"
-    ],
     "permissionRules": [
       {
         "team": "java-samples-reviewers",
@@ -39,24 +36,6 @@
       }
     ],
     "repoOverrides": [
-      {
-        "repo": "googleapis/java-conformance-tests",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "dependencies (8)",
-              "dependencies (11)",
-              "linkage-monitor",
-              "lint",
-              "clirr",
-              "units (7)",
-              "units (8)",
-              "units (11)",
-              "cla/google"
-            ]
-          }
-        ]
-      },
       {
         "repo": "googleapis/google-api-java-client-services",
         "branchProtectionRules": [
