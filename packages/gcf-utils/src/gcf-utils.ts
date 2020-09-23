@@ -12,11 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {createProbot, Probot, ApplicationFunction, Options} from 'probot';
+import {
+  createProbot,
+  Probot,
+  ApplicationFunction,
+  Options,
+  Application,
+} from 'probot';
 import {CloudTasksClient} from '@google-cloud/tasks';
 import {v1} from '@google-cloud/secret-manager';
 import * as express from 'express';
 // eslint-disable-next-line node/no-extraneous-import
+import {EventNames} from '@octokit/webhooks';
 import {Octokit} from '@octokit/rest';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger} from './logging/gcf-logger';
@@ -237,7 +244,7 @@ export class GCFBootstrapper {
           // TODO: find out the best way to get this type, and whether we can
           // keep using a custom event name.
           await this.probot.receive({
-            name,
+            name: name as EventNames.StringNames,
             id,
             payload: payload,
           });
@@ -284,17 +291,16 @@ export class GCFBootstrapper {
       // Job was scheduled for a single repository:
       await this.scheduledToTask(body.repo, id, body, eventName, signature);
     } else {
-      const octokit = new Octokit({
-        auth: await this.getInstallationToken(body.installation.id),
-      });
+      const octokit = await this.getAuthenticatedOctokit(body.installation.id);
       // Installations API documented here: https://developer.github.com/v3/apps/installations/
-      const installationsPaginated = octokit.paginate.iterator({
-        url: '/installation/repositories',
-        method: 'GET',
-        headers: {
-          Accept: 'application/vnd.github.machine-man-preview+json',
-        },
-      });
+      const installationsPaginated = octokit.paginate.iterator(
+        octokit.apps.listReposAccessibleToInstallation,
+        {
+          headers: {
+            Accept: 'application/vnd.github.machine-man-preview+json',
+          },
+        }
+      );
       for await (const response of installationsPaginated) {
         for (const repo of response.data) {
           await this.scheduledToTask(
@@ -310,10 +316,10 @@ export class GCFBootstrapper {
   }
 
   // TODO: How do we still get access to this installation token?
-  async getInstallationToken(installationId: number) {
-    return await this.probot!.app!.getInstallationAccessToken({
-      installationId,
-    });
+  async getAuthenticatedOctokit(installationId: number): Promise<Octokit> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const app = (this.probot as any).apps[0] as Application;
+    return ((await app.auth(installationId)) as unknown) as Octokit;
   }
 
   private async scheduledToTask(

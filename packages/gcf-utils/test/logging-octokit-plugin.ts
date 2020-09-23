@@ -48,7 +48,7 @@ describe('Logging-Octokit-Plugin', () => {
         repo: 'barRepo',
         labels: ['a', 'b'],
       })
-      .catch(e => {
+      .catch((e: Error) => {
         // ignore HTTP Errors since Octokit is unauthenticated
         if (e.name !== 'HttpError') throw e;
       })
@@ -80,7 +80,7 @@ describe('Logging-Octokit-Plugin', () => {
         repo: 'barRepo',
         body: 'comment body',
       })
-      .catch(e => {
+      .catch((e: Error) => {
         // ignore HTTP Errors since Octokit is unauthenticated
         if (e.name !== 'HttpError') throw e;
       })
@@ -112,7 +112,7 @@ describe('Logging-Octokit-Plugin', () => {
         name: 'labelName',
         color: 'blue',
       })
-      .catch(e => {
+      .catch((e: Error) => {
         // ignore HTTP Errors since Octokit is unauthenticated
         if (e.name !== 'HttpError') throw e;
       })
@@ -140,7 +140,7 @@ describe('Logging-Octokit-Plugin', () => {
         issue_number: 3,
         name: 'labelName',
       })
-      .catch(e => {
+      .catch((e: Error) => {
         // ignore HTTP Errors since Octokit is unauthenticated
         if (e.name !== 'HttpError') throw e;
       })
@@ -353,20 +353,6 @@ describe('Logging-Octokit-Plugin', () => {
             },
           },
         };
-        const actual = logger.lastLogData;
-        assert.deepEqual(actual, expected);
-      });
-  });
-
-  it('does not log information for unknown actions', () => {
-    loggingOctokit.issues
-      .checkAssignee({owner: 'fooOwner', repo: 'barRepo', assignee: 'bar'})
-      .catch(e => {
-        // ignore HTTP Errors since Octokit is unauthenticated
-        if (e.name !== 'HttpError') throw e;
-      })
-      .finally(() => {
-        const expected = undefined;
         const actual = logger.lastLogData;
         assert.deepEqual(actual, expected);
       });

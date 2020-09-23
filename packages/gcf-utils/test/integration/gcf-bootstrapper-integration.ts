@@ -11,10 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-/*
+
 import {GCFBootstrapper} from '../../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
-import {Application, GitHubAPI} from 'probot';
+import {Application} from 'probot';
+import {Octokit as GitHubAPI} from '@octokit/rest';
 import {resolve} from 'path';
 import {config} from 'dotenv';
 import assert from 'assert';
@@ -69,14 +70,16 @@ describe('GCFBootstrapper Integration', () => {
     it('is called properly', async () => {
       let called = false;
       const pb = await bootstrapper.loadProbot((app: Application) => {
-        app.on('foo', async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        app.on('foo' as any, async () => {
           console.log('We are called!');
           called = true;
         });
       });
 
       await pb.receive({
-        name: 'foo',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'foo' as any,
         id: 'bar',
         payload: 'baz',
       });
@@ -87,7 +90,8 @@ describe('GCFBootstrapper Integration', () => {
     it('provides github with logging plugin', async () => {
       let called = false;
       const pb = await bootstrapper.loadProbot((app: Application) => {
-        app.on('foo', async context => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        app.on('foo' as any, async context => {
           assert(
             (context.github as GitHubAPI & {
               loggingOctokitPluginVersion: string;
@@ -98,7 +102,8 @@ describe('GCFBootstrapper Integration', () => {
       });
 
       await pb.receive({
-        name: 'foo',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'foo' as any,
         id: 'bar',
         payload: 'baz',
       });

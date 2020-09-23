@@ -14,7 +14,7 @@
 
 import {GCFBootstrapper, WrapOptions, logger} from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
-import {GitHubAPI} from 'probot/lib/github';
+import {Octokit} from '@octokit/rest';
 import {Options} from 'probot';
 import * as express from 'express';
 import sinon from 'sinon';
@@ -68,15 +68,15 @@ describe('GCFBootstrapper', () => {
         .resolves({id: 1234, secret: 'foo', webhookPath: 'bar'});
 
       enqueueTask = sinon.stub(bootstrapper, 'enqueueTask');
-      sinon.stub(bootstrapper, 'getInstallationToken');
-      handler = await bootstrapper.gcf(async app => {
-        app.auth = () =>
-          new Promise<GitHubAPI>(resolve => {
-            resolve(GitHubAPI());
-          });
+      sinon
+        .stub(bootstrapper, 'getAuthenticatedOctokit')
+        .returns(Promise.resolve(new Octokit()));
+      handler = bootstrapper.gcf(async app => {
         app.on('issues', spy);
-        app.on('schedule.repository', spy);
-        app.on('err', sinon.stub().throws());
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        app.on('schedule.repository' as any, spy);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        app.on('err' as any, sinon.stub().throws());
       }, wrapOpts);
     }
 
