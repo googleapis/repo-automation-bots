@@ -296,8 +296,8 @@ export class GCFBootstrapper {
       const installationsPaginated = octokit.paginate.iterator(
         octokit.apps.listReposAccessibleToInstallation,
         {
-          headers: {
-            Accept: 'application/vnd.github.machine-man-preview+json',
+          mediaType: {
+            previews: ['machine-man'],
           },
         }
       );
