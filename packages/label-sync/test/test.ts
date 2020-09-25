@@ -18,7 +18,7 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 import path from 'path';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, Context} from 'probot';
 import * as sinon from 'sinon';
 import * as labelSync from '../src/label-sync';
 import * as assert from 'assert';
@@ -71,6 +71,10 @@ describe('Label Sync', () => {
   let probot: Probot;
   const sandbox = sinon.createSandbox();
   let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
+  let loadConfigStub: sinon.SinonStub<
+    [Context],
+    Promise<null | labelSync.ConfigurationOptions>
+  >;
   beforeEach(() => {
     probot = new Probot({
       // use a bare instance of octokit, the default version
@@ -96,6 +100,7 @@ describe('Label Sync', () => {
         },
       ],
     });
+    loadConfigStub = sandbox.stub(labelSync, 'loadConfig').resolves(null);
   });
   afterEach(() => sandbox.restore());
 
@@ -201,5 +206,33 @@ describe('Label Sync', () => {
     });
 
     scopes.forEach(s => s.done());
+  });
+
+  it('should attempt to load config', async () => {
+    const payload = require(path.resolve(
+      fixturesPath,
+      './repository_created.json'
+    ));
+    const scopes = [
+      // no need for nockLabelList(), as labels will be cached.
+      nockFetchOldLabels([]),
+      nockLabelCreate(newLabels.labels.length + 1),
+    ];
+    await probot.receive({name: 'repository.created', payload, id: 'abc123'});
+    scopes.forEach(s => s.done());
+    assert.ok(loadConfigStub.calledOnce);
+  });
+
+  it('should skip sync if repository is ignored', async () => {
+    loadConfigStub.restore();
+    loadConfigStub = sandbox.stub(labelSync, 'loadConfig').resolves({
+      ignored: true,
+    });
+    const payload = require(path.resolve(
+      fixturesPath,
+      './repository_created.json'
+    ));
+    await probot.receive({name: 'repository.created', payload, id: 'abc123'});
+    assert.ok(loadConfigStub.calledOnce);
   });
 });

@@ -13,13 +13,19 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, GitHubAPI, Octokit} from 'probot';
+import {Application, GitHubAPI, Octokit, Context} from 'probot';
 import {createHash} from 'crypto';
 import {Storage} from '@google-cloud/storage';
 import * as util from 'util';
 import {logger} from 'gcf-utils';
 
 const storage = new Storage();
+
+export interface ConfigurationOptions {
+  ignored?: boolean;
+}
+
+const CONFIGURATION_FILE = 'label-sync.yml';
 
 interface Labels {
   labels: [
@@ -90,12 +96,27 @@ export function handler(app: Application) {
 
   app.on(events, async c => {
     const [owner, repo] = c.payload.repository.full_name.split('/');
+
+    // Allow the label sync logic to be ignored for a repository:
+    const remoteConfiguration = await loadConfig(c);
+    if (remoteConfiguration?.ignored) {
+      logger.info(`skipping repository ${repo}`);
+      return;
+    }
+
     await reconcileLabels(c.github, owner, repo);
   });
 
   app.on('schedule.repository', async c => {
     const owner = c.payload.organization.login;
     const repo = c.payload.repository.name;
+
+    // Allow the label sync logic to be ignored for a repository:
+    const remoteConfiguration = await loadConfig(c);
+    if (remoteConfiguration?.ignored) {
+      logger.info(`skipping repository ${repo}`);
+      return;
+    }
 
     logger.info(`running for org ${c.payload.cron_org}`);
 
@@ -116,6 +137,17 @@ export function handler(app: Application) {
     );
   });
 }
+
+/*
+ * Fetch remote configuration.
+ * @param probot context.
+ *
+ */
+export const loadConfig = async (context: Context) => {
+  return (await context.config(
+    CONFIGURATION_FILE
+  )) as ConfigurationOptions | null;
+};
 
 interface GetApiLabelsResponse {
   apis: Array<{
