@@ -282,3 +282,18 @@ exports['buildcop app xunitXML opens an issue 2 [Java] 1'] = {
     "buildcop: issue"
   ]
 }
+
+exports['buildcop app xunitXML reopens the more recently closed issue when there is a duplicate 1'] = {
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue",
+    "buildcop: flaky",
+    null
+  ],
+  "state": "open"
+}
+
+exports['buildcop app xunitXML reopens the more recently closed issue when there is a duplicate 2'] = {
+  "body": "Looks like this issue is flaky. :worried:\n\nI'm going to leave this open and stop commenting.\n\nA human should fix and close this.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed\n<details><summary>Test output</summary><br><pre>\nsnippet_test.go:242: got output \"\"; want it to contain \"4 Venue 4\" snippet_test.go:243: got output \"\"; want it to contain \"19 Venue 19\" snippet_test.go:244: got output \"\"; want it to contain \"42 Venue 42\"\n</pre></details>"
+}
