@@ -84,14 +84,21 @@ export function handler(app: Application) {
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
       const number = context.payload.number;
-      const files = await context.github.paginate(
-        context.github.pulls.listFiles.endpoint.merge({
-          owner,
-          repo,
-          pull_number: number,
-          per_page: 100,
-        })
-      );
+      let files: Array<Octokit.PullsListFilesResponseItem>;
+      try {
+        files = await context.github.paginate(
+          context.github.pulls.listFiles.endpoint.merge({
+            owner,
+            repo,
+            pull_number: number,
+            per_page: 100,
+          })
+        );
+      } catch (e) {
+        e.message = `Error fetching files for PR ${owner}/${repo}#${number}\n\n${e.message}`;
+        logger.error(e);
+        return;
+      }
       for (const file of files) {
         if (
           file.status === 'deleted' ||
