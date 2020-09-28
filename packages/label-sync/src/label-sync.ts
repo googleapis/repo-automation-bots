@@ -18,6 +18,7 @@ import {createHash} from 'crypto';
 import {Storage} from '@google-cloud/storage';
 import * as util from 'util';
 import {logger} from 'gcf-utils';
+import {request} from 'gaxios';
 
 const storage = new Storage();
 
@@ -41,9 +42,9 @@ interface Labels {
 // from the local copy.  We are using the `PushEvent` to detect the change,
 // meaning the file running in cloud will be older than the one on master.
 let labelsCache: Labels;
-async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
+async function getLabels(repoPath: string): Promise<Labels> {
   if (!labelsCache) {
-    await refreshLabels(github);
+    await refreshLabels();
   }
   const labels = {
     labels: labelsCache.labels.slice(0),
@@ -72,18 +73,15 @@ async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
 
 /**
  * Fetch the list of static labels from this repository, and cache it.
+ * Note: this method uses gaxios and a direct HTTP request as opposed to
+ * an API call through octokit on purpose :) The GitHub API requires specific
+ * permissions to access content in a repository.
  */
-async function refreshLabels(github: GitHubAPI) {
-  const data = (
-    await github.repos.getContents({
-      owner: 'googleapis',
-      repo: 'repo-automation-bots',
-      path: 'packages/label-sync/src/labels.json',
-    })
-  ).data as {content?: string};
-  labelsCache = JSON.parse(
-    Buffer.from(data.content as string, 'base64').toString('utf8')
-  );
+async function refreshLabels() {
+  const url =
+    'https://raw.githubusercontent.com/googleapis/repo-automation-bots/master/packages/label-sync/src/labels.json';
+  const res = await request<Labels>({url});
+  labelsCache = res.data;
 }
 
 export function handler(app: Application) {
@@ -212,7 +210,7 @@ export const getApiLabels = async (
  * repository.
  */
 async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
-  const newLabels = await getLabels(github, `${owner}/${repo}`);
+  const newLabels = await getLabels(`${owner}/${repo}`);
   const options = github.issues.listLabelsForRepo.endpoint.merge({
     owner,
     repo,
