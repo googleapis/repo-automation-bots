@@ -25,6 +25,7 @@ import * as express from 'express';
 // eslint-disable-next-line node/no-extraneous-import
 import {EventNames} from '@octokit/webhooks';
 import {Octokit} from '@octokit/rest';
+import {config as ConfigPlugin} from '@probot/octokit-plugin-config';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger} from './logging/gcf-logger';
 
@@ -137,11 +138,13 @@ export class GCFBootstrapper {
     const config = JSON.parse(payload);
     if (logging) {
       logger.info('custom logging instance enabled');
-      const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin);
+      const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin).plugin(
+        ConfigPlugin
+      );
       return {...config, Octokit: LoggingOctokit} as Options;
     } else {
       logger.info('custom logging instance not enabled');
-      return {...config, Octokit} as Options;
+      return {...config, Octokit: Octokit.plugin(ConfigPlugin)} as Options;
     }
   }
 

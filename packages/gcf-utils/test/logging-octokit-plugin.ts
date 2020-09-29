@@ -357,4 +357,18 @@ describe('Logging-Octokit-Plugin', () => {
         assert.deepEqual(actual, expected);
       });
   });
+
+  it('does not log information for unknown actions', () => {
+    loggingOctokit.issues
+      .removeAssignees({issue_number: 99, owner: 'fooOwner', repo: 'barRepo', assignee: 'bar'})
+      .catch(e => {
+        // ignore HTTP Errors since Octokit is unauthenticated
+        if (e.name !== 'HttpError') throw e;
+      })
+      .finally(() => {
+        const expected = undefined;
+        const actual = logger.lastLogData;
+        assert.deepEqual(actual, expected);
+      });
+  });
 });

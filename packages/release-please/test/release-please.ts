@@ -16,8 +16,18 @@ import myProbotApp from '../src/release-please';
 import {Runner} from '../src/runner';
 import {describe, it, beforeEach} from 'mocha';
 import {resolve} from 'path';
+
+// We provide our own GitHub instnace, similar to
+// the one used by gcf-utils, this allows us to turn off
+// methods like retry, and to use @octokit/rest
+// as the base class:
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, createProbot} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
+import {config} from '@probot/octokit-plugin-config';
+const TestingOctokit = Octokit.plugin(config);
 
 import * as fs from 'fs';
 import assert, {fail} from 'assert';
@@ -40,15 +50,11 @@ describe('ReleasePleaseBot', () => {
   let probot: Probot;
 
   beforeEach(() => {
-    probot = new Probot({});
-    probot.app = {
-      getSignedJsonWebToken() {
-        return 'abc123';
-      },
-      getInstallationAccessToken(): Promise<string> {
-        return Promise.resolve('abc123');
-      },
-    };
+    probot = createProbot({
+      githubToken: 'abc123',
+      Octokit: TestingOctokit as any,
+    });
+
     probot.load(myProbotApp);
   });
 
@@ -70,7 +76,7 @@ describe('ReleasePleaseBot', () => {
       );
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
         )
         .reply(200, {content: config.toString('base64')});
 
@@ -95,9 +101,9 @@ describe('ReleasePleaseBot', () => {
       );
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
         )
-        .reply(200, {content: config.toString('base64')});
+        .reply(200, config);
 
       await probot.receive({name: 'push', payload, id: 'abc123'});
       requests.done();
@@ -114,9 +120,9 @@ describe('ReleasePleaseBot', () => {
       );
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
         )
-        .reply(200, {content: config.toString('base64')});
+        .reply(200, config);
 
       await probot.receive({name: 'push', payload, id: 'abc123'});
       requests.done();
@@ -133,9 +139,9 @@ describe('ReleasePleaseBot', () => {
       );
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
         )
-        .reply(200, {content: config.toString('base64')});
+        .reply(200, config);
 
       await probot.receive({name: 'push', payload, id: 'abc123'});
       requests.done();
@@ -153,9 +159,9 @@ describe('ReleasePleaseBot', () => {
       );
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
         )
-        .reply(200, {content: config.toString('base64')});
+        .reply(200, config);
 
       await probot.receive({name: 'push', payload, id: 'abc123'});
       requests.done();
@@ -173,9 +179,9 @@ describe('ReleasePleaseBot', () => {
       );
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
         )
-        .reply(200, {content: config.toString('base64')});
+        .reply(200, config);
 
       await probot.receive({name: 'push', payload, id: 'abc123'});
       requests.done();
@@ -188,12 +194,12 @@ describe('ReleasePleaseBot', () => {
       };
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
         )
         .reply(404)
         .get(
-          // FIXME(#68): why is this necessary?
-          '/repos/chingor13/.github/contents/.github/release-please.yml'
+          // we check both an org level .github, and a project level .github.
+          '/repos/chingor13/.github/contents/.github%2Frelease-please.yml'
         )
         .reply(404);
 
@@ -209,9 +215,9 @@ describe('ReleasePleaseBot', () => {
       };
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
         )
-        .reply(200, {content: Buffer.from('').toString('base64')});
+        .reply(200, Buffer.from(''));
 
       await probot.receive({name: 'push', payload, id: 'abc123'});
       requests.done();
@@ -230,9 +236,9 @@ describe('ReleasePleaseBot', () => {
       );
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
         )
-        .reply(200, {content: config.toString('base64')});
+        .reply(200, config);
 
       await probot.receive({name: 'push', payload, id: 'abc123'});
       requests.done();
@@ -256,9 +262,9 @@ describe('ReleasePleaseBot', () => {
       );
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
         )
-        .reply(200, {content: config.toString('base64')});
+        .reply(200, config);
 
       await probot.receive({name: 'push', payload, id: 'abc123'});
       requests.done();
@@ -275,9 +281,9 @@ describe('ReleasePleaseBot', () => {
       );
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/release-please.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
         )
-        .reply(200, {content: config.toString('base64')});
+        .reply(200, config);
 
       await probot.receive({name: 'push', payload, id: 'abc123'});
       requests.done();
@@ -310,12 +316,13 @@ describe('ReleasePleaseBot', () => {
       );
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/Codertocat/Hello-World/contents/.github/release-please.yml'
+          '/repos/Codertocat/Hello-World/contents/.github%2Frelease-please.yml'
         )
-        .reply(200, {content: config.toString('base64')});
+        .reply(200, config);
 
       await probot.receive({
-        name: 'schedule.repository',
+        // See: https://github.com/octokit/webhooks.js/issues/277
+        name: 'schedule.repository' as any,
         payload,
         id: 'abc123',
       });
@@ -339,16 +346,17 @@ describe('ReleasePleaseBot', () => {
       );
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/Codertocat/Hello-World/contents/.github/release-please.yml'
+          '/repos/Codertocat/Hello-World/contents/.github%2Frelease-please.yml'
         )
-        .reply(200, {content: config.toString('base64')})
+        .reply(200, config)
         .delete(
-          '/repos/Codertocat/Hello-World/issues/2/labels/release-please:force-run'
+          '/repos/Codertocat/Hello-World/issues/2/labels/release-please%3Aforce-run'
         )
         .reply(200);
 
       await probot.receive({
-        name: 'pull_request.labeled',
+        // see: https://github.com/probot/probot/issues/1367
+        name: 'pull_request.labeled' as any,
         payload,
         id: 'abc123',
       });
@@ -363,7 +371,8 @@ describe('ReleasePleaseBot', () => {
       };
 
       await probot.receive({
-        name: 'pull_request.labeled',
+        // see: https://github.com/probot/probot/issues/1367
+        name: 'pull_request.labeled' as any,
         payload,
         id: 'abc123',
       });

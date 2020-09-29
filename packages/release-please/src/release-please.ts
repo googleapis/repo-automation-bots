@@ -13,7 +13,13 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, GitHubAPI} from 'probot';
+import {Application} from 'probot';
+
+interface GitHubAPI {
+  graphql: Function;
+  request: Function;
+}
+
 // TODO: fix these imports when release-please exports types from the root
 // See https://github.com/googleapis/release-please/issues/249
 import {BuildOptions} from 'release-please/build/src/release-pr';
@@ -24,7 +30,8 @@ import {
   GitHubReleaseOptions,
 } from 'release-please/build/src/github-release';
 import {Runner} from './runner';
-import {Octokit} from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest'; // Use version from gcf-utils.
 import {logger} from 'gcf-utils';
 
 type OctokitType = InstanceType<typeof Octokit>;
@@ -190,7 +197,8 @@ export = (app: Application) => {
     }
   });
 
-  app.on('schedule.repository', async context => {
+  // See: https://github.com/octokit/webhooks.js/issues/277
+  app.on('schedule.repository' as any, async context => {
     const repoUrl = context.payload.repository.full_name;
     const repoName = context.payload.repository.name;
 
@@ -231,8 +239,9 @@ export = (app: Application) => {
   app.on('pull_request.labeled', async context => {
     // if missing the label, skip
     if (
+      // See: https://github.com/probot/probot/issues/1366
       !context.payload.pull_request.labels.some(
-        label => label.name === FORCE_RUN_LABEL
+        (label: any) => label.name === FORCE_RUN_LABEL
       )
     ) {
       logger.info(
@@ -250,7 +259,7 @@ export = (app: Application) => {
     // remove the label
     await context.github.issues.removeLabel({
       name: FORCE_RUN_LABEL,
-      number: context.payload.pull_request.number,
+      issue_number: context.payload.pull_request.number,
       owner,
       repo,
     });
