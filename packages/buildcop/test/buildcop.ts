@@ -976,6 +976,47 @@ describe('buildcop', () => {
         scopes.forEach(s => s.done());
       });
 
+      it('reopens the more recently closed issue when there is a duplicate', async () => {
+        const payload = buildPayload('one_failed.xml', 'golang-samples');
+
+        const title = formatTestCase({
+          package:
+            'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+          testCase: 'TestSample',
+          passed: false,
+        });
+
+        const sixDaysAgo = new Date();
+        sixDaysAgo.setDate(sixDaysAgo.getDate() - 6);
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+
+        const scopes = [
+          nockIssues('golang-samples', [
+            {
+              title,
+              number: 18,
+              body: 'Failure!',
+              state: 'closed',
+              closed_at: sixDaysAgo.toISOString(),
+            },
+            {
+              title,
+              number: 19, // Newer issue closed more recently.
+              body: 'Failure!',
+              state: 'closed',
+              closed_at: fiveDaysAgo.toISOString(),
+            },
+          ]),
+          nockIssueComment('golang-samples', 19),
+          nockIssuePatch('golang-samples', 19),
+        ];
+
+        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+
+        scopes.forEach(s => s.done());
+      });
+
       it('only opens one issue for a group of failures [Go]', async () => {
         const payload = buildPayload('go_failure_group.xml', 'golang-samples');
 
