@@ -320,6 +320,7 @@ export class GCFBootstrapper {
 
   // TODO: How do we still get access to this installation token?
   async getAuthenticatedOctokit(installationId: number): Promise<Octokit> {
+    // See: https://github.com/probot/probot/issues/1003
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const app = (this.probot as any).apps[0] as Application;
     return ((await app.auth(installationId)) as unknown) as Octokit;

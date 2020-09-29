@@ -17,7 +17,7 @@ import {Runner} from '../src/runner';
 import {describe, it, beforeEach} from 'mocha';
 import {resolve} from 'path';
 
-// We provide our own GitHub instnace, similar to
+// We provide our own GitHub instance, similar to
 // the one used by gcf-utils, this allows us to turn off
 // methods like retry, and to use @octokit/rest
 // as the base class:
@@ -52,6 +52,7 @@ describe('ReleasePleaseBot', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       Octokit: TestingOctokit as any,
     });
 
@@ -322,6 +323,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         // See: https://github.com/octokit/webhooks.js/issues/277
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'schedule.repository' as any,
         payload,
         id: 'abc123',
@@ -356,6 +358,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         // see: https://github.com/probot/probot/issues/1367
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'pull_request.labeled' as any,
         payload,
         id: 'abc123',
@@ -372,6 +375,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         // see: https://github.com/probot/probot/issues/1367
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'pull_request.labeled' as any,
         payload,
         id: 'abc123',

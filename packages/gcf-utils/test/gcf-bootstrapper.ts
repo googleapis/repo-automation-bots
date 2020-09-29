@@ -70,7 +70,7 @@ describe('GCFBootstrapper', () => {
       enqueueTask = sinon.stub(bootstrapper, 'enqueueTask');
       sinon
         .stub(bootstrapper, 'getAuthenticatedOctokit')
-        .returns(Promise.resolve(new Octokit()));
+        .resolves(new Octokit());
       handler = bootstrapper.gcf(async app => {
         app.on('issues', spy);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

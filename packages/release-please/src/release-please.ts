@@ -198,6 +198,7 @@ export = (app: Application) => {
   });
 
   // See: https://github.com/octokit/webhooks.js/issues/277
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
     const repoUrl = context.payload.repository.full_name;
     const repoName = context.payload.repository.name;
@@ -241,6 +242,7 @@ export = (app: Application) => {
     if (
       // See: https://github.com/probot/probot/issues/1366
       !context.payload.pull_request.labels.some(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (label: any) => label.name === FORCE_RUN_LABEL
       )
     ) {
