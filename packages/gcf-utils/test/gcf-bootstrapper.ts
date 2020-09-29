@@ -212,8 +212,6 @@ describe('GCFBootstrapper', () => {
           }
         )
         .reply(200, {});
-
-      await mockBootstrapper();
       req.body = {
         installation: {id: 1},
         repo: 'firstRepo',
