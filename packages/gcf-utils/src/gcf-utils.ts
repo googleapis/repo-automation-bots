@@ -476,8 +476,11 @@ export class GCFBootstrapper {
       intoStream(body).pipe(writeable);
       await new Promise((resolve, reject) => {
         writeable.on('error', reject);
+        // TODO: investigate why this delay is necessary for unit tests on
+        // GitHub Actions. It suggests to me that we are bumping into a
+        // race condition on close:
         writeable.on('finish', () => {
-          process.nextTick(resolve);
+          setTimeout(resolve, 100);
         });
       });
       return JSON.stringify({
