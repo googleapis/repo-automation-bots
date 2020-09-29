@@ -385,12 +385,9 @@ buildcop.openIssues = async (
         // If the existing issue has been closed for more than 10 days, open
         // a new issue instead.
         //
-        // The type of closed_at is null. But, it is actually a string if the
-        // issue is closed. Convert to unknown then to string as a workaround.
         // If this doesn't work, we'll mark the issue as flaky.
-        const closedAtString = (existingIssue.closed_at as unknown) as string;
-        if (closedAtString) {
-          const closedAt = Date.parse(closedAtString);
+        const closedAt = parseClosedAt(existingIssue.closed_at);
+        if (closedAt) {
           const daysAgo = 10;
           const daysAgoDate = new Date();
           daysAgoDate.setDate(daysAgoDate.getDate() - daysAgo);
@@ -614,13 +611,25 @@ buildcop.issueComparator = (
   a: Octokit.IssuesListForRepoResponseItem,
   b: Octokit.IssuesListForRepoResponseItem
 ) => {
+  if (a.state === 'open' && b.state !== 'open') {
+    return -1;
+  }
+  if (a.state !== 'open' && b.state === 'open') {
+    return 1;
+  }
+  // The issues are either both open or both not-open.
   if (buildcop.isFlaky(a) && !buildcop.isFlaky(b)) {
     return -1;
   }
   if (!buildcop.isFlaky(a) && buildcop.isFlaky(b)) {
     return 1;
   }
-  return a.number - b.number;
+  const aClose = parseClosedAt(a.closed_at);
+  const bClose = parseClosedAt(b.closed_at);
+  if (aClose && bClose) {
+    return bClose - aClose; // Later close time first.
+  }
+  return a.number - b.number; // Earlier issue number first.
 };
 
 buildcop.isFlaky = (issue: Octokit.IssuesListForRepoResponseItem): boolean => {
@@ -862,4 +871,15 @@ function deduplicateTests(tests: TestCase[]): TestCase[] {
     uniqueTests.set(buildcop.formatTestCase(test), test);
   });
   return Array.from(uniqueTests.values());
+}
+
+// parseClosedAt parses the closed_at field into a date number.
+function parseClosedAt(closedAt: null): number | undefined {
+  // The type of closed_at is null. But, it is actually a string if the
+  // issue is closed. Convert to unknown then to string as a workaround.
+  const closedAtString = (closedAt as unknown) as string;
+  if (closedAtString) {
+    return Date.parse(closedAtString);
+  }
+  return undefined;
 }
