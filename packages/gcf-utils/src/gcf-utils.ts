@@ -248,12 +248,15 @@ export class GCFBootstrapper {
             // TODO: add unit tests for both forms of payload.
             payload = this.parsePubSubPayload(request);
           }
+          // If the payload contains `tmpUrl` this indicates that the original
+          // payload has been written to Cloud Storage; download it.
+          const body = await this.maybeDownloadOriginalBody(payload)
           // TODO: find out the best way to get this type, and whether we can
           // keep using a custom event name.
           await this.probot.receive({
             name: name as EventNames.StringNames,
             id,
-            payload: await this.maybeDownloadOriginalBody(payload),
+            payload: body,
           });
         } else if (triggerType === TriggerType.SCHEDULER) {
           // TODO: currently we assume that scheduled events walk all repos
@@ -408,6 +411,9 @@ export class GCFBootstrapper {
     const url = `https://${location}-${projectId}.cloudfunctions.net/${process.env.GCF_SHORT_FUNCTION_NAME}`;
     logger.info(`scheduling task in queue ${queueName}`);
     if (params.body) {
+      // Payload conists of either the original params.body or, if Cloud
+      // Storage has been configured, a tmp file in a bucket:
+      const payload = await this.maybeWriteBodyToTmp(params.body)
       await client.createTask({
         parent: queuePath,
         task: {
@@ -420,7 +426,7 @@ export class GCFBootstrapper {
               'Content-Type': 'application/json',
             },
             url,
-            body: Buffer.from(await this.maybeWriteBodyToTmp(params.body)),
+            body: Buffer.from(payload),
           },
         },
       });
@@ -451,10 +457,7 @@ export class GCFBootstrapper {
    * @param body
    */
   private async maybeWriteBodyToTmp(body: string): Promise<string> {
-    // Cloud tasks has a maximum payload size of 100kb, if a webhook payload is
-    // approaching this size, then serialize it to a temporary folder:
-    const MAX_PAYLOAD_SIZE = 65000;
-    if (process.env.WEBHOOK_TMP && body.length > MAX_PAYLOAD_SIZE) {
+    if (process.env.WEBHOOK_TMP) {
       const tmp = `${Date.now()}-${v4()}.txt`;
       const bucket = storage.bucket(process.env.WEBHOOK_TMP);
       const writeable = bucket.file(tmp).createWriteStream();
@@ -488,7 +491,6 @@ export class GCFBootstrapper {
       const file = bucket.file(payload.tmpUrl);
       const readable = file.createReadStream();
       const content = await getStream(readable);
-      await file.delete();
       console.info(`downloaded payload from ${payload.tmpUrl}`);
       return JSON.parse(content);
     } else {
