@@ -486,7 +486,9 @@ export class GCFBootstrapper {
     [key: string]: string;
   }): Promise<object> {
     if (payload.tmpUrl) {
-      if (!process.env.WEBHOOK_TMP) throw Error('no tmp directory configured');
+      if (!process.env.WEBHOOK_TMP) {
+        throw Error('no tmp directory configured');
+      }
       const bucket = storage.bucket(process.env.WEBHOOK_TMP);
       const file = bucket.file(payload.tmpUrl);
       const readable = file.createReadStream();
