@@ -19,8 +19,10 @@ import {
   Options,
   Application,
 } from 'probot';
+import getStream from 'get-stream';
 import {CloudTasksClient} from '@google-cloud/tasks';
 import {v1} from '@google-cloud/secret-manager';
+import {Storage} from '@google-cloud/storage';
 import * as express from 'express';
 // eslint-disable-next-line node/no-extraneous-import
 import {EventNames} from '@octokit/webhooks';
@@ -28,11 +30,13 @@ import {Octokit} from '@octokit/rest';
 import {config as ConfigPlugin} from '@probot/octokit-plugin-config';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger} from './logging/gcf-logger';
+import {v4} from 'uuid';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
 
 const client = new CloudTasksClient();
+const storage = new Storage();
 
 interface Repos {
   repos: [
@@ -249,7 +253,7 @@ export class GCFBootstrapper {
           await this.probot.receive({
             name: name as EventNames.StringNames,
             id,
-            payload: payload,
+            payload: await this.maybeDownloadOriginalBody(payload),
           });
         } else if (triggerType === TriggerType.SCHEDULER) {
           // TODO: currently we assume that scheduled events walk all repos
@@ -416,7 +420,7 @@ export class GCFBootstrapper {
               'Content-Type': 'application/json',
             },
             url,
-            body: Buffer.from(params.body),
+            body: Buffer.from(await this.maybeWriteBodyToTmp(params.body)),
           },
         },
       });
@@ -436,6 +440,65 @@ export class GCFBootstrapper {
           },
         },
       });
+    }
+  }
+
+  /*
+   * Setting the process.env.WEBHOOK_TMP environemtn variable indicates
+   * that the webhook payload should be written to a tmp file in Cloud
+   * Storage. This allows us to circumvent the 100kb limit on Cloud Tasks.
+   *
+   * @param body
+   */
+  private async maybeWriteBodyToTmp(body: string): Promise<string> {
+    if (process.env.WEBHOOK_TMP) {
+      try {
+        const tmp = `${Date.now()}-${v4()}.txt`;
+        const bucket = storage.bucket(process.env.WEBHOOK_TMP);
+        const writeable = bucket.file(tmp).createWriteStream();
+        logger.info(`uploading payload to ${tmp}`);
+        writeable.write(body);
+        writeable.end();
+        await new Promise((resolve, reject) => {
+          writeable.on('error', reject);
+          writeable.on('finish', resolve);
+        });
+        return JSON.stringify({
+          tmpUrl: tmp,
+        });
+      } catch (err) {
+        // TODO: with the current logic, if we fail to write to Cloud Storage
+        // we simply return the original body (better than doing nothing).
+        // If we find we are ocasionally getting errors, we should consider
+        // adding retry logic.
+        logger.warn(err);
+        return body;
+      }
+    } else {
+      return body;
+    }
+  }
+
+  /*
+   * If body has the key tmpUrl, download the original body from a temporary
+   * folder in Cloud Storage.
+   *
+   * @param body
+   */
+  private async maybeDownloadOriginalBody(payload: {
+    [key: string]: string;
+  }): Promise<object> {
+    if (payload.tmpUrl) {
+      if (!process.env.WEBHOOK_TMP) throw Error('no tmp directory configured');
+      const bucket = storage.bucket(process.env.WEBHOOK_TMP);
+      const file = bucket.file(payload.tmpUrl);
+      const readable = file.createReadStream();
+      const content = await getStream(readable);
+      await file.delete();
+      console.info(`downloaded payload from ${payload.tmpUrl}`);
+      return JSON.parse(content);
+    } else {
+      return payload;
     }
   }
 }
