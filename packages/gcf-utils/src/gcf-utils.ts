@@ -451,29 +451,23 @@ export class GCFBootstrapper {
    * @param body
    */
   private async maybeWriteBodyToTmp(body: string): Promise<string> {
-    if (process.env.WEBHOOK_TMP) {
-      try {
-        const tmp = `${Date.now()}-${v4()}.txt`;
-        const bucket = storage.bucket(process.env.WEBHOOK_TMP);
-        const writeable = bucket.file(tmp).createWriteStream();
-        logger.info(`uploading payload to ${tmp}`);
-        writeable.write(body);
-        writeable.end();
-        await new Promise((resolve, reject) => {
-          writeable.on('error', reject);
-          writeable.on('finish', resolve);
-        });
-        return JSON.stringify({
-          tmpUrl: tmp,
-        });
-      } catch (err) {
-        // TODO: with the current logic, if we fail to write to Cloud Storage
-        // we simply return the original body (better than doing nothing).
-        // If we find we are ocasionally getting errors, we should consider
-        // adding retry logic.
-        logger.warn(err);
-        return body;
-      }
+    // Cloud tasks has a maximum payload size of 100kb, if a webhook payload is
+    // approaching this size, then serialize it to a temporary folder:
+    const MAX_PAYLOAD_SIZE = 65000;
+    if (process.env.WEBHOOK_TMP && body.length > MAX_PAYLOAD_SIZE) {
+      const tmp = `${Date.now()}-${v4()}.txt`;
+      const bucket = storage.bucket(process.env.WEBHOOK_TMP);
+      const writeable = bucket.file(tmp).createWriteStream();
+      logger.info(`uploading payload to ${tmp}`);
+      writeable.write(body);
+      writeable.end();
+      await new Promise((resolve, reject) => {
+        writeable.on('error', reject);
+        writeable.on('finish', resolve);
+      });
+      return JSON.stringify({
+        tmpUrl: tmp,
+      });
     } else {
       return body;
     }
