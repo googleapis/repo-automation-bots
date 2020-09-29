@@ -464,7 +464,6 @@ export class GCFBootstrapper {
    */
   private async maybeWriteBodyToTmp(body: string): Promise<string> {
     if (process.env.WEBHOOK_TMP) {
-      console.info('gots in here');
       const tmp = `${Date.now()}-${v4()}.txt`;
       const bucket = storage.bucket(process.env.WEBHOOK_TMP);
       const writeable = bucket.file(tmp).createWriteStream({
@@ -475,7 +474,9 @@ export class GCFBootstrapper {
       writeable.end();
       await new Promise((resolve, reject) => {
         writeable.on('error', reject);
-        writeable.on('finish', resolve);
+        writeable.on('finish', () => {
+          process.nextTick(resolve);
+        });
       });
       return JSON.stringify({
         tmpUrl: tmp,

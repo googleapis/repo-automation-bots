@@ -196,26 +196,24 @@ describe('GCFBootstrapper', () => {
       // Fake an upload to Cloud Storage. It seemed worthwhile mocking this
       // entire flow, to ensure that we're using the streaming API
       // appropriately.
-      let upload: {done: Function} | undefined;
-      const uploadComplete = new Promise(resolve => {
-        upload = nock('https://storage.googleapis.com')
-          // Create a resumble upload URL:
-          .defaultReplyHeaders({
-            Location: 'https://storage.googleapis.com/bucket/foo',
-          })
-          .post(/.*/)
-          .reply(200)
-          // Upload the contents:
-          .put(
-            '/bucket/foo',
-            (body: {[key: string]: {[key: string]: number}} | undefined) => {
-              uploaded = body;
-              resolve();
-              return true;
-            }
-          )
-          .reply(200, {});
-      });
+      const upload = nock('https://storage.googleapis.com')
+        // Create a resumble upload URL:
+        .defaultReplyHeaders({
+          Location: 'https://storage.googleapis.com/bucket/foo',
+        })
+        .post(/.*/)
+        .reply(200)
+        // Upload the contents:
+        .put(
+          '/bucket/foo',
+          (body: {[key: string]: {[key: string]: number}} | undefined) => {
+            uploaded = body;
+            return true;
+          }
+        )
+        .reply(200, {});
+
+      await mockBootstrapper();
       req.body = {
         installation: {id: 1},
         repo: 'firstRepo',
@@ -226,13 +224,12 @@ describe('GCFBootstrapper', () => {
       req.headers['x-cloudtasks-taskname'] = '';
 
       await handler(req, response);
-      await uploadComplete;
 
       delete process.env.WEBHOOK_TMP;
       // We should be attempting to write req.body to Cloud Storage:
       assert.strictEqual(uploaded?.installation?.id, 1);
       sinon.assert.calledOnce(enqueueTask);
-      upload?.done();
+      upload.done();
     });
 
     it('fetches payload from Cloud Storage, if tmpUrl in payload', async () => {
