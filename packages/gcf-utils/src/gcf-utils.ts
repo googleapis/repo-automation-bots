@@ -480,7 +480,7 @@ export class GCFBootstrapper {
         // GitHub Actions. It suggests to me that we are bumping into a
         // race condition on close:
         writeable.on('finish', () => {
-          setTimeout(resolve, 100);
+          setTimeout(resolve, 250);
         });
       });
       return JSON.stringify({

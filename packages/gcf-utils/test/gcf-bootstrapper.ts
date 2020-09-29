@@ -184,7 +184,7 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(enqueueTask);
     });
 
-    it('stores task payload in Cloud Storage if WEBHOOK_TMP set', async () => {
+    it.only('stores task payload in Cloud Storage if WEBHOOK_TMP set', async () => {
       await mockBootstrapper();
       process.env.WEBHOOK_TMP = '/tmp/foo';
       // Auth step performed prior to upload to Cloud Storage:
