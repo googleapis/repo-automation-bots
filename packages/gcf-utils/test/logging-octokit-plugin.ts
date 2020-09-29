@@ -360,7 +360,12 @@ describe('Logging-Octokit-Plugin', () => {
 
   it('does not log information for unknown actions', () => {
     loggingOctokit.issues
-      .removeAssignees({issue_number: 99, owner: 'fooOwner', repo: 'barRepo', assignee: 'bar'})
+      .removeAssignees({
+        issue_number: 99,
+        owner: 'fooOwner',
+        repo: 'barRepo',
+        assignee: 'bar',
+      })
       .catch(e => {
         // ignore HTTP Errors since Octokit is unauthenticated
         if (e.name !== 'HttpError') throw e;
