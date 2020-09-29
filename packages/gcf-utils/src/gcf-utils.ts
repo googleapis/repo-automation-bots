@@ -19,7 +19,10 @@ import {
   Options,
   Application,
 } from 'probot';
+
 import getStream from 'get-stream';
+import intoStream from 'into-stream';
+
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {v2 as CloudTasksV2} from '@google-cloud/tasks';
 import {Storage} from '@google-cloud/storage';
@@ -470,8 +473,7 @@ export class GCFBootstrapper {
         validation: process.env.NODE_ENV !== 'test',
       });
       logger.info(`uploading payload to ${tmp}`);
-      writeable.write(body);
-      writeable.end();
+      intoStream(body).pipe(writeable);
       await new Promise((resolve, reject) => {
         writeable.on('error', reject);
         writeable.on('finish', () => {
