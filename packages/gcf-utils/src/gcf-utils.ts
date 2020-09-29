@@ -20,8 +20,8 @@ import {
   Application,
 } from 'probot';
 import getStream from 'get-stream';
-import {CloudTasksClient} from '@google-cloud/tasks';
-import {v1} from '@google-cloud/secret-manager';
+import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
+import {v2 as CloudTasksV2} from '@google-cloud/tasks';
 import {Storage} from '@google-cloud/storage';
 import * as express from 'express';
 // eslint-disable-next-line node/no-extraneous-import
@@ -34,8 +34,6 @@ import {v4} from 'uuid';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
-
-const client = new CloudTasksClient();
 const storage = new Storage();
 
 interface Repos {
@@ -98,10 +96,13 @@ export enum TriggerType {
 export class GCFBootstrapper {
   probot?: Probot;
 
-  secretsClient: v1.SecretManagerServiceClient;
+  secretsClient: SecretManagerV1.SecretManagerServiceClient;
+  cloudTasksClient: CloudTasksV2.CloudTasksClient;
 
-  constructor(secretsClient?: v1.SecretManagerServiceClient) {
-    this.secretsClient = secretsClient || new v1.SecretManagerServiceClient();
+  constructor(secretsClient?: SecretManagerV1.SecretManagerServiceClient) {
+    this.secretsClient =
+      secretsClient || new SecretManagerV1.SecretManagerServiceClient();
+    this.cloudTasksClient = new CloudTasksV2.CloudTasksClient();
   }
 
   async loadProbot(
@@ -251,6 +252,7 @@ export class GCFBootstrapper {
           // If the payload contains `tmpUrl` this indicates that the original
           // payload has been written to Cloud Storage; download it.
           const body = await this.maybeDownloadOriginalBody(payload);
+
           // TODO: find out the best way to get this type, and whether we can
           // keep using a custom event name.
           await this.probot.receive({
@@ -406,7 +408,11 @@ export class GCFBootstrapper {
       /_/g,
       '-'
     );
-    const queuePath = client.queuePath(projectId, location, queueName);
+    const queuePath = this.cloudTasksClient.queuePath(
+      projectId,
+      location,
+      queueName
+    );
     // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green:
     const url = `https://${location}-${projectId}.cloudfunctions.net/${process.env.GCF_SHORT_FUNCTION_NAME}`;
     logger.info(`scheduling task in queue ${queueName}`);
@@ -414,7 +420,7 @@ export class GCFBootstrapper {
       // Payload conists of either the original params.body or, if Cloud
       // Storage has been configured, a tmp file in a bucket:
       const payload = await this.maybeWriteBodyToTmp(params.body);
-      await client.createTask({
+      await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {
           httpRequest: {
@@ -431,7 +437,7 @@ export class GCFBootstrapper {
         },
       });
     } else {
-      await client.createTask({
+      await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {
           httpRequest: {
@@ -458,9 +464,12 @@ export class GCFBootstrapper {
    */
   private async maybeWriteBodyToTmp(body: string): Promise<string> {
     if (process.env.WEBHOOK_TMP) {
+      console.info('gots in here');
       const tmp = `${Date.now()}-${v4()}.txt`;
       const bucket = storage.bucket(process.env.WEBHOOK_TMP);
-      const writeable = bucket.file(tmp).createWriteStream();
+      const writeable = bucket.file(tmp).createWriteStream({
+        validation: process.env.NODE_ENV !== 'test',
+      });
       logger.info(`uploading payload to ${tmp}`);
       writeable.write(body);
       writeable.end();
@@ -491,7 +500,9 @@ export class GCFBootstrapper {
       }
       const bucket = storage.bucket(process.env.WEBHOOK_TMP);
       const file = bucket.file(payload.tmpUrl);
-      const readable = file.createReadStream();
+      const readable = file.createReadStream({
+        validation: process.env.NODE_ENV !== 'test',
+      });
       const content = await getStream(readable);
       console.info(`downloaded payload from ${payload.tmpUrl}`);
       return JSON.parse(content);

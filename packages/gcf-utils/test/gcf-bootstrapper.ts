@@ -22,6 +22,12 @@ import nock from 'nock';
 import assert from 'assert';
 import {v1} from '@google-cloud/secret-manager';
 
+// Resource path helper used by tasks requires that the following
+// environment variables exist in the environment:
+process.env.GCF_SHORT_FUNCTION_NAME = 'fake-function';
+process.env.GCF_LOCATION = 'canada1-fake';
+process.env.PROJECT_ID = 'fake-projet';
+
 nock.disableNetConnect();
 
 function nockListInstallationRepos() {
@@ -67,7 +73,9 @@ describe('GCFBootstrapper', () => {
         .stub(bootstrapper, 'getProbotConfig')
         .resolves({id: 1234, secret: 'foo', webhookPath: 'bar'});
 
-      enqueueTask = sinon.stub(bootstrapper, 'enqueueTask');
+      enqueueTask = sinon.stub();
+      bootstrapper.cloudTasksClient.createTask = enqueueTask;
+
       sinon
         .stub(bootstrapper, 'getAuthenticatedOctokit')
         .resolves(new Octokit());
@@ -174,6 +182,101 @@ describe('GCFBootstrapper', () => {
       await handler(req, response);
 
       sinon.assert.calledOnce(enqueueTask);
+    });
+
+    it('stores task payload in Cloud Storage if WEBHOOK_TMP set', async () => {
+      await mockBootstrapper();
+      process.env.WEBHOOK_TMP = '/tmp/foo';
+      // Auth step performed prior to upload to Cloud Storage:
+      nock('https://oauth2.googleapis.com/')
+        .post('/token')
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        .reply(200, {access_token: 'abc123'});
+      let uploaded: {[key: string]: {[key: string]: number}} | undefined;
+      // Fake an upload to Cloud Storage. It seemed worthwhile mocking this
+      // entire flow, to ensure that we're using the streaming API
+      // appropriately.
+      const upload = nock('https://storage.googleapis.com')
+        // Create a resumble upload URL:
+        .defaultReplyHeaders({
+          Location: 'https://storage.googleapis.com/bucket/foo',
+        })
+        .post(/.*/)
+        .reply(200)
+        // Upload the contents:
+        .put(
+          '/bucket/foo',
+          (body: {[key: string]: {[key: string]: number}} | undefined) => {
+            uploaded = body;
+            return true;
+          }
+        )
+        .reply(200, {});
+
+      await mockBootstrapper();
+      req.body = {
+        installation: {id: 1},
+        repo: 'firstRepo',
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'schedule.repository';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = '';
+
+      await handler(req, response);
+
+      delete process.env.WEBHOOK_TMP;
+      // We should be attempting to write req.body to Cloud Storage:
+      assert.strictEqual(uploaded?.installation?.id, 1);
+      sinon.assert.calledOnce(enqueueTask);
+      upload.done();
+    });
+
+    it('fetches payload from Cloud Storage, if tmpUrl in payload', async () => {
+      await mockBootstrapper();
+      process.env.WEBHOOK_TMP = '/tmp/foo';
+      req.body = {
+        tmpUrl: '/bucket/foo',
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      // populated once this job has been executed by cloud tasks:
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+      // Auth step performed prior to upload to Cloud Storage:
+      nock('https://oauth2.googleapis.com/')
+        .post('/token')
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        .reply(200, {access_token: 'abc123'});
+      // Fake download from Cloud Storage, again with the goal of ensuring
+      // we're using the streams API appropriately:
+      const downloaded = nock('https://storage.googleapis.com')
+        .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?')
+        .reply(200, {
+          metadata: {
+            contentEncoding: 'text/plain',
+          },
+        })
+        .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
+        .reply(
+          200,
+          JSON.stringify({
+            installation: {
+              id: 1,
+            },
+          })
+        );
+
+      await handler(req, response);
+
+      delete process.env.WEBHOOK_TMP;
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.calledOnce(sendStub);
+      sinon.assert.calledOnce(spy);
+      downloaded.done();
     });
 
     it('ensures that task is enqueued when called by scheduler for many repos', async () => {
@@ -396,6 +499,8 @@ describe('GCFBootstrapper', () => {
     });
 
     it('formats from env even with nothing', async () => {
+      delete process.env.PROJECT_ID;
+      delete process.env.GCF_SHORT_FUNCTION_NAME;
       const latest = bootstrapper.getSecretName();
       assert.strictEqual(latest, 'projects//secrets/');
     });
