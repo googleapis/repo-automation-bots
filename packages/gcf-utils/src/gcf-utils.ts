@@ -250,7 +250,7 @@ export class GCFBootstrapper {
           }
           // If the payload contains `tmpUrl` this indicates that the original
           // payload has been written to Cloud Storage; download it.
-          const body = await this.maybeDownloadOriginalBody(payload)
+          const body = await this.maybeDownloadOriginalBody(payload);
           // TODO: find out the best way to get this type, and whether we can
           // keep using a custom event name.
           await this.probot.receive({
@@ -413,7 +413,7 @@ export class GCFBootstrapper {
     if (params.body) {
       // Payload conists of either the original params.body or, if Cloud
       // Storage has been configured, a tmp file in a bucket:
-      const payload = await this.maybeWriteBodyToTmp(params.body)
+      const payload = await this.maybeWriteBodyToTmp(params.body);
       await client.createTask({
         parent: queuePath,
         task: {
