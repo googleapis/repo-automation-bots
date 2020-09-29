@@ -85,9 +85,9 @@
             "type": "string"
           },
           "permission": {
-            "description": "Permission to provide the team.  Can be one of (pull|push|admin|maintain|triage)",
+            "description": "Permission to provide the team.  Can be one of (pull|push|admin)",
             "type": "string",
-            "enum": ["pull", "push", "admin", "maintain", "triage"]
+            "enum": ["pull", "push", "admin"]
           }
         },
         "required": ["team", "permission"]

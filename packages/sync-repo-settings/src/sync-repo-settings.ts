@@ -296,19 +296,18 @@ async function updateMasterBranchProtection(
         accept: 'application/vnd.github.luke-cage-preview+json',
       },
     });
+    logger.info(`Success updating master branch protection for ${repo}`);
   } catch (err) {
     if (err.status === 401) {
       logger.warn(
         `updateMasterBranchProtection: warning received ${err.status} updating ${owner}/${name}`
       );
     } else {
-      logger.error(
-        `updateMasterBranchProtection: error received ${err.status} updating ${owner}/${name}`
-      );
-      throw err;
+      err.message = `updateMasterBranchProtection: error received ${err.status} updating ${owner}/${name}\n\n${err.message}`;
+      logger.error(err);
+      return;
     }
   }
-  logger.info(`Success updating master branch protection for ${repo}`);
 }
 
 /**
@@ -335,6 +334,7 @@ async function updateRepoTeams(
         });
       })
     );
+    logger.info(`Success updating repo in org for ${repo}`);
   } catch (err) {
     const knownErrors = [
       401, // bot does not have permission to access this repository.
@@ -345,13 +345,11 @@ async function updateRepoTeams(
         `updateRepoTeams: warning received ${err.status} updating ${owner}/${name}`
       );
     } else {
-      logger.error(
-        `updateRepoTeams: error received ${err.status} updating ${owner}/${name}`
-      );
-      throw err;
+      err.message = `updateRepoTeams: error received ${err.status} updating ${owner}/${name}\n\n${err.message}`;
+      logger.error(err);
+      return;
     }
   }
-  logger.info(`Success updating repo in org for ${repo}`);
 }
 
 /**
@@ -380,6 +378,7 @@ async function updateRepoOptions(
       allow_rebase_merge: config.rebaseMergeAllowed,
       allow_squash_merge: config.squashMergeAllowed,
     });
+    logger.info(`Success updating repo options for ${repo}`);
   } catch (err) {
     const knownErrors = [
       401, // bot does not have permission to access this repository.
@@ -390,11 +389,9 @@ async function updateRepoOptions(
         `updateRepoOptions: warning received ${err.status} updating ${owner}/${name}`
       );
     } else {
-      logger.error(
-        `updateRepoOptions: error received ${err.status} updating ${owner}/${name}`
-      );
-      throw err;
+      err.message = `updateRepoOptions: error received ${err.status} updating ${owner}/${name}\n\n${err.message}`;
+      logger.error(err);
+      return;
     }
   }
-  logger.info(`Success updating repo options for ${repo}`);
 }
