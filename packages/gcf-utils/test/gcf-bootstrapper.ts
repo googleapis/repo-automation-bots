@@ -207,6 +207,7 @@ describe('GCFBootstrapper', () => {
         .put(
           '/bucket/foo',
           (body: {[key: string]: {[key: string]: number}} | undefined) => {
+            console.info(`>>>>`, body);
             uploaded = body;
             return true;
           }
