@@ -87,6 +87,17 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [6.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/v5.7.1...v6.0.0) (2020-09-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* **probot:** upgrade gcf-utils to probot@10, @octokit/rest@18 (#963)
+
+### Code Refactoring
+
+* **probot:** upgrade gcf-utils to probot@10, @octokit/rest@18 ([#963](https://www.github.com/googleapis/repo-automation-bots/issues/963)) ([a601f4a](https://www.github.com/googleapis/repo-automation-bots/commit/a601f4acb415d80258021549104124cef1a447d1))
+
 ### [5.7.1](https://www.github.com/googleapis/repo-automation-bots/compare/v5.7.0...v5.7.1) (2020-09-14)
 
 
