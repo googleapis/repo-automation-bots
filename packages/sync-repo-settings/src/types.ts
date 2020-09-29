@@ -35,7 +35,7 @@ export interface RepoConfig {
   permissionRules?: PermissionRule[];
 }
 
-export type Permission = 'pull' | 'push' | 'admin' | 'maintain' | 'triage';
+export type Permission = 'pull' | 'push' | 'admin';
 
 export interface PermissionRule {
   /**
