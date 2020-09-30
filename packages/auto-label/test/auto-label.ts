@@ -92,7 +92,11 @@ describe('auto-label', () => {
             color: 'C9FFE5',
           },
         ]);
-      await probot.receive({name: 'issues.opened' as any, payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues.opened' as any,
+        payload,
+        id: 'abc123',
+      });
       ghRequests.done();
     });
 
@@ -114,7 +118,11 @@ describe('auto-label', () => {
             color: 'C9FFE5',
           },
         ]);
-      await probot.receive({name: 'issues.opened' as any, payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues.opened' as any,
+        payload,
+        id: 'abc123',
+      });
       ghRequests.done();
     });
 
@@ -139,7 +147,11 @@ describe('auto-label', () => {
             color: 'C9FFE5',
           },
         ]);
-      await probot.receive({name: 'issues.opened' as any, payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues.opened' as any,
+        payload,
+        id: 'abc123',
+      });
       ghRequests.done();
     });
 
@@ -149,7 +161,11 @@ describe('auto-label', () => {
       repoStub.restore();
       const fileStub = sandbox.stub(handler, 'getDriftFile').resolves('');
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
-      await probot.receive({name: 'issues.opened' as any, payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues.opened' as any,
+        payload,
+        id: 'abc123',
+      });
       fileStub.restore();
       const loggerArg = errorStub.firstCall.args[0];
       assert.ok(loggerArg instanceof Error);
@@ -167,7 +183,11 @@ describe('auto-label', () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/notThere/issues/5/labels')
         .reply(200);
-      await probot.receive({name: 'issues.opened' as any, payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues.opened' as any,
+        payload,
+        id: 'abc123',
+      });
       ghRequests.done();
     });
 
@@ -206,7 +226,11 @@ describe('auto-label', () => {
             name: 'sample',
           },
         ]);
-      await probot.receive({name: 'issues.opened' as any, payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues.opened' as any,
+        payload,
+        id: 'abc123',
+      });
       ghRequests.done();
     });
 
@@ -246,7 +270,11 @@ describe('auto-label', () => {
             name: 'sample',
           },
         ]);
-      await probot.receive({name: 'issues.opened' as any, payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues.opened' as any,
+        payload,
+        id: 'abc123',
+      });
       ghRequests.done();
     });
 
@@ -283,7 +311,11 @@ describe('auto-label', () => {
           },
         ]);
 
-      await probot.receive({name: 'issues.opened' as any, payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues.opened' as any,
+        payload,
+        id: 'abc123',
+      });
       ghRequests.done();
     });
   });

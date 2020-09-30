@@ -45,7 +45,7 @@ handler.getDriftRepos = async () => {
   const jsonData = await handler.getDriftFile('public_repos.json');
   if (!jsonData) {
     logger.error(
-        new Error('public_repos.json downloaded from Cloud Storage was empty')
+      new Error('public_repos.json downloaded from Cloud Storage was empty')
     );
     return null;
   }
@@ -56,7 +56,7 @@ handler.getDriftApis = async () => {
   const jsonData = await handler.getDriftFile('apis.json');
   if (!jsonData) {
     logger.error(
-        new Error('apis.json downloaded from Cloud Storage was empty')
+      new Error('apis.json downloaded from Cloud Storage was empty')
     );
     return null;
   }
@@ -69,8 +69,8 @@ handler.getDriftApis = async () => {
 // For example, an issue titled `spanner/transactions: TestSample failed` would
 // be labeled `api: spanner`.
 export function autoDetectLabel(
-    apis: DriftApi[] | null,
-    title: string
+  apis: DriftApi[] | null,
+  title: string
 ): string | undefined {
   if (!apis || !title) {
     return undefined;
@@ -106,32 +106,32 @@ export function autoDetectLabel(
   // Some APIs have "cloud" before the name (e.g. cloudkms and cloudiot).
   const possibleLabels = [`api: ${firstPart}`, `api: cloud${firstPart}`];
   return apis.find(api => possibleLabels.indexOf(api.github_label) > -1)
-      ?.github_label;
+    ?.github_label;
 }
 
 handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
-    owner: string,
-    repo: string,
-    issueNumber: number,
-    issueTitle: string,
-    driftRepos: DriftRepo[],
-    context: Context
+  owner: string,
+  repo: string,
+  issueNumber: number,
+  issueTitle: string,
+  driftRepos: DriftRepo[],
+  context: Context
 ) {
   const driftRepo = driftRepos.find(x => x.repo === `${owner}/${repo}`);
   const res = await context.github.issues
-      .listLabelsOnIssue({
-        owner,
-        repo,
-        issue_number: issueNumber,
-      })
-      .catch(logger.error);
+    .listLabelsOnIssue({
+      owner,
+      repo,
+      issue_number: issueNumber,
+    })
+    .catch(logger.error);
   const labelsOnIssue = res ? res.data : undefined;
   let wasNotAdded = true;
   let autoDetectedLabel: string | undefined;
 
   if (!driftRepo?.github_label) {
     logger.info(
-        `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
+      `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
     );
     const apis = await handler.getDriftApis();
     autoDetectedLabel = autoDetectLabel(apis, issueTitle);
@@ -158,42 +158,18 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     }
     if (labelsOnIssue) {
       const foundAPIName = labelsOnIssue.find(
-          (element: Label) => element.name === githubLabel
+        (element: Label) => element.name === githubLabel
       );
       const cleanUpOtherLabels = labelsOnIssue.filter(
-          (element: Label) =>
-              element.name.startsWith('api') &&
-              element.name !== foundAPIName?.name &&
-              element.name !== autoDetectedLabel
+        (element: Label) =>
+          element.name.startsWith('api') &&
+          element.name !== foundAPIName?.name &&
+          element.name !== autoDetectedLabel
       );
       if (foundAPIName) {
         logger.info('The label already exists on this issue');
       } else {
         await context.github.issues
-            .addLabels({
-              owner,
-              repo,
-              issue_number: issueNumber,
-              labels: [githubLabel],
-            })
-            .catch(logger.error);
-        logger.info(
-            `Label added to ${owner}/${repo} for issue ${issueNumber} is ${githubLabel}`
-        );
-        wasNotAdded = false;
-      }
-      for (const dirtyLabel of cleanUpOtherLabels) {
-        await context.github.issues
-            .removeLabel({
-              owner,
-              repo,
-              issue_number: issueNumber,
-              name: dirtyLabel.name,
-            })
-            .catch(logger.error);
-      }
-    } else {
-      await context.github.issues
           .addLabels({
             owner,
             repo,
@@ -201,8 +177,32 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
             labels: [githubLabel],
           })
           .catch(logger.error);
-      logger.info(
+        logger.info(
           `Label added to ${owner}/${repo} for issue ${issueNumber} is ${githubLabel}`
+        );
+        wasNotAdded = false;
+      }
+      for (const dirtyLabel of cleanUpOtherLabels) {
+        await context.github.issues
+          .removeLabel({
+            owner,
+            repo,
+            issue_number: issueNumber,
+            name: dirtyLabel.name,
+          })
+          .catch(logger.error);
+      }
+    } else {
+      await context.github.issues
+        .addLabels({
+          owner,
+          repo,
+          issue_number: issueNumber,
+          labels: [githubLabel],
+        })
+        .catch(logger.error);
+      logger.info(
+        `Label added to ${owner}/${repo} for issue ${issueNumber} is ${githubLabel}`
       );
       wasNotAdded = false;
     }
@@ -213,26 +213,26 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     foundSamplesTag = labelsOnIssue.find(e => e.name === 'samples');
   }
   const isSampleIssue =
-      repo.includes('samples') || issueTitle?.includes('sample');
+    repo.includes('samples') || issueTitle?.includes('sample');
   if (!foundSamplesTag && isSampleIssue) {
     await context.github.issues
-        .createLabel({
-          owner,
-          repo,
-          name: 'samples',
-          color: colorsData[colorNumber].color,
-        })
-        .catch(logger.error);
+      .createLabel({
+        owner,
+        repo,
+        name: 'samples',
+        color: colorsData[colorNumber].color,
+      })
+      .catch(logger.error);
     await context.github.issues
-        .addLabels({
-          owner,
-          repo,
-          issue_number: issueNumber,
-          labels: ['samples'],
-        })
-        .catch(logger.error);
+      .addLabels({
+        owner,
+        repo,
+        issue_number: issueNumber,
+        labels: ['samples'],
+      })
+      .catch(logger.error);
     logger.info(
-        `Issue ${issueNumber} is in a samples repo but does not have a sample tag, adding it to the repo and issue`
+      `Issue ${issueNumber} is in a samples repo but does not have a sample tag, adding it to the repo and issue`
     );
     wasNotAdded = false;
   }
@@ -268,24 +268,24 @@ export function handler(app: Application) {
       const issues = response.data;
       for (const issue of issues) {
         const wasNotAdded = await handler.addLabeltoRepoAndIssue(
-            owner,
-            repo,
-            issue.number,
-            issue.title,
-            driftRepos,
-            context
+          owner,
+          repo,
+          issue.number,
+          issue.title,
+          driftRepos,
+          context
         );
         if (wasNotAdded) {
           logger.info(
-              `label for ${issue.number} in ${owner}/${repo} was not added`
+            `label for ${issue.number} in ${owner}/${repo} was not added`
           );
           labelWasNotAddedCount++;
         }
         if (labelWasNotAddedCount > 5) {
           logger.info(
-              `${
-                  owner / repo
-              } has 5 issues where labels were not added; skipping the rest of this repo check.`
+            `${
+              owner / repo
+            } has 5 issues where labels were not added; skipping the rest of this repo check.`
           );
           return;
         }
@@ -303,12 +303,12 @@ export function handler(app: Application) {
       return;
     }
     await handler.addLabeltoRepoAndIssue(
-        owner,
-        repo,
-        issueNumber,
-        context.payload.issue.title,
-        driftRepos,
-        context
+      owner,
+      repo,
+      issueNumber,
+      context.payload.issue.title,
+      driftRepos,
+      context
     );
   });
 
@@ -323,21 +323,22 @@ export function handler(app: Application) {
 
       //goes through issues in repository, adds labels as necessary
       for await (const response of context.github.paginate.iterator(
-          context.github.issues.listForRepo, {
-            owner,
-            repo,
-          }
+        context.github.issues.listForRepo,
+        {
+          owner,
+          repo,
+        }
       )) {
         const issues = response.data;
         //goes through each issue in each page
         for (const issue of issues) {
           await handler.addLabeltoRepoAndIssue(
-              owner,
-              repo,
-              issue.number,
-              issue.title,
-              driftRepos,
-              context
+            owner,
+            repo,
+            issue.number,
+            issue.title,
+            driftRepos,
+            context
           );
         }
       }
