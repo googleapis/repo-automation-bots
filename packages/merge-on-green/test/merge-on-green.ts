@@ -22,6 +22,7 @@ import handler from '../src/merge-on-green';
 import {CheckStatus, Reviews, Comment, Label} from '../src/merge-logic';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {config} from '@probot/octokit-plugin-config';
 const TestingOctokit = Octokit.plugin(config);
@@ -831,9 +832,9 @@ describe('merge-on-green', () => {
       ));
 
       await probot.receive({
-        name: "pull_request",
+        name: 'pull_request',
         payload,
-        id: "abc123",
+        id: 'abc123',
       });
 
       scopes.forEach(s => s.done());
@@ -857,9 +858,9 @@ describe('merge-on-green', () => {
       ));
 
       await probot.receive({
-        name: "pull_request",
+        name: 'pull_request',
         payload,
-        id: "abc123",
+        id: 'abc123',
       });
 
       scopes.forEach(s => s.done());
@@ -880,9 +881,9 @@ describe('merge-on-green', () => {
       ));
 
       await probot.receive({
-        name: "pull_request",
+        name: 'pull_request',
         payload,
-        id: "abc123",
+        id: 'abc123',
       });
 
       scopes.forEach(s => s.done());
