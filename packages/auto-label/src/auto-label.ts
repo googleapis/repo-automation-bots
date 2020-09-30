@@ -245,6 +245,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
  */
 export function handler(app: Application) {
   //nightly cron that backfills and corrects api labels
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
     logger.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;

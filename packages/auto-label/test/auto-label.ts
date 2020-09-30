@@ -25,7 +25,6 @@ import snapshot from 'snap-shot-it';
 import * as sinon from 'sinon';
 import {autoDetectLabel, handler, DriftRepo, DriftApi} from '../src/auto-label';
 import {logger} from 'gcf-utils';
-
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
@@ -54,7 +53,7 @@ describe('auto-label', () => {
       // enables retries which makes testing difficult.
       // eslint-disable-next-line node/no-extraneous-require
       githubToken: 'abc123',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line node/no-extraneous-require
       Octokit: require('@octokit/rest').Octokit,
     });
 
@@ -93,6 +92,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'issues.opened' as any,
         payload,
         id: 'abc123',
@@ -119,6 +119,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'issues.opened' as any,
         payload,
         id: 'abc123',
@@ -148,6 +149,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'issues.opened' as any,
         payload,
         id: 'abc123',
@@ -162,6 +164,7 @@ describe('auto-label', () => {
       const fileStub = sandbox.stub(handler, 'getDriftFile').resolves('');
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
       await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'issues.opened' as any,
         payload,
         id: 'abc123',
@@ -184,6 +187,7 @@ describe('auto-label', () => {
         .get('/repos/testOwner/notThere/issues/5/labels')
         .reply(200);
       await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'issues.opened' as any,
         payload,
         id: 'abc123',
@@ -227,6 +231,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'issues.opened' as any,
         payload,
         id: 'abc123',
@@ -271,6 +276,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'issues.opened' as any,
         payload,
         id: 'abc123',
@@ -312,6 +318,7 @@ describe('auto-label', () => {
         ]);
 
       await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'issues.opened' as any,
         payload,
         id: 'abc123',
@@ -349,6 +356,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'testOwner'},
@@ -396,6 +404,7 @@ describe('auto-label', () => {
         ]);
 
       await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'testOwner'},
@@ -426,6 +435,7 @@ describe('auto-label', () => {
         .reply(422);
 
       await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'testOwner'},
@@ -475,6 +485,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'testOwner'},
@@ -524,6 +535,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'testOwner'},
@@ -567,6 +579,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'installation.created' as any,
         payload,
         id: 'abc123',
