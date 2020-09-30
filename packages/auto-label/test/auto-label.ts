@@ -25,7 +25,6 @@ import snapshot from 'snap-shot-it';
 import * as sinon from 'sinon';
 import {autoDetectLabel, handler, DriftRepo, DriftApi} from '../src/auto-label';
 import {logger} from 'gcf-utils';
-
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
@@ -53,16 +52,11 @@ describe('auto-label', () => {
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
       // eslint-disable-next-line node/no-extraneous-require
+      githubToken: 'abc123',
+      // eslint-disable-next-line node/no-extraneous-require
       Octokit: require('@octokit/rest').Octokit,
     });
-    probot.app = {
-      getSignedJsonWebToken() {
-        return 'abc123';
-      },
-      getInstallationAccessToken(): Promise<string> {
-        return Promise.resolve('abc123');
-      },
-    };
+
     probot.load(handler);
 
     // throw and fail the test if we're writing
@@ -97,7 +91,11 @@ describe('auto-label', () => {
             color: 'C9FFE5',
           },
         ]);
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues',
+        payload,
+        id: 'abc123',
+      });
       ghRequests.done();
     });
 
@@ -119,7 +117,11 @@ describe('auto-label', () => {
             color: 'C9FFE5',
           },
         ]);
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues',
+        payload,
+        id: 'abc123',
+      });
       ghRequests.done();
     });
 
@@ -144,7 +146,11 @@ describe('auto-label', () => {
             color: 'C9FFE5',
           },
         ]);
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues',
+        payload,
+        id: 'abc123',
+      });
       ghRequests.done();
     });
 
@@ -154,7 +160,11 @@ describe('auto-label', () => {
       repoStub.restore();
       const fileStub = sandbox.stub(handler, 'getDriftFile').resolves('');
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues',
+        payload,
+        id: 'abc123',
+      });
       fileStub.restore();
       const loggerArg = errorStub.firstCall.args[0];
       assert.ok(loggerArg instanceof Error);
@@ -172,7 +182,11 @@ describe('auto-label', () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/notThere/issues/5/labels')
         .reply(200);
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues',
+        payload,
+        id: 'abc123',
+      });
       ghRequests.done();
     });
 
@@ -211,7 +225,11 @@ describe('auto-label', () => {
             name: 'sample',
           },
         ]);
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues',
+        payload,
+        id: 'abc123',
+      });
       ghRequests.done();
     });
 
@@ -251,7 +269,11 @@ describe('auto-label', () => {
             name: 'sample',
           },
         ]);
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues',
+        payload,
+        id: 'abc123',
+      });
       ghRequests.done();
     });
 
@@ -288,7 +310,11 @@ describe('auto-label', () => {
           },
         ]);
 
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues',
+        payload,
+        id: 'abc123',
+      });
       ghRequests.done();
     });
   });
@@ -322,7 +348,8 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
-        name: 'schedule.repository',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo'},
@@ -360,7 +387,7 @@ describe('auto-label', () => {
             color: 'C9FFE5',
           },
         ])
-        .delete('/repos/testOwner/testRepo/issues/1/labels/api:theWrongLabel')
+        .delete('/repos/testOwner/testRepo/issues/1/labels/api%3AtheWrongLabel')
         .reply(200, [
           {
             name: 'myGitHubLabel',
@@ -369,7 +396,8 @@ describe('auto-label', () => {
         ]);
 
       await probot.receive({
-        name: 'schedule.repository',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo'},
@@ -399,7 +427,8 @@ describe('auto-label', () => {
         .reply(422);
 
       await probot.receive({
-        name: 'schedule.repository',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo'},
@@ -448,7 +477,8 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
-        name: 'schedule.repository',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo-samples'},
@@ -497,7 +527,8 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
-        name: 'schedule.repository',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo'},
@@ -540,7 +571,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
-        name: 'installation.created',
+        name: 'installation',
         payload,
         id: 'abc123',
       });
