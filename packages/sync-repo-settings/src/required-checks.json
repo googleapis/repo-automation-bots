@@ -3,6 +3,7 @@
     "rebaseMergeAllowed": false,
     "branchProtectionRules": [
       {
+        "requiresCodeOwnerReviews": true,
         "requiredStatusCheckContexts": [
           "dependencies (8)",
           "dependencies (11)",
@@ -34,60 +35,12 @@
         "team": "yoshi-java",
         "permission": "push"
       }
-    ],
-    "repoOverrides": [
-      {
-        "repo": "googleapis/google-api-java-client-services",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: Generator",
-              "Kokoro - Test: Java 8",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/java-bigtable-hbase",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: Binary Compatibility",
-              "Kokoro - Test: Code Format",
-              "Kokoro - Test: Dependencies",
-              "Kokoro - Test: Integration",
-              "Kokoro - Test: Java 11",
-              "Kokoro - Test: Java 8",
-              "Kokoro - Test: Linkage Monitor",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/java-pubsublite",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "dependencies (8)",
-              "dependencies (11)",
-              "linkage-monitor",
-              "lint",
-              "clirr",
-              "units (8)",
-              "units (11)",
-              "Kokoro - Test: Integration",
-              "cla/google"
-            ]
-          }
-        ]
-      }
     ]
   },
   "python": {
     "branchProtectionRules": [
       {
+        "requiresCodeOwnerReviews": true,
         "requiresStrictStatusChecks": true,
         "requiredStatusCheckContexts": [
           "Kokoro",
@@ -111,37 +64,6 @@
     ],
     "repoOverrides": [
       {
-        "repo": "googleapis/proto-plus-python",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "ci/circleci: docs",
-              "ci/circleci: style-check",
-              "ci/circleci: unit-3.5",
-              "ci/circleci: unit-3.6",
-              "ci/circleci: unit-3.7",
-              "ci/circleci: unit-cpp-3.5",
-              "ci/circleci: unit-cpp-3.6",
-              "ci/circleci: unit-cpp-3.7",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/python-crc32c",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Linux",
-              "Kokoro - OS X",
-              "Kokoro - Windows",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
         "repo": "googleapis/python-bigtable",
         "branchProtectionRules": [
           {
@@ -157,10 +79,7 @@
     "ignoredRepos": [
       "GoogleCloudPlatform/python-docs-samples",
       "GoogleCloudPlatform/getting-started-python",
-      "googleapis/gapic-generator-python",
-      "googleapis/releasetool",
       "googleapis/sample-tester",
-      "googleapis/synthtool",
       "googleapis/google-cloud-python"
     ]
   },
