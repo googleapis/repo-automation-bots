@@ -244,7 +244,8 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
  * Main function, responds to label being added
  */
 export function handler(app: Application) {
-  //nightly cron that backfills and corrects api labels
+  // nightly cron that backfills and corrects api labels
+  // Latest Probot doesn't handle schedule events in favor of Github Actions
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
     logger.info(`running for org ${context.payload.cron_org}`);

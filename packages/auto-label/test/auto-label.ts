@@ -92,8 +92,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'issues.opened' as any,
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -119,8 +118,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'issues.opened' as any,
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -149,8 +147,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'issues.opened' as any,
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -164,8 +161,7 @@ describe('auto-label', () => {
       const fileStub = sandbox.stub(handler, 'getDriftFile').resolves('');
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
       await probot.receive({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'issues.opened' as any,
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -187,8 +183,7 @@ describe('auto-label', () => {
         .get('/repos/testOwner/notThere/issues/5/labels')
         .reply(200);
       await probot.receive({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'issues.opened' as any,
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -231,8 +226,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'issues.opened' as any,
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -276,8 +270,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'issues.opened' as any,
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -318,8 +311,7 @@ describe('auto-label', () => {
         ]);
 
       await probot.receive({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'issues.opened' as any,
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -579,8 +571,7 @@ describe('auto-label', () => {
           },
         ]);
       await probot.receive({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'installation.created' as any,
+        name: 'installation',
         payload,
         id: 'abc123',
       });
