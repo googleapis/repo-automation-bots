@@ -22,6 +22,9 @@ import handler from '../src/merge-on-green';
 import {CheckStatus, Reviews, Comment, Label} from '../src/merge-logic';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
+import {Octokit} from '@octokit/rest';
+import {config} from '@probot/octokit-plugin-config';
+const TestingOctokit = Octokit.plugin(config);
 
 const sandbox = sinon.createSandbox();
 
@@ -147,6 +150,8 @@ function getPR(mergeable: boolean, mergeableState: string, state: string) {
     });
 }
 
+//meta-note about the schedule.repository as any; currently GH does not support this type, see
+//open issue for a fix: https://github.com/octokit/webhooks.js/issues/277
 describe('merge-on-green', () => {
   let probot: Probot;
   const loggerStub = sandbox.stub(logger, 'error').throwsArg(0);
@@ -154,6 +159,7 @@ describe('merge-on-green', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
+      Octokit: TestingOctokit as any,
     });
 
     probot.load(handler);
@@ -825,9 +831,11 @@ describe('merge-on-green', () => {
       ));
 
       await probot.receive({
-        name: 'pull_request.labeled' as any,
-        payload: payload,
-        id: 'abc123',
+        name: "pull_request",
+        payload: {
+          action: "labeled"
+        },
+        id: "abc123",
       });
 
       scopes.forEach(s => s.done());
@@ -851,9 +859,11 @@ describe('merge-on-green', () => {
       ));
 
       await probot.receive({
-        name: 'pull_request.labeled' as any,
-        payload: payload,
-        id: 'abc123',
+        name: "pull_request",
+        payload: {
+          action: "labeled"
+        },
+        id: "abc123",
       });
 
       scopes.forEach(s => s.done());
@@ -874,9 +884,11 @@ describe('merge-on-green', () => {
       ));
 
       await probot.receive({
-        name: 'pull_request.labeled' as any,
-        payload: payload,
-        id: 'abc123',
+        name: "pull_request",
+        payload: {
+          action: "labeled"
+        },
+        id: "abc123",
       });
 
       scopes.forEach(s => s.done());

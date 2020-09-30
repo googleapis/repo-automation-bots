@@ -13,8 +13,10 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {ProbotOctokit} from 'probot';
+import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
+
+type OctokitType = InstanceType<typeof Octokit>;
 
 export interface Label {
   name: string;
@@ -75,7 +77,7 @@ async function getLatestCommit(
   owner: string,
   repo: string,
   pr: number,
-  github: InstanceType<typeof ProbotOctokit>
+  github: OctokitType
 ): Promise<string> {
   try {
     // TODO: consider switching this to an async iterator, which would work
@@ -105,7 +107,7 @@ async function getPR(
   owner: string,
   repo: string,
   pr: number,
-  github: InstanceType<typeof ProbotOctokit>
+  github: OctokitType
 ): Promise<PullRequest> {
   try {
     const data = await github.pulls.get({
@@ -140,7 +142,7 @@ async function getCommentsOnPR(
   owner: string,
   repo: string,
   issue_number: number,
-  github: InstanceType<typeof ProbotOctokit>
+  github: OctokitType
 ): Promise<Comment[] | null> {
   try {
     const data = await github.issues.listComments({
@@ -168,7 +170,7 @@ async function hasMOGLabel(
   repo: string,
   pr: number,
   labelNames: string[],
-  github: InstanceType<typeof ProbotOctokit>
+  github: OctokitType
 ): Promise<string | undefined> {
   const start = Date.now();
   try {
@@ -204,13 +206,13 @@ async function hasMOGLabel(
 async function getStatuses(
   owner: string,
   repo: string,
-  github: InstanceType<typeof ProbotOctokit>,
+  github: OctokitType,
   headSha: string
 ): Promise<CheckStatus[]> {
   const start = Date.now();
   try {
     const responses = await github.paginate(
-      await github.repos.listStatusesForRef,
+      await github.repos.listCommitStatusesForRef,
       {
         owner,
         repo,
@@ -240,7 +242,7 @@ async function getStatuses(
 async function getCheckRuns(
   owner: string,
   repo: string,
-  github: InstanceType<typeof ProbotOctokit>,
+  github: OctokitType,
   headSha: string
 ): Promise<CheckRun[]> {
   const start = Date.now();
@@ -297,7 +299,7 @@ async function statusesForRef(
   pr: number,
   requiredChecks: string[],
   headSha: string,
-  github: InstanceType<typeof ProbotOctokit>
+  github: OctokitType
 ): Promise<boolean> {
   const start = Date.now();
   const checkStatus = await getStatuses(owner, repo, github, headSha);
@@ -360,7 +362,7 @@ async function getReviewsCompleted(
   owner: string,
   repo: string,
   pr: number,
-  github: InstanceType<typeof ProbotOctokit>
+  github: OctokitType
 ): Promise<Reviews[]> {
   try {
     const reviewsCompleted = await github.pulls.listReviews({
@@ -415,7 +417,7 @@ async function checkReviews(
   label: string,
   secureLabel: string,
   headSha: string,
-  github: InstanceType<typeof ProbotOctokit>
+  github: OctokitType
 ): Promise<boolean> {
   const start = Date.now();
   logger.info(`=== checking required reviews ${owner}/${repo}/${pr} ===`);
@@ -486,7 +488,7 @@ async function merge(
   repo: string,
   pr: number,
   prInfo: PullRequest,
-  github: InstanceType<typeof ProbotOctokit>
+  github: OctokitType
 ): Promise<Merge> {
   const merge = (
     await github.pulls.merge({
@@ -513,7 +515,7 @@ async function updateBranch(
   owner: string,
   repo: string,
   pr: number,
-  github: InstanceType<typeof ProbotOctokit>
+  github: OctokitType
 ): Promise<Update | null> {
   try {
     const update = (
@@ -545,7 +547,7 @@ async function commentOnPR(
   repo: string,
   pr: number,
   body: string,
-  github: InstanceType<typeof ProbotOctokit>
+  github: OctokitType
 ): Promise<{} | null> {
   try {
     const data = await github.issues.createComment({
@@ -576,7 +578,7 @@ async function removeLabel(
   repo: string,
   issue_number: number,
   name: string,
-  github: InstanceType<typeof ProbotOctokit>
+  github: OctokitType
 ) {
   try {
     await github.issues.removeLabel({
@@ -609,7 +611,7 @@ export async function mergeOnGreen(
   labelNames: string[],
   state: string,
   requiredChecks: string[],
-  github: InstanceType<typeof ProbotOctokit>
+  github: OctokitType
 ): Promise<boolean | undefined> {
   logger.info(`${owner}/${repo} checking merge on green PR status`);
   const [prInfo, mogLabel, headSha] = await Promise.all([

@@ -131,6 +131,8 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
  * @returns void
  */
 function handler(app: Application) {
+  //meta-note about the schedule.repository as any; currently GH does not support this type, see
+  //open issue for a fix: https://github.com/octokit/webhooks.js/issues/277
   app.on('schedule.repository' as any, async context => {
     const rateLimit = (await context.github.rateLimit.get()).data.resources.core
       .remaining;
@@ -162,7 +164,7 @@ function handler(app: Application) {
               [MERGE_ON_GREEN_LABEL, MERGE_ON_GREEN_LABEL_SECURE],
               wp.state,
               wp.branchProtection,
-              context.github
+              context.github as any
             );
             if (remove || wp.state === 'stop') {
               await handler.removePR(wp.url);
