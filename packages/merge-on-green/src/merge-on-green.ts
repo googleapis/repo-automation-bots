@@ -37,6 +37,10 @@ interface WatchPR {
   url: string;
 }
 
+interface Label {
+  name: string;
+}
+
 /**
  * Retrieves Query response from Datastore
  * @returns a Promise that can have any data type as it is the result of the Query, plus some standard types like the query key
@@ -127,7 +131,7 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
  * @returns void
  */
 function handler(app: Application) {
-  app.on(['schedule.repository'], async context => {
+  app.on('schedule.repository' as any, async context => {
     const rateLimit = (await context.github.rateLimit.get()).data.resources.core
       .remaining;
     if (rateLimit <= 0) {
@@ -177,13 +181,13 @@ function handler(app: Application) {
     // if missing the label, skip
     if (
       !context.payload.pull_request.labels.some(
-        label =>
+        (label: Label) =>
           label.name === MERGE_ON_GREEN_LABEL ||
           label.name === MERGE_ON_GREEN_LABEL_SECURE
       )
     ) {
       const labels = context.payload.pull_request.labels
-        .map(label => {
+        .map((label: Label) => {
           return JSON.stringify(label);
         })
         .join(', ');

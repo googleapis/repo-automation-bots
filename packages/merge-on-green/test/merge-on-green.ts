@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, createProbot} from 'probot';
 import {resolve} from 'path';
 import nock from 'nock';
 import sinon, {SinonStub} from 'sinon';
@@ -30,7 +30,8 @@ interface HeadSha {
 }
 
 interface CheckRuns {
-  check_runs: [{name: string; conclusion: string}];
+  name: string;
+  conclusion: string;
 }
 
 nock.disableNetConnect();
@@ -85,9 +86,9 @@ function merge() {
     .reply(200, {sha: '123', merged: true, message: 'in a bottle'});
 }
 
-function dismissReview() {
+function dismissReview(reviewNumber: number) {
   return nock('https://api.github.com')
-    .put('/repos/testOwner/testRepo/pulls/1/reviews/12345/dismissals')
+    .put(`/repos/testOwner/testRepo/pulls/1/reviews/${reviewNumber}/dismissals`)
     .reply(200);
 }
 
@@ -151,18 +152,10 @@ describe('merge-on-green', () => {
   const loggerStub = sandbox.stub(logger, 'error').throwsArg(0);
 
   beforeEach(() => {
-    probot = new Probot({
-      // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest').Octokit,
+    probot = createProbot({
+      githubToken: 'abc123',
     });
-    probot.app = {
-      getSignedJsonWebToken() {
-        return 'abc123';
-      },
-      getInstallationAccessToken(): Promise<string> {
-        return Promise.resolve('abc123');
-      },
-    };
+
     probot.load(handler);
   });
 
@@ -212,7 +205,7 @@ describe('merge-on-green', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -242,7 +235,7 @@ describe('merge-on-green', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -277,7 +270,7 @@ describe('merge-on-green', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -302,10 +295,11 @@ describe('merge-on-green', () => {
         getStatusi('', [
           {state: 'success', context: 'Kokoro - Test: Binary Compatibility'},
         ]),
+        getCommentsOnPr([]),
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -322,7 +316,7 @@ describe('merge-on-green', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -345,11 +339,15 @@ describe('merge-on-green', () => {
         getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
+        getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
+          name: '',
+          conclusion: '',
+        }),
         getCommentsOnPr([]),
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -378,7 +376,7 @@ describe('merge-on-green', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -402,19 +400,15 @@ describe('merge-on-green', () => {
         getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
-          check_runs: [
-            {
-              name: 'Special Check',
-              conclusion: 'success',
-            },
-          ],
+          name: 'Special Check',
+          conclusion: 'success',
         }),
         getCommentsOnPr([]),
         merge(),
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -431,18 +425,14 @@ describe('merge-on-green', () => {
         getMogLabel([{name: 'automerge'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
-          check_runs: [
-            {
-              name: 'Special Check',
-              conclusion: 'success',
-            },
-          ],
+          name: 'Special Check',
+          conclusion: 'success',
         }),
         getCommentsOnPr([]),
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -476,7 +466,7 @@ describe('merge-on-green', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -510,7 +500,7 @@ describe('merge-on-green', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -527,7 +517,7 @@ describe('merge-on-green', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -565,7 +555,7 @@ describe('merge-on-green', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -577,8 +567,8 @@ describe('merge-on-green', () => {
       const scopes = [
         getRateLimit(5000),
         getPR(true, 'clean', 'open'),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getMogLabel([{name: 'automerge: exact'}]),
+        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -589,12 +579,12 @@ describe('merge-on-green', () => {
           {
             user: {login: 'octokitten'},
             state: 'APPROVED',
-            commit_id: '12345',
-            id: 12345,
+            commit_id: '12346',
+            id: 12346,
           },
         ]),
-        dismissReview(),
-        dismissReview(),
+        dismissReview(12345),
+        dismissReview(12346),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
@@ -602,7 +592,7 @@ describe('merge-on-green', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -614,7 +604,7 @@ describe('merge-on-green', () => {
       const scopes = [getRateLimit(0)];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -659,7 +649,7 @@ describe('merge-on-green', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -703,7 +693,7 @@ describe('merge-on-green', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -746,11 +736,15 @@ describe('merge-on-green', () => {
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: "this is what we're looking fo"},
         ]),
+        getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
+          name: "this is what we're looking fo",
+          conclusion: 'success',
+        }),
         getCommentsOnPr([]),
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -798,7 +792,7 @@ describe('merge-on-green', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository',
+        name: 'schedule.repository' as any,
         payload: {org: 'testOwner'},
         id: 'abc123',
       });
@@ -831,7 +825,7 @@ describe('merge-on-green', () => {
       ));
 
       await probot.receive({
-        name: 'pull_request.labeled',
+        name: 'pull_request.labeled' as any,
         payload: payload,
         id: 'abc123',
       });
@@ -857,7 +851,7 @@ describe('merge-on-green', () => {
       ));
 
       await probot.receive({
-        name: 'pull_request.labeled',
+        name: 'pull_request.labeled' as any,
         payload: payload,
         id: 'abc123',
       });
@@ -880,7 +874,7 @@ describe('merge-on-green', () => {
       ));
 
       await probot.receive({
-        name: 'pull_request.labeled',
+        name: 'pull_request.labeled' as any,
         payload: payload,
         id: 'abc123',
       });
