@@ -832,9 +832,7 @@ describe('merge-on-green', () => {
 
       await probot.receive({
         name: "pull_request",
-        payload: {
-          action: "labeled"
-        },
+        payload,
         id: "abc123",
       });
 
@@ -860,9 +858,7 @@ describe('merge-on-green', () => {
 
       await probot.receive({
         name: "pull_request",
-        payload: {
-          action: "labeled"
-        },
+        payload,
         id: "abc123",
       });
 
@@ -885,9 +881,7 @@ describe('merge-on-green', () => {
 
       await probot.receive({
         name: "pull_request",
-        payload: {
-          action: "labeled"
-        },
+        payload,
         id: "abc123",
       });
 
