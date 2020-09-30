@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [6.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/v6.0.0...v6.1.0) (2020-09-30)
+
+
+### Features
+
+* **gcf-utils:** write payload to tmp bucket ([#983](https://www.github.com/googleapis/repo-automation-bots/issues/983)) ([38f264e](https://www.github.com/googleapis/repo-automation-bots/commit/38f264e4573e501dad162d5169365a8907efa2f0))
+
 ## [6.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/v5.7.1...v6.0.0) (2020-09-29)
 
 
