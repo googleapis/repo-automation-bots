@@ -37,7 +37,6 @@ import {v4} from 'uuid';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
-const storage = new Storage();
 
 interface Repos {
   repos: [
@@ -101,11 +100,13 @@ export class GCFBootstrapper {
 
   secretsClient: SecretManagerV1.SecretManagerServiceClient;
   cloudTasksClient: CloudTasksV2.CloudTasksClient;
+  storage: Storage;
 
   constructor(secretsClient?: SecretManagerV1.SecretManagerServiceClient) {
     this.secretsClient =
       secretsClient || new SecretManagerV1.SecretManagerServiceClient();
     this.cloudTasksClient = new CloudTasksV2.CloudTasksClient();
+    this.storage = new Storage();
   }
 
   async loadProbot(
@@ -468,7 +469,7 @@ export class GCFBootstrapper {
   private async maybeWriteBodyToTmp(body: string): Promise<string> {
     if (process.env.WEBHOOK_TMP) {
       const tmp = `${Date.now()}-${v4()}.txt`;
-      const bucket = storage.bucket(process.env.WEBHOOK_TMP);
+      const bucket = this.storage.bucket(process.env.WEBHOOK_TMP);
       const writeable = bucket.file(tmp).createWriteStream({
         validation: process.env.NODE_ENV !== 'test',
       });
@@ -476,12 +477,7 @@ export class GCFBootstrapper {
       intoStream(body).pipe(writeable);
       await new Promise((resolve, reject) => {
         writeable.on('error', reject);
-        // TODO: investigate why this delay is necessary for unit tests on
-        // GitHub Actions. It suggests to me that we are bumping into a
-        // race condition on close:
-        writeable.on('finish', () => {
-          setTimeout(resolve, 250);
-        });
+        writeable.on('finish', resolve);
       });
       return JSON.stringify({
         tmpUrl: tmp,
@@ -504,7 +500,7 @@ export class GCFBootstrapper {
       if (!process.env.WEBHOOK_TMP) {
         throw Error('no tmp directory configured');
       }
-      const bucket = storage.bucket(process.env.WEBHOOK_TMP);
+      const bucket = this.storage.bucket(process.env.WEBHOOK_TMP);
       const file = bucket.file(payload.tmpUrl);
       const readable = file.createReadStream({
         validation: process.env.NODE_ENV !== 'test',

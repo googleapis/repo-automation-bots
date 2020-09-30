@@ -20,7 +20,9 @@ import * as express from 'express';
 import sinon from 'sinon';
 import nock from 'nock';
 import assert from 'assert';
+
 import {v1} from '@google-cloud/secret-manager';
+import {GoogleAuth} from 'google-auth-library';
 
 // Resource path helper used by tasks requires that the following
 // environment variables exist in the environment:
@@ -72,6 +74,14 @@ describe('GCFBootstrapper', () => {
       configStub = sinon
         .stub(bootstrapper, 'getProbotConfig')
         .resolves({id: 1234, secret: 'foo', webhookPath: 'bar'});
+      // This replaces the authClient with an auth client that uses an
+      // API Key, this ensures that we will not attempt to lookup application
+      // default credentials:
+      bootstrapper.storage.authClient.request = async (opts: object) => {
+        const auth = new GoogleAuth();
+        const client = await auth.fromAPIKey('abc123');
+        return client.request(opts);
+      };
 
       enqueueTask = sinon.stub();
       bootstrapper.cloudTasksClient.createTask = enqueueTask;
@@ -184,14 +194,9 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(enqueueTask);
     });
 
-    it.only('stores task payload in Cloud Storage if WEBHOOK_TMP set', async () => {
+    it('stores task payload in Cloud Storage if WEBHOOK_TMP set', async () => {
       await mockBootstrapper();
       process.env.WEBHOOK_TMP = '/tmp/foo';
-      // Auth step performed prior to upload to Cloud Storage:
-      nock('https://oauth2.googleapis.com/')
-        .post('/token')
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        .reply(200, {access_token: 'abc123'});
       let uploaded: {[key: string]: {[key: string]: number}} | undefined;
       // Fake an upload to Cloud Storage. It seemed worthwhile mocking this
       // entire flow, to ensure that we're using the streaming API
@@ -242,12 +247,6 @@ describe('GCFBootstrapper', () => {
       req.headers['x-github-delivery'] = '123';
       // populated once this job has been executed by cloud tasks:
       req.headers['x-cloudtasks-taskname'] = 'my-task';
-
-      // Auth step performed prior to upload to Cloud Storage:
-      nock('https://oauth2.googleapis.com/')
-        .post('/token')
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        .reply(200, {access_token: 'abc123'});
       // Fake download from Cloud Storage, again with the goal of ensuring
       // we're using the streams API appropriately:
       const downloaded = nock('https://storage.googleapis.com')
