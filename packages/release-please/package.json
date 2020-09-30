@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@octokit/webhooks": "7.11.3",
-    "gcf-utils": "^6.0.0-beta.1",
+    "gcf-utils": "^6.0.0",
     "release-please": "^6.1.0"
   },
   "devDependencies": {
