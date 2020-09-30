@@ -19,8 +19,13 @@ import {
   Options,
   Application,
 } from 'probot';
-import {CloudTasksClient} from '@google-cloud/tasks';
-import {v1} from '@google-cloud/secret-manager';
+
+import getStream from 'get-stream';
+import intoStream from 'into-stream';
+
+import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
+import {v2 as CloudTasksV2} from '@google-cloud/tasks';
+import {Storage} from '@google-cloud/storage';
 import * as express from 'express';
 // eslint-disable-next-line node/no-extraneous-import
 import {EventNames} from '@octokit/webhooks';
@@ -28,11 +33,10 @@ import {Octokit} from '@octokit/rest';
 import {config as ConfigPlugin} from '@probot/octokit-plugin-config';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger} from './logging/gcf-logger';
+import {v4} from 'uuid';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
-
-const client = new CloudTasksClient();
 
 interface Repos {
   repos: [
@@ -94,10 +98,15 @@ export enum TriggerType {
 export class GCFBootstrapper {
   probot?: Probot;
 
-  secretsClient: v1.SecretManagerServiceClient;
+  secretsClient: SecretManagerV1.SecretManagerServiceClient;
+  cloudTasksClient: CloudTasksV2.CloudTasksClient;
+  storage: Storage;
 
-  constructor(secretsClient?: v1.SecretManagerServiceClient) {
-    this.secretsClient = secretsClient || new v1.SecretManagerServiceClient();
+  constructor(secretsClient?: SecretManagerV1.SecretManagerServiceClient) {
+    this.secretsClient =
+      secretsClient || new SecretManagerV1.SecretManagerServiceClient();
+    this.cloudTasksClient = new CloudTasksV2.CloudTasksClient();
+    this.storage = new Storage();
   }
 
   async loadProbot(
@@ -244,12 +253,16 @@ export class GCFBootstrapper {
             // TODO: add unit tests for both forms of payload.
             payload = this.parsePubSubPayload(request);
           }
+          // If the payload contains `tmpUrl` this indicates that the original
+          // payload has been written to Cloud Storage; download it.
+          const body = await this.maybeDownloadOriginalBody(payload);
+
           // TODO: find out the best way to get this type, and whether we can
           // keep using a custom event name.
           await this.probot.receive({
             name: name as EventNames.StringNames,
             id,
-            payload: payload,
+            payload: body,
           });
         } else if (triggerType === TriggerType.SCHEDULER) {
           // TODO: currently we assume that scheduled events walk all repos
@@ -399,12 +412,19 @@ export class GCFBootstrapper {
       /_/g,
       '-'
     );
-    const queuePath = client.queuePath(projectId, location, queueName);
+    const queuePath = this.cloudTasksClient.queuePath(
+      projectId,
+      location,
+      queueName
+    );
     // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green:
     const url = `https://${location}-${projectId}.cloudfunctions.net/${process.env.GCF_SHORT_FUNCTION_NAME}`;
     logger.info(`scheduling task in queue ${queueName}`);
     if (params.body) {
-      await client.createTask({
+      // Payload conists of either the original params.body or, if Cloud
+      // Storage has been configured, a tmp file in a bucket:
+      const payload = await this.maybeWriteBodyToTmp(params.body);
+      await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {
           httpRequest: {
@@ -416,12 +436,12 @@ export class GCFBootstrapper {
               'Content-Type': 'application/json',
             },
             url,
-            body: Buffer.from(params.body),
+            body: Buffer.from(payload),
           },
         },
       });
     } else {
-      await client.createTask({
+      await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {
           httpRequest: {
@@ -436,6 +456,60 @@ export class GCFBootstrapper {
           },
         },
       });
+    }
+  }
+
+  /*
+   * Setting the process.env.WEBHOOK_TMP environemtn variable indicates
+   * that the webhook payload should be written to a tmp file in Cloud
+   * Storage. This allows us to circumvent the 100kb limit on Cloud Tasks.
+   *
+   * @param body
+   */
+  private async maybeWriteBodyToTmp(body: string): Promise<string> {
+    if (process.env.WEBHOOK_TMP) {
+      const tmp = `${Date.now()}-${v4()}.txt`;
+      const bucket = this.storage.bucket(process.env.WEBHOOK_TMP);
+      const writeable = bucket.file(tmp).createWriteStream({
+        validation: process.env.NODE_ENV !== 'test',
+      });
+      logger.info(`uploading payload to ${tmp}`);
+      intoStream(body).pipe(writeable);
+      await new Promise((resolve, reject) => {
+        writeable.on('error', reject);
+        writeable.on('finish', resolve);
+      });
+      return JSON.stringify({
+        tmpUrl: tmp,
+      });
+    } else {
+      return body;
+    }
+  }
+
+  /*
+   * If body has the key tmpUrl, download the original body from a temporary
+   * folder in Cloud Storage.
+   *
+   * @param body
+   */
+  private async maybeDownloadOriginalBody(payload: {
+    [key: string]: string;
+  }): Promise<object> {
+    if (payload.tmpUrl) {
+      if (!process.env.WEBHOOK_TMP) {
+        throw Error('no tmp directory configured');
+      }
+      const bucket = this.storage.bucket(process.env.WEBHOOK_TMP);
+      const file = bucket.file(payload.tmpUrl);
+      const readable = file.createReadStream({
+        validation: process.env.NODE_ENV !== 'test',
+      });
+      const content = await getStream(readable);
+      console.info(`downloaded payload from ${payload.tmpUrl}`);
+      return JSON.parse(content);
+    } else {
+      return payload;
     }
   }
 }
