@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [6.1.1](https://www.github.com/googleapis/repo-automation-bots/compare/v6.1.0...v6.1.1) (2020-10-01)
+
+
+### Bug Fixes
+
+* **logger:** allow log methods to be used in isolation ([#997](https://www.github.com/googleapis/repo-automation-bots/issues/997)) ([38371ca](https://www.github.com/googleapis/repo-automation-bots/commit/38371cae7aaf48b4ba5effab453dfac332f912bd))
+
 ## [6.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/v6.0.0...v6.1.0) (2020-09-30)
 
 
