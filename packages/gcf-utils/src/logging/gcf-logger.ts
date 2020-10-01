@@ -26,6 +26,12 @@ export class GCFLogger {
 
   constructor(customDestination?: Destination) {
     this.initPinoLogger(customDestination);
+    this.trace = this.trace.bind(this);
+    this.debug = this.debug.bind(this);
+    this.info = this.info.bind(this);
+    this.warn = this.warn.bind(this);
+    this.metric = this.metric.bind(this);
+    this.error = this.error.bind(this);
   }
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
