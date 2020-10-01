@@ -58,11 +58,11 @@ describe('GCFLogger', () => {
           );
         });
 
-        it(`allows ${level} log to be passed as argument`, (done) => {
+        it(`allows ${level} log to be passed as argument`, done => {
           setTimeout(logger[level], 1);
           setTimeout(() => {
             return done();
-          })
+          });
         });
       }
     }
