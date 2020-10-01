@@ -370,7 +370,6 @@ async function getReviewsCompleted(
       repo,
       pull_number: pr,
     });
-    console.log(reviewsCompleted.data);
     return reviewsCompleted.data;
   } catch (err) {
     err.message = `Error getting reviews completed\n\n${err.message}`;
@@ -397,7 +396,6 @@ function cleanReviews(reviewsCompleted: Reviews[]): Reviews[] {
       }
     }
   }
-  console.log(cleanReviews);
   return cleanReviews;
 }
 
