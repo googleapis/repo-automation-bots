@@ -23,10 +23,12 @@
  */
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, GitHubAPI, Octokit} from 'probot';
+import {Application} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {LoggerWithTarget} from 'probot/lib/wrap-logger';
 import xmljs from 'xml-js';
+import {Octokit} from '@octokit/rest'
+import {IssuesListForRepoResponseData, IssuesListCommentsResponseData} from '@octokit/types'
 
 const ISSUE_LABEL = 'buildcop: issue';
 const FLAKY_LABEL = 'buildcop: flaky';
@@ -75,6 +77,141 @@ const GROUPED_MESSAGE = `Many tests failed at the same time in this package.
 
 `;
 
+interface IssuesListForRepoResponseItem 
+  {
+    id: number;
+    node_id: string;
+    url: string;
+    repository_url: string;
+    labels_url: string;
+    comments_url: string;
+    events_url: string;
+    html_url: string;
+    number: number;
+    state: string;
+    title: string;
+    body: string;
+    user: {
+        login: string;
+        id: number;
+        node_id: string;
+        avatar_url: string;
+        gravatar_id: string;
+        url: string;
+        html_url: string;
+        followers_url: string;
+        following_url: string;
+        gists_url: string;
+        starred_url: string;
+        subscriptions_url: string;
+        organizations_url: string;
+        repos_url: string;
+        events_url: string;
+        received_events_url: string;
+        type: string;
+        site_admin: boolean;
+    };
+    labels: {
+        id: number;
+        node_id: string;
+        url: string;
+        name: string;
+        description: string;
+        color: string;
+        default: boolean;
+    }[];
+    assignee: {
+        login: string;
+        id: number;
+        node_id: string;
+        avatar_url: string;
+        gravatar_id: string;
+        url: string;
+        html_url: string;
+        followers_url: string;
+        following_url: string;
+        gists_url: string;
+        starred_url: string;
+        subscriptions_url: string;
+        organizations_url: string;
+        repos_url: string;
+        events_url: string;
+        received_events_url: string;
+        type: string;
+        site_admin: boolean;
+    };
+    assignees: {
+        login: string;
+        id: number;
+        node_id: string;
+        avatar_url: string;
+        gravatar_id: string;
+        url: string;
+        html_url: string;
+        followers_url: string;
+        following_url: string;
+        gists_url: string;
+        starred_url: string;
+        subscriptions_url: string;
+        organizations_url: string;
+        repos_url: string;
+        events_url: string;
+        received_events_url: string;
+        type: string;
+        site_admin: boolean;
+    }[];
+    milestone: {
+        url: string;
+        html_url: string;
+        labels_url: string;
+        id: number;
+        node_id: string;
+        number: number;
+        state: string;
+        title: string;
+        description: string;
+        creator: {
+            login: string;
+            id: number;
+            node_id: string;
+            avatar_url: string;
+            gravatar_id: string;
+            url: string;
+            html_url: string;
+            followers_url: string;
+            following_url: string;
+            gists_url: string;
+            starred_url: string;
+            subscriptions_url: string;
+            organizations_url: string;
+            repos_url: string;
+            events_url: string;
+            received_events_url: string;
+            type: string;
+            site_admin: boolean;
+        };
+        open_issues: number;
+        closed_issues: number;
+        created_at: string;
+        updated_at: string;
+        closed_at: string;
+        due_on: string;
+    };
+    locked: boolean;
+    active_lock_reason: string;
+    comments: number;
+    pull_request: {
+        url: string;
+        html_url: string;
+        diff_url: string;
+        patch_url: string;
+    };
+    closed_at: string;
+    created_at: string;
+    updated_at: string;
+}
+
+
 interface TestCase {
   package?: string;
   testCase?: string;
@@ -100,13 +237,13 @@ export interface BuildCopPayload {
 
 interface PubSubContext {
   readonly event: string;
-  github: GitHubAPI;
+  github: Octokit;
   log: LoggerWithTarget;
   payload: BuildCopPayload;
 }
 
 export function buildcop(app: Application) {
-  app.on('pubsub.message', async (context: PubSubContext) => {
+  app.on('pubsub.message' as any, async (context: PubSubContext) => {
     const owner = context.payload.organization?.login;
     const repo = context.payload.repository?.name;
     const commit = context.payload.commit || '[TODO: set commit]';
@@ -154,7 +291,7 @@ export function buildcop(app: Application) {
       labels: ISSUE_LABEL,
       state: 'all', // Include open and closed issues.
     });
-    let issues = await context.github.paginate(options);
+    let issues = (await context.github.paginate(options)) as IssuesListForRepoResponseData;
 
     // If we deduplicate any issues, re-download the issues.
     if (
@@ -194,7 +331,7 @@ export function buildcop(app: Application) {
 // more shorteners and want "nice" management of "forgotten" issues.
 buildcop.deduplicateIssues = async (
   results: TestResults,
-  issues: Octokit.IssuesListForRepoResponseItem[],
+  issues: IssuesListForRepoResponseData,
   context: PubSubContext,
   owner: string,
   repo: string
@@ -205,7 +342,7 @@ buildcop.deduplicateIssues = async (
       issue.state === 'open' &&
       tests.find(test => issue.title === buildcop.formatTestCase(test))
   );
-  const byTitle = new Map<string, Octokit.IssuesListForRepoResponseItem[]>();
+  const byTitle = new Map<string, IssuesListForRepoResponseData>();
   for (const issue of issues) {
     byTitle.set(issue.title, byTitle.get(issue.title) || []);
     byTitle.get(issue.title)?.push(issue);
@@ -248,7 +385,7 @@ buildcop.deduplicateIssues = async (
 // For every failure, check if an issue is open. If not, open/reopen one.
 buildcop.openIssues = async (
   failures: TestCase[],
-  issues: Octokit.IssuesListForRepoResponseItem[],
+  issues: IssuesListForRepoResponseData,
   context: PubSubContext,
   owner: string,
   repo: string,
@@ -447,9 +584,9 @@ buildcop.openIssues = async (
 };
 
 buildcop.findGroupedIssue = (
-  issues: Octokit.IssuesListForRepoResponseItem[],
+  issues: IssuesListForRepoResponseData,
   pkg: string
-): Octokit.IssuesListForRepoResponseItem | undefined => {
+): IssuesListForRepoResponseItem | undefined => {
   // Don't reopen grouped issues.
   return issues.find(
     issue =>
@@ -458,9 +595,9 @@ buildcop.findGroupedIssue = (
 };
 
 buildcop.findExistingIssue = (
-  issues: Octokit.IssuesListForRepoResponseItem[],
+  issues: IssuesListForRepoResponseData,
   failure: TestCase
-): Octokit.IssuesListForRepoResponseItem | undefined => {
+): IssuesListForRepoResponseItem | undefined => {
   // Only reopen issues for individual test cases, not for the "everything
   // failed" issue. If the "everything failed" issue is already open, leave it
   // open.
@@ -517,7 +654,7 @@ buildcop.openNewIssue = async (
 // previously fail in the same build, close it.
 buildcop.closeIssues = async (
   results: TestResults,
-  issues: Octokit.IssuesListForRepoResponseItem[],
+  issues: IssuesListForRepoResponseData,
   context: PubSubContext,
   owner: string,
   repo: string,
@@ -608,8 +745,8 @@ buildcop.closeIssues = async (
 };
 
 buildcop.issueComparator = (
-  a: Octokit.IssuesListForRepoResponseItem,
-  b: Octokit.IssuesListForRepoResponseItem
+  a: IssuesListForRepoResponseItem,
+  b: IssuesListForRepoResponseItem
 ) => {
   if (a.state === 'open' && b.state !== 'open') {
     return -1;
@@ -632,12 +769,12 @@ buildcop.issueComparator = (
   return a.number - b.number; // Earlier issue number first.
 };
 
-buildcop.isFlaky = (issue: Octokit.IssuesListForRepoResponseItem): boolean => {
+buildcop.isFlaky = (issue: IssuesListForRepoResponseItem): boolean => {
   return hasLabel(issue, FLAKY_LABEL);
 };
 
 function hasLabel(
-  issue: Octokit.IssuesListForRepoResponseItem,
+  issue: IssuesListForRepoResponseItem,
   label: string
 ): boolean {
   if (issue.labels === undefined) {
@@ -652,7 +789,7 @@ function hasLabel(
 }
 
 buildcop.markIssueFlaky = async (
-  existingIssue: Octokit.IssuesListForRepoResponseItem,
+  existingIssue: IssuesListForRepoResponseItem,
   context: PubSubContext,
   owner: string,
   repo: string,
@@ -710,7 +847,7 @@ status: ${testCase.passed ? 'passed' : 'failed'}`;
 };
 
 buildcop.containsBuildFailure = async (
-  issue: Octokit.IssuesListForRepoResponseItem,
+  issue: IssuesListForRepoResponseItem,
   context: PubSubContext,
   owner: string,
   repo: string,
@@ -726,14 +863,14 @@ buildcop.containsBuildFailure = async (
     repo,
     issue_number: issue.number,
   });
-  const comments = await context.github.paginate(options);
+  const comments = await context.github.paginate(options) as IssuesListCommentsResponseData;
   const comment = comments.find(
     comment =>
       comment.body.includes(`commit: ${commit}`) &&
       comment.body.includes('status: failed')
   );
   const containsFailure = comment !== undefined;
-  const buildURL = buildcop.extractBuildURL(comment?.body);
+  const buildURL = buildcop.extractBuildURL(comment?.body!);
   return [containsFailure, buildURL];
 };
 
@@ -874,7 +1011,7 @@ function deduplicateTests(tests: TestCase[]): TestCase[] {
 }
 
 // parseClosedAt parses the closed_at field into a date number.
-function parseClosedAt(closedAt: null): number | undefined {
+function parseClosedAt(closedAt: string): number | undefined {
   // The type of closed_at is null. But, it is actually a string if the
   // issue is closed. Convert to unknown then to string as a workaround.
   const closedAtString = (closedAt as unknown) as string;
