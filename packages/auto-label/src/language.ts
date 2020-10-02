@@ -76,7 +76,11 @@ function getLanguageFromPathConfig(filename: string, config: any) : string {
  */
 function getFileLanguage(filename: string, config: any) : string {
   // 1. Return language if file path is user defined
+  console.log("in getFileLanguage");
+  console.log("config:");
+  console.log(config);
   if (config.paths) {
+    console.log("User has configured paths");
     let lang = getLanguageFromPathConfig(filename, config);
     if (lang) {
       if (config.labelprefix) return config.labelprefix + lang;
@@ -111,6 +115,7 @@ interface FileData {
  * Returns the highest occurring language across all files in a PR
  */
 function getPRLanguage(data: FileData[], config: any) : string {
+  console.log("getPRlanguage");
   let counts = data.reduce(function(counted: {[key:string]: number}, file) {
     let l = getFileLanguage(file.filename, config);
     if (l) {

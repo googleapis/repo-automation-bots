@@ -28,6 +28,8 @@ import {logger} from 'gcf-utils';
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
+const langlabeler = require('../src/language');
+
 // We provide our own GitHub instance, similar to
 // the one used by gcf-utils, this allows us to turn off
 // methods like retry, and to use @octokit/rest
@@ -77,7 +79,7 @@ describe('language-label', () => {
       });
       ghRequests.done();
     });
-    
+
     // TODO: it labels PRs with a language label
 
     // TODO: it labels with user defined language names
@@ -135,6 +137,23 @@ describe('language-label', () => {
   });
 
   describe('labels languages correctly', () => {
-
+    it('labels the language with most changes in PR', async () => {
+      const config = {
+        language: {
+          pullrequest: true
+        }
+      };
+      const data = [
+        {
+          filename: "README.md",
+          changes: 8,
+        },
+        {
+          filename: "src/index.ts",
+          changes: 15,
+        }
+      ];
+      assert.strictEqual(langlabeler.getPRLanguage(data, config), "lang: javascript");
+    })
   });
 });
