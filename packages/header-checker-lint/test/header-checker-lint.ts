@@ -16,13 +16,17 @@
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, createProbot} from 'probot';
 import snapshot from 'snap-shot-it';
 // eslint-disable-next-line node/no-extraneous-import
 import Webhooks from '@octokit/webhooks';
 import {readFileSync} from 'fs';
 import nock from 'nock';
 import {describe, it, beforeEach, before} from 'mocha';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+import {config} from '@probot/octokit-plugin-config';
+const TestingOctokit = Octokit.plugin(config);
 
 import myProbotApp from '../src/header-checker-lint';
 
@@ -38,25 +42,16 @@ describe('HeaderCheckerLint', () => {
   let probot: Probot;
 
   beforeEach(() => {
-    probot = new Probot({
-      // use a bare instance of octokit, the default version
-      // enables retries which makes testing difficult.
-      // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest'),
+      probot = createProbot({
+        githubToken: 'abc123',
+        Octokit: TestingOctokit as any,
+      });
+  
+      probot.load(myProbotApp);
     });
-    probot.app = {
-      getSignedJsonWebToken() {
-        return 'abc123';
-      },
-      getInstallationAccessToken(): Promise<string> {
-        return Promise.resolve('abc123');
-      },
-    };
-    probot.load(myProbotApp);
-  });
 
   describe('opened pull request', () => {
-    let payload: Webhooks.WebhookPayloadPullRequest;
+    let payload: Webhooks.EventNames.PullRequestEvent;
 
     beforeEach(() => {
       payload = require(resolve(fixturesPath, './pull_request_opened'));
@@ -70,11 +65,11 @@ describe('HeaderCheckerLint', () => {
       const blob = require(resolve(fixturesPath, './missing_license'));
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
         )
         .reply(404)
         .get(
-          '/repos/chingor13/.github/contents/.github/header-checker-lint.yml'
+          '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
         )
         .reply(404)
         .get(
@@ -103,11 +98,11 @@ describe('HeaderCheckerLint', () => {
       const blob = require(resolve(fixturesPath, './missing_license'));
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
         )
         .reply(404)
         .get(
-          '/repos/chingor13/.github/contents/.github/header-checker-lint.yml'
+          '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
         )
         .reply(404)
         .get(
@@ -132,13 +127,13 @@ describe('HeaderCheckerLint', () => {
       const invalidFiles = require(resolve(fixturesPath, './wrong_year_added'));
       const blob = require(resolve(fixturesPath, './wrong_year'));
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
-        )
-        .reply(404)
-        .get(
-          '/repos/chingor13/.github/contents/.github/header-checker-lint.yml'
-        )
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
+      )
+      .reply(404)
+      .get(
+        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+      )
         .reply(404)
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
@@ -165,13 +160,13 @@ describe('HeaderCheckerLint', () => {
       ));
       const blob = require(resolve(fixturesPath, './missing_copyright'));
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
-        )
-        .reply(404)
-        .get(
-          '/repos/chingor13/.github/contents/.github/header-checker-lint.yml'
-        )
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
+      )
+      .reply(404)
+      .get(
+        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+      )
         .reply(404)
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
@@ -198,13 +193,13 @@ describe('HeaderCheckerLint', () => {
       ));
       const blob = require(resolve(fixturesPath, './invalid_copyright'));
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
-        )
-        .reply(404)
-        .get(
-          '/repos/chingor13/.github/contents/.github/header-checker-lint.yml'
-        )
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
+      )
+      .reply(404)
+      .get(
+        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+      )
         .reply(404)
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
@@ -224,7 +219,7 @@ describe('HeaderCheckerLint', () => {
       requests.done();
     });
 
-    it('reads a custom configuration file', async () => {
+    it.only('reads a custom configuration file', async () => {
       const config = readFileSync(
         resolve(fixturesPath, './config_copyright_holder.yml')
       );
@@ -234,13 +229,13 @@ describe('HeaderCheckerLint', () => {
       ));
       const blob = require(resolve(fixturesPath, './invalid_copyright'));
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
-        )
-        .reply(200, {content: config.toString('base64')})
-        .get(
-          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
-        )
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
+      )
+      .reply(200, config)
+      .get(
+        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+      )
         .reply(200, invalidFiles)
         .get(
           '/repos/chingor13/google-auth-library-java/git/blobs/68383638d3661e3989b1119b2a7ef414aabb4f6d'
@@ -275,13 +270,13 @@ describe('HeaderCheckerLint', () => {
       ));
       const blob = require(resolve(fixturesPath, './valid_license'));
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
-        )
-        .reply(404)
-        .get(
-          '/repos/chingor13/.github/contents/.github/header-checker-lint.yml'
-        )
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
+      )
+      .reply(404)
+      .get(
+        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+      )
         .reply(404)
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
@@ -311,13 +306,13 @@ describe('HeaderCheckerLint', () => {
       ));
       require(resolve(fixturesPath, './invalid_copyright'));
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
-        )
-        .reply(200, {content: config.toString('base64')})
-        .get(
-          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
-        )
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
+      )
+      .reply(404)
+      .get(
+        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+      )
         .reply(200, invalidFiles)
         .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
           snapshot(body);
@@ -336,13 +331,13 @@ describe('HeaderCheckerLint', () => {
       ));
       const blob = require(resolve(fixturesPath, './valid_license'));
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
-        )
-        .reply(404)
-        .get(
-          '/repos/chingor13/.github/contents/.github/header-checker-lint.yml'
-        )
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
+      )
+      .reply(404)
+      .get(
+        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+      )
         .reply(404)
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
@@ -364,8 +359,8 @@ describe('HeaderCheckerLint', () => {
   });
 
   describe('updated pull request', () => {
-    let payload: Webhooks.WebhookPayloadPullRequest;
-
+    let payload: Webhooks.EventNames.PullRequestEvent;
+    
     before(() => {
       payload = require(resolve(fixturesPath, './pull_request_synchronized'));
     });
@@ -377,13 +372,13 @@ describe('HeaderCheckerLint', () => {
       ));
       const blob = require(resolve(fixturesPath, './missing_license'));
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
-        )
-        .reply(404)
-        .get(
-          '/repos/chingor13/.github/contents/.github/header-checker-lint.yml'
-        )
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
+      )
+      .reply(404)
+      .get(
+        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+      )
         .reply(404)
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
@@ -410,13 +405,13 @@ describe('HeaderCheckerLint', () => {
       ));
       const blob = require(resolve(fixturesPath, './missing_license'));
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
-        )
-        .reply(404)
-        .get(
-          '/repos/chingor13/.github/contents/.github/header-checker-lint.yml'
-        )
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
+      )
+      .reply(404)
+      .get(
+        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+      )
         .reply(404)
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
@@ -440,13 +435,13 @@ describe('HeaderCheckerLint', () => {
       const invalidFiles = require(resolve(fixturesPath, './wrong_year_added'));
       const blob = require(resolve(fixturesPath, './wrong_year'));
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
-        )
-        .reply(404)
-        .get(
-          '/repos/chingor13/.github/contents/.github/header-checker-lint.yml'
-        )
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
+      )
+      .reply(404)
+      .get(
+        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+      )
         .reply(404)
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
@@ -473,13 +468,13 @@ describe('HeaderCheckerLint', () => {
       ));
       const blob = require(resolve(fixturesPath, './missing_copyright'));
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
-        )
-        .reply(404)
-        .get(
-          '/repos/chingor13/.github/contents/.github/header-checker-lint.yml'
-        )
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
+      )
+      .reply(404)
+      .get(
+        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+      )
         .reply(404)
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
@@ -506,13 +501,13 @@ describe('HeaderCheckerLint', () => {
       ));
       const blob = require(resolve(fixturesPath, './invalid_copyright'));
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
-        )
-        .reply(404)
-        .get(
-          '/repos/chingor13/.github/contents/.github/header-checker-lint.yml'
-        )
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
+      )
+      .reply(404)
+      .get(
+        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+      )
         .reply(404)
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
@@ -539,13 +534,13 @@ describe('HeaderCheckerLint', () => {
       ));
       const blob = require(resolve(fixturesPath, './valid_license'));
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
-        )
-        .reply(404)
-        .get(
-          '/repos/chingor13/.github/contents/.github/header-checker-lint.yml'
-        )
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
+      )
+      .reply(404)
+      .get(
+        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+      )
         .reply(404)
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
@@ -572,13 +567,13 @@ describe('HeaderCheckerLint', () => {
       ));
       const blob = require(resolve(fixturesPath, './valid_license'));
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
-        )
-        .reply(404)
-        .get(
-          '/repos/chingor13/.github/contents/.github/header-checker-lint.yml'
-        )
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
+      )
+      .reply(404)
+      .get(
+        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+      )
         .reply(404)
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
@@ -605,13 +600,13 @@ describe('HeaderCheckerLint', () => {
       ));
       require(resolve(fixturesPath, './valid_license'));
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
-        )
-        .reply(404)
-        .get(
-          '/repos/chingor13/.github/contents/.github/header-checker-lint.yml'
-        )
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
+      )
+      .reply(404)
+      .get(
+        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+      )
         .reply(404)
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'

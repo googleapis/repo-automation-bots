@@ -164,3 +164,14 @@ exports['HeaderCheckerLint updated pull request ignores a deleted file 1'] = {
   "conclusion": "success",
   "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c"
 }
+
+exports['HeaderCheckerLint opened pull request handles an invalid configuration file 1'] = {
+  "name": "header-check",
+  "conclusion": "failure",
+  "head_sha": "87139750cdcf551e8fe8d90c129527a4f358321c",
+  "output": {
+    "title": "Invalid or missing license headers detected.",
+    "summary": "Some new files are missing headers",
+    "text": "`oauth2_http/java/com/google/auth/http/TestFile.java` is missing a valid license header."
+  }
+}
