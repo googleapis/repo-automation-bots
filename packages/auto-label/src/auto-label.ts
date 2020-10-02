@@ -16,6 +16,7 @@ import {Storage} from '@google-cloud/storage';
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context} from 'probot';
 import {logger} from 'gcf-utils';
+const langlabler = require("./language");
 
 // Default app configs if user didn't specify a .config
 const LABEL_PRODUCT_BY_DEFAULT = true;
@@ -333,6 +334,31 @@ export function handler(app: Application) {
     );
   });
 
+  app.on(['pull_request.opened'], async context => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config: any = await context.config('config.yml', DEFAULT_CONFIGS);
+    if (! config.language) return;
+    if (! config.language.pullrequest) return;
+    if(langlabler.langLabelExists(context)) return;
+
+    logger.info("Labeling New Pull Request: " + context.payload.repository.name
+        + " #" + context.payload.pull_request.number);
+    const owner = context.payload.repository.owner.login;
+    const repo = context.payload.repository.name;
+    const pull_number = context.payload.pull_request.number;
+    let filesChanged = await context.github.pulls.listFiles({ owner, repo, pull_number });
+    let language = langlabler.getPRLanguage(filesChanged.data, config);
+    if (language) {
+      logger.info("Labeling PR with: " + language);
+      await context.github.issues.addLabels({
+        owner,
+        repo,
+        issue_number: pull_number,
+        labels: [language],
+      });
+    }
+  });
+
   app.on(['installation.created'], async context => {
     const repositories = context.payload.repositories;
     const driftRepos = await handler.getDriftRepos();
@@ -353,6 +379,7 @@ export function handler(app: Application) {
         const config = Buffer.from(config_encoded, 'base64')
           .toString('binary')
           .toLowerCase();
+        // TODO: escape if user has "product: false" in comments
         if (
           config.includes('product: false') ||
           config.includes('product:false')
