@@ -13,8 +13,10 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {GitHubAPI} from 'probot';
+import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
+
+type OctokitType = InstanceType<typeof Octokit>;
 
 export interface Label {
   name: string;
@@ -75,7 +77,7 @@ async function getLatestCommit(
   owner: string,
   repo: string,
   pr: number,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<string> {
   try {
     // TODO: consider switching this to an async iterator, which would work
@@ -105,7 +107,7 @@ async function getPR(
   owner: string,
   repo: string,
   pr: number,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<PullRequest> {
   try {
     const data = await github.pulls.get({
@@ -140,7 +142,7 @@ async function getCommentsOnPR(
   owner: string,
   repo: string,
   issue_number: number,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<Comment[] | null> {
   try {
     const data = await github.issues.listComments({
@@ -168,7 +170,7 @@ async function hasMOGLabel(
   repo: string,
   pr: number,
   labelNames: string[],
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<string | undefined> {
   const start = Date.now();
   try {
@@ -204,17 +206,18 @@ async function hasMOGLabel(
 async function getStatuses(
   owner: string,
   repo: string,
-  github: GitHubAPI,
+  github: OctokitType,
   headSha: string
 ): Promise<CheckStatus[]> {
   const start = Date.now();
   try {
     const responses = await github.paginate(
-      await github.repos.listStatusesForRef.endpoint.merge({
+      await github.repos.listCommitStatusesForRef,
+      {
         owner,
         repo,
         ref: headSha,
-      })
+      }
     );
     logger.info(
       `called getStatuses in ${Date.now() - start}ms ${owner}/${repo}`
@@ -239,18 +242,16 @@ async function getStatuses(
 async function getCheckRuns(
   owner: string,
   repo: string,
-  github: GitHubAPI,
+  github: OctokitType,
   headSha: string
 ): Promise<CheckRun[]> {
   const start = Date.now();
   try {
-    const responses = await github.paginate(
-      await github.checks.listForRef.endpoint.merge({
-        owner,
-        repo,
-        ref: headSha,
-      })
-    );
+    const responses = await github.paginate(github.checks.listForRef, {
+      owner,
+      repo,
+      ref: headSha,
+    });
     logger.info(
       `called getCheckRuns in ${Date.now() - start}ms ${owner}/${repo}`
     );
@@ -298,7 +299,7 @@ async function statusesForRef(
   pr: number,
   requiredChecks: string[],
   headSha: string,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<boolean> {
   const start = Date.now();
   const checkStatus = await getStatuses(owner, repo, github, headSha);
@@ -361,7 +362,7 @@ async function getReviewsCompleted(
   owner: string,
   repo: string,
   pr: number,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<Reviews[]> {
   try {
     const reviewsCompleted = await github.pulls.listReviews({
@@ -414,7 +415,7 @@ async function checkReviews(
   label: string,
   secureLabel: string,
   headSha: string,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<boolean> {
   const start = Date.now();
   logger.info(`=== checking required reviews ${owner}/${repo}/${pr} ===`);
@@ -443,7 +444,7 @@ async function checkReviews(
     });
     if (label === secureLabel) {
       //if we get to here, it means that all the reviews are in the approved state
-      reviewsCompleted.forEach(async review => {
+      for (const review of reviewsCompleted) {
         if (review.commit_id !== headSha) {
           reviewsPassed = false;
           logger.info(
@@ -460,7 +461,7 @@ async function checkReviews(
             })
             .catch(logger.error);
         }
-      });
+      }
       return reviewsPassed;
     }
   } else {
@@ -485,7 +486,7 @@ async function merge(
   repo: string,
   pr: number,
   prInfo: PullRequest,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<Merge> {
   const merge = (
     await github.pulls.merge({
@@ -512,7 +513,7 @@ async function updateBranch(
   owner: string,
   repo: string,
   pr: number,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<Update | null> {
   try {
     const update = (
@@ -544,7 +545,7 @@ async function commentOnPR(
   repo: string,
   pr: number,
   body: string,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<{} | null> {
   try {
     const data = await github.issues.createComment({
@@ -575,7 +576,7 @@ async function removeLabel(
   repo: string,
   issue_number: number,
   name: string,
-  github: GitHubAPI
+  github: OctokitType
 ) {
   try {
     await github.issues.removeLabel({
@@ -608,7 +609,7 @@ export async function mergeOnGreen(
   labelNames: string[],
   state: string,
   requiredChecks: string[],
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<boolean | undefined> {
   logger.info(`${owner}/${repo} checking merge on green PR status`);
   const [prInfo, mogLabel, headSha] = await Promise.all([

@@ -14,7 +14,7 @@
 
 import {Storage} from '@google-cloud/storage';
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, GitHubAPI} from 'probot';
+import {Application, Context} from 'probot';
 import {logger} from 'gcf-utils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -115,10 +115,10 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   issueNumber: number,
   issueTitle: string,
   driftRepos: DriftRepo[],
-  github: GitHubAPI
+  context: Context
 ) {
   const driftRepo = driftRepos.find(x => x.repo === `${owner}/${repo}`);
-  const res = await github.issues
+  const res = await context.github.issues
     .listLabelsOnIssue({
       owner,
       repo,
@@ -142,7 +142,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
 
   if (githubLabel) {
     try {
-      await github.issues.createLabel({
+      await context.github.issues.createLabel({
         owner,
         repo,
         name: githubLabel,
@@ -169,7 +169,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       if (foundAPIName) {
         logger.info('The label already exists on this issue');
       } else {
-        await github.issues
+        await context.github.issues
           .addLabels({
             owner,
             repo,
@@ -183,7 +183,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
         wasNotAdded = false;
       }
       for (const dirtyLabel of cleanUpOtherLabels) {
-        await github.issues
+        await context.github.issues
           .removeLabel({
             owner,
             repo,
@@ -193,7 +193,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
           .catch(logger.error);
       }
     } else {
-      await github.issues
+      await context.github.issues
         .addLabels({
           owner,
           repo,
@@ -215,7 +215,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   const isSampleIssue =
     repo.includes('samples') || issueTitle?.includes('sample');
   if (!foundSamplesTag && isSampleIssue) {
-    await github.issues
+    await context.github.issues
       .createLabel({
         owner,
         repo,
@@ -223,7 +223,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
         color: colorsData[colorNumber].color,
       })
       .catch(logger.error);
-    await github.issues
+    await context.github.issues
       .addLabels({
         owner,
         repo,
@@ -244,8 +244,10 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
  * Main function, responds to label being added
  */
 export function handler(app: Application) {
-  //nightly cron that backfills and corrects api labels
-  app.on(['schedule.repository'], async context => {
+  // nightly cron that backfills and corrects api labels
+  // Latest Probot doesn't handle schedule events in favor of Github Actions
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.repository' as any, async context => {
     logger.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
@@ -273,7 +275,7 @@ export function handler(app: Application) {
           issue.number,
           issue.title,
           driftRepos,
-          context.github
+          context
         );
         if (wasNotAdded) {
           logger.info(
@@ -308,7 +310,7 @@ export function handler(app: Application) {
       issueNumber,
       context.payload.issue.title,
       driftRepos,
-      context.github
+      context
     );
   });
 
@@ -320,13 +322,15 @@ export function handler(app: Application) {
     }
     for await (const repository of repositories) {
       const [owner, repo] = repository.full_name.split('/');
-      const issues = context.github.issues.listForRepo.endpoint.merge({
-        owner,
-        repo,
-      });
 
       //goes through issues in repository, adds labels as necessary
-      for await (const response of context.github.paginate.iterator(issues)) {
+      for await (const response of context.github.paginate.iterator(
+        context.github.issues.listForRepo,
+        {
+          owner,
+          repo,
+        }
+      )) {
         const issues = response.data;
         //goes through each issue in each page
         for (const issue of issues) {
@@ -336,7 +340,7 @@ export function handler(app: Application) {
             issue.number,
             issue.title,
             driftRepos,
-            context.github
+            context
           );
         }
       }
