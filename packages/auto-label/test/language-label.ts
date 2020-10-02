@@ -185,5 +185,53 @@ describe('language-label', () => {
       ];
       assert.strictEqual(langlabeler.getPRLanguage(data, lang_config), "lang: c++");
     });
+
+    it('labels with user defined path even if upstream', async () => {
+      const lang_config = {
+        pullrequest: true,
+        paths: {
+          '.': 'foo'
+        }
+      };
+      const data = [
+        {
+          filename: "src/index.ts",
+          changes: 15,
+        }
+      ];
+      assert.strictEqual(langlabeler.getPRLanguage(data, lang_config), "lang: foo");
+    });
+
+
+    it('labels with user defined path on the deepest path', async () => {
+      const lang_config = {
+        pullrequest: true,
+        paths: {
+          '.': 'foo',
+          src: 'bar'
+        }
+      };
+      const data = [
+        {
+          filename: "src/index.ts",
+          changes: 15,
+        }
+      ];
+      assert.strictEqual(langlabeler.getPRLanguage(data, lang_config), "lang: bar");
+    });
+
+    it('lets users customize label prefix', async () => {
+      const lang_config = {
+        pullrequest: true,
+        labelprefix: 'hello: '
+      };
+      const data = [
+        {
+          filename: "src/index.ts",
+          changes: 15,
+        }
+      ];
+      assert.strictEqual(langlabeler.getPRLanguage(data, lang_config), "hello: javascript");
+    });
   });
 });
