@@ -27,8 +27,12 @@ import {Application} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {LoggerWithTarget} from 'probot/lib/wrap-logger';
 import xmljs from 'xml-js';
-import {Octokit} from '@octokit/rest'
-import {IssuesListForRepoResponseData, IssuesListCommentsResponseData} from '@octokit/types'
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+import {
+  IssuesListForRepoResponseData,
+  IssuesListCommentsResponseData,
+} from '@octokit/types';
 
 const ISSUE_LABEL = 'buildcop: issue';
 const FLAKY_LABEL = 'buildcop: flaky';
@@ -77,140 +81,138 @@ const GROUPED_MESSAGE = `Many tests failed at the same time in this package.
 
 `;
 
-interface IssuesListForRepoResponseItem 
-  {
+interface IssuesListForRepoResponseItem {
+  id: number;
+  node_id: string;
+  url: string;
+  repository_url: string;
+  labels_url: string;
+  comments_url: string;
+  events_url: string;
+  html_url: string;
+  number: number;
+  state: string;
+  title: string;
+  body: string;
+  user: {
+    login: string;
+    id: number;
+    node_id: string;
+    avatar_url: string;
+    gravatar_id: string;
+    url: string;
+    html_url: string;
+    followers_url: string;
+    following_url: string;
+    gists_url: string;
+    starred_url: string;
+    subscriptions_url: string;
+    organizations_url: string;
+    repos_url: string;
+    events_url: string;
+    received_events_url: string;
+    type: string;
+    site_admin: boolean;
+  };
+  labels: {
     id: number;
     node_id: string;
     url: string;
-    repository_url: string;
-    labels_url: string;
-    comments_url: string;
-    events_url: string;
+    name: string;
+    description: string;
+    color: string;
+    default: boolean;
+  }[];
+  assignee: {
+    login: string;
+    id: number;
+    node_id: string;
+    avatar_url: string;
+    gravatar_id: string;
+    url: string;
     html_url: string;
+    followers_url: string;
+    following_url: string;
+    gists_url: string;
+    starred_url: string;
+    subscriptions_url: string;
+    organizations_url: string;
+    repos_url: string;
+    events_url: string;
+    received_events_url: string;
+    type: string;
+    site_admin: boolean;
+  };
+  assignees: {
+    login: string;
+    id: number;
+    node_id: string;
+    avatar_url: string;
+    gravatar_id: string;
+    url: string;
+    html_url: string;
+    followers_url: string;
+    following_url: string;
+    gists_url: string;
+    starred_url: string;
+    subscriptions_url: string;
+    organizations_url: string;
+    repos_url: string;
+    events_url: string;
+    received_events_url: string;
+    type: string;
+    site_admin: boolean;
+  }[];
+  milestone: {
+    url: string;
+    html_url: string;
+    labels_url: string;
+    id: number;
+    node_id: string;
     number: number;
     state: string;
     title: string;
-    body: string;
-    user: {
-        login: string;
-        id: number;
-        node_id: string;
-        avatar_url: string;
-        gravatar_id: string;
-        url: string;
-        html_url: string;
-        followers_url: string;
-        following_url: string;
-        gists_url: string;
-        starred_url: string;
-        subscriptions_url: string;
-        organizations_url: string;
-        repos_url: string;
-        events_url: string;
-        received_events_url: string;
-        type: string;
-        site_admin: boolean;
+    description: string;
+    creator: {
+      login: string;
+      id: number;
+      node_id: string;
+      avatar_url: string;
+      gravatar_id: string;
+      url: string;
+      html_url: string;
+      followers_url: string;
+      following_url: string;
+      gists_url: string;
+      starred_url: string;
+      subscriptions_url: string;
+      organizations_url: string;
+      repos_url: string;
+      events_url: string;
+      received_events_url: string;
+      type: string;
+      site_admin: boolean;
     };
-    labels: {
-        id: number;
-        node_id: string;
-        url: string;
-        name: string;
-        description: string;
-        color: string;
-        default: boolean;
-    }[];
-    assignee: {
-        login: string;
-        id: number;
-        node_id: string;
-        avatar_url: string;
-        gravatar_id: string;
-        url: string;
-        html_url: string;
-        followers_url: string;
-        following_url: string;
-        gists_url: string;
-        starred_url: string;
-        subscriptions_url: string;
-        organizations_url: string;
-        repos_url: string;
-        events_url: string;
-        received_events_url: string;
-        type: string;
-        site_admin: boolean;
-    };
-    assignees: {
-        login: string;
-        id: number;
-        node_id: string;
-        avatar_url: string;
-        gravatar_id: string;
-        url: string;
-        html_url: string;
-        followers_url: string;
-        following_url: string;
-        gists_url: string;
-        starred_url: string;
-        subscriptions_url: string;
-        organizations_url: string;
-        repos_url: string;
-        events_url: string;
-        received_events_url: string;
-        type: string;
-        site_admin: boolean;
-    }[];
-    milestone: {
-        url: string;
-        html_url: string;
-        labels_url: string;
-        id: number;
-        node_id: string;
-        number: number;
-        state: string;
-        title: string;
-        description: string;
-        creator: {
-            login: string;
-            id: number;
-            node_id: string;
-            avatar_url: string;
-            gravatar_id: string;
-            url: string;
-            html_url: string;
-            followers_url: string;
-            following_url: string;
-            gists_url: string;
-            starred_url: string;
-            subscriptions_url: string;
-            organizations_url: string;
-            repos_url: string;
-            events_url: string;
-            received_events_url: string;
-            type: string;
-            site_admin: boolean;
-        };
-        open_issues: number;
-        closed_issues: number;
-        created_at: string;
-        updated_at: string;
-        closed_at: string;
-        due_on: string;
-    };
-    locked: boolean;
-    active_lock_reason: string;
-    comments: number;
-    pull_request: {
-        url: string;
-        html_url: string;
-        diff_url: string;
-        patch_url: string;
-    };
-    closed_at: string;
+    open_issues: number;
+    closed_issues: number;
     created_at: string;
     updated_at: string;
+    closed_at: string;
+    due_on: string;
+  };
+  locked: boolean;
+  active_lock_reason: string;
+  comments: number;
+  pull_request: {
+    url: string;
+    html_url: string;
+    diff_url: string;
+    patch_url: string;
+  };
+  closed_at: string;
+  created_at: string;
+  updated_at: string;
 }
-
 
 interface TestCase {
   package?: string;
@@ -291,7 +293,9 @@ export function buildcop(app: Application) {
       labels: ISSUE_LABEL,
       state: 'all', // Include open and closed issues.
     });
-    let issues = (await context.github.paginate(options)) as IssuesListForRepoResponseData;
+    let issues = (await context.github.paginate(
+      options
+    )) as IssuesListForRepoResponseData;
 
     // If we deduplicate any issues, re-download the issues.
     if (
@@ -863,7 +867,9 @@ buildcop.containsBuildFailure = async (
     repo,
     issue_number: issue.number,
   });
-  const comments = await context.github.paginate(options) as IssuesListCommentsResponseData;
+  const comments = (await context.github.paginate(
+    options
+  )) as IssuesListCommentsResponseData;
   const comment = comments.find(
     comment =>
       comment.body.includes(`commit: ${commit}`) &&
