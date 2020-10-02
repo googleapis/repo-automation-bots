@@ -29,10 +29,10 @@
   },
   "dependencies": {
     "@octokit/rest": "^18.0.6",
-    "@octokit/types": "^5.5.0",
     "gcf-utils": "^6.1.1"
   },
   "devDependencies": {
+    "@octokit/types": "^5.5.0",
     "@probot/octokit-plugin-config": "^1.0.0",
     "@types/bunyan": "^1.8.6",
     "@types/express": "^4.17.0",
