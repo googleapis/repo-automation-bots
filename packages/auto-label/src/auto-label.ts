@@ -18,12 +18,14 @@ import {Application, Context} from 'probot';
 import {logger} from 'gcf-utils';
 
 // Default app configs if user didn't specify a .config
-// Todo: turn off pullrequest before merging
-const default_configs = {
-  product: true,
+const LABEL_PRODUCT_BY_DEFAULT = true;
+const LABEL_LANGUAGE_BY_DEFAULT = false;
+
+const DEFAULT_CONFIGS = {
+  product: LABEL_PRODUCT_BY_DEFAULT,
   language: {
-    issue: false,
-    pullrequest: true,
+    issue: LABEL_LANGUAGE_BY_DEFAULT,
+    pullrequest: LABEL_LANGUAGE_BY_DEFAULT,
   },
 };
 
@@ -257,8 +259,9 @@ export function handler(app: Application) {
   // Nightly cron that backfills and corrects api labels
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
-    const config: any = await context.config('config.yml', default_configs);
-    if (! config.product) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config: any = await context.config('config.yml', DEFAULT_CONFIGS);
+    if (!config.product) return;
 
     logger.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
@@ -309,7 +312,7 @@ export function handler(app: Application) {
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const config: any = await context.config('config.yml', default_configs);
+    const config: any = await context.config('config.yml', DEFAULT_CONFIGS);
     if (!config.product) return;
 
     //job that labels issues when they are opened
@@ -331,16 +334,31 @@ export function handler(app: Application) {
   });
 
   app.on(['installation.created'], async context => {
-    // const config: any = await context.config('config.yml', default_configs);
-    // if (! config.product) return;
-
     const repositories = context.payload.repositories;
     const driftRepos = await handler.getDriftRepos();
-    if (!driftRepos) {
-      return;
-    }
+    if (!LABEL_PRODUCT_BY_DEFAULT) return;
+    if (!driftRepos) return;
+
     for await (const repository of repositories) {
       const [owner, repo] = repository.full_name.split('/');
+
+      // Looks for a config file, breaks if user disabled product labels
+      const response = await context.github.repos.getContent({
+        owner,
+        repo,
+        path: '.github/config.yml',
+      });
+      if (response && response.status === 200) {
+        const config_encoded = response.data.content;
+        const config = Buffer.from(config_encoded, 'base64')
+          .toString('binary')
+          .toLowerCase();
+        if (
+          config.includes('product: false') ||
+          config.includes('product:false')
+        )
+          break;
+      }
 
       //goes through issues in repository, adds labels as necessary
       for await (const response of context.github.paginate.iterator(

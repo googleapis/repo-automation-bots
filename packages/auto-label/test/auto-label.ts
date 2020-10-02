@@ -379,11 +379,10 @@ describe('auto-label', () => {
   describe('schedule repository', () => {
     it('responds to a scheduled event', async () => {
       const config = fs.readFileSync(
-          resolve(fixturesPath, 'config', 'valid-config.yml')
+        resolve(fixturesPath, 'config', 'valid-config.yml')
       );
       const ghRequests = nock('https://api.github.com')
-        .get(
-            '/repos/testOwner/testRepo/contents/.github%2Fconfig.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fconfig.yml')
         .reply(200, config)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
@@ -415,7 +414,7 @@ describe('auto-label', () => {
         name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'testOwner'},
-          repository: {name: 'testRepo', owner: {login:'testOwner'}},
+          repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
         },
         id: 'abc123',
@@ -425,11 +424,10 @@ describe('auto-label', () => {
 
     it('deletes extraneous labels', async () => {
       const config = fs.readFileSync(
-          resolve(fixturesPath, 'config', 'valid-config.yml')
+        resolve(fixturesPath, 'config', 'valid-config.yml')
       );
       const ghRequests = nock('https://api.github.com')
-        .get(
-            '/repos/testOwner/testRepo/contents/.github%2Fconfig.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fconfig.yml')
         .reply(200, config)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
@@ -469,7 +467,7 @@ describe('auto-label', () => {
         name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'testOwner'},
-          repository: {name: 'testRepo', owner: {login:'testOwner'}},
+          repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
         },
         id: 'abc123',
@@ -479,11 +477,10 @@ describe('auto-label', () => {
 
     it('will not create labels that already exist', async () => {
       const config = fs.readFileSync(
-          resolve(fixturesPath, 'config', 'valid-config.yml')
+        resolve(fixturesPath, 'config', 'valid-config.yml')
       );
       const ghRequests = nock('https://api.github.com')
-        .get(
-            '/repos/testOwner/testRepo/contents/.github%2Fconfig.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fconfig.yml')
         .reply(200, config)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
@@ -506,7 +503,7 @@ describe('auto-label', () => {
         name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'testOwner'},
-          repository: {name: 'testRepo', owner: {login:'testOwner'}},
+          repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
         },
         id: 'abc123',
@@ -516,11 +513,10 @@ describe('auto-label', () => {
 
     it('will add a samples tag for a samples repo', async () => {
       const config = fs.readFileSync(
-          resolve(fixturesPath, 'config', 'valid-config.yml')
+        resolve(fixturesPath, 'config', 'valid-config.yml')
       );
       const ghRequests = nock('https://api.github.com')
-        .get(
-            '/repos/testOwner/testRepo-samples/contents/.github%2Fconfig.yml')
+        .get('/repos/testOwner/testRepo-samples/contents/.github%2Fconfig.yml')
         .reply(200, config)
         .get('/repos/testOwner/testRepo-samples/issues')
         .reply(200, [
@@ -562,7 +558,7 @@ describe('auto-label', () => {
         name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'testOwner'},
-          repository: {name: 'testRepo-samples', owner: {login:'testOwner'}},
+          repository: {name: 'testRepo-samples', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
         },
         id: 'abc123',
@@ -572,12 +568,10 @@ describe('auto-label', () => {
 
     it('will add a samples tag for a samples issue', async () => {
       const config = fs.readFileSync(
-          resolve(fixturesPath, 'config', 'valid-config.yml')
+        resolve(fixturesPath, 'config', 'valid-config.yml')
       );
       const ghRequests = nock('https://api.github.com')
-        .get(
-            '/repos/testOwner/testRepo/contents/.github%2Fconfig.yml'
-        )
+        .get('/repos/testOwner/testRepo/contents/.github%2Fconfig.yml')
         .reply(200, config)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
@@ -619,7 +613,7 @@ describe('auto-label', () => {
         name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'testOwner'},
-          repository: {name: 'testRepo', owner: {login:'testOwner'}},
+          repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
         },
         id: 'abc123',
@@ -631,8 +625,14 @@ describe('auto-label', () => {
   describe('installation', async () => {
     it('responds to an installation event', async () => {
       const payload = require(resolve(fixturesPath, './events/installation'));
-
+      const product_config = Buffer.from('product: true', 'binary').toString(
+        'base64'
+      );
       const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fconfig.yml')
+        .reply(200, {
+          content: product_config,
+        })
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
           {
