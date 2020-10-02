@@ -18,8 +18,12 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application} from 'probot';
-// eslint-disable-next-line node/no-extraneous-import
-import {GitHubAPI} from 'probot/lib/github';
+import {Octokit} from '@octokit/rest';
+import {
+  IssuesListForRepoResponseData,
+} from '@octokit/types';
+type OctokitType = InstanceType<typeof Octokit>;
+
 import {logger} from 'gcf-utils';
 // labels indicative of the fact that a release has not completed yet.
 const RELEASE_LABELS = [
@@ -97,7 +101,7 @@ export function failureChecker(app: Application) {
     owner: string,
     repo: string,
     prNumber: number,
-    github: GitHubAPI
+    github: OctokitType
   ) {
     const issues = (
       await github.issues.listForRepo({
@@ -106,7 +110,7 @@ export function failureChecker(app: Application) {
         labels: LABELS,
         per_page: 32,
       })
-    ).data;
+    ).data as IssuesListForRepoResponseData;
     const warningIssue = issues.find(issue => {
       return issue.title.includes(ISSUE_TITLE);
     });
