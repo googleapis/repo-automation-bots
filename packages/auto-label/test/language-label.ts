@@ -62,8 +62,22 @@ describe('language-label', () => {
   });
 
   describe('responds to pull request events', () => {
-    // TODO: it does not label if configs are turned off
-
+    it('does not label if configs are turned off', async () => {
+      const config = fs.readFileSync(
+          resolve(fixturesPath, 'config', 'invalid-config.yml')
+      );
+      const payload = require(resolve(fixturesPath, './events/pr_opened'));
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fconfig.yml')
+        .reply(200, config);
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123'
+      });
+      ghRequests.done();
+    });
+    
     // TODO: it labels PRs with a language label
 
     // TODO: it labels with user defined language names
