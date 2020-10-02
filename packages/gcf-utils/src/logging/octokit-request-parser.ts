@@ -77,10 +77,8 @@ const ActionEndpoints: {[url: string]: {[method: string]: GitHubActionType}} = {
     DELETE: GitHubActionType.ISSUE_REMOVE_LABEL,
   },
   '/repos/:owner/:repo/labels/:name': {
-    DELETE: GitHubActionType.ISSUE_DELETE_LABEL,
-  },
-  '/repos/:owner/:repo/labels/:current_name': {
     PATCH: GitHubActionType.ISSUE_UPDATE_LABEL,
+    DELETE: GitHubActionType.ISSUE_DELETE_LABEL,
   },
   '/repos/:owner/:repo/issues/:issue_number': {
     PATCH: GitHubActionType.ISSUE_UPDATE,
