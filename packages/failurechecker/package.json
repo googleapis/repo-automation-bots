@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@octokit/rest": "^18.0.6",
+    "@octokit/types": "^5.5.0",
     "gcf-utils": "^6.1.1"
   },
   "devDependencies": {
