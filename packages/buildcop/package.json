@@ -33,6 +33,7 @@
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
+    "@probot/octokit-plugin-config": "^1.0.0",
     "@types/mocha": "^8.0.0",
     "@types/nock": "^10.0.3",
     "@types/node": "^12.6.1",
