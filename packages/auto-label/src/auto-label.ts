@@ -18,12 +18,13 @@ import {Application, Context} from 'probot';
 import {logger} from 'gcf-utils';
 
 // Default app configs if user didn't specify a .config
+// Todo: turn off pullrequest before merging
 const default_configs = {
   product: true,
   language: {
     issue: false,
-    pullrequest: false
-  }
+    pullrequest: true,
+  },
 };
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -257,6 +258,9 @@ export function handler(app: Application) {
   // Latest Probot doesn't handle schedule events in favor of Github Actions
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
+    // const config: any = await context.config('config.yml', default_configs);
+    // if (! config.product) return;
+
     logger.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
@@ -305,6 +309,10 @@ export function handler(app: Application) {
   });
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config: any = await context.config('config.yml', default_configs);
+    if (!config.product) return;
+
     //job that labels issues when they are opened
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
@@ -324,6 +332,9 @@ export function handler(app: Application) {
   });
 
   app.on(['installation.created'], async context => {
+    // const config: any = await context.config('config.yml', default_configs);
+    // if (! config.product) return;
+
     const repositories = context.payload.repositories;
     const driftRepos = await handler.getDriftRepos();
     if (!driftRepos) {
