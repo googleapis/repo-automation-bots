@@ -17,6 +17,15 @@ import {Storage} from '@google-cloud/storage';
 import {Application, Context} from 'probot';
 import {logger} from 'gcf-utils';
 
+// Default app configs if user didn't specify a .config
+const default_configs = {
+  product: true,
+  language: {
+    issue: false,
+    pullrequest: false
+  }
+};
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const colorsData = require('./colors.json');
 
