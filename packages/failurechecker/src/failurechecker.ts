@@ -33,6 +33,8 @@ const RELEASE_LABELS = [
 // We open an issue that a release has failed if it's been longer than 3
 // hours and we're within normal working hours.
 const WARNING_THRESHOLD = 60 * 60 * 3 * 1000;
+
+const MAX_THRESHOLD = 60 * 60 * 24 * 3 * 1000;
 // We currently only open issues during the hours 9 to 7.
 const END_HOUR_UTC = 3;
 const START_HOUR_UTC = 17;
@@ -42,13 +44,6 @@ export function failureChecker(app: Application) {
     const utcHour = new Date().getUTCHours();
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
-
-    // TODO(SuferJeffAtGoogle, bcoe): investigate whey we are failing to remove
-    // labels from some repositories during the publication process.
-    if (failureChecker.DISABLED) {
-      app.log('failure checker is currently turned off');
-      return;
-    }
 
     // If we're outside of working hours, and we're not in a test context, skip this bot.
     if (utcHour > END_HOUR_UTC && utcHour < START_HOUR_UTC) {
@@ -65,12 +60,17 @@ export function failureChecker(app: Application) {
             repo: context.payload.repository.name,
             labels: label,
             state: 'closed',
+            sort: 'updated',
+            direction: 'desc',
             per_page: 16,
           })
         ).data;
         for (const issue of results) {
           const updatedTime = new Date(issue.updated_at).getTime();
-          if (now - updatedTime > WARNING_THRESHOLD) {
+          if (
+            now - updatedTime > WARNING_THRESHOLD &&
+            now - updatedTime < MAX_THRESHOLD
+          ) {
             // Check that the corresponding PR was actually merged,
             // rather than closed:
             const pr = (
@@ -131,6 +131,3 @@ export function failureChecker(app: Application) {
     });
   }
 }
-
-// Set this to false again onde we've addressed reporting bug:
-failureChecker.DISABLED = true;

@@ -24,8 +24,6 @@ import {Octokit} from '@octokit/rest';
 import {config} from '@probot/octokit-plugin-config';
 const TestingOctokit = Octokit.plugin(config);
 
-failureChecker.DISABLED = false;
-
 nock.disableNetConnect();
 
 describe('failurechecker', () => {
@@ -50,25 +48,25 @@ describe('failurechecker', () => {
   it('opens an issue on GitHub if there exists a pending label > threshold', async () => {
     const requests = nock('https://api.github.com')
       .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&per_page=16'
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&sort=updated&direction=desc&per_page=16'
       )
       .reply(200, [
         {
           number: 33,
-          updated_at: '2011-04-22T13:33:48Z',
+          updated_at: '2020-01-30T13:33:48Z',
         },
       ])
       .get('/repos/googleapis/nodejs-foo/pulls/33')
       .reply(200, {
         number: 33,
-        merged_at: '2011-04-22T13:33:48Z',
+        merged_at: '2020-01-30T13:33:48Z',
       })
       .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&per_page=16'
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&sort=updated&direction=desc&per_page=16'
       )
       .reply(200, [])
       .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&per_page=16'
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
       )
       .reply(200, [])
       .get(
@@ -101,26 +99,26 @@ describe('failurechecker', () => {
   it('opens an issue on GitHub if there exists a tagged label > threshold', async () => {
     const requests = nock('https://api.github.com')
       .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&per_page=16'
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&sort=updated&direction=desc&per_page=16'
       )
       .reply(200, [])
       .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&per_page=16'
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&sort=updated&direction=desc&per_page=16'
       )
       .reply(200, [])
       .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&per_page=16'
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
       )
       .reply(200, [
         {
           number: 33,
-          updated_at: '2011-04-22T13:33:48Z',
+          updated_at: '2020-01-30T13:33:48Z',
         },
       ])
       .get('/repos/googleapis/nodejs-foo/pulls/33')
       .reply(200, {
         number: 33,
-        merged_at: '2011-04-22T13:33:48Z',
+        merged_at: '2020-01-30T13:33:48Z',
       })
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
@@ -153,15 +151,15 @@ describe('failurechecker', () => {
     const date = new Date().toISOString();
     const requests = nock('https://api.github.com')
       .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&per_page=16'
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&sort=updated&direction=desc&per_page=16'
       )
       .reply(200, [])
       .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&per_page=16'
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&sort=updated&direction=desc&per_page=16'
       )
       .reply(200, [])
       .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&per_page=16'
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
       )
       .reply(200, [
         {
@@ -185,29 +183,64 @@ describe('failurechecker', () => {
     requests.done();
   });
 
-  it('does not open an issue if a prior warning issue is still open', async () => {
+  it('does not open an issue if merged_at is over the max threshold', async () => {
     const requests = nock('https://api.github.com')
       .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&per_page=16'
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&sort=updated&direction=desc&per_page=16'
       )
       .reply(200, [])
       .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&per_page=16'
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&sort=updated&direction=desc&per_page=16'
       )
       .reply(200, [])
       .get(
-        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&per_page=16'
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
       )
       .reply(200, [
         {
           number: 33,
-          updated_at: '2011-04-22T13:33:48Z',
+          updated_at: '2020-01-25T13:33:48Z',
+        },
+      ]);
+
+    await probot.receive({
+      name: 'schedule.repository' as any,
+      payload: {
+        repository: {
+          name: 'nodejs-foo',
+        },
+        organization: {
+          login: 'googleapis',
+        },
+      },
+      id: 'abc123',
+    });
+    requests.done();
+  });
+
+  it('does not open an issue if a prior warning issue is still open', async () => {
+    const requests = nock('https://api.github.com')
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&sort=updated&direction=desc&per_page=16'
+      )
+      .reply(200, [])
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&sort=updated&direction=desc&per_page=16'
+      )
+      .reply(200, [])
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
+      )
+      .reply(200, [
+        {
+          number: 33,
+          updated_at: '2020-01-30T13:33:48Z',
         },
       ])
       .get('/repos/googleapis/nodejs-foo/pulls/33')
       .reply(200, {
         number: 33,
-        merged_at: '2011-04-22T13:33:48Z',
+        merged_at: '2020-01-30T13:33:48Z',
       })
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
