@@ -82,9 +82,7 @@ describe('language-label', () => {
 
     // TODO: it labels PRs with a language label
 
-    // TODO: it labels with user defined language names
 
-    // TODO: it labels with user defined paths
 
     // TODO: it doesn't label if language not found
     it('does not re-label a PR', async () => {
@@ -154,6 +152,38 @@ describe('language-label', () => {
         }
       ];
       assert.strictEqual(langlabeler.getPRLanguage(data, config), "lang: javascript");
-    })
+    });
+
+    it('labels with user defined language mapping', async () => {
+      const lang_config = {
+        pullrequest: true,
+        extensions: {
+          typescript: ['ts']
+        }
+      };
+      const data = [
+        {
+          filename: "src/index.ts",
+          changes: 15,
+        }
+      ];
+      assert.strictEqual(langlabeler.getPRLanguage(data, lang_config), "lang: typescript");
+    });
+
+    it('labels with user defined paths', async () => {
+      const lang_config = {
+        pullrequest: true,
+        paths: {
+          src: 'c++'
+        }
+      };
+      const data = [
+        {
+          filename: "src/index.ts",
+          changes: 15,
+        }
+      ];
+      assert.strictEqual(langlabeler.getPRLanguage(data, lang_config), "lang: c++");
+    });
   });
 });

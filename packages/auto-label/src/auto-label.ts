@@ -347,7 +347,7 @@ export function handler(app: Application) {
     const repo = context.payload.repository.name;
     const pull_number = context.payload.pull_request.number;
     let filesChanged = await context.github.pulls.listFiles({ owner, repo, pull_number });
-    let language = langlabler.getPRLanguage(filesChanged.data, config);
+    let language = langlabler.getPRLanguage(filesChanged.data, config.language);
     if (language) {
       logger.info("Labeling PR with: " + language);
       await context.github.issues.addLabels({

@@ -79,6 +79,8 @@ function getFileLanguage(filename: string, config: any) : string {
   console.log("in getFileLanguage");
   console.log("config:");
   console.log(config);
+  console.log("config.extensions");
+  console.log(config.extensions);
   if (config.paths) {
     console.log("User has configured paths");
     let lang = getLanguageFromPathConfig(filename, config);
@@ -92,6 +94,8 @@ function getFileLanguage(filename: string, config: any) : string {
   const extensionMap = config.extensions ?
       {...config.extensions, ...defaultExtensions}
       : defaultExtensions;
+  console.log("extension map with user configs: ");
+  // console.log(extensionMap);
   let ext: string = filename.substring(filename.lastIndexOf('.') + 1);
   let lang = Object.keys(extensionMap).find(key => extensionMap[key].includes(ext));
   if (!lang) return "";
