@@ -19,9 +19,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Application} from 'probot';
 import {Octokit} from '@octokit/rest';
-import {
-  IssuesListForRepoResponseData,
-} from '@octokit/types';
+import {IssuesListForRepoResponseData} from '@octokit/types';
 type OctokitType = InstanceType<typeof Octokit>;
 
 import {logger} from 'gcf-utils';
