@@ -37,6 +37,10 @@ interface WatchPR {
   url: string;
 }
 
+interface Label {
+  name: string;
+}
+
 /**
  * Retrieves Query response from Datastore
  * @returns a Promise that can have any data type as it is the result of the Query, plus some standard types like the query key
@@ -127,7 +131,9 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
  * @returns void
  */
 function handler(app: Application) {
-  app.on(['schedule.repository'], async context => {
+  //meta-note about the schedule.repository as any; currently GH does not support this type, see
+  //open issue for a fix: https://github.com/octokit/webhooks.js/issues/277
+  app.on('schedule.repository' as any, async context => {
     const rateLimit = (await context.github.rateLimit.get()).data.resources.core
       .remaining;
     if (rateLimit <= 0) {
@@ -158,7 +164,7 @@ function handler(app: Application) {
               [MERGE_ON_GREEN_LABEL, MERGE_ON_GREEN_LABEL_SECURE],
               wp.state,
               wp.branchProtection,
-              context.github
+              context.github as any
             );
             if (remove || wp.state === 'stop') {
               await handler.removePR(wp.url);
@@ -177,13 +183,13 @@ function handler(app: Application) {
     // if missing the label, skip
     if (
       !context.payload.pull_request.labels.some(
-        label =>
+        (label: Label) =>
           label.name === MERGE_ON_GREEN_LABEL ||
           label.name === MERGE_ON_GREEN_LABEL_SECURE
       )
     ) {
       const labels = context.payload.pull_request.labels
-        .map(label => {
+        .map((label: Label) => {
           return JSON.stringify(label);
         })
         .join(', ');

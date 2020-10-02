@@ -43,7 +43,7 @@ branchProtectionRules:
 permissionRules:
     # Team slug to add to repository permissions
   - team: team1
-    # Access level required, one of push|pull|admin|maintain|triage
+    # Access level required, one of push|pull|admin
     permission: push
 ```
 
