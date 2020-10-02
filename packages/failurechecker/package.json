@@ -28,9 +28,10 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "^5.3.0"
+    "gcf-utils": "^6.1.1"
   },
   "devDependencies": {
+    "@probot/octokit-plugin-config": "^1.0.0",
     "@types/bunyan": "^1.8.6",
     "@types/express": "^4.17.0",
     "@types/ioredis": "^4.0.13",

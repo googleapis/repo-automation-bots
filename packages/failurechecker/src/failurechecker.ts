@@ -36,7 +36,7 @@ const END_HOUR_UTC = 3;
 const START_HOUR_UTC = 17;
 
 export function failureChecker(app: Application) {
-  app.on(['schedule.repository'], async context => {
+  app.on(['schedule.repository' as any], async context => {
     const utcHour = new Date().getUTCHours();
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
