@@ -110,7 +110,6 @@ export = (app: Application) => {
       return;
     }
 
-    console.log(files)
 
     let lintError = false;
     const failureMessages: string[] = [];
@@ -133,7 +132,6 @@ export = (app: Application) => {
         logger.info('ignoring non-source file: ' + file.filename);
         continue;
       }
-      console.log('hi?')
 
       const blob = await context.github.git.getBlob(
         context.repo({

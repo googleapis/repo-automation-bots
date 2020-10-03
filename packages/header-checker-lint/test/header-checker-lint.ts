@@ -219,7 +219,7 @@ describe('HeaderCheckerLint', () => {
       requests.done();
     });
 
-    it.only('reads a custom configuration file', async () => {
+    it('reads a custom configuration file', async () => {
       const config = readFileSync(
         resolve(fixturesPath, './config_copyright_holder.yml')
       );
@@ -234,7 +234,7 @@ describe('HeaderCheckerLint', () => {
       )
       .reply(200, config)
       .get(
-        '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
+        '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
       )
         .reply(200, invalidFiles)
         .get(
@@ -255,9 +255,9 @@ describe('HeaderCheckerLint', () => {
       const config = readFileSync(resolve(fixturesPath, './invalid_yaml.yml'));
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/header-checker-lint.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Fheader-checker-lint.yml'
         )
-        .reply(200, {content: config.toString('base64')});
+        .reply(200, config);
 
       await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
@@ -313,6 +313,10 @@ describe('HeaderCheckerLint', () => {
       .get(
         '/repos/chingor13/.github/contents/.github%2Fheader-checker-lint.yml'
       )
+        .reply(200, config)
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
         .reply(200, invalidFiles)
         .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
           snapshot(body);
