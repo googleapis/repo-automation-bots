@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {GitHubAPI} from 'probot';
+import {ProbotOctokit} from 'probot';
 import moment from 'moment';
 import {SLORules, IssuesListCommentsItem, IssueItem} from './types';
 import {convertToArray} from './slo-appliesTo';
@@ -41,7 +41,7 @@ interface ReposListCollaboratorsItem {
  * @returns string of the content in the file
  */
 export const getFilePathContent = async function getFilePathContent(
-  github: GitHubAPI,
+  github: InstanceType<typeof ProbotOctokit>,
   owner: string,
   repo: string,
   path: string
@@ -74,7 +74,7 @@ export const getFilePathContent = async function getFilePathContent(
  * @returns true if valid responder responded in time else false
  */
 export const isInResponseTime = async function isInResponseTime(
-  github: GitHubAPI,
+  github: InstanceType<typeof ProbotOctokit>,
   issueItem: IssueItem,
   responders: Set<string>,
   responseTime: string | number
@@ -137,7 +137,7 @@ export const isAssigned = async function isAssigned(
  * @returns an array of IssuesListCommentsItem with id number, user login, updated time, and created time
  */
 export const getIssueCommentsList = async function getIssueCommentsList(
-  github: GitHubAPI,
+  github: InstanceType<typeof ProbotOctokit>,
   owner: string,
   repo: string,
   number: number
@@ -166,7 +166,7 @@ export const getIssueCommentsList = async function getIssueCommentsList(
  * @returns a set of valid responders
  */
 export const getResponders = async function getResponders(
-  github: GitHubAPI,
+  github: InstanceType<typeof ProbotOctokit>,
   owner: string,
   repo: string,
   slo: SLORules
@@ -250,7 +250,7 @@ export const getContributers = async function getContributers(
  * @returns of ReposListCollaboratorsItems that specifies user login, and their permissions (pull, push, admin)
  */
 export const getCollaborators = async function getCollaborators(
-  github: GitHubAPI,
+  github: InstanceType<typeof ProbotOctokit>,
   owner: string,
   repo: string
 ): Promise<ReposListCollaboratorsItem[] | null> {
@@ -309,7 +309,7 @@ export const isInDuration = async function isInDuration(
  * @returns true if issue is compliant with slo else false
  */
 export const isIssueCompliant = async function isIssueCompliant(
-  github: GitHubAPI,
+  github: InstanceType<typeof ProbotOctokit>,
   issueItem: IssueItem,
   slo: SLORules
 ): Promise<boolean> {

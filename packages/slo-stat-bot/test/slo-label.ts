@@ -15,7 +15,7 @@
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, createProbot, ProbotOctokit} from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
 import {describe, it, beforeEach, afterEach} from 'mocha';
@@ -27,6 +27,10 @@ import handler from '../src/slo-bot';
 import sinon from 'sinon';
 import * as sloAppliesTo from '../src/slo-appliesTo';
 import * as sloCompliant from '../src/slo-compliant';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+import {config} from '@probot/octokit-plugin-config';
+const TestingOctokit = Octokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -36,29 +40,20 @@ describe('slo-label', () => {
   let probot: Probot;
 
   beforeEach(() => {
-    probot = new Probot({
-      // use a bare instance of octokit, the default version
-      // enables retries which makes testing difficult.
-      // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest'),
+    probot = createProbot({
+      githubToken: 'abc123',
+      Octokit: TestingOctokit as any,
     });
 
-    probot.app = {
-      getSignedJsonWebToken() {
-        return 'abc123';
-      },
-      getInstallationAccessToken(): Promise<string> {
-        return Promise.resolve('abc123');
-      },
-    };
     probot.load(handler);
   });
+
   describe('handle_labels', () => {
     const config = fs.readFileSync(
       resolve(fixturesPath, 'config', 'slo-stat-bot.yaml')
     );
 
-    let payload: Webhooks.WebhookPayloadPullRequest;
+    let payload: Webhooks.EventNames.PullRequestEvent;
     let appliesToStub: sinon.SinonStub;
     let isCompliantStub: sinon.SinonStub;
 
@@ -88,7 +83,7 @@ describe('slo-label', () => {
       appliesToStub.onCall(0).returns(true);
       isCompliantStub.onCall(0).returns(true);
       await probot.receive({
-        name: 'issues.opened',
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -115,7 +110,7 @@ describe('slo-label', () => {
       appliesToStub.onCall(0).returns(true);
       isCompliantStub.onCall(0).returns(false);
       await probot.receive({
-        name: 'issues.opened',
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -137,7 +132,7 @@ describe('slo-label', () => {
       appliesToStub.onCall(0).returns(true);
       isCompliantStub.onCall(0).returns(false);
       await probot.receive({
-        name: 'issues.opened',
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -160,7 +155,7 @@ describe('slo-label', () => {
       appliesToStub.onCall(0).returns(true);
       isCompliantStub.onCall(0).returns(true);
       await probot.receive({
-        name: 'issues.opened',
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -184,7 +179,7 @@ describe('slo-label', () => {
       appliesToStub.onCall(0).returns(true);
       isCompliantStub.onCall(0).returns(true);
       await probot.receive({
-        name: 'issues.opened',
+        name: 'issues',
         payload,
         id: 'abc123',
       });

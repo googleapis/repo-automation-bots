@@ -15,7 +15,7 @@
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, createProbot} from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
 import {describe, it, beforeEach, afterEach} from 'mocha';
@@ -28,6 +28,9 @@ import * as sloLint from '../src/slo-lint';
 import * as sloAppliesTo from '../src/slo-appliesTo';
 import * as sloCompliant from '../src/slo-compliant';
 import * as sloLabel from '../src/slo-label';
+import {Octokit} from '@octokit/rest';
+import {config} from '@probot/octokit-plugin-config';
+const TestingOctokit = Octokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -41,25 +44,16 @@ describe('slo-bot', () => {
   );
 
   beforeEach(() => {
-    probot = new Probot({
-      // use a bare instance of octokit, the default version
-      // enables retries which makes testing difficult.
-      // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest'),
+    probot = createProbot({
+      githubToken: 'abc123',
+      Octokit: TestingOctokit as any,
     });
 
-    probot.app = {
-      getSignedJsonWebToken() {
-        return 'abc123';
-      },
-      getInstallationAccessToken(): Promise<string> {
-        return Promise.resolve('abc123');
-      },
-    };
     probot.load(handler);
   });
+
   describe('getSloFile', () => {
-    let payload: Webhooks.WebhookPayloadPullRequest;
+    let payload: Webhooks.EventNames.PullRequestEvent;
     let appliesToStub: sinon.SinonStub;
     let isCompliantStub: sinon.SinonStub;
 
@@ -87,7 +81,7 @@ describe('slo-bot', () => {
 
       appliesToStub.onCall(0).returns(false);
       await probot.receive({
-        name: 'issues.opened',
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -110,7 +104,7 @@ describe('slo-bot', () => {
 
       appliesToStub.onCall(0).returns(false);
       await probot.receive({
-        name: 'issues.opened',
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -121,7 +115,7 @@ describe('slo-bot', () => {
     });
   });
   describe('handleIssues', () => {
-    let payload: Webhooks.WebhookPayloadPullRequest;
+    let payload: Webhooks.EventNames.PullRequestEvent;
     let appliesToStub: sinon.SinonStub;
     let isCompliantStub: sinon.SinonStub;
     let labelStub: sinon.SinonStub;
@@ -161,7 +155,7 @@ describe('slo-bot', () => {
         isCompliantStub.onCall(0).returns(false);
 
         await probot.receive({
-          name: 'pull_request.opened',
+          name: 'pull_request',
           payload,
           id: 'abc123',
         });
@@ -186,7 +180,7 @@ describe('slo-bot', () => {
         appliesToStub.onCall(0).returns(false);
 
         await probot.receive({
-          name: 'pull_request.opened',
+          name: 'pull_request',
           payload,
           id: 'abc123',
         });
@@ -216,7 +210,7 @@ describe('slo-bot', () => {
         isCompliantStub.onCall(0).returns(false);
 
         await probot.receive({
-          name: 'issues.opened',
+          name: 'issues',
           payload,
           id: 'abc123',
         });
@@ -240,7 +234,7 @@ describe('slo-bot', () => {
         appliesToStub.onCall(0).returns(false);
 
         await probot.receive({
-          name: 'issues.opened',
+          name: 'issues',
           payload,
           id: 'abc123',
         });
@@ -301,7 +295,7 @@ describe('slo-bot', () => {
         isCompliantStub.onCall(0).returns(false);
 
         await probot.receive({
-          name: 'schedule.repository',
+          name: 'schedule.repository' as any,
           payload,
           id: 'abc123',
         });
