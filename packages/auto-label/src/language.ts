@@ -13,10 +13,12 @@
 // limitations under the License.
 //
 
+// eslint-disable-next-line node/no-extraneous-import
 import {Context} from 'probot';
 import {logger} from 'gcf-utils';
 
 // A mapping of languages to their file extensions
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const defaultExtensions = require('./extensions.json');
 
 /**
@@ -36,6 +38,7 @@ function langLabelExists(context: Context): boolean {
   return false;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getLanguageFromPathConfig(filename: string, config: any): string {
   // If user specified languages for discrete paths
   let lang = '';
@@ -66,6 +69,7 @@ function getLanguageFromPathConfig(filename: string, config: any): string {
  *  Only extensions & languages whitelisted in extensions.json are labeled
  *  Ignores files without . extensions, e.g. Dockerfile, LICENSE
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getFileLanguage(filename: string, config: any): string {
   // 1. Return language if file path is user defined
   if (config.paths) {
@@ -104,6 +108,7 @@ interface FileData {
  * Interprets the language of a given file
  * Returns the highest occurring language across all files in a PR
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getPRLanguage(data: FileData[], config: any): string {
   const counts = data.reduce((counted: {[key: string]: number}, file) => {
     const l = getFileLanguage(file.filename, config);

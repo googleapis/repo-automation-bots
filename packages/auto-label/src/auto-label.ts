@@ -16,12 +16,12 @@ import {Storage} from '@google-cloud/storage';
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context} from 'probot';
 import {logger} from 'gcf-utils';
-const langlabler = require('./language');
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const langlabler = require('./language');
 // Default app configs if user didn't specify a .config
 const LABEL_PRODUCT_BY_DEFAULT = true;
 const LABEL_LANGUAGE_BY_DEFAULT = false;
-
 const DEFAULT_CONFIGS = {
   product: LABEL_PRODUCT_BY_DEFAULT,
   language: {
@@ -341,7 +341,9 @@ export function handler(app: Application) {
     if (!config.language.pullrequest) return;
     if (langlabler.langLabelExists(context)) return;
 
-    logger.info('Labeling New Pull Request: ' + context.payload.repository.name +
+    logger.info(
+      'Labeling New Pull Request: ' +
+        context.payload.repository.name +
         ' #' +
         context.payload.pull_request.number
     );
@@ -353,7 +355,10 @@ export function handler(app: Application) {
       repo,
       pull_number,
     });
-    const language = langlabler.getPRLanguage(filesChanged.data, config.language);
+    const language = langlabler.getPRLanguage(
+      filesChanged.data,
+      config.language
+    );
     if (language) {
       logger.info('Labeling PR with: ' + language);
       await context.github.issues.addLabels({

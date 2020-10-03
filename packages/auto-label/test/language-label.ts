@@ -21,10 +21,8 @@ import nock from 'nock';
 import * as assert from 'assert';
 import {resolve} from 'path';
 import fs from 'fs';
-import snapshot from 'snap-shot-it';
 import * as sinon from 'sinon';
 import {handler} from '../src/auto-label';
-import {logger} from 'gcf-utils';
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
@@ -43,8 +41,6 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 describe('language-label', () => {
   let probot: Probot;
-  let errorStub: sinon.SinonStub;
-  let repoStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = new Probot({
@@ -53,9 +49,6 @@ describe('language-label', () => {
       Octokit: TestingOctokit as any,
     });
     probot.load(handler);
-
-    // throw and fail the test if we're writing
-    errorStub = sandbox.stub(logger, 'error').throwsArg(0);
   });
 
   afterEach(() => {
@@ -80,40 +73,41 @@ describe('language-label', () => {
       ghRequests.done();
     });
 
-    // TODO: it labels PRs with a language label
-
-    // TODO: it doesn't label if language not found
     it('labels PR with a language label', async () => {
       const config = fs.readFileSync(
-          resolve(fixturesPath, 'config', 'valid-config.yml')
+        resolve(fixturesPath, 'config', 'valid-config.yml')
       );
-      const pr_opened_payload = require(resolve(fixturesPath, './events/pr_opened.json'));
-      const pr_files_payload = require(resolve(fixturesPath, './events/pr_opened_files.json'));
+      const pr_opened_payload = require(resolve(
+        fixturesPath,
+        './events/pr_opened.json'
+      ));
+      const pr_files_payload = require(resolve(
+        fixturesPath,
+        './events/pr_opened_files.json'
+      ));
       const expected_labels = {
-        labels: ['language:JSON']
-      }
+        labels: ['language:JSON'],
+      };
       const ghRequests = nock('https://api.github.com')
-          .get(
-              '/repos/testOwner/testRepo/contents/.github%2Fconfig.yml'
-          )
-          .reply(200, config)
+        .get('/repos/testOwner/testRepo/contents/.github%2Fconfig.yml')
+        .reply(200, config)
 
-          //  Mock pulls.listfiles
-          .get('/repos/testOwner/testRepo/pulls/12/files')
-          .reply(200, pr_files_payload)
+        //  Mock pulls.listfiles
+        .get('/repos/testOwner/testRepo/pulls/12/files')
+        .reply(200, pr_files_payload)
 
-          // Mock issues.addlabels
-          .post('/repos/testOwner/testRepo/issues/12/labels', body => {
-            console.log(body.labels);
-            assert.notStrictEqual(body, expected_labels);
-            return true;
-          })
-          .reply(200);
+        // Mock issues.addlabels
+        .post('/repos/testOwner/testRepo/issues/12/labels', body => {
+          console.log(body.labels);
+          assert.notStrictEqual(body, expected_labels);
+          return true;
+        })
+        .reply(200);
 
       await probot.receive({
         name: 'pull_request',
         payload: pr_opened_payload,
-        id: 'abc123'
+        id: 'abc123',
       });
 
       ghRequests.done();
