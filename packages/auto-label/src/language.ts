@@ -13,17 +13,8 @@
 // limitations under the License.
 //
 
-import { Context } from 'probot';
-import { logger } from 'gcf-utils';
-
-// Default app configs if user didn't specify a .config
-const default_configs = {
-  product: true,
-  language: {
-    issue: false,
-    pullrequest: false
-  }
-};
+import {Context} from 'probot';
+import {logger} from 'gcf-utils';
 
 // A mapping of languages to their file extensions
 const defaultExtensions = require('./extensions.json');
@@ -32,39 +23,40 @@ const defaultExtensions = require('./extensions.json');
  * hasLangLabel
  * Checks whether there already exists a "lang:" label
  */
-function langLabelExists(context: Context) : boolean {
-  let labels = context.payload.issue ? context.payload.issue.labels : context.payload.pull_request.labels;
-  for (let label of labels) {
-    if (label.name.includes("lang: ")) {
-      logger.info("Exiting - language tag already exists: " + label.name);
-      return true
+function langLabelExists(context: Context): boolean {
+  const labels = context.payload.issue
+    ? context.payload.issue.labels
+    : context.payload.pull_request.labels;
+  for (const label of labels) {
+    if (label.name.includes('lang: ')) {
+      logger.info('Exiting - language tag already exists: ' + label.name);
+      return true;
     }
   }
-  return false
+  return false;
 }
 
-function getLanguageFromPathConfig(filename: string, config: any) : string {
+function getLanguageFromPathConfig(filename: string, config: any): string {
   // If user specified languages for discrete paths
-  let lang = "";
-  const dirs = filename.split("/");
+  let lang = '';
+  const dirs = filename.split('/');
   let path_obj = config.paths;
   // If user set default language for entire drive, use that language
   if ('.' in path_obj) lang = path_obj['.'];
-  for (let dir of dirs) {
+  for (const dir of dirs) {
     if (dir in path_obj) {
       if ('.' in path_obj) lang = path_obj['.'];
       if (typeof path_obj[dir] === 'string') {
         lang = path_obj[dir];
         break; // break as this is the end of user defined path
       } else {
-        path_obj=path_obj[dir];
+        path_obj = path_obj[dir];
       }
     } else {
       break; // break as this is the end of user defined path
     }
   }
   return lang;
-
 }
 
 /**
@@ -74,33 +66,27 @@ function getLanguageFromPathConfig(filename: string, config: any) : string {
  *  Only extensions & languages whitelisted in extensions.json are labeled
  *  Ignores files without . extensions, e.g. Dockerfile, LICENSE
  */
-function getFileLanguage(filename: string, config: any) : string {
+function getFileLanguage(filename: string, config: any): string {
   // 1. Return language if file path is user defined
-  console.log("in getFileLanguage");
-  console.log("config:");
-  console.log(config);
-  console.log("config.extensions");
-  console.log(config.extensions);
   if (config.paths) {
-    console.log("User has configured paths");
-    let lang = getLanguageFromPathConfig(filename, config);
+    const lang = getLanguageFromPathConfig(filename, config);
     if (lang) {
       if (config.labelprefix) return config.labelprefix + lang;
-      return "lang: " + lang;
+      return 'lang: ' + lang;
     }
   }
 
   // 2. Return language based on extension matching
-  const extensionMap = config.extensions ?
-      {...config.extensions, ...defaultExtensions}
-      : defaultExtensions;
-  console.log("extension map with user configs: ");
-  // console.log(extensionMap);
-  let ext: string = filename.substring(filename.lastIndexOf('.') + 1);
-  let lang = Object.keys(extensionMap).find(key => extensionMap[key].includes(ext));
-  if (!lang) return "";
+  const extensionMap = config.extensions
+    ? {...config.extensions, ...defaultExtensions}
+    : defaultExtensions;
+  const ext: string = filename.substring(filename.lastIndexOf('.') + 1);
+  const lang = Object.keys(extensionMap).find(key =>
+    extensionMap[key].includes(ext)
+  );
+  if (!lang) return '';
   if (config.labelprefix) return config.labelprefix + lang;
-  return "lang: " + lang;
+  return 'lang: ' + lang;
 }
 
 /**
@@ -108,8 +94,8 @@ function getFileLanguage(filename: string, config: any) : string {
  * Extracting relevant data from each file changed from github.pulls.listFiles
  */
 interface FileData {
-  filename: string
-  changes: number
+  filename: string;
+  changes: number;
 }
 
 /**
@@ -118,10 +104,9 @@ interface FileData {
  * Interprets the language of a given file
  * Returns the highest occurring language across all files in a PR
  */
-function getPRLanguage(data: FileData[], config: any) : string {
-  console.log("getPRlanguage");
-  let counts = data.reduce(function(counted: {[key:string]: number}, file) {
-    let l = getFileLanguage(file.filename, config);
+function getPRLanguage(data: FileData[], config: any): string {
+  const counts = data.reduce((counted: {[key: string]: number}, file) => {
+    const l = getFileLanguage(file.filename, config);
     if (l) {
       if (!counted[l]) {
         counted[l] = file.changes;
@@ -132,10 +117,10 @@ function getPRLanguage(data: FileData[], config: any) : string {
     return counted;
   }, {});
 
-  let label = Object.keys(counts).sort(function (a,b) {
-    return counts[b]-counts[a]
+  const label = Object.keys(counts).sort((a, b) => {
+    return counts[b] - counts[a];
   });
-  logger.info("Detected languages based on files extensions are: " + label);
+  logger.info('Detected languages based on files extensions are: ' + label);
   return label[0];
 }
 
