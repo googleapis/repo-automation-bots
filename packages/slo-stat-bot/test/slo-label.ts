@@ -74,7 +74,9 @@ describe('slo-label', () => {
         .reply(404)
         .get('/repos/testOwner/.github/contents/.github%2Fslo-stat-bot.yaml')
         .reply(404)
-        .get('/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json')
+        .get(
+          '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
+        )
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
@@ -94,7 +96,9 @@ describe('slo-label', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json')
+        .get(
+          '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
+        )
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
@@ -121,7 +125,9 @@ describe('slo-label', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'issue_ooslo'));
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json')
+        .get(
+          '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
+        )
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
@@ -144,7 +150,9 @@ describe('slo-label', () => {
       payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json')
+        .get(
+          '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
+        )
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
@@ -166,7 +174,9 @@ describe('slo-label', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'issue_ooslo'));
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json')
+        .get(
+          '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
+        )
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
