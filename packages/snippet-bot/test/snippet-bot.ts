@@ -19,12 +19,17 @@
 import myProbotApp from '../src/snippet-bot';
 
 import {resolve} from 'path';
-import {Probot} from 'probot';
+import {Probot, createProbot} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
 import assert from 'assert';
 import {describe, it, beforeEach, afterEach} from 'mocha';
+
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+import {config} from '@probot/octokit-plugin-config';
+const TestingOctokit = Octokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -42,15 +47,10 @@ describe('snippet-bot', () => {
   );
 
   beforeEach(() => {
-    probot = new Probot({});
-    probot.app = {
-      getSignedJsonWebToken() {
-        return 'abc123';
-      },
-      getInstallationAccessToken(): Promise<string> {
-        return Promise.resolve('abc123');
-      },
-    };
+    probot = createProbot({
+      githubToken: 'abc123',
+      Octokit: TestingOctokit as any,
+    });
     probot.load(myProbotApp);
   });
 
@@ -71,9 +71,9 @@ describe('snippet-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github/snippet-bot.yml'
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
         )
-        .reply(200, {content: config.toString('base64')})
+        .reply(200, config)
         .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
         .reply(404, {});
 
@@ -94,9 +94,9 @@ describe('snippet-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github/snippet-bot.yml'
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
         )
-        .reply(200, {content: config.toString('base64')})
+        .reply(200, config)
         .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
         .reply(200, changedFiles)
         .get(
@@ -126,9 +126,9 @@ describe('snippet-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github/snippet-bot.yml'
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
         )
-        .reply(200, {content: config.toString('base64')})
+        .reply(200, config)
         .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
         .reply(200, changedFiles)
         .get(
@@ -151,7 +151,7 @@ describe('snippet-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github/snippet-bot.yml'
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
         )
         .reply(403, {content: 'Permission denied'});
 
@@ -175,9 +175,9 @@ describe('snippet-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github/snippet-bot.yml'
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
         )
-        .reply(200, {content: ignoreConfig.toString('base64')})
+        .reply(200, ignoreConfig)
         .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
         .reply(200, changedFiles);
 
@@ -197,9 +197,9 @@ describe('snippet-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github/snippet-bot.yml'
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
         )
-        .reply(200, {content: config.toString('base64')})
+        .reply(200, config)
         .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
         .reply(200, changedFiles);
 
@@ -219,11 +219,11 @@ describe('snippet-bot', () => {
       // probot tries to fetch the org's config too.
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github/snippet-bot.yml'
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
         )
-        .reply(404, {content: 'Not Found'})
-        .get('/repos/tmatsuo/.github/contents/.github/snippet-bot.yml')
-        .reply(404, {content: 'Not Found'});
+        .reply(404, 'Not Found')
+        .get('/repos/tmatsuo/.github/contents/.github%2Fsnippet-bot.yml')
+        .reply(404, 'Not Found');
 
       await probot.receive({
         name: 'pull_request',
@@ -242,12 +242,12 @@ describe('snippet-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/tmatsuo/python-docs-samples/contents/.github/snippet-bot.yml'
+          '/repos/tmatsuo/python-docs-samples/contents/.github%2Fsnippet-bot.yml'
         )
-        .reply(200, {content: config.toString('base64')});
+        .reply(200, config);
 
       await probot.receive({
-        name: 'issues.opened',
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -259,9 +259,9 @@ describe('snippet-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/tmatsuo/python-docs-samples/contents/.github/snippet-bot.yml'
+          '/repos/tmatsuo/python-docs-samples/contents/.github%2Fsnippet-bot.yml'
         )
-        .reply(200, {content: config.toString('base64')})
+        .reply(200, config)
         .patch('/repos/tmatsuo/python-docs-samples/issues/10', body => {
           snapshot(body);
           return true;
@@ -270,10 +270,10 @@ describe('snippet-bot', () => {
 
       const tarBallRequests = nock('https://github.com')
         .get('/tmatsuo/python-docs-samples/tarball/master')
-        .reply(403, {content: 'Error'});
+        .reply(403, 'Error');
 
       await probot.receive({
-        name: 'issues.opened',
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -287,9 +287,9 @@ describe('snippet-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/tmatsuo/python-docs-samples/contents/.github/snippet-bot.yml'
+          '/repos/tmatsuo/python-docs-samples/contents/.github%2Fsnippet-bot.yml'
         )
-        .reply(200, {content: config.toString('base64')})
+        .reply(200, config)
         .patch('/repos/tmatsuo/python-docs-samples/issues/10', body => {
           snapshot(body);
           return true;
@@ -303,7 +303,7 @@ describe('snippet-bot', () => {
         });
 
       await probot.receive({
-        name: 'issues.opened',
+        name: 'issues',
         payload,
         id: 'abc123',
       });
