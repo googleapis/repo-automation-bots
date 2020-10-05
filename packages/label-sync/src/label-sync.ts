@@ -13,12 +13,13 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, GitHubAPI, Octokit, Context} from 'probot';
+import {Application, Context} from 'probot';
 import {createHash} from 'crypto';
 import {Storage} from '@google-cloud/storage';
 import * as util from 'util';
 import {logger} from 'gcf-utils';
 import {request} from 'gaxios';
+import {IssuesListLabelsForRepoResponseData} from '@octokit/types';
 
 const storage = new Storage();
 
@@ -36,6 +37,10 @@ interface Labels {
       color: string;
     }
   ];
+}
+
+interface Repo {
+  full_name: string;
 }
 
 // Labels are fetched by reaching out to GitHub *instead* of grabbing the file
@@ -85,27 +90,28 @@ async function refreshLabels() {
 }
 
 export function handler(app: Application) {
-  const events = [
-    'repository.created',
-    'repository.transferred',
-    'label.edited',
-    'label.deleted',
-  ];
+  app.on(
+    [
+      'repository.created',
+      'repository.transferred',
+      'label.edited',
+      'label.deleted',
+    ],
+    async c => {
+      const [owner, repo] = c.payload.repository.full_name.split('/');
 
-  app.on(events, async c => {
-    const [owner, repo] = c.payload.repository.full_name.split('/');
+      // Allow the label sync logic to be ignored for a repository:
+      const remoteConfiguration = await loadConfig(c);
+      if (remoteConfiguration?.ignored) {
+        logger.info(`skipping repository ${repo}`);
+        return;
+      }
 
-    // Allow the label sync logic to be ignored for a repository:
-    const remoteConfiguration = await loadConfig(c);
-    if (remoteConfiguration?.ignored) {
-      logger.info(`skipping repository ${repo}`);
-      return;
+      await reconcileLabels(c.github, owner, repo);
     }
+  );
 
-    await reconcileLabels(c.github, owner, repo);
-  });
-
-  app.on('schedule.repository', async c => {
+  app.on('schedule.repository' as any, async c => {
     const owner = c.payload.organization.login;
     const repo = c.payload.repository.name;
 
@@ -128,7 +134,7 @@ export function handler(app: Application) {
 
   app.on('installation_repositories.added', async c => {
     await Promise.all(
-      c.payload.repositories_added.map(r => {
+      c.payload.repositories_added.map((r: Repo) => {
         const [owner, repo] = r.full_name.split('/');
         return reconcileLabels(c.github, owner, repo);
       })
@@ -209,14 +215,18 @@ export const getApiLabels = async (
  * Main method. Fetch a list of required labels, and apply them to a given
  * repository.
  */
-async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
+async function reconcileLabels(
+  github: Context['github'],
+  owner: string,
+  repo: string
+) {
   const newLabels = await getLabels(`${owner}/${repo}`);
   const options = github.issues.listLabelsForRepo.endpoint.merge({
     owner,
     repo,
     per_page: 100,
   });
-  const oldLabels: Octokit.IssuesListLabelsForRepoResponseItem[] = await github.paginate(
+  const oldLabels: IssuesListLabelsForRepoResponseData = await github.paginate(
     options
   );
   for (const l of newLabels.labels) {
