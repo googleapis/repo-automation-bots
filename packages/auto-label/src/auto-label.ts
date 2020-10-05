@@ -340,7 +340,6 @@ export function handler(app: Application) {
     if (!config.language) return;
     if (!config.language.pullrequest) return;
     if (langlabler.langLabelExists(context)) return;
-
     logger.info(
       'Labeling New Pull Request: ' +
         context.payload.repository.name +
@@ -390,12 +389,10 @@ export function handler(app: Application) {
         const config = Buffer.from(config_encoded, 'base64')
           .toString('binary')
           .toLowerCase();
-        // TODO: escape if user has "product: false" in comments
-        if (
-          config.includes('product: false') ||
-          config.includes('product:false')
-        )
-          break;
+        const disable_product_label = config
+          .split('\n')
+          .filter(line => line.match(/^product:( *)false/));
+        if (disable_product_label.length > 0) break;
       }
 
       //goes through issues in repository, adds labels as necessary

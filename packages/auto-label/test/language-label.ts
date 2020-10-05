@@ -98,11 +98,39 @@ describe('language-label', () => {
 
         // Mock issues.addlabels
         .post('/repos/testOwner/testRepo/issues/12/labels', body => {
-          console.log(body.labels);
           assert.notStrictEqual(body, expected_labels);
           return true;
         })
         .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: pr_opened_payload,
+        id: 'abc123',
+      });
+
+      ghRequests.done();
+    });
+
+    it('does not label when no language found', async () => {
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'simple-config.yml')
+      );
+      const pr_opened_payload = require(resolve(
+        fixturesPath,
+        './events/pr_opened.json'
+      ));
+      const pr_files_payload = require(resolve(
+        fixturesPath,
+        './events/pr_opened_files_no_lang_match.json'
+      ));
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fconfig.yml')
+        .reply(200, config)
+
+        //  Mock pulls.listfiles
+        .get('/repos/testOwner/testRepo/pulls/12/files')
+        .reply(200, pr_files_payload);
 
       await probot.receive({
         name: 'pull_request',
