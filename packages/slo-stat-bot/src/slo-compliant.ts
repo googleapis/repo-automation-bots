@@ -47,7 +47,7 @@ export const getFilePathContent = async function getFilePathContent(
   path: string
 ): Promise<string | null> {
   try {
-    const fileResponse = await github.repos.getContents({
+    const fileResponse = await github.repos.getContent({
       owner,
       repo,
       path,

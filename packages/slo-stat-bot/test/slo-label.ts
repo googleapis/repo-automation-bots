@@ -70,11 +70,11 @@ describe('slo-label', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
         .reply(404)
-        .get('/repos/testOwner/.github/contents/.github/slo-stat-bot.yaml')
+        .get('/repos/testOwner/.github/contents/.github%2Fslo-stat-bot.yaml')
         .reply(404)
-        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json')
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
@@ -94,13 +94,13 @@ describe('slo-label', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json')
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         })
-        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-        .reply(200, {content: config.toString('base64')})
+        .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+        .reply(200, config)
         .post('/repos/testOwner/testRepo/issues/5/labels', body => {
           snapshot(body);
           return true;
@@ -121,13 +121,13 @@ describe('slo-label', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'issue_ooslo'));
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json')
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         })
-        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-        .reply(200, {content: config.toString('base64')});
+        .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+        .reply(200, config);
 
       appliesToStub.onCall(0).returns(true);
       isCompliantStub.onCall(0).returns(false);
@@ -144,13 +144,13 @@ describe('slo-label', () => {
       payload = require(resolve(fixturesPath, 'events', 'issue_opened'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json')
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         })
-        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-        .reply(200, {content: config.toString('base64')});
+        .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+        .reply(200, config);
 
       appliesToStub.onCall(0).returns(true);
       isCompliantStub.onCall(0).returns(true);
@@ -166,15 +166,15 @@ describe('slo-label', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       payload = require(resolve(fixturesPath, 'events', 'issue_ooslo'));
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json')
         .reply(200, {
           content:
             'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
         })
         .delete('/repos/testOwner/testRepo/issues/5/labels/ooslo')
         .reply(200)
-        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-        .reply(200, {content: config.toString('base64')});
+        .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+        .reply(200, config);
 
       appliesToStub.onCall(0).returns(true);
       isCompliantStub.onCall(0).returns(true);

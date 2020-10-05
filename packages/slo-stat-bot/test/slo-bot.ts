@@ -71,9 +71,9 @@ describe('slo-bot', () => {
 
     it('triggers handle slo if config file exists in repo level', async () => {
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-        .reply(200, {content: config.toString('base64')})
-        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+        .reply(200, config)
+        .get('/repos/testOwner/.github/contents/issue_slo_rules.json')
         .reply(200, {
           content:
             'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n',
@@ -90,11 +90,14 @@ describe('slo-bot', () => {
       sinon.assert.notCalled(isCompliantStub);
       requests.done();
     });
+
     it('triggers handle slo if config file exists in org level', async () => {
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-        .reply(200, {content: config.toString('base64')})
-        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+        .reply(200, config)
+        .get(
+          '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
+        )
         .reply(404)
         .get('/repos/testOwner/.github/contents/issue_slo_rules.json')
         .reply(200, {
@@ -142,10 +145,10 @@ describe('slo-bot', () => {
       });
       it('triggers handle label if slo applies to issue', async () => {
         const requests = nock('https://api.github.com')
-          .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-          .reply(200, {content: config.toString('base64')})
+          .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+          .reply(200, config)
           .get(
-            '/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json'
+            '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
           )
           .reply(200, {
             content:
@@ -167,10 +170,10 @@ describe('slo-bot', () => {
       });
       it('does not trigger handle label if slo does not apply to issue', async () => {
         const requests = nock('https://api.github.com')
-          .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-          .reply(200, {content: config.toString('base64')})
+          .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+          .reply(200, config)
           .get(
-            '/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json'
+            '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
           )
           .reply(200, {
             content:
@@ -197,10 +200,10 @@ describe('slo-bot', () => {
       });
       it('triggers handle label if slo applies to issue', async () => {
         const requests = nock('https://api.github.com')
-          .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-          .reply(200, {content: config.toString('base64')})
+          .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+          .reply(200, config)
           .get(
-            '/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json'
+            '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
           )
           .reply(200, {
             content:
@@ -222,10 +225,10 @@ describe('slo-bot', () => {
       });
       it('does not trigger handle label if slo does not apply to issue', async () => {
         const requests = nock('https://api.github.com')
-          .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-          .reply(200, {content: config.toString('base64')})
+          .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+          .reply(200, config)
           .get(
-            '/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json'
+            '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
           )
           .reply(200, {
             content:
@@ -282,13 +285,13 @@ describe('slo-bot', () => {
             },
           ])
           .get(
-            '/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json'
+            '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
           )
           .reply(200, {
             content:
               'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
           })
-          .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
+          .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
           .reply(200, {content: config.toString('base64')});
 
         appliesToStub.onCall(0).returns(true);
