@@ -110,7 +110,6 @@ export = (app: Application) => {
       return;
     }
 
-
     let lintError = false;
     const failureMessages: string[] = [];
 
@@ -190,8 +189,8 @@ export = (app: Application) => {
       output: {
         title: 'Headercheck',
         summary: 'Header check successful',
-        text: 'Header check successful'
-      }
+        text: 'Header check successful',
+      },
     });
 
     if (lintError) {
