@@ -23,9 +23,7 @@
  */
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
-// eslint-disable-next-line node/no-extraneous-import
-import {LoggerWithTarget} from 'probot/lib/wrap-logger';
+import {Application, Logger} from 'probot';
 import xmljs from 'xml-js';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
@@ -240,7 +238,7 @@ export interface BuildCopPayload {
 interface PubSubContext {
   readonly event: string;
   github: Octokit;
-  log: LoggerWithTarget;
+  log: Logger;
   payload: BuildCopPayload;
 }
 
