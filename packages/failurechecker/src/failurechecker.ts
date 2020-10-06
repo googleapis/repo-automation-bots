@@ -23,12 +23,10 @@ import {IssuesListForRepoResponseData} from '@octokit/types';
 type OctokitType = InstanceType<typeof Octokit>;
 
 import {logger} from 'gcf-utils';
+
 // labels indicative of the fact that a release has not completed yet.
-const RELEASE_LABELS = [
-  'autorelease: pending',
-  'autorelease: tagged',
-  'autorelease: failed',
-];
+const RELEASE_LABELS = ['autorelease: pending', 'autorelease: failed'];
+const RELEASE_TYPE_NO_PUBLISH = ['go-yoshi'];
 
 // We open an issue that a release has failed if it's been longer than 3
 // hours and we're within normal working hours.
@@ -38,6 +36,11 @@ const MAX_THRESHOLD = 60 * 60 * 24 * 3 * 1000;
 // We currently only open issues during the hours 9 to 7.
 const END_HOUR_UTC = 3;
 const START_HOUR_UTC = 17;
+
+const WELL_KNOWN_CONFIGURATION_FILE = 'release-please.yml';
+interface ConfigurationOptions {
+  releaseType?: string;
+}
 
 export function failureChecker(app: Application) {
   app.on(['schedule.repository' as any], async context => {
@@ -50,47 +53,54 @@ export function failureChecker(app: Application) {
       app.log("skipping run, we're currently outside of working hours");
       return;
     }
+    // Some release types, such as go-yoshi, have no publish step so a release
+    // is considered successful once a tag has occurred:
+    const configuration =
+      ((await context.config(
+        WELL_KNOWN_CONFIGURATION_FILE
+      )) as ConfigurationOptions | null) || {};
+    const labels = [...RELEASE_LABELS];
+    if (
+      RELEASE_TYPE_NO_PUBLISH.indexOf('' + configuration.releaseType) === -1
+    ) {
+      labels.push('autorelease: tagged');
+    }
 
-    try {
-      const now = new Date().getTime();
-      for (const label of RELEASE_LABELS) {
-        const results = (
-          await context.github.issues.listForRepo({
-            owner: context.payload.organization.login,
-            repo: context.payload.repository.name,
-            labels: label,
-            state: 'closed',
-            sort: 'updated',
-            direction: 'desc',
-            per_page: 16,
-          })
-        ).data;
-        for (const issue of results) {
-          const updatedTime = new Date(issue.updated_at).getTime();
-          if (
-            now - updatedTime > WARNING_THRESHOLD &&
-            now - updatedTime < MAX_THRESHOLD
-          ) {
-            // Check that the corresponding PR was actually merged,
-            // rather than closed:
-            const pr = (
-              await context.github.pulls.get({
-                owner,
-                repo,
-                pull_number: issue.number,
-              })
-            ).data;
-            if (pr.merged_at) {
-              await openWarningIssue(owner, repo, pr.number, context.github);
-            }
+    const now = new Date().getTime();
+    for (const label of labels) {
+      const results = (
+        await context.github.issues.listForRepo({
+          owner: context.payload.organization.login,
+          repo: context.payload.repository.name,
+          labels: label,
+          state: 'closed',
+          sort: 'updated',
+          direction: 'desc',
+          per_page: 16,
+        })
+      ).data;
+      for (const issue of results) {
+        const updatedTime = new Date(issue.updated_at).getTime();
+        if (
+          now - updatedTime > WARNING_THRESHOLD &&
+          now - updatedTime < MAX_THRESHOLD
+        ) {
+          // Check that the corresponding PR was actually merged,
+          // rather than closed:
+          const pr = (
+            await context.github.pulls.get({
+              owner,
+              repo,
+              pull_number: issue.number,
+            })
+          ).data;
+          if (pr.merged_at) {
+            await openWarningIssue(owner, repo, pr.number, context.github);
           }
         }
       }
-      app.log(`it's alive! event for ${repo}`);
-    } catch (err) {
-      logger.info(err);
-      app.log.error(`${err.message} processing ${repo}`);
     }
+    app.log(`it's alive! event for ${repo}`);
   });
 
   const ISSUE_TITLE = 'Warning: a recent release failed';
