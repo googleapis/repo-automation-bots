@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, Context, Octokit} from 'probot';
+import {Application, Context} from 'probot';
 import extend from 'extend';
 import {
   LanguageConfig,
@@ -24,8 +24,18 @@ import {
 import {logger} from 'gcf-utils';
 import Ajv from 'ajv';
 import yaml from 'js-yaml';
+import {PullsListFilesResponseData} from '@octokit/types';
 
 export const configFileName = 'sync-repo-settings.yaml';
+
+type Conclusion =
+  | 'success'
+  | 'failure'
+  | 'neutral'
+  | 'cancelled'
+  | 'timed_out'
+  | 'action_required'
+  | undefined;
 
 // configure the schema validator once
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -84,7 +94,7 @@ export function handler(app: Application) {
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
       const number = context.payload.number;
-      let files: Array<Octokit.PullsListFilesResponseItem>;
+      let files: PullsListFilesResponseData;
       try {
         files = await context.github.paginate(
           context.github.pulls.listFiles.endpoint.merge({
@@ -126,10 +136,15 @@ export function handler(app: Application) {
           errorText = `${configFileName} is not valid YAML 😱`;
         }
 
-        const checkParams: Octokit.ChecksCreateParams = context.repo({
+        const checkParams = context.repo({
           name: 'sync-repo-settings-check',
           head_sha: context.payload.pull_request.head.sha,
-          conclusion: 'success',
+          conclusion: 'success' as Conclusion,
+          output: {
+            title: 'Successful sync-repo-settings.yaml check',
+            summary: 'sync-repo-settings.yaml matches the required schema',
+            text: 'Success',
+          },
         });
         if (!isValid) {
           (checkParams.conclusion = 'failure'),
@@ -150,7 +165,7 @@ export function handler(app: Application) {
     }
   );
 
-  app.on(['schedule.repository'], async (context: Context) => {
+  app.on(['schedule.repository' as any], async (context: Context) => {
     logger.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
     const name = context.payload.repository.name;
@@ -238,6 +253,7 @@ export function handler(app: Application) {
     if (!ignored) {
       jobs.push(updateRepoOptions(repo, context, config));
       if (config.branchProtectionRules) {
+        //console.log(JSON.stringify(config.branchProtectionRules))
         jobs.push(
           updateMasterBranchProtection(
             repo,
@@ -325,7 +341,7 @@ async function updateRepoTeams(
   try {
     await Promise.all(
       rules.map(membership => {
-        return context.github.teams.addOrUpdateRepoInOrg({
+        return context.github.teams.addOrUpdateRepoPermissionsInOrg({
           team_slug: membership.team,
           owner,
           org: owner,
