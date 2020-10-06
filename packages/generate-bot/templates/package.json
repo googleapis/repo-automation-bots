@@ -28,7 +28,7 @@
       "lint": "gts check"
     },
     "dependencies": {
-      "gcf-utils": "^5.5.1"
+      "gcf-utils": "^6.0.0"
     },
     "devDependencies": {
       "@types/mocha": "^8.0.0",

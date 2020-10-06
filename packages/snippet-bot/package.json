@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@octokit/rest": "^16.0.0",
-    "gcf-utils": "^5.5.1",
+    "gcf-utils": "^6.0.0",
     "node-fetch": "^2.6.0",
     "tar": "^6.0.5",
     "tmp-promise": "^3.0.2"

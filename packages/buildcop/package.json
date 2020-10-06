@@ -27,7 +27,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "^5.3.1",
+    "gcf-utils": "^6.0.0",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
