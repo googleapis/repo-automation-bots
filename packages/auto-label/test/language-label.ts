@@ -63,7 +63,7 @@ describe('language-label', () => {
       );
       const payload = require(resolve(fixturesPath, './events/pr_opened'));
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fconfig.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yml')
         .reply(200, config);
       await probot.receive({
         name: 'pull_request',
@@ -89,7 +89,7 @@ describe('language-label', () => {
         labels: ['language:JSON'],
       };
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fconfig.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yml')
         .reply(200, config)
 
         //  Mock pulls.listfiles
@@ -125,7 +125,7 @@ describe('language-label', () => {
         './events/pr_opened_files_no_lang_match.json'
       ));
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fconfig.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yml')
         .reply(200, config)
 
         //  Mock pulls.listfiles
