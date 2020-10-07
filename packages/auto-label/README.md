@@ -6,12 +6,18 @@ There are two types of labels available:
 1. Product labels (enabled by default): Product-specific repos are always labeled with the API label 
 for that product. The product can also be auto-detected from the issue/PR title. 
 
-2. Language labels (enabled by .config): PRs are labeled with a relevant language based on code changes. Language categorization and labeling by directory paths can be customized.  
+2. Language labels (enabled by configuration - see below): PRs are labeled with a relevant language based on code changes. Language categorization and labeling by directory paths can be customized.  
 
 Auto-label is different from label-sync, auto-label adds labels to your issues, whereas label-sync cleans up labels in your repository.
 
 ## Product Label
 Bot runs every night, when repositories are created, and when issues are created. So, wait until the next day if you just added the bot to see your issues backlabeled.
+
+Product labeling is turned on by default. To turn off product labeling: 
+```yaml
+# In .github/auto-label.yaml
+product: false
+```
 
 The following formats are known to work:
 
@@ -42,21 +48,21 @@ Issue title | Label
 
 Bot runs on new pull requests. You can find a list of default file extension to [language mappings here](https://github.com/googleapis/repo-automation-bots/blob/master/packages/auto-label/src/extensions.json).   
 
-To turn on language labeling: 
+Language labeling is turned off by default. To turn on language labeling: 
 ```yaml
-# In .github/config
+# In .github/auto-label.yaml
 language:
   pullrequest: true
 ```
 
-You can customize labeling logic: 
+You can customize labeling logic to: 
 - Re-map file extensions to language names, e.g. label `.ts` files as "lang: js"
 - Define languages at a path level which is helpful for monorepos, e.g. label all files in `/src/` directory as "python"
 - Change your label prefix, e.g. add a "language:_" prefix to all language labels
 
 Simple configuration example:
 ```yaml
-# In .github/config
+# In .github/auto-label.yaml
 language:
   pullrequest: true
   labelprefix: 'lang:'

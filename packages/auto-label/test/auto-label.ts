@@ -85,7 +85,7 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
         .reply(200, config)
         .post('/repos/testOwner/testRepo/labels')
         .reply(200, [
@@ -118,7 +118,7 @@ describe('auto-label', () => {
       );
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
         .reply(200, config)
         .post('/repos/testOwner/testRepo/labels')
         .reply(422, [
@@ -150,7 +150,7 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
         .reply(200, config)
         .post('/repos/testOwner/testRepo/labels')
         .reply(422, [
@@ -186,7 +186,7 @@ describe('auto-label', () => {
       const fileStub = sandbox.stub(handler, 'getDriftFile').resolves('');
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
         .reply(200, config);
       await probot.receive({
         name: 'issues',
@@ -212,7 +212,7 @@ describe('auto-label', () => {
         './events/issue_opened_no_match_repo'
       ));
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/notThere/contents/.github%2Fauto-label.yml')
+        .get('/repos/testOwner/notThere/contents/.github%2Fauto-label.yaml')
         .reply(200, config)
         .get('/repos/testOwner/notThere/issues/5/labels')
         .reply(200);
@@ -236,7 +236,7 @@ describe('auto-label', () => {
 
       const ghRequests = nock('https://api.github.com')
         .get(
-          '/repos/GoogleCloudPlatform/golang-samples/contents/.github%2Fauto-label.yml'
+          '/repos/GoogleCloudPlatform/golang-samples/contents/.github%2Fauto-label.yaml'
         )
         .reply(200, config)
         .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
@@ -288,7 +288,7 @@ describe('auto-label', () => {
 
       const ghRequests = nock('https://api.github.com')
         .get(
-          '/repos/GoogleCloudPlatform/golang-samples/contents/.github%2Fauto-label.yml'
+          '/repos/GoogleCloudPlatform/golang-samples/contents/.github%2Fauto-label.yaml'
         )
         .reply(200, config)
         .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
@@ -339,7 +339,7 @@ describe('auto-label', () => {
 
       const ghRequests = nock('https://api.github.com')
         .get(
-          '/repos/GoogleCloudPlatform/golang-samples/contents/.github%2Fauto-label.yml'
+          '/repos/GoogleCloudPlatform/golang-samples/contents/.github%2Fauto-label.yaml'
         )
         .reply(200, config)
         .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
@@ -382,7 +382,7 @@ describe('auto-label', () => {
         resolve(fixturesPath, 'config', 'valid-config.yml')
       );
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
         .reply(200, config)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
@@ -427,7 +427,7 @@ describe('auto-label', () => {
         resolve(fixturesPath, 'config', 'valid-config.yml')
       );
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
         .reply(200, config)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
@@ -480,7 +480,7 @@ describe('auto-label', () => {
         resolve(fixturesPath, 'config', 'valid-config.yml')
       );
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
         .reply(200, config)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
@@ -517,7 +517,7 @@ describe('auto-label', () => {
       );
       const ghRequests = nock('https://api.github.com')
         .get(
-          '/repos/testOwner/testRepo-samples/contents/.github%2Fauto-label.yml'
+          '/repos/testOwner/testRepo-samples/contents/.github%2Fauto-label.yaml'
         )
         .reply(200, config)
         .get('/repos/testOwner/testRepo-samples/issues')
@@ -573,7 +573,7 @@ describe('auto-label', () => {
         resolve(fixturesPath, 'config', 'valid-config.yml')
       );
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
         .reply(200, config)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
@@ -631,7 +631,7 @@ describe('auto-label', () => {
         'base64'
       );
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
         .reply(200, {
           content: product_config,
         })
