@@ -127,6 +127,20 @@
     "php5",
     "phpt"
   ],
+  "python": [
+    "py",
+    "py3",
+    "pyc",
+    "pyo",
+    "pyw",
+    "pyx",
+    "pyd",
+    "pxd",
+    "pyi",
+    "pyz",
+    "pyt",
+    "ipynb"
+  ],
   "ruby": [
     "rb",
     "builder",
