@@ -60,7 +60,7 @@
       {
         "team": "yoshi-python",
         "permission": "push"
-      }
+      },
       {
         "team": "python-samples-owners",
         "permission": "push"
