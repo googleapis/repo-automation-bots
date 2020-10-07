@@ -261,7 +261,10 @@ export function handler(app: Application) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const config: any = await context.config('auto-label.yaml', DEFAULT_CONFIGS);
+    const config: any = await context.config(
+      'auto-label.yaml',
+      DEFAULT_CONFIGS
+    );
     if (!config.product) return;
 
     logger.info(`running for org ${context.payload.cron_org}`);
@@ -313,7 +316,10 @@ export function handler(app: Application) {
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const config: any = await context.config('auto-label.yaml', DEFAULT_CONFIGS);
+    const config: any = await context.config(
+      'auto-label.yaml',
+      DEFAULT_CONFIGS
+    );
     if (!config.product) return;
 
     //job that labels issues when they are opened
@@ -336,7 +342,10 @@ export function handler(app: Application) {
 
   app.on(['pull_request.opened'], async context => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const config: any = await context.config('auto-label.yaml', DEFAULT_CONFIGS);
+    const config: any = await context.config(
+      'auto-label.yaml',
+      DEFAULT_CONFIGS
+    );
     if (!config.language) return;
     if (!config.language.pullrequest) return;
     if (langlabler.langLabelExists(context)) return;
