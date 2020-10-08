@@ -157,44 +157,6 @@ async function getCommentsOnPR(
 }
 
 /**
- * Function checks whether the PR has the appropriate MOG label
- * @param owner of pr (from Watch PR)
- * @param repo of pr (from Watch PR)
- * @param pr number of pr (from Watch PR)
- * @param labelNames array of labels its checking for
- * @param github unique installation id for each function
- * @returns the name of the label that is in the repo, if it is there; otherwise, undefined
- */
-async function hasMOGLabel(
-  owner: string,
-  repo: string,
-  pr: number,
-  labelNames: string[],
-  github: OctokitType
-): Promise<string | undefined> {
-  const start = Date.now();
-  try {
-    const labels = await github.issues.listLabelsOnIssue({
-      owner,
-      repo,
-      issue_number: pr,
-    });
-    const labelArray = labels.data;
-    logger.info(
-      `checked hasMOGLabel in ${Date.now() - start}ms ${owner}/${repo}/${pr}`
-    );
-    const mog = labelArray?.find(prLabel =>
-      labelNames.find(labelName => prLabel.name === labelName)
-    )?.name;
-    return mog;
-  } catch (err) {
-    err.message = `Error in getting MOG label\n\n ${err.message}`;
-    logger.error(err);
-    return undefined;
-  }
-}
-
-/**
  * Function grabs the statuses that have run for a given Sha
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
@@ -563,35 +525,6 @@ async function commentOnPR(
 }
 
 /**
- * Removes a label that is on the PR
- * @param owner of pr (from Watch PR)
- * @param repo of pr (from Watch PR)
- * @param issue_number of the PR
- * @param name of the label to remove
- * @param github unique installation id for each function
- * @returns the update data type
- */
-async function removeLabel(
-  owner: string,
-  repo: string,
-  issue_number: number,
-  name: string,
-  github: OctokitType
-) {
-  try {
-    await github.issues.removeLabel({
-      owner,
-      repo,
-      issue_number,
-      name,
-    });
-  } catch (err) {
-    err.message = `There was an issue removing the automerge label on ${owner}/${repo} PR ${issue_number}\n\n${err.message}`;
-    logger.error(err);
-  }
-}
-
-/**
  * Main function. Checks whether PR is open and whether there are is any master branch protection. If there
  * is, MOG continues checking to make sure reviews are approved and statuses have passed.
  * @param owner of pr (from Watch PR)
@@ -609,32 +542,32 @@ export async function mergeOnGreen(
   labelNames: string[],
   state: string,
   requiredChecks: string[],
+  mogLabel: string,
+  author: string,
   github: OctokitType
 ): Promise<boolean | undefined> {
+  const rateLimit = (await github.rateLimit.get()).data.resources.core
+    .remaining;
+
+  // we are picking 10 because that is *roughly* the amount of API calls required
+  // to complete this function. But, it can vary based on paths, pages, etc.
+  if (rateLimit <= 10) {
+    logger.error(
+      `The rate limit is at ${rateLimit}. We are skipping execution until we reset.`
+    );
+    return false;
+  }
+
   logger.info(`${owner}/${repo} checking merge on green PR status`);
-  const [prInfo, mogLabel, headSha] = await Promise.all([
-    await getPR(owner, repo, pr, github),
-    await hasMOGLabel(owner, repo, pr, labelNames, github),
-    await getLatestCommit(owner, repo, pr, github),
-  ]);
-  logger.info(`required checks: ${requiredChecks}`);
 
-  if (prInfo.state === 'closed') {
-    logger.info(`${owner}/${repo}/${pr} is closed`);
-    return true;
-  }
-
-  if (!mogLabel) {
-    logger.info(`${owner}/${repo}/${pr} does not have the required labels`);
-    return true;
-  }
+  const headSha = await getLatestCommit(owner, repo, pr, github);
 
   const [checkReview, checkStatus, commentsOnPR] = await Promise.all([
     checkReviews(
       owner,
       repo,
       pr,
-      prInfo.user.login,
+      author,
       mogLabel,
       labelNames[1],
       headSha,
@@ -656,7 +589,9 @@ export async function mergeOnGreen(
     `checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state} ${owner}/${repo}/${pr}`
   );
 
+  //if the reviews and statuses are green, let's try to merge
   if (checkReview === true && checkStatus === true) {
+    const prInfo = await getPR(owner, repo, pr, github);
     let merged = false;
     try {
       logger.info(`attempt to merge ${owner}/${repo}/${pr}`);
@@ -699,13 +634,15 @@ export async function mergeOnGreen(
       }
     }
     return merged;
+
+    //if the state is stopped, i.e., we won't keep checking, let's comment and remove from Datastore
   } else if (state === 'stop') {
     logger.info(
       `${owner}/${repo}/${pr} timed out before its statuses & reviews passed`
     );
     await commentOnPR(owner, repo, pr, failedMesssage, github);
-    await removeLabel(owner, repo, pr, mogLabel, github);
     return true;
+    // if the PR is halfway through the time it is checking, comment on the PR.
   } else if (state === 'comment') {
     const isCommented = commentsOnPR?.find(element =>
       element.body.includes(continueMesssage)
@@ -715,6 +652,8 @@ export async function mergeOnGreen(
     }
     logger.info(`${owner}/${repo}/${pr} is halfway through its check`);
     return false;
+
+    // if the PR has not been merged but it is still going to be checked, check again.
   } else {
     logger.info(
       `Statuses and/or checks failed for ${owner}/${repo}/${pr}, will check again`
