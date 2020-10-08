@@ -185,16 +185,18 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
 function handler(app: Application) {
   //meta-note about the schedule.repository as any; currently GH does not support this type, see
   //open issue for a fix: https://github.com/octokit/webhooks.js/issues/277
-  app.on('schedule.repository' as any, async () => {
+  app.on('schedule.repository' as any, async context => {
     const watchedPRs = await handler.listPRs();
     const start = Date.now();
-    while (watchedPRs.length) {
-      const work = watchedPRs.splice(0, WORKER_SIZE);
+    logger.info(`running for org ${context.payload.org}`);
+    const filteredPRs = watchedPRs.filter(value => {
+      return value.owner.startsWith(context.payload.org);
+    });
+    while (filteredPRs.length) {
+      const work = filteredPRs.splice(0, WORKER_SIZE);
       await Promise.all(
         work.map(async wp => {
           logger.info(`checking ${wp.url}`);
-          logger.info(`Running under installation Id ${wp.installationId}`);
-          const github = await app.auth(wp.installationId);
           try {
             const remove = await mergeOnGreen(
               wp.owner,
@@ -205,7 +207,7 @@ function handler(app: Application) {
               wp.branchProtection,
               wp.label,
               wp.author,
-              github as any
+              context.github as any
             );
             if (remove || wp.state === 'stop') {
               await handler.removeLabelAndReaction(
@@ -214,7 +216,7 @@ function handler(app: Application) {
                 wp.number,
                 wp.label,
                 wp.reactionId,
-                github as any
+                context.github as any
               );
             }
             await handler.removePR(wp.url);
@@ -233,7 +235,7 @@ function handler(app: Application) {
     const author = context.payload.pull_request.user.login;
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
-    const installationId = context.payload.installation.id;
+    const installationId = context.payload.installation.id.toString();
 
     const label = context.payload.pull_request.labels.find(
       (label: Label) =>
