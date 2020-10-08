@@ -622,6 +622,59 @@ describe('auto-label', () => {
       });
       ghRequests.done();
     });
+
+    it('will run by default if there is no auto-label config file', async () => {
+      const config = undefined;
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
+        .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, [
+          {
+            number: 1,
+            title: 'samples.spanner: ignored',
+          },
+        ])
+        .post('/repos/testOwner/testRepo/labels')
+        .reply(201, [
+          {
+            name: 'api: spanner',
+            color: 'C9FFE5',
+          },
+        ])
+        .get('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200)
+        .post('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [
+          {
+            name: 'api: spanner',
+            color: 'C9FFE5',
+          },
+        ])
+        .post('/repos/testOwner/testRepo/labels')
+        .reply(201, [
+          {
+            name: 'samples',
+          },
+        ])
+        .post('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [
+          {
+            name: 'samples',
+          },
+        ]);
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          organization: {login: 'testOwner'},
+          repository: {name: 'testRepo', owner: {login: 'testOwner'}},
+          cron_org: 'testOwner',
+        },
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
   });
 
   describe('installation', async () => {

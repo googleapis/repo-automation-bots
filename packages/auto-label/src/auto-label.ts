@@ -388,11 +388,17 @@ export function handler(app: Application) {
       const [owner, repo] = repository.full_name.split('/');
 
       // Looks for a config file, breaks if user disabled product labels
-      const response = await context.github.repos.getContent({
-        owner,
-        repo,
-        path: '.github/auto-label.yaml',
-      });
+      let response;
+      try {
+        response = await context.github.repos.getContent({
+          owner,
+          repo,
+          path: '.github/auto-label.yaml',
+        });
+      } catch (e) {
+        e.message = `No auto-label.yaml found in repo upon installation: ${e.message}`;
+        logger.error(e);
+      }
       if (response && response.status === 200) {
         const config_encoded = response.data.content;
         const config = Buffer.from(config_encoded, 'base64')
