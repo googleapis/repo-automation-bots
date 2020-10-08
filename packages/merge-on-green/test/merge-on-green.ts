@@ -194,13 +194,15 @@ describe('merge-on-green', () => {
               label: 'automerge',
               author: 'testOwner',
               reactionId: 1,
+              url: 'url/url',
+              installationId: 123456,
             },
           ],
         ];
         return pr;
       };
 
-      it('merges a PR on green', async () => {
+      it.only('merges a PR on green', async () => {
         const scopes = [
           getRateLimit(5000),
           getReviewsCompleted([
@@ -435,7 +437,7 @@ describe('merge-on-green', () => {
         scopes.forEach(s => s.done());
       });
 
-      //This method is supposed to include an error
+      //This test is supposed to include an error
       it('comments on PR if branch is dirty and merge returns with error', async () => {
         loggerStub.restore();
 
@@ -519,8 +521,8 @@ describe('merge-on-green', () => {
       });
     });
 
-    describe('with unique Datastore payloads', () => {
-      it.only('posts a comment on the PR if the flag is set to stop and the merge has failed', async () => {
+    describe('with different Datastore payloads', () => {
+      it('posts a comment on the PR if the flag is set to stop and the merge has failed', async () => {
         handler.getDatastore = async () => {
           const pr = [
             [
@@ -538,6 +540,7 @@ describe('merge-on-green', () => {
           ];
           return pr;
         };
+
         const scopes = [
           getRateLimit(5000),
           getReviewsCompleted([
@@ -866,7 +869,6 @@ describe('merge-on-green', () => {
 
         const scopes = [
           getRateLimit(5000),
-          react(),
           getBranchProtection(400, []),
           commentOnPR(),
         ];
@@ -912,6 +914,9 @@ describe('merge-on-green', () => {
                   name: 'bug',
                 },
               ],
+            },
+            installation: {
+              id: 'abc123',
             },
           },
           id: 'abc123',

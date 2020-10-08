@@ -639,7 +639,6 @@ export async function mergeOnGreen(
     );
     await commentOnPR(owner, repo, pr, failedMesssage, github);
     return true;
-
     // if the PR is halfway through the time it is checking, comment on the PR.
   } else if (state === 'comment') {
     const isCommented = commentsOnPR?.find(element =>
