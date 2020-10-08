@@ -396,7 +396,7 @@ export function handler(app: Application) {
           path: '.github/auto-label.yaml',
         });
       } catch (e) {
-        e.message = `No auto-label.yml found in repo upon installation: ${e.message}`;
+        e.message = `No auto-label.yaml found in repo upon installation: ${e.message}`;
         logger.error(e);
       }
       if (response && response.status === 200) {
