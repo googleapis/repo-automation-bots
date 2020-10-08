@@ -19,7 +19,7 @@ import nock from 'nock';
 import sinon, {SinonStub} from 'sinon';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import handler from '../src/merge-on-green';
-import {CheckStatus, Reviews, Comment, Label} from '../src/merge-logic';
+import {CheckStatus, Reviews, Comment} from '../src/merge-logic';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
 // eslint-disable-next-line node/no-extraneous-import
@@ -72,15 +72,9 @@ function getCommentsOnPr(response: Comment[]) {
     .reply(200, response);
 }
 
-function getMogLabel(response: Label[]) {
+function removeMogLabel(label: string) {
   return nock('https://api.github.com')
-    .get('/repos/testOwner/testRepo/issues/1/labels')
-    .reply(200, response);
-}
-
-function removeMogLabel() {
-  return nock('https://api.github.com')
-    .delete('/repos/testOwner/testRepo/issues/1/labels/automerge')
+    .delete(`/repos/testOwner/testRepo/issues/1/labels/${label}`)
     .reply(200);
 }
 
@@ -138,6 +132,18 @@ function getRateLimit(remaining: number) {
     });
 }
 
+function react() {
+  return nock('https://api.github.com')
+    .post('/repos/testOwner/testRepo/issues/1/reactions')
+    .reply(200, {id: 1});
+}
+
+function removeReaction() {
+  return nock('https://api.github.com')
+    .delete('/repos/testOwner/testRepo/issues/1/reactions/1')
+    .reply(204);
+}
+
 function getPR(mergeable: boolean, mergeableState: string, state: string) {
   return nock('https://api.github.com')
     .get('/repos/testOwner/testRepo/pulls/1')
@@ -175,540 +181,7 @@ describe('merge-on-green', () => {
       return Promise.resolve(undefined);
     };
 
-    handler.getDatastore = async () => {
-      const pr = [
-        [
-          {
-            repo: 'testRepo',
-            number: 1,
-            owner: 'testOwner',
-            created: Date.now(),
-            branchProtection: ['Special Check'],
-          },
-        ],
-      ];
-      return pr;
-    };
-
-    it('merges a PR on green', async () => {
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'clean', 'open'),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
-        ]),
-        getCommentsOnPr([]),
-        merge(),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    it('merges a PR on green with an exact label', async () => {
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'clean', 'open'),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge: exact'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
-        ]),
-        getCommentsOnPr([]),
-        merge(),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    it('fails when a review has not been approved', async () => {
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'clean', 'open'),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-          {
-            user: {login: 'octokitten'},
-            state: 'CHANGES_REQUESTED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
-        ]),
-        getCommentsOnPr([]),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    it('fails if there is no commit', async () => {
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'clean', 'open'),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getLatestCommit([]),
-        getMogLabel([{name: 'automerge'}]),
-        getStatusi('', [
-          {state: 'success', context: 'Kokoro - Test: Binary Compatibility'},
-        ]),
-        getCommentsOnPr([]),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    it('fails if there is no MOG label', async () => {
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'clean', 'open'),
-        getMogLabel([{name: 'this is not the label you are looking for'}]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    it('fails if there are no status checks', async () => {
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'clean', 'open'),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
-        getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
-          name: '',
-          conclusion: '',
-        }),
-        getCommentsOnPr([]),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    it('fails if the status checks have failed', async () => {
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'clean', 'open'),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'failure', context: 'Special Check'},
-        ]),
-        getCommentsOnPr([]),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    it('passes if checks are actually check runs', async () => {
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'clean', 'open'),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
-        getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
-          name: 'Special Check',
-          conclusion: 'success',
-        }),
-        getCommentsOnPr([]),
-        merge(),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    it('fails if no one has reviewed the PR', async () => {
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'clean', 'open'),
-        getReviewsCompleted([]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
-        getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
-          name: 'Special Check',
-          conclusion: 'success',
-        }),
-        getCommentsOnPr([]),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    //This method is supposed to include an error
-    it('updates a branch if merge returns error and branch is behind', async () => {
-      loggerStub.restore();
-
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'behind', 'open'),
-        getMogLabel([{name: 'automerge'}]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
-        ]),
-        getCommentsOnPr([]),
-        mergeWithError(),
-        updateBranch(),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    //This method is supposed to include an error
-    it('comments on PR if branch is dirty and merge returns with error', async () => {
-      loggerStub.restore();
-
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'dirty', 'open'),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getMogLabel([{name: 'automerge'}]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
-        ]),
-        getCommentsOnPr([]),
-        mergeWithError(),
-        commentOnPR(),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    it('fails if PR is closed', async () => {
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'clean', 'closed'),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge'}]),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    //This test is supposed to include an error
-    it('does not comment if comment is already on PR and merge errors', async () => {
-      loggerStub.restore();
-
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'dirty', 'open'),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
-        ]),
-        getCommentsOnPr([
-          {
-            body:
-              'Your PR has conflicts that you need to resolve before merge-on-green can automerge',
-          },
-        ]),
-        mergeWithError(),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    it('dismisses reviews if the label is set to exact', async () => {
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'clean', 'open'),
-        getMogLabel([{name: 'automerge: exact'}]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '12345',
-            id: 12345,
-          },
-          {
-            user: {login: 'octokitten'},
-            state: 'APPROVED',
-            commit_id: '12346',
-            id: 12346,
-          },
-        ]),
-        dismissReview(12345),
-        dismissReview(12346),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: 'Special Check'},
-        ]),
-        getCommentsOnPr([]),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-      scopes.forEach(s => s.done());
-    });
-
-    it('does not execute if there is no more space for requests', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const scopes = [getRateLimit(0)];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    it('posts a comment on the PR if the flag is set to stop and the merge has failed', async () => {
-      handler.getDatastore = async () => {
-        const pr = [
-          [
-            {
-              repo: 'testRepo',
-              number: 1,
-              owner: 'testOwner',
-              created: -14254782000,
-              branchProtection: ['Special Check'],
-            },
-          ],
-        ];
-        return pr;
-      };
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'clean', 'open'),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'failure', context: 'Special Check'},
-        ]),
-        getCommentsOnPr([]),
-        commentOnPR(),
-        removeMogLabel(),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    it('posts a comment on the PR if the flag is set to comment', async () => {
-      handler.getDatastore = async () => {
-        const pr = [
-          [
-            {
-              repo: 'testRepo',
-              number: 1,
-              owner: 'testOwner',
-              created: Date.now() - 10920000, // 3 hours ago
-              branchProtection: ['Special Check'],
-            },
-          ],
-        ];
-        return pr;
-      };
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'clean', 'open'),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'failure', context: 'Special Check'},
-        ]),
-        getCommentsOnPr([]),
-        commentOnPR(),
-      ];
-
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
-      });
-
-      scopes.forEach(s => s.done());
-    });
-
-    it('rejects status checks that do not match the required check', async () => {
+    describe('with default/normal get Datastore payload', () => {
       handler.getDatastore = async () => {
         const pr = [
           [
@@ -717,180 +190,940 @@ describe('merge-on-green', () => {
               number: 1,
               owner: 'testOwner',
               created: Date.now(),
-              branchProtection: ["this is what we're looking for"],
+              branchProtection: ['Special Check'],
+              label: 'automerge',
+              author: 'testOwner',
+              reactionId: 1,
             },
           ],
         ];
         return pr;
       };
 
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'clean', 'open'),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge'}]),
-        //Intentionally giving this status check a misleading name. We want subtests to match the beginning
-        //of required status checks, not the other way around. i.e., if the required status check is "passes"
-        //then it should reject a status check called "passe", but pass one called "passesS"
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {state: 'success', context: "this is what we're looking fo"},
-        ]),
-        getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
-          name: "this is what we're looking fo",
-          conclusion: 'success',
-        }),
-        getCommentsOnPr([]),
-      ];
+      it('merges a PR on green', async () => {
+        const scopes = [
+          getRateLimit(5000),
+          getReviewsCompleted([
+            {
+              user: {login: 'octocat'},
+              state: 'APPROVED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
+            },
+          ]),
+          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+            {state: 'success', context: 'Special Check'},
+          ]),
+          getPR(true, 'clean', 'open'),
+          getCommentsOnPr([]),
+          merge(),
+          removeMogLabel('automerge'),
+          removeReaction(),
+        ];
 
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
       });
 
-      scopes.forEach(s => s.done());
+      it('fails when a review has not been approved', async () => {
+        const scopes = [
+          getRateLimit(5000),
+          getReviewsCompleted([
+            {
+              user: {login: 'octocat'},
+              state: 'APPROVED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
+            },
+            {
+              user: {login: 'octokitten'},
+              state: 'CHANGES_REQUESTED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
+            },
+          ]),
+          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+            {state: 'success', context: 'Special Check'},
+          ]),
+          getCommentsOnPr([]),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('fails if there is no commit', async () => {
+        const scopes = [
+          getRateLimit(5000),
+          getReviewsCompleted([
+            {
+              user: {login: 'octocat'},
+              state: 'APPROVED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
+            },
+          ]),
+          getLatestCommit([]),
+          getStatusi('', [
+            {state: 'success', context: 'Kokoro - Test: Binary Compatibility'},
+          ]),
+          getCommentsOnPr([]),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('fails if there are no status checks', async () => {
+        const scopes = [
+          getRateLimit(5000),
+          getReviewsCompleted([
+            {
+              user: {login: 'octocat'},
+              state: 'APPROVED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
+            },
+          ]),
+          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
+          getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
+            name: '',
+            conclusion: '',
+          }),
+          getCommentsOnPr([]),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('fails if the status checks have failed', async () => {
+        const scopes = [
+          getRateLimit(5000),
+          getReviewsCompleted([
+            {
+              user: {login: 'octocat'},
+              state: 'APPROVED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
+            },
+          ]),
+          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+            {state: 'failure', context: 'Special Check'},
+          ]),
+          getCommentsOnPr([]),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('passes if checks are actually check runs', async () => {
+        const scopes = [
+          getRateLimit(5000),
+          getReviewsCompleted([
+            {
+              user: {login: 'octocat'},
+              state: 'APPROVED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
+            },
+          ]),
+          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
+          getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
+            name: 'Special Check',
+            conclusion: 'success',
+          }),
+          getCommentsOnPr([]),
+          getPR(true, 'clean', 'open'),
+          merge(),
+          removeMogLabel('automerge'),
+          removeReaction(),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('fails if no one has reviewed the PR', async () => {
+        const scopes = [
+          getRateLimit(5000),
+          getReviewsCompleted([]),
+          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
+          getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
+            name: 'Special Check',
+            conclusion: 'success',
+          }),
+          getCommentsOnPr([]),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      //This method is supposed to include an error
+      it('updates a branch if merge returns error and branch is behind', async () => {
+        loggerStub.restore();
+
+        const scopes = [
+          getRateLimit(5000),
+          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+          getReviewsCompleted([
+            {
+              user: {login: 'octocat'},
+              state: 'APPROVED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
+            },
+          ]),
+          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+            {state: 'success', context: 'Special Check'},
+          ]),
+          getCommentsOnPr([]),
+          getPR(true, 'behind', 'open'),
+          mergeWithError(),
+          updateBranch(),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      //This method is supposed to include an error
+      it('comments on PR if branch is dirty and merge returns with error', async () => {
+        loggerStub.restore();
+
+        const scopes = [
+          getRateLimit(5000),
+          getReviewsCompleted([
+            {
+              user: {login: 'octocat'},
+              state: 'APPROVED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
+            },
+          ]),
+          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+            {state: 'success', context: 'Special Check'},
+          ]),
+          getCommentsOnPr([]),
+          getPR(true, 'dirty', 'open'),
+          mergeWithError(),
+          commentOnPR(),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      //This test is supposed to include an error
+      it('does not comment if comment is already on PR and merge errors', async () => {
+        loggerStub.restore();
+
+        const scopes = [
+          getRateLimit(5000),
+          getReviewsCompleted([
+            {
+              user: {login: 'octocat'},
+              state: 'APPROVED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
+            },
+          ]),
+          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+            {state: 'success', context: 'Special Check'},
+          ]),
+          getCommentsOnPr([
+            {
+              body:
+                'Your PR has conflicts that you need to resolve before merge-on-green can automerge',
+            },
+          ]),
+          getPR(true, 'dirty', 'open'),
+          mergeWithError(),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('does not execute if there is no more space for requests', async () => {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const scopes = [getRateLimit(0)];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
     });
 
-    it('accepts status checks that match the beginning of the required status check', async () => {
-      handler.getDatastore = async () => {
-        const pr = [
-          [
+    describe('with unique Datastore payloads', () => {
+      it.only('posts a comment on the PR if the flag is set to stop and the merge has failed', async () => {
+        handler.getDatastore = async () => {
+          const pr = [
+            [
+              {
+                repo: 'testRepo',
+                number: 1,
+                owner: 'testOwner',
+                created: -14254782000,
+                branchProtection: ['Special Check'],
+                label: 'automerge',
+                author: 'testOwner',
+                reactionId: 1,
+              },
+            ],
+          ];
+          return pr;
+        };
+        const scopes = [
+          getRateLimit(5000),
+          getReviewsCompleted([
             {
-              repo: 'testRepo',
-              number: 1,
-              owner: 'testOwner',
-              created: Date.now(),
-              branchProtection: ["this is what we're looking for"],
+              user: {login: 'octocat'},
+              state: 'APPROVED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
             },
-          ],
+          ]),
+          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+            {state: 'failure', context: 'Special Check'},
+          ]),
+          getCommentsOnPr([]),
+          commentOnPR(),
+          removeMogLabel('automerge'),
+          removeReaction(),
         ];
-        return pr;
-      };
 
-      const scopes = [
-        getRateLimit(5000),
-        getPR(true, 'clean', 'open'),
-        getReviewsCompleted([
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-        getMogLabel([{name: 'automerge'}]),
-        getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-          {
-            state: 'success',
-            context: "this is what we're looking for/subtest",
-          },
-        ]),
-        getCommentsOnPr([]),
-        merge(),
-      ];
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
 
-      await probot.receive({
-        name: 'schedule.repository' as any,
-        payload: {org: 'testOwner'},
-        id: 'abc123',
+        scopes.forEach(s => s.done());
       });
 
-      scopes.forEach(s => s.done());
+      it('posts a comment on the PR if the flag is set to comment', async () => {
+        handler.getDatastore = async () => {
+          const pr = [
+            [
+              {
+                repo: 'testRepo',
+                number: 1,
+                owner: 'testOwner',
+                created: Date.now() - 10920000, // 3 hours ago
+                branchProtection: ['Special Check'],
+                label: 'automerge',
+                author: 'testOwner',
+                reactionId: 1,
+              },
+            ],
+          ];
+          return pr;
+        };
+        const scopes = [
+          getRateLimit(5000),
+          getReviewsCompleted([
+            {
+              user: {login: 'octocat'},
+              state: 'APPROVED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
+            },
+          ]),
+          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+            {state: 'failure', context: 'Special Check'},
+          ]),
+          getCommentsOnPr([]),
+          commentOnPR(),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('rejects status checks that do not match the required check', async () => {
+        handler.getDatastore = async () => {
+          const pr = [
+            [
+              {
+                repo: 'testRepo',
+                number: 1,
+                owner: 'testOwner',
+                created: Date.now(),
+                branchProtection: ["this is what we're looking for"],
+                label: 'automerge',
+                author: 'testOwner',
+                reactionId: 1,
+              },
+            ],
+          ];
+          return pr;
+        };
+
+        const scopes = [
+          getRateLimit(5000),
+          getReviewsCompleted([
+            {
+              user: {login: 'octocat'},
+              state: 'APPROVED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
+            },
+          ]),
+          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+          //Intentionally giving this status check a misleading name. We want subtests to match the beginning
+          //of required status checks, not the other way around. i.e., if the required status check is "passes"
+          //then it should reject a status check called "passe", but pass one called "passesS"
+          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+            {state: 'success', context: "this is what we're looking fo"},
+          ]),
+          getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
+            name: "this is what we're looking fo",
+            conclusion: 'success',
+          }),
+          getCommentsOnPr([]),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('accepts status checks that match the beginning of the required status check', async () => {
+        handler.getDatastore = async () => {
+          const pr = [
+            [
+              {
+                repo: 'testRepo',
+                number: 1,
+                owner: 'testOwner',
+                created: Date.now(),
+                branchProtection: ["this is what we're looking for"],
+                label: 'automerge',
+                author: 'testOwner',
+                reactionId: 1,
+              },
+            ],
+          ];
+          return pr;
+        };
+
+        const scopes = [
+          getRateLimit(5000),
+          getReviewsCompleted([
+            {
+              user: {login: 'octocat'},
+              state: 'APPROVED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
+            },
+          ]),
+          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+            {
+              state: 'success',
+              context: "this is what we're looking for/subtest",
+            },
+          ]),
+          getCommentsOnPr([]),
+          getPR(true, 'clean', 'open'),
+          merge(),
+          removeMogLabel('automerge'),
+          removeReaction(),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('merges a PR on green with exact label', async () => {
+        handler.getDatastore = async () => {
+          const pr = [
+            [
+              {
+                repo: 'testRepo',
+                number: 1,
+                owner: 'testOwner',
+                created: Date.now(),
+                branchProtection: ['Special Check'],
+                label: 'automerge: exact',
+                author: 'testOwner',
+                reactionId: 1,
+              },
+            ],
+          ];
+          return pr;
+        };
+
+        const scopes = [
+          getRateLimit(5000),
+          getReviewsCompleted([
+            {
+              user: {login: 'octocat'},
+              state: 'APPROVED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
+            },
+          ]),
+          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+            {state: 'success', context: 'Special Check'},
+          ]),
+          getPR(true, 'clean', 'open'),
+          getCommentsOnPr([]),
+          merge(),
+          removeMogLabel('automerge%3A%20exact'),
+          removeReaction(),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('dismisses reviews if automerge label is set to exact', async () => {
+        handler.getDatastore = async () => {
+          const pr = [
+            [
+              {
+                repo: 'testRepo',
+                number: 1,
+                owner: 'testOwner',
+                created: Date.now(),
+                branchProtection: ['Special Check'],
+                label: 'automerge: exact',
+                author: 'testOwner',
+                reactionId: 1,
+              },
+            ],
+          ];
+          return pr;
+        };
+
+        const scopes = [
+          getRateLimit(5000),
+          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+          getReviewsCompleted([
+            {
+              user: {login: 'octocat'},
+              state: 'APPROVED',
+              commit_id: '12345',
+              id: 12345,
+            },
+            {
+              user: {login: 'octokitten'},
+              state: 'APPROVED',
+              commit_id: '12346',
+              id: 12346,
+            },
+          ]),
+          dismissReview(12345),
+          dismissReview(12346),
+          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
+            {state: 'success', context: 'Special Check'},
+          ]),
+          getCommentsOnPr([]),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner'},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
     });
   });
 
   describe('merge-on-green wrapper logic', () => {
     let addPRStub: SinonStub;
+    let removePRStub: SinonStub;
+    let getPRStub: SinonStub;
+
     beforeEach(() => {
       addPRStub = sandbox.stub(handler, 'addPR');
+      removePRStub = sandbox.stub(handler, 'removePR');
     });
 
     afterEach(() => {
       addPRStub.restore();
+      removePRStub.restore();
     });
 
-    it('adds a PR when label is added correctly', async () => {
-      const scopes = [
-        getRateLimit(5000),
-        getBranchProtection(200, ['Special Check']),
-      ];
+    describe('PRs when labeled', () => {
+      it('adds a PR when label is added correctly', async () => {
+        const scopes = [
+          getRateLimit(5000),
+          react(),
+          getBranchProtection(200, ['Special Check']),
+        ];
 
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const payload = require(resolve(
-        fixturesPath,
-        'events',
-        'pull_request_labeled'
-      ));
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_labeled'
+        ));
 
-      await probot.receive({
-        name: 'pull_request',
-        payload,
-        id: 'abc123',
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+        assert(addPRStub.called);
       });
 
-      scopes.forEach(s => s.done());
-      assert(addPRStub.called);
+      //This function is supposed to respond with an error
+      it('does not add a PR if branch protection errors and comments on PR', async () => {
+        loggerStub.restore();
+
+        const scopes = [
+          getRateLimit(5000),
+          react(),
+          getBranchProtection(400, []),
+          commentOnPR(),
+        ];
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_labeled'
+        ));
+
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+
+        assert(!addPRStub.called);
+
+        logger.info('stub called? ' + addPRStub.called);
+      });
+
+      it('does not add a PR if PR is labeled but does not include MOG', async () => {
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'labeled',
+            number: 1,
+            repository: {
+              name: 'testRepo',
+              owner: {
+                login: 'testOwner',
+              },
+            },
+            pull_request: {
+              html_url: 'https://github.com/testOwner/testRepo/pull/6',
+              user: {
+                login: 'testOwner',
+              },
+              labels: [
+                {
+                  name: 'bug',
+                },
+              ],
+            },
+          },
+          id: 'abc123',
+        });
+
+        assert(!addPRStub.called);
+
+        logger.info('stub called? ' + addPRStub.called);
+      });
+
+      it('does not execute if there is no more space for requests', async () => {
+        const scopes = [getRateLimit(0)];
+
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_labeled'
+        ));
+
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+
+        assert(!addPRStub.called);
+
+        logger.info('stub called? ' + addPRStub.called);
+      });
     });
 
-    //This function is supposed to respond with an error
-    it('does not add a PR if there is no branch protection and comments', async () => {
-      loggerStub.restore();
+    describe('PRs when closed, merged or unlabeled', () => {
+      it('deletes a PR from datastore if it was closed', async () => {
+        getPRStub = sandbox.stub(handler, 'getPR').resolves({
+          number: 1,
+          repo: 'testRepo',
+          owner: 'testOwner',
+          state: 'continue',
+          branchProtextion: ['Special Check'],
+          label: 'automerge',
+          author: 'testOwner',
+          url: 'https://github.com/testOwner/testRepo/pull/6',
+          reactionId: 1,
+        });
 
-      const scopes = [
-        getRateLimit(5000),
-        getBranchProtection(400, []),
-        commentOnPR(),
-      ];
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const payload = require(resolve(
-        fixturesPath,
-        'events',
-        'pull_request_labeled'
-      ));
+        const scopes = [removeReaction(), removeMogLabel('automerge')];
 
-      await probot.receive({
-        name: 'pull_request',
-        payload,
-        id: 'abc123',
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'closed',
+            repository: {
+              name: 'testRepo',
+              owner: {
+                login: 'testOwner',
+              },
+            },
+            pull_request: {
+              number: 1,
+              html_url: 'https://github.com/testOwner/testRepo/pull/6',
+              user: {
+                login: 'testOwner',
+              },
+              labels: [
+                {
+                  name: 'automerge',
+                },
+              ],
+            },
+          },
+          id: 'abc123',
+        });
+
+        assert(getPRStub.called);
+        scopes.forEach(s => s.done());
+        assert(removePRStub.called);
+
+        logger.info('getPR stub called? ' + getPRStub.called);
+        logger.info('remove stub called? ' + removePRStub.called);
+
+        getPRStub.restore();
       });
 
-      scopes.forEach(s => s.done());
+      it('deletes a PR from datastore if it unlabeled MOG', async () => {
+        getPRStub = sandbox.stub(handler, 'getPR').resolves({
+          number: 1,
+          repo: 'testRepo',
+          owner: 'testOwner',
+          state: 'continue',
+          branchProtextion: ['Special Check'],
+          label: 'automerge',
+          author: 'testOwner',
+          url: 'https://github.com/testOwner/testRepo/pull/6',
+          reactionId: 1,
+        });
 
-      assert(!addPRStub.called);
+        const scopes = [removeReaction(), removeMogLabel('automerge')];
 
-      logger.info('stub called? ' + addPRStub.called);
-    });
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'unlabeled',
+            repository: {
+              name: 'testRepo',
+              owner: {
+                login: 'testOwner',
+              },
+            },
+            pull_request: {
+              number: 1,
+              html_url: 'https://github.com/testOwner/testRepo/pull/6',
+              user: {
+                login: 'testOwner',
+              },
+              labels: [
+                {
+                  name: 'buggy',
+                },
+              ],
+            },
+          },
+          id: 'abc123',
+        });
 
-    it('does not execute if there is no more space for requests', async () => {
-      const scopes = [getRateLimit(0)];
+        assert(getPRStub.called);
+        scopes.forEach(s => s.done());
+        assert(removePRStub.called);
 
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const payload = require(resolve(
-        fixturesPath,
-        'events',
-        'pull_request_labeled'
-      ));
+        logger.info('getPR stub called? ' + getPRStub.called);
+        logger.info('remove stub called? ' + removePRStub.called);
 
-      await probot.receive({
-        name: 'pull_request',
-        payload,
-        id: 'abc123',
+        getPRStub.restore();
       });
 
-      scopes.forEach(s => s.done());
+      it('does not delete a PR from datastore if it unlabeled another label other than MOG', async () => {
+        getPRStub = sandbox.stub(handler, 'getPR');
 
-      assert(!addPRStub.called);
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'unlabeled',
+            repository: {
+              name: 'testRepo',
+              owner: {
+                login: 'testOwner',
+              },
+            },
+            pull_request: {
+              number: 1,
+              html_url: 'https://github.com/testOwner/testRepo/pull/6',
+              user: {
+                login: 'testOwner',
+              },
+              labels: [
+                {
+                  name: 'automerge',
+                },
+              ],
+            },
+          },
+          id: 'abc123',
+        });
 
-      logger.info('stub called? ' + addPRStub.called);
+        assert(!getPRStub.called);
+        assert(!removePRStub.called);
+
+        logger.info('getPR stub called? ' + getPRStub.called);
+        logger.info('remove stub called? ' + removePRStub.called);
+
+        getPRStub.restore();
+      });
+
+      it('does not delete a PR if PR merged is not in the table', async () => {
+        getPRStub = sandbox.stub(handler, 'getPR').resolves(undefined);
+
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'merged',
+            repository: {
+              name: 'notherightrepo',
+              owner: {
+                login: 'nottherightowner',
+              },
+            },
+            pull_request: {
+              number: 1,
+              html_url: 'https://github.com/testOwner/testRepo/pull/8',
+              user: {
+                login: 'testOwner',
+              },
+              labels: [
+                {
+                  name: 'automerge',
+                },
+              ],
+            },
+          },
+          id: 'abc123',
+        });
+
+        assert(getPRStub.called);
+        assert(!removePRStub.called);
+
+        logger.info('getPR stub called? ' + getPRStub.called);
+        logger.info('remove stub called? ' + removePRStub.called);
+
+        getPRStub.restore();
+      });
     });
   });
 });
