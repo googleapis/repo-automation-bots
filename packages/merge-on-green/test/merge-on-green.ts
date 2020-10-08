@@ -202,7 +202,7 @@ describe('merge-on-green', () => {
         return pr;
       };
 
-      it.only('merges a PR on green', async () => {
+      it('merges a PR on green', async () => {
         const scopes = [
           getRateLimit(5000),
           getReviewsCompleted([
