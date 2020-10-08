@@ -399,7 +399,6 @@ export function handler(app: Application) {
         e.message = `No auto-label.yml found in repo upon installation: ${e.message}`;
         logger.error(e);
       }
-
       if (response && response.status === 200) {
         const config_encoded = response.data.content;
         const config = Buffer.from(config_encoded, 'base64')
