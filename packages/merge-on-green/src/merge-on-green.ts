@@ -218,8 +218,8 @@ function handler(app: Application) {
                 wp.reactionId,
                 context.github as any
               );
+              await handler.removePR(wp.url);
             }
-            await handler.removePR(wp.url);
           } catch (err) {
             err.message = `Error in merge-on-green: \n\n${err.message}`;
             logger.error(err);
