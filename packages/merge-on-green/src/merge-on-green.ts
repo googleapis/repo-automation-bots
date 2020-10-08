@@ -127,7 +127,7 @@ handler.removePR = async function removePR(url: string) {
  * @param reactionId type number or null
  * @param github type githup API surface from payload
  */
-handler.removeLabelAndReaction = async function removeLabelAndReaction(
+handler.cleanUpPullRequest = async function cleanUpPullRequest(
   owner: string,
   repo: string,
   prNumber: number,
@@ -210,7 +210,7 @@ function handler(app: Application) {
               context.github as any
             );
             if (remove || wp.state === 'stop') {
-              await handler.removeLabelAndReaction(
+              await handler.cleanUpPullRequest(
                 wp.owner,
                 wp.repo,
                 wp.number,
@@ -319,48 +319,69 @@ function handler(app: Application) {
     }
   });
 
-  app.on(
-    ['pull_request.unlabeled', 'pull_request.closed', 'pull_request.merged'],
-    async context => {
-      const prNumber = context.payload.pull_request.number;
-      const owner = context.payload.repository.owner.login;
-      const repo = context.payload.repository.name;
+  app.on(['pull_request.unlabeled'], async context => {
+    const prNumber = context.payload.pull_request.number;
+    const owner = context.payload.repository.owner.login;
+    const repo = context.payload.repository.name;
 
-      // check to see if the label is on the PR
-      const label = context.payload.pull_request.labels.find(
-        (label: Label) =>
-          label.name === MERGE_ON_GREEN_LABEL ||
-          label.name === MERGE_ON_GREEN_LABEL_SECURE
-      )?.name;
+    // check to see if the label is on the PR
+    const label = context.payload.pull_request.labels.find(
+      (label: Label) =>
+        label.name === MERGE_ON_GREEN_LABEL ||
+        label.name === MERGE_ON_GREEN_LABEL_SECURE
+    )?.name;
 
-      // If the label is on the PR but the action was unlabeled, it means the PR had some other
-      // label removed. No action needs to be taken.
-      if (label && context.payload.action === 'unlabeled') {
-        logger.info(
-          `correct label ${label} is still on ${repo}/${prNumber}, will continue watching`
-        );
-        return;
-      }
-
-      // Check to see if the PR exists in the table before trying to delete. We also
-      // need to do this to get the reaction id to remove the reaction when MOG is finished.
-      const PR: WatchPR = await handler.getPR(
-        context.payload.pull_request.html_url
+    // If the label is on the PR but the action was unlabeled, it means the PR had some other
+    // label removed. No action needs to be taken.
+    if (label) {
+      logger.info(
+        `correct label ${label} is still on ${repo}/${prNumber}, will continue watching`
       );
-      logger.info(`PR from Datastore: ${JSON.stringify(PR)}`);
-      if (PR) {
-        await handler.removeLabelAndReaction(
-          owner,
-          repo,
-          prNumber,
-          PR.label,
-          PR.reactionId,
-          context.github
-        );
-        await handler.removePR(context.payload.pull_request.html_url);
-      }
+      return;
     }
-  );
+
+    // Check to see if the PR exists in the table before trying to delete. We also
+    // need to do this to get the reaction id to remove the reaction when MOG is finished.
+    const watchedPullRequest: WatchPR = await handler.getPR(
+      context.payload.pull_request.html_url
+    );
+    logger.info(`PR from Datastore: ${JSON.stringify(watchedPullRequest)}`);
+    if (watchedPullRequest) {
+      await handler.cleanUpPullRequest(
+        owner,
+        repo,
+        prNumber,
+        watchedPullRequest.label,
+        watchedPullRequest.reactionId,
+        context.github
+      );
+      await handler.removePR(context.payload.pull_request.html_url);
+    }
+  });
+
+  app.on(['pull_request.closed', 'pull_request.merged'], async context => {
+    const prNumber = context.payload.pull_request.number;
+    const owner = context.payload.repository.owner.login;
+    const repo = context.payload.repository.name;
+
+    // Check to see if the PR exists in the table before trying to delete. We also
+    // need to do this to get the reaction id to remove the reaction when MOG is finished.
+    const watchedPullRequest: WatchPR = await handler.getPR(
+      context.payload.pull_request.html_url
+    );
+    logger.info(`PR from Datastore: ${JSON.stringify(watchedPullRequest)}`);
+    if (watchedPullRequest) {
+      await handler.cleanUpPullRequest(
+        owner,
+        repo,
+        prNumber,
+        watchedPullRequest.label,
+        watchedPullRequest.reactionId,
+        context.github
+      );
+      await handler.removePR(context.payload.pull_request.html_url);
+    }
+  });
 }
 
 export = handler;

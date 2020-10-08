@@ -548,7 +548,10 @@ export async function mergeOnGreen(
 ): Promise<boolean | undefined> {
   const rateLimit = (await github.rateLimit.get()).data.resources.core
     .remaining;
-  if (rateLimit <= 0) {
+
+  // we are picking 10 because that is *roughly* the amount of API calls required
+  // to complete this function. But, it can vary based on paths, pages, etc.
+  if (rateLimit <= 10) {
     logger.error(
       `The rate limit is at ${rateLimit}. We are skipping execution until we reset.`
     );
