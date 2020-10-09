@@ -171,9 +171,10 @@ describe('merge-on-green', () => {
       Octokit: TestingOctokit as any,
     });
 
-    
     const app = probot.load(handler);
-    app.auth = async function(installationId: number) {return testingOctokitInstance} as any;
+    app.auth = async function (installationId: number) {
+      return testingOctokitInstance;
+    } as any;
   });
 
   afterEach(() => {

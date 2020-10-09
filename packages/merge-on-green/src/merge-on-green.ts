@@ -193,7 +193,9 @@ function handler(app: Application) {
       await Promise.all(
         work.map(async wp => {
           logger.info(`checking ${wp.url}, ${wp.installationId}`);
-          const github = wp.installationId ? await app.auth(wp.installationId) : context.github;
+          const github = wp.installationId
+            ? await app.auth(wp.installationId)
+            : context.github;
           try {
             const remove = await mergeOnGreen(
               wp.owner,
