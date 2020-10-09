@@ -308,7 +308,7 @@ function handler(app: Application) {
           state: 'continue',
           url: context.payload.pull_request.html_url,
           branchProtection: branchProtection,
-          label,
+          label: label.name,
           author,
           reactionId,
           installationId,
@@ -328,13 +328,13 @@ function handler(app: Application) {
       (label: Label) =>
         label.name === MERGE_ON_GREEN_LABEL ||
         label.name === MERGE_ON_GREEN_LABEL_SECURE
-    )?.name;
+    );
 
     // If the label is on the PR but the action was unlabeled, it means the PR had some other
     // label removed. No action needs to be taken.
     if (label) {
       logger.info(
-        `correct label ${label} is still on ${repo}/${prNumber}, will continue watching`
+        `correct label ${label.name} is still on ${repo}/${prNumber}, will continue watching`
       );
       return;
     }
