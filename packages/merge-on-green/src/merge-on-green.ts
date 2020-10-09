@@ -167,6 +167,7 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
       branchProtection: wp.branchProtection,
       label: wp.label,
       author: wp.author,
+      reactionId: wp.reactionId,
       installationId: wp.installationId,
     },
     method: 'upsert',
