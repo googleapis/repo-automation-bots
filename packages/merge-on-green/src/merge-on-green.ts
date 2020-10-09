@@ -166,6 +166,7 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
       branchProtection: wp.branchProtection,
       label: wp.label,
       author: wp.author,
+      reactionId: wp.reactionId,
       installationToken: wp.installationId,
     },
     method: 'upsert',
@@ -241,7 +242,7 @@ function handler(app: Application) {
       (label: Label) =>
         label.name === MERGE_ON_GREEN_LABEL ||
         label.name === MERGE_ON_GREEN_LABEL_SECURE
-    );
+    )?.name;
 
     // if missing the label, skip
     if (!label) {
