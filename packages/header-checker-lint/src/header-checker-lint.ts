@@ -218,10 +218,8 @@ export = (app: Application) => {
   });
 
   app.on('push', async context => {
-    if (
-      `refs/heads/${context.payload.repository.default_branch}` !==
-      context.payload.ref
-    ) {
+    const targetBranch = context.payload.repository.default_branch;
+    if (`refs/heads/${targetBranch}` !== context.payload.ref) {
       // only act on pushes to default branch
       return;
     }
@@ -260,6 +258,7 @@ export = (app: Application) => {
     createPullRequest(octokit, changes, {
       upstreamOwner: context.payload.repository.owner.name!,
       upstreamRepo: context.payload.repository.name,
+      branch: targetBranch,
       message: 'chore: create LICENSE',
       title: 'chore: create LICENSE',
       description: 'Generating a LICENSE file',
