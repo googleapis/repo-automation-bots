@@ -336,7 +336,7 @@ function handler(app: Application) {
     // label removed. No action needs to be taken.
     if (label) {
       logger.info(
-        `correct label ${label} is still on ${repo}/${prNumber}, will continue watching`
+        `correct label ${label.name} is still on ${repo}/${prNumber}, will continue watching`
       );
       return;
     }
