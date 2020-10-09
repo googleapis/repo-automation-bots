@@ -27,6 +27,8 @@ import {Octokit} from '@octokit/rest';
 import {config} from '@probot/octokit-plugin-config';
 const TestingOctokit = Octokit.plugin(config);
 
+const testingOctokitInstance = new TestingOctokit({auth: 'abc123'});
+
 const sandbox = sinon.createSandbox();
 
 interface HeadSha {
@@ -169,7 +171,9 @@ describe('merge-on-green', () => {
       Octokit: TestingOctokit as any,
     });
 
-    probot.load(handler);
+    
+    const app = probot.load(handler);
+    app.auth = async function(installationId: number) {return testingOctokitInstance} as any;
   });
 
   afterEach(() => {

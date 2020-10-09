@@ -166,7 +166,7 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
       branchProtection: wp.branchProtection,
       label: wp.label,
       author: wp.author,
-      installationToken: wp.installationId,
+      installationId: wp.installationId,
     },
     method: 'upsert',
   };
@@ -188,15 +188,12 @@ function handler(app: Application) {
   app.on('schedule.repository' as any, async context => {
     const watchedPRs = await handler.listPRs();
     const start = Date.now();
-    logger.info(`running for org ${context.payload.org}`);
-    const filteredPRs = watchedPRs.filter(value => {
-      return value.owner.startsWith(context.payload.org);
-    });
-    while (filteredPRs.length) {
-      const work = filteredPRs.splice(0, WORKER_SIZE);
+    while (watchedPRs.length) {
+      const work = watchedPRs.splice(0, WORKER_SIZE);
       await Promise.all(
         work.map(async wp => {
-          logger.info(`checking ${wp.url}`);
+          logger.info(`checking ${wp.url}, ${wp.installationId}`);
+          const github = wp.installationId ? await app.auth(wp.installationId) : context.github;
           try {
             const remove = await mergeOnGreen(
               wp.owner,
@@ -207,7 +204,7 @@ function handler(app: Application) {
               wp.branchProtection,
               wp.label,
               wp.author,
-              context.github as any
+              github as any
             );
             if (remove || wp.state === 'stop') {
               await handler.cleanUpPullRequest(
@@ -216,7 +213,7 @@ function handler(app: Application) {
                 wp.number,
                 wp.label,
                 wp.reactionId,
-                context.github as any
+                github as any
               );
               await handler.removePR(wp.url);
             }
@@ -235,7 +232,7 @@ function handler(app: Application) {
     const author = context.payload.pull_request.user.login;
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
-    const installationId = context.payload.installation.id.toString();
+    const installationId = context.payload.installation.id;
 
     const label = context.payload.pull_request.labels.find(
       (label: Label) =>
