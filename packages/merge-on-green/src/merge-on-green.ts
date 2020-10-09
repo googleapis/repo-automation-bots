@@ -27,6 +27,7 @@ const COMMENT_INTERVAL_HIGH = 1000 * 60 * 60 * 3.067; // 3 hours and 4 minutes, 
 const MERGE_ON_GREEN_LABEL = 'automerge';
 const MERGE_ON_GREEN_LABEL_SECURE = 'automerge: exact';
 const WORKER_SIZE = 4;
+const allowlist = ['googleapis', 'yargs', 'googlecloudplatform', 'google', 'bcoe', 'sofisl'];
 
 interface WatchPR {
   number: number;
@@ -242,6 +243,10 @@ function handler(app: Application) {
         label.name === MERGE_ON_GREEN_LABEL_SECURE
     );
 
+    if (!allowlist.find(element => element.toLowerCase() === owner)) {
+      logger.info(`skipped ${owner}/${repo} because not a part of allowlist`)
+      return;
+    }
     // if missing the label, skip
     if (!label) {
       logger.info('ignoring non-MOG label');
@@ -368,7 +373,7 @@ function handler(app: Application) {
     const watchedPullRequest: WatchPR = await handler.getPR(
       context.payload.pull_request.html_url
     );
-    logger.info(`PR from Datastore: ${JSON.stringify(watchedPullRequest)}`);
+    
     if (watchedPullRequest) {
       await handler.cleanUpPullRequest(
         owner,
