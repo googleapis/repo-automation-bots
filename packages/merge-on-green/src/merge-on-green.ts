@@ -28,6 +28,15 @@ const MERGE_ON_GREEN_LABEL = 'automerge';
 const MERGE_ON_GREEN_LABEL_SECURE = 'automerge: exact';
 const WORKER_SIZE = 4;
 
+handler.allowlist = [
+  'googleapis',
+  'yargs',
+  'googlecloudplatform',
+  'google',
+  'bcoe',
+  'sofisl',
+];
+
 interface WatchPR {
   number: number;
   repo: string;
@@ -167,7 +176,7 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
       label: wp.label,
       author: wp.author,
       reactionId: wp.reactionId,
-      installationToken: wp.installationId,
+      installationId: wp.installationId,
     },
     method: 'upsert',
   };
@@ -189,15 +198,14 @@ function handler(app: Application) {
   app.on('schedule.repository' as any, async context => {
     const watchedPRs = await handler.listPRs();
     const start = Date.now();
-    logger.info(`running for org ${context.payload.org}`);
-    const filteredPRs = watchedPRs.filter(value => {
-      return value.owner.startsWith(context.payload.org);
-    });
-    while (filteredPRs.length) {
-      const work = filteredPRs.splice(0, WORKER_SIZE);
+    while (watchedPRs.length) {
+      const work = watchedPRs.splice(0, WORKER_SIZE);
       await Promise.all(
         work.map(async wp => {
-          logger.info(`checking ${wp.url}`);
+          logger.info(`checking ${wp.url}, ${wp.installationId}`);
+          const github = wp.installationId
+            ? await app.auth(wp.installationId)
+            : context.github;
           try {
             const remove = await mergeOnGreen(
               wp.owner,
@@ -208,7 +216,7 @@ function handler(app: Application) {
               wp.branchProtection,
               wp.label,
               wp.author,
-              context.github as any
+              github as any
             );
             if (remove || wp.state === 'stop') {
               await handler.cleanUpPullRequest(
@@ -217,7 +225,7 @@ function handler(app: Application) {
                 wp.number,
                 wp.label,
                 wp.reactionId,
-                context.github as any
+                github as any
               );
               await handler.removePR(wp.url);
             }
@@ -236,7 +244,7 @@ function handler(app: Application) {
     const author = context.payload.pull_request.user.login;
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
-    const installationId = context.payload.installation.id.toString();
+    const installationId = context.payload.installation.id;
 
     const label = context.payload.pull_request.labels.find(
       (label: Label) =>
@@ -244,6 +252,15 @@ function handler(app: Application) {
         label.name === MERGE_ON_GREEN_LABEL_SECURE
     );
 
+    console.log(handler.allowlist);
+    if (
+      !handler.allowlist.find(
+        element => element.toLowerCase() === owner.toLowerCase()
+      )
+    ) {
+      logger.info(`skipped ${owner}/${repo} because not a part of allowlist`);
+      return;
+    }
     // if missing the label, skip
     if (!label) {
       logger.info('ignoring non-MOG label');
@@ -370,7 +387,7 @@ function handler(app: Application) {
     const watchedPullRequest: WatchPR = await handler.getPR(
       context.payload.pull_request.html_url
     );
-    logger.info(`PR from Datastore: ${JSON.stringify(watchedPullRequest)}`);
+
     if (watchedPullRequest) {
       await handler.cleanUpPullRequest(
         owner,
