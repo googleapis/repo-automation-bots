@@ -844,6 +844,7 @@ describe('merge-on-green', () => {
     });
 
     describe('PRs when labeled', () => {
+      handler.allowlist = ['testOwner'];
       it('adds a PR when label is added correctly', async () => {
         const scopes = [
           getRateLimit(5000),
@@ -917,6 +918,41 @@ describe('merge-on-green', () => {
               labels: [
                 {
                   name: 'bug',
+                },
+              ],
+            },
+            installation: {
+              id: 'abc123',
+            },
+          },
+          id: 'abc123',
+        });
+
+        assert(!addPRStub.called);
+
+        logger.info('stub called? ' + addPRStub.called);
+      });
+
+      it('does not add a PR if PR is labeled but is not in allowlist', async () => {
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'labeled',
+            number: 1,
+            repository: {
+              name: 'testRepo',
+              owner: {
+                login: 'denylistOwner',
+              },
+            },
+            pull_request: {
+              html_url: 'https://github.com/testOwner/testRepo/pull/6',
+              user: {
+                login: 'testOwner',
+              },
+              labels: [
+                {
+                  name: 'automerge',
                 },
               ],
             },

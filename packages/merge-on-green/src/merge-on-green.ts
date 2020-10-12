@@ -27,7 +27,15 @@ const COMMENT_INTERVAL_HIGH = 1000 * 60 * 60 * 3.067; // 3 hours and 4 minutes, 
 const MERGE_ON_GREEN_LABEL = 'automerge';
 const MERGE_ON_GREEN_LABEL_SECURE = 'automerge: exact';
 const WORKER_SIZE = 4;
-const allowlist = ['googleapis', 'yargs', 'googlecloudplatform', 'google', 'bcoe', 'sofisl'];
+
+handler.allowlist = [
+  'googleapis',
+  'yargs',
+  'googlecloudplatform',
+  'google',
+  'bcoe',
+  'sofisl',
+];
 
 interface WatchPR {
   number: number;
@@ -244,8 +252,13 @@ function handler(app: Application) {
         label.name === MERGE_ON_GREEN_LABEL_SECURE
     );
 
-    if (!allowlist.find(element => element.toLowerCase() === owner)) {
-      logger.info(`skipped ${owner}/${repo} because not a part of allowlist`)
+    console.log(handler.allowlist);
+    if (
+      !handler.allowlist.find(
+        element => element.toLowerCase() === owner.toLowerCase()
+      )
+    ) {
+      logger.info(`skipped ${owner}/${repo} because not a part of allowlist`);
       return;
     }
     // if missing the label, skip
@@ -374,7 +387,7 @@ function handler(app: Application) {
     const watchedPullRequest: WatchPR = await handler.getPR(
       context.payload.pull_request.html_url
     );
-    
+
     if (watchedPullRequest) {
       await handler.cleanUpPullRequest(
         owner,
