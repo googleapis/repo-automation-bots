@@ -50,7 +50,6 @@ export = (app: Application) => {
     let commits: PullsListCommitsResponseData;
     try {
       commits = (await context.github.pulls.listCommits(commitParams)).data;
-      console.log(commits);
     } catch (err) {
       app.log.error(err);
       return;
