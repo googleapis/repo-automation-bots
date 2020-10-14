@@ -34,7 +34,7 @@
   "devDependencies": {
     "c8": "^7.1.0",
     "chai": "^4.2.0",
-    "gts": "^2.0.0",
+    "gts": "^3.0.0",
     "mocha": "^8.0.0",
     "recursive-readdir": "^2.2.2",
     "rimraf": "^3.0.0",
