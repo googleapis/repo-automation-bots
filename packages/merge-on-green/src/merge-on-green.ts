@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
+import {Application, Context} from 'probot';
 import {Datastore} from '@google-cloud/datastore';
 import {mergeOnGreen} from './merge-logic';
 import {logger} from 'gcf-utils';
@@ -28,13 +28,26 @@ const MERGE_ON_GREEN_LABEL = 'automerge';
 const MERGE_ON_GREEN_LABEL_SECURE = 'automerge: exact';
 const WORKER_SIZE = 4;
 
+handler.allowlist = [
+  'googleapis',
+  'yargs',
+  'googlecloudplatform',
+  'google',
+  'bcoe',
+  'sofisl',
+];
+
 interface WatchPR {
   number: number;
   repo: string;
   owner: string;
   state: 'continue' | 'stop' | 'comment';
   branchProtection: string[];
+  label: string;
+  author: string;
   url: string;
+  reactionId: number;
+  installationId: number;
 }
 
 interface Label {
@@ -81,6 +94,10 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
       owner: pr.owner,
       state: state as 'continue' | 'stop' | 'comment',
       branchProtection: pr.branchProtection,
+      label: pr.label,
+      author: pr.author,
+      reactionId: pr.reactionId,
+      installationId: pr.installationId,
       url,
     };
     result.push(watchPr);
@@ -89,7 +106,18 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
 };
 
 /**
- * Removes a PR from datastore once it's been attempted to merge (i.e., checked for mergeability) for 6 hours
+ * Gets a PR from Datastore
+ * @param url type string
+ * @returns WatchPR entity
+ */
+handler.getPR = async function getPR(url: string) {
+  const key = datastore.key([TABLE, url]);
+  const [entity] = await datastore.get(key);
+  return entity;
+};
+
+/**
+ * Removes a PR from Datastore
  * @param url type string
  * @returns void
  */
@@ -97,6 +125,36 @@ handler.removePR = async function removePR(url: string) {
   const key = datastore.key([TABLE, url]);
   await datastore.delete(key);
   logger.info(`PR ${url} was removed`);
+};
+
+/**
+ * Removes a label and reaction from a PR when it has been removed from Datastore table
+ * @param owner type string
+ * @param repo type string
+ * @param prNumber type number
+ * @param label type string
+ * @param reactionId type number or null
+ * @param github type githup API surface from payload
+ */
+handler.cleanUpPullRequest = async function cleanUpPullRequest(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  label: string,
+  reactionId: number,
+  github: Context['github']
+) {
+  await github.issues
+    .removeLabel({owner, repo, issue_number: prNumber, name: label})
+    .catch(logger.error);
+  await github.reactions
+    .deleteForIssue({
+      owner,
+      repo,
+      issue_number: prNumber,
+      reaction_id: reactionId,
+    })
+    .catch(logger.error);
 };
 
 /**
@@ -115,6 +173,10 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
       repo: wp.repo,
       number: wp.number,
       branchProtection: wp.branchProtection,
+      label: wp.label,
+      author: wp.author,
+      reactionId: wp.reactionId,
+      installationId: wp.installationId,
     },
     method: 'upsert',
   };
@@ -134,28 +196,16 @@ function handler(app: Application) {
   //meta-note about the schedule.repository as any; currently GH does not support this type, see
   //open issue for a fix: https://github.com/octokit/webhooks.js/issues/277
   app.on('schedule.repository' as any, async context => {
-    const rateLimit = (await context.github.rateLimit.get()).data.resources.core
-      .remaining;
-    if (rateLimit <= 0) {
-      logger.error(
-        `The rate limit is at ${rateLimit}. We are skipping execution until we reset.`
-      );
-      return;
-    }
     const watchedPRs = await handler.listPRs();
     const start = Date.now();
-    logger.info(`running for org ${context.payload.org}`);
-    const filteredPRs = watchedPRs.filter(value => {
-      return value.owner.startsWith(context.payload.org);
-    });
-    while (filteredPRs.length) {
-      const work = filteredPRs.splice(0, WORKER_SIZE);
+    while (watchedPRs.length) {
+      const work = watchedPRs.splice(0, WORKER_SIZE);
       await Promise.all(
         work.map(async wp => {
-          logger.info(`checking ${wp.url}`);
-          if (wp.state === 'stop') {
-            await handler.removePR(wp.url);
-          }
+          logger.info(`checking ${wp.url}, ${wp.installationId}`);
+          const github = wp.installationId
+            ? await app.auth(wp.installationId)
+            : context.github;
           try {
             const remove = await mergeOnGreen(
               wp.owner,
@@ -164,9 +214,19 @@ function handler(app: Application) {
               [MERGE_ON_GREEN_LABEL, MERGE_ON_GREEN_LABEL_SECURE],
               wp.state,
               wp.branchProtection,
-              context.github as any
+              wp.label,
+              wp.author,
+              github as any
             );
             if (remove || wp.state === 'stop') {
+              await handler.cleanUpPullRequest(
+                wp.owner,
+                wp.repo,
+                wp.number,
+                wp.label,
+                wp.reactionId,
+                github as any
+              );
               await handler.removePR(wp.url);
             }
           } catch (err) {
@@ -180,30 +240,38 @@ function handler(app: Application) {
   });
 
   app.on('pull_request.labeled', async context => {
-    // if missing the label, skip
+    const prNumber = context.payload.pull_request.number;
+    const author = context.payload.pull_request.user.login;
+    const owner = context.payload.repository.owner.login;
+    const repo = context.payload.repository.name;
+    const installationId = context.payload.installation.id;
+
+    const label = context.payload.pull_request.labels.find(
+      (label: Label) =>
+        label.name === MERGE_ON_GREEN_LABEL ||
+        label.name === MERGE_ON_GREEN_LABEL_SECURE
+    );
+
+    console.log(handler.allowlist);
     if (
-      !context.payload.pull_request.labels.some(
-        (label: Label) =>
-          label.name === MERGE_ON_GREEN_LABEL ||
-          label.name === MERGE_ON_GREEN_LABEL_SECURE
+      !handler.allowlist.find(
+        element => element.toLowerCase() === owner.toLowerCase()
       )
     ) {
-      const labels = context.payload.pull_request.labels
-        .map((label: Label) => {
-          return JSON.stringify(label);
-        })
-        .join(', ');
-      logger.info(`ignoring non-force label action (${labels})`);
+      logger.info(`skipped ${owner}/${repo} because not a part of allowlist`);
+      return;
+    }
+    // if missing the label, skip
+    if (!label) {
+      logger.info('ignoring non-MOG label');
       return;
     }
 
-    const prNumber = context.payload.pull_request.number;
-    const owner = context.payload.repository.owner.login;
-    const repo = context.payload.repository.name;
     logger.info(`${prNumber} ${owner} ${repo}`);
     //TODO: we can likely split the database functionality into its own file and
     //import these helper functions for use in the main bot event handling.
 
+    // check our rate limit for next steps
     const rateLimit = (await context.github.rateLimit.get()).data.resources.core
       .remaining;
     if (rateLimit <= 0) {
@@ -213,6 +281,7 @@ function handler(app: Application) {
       return;
     }
 
+    // check to see if the owner has branch protection rules
     let branchProtection: string[] | undefined;
     try {
       branchProtection = (
@@ -237,7 +306,19 @@ function handler(app: Application) {
       logger.error(err);
     }
 
+    // if the owner has branch protection set up, add this PR to the Datastore table
     if (branchProtection) {
+      // try to create reaction. Save this reaction in the Datastore table since I don't (think)
+      // it is on the pull_request payload.
+      const reactionId = (
+        await context.github.reactions.createForIssue({
+          owner,
+          repo,
+          issue_number: prNumber,
+          content: 'eyes',
+        })
+      ).data.id;
+
       await handler.addPR(
         {
           number: prNumber,
@@ -246,9 +327,77 @@ function handler(app: Application) {
           state: 'continue',
           url: context.payload.pull_request.html_url,
           branchProtection: branchProtection,
+          label: label.name,
+          author,
+          reactionId,
+          installationId,
         },
         context.payload.pull_request.html_url
       );
+    }
+  });
+
+  app.on(['pull_request.unlabeled'], async context => {
+    const prNumber = context.payload.pull_request.number;
+    const owner = context.payload.repository.owner.login;
+    const repo = context.payload.repository.name;
+
+    // check to see if the label is on the PR
+    const label = context.payload.pull_request.labels.find(
+      (label: Label) =>
+        label.name === MERGE_ON_GREEN_LABEL ||
+        label.name === MERGE_ON_GREEN_LABEL_SECURE
+    );
+
+    // If the label is on the PR but the action was unlabeled, it means the PR had some other
+    // label removed. No action needs to be taken.
+    if (label) {
+      logger.info(
+        `correct label ${label.name} is still on ${repo}/${prNumber}, will continue watching`
+      );
+      return;
+    }
+
+    // Check to see if the PR exists in the table before trying to delete. We also
+    // need to do this to get the reaction id to remove the reaction when MOG is finished.
+    const watchedPullRequest: WatchPR = await handler.getPR(
+      context.payload.pull_request.html_url
+    );
+    logger.info(`PR from Datastore: ${JSON.stringify(watchedPullRequest)}`);
+    if (watchedPullRequest) {
+      await handler.cleanUpPullRequest(
+        owner,
+        repo,
+        prNumber,
+        watchedPullRequest.label,
+        watchedPullRequest.reactionId,
+        context.github
+      );
+      await handler.removePR(context.payload.pull_request.html_url);
+    }
+  });
+
+  app.on(['pull_request.closed', 'pull_request.merged'], async context => {
+    const prNumber = context.payload.pull_request.number;
+    const owner = context.payload.repository.owner.login;
+    const repo = context.payload.repository.name;
+
+    // Check to see if the PR exists in the table before trying to delete. We also
+    // need to do this to get the reaction id to remove the reaction when MOG is finished.
+    const watchedPullRequest: WatchPR = await handler.getPR(
+      context.payload.pull_request.html_url
+    );
+
+    if (watchedPullRequest) {
+      await handler.cleanUpPullRequest(
+        owner,
+        repo,
+        prNumber,
+        watchedPullRequest.label,
+        watchedPullRequest.reactionId,
+        context.github
+      );
+      await handler.removePR(context.payload.pull_request.html_url);
     }
   });
 }

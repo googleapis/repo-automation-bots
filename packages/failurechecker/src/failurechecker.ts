@@ -43,14 +43,14 @@ interface ConfigurationOptions {
 }
 
 export function failureChecker(app: Application) {
-  app.on(['schedule.repository' as any], async context => {
+  app.on('schedule.repository' as '*', async context => {
     const utcHour = new Date().getUTCHours();
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
 
     // If we're outside of working hours, and we're not in a test context, skip this bot.
     if (utcHour > END_HOUR_UTC && utcHour < START_HOUR_UTC) {
-      app.log("skipping run, we're currently outside of working hours");
+      logger.info("skipping run, we're currently outside of working hours");
       return;
     }
     // Some release types, such as go-yoshi, have no publish step so a release
@@ -100,7 +100,7 @@ export function failureChecker(app: Application) {
         }
       }
     }
-    app.log(`it's alive! event for ${repo}`);
+    logger.info(`it's alive! event for ${repo}`);
   });
 
   const ISSUE_TITLE = 'Warning: a recent release failed';
@@ -125,10 +125,10 @@ export function failureChecker(app: Application) {
 
     // TODO: remove this probe once we have a better idea of how
     // a cron effects our usage limits:
-    app.log((await github.rateLimit.get()).data);
+    logger.info((await github.rateLimit.get()).data);
 
     if (warningIssue) {
-      app.log(`a warning issue was already opened for pr ${prNumber}`);
+      logger.info(`a warning issue was already opened for pr ${prNumber}`);
       return;
     }
     app.log(`opening warning issue on ${repo} for PR #${prNumber}`);
