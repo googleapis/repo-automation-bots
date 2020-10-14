@@ -13,8 +13,9 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, Octokit} from 'probot';
+import {Application} from 'probot';
 import lint from '@commitlint/lint';
+import {PullsListCommitsResponseData} from '@octokit/types';
 
 import {rules} from '@commitlint/config-conventional';
 import {logger} from 'gcf-utils';
@@ -22,6 +23,10 @@ import {logger} from 'gcf-utils';
 // see: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-conventional/index.js
 delete rules['type-enum'];
 rules['header-max-length'] = [2, 'always', 256];
+
+type Label = {
+  name: string;
+};
 
 type Conclusion =
   | 'success'
@@ -41,19 +46,14 @@ export = (app: Application) => {
       pull_number: context.payload.pull_request.number,
       per_page: 100,
     });
-    // Response object has a typed response.data, which has definitions that
-    // can be found here: https://unpkg.com/@octokit/rest@16.28.3/index.d.ts
-    let commitsResponse: Octokit.Response<
-      Octokit.PullsListCommitsResponseItem[]
-    >;
+
+    let commits: PullsListCommitsResponseData;
     try {
-      commitsResponse = await context.github.pulls.listCommits(commitParams);
+      commits = (await context.github.pulls.listCommits(commitParams)).data;
     } catch (err) {
       app.log.error(err);
       return;
     }
-
-    const commits = commitsResponse.data;
     if (commits.length === 0) {
       logger.info(
         `Pull request ${context.payload.pull_request.html_url} has no commits!`
@@ -63,7 +63,7 @@ export = (app: Application) => {
 
     let message = context.payload.pull_request.title;
     const hasAutomergeLabel = context.payload.pull_request.labels
-      .map(label => {
+      .map((label: Label) => {
         return label.name;
       })
       .includes(AUTOMERGE_LABEL);
