@@ -18,11 +18,16 @@ import * as blunderbuss from '../src/blunderbuss';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, createProbot} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
 import * as sinon from 'sinon';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
+import {config} from '@probot/octokit-plugin-config';
+const TestingOctokit = Octokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -37,20 +42,11 @@ describe('Blunderbuss', () => {
   const sandbox = sinon.createSandbox();
 
   beforeEach(() => {
-    probot = new Probot({
-      // use a bare instance of octokit, the default version
-      // enables retries which makes testing difficult.
-      // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest'),
+    probot = createProbot({
+      githubToken: 'abc123',
+      Octokit: TestingOctokit as any,
     });
-    probot.app = {
-      getSignedJsonWebToken() {
-        return 'abc123';
-      },
-      getInstallationAccessToken(): Promise<string> {
-        return Promise.resolve('abc123');
-      },
-    };
+
     sandbox.stub(blunderbuss, 'sleep').resolves();
     probot.load(blunderbuss.blunderbuss);
   });
@@ -60,6 +56,8 @@ describe('Blunderbuss', () => {
     nock.cleanAll();
   });
 
+  //FYI: Probot upgrades usually break the config reply. Check there when updating
+  //Probot.
   describe('issue tests', () => {
     it('assigns opened issues with no assignees', async () => {
       const payload = require(resolve(
@@ -70,15 +68,15 @@ describe('Blunderbuss', () => {
         resolve(fixturesPath, 'config', 'valid.yml')
       );
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')})
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config)
         .post('/repos/testOwner/testRepo/issues/5/assignees', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -93,10 +91,10 @@ describe('Blunderbuss', () => {
       );
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')});
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config);
 
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -106,15 +104,16 @@ describe('Blunderbuss', () => {
         'events',
         'issue_opened_no_assignees'
       ));
+
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'no_issues.yml')
       );
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')});
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config);
 
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -124,16 +123,16 @@ describe('Blunderbuss', () => {
         'events',
         'issue_correct_label'
       ));
+
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')})
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config)
         .delete(
-          '/repos/testOwner/testRepo/issues/4/labels/' +
-            encodeURI('blunderbuss: assign')
+          '/repos/testOwner/testRepo/issues/4/labels/blunderbuss%3A%20assign'
         )
         .reply(200, {})
         .post('/repos/testOwner/testRepo/issues/4/assignees', body => {
@@ -142,7 +141,11 @@ describe('Blunderbuss', () => {
         })
         .reply(200);
 
-      await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
+      await probot.receive({
+        name: 'issues' as any,
+        payload,
+        id: 'abc123',
+      });
       requests.done();
     });
 
@@ -157,10 +160,10 @@ describe('Blunderbuss', () => {
       );
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')});
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config);
 
-      await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -173,11 +176,12 @@ describe('Blunderbuss', () => {
 
       const requests = nock('https://api.github.com')
         // This second stub is required as octokit does a second attempt on a different endpoint
-        .get('/repos/testOwner/.github/contents/.github/blunderbuss.yml')
+        .get('/repos/testOwner/.github/contents/.github%2Fblunderbuss.yml')
         .reply(404, {})
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
         .reply(404, {});
-      await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
+
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -192,11 +196,10 @@ describe('Blunderbuss', () => {
       );
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')})
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config)
         .delete(
-          '/repos/testOwner/testRepo/issues/4/labels/' +
-            encodeURI('blunderbuss: assign')
+          '/repos/testOwner/testRepo/issues/4/labels/blunderbuss%3A%20assign'
         )
         .reply(200, {})
         .post('/repos/testOwner/testRepo/issues/4/assignees', body => {
@@ -205,7 +208,7 @@ describe('Blunderbuss', () => {
         })
         .reply(200);
 
-      await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -219,8 +222,8 @@ describe('Blunderbuss', () => {
         resolve(fixturesPath, 'config', 'on_label.yml')
       );
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')})
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config)
         .post('/repos/testOwner/testRepo/issues/5/assignees', body => {
           snapshot(body);
           return true;
@@ -229,7 +232,7 @@ describe('Blunderbuss', () => {
         .get('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200, [{name: 'api: foo'}]);
 
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -240,15 +243,15 @@ describe('Blunderbuss', () => {
       );
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')})
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config)
         .post('/repos/testOwner/testRepo/issues/4/assignees', body => {
           snapshot(body);
           return true;
         })
         .reply(200);
 
-      await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -263,10 +266,10 @@ describe('Blunderbuss', () => {
       );
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')});
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config);
 
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -282,8 +285,8 @@ describe('Blunderbuss', () => {
 
       const scopes = [
         nock('https://api.github.com')
-          .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-          .reply(200, {content: config.toString('base64')}),
+          .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+          .reply(200, config),
         nock('https://api.github.com')
           .get('/orgs/googleapis/teams/team-awesome/members')
           .reply(200, [{login: 'user123'}]),
@@ -295,7 +298,7 @@ describe('Blunderbuss', () => {
           .reply(200),
       ];
 
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
       scopes.forEach(s => s.done());
     });
   });
@@ -312,8 +315,8 @@ describe('Blunderbuss', () => {
       );
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')})
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config)
         .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
           snapshot(body);
           return true;
@@ -321,7 +324,7 @@ describe('Blunderbuss', () => {
         .reply(200);
 
       await probot.receive({
-        name: 'pull_request.opened',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });
@@ -339,8 +342,8 @@ describe('Blunderbuss', () => {
       );
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')})
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config)
         .get('/orgs/googleapis/teams/team-awesome/members')
         .reply(200, [{login: 'user123'}])
         .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
@@ -350,7 +353,7 @@ describe('Blunderbuss', () => {
         .reply(200);
 
       await probot.receive({
-        name: 'pull_request.opened',
+        name: 'pull_request',
         payload,
         id: 'user123',
       });
@@ -369,8 +372,8 @@ describe('Blunderbuss', () => {
       );
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')})
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config)
         .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
           snapshot(body);
           return true;
@@ -378,7 +381,7 @@ describe('Blunderbuss', () => {
         .reply(200);
 
       await probot.receive({
-        name: 'pull_request.opened',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });
@@ -396,11 +399,11 @@ describe('Blunderbuss', () => {
       );
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')});
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config.toString('base64'));
 
       await probot.receive({
-        name: 'pull_request.opened',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });
@@ -417,10 +420,10 @@ describe('Blunderbuss', () => {
         resolve(fixturesPath, 'config', 'valid.yml')
       );
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')});
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config);
       await probot.receive({
-        name: 'pull_request.opened',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });
@@ -438,11 +441,11 @@ describe('Blunderbuss', () => {
       );
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')});
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config);
 
       await probot.receive({
-        name: 'pull_request.opened',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });
@@ -460,11 +463,10 @@ describe('Blunderbuss', () => {
       );
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')})
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config)
         .delete(
-          '/repos/testOwner/testRepo/issues/6/labels/' +
-            encodeURI('blunderbuss: assign')
+          '/repos/testOwner/testRepo/issues/6/labels/blunderbuss%3A%20assign'
         )
         .reply(200, {})
         .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
@@ -473,7 +475,7 @@ describe('Blunderbuss', () => {
         })
         .reply(200);
 
-      await probot.receive({name: 'issues.labeled', payload, id: 'abc123'});
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });
 
@@ -488,11 +490,11 @@ describe('Blunderbuss', () => {
       );
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
-        .reply(200, {content: config.toString('base64')});
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config);
 
       await probot.receive({
-        name: 'pull_request.labeled',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });
@@ -507,13 +509,13 @@ describe('Blunderbuss', () => {
       ));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/blunderbuss.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
         .reply(404, {})
-        .get('/repos/testOwner/.github/contents/.github/blunderbuss.yml')
+        .get('/repos/testOwner/.github/contents/.github%2Fblunderbuss.yml')
         .reply(404, {});
 
       await probot.receive({
-        name: 'pull_request.labeled',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });

@@ -15,7 +15,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context} from 'probot';
 import * as util from 'util';
-import {logger} from 'gcf-utils';
+import {logger, TriggerType} from 'gcf-utils';
 
 const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';
@@ -56,180 +56,184 @@ export const sleep = (ms: number) => {
 };
 
 export function blunderbuss(app: Application) {
-  const events = [
-    'issues.opened',
-    'issues.reopened',
-    'issues.labeled',
-    'pull_request.opened',
-    'pull_request.reopened',
-    'pull_request.edited',
-    'pull_request.labeled',
-  ];
-  app.on(events, async context => {
-    let config: Configuration = {};
-    try {
-      // Reading the config requires access to code permissions, which are not
-      // always available for private repositories.
-      config = (await context.config<Configuration>(
-        CONFIGURATION_FILE_PATH,
-        {}
-      ))!;
-    } catch (err) {
-      err.message = `Error reading configuration: ${err.message}`;
-      logger.error(err);
-    }
-    config = config || {};
+  app.on(
+    [
+      'issues.opened',
+      'issues.reopened',
+      'issues.labeled',
+      'pull_request.opened',
+      'pull_request.reopened',
+      'pull_request.edited',
+      'pull_request.labeled',
+    ],
+    async context => {
+      let config: Configuration = {};
+      try {
+        // Reading the config requires access to code permissions, which are not
+        // always available for private repositories.
+        config = (await context.config<Configuration>(
+          CONFIGURATION_FILE_PATH,
+          {}
+        ))!;
+      } catch (err) {
+        err.message = `Error reading configuration: ${err.message}`;
+        logger.error(err);
+      }
+      config = config || {};
 
-    const issue: Issue = context.payload.issue || context.payload.pull_request;
-    const repoName = context.payload.repository.full_name;
+      const issue: Issue =
+        context.payload.issue || context.payload.pull_request;
+      const repoName = context.payload.repository.full_name;
 
-    // If this is a PR, and it's in draft mode, don't assign it
-    if (issue.draft === true) {
-      logger.info(`Skipping ${repoName}#${issue.number} as it's a draft PR`);
-      return;
-    }
+      // If this is a PR, and it's in draft mode, don't assign it
+      if (issue.draft === true) {
+        logger.info(`Skipping ${repoName}#${issue.number} as it's a draft PR`);
+        return;
+      }
 
-    // Check if the config specifically asks to not assign issues or PRs
-    if (
-      (context.payload.issue &&
-        !config.assign_issues &&
-        !config.assign_issues_by) ||
-      (context.payload.pull_request && !config.assign_prs)
-    ) {
-      const paramName = context.payload.issue
-        ? '"assign_issues" and "assign_issues_by"'
-        : '"assign_prs"';
-      context.log.info(
-        util.format(
-          '[%s] #%s ignored: %s not in config',
-          repoName,
-          issue.number,
-          paramName
-        )
-      );
-      return;
-    }
-
-    // PRs are a superset of issues, so we can handle them similarly.
-    const assignConfig = context.payload.issue
-      ? config.assign_issues!
-      : config.assign_prs!;
-    const byConfig = context.payload.issue
-      ? config.assign_issues_by
-      : undefined;
-    const issuePayload = context.payload.issue || context.payload.pull_request;
-
-    const isLabeled = context.payload.action === 'labeled';
-    if (isLabeled) {
-      // Only assign an issue that already has an assignee if labeled with
-      // ASSIGN_LABEL.
+      // Check if the config specifically asks to not assign issues or PRs
       if (
-        context.payload.label.name !== ASSIGN_LABEL &&
-        issuePayload.assignees?.length
+        (context.payload.issue &&
+          !config.assign_issues &&
+          !config.assign_issues_by) ||
+        (context.payload.pull_request && !config.assign_prs)
       ) {
+        const paramName = context.payload.issue
+          ? '"assign_issues" and "assign_issues_by"'
+          : '"assign_prs"';
         context.log.info(
-          '[%s] #%s ignored: incorrect label ("%s") because it is already assigned',
-          repoName,
-          issue.number,
-          context.payload.label.name
+          util.format(
+            '[%s] #%s ignored: %s not in config',
+            repoName,
+            issue.number,
+            paramName
+          )
         );
         return;
       }
-      // Check if the new label has a possible assignee.
-      // Don't check all labels to avoid updating an old issue when someone
-      // changes a random label.
-      const assigneesForNewLabel = findAssignees(byConfig, [
-        context.payload.label.name,
-      ]);
-      if (
-        assigneesForNewLabel.length === 0 &&
-        context.payload.label.name !== ASSIGN_LABEL
-      ) {
+
+      // PRs are a superset of issues, so we can handle them similarly.
+      const assignConfig = context.payload.issue
+        ? config.assign_issues!
+        : config.assign_prs!;
+      const byConfig = context.payload.issue
+        ? config.assign_issues_by
+        : undefined;
+      const issuePayload =
+        context.payload.issue || context.payload.pull_request;
+
+      const isLabeled = context.payload.action === 'labeled';
+      if (isLabeled) {
+        // Only assign an issue that already has an assignee if labeled with
+        // ASSIGN_LABEL.
+        if (
+          context.payload.label.name !== ASSIGN_LABEL &&
+          issuePayload.assignees?.length
+        ) {
+          context.log.info(
+            '[%s] #%s ignored: incorrect label ("%s") because it is already assigned',
+            repoName,
+            issue.number,
+            context.payload.label.name
+          );
+          return;
+        }
+        // Check if the new label has a possible assignee.
+        // Don't check all labels to avoid updating an old issue when someone
+        // changes a random label.
+        const assigneesForNewLabel = findAssignees(byConfig, [
+          context.payload.label.name,
+        ]);
+        if (
+          assigneesForNewLabel.length === 0 &&
+          context.payload.label.name !== ASSIGN_LABEL
+        ) {
+          context.log.info(
+            '[%s] #%s ignored: incorrect label ("%s")',
+            repoName,
+            issue.number,
+            context.payload.label.name
+          );
+          return;
+        }
+        if (context.payload.label.name === ASSIGN_LABEL) {
+          // Remove the label so the user knows the event was processed (even if not successfully).
+          await context.github.issues.removeLabel(
+            context.issue({name: ASSIGN_LABEL})
+          );
+        }
+      }
+
+      // Allow the label to force a new assignee, even if one is already assigned.
+      if (!isLabeled && issuePayload.assignees.length !== 0) {
         context.log.info(
-          '[%s] #%s ignored: incorrect label ("%s")',
-          repoName,
-          issue.number,
-          context.payload.label.name
+          util.format(
+            '[%s] #%s ignored: already has assignee(s)',
+            repoName,
+            issue.number
+          )
         );
         return;
       }
-      if (context.payload.label.name === ASSIGN_LABEL) {
-        // Remove the label so the user knows the event was processed (even if not successfully).
-        await context.github.issues.removeLabel(
-          context.issue({name: ASSIGN_LABEL})
-        );
+
+      let labels: string[] = [];
+      if (byConfig !== undefined && context.payload.action === 'opened') {
+        // It is possible that blunderbuss is running before other bots have
+        // a chance to add extra labels. Wait and re-pull fresh labels
+        // before comparing against the config.
+        await sleep(10_000);
+        const labelResp = await context.github.issues.listLabelsOnIssue({
+          issue_number: issue.number,
+          owner: context.payload.repository.owner.login,
+          repo: context.payload.repository.name,
+        });
+        labels = labelResp.data.map(lr => lr.name);
+      } else {
+        labels = issue.labels?.map(l => l.name);
       }
-    }
+      const preferredAssignees = findAssignees(byConfig, labels);
+      let possibleAssignees = preferredAssignees.length
+        ? preferredAssignees
+        : assignConfig;
+      possibleAssignees = await expandTeams(possibleAssignees, context);
+      const assignee = randomFrom(possibleAssignees, issuePayload.user.login);
+      if (!assignee) {
+        context.log.info(
+          util.format(
+            '[%s] #%s not assigned: no valid assignee(s)',
+            repoName,
+            issue.number
+          )
+        );
+        return;
+      }
 
-    // Allow the label to force a new assignee, even if one is already assigned.
-    if (!isLabeled && issuePayload.assignees.length !== 0) {
+      const resp = await context.github.issues.addAssignees(
+        context.issue({assignees: [assignee]})
+      );
+      if (resp.status !== 201) {
+        context.log.error(
+          util.format(
+            '[%s] #%s could not be assined to %s: status %d',
+            repoName,
+            issue.number,
+            assignee,
+            resp.status
+          )
+        );
+        return;
+      }
       context.log.info(
         util.format(
-          '[%s] #%s ignored: already has assignee(s)',
-          repoName,
-          issue.number
-        )
-      );
-      return;
-    }
-
-    let labels: string[] = [];
-    if (byConfig !== undefined && context.payload.action === 'opened') {
-      // It is possible that blunderbuss is running before other bots have
-      // a chance to add extra labels. Wait and re-pull fresh labels
-      // before comparing against the config.
-      await sleep(10_000);
-      const labelResp = await context.github.issues.listLabelsOnIssue({
-        number: issue.number,
-        owner: context.payload.repository.owner.login,
-        repo: context.payload.repository.name,
-      });
-      labels = labelResp.data.map(lr => lr.name);
-    } else {
-      labels = issue.labels?.map(l => l.name);
-    }
-    const preferredAssignees = findAssignees(byConfig, labels);
-    let possibleAssignees = preferredAssignees.length
-      ? preferredAssignees
-      : assignConfig;
-    possibleAssignees = await expandTeams(possibleAssignees, context);
-    const assignee = randomFrom(possibleAssignees, issuePayload.user.login);
-    if (!assignee) {
-      context.log.info(
-        util.format(
-          '[%s] #%s not assigned: no valid assignee(s)',
-          repoName,
-          issue.number
-        )
-      );
-      return;
-    }
-
-    const resp = await context.github.issues.addAssignees(
-      context.issue({assignees: [assignee]})
-    );
-    if (resp.status !== 201) {
-      context.log.error(
-        util.format(
-          '[%s] #%s could not be assined to %s: status %d',
-          repoName,
+          '[%s] #%s was assigned to %s',
+          issue.owner,
+          issue.repo,
           issue.number,
-          assignee,
-          resp.status
+          assignee
         )
       );
-      return;
     }
-    context.log.info(
-      util.format(
-        '[%s] #%s was assigned to %s',
-        issue.owner,
-        issue.repo,
-        issue.number,
-        assignee
-      )
-    );
-  });
+  );
 }
 
 function findAssignees(
