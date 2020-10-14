@@ -1,0 +1,18 @@
+[
+  {
+    "sha": "94344ce458c7d7797c6cffe5702518f73e525c1a",
+    "filename": "filename.foo",
+    "status": "modified",
+    "additions": 0,
+    "deletions": 6,
+    "changes": 6
+  },
+  {
+    "sha": "a5faffc3176702d537045c43a1f37840fde970c3",
+    "filename": "index.bar",
+    "status": "modified",
+    "additions": 13,
+    "deletions": 2,
+    "changes": 15
+  }
+]
