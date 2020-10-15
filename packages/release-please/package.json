@@ -28,9 +28,8 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@octokit/rest": "^18.0.0",
-    "@octokit/webhooks": "7.11.3",
-    "gcf-utils": "^5.5.1",
+    "@octokit/webhooks": "7.11.4",
+    "gcf-utils": "^6.1.0",
     "release-please": "^6.1.0"
   },
   "devDependencies": {
