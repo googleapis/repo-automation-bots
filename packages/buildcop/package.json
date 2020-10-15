@@ -27,10 +27,14 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "^5.3.1",
+    "@octokit/plugin-rest-endpoint-methods": "^4.2.0",
+    "@octokit/types": "^5.5.0",
+    "gcf-utils": "^6.1.1",
+    "probot": "^10.9.1",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
+    "@probot/octokit-plugin-config": "^1.0.0",
     "@types/mocha": "^8.0.0",
     "@types/nock": "^10.0.3",
     "@types/node": "^12.6.1",
