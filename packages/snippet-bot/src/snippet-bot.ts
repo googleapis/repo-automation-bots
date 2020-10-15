@@ -15,11 +15,12 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable node/no-extraneous-import */
 
-import {Application, Octokit} from 'probot';
+import {Application} from 'probot';
 import {parseRegionTags} from './region-tag-parser';
 import {logger} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
+import {PullsListFilesResponseData} from '@octokit/types';
 import * as minimatch from 'minimatch';
 
 import tar from 'tar';
@@ -114,231 +115,237 @@ async function getFiles(dir: string, allFiles: string[]) {
 }
 
 export = (app: Application) => {
-  const events = [
-    'issues.opened',
-    'issues.reopened',
-    'pull_request.opened',
-    'pull_request.reopened',
-    'pull_request.edited',
-    'pull_request.synchronized',
-  ];
-  app.on(events, async context => {
-    const repoUrl = context.payload.repository.full_name;
-    const defaultBranch = context.payload.repository.default_branch;
-    let configOptions!: ConfigurationOptions | null;
-    try {
-      configOptions = await context.config<ConfigurationOptions>(
-        CONFIGURATION_FILE_PATH
-      );
-    } catch (err) {
-      err.message = `Error reading configuration: ${err.message}`;
-      logger.error(err);
-      // Now this bot is only enabled if it finds the configuration file.
-      // Exiting.
-      return;
-    }
-
-    if (configOptions === null) {
-      logger.info(`snippet-bot is not configured for ${repoUrl}.`);
-      return;
-    }
-    const configuration = new Configuration({
-      ...DEFAULT_CONFIGURATION,
-      ...configOptions,
-    });
-    logger.info({config: configuration});
-    if (context.payload.issue?.title.includes(FULL_SCAN_ISSUE_TITLE)) {
-      // full scan start
-      const installationId = context.payload.installation.id;
-      const commentMark = `<!-- probot comment [${installationId}]-->`;
-      const issueNumber = context.payload.issue.number;
-      const owner = context.payload.repository.owner.login;
-      const repo = context.payload.repository.name;
-
-      const url = `https://github.com/${owner}/${repo}/tarball/${defaultBranch}`;
-      const tmpDir = tmp.dirSync();
-      logger.info(`working directory: ${tmpDir.name}`);
-
-      const file = `${tmpDir.name}/${repo}.tar.gz`;
-      // Download the default branch tarball and run full scan.
+  app.on(
+    [
+      'issues.opened',
+      'issues.reopened',
+      'pull_request.opened',
+      'pull_request.reopened',
+      'pull_request.edited',
+      'pull_request.synchronize',
+    ],
+    async context => {
+      const repoUrl = context.payload.repository.full_name;
+      const defaultBranch = context.payload.repository.default_branch;
+      let configOptions!: ConfigurationOptions | null;
       try {
-        await downloadFile(url, file);
-        logger.info(`Downloaded to ${file}`);
-        tar.x({
-          file: file,
-          cwd: tmpDir.name,
-          sync: true,
-        });
-        let archiveDir!: string;
-        for (const f of await pfs.readdir(tmpDir.name)) {
-          const cur = tmpDir.name + '/' + f;
-          const stat = await pfs.lstat(cur);
-          if (stat.isDirectory()) {
-            archiveDir = cur;
-          }
-        }
-        if (archiveDir === undefined) {
-          throw new Error('Failed to extract the archive');
-        }
-        // Determine the short commit hash from the directory name.
-        // We'll use the hash for creating permalink.
-        let commitHash = defaultBranch; // Defaulting to the default branch.
-        const lastDashIndex = archiveDir.lastIndexOf('-');
-        if (lastDashIndex !== -1) {
-          commitHash = archiveDir.substr(lastDashIndex + 1);
-        }
-        logger.info(`Using commit hash "${commitHash}"`);
-        const files = await getFiles(archiveDir, []);
+        configOptions = await context.config<ConfigurationOptions>(
+          CONFIGURATION_FILE_PATH
+        );
+      } catch (err) {
+        err.message = `Error reading configuration: ${err.message}`;
+        logger.error(err);
+        // Now this bot is only enabled if it finds the configuration file.
+        // Exiting.
+        return;
+      }
 
-        let mismatchedTags = false;
-        const failureMessages: string[] = [];
+      if (configOptions === null) {
+        logger.info(`snippet-bot is not configured for ${repoUrl}.`);
+        return;
+      }
+      const configuration = new Configuration({
+        ...DEFAULT_CONFIGURATION,
+        ...configOptions,
+      });
+      logger.info({config: configuration});
+      if (context.payload.issue?.title.includes(FULL_SCAN_ISSUE_TITLE)) {
+        // full scan start
+        const installationId = context.payload.installation.id;
+        const commentMark = `<!-- probot comment [${installationId}]-->`;
+        const issueNumber = context.payload.issue.number;
+        const owner = context.payload.repository.owner.login;
+        const repo = context.payload.repository.name;
 
-        for (const file of files) {
-          if (configuration.ignoredFile(file)) {
-            logger.info('ignoring file from configuration: ' + file);
-            continue;
-          }
-          try {
-            const fileContents = await pfs.readFile(file, 'utf-8');
-            const parseResult = parseRegionTags(
-              fileContents,
-              file.replace(archiveDir + '/', '')
-            );
-            if (!parseResult.result) {
-              mismatchedTags = true;
-              for (const message of parseResult.messages) {
-                // Create a link to the source code at the commit.
-                const linkedMessage = message.replace(
-                  /^(.+):(\d+),/,
-                  `- [ ] [$1:$2](https://github.com/${owner}/${repo}/blob/${commitHash}/$1#L$2),`
-                );
-                failureMessages.push(linkedMessage);
-              }
-              parseResult.messages.join('\n');
+        const url = `https://github.com/${owner}/${repo}/tarball/${defaultBranch}`;
+        const tmpDir = tmp.dirSync();
+        logger.info(`working directory: ${tmpDir.name}`);
+
+        const file = `${tmpDir.name}/${repo}.tar.gz`;
+        // Download the default branch tarball and run full scan.
+        try {
+          await downloadFile(url, file);
+          logger.info(`Downloaded to ${file}`);
+          tar.x({
+            file: file,
+            cwd: tmpDir.name,
+            sync: true,
+          });
+          let archiveDir!: string;
+          for (const f of await pfs.readdir(tmpDir.name)) {
+            const cur = tmpDir.name + '/' + f;
+            const stat = await pfs.lstat(cur);
+            if (stat.isDirectory()) {
+              archiveDir = cur;
             }
-          } catch (err) {
-            err.message = `Failed to read the file: ${err.message}`;
-            logger.error(err);
-            continue;
           }
-        }
-        let bodyDetail = 'Great job! No unmatching region tags found!';
-        if (mismatchedTags) {
-          bodyDetail = failureMessages.join('\n');
-        }
-        await context.github.issues.update({
-          owner: owner,
-          repo: repo,
-          issue_number: issueNumber,
-          body: formatBody(
-            context.payload.issue.body,
-            commentMark,
-            `## snippet-bot scan result
+          if (archiveDir === undefined) {
+            throw new Error('Failed to extract the archive');
+          }
+          // Determine the short commit hash from the directory name.
+          // We'll use the hash for creating permalink.
+          let commitHash = defaultBranch; // Defaulting to the default branch.
+          const lastDashIndex = archiveDir.lastIndexOf('-');
+          if (lastDashIndex !== -1) {
+            commitHash = archiveDir.substr(lastDashIndex + 1);
+          }
+          logger.info(`Using commit hash "${commitHash}"`);
+          const files = await getFiles(archiveDir, []);
+
+          let mismatchedTags = false;
+          const failureMessages: string[] = [];
+
+          for (const file of files) {
+            if (configuration.ignoredFile(file)) {
+              logger.info('ignoring file from configuration: ' + file);
+              continue;
+            }
+            try {
+              const fileContents = await pfs.readFile(file, 'utf-8');
+              const parseResult = parseRegionTags(
+                fileContents,
+                file.replace(archiveDir + '/', '')
+              );
+              if (!parseResult.result) {
+                mismatchedTags = true;
+                for (const message of parseResult.messages) {
+                  // Create a link to the source code at the commit.
+                  const linkedMessage = message.replace(
+                    /^(.+):(\d+),/,
+                    `- [ ] [$1:$2](https://github.com/${owner}/${repo}/blob/${commitHash}/$1#L$2),`
+                  );
+                  failureMessages.push(linkedMessage);
+                }
+                parseResult.messages.join('\n');
+              }
+            } catch (err) {
+              err.message = `Failed to read the file: ${err.message}`;
+              logger.error(err);
+              continue;
+            }
+          }
+          let bodyDetail = 'Great job! No unmatching region tags found!';
+          if (mismatchedTags) {
+            bodyDetail = failureMessages.join('\n');
+          }
+          await context.github.issues.update({
+            owner: owner,
+            repo: repo,
+            issue_number: issueNumber,
+            body: formatBody(
+              context.payload.issue.body,
+              commentMark,
+              `## snippet-bot scan result
 Life is too short to manually check unmatched region tags.
 Here is the result:
 ${bodyDetail}`
-          ),
-        });
+            ),
+          });
+        } catch (err) {
+          err.message = `Failed to scan files: ${err.message}`;
+          logger.error(err);
+          await context.github.issues.update({
+            owner: owner,
+            repo: repo,
+            issue_number: issueNumber,
+            body: formatBody(
+              context.payload.issue.body,
+              commentMark,
+              `## snippet-bot scan result\nFailed running the full scan: ${err}.`
+            ),
+          });
+        } finally {
+          // Clean up the directory.
+          await pfs.rmdir(tmpDir.name, {recursive: true});
+        }
+      } // full scan end.
+
+      if (context.payload.pull_request === undefined) {
+        return;
+      }
+      // Check on pull requests.
+      // List pull request files for the given PR
+      // https://developer.github.com/v3/pulls/#list-pull-requests-files
+      const listFilesParams = context.repo({
+        pull_number: context.payload.pull_request.number,
+        per_page: 100,
+      });
+      const pullRequestCommitSha = context.payload.pull_request.head.sha;
+      logger.info({sha: pullRequestCommitSha});
+      // TODO: handle pagination
+      let files: PullsListFilesResponseData;
+      try {
+        files = (await context.github.pulls.listFiles(listFilesParams)).data;
       } catch (err) {
-        err.message = `Failed to scan files: ${err.message}`;
+        logger.error('---------------------');
         logger.error(err);
-        await context.github.issues.update({
-          owner: owner,
-          repo: repo,
-          issue_number: issueNumber,
-          body: formatBody(
-            context.payload.issue.body,
-            commentMark,
-            `## snippet-bot scan result\nFailed running the full scan: ${err}.`
-          ),
-        });
-      } finally {
-        // Clean up the directory.
-        await pfs.rmdir(tmpDir.name, {recursive: true});
-      }
-    } // full scan end.
-
-    if (context.payload.pull_request === undefined) {
-      return;
-    }
-    // Check on pull requests.
-    // List pull request files for the given PR
-    // https://developer.github.com/v3/pulls/#list-pull-requests-files
-    const listFilesParams = context.repo({
-      pull_number: context.payload.pull_request.number,
-      per_page: 100,
-    });
-    const pullRequestCommitSha = context.payload.pull_request.head.sha;
-    logger.info({sha: pullRequestCommitSha});
-    // TODO: handle pagination
-    let filesResponse: Octokit.Response<Octokit.PullsListFilesResponse>;
-    try {
-      filesResponse = await context.github.pulls.listFiles(listFilesParams);
-    } catch (err) {
-      logger.error('---------------------');
-      logger.error(err);
-      return;
-    }
-    const files: Octokit.PullsListFilesResponseItem[] = filesResponse.data;
-
-    let mismatchedTags = false;
-    let tagsFound = false;
-    const failureMessages: string[] = [];
-
-    // If we found any new files, verify they all have matching region tags.
-    for (let i = 0; files[i] !== undefined; i++) {
-      const file = files[i];
-
-      if (configuration.ignoredFile(file.filename)) {
-        logger.info('ignoring file from configuration: ' + file.filename);
-        continue;
+        return;
       }
 
-      if (file.status === 'removed') {
-        logger.info('ignoring deleted file: ' + file.filename);
-        continue;
+      let mismatchedTags = false;
+      let tagsFound = false;
+      const failureMessages: string[] = [];
+
+      // If we found any new files, verify they all have matching region tags.
+      for (let i = 0; files[i] !== undefined; i++) {
+        const file = files[i];
+
+        if (configuration.ignoredFile(file.filename)) {
+          logger.info('ignoring file from configuration: ' + file.filename);
+          continue;
+        }
+
+        if (file.status === 'removed') {
+          logger.info('ignoring deleted file: ' + file.filename);
+          continue;
+        }
+
+        const blob = await context.github.git.getBlob(
+          context.repo({
+            file_sha: file.sha,
+          })
+        );
+
+        const fileContents = Buffer.from(blob.data.content, 'base64').toString(
+          'utf8'
+        );
+
+        logger.info({fileContents: fileContents});
+        const parseResult = parseRegionTags(fileContents, file.filename);
+        if (!parseResult.result) {
+          mismatchedTags = true;
+          failureMessages.push(parseResult.messages.join('\n'));
+        }
+        if (parseResult.tagsFound) {
+          tagsFound = true;
+        }
       }
 
-      const blob = await context.github.git.getBlob(
-        context.repo({
-          file_sha: file.sha,
-        })
-      );
+      const checkParams = context.repo({
+        name: 'Mismatched region tag',
+        conclusion: 'success' as Conclusion,
+        head_sha: pullRequestCommitSha,
+        output: {
+          title: 'Region tag check',
+          summary: 'Region tag successful',
+          text: 'Region tag successful',
+        },
+      });
 
-      const fileContents = Buffer.from(blob.data.content, 'base64').toString(
-        'utf8'
-      );
-
-      logger.info({fileContents: fileContents});
-      const parseResult = parseRegionTags(fileContents, file.filename);
-      if (!parseResult.result) {
-        mismatchedTags = true;
-        failureMessages.push(parseResult.messages.join('\n'));
+      if (mismatchedTags) {
+        checkParams.conclusion = 'failure';
+        checkParams.output = {
+          title: 'Mismatched region tag detected.',
+          summary: 'Some new files have mismatched region tag',
+          text: failureMessages.join('\n'),
+        };
       }
-      if (parseResult.tagsFound) {
-        tagsFound = true;
+
+      // post the status of commit linting to the PR, using:
+      // https://developer.github.com/v3/checks/
+      if (tagsFound) {
+        await context.github.checks.create(checkParams);
       }
     }
-
-    const checkParams: Octokit.ChecksCreateParams = context.repo({
-      name: 'Mismatched region tag',
-      conclusion: 'success' as Conclusion,
-      head_sha: pullRequestCommitSha,
-    });
-
-    if (mismatchedTags) {
-      checkParams.conclusion = 'failure';
-      checkParams.output = {
-        title: 'Mismatched region tag detected.',
-        summary: 'Some new files have mismatched region tag',
-        text: failureMessages.join('\n'),
-      };
-    }
-
-    // post the status of commit linting to the PR, using:
-    // https://developer.github.com/v3/checks/
-    if (tagsFound) {
-      await context.github.checks.create(checkParams);
-    }
-  });
+  );
 };
