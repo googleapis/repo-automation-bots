@@ -28,13 +28,14 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@octokit/rest": "^16.0.0",
-    "gcf-utils": "^5.5.1",
+    "gcf-utils": "^6.1.1",
     "node-fetch": "^2.6.0",
     "tar": "^6.0.5",
     "tmp-promise": "^3.0.2"
   },
   "devDependencies": {
+    "@octokit/rest": "^18.0.6",
+    "@probot/octokit-plugin-config": "^1.0.0",
     "@types/body-parser": "^1.17.0",
     "@types/bunyan": "^1.8.6",
     "@types/chai": "^4.1.7",

@@ -26,11 +26,10 @@ if (!promises) {
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Probot} from 'probot';
 import {resolve} from 'path';
-// eslint-disable-next-line node/no-extraneous-import
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
-import {expect} from 'chai';
+import * as assert from 'assert';
 import {describe, it, beforeEach} from 'mocha';
 
 import handler from '../src/publish';
@@ -58,7 +57,7 @@ describe('publish', () => {
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
       // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest'),
+      Octokit: require('@octokit/rest').Octokit,
     });
     probot.app = {
       getSignedJsonWebToken() {
@@ -123,7 +122,7 @@ describe('publish', () => {
 
     await probot.receive({name: 'release.released', payload, id: 'abc123'});
     requests.done();
-    expect(observedPkgPath).to.match(/\/tmp\/.*\/package/);
+    assert.ok(/\/tmp\/.*\/package/.test(observedPkgPath!));
   });
 
   it('should not attempt to publish to npm if no configuration found', async () => {
@@ -199,7 +198,7 @@ describe('publish', () => {
     handler.publish = async (opts: PublishOpts) => {
       const {npmRc, pkgPath, prerelease} = opts;
       snapshot(npmRc);
-      expect(prerelease).to.equal(true);
+      assert.strictEqual(prerelease, true);
       observedPkgPath = pkgPath;
     };
 
@@ -268,7 +267,7 @@ describe('publish', () => {
     handler.publish = async (opts: PublishOpts) => {
       const {npmRc, pkgPath, prerelease} = opts;
       snapshot(npmRc);
-      expect(prerelease).to.equal(true);
+      assert.strictEqual(prerelease, true);
       observedPkgPath = pkgPath;
     };
 
