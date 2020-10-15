@@ -16,10 +16,15 @@
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, createProbot} from 'probot';
 import {describe, it, beforeEach} from 'mocha';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
+import {config} from '@probot/octokit-plugin-config';
+const TestingOctokit = Octokit.plugin(config);
 
 import myProbotApp from '../src/conventional-commit-lint';
 
@@ -35,20 +40,11 @@ describe('ConventionalCommitLint', () => {
   let probot: Probot;
 
   beforeEach(() => {
-    probot = new Probot({
-      // use a bare instance of octokit, the default version
-      // enables retries which makes testing difficult.
-      // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest'),
+    probot = createProbot({
+      githubToken: 'abc123',
+      Octokit: TestingOctokit as any,
     });
-    probot.app = {
-      getSignedJsonWebToken() {
-        return 'abc123';
-      },
-      getInstallationAccessToken(): Promise<string> {
-        return Promise.resolve('abc123');
-      },
-    };
+
     probot.load(myProbotApp);
   });
 

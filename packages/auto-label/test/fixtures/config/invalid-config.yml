@@ -2,7 +2,7 @@ randomBoolean: true
 product: true
 language:
   issue: false
-  pullrequest: true
+  pullrequest: false
   labelprefix: 'language:'
   extensions:
     JSON: ['JSON']

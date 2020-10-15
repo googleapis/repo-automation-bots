@@ -1,0 +1,192 @@
+{
+  "asp": [
+    "asp",
+    "asax",
+    "ascx",
+    "ashx",
+    "asmx",
+    "aspx",
+    "axd"
+  ],
+  "assembly": [
+    "asm",
+    "a51",
+    "nasm"
+  ],
+  "c": [
+    "c",
+    "cats",
+    "h",
+    "idc",
+    "w"
+  ],
+  "c++": [
+    "cpp",
+    "c++",
+    "cc",
+    "cp",
+    "cxx",
+    "h",
+    "h++",
+    "hh",
+    "hpp",
+    "hxx",
+    "inl",
+    "ipp",
+    "tcc",
+    "tpp"
+  ],
+  "cmake": [
+    "cmake",
+    "cmake.in"
+  ],
+  "css": [
+    "css"
+  ],
+  "clojure": [
+    "clj",
+    "boot",
+    "cl2",
+    "cljc",
+    "cljs",
+    "cljs.hl",
+    "cljscm",
+    "cljx",
+    "hic"
+  ],
+  "coffeescript": [
+    "coffee",
+    "_coffee",
+    "cjsx",
+    "cson",
+    "iced"
+  ],
+  "dockerfile": [
+    "dockerfile"
+  ],
+  "elixir": [
+    "ex",
+    "exs"
+  ],
+  "go": [
+    "go"
+  ],
+  "java": [
+    "java",
+    "jsp"
+  ],
+  "javascript": [
+    "js",
+    "_js",
+    "bones",
+    "es6",
+    "frag",
+    "gs",
+    "jake",
+    "jsb",
+    "jsfl",
+    "jsm",
+    "jss",
+    "jsx",
+    "njs",
+    "pac",
+    "sjs",
+    "ssjs",
+    "sublime-build",
+    "sublime-commands",
+    "sublime-completions",
+    "sublime-keymap",
+    "sublime-macro",
+    "sublime-menu",
+    "sublime-mousemap",
+    "sublime-project",
+    "sublime-settings",
+    "sublime-theme",
+    "sublime-workspace",
+    "sublime_metrics",
+    "sublime_session",
+    "ts",
+    "xsjs",
+    "xsjslib"
+  ],
+  "markdown": [
+    "md",
+    "markdown",
+    "mkd",
+    "mkdn",
+    "mkdown",
+    "ron"
+  ],
+  "php": [
+    "php",
+    "aw",
+    "ctp",
+    "fcgi",
+    "php3",
+    "php4",
+    "php5",
+    "phpt"
+  ],
+  "python": [
+    "py",
+    "py3",
+    "pyc",
+    "pyo",
+    "pyw",
+    "pyx",
+    "pyd",
+    "pxd",
+    "pyi",
+    "pyz",
+    "pyt",
+    "ipynb"
+  ],
+  "ruby": [
+    "rb",
+    "builder",
+    "fcgi",
+    "gemspec",
+    "god",
+    "irbrc",
+    "jbuilder",
+    "mspec",
+    "pluginspec",
+    "podspec",
+    "rabl",
+    "rake",
+    "rbuild",
+    "rbw",
+    "rbx",
+    "ru",
+    "ruby",
+    "thor",
+    "watchr"
+  ],
+  "shell": [
+    "sh",
+    "bash",
+    "bats",
+    "cgi",
+    "command",
+    "fcgi",
+    "ksh",
+    "tmux",
+    "tool",
+    "zsh"
+  ],
+  "sql": [
+    "sql",
+    "cql",
+    "ddl",
+    "prc",
+    "tab",
+    "udf",
+    "viw"
+  ],
+  "yaml": [
+    "yml",
+    "reek",
+    "rviz",
+    "yaml"
+  ]
+}
