@@ -165,7 +165,9 @@ export function handler(app: Application) {
     }
   );
 
-  app.on(['schedule.repository' as any], async (context: Context) => {
+  // meta comment about the '*' here: https://github.com/octokit/webhooks.js/issues/277
+  
+  app.on(['schedule.repository' as '*'], async (context: Context) => {
     logger.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
     const name = context.payload.repository.name;

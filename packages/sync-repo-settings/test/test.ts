@@ -87,6 +87,7 @@ function nockUpdateBranchProtection(
     .reply(200);
 }
 
+// meta comment about the 'any' here: https://github.com/octokit/webhooks.js/issues/277
 async function receive(org: string, repo: string, cronOrg?: string) {
   await probot.receive({
     name: 'schedule.repository' as any,
