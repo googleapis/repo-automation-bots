@@ -41,16 +41,16 @@ function labelExists(context: Context, new_label: string): boolean {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getLabelFromPathConfig(filename: string, config: any): string {
   // If user specified languages for discrete paths
-  let lang = '';
+  let label = '';
   const dirs = filename.split('/');
   let path_obj = config.paths;
   // If user set default language for entire drive, use that language
-  if ('.' in path_obj) lang = path_obj['.'];
+  if ('.' in path_obj) label = path_obj['.'];
   for (const dir of dirs) {
     if (dir in path_obj) {
-      if ('.' in path_obj) lang = path_obj['.'];
+      if ('.' in path_obj) label = path_obj['.'];
       if (typeof path_obj[dir] === 'string') {
-        lang = path_obj[dir];
+        label = path_obj[dir];
         break; // break as this is the end of user defined path
       } else {
         path_obj = path_obj[dir];
@@ -59,19 +59,19 @@ function getLabelFromPathConfig(filename: string, config: any): string {
       break; // break as this is the end of user defined path
     }
   }
-  return lang;
+  return label;
 }
 
 /**
  *  getFileLabel
  *  @param filename
  *  Output: "[prefix]label" or "" if no matches were found
- *  For language labeling, if no user specified labels are found
+ *  For language labeling, if no user specified language labels are found
  *  it will default to language mappings in extensions.json
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getFileLabel(filename: string, config: any, type: string): string {
-  // Return a label based if user defined a file path label
+  // Return a path based label, if user defined a path configuration
   if (config.paths) {
     const lang = getLabelFromPathConfig(filename, config);
     if (lang) {
@@ -80,7 +80,7 @@ function getFileLabel(filename: string, config: any, type: string): string {
     }
   }
 
-  // Return language label based on extension matching
+  // Default to extension.json mapping since user didn't configure this file ext
   if (type === 'language') {
     const extensionMap = config.extensions
       ? {...config.extensions, ...defaultExtensions}

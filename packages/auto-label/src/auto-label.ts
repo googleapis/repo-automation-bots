@@ -18,7 +18,7 @@ import {Application, Context} from 'probot';
 import {logger} from 'gcf-utils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const langlabler = require('./helper');
+const helper = require('./helper');
 // Default app configs if user didn't specify a .config
 const LABEL_PRODUCT_BY_DEFAULT = true;
 const DEFAULT_CONFIGS = {
@@ -358,12 +358,12 @@ export function handler(app: Application) {
 
     if (config.path && config.path.pullrequest) {
       logger.info(`Labeling path in PR #${pull_number} in ${owner}/${repo}...`);
-      const path_label = langlabler.getLabel(
+      const path_label = helper.getLabel(
         filesChanged.data,
         config.path,
         'path'
       );
-      if (path_label && !langlabler.labelExists(context, path_label)) {
+      if (path_label && !helper.labelExists(context, path_label)) {
         logger.info(
           `Path label added to PR #${pull_number} in ${owner}/${repo} is ${path_label}`
         );
@@ -380,12 +380,12 @@ export function handler(app: Application) {
       logger.info(
         `Labeling language in PR #${pull_number} in ${owner}/${repo}...`
       );
-      const language_label = langlabler.getLabel(
+      const language_label = helper.getLabel(
         filesChanged.data,
         config.language,
         'language'
       );
-      if (language_label && !langlabler.labelExists(context, language_label)) {
+      if (language_label && !helper.labelExists(context, language_label)) {
         logger.info(
           `Language label added to PR #${pull_number} in ${owner}/${repo} is ${language_label}`
         );
