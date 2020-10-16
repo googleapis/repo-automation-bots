@@ -397,7 +397,7 @@ export function handler(app: Application) {
         });
       } catch (e) {
         e.message = `No auto-label.yaml found in repo upon installation: ${e.message}`;
-        logger.error(e);
+        logger.info(e);
       }
       if (response && response.status === 200) {
         const config_encoded = response.data.content;
