@@ -39,7 +39,7 @@ function labelExists(context: Context, new_label: string): boolean {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getLanguageFromPathConfig(filename: string, config: any): string {
+function getLabelFromPathConfig(filename: string, config: any): string {
   // If user specified languages for discrete paths
   let lang = '';
   const dirs = filename.split('/');
@@ -63,34 +63,38 @@ function getLanguageFromPathConfig(filename: string, config: any): string {
 }
 
 /**
- *  getFileLanguage
+ *  getFileLabel
  *  @param filename
- *  Output: "language" or "" if no matches were found
- *  Only extensions & languages whitelisted in extensions.json are labeled
- *  Ignores files without . extensions, e.g. Dockerfile, LICENSE
+ *  Output: "[prefix]label" or "" if no matches were found
+ *  For language labeling, if no user specified labels are found
+ *  it will default to language mappings in extensions.json
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getFileLanguage(filename: string, config: any): string {
-  // 1. Return language if file path is user defined
+function getFileLabel(filename: string, config: any, type: string): string {
+  // Return a label based if user defined a file path label
   if (config.paths) {
-    const lang = getLanguageFromPathConfig(filename, config);
+    const lang = getLabelFromPathConfig(filename, config);
     if (lang) {
       if (config.labelprefix) return config.labelprefix + lang;
       return lang;
     }
   }
 
-  // 2. Return language based on extension matching
-  const extensionMap = config.extensions
-    ? {...config.extensions, ...defaultExtensions}
-    : defaultExtensions;
-  const ext: string = filename.substring(filename.lastIndexOf('.') + 1);
-  const lang = Object.keys(extensionMap).find(key =>
-    extensionMap[key].includes(ext)
-  );
-  if (!lang) return '';
-  if (config.labelprefix) return config.labelprefix + lang;
-  return lang;
+  // Return language label based on extension matching
+  if (type === 'language') {
+    const extensionMap = config.extensions
+      ? {...config.extensions, ...defaultExtensions}
+      : defaultExtensions;
+    const ext: string = filename.substring(filename.lastIndexOf('.') + 1);
+    const lang = Object.keys(extensionMap).find(key =>
+      extensionMap[key].includes(ext)
+    );
+    if (!lang) return '';
+    if (config.labelprefix) return config.labelprefix + lang;
+    return lang;
+  }
+
+  return '';
 }
 
 /**
@@ -103,15 +107,15 @@ interface FileData {
 }
 
 /**
- * getPRLanguage
- * Output: "[prefix]language"
- * Interprets the language of a given file
- * Returns the highest occurring language across all files in a PR
+ * getLabel
+ * Output: "[prefix]label"
+ * Map reduces changes in files and its corresponding label
+ * Returns the highest frequency language_label OR path_label
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getPRLanguage(data: FileData[], config: any): string {
+function getLabel(data: FileData[], config: any, type: string): string {
   const counts = data.reduce((counted: {[key: string]: number}, file) => {
-    const l = getFileLanguage(file.filename, config);
+    const l = getFileLabel(file.filename, config, type);
     if (l) {
       if (!counted[l]) {
         counted[l] = file.changes;
@@ -125,11 +129,11 @@ function getPRLanguage(data: FileData[], config: any): string {
   const label = Object.keys(counts).sort((a, b) => {
     return counts[b] - counts[a];
   });
-  logger.info('Detected languages based on files extensions are: ' + label);
+  logger.info('Detected labels based on files extensions are: ' + label);
   return label[0];
 }
 
 module.exports = {
-  getPRLanguage,
+  getLabel,
   labelExists,
 };

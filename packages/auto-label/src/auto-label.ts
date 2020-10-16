@@ -21,12 +21,13 @@ import {logger} from 'gcf-utils';
 const langlabler = require('./language');
 // Default app configs if user didn't specify a .config
 const LABEL_PRODUCT_BY_DEFAULT = true;
-const LABEL_LANGUAGE_BY_DEFAULT = false;
 const DEFAULT_CONFIGS = {
   product: LABEL_PRODUCT_BY_DEFAULT,
   language: {
-    issue: LABEL_LANGUAGE_BY_DEFAULT,
-    pullrequest: LABEL_LANGUAGE_BY_DEFAULT,
+    pullrequest: false,
+  },
+  path: {
+    pullrequest: false,
   },
 };
 
@@ -346,35 +347,55 @@ export function handler(app: Application) {
       'auto-label.yaml',
       DEFAULT_CONFIGS
     );
-    if (!config.language) return;
-    if (!config.language.pullrequest) return;
-
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const pull_number = context.payload.pull_request.number;
-    logger.info(`Labeling PR #${pull_number} in ${owner}/${repo}...`);
-
     const filesChanged = await context.github.pulls.listFiles({
       owner,
       repo,
       pull_number,
     });
-    const language = langlabler.getPRLanguage(
-      filesChanged.data,
-      config.language,
-      context
-    );
 
-    if (language && !langlabler.labelExists(context, language)) {
-      logger.info(
-        `Label added to PR #${pull_number} in ${owner}/${repo} is ${language}`
+    if (config.path && config.path.pullrequest) {
+      logger.info(`Labeling path in PR #${pull_number} in ${owner}/${repo}...`);
+      const path_label = langlabler.getLabel(
+        filesChanged.data,
+        config.path,
+        'path'
       );
-      await context.github.issues.addLabels({
-        owner,
-        repo,
-        issue_number: pull_number,
-        labels: [language],
-      });
+      if (path_label && !langlabler.labelExists(context, path_label)) {
+        logger.info(
+          `Path label added to PR #${pull_number} in ${owner}/${repo} is ${path_label}`
+        );
+        await context.github.issues.addLabels({
+          owner,
+          repo,
+          issue_number: pull_number,
+          labels: [path_label],
+        });
+      }
+    }
+
+    if (config.language && config.language.pullrequest) {
+      logger.info(
+        `Labeling language in PR #${pull_number} in ${owner}/${repo}...`
+      );
+      const language_label = langlabler.getLabel(
+        filesChanged.data,
+        config.language,
+        'language'
+      );
+      if (language_label && !langlabler.labelExists(context, language_label)) {
+        logger.info(
+          `Language label added to PR #${pull_number} in ${owner}/${repo} is ${language_label}`
+        );
+        await context.github.issues.addLabels({
+          owner,
+          repo,
+          issue_number: pull_number,
+          labels: [language_label],
+        });
+      }
     }
   });
 
