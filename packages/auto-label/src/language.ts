@@ -22,16 +22,16 @@ import {logger} from 'gcf-utils';
 const defaultExtensions = require('./extensions.json');
 
 /**
- * hasLangLabel: TODO
- * Checks whether there already exists a "lang:" label
+ * labelExists:
+ * Checks whether the intended label already exists
  */
-function langLabelExists(context: Context): boolean {
+function labelExists(context: Context, new_label: string): boolean {
   const labels = context.payload.issue
     ? context.payload.issue.labels
     : context.payload.pull_request.labels;
   for (const label of labels) {
-    if (label.name.includes('lang: ')) {
-      logger.info('Exiting - language tag already exists: ' + label.name);
+    if (label.name === new_label) {
+      logger.info(`Exiting: label ${new_label} already exists`);
       return true;
     }
   }
@@ -131,5 +131,5 @@ function getPRLanguage(data: FileData[], config: any): string {
 
 module.exports = {
   getPRLanguage,
-  langLabelExists,
+  labelExists,
 };

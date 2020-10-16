@@ -140,6 +140,36 @@ describe('language-label', () => {
 
       ghRequests.done();
     });
+
+    it('does not label when label already exists', async () => {
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'simple-config.yml')
+      );
+      // PR already contains a "javascript" label
+      const pr_opened_payload = require(resolve(
+        fixturesPath,
+        './events/pr_opened_labeled.json'
+      ));
+      const pr_files_payload = require(resolve(
+        fixturesPath,
+        './events/pr_opened_files.json'
+      ));
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
+        .reply(200, config)
+
+        //  Mock pulls.listfiles
+        .get('/repos/testOwner/testRepo/pulls/12/files')
+        .reply(200, pr_files_payload);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: pr_opened_payload,
+        id: 'abc123',
+      });
+
+      ghRequests.done();
+    });
   });
 
   describe('labels languages correctly', () => {

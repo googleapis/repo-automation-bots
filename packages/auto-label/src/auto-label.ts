@@ -349,9 +349,6 @@ export function handler(app: Application) {
     if (!config.language) return;
     if (!config.language.pullrequest) return;
 
-    // TODO: edit this check. move to later part
-    if (langlabler.langLabelExists(context)) return;
-
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const pull_number = context.payload.pull_request.number;
@@ -364,9 +361,11 @@ export function handler(app: Application) {
     });
     const language = langlabler.getPRLanguage(
       filesChanged.data,
-      config.language
+      config.language,
+      context
     );
-    if (language) {
+
+    if (language && !langlabler.labelExists(context, language)) {
       logger.info(
         `Label added to PR #${pull_number} in ${owner}/${repo} is ${language}`
       );
