@@ -18,7 +18,7 @@ import {Application, Context} from 'probot';
 import {logger} from 'gcf-utils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const langlabler = require('./language');
+const langlabler = require('./helper');
 // Default app configs if user didn't specify a .config
 const LABEL_PRODUCT_BY_DEFAULT = true;
 const DEFAULT_CONFIGS = {

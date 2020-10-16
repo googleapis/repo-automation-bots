@@ -26,7 +26,7 @@ import {handler} from '../src/auto-label';
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
-const langlabeler = require('../src/language');
+const langlabeler = require('../src/helper');
 
 // We provide our own GitHub instance, similar to
 // the one used by gcf-utils, this allows us to turn off
