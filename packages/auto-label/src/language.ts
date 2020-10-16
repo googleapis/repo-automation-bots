@@ -22,7 +22,7 @@ import {logger} from 'gcf-utils';
 const defaultExtensions = require('./extensions.json');
 
 /**
- * hasLangLabel
+ * hasLangLabel: TODO
  * Checks whether there already exists a "lang:" label
  */
 function langLabelExists(context: Context): boolean {
@@ -65,7 +65,7 @@ function getLanguageFromPathConfig(filename: string, config: any): string {
 /**
  *  getFileLanguage
  *  @param filename
- *  Output: "lang: language" or "" if no matches were found
+ *  Output: "language" or "" if no matches were found
  *  Only extensions & languages whitelisted in extensions.json are labeled
  *  Ignores files without . extensions, e.g. Dockerfile, LICENSE
  */
@@ -76,7 +76,7 @@ function getFileLanguage(filename: string, config: any): string {
     const lang = getLanguageFromPathConfig(filename, config);
     if (lang) {
       if (config.labelprefix) return config.labelprefix + lang;
-      return 'lang: ' + lang;
+      return lang;
     }
   }
 
@@ -90,7 +90,7 @@ function getFileLanguage(filename: string, config: any): string {
   );
   if (!lang) return '';
   if (config.labelprefix) return config.labelprefix + lang;
-  return 'lang: ' + lang;
+  return lang;
 }
 
 /**
@@ -104,7 +104,7 @@ interface FileData {
 
 /**
  * getPRLanguage
- * Output: "lang: language"
+ * Output: "[prefix]language"
  * Interprets the language of a given file
  * Returns the highest occurring language across all files in a PR
  */

@@ -348,16 +348,15 @@ export function handler(app: Application) {
     );
     if (!config.language) return;
     if (!config.language.pullrequest) return;
+
+    // TODO: edit this check. move to later part
     if (langlabler.langLabelExists(context)) return;
-    logger.info(
-      'Labeling New Pull Request: ' +
-        context.payload.repository.name +
-        ' #' +
-        context.payload.pull_request.number
-    );
+
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const pull_number = context.payload.pull_request.number;
+    logger.info(`Labeling PR #${pull_number} in ${owner}/${repo}...`);
+
     const filesChanged = await context.github.pulls.listFiles({
       owner,
       repo,
@@ -368,7 +367,9 @@ export function handler(app: Application) {
       config.language
     );
     if (language) {
-      logger.info('Labeling PR with: ' + language);
+      logger.info(
+        `Label added to PR #${pull_number} in ${owner}/${repo} is ${language}`
+      );
       await context.github.issues.addLabels({
         owner,
         repo,

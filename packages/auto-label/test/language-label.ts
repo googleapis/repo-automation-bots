@@ -159,15 +159,13 @@ describe('language-label', () => {
           changes: 15,
         },
       ];
-      assert.strictEqual(
-        langlabeler.getPRLanguage(data, config),
-        'lang: javascript'
-      );
+      assert.strictEqual(langlabeler.getPRLanguage(data, config), 'javascript');
     });
 
     it('labels with user defined language mapping', async () => {
       const lang_config = {
         pullrequest: true,
+        labelprefix: 'lang: ',
         extensions: {
           typescript: ['ts'],
         },
@@ -187,6 +185,7 @@ describe('language-label', () => {
     it('labels with user defined paths', async () => {
       const lang_config = {
         pullrequest: true,
+        labelprefix: 'lang: ',
         paths: {
           src: 'c++',
         },
@@ -206,6 +205,7 @@ describe('language-label', () => {
     it('labels with user defined path even if upstream', async () => {
       const lang_config = {
         pullrequest: true,
+        labelprefix: 'lang: ',
         paths: {
           '.': 'foo',
         },
@@ -225,6 +225,7 @@ describe('language-label', () => {
     it('labels with user defined path on the deepest path', async () => {
       const lang_config = {
         pullrequest: true,
+        labelprefix: 'lang: ',
         paths: {
           '.': 'foo',
           src: 'bar',
