@@ -40,11 +40,11 @@ function labelExists(context: Context, new_label: string): boolean {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getLabelFromPathConfig(filename: string, config: any): string {
-  // If user specified languages for discrete paths
+  // If user specified labels for discrete paths
   let label = '';
   const dirs = filename.split('/');
   let path_obj = config.paths;
-  // If user set default language for entire drive, use that language
+  // If user set default label for entire drive, use that label
   if ('.' in path_obj) label = path_obj['.'];
   for (const dir of dirs) {
     if (dir in path_obj) {
