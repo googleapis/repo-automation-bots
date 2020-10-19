@@ -29,6 +29,7 @@ interface Configuration {
   assign_issues?: string[];
   assign_issues_by?: ByConfig[];
   assign_prs?: string[];
+  assign_prs_by?: ByConfig[];
 }
 
 interface Issue {
@@ -118,7 +119,7 @@ export function blunderbuss(app: Application) {
         : config.assign_prs!;
       const byConfig = context.payload.issue
         ? config.assign_issues_by
-        : undefined;
+        : config.assign_prs_by;
       const issuePayload =
         context.payload.issue || context.payload.pull_request;
 
