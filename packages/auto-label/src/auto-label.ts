@@ -14,8 +14,21 @@
 
 import {Storage} from '@google-cloud/storage';
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, GitHubAPI} from 'probot';
+import {Application, Context} from 'probot';
 import {logger} from 'gcf-utils';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const langlabler = require('./language');
+// Default app configs if user didn't specify a .config
+const LABEL_PRODUCT_BY_DEFAULT = true;
+const LABEL_LANGUAGE_BY_DEFAULT = false;
+const DEFAULT_CONFIGS = {
+  product: LABEL_PRODUCT_BY_DEFAULT,
+  language: {
+    issue: LABEL_LANGUAGE_BY_DEFAULT,
+    pullrequest: LABEL_LANGUAGE_BY_DEFAULT,
+  },
+};
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const colorsData = require('./colors.json');
@@ -115,10 +128,10 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   issueNumber: number,
   issueTitle: string,
   driftRepos: DriftRepo[],
-  github: GitHubAPI
+  context: Context
 ) {
   const driftRepo = driftRepos.find(x => x.repo === `${owner}/${repo}`);
-  const res = await github.issues
+  const res = await context.github.issues
     .listLabelsOnIssue({
       owner,
       repo,
@@ -142,7 +155,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
 
   if (githubLabel) {
     try {
-      await github.issues.createLabel({
+      await context.github.issues.createLabel({
         owner,
         repo,
         name: githubLabel,
@@ -169,7 +182,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       if (foundAPIName) {
         logger.info('The label already exists on this issue');
       } else {
-        await github.issues
+        await context.github.issues
           .addLabels({
             owner,
             repo,
@@ -183,7 +196,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
         wasNotAdded = false;
       }
       for (const dirtyLabel of cleanUpOtherLabels) {
-        await github.issues
+        await context.github.issues
           .removeLabel({
             owner,
             repo,
@@ -193,7 +206,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
           .catch(logger.error);
       }
     } else {
-      await github.issues
+      await context.github.issues
         .addLabels({
           owner,
           repo,
@@ -215,7 +228,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   const isSampleIssue =
     repo.includes('samples') || issueTitle?.includes('sample');
   if (!foundSamplesTag && isSampleIssue) {
-    await github.issues
+    await context.github.issues
       .createLabel({
         owner,
         repo,
@@ -223,7 +236,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
         color: colorsData[colorNumber].color,
       })
       .catch(logger.error);
-    await github.issues
+    await context.github.issues
       .addLabels({
         owner,
         repo,
@@ -244,8 +257,16 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
  * Main function, responds to label being added
  */
 export function handler(app: Application) {
-  //nightly cron that backfills and corrects api labels
-  app.on(['schedule.repository'], async context => {
+  // Nightly cron that backfills and corrects api labels
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.repository' as any, async context => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config: any = await context.config(
+      'auto-label.yaml',
+      DEFAULT_CONFIGS
+    );
+    if (!config.product) return;
+
     logger.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
@@ -273,7 +294,7 @@ export function handler(app: Application) {
           issue.number,
           issue.title,
           driftRepos,
-          context.github
+          context
         );
         if (wasNotAdded) {
           logger.info(
@@ -294,6 +315,13 @@ export function handler(app: Application) {
   });
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config: any = await context.config(
+      'auto-label.yaml',
+      DEFAULT_CONFIGS
+    );
+    if (!config.product) return;
+
     //job that labels issues when they are opened
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
@@ -308,25 +336,88 @@ export function handler(app: Application) {
       issueNumber,
       context.payload.issue.title,
       driftRepos,
-      context.github
+      context
     );
+  });
+
+  app.on(['pull_request.opened'], async context => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config: any = await context.config(
+      'auto-label.yaml',
+      DEFAULT_CONFIGS
+    );
+    if (!config.language) return;
+    if (!config.language.pullrequest) return;
+    if (langlabler.langLabelExists(context)) return;
+    logger.info(
+      'Labeling New Pull Request: ' +
+        context.payload.repository.name +
+        ' #' +
+        context.payload.pull_request.number
+    );
+    const owner = context.payload.repository.owner.login;
+    const repo = context.payload.repository.name;
+    const pull_number = context.payload.pull_request.number;
+    const filesChanged = await context.github.pulls.listFiles({
+      owner,
+      repo,
+      pull_number,
+    });
+    const language = langlabler.getPRLanguage(
+      filesChanged.data,
+      config.language
+    );
+    if (language) {
+      logger.info('Labeling PR with: ' + language);
+      await context.github.issues.addLabels({
+        owner,
+        repo,
+        issue_number: pull_number,
+        labels: [language],
+      });
+    }
   });
 
   app.on(['installation.created'], async context => {
     const repositories = context.payload.repositories;
     const driftRepos = await handler.getDriftRepos();
-    if (!driftRepos) {
-      return;
-    }
+    if (!LABEL_PRODUCT_BY_DEFAULT) return;
+    if (!driftRepos) return;
+
     for await (const repository of repositories) {
       const [owner, repo] = repository.full_name.split('/');
-      const issues = context.github.issues.listForRepo.endpoint.merge({
-        owner,
-        repo,
-      });
+
+      // Looks for a config file, breaks if user disabled product labels
+      let response;
+      try {
+        response = await context.github.repos.getContent({
+          owner,
+          repo,
+          path: '.github/auto-label.yaml',
+        });
+      } catch (e) {
+        e.message = `No auto-label.yaml found in repo upon installation: ${e.message}`;
+        logger.error(e);
+      }
+      if (response && response.status === 200) {
+        const config_encoded = response.data.content;
+        const config = Buffer.from(config_encoded, 'base64')
+          .toString('binary')
+          .toLowerCase();
+        const disable_product_label = config
+          .split('\n')
+          .filter(line => line.match(/^product:( *)false/));
+        if (disable_product_label.length > 0) break;
+      }
 
       //goes through issues in repository, adds labels as necessary
-      for await (const response of context.github.paginate.iterator(issues)) {
+      for await (const response of context.github.paginate.iterator(
+        context.github.issues.listForRepo,
+        {
+          owner,
+          repo,
+        }
+      )) {
         const issues = response.data;
         //goes through each issue in each page
         for (const issue of issues) {
@@ -336,7 +427,7 @@ export function handler(app: Application) {
             issue.number,
             issue.title,
             driftRepos,
-            context.github
+            context
           );
         }
       }

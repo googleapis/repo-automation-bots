@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, Context, Octokit} from 'probot';
+import {Application, Context} from 'probot';
 import extend from 'extend';
 import {
   LanguageConfig,
@@ -24,8 +24,18 @@ import {
 import {logger} from 'gcf-utils';
 import Ajv from 'ajv';
 import yaml from 'js-yaml';
+import {PullsListFilesResponseData} from '@octokit/types';
 
 export const configFileName = 'sync-repo-settings.yaml';
+
+type Conclusion =
+  | 'success'
+  | 'failure'
+  | 'neutral'
+  | 'cancelled'
+  | 'timed_out'
+  | 'action_required'
+  | undefined;
 
 // configure the schema validator once
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -84,7 +94,7 @@ export function handler(app: Application) {
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
       const number = context.payload.number;
-      let files: Array<Octokit.PullsListFilesResponseItem>;
+      let files: PullsListFilesResponseData;
       try {
         files = await context.github.paginate(
           context.github.pulls.listFiles.endpoint.merge({
@@ -126,10 +136,15 @@ export function handler(app: Application) {
           errorText = `${configFileName} is not valid YAML 😱`;
         }
 
-        const checkParams: Octokit.ChecksCreateParams = context.repo({
+        const checkParams = context.repo({
           name: 'sync-repo-settings-check',
           head_sha: context.payload.pull_request.head.sha,
-          conclusion: 'success',
+          conclusion: 'success' as Conclusion,
+          output: {
+            title: 'Successful sync-repo-settings.yaml check',
+            summary: 'sync-repo-settings.yaml matches the required schema',
+            text: 'Success',
+          },
         });
         if (!isValid) {
           (checkParams.conclusion = 'failure'),
@@ -150,7 +165,9 @@ export function handler(app: Application) {
     }
   );
 
-  app.on(['schedule.repository'], async (context: Context) => {
+  // meta comment about the '*' here: https://github.com/octokit/webhooks.js/issues/277
+
+  app.on(['schedule.repository' as '*'], async (context: Context) => {
     logger.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
     const name = context.payload.repository.name;
@@ -238,6 +255,7 @@ export function handler(app: Application) {
     if (!ignored) {
       jobs.push(updateRepoOptions(repo, context, config));
       if (config.branchProtectionRules) {
+        //console.log(JSON.stringify(config.branchProtectionRules))
         jobs.push(
           updateMasterBranchProtection(
             repo,
@@ -296,19 +314,18 @@ async function updateMasterBranchProtection(
         accept: 'application/vnd.github.luke-cage-preview+json',
       },
     });
+    logger.info(`Success updating master branch protection for ${repo}`);
   } catch (err) {
     if (err.status === 401) {
       logger.warn(
         `updateMasterBranchProtection: warning received ${err.status} updating ${owner}/${name}`
       );
     } else {
-      logger.error(
-        `updateMasterBranchProtection: error received ${err.status} updating ${owner}/${name}`
-      );
-      throw err;
+      err.message = `updateMasterBranchProtection: error received ${err.status} updating ${owner}/${name}\n\n${err.message}`;
+      logger.error(err);
+      return;
     }
   }
-  logger.info(`Success updating master branch protection for ${repo}`);
 }
 
 /**
@@ -326,7 +343,7 @@ async function updateRepoTeams(
   try {
     await Promise.all(
       rules.map(membership => {
-        return context.github.teams.addOrUpdateRepoInOrg({
+        return context.github.teams.addOrUpdateRepoPermissionsInOrg({
           team_slug: membership.team,
           owner,
           org: owner,
@@ -335,6 +352,7 @@ async function updateRepoTeams(
         });
       })
     );
+    logger.info(`Success updating repo in org for ${repo}`);
   } catch (err) {
     const knownErrors = [
       401, // bot does not have permission to access this repository.
@@ -345,13 +363,11 @@ async function updateRepoTeams(
         `updateRepoTeams: warning received ${err.status} updating ${owner}/${name}`
       );
     } else {
-      logger.error(
-        `updateRepoTeams: error received ${err.status} updating ${owner}/${name}`
-      );
-      throw err;
+      err.message = `updateRepoTeams: error received ${err.status} updating ${owner}/${name}\n\n${err.message}`;
+      logger.error(err);
+      return;
     }
   }
-  logger.info(`Success updating repo in org for ${repo}`);
 }
 
 /**
@@ -380,6 +396,7 @@ async function updateRepoOptions(
       allow_rebase_merge: config.rebaseMergeAllowed,
       allow_squash_merge: config.squashMergeAllowed,
     });
+    logger.info(`Success updating repo options for ${repo}`);
   } catch (err) {
     const knownErrors = [
       401, // bot does not have permission to access this repository.
@@ -390,11 +407,9 @@ async function updateRepoOptions(
         `updateRepoOptions: warning received ${err.status} updating ${owner}/${name}`
       );
     } else {
-      logger.error(
-        `updateRepoOptions: error received ${err.status} updating ${owner}/${name}`
-      );
-      throw err;
+      err.message = `updateRepoOptions: error received ${err.status} updating ${owner}/${name}\n\n${err.message}`;
+      logger.error(err);
+      return;
     }
   }
-  logger.info(`Success updating repo options for ${repo}`);
 }

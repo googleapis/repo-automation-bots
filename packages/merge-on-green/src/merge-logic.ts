@@ -13,8 +13,10 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {GitHubAPI} from 'probot';
+import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
+
+type OctokitType = InstanceType<typeof Octokit>;
 
 export interface Label {
   name: string;
@@ -75,7 +77,7 @@ async function getLatestCommit(
   owner: string,
   repo: string,
   pr: number,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<string> {
   try {
     // TODO: consider switching this to an async iterator, which would work
@@ -105,7 +107,7 @@ async function getPR(
   owner: string,
   repo: string,
   pr: number,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<PullRequest> {
   try {
     const data = await github.pulls.get({
@@ -140,7 +142,7 @@ async function getCommentsOnPR(
   owner: string,
   repo: string,
   issue_number: number,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<Comment[] | null> {
   try {
     const data = await github.issues.listComments({
@@ -151,44 +153,6 @@ async function getCommentsOnPR(
     return data.data;
   } catch (err) {
     return null;
-  }
-}
-
-/**
- * Function checks whether the PR has the appropriate MOG label
- * @param owner of pr (from Watch PR)
- * @param repo of pr (from Watch PR)
- * @param pr number of pr (from Watch PR)
- * @param labelNames array of labels its checking for
- * @param github unique installation id for each function
- * @returns the name of the label that is in the repo, if it is there; otherwise, undefined
- */
-async function hasMOGLabel(
-  owner: string,
-  repo: string,
-  pr: number,
-  labelNames: string[],
-  github: GitHubAPI
-): Promise<string | undefined> {
-  const start = Date.now();
-  try {
-    const labels = await github.issues.listLabelsOnIssue({
-      owner,
-      repo,
-      issue_number: pr,
-    });
-    const labelArray = labels.data;
-    logger.info(
-      `checked hasMOGLabel in ${Date.now() - start}ms ${owner}/${repo}/${pr}`
-    );
-    const mog = labelArray?.find(prLabel =>
-      labelNames.find(labelName => prLabel.name === labelName)
-    )?.name;
-    return mog;
-  } catch (err) {
-    err.message = `Error in getting MOG label\n\n ${err.message}`;
-    logger.error(err);
-    return undefined;
   }
 }
 
@@ -204,17 +168,18 @@ async function hasMOGLabel(
 async function getStatuses(
   owner: string,
   repo: string,
-  github: GitHubAPI,
+  github: OctokitType,
   headSha: string
 ): Promise<CheckStatus[]> {
   const start = Date.now();
   try {
     const responses = await github.paginate(
-      await github.repos.listStatusesForRef.endpoint.merge({
+      await github.repos.listCommitStatusesForRef,
+      {
         owner,
         repo,
         ref: headSha,
-      })
+      }
     );
     logger.info(
       `called getStatuses in ${Date.now() - start}ms ${owner}/${repo}`
@@ -239,18 +204,16 @@ async function getStatuses(
 async function getCheckRuns(
   owner: string,
   repo: string,
-  github: GitHubAPI,
+  github: OctokitType,
   headSha: string
 ): Promise<CheckRun[]> {
   const start = Date.now();
   try {
-    const responses = await github.paginate(
-      await github.checks.listForRef.endpoint.merge({
-        owner,
-        repo,
-        ref: headSha,
-      })
-    );
+    const responses = await github.paginate(github.checks.listForRef, {
+      owner,
+      repo,
+      ref: headSha,
+    });
     logger.info(
       `called getCheckRuns in ${Date.now() - start}ms ${owner}/${repo}`
     );
@@ -298,7 +261,7 @@ async function statusesForRef(
   pr: number,
   requiredChecks: string[],
   headSha: string,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<boolean> {
   const start = Date.now();
   const checkStatus = await getStatuses(owner, repo, github, headSha);
@@ -361,7 +324,7 @@ async function getReviewsCompleted(
   owner: string,
   repo: string,
   pr: number,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<Reviews[]> {
   try {
     const reviewsCompleted = await github.pulls.listReviews({
@@ -414,7 +377,7 @@ async function checkReviews(
   label: string,
   secureLabel: string,
   headSha: string,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<boolean> {
   const start = Date.now();
   logger.info(`=== checking required reviews ${owner}/${repo}/${pr} ===`);
@@ -443,7 +406,7 @@ async function checkReviews(
     });
     if (label === secureLabel) {
       //if we get to here, it means that all the reviews are in the approved state
-      reviewsCompleted.forEach(async review => {
+      for (const review of reviewsCompleted) {
         if (review.commit_id !== headSha) {
           reviewsPassed = false;
           logger.info(
@@ -460,7 +423,7 @@ async function checkReviews(
             })
             .catch(logger.error);
         }
-      });
+      }
       return reviewsPassed;
     }
   } else {
@@ -485,7 +448,7 @@ async function merge(
   repo: string,
   pr: number,
   prInfo: PullRequest,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<Merge> {
   const merge = (
     await github.pulls.merge({
@@ -512,7 +475,7 @@ async function updateBranch(
   owner: string,
   repo: string,
   pr: number,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<Update | null> {
   try {
     const update = (
@@ -544,7 +507,7 @@ async function commentOnPR(
   repo: string,
   pr: number,
   body: string,
-  github: GitHubAPI
+  github: OctokitType
 ): Promise<{} | null> {
   try {
     const data = await github.issues.createComment({
@@ -558,35 +521,6 @@ async function commentOnPR(
     err.message = `There was an issue commenting on ${owner}/${repo} PR ${pr} \n\n${err.message}`;
     logger.error(err);
     return null;
-  }
-}
-
-/**
- * Removes a label that is on the PR
- * @param owner of pr (from Watch PR)
- * @param repo of pr (from Watch PR)
- * @param issue_number of the PR
- * @param name of the label to remove
- * @param github unique installation id for each function
- * @returns the update data type
- */
-async function removeLabel(
-  owner: string,
-  repo: string,
-  issue_number: number,
-  name: string,
-  github: GitHubAPI
-) {
-  try {
-    await github.issues.removeLabel({
-      owner,
-      repo,
-      issue_number,
-      name,
-    });
-  } catch (err) {
-    err.message = `There was an issue removing the automerge label on ${owner}/${repo} PR ${issue_number}\n\n${err.message}`;
-    logger.error(err);
   }
 }
 
@@ -608,32 +542,32 @@ export async function mergeOnGreen(
   labelNames: string[],
   state: string,
   requiredChecks: string[],
-  github: GitHubAPI
+  mogLabel: string,
+  author: string,
+  github: OctokitType
 ): Promise<boolean | undefined> {
+  const rateLimit = (await github.rateLimit.get()).data.resources.core
+    .remaining;
+  logger.info(`rate limit remaining: ${rateLimit}`);
+  // we are picking 10 because that is *roughly* the amount of API calls required
+  // to complete this function. But, it can vary based on paths, pages, etc.
+  if (rateLimit <= 10) {
+    logger.error(
+      `The rate limit is at ${rateLimit}. We are skipping execution until we reset.`
+    );
+    return false;
+  }
+
   logger.info(`${owner}/${repo} checking merge on green PR status`);
-  const [prInfo, mogLabel, headSha] = await Promise.all([
-    await getPR(owner, repo, pr, github),
-    await hasMOGLabel(owner, repo, pr, labelNames, github),
-    await getLatestCommit(owner, repo, pr, github),
-  ]);
-  logger.info(`required checks: ${requiredChecks}`);
 
-  if (prInfo.state === 'closed') {
-    logger.info(`${owner}/${repo}/${pr} is closed`);
-    return true;
-  }
-
-  if (!mogLabel) {
-    logger.info(`${owner}/${repo}/${pr} does not have the required labels`);
-    return true;
-  }
+  const headSha = await getLatestCommit(owner, repo, pr, github);
 
   const [checkReview, checkStatus, commentsOnPR] = await Promise.all([
     checkReviews(
       owner,
       repo,
       pr,
-      prInfo.user.login,
+      author,
       mogLabel,
       labelNames[1],
       headSha,
@@ -655,7 +589,9 @@ export async function mergeOnGreen(
     `checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state} ${owner}/${repo}/${pr}`
   );
 
+  //if the reviews and statuses are green, let's try to merge
   if (checkReview === true && checkStatus === true) {
+    const prInfo = await getPR(owner, repo, pr, github);
     let merged = false;
     try {
       logger.info(`attempt to merge ${owner}/${repo}/${pr}`);
@@ -698,13 +634,15 @@ export async function mergeOnGreen(
       }
     }
     return merged;
+
+    //if the state is stopped, i.e., we won't keep checking, let's comment and remove from Datastore
   } else if (state === 'stop') {
     logger.info(
       `${owner}/${repo}/${pr} timed out before its statuses & reviews passed`
     );
     await commentOnPR(owner, repo, pr, failedMesssage, github);
-    await removeLabel(owner, repo, pr, mogLabel, github);
     return true;
+    // if the PR is halfway through the time it is checking, comment on the PR.
   } else if (state === 'comment') {
     const isCommented = commentsOnPR?.find(element =>
       element.body.includes(continueMesssage)
@@ -714,6 +652,8 @@ export async function mergeOnGreen(
     }
     logger.info(`${owner}/${repo}/${pr} is halfway through its check`);
     return false;
+
+    // if the PR has not been merged but it is still going to be checked, check again.
   } else {
     logger.info(
       `Statuses and/or checks failed for ${owner}/${repo}/${pr}, will check again`
