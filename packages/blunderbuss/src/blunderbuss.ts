@@ -79,6 +79,7 @@ export function blunderbuss(app: Application) {
       } catch (err) {
         err.message = `Error reading configuration: ${err.message}`;
         logger.error(err);
+        return;
       }
       config = config || {};
 
@@ -97,11 +98,13 @@ export function blunderbuss(app: Application) {
         (context.payload.issue &&
           !config.assign_issues &&
           !config.assign_issues_by) ||
-        (context.payload.pull_request && !config.assign_prs)
+        (context.payload.pull_request &&
+          !config.assign_prs &&
+          !config.assign_prs_by)
       ) {
         const paramName = context.payload.issue
           ? '"assign_issues" and "assign_issues_by"'
-          : '"assign_prs"';
+          : '"assign_prs" and "assign_prs_by"';
         context.log.info(
           util.format(
             '[%s] #%s ignored: %s not in config',
