@@ -1,8 +1,39 @@
 # template-bot
 
-Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
+The template bot automatically comments on pull requests if you are modifying templated files.
 
-This bot uses nock for mocking requests to GitHub, and snap-shot-it for capturing responses; This allows updates to the API surface to be treated as a visual diff, rather than tediously asserting against each field.
+To identify a templated file, you must provide configuration in the `.github/template-bot.yml` file in your repository.
+
+## Setup
+
+```sh
+# Install dependencies
+npm install
+
+# Run the bot
+npm start
+```
+
+### Configuration
+
+To configure the bot, you can create a configuration file:
+`.github/release-please.yml`. The contents of this file allow for the following
+options:
+
+| Name | Description | Type | Default |
+| ---- | ----------- | ---- | ------- |
+| `generatedFiles`    | An explicit list of files which are considered templates. | `string[]` | `[]` |
+| `externalManifests` | List of external manifest files to parse. | `ExternalManifest[]` | `[]` |
+
+External Manifest:
+
+| Name | Description | Type |
+| ---- | ----------- | ---- |
+| `type` | Manifest file format | `"json" | "yaml"` |
+| `file` | Path to the manifest in the repository | `string` |
+| `jsonpath` | [JsonPath query](https://goessner.net/articles/JsonPath/) to find the list of template files | `string` |
+
+## Testing
 
 ## Running tests:
 
