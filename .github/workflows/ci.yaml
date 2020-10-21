@@ -27,6 +27,7 @@ jobs:
           'slo-stat-bot',
           'snippet-bot',
           'sync-repo-settings',
+          'template-bot',
           'trusted-contribution'
         ]
         include:
