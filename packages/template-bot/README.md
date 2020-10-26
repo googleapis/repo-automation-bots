@@ -17,7 +17,7 @@ npm start
 ### Configuration
 
 To configure the bot, you can create a configuration file:
-`.github/release-please.yml`. The contents of this file allow for the following
+`.github/template-bot.yml`. The contents of this file allow for the following
 options:
 
 | Name | Description | Type | Default |
@@ -29,7 +29,7 @@ External Manifest:
 
 | Name | Description | Type |
 | ---- | ----------- | ---- |
-| `type` | Manifest file format | `"json" | "yaml"` |
+| `type` | Manifest file format | `"json"` or `"yaml"` |
 | `file` | Path to the manifest in the repository | `string` |
 | `jsonpath` | [JsonPath query](https://goessner.net/articles/JsonPath/) to find the list of template files | `string` |
 
