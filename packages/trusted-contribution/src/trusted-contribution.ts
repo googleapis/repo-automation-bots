@@ -23,7 +23,7 @@ interface ConfigurationOptions {
 const WELL_KNOWN_CONFIGURATION_FILE = 'trusted-contribution.yml';
 const DEFAULT_TRUSTED_CONTRIBUTORS = [
   'renovate-bot',
-  'dependabot',
+  'dependabot[bot]',
   'release-please[bot]',
   'gcf-merge-on-green[bot]',
 ];
