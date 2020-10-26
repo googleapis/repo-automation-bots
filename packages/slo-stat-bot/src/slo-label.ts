@@ -14,7 +14,7 @@
 //
 
 // eslint-disable-next-line node/no-extraneous-import
-import {GitHubAPI} from 'probot';
+import {ProbotOctokit} from 'probot';
 import {logger} from 'gcf-utils';
 import {IssueItem} from './types';
 
@@ -29,7 +29,7 @@ import {IssueItem} from './types';
  * @returns void
  */
 async function addLabel(
-  github: GitHubAPI,
+  github: InstanceType<typeof ProbotOctokit>,
   owner: string,
   repo: string,
   number: number,
@@ -59,7 +59,7 @@ async function addLabel(
  * @returns void
  */
 export const removeLabel = async function removeLabel(
-  github: GitHubAPI,
+  github: InstanceType<typeof ProbotOctokit>,
   owner: string,
   repo: string,
   number: number,
@@ -90,7 +90,7 @@ export const removeLabel = async function removeLabel(
  * @returns void
  */
 export async function handleLabeling(
-  github: GitHubAPI,
+  github: InstanceType<typeof ProbotOctokit>,
   issueItem: IssueItem,
   isCompliant: boolean,
   name: string

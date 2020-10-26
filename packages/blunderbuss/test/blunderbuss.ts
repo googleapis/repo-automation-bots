@@ -521,5 +521,36 @@ describe('Blunderbuss', () => {
       });
       requests.done();
     });
+
+    it('assigns pr by label', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_no_assignees'
+      ));
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'pr_on_label.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/6/labels')
+        .reply(200, [{name: 'samples'}])
+        .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+      requests.done();
+
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
+      requests.done();
+    });
   });
 });

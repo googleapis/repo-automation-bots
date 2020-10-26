@@ -15,10 +15,14 @@
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, createProbot} from 'probot';
 import {promises as fs} from 'fs';
 import {handler} from '../src/sync-repo-settings';
 import assert from 'assert';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+import {config} from '@probot/octokit-plugin-config';
+const TestingOctokit = Octokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -39,9 +43,9 @@ function nockUpdateTeamMembership(team: string, org: string, repo: string) {
 
 function nockConfig404(org = 'googleapis', repo = 'api-common-java') {
   return nock('https://api.github.com')
-    .get(`/repos/${org}/${repo}/contents/.github/sync-repo-settings.yaml`)
+    .get(`/repos/${org}/${repo}/contents/.github%2Fsync-repo-settings.yaml`)
     .reply(404)
-    .get(`/repos/${org}/.github/contents/.github/sync-repo-settings.yaml`)
+    .get(`/repos/${org}/.github/contents/.github%2Fsync-repo-settings.yaml`)
     .reply(404);
 }
 
@@ -64,7 +68,7 @@ function nockUpdateBranchProtection(
   repo: string,
   contexts: string[],
   requireUpToDateBranch: boolean,
-  requireCodeOwners = false
+  requireCodeOwners: boolean
 ) {
   return nock('https://api.github.com')
     .put(`/repos/googleapis/${repo}/branches/master/protection`, {
@@ -83,9 +87,10 @@ function nockUpdateBranchProtection(
     .reply(200);
 }
 
+// meta comment about the 'any' here: https://github.com/octokit/webhooks.js/issues/277
 async function receive(org: string, repo: string, cronOrg?: string) {
   await probot.receive({
-    name: 'schedule.repository',
+    name: 'schedule.repository' as any,
     payload: {
       repository: {
         name: repo,
@@ -104,18 +109,11 @@ async function receive(org: string, repo: string, cronOrg?: string) {
 
 describe('Sync repo settings', () => {
   beforeEach(() => {
-    probot = new Probot({
-      // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest').Octokit,
+    probot = createProbot({
+      githubToken: 'abc123',
+      Octokit: TestingOctokit as any,
     });
-    probot.app = {
-      getSignedJsonWebToken() {
-        return 'abc123';
-      },
-      getInstallationAccessToken(): Promise<string> {
-        return Promise.resolve('abc123');
-      },
-    };
+
     probot.load(handler);
   });
 
@@ -155,7 +153,7 @@ describe('Sync repo settings', () => {
       nockConfig404(org, repo),
       nockLanguagesList(org, repo, {python: 1}),
       nockUpdateRepoSettings(repo, true, true),
-      nockUpdateBranchProtection(repo, ['Kokoro', 'cla/google'], false),
+      nockUpdateBranchProtection(repo, ['Kokoro', 'cla/google'], false, false),
       nockUpdateTeamMembership('yoshi-admins', org, repo),
       nockUpdateTeamMembership('yoshi-python-admins', org, repo),
       nockUpdateTeamMembership('yoshi-python', org, repo),
@@ -182,7 +180,8 @@ describe('Sync repo settings', () => {
           'lint',
           'test (10)',
           'test (12)',
-          'test (13)',
+          'test (14)',
+          'test (15)',
           'cla/google',
           'windows',
         ],
@@ -221,14 +220,11 @@ describe('Sync repo settings', () => {
   it('should use localized config if available', async () => {
     const org = 'googleapis';
     const repo = 'fake';
-    const content = await fs.readFile(
-      './test/fixtures/localConfig.yaml',
-      'base64'
-    );
+    const content = await fs.readFile('./test/fixtures/localConfig.yaml');
     const scopes = [
       nock('https://api.github.com')
-        .get(`/repos/${org}/${repo}/contents/.github/sync-repo-settings.yaml`)
-        .reply(200, {content}),
+        .get(`/repos/${org}/${repo}/contents/.github%2Fsync-repo-settings.yaml`)
+        .reply(200, content),
       nockUpdateRepoSettings(repo, false, true),
       nockUpdateBranchProtection(repo, ['check1', 'check2'], false, true),
       nockUpdateTeamMembership('team1', org, repo),
@@ -267,8 +263,9 @@ describe('Sync repo settings', () => {
         .reply(200),
     ];
     await probot.receive({
-      name: 'pull_request.opened',
+      name: 'pull_request',
       payload: {
+        action: 'opened',
         repository: {
           name: repo,
           owner: {
@@ -321,8 +318,9 @@ describe('Sync repo settings', () => {
         .reply(200),
     ];
     await probot.receive({
-      name: 'pull_request.opened',
+      name: 'pull_request',
       payload: {
+        action: 'opened',
         repository: {
           name: repo,
           owner: {
@@ -374,8 +372,9 @@ describe('Sync repo settings', () => {
         .reply(200),
     ];
     await probot.receive({
-      name: 'pull_request.opened',
+      name: 'pull_request',
       payload: {
+        action: 'opened',
         repository: {
           name: repo,
           owner: {
