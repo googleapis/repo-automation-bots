@@ -327,6 +327,40 @@ describe('auto-label', () => {
       ghRequests.done();
     });
 
+    it('auto detects and labels a Spanner pull request', async () => {
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'valid-config.yml')
+      );
+
+      const payload = require(resolve(
+        fixturesPath,
+        './events/pr_opened_no_match_repo'
+      ));
+
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/notThere/contents/.github%2Fauto-label.yaml')
+        .reply(200, config)
+        .get('/repos/testOwner/notThere/issues/12/labels')
+        .reply(200)
+        .post('/repos/testOwner/notThere/labels')
+        .reply(200, [
+          {
+            name: 'api: spanner',
+          },
+        ])
+        .post('/repos/testOwner/notThere/issues/12/labels', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
     it('does not re-label an issue', async () => {
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid-config.yml')

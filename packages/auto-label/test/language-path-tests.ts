@@ -23,6 +23,7 @@ import {resolve} from 'path';
 import fs from 'fs';
 import * as sinon from 'sinon';
 import {handler} from '../src/auto-label';
+
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
@@ -62,16 +63,9 @@ describe('language-and-path-labeling', () => {
         resolve(fixturesPath, 'config', 'invalid-config.yml')
       );
       const payload = require(resolve(fixturesPath, './events/pr_opened'));
-      const pr_files_payload = require(resolve(
-        fixturesPath,
-        './events/pr_opened_files.json'
-      ));
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
-        .reply(200, config)
-        //  Mock pulls.listfiles
-        .get('/repos/testOwner/testRepo/pulls/12/files')
-        .reply(200, pr_files_payload);
+        .reply(200, config);
       await probot.receive({
         name: 'pull_request',
         payload,
@@ -82,7 +76,7 @@ describe('language-and-path-labeling', () => {
 
     it('labels PR with respective labels', async () => {
       const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
+        resolve(fixturesPath, 'config', 'valid-config-no-product.yml')
       );
       const pr_opened_payload = require(resolve(
         fixturesPath,
