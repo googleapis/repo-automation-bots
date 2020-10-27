@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {GCFBootstrapper} from 'gcf-utils';
-import {handler} from './template-bot';
+import {handler} from './generated-files-bot';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['template-bot'] = bootstrap.gcf(handler);
+module.exports['generated-files-bot'] = bootstrap.gcf(handler);

@@ -19,7 +19,7 @@ import {query} from 'jsonpath';
 
 type OctokitType = InstanceType<typeof ProbotOctokit>;
 
-const CONFIGURATION_FILE_PATH = 'template-bot.yml';
+const CONFIGURATION_FILE_PATH = 'generated-files-bot.yml';
 
 interface ExternalManifest {
   type: 'json' | 'yaml';

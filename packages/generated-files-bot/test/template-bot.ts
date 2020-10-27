@@ -27,7 +27,7 @@ import {
   getPullRequestFiles,
   buildCommentMessage,
   handler,
-} from '../src/template-bot';
+} from '../src/generated-files-bot';
 
 nock.disableNetConnect();
 
@@ -39,7 +39,7 @@ const yamlManifest = fs
   .readFileSync(resolve(fixturesPath, 'manifests', 'simple.yaml'))
   .toString();
 
-describe('template-bot', () => {
+describe('generated-files-bot', () => {
   let requests: nock.Scope;
 
   beforeEach(() => {
@@ -200,9 +200,9 @@ describe('template-bot', () => {
 
       it('ignores repo without configuration', async () => {
         requests = requests
-          .get('/repos/testOwner/testRepo/contents/.github%2Ftemplate-bot.yml')
+          .get('/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml')
           .reply(404)
-          .get('/repos/testOwner/.github/contents/.github%2Ftemplate-bot.yml')
+          .get('/repos/testOwner/.github/contents/.github%2Fgenerated-files-bot.yml')
           .reply(404);
         await probot.receive({
           name: 'pull_request',
@@ -217,7 +217,7 @@ describe('template-bot', () => {
           resolve(fixturesPath, 'config', 'valid-config.yml')
         );
         requests = requests
-          .get('/repos/testOwner/testRepo/contents/.github%2Ftemplate-bot.yml')
+          .get('/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml')
           .reply(200, validConfig)
           .get('/repos/testOwner/testRepo/contents/manifest.json')
           .reply(200, {
@@ -242,7 +242,7 @@ describe('template-bot', () => {
           resolve(fixturesPath, 'config', 'valid-config.yml')
         );
         requests = requests
-          .get('/repos/testOwner/testRepo/contents/.github%2Ftemplate-bot.yml')
+          .get('/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml')
           .reply(200, validConfig)
           .get('/repos/testOwner/testRepo/contents/manifest.json')
           .reply(200, {

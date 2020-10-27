@@ -1,8 +1,8 @@
-# template-bot
+# generated-files-bot
 
 The template bot automatically comments on pull requests if you are modifying templated files.
 
-To identify a templated file, you must provide configuration in the `.github/template-bot.yml` file in your repository.
+To identify a templated file, you must provide configuration in the `.github/generated-files-bot.yml` file in your repository.
 
 ## Setup
 
@@ -17,7 +17,7 @@ npm start
 ### Configuration
 
 To configure the bot, you can create a configuration file:
-`.github/template-bot.yml`. The contents of this file allow for the following
+`.github/generated-files-bot.yml`. The contents of this file allow for the following
 options:
 
 | Name | Description | Type | Default |
@@ -45,7 +45,7 @@ External Manifest:
 
 ## Contributing
 
-If you have suggestions for how template-bot could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
+If you have suggestions for how generated-files-bot could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
 
 For more, check out the Contributing Guide.
 
