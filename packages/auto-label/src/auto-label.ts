@@ -112,6 +112,12 @@ export function autoDetectLabel(
   firstPart = firstPart.toLowerCase(); // Convert to lower case.
   firstPart = firstPart.replace(/\s/, ''); // Remove spaces.
 
+  // The Conventional Commits "docs:" prefix is far more common than "api: docs".
+  // So, never label with "api: docs".
+  if (firstPart === 'docs') {
+    return undefined;
+  }
+
   // Replace some known firstPart values with their API name.
   const commonConversions = new Map();
   commonConversions.set('video', 'videointelligence');
