@@ -77,7 +77,12 @@ describe('generated-files-bot', () => {
       const config = {
         generatedFiles: ['file1.txt', 'file2.txt'],
       };
-      const list = await getFileList(config, new ProbotOctokit(), 'owner', 'repo');
+      const list = await getFileList(
+        config,
+        new ProbotOctokit(),
+        'owner',
+        'repo'
+      );
       expect(list).to.eql(['file1.txt', 'file2.txt']);
     });
 
@@ -105,7 +110,12 @@ describe('generated-files-bot', () => {
         .reply(200, {
           content: Buffer.from(yamlManifest, 'utf8').toString('base64'),
         });
-      const list = await getFileList(config, new ProbotOctokit(), 'owner', 'repo');
+      const list = await getFileList(
+        config,
+        new ProbotOctokit(),
+        'owner',
+        'repo'
+      );
       expect(list).to.eql(['value1', 'value2', 'value3']);
       requests.done();
     });
@@ -135,7 +145,12 @@ describe('generated-files-bot', () => {
         .reply(200, {
           content: Buffer.from(yamlManifest, 'utf8').toString('base64'),
         });
-      const list = await getFileList(config, new ProbotOctokit(), 'owner', 'repo');
+      const list = await getFileList(
+        config,
+        new ProbotOctokit(),
+        'owner',
+        'repo'
+      );
       expect(list).to.eql(['file1.txt', 'value1', 'value2', 'value3']);
       requests.done();
     });
@@ -200,9 +215,13 @@ describe('generated-files-bot', () => {
 
       it('ignores repo without configuration', async () => {
         requests = requests
-          .get('/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml')
+          .get(
+            '/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml'
+          )
           .reply(404)
-          .get('/repos/testOwner/.github/contents/.github%2Fgenerated-files-bot.yml')
+          .get(
+            '/repos/testOwner/.github/contents/.github%2Fgenerated-files-bot.yml'
+          )
           .reply(404);
         await probot.receive({
           name: 'pull_request',
@@ -217,7 +236,9 @@ describe('generated-files-bot', () => {
           resolve(fixturesPath, 'config', 'valid-config.yml')
         );
         requests = requests
-          .get('/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml')
+          .get(
+            '/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml'
+          )
           .reply(200, validConfig)
           .get('/repos/testOwner/testRepo/contents/manifest.json')
           .reply(200, {
@@ -242,7 +263,9 @@ describe('generated-files-bot', () => {
           resolve(fixturesPath, 'config', 'valid-config.yml')
         );
         requests = requests
-          .get('/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml')
+          .get(
+            '/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml'
+          )
           .reply(200, validConfig)
           .get('/repos/testOwner/testRepo/contents/manifest.json')
           .reply(200, {
