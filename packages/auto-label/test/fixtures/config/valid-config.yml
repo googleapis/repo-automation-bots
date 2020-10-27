@@ -1,7 +1,6 @@
 randomBoolean: true
 product: true
 language:
-  issue: false
   pullrequest: true
   labelprefix: 'language:'
   extensions:
@@ -13,3 +12,12 @@ language:
     test:
       .: 'test'
       fixtures: 'JSON'
+path:
+  pullrequest: true
+  labelprefix: 'path: '
+  paths:
+    .: 'root'
+    src: 'source'
+    test:
+      .: 'tests'
+      fixtures: 'test_fixtures'
