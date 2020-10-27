@@ -315,7 +315,7 @@ export function handler(app: Application) {
     }
   });
 
-  // Labels issues and pull requests with product labels.
+  // Labels issues with product labels.
   // By default, this is turned on without user configuration.
   app.on(['issues.opened', 'issues.reopened'], async context => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -344,7 +344,7 @@ export function handler(app: Application) {
 
   // Labels pull requests with product, language, and/or path labels.
   // By default, product labels are turned on and language/path labels are
-  // turned off. Behavior can be configured with user configuration.
+  // turned off.
   app.on(['pull_request.opened'], async context => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config: any = await context.config(
