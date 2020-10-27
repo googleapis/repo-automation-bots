@@ -19,6 +19,7 @@ jobs:
           'failurechecker',
           'gcf-utils',
           'generate-bot',
+          'generated-files-bot',
           'header-checker-lint',
           'label-sync',
           'merge-on-green',
@@ -27,7 +28,6 @@ jobs:
           'slo-stat-bot',
           'snippet-bot',
           'sync-repo-settings',
-          'template-bot',
           'trusted-contribution'
         ]
         include:
