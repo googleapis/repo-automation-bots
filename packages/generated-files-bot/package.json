@@ -1,0 +1,58 @@
+{
+  "name": "generated-files-bot",
+  "version": "1.0.0",
+  "description": "Detect modifications to templated files",
+  "private": true,
+  "author": "Google LLC.",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "main": "build/src/app.js",
+  "keywords": [
+    "probot",
+    "github",
+    "probot-app"
+  ],
+  "files": [
+    "build/src"
+  ],
+  "scripts": {
+    "compile": "tsc -p .",
+    "start": "probot run ./build/src/generated-files-bot.js",
+    "start:local": "node ./build/src/local.js",
+    "pretest": "npm run compile",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
+    "test:snap": "SNAPSHOT_UPDATE=1 npm test",
+    "fix": "gts fix",
+    "lint": "gts check"
+  },
+  "dependencies": {
+    "@octokit/rest": "^18.0.6",
+    "@octokit/webhooks": "7.11.4",
+    "@types/js-yaml": "^3.12.5",
+    "@types/jsonpath": "^0.2.0",
+    "gcf-utils": "^6.1.1",
+    "js-yaml": "^3.14.0",
+    "jsonpath": "^1.0.2",
+    "probot": "10.9.0"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.14",
+    "@types/mocha": "^8.0.0",
+    "@types/nock": "^10.0.3",
+    "@types/node": "^12.6.1",
+    "c8": "^7.1.0",
+    "chai": "^4.2.0",
+    "cross-env": "^7.0.0",
+    "gts": "^2.0.0",
+    "mocha": "^8.0.0",
+    "nock": "^13.0.0",
+    "smee-client": "^1.1.0",
+    "snap-shot-it": "^7.8.0",
+    "typescript": "^3.9.7"
+  },
+  "engines": {
+    "node": ">= 12.18.2"
+  }
+}

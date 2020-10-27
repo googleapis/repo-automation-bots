@@ -1,0 +1,6 @@
+key1:
+- value1
+- value2
+key2:
+  key3: 
+  - "value3"
