@@ -17,7 +17,7 @@
   "author": "asonawalla@google.com",
   "license": "Apache-2.0",
   "devDependencies": {
-    "firebase": "^7.18.0",
+    "firebase": "^8.0.0",
     "gts": "^2.0.2",
     "json-loader": "^0.5.7",
     "typescript": "^3.9.7",
