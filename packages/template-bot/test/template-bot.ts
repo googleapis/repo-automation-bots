@@ -14,7 +14,7 @@
 //
 
 import {resolve} from 'path';
-import {Probot, createProbot} from 'probot';
+import {Probot, createProbot, ProbotOctokit} from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
 import snapshot from 'snap-shot-it';
@@ -28,10 +28,6 @@ import {
   buildCommentMessage,
   handler,
 } from '../src/template-bot';
-import {Octokit} from '@octokit/rest';
-// eslint-disable-next-line node/no-extraneous-import
-import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -81,7 +77,7 @@ describe('template-bot', () => {
       const config = {
         generatedFiles: ['file1.txt', 'file2.txt'],
       };
-      const list = await getFileList(config, new Octokit(), 'owner', 'repo');
+      const list = await getFileList(config, new ProbotOctokit(), 'owner', 'repo');
       expect(list).to.eql(['file1.txt', 'file2.txt']);
     });
 
@@ -109,7 +105,7 @@ describe('template-bot', () => {
         .reply(200, {
           content: Buffer.from(yamlManifest, 'utf8').toString('base64'),
         });
-      const list = await getFileList(config, new Octokit(), 'owner', 'repo');
+      const list = await getFileList(config, new ProbotOctokit(), 'owner', 'repo');
       expect(list).to.eql(['value1', 'value2', 'value3']);
       requests.done();
     });
@@ -139,7 +135,7 @@ describe('template-bot', () => {
         .reply(200, {
           content: Buffer.from(yamlManifest, 'utf8').toString('base64'),
         });
-      const list = await getFileList(config, new Octokit(), 'owner', 'repo');
+      const list = await getFileList(config, new ProbotOctokit(), 'owner', 'repo');
       expect(list).to.eql(['file1.txt', 'value1', 'value2', 'value3']);
       requests.done();
     });
@@ -156,7 +152,7 @@ describe('template-bot', () => {
         ]);
 
       const list = await getPullRequestFiles(
-        new Octokit(),
+        new ProbotOctokit(),
         'owner',
         'repo',
         1234
@@ -187,8 +183,7 @@ describe('template-bot', () => {
     beforeEach(() => {
       probot = createProbot({
         githubToken: 'abc123',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        Octokit: TestingOctokit as any,
+        Octokit: ProbotOctokit,
       });
 
       probot.load(handler);

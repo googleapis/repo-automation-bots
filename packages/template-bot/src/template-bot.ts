@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Application} from 'probot';
+import {Application, ProbotOctokit} from 'probot';
 import {logger} from 'gcf-utils';
-import {Octokit} from '@octokit/rest'; // Use version from gcf-utils.
 import {safeLoad} from 'js-yaml';
 import {query} from 'jsonpath';
 
-type OctokitType = InstanceType<typeof Octokit>;
+type OctokitType = InstanceType<typeof ProbotOctokit>;
 
 const CONFIGURATION_FILE_PATH = 'template-bot.yml';
 
@@ -160,8 +159,7 @@ export function handler(app: Application) {
 
     // Read the list of templated files
     const templatedFiles = new Set(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await getFileList(config, context.github as any, owner, repo)
+      await getFileList(config, context.github, owner, repo)
     );
     if (templatedFiles.size === 0) {
       logger.warn(
@@ -172,8 +170,7 @@ export function handler(app: Application) {
 
     // Fetch the list of touched files in this pull request
     const pullRequestFiles = await getPullRequestFiles(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      context.github as any,
+      context.github,
       owner,
       repo,
       pullNumber
