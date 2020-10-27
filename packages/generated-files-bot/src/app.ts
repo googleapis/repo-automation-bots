@@ -16,4 +16,4 @@ import {GCFBootstrapper} from 'gcf-utils';
 import {handler} from './generated-files-bot';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['generated-files-bot'] = bootstrap.gcf(handler);
+module.exports['generated_files_bot'] = bootstrap.gcf(handler);
