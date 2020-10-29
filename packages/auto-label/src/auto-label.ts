@@ -89,6 +89,13 @@ export function autoDetectLabel(
   if (!apis || !title) {
     return undefined;
   }
+
+  // The Conventional Commits "docs:" and "build:" prefixes are far more common
+  // than the APIs. So, never label those with "api: docs" or "api: build".
+  if (title.startsWith('docs:') || title.startsWith('build:')) {
+    return undefined;
+  }
+
   // Regex to match the scope of a Conventional Commit message.
   const conv = /[^(]+\(([^)]+)\):/;
   const match = title.match(conv);
