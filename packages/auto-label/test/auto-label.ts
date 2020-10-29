@@ -408,6 +408,41 @@ describe('auto-label', () => {
       });
       ghRequests.done();
     });
+
+    it('does not label a docs issue', async () => {
+      assert.notStrictEqual(
+        driftApis.find(api => api.github_label === 'api: docs'),
+        undefined,
+        'expected an `api: docs` repo in downloadedfile.json'
+      );
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'valid-config.yml')
+      );
+
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened_spanner'
+      ));
+      payload['issue']['title'] = 'docs: they are awesome';
+
+      const ghRequests = nock('https://api.github.com')
+        .get(
+          '/repos/GoogleCloudPlatform/golang-samples/contents/.github%2Fauto-label.yaml'
+        )
+        .reply(200, config)
+        .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
+        .reply(200, [
+          {
+            name: 'samples',
+          },
+        ]);
+      await probot.receive({
+        name: 'issues',
+        payload,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
   });
 
   describe('schedule repository', () => {
