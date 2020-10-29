@@ -28,7 +28,6 @@ import {v2 as CloudTasksV2} from '@google-cloud/tasks';
 import {Storage} from '@google-cloud/storage';
 import * as express from 'express';
 // eslint-disable-next-line node/no-extraneous-import
-import {EventNames} from '@octokit/webhooks';
 import {Octokit} from '@octokit/rest';
 import {config as ConfigPlugin} from '@probot/octokit-plugin-config';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
@@ -260,7 +259,8 @@ export class GCFBootstrapper {
           // TODO: find out the best way to get this type, and whether we can
           // keep using a custom event name.
           await this.probot.receive({
-            name: name as EventNames.StringNames,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            name: name as any,
             id,
             payload: body,
           });

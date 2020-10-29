@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [6.1.3](https://www.github.com/googleapis/repo-automation-bots/compare/v6.1.2...v6.1.3) (2020-10-28)
+
+
+### Bug Fixes
+
+* **probot:** latest release of probot breaks auth ([#1063](https://www.github.com/googleapis/repo-automation-bots/issues/1063)) ([e32e8da](https://www.github.com/googleapis/repo-automation-bots/commit/e32e8daeb591cc10db537e9bf990c255ed95dae7))
+
 ### [6.1.2](https://www.github.com/googleapis/repo-automation-bots/compare/v6.1.1...v6.1.2) (2020-10-26)
 
 
