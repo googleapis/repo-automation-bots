@@ -322,8 +322,8 @@ export function handler(app: Application) {
     }
   });
 
-  // Labels issues with product labels
-  // By default, this is turned on without user configuration
+  // Labels issues with product labels.
+  // By default, this is turned on without user configuration.
   app.on(['issues.opened', 'issues.reopened'], async context => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config: any = await context.config(
@@ -332,7 +332,6 @@ export function handler(app: Application) {
     );
     if (!config.product) return;
 
-    //job that labels issues when they are opened
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const issueNumber = context.payload.issue.number;
@@ -350,8 +349,9 @@ export function handler(app: Application) {
     );
   });
 
-  // Labels pull requests with language and or path labels
-  // By default, this is turned off and is enabled through user configuration
+  // Labels pull requests with product, language, and/or path labels.
+  // By default, product labels are turned on and language/path labels are
+  // turned off.
   app.on(['pull_request.opened'], async context => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config: any = await context.config(
@@ -361,6 +361,27 @@ export function handler(app: Application) {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const pull_number = context.payload.pull_request.number;
+
+    if (config.product) {
+      const driftRepos = await handler.getDriftRepos();
+      if (!driftRepos) {
+        return;
+      }
+      await handler.addLabeltoRepoAndIssue(
+        owner,
+        repo,
+        pull_number,
+        context.payload.pull_request.title,
+        driftRepos,
+        context
+      );
+    }
+
+    // Only need to fetch PR contents if config.path or config.language are configured.
+    if (!config.path?.pullrequest && !config.language?.pullrequest) {
+      return;
+    }
+
     const filesChanged = await context.github.pulls.listFiles({
       owner,
       repo,
@@ -369,7 +390,7 @@ export function handler(app: Application) {
 
     // If user has turned on path labels by configuring {path: {pullrequest: false, }}
     // By default, this feature is turned off
-    if (config.path && config.path.pullrequest) {
+    if (config.path?.pullrequest) {
       logger.info(`Labeling path in PR #${pull_number} in ${owner}/${repo}...`);
       const path_label = helper.getLabel(
         filesChanged.data,
@@ -391,7 +412,7 @@ export function handler(app: Application) {
 
     // If user has turned on language labels by configuring {language: {pullrequest: false,}}
     // By default, this feature is turned off
-    if (config.language && config.language.pullrequest) {
+    if (config.language?.pullrequest) {
       logger.info(
         `Labeling language in PR #${pull_number} in ${owner}/${repo}...`
       );
