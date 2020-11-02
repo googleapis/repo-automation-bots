@@ -45,13 +45,13 @@ type Conclusion =
 type ChangeTypes = 'add' | 'del';
 
 interface Change {
-  type: ChangeTypes,
-  region_tag: string,
-  owner: string,
-  repo: string,
-  file?: string,
-  sha: string,
-  line: number,
+  type: ChangeTypes;
+  region_tag: string;
+  owner: string;
+  repo: string;
+  file?: string;
+  sha: string;
+  line: number;
 }
 
 interface ConfigurationOptions {
@@ -105,10 +105,7 @@ https://github.com/googleapis/repo-automation-bots/issues.
 `;
 }
 
-function formatExpandable(
-  summary: string,
-  detail: string
-): string {
+function formatExpandable(summary: string, detail: string): string {
   return `<details>
   <summary>${summary}</summary>
 
@@ -118,10 +115,8 @@ function formatExpandable(
 `;
 }
 
-function formatChangedFile(
-  change: Change,
-): string {
-  const url = `https://github.com/${change.owner}/${change.repo}/blob/${change.sha}/${change.file}#L${change.line}`
+function formatChangedFile(change: Change): string {
+  const url = `https://github.com/${change.owner}/${change.repo}/blob/${change.sha}/${change.file}#L${change.line}`;
   return `[\`${change.region_tag}\` in \`${change.file}\`](${url})`;
 }
 
@@ -389,40 +384,39 @@ ${bodyDetail}`
       const response = await fetch(context.payload.pull_request.diff_url);
       const diff = await response.text();
       const diffResult = parseDiff(diff);
-      let changes: Change[] = [];
+      const changes: Change[] = [];
       let added = 0;
       let deleted = 0;
-      for (let file of diffResult) {
-        for (let chunk of file.chunks) {
-          for (let change of chunk.changes) {
-            if (change.type == 'normal') {
+      for (const file of diffResult) {
+        for (const chunk of file.chunks) {
+          for (const change of chunk.changes) {
+            if (change.type === 'normal') {
               continue;
             }
             // We only track add/deletion of start tags.
             const startMatch = change.content.match(START_TAG_REGEX);
             // TODO: change owner and repo for deletion
             if (startMatch) {
-              if (change.type == 'add') {
+              if (change.type === 'add') {
                 added += 1;
               }
-              if (change.type == 'del') {
+              if (change.type === 'del') {
                 deleted += 1;
               }
-              const filename = file.to ? file.to : file.from;
               changes.push({
-                type: change.type == 'del' ? 'del' : 'add',
+                type: change.type === 'del' ? 'del' : 'add',
                 region_tag: startMatch[1],
-                owner: change.type == 'del' ? owner : headOnwer,
-                repo: change.type == 'del' ? repo : headRepo,
-                file: change.type == 'del' ? file.from : file.to,
-                sha: change.type == 'del' ? sha : headSha,
-                line: change.ln
+                owner: change.type === 'del' ? owner : headOnwer,
+                repo: change.type === 'del' ? repo : headRepo,
+                file: change.type === 'del' ? file.from : file.to,
+                sha: change.type === 'del' ? sha : headSha,
+                line: change.ln,
               });
             }
           }
         }
       }
-      if (changes.length == 0) {
+      if (changes.length === 0) {
         return;
       }
 
@@ -430,23 +424,23 @@ ${bodyDetail}`
       const prNumber = context.payload.pull_request.number;
       let commentBody = 'Here is the summary of changes.\n';
       if (added > 0) {
-        const plural = added == 1 ? '' : 's';
+        const plural = added === 1 ? '' : 's';
         const summary = `You added ${added} region tag${plural}.`;
-        let detail: string = '';
+        let detail = '';
         for (const change of changes) {
-          if (change.type == 'add') {
-            detail += `- ${formatChangedFile(change)}\n`
+          if (change.type === 'add') {
+            detail += `- ${formatChangedFile(change)}\n`;
           }
         }
         commentBody += formatExpandable(summary, detail);
       }
       if (deleted > 0) {
-        const plural = deleted == 1 ? '' : 's';
+        const plural = deleted === 1 ? '' : 's';
         const summary = `You deleted ${deleted} region tag${plural}.\n`;
-        let detail: string = '';
+        let detail = '';
         for (const change of changes) {
-          if (change.type == 'del') {
-            detail += `- ${formatChangedFile(change)}\n`
+          if (change.type === 'del') {
+            detail += `- ${formatChangedFile(change)}\n`;
           }
         }
         commentBody += formatExpandable(summary, detail);
@@ -456,17 +450,17 @@ ${bodyDetail}`
         owner: owner,
         repo: repo,
         per_page: 50,
-        issue_number: prNumber
+        issue_number: prNumber,
       });
       let found = false;
-      for (let comment of listCommentsResponse.data) {
+      for (const comment of listCommentsResponse.data) {
         if (comment.body.includes(commentMark)) {
           // We found the existing comment, so updating it
           await context.github.issues.updateComment({
             owner: owner,
             repo: repo,
             comment_id: comment.id,
-            body: `${commentMark}\n${commentBody}`
+            body: `${commentMark}\n${commentBody}`,
           });
           found = true;
         }
@@ -476,7 +470,7 @@ ${bodyDetail}`
           owner: owner,
           repo: repo,
           issue_number: prNumber,
-          body: `${commentMark}\n${commentBody}`
+          body: `${commentMark}\n${commentBody}`,
         });
       }
     }

@@ -14,6 +14,7 @@
 //
 
 /* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable node/no-extraneous-import */
 
 import myProbotApp from '../src/snippet-bot';
@@ -46,9 +47,7 @@ describe('snippet-bot', () => {
     resolve(fixturesPath, 'tmatsuo-python-docs-samples-abcde.tar.gz')
   );
 
-  const diffResponse = fs.readFileSync(
-    resolve(fixturesPath, 'diff.txt')
-  );
+  const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
 
   beforeEach(() => {
     probot = createProbot({
@@ -112,12 +111,17 @@ describe('snippet-bot', () => {
           return true;
         })
         .reply(200)
-        .get('/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
+        )
         .reply(200, [])
-        .post('/repos/tmatsuo/repo-automation-bots/issues/14/comments', body => {
-          snapshot(body);
-          return true;
-        })
+        .post(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
         .reply(200);
 
       const diffRequests = nock('https://github.com')
