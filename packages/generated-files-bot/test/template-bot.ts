@@ -154,6 +154,31 @@ describe('generated-files-bot', () => {
       expect(list).to.eql(['file1.txt', 'value1', 'value2', 'value3']);
       requests.done();
     });
+
+    it('should handle missing manifest files', async () => {
+      const config: Configuration = {
+        externalManifests: [
+          {
+            type: 'json',
+            file: 'manifest.json',
+            jsonpath: '$.key1[*]',
+          },
+        ],
+      };
+      requests = requests
+        .get('/repos/owner/repo/contents/manifest.json')
+        .reply(404, {
+          content: Buffer.from(jsonManifest, 'utf8').toString('base64'),
+        });
+      const list = await getFileList(
+        config,
+        new ProbotOctokit(),
+        'owner',
+        'repo'
+      );
+      expect(list).to.eql([]);
+      requests.done();
+    });
   });
 
   describe('getPullRequestFiles', () => {
