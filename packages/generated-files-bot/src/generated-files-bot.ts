@@ -72,6 +72,7 @@ async function readExternalManifest(
     })
     .catch(e => {
       logger.warn(`error loading manifest: ${manifest.file}`);
+      logger.warn(e);
       return new Set();
     });
 }
