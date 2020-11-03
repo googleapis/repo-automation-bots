@@ -17,13 +17,13 @@
 
 import {Application} from 'probot';
 import {parseRegionTags} from './region-tag-parser';
-import {START_TAG_REGEX} from './region-tag-parser';
+import {parseRegionTagsInPullRequest} from './region-tag-parser';
+import {Change} from './region-tag-parser';
 import {logger} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
 import {PullsListFilesResponseData} from '@octokit/types';
 import * as minimatch from 'minimatch';
-import parseDiff from 'parse-diff';
 
 import tar from 'tar';
 import util from 'util';
@@ -41,18 +41,6 @@ type Conclusion =
   | 'timed_out'
   | 'action_required'
   | undefined;
-
-type ChangeTypes = 'add' | 'del';
-
-interface Change {
-  type: ChangeTypes;
-  region_tag: string;
-  owner: string;
-  repo: string;
-  file?: string;
-  sha: string;
-  line: number;
-}
 
 interface ConfigurationOptions {
   ignoreFiles: string[];
@@ -84,6 +72,10 @@ class Configuration {
   }
 }
 
+/**
+ * Formats the full scan report with the comment mark, so that it can
+ * preserve original contents.
+ */
 function formatBody(
   originalBody: string,
   commentMark: string,
@@ -105,6 +97,9 @@ https://github.com/googleapis/repo-automation-bots/issues.
 `;
 }
 
+/**
+ * It formats the summary and detail as an expandable UI in the markdown.
+ */
 function formatExpandable(summary: string, detail: string): string {
   return `<details>
   <summary>${summary}</summary>
@@ -115,9 +110,12 @@ function formatExpandable(summary: string, detail: string): string {
 `;
 }
 
+/**
+ * It formats a region tag change as a markdown with a permalink to the code.
+ */
 function formatChangedFile(change: Change): string {
   const url = `https://github.com/${change.owner}/${change.repo}/blob/${change.sha}/${change.file}#L${change.line}`;
-  return `[\`${change.region_tag}\` in \`${change.file}\`](${url})`;
+  return `[\`${change.regionTag}\` in \`${change.file}\`](${url})`;
 }
 
 async function downloadFile(url: string, file: string) {
@@ -293,10 +291,6 @@ ${bodyDetail}`
       if (context.payload.pull_request === undefined) {
         return;
       }
-      const sha = context.payload.pull_request.base.sha;
-      const headOnwer = context.payload.pull_request.head.repo.owner.login;
-      const headRepo = context.payload.pull_request.head.repo.name;
-      const headSha = context.payload.pull_request.head.sha;
       // Check on pull requests.
       // List pull request files for the given PR
       // https://developer.github.com/v3/pulls/#list-pull-requests-files
@@ -383,62 +377,40 @@ ${bodyDetail}`
       // Parse the PR diff and recognize added/deleted region tags.
       const response = await fetch(context.payload.pull_request.diff_url);
       const diff = await response.text();
-      const diffResult = parseDiff(diff);
-      const changes: Change[] = [];
-      let added = 0;
-      let deleted = 0;
-      for (const file of diffResult) {
-        for (const chunk of file.chunks) {
-          for (const change of chunk.changes) {
-            if (change.type === 'normal') {
-              continue;
-            }
-            // We only track add/deletion of start tags.
-            const startMatch = change.content.match(START_TAG_REGEX);
-            // TODO: change owner and repo for deletion
-            if (startMatch) {
-              if (change.type === 'add') {
-                added += 1;
-              }
-              if (change.type === 'del') {
-                deleted += 1;
-              }
-              changes.push({
-                type: change.type === 'del' ? 'del' : 'add',
-                region_tag: startMatch[1],
-                owner: change.type === 'del' ? owner : headOnwer,
-                repo: change.type === 'del' ? repo : headRepo,
-                file: change.type === 'del' ? file.from : file.to,
-                sha: change.type === 'del' ? sha : headSha,
-                line: change.ln,
-              });
-            }
-          }
-        }
-      }
-      if (changes.length === 0) {
+
+      const result = parseRegionTagsInPullRequest(
+        diff,
+        context.payload.pull_request.base.repo.owner.login,
+        context.payload.pull_request.base.repo.name,
+        context.payload.pull_request.base.sha,
+        context.payload.pull_request.head.repo.owner.login,
+        context.payload.pull_request.head.repo.name,
+        context.payload.pull_request.head.sha
+      );
+
+      if (result.changes.length === 0) {
         return;
       }
 
       // Add or update a comment on the PR.
       const prNumber = context.payload.pull_request.number;
       let commentBody = 'Here is the summary of changes.\n';
-      if (added > 0) {
-        const plural = added === 1 ? '' : 's';
-        const summary = `You added ${added} region tag${plural}.`;
+      if (result.added > 0) {
+        const plural = result.added === 1 ? '' : 's';
+        const summary = `You added ${result.added} region tag${plural}.`;
         let detail = '';
-        for (const change of changes) {
+        for (const change of result.changes) {
           if (change.type === 'add') {
             detail += `- ${formatChangedFile(change)}\n`;
           }
         }
         commentBody += formatExpandable(summary, detail);
       }
-      if (deleted > 0) {
-        const plural = deleted === 1 ? '' : 's';
-        const summary = `You deleted ${deleted} region tag${plural}.\n`;
+      if (result.deleted > 0) {
+        const plural = result.deleted === 1 ? '' : 's';
+        const summary = `You deleted ${result.deleted} region tag${plural}.\n`;
         let detail = '';
-        for (const change of changes) {
+        for (const change of result.changes) {
           if (change.type === 'del') {
             detail += `- ${formatChangedFile(change)}\n`;
           }

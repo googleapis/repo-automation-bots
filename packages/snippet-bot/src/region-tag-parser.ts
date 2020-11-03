@@ -12,16 +12,98 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// We'll add error details later.
+import parseDiff from 'parse-diff';
+
+/**
+ * The result for unmatched region tag checks.
+ */
 export interface ParseResult {
   result: boolean;
   messages: string[];
   tagsFound: boolean;
 }
 
+type ChangeTypes = 'add' | 'del';
+
+/**
+ * A single region tag change in a pull request.
+ */
+export interface Change {
+  type: ChangeTypes;
+  regionTag: string;
+  owner: string;
+  repo: string;
+  file?: string;
+  sha: string;
+  line: number;
+}
+
+/**
+ * The summary of the region tag changes in a pull request.
+ */
+export interface ChangesInPullRequest {
+  changes: Change[];
+  added: number;
+  deleted: number;
+}
+
 export const START_TAG_REGEX = /\[START ([^\]]*)\]/;
 const END_TAG_REGEX = /\[END ([^\]]*)\]/;
 
+/**
+ * Detects region tag changes in a pull request and return the summary.
+ */
+export function parseRegionTagsInPullRequest(
+  diff: string,
+  owner: string,
+  repo: string,
+  sha: string,
+  headOwner: string,
+  headRepo: string,
+  headSha: string
+): ChangesInPullRequest {
+  const changes: Change[] = [];
+  const ret = {
+    changes: changes,
+    added: 0,
+    deleted: 0,
+  };
+
+  const diffResult = parseDiff(diff);
+  for (const file of diffResult) {
+    for (const chunk of file.chunks) {
+      for (const change of chunk.changes) {
+        if (change.type === 'normal') {
+          continue;
+        }
+        // We only track add/deletion of start tags.
+        const startMatch = change.content.match(START_TAG_REGEX);
+        if (startMatch) {
+          if (change.type === 'add') {
+            ret.added += 1;
+          }
+          if (change.type === 'del') {
+            ret.deleted += 1;
+          }
+          ret.changes.push({
+            type: change.type === 'del' ? 'del' : 'add',
+            regionTag: startMatch[1],
+            owner: change.type === 'del' ? owner : headOwner,
+            repo: change.type === 'del' ? repo : headRepo,
+            file: change.type === 'del' ? file.from : file.to,
+            sha: change.type === 'del' ? sha : headSha,
+            line: change.ln,
+          });
+        }
+      }
+    }
+  }
+  return ret;
+}
+
+/**
+ * Parses a single file and checks unmatched region tags.
+ */
 export function parseRegionTags(
   contents: string,
   filename: string
