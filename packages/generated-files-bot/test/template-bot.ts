@@ -154,6 +154,31 @@ describe('generated-files-bot', () => {
       expect(list).to.eql(['file1.txt', 'value1', 'value2', 'value3']);
       requests.done();
     });
+
+    it('should handle missing manifest files', async () => {
+      const config: Configuration = {
+        externalManifests: [
+          {
+            type: 'json',
+            file: 'manifest.json',
+            jsonpath: '$.key1[*]',
+          },
+        ],
+      };
+      requests = requests
+        .get('/repos/owner/repo/contents/manifest.json')
+        .reply(404, {
+          content: Buffer.from(jsonManifest, 'utf8').toString('base64'),
+        });
+      const list = await getFileList(
+        config,
+        new ProbotOctokit(),
+        'owner',
+        'repo'
+      );
+      expect(list).to.eql([]);
+      requests.done();
+    });
   });
 
   describe('getPullRequestFiles', () => {
@@ -271,6 +296,41 @@ describe('generated-files-bot', () => {
           .reply(200, {
             content: Buffer.from(jsonManifest, 'utf8').toString('base64'),
           })
+          .get('/repos/testOwner/testRepo/contents/manifest.yaml')
+          .reply(200, {
+            content: Buffer.from(yamlManifest, 'utf8').toString('base64'),
+          })
+          .get('/repos/testOwner/testRepo/pulls/6/files')
+          .reply(200, [
+            {filename: 'file1.txt'},
+            {filename: 'file2.txt'},
+            {filename: 'file3.txt'},
+            {filename: 'value1'},
+          ])
+          .post('/repos/testOwner/testRepo/issues/6/comments', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200);
+        await probot.receive({
+          name: 'pull_request',
+          payload: payload,
+          id: 'abc123',
+        });
+        requests.done();
+      });
+
+      it('ignores missing manifests', async () => {
+        const validConfig = fs.readFileSync(
+          resolve(fixturesPath, 'config', 'valid-config.yml')
+        );
+        requests = requests
+          .get(
+            '/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml'
+          )
+          .reply(200, validConfig)
+          .get('/repos/testOwner/testRepo/contents/manifest.json')
+          .reply(404)
           .get('/repos/testOwner/testRepo/contents/manifest.yaml')
           .reply(200, {
             content: Buffer.from(yamlManifest, 'utf8').toString('base64'),
