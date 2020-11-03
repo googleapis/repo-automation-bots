@@ -48,7 +48,7 @@
     "mocha": "^8.0.0",
     "randomstring": "^1.1.5",
     "stream-mock": "^2.0.5",
-    "supertest": "^5.0.0",
+    "supertest": "^6.0.0",
     "typescript": "^3.9.6"
   },
   "files": [

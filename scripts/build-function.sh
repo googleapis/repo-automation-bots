@@ -38,5 +38,6 @@ npm install
 npm run compile
 cp -r build "${targetDir}"
 cp package.json "${targetDir}/package.json"
+cp package-lock.json "${targetDir}/package-lock.json"
 
 popd

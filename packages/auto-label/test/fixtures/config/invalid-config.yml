@@ -1,7 +1,6 @@
 randomBoolean: true
-product: true
+product: false
 language:
-  issue: false
   pullrequest: false
   labelprefix: 'language:'
   extensions:
