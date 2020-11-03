@@ -294,6 +294,36 @@ describe('generated-files-bot', () => {
         });
         requests.done();
       });
+
+      it('ignores missing manifests', async () => {
+        const validConfig = fs.readFileSync(
+          resolve(fixturesPath, 'config', 'valid-config.yml')
+        );
+        requests = requests
+          .get(
+            '/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml'
+          )
+          .reply(200, validConfig)
+          .get('/repos/testOwner/testRepo/contents/manifest.json')
+          .reply(200, {
+            content: Buffer.from(jsonManifest, 'utf8').toString('base64'),
+          })
+          .get('/repos/testOwner/testRepo/contents/manifest.yaml')
+          .reply(404)
+          .get('/repos/testOwner/testRepo/pulls/6/files')
+          .reply(200, [
+            {filename: 'file1.txt'},
+            {filename: 'file2.txt'},
+            {filename: 'file3.txt'},
+            {filename: 'value1'},
+          ]);
+        await probot.receive({
+          name: 'pull_request',
+          payload: payload,
+          id: 'abc123',
+        });
+        requests.done();
+      });
     });
   });
 });
