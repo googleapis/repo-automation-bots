@@ -38,14 +38,14 @@ describe('region-tag-parser', () => {
         'headRepo',
         'headSha'
       );
-      assert(result.added === 3);
-      assert(result.deleted === 3);
-      assert(result.changes[0].owner === 'owner');
-      assert(result.changes[0].repo === 'repo');
-      assert(result.changes[0].sha === 'sha');
-      assert(result.changes[1].owner === 'headOwner');
-      assert(result.changes[1].repo === 'headRepo');
-      assert(result.changes[1].sha === 'headSha');
+      assert.strictEqual(3, result.added);
+      assert.strictEqual(3, result.deleted);
+      assert.strictEqual('owner', result.changes[0].owner);
+      assert.strictEqual('repo', result.changes[0].repo);
+      assert.strictEqual('sha', result.changes[0].sha);
+      assert.strictEqual('headOwner', result.changes[1].owner);
+      assert.strictEqual('headRepo', result.changes[1].repo);
+      assert.strictEqual('headSha', result.changes[1].sha);
     });
   });
 });
