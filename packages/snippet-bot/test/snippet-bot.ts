@@ -14,7 +14,6 @@
 //
 
 /* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable node/no-extraneous-import */
 
 import myProbotApp from '../src/snippet-bot';
@@ -52,6 +51,7 @@ describe('snippet-bot', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       Octokit: TestingOctokit as any,
     });
     probot.load(myProbotApp);
