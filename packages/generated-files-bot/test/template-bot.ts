@@ -330,18 +330,23 @@ describe('generated-files-bot', () => {
           )
           .reply(200, validConfig)
           .get('/repos/testOwner/testRepo/contents/manifest.json')
-          .reply(200, {
-            content: Buffer.from(jsonManifest, 'utf8').toString('base64'),
-          })
-          .get('/repos/testOwner/testRepo/contents/manifest.yaml')
           .reply(404)
+          .get('/repos/testOwner/testRepo/contents/manifest.yaml')
+          .reply(200, {
+            content: Buffer.from(yamlManifest, 'utf8').toString('base64'),
+          })
           .get('/repos/testOwner/testRepo/pulls/6/files')
           .reply(200, [
             {filename: 'file1.txt'},
             {filename: 'file2.txt'},
             {filename: 'file3.txt'},
             {filename: 'value1'},
-          ]);
+          ])
+          .post('/repos/testOwner/testRepo/issues/6/comments', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200);
         await probot.receive({
           name: 'pull_request',
           payload: payload,
