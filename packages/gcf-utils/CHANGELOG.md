@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [6.1.4](https://www.github.com/googleapis/repo-automation-bots/compare/v6.1.3...v6.1.4) (2020-11-03)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @octokit/plugin-enterprise-compatibility to v1.2.6 ([#1069](https://www.github.com/googleapis/repo-automation-bots/issues/1069)) ([1c0fb97](https://www.github.com/googleapis/repo-automation-bots/commit/1c0fb97e7e2420d13b251fa0e1bbeaca0873a35b))
+
 ### [6.1.3](https://www.github.com/googleapis/repo-automation-bots/compare/v6.1.2...v6.1.3) (2020-10-28)
 
 
