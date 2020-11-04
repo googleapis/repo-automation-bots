@@ -53,7 +53,7 @@ describe('slo-bot', () => {
   });
 
   describe('getSloFile', () => {
-    let payload: Webhooks.EventNames.PullRequestEvent;
+    let payload: Webhooks.WebhookEvents;
     let appliesToStub: sinon.SinonStub;
     let isCompliantStub: sinon.SinonStub;
 
@@ -118,7 +118,7 @@ describe('slo-bot', () => {
     });
   });
   describe('handleIssues', () => {
-    let payload: Webhooks.EventNames.PullRequestEvent;
+    let payload: Webhooks.WebhookEvents;
     let appliesToStub: sinon.SinonStub;
     let isCompliantStub: sinon.SinonStub;
     let labelStub: sinon.SinonStub;

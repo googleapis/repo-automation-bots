@@ -759,7 +759,10 @@ buildcop.containsBuildFailure = async (
       comment.body.includes('status: failed')
   );
   const containsFailure = comment !== undefined;
-  const buildURL = buildcop.extractBuildURL(comment?.body!);
+  let buildURL = '';
+  if (comment) {
+    buildURL = buildcop.extractBuildURL(comment.body!);
+  }
   return [containsFailure, buildURL];
 };
 
