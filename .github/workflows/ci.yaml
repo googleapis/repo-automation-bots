@@ -19,6 +19,7 @@ jobs:
           'failurechecker',
           'gcf-utils',
           'generate-bot',
+          'generated-files-bot',
           'header-checker-lint',
           'label-sync',
           'merge-on-green',

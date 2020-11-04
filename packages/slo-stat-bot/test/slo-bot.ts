@@ -15,7 +15,7 @@
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, createProbot} from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
 import {describe, it, beforeEach, afterEach} from 'mocha';
@@ -28,6 +28,9 @@ import * as sloLint from '../src/slo-lint';
 import * as sloAppliesTo from '../src/slo-appliesTo';
 import * as sloCompliant from '../src/slo-compliant';
 import * as sloLabel from '../src/slo-label';
+import {Octokit} from '@octokit/rest';
+import {config} from '@probot/octokit-plugin-config';
+const TestingOctokit = Octokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -41,25 +44,16 @@ describe('slo-bot', () => {
   );
 
   beforeEach(() => {
-    probot = new Probot({
-      // use a bare instance of octokit, the default version
-      // enables retries which makes testing difficult.
-      // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest'),
+    probot = createProbot({
+      githubToken: 'abc123',
+      Octokit: TestingOctokit as any,
     });
 
-    probot.app = {
-      getSignedJsonWebToken() {
-        return 'abc123';
-      },
-      getInstallationAccessToken(): Promise<string> {
-        return Promise.resolve('abc123');
-      },
-    };
     probot.load(handler);
   });
+
   describe('getSloFile', () => {
-    let payload: Webhooks.WebhookPayloadPullRequest;
+    let payload: Webhooks.EventNames.PullRequestEvent;
     let appliesToStub: sinon.SinonStub;
     let isCompliantStub: sinon.SinonStub;
 
@@ -77,9 +71,9 @@ describe('slo-bot', () => {
 
     it('triggers handle slo if config file exists in repo level', async () => {
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-        .reply(200, {content: config.toString('base64')})
-        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+        .reply(200, config)
+        .get('/repos/testOwner/.github/contents/issue_slo_rules.json')
         .reply(200, {
           content:
             'WwogICAgewoJImFwcGxpZXNUbyI6IHsKCSAgICAiZ2l0SHViTGFiZWxzIjog\nWyJidWciLCAiaGVscCB3YW50ZWQiXSwKCSAgICAiZXhjbHVkZWRHaXRoSHVi\nTGFiZWxzIjogImVuaGFuY2VtZW50IiwKCSAgICAicHJpb3JpdHkiOiAiUDAi\nLAoJICAgICJ0eXBlIjogImJ1ZyIKCX0sCiAgICAgICAgImNvbXBsaWFuY2VT\nZXR0aW5ncyI6IHsKICAgICAgICAgICAgInJlc29sdXRpb25UaW1lIjogMCwK\nICAgICAgICAgICAgInJlc3BvbnNlVGltZSI6ICI0MjAwcyIsCiAgICAgICAg\nICAgICJyZXF1aXJlc0Fzc2lnbmVlIjogdHJ1ZSwKCSAgICAicmVzcG9uZGVy\ncyIgOiB7CgkgICAgICAgIm93bmVycyI6ICIuZ2l0aHViL0NPREVPV05FUlMi\nLAogICAgICAgICAgICAgICAidXNlcnMiOiBbInVzZXIzIl0KICAgICAgICAg\nICAgfQogICAgICAgIH0KICAgIH0KIF0KIAogCiAKIAogCg==\n',
@@ -87,7 +81,7 @@ describe('slo-bot', () => {
 
       appliesToStub.onCall(0).returns(false);
       await probot.receive({
-        name: 'issues.opened',
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -96,11 +90,14 @@ describe('slo-bot', () => {
       sinon.assert.notCalled(isCompliantStub);
       requests.done();
     });
+
     it('triggers handle slo if config file exists in org level', async () => {
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-        .reply(200, {content: config.toString('base64')})
-        .get('/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+        .reply(200, config)
+        .get(
+          '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
+        )
         .reply(404)
         .get('/repos/testOwner/.github/contents/issue_slo_rules.json')
         .reply(200, {
@@ -110,7 +107,7 @@ describe('slo-bot', () => {
 
       appliesToStub.onCall(0).returns(false);
       await probot.receive({
-        name: 'issues.opened',
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -121,7 +118,7 @@ describe('slo-bot', () => {
     });
   });
   describe('handleIssues', () => {
-    let payload: Webhooks.WebhookPayloadPullRequest;
+    let payload: Webhooks.EventNames.PullRequestEvent;
     let appliesToStub: sinon.SinonStub;
     let isCompliantStub: sinon.SinonStub;
     let labelStub: sinon.SinonStub;
@@ -148,10 +145,10 @@ describe('slo-bot', () => {
       });
       it('triggers handle label if slo applies to issue', async () => {
         const requests = nock('https://api.github.com')
-          .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-          .reply(200, {content: config.toString('base64')})
+          .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+          .reply(200, config)
           .get(
-            '/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json'
+            '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
           )
           .reply(200, {
             content:
@@ -161,7 +158,7 @@ describe('slo-bot', () => {
         isCompliantStub.onCall(0).returns(false);
 
         await probot.receive({
-          name: 'pull_request.opened',
+          name: 'pull_request',
           payload,
           id: 'abc123',
         });
@@ -173,10 +170,10 @@ describe('slo-bot', () => {
       });
       it('does not trigger handle label if slo does not apply to issue', async () => {
         const requests = nock('https://api.github.com')
-          .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-          .reply(200, {content: config.toString('base64')})
+          .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+          .reply(200, config)
           .get(
-            '/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json'
+            '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
           )
           .reply(200, {
             content:
@@ -186,7 +183,7 @@ describe('slo-bot', () => {
         appliesToStub.onCall(0).returns(false);
 
         await probot.receive({
-          name: 'pull_request.opened',
+          name: 'pull_request',
           payload,
           id: 'abc123',
         });
@@ -203,10 +200,10 @@ describe('slo-bot', () => {
       });
       it('triggers handle label if slo applies to issue', async () => {
         const requests = nock('https://api.github.com')
-          .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-          .reply(200, {content: config.toString('base64')})
+          .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+          .reply(200, config)
           .get(
-            '/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json'
+            '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
           )
           .reply(200, {
             content:
@@ -216,7 +213,7 @@ describe('slo-bot', () => {
         isCompliantStub.onCall(0).returns(false);
 
         await probot.receive({
-          name: 'issues.opened',
+          name: 'issues',
           payload,
           id: 'abc123',
         });
@@ -228,10 +225,10 @@ describe('slo-bot', () => {
       });
       it('does not trigger handle label if slo does not apply to issue', async () => {
         const requests = nock('https://api.github.com')
-          .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
-          .reply(200, {content: config.toString('base64')})
+          .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
+          .reply(200, config)
           .get(
-            '/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json'
+            '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
           )
           .reply(200, {
             content:
@@ -240,7 +237,7 @@ describe('slo-bot', () => {
         appliesToStub.onCall(0).returns(false);
 
         await probot.receive({
-          name: 'issues.opened',
+          name: 'issues',
           payload,
           id: 'abc123',
         });
@@ -288,20 +285,20 @@ describe('slo-bot', () => {
             },
           ])
           .get(
-            '/repos/testOwner/testRepo/contents/.github/issue_slo_rules.json'
+            '/repos/testOwner/testRepo/contents/.github%2Fissue_slo_rules.json'
           )
           .reply(200, {
             content:
               'WwogICAgewogICAgICAgICJhcHBsaWVzVG8iOiB7CiAgICAgICAgICAgICJn\naXRIdWJMYWJlbHMiOiBbInByaW9yaXR5OiBQMiIsICJidWciXQogICAgICAg\nIH0sCiAgICAgICAgImNvbXBsaWFuY2VTZXR0aW5ncyI6IHsKICAgICAgICAg\nICAgInJlc3BvbnNlVGltZSI6IDAKICAgICAgICB9CiAgICB9CiBdCiAKIAog\nCiAK\n',
           })
-          .get('/repos/testOwner/testRepo/contents/.github/slo-stat-bot.yaml')
+          .get('/repos/testOwner/testRepo/contents/.github%2Fslo-stat-bot.yaml')
           .reply(200, {content: config.toString('base64')});
 
         appliesToStub.onCall(0).returns(true);
         isCompliantStub.onCall(0).returns(false);
 
         await probot.receive({
-          name: 'schedule.repository',
+          name: 'schedule.repository' as any,
           payload,
           id: 'abc123',
         });

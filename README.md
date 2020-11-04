@@ -8,7 +8,7 @@ by Google on GitHub.
 
 | Name | Description | Install |
 | ---- | ----------- | ------- |
-| [auto-label] | Automatically labels issues and PRs with product or language labels | [install][auto-label-app] |
+| [auto-label] | Automatically labels issues and PRs with product, language, or directory based labels | [install][auto-label-app] |
 | [blunderbuss] | Assigns issues and PRs randomly to a specific list of users | [install][blunderbuss-app] |
 | [buildcop] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][buildcop-app] |
 | [conventional-commit-lint] | PR checker that ensures that the commit messages follow conventionalcommits.org style | [install][conventional-commit-lint-app] |
