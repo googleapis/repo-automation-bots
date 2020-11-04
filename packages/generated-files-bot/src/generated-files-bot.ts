@@ -60,13 +60,21 @@ async function readExternalManifest(
   owner: string,
   repo: string
 ): Promise<Set<string>> {
-  const result = await github.repos.getContent({
-    owner,
-    repo,
-    path: manifest.file,
-  });
-  const content = Buffer.from(result.data.content, 'base64').toString();
-  return new Set(parseManifest(content, manifest.type, manifest.jsonpath));
+  return github.repos
+    .getContent({
+      owner,
+      repo,
+      path: manifest.file,
+    })
+    .then(result => {
+      const content = Buffer.from(result.data.content, 'base64').toString();
+      return new Set(parseManifest(content, manifest.type, manifest.jsonpath));
+    })
+    .catch(e => {
+      logger.warn(`error loading manifest: ${manifest.file}`);
+      logger.warn(e);
+      return new Set();
+    });
 }
 
 /**

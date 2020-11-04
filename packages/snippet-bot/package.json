@@ -30,6 +30,7 @@
   "dependencies": {
     "gcf-utils": "^6.1.1",
     "node-fetch": "^2.6.0",
+    "parse-diff": "^0.7.1",
     "tar": "^6.0.5",
     "tmp-promise": "^3.0.2"
   },
