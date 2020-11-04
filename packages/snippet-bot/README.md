@@ -51,7 +51,7 @@ current PR.
 
 ## Refreshing on PRs
 
-You can add `snippet-bot:refresh` label on PRs for refreshing the
+You can add `snippet-bot:force-run` label on PRs for refreshing the
 result made by the bot.
 
 ## Full scan

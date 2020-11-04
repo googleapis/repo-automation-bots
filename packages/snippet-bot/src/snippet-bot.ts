@@ -54,7 +54,7 @@ const CONFIGURATION_FILE_PATH = 'snippet-bot.yml';
 
 const FULL_SCAN_ISSUE_TITLE = 'snippet-bot full scan';
 
-const REFRESH_LABEL = 'snippet-bot:refresh';
+const REFRESH_LABEL = 'snippet-bot:force-run';
 
 class Configuration {
   private options: ConfigurationOptions;
@@ -295,7 +295,7 @@ ${bodyDetail}`
         return;
       }
       if (context.payload.action === 'labeled') {
-        // Only proceeds if `snippet-bot:refresh` label is added.
+        // Only proceeds if `snippet-bot:force-run` label is added.
         if (context.payload.pull_request.labels === undefined) {
           return;
         }
@@ -440,8 +440,7 @@ ${bodyDetail}`
         commentBody += formatExpandable(summary, detail);
       }
 
-      commentBody +=
-        'To update this comment, add `snippet-bot:refresh` label.\n';
+      commentBody += `To update this comment, add \`${REFRESH_LABEL}\` label.\n`;
 
       const listCommentsResponse = await context.github.issues.listComments({
         owner: owner,

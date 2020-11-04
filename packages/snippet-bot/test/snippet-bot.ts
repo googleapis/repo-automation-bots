@@ -159,7 +159,7 @@ describe('snippet-bot', () => {
       requests.done();
     });
 
-    it('responds to snippet-bot:refresh label', async () => {
+    it('responds to snippet-bot:force-run label', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
       const payload = require(resolve(fixturesPath, './pr_event_label_added'));
@@ -172,7 +172,7 @@ describe('snippet-bot', () => {
         .reply(200, config)
         .delete(
           // For removing the label.
-          '/repos/tmatsuo/repo-automation-bots/issues/14/labels/snippet-bot%3Arefresh'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/labels/snippet-bot%3Aforce-run'
         )
         .reply(200)
         .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
