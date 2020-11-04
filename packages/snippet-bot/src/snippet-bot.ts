@@ -54,6 +54,8 @@ const CONFIGURATION_FILE_PATH = 'snippet-bot.yml';
 
 const FULL_SCAN_ISSUE_TITLE = 'snippet-bot full scan';
 
+const REFRESH_LABEL = 'snippet-bot:refresh';
+
 class Configuration {
   private options: ConfigurationOptions;
   private minimatches: minimatch.IMinimatch[];
@@ -149,6 +151,7 @@ export = (app: Application) => {
       'pull_request.opened',
       'pull_request.reopened',
       'pull_request.edited',
+      'pull_request.labeled',
       'pull_request.synchronize',
     ],
     async context => {
@@ -291,6 +294,25 @@ ${bodyDetail}`
       if (context.payload.pull_request === undefined) {
         return;
       }
+      if (context.payload.action === 'labeled') {
+        // Only proceeds if `snippet-bot:refresh` label is added.
+        if (context.payload.pull_request.labels === undefined) {
+          return;
+        }
+        let labelFound = false;
+        for (const label of context.payload.pull_request.labels) {
+          if (label.name === REFRESH_LABEL) {
+            labelFound = true;
+          }
+        }
+        if (!labelFound) {
+          return;
+        }
+        // Remove the label and proceed.
+        await context.github.issues.removeLabel(
+          context.issue({name: REFRESH_LABEL})
+        );
+      }
       // Check on pull requests.
       // List pull request files for the given PR
       // https://developer.github.com/v3/pulls/#list-pull-requests-files
@@ -417,6 +439,8 @@ ${bodyDetail}`
         }
         commentBody += formatExpandable(summary, detail);
       }
+
+      commentBody += 'To update this comment, add `snippet-bot:refresh` label.\n';
 
       const listCommentsResponse = await context.github.issues.listComments({
         owner: owner,
