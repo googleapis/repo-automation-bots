@@ -40,6 +40,9 @@ async function main() {
     const totalCount = res.data.total_count;
     console.log(`total count: ${totalCount}`);
     console.log(`required jobs: ${requiredJobs.length}`);
+    for (const job of requiredJobs) {
+      console.log(`- ${job}`);
+    }
     if (totalCount >= requiredJobs.length) {
       const successfulJobs = res.data.jobs.filter(job => {
         return job.status === 'completed' && job.conclusion === 'success';
