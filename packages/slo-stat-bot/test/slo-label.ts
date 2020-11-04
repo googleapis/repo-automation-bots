@@ -53,7 +53,7 @@ describe('slo-label', () => {
       resolve(fixturesPath, 'config', 'slo-stat-bot.yaml')
     );
 
-    let payload: Webhooks.EventNames.PullRequestEvent;
+    let payload: Webhooks.WebhookEvents;
     let appliesToStub: sinon.SinonStub;
     let isCompliantStub: sinon.SinonStub;
 

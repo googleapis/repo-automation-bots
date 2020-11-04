@@ -55,7 +55,7 @@ describe('slo-lint', () => {
   });
 
   describe('opened or reopened pull request', () => {
-    let payload: Webhooks.EventNames.PullRequestEvent;
+    let payload: Webhooks.WebhookEvents;
     let appliesToStub: sinon.SinonStub;
     let isCompliantStub: sinon.SinonStub;
     let handleSloStub: sinon.SinonStub;
@@ -161,7 +161,7 @@ describe('slo-lint', () => {
   });
 
   describe('handleSLOs is triggered', async () => {
-    let payload: Webhooks.EventNames.PullRequestEvent;
+    let payload: Webhooks.WebhookEvents;
     let appliesToStub: sinon.SinonStub;
     let isCompliantStub: sinon.SinonStub;
 
