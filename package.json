@@ -17,8 +17,5 @@
     "smee-client": "^1.1.0",
     "@microsoft/api-documenter": "^7.8.10",
     "@microsoft/api-extractor": "^7.8.10"
-  },
-  "dependencies": {
-    "gts": "^3.0.0"
   }
 }
