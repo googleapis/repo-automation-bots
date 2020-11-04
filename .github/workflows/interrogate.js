@@ -40,7 +40,7 @@ nodePaths = Array.from(nodePaths);
 goPaths = Array.from(goPaths);
 bashPaths = Array.from(bashPaths);
 const requiredJobs = [
-  'director',
+  'changeFinder',
   ...nodePaths.map(p => `test (${p})`),
   ...goPaths.map(p => `go-test (${p})`),
   ...bashPaths.map(p => `bash-test (${p})`),
