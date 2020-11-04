@@ -299,12 +299,12 @@ ${bodyDetail}`
         if (context.payload.pull_request.labels === undefined) {
           return;
         }
-        let labelFound = false;
-        for (const label of context.payload.pull_request.labels) {
-          if (label.name === REFRESH_LABEL) {
-            labelFound = true;
+        const labelFound = context.payload.pull_request.labels.some(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (label: any) => {
+            return label.name === REFRESH_LABEL;
           }
-        }
+        );
         if (!labelFound) {
           return;
         }
