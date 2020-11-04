@@ -138,6 +138,81 @@ describe('snippet-bot', () => {
       diffRequests.done();
     });
 
+    it('quits early for normal labels', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const payload = require(resolve(
+        fixturesPath,
+        './pr_event_label_ignored'
+      ));
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
+        )
+        .reply(200, config);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+    });
+
+    it('responds to snippet-bot:refresh label', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
+      const payload = require(resolve(fixturesPath, './pr_event_label_added'));
+      const blob = require(resolve(fixturesPath, './failure_blob'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
+        )
+        .reply(200, config)
+        .delete(
+          // For removing the label.
+          '/repos/tmatsuo/repo-automation-bots/issues/14/labels/snippet-bot%3Arefresh'
+        )
+        .reply(200)
+        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+        .reply(200, changedFiles)
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+        )
+        .reply(200, blob)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200)
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
+        )
+        .reply(200, [])
+        .post(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200);
+
+      const diffRequests = nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+        .reply(200, diffResponse);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+      diffRequests.done();
+    });
+
     it('does not submit a check on PR if there are no region tags', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
