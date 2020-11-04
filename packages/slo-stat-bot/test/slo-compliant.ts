@@ -154,7 +154,7 @@ describe('getContributers', () => {
     );
     assert.deepEqual(
       responders,
-      new Set<string>(['testOwner', 'admin1'])
+      new Set<string>(['testOwner', 'admin1', 'user1'])
     );
   });
   it('Contributer is owner', async () => {

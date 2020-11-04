@@ -234,7 +234,7 @@ export const getContributers = async function getContributers(
         collab.permissions.admin
       ) {
         responders.add(collab.login);
-      } else if (contributors === 'ADMIN' && collab.permissions.admin) {
+      } else if (contributors === 'ADMIN') {
         responders.add(collab.login);
       }
     }
