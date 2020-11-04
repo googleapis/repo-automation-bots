@@ -44,6 +44,16 @@ test.py:10, tag lol doesn't have a matching start tag
 test.py:8, tag world doesn't have a matching end tag
 ```
 
+## Comment on PRs
+
+The bot adds a comment summarizing changes w.r.t region tags in the
+current PR.
+
+## Refreshing on PRs
+
+You can add `snippet-bot:refresh` label on PRs for refreshing the
+result made by the bot.
+
 ## Full scan
 If you open an issue with `snippet-bot full scan` in its title, the
 bot will scan all the files in the repo and update the issue with the
