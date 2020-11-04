@@ -440,7 +440,8 @@ ${bodyDetail}`
         commentBody += formatExpandable(summary, detail);
       }
 
-      commentBody += 'To update this comment, add `snippet-bot:refresh` label.\n';
+      commentBody +=
+        'To update this comment, add `snippet-bot:refresh` label.\n';
 
       const listCommentsResponse = await context.github.issues.listComments({
         owner: owner,
