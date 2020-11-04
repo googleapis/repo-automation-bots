@@ -28,9 +28,12 @@
   "dependencies": {
     "@google-cloud/debug-agent": "^5.1.2",
     "@google-cloud/storage": "^5.0.0",
-    "gcf-utils": "^5.2.6"
+    "@octokit/types": "^5.5.0",
+    "gaxios": "^4.0.0",
+    "gcf-utils": "^6.1.1"
   },
   "devDependencies": {
+    "@probot/octokit-plugin-config": "^1.0.0",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.11.6",
     "@types/sinon": "^9.0.4",
@@ -44,6 +47,6 @@
     "typescript": "^3.8.3"
   },
   "engines": {
-    "node": ">= 10.13.0"
+    "node": ">= 12.18.2"
   }
 }

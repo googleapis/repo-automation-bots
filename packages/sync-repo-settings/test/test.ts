@@ -15,10 +15,14 @@
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
-// eslint-disable-next-line node/no-unsupported-features/node-builtins
+import {Probot, createProbot} from 'probot';
 import {promises as fs} from 'fs';
 import {handler} from '../src/sync-repo-settings';
+import assert from 'assert';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+import {config} from '@probot/octokit-plugin-config';
+const TestingOctokit = Octokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -39,9 +43,9 @@ function nockUpdateTeamMembership(team: string, org: string, repo: string) {
 
 function nockConfig404(org = 'googleapis', repo = 'api-common-java') {
   return nock('https://api.github.com')
-    .get(`/repos/${org}/${repo}/contents/.github/sync-repo-settings.yaml`)
+    .get(`/repos/${org}/${repo}/contents/.github%2Fsync-repo-settings.yaml`)
     .reply(404)
-    .get(`/repos/${org}/.github/contents/.github/sync-repo-settings.yaml`)
+    .get(`/repos/${org}/.github/contents/.github%2Fsync-repo-settings.yaml`)
     .reply(404);
 }
 
@@ -64,7 +68,7 @@ function nockUpdateBranchProtection(
   repo: string,
   contexts: string[],
   requireUpToDateBranch: boolean,
-  requireCodeOwners = false
+  requireCodeOwners: boolean
 ) {
   return nock('https://api.github.com')
     .put(`/repos/googleapis/${repo}/branches/master/protection`, {
@@ -83,9 +87,10 @@ function nockUpdateBranchProtection(
     .reply(200);
 }
 
+// meta comment about the 'any' here: https://github.com/octokit/webhooks.js/issues/277
 async function receive(org: string, repo: string, cronOrg?: string) {
   await probot.receive({
-    name: 'schedule.repository',
+    name: 'schedule.repository' as any,
     payload: {
       repository: {
         name: repo,
@@ -104,18 +109,11 @@ async function receive(org: string, repo: string, cronOrg?: string) {
 
 describe('Sync repo settings', () => {
   beforeEach(() => {
-    probot = new Probot({
-      // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest').Octokit,
+    probot = createProbot({
+      githubToken: 'abc123',
+      Octokit: TestingOctokit as any,
     });
-    probot.app = {
-      getSignedJsonWebToken() {
-        return 'abc123';
-      },
-      getInstallationAccessToken(): Promise<string> {
-        return Promise.resolve('abc123');
-      },
-    };
+
     probot.load(handler);
   });
 
@@ -124,16 +122,15 @@ describe('Sync repo settings', () => {
   });
 
   it('should ignore repos in ignored repos in required-checks.json', async () => {
-    const repo = 'api-common-java';
+    const repo = 'gax-ruby';
     const scopes = [
       nockConfig404(org, repo),
-      nockLanguagesList(org, repo, {java: 1}),
+      nockLanguagesList(org, repo, {ruby: 1}),
       nockUpdateTeamMembership('yoshi-admins', org, repo),
-      nockUpdateTeamMembership('yoshi-java-admins', org, repo),
-      nockUpdateTeamMembership('yoshi-java', org, repo),
-      nockUpdateTeamMembership('java-samples-reviewers', org, repo),
+      nockUpdateTeamMembership('yoshi-ruby-admins', org, repo),
+      nockUpdateTeamMembership('yoshi-ruby', org, repo),
     ];
-    await receive('googleapis', 'api-common-java');
+    await receive(org, repo);
     scopes.forEach(x => x.done());
   });
 
@@ -151,29 +148,17 @@ describe('Sync repo settings', () => {
   });
 
   it('should override master branch protection if the repo is overridden', async () => {
-    const repo = 'google-api-java-client';
+    const repo = 'python-bigtable';
     const scopes = [
       nockConfig404(org, repo),
-      nockLanguagesList(org, repo, {java: 1}),
-      nockUpdateRepoSettings(repo, false, true),
-      nockUpdateBranchProtection(
-        repo,
-        [
-          'Kokoro - Test: Binary Compatibility',
-          'Kokoro - Test: Java 11',
-          'Kokoro - Test: Java 7',
-          'Kokoro - Test: Java 8',
-          'Kokoro - Test: Linkage Monitor',
-          'cla/google',
-        ],
-        false
-      ),
+      nockLanguagesList(org, repo, {python: 1}),
+      nockUpdateRepoSettings(repo, true, true),
+      nockUpdateBranchProtection(repo, ['Kokoro', 'cla/google'], false, false),
       nockUpdateTeamMembership('yoshi-admins', org, repo),
-      nockUpdateTeamMembership('yoshi-java-admins', org, repo),
-      nockUpdateTeamMembership('yoshi-java', org, repo),
-      nockUpdateTeamMembership('java-samples-reviewers', org, repo),
+      nockUpdateTeamMembership('yoshi-python-admins', org, repo),
+      nockUpdateTeamMembership('yoshi-python', org, repo),
     ];
-    await receive('googleapis', 'google-api-java-client');
+    await receive(org, repo);
     scopes.forEach(s => s.done());
   });
 
@@ -195,7 +180,8 @@ describe('Sync repo settings', () => {
           'lint',
           'test (10)',
           'test (12)',
-          'test (13)',
+          'test (14)',
+          'test (15)',
           'cla/google',
           'windows',
         ],
@@ -234,19 +220,179 @@ describe('Sync repo settings', () => {
   it('should use localized config if available', async () => {
     const org = 'googleapis';
     const repo = 'fake';
+    const content = await fs.readFile('./test/fixtures/localConfig.yaml');
+    const scopes = [
+      nock('https://api.github.com')
+        .get(`/repos/${org}/${repo}/contents/.github%2Fsync-repo-settings.yaml`)
+        .reply(200, content),
+      nockUpdateRepoSettings(repo, false, true),
+      nockUpdateBranchProtection(repo, ['check1', 'check2'], false, true),
+      nockUpdateTeamMembership('team1', org, repo),
+    ];
+    await receive(org, repo);
+    scopes.forEach(x => x.done());
+  });
+
+  it('should detect a valid schema', async () => {
+    const org = 'googleapis';
+    const repo = 'fake';
+    const fileSha = 'bbcd538c8e72b8c175046e27cc8f907076331401';
+    const headSha = 'abc123';
     const content = await fs.readFile(
       './test/fixtures/localConfig.yaml',
       'base64'
     );
     const scopes = [
       nock('https://api.github.com')
-        .get(`/repos/${org}/${repo}/contents/.github/sync-repo-settings.yaml`)
+        .get(`/repos/${org}/${repo}/pulls/1/files?per_page=100`)
+        .reply(200, [
+          {
+            sha: fileSha,
+            filename: '.github/sync-repo-settings.yaml',
+            status: 'added',
+          },
+        ]),
+      nock('https://api.github.com')
+        .get(`/repos/${org}/${repo}/git/blobs/${fileSha}`)
         .reply(200, {content}),
-      nockUpdateRepoSettings(repo, false, true),
-      nockUpdateBranchProtection(repo, ['check1', 'check2'], false, true),
-      nockUpdateTeamMembership('team1', org, repo),
+      nock('https://api.github.com')
+        .post(`/repos/${org}/${repo}/check-runs`, body => {
+          assert.strictEqual(body.conclusion, 'success');
+          return true;
+        })
+        .reply(200),
     ];
-    await receive(org, repo);
+    await probot.receive({
+      name: 'pull_request',
+      payload: {
+        action: 'opened',
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+        },
+        organization: {
+          login: org,
+        },
+        number: 1,
+        pull_request: {
+          head: {
+            sha: headSha,
+          },
+        },
+      },
+      id: 'abc123',
+    });
+    scopes.forEach(x => x.done());
+  });
+
+  it('should detect an invalid schema', async () => {
+    const org = 'googleapis';
+    const repo = 'fake';
+    const fileSha = 'bbcd538c8e72b8c175046e27cc8f907076331401';
+    const headSha = 'abc123';
+    const content = await fs.readFile(
+      './test/fixtures/bogusConfig.yaml',
+      'base64'
+    );
+    const scopes = [
+      nock('https://api.github.com')
+        .get(`/repos/${org}/${repo}/pulls/1/files?per_page=100`)
+        .reply(200, [
+          {
+            sha: fileSha,
+            filename: '.github/sync-repo-settings.yaml',
+            status: 'added',
+          },
+        ]),
+      nock('https://api.github.com')
+        .get(`/repos/${org}/${repo}/git/blobs/${fileSha}`)
+        .reply(200, {content}),
+      nock('https://api.github.com')
+        .post(`/repos/${org}/${repo}/check-runs`, body => {
+          assert.strictEqual(body.conclusion, 'failure');
+
+          return true;
+        })
+        .reply(200),
+    ];
+    await probot.receive({
+      name: 'pull_request',
+      payload: {
+        action: 'opened',
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+        },
+        organization: {
+          login: org,
+        },
+        number: 1,
+        pull_request: {
+          head: {
+            sha: headSha,
+          },
+        },
+      },
+      id: 'abc123',
+    });
+    scopes.forEach(x => x.done());
+  });
+
+  it('should detect invalid yaml in the schema', async () => {
+    const org = 'googleapis';
+    const repo = 'fake';
+    const fileSha = 'bbcd538c8e72b8c175046e27cc8f907076331401';
+    const headSha = 'abc123';
+    const content = await fs.readFile(
+      './test/fixtures/invalidYamlConfig.yaml',
+      'base64'
+    );
+    const scopes = [
+      nock('https://api.github.com')
+        .get(`/repos/${org}/${repo}/pulls/1/files?per_page=100`)
+        .reply(200, [
+          {
+            sha: fileSha,
+            filename: '.github/sync-repo-settings.yaml',
+            status: 'added',
+          },
+        ]),
+      nock('https://api.github.com')
+        .get(`/repos/${org}/${repo}/git/blobs/${fileSha}`)
+        .reply(200, {content}),
+      nock('https://api.github.com')
+        .post(`/repos/${org}/${repo}/check-runs`, body => {
+          assert.strictEqual(body.conclusion, 'failure');
+          return true;
+        })
+        .reply(200),
+    ];
+    await probot.receive({
+      name: 'pull_request',
+      payload: {
+        action: 'opened',
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+        },
+        organization: {
+          login: org,
+        },
+        number: 1,
+        pull_request: {
+          head: {
+            sha: headSha,
+          },
+        },
+      },
+      id: 'abc123',
+    });
     scopes.forEach(x => x.done());
   });
 });

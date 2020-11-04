@@ -3,6 +3,7 @@
     "rebaseMergeAllowed": false,
     "branchProtectionRules": [
       {
+        "requiresCodeOwnerReviews": true,
         "requiredStatusCheckContexts": [
           "dependencies (8)",
           "dependencies (11)",
@@ -16,14 +17,6 @@
           "cla/google"
         ]
       }
-    ],
-    "ignoredRepos": [
-      "googleapis/api-common-java",
-      "googleapis/disco-to-proto3-converter",
-      "googleapis/gapic-generator",
-      "googleapis/gapic-generator-java",
-      "GoogleCloudPlatform/java-docs-samples",
-      "GoogleCloudPlatform/getting-started-java"
     ],
     "permissionRules": [
       {
@@ -42,234 +35,12 @@
         "team": "yoshi-java",
         "permission": "push"
       }
-    ],
-    "repoOverrides": [
-      {
-        "repo": "googleapis/java-cloud-bom",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: BOM Upper Bounds",
-              "dependencies (8)",
-              "dependencies (11)",
-              "linkage-monitor",
-              "lint",
-              "clirr",
-              "units (7)",
-              "units (8)",
-              "units (11)",
-              "Kokoro - Test: Integration",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/gax-java",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "linkage-monitor",
-              "units (7)",
-              "units (8)",
-              "units (11)",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/java-conformance-tests",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "dependencies (8)",
-              "dependencies (11)",
-              "linkage-monitor",
-              "lint",
-              "clirr",
-              "units (7)",
-              "units (8)",
-              "units (11)",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "GoogleCloudPlatform/getting-started-java",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro CI - Java 8",
-              "Kokoro CI - Lint",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "GoogleCloudPlatform/java-docs-samples",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro CI - Java 11",
-              "Kokoro CI - Java 8",
-              "Kokoro CI - Lint",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/google-auth-library-java",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: Binary Compatibility",
-              "Kokoro - Test: Code Format",
-              "Kokoro - Test: Dependencies",
-              "Kokoro - Test: Java 11",
-              "Kokoro - Test: Java 7",
-              "Kokoro - Test: Java 8",
-              "Kokoro - Test: Linkage Monitor",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/google-api-java-client-services",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: Generator",
-              "Kokoro - Test: Java 8",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/google-api-java-client",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: Binary Compatibility",
-              "Kokoro - Test: Java 11",
-              "Kokoro - Test: Java 7",
-              "Kokoro - Test: Java 8",
-              "Kokoro - Test: Linkage Monitor",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/google-http-java-client",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: Binary Compatibility",
-              "Kokoro - Test: Code Format",
-              "Kokoro - Test: Dependencies",
-              "Kokoro - Test: Java 11",
-              "Kokoro - Test: Java 7",
-              "Kokoro - Test: Java 8",
-              "Kokoro - Test: Linkage Monitor",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/google-oauth-java-client",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: Binary Compatibility",
-              "Kokoro - Test: Java 11",
-              "Kokoro - Test: Java 7",
-              "Kokoro - Test: Java 8",
-              "Kokoro - Test: Linkage Monitor",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/google-cloud-java",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: Code Format",
-              "Kokoro - Test: Java 11",
-              "Kokoro - Test: Java 7",
-              "Kokoro - Test: Java 8",
-              "Kokoro - Test: Linkage Monitor",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/java-bigtable-hbase",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: Binary Compatibility",
-              "Kokoro - Test: Code Format",
-              "Kokoro - Test: Dependencies",
-              "Kokoro - Test: Integration",
-              "Kokoro - Test: Java 11",
-              "Kokoro - Test: Java 8",
-              "Kokoro - Test: Linkage Monitor",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/java-pubsublite",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "dependencies (8)",
-              "dependencies (11)",
-              "linkage-monitor",
-              "lint",
-              "clirr",
-              "units (8)",
-              "units (11)",
-              "Kokoro - Test: Integration",
-              "cla/google"
-            ]
-          }
-        ]
-      },
-      {
-        "repo": "googleapis/java-spanner",
-        "branchProtectionRules": [
-          {
-            "requiredStatusCheckContexts": [
-              "Kokoro - Test: Binary Compatibility",
-              "Kokoro - Test: Code Format",
-              "Kokoro - Test: Dependencies",
-              "Kokoro - Test: Integration",
-              "Kokoro - Test: Java 11",
-              "Kokoro - Test: Java 8",
-              "Kokoro - Test: Java 7",
-              "Kokoro - Test: Linkage Monitor",
-              "cla/google"
-            ]
-          }
-        ]
-      }
     ]
   },
   "python": {
     "branchProtectionRules": [
       {
+        "requiresCodeOwnerReviews": true,
         "requiresStrictStatusChecks": true,
         "requiredStatusCheckContexts": [
           "Kokoro",
@@ -289,22 +60,20 @@
       {
         "team": "yoshi-python",
         "permission": "push"
+      },
+      {
+        "team": "python-samples-owners",
+        "permission": "push"
       }
     ],
     "repoOverrides": [
       {
-        "repo": "googleapis/proto-plus-python",
+        "repo": "googleapis/python-bigtable",
         "branchProtectionRules": [
           {
+            "requiresStrictStatusChecks": false,
             "requiredStatusCheckContexts": [
-              "ci/circleci: docs",
-              "ci/circleci: style-check",
-              "ci/circleci: unit-3.5",
-              "ci/circleci: unit-3.6",
-              "ci/circleci: unit-3.7",
-              "ci/circleci: unit-cpp-3.5",
-              "ci/circleci: unit-cpp-3.6",
-              "ci/circleci: unit-cpp-3.7",
+              "Kokoro",
               "cla/google"
             ]
           }
@@ -314,10 +83,7 @@
     "ignoredRepos": [
       "GoogleCloudPlatform/python-docs-samples",
       "GoogleCloudPlatform/getting-started-python",
-      "googleapis/gapic-generator-python",
-      "googleapis/releasetool",
       "googleapis/sample-tester",
-      "googleapis/synthtool",
       "googleapis/google-cloud-python"
     ]
   },
@@ -333,7 +99,8 @@
           "lint",
           "test (10)",
           "test (12)",
-          "test (13)",
+          "test (14)",
+          "test (15)",
           "cla/google",
           "windows"
         ]
@@ -356,11 +123,11 @@
     "ignoredRepos": [
       "GoogleCloudPlatform/nodejs-docs-samples",
       "GoogleCloudPlatform/nodejs-getting-started",
-      "googleapis/repo-automation-bots",
       "googleapis/google-cloud-node",
       "googleapis/gapic-generator-typescript",
       "googleapis/aip",
-      "googleapis/release-please"
+      "googleapis/release-please",
+      "google-cloudevents-nodejs"
     ]
   },
   "ruby": {

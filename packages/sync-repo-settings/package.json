@@ -26,9 +26,16 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "^5.2.6"
+    "@types/js-yaml": "^3.12.5",
+    "ajv": "^6.12.4",
+    "extend": "^3.0.2",
+    "gcf-utils": "^6.1.1",
+    "js-yaml": "^3.14.0"
   },
   "devDependencies": {
+    "@octokit/types": "^5.5.0",
+    "@probot/octokit-plugin-config": "^1.0.0",
+    "@types/extend": "^3.0.1",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.11.6",
     "c8": "^7.1.0",
@@ -40,6 +47,6 @@
     "typescript": "^3.9.6"
   },
   "engines": {
-    "node": ">= 10.17.0"
+    "node": ">= 12.18.2"
   }
 }

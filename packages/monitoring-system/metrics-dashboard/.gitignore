@@ -1,0 +1,8 @@
+# node
+./node_modules
+
+# Firebase cache
+.firebase/
+
+# Credentials
+firestore-config.json

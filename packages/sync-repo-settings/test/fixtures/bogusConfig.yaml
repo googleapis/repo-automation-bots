@@ -1,0 +1,10 @@
+rebaseMergeAllowed: false
+notAllowed: true
+branchProtectionRules:
+- requiresCodeOwnerReviews: true
+  requiredStatusCheckContexts:
+    - check1
+    - check2
+permissionRules:
+  - team: team1
+    permission: push

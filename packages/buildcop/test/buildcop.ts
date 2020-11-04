@@ -14,12 +14,16 @@
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, createProbot} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
-import {expect} from 'chai';
+import * as assert from 'assert';
 import {describe, it, beforeEach} from 'mocha';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+import {config} from '@probot/octokit-plugin-config';
+const TestingOctokit = Octokit.plugin(config);
 
 import {buildcop} from '../src/buildcop';
 const {findTestResults, formatTestCase} = buildcop;
@@ -96,20 +100,11 @@ describe('buildcop', () => {
   let probot: Probot;
 
   beforeEach(() => {
-    probot = new Probot({
-      // use a bare instance of octokit, the default version
-      // enables retries which makes testing difficult.
-      // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest'),
+    probot = createProbot({
+      githubToken: 'abc123',
+      Octokit: TestingOctokit as any,
     });
-    probot.app = {
-      getSignedJsonWebToken() {
-        return 'abc123';
-      },
-      getInstallationAccessToken(): Promise<string> {
-        return Promise.resolve('abc123');
-      },
-    };
+
     probot.load(buildcop);
   });
 
@@ -122,7 +117,7 @@ describe('buildcop', () => {
         want
       );
       const result = buildcop.extractBuildURL(input);
-      expect(result).to.equal(want);
+      assert.strictEqual(result, want);
     });
   });
 
@@ -133,7 +128,7 @@ describe('buildcop', () => {
         'utf8'
       );
       const results = findTestResults(input);
-      expect(results).to.eql({
+      assert.deepStrictEqual(results, {
         failures: [
           {
             package:
@@ -170,7 +165,7 @@ describe('buildcop', () => {
         'utf8'
       );
       const results = findTestResults(input);
-      expect(results).to.eql({
+      assert.deepStrictEqual(results, {
         failures: [
           {
             package:
@@ -217,7 +212,7 @@ describe('buildcop', () => {
         'utf8'
       );
       const results = findTestResults(input);
-      expect(results).to.eql({
+      assert.deepStrictEqual(results, {
         failures: [],
         passes: [
           {
@@ -241,7 +236,7 @@ describe('buildcop', () => {
         'utf8'
       );
       const results = findTestResults(input);
-      expect(results).to.eql({
+      assert.deepStrictEqual(results, {
         passes: [],
         failures: [],
       });
@@ -253,7 +248,7 @@ describe('buildcop', () => {
         'utf8'
       );
       const results = findTestResults(input);
-      expect(results).to.eql({
+      assert.deepStrictEqual(results, {
         failures: [],
         passes: [
           {
@@ -273,7 +268,7 @@ describe('buildcop', () => {
         testCase: 'TestPublish',
         passed: true,
       });
-      expect(got).to.equal('pubsub: TestPublish failed');
+      assert.strictEqual(got, 'pubsub: TestPublish failed');
     });
 
     it('shortens test with / in name', () => {
@@ -282,7 +277,7 @@ describe('buildcop', () => {
         testCase: 'TestPublish/One',
         passed: true,
       });
-      expect(got).to.equal('pubsub: TestPublish failed');
+      assert.strictEqual(got, 'pubsub: TestPublish failed');
     });
   });
 
@@ -297,7 +292,11 @@ describe('buildcop', () => {
       };
 
       const requests = nock('https://api.github.com');
-      await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+      await probot.receive({
+        name: 'pubsub.message' as any,
+        payload,
+        id: 'abc123',
+      });
       requests.done();
     });
 
@@ -317,7 +316,11 @@ describe('buildcop', () => {
           nockNewIssue('golang-samples'),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -344,7 +347,11 @@ describe('buildcop', () => {
           nockNewIssue('golang-samples'),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -372,7 +379,11 @@ describe('buildcop', () => {
           nockIssueComment('golang-samples', 16),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -387,7 +398,11 @@ describe('buildcop', () => {
           nockNewIssue('golang-samples'),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -403,7 +418,31 @@ describe('buildcop', () => {
           nockNewIssue('python-docs-samples'),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('opens an issue [Python error]', async () => {
+        const payload = buildPayload(
+          'python_one_error.xml',
+          'python-docs-samples'
+        );
+
+        const scopes = [
+          nockIssues('python-docs-samples'),
+          nockNewIssue('python-docs-samples'),
+        ];
+
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -413,7 +452,28 @@ describe('buildcop', () => {
 
         const scopes = [nockIssues('java-vision'), nockNewIssue('java-vision')];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('opens an issue 2 [Java]', async () => {
+        const payload = buildPayload('java_one_error.xml', 'java-datastore');
+
+        const scopes = [
+          nockIssues('java-datastore'),
+          nockNewIssue('java-datastore'),
+        ];
+
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -426,7 +486,31 @@ describe('buildcop', () => {
           nockNewIssue('nodejs-spanner'),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('opens an issue [Ruby]', async () => {
+        const payload = buildPayload(
+          'ruby_one_failed.xml',
+          'ruby-docs-samples'
+        );
+
+        const scopes = [
+          nockIssues('ruby-docs-samples'),
+          nockNewIssue('ruby-docs-samples'),
+        ];
+
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -464,7 +548,11 @@ describe('buildcop', () => {
           nockIssueComment('golang-samples', 16),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -505,7 +593,11 @@ describe('buildcop', () => {
           nockIssueComment('golang-samples', 17),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -546,7 +638,11 @@ describe('buildcop', () => {
           nockIssueComment('golang-samples', 17),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -556,7 +652,11 @@ describe('buildcop', () => {
 
         const scopes = [nockIssues('golang-samples')];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -595,7 +695,11 @@ describe('buildcop', () => {
           nockIssuePatch('golang-samples', 16),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -620,7 +724,11 @@ describe('buildcop', () => {
           nockIssuePatch('golang-samples', 16),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -648,7 +756,11 @@ describe('buildcop', () => {
           nockIssuePatch('python-docs-samples', 16),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -673,7 +785,11 @@ describe('buildcop', () => {
           nockIssuePatch('java-vision', 16),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -696,7 +812,11 @@ describe('buildcop', () => {
           ]),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -728,7 +848,11 @@ describe('buildcop', () => {
           nockIssuePatch('golang-samples', 16),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -754,7 +878,11 @@ describe('buildcop', () => {
           nockIssuePatch('golang-samples', 16),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -784,7 +912,11 @@ describe('buildcop', () => {
             ]),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -808,7 +940,11 @@ describe('buildcop', () => {
           ]),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -837,7 +973,11 @@ describe('buildcop', () => {
           nockNewIssue('golang-samples'),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -891,7 +1031,11 @@ describe('buildcop', () => {
           nockIssues('golang-samples'), // Real response would include all issues again.
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -926,7 +1070,56 @@ describe('buildcop', () => {
           nockIssuePatch('golang-samples', 19),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('reopens the more recently closed issue when there is a duplicate', async () => {
+        const payload = buildPayload('one_failed.xml', 'golang-samples');
+
+        const title = formatTestCase({
+          package:
+            'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+          testCase: 'TestSample',
+          passed: false,
+        });
+
+        const sixDaysAgo = new Date();
+        sixDaysAgo.setDate(sixDaysAgo.getDate() - 6);
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+
+        const scopes = [
+          nockIssues('golang-samples', [
+            {
+              title,
+              number: 18,
+              body: 'Failure!',
+              state: 'closed',
+              closed_at: sixDaysAgo.toISOString(),
+            },
+            {
+              title,
+              number: 19, // Newer issue closed more recently.
+              body: 'Failure!',
+              state: 'closed',
+              closed_at: fiveDaysAgo.toISOString(),
+            },
+          ]),
+          nockIssueComment('golang-samples', 19),
+          nockIssuePatch('golang-samples', 19),
+        ];
+
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -939,7 +1132,11 @@ describe('buildcop', () => {
           nockNewIssue('golang-samples'),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -965,7 +1162,11 @@ describe('buildcop', () => {
           nockNewIssue('golang-samples'),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -993,7 +1194,11 @@ describe('buildcop', () => {
           nockNewIssue('golang-samples'),
         ];
 
-        await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pubsub.message' as any,
+          payload,
+          id: 'abc123',
+        });
 
         scopes.forEach(s => s.done());
       });
@@ -1020,7 +1225,11 @@ describe('buildcop', () => {
             nockNewIssue('nodejs-spanner'),
           ];
 
-          await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+          await probot.receive({
+            name: 'pubsub.message' as any,
+            payload,
+            id: 'abc123',
+          });
 
           scopes.forEach(s => s.done());
         });
@@ -1054,7 +1263,11 @@ describe('buildcop', () => {
             nockIssuePatch('nodejs-spanner', 9),
           ];
 
-          await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+          await probot.receive({
+            name: 'pubsub.message' as any,
+            payload,
+            id: 'abc123',
+          });
 
           scopes.forEach(s => s.done());
         });
@@ -1079,7 +1292,11 @@ describe('buildcop', () => {
             ]),
           ];
 
-          await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+          await probot.receive({
+            name: 'pubsub.message' as any,
+            payload,
+            id: 'abc123',
+          });
 
           scopes.forEach(s => s.done());
         });
@@ -1114,7 +1331,11 @@ describe('buildcop', () => {
             nockIssuePatch('nodejs-spanner', 10),
           ];
 
-          await probot.receive({name: 'pubsub.message', payload, id: 'abc123'});
+          await probot.receive({
+            name: 'pubsub.message' as any,
+            payload,
+            id: 'abc123',
+          });
 
           scopes.forEach(s => s.done());
         });

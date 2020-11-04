@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Sync Repo Settings Config",
+  "description": "Schema for defining the sync repo settings config",
+  "additionalProperties": false,
+  "properties": {
+    "squashMergeAllowed": {
+      "description": "Whether or not squash-merging is enabled on this repository.",
+      "type": "boolean"
+    },
+    "rebaseMergeAllowed": {
+      "description": "Whether or not rebase-merging is enabled on this repository.",
+      "type": "boolean"
+    },
+    "mergeCommitAllowed": {
+      "description": "Whether or not PRs are merged with a merge commit on this repository.",
+      "type": "boolean"
+    },
+    "branchProtectionRules": {
+      "description": "Branch protection rules",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "pattern": {
+            "description": "Identifies the protection rule pattern.",
+            "type": "string"
+          },
+          "dismissesStaleReviews": {
+            "description": "Will new commits pushed to matching branches dismiss pull request review approvals.",
+            "type": "boolean"
+          },
+          "isAdminEnforced": {
+            "description": "Can admins overwrite branch protection.",
+            "type": "boolean"
+          },
+          "requiredApprovingReviewCount": {
+            "description": "Number of approving reviews required to update matching branches.",
+            "type": "number"
+          },
+          "requiredStatusCheckContexts": {
+            "description": "List of required status check contexts that must pass for commits to be accepted to matching branches.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "requiresCodeOwnerReviews": {
+            "description": "Are reviews from code owners required to update matching branches.",
+            "type": "boolean"
+          },
+          "requiresCommitSignatures": {
+            "description": "Are commits required to be signed.",
+            "type": "boolean"
+          },
+          "requiresStatusChecks": {
+            "description": "Are status checks required to update matching branches.",
+            "type": "boolean"
+          },
+          "requiresStrictStatusChecks": {
+            "description": "Are branches required to be up to date before merging.",
+            "type": "boolean"
+          },
+          "restrictsPushes": {
+            "description": "Is pushing to matching branches restricted.",
+            "type": "boolean"
+          },
+          "restrictsReviewDismissals": {
+            "description": "Is dismissal of pull request reviews restricted.",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "permissionRules": {
+      "description": "List of explicit permissions to add (additive only)",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "team": {
+            "description": "Team slug to provide access.",
+            "type": "string"
+          },
+          "permission": {
+            "description": "Permission to provide the team.  Can be one of (pull|push|admin)",
+            "type": "string",
+            "enum": ["pull", "push", "admin"]
+          }
+        },
+        "required": ["team", "permission"]
+      }
+    }
+  }
+}

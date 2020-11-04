@@ -12,12 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFLogger, initLogger} from '../src/gcf-utils';
+import {logger} from '../src/gcf-utils';
+import {GCFLogger} from '../src/logging/gcf-logger';
 import {describe, beforeEach, it} from 'mocha';
 import {ObjectWritableMock} from 'stream-mock';
 import {validateLogs, LogLine, logLevels} from './test-helpers';
 
 describe('GCFLogger', () => {
+  describe('gcf-util', () => {
+    it('exports a GCFLogger', () => {
+      logger.info('successfully imported logger from gcf-utils');
+    });
+  });
   describe('logger instance', () => {
     let destination: ObjectWritableMock;
     let logger: GCFLogger & {[key: string]: Function};
@@ -51,12 +57,21 @@ describe('GCFLogger', () => {
             logLevels[level]
           );
         });
+
+        it(`allows ${level} log to be passed as argument`, done => {
+          setTimeout(logger[level], 1);
+          setTimeout(() => {
+            return done();
+          });
+        });
       }
     }
 
     beforeEach(() => {
       destination = new ObjectWritableMock();
-      logger = initLogger(destination) as GCFLogger & {[key: string]: Function};
+      logger = new GCFLogger(destination) as GCFLogger & {
+        [key: string]: Function;
+      };
     });
 
     testAllLevels();

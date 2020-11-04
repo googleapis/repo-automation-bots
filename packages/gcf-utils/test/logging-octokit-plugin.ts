@@ -17,7 +17,7 @@ import {describe, beforeEach, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
 import assert from 'assert';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const LoggingOctokitPlugin = require('../src/logging-octokit-plugin.js');
+const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
 
 interface LogStatement {
   [key: string]: string | number | LogStatement;
@@ -48,7 +48,7 @@ describe('Logging-Octokit-Plugin', () => {
         repo: 'barRepo',
         labels: ['a', 'b'],
       })
-      .catch(e => {
+      .catch((e: Error) => {
         // ignore HTTP Errors since Octokit is unauthenticated
         if (e.name !== 'HttpError') throw e;
       })
@@ -80,7 +80,7 @@ describe('Logging-Octokit-Plugin', () => {
         repo: 'barRepo',
         body: 'comment body',
       })
-      .catch(e => {
+      .catch((e: Error) => {
         // ignore HTTP Errors since Octokit is unauthenticated
         if (e.name !== 'HttpError') throw e;
       })
@@ -112,7 +112,7 @@ describe('Logging-Octokit-Plugin', () => {
         name: 'labelName',
         color: 'blue',
       })
-      .catch(e => {
+      .catch((e: Error) => {
         // ignore HTTP Errors since Octokit is unauthenticated
         if (e.name !== 'HttpError') throw e;
       })
@@ -140,7 +140,7 @@ describe('Logging-Octokit-Plugin', () => {
         issue_number: 3,
         name: 'labelName',
       })
-      .catch(e => {
+      .catch((e: Error) => {
         // ignore HTTP Errors since Octokit is unauthenticated
         if (e.name !== 'HttpError') throw e;
       })
@@ -360,7 +360,12 @@ describe('Logging-Octokit-Plugin', () => {
 
   it('does not log information for unknown actions', () => {
     loggingOctokit.issues
-      .checkAssignee({owner: 'fooOwner', repo: 'barRepo', assignee: 'bar'})
+      .removeAssignees({
+        issue_number: 99,
+        owner: 'fooOwner',
+        repo: 'barRepo',
+        assignee: 'bar',
+      })
       .catch(e => {
         // ignore HTTP Errors since Octokit is unauthenticated
         if (e.name !== 'HttpError') throw e;

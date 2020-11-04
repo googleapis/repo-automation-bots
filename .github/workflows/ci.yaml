@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: 12
+          node-version: ${{ matrix.node }}
       - run: echo ./packages/${{ matrix.package }}
       - run: cd ./packages/${{ matrix.package }}
       - run: npm install

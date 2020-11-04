@@ -13,13 +13,21 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, GitHubAPI, Octokit} from 'probot';
+import {Application, Context} from 'probot';
 import {createHash} from 'crypto';
 import {Storage} from '@google-cloud/storage';
 import * as util from 'util';
 import {logger} from 'gcf-utils';
+import {request} from 'gaxios';
+import {IssuesListLabelsForRepoResponseData} from '@octokit/types';
 
 const storage = new Storage();
+
+export interface ConfigurationOptions {
+  ignored?: boolean;
+}
+
+const CONFIGURATION_FILE = 'label-sync.yml';
 
 interface Labels {
   labels: [
@@ -31,13 +39,17 @@ interface Labels {
   ];
 }
 
+interface Repo {
+  full_name: string;
+}
+
 // Labels are fetched by reaching out to GitHub *instead* of grabbing the file
 // from the local copy.  We are using the `PushEvent` to detect the change,
 // meaning the file running in cloud will be older than the one on master.
 let labelsCache: Labels;
-async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
+async function getLabels(repoPath: string): Promise<Labels> {
   if (!labelsCache) {
-    await refreshLabels(github);
+    await refreshLabels();
   }
   const labels = {
     labels: labelsCache.labels.slice(0),
@@ -66,43 +78,80 @@ async function getLabels(github: GitHubAPI, repoPath: string): Promise<Labels> {
 
 /**
  * Fetch the list of static labels from this repository, and cache it.
+ * Note: this method uses gaxios and a direct HTTP request as opposed to
+ * an API call through octokit on purpose :) The GitHub API requires specific
+ * permissions to access content in a repository.
  */
-async function refreshLabels(github: GitHubAPI) {
-  const data = (
-    await github.repos.getContents({
-      owner: 'googleapis',
-      repo: 'repo-automation-bots',
-      path: 'packages/label-sync/src/labels.json',
-    })
-  ).data as {content?: string};
-  labelsCache = JSON.parse(
-    Buffer.from(data.content as string, 'base64').toString('utf8')
-  );
+async function refreshLabels() {
+  const url =
+    'https://raw.githubusercontent.com/googleapis/repo-automation-bots/master/packages/label-sync/src/labels.json';
+  const res = await request<Labels>({url});
+  labelsCache = res.data;
 }
 
 export function handler(app: Application) {
-  const events = [
-    'repository.created',
-    'repository.transferred',
-    'label.edited',
-    'label.deleted',
-    'schedule.repository',
-  ];
+  app.on(
+    [
+      'repository.created',
+      'repository.transferred',
+      'label.edited',
+      'label.deleted',
+    ],
+    async c => {
+      const [owner, repo] = c.payload.repository.full_name.split('/');
 
-  app.on(events, async c => {
-    const [owner, repo] = c.payload.repository.full_name.split('/');
+      // Allow the label sync logic to be ignored for a repository:
+      const remoteConfiguration = await loadConfig(c);
+      if (remoteConfiguration?.ignored) {
+        logger.info(`skipping repository ${repo}`);
+        return;
+      }
+
+      await reconcileLabels(c.github, owner, repo);
+    }
+  );
+
+  app.on('schedule.repository' as any, async c => {
+    const owner = c.payload.organization.login;
+    const repo = c.payload.repository.name;
+
+    // Allow the label sync logic to be ignored for a repository:
+    const remoteConfiguration = await loadConfig(c);
+    if (remoteConfiguration?.ignored) {
+      logger.info(`skipping repository ${repo}`);
+      return;
+    }
+
+    logger.info(`running for org ${c.payload.cron_org}`);
+
+    if (c.payload.cron_org !== owner) {
+      logger.info(`skipping run for ${c.payload.cron_org}`);
+      return;
+    }
+
     await reconcileLabels(c.github, owner, repo);
   });
 
   app.on('installation_repositories.added', async c => {
     await Promise.all(
-      c.payload.repositories_added.map(r => {
+      c.payload.repositories_added.map((r: Repo) => {
         const [owner, repo] = r.full_name.split('/');
         return reconcileLabels(c.github, owner, repo);
       })
     );
   });
 }
+
+/*
+ * Fetch remote configuration.
+ * @param probot context.
+ *
+ */
+export const loadConfig = async (context: Context) => {
+  return (await context.config(
+    CONFIGURATION_FILE
+  )) as ConfigurationOptions | null;
+};
 
 interface GetApiLabelsResponse {
   apis: Array<{
@@ -166,14 +215,18 @@ export const getApiLabels = async (
  * Main method. Fetch a list of required labels, and apply them to a given
  * repository.
  */
-async function reconcileLabels(github: GitHubAPI, owner: string, repo: string) {
-  const newLabels = await getLabels(github, `${owner}/${repo}`);
+async function reconcileLabels(
+  github: Context['github'],
+  owner: string,
+  repo: string
+) {
+  const newLabels = await getLabels(`${owner}/${repo}`);
   const options = github.issues.listLabelsForRepo.endpoint.merge({
     owner,
     repo,
     per_page: 100,
   });
-  const oldLabels: Octokit.IssuesListLabelsForRepoResponseItem[] = await github.paginate(
+  const oldLabels: IssuesListLabelsForRepoResponseData = await github.paginate(
     options
   );
   for (const l of newLabels.labels) {

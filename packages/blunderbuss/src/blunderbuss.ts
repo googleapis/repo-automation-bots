@@ -13,8 +13,9 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
+import {Application, Context} from 'probot';
 import * as util from 'util';
+import {logger, TriggerType} from 'gcf-utils';
 
 const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';
@@ -28,6 +29,7 @@ interface Configuration {
   assign_issues?: string[];
   assign_issues_by?: ByConfig[];
   assign_prs?: string[];
+  assign_prs_by?: ByConfig[];
 }
 
 interface Issue {
@@ -35,6 +37,7 @@ interface Issue {
   repo: string;
   number: number;
   labels: {name: string}[];
+  draft?: boolean;
 }
 
 // Randomly returns an item from an array, while ignoring the provided value.
@@ -61,31 +64,51 @@ export function blunderbuss(app: Application) {
       'issues.labeled',
       'pull_request.opened',
       'pull_request.reopened',
+      'pull_request.edited',
       'pull_request.labeled',
     ],
     async context => {
-      const config = (await context.config(
-        CONFIGURATION_FILE_PATH,
-        {}
-      )) as Configuration;
-      const issue = (context.payload.issue
-        ? context.payload.issue
-        : context.payload.pull_request) as Issue;
+      let config: Configuration = {};
+      try {
+        // Reading the config requires access to code permissions, which are not
+        // always available for private repositories.
+        config = (await context.config<Configuration>(
+          CONFIGURATION_FILE_PATH,
+          {}
+        ))!;
+      } catch (err) {
+        err.message = `Error reading configuration: ${err.message}`;
+        logger.error(err);
+        return;
+      }
+      config = config || {};
 
+      const issue: Issue =
+        context.payload.issue || context.payload.pull_request;
+      const repoName = context.payload.repository.full_name;
+
+      // If this is a PR, and it's in draft mode, don't assign it
+      if (issue.draft === true) {
+        logger.info(`Skipping ${repoName}#${issue.number} as it's a draft PR`);
+        return;
+      }
+
+      // Check if the config specifically asks to not assign issues or PRs
       if (
         (context.payload.issue &&
           !config.assign_issues &&
           !config.assign_issues_by) ||
-        (context.payload.pull_request && !config.assign_prs)
+        (context.payload.pull_request &&
+          !config.assign_prs &&
+          !config.assign_prs_by)
       ) {
         const paramName = context.payload.issue
           ? '"assign_issues" and "assign_issues_by"'
-          : '"assign_prs"';
+          : '"assign_prs" and "assign_prs_by"';
         context.log.info(
           util.format(
-            '[%s/%s] #%s ignored: %s not in config',
-            issue.owner,
-            issue.repo,
+            '[%s] #%s ignored: %s not in config',
+            repoName,
             issue.number,
             paramName
           )
@@ -99,7 +122,7 @@ export function blunderbuss(app: Application) {
         : config.assign_prs!;
       const byConfig = context.payload.issue
         ? config.assign_issues_by
-        : undefined;
+        : config.assign_prs_by;
       const issuePayload =
         context.payload.issue || context.payload.pull_request;
 
@@ -112,9 +135,8 @@ export function blunderbuss(app: Application) {
           issuePayload.assignees?.length
         ) {
           context.log.info(
-            '[%s/%s] #%s ignored: incorrect label ("%s") because it is already assigned',
-            issue.owner,
-            issue.repo,
+            '[%s] #%s ignored: incorrect label ("%s") because it is already assigned',
+            repoName,
             issue.number,
             context.payload.label.name
           );
@@ -131,9 +153,8 @@ export function blunderbuss(app: Application) {
           context.payload.label.name !== ASSIGN_LABEL
         ) {
           context.log.info(
-            '[%s/%s] #%s ignored: incorrect label ("%s")',
-            issue.owner,
-            issue.repo,
+            '[%s] #%s ignored: incorrect label ("%s")',
+            repoName,
             issue.number,
             context.payload.label.name
           );
@@ -151,9 +172,8 @@ export function blunderbuss(app: Application) {
       if (!isLabeled && issuePayload.assignees.length !== 0) {
         context.log.info(
           util.format(
-            '[%s/%s] #%s ignored: already has assignee(s)',
-            issue.owner,
-            issue.repo,
+            '[%s] #%s ignored: already has assignee(s)',
+            repoName,
             issue.number
           )
         );
@@ -167,7 +187,7 @@ export function blunderbuss(app: Application) {
         // before comparing against the config.
         await sleep(10_000);
         const labelResp = await context.github.issues.listLabelsOnIssue({
-          number: issue.number,
+          issue_number: issue.number,
           owner: context.payload.repository.owner.login,
           repo: context.payload.repository.name,
         });
@@ -176,28 +196,40 @@ export function blunderbuss(app: Application) {
         labels = issue.labels?.map(l => l.name);
       }
       const preferredAssignees = findAssignees(byConfig, labels);
-      const possibleAssignees = preferredAssignees.length
+      let possibleAssignees = preferredAssignees.length
         ? preferredAssignees
         : assignConfig;
+      possibleAssignees = await expandTeams(possibleAssignees, context);
       const assignee = randomFrom(possibleAssignees, issuePayload.user.login);
       if (!assignee) {
         context.log.info(
           util.format(
-            '[%s/%s] #%s not assigned: no valid assignee(s)',
-            issue.owner,
-            issue.repo,
+            '[%s] #%s not assigned: no valid assignee(s)',
+            repoName,
             issue.number
           )
         );
         return;
       }
 
-      await context.github.issues.addAssignees(
+      const resp = await context.github.issues.addAssignees(
         context.issue({assignees: [assignee]})
       );
+      if (resp.status !== 201) {
+        context.log.error(
+          util.format(
+            '[%s] #%s could not be assined to %s: status %d',
+            repoName,
+            issue.number,
+            assignee,
+            resp.status
+          )
+        );
+        return;
+      }
       context.log.info(
         util.format(
-          '[%s/%s] #%s was assigned to %s',
+          '[%s] #%s was assigned to %s',
           issue.owner,
           issue.repo,
           issue.number,
@@ -223,4 +255,30 @@ function findAssignees(
     }
   }
   return assignees;
+}
+
+async function expandTeams(
+  usernames: string[],
+  context: Context
+): Promise<string[]> {
+  const result: string[] = [];
+  for (const user of usernames) {
+    if (user.indexOf('/') === -1) {
+      // Normal user. Not a team.
+      result.push(user);
+      continue;
+    }
+    // There is a slash. Probably a team.
+    const [org, slug] = user.split('/');
+    const members = (
+      await context.github.teams.listMembersInOrg({
+        org,
+        team_slug: slug,
+      })
+    ).data;
+    for (const member of members) {
+      result.push(member.login);
+    }
+  }
+  return result;
 }

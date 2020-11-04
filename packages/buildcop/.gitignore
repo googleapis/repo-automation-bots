@@ -1,2 +1,5 @@
 bin
 buildcop
+build
+coverage
+node_modules

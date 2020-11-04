@@ -13,10 +13,10 @@
 // limitations under the License.
 
 import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './slo-stat-label';
+import appFn from './slo-bot';
 
 const bootstrap = new GCFBootstrapper();
 module.exports.slo_stat_bot = bootstrap.gcf(appFn, {
-    background: true,
-    logging: true,
-  });
+  background: true,
+  logging: true,
+});

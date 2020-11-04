@@ -15,6 +15,11 @@
 import {DataProcessor, ProcessorOptions} from './data-processor-abstract';
 import {WriteResult} from '@google-cloud/firestore';
 import {CloudTasksClient, protos, v2} from '@google-cloud/tasks';
+import {
+  BotDocument,
+  TaskQueueStatusDocument,
+  FirestoreCollection,
+} from '../types/firestore-schema';
 
 type CloudTasksList = [
   protos.google.cloud.tasks.v2.ITask[],
@@ -30,16 +35,6 @@ export interface CloudTasksProcessorOptions extends ProcessorOptions {
   tasksClient?: v2.CloudTasksClient;
   taskQueueProjectId: string;
   taskQueueLocation: string;
-}
-
-interface BotDocument {
-  bot_name: string;
-}
-
-interface TaskQueueDocument {
-  timestamp: number;
-  queue_name: string;
-  in_queue: number;
 }
 
 /**
@@ -87,7 +82,7 @@ export class CloudTasksProcessor extends DataProcessor {
         })
         .then(() => resolve())
         .catch(error => {
-          console.trace(error);
+          this.logger.error(error);
           reject(`Failed to collect and process Cloud Tasks data: ${error}`);
         });
     });
@@ -96,7 +91,7 @@ export class CloudTasksProcessor extends DataProcessor {
   private async getBotNames(): Promise<string[]> {
     return new Promise<string[]>((resolve, reject) => {
       this.firestore
-        .collection('Bot')
+        .collection(FirestoreCollection.Bot)
         .get()
         .then(botCollection => {
           if (!botCollection) {
@@ -109,7 +104,7 @@ export class CloudTasksProcessor extends DataProcessor {
           resolve(botDocuments.map(doc => doc.bot_name));
         })
         .catch(error => {
-          console.trace(error);
+          this.logger.error(error);
           reject(error);
         });
     });
@@ -143,7 +138,7 @@ export class CloudTasksProcessor extends DataProcessor {
           resolve(queueStatus);
         })
         .catch(error => {
-          console.trace(error);
+          this.logger.error(error);
           reject(error);
         });
     });
@@ -153,26 +148,22 @@ export class CloudTasksProcessor extends DataProcessor {
     queueStatus: QueueStatus
   ): Promise<number> {
     const currentTimestamp = new Date().getTime();
-    const collectionRef = this.firestore.collection('Task_Queue_Status');
     const queueNames = Object.keys(queueStatus);
 
     const writePromises: Promise<WriteResult>[] = queueNames.map(queueName => {
-      const documentKey = `${queueName}_${currentTimestamp}`;
-      const documentData: TaskQueueDocument = {
+      const documentData: TaskQueueStatusDocument = {
         timestamp: currentTimestamp,
         queue_name: queueName,
         in_queue: queueStatus[queueName],
       };
-      return collectionRef.doc(documentKey).set(documentData);
+      return this.updateFirestore({
+        doc: documentData,
+        collection: FirestoreCollection.TaskQueueStatus,
+      });
     });
 
-    return new Promise((resolve, reject) => {
-      Promise.all(writePromises)
-        .then(() => resolve(currentTimestamp))
-        .catch(error => {
-          console.trace(error);
-          reject(error);
-        });
+    return new Promise(resolve => {
+      Promise.all(writePromises).then(() => resolve(currentTimestamp));
     });
   }
 

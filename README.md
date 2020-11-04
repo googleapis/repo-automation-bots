@@ -8,7 +8,7 @@ by Google on GitHub.
 
 | Name | Description | Install |
 | ---- | ----------- | ------- |
-| [auto-label] | Automatically applies product specific labels to GitHub issues | [install][auto-label-app] |
+| [auto-label] | Automatically labels issues and PRs with product, language, or directory based labels | [install][auto-label-app] |
 | [blunderbuss] | Assigns issues and PRs randomly to a specific list of users | [install][blunderbuss-app] |
 | [buildcop] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][buildcop-app] |
 | [conventional-commit-lint] | PR checker that ensures that the commit messages follow conventionalcommits.org style | [install][conventional-commit-lint-app] |
@@ -18,16 +18,25 @@ by Google on GitHub.
 | [merge-on-green] | Merge a pull-request when all required checks have passed | [install][merge-on-green-app] |
 | [publish] | Publish to npm, through [Wombat Dressing Room][] | [install][publish-app] |
 | [release-please] | Proposes releases based on semantic version commits | [install][release-please-app] |
+| [snippet-bot] | Check for mismatched region tags in PRs | [install][snippet-bot-app] |
 | [sync-repo-settings] | Synchronize repository settings from a centralized config | [install][sync-repo-settings-app] |
 | [trusted-contribution] | Allows Kokoro CI to trigger for trusted contributors | [install][trusted-contribution-app] |
 
-## Testing Locally
+## Development environment
+
+You need to install node.js version 12 or higher.
+
+To manage multiple Node.js versions, you can use
+[nvm](https://github.com/nvm-sh/nvm).
+
+## Running the app locally
 
 ### Create a Proxy to Relay Webhooks
 
 In order to forward to your local machine, you can use smee.io. Visit
 https://smee.io/new and create a proxy for relaying webhooks to your
-local web-service.
+local web-service. After creating the proxy, you'll get the URL of the
+new proxy.
 
 In the root directory of `repo-automation-bots`, run:
 
@@ -77,7 +86,6 @@ at https://github.com/settings/apps/{YOUR_APP}:
    * Alternatively, set the GitHub client ID and secret:
      * `GITHUB_CLIENT_ID`: client ID from the top of the page.
      * `GITHUB_CLIENT_SECRET`: client secret from the top of the page.
-* `PRIVATE_KEY`: private key for application. This is the client secret near the top, `Client secret: a1bc23def4..........5678gh`
 * `WEBHOOK_SECRET`: secret key set in GitHub developer settings. Edit this to a known value in the settings page.
 
 Environment variables set, run:
@@ -124,6 +132,8 @@ at the specified schedule.
 [publish-app]: https://github.com/apps/publish-bot
 [merge-on-green]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/merge-on-green
 [merge-on-green-app]: https://github.com/apps/gcf-merge-on-green
+[snippet-bot]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/snippet-bot
+[snippet-bot-app]: https://github.com/apps/snippet-bot
 [sync-repo-settings]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/sync-repo-settings
 [sync-repo-settings-app]: https://github.com/apps/sync-repo-settings
 [Wombat Dressing Room]: https://opensource.googleblog.com/2020/01/wombat-dressing-room-npm-publication_10.html

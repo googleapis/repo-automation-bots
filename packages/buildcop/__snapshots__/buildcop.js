@@ -252,3 +252,48 @@ exports['buildcop app xunitXML Grouped issues closes an individual issue and kee
 exports['buildcop app xunitXML Grouped issues closes an individual issue and keeps grouped issue open 3'] = {
   "state": "closed"
 }
+
+exports['buildcop app xunitXML opens an issue [Ruby] 1'] = {
+  "title": "Minitest::Result: test_0001_lists entries of a log failed",
+  "body": "This test failed!\n\nTo configure my behavior, see [the Build Cop Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop).\n\nIf I'm commenting on this issue too often, add the `buildcop: quiet` label and\nI will stop commenting.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed\n<details><summary>Test output</summary><br><pre>/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/assertions.rb:183:in `assert'\n/tmpfs/src/github/ruby-docs-samples/logging/acceptance/sample_test.rb:126:in `block (3 levels) in <top (required)>'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:98:in `block (3 levels) in run'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:195:in `capture_exceptions'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:95:in `block (2 levels) in run'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest.rb:272:in `time_it'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:94:in `block in run'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest.rb:367:in `on_signal'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:211:in `with_info_handler'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/test.rb:93:in `run'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest.rb:1029:in `run_one_method'\n/usr/local/bundle/gems/minitest-5.14.1/lib/minitest/parallel.rb:33:in `block (2 levels) in start'</pre></details>",
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue"
+  ]
+}
+
+exports['buildcop app xunitXML opens an issue [Python error] 1'] = {
+  "title": "memorystore.redis.cloud_run_deployment.e2e_test: test_end_to_end failed",
+  "body": "This test failed!\n\nTo configure my behavior, see [the Build Cop Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop).\n\nIf I'm commenting on this issue too often, add the `buildcop: quiet` label and\nI will stop commenting.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed\n<details><summary>Test output</summary><br><pre>Traceback (most recent call last):\n  File \"/workspace/memorystore/redis/cloud_run_deployment/e2e_test.py\", line 70, in services\n    subprocess.run(\n  File \"/usr/local/lib/python3.8/subprocess.py\", line 512, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['gcloud', 'redis', 'instances', 'create', 'test-instance-44d74c74c5', '--region=us-central1', '--network', 'test-network-44d74c74c5', '--project', 'python-docs-samples-tests']' returned non-zero exit status 1.</pre></details>",
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue"
+  ]
+}
+
+exports['buildcop app xunitXML opens an issue 2 [Java] 1'] = {
+  "title": "com.example.datastore.QuickstartSampleIT: testQuickstart failed",
+  "body": "This test failed!\n\nTo configure my behavior, see [the Build Cop Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop).\n\nIf I'm commenting on this issue too often, add the `buildcop: quiet` label and\nI will stop commenting.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed\n<details><summary>Test output</summary><br><pre>com.google.cloud.datastore.DatastoreException: The project java-docs-samples-testing does not exist or it does not contain an active Cloud Datastore or Cloud Firestore database. Please visit http://console.cloud.google.com to create a project or https://console.cloud.google.com/datastore/setup?project=java-docs-samples-testing to add a Cloud Datastore or Cloud Firestore database. Note that Cloud Datastore or Cloud Firestore always have an associated App Engine app and this app must not be disabled.\n\tat com.google.cloud.datastore.spi.v1.HttpDatastoreRpc.translate(HttpDatastoreRpc.java:138)\n\tat com.google.cloud.datastore.spi.v1.HttpDatastoreRpc.commit(HttpDatastoreRpc.java:164)\n\tat com.google.cloud.datastore.DatastoreImpl$5.call(DatastoreImpl.java:564)\n\tat com.google.cloud.datastore.DatastoreImpl$5.call(DatastoreImpl.java:561)\n\tat com.google.api.gax.retrying.DirectRetryingExecutor.submit(DirectRetryingExecutor.java:105)\n\tat com.google.cloud.RetryHelper.run(RetryHelper.java:76)\n\tat com.google.cloud.RetryHelper.runWithRetries(RetryHelper.java:50)\n\tat com.google.cloud.datastore.DatastoreImpl.commit(DatastoreImpl.java:560)\n\tat com.google.cloud.datastore.DatastoreImpl.commitMutation(DatastoreImpl.java:553)\n\tat com.google.cloud.datastore.DatastoreImpl.delete(DatastoreImpl.java:538)\n\tat com.example.datastore.QuickstartSampleIT.deleteTestEntity(QuickstartSampleIT.java:46)\n\tat com.example.datastore.QuickstartSampleIT.setUp(QuickstartSampleIT.java:51)\n\tat sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.lang.reflect.Method.invoke(Method.java:498)\n\tat org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)\n\tat org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)\n\tat org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)\n\tat org.junit.internal.runners.statements.RunBefores.invokeMethod(RunBefores.java:33)\n\tat org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:24)\n\tat org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)\n\tat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\n\tat org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)\n\tat org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)\n\tat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)\n\tat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)\n\tat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\n\tat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\n\tat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\n\tat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\n\tat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\n\tat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\n\tat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\n\tat org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:365)\n\tat org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:273)\n\tat org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:238)\n\tat org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:159)\n\tat org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:377)\n\tat org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:138)\n\tat org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:465)\n\tat org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:451)\nCaused by: com.google.datastore.v1.client.DatastoreException: The project java-docs-samples-testing does not exist or it does not contain an active Cloud Datastore or Cloud Firestore database. Please visit http://console.cloud.google.com to create a project or https://console.cloud.google.com/datastore/setup?project=java-docs-samples-testing to add a Cloud Datastore or Cloud Firestore database. Note that Cloud Datastore or Cloud Firestore always have an associated App Engine app and this app must not be disabled., code=NOT_FOUND\n\tat com.google.datastore.v1.client.RemoteRpc.makeException(RemoteRpc.java:136)\n\tat com.google.datastore.v1.client.RemoteRpc.makeException(RemoteRpc.java:185)\n\tat com.google.datastore.v1.client.RemoteRpc.call(RemoteRpc.java:96)\n\tat com.google.datastore.v1.client.Datastore.commit(Datastore.java:87)\n\tat com.google.cloud.datastore.spi.v1.HttpDatastoreRpc.commit(HttpDatastoreRpc.java:162)\n\t... 40 more\n</pre></details>",
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue"
+  ]
+}
+
+exports['buildcop app xunitXML reopens the more recently closed issue when there is a duplicate 1'] = {
+  "labels": [
+    "type: bug",
+    "priority: p1",
+    "buildcop: issue",
+    "buildcop: flaky",
+    null
+  ],
+  "state": "open"
+}
+
+exports['buildcop app xunitXML reopens the more recently closed issue when there is a duplicate 2'] = {
+  "body": "Looks like this issue is flaky. :worried:\n\nI'm going to leave this open and stop commenting.\n\nA human should fix and close this.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed\n<details><summary>Test output</summary><br><pre>\nsnippet_test.go:242: got output \"\"; want it to contain \"4 Venue 4\" snippet_test.go:243: got output \"\"; want it to contain \"19 Venue 19\" snippet_test.go:244: got output \"\"; want it to contain \"42 Venue 42\"\n</pre></details>"
+}

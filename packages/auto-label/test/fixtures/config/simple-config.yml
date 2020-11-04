@@ -1,0 +1,4 @@
+randomBoolean: true
+product: false
+language:
+  pullrequest: true

@@ -1,0 +1,26 @@
+[
+  {
+    "sha": "94344ce458c7d7797c6cffe5702518f73e525c1a",
+    "filename": "README.md",
+    "status": "modified",
+    "additions": 0,
+    "deletions": 6,
+    "changes": 6
+  },
+  {
+    "sha": "a5faffc3176702d537045c43a1f37840fde970c3",
+    "filename": "src/index.ts",
+    "status": "modified",
+    "additions": 13,
+    "deletions": 2,
+    "changes": 15
+  },
+  {
+    "sha": "c6e90cc6cd13f2f4341ba58618f7a2e2c4d552f4",
+    "filename": "test/fixtures/issue1.opened.json",
+    "status": "added",
+    "additions": 213,
+    "deletions": 0,
+    "changes": 213
+  }
+]

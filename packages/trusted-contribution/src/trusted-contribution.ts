@@ -14,15 +14,16 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application} from 'probot';
+import {logger} from 'gcf-utils';
 
 interface ConfigurationOptions {
   trustedContributors?: string[];
 }
 
 const WELL_KNOWN_CONFIGURATION_FILE = 'trusted-contribution.yml';
-const DEFAULT_CONFIGURATION: ConfigurationOptions = {};
 const DEFAULT_TRUSTED_CONTRIBUTORS = [
   'renovate-bot',
+  'dependabot[bot]',
   'release-please[bot]',
   'gcf-merge-on-green[bot]',
 ];
@@ -45,24 +46,27 @@ export = (app: Application) => {
 
   app.on(
     [
-      'pull_request.edited',
       'pull_request.opened',
       'pull_request.reopened',
       'pull_request.synchronize',
     ],
     async context => {
       const PR_AUTHOR = context.payload.pull_request.user.login;
-
-      const remoteConfiguration =
-        (await context.config<ConfigurationOptions>(
+      let remoteConfiguration: ConfigurationOptions | null;
+      try {
+        remoteConfiguration = await context.config<ConfigurationOptions>(
           WELL_KNOWN_CONFIGURATION_FILE
-        )) || DEFAULT_CONFIGURATION;
-
+        );
+      } catch (err) {
+        err.message = `Error reading configuration: ${err.message}`;
+        logger.error(err);
+      }
+      remoteConfiguration = remoteConfiguration! || {};
       // TODO: add additional verification that only dependency version changes occurred.
       if (isTrustedContribution(remoteConfiguration, PR_AUTHOR)) {
         const issuesAddLabelsParams = context.repo({
           issue_number: context.payload.pull_request.number,
-          labels: ['kokoro:run'],
+          labels: ['kokoro:force-run'],
         });
         await context.github.issues.addLabels(issuesAddLabelsParams);
       }

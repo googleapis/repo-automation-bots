@@ -87,6 +87,107 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [6.1.4](https://www.github.com/googleapis/repo-automation-bots/compare/v6.1.3...v6.1.4) (2020-11-03)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @octokit/plugin-enterprise-compatibility to v1.2.6 ([#1069](https://www.github.com/googleapis/repo-automation-bots/issues/1069)) ([1c0fb97](https://www.github.com/googleapis/repo-automation-bots/commit/1c0fb97e7e2420d13b251fa0e1bbeaca0873a35b))
+
+### [6.1.3](https://www.github.com/googleapis/repo-automation-bots/compare/v6.1.2...v6.1.3) (2020-10-28)
+
+
+### Bug Fixes
+
+* **probot:** latest release of probot breaks auth ([#1063](https://www.github.com/googleapis/repo-automation-bots/issues/1063)) ([e32e8da](https://www.github.com/googleapis/repo-automation-bots/commit/e32e8daeb591cc10db537e9bf990c255ed95dae7))
+
+### [6.1.2](https://www.github.com/googleapis/repo-automation-bots/compare/v6.1.1...v6.1.2) (2020-10-26)
+
+
+### Bug Fixes
+
+* **deps:** update dependency gaxios to v4 ([#1049](https://www.github.com/googleapis/repo-automation-bots/issues/1049)) ([1301f76](https://www.github.com/googleapis/repo-automation-bots/commit/1301f7665ea6781f880dfb3213b8716fafd28df1))
+
+### [6.1.1](https://www.github.com/googleapis/repo-automation-bots/compare/v6.1.0...v6.1.1) (2020-10-01)
+
+
+### Bug Fixes
+
+* **logger:** allow log methods to be used in isolation ([#997](https://www.github.com/googleapis/repo-automation-bots/issues/997)) ([38371ca](https://www.github.com/googleapis/repo-automation-bots/commit/38371cae7aaf48b4ba5effab453dfac332f912bd))
+
+## [6.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/v6.0.0...v6.1.0) (2020-09-30)
+
+
+### Features
+
+* **gcf-utils:** write payload to tmp bucket ([#983](https://www.github.com/googleapis/repo-automation-bots/issues/983)) ([38f264e](https://www.github.com/googleapis/repo-automation-bots/commit/38f264e4573e501dad162d5169365a8907efa2f0))
+
+## [6.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/v5.7.1...v6.0.0) (2020-09-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* **probot:** upgrade gcf-utils to probot@10, @octokit/rest@18 (#963)
+
+### Code Refactoring
+
+* **probot:** upgrade gcf-utils to probot@10, @octokit/rest@18 ([#963](https://www.github.com/googleapis/repo-automation-bots/issues/963)) ([a601f4a](https://www.github.com/googleapis/repo-automation-bots/commit/a601f4acb415d80258021549104124cef1a447d1))
+
+### [5.7.1](https://www.github.com/googleapis/repo-automation-bots/compare/v5.7.0...v5.7.1) (2020-09-14)
+
+
+### Bug Fixes
+
+* **deps:** update dependency yargs to v16 ([#944](https://www.github.com/googleapis/repo-automation-bots/issues/944)) ([1579ab6](https://www.github.com/googleapis/repo-automation-bots/commit/1579ab6694dcbf174aa2d936d5a68d31d6ac5bab))
+
+## [5.7.0](https://www.github.com/googleapis/repo-automation-bots/compare/v5.6.0...v5.7.0) (2020-09-02)
+
+
+### Features
+
+* bind trigger information to all logs ([#926](https://www.github.com/googleapis/repo-automation-bots/issues/926)) ([dcdd281](https://www.github.com/googleapis/repo-automation-bots/commit/dcdd281b06524203788946470fbb8012179d2c98))
+
+## [5.6.0](https://www.github.com/googleapis/repo-automation-bots/compare/v5.5.1...v5.6.0) (2020-08-28)
+
+
+### Features
+
+* **gcf-utils:** log event type with trigger information ([#921](https://www.github.com/googleapis/repo-automation-bots/issues/921)) ([023ed12](https://www.github.com/googleapis/repo-automation-bots/commit/023ed126aa478ab80279a27f8a194a88e5aff44d))
+
+### [5.5.1](https://www.github.com/googleapis/repo-automation-bots/compare/v5.5.0...v5.5.1) (2020-08-06)
+
+
+### Bug Fixes
+
+* **gcf-utils:** Revert binding trigger information to logger ([#809](https://www.github.com/googleapis/repo-automation-bots/issues/809)) ([e9c42b3](https://www.github.com/googleapis/repo-automation-bots/commit/e9c42b3c1e0dafdc05db2e9b1240cb24447de75e)), closes [#796](https://www.github.com/googleapis/repo-automation-bots/issues/796)
+
+## [5.5.0](https://www.github.com/googleapis/repo-automation-bots/compare/v5.4.0...v5.5.0) (2020-08-05)
+
+
+### Features
+
+* **gcf-utils:** add trigger info as bindings to all log statements ([#796](https://www.github.com/googleapis/repo-automation-bots/issues/796)) ([157c768](https://www.github.com/googleapis/repo-automation-bots/commit/157c768e6de8e3067e24a6dd17be152ae98c25d8))
+
+## [5.4.0](https://www.github.com/googleapis/repo-automation-bots/compare/v5.3.1...v5.4.0) (2020-08-03)
+
+
+### Features
+
+* **gcf-utils:** log more trigger information ([#788](https://www.github.com/googleapis/repo-automation-bots/issues/788)) ([8a73cca](https://www.github.com/googleapis/repo-automation-bots/commit/8a73ccad2c4a4bc3d9d1dcd0d25d8a6e627921cf))
+
+
+### Bug Fixes
+
+* **gcf-utils:** log entire errors in specific cases ([#775](https://www.github.com/googleapis/repo-automation-bots/issues/775)) ([ab6fec4](https://www.github.com/googleapis/repo-automation-bots/commit/ab6fec4c9a1d278a015ec00bd24cbefc208ce6f8))
+* **merge-on-green:** payload switches between Buffer and object ([#785](https://www.github.com/googleapis/repo-automation-bots/issues/785)) ([43bbd2a](https://www.github.com/googleapis/repo-automation-bots/commit/43bbd2aa199fa6908d4773b7641f4c22b19bacde))
+
+### [5.3.1](https://www.github.com/googleapis/repo-automation-bots/compare/v5.3.0...v5.3.1) (2020-07-28)
+
+
+### Bug Fixes
+
+* **gcf-utils:** add repository details to payload for pub/sub triggered executions ([#758](https://www.github.com/googleapis/repo-automation-bots/issues/758)) ([00faedc](https://www.github.com/googleapis/repo-automation-bots/commit/00faedc0a3f5d1e4b39bda6fc5371edb2f921d2b))
+
 ## [0.4.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils@0.4.0...gcf-utils@0.4.1) (2019-07-30)
 
 
