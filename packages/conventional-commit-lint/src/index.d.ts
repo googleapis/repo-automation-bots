@@ -21,14 +21,12 @@ declare module 'promise-events' {
 }
 
 declare module '@commitlint/lint' {
-  // eslint-disable-next-line @typescript-eslint/interface-name-prefix
   interface ILint {
     input: string;
     valid: boolean;
     errors: IError[];
   }
 
-  // eslint-disable-next-line @typescript-eslint/interface-name-prefix
   interface IError {
     message: string;
   }
