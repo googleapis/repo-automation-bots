@@ -47,3 +47,24 @@ exports[
   body:
     '<!-- probot comment [11237253]-->\nHere is the summary of changes.\n<details>\n  <summary>You added 3 region tags.</summary>\n\n  - [`datastore_incomplete_key2` in `datastore/cloud-client/snippets.py`](https://github.com/tmatsuo/repo-automation-bots/blob/ce03c1b7977aadefb5f6afc09901f106ee6ece6a/datastore/cloud-client/snippets.py#L22)\n- [`datastore_named_key2` in `datastore/cloud-client/snippets.py`](https://github.com/tmatsuo/repo-automation-bots/blob/ce03c1b7977aadefb5f6afc09901f106ee6ece6a/datastore/cloud-client/snippets.py#L27)\n- [`datastore_key_with_parent2` in `datastore/cloud-client/snippets.py`](https://github.com/tmatsuo/repo-automation-bots/blob/ce03c1b7977aadefb5f6afc09901f106ee6ece6a/datastore/cloud-client/snippets.py#L32)\n\n</details>\n\n<details>\n  <summary>You deleted 3 region tags.\n</summary>\n\n  - [`datastore_incomplete_key` in `datastore/cloud-client/snippets.py`](https://github.com/tmatsuo/repo-automation-bots/blob/48d47a91300728008c9712d6e793a6ed5d86e01d/datastore/cloud-client/snippets.py#L22)\n- [`datastore_named_key` in `datastore/cloud-client/snippets.py`](https://github.com/tmatsuo/repo-automation-bots/blob/48d47a91300728008c9712d6e793a6ed5d86e01d/datastore/cloud-client/snippets.py#L27)\n- [`datastore_key_with_parent` in `datastore/cloud-client/snippets.py`](https://github.com/tmatsuo/repo-automation-bots/blob/48d47a91300728008c9712d6e793a6ed5d86e01d/datastore/cloud-client/snippets.py#L32)\n\n</details>\n\nTo update this comment, add `snippet-bot:force-run` label.\n',
 };
+
+exports[
+  'snippet-bot responds to PR ignores 404 error upon label deletion 1'
+] = {
+  name: 'Mismatched region tag',
+  conclusion: 'failure',
+  head_sha: 'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
+  output: {
+    title: 'Mismatched region tag detected.',
+    summary: 'Some new files have mismatched region tag',
+    text:
+      "test.py:5, tag `hello` has already started\ntest.py:10, tag `lol` doesn't have a matching start tag\ntest.py:8, tag `world` doesn't have a matching end tag",
+  },
+};
+
+exports[
+  'snippet-bot responds to PR ignores 404 error upon label deletion 2'
+] = {
+  body:
+    '<!-- probot comment [11237253]-->\nHere is the summary of changes.\n<details>\n  <summary>You added 3 region tags.</summary>\n\n  - [`datastore_incomplete_key2` in `datastore/cloud-client/snippets.py`](https://github.com/tmatsuo/repo-automation-bots/blob/ce03c1b7977aadefb5f6afc09901f106ee6ece6a/datastore/cloud-client/snippets.py#L22)\n- [`datastore_named_key2` in `datastore/cloud-client/snippets.py`](https://github.com/tmatsuo/repo-automation-bots/blob/ce03c1b7977aadefb5f6afc09901f106ee6ece6a/datastore/cloud-client/snippets.py#L27)\n- [`datastore_key_with_parent2` in `datastore/cloud-client/snippets.py`](https://github.com/tmatsuo/repo-automation-bots/blob/ce03c1b7977aadefb5f6afc09901f106ee6ece6a/datastore/cloud-client/snippets.py#L32)\n\n</details>\n\n<details>\n  <summary>You deleted 3 region tags.\n</summary>\n\n  - [`datastore_incomplete_key` in `datastore/cloud-client/snippets.py`](https://github.com/tmatsuo/repo-automation-bots/blob/48d47a91300728008c9712d6e793a6ed5d86e01d/datastore/cloud-client/snippets.py#L22)\n- [`datastore_named_key` in `datastore/cloud-client/snippets.py`](https://github.com/tmatsuo/repo-automation-bots/blob/48d47a91300728008c9712d6e793a6ed5d86e01d/datastore/cloud-client/snippets.py#L27)\n- [`datastore_key_with_parent` in `datastore/cloud-client/snippets.py`](https://github.com/tmatsuo/repo-automation-bots/blob/48d47a91300728008c9712d6e793a6ed5d86e01d/datastore/cloud-client/snippets.py#L32)\n\n</details>\n\nTo update this comment, add `snippet-bot:force-run` label.\n',
+};
