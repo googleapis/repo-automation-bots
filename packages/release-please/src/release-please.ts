@@ -15,11 +15,6 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Application} from 'probot';
 
-interface GitHubAPI {
-  graphql: Function;
-  request: Function;
-}
-
 // TODO: fix these imports when release-please exports types from the root
 // See https://github.com/googleapis/release-please/issues/249
 import {BuildOptions} from 'release-please/build/src/release-pr';
@@ -32,9 +27,22 @@ import {
 import {Runner} from './runner';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest'; // Use version from gcf-utils.
+// We pull in @octokit/request to crreate an appropriate type for the
+// GitHubAPI interface:
+// eslint-disable-next-line node/no-extraneous-import
+import {request} from '@octokit/request';
+type RequestBuilderType = typeof request;
+type DefaultFunctionType = RequestBuilderType['defaults'];
+type RequestFunctionType = ReturnType<DefaultFunctionType>;
+
 import {logger} from 'gcf-utils';
 
 type OctokitType = InstanceType<typeof Octokit>;
+
+interface GitHubAPI {
+  graphql: Function;
+  request: RequestFunctionType;
+}
 
 interface ConfigurationOptions {
   primaryBranch: string;
@@ -176,7 +184,7 @@ export = (app: Application) => {
       releaseType,
       configuration.packageName || repoName,
       repoUrl,
-      context.github,
+      context.github as GitHubAPI,
       configuration.releaseLabels,
       configuration.bumpMinorPreMajor,
       false,
@@ -190,7 +198,7 @@ export = (app: Application) => {
       await createGitHubRelease(
         configuration.packageName ?? repoName,
         repoUrl,
-        context.github,
+        context.github as GitHubAPI,
         configuration.path,
         configuration.changelogPath ?? 'CHANGELOG.md'
       );
@@ -294,7 +302,7 @@ export = (app: Application) => {
       releaseType,
       configuration.packageName || repo,
       repoUrl,
-      context.github,
+      context.github as GitHubAPI,
       configuration.releaseLabels,
       configuration.bumpMinorPreMajor,
       false,
