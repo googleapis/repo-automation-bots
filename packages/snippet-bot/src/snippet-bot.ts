@@ -314,9 +314,16 @@ ${bodyDetail}`
           return;
         }
         // Remove the label and proceed.
-        await context.github.issues.removeLabel(
-          context.issue({name: REFRESH_LABEL})
-        );
+        try {
+          await context.github.issues.removeLabel(
+            context.issue({name: REFRESH_LABEL})
+          );
+        } catch (err) {
+          // Ignoring 404 errors.
+          if (err.status !== 404) {
+            throw err;
+          }
+        }
       }
       // Check on pull requests.
       // List pull request files for the given PR
