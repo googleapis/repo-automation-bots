@@ -46,6 +46,11 @@ interface ConfigurationOptions {
   ignoreFiles: string[];
 }
 
+// Solely for avoid using `any` type.
+interface Label {
+  name: string;
+}
+
 const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   ignoreFiles: [],
 };
@@ -299,9 +304,9 @@ ${bodyDetail}`
         if (context.payload.pull_request.labels === undefined) {
           return;
         }
+        // Exits when there's no REFRESH_LABEL
         const labelFound = context.payload.pull_request.labels.some(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (label: any) => {
+          (label: Label) => {
             return label.name === REFRESH_LABEL;
           }
         );
