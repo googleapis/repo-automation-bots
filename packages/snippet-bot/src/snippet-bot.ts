@@ -46,6 +46,11 @@ interface ConfigurationOptions {
   ignoreFiles: string[];
 }
 
+// Solely for avoid using `any` type.
+interface Label {
+  name: string;
+}
+
 const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   ignoreFiles: [],
 };
@@ -53,6 +58,8 @@ const DEFAULT_CONFIGURATION: ConfigurationOptions = {
 const CONFIGURATION_FILE_PATH = 'snippet-bot.yml';
 
 const FULL_SCAN_ISSUE_TITLE = 'snippet-bot full scan';
+
+const REFRESH_LABEL = 'snippet-bot:force-run';
 
 class Configuration {
   private options: ConfigurationOptions;
@@ -149,6 +156,7 @@ export = (app: Application) => {
       'pull_request.opened',
       'pull_request.reopened',
       'pull_request.edited',
+      'pull_request.labeled',
       'pull_request.synchronize',
     ],
     async context => {
@@ -291,6 +299,25 @@ ${bodyDetail}`
       if (context.payload.pull_request === undefined) {
         return;
       }
+      if (context.payload.action === 'labeled') {
+        // Only proceeds if `snippet-bot:force-run` label is added.
+        if (context.payload.pull_request.labels === undefined) {
+          return;
+        }
+        // Exits when there's no REFRESH_LABEL
+        const labelFound = context.payload.pull_request.labels.some(
+          (label: Label) => {
+            return label.name === REFRESH_LABEL;
+          }
+        );
+        if (!labelFound) {
+          return;
+        }
+        // Remove the label and proceed.
+        await context.github.issues.removeLabel(
+          context.issue({name: REFRESH_LABEL})
+        );
+      }
       // Check on pull requests.
       // List pull request files for the given PR
       // https://developer.github.com/v3/pulls/#list-pull-requests-files
@@ -417,6 +444,8 @@ ${bodyDetail}`
         }
         commentBody += formatExpandable(summary, detail);
       }
+
+      commentBody += `To update this comment, add \`${REFRESH_LABEL}\` label.\n`;
 
       const listCommentsResponse = await context.github.issues.listComments({
         owner: owner,
