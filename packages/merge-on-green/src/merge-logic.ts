@@ -634,7 +634,6 @@ export async function mergeOnGreen(
       }
     }
     return merged;
-
     //if the state is stopped, i.e., we won't keep checking, let's comment and remove from Datastore
   } else if (state === 'stop') {
     logger.info(
@@ -643,17 +642,6 @@ export async function mergeOnGreen(
     await commentOnPR(owner, repo, pr, failedMesssage, github);
     return true;
     // if the PR is halfway through the time it is checking, comment on the PR.
-  } else if (state === 'comment') {
-    const isCommented = commentsOnPR?.find(element =>
-      element.body.includes(continueMesssage)
-    );
-    if (!isCommented) {
-      await commentOnPR(owner, repo, pr, continueMesssage, github);
-    }
-    logger.info(`${owner}/${repo}/${pr} is halfway through its check`);
-    return false;
-
-    // if the PR has not been merged but it is still going to be checked, check again.
   } else {
     logger.info(
       `Statuses and/or checks failed for ${owner}/${repo}/${pr}, will check again`
