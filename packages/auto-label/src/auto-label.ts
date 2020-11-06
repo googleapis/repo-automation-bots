@@ -18,15 +18,16 @@ import {Application, Context} from 'probot';
 import {logger} from 'gcf-utils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const langlabler = require('./language');
+const helper = require('./helper');
 // Default app configs if user didn't specify a .config
 const LABEL_PRODUCT_BY_DEFAULT = true;
-const LABEL_LANGUAGE_BY_DEFAULT = false;
 const DEFAULT_CONFIGS = {
   product: LABEL_PRODUCT_BY_DEFAULT,
   language: {
-    issue: LABEL_LANGUAGE_BY_DEFAULT,
-    pullrequest: LABEL_LANGUAGE_BY_DEFAULT,
+    pullrequest: false,
+  },
+  path: {
+    pullrequest: false,
   },
 };
 
@@ -88,6 +89,13 @@ export function autoDetectLabel(
   if (!apis || !title) {
     return undefined;
   }
+
+  // The Conventional Commits "docs:" and "build:" prefixes are far more common
+  // than the APIs. So, never label those with "api: docs" or "api: build".
+  if (title.startsWith('docs:') || title.startsWith('build:')) {
+    return undefined;
+  }
+
   // Regex to match the scope of a Conventional Commit message.
   const conv = /[^(]+\(([^)]+)\):/;
   const match = title.match(conv);
@@ -314,6 +322,8 @@ export function handler(app: Application) {
     }
   });
 
+  // Labels issues with product labels.
+  // By default, this is turned on without user configuration.
   app.on(['issues.opened', 'issues.reopened'], async context => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config: any = await context.config(
@@ -322,7 +332,6 @@ export function handler(app: Application) {
     );
     if (!config.product) return;
 
-    //job that labels issues when they are opened
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const issueNumber = context.payload.issue.number;
@@ -340,41 +349,89 @@ export function handler(app: Application) {
     );
   });
 
+  // Labels pull requests with product, language, and/or path labels.
+  // By default, product labels are turned on and language/path labels are
+  // turned off.
   app.on(['pull_request.opened'], async context => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config: any = await context.config(
       'auto-label.yaml',
       DEFAULT_CONFIGS
     );
-    if (!config.language) return;
-    if (!config.language.pullrequest) return;
-    if (langlabler.langLabelExists(context)) return;
-    logger.info(
-      'Labeling New Pull Request: ' +
-        context.payload.repository.name +
-        ' #' +
-        context.payload.pull_request.number
-    );
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const pull_number = context.payload.pull_request.number;
+
+    if (config.product) {
+      const driftRepos = await handler.getDriftRepos();
+      if (!driftRepos) {
+        return;
+      }
+      await handler.addLabeltoRepoAndIssue(
+        owner,
+        repo,
+        pull_number,
+        context.payload.pull_request.title,
+        driftRepos,
+        context
+      );
+    }
+
+    // Only need to fetch PR contents if config.path or config.language are configured.
+    if (!config.path?.pullrequest && !config.language?.pullrequest) {
+      return;
+    }
+
     const filesChanged = await context.github.pulls.listFiles({
       owner,
       repo,
       pull_number,
     });
-    const language = langlabler.getPRLanguage(
-      filesChanged.data,
-      config.language
-    );
-    if (language) {
-      logger.info('Labeling PR with: ' + language);
-      await context.github.issues.addLabels({
-        owner,
-        repo,
-        issue_number: pull_number,
-        labels: [language],
-      });
+
+    // If user has turned on path labels by configuring {path: {pullrequest: false, }}
+    // By default, this feature is turned off
+    if (config.path?.pullrequest) {
+      logger.info(`Labeling path in PR #${pull_number} in ${owner}/${repo}...`);
+      const path_label = helper.getLabel(
+        filesChanged.data,
+        config.path,
+        'path'
+      );
+      if (path_label && !helper.labelExists(context, path_label)) {
+        logger.info(
+          `Path label added to PR #${pull_number} in ${owner}/${repo} is ${path_label}`
+        );
+        await context.github.issues.addLabels({
+          owner,
+          repo,
+          issue_number: pull_number,
+          labels: [path_label],
+        });
+      }
+    }
+
+    // If user has turned on language labels by configuring {language: {pullrequest: false,}}
+    // By default, this feature is turned off
+    if (config.language?.pullrequest) {
+      logger.info(
+        `Labeling language in PR #${pull_number} in ${owner}/${repo}...`
+      );
+      const language_label = helper.getLabel(
+        filesChanged.data,
+        config.language,
+        'language'
+      );
+      if (language_label && !helper.labelExists(context, language_label)) {
+        logger.info(
+          `Language label added to PR #${pull_number} in ${owner}/${repo} is ${language_label}`
+        );
+        await context.github.issues.addLabels({
+          owner,
+          repo,
+          issue_number: pull_number,
+          labels: [language_label],
+        });
+      }
     }
   });
 
@@ -397,7 +454,7 @@ export function handler(app: Application) {
         });
       } catch (e) {
         e.message = `No auto-label.yaml found in repo upon installation: ${e.message}`;
-        logger.error(e);
+        logger.info(e);
       }
       if (response && response.status === 200) {
         const config_encoded = response.data.content;

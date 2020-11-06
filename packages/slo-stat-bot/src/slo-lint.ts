@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {GitHubAPI, Context} from 'probot';
+import {ProbotOctokit, Context} from 'probot';
 import Ajv, {ErrorObject} from 'ajv';
 import {logger} from 'gcf-utils';
 import {convertToArray} from './slo-appliesTo';
@@ -55,7 +55,7 @@ interface ErrorMessage {
  * @returns an array of PullsListFilesResponseItem containing the filename and sha
  */
 async function listFiles(
-  github: GitHubAPI,
+  github: InstanceType<typeof ProbotOctokit>,
   owner: string,
   repo: string,
   number: number,
@@ -120,7 +120,7 @@ export const handleSlos = async function handleSlos(
  * @returns json string of the slo rules content
  */
 async function getFileShaContents(
-  github: GitHubAPI,
+  github: InstanceType<typeof ProbotOctokit>,
   owner: string,
   repo: string,
   fileSha: string
@@ -212,7 +212,7 @@ async function sloContradicts(slo: SLORules): Promise<boolean | undefined> {
  * @returns void
  */
 async function commentPR(
-  github: GitHubAPI,
+  github: InstanceType<typeof ProbotOctokit>,
   owner: string,
   repo: string,
   number: number,

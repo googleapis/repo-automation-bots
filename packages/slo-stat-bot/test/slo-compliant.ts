@@ -15,7 +15,7 @@
 
 import * as assert from 'assert';
 // eslint-disable-next-line node/no-extraneous-import
-import {GitHubAPI} from 'probot';
+import {ProbotOctokit} from 'probot';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import {IssuesListCommentsItem} from '../src/types';
 import * as sloCompliant from '../src/slo-compliant';
@@ -154,7 +154,7 @@ describe('getContributers', () => {
     );
     assert.deepEqual(
       responders,
-      new Set<string>(['testOwner', 'admin1'])
+      new Set<string>(['testOwner', 'admin1', 'user1'])
     );
   });
   it('Contributer is owner', async () => {
@@ -174,7 +174,7 @@ describe('getContributers', () => {
   });
 });
 describe('getResponders', () => {
-  const githubAPI: GitHubAPI = GitHubAPI();
+  const githubAPI: InstanceType<typeof ProbotOctokit> = new ProbotOctokit();
   let fileContentStub: sinon.SinonStub;
   let getCollaboratorStub: sinon.SinonStub;
   let getContributorsStub: sinon.SinonStub;
@@ -426,7 +426,7 @@ describe('isAssigned', () => {
   });
 });
 describe('isInResponseTime', () => {
-  const github = GitHubAPI();
+  const github = new ProbotOctokit();
   let isInDurationStub: sinon.SinonStub;
   let getIssueCommentsStub: sinon.SinonStub;
 
@@ -576,7 +576,7 @@ describe('isInResponseTime', () => {
   });
 });
 describe('isCompliant given slo applies to issue', () => {
-  const githubAPI: GitHubAPI = GitHubAPI();
+  const githubAPI: InstanceType<typeof ProbotOctokit> = new ProbotOctokit();
   const issueItem = {
     owner: 'testOwner',
     repo: 'testRepo',

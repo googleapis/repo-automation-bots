@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, Context, GitHubAPI} from 'probot';
+import {Application, Context, ProbotOctokit} from 'probot';
 import {logger} from 'gcf-utils';
 import {doesSloApply} from './slo-appliesTo';
 import {isIssueCompliant, getFilePathContent} from './slo-compliant';
@@ -57,7 +57,7 @@ interface IssueListForRepoItem {
  * @returns void
  */
 async function handleIssues(
-  github: GitHubAPI,
+  github: InstanceType<typeof ProbotOctokit>,
   issueItem: IssueItem,
   sloString: string,
   labelName: string
@@ -109,7 +109,7 @@ async function getOoSloLabelName(context: Context): Promise<string> {
  * @returns json string of the slo rules
  */
 async function getSloFile(
-  github: GitHubAPI,
+  github: InstanceType<typeof ProbotOctokit>,
   owner: string,
   repo: string
 ): Promise<string> {
@@ -138,7 +138,7 @@ async function getSloFile(
  * @returns IssueListForRepoItem which contains issue number, user login, labels, assignees, issue created time, & issue updated time
  */
 async function getIssueList(
-  github: GitHubAPI,
+  github: InstanceType<typeof ProbotOctokit>,
   owner: string,
   repo: string
 ): Promise<IssueListForRepoItem[] | null> {
@@ -293,7 +293,7 @@ export = function handler(app: Application) {
       await handleIssues(context.github, issueItem, sloString, labelName);
     }
   );
-  app.on(['schedule.repository'], async (context: Context) => {
+  app.on(['schedule.repository' as any], async (context: Context) => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
 

@@ -1,0 +1,23 @@
+randomBoolean: true
+product: false
+language:
+  pullrequest: true
+  labelprefix: 'language:'
+  extensions:
+    JSON: ['JSON']
+    typescript: ['ts']
+  paths:
+    .: 'js'
+    src: 'typescript'
+    test:
+      .: 'test'
+      fixtures: 'JSON'
+path:
+  pullrequest: true
+  labelprefix: 'path: '
+  paths:
+    .: 'root'
+    src: 'source'
+    test:
+      .: 'tests'
+      fixtures: 'test_fixtures'

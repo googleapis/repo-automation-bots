@@ -23,10 +23,11 @@ import {resolve} from 'path';
 import fs from 'fs';
 import * as sinon from 'sinon';
 import {handler} from '../src/auto-label';
+
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
-const langlabeler = require('../src/language');
+const helper = require('../src/helper');
 
 // We provide our own GitHub instance, similar to
 // the one used by gcf-utils, this allows us to turn off
@@ -39,7 +40,7 @@ import {config} from '@probot/octokit-plugin-config';
 const TestingOctokit = Octokit.plugin(config);
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-describe('language-label', () => {
+describe('language-and-path-labeling', () => {
   let probot: Probot;
 
   beforeEach(() => {
@@ -73,9 +74,9 @@ describe('language-label', () => {
       ghRequests.done();
     });
 
-    it('labels PR with a language label', async () => {
+    it('labels PR with respective labels', async () => {
       const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
+        resolve(fixturesPath, 'config', 'valid-config-no-product.yml')
       );
       const pr_opened_payload = require(resolve(
         fixturesPath,
@@ -86,7 +87,7 @@ describe('language-label', () => {
         './events/pr_opened_files.json'
       ));
       const expected_labels = {
-        labels: ['language:JSON'],
+        labels: ['some_label'],
       };
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
@@ -96,7 +97,14 @@ describe('language-label', () => {
         .get('/repos/testOwner/testRepo/pulls/12/files')
         .reply(200, pr_files_payload)
 
-        // Mock issues.addlabels
+        // Mock issues.addlabels adding path_label
+        .post('/repos/testOwner/testRepo/issues/12/labels', body => {
+          assert.notStrictEqual(body, expected_labels);
+          return true;
+        })
+        .reply(200)
+
+        // Mock issues.addlabels adding language_label
         .post('/repos/testOwner/testRepo/issues/12/labels', body => {
           assert.notStrictEqual(body, expected_labels);
           return true;
@@ -140,6 +148,36 @@ describe('language-label', () => {
 
       ghRequests.done();
     });
+
+    it('does not label when label already exists', async () => {
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'simple-config.yml')
+      );
+      // PR already contains a "javascript" label
+      const pr_opened_payload = require(resolve(
+        fixturesPath,
+        './events/pr_opened_labeled.json'
+      ));
+      const pr_files_payload = require(resolve(
+        fixturesPath,
+        './events/pr_opened_files.json'
+      ));
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
+        .reply(200, config)
+
+        //  Mock pulls.listfiles
+        .get('/repos/testOwner/testRepo/pulls/12/files')
+        .reply(200, pr_files_payload);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: pr_opened_payload,
+        id: 'abc123',
+      });
+
+      ghRequests.done();
+    });
   });
 
   describe('labels languages correctly', () => {
@@ -160,14 +198,15 @@ describe('language-label', () => {
         },
       ];
       assert.strictEqual(
-        langlabeler.getPRLanguage(data, config),
-        'lang: javascript'
+        helper.getLabel(data, config, 'language'),
+        'javascript'
       );
     });
 
     it('labels with user defined language mapping', async () => {
       const lang_config = {
         pullrequest: true,
+        labelprefix: 'lang: ',
         extensions: {
           typescript: ['ts'],
         },
@@ -179,7 +218,7 @@ describe('language-label', () => {
         },
       ];
       assert.strictEqual(
-        langlabeler.getPRLanguage(data, lang_config),
+        helper.getLabel(data, lang_config, 'language'),
         'lang: typescript'
       );
     });
@@ -187,6 +226,7 @@ describe('language-label', () => {
     it('labels with user defined paths', async () => {
       const lang_config = {
         pullrequest: true,
+        labelprefix: 'lang: ',
         paths: {
           src: 'c++',
         },
@@ -198,7 +238,7 @@ describe('language-label', () => {
         },
       ];
       assert.strictEqual(
-        langlabeler.getPRLanguage(data, lang_config),
+        helper.getLabel(data, lang_config, 'language'),
         'lang: c++'
       );
     });
@@ -206,6 +246,7 @@ describe('language-label', () => {
     it('labels with user defined path even if upstream', async () => {
       const lang_config = {
         pullrequest: true,
+        labelprefix: 'lang: ',
         paths: {
           '.': 'foo',
         },
@@ -217,7 +258,7 @@ describe('language-label', () => {
         },
       ];
       assert.strictEqual(
-        langlabeler.getPRLanguage(data, lang_config),
+        helper.getLabel(data, lang_config, 'language'),
         'lang: foo'
       );
     });
@@ -225,6 +266,7 @@ describe('language-label', () => {
     it('labels with user defined path on the deepest path', async () => {
       const lang_config = {
         pullrequest: true,
+        labelprefix: 'lang: ',
         paths: {
           '.': 'foo',
           src: 'bar',
@@ -237,7 +279,7 @@ describe('language-label', () => {
         },
       ];
       assert.strictEqual(
-        langlabeler.getPRLanguage(data, lang_config),
+        helper.getLabel(data, lang_config, 'language'),
         'lang: bar'
       );
     });
@@ -254,9 +296,45 @@ describe('language-label', () => {
         },
       ];
       assert.strictEqual(
-        langlabeler.getPRLanguage(data, lang_config),
+        helper.getLabel(data, lang_config, 'language'),
         'hello: javascript'
       );
+    });
+  });
+
+  describe('labels paths correctly', () => {
+    it('labels with user defined paths', async () => {
+      const path_config = {
+        pullrequest: true,
+        labelprefix: 'path: ',
+        paths: {
+          src: 'my-app',
+        },
+      };
+      const data = [
+        {
+          filename: 'src/index.ts',
+          changes: 15,
+        },
+      ];
+      assert.strictEqual(
+        helper.getLabel(data, path_config, 'path'),
+        'path: my-app'
+      );
+    });
+
+    it('label is nil if path is not user defined', async () => {
+      const path_config = {
+        pullrequest: true,
+        labelprefix: 'path: ',
+      };
+      const data = [
+        {
+          filename: 'src/index.ts',
+          changes: 15,
+        },
+      ];
+      assert.strictEqual(helper.getLabel(data, path_config, 'path'), undefined);
     });
   });
 });

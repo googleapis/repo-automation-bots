@@ -15,11 +15,15 @@
 import {describe, it, beforeEach, before} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, createProbot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import Webhooks from '@octokit/webhooks';
 import nock from 'nock';
 import * as fs from 'fs';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+import {config} from '@probot/octokit-plugin-config';
+const TestingOctokit = Octokit.plugin(config);
 
 import myProbotApp from '../src/trusted-contribution';
 
@@ -36,20 +40,11 @@ describe('TrustedContributionTestRunner', () => {
   let requests: nock.Scope;
 
   beforeEach(() => {
-    probot = new Probot({
-      // use a bare instance of octokit, the default version
-      // enables retries which makes testing difficult.
-      // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest'),
+    probot = createProbot({
+      githubToken: 'abc123',
+      Octokit: TestingOctokit as any,
     });
-    probot.app = {
-      getSignedJsonWebToken() {
-        return 'abc123';
-      },
-      getInstallationAccessToken(): Promise<string> {
-        return Promise.resolve('abc123');
-      },
-    };
+
     probot.load(myProbotApp);
 
     requests = nock('https://api.github.com');
@@ -59,23 +54,17 @@ describe('TrustedContributionTestRunner', () => {
     beforeEach(() => {
       requests = requests
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/trusted-contribution.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Ftrusted-contribution.yml'
         )
         .reply(404)
         .get(
           // FIXME(#68): why is this necessary?
-          '/repos/chingor13/.github/contents/.github/trusted-contribution.yml'
+          '/repos/chingor13/.github/contents/.github%2Ftrusted-contribution.yml'
         )
         .reply(404);
     });
 
     describe('opened pull request', () => {
-      let payload: Webhooks.WebhookPayloadPullRequest;
-
-      beforeEach(() => {
-        payload = require(resolve(fixturesPath, './pull_request_opened'));
-      });
-
       it('sets a label on PR, if PR author is a trusted contributor', async () => {
         requests = requests
           .post(
@@ -84,24 +73,53 @@ describe('TrustedContributionTestRunner', () => {
           )
           .reply(200);
 
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'opened',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'renovate-bot',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
-        payload.pull_request.user.login = 'notauthorized';
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'opened',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'notauthorized',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
         requests.done();
       });
     });
 
     describe('updated pull request', () => {
-      let payload: Webhooks.WebhookPayloadPullRequest;
-
-      before(() => {
-        payload = require(resolve(fixturesPath, './pull_request_synchronized'));
-      });
-
       it('sets a label on PR, if PR author is a trusted contributor', async () => {
         requests = requests
           .post(
@@ -110,13 +128,49 @@ describe('TrustedContributionTestRunner', () => {
           )
           .reply(200);
 
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'opened',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'renovate-bot',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
-        payload.pull_request.user.login = 'notauthorized';
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'opened',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'notauthorized',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
+        requests.done();
         requests.done();
       });
     });
@@ -127,20 +181,13 @@ describe('TrustedContributionTestRunner', () => {
       const config = fs.readFileSync(resolve(fixturesPath, 'custom.yml'));
       requests = requests
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/trusted-contribution.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Ftrusted-contribution.yml'
         )
-        .reply(200, {content: config.toString('base64')});
+        .reply(200, config);
     });
 
     describe('opened pull request', () => {
-      let payload: Webhooks.WebhookPayloadPullRequest;
-
-      beforeEach(() => {
-        payload = require(resolve(fixturesPath, './pull_request_opened'));
-      });
-
       it('sets a label on PR, if PR author is a trusted contributor', async () => {
-        payload.pull_request.user.login = 'custom-user';
         requests = requests
           .post(
             '/repos/chingor13/google-auth-library-java/issues/3/labels',
@@ -148,26 +195,54 @@ describe('TrustedContributionTestRunner', () => {
           )
           .reply(200);
 
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'opened',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'custom-user',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
-        payload.pull_request.user.login = 'release-please[bot]';
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'opened',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'release-please[bot]',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
         requests.done();
       });
     });
 
     describe('updated pull request', () => {
-      let payload: Webhooks.WebhookPayloadPullRequest;
-
-      before(() => {
-        payload = require(resolve(fixturesPath, './pull_request_synchronized'));
-      });
-
       it('sets a label on PR, if PR author is a trusted contributor', async () => {
-        payload.pull_request.user.login = 'custom-user';
         requests = requests
           .post(
             '/repos/chingor13/google-auth-library-java/issues/3/labels',
@@ -175,13 +250,48 @@ describe('TrustedContributionTestRunner', () => {
           )
           .reply(200);
 
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'opened',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'custom-user',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
-        payload.pull_request.user.login = 'release-please[bot]';
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'opened',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'release-please[bot]',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
         requests.done();
       });
     });
@@ -192,18 +302,12 @@ describe('TrustedContributionTestRunner', () => {
       const config = fs.readFileSync(resolve(fixturesPath, 'empty.yml'));
       requests = requests
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/trusted-contribution.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Ftrusted-contribution.yml'
         )
-        .reply(200, {content: config.toString('base64')});
+        .reply(200, config);
     });
 
     describe('opened pull request', () => {
-      let payload: Webhooks.WebhookPayloadPullRequest;
-
-      beforeEach(() => {
-        payload = require(resolve(fixturesPath, './pull_request_opened'));
-      });
-
       it('sets a label on PR, if PR author is a trusted contributor', async () => {
         requests = requests
           .post(
@@ -212,24 +316,53 @@ describe('TrustedContributionTestRunner', () => {
           )
           .reply(200);
 
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'opened',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'renovate-bot',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
-        payload.pull_request.user.login = 'unauthorized';
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'opened',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'unauthorized',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
         requests.done();
       });
     });
 
     describe('updated pull request', () => {
-      let payload: Webhooks.WebhookPayloadPullRequest;
-
-      before(() => {
-        payload = require(resolve(fixturesPath, './pull_request_synchronized'));
-      });
-
       it('sets a label on PR, if PR author is a trusted contributor', async () => {
         requests = requests
           .post(
@@ -238,13 +371,48 @@ describe('TrustedContributionTestRunner', () => {
           )
           .reply(200);
 
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'synchronize',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'renovate-bot',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
-        payload.pull_request.user.login = 'unauthorized';
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'synchronize',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'unauthorized',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
         requests.done();
       });
     });
@@ -257,44 +425,104 @@ describe('TrustedContributionTestRunner', () => {
       );
       requests = requests
         .get(
-          '/repos/chingor13/google-auth-library-java/contents/.github/trusted-contribution.yml'
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Ftrusted-contribution.yml'
         )
-        .reply(200, {content: config.toString('base64')});
+        .reply(200, config);
     });
 
     describe('opened pull request', () => {
-      let payload: Webhooks.WebhookPayloadPullRequest;
-
-      beforeEach(() => {
-        payload = require(resolve(fixturesPath, './pull_request_opened'));
-      });
-
       it('does not set a label on PR, even if PR author is a default trusted contributor', async () => {
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'opened',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'renovate-bot',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
-        payload.pull_request.user.login = 'custom-user';
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'opened',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'custom-user',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
+        requests.done();
         requests.done();
       });
     });
 
     describe('updated pull request', () => {
-      let payload: Webhooks.WebhookPayloadPullRequest;
-
-      before(() => {
-        payload = require(resolve(fixturesPath, './pull_request_synchronized'));
-      });
-
       it('does not set a label on PR, even if PR author is a default trusted contributor', async () => {
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'synchronize',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'renovate-bot',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
         requests.done();
       });
 
       it('does not set a label on PR, if PR author is not a trusted contributor', async () => {
-        await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'synchronize',
+            pull_request: {
+              number: 3,
+              user: {
+                login: 'renovate-bot',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          },
+          id: 'abc123',
+        });
         requests.done();
       });
     });
