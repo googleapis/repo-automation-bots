@@ -18,6 +18,7 @@
 import {Application} from 'probot';
 import {parseRegionTags} from './region-tag-parser';
 import {parseRegionTagsInPullRequest} from './region-tag-parser';
+import {ParseResult} from './region-tag-parser';
 import {Change} from './region-tag-parser';
 import {logger} from 'gcf-utils';
 import fetch from 'node-fetch';
@@ -348,6 +349,9 @@ ${bodyDetail}`
       let tagsFound = false;
       const failureMessages: string[] = [];
 
+      // Keep track of start tags in all the files.
+      const parseResults = new Map<string, ParseResult>();
+
       // If we found any new files, verify they all have matching region tags.
       for (let i = 0; files[i] !== undefined; i++) {
         const file = files[i];
@@ -373,6 +377,7 @@ ${bodyDetail}`
         );
 
         const parseResult = parseRegionTags(fileContents, file.filename);
+        parseResults.set(file.filename, parseResult);
         if (!parseResult.result) {
           mismatchedTags = true;
           failureMessages.push(parseResult.messages.join('\n'));
