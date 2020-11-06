@@ -1,7 +1,7 @@
-diff --git a/datastore/cloud-client/snippets.py b/datastore/cloud-client/snippets.py
+diff --git a/test.py b/test.py
 index 198d0257595..6048151ca9f 100644
---- a/datastore/cloud-client/snippets.py
-+++ b/datastore/cloud-client/snippets.py
+--- a/test.py
++++ b/test.py
 @@ -21,28 +21,28 @@
 
 
