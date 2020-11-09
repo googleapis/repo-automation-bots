@@ -580,8 +580,6 @@ export async function mergeOnGreen(
     'Merge-on-green attempted to merge your PR for 6 hours, but it was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. Learn more about your required status checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks. You can remove and reapply the label to re-run the bot.';
   const conflictMessage =
     'Your PR has conflicts that you need to resolve before merge-on-green can automerge';
-  const continueMesssage =
-    'Your PR has attempted to merge for 3 hours. Please check that all required checks have passed, you have an automerge label, and that all your reviewers have approved the PR';
   const notAuthorizedMessage =
     'Merge-on-green is not authorized to push to this branch. Visit https://help.github.com/en/github/administering-a-repository/enabling-branch-restrictions to give gcf-merge-on-green permission to push to this branch.';
 
@@ -634,7 +632,6 @@ export async function mergeOnGreen(
       }
     }
     return merged;
-
     //if the state is stopped, i.e., we won't keep checking, let's comment and remove from Datastore
   } else if (state === 'stop') {
     logger.info(
@@ -643,17 +640,6 @@ export async function mergeOnGreen(
     await commentOnPR(owner, repo, pr, failedMesssage, github);
     return true;
     // if the PR is halfway through the time it is checking, comment on the PR.
-  } else if (state === 'comment') {
-    const isCommented = commentsOnPR?.find(element =>
-      element.body.includes(continueMesssage)
-    );
-    if (!isCommented) {
-      await commentOnPR(owner, repo, pr, continueMesssage, github);
-    }
-    logger.info(`${owner}/${repo}/${pr} is halfway through its check`);
-    return false;
-
-    // if the PR has not been merged but it is still going to be checked, check again.
   } else {
     logger.info(
       `Statuses and/or checks failed for ${owner}/${repo}/${pr}, will check again`
