@@ -43,9 +43,9 @@ function nockUpdateTeamMembership(team: string, org: string, repo: string) {
 
 function nockConfig404(org = 'googleapis', repo = 'api-common-java') {
   return nock('https://api.github.com')
-    .get(`/repos/${org}/${repo}/contents/.github%2Fsync-repo-settings.yml`)
+    .get(`/repos/${org}/${repo}/contents/.github%2Fsync-repo-settings.yaml`)
     .reply(404)
-    .get(`/repos/${org}/.github/contents/.github%2Fsync-repo-settings.yml`)
+    .get(`/repos/${org}/.github/contents/.github%2Fsync-repo-settings.yaml`)
     .reply(404);
 }
 
@@ -220,10 +220,10 @@ describe('Sync repo settings', () => {
   it('should use localized config if available', async () => {
     const org = 'googleapis';
     const repo = 'fake';
-    const content = await fs.readFile('./test/fixtures/localConfig.yml');
+    const content = await fs.readFile('./test/fixtures/localConfig.yaml');
     const scopes = [
       nock('https://api.github.com')
-        .get(`/repos/${org}/${repo}/contents/.github%2Fsync-repo-settings.yml`)
+        .get(`/repos/${org}/${repo}/contents/.github%2Fsync-repo-settings.yaml`)
         .reply(200, content),
       nockUpdateRepoSettings(repo, false, true),
       nockUpdateBranchProtection(repo, ['check1', 'check2'], false, true),
@@ -239,7 +239,7 @@ describe('Sync repo settings', () => {
     const fileSha = 'bbcd538c8e72b8c175046e27cc8f907076331401';
     const headSha = 'abc123';
     const content = await fs.readFile(
-      './test/fixtures/localConfig.yml',
+      './test/fixtures/localConfig.yaml',
       'base64'
     );
     const scopes = [
@@ -248,7 +248,7 @@ describe('Sync repo settings', () => {
         .reply(200, [
           {
             sha: fileSha,
-            filename: '.github/sync-repo-settings.yml',
+            filename: '.github/sync-repo-settings.yaml',
             status: 'added',
           },
         ]),
@@ -293,7 +293,7 @@ describe('Sync repo settings', () => {
     const fileSha = 'bbcd538c8e72b8c175046e27cc8f907076331401';
     const headSha = 'abc123';
     const content = await fs.readFile(
-      './test/fixtures/bogusConfig.yml',
+      './test/fixtures/bogusConfig.yaml',
       'base64'
     );
     const scopes = [
@@ -302,7 +302,7 @@ describe('Sync repo settings', () => {
         .reply(200, [
           {
             sha: fileSha,
-            filename: '.github/sync-repo-settings.yml',
+            filename: '.github/sync-repo-settings.yaml',
             status: 'added',
           },
         ]),
@@ -348,7 +348,7 @@ describe('Sync repo settings', () => {
     const fileSha = 'bbcd538c8e72b8c175046e27cc8f907076331401';
     const headSha = 'abc123';
     const content = await fs.readFile(
-      './test/fixtures/invalidYamlConfig.yml',
+      './test/fixtures/invalidYamlConfig.yaml',
       'base64'
     );
     const scopes = [
@@ -357,7 +357,7 @@ describe('Sync repo settings', () => {
         .reply(200, [
           {
             sha: fileSha,
-            filename: '.github/sync-repo-settings.yml',
+            filename: '.github/sync-repo-settings.yaml',
             status: 'added',
           },
         ]),
