@@ -48,6 +48,7 @@ export interface ChangesInPullRequest {
   changes: Change[];
   added: number;
   deleted: number;
+  files: string[];
 }
 
 export const START_TAG_REGEX = /\[START ([^\]]*)\]/;
@@ -66,14 +67,19 @@ export function parseRegionTagsInPullRequest(
   headSha: string
 ): ChangesInPullRequest {
   const changes: Change[] = [];
+  const files: string[] = [];
   const ret = {
     changes: changes,
     added: 0,
     deleted: 0,
+    files: files,
   };
 
   const diffResult = parseDiff(diff);
   for (const file of diffResult) {
+    if (file.to !== undefined) {
+      ret.files.push(file.to);
+    }
     for (const chunk of file.chunks) {
       for (const change of chunk.changes) {
         if (change.type === 'normal') {

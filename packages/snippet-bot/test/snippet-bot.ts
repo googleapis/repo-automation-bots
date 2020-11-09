@@ -46,8 +46,6 @@ describe('snippet-bot', () => {
     resolve(fixturesPath, 'tmatsuo-python-docs-samples-abcde.tar.gz')
   );
 
-  const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
-
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
@@ -76,8 +74,10 @@ describe('snippet-bot', () => {
         .get(
           '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
         )
-        .reply(200, config)
-        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+        .reply(200, config);
+
+      const diffRequests = nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(404, {});
 
       await probot.receive({
@@ -87,11 +87,12 @@ describe('snippet-bot', () => {
       });
 
       requests.done();
+      diffRequests.done();
     });
 
     it('sets a "failure" context on PR', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
+      const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event'));
       const blob = require(resolve(fixturesPath, './failure_blob'));
 
@@ -100,10 +101,8 @@ describe('snippet-bot', () => {
           '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
         )
         .reply(200, config)
-        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
-        .reply(200, changedFiles)
         .get(
-          '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
         )
         .reply(200, blob)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
@@ -161,7 +160,7 @@ describe('snippet-bot', () => {
 
     it('responds to snippet-bot:force-run label', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
+      const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event_label_added'));
       const blob = require(resolve(fixturesPath, './failure_blob'));
 
@@ -175,10 +174,8 @@ describe('snippet-bot', () => {
           '/repos/tmatsuo/repo-automation-bots/issues/14/labels/snippet-bot%3Aforce-run'
         )
         .reply(200)
-        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
-        .reply(200, changedFiles)
         .get(
-          '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
         )
         .reply(200, blob)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
@@ -215,7 +212,7 @@ describe('snippet-bot', () => {
 
     it('ignores 404 error upon label deletion', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
+      const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event_label_added'));
       const blob = require(resolve(fixturesPath, './failure_blob'));
 
@@ -229,10 +226,8 @@ describe('snippet-bot', () => {
           '/repos/tmatsuo/repo-automation-bots/issues/14/labels/snippet-bot%3Aforce-run'
         )
         .reply(404)
-        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
-        .reply(200, changedFiles)
         .get(
-          '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
         )
         .reply(200, blob)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
@@ -269,7 +264,7 @@ describe('snippet-bot', () => {
 
     it('does not submit a check on PR if there are no region tags', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
+      const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event'));
       const blob = require(resolve(fixturesPath, './blob_no_region_tags'));
 
@@ -278,15 +273,26 @@ describe('snippet-bot', () => {
           '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
         )
         .reply(200, config)
-        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
-        .reply(200, changedFiles)
         .get(
-          '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
         )
-        .reply(200, blob);
+        .reply(200, blob)
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
+        )
+        .reply(200, [])
+        .post(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200);
+
       const diffRequests = nock('https://github.com')
         .get('/tmatsuo/repo-automation-bots/pull/14.diff')
-        .reply(200, '');
+        .reply(200, diffResponse);
 
       await probot.receive({
         name: 'pull_request',
@@ -319,7 +325,7 @@ describe('snippet-bot', () => {
 
     it('does not submit a check on PR by ignoreFile', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const changedFiles = require(resolve(fixturesPath, './pr_files_added'));
+      const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event'));
 
       const ignoreConfig = fs.readFileSync(
@@ -331,39 +337,22 @@ describe('snippet-bot', () => {
           '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
         )
         .reply(200, ignoreConfig)
-        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
-        .reply(200, changedFiles);
-
-      const diffRequests = nock('https://github.com')
-        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
-        .reply(200, '');
-
-      await probot.receive({
-        name: 'pull_request',
-        payload,
-        id: 'abc123',
-      });
-
-      requests.done();
-      diffRequests.done();
-    });
-
-    it('does not submit a check on PR because the file was just deleted', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const changedFiles = require(resolve(fixturesPath, './pr_files_deleted'));
-      const payload = require(resolve(fixturesPath, './pr_event'));
-
-      const requests = nock('https://api.github.com')
         .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
-        .reply(200, config)
-        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
-        .reply(200, changedFiles);
+        .reply(200, [])
+        .post(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200);
 
       const diffRequests = nock('https://github.com')
         .get('/tmatsuo/repo-automation-bots/pull/14.diff')
-        .reply(200, '');
+        .reply(200, diffResponse);
 
       await probot.receive({
         name: 'pull_request',
