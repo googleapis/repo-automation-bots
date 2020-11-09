@@ -26,7 +26,7 @@ import Ajv from 'ajv';
 import yaml from 'js-yaml';
 import {PullsListFilesResponseData} from '@octokit/types';
 
-export const configFileName = 'sync-repo-settings.yml';
+export const configFileName = 'sync-repo-settings.yaml';
 
 type Conclusion =
   | 'success'
