@@ -23,7 +23,6 @@ import {Change} from './region-tag-parser';
 import {logger} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
-import {PullsListFilesResponseData} from '@octokit/types';
 import * as minimatch from 'minimatch';
 
 import tar from 'tar';
@@ -327,23 +326,20 @@ ${bodyDetail}`
         }
       }
       // Check on pull requests.
-      // List pull request files for the given PR
-      // https://developer.github.com/v3/pulls/#list-pull-requests-files
-      const listFilesParams = context.repo({
-        pull_number: context.payload.pull_request.number,
-        per_page: 100,
-      });
-      const pullRequestCommitSha = context.payload.pull_request.head.sha;
-      logger.info({sha: pullRequestCommitSha});
-      // TODO: handle pagination
-      let files: PullsListFilesResponseData;
-      try {
-        files = (await context.github.pulls.listFiles(listFilesParams)).data;
-      } catch (err) {
-        logger.error('---------------------');
-        logger.error(err);
-        return;
-      }
+
+      // Parse the PR diff and recognize added/deleted region tags.
+      const response = await fetch(context.payload.pull_request.diff_url);
+      const diff = await response.text();
+
+      const result = parseRegionTagsInPullRequest(
+        diff,
+        context.payload.pull_request.base.repo.owner.login,
+        context.payload.pull_request.base.repo.name,
+        context.payload.pull_request.base.sha,
+        context.payload.pull_request.head.repo.owner.login,
+        context.payload.pull_request.head.repo.name,
+        context.payload.pull_request.head.sha
+      );
 
       let mismatchedTags = false;
       let tagsFound = false;
@@ -353,31 +349,25 @@ ${bodyDetail}`
       const parseResults = new Map<string, ParseResult>();
 
       // If we found any new files, verify they all have matching region tags.
-      for (let i = 0; files[i] !== undefined; i++) {
-        const file = files[i];
-
-        if (configuration.ignoredFile(file.filename)) {
-          logger.info('ignoring file from configuration: ' + file.filename);
+      for (const file of result.files) {
+        if (configuration.ignoredFile(file)) {
+          logger.info('ignoring file from configuration: ' + file);
           continue;
         }
 
-        if (file.status === 'removed') {
-          logger.info('ignoring deleted file: ' + file.filename);
-          continue;
-        }
-
-        const blob = await context.github.git.getBlob(
-          context.repo({
-            file_sha: file.sha,
-          })
-        );
+        const blob = await context.github.repos.getContent({
+          owner: context.payload.pull_request.head.repo.owner.login,
+          repo: context.payload.pull_request.head.repo.name,
+          path: file,
+          ref: context.payload.pull_request.head.sha,
+        });
 
         const fileContents = Buffer.from(blob.data.content, 'base64').toString(
           'utf8'
         );
 
-        const parseResult = parseRegionTags(fileContents, file.filename);
-        parseResults.set(file.filename, parseResult);
+        const parseResult = parseRegionTags(fileContents, file);
+        parseResults.set(file, parseResult);
         if (!parseResult.result) {
           mismatchedTags = true;
           failureMessages.push(parseResult.messages.join('\n'));
@@ -390,7 +380,7 @@ ${bodyDetail}`
       const checkParams = context.repo({
         name: 'Mismatched region tag',
         conclusion: 'success' as Conclusion,
-        head_sha: pullRequestCommitSha,
+        head_sha: context.payload.pull_request.head.sha,
         output: {
           title: 'Region tag check',
           summary: 'Region tag successful',
@@ -412,20 +402,6 @@ ${bodyDetail}`
       if (tagsFound) {
         await context.github.checks.create(checkParams);
       }
-
-      // Parse the PR diff and recognize added/deleted region tags.
-      const response = await fetch(context.payload.pull_request.diff_url);
-      const diff = await response.text();
-
-      const result = parseRegionTagsInPullRequest(
-        diff,
-        context.payload.pull_request.base.repo.owner.login,
-        context.payload.pull_request.base.repo.name,
-        context.payload.pull_request.base.sha,
-        context.payload.pull_request.head.repo.owner.login,
-        context.payload.pull_request.head.repo.name,
-        context.payload.pull_request.head.sha
-      );
 
       if (result.changes.length === 0) {
         return;
