@@ -146,7 +146,7 @@ async function createGitHubRelease(
     path,
     changelogPath,
     monorepoTags,
-    releaseType
+    releaseType,
   };
   const ghr = new GitHubRelease(releaseOptions);
   await Runner.releaser(ghr);
