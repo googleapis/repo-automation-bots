@@ -17,6 +17,7 @@
 /* eslint-disable node/no-extraneous-import */
 
 import myProbotApp from '../src/snippet-bot';
+import * as apiLabelsModule from '../src/api-labels';
 
 import {resolve} from 'path';
 import {Probot, createProbot} from 'probot';
@@ -25,6 +26,7 @@ import nock from 'nock';
 import * as fs from 'fs';
 import assert from 'assert';
 import {describe, it, beforeEach, afterEach} from 'mocha';
+import * as sinon from 'sinon';
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
@@ -46,6 +48,9 @@ describe('snippet-bot', () => {
     resolve(fixturesPath, 'tmatsuo-python-docs-samples-abcde.tar.gz')
   );
 
+  const sandbox = sinon.createSandbox();
+
+  let getApiLabelsStub: sinon.SinonStub<[], Promise<{}>>;
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
@@ -66,6 +71,21 @@ describe('snippet-bot', () => {
   });
 
   describe('responds to PR', () => {
+    beforeEach(() => {
+      getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
+      getApiLabelsStub.resolves({
+        apis: [
+          {
+            display_name: 'Datastore',
+            github_label: 'api: datastore',
+            api_shortname: 'datastore',
+          },
+        ],
+      });
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
     it('quits early', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './pr_event'));
