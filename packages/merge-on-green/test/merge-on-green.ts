@@ -575,51 +575,6 @@ describe('merge-on-green', () => {
         scopes.forEach(s => s.done());
       });
 
-      it('posts a comment on the PR if the flag is set to comment', async () => {
-        handler.getDatastore = async () => {
-          const pr = [
-            [
-              {
-                repo: 'testRepo',
-                number: 1,
-                owner: 'testOwner',
-                created: Date.now() - 10920000, // 3 hours ago
-                branchProtection: ['Special Check'],
-                label: 'automerge',
-                author: 'testOwner',
-                reactionId: 1,
-              },
-            ],
-          ];
-          return pr;
-        };
-        const scopes = [
-          getRateLimit(5000),
-          getReviewsCompleted([
-            {
-              user: {login: 'octocat'},
-              state: 'APPROVED',
-              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-              id: 12345,
-            },
-          ]),
-          getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
-          getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
-            {state: 'failure', context: 'Special Check'},
-          ]),
-          getCommentsOnPr([]),
-          commentOnPR(),
-        ];
-
-        await probot.receive({
-          name: 'schedule.repository' as any,
-          payload: {org: 'testOwner'},
-          id: 'abc123',
-        });
-
-        scopes.forEach(s => s.done());
-      });
-
       it('rejects status checks that do not match the required check', async () => {
         handler.getDatastore = async () => {
           const pr = [

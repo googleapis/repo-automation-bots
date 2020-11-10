@@ -18,11 +18,11 @@
 import {Application} from 'probot';
 import {parseRegionTags} from './region-tag-parser';
 import {parseRegionTagsInPullRequest} from './region-tag-parser';
+import {ParseResult} from './region-tag-parser';
 import {Change} from './region-tag-parser';
 import {logger} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
-import {PullsListFilesResponseData} from '@octokit/types';
 import * as minimatch from 'minimatch';
 
 import tar from 'tar';
@@ -46,6 +46,11 @@ interface ConfigurationOptions {
   ignoreFiles: string[];
 }
 
+// Solely for avoid using `any` type.
+interface Label {
+  name: string;
+}
+
 const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   ignoreFiles: [],
 };
@@ -53,6 +58,8 @@ const DEFAULT_CONFIGURATION: ConfigurationOptions = {
 const CONFIGURATION_FILE_PATH = 'snippet-bot.yml';
 
 const FULL_SCAN_ISSUE_TITLE = 'snippet-bot full scan';
+
+const REFRESH_LABEL = 'snippet-bot:force-run';
 
 class Configuration {
   private options: ConfigurationOptions;
@@ -149,6 +156,7 @@ export = (app: Application) => {
       'pull_request.opened',
       'pull_request.reopened',
       'pull_request.edited',
+      'pull_request.labeled',
       'pull_request.synchronize',
     ],
     async context => {
@@ -291,54 +299,75 @@ ${bodyDetail}`
       if (context.payload.pull_request === undefined) {
         return;
       }
-      // Check on pull requests.
-      // List pull request files for the given PR
-      // https://developer.github.com/v3/pulls/#list-pull-requests-files
-      const listFilesParams = context.repo({
-        pull_number: context.payload.pull_request.number,
-        per_page: 100,
-      });
-      const pullRequestCommitSha = context.payload.pull_request.head.sha;
-      logger.info({sha: pullRequestCommitSha});
-      // TODO: handle pagination
-      let files: PullsListFilesResponseData;
-      try {
-        files = (await context.github.pulls.listFiles(listFilesParams)).data;
-      } catch (err) {
-        logger.error('---------------------');
-        logger.error(err);
-        return;
+      if (context.payload.action === 'labeled') {
+        // Only proceeds if `snippet-bot:force-run` label is added.
+        if (context.payload.pull_request.labels === undefined) {
+          return;
+        }
+        // Exits when there's no REFRESH_LABEL
+        const labelFound = context.payload.pull_request.labels.some(
+          (label: Label) => {
+            return label.name === REFRESH_LABEL;
+          }
+        );
+        if (!labelFound) {
+          return;
+        }
+        // Remove the label and proceed.
+        try {
+          await context.github.issues.removeLabel(
+            context.issue({name: REFRESH_LABEL})
+          );
+        } catch (err) {
+          // Ignoring 404 errors.
+          if (err.status !== 404) {
+            throw err;
+          }
+        }
       }
+      // Check on pull requests.
+
+      // Parse the PR diff and recognize added/deleted region tags.
+      const response = await fetch(context.payload.pull_request.diff_url);
+      const diff = await response.text();
+
+      const result = parseRegionTagsInPullRequest(
+        diff,
+        context.payload.pull_request.base.repo.owner.login,
+        context.payload.pull_request.base.repo.name,
+        context.payload.pull_request.base.sha,
+        context.payload.pull_request.head.repo.owner.login,
+        context.payload.pull_request.head.repo.name,
+        context.payload.pull_request.head.sha
+      );
 
       let mismatchedTags = false;
       let tagsFound = false;
       const failureMessages: string[] = [];
 
+      // Keep track of start tags in all the files.
+      const parseResults = new Map<string, ParseResult>();
+
       // If we found any new files, verify they all have matching region tags.
-      for (let i = 0; files[i] !== undefined; i++) {
-        const file = files[i];
-
-        if (configuration.ignoredFile(file.filename)) {
-          logger.info('ignoring file from configuration: ' + file.filename);
+      for (const file of result.files) {
+        if (configuration.ignoredFile(file)) {
+          logger.info('ignoring file from configuration: ' + file);
           continue;
         }
 
-        if (file.status === 'removed') {
-          logger.info('ignoring deleted file: ' + file.filename);
-          continue;
-        }
-
-        const blob = await context.github.git.getBlob(
-          context.repo({
-            file_sha: file.sha,
-          })
-        );
+        const blob = await context.github.repos.getContent({
+          owner: context.payload.pull_request.head.repo.owner.login,
+          repo: context.payload.pull_request.head.repo.name,
+          path: file,
+          ref: context.payload.pull_request.head.sha,
+        });
 
         const fileContents = Buffer.from(blob.data.content, 'base64').toString(
           'utf8'
         );
 
-        const parseResult = parseRegionTags(fileContents, file.filename);
+        const parseResult = parseRegionTags(fileContents, file);
+        parseResults.set(file, parseResult);
         if (!parseResult.result) {
           mismatchedTags = true;
           failureMessages.push(parseResult.messages.join('\n'));
@@ -351,7 +380,7 @@ ${bodyDetail}`
       const checkParams = context.repo({
         name: 'Mismatched region tag',
         conclusion: 'success' as Conclusion,
-        head_sha: pullRequestCommitSha,
+        head_sha: context.payload.pull_request.head.sha,
         output: {
           title: 'Region tag check',
           summary: 'Region tag successful',
@@ -373,20 +402,6 @@ ${bodyDetail}`
       if (tagsFound) {
         await context.github.checks.create(checkParams);
       }
-
-      // Parse the PR diff and recognize added/deleted region tags.
-      const response = await fetch(context.payload.pull_request.diff_url);
-      const diff = await response.text();
-
-      const result = parseRegionTagsInPullRequest(
-        diff,
-        context.payload.pull_request.base.repo.owner.login,
-        context.payload.pull_request.base.repo.name,
-        context.payload.pull_request.base.sha,
-        context.payload.pull_request.head.repo.owner.login,
-        context.payload.pull_request.head.repo.name,
-        context.payload.pull_request.head.sha
-      );
 
       if (result.changes.length === 0) {
         return;
@@ -417,6 +432,8 @@ ${bodyDetail}`
         }
         commentBody += formatExpandable(summary, detail);
       }
+
+      commentBody += `To update this comment, add \`${REFRESH_LABEL}\` label.\n`;
 
       const listCommentsResponse = await context.github.issues.listComments({
         owner: owner,

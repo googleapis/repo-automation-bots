@@ -15,11 +15,6 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Application} from 'probot';
 
-interface GitHubAPI {
-  graphql: Function;
-  request: Function;
-}
-
 // TODO: fix these imports when release-please exports types from the root
 // See https://github.com/googleapis/release-please/issues/249
 import {BuildOptions} from 'release-please/build/src/release-pr';
@@ -32,13 +27,27 @@ import {
 import {Runner} from './runner';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest'; // Use version from gcf-utils.
+// We pull in @octokit/request to crreate an appropriate type for the
+// GitHubAPI interface:
+// eslint-disable-next-line node/no-extraneous-import
+import {request} from '@octokit/request';
+type RequestBuilderType = typeof request;
+type DefaultFunctionType = RequestBuilderType['defaults'];
+type RequestFunctionType = ReturnType<DefaultFunctionType>;
+
 import {logger} from 'gcf-utils';
 
 type OctokitType = InstanceType<typeof Octokit>;
 
+interface GitHubAPI {
+  graphql: Function;
+  request: RequestFunctionType;
+}
+
 interface ConfigurationOptions {
   primaryBranch: string;
   releaseLabels?: string[];
+  monorepoTags?: boolean;
   releaseType?: string;
   packageName?: string;
   handleGHRelease?: boolean;
@@ -88,7 +97,8 @@ async function createReleasePR(
   releaseLabels?: string[],
   bumpMinorPreMajor?: boolean,
   snapshot?: boolean,
-  path?: string
+  path?: string,
+  monorepoTags?: boolean
 ) {
   const buildOptions: BuildOptions = {
     packageName,
@@ -103,6 +113,7 @@ async function createReleasePR(
     bumpMinorPreMajor,
     snapshot,
     path,
+    monorepoTags,
   };
   if (releaseLabels) {
     buildOptions.label = releaseLabels.join(',');
@@ -117,7 +128,8 @@ async function createGitHubRelease(
   repoUrl: string,
   github: GitHubAPI,
   path?: string,
-  changelogPath?: string
+  changelogPath?: string,
+  monorepoTags?: boolean
 ) {
   const releaseOptions: GitHubReleaseOptions = {
     label: 'autorelease: pending',
@@ -132,6 +144,7 @@ async function createGitHubRelease(
     },
     path,
     changelogPath,
+    monorepoTags,
   };
   const ghr = new GitHubRelease(releaseOptions);
   await Runner.releaser(ghr);
@@ -176,11 +189,12 @@ export = (app: Application) => {
       releaseType,
       configuration.packageName || repoName,
       repoUrl,
-      context.github,
+      context.github as GitHubAPI,
       configuration.releaseLabels,
       configuration.bumpMinorPreMajor,
       false,
-      configuration.path
+      configuration.path,
+      configuration.monorepoTags
     );
 
     // release-please can handle creating a release on GitHub, we opt not to do
@@ -190,9 +204,10 @@ export = (app: Application) => {
       await createGitHubRelease(
         configuration.packageName ?? repoName,
         repoUrl,
-        context.github,
+        context.github as GitHubAPI,
         configuration.path,
-        configuration.changelogPath ?? 'CHANGELOG.md'
+        configuration.changelogPath ?? 'CHANGELOG.md',
+        configuration.monorepoTags
       );
     }
   });
@@ -233,7 +248,8 @@ export = (app: Application) => {
       configuration.releaseLabels,
       configuration.bumpMinorPreMajor,
       true,
-      configuration.path
+      configuration.path,
+      configuration.monorepoTags
     );
   });
 
@@ -294,11 +310,12 @@ export = (app: Application) => {
       releaseType,
       configuration.packageName || repo,
       repoUrl,
-      context.github,
+      context.github as GitHubAPI,
       configuration.releaseLabels,
       configuration.bumpMinorPreMajor,
       false,
-      configuration.path
+      configuration.path,
+      configuration.monorepoTags
     );
   });
 };

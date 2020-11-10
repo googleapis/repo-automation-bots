@@ -16,11 +16,14 @@ import parseDiff from 'parse-diff';
 
 /**
  * The result for unmatched region tag checks.
+ *
+ * We want to keep track of which region tags are in which files.
  */
 export interface ParseResult {
   result: boolean;
   messages: string[];
   tagsFound: boolean;
+  startTags: string[];
 }
 
 type ChangeTypes = 'add' | 'del';
@@ -45,6 +48,7 @@ export interface ChangesInPullRequest {
   changes: Change[];
   added: number;
   deleted: number;
+  files: string[];
 }
 
 export const START_TAG_REGEX = /\[START ([^\]]*)\]/;
@@ -63,14 +67,19 @@ export function parseRegionTagsInPullRequest(
   headSha: string
 ): ChangesInPullRequest {
   const changes: Change[] = [];
+  const files: string[] = [];
   const ret = {
     changes: changes,
     added: 0,
     deleted: 0,
+    files: files,
   };
 
   const diffResult = parseDiff(diff);
   for (const file of diffResult) {
+    if (file.to !== undefined) {
+      ret.files.push(file.to);
+    }
     for (const chunk of file.chunks) {
       for (const change of chunk.changes) {
         if (change.type === 'normal') {
@@ -108,7 +117,12 @@ export function parseRegionTags(
   contents: string,
   filename: string
 ): ParseResult {
-  const result: ParseResult = {result: true, messages: [], tagsFound: false};
+  const result: ParseResult = {
+    result: true,
+    messages: [],
+    tagsFound: false,
+    startTags: [],
+  };
   const tags: Array<[number, string]> = [];
 
   let lineno = 0;
@@ -119,6 +133,9 @@ export function parseRegionTags(
     if (startMatch) {
       // We found the region tag.
       result.tagsFound = true;
+      if (!result.startTags.includes(startMatch[1])) {
+        result.startTags.push(startMatch[1]);
+      }
       // startMatch[1] should hold the name of the region tag.
       // If we already have the same tag, it's an error.
       let alreadyStarted = false;
