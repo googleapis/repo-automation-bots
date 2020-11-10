@@ -113,7 +113,7 @@ async function createReleasePR(
     bumpMinorPreMajor,
     snapshot,
     path,
-    monorepoTags
+    monorepoTags,
   };
   if (releaseLabels) {
     buildOptions.label = releaseLabels.join(',');
@@ -144,7 +144,7 @@ async function createGitHubRelease(
     },
     path,
     changelogPath,
-    monorepoTags
+    monorepoTags,
   };
   const ghr = new GitHubRelease(releaseOptions);
   await Runner.releaser(ghr);
