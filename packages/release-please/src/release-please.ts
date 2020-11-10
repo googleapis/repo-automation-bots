@@ -129,7 +129,8 @@ async function createGitHubRelease(
   github: GitHubAPI,
   path?: string,
   changelogPath?: string,
-  monorepoTags?: boolean
+  monorepoTags?: boolean,
+  releaseType?: string
 ) {
   const releaseOptions: GitHubReleaseOptions = {
     label: 'autorelease: pending',
@@ -145,6 +146,7 @@ async function createGitHubRelease(
     path,
     changelogPath,
     monorepoTags,
+    releaseType
   };
   const ghr = new GitHubRelease(releaseOptions);
   await Runner.releaser(ghr);
@@ -207,7 +209,8 @@ export = (app: Application) => {
         context.github as GitHubAPI,
         configuration.path,
         configuration.changelogPath ?? 'CHANGELOG.md',
-        configuration.monorepoTags
+        configuration.monorepoTags,
+        configuration.releaseType
       );
     }
   });
