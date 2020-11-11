@@ -27,12 +27,12 @@ index 198d0257595..6048151ca9f 100644
 
  def key_with_parent(client):
 -    # [START datastore_key_with_parent]
-+    # [START datastore_key_with_parent2]
++    # [START key_with_parent]
      key = client.key('TaskList', 'default', 'Task', 'sample_task')
      # Alternatively
      parent_key = client.key('TaskList', 'default')
      key = client.key('Task', 'sample_task', parent=parent_key)
 -    # [END datastore_key_with_parent]
-+    # [END datastore_key_with_parent2]
++    # [END key_with_parent]
 
      return key
