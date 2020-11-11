@@ -50,7 +50,7 @@ describe('snippet-bot', () => {
 
   const sandbox = sinon.createSandbox();
 
-  let getApiLabelsStub: sinon.SinonStub<[], Promise<{}>>;
+  let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
@@ -74,11 +74,12 @@ describe('snippet-bot', () => {
     beforeEach(() => {
       getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
       getApiLabelsStub.resolves({
-        apis: [
+        products: [
           {
             display_name: 'Datastore',
             github_label: 'api: datastore',
             api_shortname: 'datastore',
+            region_tag_prefix: 'datastore',
           },
         ],
       });
