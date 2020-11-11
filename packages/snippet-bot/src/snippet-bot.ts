@@ -16,6 +16,8 @@
 /* eslint-disable node/no-extraneous-import */
 
 import {Application} from 'probot';
+import {Configuration, ConfigurationOptions} from './configuration';
+import {DEFAULT_CONFIGURATION, CONFIGURATION_FILE_PATH} from './configuration';
 import {parseRegionTags} from './region-tag-parser';
 import {parseRegionTagsInPullRequest} from './region-tag-parser';
 import {ParseResult} from './region-tag-parser';
@@ -24,7 +26,6 @@ import {checkProductPrefixViolations} from './violations';
 import {logger} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
-import * as minimatch from 'minimatch';
 
 import tar from 'tar';
 import util from 'util';
@@ -43,42 +44,14 @@ type Conclusion =
   | 'action_required'
   | undefined;
 
-interface ConfigurationOptions {
-  ignoreFiles: string[];
-}
-
 // Solely for avoid using `any` type.
 interface Label {
   name: string;
 }
 
-const DEFAULT_CONFIGURATION: ConfigurationOptions = {
-  ignoreFiles: [],
-};
-
-const CONFIGURATION_FILE_PATH = 'snippet-bot.yml';
-
 const FULL_SCAN_ISSUE_TITLE = 'snippet-bot full scan';
 
 const REFRESH_LABEL = 'snippet-bot:force-run';
-
-class Configuration {
-  private options: ConfigurationOptions;
-  private minimatches: minimatch.IMinimatch[];
-
-  constructor(options: ConfigurationOptions) {
-    this.options = options;
-    this.minimatches = options.ignoreFiles.map(pattern => {
-      return new minimatch.Minimatch(pattern);
-    });
-  }
-
-  ignoredFile(filename: string): boolean {
-    return this.minimatches.some(mm => {
-      return mm.match(filename);
-    });
-  }
-}
 
 /**
  * Formats the full scan report with the comment mark, so that it can
@@ -414,7 +387,8 @@ ${bodyDetail}`
 
       // First check product prefix for added region tags.
       const productPrefixViolations = await checkProductPrefixViolations(
-        result
+        result,
+        configuration
       );
       if (productPrefixViolations.length > 0) {
         commentBody += 'Here is the summary of possible violations 😱';
