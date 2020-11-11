@@ -24,11 +24,7 @@ export interface Violation {
   violationType: violationTypes;
 }
 
-let dataBucket: string | undefined = process.env['DEVREL_SETTINGS_BUCKET'];
-if (dataBucket === undefined) {
-  // Default prod bucket
-  dataBucket = 'devrel-prod-settings';
-}
+const dataBucket = process.env.DEVREL_SETTINGS_BUCKET || 'devrel-prod-settings';
 
 export const checkProductPrefixViolations = async (
   changes: ChangesInPullRequest
