@@ -13,24 +13,27 @@
 // limitations under the License.
 
 import {Storage} from '@google-cloud/storage';
+import {logger} from 'gcf-utils';
 
 const storage = new Storage();
 
 export interface ApiLabel {
-  display_name: string; // Access Approval
-  github_label: string; // api: accessapproval
-  api_shortname: string; // accessapproval
+  api_shortname: string; // run
+  region_tag_prefix: string; // cloudrun
+  title: string; // Cloud Run
+  github_label: string; // api: run
 }
 
 export interface ApiLabels {
-  apis: Array<ApiLabel>;
+  products: Array<ApiLabel>;
 }
 
-export const getApiLabels = async (): Promise<ApiLabels> => {
+export const getApiLabels = async (dataBucket: string): Promise<ApiLabels> => {
   const apis = await storage
-    .bucket('devrel-prod-settings')
-    .file('apis.json')
+    .bucket(dataBucket)
+    .file('products.json')
     .download();
   const parsedResponse = JSON.parse(apis[0].toString()) as ApiLabels;
+  logger.debug({apiLabels: parsedResponse});
   return parsedResponse;
 };

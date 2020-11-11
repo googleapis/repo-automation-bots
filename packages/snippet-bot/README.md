@@ -76,6 +76,11 @@ ignoreFiles:
 
 `npm run test:snap`
 
+## Environment variables for local development
+
+- `DEVREL_SETTINGS_BUCKET`: specify the bucket name for external json
+  files, defaults to `devrel-prod-settings`.
+
 ## Contributing
 
 If you have suggestions for how snippet-bot could be improved, or want to report a bug, open an issue! We'd love all and any contributions.

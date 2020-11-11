@@ -24,18 +24,24 @@ export interface Violation {
   violationType: violationTypes;
 }
 
+let dataBucket: string | undefined = process.env['DEVREL_SETTINGS_BUCKET'];
+if (dataBucket === undefined) {
+  // Default prod bucket
+  dataBucket = 'devrel-prod-settings';
+}
+
 export const checkProductPrefixViolations = async (
   changes: ChangesInPullRequest
 ): Promise<Array<Violation>> => {
   const ret: Violation[] = [];
-  const apiLabels = await getApiLabels();
+  const apiLabels = await getApiLabels(dataBucket as string);
   for (const change of changes.changes) {
     if (change.type !== 'add') {
       continue;
     }
     if (
-      !apiLabels.apis.some((label: ApiLabel) => {
-        return change.regionTag.startsWith(label.api_shortname);
+      !apiLabels.products.some((label: ApiLabel) => {
+        return change.regionTag.startsWith(label.region_tag_prefix);
       })
     ) {
       ret.push({
