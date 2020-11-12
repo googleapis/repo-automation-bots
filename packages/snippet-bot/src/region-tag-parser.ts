@@ -77,7 +77,7 @@ export function parseRegionTagsInPullRequest(
 
   const diffResult = parseDiff(diff);
   for (const file of diffResult) {
-    if (file.to !== undefined) {
+    if (file.to !== undefined && file.to !== '/dev/null') {
       ret.files.push(file.to);
     }
     for (const chunk of file.chunks) {

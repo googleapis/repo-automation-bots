@@ -328,26 +328,36 @@ ${bodyDetail}`
           logger.info('ignoring file from configuration: ' + file);
           continue;
         }
+        try {
+          const blob = await context.github.repos.getContent({
+            owner: context.payload.pull_request.head.repo.owner.login,
+            repo: context.payload.pull_request.head.repo.name,
+            path: file,
+            ref: context.payload.pull_request.head.sha,
+          });
+          const fileContents = Buffer.from(
+            blob.data.content,
+            'base64'
+          ).toString('utf8');
 
-        const blob = await context.github.repos.getContent({
-          owner: context.payload.pull_request.head.repo.owner.login,
-          repo: context.payload.pull_request.head.repo.name,
-          path: file,
-          ref: context.payload.pull_request.head.sha,
-        });
-
-        const fileContents = Buffer.from(blob.data.content, 'base64').toString(
-          'utf8'
-        );
-
-        const parseResult = parseRegionTags(fileContents, file);
-        parseResults.set(file, parseResult);
-        if (!parseResult.result) {
-          mismatchedTags = true;
-          failureMessages.push(parseResult.messages.join('\n'));
-        }
-        if (parseResult.tagsFound) {
-          tagsFound = true;
+          const parseResult = parseRegionTags(fileContents, file);
+          parseResults.set(file, parseResult);
+          if (!parseResult.result) {
+            mismatchedTags = true;
+            failureMessages.push(parseResult.messages.join('\n'));
+          }
+          if (parseResult.tagsFound) {
+            tagsFound = true;
+          }
+        } catch (err) {
+          // Ignoring 403/404 errors.
+          if (err.status === 403 || err.status === 404) {
+            logger.info(
+              `ignoring 403/404 errors upon fetching ${file}: ${err.message}`
+            );
+          } else {
+            throw err;
+          }
         }
       }
 
