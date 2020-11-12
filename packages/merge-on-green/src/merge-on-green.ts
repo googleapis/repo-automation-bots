@@ -137,7 +137,7 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
 ) {
   await github.issues
     .removeLabel({owner, repo, issue_number: prNumber, name: label})
-    .catch(logger.error);
+    .catch(logger.warn);
   await github.reactions
     .deleteForIssue({
       owner,
@@ -145,7 +145,7 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
       issue_number: prNumber,
       reaction_id: reactionId,
     })
-    .catch(logger.error);
+    .catch(logger.warn);
 };
 
 /**
@@ -298,6 +298,7 @@ function handler(app: Application) {
             );
             if (remove || wp.state === 'stop') {
               await handler.removePR(wp.url);
+              try {
               await handler.cleanUpPullRequest(
                 wp.owner,
                 wp.repo,
@@ -305,7 +306,10 @@ function handler(app: Application) {
                 wp.label,
                 wp.reactionId,
                 github as any
-              );
+              ); 
+              }  catch(err) {
+                 logger.warn(`Failed to delete reaction and label on ${wp.owner}/${wp.repo}/${wp.number}`);
+              }
             }
           } catch (err) {
             err.message = `Error in merge-on-green: \n\n${err.message}`;
