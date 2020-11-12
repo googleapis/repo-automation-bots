@@ -16,15 +16,16 @@
 /* eslint-disable node/no-extraneous-import */
 
 import {Application} from 'probot';
+import {Configuration, ConfigurationOptions} from './configuration';
+import {DEFAULT_CONFIGURATION, CONFIGURATION_FILE_PATH} from './configuration';
 import {parseRegionTags} from './region-tag-parser';
 import {parseRegionTagsInPullRequest} from './region-tag-parser';
 import {ParseResult} from './region-tag-parser';
 import {Change} from './region-tag-parser';
+import {checkProductPrefixViolations} from './violations';
 import {logger} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
-import {PullsListFilesResponseData} from '@octokit/types';
-import * as minimatch from 'minimatch';
 
 import tar from 'tar';
 import util from 'util';
@@ -43,42 +44,14 @@ type Conclusion =
   | 'action_required'
   | undefined;
 
-interface ConfigurationOptions {
-  ignoreFiles: string[];
-}
-
 // Solely for avoid using `any` type.
 interface Label {
   name: string;
 }
 
-const DEFAULT_CONFIGURATION: ConfigurationOptions = {
-  ignoreFiles: [],
-};
-
-const CONFIGURATION_FILE_PATH = 'snippet-bot.yml';
-
 const FULL_SCAN_ISSUE_TITLE = 'snippet-bot full scan';
 
 const REFRESH_LABEL = 'snippet-bot:force-run';
-
-class Configuration {
-  private options: ConfigurationOptions;
-  private minimatches: minimatch.IMinimatch[];
-
-  constructor(options: ConfigurationOptions) {
-    this.options = options;
-    this.minimatches = options.ignoreFiles.map(pattern => {
-      return new minimatch.Minimatch(pattern);
-    });
-  }
-
-  ignoredFile(filename: string): boolean {
-    return this.minimatches.some(mm => {
-      return mm.match(filename);
-    });
-  }
-}
 
 /**
  * Formats the full scan report with the comment mark, so that it can
@@ -327,23 +300,20 @@ ${bodyDetail}`
         }
       }
       // Check on pull requests.
-      // List pull request files for the given PR
-      // https://developer.github.com/v3/pulls/#list-pull-requests-files
-      const listFilesParams = context.repo({
-        pull_number: context.payload.pull_request.number,
-        per_page: 100,
-      });
-      const pullRequestCommitSha = context.payload.pull_request.head.sha;
-      logger.info({sha: pullRequestCommitSha});
-      // TODO: handle pagination
-      let files: PullsListFilesResponseData;
-      try {
-        files = (await context.github.pulls.listFiles(listFilesParams)).data;
-      } catch (err) {
-        logger.error('---------------------');
-        logger.error(err);
-        return;
-      }
+
+      // Parse the PR diff and recognize added/deleted region tags.
+      const response = await fetch(context.payload.pull_request.diff_url);
+      const diff = await response.text();
+
+      const result = parseRegionTagsInPullRequest(
+        diff,
+        context.payload.pull_request.base.repo.owner.login,
+        context.payload.pull_request.base.repo.name,
+        context.payload.pull_request.base.sha,
+        context.payload.pull_request.head.repo.owner.login,
+        context.payload.pull_request.head.repo.name,
+        context.payload.pull_request.head.sha
+      );
 
       let mismatchedTags = false;
       let tagsFound = false;
@@ -353,31 +323,25 @@ ${bodyDetail}`
       const parseResults = new Map<string, ParseResult>();
 
       // If we found any new files, verify they all have matching region tags.
-      for (let i = 0; files[i] !== undefined; i++) {
-        const file = files[i];
-
-        if (configuration.ignoredFile(file.filename)) {
-          logger.info('ignoring file from configuration: ' + file.filename);
+      for (const file of result.files) {
+        if (configuration.ignoredFile(file)) {
+          logger.info('ignoring file from configuration: ' + file);
           continue;
         }
 
-        if (file.status === 'removed') {
-          logger.info('ignoring deleted file: ' + file.filename);
-          continue;
-        }
-
-        const blob = await context.github.git.getBlob(
-          context.repo({
-            file_sha: file.sha,
-          })
-        );
+        const blob = await context.github.repos.getContent({
+          owner: context.payload.pull_request.head.repo.owner.login,
+          repo: context.payload.pull_request.head.repo.name,
+          path: file,
+          ref: context.payload.pull_request.head.sha,
+        });
 
         const fileContents = Buffer.from(blob.data.content, 'base64').toString(
           'utf8'
         );
 
-        const parseResult = parseRegionTags(fileContents, file.filename);
-        parseResults.set(file.filename, parseResult);
+        const parseResult = parseRegionTags(fileContents, file);
+        parseResults.set(file, parseResult);
         if (!parseResult.result) {
           mismatchedTags = true;
           failureMessages.push(parseResult.messages.join('\n'));
@@ -390,7 +354,7 @@ ${bodyDetail}`
       const checkParams = context.repo({
         name: 'Mismatched region tag',
         conclusion: 'success' as Conclusion,
-        head_sha: pullRequestCommitSha,
+        head_sha: context.payload.pull_request.head.sha,
         output: {
           title: 'Region tag check',
           summary: 'Region tag successful',
@@ -413,27 +377,37 @@ ${bodyDetail}`
         await context.github.checks.create(checkParams);
       }
 
-      // Parse the PR diff and recognize added/deleted region tags.
-      const response = await fetch(context.payload.pull_request.diff_url);
-      const diff = await response.text();
-
-      const result = parseRegionTagsInPullRequest(
-        diff,
-        context.payload.pull_request.base.repo.owner.login,
-        context.payload.pull_request.base.repo.name,
-        context.payload.pull_request.base.sha,
-        context.payload.pull_request.head.repo.owner.login,
-        context.payload.pull_request.head.repo.name,
-        context.payload.pull_request.head.sha
-      );
-
       if (result.changes.length === 0) {
         return;
       }
 
       // Add or update a comment on the PR.
       const prNumber = context.payload.pull_request.number;
-      let commentBody = 'Here is the summary of changes.\n';
+      let commentBody = '';
+
+      // First check product prefix for added region tags.
+      const productPrefixViolations = await checkProductPrefixViolations(
+        result,
+        configuration
+      );
+      if (productPrefixViolations.length > 0) {
+        commentBody += 'Here is the summary of possible violations 😱';
+        let summary = '';
+        if (productPrefixViolations.length === 1) {
+          summary =
+            'There is a possible violation for not having product prefix.';
+        } else {
+          summary = `There are ${productPrefixViolations.length} possible violations for not having product prefix.`;
+        }
+        let detail = '';
+        for (const violation of productPrefixViolations) {
+          detail += `- ${formatChangedFile(violation.change)}\n`;
+        }
+        commentBody += formatExpandable(summary, detail);
+        commentBody += '---\n';
+      }
+
+      commentBody += 'Here is the summary of changes.\n';
       if (result.added > 0) {
         const plural = result.added === 1 ? '' : 's';
         const summary = `You added ${result.added} region tag${plural}.`;
@@ -457,7 +431,11 @@ ${bodyDetail}`
         commentBody += formatExpandable(summary, detail);
       }
 
-      commentBody += `To update this comment, add \`${REFRESH_LABEL}\` label.\n`;
+      commentBody += `This comment is generated by [snippet-bot](https://github.com/apps/snippet-bot).
+If you find problems with this result, please file an issue at:
+https://github.com/googleapis/repo-automation-bots/issues.
+To update this comment, add \`${REFRESH_LABEL}\` label.
+`;
 
       const listCommentsResponse = await context.github.issues.listComments({
         owner: owner,

@@ -47,6 +47,7 @@ interface GitHubAPI {
 interface ConfigurationOptions {
   primaryBranch: string;
   releaseLabels?: string[];
+  monorepoTags?: boolean;
   releaseType?: string;
   packageName?: string;
   handleGHRelease?: boolean;
@@ -96,7 +97,8 @@ async function createReleasePR(
   releaseLabels?: string[],
   bumpMinorPreMajor?: boolean,
   snapshot?: boolean,
-  path?: string
+  path?: string,
+  monorepoTags?: boolean
 ) {
   const buildOptions: BuildOptions = {
     packageName,
@@ -111,6 +113,7 @@ async function createReleasePR(
     bumpMinorPreMajor,
     snapshot,
     path,
+    monorepoTags,
   };
   if (releaseLabels) {
     buildOptions.label = releaseLabels.join(',');
@@ -125,7 +128,9 @@ async function createGitHubRelease(
   repoUrl: string,
   github: GitHubAPI,
   path?: string,
-  changelogPath?: string
+  changelogPath?: string,
+  monorepoTags?: boolean,
+  releaseType?: string
 ) {
   const releaseOptions: GitHubReleaseOptions = {
     label: 'autorelease: pending',
@@ -140,6 +145,8 @@ async function createGitHubRelease(
     },
     path,
     changelogPath,
+    monorepoTags,
+    releaseType,
   };
   const ghr = new GitHubRelease(releaseOptions);
   await Runner.releaser(ghr);
@@ -188,7 +195,8 @@ export = (app: Application) => {
       configuration.releaseLabels,
       configuration.bumpMinorPreMajor,
       false,
-      configuration.path
+      configuration.path,
+      configuration.monorepoTags
     );
 
     // release-please can handle creating a release on GitHub, we opt not to do
@@ -200,7 +208,9 @@ export = (app: Application) => {
         repoUrl,
         context.github as GitHubAPI,
         configuration.path,
-        configuration.changelogPath ?? 'CHANGELOG.md'
+        configuration.changelogPath ?? 'CHANGELOG.md',
+        configuration.monorepoTags,
+        configuration.releaseType
       );
     }
   });
@@ -241,7 +251,8 @@ export = (app: Application) => {
       configuration.releaseLabels,
       configuration.bumpMinorPreMajor,
       true,
-      configuration.path
+      configuration.path,
+      configuration.monorepoTags
     );
   });
 
@@ -306,7 +317,8 @@ export = (app: Application) => {
       configuration.releaseLabels,
       configuration.bumpMinorPreMajor,
       false,
-      configuration.path
+      configuration.path,
+      configuration.monorepoTags
     );
   });
 };
