@@ -355,8 +355,9 @@ ${bodyDetail}`
             logger.info(
               `ignoring 403/404 errors upon fetching ${file}: ${err.message}`
             );
+          } else {
+            throw err;
           }
-          throw err;
         }
       }
 
