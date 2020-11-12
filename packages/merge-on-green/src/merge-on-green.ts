@@ -149,6 +149,59 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
 };
 
 /**
+ * Check if PR has been merged, closed, or unlabeled, then remove
+ * @param owner type string
+ * @param repo type string
+ * @param prNumber type number
+ * @param label type string
+ * @param reactionId type number or null
+ * @param github type githup API surface from payload
+ */
+handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  label: string,
+  reactionId: number,
+  url: string,
+  github: Context['github']
+) {
+  let pr;
+  let labels;
+
+  try {
+    pr = (await github.pulls.get({
+      owner,
+      repo,
+      pull_number: prNumber,
+    })).data;
+  } catch (err) {
+    pr = undefined;
+  }  
+
+  try {
+    labels = (await github.issues.listLabelsOnIssue({
+      owner,
+      repo,
+      issue_number: prNumber,
+    })).data;
+  } catch (err) {
+    labels = undefined;
+  }  
+
+  const foundLabel = labels?.find(
+    (label: Label) =>
+      label.name === MERGE_ON_GREEN_LABEL ||
+      label.name === MERGE_ON_GREEN_LABEL_SECURE
+  );
+
+  if (pr?.merged === true || pr?.state === 'closed' || !foundLabel) {
+    await handler.removePR(url);
+    await handler.cleanUpPullRequest(owner, repo, prNumber, label, reactionId, github);
+  }
+};
+
+/**
  * Adds a PR to datastore when an automerge label is added to a PR
  * @param url type string
  * @param wp type Watch PR (owner, repo, pr number, state, url)
@@ -188,6 +241,19 @@ function handler(app: Application) {
   //open issue for a fix: https://github.com/octokit/webhooks.js/issues/277
   app.on('schedule.repository' as any, async context => {
     const watchedPRs = await handler.listPRs();
+    if (context.payload.cleanUp === true) {
+      while (watchedPRs.length) {
+        const work = watchedPRs.splice(0, WORKER_SIZE);
+        await Promise.all(
+          work.map(async wp => {
+            logger.info(`checking ${wp.url}, ${wp.installationId} for cleanup`);
+            const github = wp.installationId
+              ? await app.auth(wp.installationId)
+              : context.github;
+            await handler.checkIfPRIsInvalid(wp.owner, wp.repo, wp.number, wp.label, wp.reactionId, wp.url, github);
+      }))
+    }
+  }
     const start = Date.now();
     while (watchedPRs.length) {
       const work = watchedPRs.splice(0, WORKER_SIZE);
@@ -210,6 +276,7 @@ function handler(app: Application) {
               github as any
             );
             if (remove || wp.state === 'stop') {
+              await handler.removePR(wp.url);
               await handler.cleanUpPullRequest(
                 wp.owner,
                 wp.repo,
@@ -218,7 +285,6 @@ function handler(app: Application) {
                 wp.reactionId,
                 github as any
               );
-              await handler.removePR(wp.url);
             }
           } catch (err) {
             err.message = `Error in merge-on-green: \n\n${err.message}`;
@@ -356,6 +422,7 @@ function handler(app: Application) {
     );
     logger.info(`PR from Datastore: ${JSON.stringify(watchedPullRequest)}`);
     if (watchedPullRequest) {
+      await handler.removePR(context.payload.pull_request.html_url);
       await handler.cleanUpPullRequest(
         owner,
         repo,
@@ -364,7 +431,6 @@ function handler(app: Application) {
         watchedPullRequest.reactionId,
         context.github
       );
-      await handler.removePR(context.payload.pull_request.html_url);
     }
   });
 
@@ -380,6 +446,7 @@ function handler(app: Application) {
     );
 
     if (watchedPullRequest) {
+      await handler.removePR(context.payload.pull_request.html_url);
       await handler.cleanUpPullRequest(
         owner,
         repo,
@@ -388,7 +455,6 @@ function handler(app: Application) {
         watchedPullRequest.reactionId,
         context.github
       );
-      await handler.removePR(context.payload.pull_request.html_url);
     }
   });
 }
