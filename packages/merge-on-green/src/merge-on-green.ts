@@ -238,6 +238,98 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
   await datastore.save(entity);
 };
 
+/**
+ * Cleans up the Datastore table for invalid PRs (merged, closed, etc)
+ * @param watchedPRs array of watched PRs
+ * @param app the current application being called
+ * @param context the context of the webhook payload
+ * @returns void
+ */
+handler.cleanDatastoreTable = async function cleanDatastoreTable(
+  watchedPRs: WatchPR[],
+  app: Application,
+  context: Context
+) {
+  while (watchedPRs.length) {
+    const work = watchedPRs.splice(0, WORKER_SIZE);
+    await Promise.all(
+      work.map(async wp => {
+        logger.info(`checking ${wp.url}, ${wp.installationId} for cleanup`);
+        const github = wp.installationId
+          ? await app.auth(wp.installationId)
+          : context.github;
+        await handler.checkIfPRIsInvalid(
+          wp.owner,
+          wp.repo,
+          wp.number,
+          wp.label,
+          wp.reactionId,
+          wp.url,
+          github
+        );
+      })
+    );
+  }
+};
+
+/**
+ * Calls the main MOG logic, either deletes or keeps that PR in the Datastore table
+ * @param watchedPRs array of watched PRs
+ * @param app the current application being called
+ * @param context the context of the webhook payload
+ * @returns void
+ */
+handler.callMOGLogic = async function callMOGLogic(
+  watchedPRs: WatchPR[],
+  app: Application,
+  context: Context
+) {
+  while (watchedPRs.length) {
+    const work = watchedPRs.splice(0, WORKER_SIZE);
+    await Promise.all(
+      work.map(async wp => {
+        logger.info(`checking ${wp.url}, ${wp.installationId}`);
+        const github = wp.installationId
+          ? await app.auth(wp.installationId)
+          : context.github;
+        try {
+          const remove = await mergeOnGreen(
+            wp.owner,
+            wp.repo,
+            wp.number,
+            [MERGE_ON_GREEN_LABEL, MERGE_ON_GREEN_LABEL_SECURE],
+            wp.state,
+            wp.branchProtection,
+            wp.label,
+            wp.author,
+            github as any
+          );
+          if (remove || wp.state === 'stop') {
+            await handler.removePR(wp.url);
+            try {
+              await handler.cleanUpPullRequest(
+                wp.owner,
+                wp.repo,
+                wp.number,
+                wp.label,
+                wp.reactionId,
+                github as any
+              );
+            } catch (err) {
+              logger.warn(
+                `Failed to delete reaction and label on ${wp.owner}/${wp.repo}/${wp.number}`
+              );
+            }
+          }
+        } catch (err) {
+          err.message = `Error in merge-on-green: \n\n${err.message}`;
+          logger.error(err);
+        }
+      })
+    );
+  }
+};
+
 // TODO: refactor into multiple function exports, this will take some work in
 // gcf-utils.
 
@@ -253,71 +345,11 @@ function handler(app: Application) {
   app.on('schedule.repository' as any, async context => {
     const watchedPRs = await handler.listPRs();
     if (context.payload.cleanUp === true) {
-      while (watchedPRs.length) {
-        const work = watchedPRs.splice(0, WORKER_SIZE);
-        await Promise.all(
-          work.map(async wp => {
-            logger.info(`checking ${wp.url}, ${wp.installationId} for cleanup`);
-            const github = wp.installationId
-              ? await app.auth(wp.installationId)
-              : context.github;
-            await handler.checkIfPRIsInvalid(
-              wp.owner,
-              wp.repo,
-              wp.number,
-              wp.label,
-              wp.reactionId,
-              wp.url,
-              github
-            );
-          })
-        );
-      }
+      await handler.cleanDatastoreTable(watchedPRs, app, context);
       return;
     }
     const start = Date.now();
-    while (watchedPRs.length) {
-      const work = watchedPRs.splice(0, WORKER_SIZE);
-      await Promise.all(
-        work.map(async wp => {
-          logger.info(`checking ${wp.url}, ${wp.installationId}`);
-          const github = wp.installationId
-            ? await app.auth(wp.installationId)
-            : context.github;
-          try {
-            const remove = await mergeOnGreen(
-              wp.owner,
-              wp.repo,
-              wp.number,
-              [MERGE_ON_GREEN_LABEL, MERGE_ON_GREEN_LABEL_SECURE],
-              wp.state,
-              wp.branchProtection,
-              wp.label,
-              wp.author,
-              github as any
-            );
-            if (remove || wp.state === 'stop') {
-              await handler.removePR(wp.url);
-              try {
-              await handler.cleanUpPullRequest(
-                wp.owner,
-                wp.repo,
-                wp.number,
-                wp.label,
-                wp.reactionId,
-                github as any
-              ); 
-              }  catch(err) {
-                 logger.warn(`Failed to delete reaction and label on ${wp.owner}/${wp.repo}/${wp.number}`);
-              }
-            }
-          } catch (err) {
-            err.message = `Error in merge-on-green: \n\n${err.message}`;
-            logger.error(err);
-          }
-        })
-      );
-    }
+    await handler.callMOGLogic(watchedPRs, app, context);
     logger.info(`mergeOnGreen check took ${Date.now() - start}ms`);
   });
 
