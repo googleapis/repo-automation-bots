@@ -253,6 +253,7 @@ function handler(app: Application) {
             await handler.checkIfPRIsInvalid(wp.owner, wp.repo, wp.number, wp.label, wp.reactionId, wp.url, github);
       }))
     }
+    return;
   }
     const start = Date.now();
     while (watchedPRs.length) {
