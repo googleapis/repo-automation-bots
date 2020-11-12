@@ -350,10 +350,10 @@ ${bodyDetail}`
             tagsFound = true;
           }
         } catch (err) {
-          // Ignoring 404 errors.
-          if (err.status === 404) {
+          // Ignoring 403/404 errors.
+          if (err.status === 403 || err.status === 404) {
             logger.info(
-              `ignoring 404 errors upon fetching ${file}: ${err.message}`
+              `ignoring 403/404 errors upon fetching ${file}: ${err.message}`
             );
           }
           throw err;
