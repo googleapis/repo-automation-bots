@@ -16,6 +16,7 @@ import {getApiLabels} from './api-labels';
 import {ApiLabel} from './api-labels';
 import {ChangesInPullRequest} from './region-tag-parser';
 import {Change} from './region-tag-parser';
+import {Configuration} from './configuration';
 
 type violationTypes = 'PRODUCT_PREFIX';
 
@@ -27,12 +28,16 @@ export interface Violation {
 const dataBucket = process.env.DEVREL_SETTINGS_BUCKET || 'devrel-prod-settings';
 
 export const checkProductPrefixViolations = async (
-  changes: ChangesInPullRequest
+  changes: ChangesInPullRequest,
+  config: Configuration
 ): Promise<Array<Violation>> => {
   const ret: Violation[] = [];
   const apiLabels = await getApiLabels(dataBucket as string);
   for (const change of changes.changes) {
     if (change.type !== 'add') {
+      continue;
+    }
+    if (config.ignoredFile(change.file as string)) {
       continue;
     }
     if (
