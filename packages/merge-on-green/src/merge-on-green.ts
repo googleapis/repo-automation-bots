@@ -149,7 +149,7 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
 };
 
 /**
- * Check if PR has been merged, closed, or unlabeled, then remove
+ * Check if PR has been merged, closed, or unlabeled, then remove from Datastore table
  * @param owner type string
  * @param repo type string
  * @param prNumber type number
