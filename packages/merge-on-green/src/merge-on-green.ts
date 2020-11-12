@@ -170,24 +170,28 @@ handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
   let labels;
 
   try {
-    pr = (await github.pulls.get({
-      owner,
-      repo,
-      pull_number: prNumber,
-    })).data;
+    pr = (
+      await github.pulls.get({
+        owner,
+        repo,
+        pull_number: prNumber,
+      })
+    ).data;
   } catch (err) {
     pr = undefined;
-  }  
+  }
 
   try {
-    labels = (await github.issues.listLabelsOnIssue({
-      owner,
-      repo,
-      issue_number: prNumber,
-    })).data;
+    labels = (
+      await github.issues.listLabelsOnIssue({
+        owner,
+        repo,
+        issue_number: prNumber,
+      })
+    ).data;
   } catch (err) {
     labels = undefined;
-  }  
+  }
 
   const foundLabel = labels?.find(
     (label: Label) =>
@@ -197,7 +201,14 @@ handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
 
   if (pr?.merged === true || pr?.state === 'closed' || !foundLabel) {
     await handler.removePR(url);
-    await handler.cleanUpPullRequest(owner, repo, prNumber, label, reactionId, github);
+    await handler.cleanUpPullRequest(
+      owner,
+      repo,
+      prNumber,
+      label,
+      reactionId,
+      github
+    );
   }
 };
 
@@ -250,11 +261,20 @@ function handler(app: Application) {
             const github = wp.installationId
               ? await app.auth(wp.installationId)
               : context.github;
-            await handler.checkIfPRIsInvalid(wp.owner, wp.repo, wp.number, wp.label, wp.reactionId, wp.url, github);
-      }))
+            await handler.checkIfPRIsInvalid(
+              wp.owner,
+              wp.repo,
+              wp.number,
+              wp.label,
+              wp.reactionId,
+              wp.url,
+              github
+            );
+          })
+        );
+      }
+      return;
     }
-    return;
-  }
     const start = Date.now();
     while (watchedPRs.length) {
       const work = watchedPRs.splice(0, WORKER_SIZE);
