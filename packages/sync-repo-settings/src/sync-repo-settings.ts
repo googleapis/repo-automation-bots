@@ -340,6 +340,12 @@ async function updateRepoTeams(
   logger.info(`Update team access for ${repo}`);
   const [owner, name] = repo.split('/');
 
+  // Cloud DPEs are given default write access to all repositories we manage.
+  rules.push({
+    permission: 'push',
+    team: 'cloud-dpes',
+  });
+
   try {
     await Promise.all(
       rules.map(membership => {
