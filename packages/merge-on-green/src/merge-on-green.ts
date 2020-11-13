@@ -346,6 +346,7 @@ function handler(app: Application) {
   app.on('schedule.repository' as any, async context => {
     const watchedPRs = await handler.listPRs();
     if (context.payload.cleanUp === true) {
+      logger.info('Entering clean up cron job');
       await handler.cleanDatastoreTable(watchedPRs, app, context);
       return;
     }
