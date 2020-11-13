@@ -200,7 +200,7 @@ handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
       label.name === MERGE_ON_GREEN_LABEL_SECURE
   );
 
-  if (pr?.merged === true || pr?.state === 'closed' || !foundLabel) {
+  if (pr?.merged || pr?.state === 'closed' || !foundLabel) {
     await handler.removePR(url);
     await handler.cleanUpPullRequest(
       owner,
@@ -280,7 +280,7 @@ handler.cleanDatastoreTable = async function cleanDatastoreTable(
  * @param context the context of the webhook payload
  * @returns void
  */
-handler.callMOGLogic = async function callMOGLogic(
+handler.checkPRMergeability = async function checkPRMergeability(
   watchedPRs: WatchPR[],
   app: Application,
   context: Context
@@ -351,7 +351,7 @@ function handler(app: Application) {
       return;
     }
     const start = Date.now();
-    await handler.callMOGLogic(watchedPRs, app, context);
+    await handler.checkPRMergeability(watchedPRs, app, context);
     logger.info(`mergeOnGreen check took ${Date.now() - start}ms`);
   });
 
