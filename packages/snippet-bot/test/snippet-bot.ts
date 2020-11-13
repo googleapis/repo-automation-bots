@@ -413,7 +413,7 @@ describe('snippet-bot', () => {
       requests.done();
     });
 
-    it('gives warnings about removing retion tag in use', async () => {
+    it('gives warnings about removing region tag in use', async () => {
       sandbox.restore();
       getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
       getApiLabelsStub.resolves({
