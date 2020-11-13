@@ -120,6 +120,18 @@ function getBranchProtection(status: number, requiredStatusChecks: string[]) {
     });
 }
 
+function getPRCleanUp(state: string, merged: boolean) {
+  return nock('https://api.github.com')
+    .get('/repos/testOwner/testRepo/pulls/1')
+    .reply(200, {state, merged});
+}
+
+function getLabels(name: string) {
+  return nock('https://api.github.com')
+    .get('/repos/testOwner/testRepo/issues/1/labels')
+    .reply(200, [{name}]);
+}
+
 function getRateLimit(remaining: number) {
   return nock('https://api.github.com')
     .get('/rate_limit')
@@ -796,6 +808,93 @@ describe('merge-on-green', () => {
     afterEach(() => {
       addPRStub.restore();
       removePRStub.restore();
+    });
+
+    describe('cleanup repository events', () => {
+      it('deletes a PR if PR is closed when cleaning up repository', async () => {
+        handler.getDatastore = async () => {
+          const pr = [
+            [
+              {
+                repo: 'testRepo',
+                number: 1,
+                owner: 'testOwner',
+                created: Date.now(),
+                branchProtection: ['Special Check'],
+                label: 'automerge',
+                author: 'testOwner',
+                reactionId: 1,
+              },
+            ],
+          ];
+          return pr;
+        };
+
+        const scopes = [
+          getPRCleanUp('closed', false),
+          getLabels('automerge'),
+          removeMogLabel('automerge'),
+          removeReaction(),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner', cleanUp: true},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+        assert(removePRStub.called);
+      });
+
+      it('deletes a PR if PR is merged when cleaning up repository', async () => {
+        const scopes = [
+          getPRCleanUp('closed', true),
+          getLabels('automerge'),
+          removeMogLabel('automerge'),
+          removeReaction(),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner', cleanUp: true},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+        assert(removePRStub.called);
+      });
+
+      it('deletes a PR if label is not found when cleaning up repository', async () => {
+        const scopes = [
+          getPRCleanUp('closed', true),
+          getLabels('anotherLabel'),
+          removeMogLabel('automerge'),
+          removeReaction(),
+        ];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner', cleanUp: true},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+        assert(removePRStub.called);
+      });
+
+      it('does not delete a PR if it is not invalid', async () => {
+        const scopes = [getPRCleanUp('open', false), getLabels('automerge')];
+
+        await probot.receive({
+          name: 'schedule.repository' as any,
+          payload: {org: 'testOwner', cleanUp: true},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+        assert(!removePRStub.called);
+      });
     });
 
     describe('PRs when labeled', () => {
