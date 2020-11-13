@@ -136,16 +136,14 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
   github: Context['github']
 ) {
   await github.issues
-    .removeLabel({owner, repo, issue_number: prNumber, name: label})
-    .catch(logger.warn);
+    .removeLabel({owner, repo, issue_number: prNumber, name: label});
   await github.reactions
     .deleteForIssue({
       owner,
       repo,
       issue_number: prNumber,
       reaction_id: reactionId,
-    })
-    .catch(logger.warn);
+    });
 };
 
 /**
@@ -366,7 +364,6 @@ function handler(app: Application) {
         label.name === MERGE_ON_GREEN_LABEL_SECURE
     );
 
-    console.log(handler.allowlist);
     if (
       !handler.allowlist.find(
         element => element.toLowerCase() === owner.toLowerCase()

@@ -811,25 +811,25 @@ describe('merge-on-green', () => {
     });
 
     describe('cleanup repository events', () => {
-      handler.getDatastore = async () => {
-        const pr = [
-          [
-            {
-              repo: 'testRepo',
-              number: 1,
-              owner: 'testOwner',
-              created: Date.now(),
-              branchProtection: ['Special Check'],
-              label: 'automerge',
-              author: 'testOwner',
-              reactionId: 1,
-            },
-          ],
-        ];
-        return pr;
-      };
-
       it('deletes a PR if PR is closed when cleaning up repository', async () => {
+        handler.getDatastore = async () => {
+          const pr = [
+            [
+              {
+                repo: 'testRepo',
+                number: 1,
+                owner: 'testOwner',
+                created: Date.now(),
+                branchProtection: ['Special Check'],
+                label: 'automerge',
+                author: 'testOwner',
+                reactionId: 1,
+              },
+            ],
+          ];
+          return pr;
+        };
+        
         const scopes = [
           getPRCleanUp('closed', false),
           getLabels('automerge'),
