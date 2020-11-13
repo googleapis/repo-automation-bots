@@ -829,7 +829,7 @@ describe('merge-on-green', () => {
           ];
           return pr;
         };
-        
+
         const scopes = [
           getPRCleanUp('closed', false),
           getLabels('automerge'),

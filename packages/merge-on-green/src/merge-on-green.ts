@@ -135,15 +135,18 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
   reactionId: number,
   github: Context['github']
 ) {
-  await github.issues
-    .removeLabel({owner, repo, issue_number: prNumber, name: label});
-  await github.reactions
-    .deleteForIssue({
-      owner,
-      repo,
-      issue_number: prNumber,
-      reaction_id: reactionId,
-    });
+  await github.issues.removeLabel({
+    owner,
+    repo,
+    issue_number: prNumber,
+    name: label,
+  });
+  await github.reactions.deleteForIssue({
+    owner,
+    repo,
+    issue_number: prNumber,
+    reaction_id: reactionId,
+  });
 };
 
 /**
