@@ -428,6 +428,7 @@ ${bodyDetail}`
       const removeViolations = await checkRemovingUsedTagViolations(
         result,
         configuration,
+        parseResults,
         context.payload.pull_request.base.repo.full_name,
         context.payload.pull_request.base.ref
       );

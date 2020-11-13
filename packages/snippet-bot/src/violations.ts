@@ -15,7 +15,7 @@
 import {getApiLabels} from './api-labels';
 import {ApiLabel} from './api-labels';
 import {Configuration} from './configuration';
-import {ChangesInPullRequest} from './region-tag-parser';
+import {ChangesInPullRequest, ParseResult} from './region-tag-parser';
 import {Change} from './region-tag-parser';
 import {getSnippets} from './snippets';
 import {SnippetLanguage, SnippetLocation} from './snippets';
@@ -36,6 +36,7 @@ const dataBucket = process.env.DEVREL_SETTINGS_BUCKET || 'devrel-prod-settings';
 export const checkRemovingUsedTagViolations = async (
   changes: ChangesInPullRequest,
   config: Configuration,
+  parseResults: Map<string, ParseResult>,
   baseRepositoryPath: string, // googleapis/java-accessapproval
   baseBranch: string
 ): Promise<Map<string, Array<Violation>>> => {
@@ -47,6 +48,17 @@ export const checkRemovingUsedTagViolations = async (
       continue;
     }
     if (config.ignoredFile(change.file as string)) {
+      continue;
+    }
+    const parseResult = parseResults.get(change.file as string);
+    if (
+      parseResult !== undefined &&
+      parseResult.startTags.includes(change.regionTag)
+    ) {
+      // This region tag is deleted in the PR, but the same file has
+      // the same region tag after the PR gets merged. Likely the PR author is
+      // deleting redundunt region tags in this file. We can ignore
+      // this case.
       continue;
     }
     const snippet = snippets.get(change.regionTag);
