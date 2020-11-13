@@ -22,7 +22,11 @@ import {parseRegionTags} from './region-tag-parser';
 import {parseRegionTagsInPullRequest} from './region-tag-parser';
 import {ParseResult} from './region-tag-parser';
 import {Change} from './region-tag-parser';
-import {checkProductPrefixViolations} from './violations';
+import {
+  Violation,
+  checkProductPrefixViolations,
+  checkRemovingUsedTagViolations,
+} from './violations';
 import {logger} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
@@ -89,6 +93,26 @@ function formatExpandable(summary: string, detail: string): string {
 </details>
 
 `;
+}
+
+/**
+ * It formats an array of Violations for commenting.
+ */
+function formatViolations(
+  violations: Violation[],
+  violationDetail: string
+): string {
+  let summary = '';
+  if (violations.length === 1) {
+    summary = `There is a possible violation for ${violationDetail}.`;
+  } else {
+    summary = `There are ${violations.length} possible violations for ${violationDetail}.`;
+  }
+  let detail = '';
+  for (const violation of violations) {
+    detail += `- ${formatChangedFile(violation.change)}\n`;
+  }
+  return formatExpandable(summary, detail);
 }
 
 /**
@@ -400,20 +424,48 @@ ${bodyDetail}`
         result,
         configuration
       );
-      if (productPrefixViolations.length > 0) {
+      // Check for removing region tags in use.
+      const removeViolations = await checkRemovingUsedTagViolations(
+        result,
+        configuration,
+        context.payload.pull_request.base.repo.full_name,
+        context.payload.pull_request.base.ref
+      );
+      const removeUsedTagViolations = removeViolations.get(
+        'REMOVE_USED_TAG'
+      ) as Violation[];
+      const removeConflictingTagViolations = removeViolations.get(
+        'REMOVE_CONFLICTING_TAG'
+      ) as Violation[];
+
+      if (
+        productPrefixViolations.length > 0 ||
+        removeUsedTagViolations.length > 0 ||
+        removeConflictingTagViolations.length > 0
+      ) {
         commentBody += 'Here is the summary of possible violations 😱';
-        let summary = '';
-        if (productPrefixViolations.length === 1) {
-          summary =
-            'There is a possible violation for not having product prefix.';
-        } else {
-          summary = `There are ${productPrefixViolations.length} possible violations for not having product prefix.`;
+
+        // Rendering prefix violations
+        if (productPrefixViolations.length > 0) {
+          commentBody += formatViolations(
+            productPrefixViolations,
+            'not having product prefix'
+          );
         }
-        let detail = '';
-        for (const violation of productPrefixViolations) {
-          detail += `- ${formatChangedFile(violation.change)}\n`;
+
+        // Rendering used tag violations
+        if (removeUsedTagViolations.length > 0) {
+          commentBody += formatViolations(
+            removeUsedTagViolations,
+            'removing region tag in use'
+          );
         }
-        commentBody += formatExpandable(summary, detail);
+        if (removeConflictingTagViolations.length > 0) {
+          commentBody += formatViolations(
+            removeConflictingTagViolations,
+            'removing conflicting region tag in use'
+          );
+        }
         commentBody += '---\n';
       }
 

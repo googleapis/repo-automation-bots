@@ -18,6 +18,8 @@
 
 import myProbotApp from '../src/snippet-bot';
 import * as apiLabelsModule from '../src/api-labels';
+import * as snippetsModule from '../src/snippets';
+import {Snippet, SnippetLanguage} from '../src/snippets';
 
 import {resolve} from 'path';
 import {Probot, createProbot} from 'probot';
@@ -51,6 +53,7 @@ describe('snippet-bot', () => {
   const sandbox = sinon.createSandbox();
 
   let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
+  let getSnippetsStub: sinon.SinonStub<[string], Promise<Map<string, Snippet>>>;
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
@@ -83,6 +86,43 @@ describe('snippet-bot', () => {
           },
         ],
       });
+      const testSnippets = new Map<string, Snippet>();
+      const languageMap = new Map<string, SnippetLanguage>();
+      languageMap.set('PYTHON', {
+        status: 'IMPLEMENTED',
+        current_locations: [
+          {
+            repository_path: 'tmatsuo/repo-automation-bots',
+            filename: 'test.py',
+            commit: 'xxx',
+            branch: 'master',
+          },
+        ],
+      });
+      testSnippets.set('datastore_incomplete_key', {
+        title: '',
+        description: '',
+        languages: languageMap,
+      });
+      const languageMap2 = new Map<string, SnippetLanguage>();
+      languageMap2.set('PYTHON', {
+        status: 'CONFLICT',
+        current_locations: [
+          {
+            repository_path: 'tmatsuo/repo-automation-bots',
+            filename: 'test.py',
+            commit: 'xxx',
+            branch: 'master',
+          },
+        ],
+      });
+      testSnippets.set('datastore_named_key', {
+        title: '',
+        description: '',
+        languages: languageMap2,
+      });
+      getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
+      getSnippetsStub.resolves(testSnippets);
     });
     afterEach(() => {
       sandbox.restore();
