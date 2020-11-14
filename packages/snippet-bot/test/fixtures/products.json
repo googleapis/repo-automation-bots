@@ -1,0 +1,10 @@
+{
+  "products": [
+    {
+      "display_name": "Datastore",
+      "github_label": "api: datastore",
+      "api_shortname": "datastore",
+      "region_tag_prefix": "datastore"
+    }
+  ]
+}

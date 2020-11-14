@@ -18,8 +18,7 @@ import {Configuration} from './configuration';
 import {ChangesInPullRequest, ParseResult} from './region-tag-parser';
 import {Change} from './region-tag-parser';
 import {getSnippets} from './snippets';
-import {SnippetLanguage, SnippetLocation} from './snippets';
-import {logger} from 'gcf-utils';
+import {SnippetLocation} from './snippets';
 
 type violationTypes =
   | 'PRODUCT_PREFIX'
@@ -42,7 +41,7 @@ export const checkRemovingUsedTagViolations = async (
 ): Promise<Map<string, Array<Violation>>> => {
   const removeUsedTagViolations = new Array<Violation>();
   const removeConflictingTagViolations = new Array<Violation>();
-  const snippets = await getSnippets(dataBucket as string);
+  const snippets = await getSnippets(dataBucket);
   for (const change of changes.changes) {
     if (change.type !== 'del') {
       continue;
@@ -61,17 +60,12 @@ export const checkRemovingUsedTagViolations = async (
       // this case.
       continue;
     }
-    const snippet = snippets.get(change.regionTag);
+    const snippet = snippets[change.regionTag];
     if (snippet === undefined) {
       continue;
     }
-    snippet.languages.forEach((lang: SnippetLanguage) => {
-      logger.debug({
-        lang: lang,
-        baseBranch: baseBranch,
-        baseRepositoryPath: baseRepositoryPath,
-        file: change.file,
-      });
+    for (const k of Object.keys(snippet.languages)) {
+      const lang = snippet.languages[k];
       if (
         lang.current_locations.some((loc: SnippetLocation) => {
           return (
@@ -97,7 +91,7 @@ export const checkRemovingUsedTagViolations = async (
           removeConflictingTagViolations.push(violation);
         }
       }
-    });
+    }
   }
   const ret: Map<string, Array<Violation>> = new Map([
     ['REMOVE_USED_TAG', removeUsedTagViolations],
@@ -111,7 +105,7 @@ export const checkProductPrefixViolations = async (
   config: Configuration
 ): Promise<Array<Violation>> => {
   const ret: Violation[] = [];
-  const apiLabels = await getApiLabels(dataBucket as string);
+  const apiLabels = await getApiLabels(dataBucket);
   for (const change of changes.changes) {
     if (change.type !== 'add') {
       continue;

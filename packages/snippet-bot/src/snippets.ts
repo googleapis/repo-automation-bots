@@ -58,25 +58,18 @@ export interface SnippetLanguage {
 export interface Snippet {
   title: string;
   description: string;
-  languages: Map<string, SnippetLanguage>;
+  languages: {[index: string]: SnippetLanguage};
 }
 
-export const getSnippets = async (
-  dataBucket: string
-): Promise<Map<string, Snippet>> => {
+export interface Snippets {
+  [index: string]: Snippet;
+}
+
+export const getSnippets = async (dataBucket: string): Promise<Snippets> => {
   const snippets = await storage
     .bucket(dataBucket)
     .file('snippets.json')
     .download();
-  const parsedResponse = JSON.parse(snippets[0].toString());
-  const ret = new Map<string, Snippet>();
-  for (const k in parsedResponse) {
-    const languageMap = new Map<string, SnippetLanguage>();
-    for (const k2 in parsedResponse[k].languages) {
-      languageMap.set(k2, parsedResponse[k].languages[k2]);
-    }
-    parsedResponse[k].languages = languageMap;
-    ret.set(k, parsedResponse[k]);
-  }
-  return ret;
+  const parsedResponse = JSON.parse(snippets[0].toString()) as Snippets;
+  return parsedResponse;
 };

@@ -19,7 +19,7 @@
 import myProbotApp from '../src/snippet-bot';
 import * as apiLabelsModule from '../src/api-labels';
 import * as snippetsModule from '../src/snippets';
-import {Snippet, SnippetLanguage} from '../src/snippets';
+import {Snippets} from '../src/snippets';
 
 import {resolve} from 'path';
 import {Probot, createProbot} from 'probot';
@@ -53,7 +53,7 @@ describe('snippet-bot', () => {
   const sandbox = sinon.createSandbox();
 
   let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
-  let getSnippetsStub: sinon.SinonStub<[string], Promise<Map<string, Snippet>>>;
+  let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
@@ -76,17 +76,9 @@ describe('snippet-bot', () => {
   describe('responds to PR', () => {
     beforeEach(() => {
       getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
-      getApiLabelsStub.resolves({
-        products: [
-          {
-            display_name: 'Datastore',
-            github_label: 'api: datastore',
-            api_shortname: 'datastore',
-            region_tag_prefix: 'datastore',
-          },
-        ],
-      });
-      const testSnippets = new Map<string, Snippet>();
+      const products = require(resolve(fixturesPath, './products'));
+      getApiLabelsStub.resolves(products);
+      const testSnippets = {};
       getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
       getSnippetsStub.resolves(testSnippets);
     });
@@ -416,53 +408,13 @@ describe('snippet-bot', () => {
     it('gives warnings about removing region tag in use', async () => {
       sandbox.restore();
       getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
-      getApiLabelsStub.resolves({
-        products: [
-          {
-            display_name: 'Datastore',
-            github_label: 'api: datastore',
-            api_shortname: 'datastore',
-            region_tag_prefix: 'datastore',
-          },
-        ],
-      });
-      const testSnippets = new Map<string, Snippet>();
-      const languageMap = new Map<string, SnippetLanguage>();
-      languageMap.set('PYTHON', {
-        status: 'IMPLEMENTED',
-        current_locations: [
-          {
-            repository_path: 'tmatsuo/repo-automation-bots',
-            filename: 'test.py',
-            commit: 'xxx',
-            branch: 'master',
-          },
-        ],
-      });
-      testSnippets.set('datastore_incomplete_key', {
-        title: '',
-        description: '',
-        languages: languageMap,
-      });
-      const languageMap2 = new Map<string, SnippetLanguage>();
-      languageMap2.set('PYTHON', {
-        status: 'CONFLICT',
-        current_locations: [
-          {
-            repository_path: 'tmatsuo/repo-automation-bots',
-            filename: 'test.py',
-            commit: 'xxx',
-            branch: 'master',
-          },
-        ],
-      });
-      testSnippets.set('datastore_named_key', {
-        title: '',
-        description: '',
-        languages: languageMap2,
-      });
+      const products = require(resolve(fixturesPath, './products'));
+
+      getApiLabelsStub.resolves(products);
+
       getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
-      getSnippetsStub.resolves(testSnippets);
+      const snippets = require(resolve(fixturesPath, './snippets'));
+      getSnippetsStub.resolves(snippets);
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event'));
