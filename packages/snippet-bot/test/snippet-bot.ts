@@ -117,7 +117,7 @@ describe('snippet-bot', () => {
       diffRequests.done();
     });
 
-    it('sets a "failure" context on PR', async () => {
+    it('sets a "failure" context on PR without a warning about removal of region tags in use', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event'));
