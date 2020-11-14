@@ -18,7 +18,6 @@ import {
   ApplicationFunction,
   Options,
   Application,
-  Context,
 } from 'probot';
 
 import getStream from 'get-stream';
@@ -96,15 +95,15 @@ export enum TriggerType {
 }
 
 export const addOrUpdateIssueComment = async (
-  context: Context,
+  github: Octokit,
   owner: string,
   repo: string,
   issueNumber: number,
+  installationId: number,
   commentBody: string
 ) => {
-  const installationId = context.payload.installation.id;
   const commentMark = `<!-- probot comment [${installationId}]-->`;
-  const listCommentsResponse = await context.github.issues.listComments({
+  const listCommentsResponse = await github.issues.listComments({
     owner: owner,
     repo: repo,
     per_page: 50, // I think 50 is enough, but I may be wrong.
@@ -114,7 +113,7 @@ export const addOrUpdateIssueComment = async (
   for (const comment of listCommentsResponse.data) {
     if (comment.body.includes(commentMark)) {
       // We found the existing comment, so updating it
-      await context.github.issues.updateComment({
+      await github.issues.updateComment({
         owner: owner,
         repo: repo,
         comment_id: comment.id,
@@ -124,7 +123,7 @@ export const addOrUpdateIssueComment = async (
     }
   }
   if (!found) {
-    await context.github.issues.createComment({
+    await github.issues.createComment({
       owner: owner,
       repo: repo,
       issue_number: issueNumber,
