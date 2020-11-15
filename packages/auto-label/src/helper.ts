@@ -16,16 +16,15 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Context} from 'probot';
 import {logger} from 'gcf-utils';
+import {LanguageConfig, PathConfig} from './auto-label';
 
 // A mapping of languages to their file extensions
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const defaultExtensions = require('./extensions.json');
+import defaultExtensions from './extensions.json';
 
 /**
- * labelExists:
  * Checks whether the intended label already exists
  */
-function labelExists(context: Context, new_label: string): boolean {
+export function labelExists(context: Context, new_label: string): boolean {
   const labels = context.payload.issue
     ? context.payload.issue.labels
     : context.payload.pull_request.labels;
@@ -38,28 +37,32 @@ function labelExists(context: Context, new_label: string): boolean {
   return false;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getLabelFromPathConfig(filename: string, config: any): string {
+function getLabelFromPathConfig(
+  filename: string,
+  config: LanguageConfig
+): string {
   // If user specified labels for discrete paths
-  let label = '';
+  let label: string | PathConfig = '';
   const dirs = filename.split('/');
-  let path_obj = config.paths;
+  let paths = config.paths!;
   // If user set default label for entire drive, use that label
-  if ('.' in path_obj) label = path_obj['.'];
+  if ('.' in paths) {
+    label = paths['.'];
+  }
   for (const dir of dirs) {
-    if (dir in path_obj) {
-      if ('.' in path_obj) label = path_obj['.'];
-      if (typeof path_obj[dir] === 'string') {
-        label = path_obj[dir];
+    if (dir in paths) {
+      if ('.' in paths) label = paths['.'];
+      if (typeof paths[dir] === 'string') {
+        label = paths[dir];
         break; // break as this is the end of user defined path
       } else {
-        path_obj = path_obj[dir];
+        paths = paths[dir] as PathConfig;
       }
     } else {
       break; // break as this is the end of user defined path
     }
   }
-  return label;
+  return label as string;
 }
 
 /**
@@ -69,31 +72,39 @@ function getLabelFromPathConfig(filename: string, config: any): string {
  *  For language labeling, if no user specified language labels are found
  *  it will default to language mappings in extensions.json
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getFileLabel(filename: string, config: any, type: string): string {
+function getFileLabel(
+  filename: string,
+  config: LanguageConfig,
+  type: string
+): string {
   // Return a path based label, if user defined a path configuration
   if (config.paths) {
     const lang = getLabelFromPathConfig(filename, config);
     if (lang) {
-      if (config.labelprefix) return config.labelprefix + lang;
+      if (config.labelprefix) {
+        return config.labelprefix + lang;
+      }
       return lang;
     }
   }
 
   // Default to extension.json mapping since user didn't configure this file ext
   if (type === 'language') {
-    const extensionMap = config.extensions
+    const extensionMap: {[index: string]: string[]} = config.extensions
       ? {...config.extensions, ...defaultExtensions}
       : defaultExtensions;
     const ext: string = filename.substring(filename.lastIndexOf('.') + 1);
-    const lang = Object.keys(extensionMap).find(key =>
-      extensionMap[key].includes(ext)
-    );
-    if (!lang) return '';
-    if (config.labelprefix) return config.labelprefix + lang;
+    const lang = Object.keys(extensionMap).find(key => {
+      return extensionMap[key].includes(ext);
+    });
+    if (!lang) {
+      return '';
+    }
+    if (config.labelprefix) {
+      return config.labelprefix + lang;
+    }
     return lang;
   }
-
   return '';
 }
 
@@ -112,8 +123,11 @@ interface FileData {
  * Map reduces changes in files and its corresponding label
  * Returns the highest frequency language_label OR path_label
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getLabel(data: FileData[], config: any, type: string): string {
+export function getLabel(
+  data: FileData[],
+  config: LanguageConfig,
+  type: string
+): string {
   const counts = data.reduce((counted: {[key: string]: number}, file) => {
     const l = getFileLabel(file.filename, config, type);
     if (l) {
@@ -132,8 +146,3 @@ function getLabel(data: FileData[], config: any, type: string): string {
   logger.info('Detected labels based on files extensions are: ' + label);
   return label[0];
 }
-
-module.exports = {
-  getLabel,
-  labelExists,
-};
