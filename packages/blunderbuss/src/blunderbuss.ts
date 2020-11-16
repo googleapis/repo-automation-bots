@@ -15,7 +15,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context} from 'probot';
 import * as util from 'util';
-import {logger, TriggerType} from 'gcf-utils';
+import {logger} from 'gcf-utils';
 
 const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';
@@ -118,7 +118,7 @@ export function blunderbuss(app: Application) {
 
       // PRs are a superset of issues, so we can handle them similarly.
       const assignConfig = context.payload.issue
-        ? config.assign_issues!
+        ? config.assign_issues
         : config.assign_prs!;
       const byConfig = context.payload.issue
         ? config.assign_issues_by
@@ -198,7 +198,7 @@ export function blunderbuss(app: Application) {
       const preferredAssignees = findAssignees(byConfig, labels);
       let possibleAssignees = preferredAssignees.length
         ? preferredAssignees
-        : assignConfig;
+        : assignConfig || [];
       possibleAssignees = await expandTeams(possibleAssignees, context);
       const assignee = randomFrom(possibleAssignees, issuePayload.user.login);
       if (!assignee) {

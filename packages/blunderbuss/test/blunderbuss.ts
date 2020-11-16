@@ -18,7 +18,7 @@ import * as blunderbuss from '../src/blunderbuss';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot} from 'probot';
+import {Probot, createProbot, ProbotOctokit} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
@@ -27,7 +27,7 @@ import * as sinon from 'sinon';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
+const TestingOctokit = (Octokit.plugin(config) as {}) as typeof ProbotOctokit;
 
 nock.disableNetConnect();
 
@@ -44,7 +44,7 @@ describe('Blunderbuss', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit as any,
+      Octokit: TestingOctokit,
     });
 
     sandbox.stub(blunderbuss, 'sleep').resolves();
@@ -142,7 +142,7 @@ describe('Blunderbuss', () => {
         .reply(200);
 
       await probot.receive({
-        name: 'issues' as any,
+        name: 'issues',
         payload,
         id: 'abc123',
       });
@@ -296,6 +296,29 @@ describe('Blunderbuss', () => {
             return true;
           })
           .reply(200),
+      ];
+
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
+      scopes.forEach(s => s.done());
+    });
+
+    it('should handle assign_issues_by with no assign_issues in config', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_opened_no_assignees'
+      ));
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'assign_by.yml')
+      );
+
+      const scopes = [
+        nock('https://api.github.com')
+          .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+          .reply(200, config),
+        nock('https://api.github.com')
+          .get('/repos/testOwner/testRepo/issues/5/labels')
+          .reply(200, []),
       ];
 
       await probot.receive({name: 'issues', payload, id: 'abc123'});
