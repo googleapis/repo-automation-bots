@@ -1,0 +1,36 @@
+{
+  "datastore_incomplete_key": {
+    "title": "",
+    "description": "",
+    "languages": {
+      "PYTHON": {
+        "status": "IMPLEMENTED",
+        "current_locations": [
+          {
+            "repository_path": "tmatsuo/repo-automation-bots",
+            "filename": "test.py",
+            "commit": "xxx",
+            "branch": "master"
+          }
+        ]
+      }
+    }
+  },
+  "datastore_named_key": {
+    "title": "",
+    "description": "",
+    "languages": {
+      "PYTHON": {
+        "status": "CONFLICT",
+        "current_locations": [
+          {
+            "repository_path": "tmatsuo/repo-automation-bots",
+            "filename": "test.py",
+            "commit": "xxx",
+            "branch": "master"
+          }
+        ]
+      }
+    }
+  }
+}
