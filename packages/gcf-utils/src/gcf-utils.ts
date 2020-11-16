@@ -15,6 +15,7 @@
 import {
   createProbot,
   Probot,
+  ProbotOctokit,
   ApplicationFunction,
   Options,
   Application,
@@ -36,6 +37,8 @@ import {v4} from 'uuid';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
+
+type ProbotOctokitType = InstanceType<typeof ProbotOctokit>;
 
 interface Repos {
   repos: [
@@ -95,7 +98,7 @@ export enum TriggerType {
 }
 
 export const addOrUpdateIssueComment = async (
-  github: Octokit,
+  github: ProbotOctokitType,
   owner: string,
   repo: string,
   issueNumber: number,

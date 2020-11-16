@@ -16,7 +16,6 @@
 
 import {addOrUpdateIssueComment} from '../src/gcf-utils';
 
-import {Octokit} from '@octokit/rest';
 import {resolve} from 'path';
 import snapshot from 'snap-shot-it';
 import {Application, Probot, ProbotOctokit} from 'probot';
@@ -31,7 +30,7 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 const app = (app: Application) => {
   app.on('issues.opened', async context => {
     await addOrUpdateIssueComment(
-      (context.github as unknown) as Octokit,
+      context.github,
       context.payload.repository.owner.login,
       context.payload.repository.name,
       context.payload.issue.number,
