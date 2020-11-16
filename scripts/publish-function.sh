@@ -60,4 +60,5 @@ fi
 gcloud tasks queues ${verb} "${queueName}" \
   --max-concurrent-dispatches="2048" \
   --max-attempts="100" \
+  --max-retry-duration="21600"
   --max-dispatches-per-second="500"
