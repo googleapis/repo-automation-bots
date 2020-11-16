@@ -91,6 +91,7 @@ export class TaskService {
         task: task,
         msg: 'Error while completing task',
       });
+      logger.error(err);
     }
   }
 }
