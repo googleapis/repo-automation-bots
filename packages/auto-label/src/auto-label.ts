@@ -286,7 +286,8 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
  */
 export function handler(app: Application) {
   // Nightly cron that backfills and corrects api labels
-  app.on('schedule.repository' as '*', async context => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.repository' as any, async context => {
     const config: Config = await context.config(
       'auto-label.yaml',
       DEFAULT_CONFIGS
