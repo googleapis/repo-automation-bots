@@ -21,6 +21,7 @@ import {DEFAULT_CONFIGURATION, CONFIGURATION_FILE_PATH} from './configuration';
 import {parseRegionTags} from './region-tag-parser';
 import {parseRegionTagsInPullRequest} from './region-tag-parser';
 import {ParseResult} from './region-tag-parser';
+import {invalidateCache} from './snippets';
 import {Change} from './region-tag-parser';
 import {
   Violation,
@@ -322,6 +323,8 @@ ${bodyDetail}`
             throw err;
           }
         }
+        // Also invalidate the cache for Snippets.
+        await invalidateCache();
       }
       // Check on pull requests.
 
