@@ -19,5 +19,7 @@
       "schedule": "after 2pm on monday"
     }
   ],
-  "ignoreDeps": ["typescript"]
+  "lockFileMaintenance": {
+    "enabled": true
+  }
 }
