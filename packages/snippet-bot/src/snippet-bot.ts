@@ -23,11 +23,7 @@ import {parseRegionTagsInPullRequest} from './region-tag-parser';
 import {ParseResult} from './region-tag-parser';
 import {invalidateCache} from './snippets';
 import {Change} from './region-tag-parser';
-import {
-  Violation,
-  checkProductPrefixViolations,
-  checkRemovingUsedTagViolations,
-} from './violations';
+import {Violation, checkProductPrefixViolations} from './violations';
 import {logger} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
@@ -425,20 +421,9 @@ ${bodyDetail}`
         result,
         configuration
       );
-      // Check for removing region tags in use.
-      const removeViolations = await checkRemovingUsedTagViolations(
-        result,
-        configuration,
-        parseResults,
-        context.payload.pull_request.base.repo.full_name,
-        context.payload.pull_request.base.ref
-      );
-      const removeUsedTagViolations = removeViolations.get(
-        'REMOVE_USED_TAG'
-      ) as Violation[];
-      const removeConflictingTagViolations = removeViolations.get(
-        'REMOVE_CONFLICTING_TAG'
-      ) as Violation[];
+      // Warnings for removal of region tag in use is disabled for now.
+      const removeUsedTagViolations: Violation[] = [];
+      const removeConflictingTagViolations: Violation[] = [];
 
       if (
         productPrefixViolations.length > 0 ||
