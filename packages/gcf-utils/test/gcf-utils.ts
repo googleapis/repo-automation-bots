@@ -30,10 +30,11 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 const app = (app: Application) => {
   app.on('issues.opened', async context => {
     await addOrUpdateIssueComment(
-      context,
+      context.github,
       context.payload.repository.owner.login,
       context.payload.repository.name,
       context.payload.issue.number,
+      context.payload.installation.id,
       'test comment'
     );
   });
