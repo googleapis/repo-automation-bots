@@ -54,6 +54,8 @@ describe('snippet-bot', () => {
 
   let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
   let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
+  let invalidateCacheStub: sinon.SinonStub;
+
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
@@ -177,8 +179,9 @@ describe('snippet-bot', () => {
       requests.done();
     });
 
-    it('responds to snippet-bot:force-run label', async () => {
+    it('responds to snippet-bot:force-run label, invalidating the Snippet cache', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
+      invalidateCacheStub = sandbox.stub(snippetsModule, 'invalidateCache');
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event_label_added'));
       const blob = require(resolve(fixturesPath, './failure_blob'));
@@ -225,6 +228,7 @@ describe('snippet-bot', () => {
         id: 'abc123',
       });
 
+      sinon.assert.calledOnce(invalidateCacheStub);
       requests.done();
       diffRequests.done();
     });
