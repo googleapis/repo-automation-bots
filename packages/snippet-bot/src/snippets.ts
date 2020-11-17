@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import {Storage} from '@google-cloud/storage';
-import AwaitLock from 'await-lock';
 import {logger} from 'gcf-utils';
 
 /**
@@ -69,37 +68,21 @@ export interface Snippets {
 
 let cachedSnippets: Snippets;
 let cacheTimestamp = 0;
-const lock = new AwaitLock();
 
-export const invalidateCache = async () => {
-  await lock.acquireAsync();
-  try {
-    cacheTimestamp = 0;
-  } finally {
-    lock.release();
-  }
+export const invalidateCache = () => {
+  cacheTimestamp = 0;
 };
 
 export const getSnippets = async (dataBucket: string): Promise<Snippets> => {
   const cacheExpiration = Math.floor(Date.now() / 1000) - 3600; // 1 hour;
   if (cacheTimestamp < cacheExpiration) {
-    await lock.acquireAsync();
-    try {
-      // Check one more time to return the newly fetched data if it's fresh.
-      if (cacheTimestamp < cacheExpiration) {
-        logger.info(`Fetching snippets json from ${dataBucket}.`);
-        const snippets = await storage
-          .bucket(dataBucket)
-          .file('snippets.json')
-          .download();
-        cachedSnippets = JSON.parse(snippets[0].toString()) as Snippets;
-        cacheTimestamp = Math.floor(Date.now() / 1000);
-      } else {
-        logger.info('Reusing cache for Snippets.');
-      }
-    } finally {
-      lock.release();
-    }
+    logger.info(`Fetching snippets json from ${dataBucket}.`);
+    const snippets = await storage
+      .bucket(dataBucket)
+      .file('snippets.json')
+      .download();
+    cachedSnippets = JSON.parse(snippets[0].toString()) as Snippets;
+    cacheTimestamp = Math.floor(Date.now() / 1000);
   } else {
     logger.info('Reusing cache for Snippets.');
   }
