@@ -22,15 +22,21 @@ import {resolve} from 'path';
 import * as fs from 'fs';
 import assert from 'assert';
 import {describe, it} from 'mocha';
+import nock from 'nock';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+
+nock.disableNetConnect();
 
 describe('region-tag-parser', () => {
   const diff = fs.readFileSync(resolve(fixturesPath, 'diff.txt'), 'utf8');
   describe('parses a diff', () => {
-    it('returns a correct result', () => {
-      const result = parseRegionTagsInPullRequest(
-        diff,
+    it('returns a correct result', async () => {
+      const requests = nock('https://example.com')
+        .get('/diff.txt')
+        .reply(200, diff);
+      const result = await parseRegionTagsInPullRequest(
+        'https://example.com/diff.txt',
         'owner',
         'repo',
         'sha',
@@ -46,6 +52,8 @@ describe('region-tag-parser', () => {
       assert.strictEqual('headOwner', result.changes[1].owner);
       assert.strictEqual('headRepo', result.changes[1].repo);
       assert.strictEqual('headSha', result.changes[1].sha);
+
+      requests.done();
     });
   });
 });
