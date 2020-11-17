@@ -28,7 +28,7 @@ export async function gather(
   keyContent = await fs.readFile(keyfile, 'utf8');
 
   return {
-    cert: keyContent,
+    privateKey: keyContent,
     id,
     secret: webhookSecret,
   };

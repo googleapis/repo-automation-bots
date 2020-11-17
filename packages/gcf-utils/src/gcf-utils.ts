@@ -13,7 +13,6 @@
 // limitations under the License.
 //
 import {
-  createProbot,
   Probot,
   ProbotOctokit,
   ApplicationFunction,
@@ -155,7 +154,7 @@ export class GCFBootstrapper {
   ): Promise<Probot> {
     if (!this.probot) {
       const cfg = await this.getProbotConfig(logging);
-      this.probot = createProbot(cfg);
+      this.probot = new Probot(cfg);
     }
 
     this.probot.load(appFn);
