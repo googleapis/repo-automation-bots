@@ -5,34 +5,29 @@ on:
   pull_request:
 name: ci
 jobs:
+  changeFinder:
+    runs-on: ubuntu-latest
+    outputs:
+      nodePaths: ${{ steps.interrogate.outputs.nodePaths }}
+      goPaths: ${{ steps.interrogate.outputs.goPaths }}
+      bashPaths: ${{ steps.interrogate.outputs.bashPaths }}
+      requiredJobs: ${{ steps.interrogate.outputs.requiredJobs }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - id: interrogate
+        run: node ./.github/workflows/interrogate.js
+        env:
+          GITHUB_BASE_REF: ${{github.base_ref}}
   test:
     runs-on: ubuntu-latest
+    needs: changeFinder
     strategy:
       fail-fast: false
       matrix:
-        node: [12]
-        package: [
-          'auto-label',
-          'blunderbuss',
-          'buildcop',
-          'conventional-commit-lint',
-          'failurechecker',
-          'gcf-utils',
-          'generate-bot',
-          'generated-files-bot',
-          'header-checker-lint',
-          'label-sync',
-          'merge-on-green',
-          'monitoring-system/data-processor',
-          'release-please',
-          'slo-stat-bot',
-          'snippet-bot',
-          'sync-repo-settings',
-          'trusted-contribution'
-        ]
-        include:
-          - node: 10
-            package: 'publish'
+        package: ${{fromJson(needs.changeFinder.outputs.nodePaths)}}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
@@ -48,15 +43,12 @@ jobs:
       - run: npm run lint
         working-directory: ./packages/${{ matrix.package }}
   go-test:
-    name: Go tests
     runs-on: ubuntu-latest
+    needs: changeFinder
     strategy:
       fail-fast: false
       matrix:
-        module: [
-          'packages/buildcop',
-          'serverless-scheduler-proxy'
-        ]
+        module: ${{fromJson(needs.changeFinder.outputs.goPaths)}}
     steps:
     - name: Install Go
       uses: actions/setup-go@v2
@@ -76,12 +68,12 @@ jobs:
     - run: go test ./...
       working-directory: ./${{ matrix.module }}
   bash-test:
-    name: Bash tests
     runs-on: ubuntu-latest
+    needs: changeFinder
     strategy:
       fail-fast: false
       matrix:
-        module: ["scripts"]
+        module: ${{fromJson(needs.changeFinder.outputs.bashPaths)}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -89,3 +81,13 @@ jobs:
         run: |
           ./test.sh
         working-directory: ./${{ matrix.module }}
+  finale:
+    runs-on: ubuntu-latest
+    needs: changeFinder
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - run: npm install
+      - run: node ./.github/workflows/finale.js '${{needs.changeFinder.outputs.requiredJobs}}' ${{secrets.GITHUB_TOKEN}}

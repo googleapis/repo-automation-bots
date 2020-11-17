@@ -5,26 +5,8 @@ branchProtectionRules:
 - pattern: master
   isAdminEnforced: true
   requiredStatusCheckContexts:
-    - 'test (12, auto-label)'
-    - 'test (12, blunderbuss)'
-    - 'test (12, buildcop)'
-    - 'test (12, conventional-commit-lint)'
-    - 'test (12, failurechecker)'
-    - 'test (12, gcf-utils)'
-    - 'test (12, generate-bot)'
-    - 'test (12, header-checker-lint)'
-    - 'test (12, label-sync)'
-    - 'test (12, merge-on-green)'
-    - 'test (12, monitoring-system/data-processor)'
-    - 'test (12, release-please)'
-    - 'test (12, slo-stat-bot)'
-    - 'test (12, snippet-bot)'
-    - 'test (12, sync-repo-settings)'
-    - 'test (12, trusted-contribution)'
-    - 'test (10, publish)'
-    - 'Go tests (packages/buildcop)'
-    - 'Go tests (serverless-scheduler-proxy)'
-    - 'Bash tests (scripts)'
+    - 'changeFinder'
+    - 'finale'
     - 'cla/google'
   requiredApprovingReviewCount: 1
   requiresCodeOwnerReviews: true
