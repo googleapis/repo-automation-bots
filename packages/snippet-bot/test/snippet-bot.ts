@@ -17,6 +17,9 @@
 /* eslint-disable node/no-extraneous-import */
 
 import myProbotApp from '../src/snippet-bot';
+import * as apiLabelsModule from '../src/api-labels';
+import * as snippetsModule from '../src/snippets';
+import {Snippets} from '../src/snippets';
 
 import {resolve} from 'path';
 import {Probot, createProbot} from 'probot';
@@ -25,6 +28,7 @@ import nock from 'nock';
 import * as fs from 'fs';
 import assert from 'assert';
 import {describe, it, beforeEach, afterEach} from 'mocha';
+import * as sinon from 'sinon';
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
@@ -46,6 +50,10 @@ describe('snippet-bot', () => {
     resolve(fixturesPath, 'tmatsuo-python-docs-samples-abcde.tar.gz')
   );
 
+  const sandbox = sinon.createSandbox();
+
+  let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
+  let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
@@ -66,6 +74,17 @@ describe('snippet-bot', () => {
   });
 
   describe('responds to PR', () => {
+    beforeEach(() => {
+      getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
+      const products = require(resolve(fixturesPath, './products'));
+      getApiLabelsStub.resolves(products);
+      const testSnippets = {};
+      getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
+      getSnippetsStub.resolves(testSnippets);
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
     it('quits early', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './pr_event'));
@@ -90,7 +109,7 @@ describe('snippet-bot', () => {
       diffRequests.done();
     });
 
-    it('sets a "failure" context on PR', async () => {
+    it('sets a "failure" context on PR without a warning about removal of region tags in use', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event'));
@@ -384,6 +403,62 @@ describe('snippet-bot', () => {
       });
 
       requests.done();
+    });
+
+    it('gives warnings about removing region tag in use', async () => {
+      sandbox.restore();
+      getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
+      const products = require(resolve(fixturesPath, './products'));
+
+      getApiLabelsStub.resolves(products);
+
+      getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
+      const snippets = require(resolve(fixturesPath, './snippets'));
+      getSnippetsStub.resolves(snippets);
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
+      const payload = require(resolve(fixturesPath, './pr_event'));
+      const blob = require(resolve(fixturesPath, './failure_blob'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
+        )
+        .reply(200, config)
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
+        )
+        .reply(200, blob)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200)
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
+        )
+        .reply(200, [])
+        .post(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200);
+
+      const diffRequests = nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+        .reply(200, diffResponse);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+      diffRequests.done();
     });
   });
 

@@ -16,9 +16,30 @@ import {Storage} from '@google-cloud/storage';
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context} from 'probot';
 import {logger} from 'gcf-utils';
+import * as helper from './helper';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const helper = require('./helper');
+export interface PathConfig {
+  [index: string]: string | PathConfig;
+}
+
+export interface LanguageConfig {
+  pullrequest?: boolean;
+  labelprefix?: string;
+  extensions?: {
+    [index: string]: string[];
+  };
+  paths?: PathConfig;
+}
+
+export interface Config {
+  product?: boolean;
+  path?: {
+    pullrequest?: boolean;
+    labelprefix?: string;
+  };
+  language?: LanguageConfig;
+}
+
 // Default app configs if user didn't specify a .config
 const LABEL_PRODUCT_BY_DEFAULT = true;
 const DEFAULT_CONFIGS = {
@@ -31,8 +52,7 @@ const DEFAULT_CONFIGS = {
   },
 };
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const colorsData = require('./colors.json');
+import colorsData from './colors.json';
 
 export interface DriftRepo {
   github_label: string;
@@ -268,12 +288,11 @@ export function handler(app: Application) {
   // Nightly cron that backfills and corrects api labels
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const config: any = await context.config(
+    const config: Config = await context.config(
       'auto-label.yaml',
       DEFAULT_CONFIGS
     );
-    if (!config.product) return;
+    if (!config?.product) return;
 
     logger.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
@@ -325,12 +344,11 @@ export function handler(app: Application) {
   // Labels issues with product labels.
   // By default, this is turned on without user configuration.
   app.on(['issues.opened', 'issues.reopened'], async context => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const config: any = await context.config(
+    const config = await context.config<Config>(
       'auto-label.yaml',
       DEFAULT_CONFIGS
     );
-    if (!config.product) return;
+    if (!config?.product) return;
 
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
@@ -353,8 +371,7 @@ export function handler(app: Application) {
   // By default, product labels are turned on and language/path labels are
   // turned off.
   app.on(['pull_request.opened'], async context => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const config: any = await context.config(
+    const config = await context.config<Config>(
       'auto-label.yaml',
       DEFAULT_CONFIGS
     );
@@ -362,7 +379,7 @@ export function handler(app: Application) {
     const repo = context.payload.repository.name;
     const pull_number = context.payload.pull_request.number;
 
-    if (config.product) {
+    if (config?.product) {
       const driftRepos = await handler.getDriftRepos();
       if (!driftRepos) {
         return;
@@ -378,7 +395,7 @@ export function handler(app: Application) {
     }
 
     // Only need to fetch PR contents if config.path or config.language are configured.
-    if (!config.path?.pullrequest && !config.language?.pullrequest) {
+    if (!config?.path?.pullrequest && !config?.language?.pullrequest) {
       return;
     }
 
@@ -467,7 +484,7 @@ export function handler(app: Application) {
         if (disable_product_label.length > 0) break;
       }
 
-      //goes through issues in repository, adds labels as necessary
+      // goes through issues in repository, adds labels as necessary
       for await (const response of context.github.paginate.iterator(
         context.github.issues.listForRepo,
         {
@@ -476,7 +493,7 @@ export function handler(app: Application) {
         }
       )) {
         const issues = response.data;
-        //goes through each issue in each page
+        // goes through each issue in each page
         for (const issue of issues) {
           await handler.addLabeltoRepoAndIssue(
             owner,

@@ -16,14 +16,20 @@
 /* eslint-disable node/no-extraneous-import */
 
 import {Application} from 'probot';
+import {Configuration, ConfigurationOptions} from './configuration';
+import {DEFAULT_CONFIGURATION, CONFIGURATION_FILE_PATH} from './configuration';
 import {parseRegionTags} from './region-tag-parser';
 import {parseRegionTagsInPullRequest} from './region-tag-parser';
 import {ParseResult} from './region-tag-parser';
 import {Change} from './region-tag-parser';
+import {
+  Violation,
+  checkProductPrefixViolations,
+  checkRemovingUsedTagViolations,
+} from './violations';
 import {logger} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
-import * as minimatch from 'minimatch';
 
 import tar from 'tar';
 import util from 'util';
@@ -42,42 +48,14 @@ type Conclusion =
   | 'action_required'
   | undefined;
 
-interface ConfigurationOptions {
-  ignoreFiles: string[];
-}
-
 // Solely for avoid using `any` type.
 interface Label {
   name: string;
 }
 
-const DEFAULT_CONFIGURATION: ConfigurationOptions = {
-  ignoreFiles: [],
-};
-
-const CONFIGURATION_FILE_PATH = 'snippet-bot.yml';
-
 const FULL_SCAN_ISSUE_TITLE = 'snippet-bot full scan';
 
 const REFRESH_LABEL = 'snippet-bot:force-run';
-
-class Configuration {
-  private options: ConfigurationOptions;
-  private minimatches: minimatch.IMinimatch[];
-
-  constructor(options: ConfigurationOptions) {
-    this.options = options;
-    this.minimatches = options.ignoreFiles.map(pattern => {
-      return new minimatch.Minimatch(pattern);
-    });
-  }
-
-  ignoredFile(filename: string): boolean {
-    return this.minimatches.some(mm => {
-      return mm.match(filename);
-    });
-  }
-}
 
 /**
  * Formats the full scan report with the comment mark, so that it can
@@ -115,6 +93,26 @@ function formatExpandable(summary: string, detail: string): string {
 </details>
 
 `;
+}
+
+/**
+ * It formats an array of Violations for commenting.
+ */
+function formatViolations(
+  violations: Violation[],
+  violationDetail: string
+): string {
+  let summary = '';
+  if (violations.length === 1) {
+    summary = `There is a possible violation for ${violationDetail}.`;
+  } else {
+    summary = `There are ${violations.length} possible violations for ${violationDetail}.`;
+  }
+  let detail = '';
+  for (const violation of violations) {
+    detail += `- ${formatChangedFile(violation.change)}\n`;
+  }
+  return formatExpandable(summary, detail);
 }
 
 /**
@@ -354,26 +352,36 @@ ${bodyDetail}`
           logger.info('ignoring file from configuration: ' + file);
           continue;
         }
+        try {
+          const blob = await context.github.repos.getContent({
+            owner: context.payload.pull_request.head.repo.owner.login,
+            repo: context.payload.pull_request.head.repo.name,
+            path: file,
+            ref: context.payload.pull_request.head.sha,
+          });
+          const fileContents = Buffer.from(
+            blob.data.content,
+            'base64'
+          ).toString('utf8');
 
-        const blob = await context.github.repos.getContent({
-          owner: context.payload.pull_request.head.repo.owner.login,
-          repo: context.payload.pull_request.head.repo.name,
-          path: file,
-          ref: context.payload.pull_request.head.sha,
-        });
-
-        const fileContents = Buffer.from(blob.data.content, 'base64').toString(
-          'utf8'
-        );
-
-        const parseResult = parseRegionTags(fileContents, file);
-        parseResults.set(file, parseResult);
-        if (!parseResult.result) {
-          mismatchedTags = true;
-          failureMessages.push(parseResult.messages.join('\n'));
-        }
-        if (parseResult.tagsFound) {
-          tagsFound = true;
+          const parseResult = parseRegionTags(fileContents, file);
+          parseResults.set(file, parseResult);
+          if (!parseResult.result) {
+            mismatchedTags = true;
+            failureMessages.push(parseResult.messages.join('\n'));
+          }
+          if (parseResult.tagsFound) {
+            tagsFound = true;
+          }
+        } catch (err) {
+          // Ignoring 403/404 errors.
+          if (err.status === 403 || err.status === 404) {
+            logger.info(
+              `ignoring 403/404 errors upon fetching ${file}: ${err.message}`
+            );
+          } else {
+            throw err;
+          }
         }
       }
 
@@ -409,7 +417,60 @@ ${bodyDetail}`
 
       // Add or update a comment on the PR.
       const prNumber = context.payload.pull_request.number;
-      let commentBody = 'Here is the summary of changes.\n';
+      let commentBody = '';
+
+      // First check product prefix for added region tags.
+      const productPrefixViolations = await checkProductPrefixViolations(
+        result,
+        configuration
+      );
+      // Check for removing region tags in use.
+      const removeViolations = await checkRemovingUsedTagViolations(
+        result,
+        configuration,
+        parseResults,
+        context.payload.pull_request.base.repo.full_name,
+        context.payload.pull_request.base.ref
+      );
+      const removeUsedTagViolations = removeViolations.get(
+        'REMOVE_USED_TAG'
+      ) as Violation[];
+      const removeConflictingTagViolations = removeViolations.get(
+        'REMOVE_CONFLICTING_TAG'
+      ) as Violation[];
+
+      if (
+        productPrefixViolations.length > 0 ||
+        removeUsedTagViolations.length > 0 ||
+        removeConflictingTagViolations.length > 0
+      ) {
+        commentBody += 'Here is the summary of possible violations 😱';
+
+        // Rendering prefix violations
+        if (productPrefixViolations.length > 0) {
+          commentBody += formatViolations(
+            productPrefixViolations,
+            'not having product prefix'
+          );
+        }
+
+        // Rendering used tag violations
+        if (removeUsedTagViolations.length > 0) {
+          commentBody += formatViolations(
+            removeUsedTagViolations,
+            'removing region tag in use'
+          );
+        }
+        if (removeConflictingTagViolations.length > 0) {
+          commentBody += formatViolations(
+            removeConflictingTagViolations,
+            'removing conflicting region tag in use'
+          );
+        }
+        commentBody += '---\n';
+      }
+
+      commentBody += 'Here is the summary of changes.\n';
       if (result.added > 0) {
         const plural = result.added === 1 ? '' : 's';
         const summary = `You added ${result.added} region tag${plural}.`;
@@ -433,7 +494,11 @@ ${bodyDetail}`
         commentBody += formatExpandable(summary, detail);
       }
 
-      commentBody += `To update this comment, add \`${REFRESH_LABEL}\` label.\n`;
+      commentBody += `This comment is generated by [snippet-bot](https://github.com/apps/snippet-bot).
+If you find problems with this result, please file an issue at:
+https://github.com/googleapis/repo-automation-bots/issues.
+To update this comment, add \`${REFRESH_LABEL}\` label.
+`;
 
       const listCommentsResponse = await context.github.issues.listComments({
         owner: owner,

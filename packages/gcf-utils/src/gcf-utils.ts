@@ -15,6 +15,7 @@
 import {
   createProbot,
   Probot,
+  ProbotOctokit,
   ApplicationFunction,
   Options,
   Application,
@@ -36,6 +37,8 @@ import {v4} from 'uuid';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
+
+type ProbotOctokitType = InstanceType<typeof ProbotOctokit>;
 
 interface Repos {
   repos: [
@@ -93,6 +96,44 @@ export enum TriggerType {
   PUBSUB = 'Pub/Sub',
   UNKNOWN = 'Unknown',
 }
+
+export const addOrUpdateIssueComment = async (
+  github: ProbotOctokitType,
+  owner: string,
+  repo: string,
+  issueNumber: number,
+  installationId: number,
+  commentBody: string
+) => {
+  const commentMark = `<!-- probot comment [${installationId}]-->`;
+  const listCommentsResponse = await github.issues.listComments({
+    owner: owner,
+    repo: repo,
+    per_page: 50, // I think 50 is enough, but I may be wrong.
+    issue_number: issueNumber,
+  });
+  let found = false;
+  for (const comment of listCommentsResponse.data) {
+    if (comment.body.includes(commentMark)) {
+      // We found the existing comment, so updating it
+      await github.issues.updateComment({
+        owner: owner,
+        repo: repo,
+        comment_id: comment.id,
+        body: `${commentMark}\n${commentBody}`,
+      });
+      found = true;
+    }
+  }
+  if (!found) {
+    await github.issues.createComment({
+      owner: owner,
+      repo: repo,
+      issue_number: issueNumber,
+      body: `${commentMark}\n${commentBody}`,
+    });
+  }
+};
 
 export class GCFBootstrapper {
   probot?: Probot;

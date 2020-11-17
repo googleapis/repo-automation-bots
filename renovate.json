@@ -16,8 +16,10 @@
     },
     {
       "packageNames": ["google.golang.org/genproto"],
-      "schedule": "after 9am on monday"
+      "schedule": "after 2pm on monday"
     }
   ],
-  "ignoreDeps": ["typescript"]
+  "lockFileMaintenance": {
+    "enabled": true
+  }
 }
