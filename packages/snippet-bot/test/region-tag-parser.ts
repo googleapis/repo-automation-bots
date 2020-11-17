@@ -20,6 +20,7 @@ import {parseRegionTagsInPullRequest} from '../src/region-tag-parser';
 
 import {resolve} from 'path';
 import * as fs from 'fs';
+import * as nodeFetch from 'node-fetch';
 import assert from 'assert';
 import {describe, it} from 'mocha';
 
@@ -28,9 +29,10 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 describe('region-tag-parser', () => {
   const diff = fs.readFileSync(resolve(fixturesPath, 'diff.txt'), 'utf8');
   describe('parses a diff', () => {
-    it('returns a correct result', () => {
-      const result = parseRegionTagsInPullRequest(
-        diff,
+    it('returns a correct result', async () => {
+      const response = new nodeFetch.Response(diff);
+      const result = await parseRegionTagsInPullRequest(
+        response,
         'owner',
         'repo',
         'sha',
