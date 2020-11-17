@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import parseDiff from 'parse-diff';
+import fetch from 'node-fetch';
 
 /**
  * The result for unmatched region tag checks.
@@ -57,15 +58,15 @@ const END_TAG_REGEX = /\[END ([^\]]*)\]/;
 /**
  * Detects region tag changes in a pull request and return the summary.
  */
-export function parseRegionTagsInPullRequest(
-  diff: string,
+export async function parseRegionTagsInPullRequest(
+  diffUrl: string,
   owner: string,
   repo: string,
   sha: string,
   headOwner: string,
   headRepo: string,
   headSha: string
-): ChangesInPullRequest {
+): Promise<ChangesInPullRequest> {
   const changes: Change[] = [];
   const files: string[] = [];
   const ret = {
@@ -74,7 +75,8 @@ export function parseRegionTagsInPullRequest(
     deleted: 0,
     files: files,
   };
-
+  const response = await fetch(diffUrl);
+  const diff = await response.text();
   const diffResult = parseDiff(diff);
   for (const file of diffResult) {
     if (file.to !== undefined && file.to !== '/dev/null') {

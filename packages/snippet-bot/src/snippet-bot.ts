@@ -329,11 +329,9 @@ ${bodyDetail}`
       // Check on pull requests.
 
       // Parse the PR diff and recognize added/deleted region tags.
-      const response = await fetch(context.payload.pull_request.diff_url);
-      const diff = await response.text();
 
-      const result = parseRegionTagsInPullRequest(
-        diff,
+      const result = await parseRegionTagsInPullRequest(
+        context.payload.pull_request.diff_url,
         context.payload.pull_request.base.repo.owner.login,
         context.payload.pull_request.base.repo.name,
         context.payload.pull_request.base.sha,
