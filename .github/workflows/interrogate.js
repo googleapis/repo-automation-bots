@@ -24,7 +24,12 @@ let goPaths = new Set();
 let bashPaths = new Set();
 for (const change of changes) {
   if (change.startsWith('packages/')) {
-    nodePaths.add(change.split('/')[1]);
+    if (change.startsWith('packages/monitoring-system')) {
+      // projects under packages/monitoring-system are nested
+      nodePaths.add(`monitoring-system/${change.split('/')[2]}`);
+    } else {
+      nodePaths.add(change.split('/')[1]);
+    }
   };
   if (change.startsWith('packages/buildcop/')) {
     goPaths.add('packages/buildcop')

@@ -17,7 +17,9 @@ import assert from 'assert';
 import {MockFirestore} from './mocks/mock-firestore';
 import {MockCloudFunctionsClient} from './mocks/mock-cloud-functions-client';
 import {CloudFunctionsProcessor} from '../../../src/data-processors/cloud-functions-data-processor';
-import {CloudFunction} from 'googleapis-nodejs-functions';
+import {protos} from '@google-cloud/functions';
+
+type CloudFunction = protos.google.cloud.functions.v1.CloudFunction;
 
 describe('Cloud Functions processor', () => {
   describe('collectAndProcess', () => {
@@ -27,7 +29,7 @@ describe('Cloud Functions processor', () => {
      * @param entryPoint entryPoint for CloudFunction
      */
     function getMockGCFObject(entryPoint: string): CloudFunction {
-      return {metadata: {entryPoint: entryPoint}} as CloudFunction;
+      return {entryPoint: entryPoint} as CloudFunction;
     }
 
     let mockFirestore: MockFirestore;
@@ -54,6 +56,7 @@ describe('Cloud Functions processor', () => {
           getMockGCFObject('bot3'),
         ],
         null,
+        null,
       ]);
 
       return processor.collectAndProcess().then(() => {
@@ -75,7 +78,7 @@ describe('Cloud Functions processor', () => {
       });
     });
     it('does not store anything when there are no Cloud Functions', () => {
-      mockFunctionsClient.setMockData([[], null]);
+      mockFunctionsClient.setMockData([[], null, null]);
 
       return processor.collectAndProcess().then(() => {
         const firestoreData = mockFirestore.getMockData();
@@ -103,6 +106,7 @@ describe('Cloud Functions processor', () => {
           getMockGCFObject('bot2'),
           getMockGCFObject('bot3'),
         ],
+        null,
         null,
       ]);
 
@@ -135,7 +139,7 @@ describe('Cloud Functions processor', () => {
     });
 
     it('throws an error if Firestore throws an error', () => {
-      mockFunctionsClient.setMockData([[getMockGCFObject('bot1')], null]);
+      mockFunctionsClient.setMockData([[getMockGCFObject('bot1')], null, null]);
 
       mockFirestore.throwOnCollection();
 
