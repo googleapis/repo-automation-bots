@@ -12,25 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {
-  GCF,
-  CloudFunctionQuery,
-  CloudFunctionsCallback,
-  CloudFunction,
-} from 'googleapis-nodejs-functions';
+import {protos, CloudFunctionsServiceClient} from '@google-cloud/functions';
+type CloudFunction = protos.google.cloud.functions.v1.CloudFunction;
+type ListFunctionsRequest = protos.google.cloud.functions.v1.IListFunctionsRequest;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ReturnValue = [CloudFunction[], any];
+export type ReturnValue = [CloudFunction[], null, any];
 
 /**
- * A mock client to mimic googleapis-nodejs-functions/GCF
+ * A mock client to mimic @google-cloud/functions
  */
-export class MockCloudFunctionsClient extends GCF {
+export class MockCloudFunctionsClient extends CloudFunctionsServiceClient {
   private mockData: ReturnValue;
   private getShouldThrow = false;
 
   constructor(mockData?: ReturnValue) {
     super();
-    this.mockData = mockData || [[], null];
+    this.mockData = mockData || [[], null, null];
   }
 
   /**
@@ -53,17 +51,13 @@ export class MockCloudFunctionsClient extends GCF {
    * @param query parameter is ignored
    * @param callback parameter is ignored
    */
-  getCloudFunctions(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    query?: CloudFunctionQuery,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    callback?: CloudFunctionsCallback
-  ): void | Promise<ReturnValue> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async listFunctions(_options: ListFunctionsRequest) {
     if (this.getShouldThrow) {
       throw new Error('This is a mock error');
     }
-    return new Promise(resolve => {
-      setTimeout(() => resolve(this.mockData), 100); // simulates network delay
-    });
+    // simulates network delay
+    await new Promise(r => setTimeout(r, 100));
+    return this.mockData;
   }
 }
