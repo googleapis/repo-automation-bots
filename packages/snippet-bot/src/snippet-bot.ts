@@ -165,112 +165,113 @@ async function fullScan(context: Context, configuration: Configuration) {
   const repo = context.payload.repository.name;
   const defaultBranch = context.payload.repository.default_branch;
 
-  if (context.payload.issue?.title.includes(FULL_SCAN_ISSUE_TITLE)) {
-    // full scan start
-    const issueNumber = context.payload.issue.number;
+  if (!context.payload.issue?.title.includes(FULL_SCAN_ISSUE_TITLE)) {
+    return;
+  }
+  // full scan start
+  const issueNumber = context.payload.issue.number;
 
-    const url = `https://github.com/${owner}/${repo}/tarball/${defaultBranch}`;
-    const tmpDir = tmp.dirSync();
-    logger.info(`working directory: ${tmpDir.name}`);
+  const url = `https://github.com/${owner}/${repo}/tarball/${defaultBranch}`;
+  const tmpDir = tmp.dirSync();
+  logger.info(`working directory: ${tmpDir.name}`);
 
-    const file = `${tmpDir.name}/${repo}.tar.gz`;
-    // Download the default branch tarball and run full scan.
-    try {
-      await downloadFile(url, file);
-      logger.info(`Downloaded to ${file}`);
-      tar.x({
-        file: file,
-        cwd: tmpDir.name,
-        sync: true,
-      });
-      let archiveDir!: string;
-      for (const f of await pfs.readdir(tmpDir.name)) {
-        const cur = tmpDir.name + '/' + f;
-        const stat = await pfs.lstat(cur);
-        if (stat.isDirectory()) {
-          archiveDir = cur;
-        }
+  const file = `${tmpDir.name}/${repo}.tar.gz`;
+  // Download the default branch tarball and run full scan.
+  try {
+    await downloadFile(url, file);
+    logger.info(`Downloaded to ${file}`);
+    tar.x({
+      file: file,
+      cwd: tmpDir.name,
+      sync: true,
+    });
+    let archiveDir!: string;
+    for (const f of await pfs.readdir(tmpDir.name)) {
+      const cur = tmpDir.name + '/' + f;
+      const stat = await pfs.lstat(cur);
+      if (stat.isDirectory()) {
+        archiveDir = cur;
       }
-      if (archiveDir === undefined) {
-        throw new Error('Failed to extract the archive');
-      }
-      // Determine the short commit hash from the directory name.
-      // We'll use the hash for creating permalink.
-      let commitHash = defaultBranch; // Defaulting to the default branch.
-      const lastDashIndex = archiveDir.lastIndexOf('-');
-      if (lastDashIndex !== -1) {
-        commitHash = archiveDir.substr(lastDashIndex + 1);
-      }
-      logger.info(`Using commit hash "${commitHash}"`);
-      const files = await getFiles(archiveDir, []);
+    }
+    if (archiveDir === undefined) {
+      throw new Error('Failed to extract the archive');
+    }
+    // Determine the short commit hash from the directory name.
+    // We'll use the hash for creating permalink.
+    let commitHash = defaultBranch; // Defaulting to the default branch.
+    const lastDashIndex = archiveDir.lastIndexOf('-');
+    if (lastDashIndex !== -1) {
+      commitHash = archiveDir.substr(lastDashIndex + 1);
+    }
+    logger.info(`Using commit hash "${commitHash}"`);
+    const files = await getFiles(archiveDir, []);
 
-      let mismatchedTags = false;
-      const failureMessages: string[] = [];
+    let mismatchedTags = false;
+    const failureMessages: string[] = [];
 
-      for (const file of files) {
-        if (configuration.ignoredFile(file)) {
-          logger.info('ignoring file from configuration: ' + file);
-          continue;
-        }
-        try {
-          const fileContents = await pfs.readFile(file, 'utf-8');
-          const parseResult = parseRegionTags(
-            fileContents,
-            file.replace(archiveDir + '/', '')
-          );
-          if (!parseResult.result) {
-            mismatchedTags = true;
-            for (const message of parseResult.messages) {
-              // Create a link to the source code at the commit.
-              const linkedMessage = message.replace(
-                /^(.+):(\d+),/,
-                `- [ ] [$1:$2](https://github.com/${owner}/${repo}/blob/${commitHash}/$1#L$2),`
-              );
-              failureMessages.push(linkedMessage);
-            }
-            parseResult.messages.join('\n');
+    for (const file of files) {
+      if (configuration.ignoredFile(file)) {
+        logger.info('ignoring file from configuration: ' + file);
+        continue;
+      }
+      try {
+        const fileContents = await pfs.readFile(file, 'utf-8');
+        const parseResult = parseRegionTags(
+          fileContents,
+          file.replace(archiveDir + '/', '')
+        );
+        if (!parseResult.result) {
+          mismatchedTags = true;
+          for (const message of parseResult.messages) {
+            // Create a link to the source code at the commit.
+            const linkedMessage = message.replace(
+              /^(.+):(\d+),/,
+              `- [ ] [$1:$2](https://github.com/${owner}/${repo}/blob/${commitHash}/$1#L$2),`
+            );
+            failureMessages.push(linkedMessage);
           }
-        } catch (err) {
-          err.message = `Failed to read the file: ${err.message}`;
-          logger.error(err);
-          continue;
+          parseResult.messages.join('\n');
         }
+      } catch (err) {
+        err.message = `Failed to read the file: ${err.message}`;
+        logger.error(err);
+        continue;
       }
-      let bodyDetail = 'Great job! No unmatching region tags found!';
-      if (mismatchedTags) {
-        bodyDetail = failureMessages.join('\n');
-      }
-      await context.github.issues.update({
-        owner: owner,
-        repo: repo,
-        issue_number: issueNumber,
-        body: formatBody(
-          context.payload.issue.body,
-          commentMark,
-          `## snippet-bot scan result
+    }
+    let bodyDetail = 'Great job! No unmatching region tags found!';
+    if (mismatchedTags) {
+      bodyDetail = failureMessages.join('\n');
+    }
+    await context.github.issues.update({
+      owner: owner,
+      repo: repo,
+      issue_number: issueNumber,
+      body: formatBody(
+        context.payload.issue.body,
+        commentMark,
+        `## snippet-bot scan result
 Life is too short to manually check unmatched region tags.
 Here is the result:
 ${bodyDetail}`
-        ),
-      });
-    } catch (err) {
-      err.message = `Failed to scan files: ${err.message}`;
-      logger.error(err);
-      await context.github.issues.update({
-        owner: owner,
-        repo: repo,
-        issue_number: issueNumber,
-        body: formatBody(
-          context.payload.issue.body,
-          commentMark,
-          `## snippet-bot scan result\nFailed running the full scan: ${err}.`
-        ),
-      });
-    } finally {
-      // Clean up the directory.
-      await pfs.rmdir(tmpDir.name, {recursive: true});
-    }
-  } // full scan end.
+      ),
+    });
+  } catch (err) {
+    err.message = `Failed to scan files: ${err.message}`;
+    logger.error(err);
+    await context.github.issues.update({
+      owner: owner,
+      repo: repo,
+      issue_number: issueNumber,
+      body: formatBody(
+        context.payload.issue.body,
+        commentMark,
+        `## snippet-bot scan result\nFailed running the full scan: ${err}.`
+      ),
+    });
+  } finally {
+    // Clean up the directory.
+    await pfs.rmdir(tmpDir.name, {recursive: true});
+  }
 }
 
 async function scanPullRequest(context: Context, configuration: Configuration) {
