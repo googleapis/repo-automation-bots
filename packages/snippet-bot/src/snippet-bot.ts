@@ -117,7 +117,7 @@ function formatViolations(
  */
 function formatChangedFile(change: Change): string {
   const url = `https://github.com/${change.owner}/${change.repo}/blob/${change.sha}/${change.file}#L${change.line}`;
-  return `[\`${change.regionTag}\` in \`${change.file}\`](${url})`;
+  return `\`${change.regionTag}\` in [\`${change.file}\`](${url})`;
 }
 
 async function downloadFile(url: string, file: string) {
