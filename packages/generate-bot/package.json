@@ -39,7 +39,7 @@
     "recursive-readdir": "^2.2.2",
     "rimraf": "^3.0.0",
     "snap-shot-it": "^7.9.0",
-    "typescript": "^4.0.0"
+    "typescript": "~4.1.0"
   },
   "dependencies": {
     "enquirer": "^2.3.2",

@@ -17,10 +17,9 @@
 // check whether type bindings are already published.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
-import {Octokit} from '@octokit/rest';
+import {Application, ProbotOctokit} from 'probot';
 import {IssuesListForRepoResponseData} from '@octokit/types';
-type OctokitType = InstanceType<typeof Octokit>;
+type OctokitType = InstanceType<typeof ProbotOctokit>;
 
 import {logger} from 'gcf-utils';
 

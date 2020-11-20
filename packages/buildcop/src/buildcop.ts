@@ -30,6 +30,7 @@ import {Octokit} from '@octokit/rest';
 import {
   IssuesListForRepoResponseData,
   IssuesListCommentsResponseData,
+  // eslint-disable-next-line node/no-extraneous-import
 } from '@octokit/types';
 
 const ISSUE_LABEL = 'buildcop: issue';
@@ -128,6 +129,7 @@ interface PubSubContext {
 
 // meta comment about the 'any' here: https://github.com/octokit/webhooks.js/issues/277
 export function buildcop(app: Application) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('pubsub.message' as any, async (context: PubSubContext) => {
     const owner = context.payload.organization?.login;
     const repo = context.payload.repository?.name;

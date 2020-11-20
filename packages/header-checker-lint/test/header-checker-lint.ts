@@ -16,17 +16,17 @@
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot} from 'probot';
+import {Probot, createProbot, ProbotOctokit} from 'probot';
 import snapshot from 'snap-shot-it';
 // eslint-disable-next-line node/no-extraneous-import
-import Webhooks from '@octokit/webhooks';
+import {EventPayloads} from '@octokit/webhooks';
 import {readFileSync} from 'fs';
 import nock from 'nock';
 import {describe, it, beforeEach, before} from 'mocha';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
+const TestingOctokit = (Octokit.plugin(config) as {}) as typeof ProbotOctokit;
 
 import myProbotApp from '../src/header-checker-lint';
 
@@ -44,14 +44,14 @@ describe('HeaderCheckerLint', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit as any,
+      Octokit: TestingOctokit,
     });
 
     probot.load(myProbotApp);
   });
 
   describe('opened pull request', () => {
-    let payload: Webhooks.EventNames.PullRequestEvent;
+    let payload: EventPayloads.WebhookPayloadPullRequest;
 
     beforeEach(() => {
       payload = require(resolve(fixturesPath, './pull_request_opened'));
@@ -363,7 +363,7 @@ describe('HeaderCheckerLint', () => {
   });
 
   describe('updated pull request', () => {
-    let payload: Webhooks.EventNames.PullRequestEvent;
+    let payload: EventPayloads.WebhookPayloadPullRequest;
 
     before(() => {
       payload = require(resolve(fixturesPath, './pull_request_synchronized'));

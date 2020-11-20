@@ -14,8 +14,8 @@
 //
 
 /* eslint-disable node/no-unpublished-import */
-import * as firebaseApp from 'firebase/app';
-import * as firebase from 'firebase';
+import firebaseApp from 'firebase/app';
+import firebase from 'firebase';
 /** Required for Firestore capabilities */
 /* eslint-disable node/no-unpublished-import */
 import 'firebase/firestore';

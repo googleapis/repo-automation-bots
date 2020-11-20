@@ -14,7 +14,7 @@
 //
 
 /* eslint-disable node/no-unpublished-import */
-import * as firebase from 'firebase';
+import firebase from 'firebase';
 import * as firebaseui from 'firebaseui';
 import {AuthenticatedFirestore} from './firestore/firestore-client';
 

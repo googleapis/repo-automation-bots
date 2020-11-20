@@ -85,7 +85,7 @@ function handler(app: Application) {
 
       // Unpack the tarball to the directory we just created:
       await fetch(context.payload.release.tarball_url).then(res => {
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
           const dest = tar.x({
             C: unpackPath,
           });
@@ -174,7 +174,7 @@ function handler(app: Application) {
 
     // Unpack the tarball to the directory we just created:
     await fetch(tarballURL).then(res => {
-      return new Promise((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         const dest = tar.x({
           C: unpackPath,
         });
@@ -418,7 +418,7 @@ function execAsync(
   cwd: string,
   env: {[key: string]: string | undefined}
 ) {
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     const subprocess = spawn(cmd, args, {
       env,
       cwd,
