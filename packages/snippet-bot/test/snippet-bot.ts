@@ -233,6 +233,18 @@ describe('snippet-bot', () => {
       diffRequests.done();
     });
 
+    it('quits early for an irelevant issue_comment.edited event', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './pr_event_comment_edited_irelevant'
+      ));
+      await probot.receive({
+        name: 'issue_comment.edited',
+        payload,
+        id: 'abc123',
+      });
+    });
+
     it('responds to refresh checkbox, invalidating the Snippet cache, updating without region tag changes', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       invalidateCacheStub = sandbox.stub(snippetsModule, 'invalidateCache');

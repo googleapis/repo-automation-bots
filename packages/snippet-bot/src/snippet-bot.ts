@@ -475,6 +475,16 @@ function getCommentMark(installationId: string): string {
 
 export = (app: Application) => {
   app.on('issue_comment.edited', async context => {
+    const commentMark = getCommentMark(context.payload.installation.id);
+
+    // If the comment is made by bots, and the comment has the refresh
+    // checkbox checked, we'll proceed.
+    if (
+      !context.payload.comment.body.includes(commentMark) ||
+      !context.payload.comment.body.includes(REFRESH_STRING)
+    ) {
+      return;
+    }
     const repoUrl = context.payload.repository.full_name;
     const configOptions = await getConfigOptions(context);
 
@@ -487,16 +497,6 @@ export = (app: Application) => {
       ...configOptions,
     });
     logger.info({config: configuration});
-    const commentMark = getCommentMark(context.payload.installation.id);
-
-    // If the comment is made by bots, and the comment has the refresh
-    // checkbox checked, we'll proceed.
-    if (
-      !context.payload.comment.body.includes(commentMark) ||
-      !context.payload.comment.body.includes(REFRESH_STRING)
-    ) {
-      return;
-    }
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const prNumber = context.payload.issue.number;
