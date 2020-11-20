@@ -233,16 +233,14 @@ describe('snippet-bot', () => {
       diffRequests.done();
     });
 
-    it('responds to refresh checkbox, invalidating the Snippet cache', async () => {
+    it('responds to refresh checkbox, invalidating the Snippet cache, updating without region tag changes', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       invalidateCacheStub = sandbox.stub(snippetsModule, 'invalidateCache');
-      const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(
         fixturesPath,
         './pr_event_comment_edited'
       ));
       const prResponse = require(resolve(fixturesPath, './pr_response'));
-      const blob = require(resolve(fixturesPath, './failure_blob'));
 
       const requests = nock('https://api.github.com')
         .get(
@@ -252,15 +250,6 @@ describe('snippet-bot', () => {
         .get('/repos/tmatsuo/repo-automation-bots/pulls/14')
         .reply(200, prResponse)
 
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
-        )
-        .reply(200, blob)
-        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
-          snapshot(body);
-          return true;
-        })
-        .reply(200)
         .get(
           '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
@@ -276,7 +265,7 @@ describe('snippet-bot', () => {
 
       const diffRequests = nock('https://github.com')
         .get('/tmatsuo/repo-automation-bots/pull/14.diff')
-        .reply(200, diffResponse);
+        .reply(200, '');
 
       await probot.receive({
         name: 'issue_comment.edited',
