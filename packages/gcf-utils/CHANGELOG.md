@@ -87,6 +87,14 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [6.2.0](https://www.github.com/googleapis/repo-automation-bots/compare/v6.1.4...v6.2.0) (2020-11-18)
+
+
+### Features
+
+* **gcf-utils:** add addOrUpdateIssueComment ([#1118](https://www.github.com/googleapis/repo-automation-bots/issues/1118)) ([448243f](https://www.github.com/googleapis/repo-automation-bots/commit/448243f00c84e7535d63d253777858fd22baf7a3)), closes [#1114](https://www.github.com/googleapis/repo-automation-bots/issues/1114)
+* **gcf-utils:** change the method signature of addOrUpdateIssueComment ([#1131](https://www.github.com/googleapis/repo-automation-bots/issues/1131)) ([700927f](https://www.github.com/googleapis/repo-automation-bots/commit/700927fc4667d29afeaa60a1acdc47a557bcc9d5)), closes [#1130](https://www.github.com/googleapis/repo-automation-bots/issues/1130)
+
 ### [6.1.4](https://www.github.com/googleapis/repo-automation-bots/compare/v6.1.3...v6.1.4) (2020-11-03)
 
 

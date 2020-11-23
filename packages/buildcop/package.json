@@ -29,14 +29,12 @@
   "dependencies": {
     "@octokit/plugin-rest-endpoint-methods": "^4.2.0",
     "@octokit/types": "^5.5.0",
-    "gcf-utils": "^6.1.1",
-    "probot": "^10.9.1",
+    "gcf-utils": "^6.2.0",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
     "@probot/octokit-plugin-config": "^1.0.0",
     "@types/mocha": "^8.0.0",
-    "@types/nock": "^10.0.3",
     "@types/node": "^12.6.1",
     "c8": "^7.1.0",
     "cross-env": "^7.0.0",
@@ -44,7 +42,7 @@
     "mocha": "^8.0.0",
     "nock": "^13.0.0",
     "snap-shot-it": "^7.8.0",
-    "typescript": "^3.5.3"
+    "typescript": "~4.1.0"
   },
   "engines": {
     "node": ">= 12.18.2"

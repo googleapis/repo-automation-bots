@@ -14,16 +14,14 @@
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot} from 'probot';
+import {Probot, createProbot, ProbotOctokit} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
 import * as assert from 'assert';
 import {describe, it, beforeEach} from 'mocha';
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
 import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
+const TestingOctokit = ProbotOctokit.plugin(config);
 
 import {buildcop} from '../src/buildcop';
 const {findTestResults, formatTestCase} = buildcop;
@@ -102,9 +100,8 @@ describe('buildcop', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit as any,
+      Octokit: TestingOctokit,
     });
-
     probot.load(buildcop);
   });
 
@@ -293,7 +290,7 @@ describe('buildcop', () => {
 
       const requests = nock('https://api.github.com');
       await probot.receive({
-        name: 'pubsub.message' as any,
+        name: 'pubsub.message' as '*',
         payload,
         id: 'abc123',
       });
@@ -317,7 +314,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -348,7 +345,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -380,7 +377,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -399,7 +396,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -419,7 +416,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -439,7 +436,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -453,7 +450,7 @@ describe('buildcop', () => {
         const scopes = [nockIssues('java-vision'), nockNewIssue('java-vision')];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -470,7 +467,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -487,7 +484,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -507,7 +504,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -549,7 +546,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -594,7 +591,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -639,7 +636,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -653,7 +650,7 @@ describe('buildcop', () => {
         const scopes = [nockIssues('golang-samples')];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -696,7 +693,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -725,7 +722,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -757,7 +754,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -786,7 +783,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -813,7 +810,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -849,7 +846,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -879,7 +876,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -913,7 +910,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -941,7 +938,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -974,7 +971,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -1032,7 +1029,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -1071,7 +1068,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -1116,7 +1113,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -1133,7 +1130,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -1163,7 +1160,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -1195,7 +1192,7 @@ describe('buildcop', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as any,
+          name: 'pubsub.message' as '*',
           payload,
           id: 'abc123',
         });
@@ -1226,7 +1223,7 @@ describe('buildcop', () => {
           ];
 
           await probot.receive({
-            name: 'pubsub.message' as any,
+            name: 'pubsub.message' as '*',
             payload,
             id: 'abc123',
           });
@@ -1264,7 +1261,7 @@ describe('buildcop', () => {
           ];
 
           await probot.receive({
-            name: 'pubsub.message' as any,
+            name: 'pubsub.message' as '*',
             payload,
             id: 'abc123',
           });
@@ -1293,7 +1290,7 @@ describe('buildcop', () => {
           ];
 
           await probot.receive({
-            name: 'pubsub.message' as any,
+            name: 'pubsub.message' as '*',
             payload,
             id: 'abc123',
           });
@@ -1332,7 +1329,7 @@ describe('buildcop', () => {
           ];
 
           await probot.receive({
-            name: 'pubsub.message' as any,
+            name: 'pubsub.message' as '*',
             payload,
             id: 'abc123',
           });

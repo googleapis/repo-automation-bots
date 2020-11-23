@@ -233,6 +233,63 @@ describe('snippet-bot', () => {
       diffRequests.done();
     });
 
+    it('quits early for an irelevant issue_comment.edited event', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './pr_event_comment_edited_irelevant'
+      ));
+      await probot.receive({
+        name: 'issue_comment.edited',
+        payload,
+        id: 'abc123',
+      });
+    });
+
+    it('responds to refresh checkbox, invalidating the Snippet cache, updating without region tag changes', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      invalidateCacheStub = sandbox.stub(snippetsModule, 'invalidateCache');
+      const payload = require(resolve(
+        fixturesPath,
+        './pr_event_comment_edited'
+      ));
+      const prResponse = require(resolve(fixturesPath, './pr_response'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
+        )
+        .reply(200, config)
+        .get('/repos/tmatsuo/repo-automation-bots/pulls/14')
+        .reply(200, prResponse)
+
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
+        )
+        .reply(200, [])
+        .post(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200);
+
+      const diffRequests = nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+        .reply(200, '');
+
+      await probot.receive({
+        name: 'issue_comment.edited',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(invalidateCacheStub);
+      requests.done();
+      diffRequests.done();
+    });
+
     it('ignores 404 error upon label deletion', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));

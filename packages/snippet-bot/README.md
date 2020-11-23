@@ -12,6 +12,7 @@ This bot needs read/write permissions on PRs, Issues and Checks. Also make sure 
 - Listening to events:
   - PRs
   - Issues
+  - Issue comment
 
 After installing the bot, you have to have `.github/snippet-bot.yml` for actually enabling it.
 
@@ -51,8 +52,8 @@ current PR.
 
 ## Refreshing on PRs
 
-You can add `snippet-bot:force-run` label on PRs for refreshing the
-result made by the bot.
+You can add `snippet-bot:force-run` label on PRs, or check a checkbox
+at the end of the comment for refreshing the result made by the bot.
 
 ## Full scan
 If you open an issue with `snippet-bot full scan` in its title, the

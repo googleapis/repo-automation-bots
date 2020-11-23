@@ -11,19 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
-const GenerateBot = require('./main.js');
-const path = require('path');
+import * as GenerateBot from './main';
 
-const relativePath = path.resolve(
-  '../repo-automation-bots/packages/generate-bot/templates'
-);
 async function prompt() {
-  GenerateBot.creatingBotFiles(
-    relativePath,
-    await GenerateBot.collectUserInput()
-  );
+  GenerateBot.creatingBotFiles(await GenerateBot.collectUserInput());
 }
 
 prompt();
