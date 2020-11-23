@@ -97,6 +97,13 @@ export enum TriggerType {
   UNKNOWN = 'Unknown',
 }
 
+/**
+ * It creates a comment string used for `addOrUpdateissuecomment`.
+ */
+export const getCommentMark = (installationId: number): string => {
+  return `<!-- probot comment [${installationId}]-->`;
+};
+
 export const addOrUpdateIssueComment = async (
   github: ProbotOctokitType,
   owner: string,
@@ -105,7 +112,7 @@ export const addOrUpdateIssueComment = async (
   installationId: number,
   commentBody: string
 ) => {
-  const commentMark = `<!-- probot comment [${installationId}]-->`;
+  const commentMark = getCommentMark(installationId);
   const listCommentsResponse = await github.issues.listComments({
     owner: owner,
     repo: repo,
