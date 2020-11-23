@@ -6,11 +6,7 @@ This bot uses nock for mocking requests to GitHub, and snap-shot-it for capturin
 
 ## Running tests:
 
-`npm run test`
-
-## To update snapshots:
-
-`npm run test:snap`
+`npm test`
 
 ## Contributing
 

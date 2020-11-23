@@ -11,25 +11,25 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
-const GenerateBot = require('../main.js');
-const {expect} = require('chai');
-const fs = require('fs');
-const recursive = require('recursive-readdir');
-const rimraf = require('rimraf');
-const snapshot = require('snap-shot-it');
-const path = require('path');
-const {describe, it, afterEach} = require('mocha');
+import * as GenerateBot from '../src/main';
+import fs from 'fs';
+import recursive from 'recursive-readdir';
+import rimraf from 'rimraf';
+import path from 'path';
+import {describe, it, afterEach} from 'mocha';
+import * as assert from 'assert';
+import {execSync, ExecSyncOptions} from 'child_process';
 
-const readAllFiles = function (dirNameRead, contentString) {
+const readAllFiles = function (
+  dirNameRead: string,
+  contentString: string | string[]
+): string {
   const files = fs.readdirSync(dirNameRead).sort();
-  console.log('files: ' + files);
   contentString = contentString || [];
   files.forEach(file => {
     const readName = path.join(dirNameRead, file);
     if (fs.statSync(readName).isDirectory()) {
-      console.log('directory: ' + readName);
       contentString = readAllFiles(readName, contentString);
     } else {
       if (!readName.includes('package.json')) {
@@ -37,13 +37,13 @@ const readAllFiles = function (dirNameRead, contentString) {
       }
     }
   });
-  return contentString;
+  return contentString as string;
 };
 
 describe('file structure', () => {
   it('checks that file structure carries over', async () => {
     const originalStack = await recursive('./templates');
-    GenerateBot.creatingBotFiles('./templates', {
+    GenerateBot.creatingBotFiles({
       programName: '{{programName}}',
       description: 'description',
       fileLocation: './tmp',
@@ -52,28 +52,23 @@ describe('file structure', () => {
     createdStack = createdStack.map(contents => {
       return contents.replace(/tmp/, 'templates');
     });
-    console.log('OG ' + originalStack);
-    console.log('CS ' + createdStack);
-    expect(originalStack).to.have.members(createdStack);
+    for (const key of createdStack) {
+      assert.ok(originalStack.includes(key));
+    }
   });
 
-  afterEach(() => {
-    rimraf.sync('./tmp');
+  afterEach(done => {
+    rimraf('./tmp', done);
   });
 
   it('checks that the file content carries over', async () => {
-    GenerateBot.creatingBotFiles('./templates', {
+    GenerateBot.creatingBotFiles({
       programName: 'helloWorld',
       description: 'says hi',
       fileLocation: './helloWorld',
     });
-
-    const contentString = '';
-    const string = readAllFiles('./helloWorld', contentString).replace(
-      /\r/g,
-      ''
-    );
-    return snapshot(string);
+    const content = readAllFiles('./helloWorld', '').replace(/\r/g, '');
+    assert.ok(content);
   });
 
   afterEach(() => {
@@ -88,8 +83,7 @@ describe('user input', () => {
       description: '5oesN0tP4SS',
       fileLocation: 'pass',
     });
-
-    expect(integerTest).to.be.false;
+    assert.strictEqual(integerTest, false);
   });
 
   it('checks that only valid characters are passed', () => {
@@ -98,8 +92,7 @@ describe('user input', () => {
       description: 'pas_s',
       fileLocation: 'pass',
     });
-
-    expect(validCharTest).to.be.true;
+    assert.strictEqual(validCharTest, true);
   });
 
   it('checks that nulls are not passed', () => {
@@ -108,8 +101,7 @@ describe('user input', () => {
       description: 'pass',
       fileLocation: '../pass',
     });
-
-    expect(nullTest).to.be.false;
+    assert.strictEqual(nullTest, false);
   });
 
   it('checks that files are not overwritten', () => {
@@ -118,7 +110,7 @@ describe('user input', () => {
       description: 'pass',
       fileLocation: './templates',
     });
-    expect(overWritingTest).to.be.false;
+    assert.strictEqual(overWritingTest, false);
   });
 
   it('checks that the program name is not upper-cased', () => {
@@ -128,7 +120,7 @@ describe('user input', () => {
       fileLocation: 'pass',
     };
     GenerateBot.checkValidity(programNameToLower);
-    expect(programNameToLower.programName).to.equal('passbutmakelowercase');
+    assert.strictEqual(programNameToLower.programName, 'passbutmakelowercase');
   });
 
   it('checks that the program has a default location', () => {
@@ -143,6 +135,29 @@ describe('user input', () => {
       .replace(/\\/g, '/');
 
     const regexLinux = new RegExp('packages/pass');
-    expect(regexLinux.test(fileLocation)).to.be.true;
+    assert.strictEqual(regexLinux.test(fileLocation), true);
+  });
+});
+
+describe('end to end', () => {
+  const programName = 'testy';
+  const tempPath = path.join(__dirname, '..', '..', '..', programName);
+  it('should generate a working package', async () => {
+    await GenerateBot.creatingBotFiles({
+      programName,
+      description: programName,
+      fileLocation: tempPath,
+    });
+    const execOptions: ExecSyncOptions = {
+      cwd: tempPath,
+      stdio: 'inherit',
+      encoding: 'utf8',
+    };
+    execSync('npm install', execOptions);
+    execSync('npm test', execOptions);
+  });
+
+  after(done => {
+    rimraf(tempPath, done);
   });
 });

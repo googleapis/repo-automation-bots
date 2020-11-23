@@ -3,13 +3,13 @@
 > A command-line script that generates the scaffolding for a Github Probot application. 
 > The script will generate a working probot application that listens to Issues and PRs.
 
-## Install dependencies
+## Generate a bot
 
-Run ```npm install``` at the packages/ directory level. 
-
-## Run the bot
-
-```npm run generate-bot```
+```sh
+$ npm install
+$ npm run compile
+$ npm run generate-bot
+```
 
 ## Setup
 
@@ -23,20 +23,10 @@ You may only use alphabetical letters, hyphens, underscores, and spaces in your 
 
 ## Testing
 
-This bot uses [snap-shot-it][snap-shot-it] for capturing responses; This allows
-updates to the API surface to be treated as a visual diff, rather than tediously
-asserting against each field.
-
 Running tests:
 
 ```sh
-npm run test
-```
-
-To update snapshots:
-
-```sh
-npm run test:snap
+npm test
 ```
 
 ## Contributing
@@ -53,5 +43,4 @@ Apache 2.0 © 2019 Google Inc.
 [probot]: https://github.com/probot/probot
 [github-app-link]: https://github.com/apps/license-header-lint-gcf
 [nock]: https://www.npmjs.com/package/nock
-[snap-shot-it]: https://www.npmjs.com/package/snap-shot-it
 [contributing-guide]: https://github.com/googleapis/repo-automation-bots/blob/master/CONTRIBUTING.md
