@@ -111,7 +111,7 @@ export function handler(app: Application) {
     }
   );
 
-  app.on('schedule.repository' as any, async c => {
+  app.on('schedule.repository' as '*', async c => {
     const owner = c.payload.organization.login;
     const repo = c.payload.repository.name;
 

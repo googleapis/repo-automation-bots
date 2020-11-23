@@ -12,20 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* eslint-disable @typescript-eslint/no-var-requires */
-
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import path from 'path';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, Context, createProbot} from 'probot';
+import {Probot, Context, createProbot, ProbotOctokit} from 'probot';
 import * as sinon from 'sinon';
-import * as labelSync from '../src/label-sync';
 import * as assert from 'assert';
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
 import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
+import * as labelSync from '../src/label-sync';
+
+const TestingOctokit = ProbotOctokit.plugin(config);
 
 nock.disableNetConnect();
 const fixturesPath = path.resolve(__dirname, '../../test/fixtures');
@@ -83,7 +80,7 @@ describe('Label Sync', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit as any,
+      Octokit: TestingOctokit,
     });
 
     probot.load(labelSync.handler);
@@ -112,7 +109,7 @@ describe('Label Sync', () => {
       nockLabelCreate(newLabels.labels.length + 1),
     ];
     await probot.receive({
-      name: 'repository.created' as any,
+      name: 'repository.created' as '*',
       payload,
       id: 'abc123',
     });
@@ -146,7 +143,7 @@ describe('Label Sync', () => {
       nockLabelDelete(labelName),
     ];
     await probot.receive({
-      name: 'repository.created' as any,
+      name: 'repository.created' as '*',
       payload,
       id: 'abc123',
     });
@@ -164,7 +161,7 @@ describe('Label Sync', () => {
       nockLabelCreate(1),
       nockLabelUpdate(labelName),
     ];
-    await probot.receive({name: 'label.deleted' as any, payload, id: 'abc123'});
+    await probot.receive({name: 'label.deleted', payload, id: 'abc123'});
     scopes.forEach(s => s.done());
   });
 
@@ -190,7 +187,7 @@ describe('Label Sync', () => {
       nockLabelCreate(newLabels.labels.length),
     ];
     await probot.receive({
-      name: 'repository.created' as any,
+      name: 'repository.created',
       payload,
       id: 'abc123',
     });
@@ -205,7 +202,7 @@ describe('Label Sync', () => {
     ];
 
     await probot.receive({
-      name: 'schedule.repository' as any,
+      name: 'schedule.repository' as '*',
       payload: {
         cron_org: 'Codertocat',
         organization: {login: 'Codertocat'},
@@ -228,7 +225,7 @@ describe('Label Sync', () => {
       nockLabelCreate(newLabels.labels.length + 1),
     ];
     await probot.receive({
-      name: 'repository.created' as any,
+      name: 'repository.created',
       payload,
       id: 'abc123',
     });
@@ -246,7 +243,7 @@ describe('Label Sync', () => {
       './repository_created.json'
     ));
     await probot.receive({
-      name: 'repository.created' as any,
+      name: 'repository.created',
       payload,
       id: 'abc123',
     });
