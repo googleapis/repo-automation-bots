@@ -16,15 +16,13 @@
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot} from 'probot';
+import {Probot, createProbot, ProbotOctokit} from 'probot';
 import {describe, it, beforeEach} from 'mocha';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
-// eslint-disable-next-line node/no-extraneous-import
 import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
+const TestingOctokit = ProbotOctokit.plugin(config);
 
 import myProbotApp from '../src/conventional-commit-lint';
 
@@ -42,9 +40,8 @@ describe('ConventionalCommitLint', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit as any,
+      Octokit: TestingOctokit,
     });
-
     probot.load(myProbotApp);
   });
 
