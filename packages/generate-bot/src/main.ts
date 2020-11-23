@@ -11,19 +11,22 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
-const {prompt} = require('enquirer');
-const Handlebars = require('handlebars');
-const fs = require('fs');
-const path = require('path');
-const process = require('process');
+import {prompt} from 'enquirer';
+import Handlebars from 'handlebars';
+import fs from 'fs';
+import path from 'path';
+import process from 'process';
 
-exports.checkValidity = function (testString) {
-  let isValid = true;
-  const relativePath = path.resolve('./packages');
+export interface ProgramOptions {
+  programName: string;
+  description: string;
+  fileLocation: string;
+}
+
+export function checkValidity(opts: ProgramOptions) {
   const validName = /[^-A-Za-z_\s]+/;
-  let string = JSON.stringify(testString);
+  let string = JSON.stringify(opts);
   string = string
     .replace('{"programName":', '')
     .replace(',"description":', '')
@@ -31,46 +34,34 @@ exports.checkValidity = function (testString) {
     .replace(/"/g, '')
     .replace(/}$/, '');
 
-  console.log(string);
   if (validName.test(string)) {
-    isValid = false;
     console.log(
       'You used an invalid character, like an integer. Please try again.'
     );
-    return isValid;
+    return false;
   }
 
-  if (isValid && !testString.programName) {
-    isValid = false;
+  if (!opts.programName) {
     console.log('You forgot to name your program. Please try again.');
-    return isValid;
+    return false;
   }
 
-  if (isValid && !testString.fileLocation) {
-    testString.fileLocation = path.join(relativePath, testString.programName);
+  const relativePath = path.join(__dirname, '..', '..', '..');
+  if (!opts.fileLocation) {
+    opts.fileLocation = path.join(relativePath, opts.programName);
   }
 
-  if (isValid && fs.existsSync(path.join(testString.fileLocation))) {
-    isValid = false;
+  if (fs.existsSync(path.join(opts.fileLocation))) {
     console.log('Your progam name and location is not unique. Please rename.');
-    return isValid;
+    return false;
   }
+  opts.programName = opts.programName.toLowerCase();
+  return true;
+}
 
-  if (
-    isValid &&
-    testString.programName &&
-    testString.programName.charAt(0) ===
-      testString.programName.charAt(0).toUpperCase()
-  ) {
-    testString.programName = testString.programName.toLowerCase();
-  }
-
-  return isValid;
-};
-
-exports.collectUserInput = async function () {
+export async function collectUserInput(): Promise<ProgramOptions> {
   let isValid = false;
-  let input = null;
+  let input: ProgramOptions;
   while (!isValid) {
     input = await prompt([
       {
@@ -89,25 +80,27 @@ exports.collectUserInput = async function () {
         message: `This package will be saved in /packages/yourProgramName unless you specify another location and directory name here relative to ${process.cwd()} : `,
       },
     ]);
-
-    isValid = exports.checkValidity(input);
+    isValid = checkValidity(input);
   }
+  return input!;
+}
 
-  return input;
-};
-
-exports.creatingBotFiles = function (dirname, data) {
-  fs.mkdirSync(`${data.fileLocation}`);
-  console.log(`${data.fileLocation}` + ' generated');
-
-  const mkDir = `${data.fileLocation}`;
-
-  const readAllFiles = function (dirNameRead, dirNameWrite) {
+/**
+ * Copy a set of templates, and render a new bot on disk.
+ * @param templatePath The fully qualified path to the template project to be copied
+ * @param options Options for creating the new bot
+ */
+export function creatingBotFiles(options: ProgramOptions) {
+  console.log(`Creating new folder ${options.fileLocation}`);
+  fs.mkdirSync(options.fileLocation);
+  const mkDir = options.fileLocation;
+  const readAllFiles = function (dirNameRead: string, dirNameWrite: string) {
+    console.log(`copying from ${dirNameRead} to ${dirNameWrite}...`);
     const files = fs.readdirSync(dirNameRead);
     files.forEach(file => {
       const fileName = file.toString();
       const fileNameTemplate = Handlebars.compile(fileName);
-      const fileNameResult = fileNameTemplate(data);
+      const fileNameResult = fileNameTemplate(options);
       const readName = path.join(dirNameRead, file);
       const writeName = path.join(dirNameWrite, fileNameResult);
       if (fs.statSync(readName).isDirectory()) {
@@ -117,11 +110,12 @@ exports.creatingBotFiles = function (dirname, data) {
       } else {
         const fileContents = fs.readFileSync(readName);
         const template = Handlebars.compile(fileContents.toString());
-        const result = template(data);
+        const result = template(options);
         console.log(writeName + ' generated');
         fs.writeFileSync(writeName, result);
       }
     });
   };
-  readAllFiles(dirname, mkDir);
-};
+  const templatePath = path.join(__dirname, '..', '..', 'templates');
+  readAllFiles(templatePath, mkDir);
+}

@@ -2,48 +2,42 @@
   "name": "generate-bot",
   "version": "1.1.0",
   "description": "generate new repo-automation-bots 🤖",
-  "main": "index.js",
+  "main": "build/src/run.js",
   "private": true,
   "files": [
     "templates/",
-    "main.js",
-    "run.js"
+    "build/src"
   ],
   "scripts": {
     "lint": "gts check",
     "fix": "gts fix",
-    "test": "c8 mocha",
-    "test:snap": "SNAPSHOT_UPDATE=1 npm test",
-    "start": "",
-    "start:local": "node ./build/src/local.js"
+    "pretest": "npm run compile",
+    "test": "c8 mocha build/test --timeout 60000",
+    "compile": "tsc",
+    "generate-bot": "node build/src/run.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/sofisl/generate-bot.git"
-  },
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
   "keywords": [
     "robot",
     "generator"
   ],
   "author": "Google LLC",
   "license": "Apache-2.0",
-  "bugs": {
-    "url": "https://github.com/sofisl/generate-bot/issues"
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "dependencies": {
+    "enquirer": "^2.3.2",
+    "handlebars": "^4.5.1"
   },
-  "homepage": "https://github.com/sofisl/generate-bot#readme",
   "devDependencies": {
+    "@types/mocha": "^8.0.4",
+    "@types/recursive-readdir": "^2.2.0",
+    "@types/rimraf": "^3.0.0",
     "c8": "^7.1.0",
-    "chai": "^4.2.0",
     "gts": "^3.0.0",
     "mocha": "^8.0.0",
     "recursive-readdir": "^2.2.2",
     "rimraf": "^3.0.0",
-    "snap-shot-it": "^7.9.0",
-    "typescript": "^4.0.0"
-  },
-  "dependencies": {
-    "enquirer": "^2.3.2",
-    "expect": "^26.0.0",
-    "handlebars": "^4.5.1"
+    "typescript": "~4.1.0"
   }
 }
