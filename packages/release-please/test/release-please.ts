@@ -16,35 +16,18 @@ import myProbotApp from '../src/release-please';
 import {Runner} from '../src/runner';
 import {describe, it, beforeEach} from 'mocha';
 import {resolve} from 'path';
-
-// We provide our own GitHub instance, similar to
-// the one used by gcf-utils, this allows us to turn off
-// methods like retry, and to use @octokit/rest
-// as the base class:
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot} from 'probot';
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
+import {Probot, createProbot, ProbotOctokit} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
-
 import * as fs from 'fs';
 import assert, {fail} from 'assert';
-import {GitHubRelease} from 'release-please/build/src/github-release';
-import {ReleasePR} from 'release-please/build/src/release-pr';
-import {JavaYoshi} from 'release-please/build/src/releasers/java-yoshi';
-import {Ruby} from 'release-please/build/src/releasers/ruby';
-
-// eslint-disable-next-line node/no-unpublished-import
+import {GitHubRelease, ReleasePR, JavaYoshi, Ruby} from 'release-please';
 import nock from 'nock';
+
+const TestingOctokit = ProbotOctokit.plugin(config);
 nock.disableNetConnect();
-
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
-
-// TODO: stop disabling warn once the following upstream patch is landed:
-// https://github.com/probot/probot/pull/926
-global.console.warn = () => {};
 
 describe('ReleasePleaseBot', () => {
   let probot: Probot;
@@ -52,10 +35,8 @@ describe('ReleasePleaseBot', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      Octokit: TestingOctokit as any,
+      Octokit: TestingOctokit,
     });
-
     probot.load(myProbotApp);
   });
 
@@ -323,8 +304,7 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         // See: https://github.com/octokit/webhooks.js/issues/277
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'schedule.repository' as any,
+        name: 'schedule.repository' as '*',
         payload,
         id: 'abc123',
       });
@@ -357,9 +337,7 @@ describe('ReleasePleaseBot', () => {
         .reply(200);
 
       await probot.receive({
-        // see: https://github.com/probot/probot/issues/1367
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'pull_request.labeled' as any,
+        name: 'pull_request.labeled',
         payload,
         id: 'abc123',
       });
@@ -374,9 +352,7 @@ describe('ReleasePleaseBot', () => {
       };
 
       await probot.receive({
-        // see: https://github.com/probot/probot/issues/1367
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'pull_request.labeled' as any,
+        name: 'pull_request.labeled',
         payload,
         id: 'abc123',
       });

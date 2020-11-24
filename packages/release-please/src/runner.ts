@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO: fix these imports when release-please exports types from the root
-import {ReleasePR} from 'release-please/build/src/release-pr';
-import {GitHubRelease} from 'release-please/build/src/github-release';
+import {ReleasePR, GitHubRelease} from 'release-please';
 
 export class Runner {
   static runner = async (pr: ReleasePR) => {
