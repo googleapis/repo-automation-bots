@@ -592,6 +592,12 @@ export = (app: Application) => {
       'pull_request.synchronize',
     ],
     async context => {
+      if (context.payload.pull_request.state === 'closed') {
+        logger.info(
+          `The pull request ${context.payload.pull_request.url} is closed, exiting.`
+        );
+        return;
+      }
       const repoUrl = context.payload.repository.full_name;
       const configOptions = await getConfigOptions(context);
 
