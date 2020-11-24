@@ -303,7 +303,7 @@ handler.checkPRMergeability = async function checkPRMergeability(
             wp.branchProtection,
             wp.label,
             wp.author,
-            github as any
+            github
           );
           if (remove || wp.state === 'stop') {
             await handler.removePR(wp.url);
@@ -314,7 +314,7 @@ handler.checkPRMergeability = async function checkPRMergeability(
                 wp.number,
                 wp.label,
                 wp.reactionId,
-                github as any
+                github
               );
             } catch (err) {
               logger.warn(
@@ -343,7 +343,7 @@ handler.checkPRMergeability = async function checkPRMergeability(
 function handler(app: Application) {
   //meta-note about the schedule.repository as any; currently GH does not support this type, see
   //open issue for a fix: https://github.com/octokit/webhooks.js/issues/277
-  app.on('schedule.repository' as any, async context => {
+  app.on('schedule.repository' as '*', async context => {
     const watchedPRs = await handler.listPRs();
     if (context.payload.cleanUp === true) {
       logger.info('Entering clean up cron job');

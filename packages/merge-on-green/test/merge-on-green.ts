@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot} from 'probot';
+import {Probot, createProbot, ProbotOctokit} from 'probot';
 import {resolve} from 'path';
 import nock from 'nock';
 import sinon, {SinonStub} from 'sinon';
@@ -22,13 +22,10 @@ import handler from '../src/merge-on-green';
 import {CheckStatus, Reviews, Comment} from '../src/merge-logic';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
 import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
 
+const TestingOctokit = ProbotOctokit.plugin(config);
 const testingOctokitInstance = new TestingOctokit({auth: 'abc123'});
-
 const sandbox = sinon.createSandbox();
 
 interface HeadSha {
@@ -180,13 +177,11 @@ describe('merge-on-green', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit as any,
+      Octokit: TestingOctokit,
     });
 
     const app = probot.load(handler);
-    app.auth = async function (installationId: number) {
-      return testingOctokitInstance;
-    } as any;
+    (app.auth as Function) = async () => testingOctokitInstance;
   });
 
   afterEach(() => {
@@ -242,7 +237,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -275,7 +270,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -302,7 +297,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -331,7 +326,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -358,7 +353,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -391,7 +386,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -413,7 +408,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -446,7 +441,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -479,7 +474,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -516,7 +511,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -529,7 +524,7 @@ describe('merge-on-green', () => {
         const scopes = [getRateLimit(0)];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -579,7 +574,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -631,7 +626,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -683,7 +678,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -732,7 +727,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -785,7 +780,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner'},
           id: 'abc123',
         });
@@ -838,7 +833,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner', cleanUp: true},
           id: 'abc123',
         });
@@ -856,7 +851,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner', cleanUp: true},
           id: 'abc123',
         });
@@ -874,7 +869,7 @@ describe('merge-on-green', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner', cleanUp: true},
           id: 'abc123',
         });
@@ -887,7 +882,7 @@ describe('merge-on-green', () => {
         const scopes = [getPRCleanUp('open', false), getLabels('automerge')];
 
         await probot.receive({
-          name: 'schedule.repository' as any,
+          name: 'schedule.repository' as '*',
           payload: {org: 'testOwner', cleanUp: true},
           id: 'abc123',
         });
