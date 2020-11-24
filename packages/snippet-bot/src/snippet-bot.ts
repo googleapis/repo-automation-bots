@@ -287,7 +287,10 @@ async function scanPullRequest(
   const repo = context.payload.repository.name;
 
   // If the head repo is null, we can not proceed.
-  if (context.payload.pull_request.head.repo === undefined) {
+  if (
+    context.payload.pull_request.head.repo === undefined ||
+    context.payload.pull_request.head.repo === null
+  ) {
     logger.info(
       `The head repo is undefined for ${context.payload.pull_request.url}, exiting.`
     );
