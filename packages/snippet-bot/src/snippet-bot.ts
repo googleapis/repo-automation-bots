@@ -286,6 +286,17 @@ async function scanPullRequest(
   const owner = context.payload.repository.owner.login;
   const repo = context.payload.repository.name;
 
+  // If the head repo is null, we can not proceed.
+  if (
+    context.payload.pull_request.head.repo === undefined ||
+    context.payload.pull_request.head.repo === null
+  ) {
+    logger.info(
+      `The head repo is undefined for ${context.payload.pull_request.url}, exiting.`
+    );
+    return;
+  }
+
   // Parse the PR diff and recognize added/deleted region tags.
   const result = await parseRegionTagsInPullRequest(
     context.payload.pull_request.diff_url,

@@ -111,6 +111,25 @@ describe('snippet-bot', () => {
       diffRequests.done();
     });
 
+    it('quits early for PRs with null head', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const payload = require(resolve(fixturesPath, './pr_event_null_head'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
+        )
+        .reply(200, config);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+    });
+
     it('sets a "failure" context on PR without a warning about removal of region tags in use', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
