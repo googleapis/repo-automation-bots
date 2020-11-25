@@ -315,8 +315,8 @@ export function handler(app: Application) {
       pull_number,
     });
     const labels = context.payload.issue
-        ? context.payload.issue.labels
-        : context.payload.pull_request.labels;
+      ? context.payload.issue.labels
+      : context.payload.pull_request.labels;
 
     // If user has turned on path labels by configuring {path: {pullrequest: false, }}
     // By default, this feature is turned off

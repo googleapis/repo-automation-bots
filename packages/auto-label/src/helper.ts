@@ -13,15 +13,13 @@
 // limitations under the License.
 //
 
-// eslint-disable-next-line node/no-extraneous-import
-import {Context} from 'probot';
 import {logger} from 'gcf-utils';
 
 // *** Helper functions for all labels ***
 /**
  * Checks whether the intended label already exists
  */
-export function labelExists(labels: Label[], new_label: string): Label|null {
+export function labelExists(labels: Label[], new_label: string): Label | null {
   for (const label of labels) {
     if (label.name === new_label) {
       logger.info(`Exiting: label ${new_label} already exists`);
@@ -73,8 +71,8 @@ export interface DriftRepo {
 // For example, an issue titled `spanner/transactions: TestSample failed` would
 // be labeled `api: spanner`.
 export function autoDetectLabel(
-    apis: DriftApi[] | null,
-    title: string
+  apis: DriftApi[] | null,
+  title: string
 ): string | undefined {
   if (!apis || !title) {
     return undefined;
@@ -117,7 +115,7 @@ export function autoDetectLabel(
   // Some APIs have "cloud" before the name (e.g. cloudkms and cloudiot).
   const possibleLabels = [`api: ${firstPart}`, `api: cloud${firstPart}`];
   return apis.find(api => possibleLabels.indexOf(api.github_label) > -1)
-      ?.github_label;
+    ?.github_label;
 }
 
 // *** Helper functions for language and path based labels ***
