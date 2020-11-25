@@ -16,13 +16,8 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Context} from 'probot';
 import {logger} from 'gcf-utils';
-import {DriftApi, LanguageConfig, PathConfig} from './auto-label';
 
 // *** Helper functions for all labels ***
-export interface Label {
-  name: string;
-}
-
 /**
  * Checks whether the intended label already exists
  */
@@ -37,6 +32,40 @@ export function labelExists(labels: Label[], new_label: string): Label|null {
 }
 
 // *** Helper functions for product based labels ***
+export interface PathConfig {
+  [index: string]: string | PathConfig;
+}
+
+export interface LanguageConfig {
+  pullrequest?: boolean;
+  labelprefix?: string;
+  extensions?: {
+    [index: string]: string[];
+  };
+  paths?: PathConfig;
+}
+
+export interface Config {
+  product?: boolean;
+  path?: {
+    pullrequest?: boolean;
+    labelprefix?: string;
+  };
+  language?: LanguageConfig;
+}
+
+export interface Label {
+  name: string;
+}
+
+export interface DriftApi {
+  github_label: string;
+}
+
+export interface DriftRepo {
+  github_label: string;
+  repo: string;
+}
 
 // autoDetectLabel tries to detect the right api: label based on the issue
 // title.

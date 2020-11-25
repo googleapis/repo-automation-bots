@@ -17,29 +17,7 @@ import {Storage} from '@google-cloud/storage';
 import {Application, Context} from 'probot';
 import {logger} from 'gcf-utils';
 import * as helper from './helper';
-
-// TODO: nicole move these interfaces into helper?
-export interface PathConfig {
-  [index: string]: string | PathConfig;
-}
-
-export interface LanguageConfig {
-  pullrequest?: boolean;
-  labelprefix?: string;
-  extensions?: {
-    [index: string]: string[];
-  };
-  paths?: PathConfig;
-}
-
-export interface Config {
-  product?: boolean;
-  path?: {
-    pullrequest?: boolean;
-    labelprefix?: string;
-  };
-  language?: LanguageConfig;
-}
+import {DriftRepo, DriftApi, Label, Config} from './helper';
 
 // Default app configs if user didn't specify a .config
 const LABEL_PRODUCT_BY_DEFAULT = true;
@@ -54,15 +32,6 @@ const DEFAULT_CONFIGS = {
 };
 
 import colorsData from './colors.json';
-
-export interface DriftRepo {
-  github_label: string;
-  repo: string;
-}
-
-export interface DriftApi {
-  github_label: string;
-}
 
 const storage = new Storage();
 
@@ -145,7 +114,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       const foundAPIName = helper.labelExists(labelsOnIssue, githubLabel);
 
       const cleanUpOtherLabels = labelsOnIssue.filter(
-        (element: helper.Label) =>
+        (element: Label) =>
           element.name.startsWith('api') &&
           element.name !== foundAPIName?.name &&
           element.name !== autoDetectedLabel
@@ -190,7 +159,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     }
   }
 
-  let foundSamplesTag: helper.Label | undefined;
+  let foundSamplesTag: Label | undefined;
   if (labelsOnIssue) {
     foundSamplesTag = labelsOnIssue.find(e => e.name === 'samples');
   }
