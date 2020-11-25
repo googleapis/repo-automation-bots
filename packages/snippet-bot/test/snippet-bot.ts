@@ -115,19 +115,11 @@ describe('snippet-bot', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './pr_event_null_head'));
 
-      const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, config);
-
       await probot.receive({
         name: 'pull_request',
         payload,
         id: 'abc123',
       });
-
-      requests.done();
     });
 
     it('quits early if PR is closed', async () => {
