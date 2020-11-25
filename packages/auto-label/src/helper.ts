@@ -15,7 +15,8 @@
 
 import {logger} from 'gcf-utils';
 
-// *** Helper functions for all labels ***
+// *** Helper functions for all types fo labels ***
+
 /**
  * Checks whether the intended label already exists
  */
@@ -29,7 +30,7 @@ export function labelExists(labels: Label[], new_label: string): Label | null {
   return null;
 }
 
-// *** Helper functions for product based labels ***
+// *** Helper functions for product type labels ***
 export interface PathConfig {
   [index: string]: string | PathConfig;
 }
@@ -65,11 +66,13 @@ export interface DriftRepo {
   repo: string;
 }
 
-// autoDetectLabel tries to detect the right api: label based on the issue
-// title.
-//
-// For example, an issue titled `spanner/transactions: TestSample failed` would
-// be labeled `api: spanner`.
+/**
+ * autoDetectLabel tries to detect the right api: label based on the issue
+ * title. For example, an issue titled `spanner/transactions: TestSample failed`
+ * would be labeled `api: spanner`.
+ * @param apis
+ * @param title
+ */
 export function autoDetectLabel(
   apis: DriftApi[] | null,
   title: string
@@ -118,7 +121,7 @@ export function autoDetectLabel(
     ?.github_label;
 }
 
-// *** Helper functions for language and path based labels ***
+// *** Helper functions for language and path type labels ***
 
 // A mapping of languages to their file extensions
 import defaultExtensions from './extensions.json';
