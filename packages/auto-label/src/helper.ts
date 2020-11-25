@@ -18,7 +18,25 @@ import {Context} from 'probot';
 import {logger} from 'gcf-utils';
 import {DriftApi, LanguageConfig, PathConfig} from './auto-label';
 
-// Helper functions for product based labels
+// *** Helper functions for all labels ***
+export interface Label {
+  name: string;
+}
+
+/**
+ * Checks whether the intended label already exists
+ */
+export function labelExists(labels: Label[], new_label: string): Label|null {
+  for (const label of labels) {
+    if (label.name === new_label) {
+      logger.info(`Exiting: label ${new_label} already exists`);
+      return label;
+    }
+  }
+  return null;
+}
+
+// *** Helper functions for product based labels ***
 
 // autoDetectLabel tries to detect the right api: label based on the issue
 // title.
@@ -73,26 +91,10 @@ export function autoDetectLabel(
       ?.github_label;
 }
 
-// Helper functions for language and path based labels
+// *** Helper functions for language and path based labels ***
 
 // A mapping of languages to their file extensions
 import defaultExtensions from './extensions.json';
-
-/**
- * Checks whether the intended label already exists
- */
-export function labelExists(context: Context, new_label: string): boolean {
-  const labels = context.payload.issue
-    ? context.payload.issue.labels
-    : context.payload.pull_request.labels;
-  for (const label of labels) {
-    if (label.name === new_label) {
-      logger.info(`Exiting: label ${new_label} already exists`);
-      return true;
-    }
-  }
-  return false;
-}
 
 function getLabelFromPathConfig(
   filename: string,

@@ -64,10 +64,6 @@ export interface DriftApi {
   github_label: string;
 }
 
-interface Label {
-  name: string;
-}
-
 const storage = new Storage();
 
 handler.getDriftFile = async (file: string) => {
@@ -146,18 +142,15 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       }
     }
     if (labelsOnIssue) {
-      const foundAPIName = labelsOnIssue.find(
-        (element: Label) => element.name === githubLabel
-      );
+      const foundAPIName = helper.labelExists(labelsOnIssue, githubLabel);
+
       const cleanUpOtherLabels = labelsOnIssue.filter(
-        (element: Label) =>
+        (element: helper.Label) =>
           element.name.startsWith('api') &&
           element.name !== foundAPIName?.name &&
           element.name !== autoDetectedLabel
       );
-      if (foundAPIName) {
-        logger.info('The label already exists on this issue');
-      } else {
+      if (!foundAPIName) {
         await context.github.issues
           .addLabels({
             owner,
@@ -197,7 +190,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     }
   }
 
-  let foundSamplesTag: Label | undefined;
+  let foundSamplesTag: helper.Label | undefined;
   if (labelsOnIssue) {
     foundSamplesTag = labelsOnIssue.find(e => e.name === 'samples');
   }
@@ -352,6 +345,9 @@ export function handler(app: Application) {
       repo,
       pull_number,
     });
+    const labels = context.payload.issue
+        ? context.payload.issue.labels
+        : context.payload.pull_request.labels;
 
     // If user has turned on path labels by configuring {path: {pullrequest: false, }}
     // By default, this feature is turned off
@@ -362,7 +358,7 @@ export function handler(app: Application) {
         config.path,
         'path'
       );
-      if (path_label && !helper.labelExists(context, path_label)) {
+      if (path_label && !helper.labelExists(labels, path_label)) {
         logger.info(
           `Path label added to PR #${pull_number} in ${owner}/${repo} is ${path_label}`
         );
@@ -386,7 +382,7 @@ export function handler(app: Application) {
         config.language,
         'language'
       );
-      if (language_label && !helper.labelExists(context, language_label)) {
+      if (language_label && !helper.labelExists(labels, language_label)) {
         logger.info(
           `Language label added to PR #${pull_number} in ${owner}/${repo} is ${language_label}`
         );
