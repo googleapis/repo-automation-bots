@@ -25,6 +25,7 @@ import {logger} from 'gcf-utils';
 import Ajv from 'ajv';
 import yaml from 'js-yaml';
 import {PullsListFilesResponseData} from '@octokit/types';
+import checks from './required-checks.json';
 
 export const configFileName = 'sync-repo-settings.yaml';
 
@@ -38,8 +39,7 @@ type Conclusion =
   | undefined;
 
 // configure the schema validator once
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const schema = require('./schema.json');
+import schema from './schema.json';
 const ajv = new Ajv();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,11 +53,7 @@ function deepFreeze(object: any) {
   }
   return Object.freeze(object);
 }
-
-const languageConfig: LanguageConfig = deepFreeze(
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  require('./required-checks.json')
-);
+const languageConfig: LanguageConfig = deepFreeze(checks);
 
 const repoConfigDefaults: RepoConfig = deepFreeze({
   mergeCommitAllowed: false,
