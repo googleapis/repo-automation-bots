@@ -581,6 +581,24 @@ export = (app: Application) => {
       'pull_request.synchronize',
     ],
     async context => {
+      // Exit if the PR is closed.
+      if (context.payload.pull_request.state === 'closed') {
+        logger.info(
+          `The pull request ${context.payload.pull_request.url} is closed, exiting.`
+        );
+        return;
+      }
+      // If the head repo is null, we can not proceed.
+      if (
+        context.payload.pull_request.head.repo === undefined ||
+        context.payload.pull_request.head.repo === null
+      ) {
+        logger.info(
+          `The head repo is undefined for ${context.payload.pull_request.url}, exiting.`
+        );
+        return;
+      }
+
       const repoUrl = context.payload.repository.full_name;
       const configOptions = await getConfigOptions(context);
 
