@@ -13,16 +13,15 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot} from 'probot';
+import {Probot, createProbot, ProbotOctokit} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sinon from 'sinon';
-import {failureChecker} from '../src/failurechecker';
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
+import {failureChecker, TimeMethods} from '../src/failurechecker';
 import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
+
+const TestingOctokit = ProbotOctokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -30,20 +29,19 @@ describe('failurechecker', () => {
   let probot: Probot;
 
   beforeEach(() => {
-    sinon.useFakeTimers(new Date(Date.UTC(2020, 1, 1, 20)));
+    // Later versions of probot seem to have problems dealing with fake sinon timers.
+    sinon.stub(TimeMethods, 'Date').returns(new Date(Date.UTC(2020, 1, 1, 20)));
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit as any,
+      Octokit: TestingOctokit,
     });
-
     probot.load(failureChecker);
   });
 
   afterEach(() => {
     nock.cleanAll();
+    sinon.restore();
   });
-
-  afterEach(() => sinon.restore());
 
   it('opens an issue on GitHub if there exists a pending label > threshold', async () => {
     const requests = nock('https://api.github.com')
@@ -91,7 +89,7 @@ describe('failurechecker', () => {
       .reply(200);
 
     await probot.receive({
-      name: 'schedule.repository' as any,
+      name: 'schedule.repository' as '*',
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -154,7 +152,7 @@ describe('failurechecker', () => {
       .reply(200);
 
     await probot.receive({
-      name: 'schedule.repository' as any,
+      name: 'schedule.repository' as '*',
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -192,7 +190,7 @@ describe('failurechecker', () => {
       .reply(200, []);
 
     await probot.receive({
-      name: 'schedule.repository' as any,
+      name: 'schedule.repository' as '*',
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -240,7 +238,7 @@ describe('failurechecker', () => {
       ]);
 
     await probot.receive({
-      name: 'schedule.repository' as any,
+      name: 'schedule.repository' as '*',
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -287,7 +285,7 @@ describe('failurechecker', () => {
       ]);
 
     await probot.receive({
-      name: 'schedule.repository' as any,
+      name: 'schedule.repository' as '*',
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -349,7 +347,7 @@ describe('failurechecker', () => {
       .reply(200, {});
 
     await probot.receive({
-      name: 'schedule.repository' as any,
+      name: 'schedule.repository' as '*',
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -368,10 +366,11 @@ describe('failurechecker', () => {
 
   it('does not run outside of working hours', async () => {
     // UTC 05:00 is outside of working hours:
-    sinon.useFakeTimers(new Date(Date.UTC(2020, 1, 1, 5)));
+    sinon.restore();
+    sinon.stub(TimeMethods, 'Date').returns(new Date(Date.UTC(2020, 1, 1, 5)));
 
     await probot.receive({
-      name: 'schedule.repository' as any,
+      name: 'schedule.repository' as '*',
       payload: {
         repository: {
           name: 'nodejs-foo',

@@ -17,12 +17,11 @@
 // check whether type bindings are already published.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
-import {Octokit} from '@octokit/rest';
+import {Application, ProbotOctokit} from 'probot';
 import {IssuesListForRepoResponseData} from '@octokit/types';
-type OctokitType = InstanceType<typeof Octokit>;
-
 import {logger} from 'gcf-utils';
+
+type OctokitType = InstanceType<typeof ProbotOctokit>;
 
 // labels indicative of the fact that a release has not completed yet.
 const RELEASE_LABELS = ['autorelease: pending', 'autorelease: failed'];
@@ -42,9 +41,16 @@ interface ConfigurationOptions {
   releaseType?: string;
 }
 
+// exported for testing purposes
+export const TimeMethods = {
+  Date: () => {
+    return new Date();
+  },
+};
+
 export function failureChecker(app: Application) {
   app.on('schedule.repository' as '*', async context => {
-    const utcHour = new Date().getUTCHours();
+    const utcHour = TimeMethods.Date().getUTCHours();
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
 
@@ -66,7 +72,7 @@ export function failureChecker(app: Application) {
       labels.push('autorelease: tagged');
     }
 
-    const now = new Date().getTime();
+    const now = TimeMethods.Date().getTime();
     for (const label of labels) {
       const results = (
         await context.github.issues.listForRepo({
