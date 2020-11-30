@@ -13,16 +13,15 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot} from 'probot';
+import {Probot, createProbot, ProbotOctokit} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sinon from 'sinon';
 import {failureChecker} from '../src/failurechecker';
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
 import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
+
+const TestingOctokit = ProbotOctokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -33,7 +32,7 @@ describe('failurechecker', () => {
     sinon.useFakeTimers(new Date(Date.UTC(2020, 1, 1, 20)));
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit as any,
+      Octokit: TestingOctokit,
     });
 
     probot.load(failureChecker);
@@ -91,7 +90,7 @@ describe('failurechecker', () => {
       .reply(200);
 
     await probot.receive({
-      name: 'schedule.repository' as any,
+      name: 'schedule.repository' as '*',
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -154,7 +153,7 @@ describe('failurechecker', () => {
       .reply(200);
 
     await probot.receive({
-      name: 'schedule.repository' as any,
+      name: 'schedule.repository' as '*',
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -192,7 +191,7 @@ describe('failurechecker', () => {
       .reply(200, []);
 
     await probot.receive({
-      name: 'schedule.repository' as any,
+      name: 'schedule.repository' as '*',
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -240,7 +239,7 @@ describe('failurechecker', () => {
       ]);
 
     await probot.receive({
-      name: 'schedule.repository' as any,
+      name: 'schedule.repository' as '*',
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -287,7 +286,7 @@ describe('failurechecker', () => {
       ]);
 
     await probot.receive({
-      name: 'schedule.repository' as any,
+      name: 'schedule.repository' as '*',
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -349,7 +348,7 @@ describe('failurechecker', () => {
       .reply(200, {});
 
     await probot.receive({
-      name: 'schedule.repository' as any,
+      name: 'schedule.repository' as '*',
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -371,7 +370,7 @@ describe('failurechecker', () => {
     sinon.useFakeTimers(new Date(Date.UTC(2020, 1, 1, 5)));
 
     await probot.receive({
-      name: 'schedule.repository' as any,
+      name: 'schedule.repository' as '*',
       payload: {
         repository: {
           name: 'nodejs-foo',

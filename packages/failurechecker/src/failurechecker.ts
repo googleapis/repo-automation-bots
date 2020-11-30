@@ -17,12 +17,11 @@
 // check whether type bindings are already published.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
-import {Octokit} from '@octokit/rest';
+import {Application, ProbotOctokit} from 'probot';
 import {IssuesListForRepoResponseData} from '@octokit/types';
-type OctokitType = InstanceType<typeof Octokit>;
-
 import {logger} from 'gcf-utils';
+
+type OctokitType = InstanceType<typeof ProbotOctokit>;
 
 // labels indicative of the fact that a release has not completed yet.
 const RELEASE_LABELS = ['autorelease: pending', 'autorelease: failed'];
