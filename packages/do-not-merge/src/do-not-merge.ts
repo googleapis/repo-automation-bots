@@ -41,6 +41,13 @@ export = (app: Application) => {
     async (
       context: Context<Webhooks.EventPayloads.WebhookPayloadPullRequest>
     ) => {
+      if (context.payload.pull_request.state === 'closed') {
+        logger.info(
+          `The pull request ${context.payload.pull_request.url} is closed, exiting.`
+        );
+        return;
+      }
+
       const owner = context.payload.repository.owner.login;
       const repo = context.payload.repository.name;
       const sha = context.payload.pull_request.head.sha;

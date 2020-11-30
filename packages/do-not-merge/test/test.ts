@@ -20,7 +20,6 @@ import {Probot, createProbot, ProbotOctokit} from 'probot';
 import {config} from '@probot/octokit-plugin-config';
 import nock from 'nock';
 import {describe, it, beforeEach} from 'mocha';
-import * as assert from 'assert';
 import snapshot from 'snap-shot-it';
 
 const TestingOctokit = ProbotOctokit.plugin(config);
@@ -61,8 +60,24 @@ describe('do-not-merge', () => {
       });
 
       requests.done();
+    });
 
-      assert.ok(true);
+    it('does nothing for closed PRs', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_labeled_closed'
+      ));
+
+      const requests = nock('https://api.github.com');
+
+      await probot.receive({
+        name: 'pull_request.labeled',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
     });
 
     it('creates failed check when label added', async () => {
