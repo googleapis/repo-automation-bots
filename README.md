@@ -12,7 +12,7 @@ by Google on GitHub.
 | [blunderbuss] | Assigns issues and PRs randomly to a specific list of users | [install][blunderbuss-app] |
 | [buildcop] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][buildcop-app] |
 | [conventional-commit-lint] | PR checker that ensures that the commit messages follow conventionalcommits.org style | [install][conventional-commit-lint-app] |
-| [do-not-merge] | PR checker that ensures the do not label is not present | [install][do-not-merge-app]
+| [do-not-merge] | PR checker that ensures the `do not merge` label is not present | [install][do-not-merge-app]
 | [failurechecker] | Check for automation tasks, e.g., releases, that are in a failed state | [install][failurechecker-app] |
 | [license-header-lint] | PR checker that ensures that source files contain valid license headers | [install][license-header-lint-app] |
 | [label-sync] | Synchronize labels across organizations | [install][label-sync-app] |

@@ -59,7 +59,9 @@ export = (app: Application) => {
       const existingCheck = await findCheck(context, owner, repo, sha);
 
       if (!labelFound) {
-        logger.info('Do not merge label not found');
+        logger.info(
+          `Do not merge label not found on ${context.payload.pull_request.url}`
+        );
         // If the check already exists, but it's not a success, make it a success.
         if (existingCheck && existingCheck.conclusion !== 'success') {
           logger.info(
