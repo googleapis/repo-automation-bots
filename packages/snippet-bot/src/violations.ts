@@ -16,17 +16,20 @@ import {getApiLabels} from './api-labels';
 import {ApiLabel} from './api-labels';
 import {Configuration} from './configuration';
 import {ChangesInPullRequest, ParseResult} from './region-tag-parser';
-import {Change} from './region-tag-parser';
+import {RegionTagLocation} from './region-tag-parser';
 import {getSnippets} from './snippets';
 import {SnippetLocation} from './snippets';
 
 type violationTypes =
   | 'PRODUCT_PREFIX'
   | 'REMOVE_USED_TAG'
-  | 'REMOVE_CONFLICTING_TAG';
+  | 'REMOVE_CONFLICTING_TAG'
+  | 'TAG_ALREADY_STARTED'
+  | 'NO_MATCHING_START_TAG'
+  | 'NO_MATCHING_END_TAG';
 
 export interface Violation {
-  change: Change;
+  location: RegionTagLocation;
   violationType: violationTypes;
 }
 
@@ -79,13 +82,13 @@ export const checkRemovingUsedTagViolations = async (
         // Dispatch the violation depending on the current status.
         if (lang.status === 'IMPLEMENTED') {
           violation = {
-            change: change,
+            location: change,
             violationType: 'REMOVE_USED_TAG',
           };
           removeUsedTagViolations.push(violation);
         } else if (lang.status === 'CONFLICT') {
           violation = {
-            change: change,
+            location: change,
             violationType: 'REMOVE_CONFLICTING_TAG',
           };
           removeConflictingTagViolations.push(violation);
@@ -119,7 +122,7 @@ export const checkProductPrefixViolations = async (
       })
     ) {
       ret.push({
-        change: change,
+        location: change,
         violationType: 'PRODUCT_PREFIX',
       });
     }
