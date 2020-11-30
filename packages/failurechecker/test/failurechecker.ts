@@ -18,7 +18,7 @@ import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sinon from 'sinon';
-import {failureChecker} from '../src/failurechecker';
+import {failureChecker, TimeMethods} from '../src/failurechecker';
 import {config} from '@probot/octokit-plugin-config';
 
 const TestingOctokit = ProbotOctokit.plugin(config);
@@ -29,20 +29,19 @@ describe('failurechecker', () => {
   let probot: Probot;
 
   beforeEach(() => {
-    sinon.useFakeTimers(new Date(Date.UTC(2020, 1, 1, 20)));
+    // Later versions of probot seem to have problems dealing with fake sinon timers.
+    sinon.stub(TimeMethods, 'Date').returns(new Date(Date.UTC(2020, 1, 1, 20)));
     probot = createProbot({
       githubToken: 'abc123',
       Octokit: TestingOctokit,
     });
-
     probot.load(failureChecker);
   });
 
   afterEach(() => {
     nock.cleanAll();
+    sinon.restore();
   });
-
-  afterEach(() => sinon.restore());
 
   it('opens an issue on GitHub if there exists a pending label > threshold', async () => {
     const requests = nock('https://api.github.com')
@@ -367,7 +366,8 @@ describe('failurechecker', () => {
 
   it('does not run outside of working hours', async () => {
     // UTC 05:00 is outside of working hours:
-    sinon.useFakeTimers(new Date(Date.UTC(2020, 1, 1, 5)));
+    sinon.restore();
+    sinon.stub(TimeMethods, 'Date').returns(new Date(Date.UTC(2020, 1, 1, 5)));
 
     await probot.receive({
       name: 'schedule.repository' as '*',

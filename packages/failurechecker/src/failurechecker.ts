@@ -41,9 +41,16 @@ interface ConfigurationOptions {
   releaseType?: string;
 }
 
+// exported for testing purposes
+export const TimeMethods = {
+  Date: () => {
+    return new Date();
+  },
+};
+
 export function failureChecker(app: Application) {
   app.on('schedule.repository' as '*', async context => {
-    const utcHour = new Date().getUTCHours();
+    const utcHour = TimeMethods.Date().getUTCHours();
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
 
@@ -65,7 +72,7 @@ export function failureChecker(app: Application) {
       labels.push('autorelease: tagged');
     }
 
-    const now = new Date().getTime();
+    const now = TimeMethods.Date().getTime();
     for (const label of labels) {
       const results = (
         await context.github.issues.listForRepo({
