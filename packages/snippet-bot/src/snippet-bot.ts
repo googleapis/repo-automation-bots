@@ -123,7 +123,7 @@ function formatMatchingViolation(violation: Violation): string {
   const loc = violation.location;
   let detail = '';
   if (violation.violationType === 'NO_MATCHING_START_TAG') {
-    detail = "does'nt have a matching start tag.";
+    detail = "doesn't have a matching start tag.";
   } else if (violation.violationType === 'NO_MATCHING_END_TAG') {
     detail = "does'nt have a matching end tag.";
   } else if (violation.violationType === 'TAG_ALREADY_STARTED') {
