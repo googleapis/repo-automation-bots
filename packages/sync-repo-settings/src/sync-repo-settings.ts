@@ -24,6 +24,7 @@ import {
 import {logger} from 'gcf-utils';
 import Ajv from 'ajv';
 import yaml from 'js-yaml';
+// eslint-disable-next-line node/no-extraneous-import
 import {PullsListFilesResponseData} from '@octokit/types';
 import checks from './required-checks.json';
 
