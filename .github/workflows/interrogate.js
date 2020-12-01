@@ -22,8 +22,7 @@ if (baseRef) {
 } else {
   // If we're on the main branch, run tests based on last commit:
   console.log(`running against last commit`);
-  execSync(`git reset --hard HEAD~1`, { encoding: 'utf-8'});
-  status = execSync(`git diff --name-only origin/master`, { encoding: 'utf-8'});
+  status = execSync(`git diff --name-only HEAD~1`, { encoding: 'utf-8'});
 }
 console.log(status);
 const changes = status.split('\n');
