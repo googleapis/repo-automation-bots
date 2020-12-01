@@ -11,14 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
 import {resolve} from 'path';
+// eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
 import snapshot from 'snap-shot-it';
-import {expect} from 'chai';
+import * as assert from 'assert';
 import {describe, it, beforeEach} from 'mocha';
 import {
   parseManifest,
@@ -50,11 +50,11 @@ describe('generated-files-bot', () => {
     describe('json input', () => {
       it('should parse a simple jsonpath', () => {
         const values = parseManifest(jsonManifest, 'json', '$.key1[*]');
-        expect(values).to.eql(['value1', 'value2']);
+        assert.deepStrictEqual(values, ['value1', 'value2']);
       });
       it('should parse a nested jsonpath', () => {
         const values = parseManifest(jsonManifest, 'json', '$.key2.key3[*]');
-        expect(values).to.eql(['value3']);
+        assert.deepStrictEqual(values, ['value3']);
       });
     });
 
@@ -62,11 +62,11 @@ describe('generated-files-bot', () => {
       it('should parse a jsonpath', () => {
         it('should parse a simple jsonpath', () => {
           const values = parseManifest(yamlManifest, 'yaml', '$.key1[*]');
-          expect(values).to.eql(['value1', 'value2']);
+          assert.deepStrictEqual(values, ['value1', 'value2']);
         });
         it('should parse a nested jsonpath', () => {
           const values = parseManifest(yamlManifest, 'yaml', '$.key2.key3[*]');
-          expect(values).to.eql(['value3']);
+          assert.deepStrictEqual(values, ['value3']);
         });
       });
     });
@@ -83,7 +83,7 @@ describe('generated-files-bot', () => {
         'owner',
         'repo'
       );
-      expect(list).to.eql(['file1.txt', 'file2.txt']);
+      assert.deepStrictEqual(list, ['file1.txt', 'file2.txt']);
     });
 
     it('should combine multiple manifests', async () => {
@@ -116,7 +116,7 @@ describe('generated-files-bot', () => {
         'owner',
         'repo'
       );
-      expect(list).to.eql(['value1', 'value2', 'value3']);
+      assert.deepStrictEqual(list, ['value1', 'value2', 'value3']);
       requests.done();
     });
 
@@ -151,7 +151,7 @@ describe('generated-files-bot', () => {
         'owner',
         'repo'
       );
-      expect(list).to.eql(['file1.txt', 'value1', 'value2', 'value3']);
+      assert.deepStrictEqual(list, ['file1.txt', 'value1', 'value2', 'value3']);
       requests.done();
     });
 
@@ -176,7 +176,7 @@ describe('generated-files-bot', () => {
         'owner',
         'repo'
       );
-      expect(list).to.eql([]);
+      assert.deepStrictEqual(list, []);
       requests.done();
     });
   });
@@ -197,7 +197,7 @@ describe('generated-files-bot', () => {
         'repo',
         1234
       );
-      expect(list).to.eql(['file1.txt', 'file2.txt', 'file3.txt']);
+      assert.deepStrictEqual(list, ['file1.txt', 'file2.txt', 'file3.txt']);
       requests.done();
     });
   });
@@ -209,11 +209,13 @@ describe('generated-files-bot', () => {
       templateList.add('file2.txt');
 
       const body = buildCommentMessage(templateList);
-      expect(body).to
-        .equal(`*Warning*: This pull request is touching the following templated files:
+      assert.strictEqual(
+        body,
+        `*Warning*: This pull request is touching the following templated files:
 
 * file1.txt
-* file2.txt`);
+* file2.txt`
+      );
     });
   });
 
