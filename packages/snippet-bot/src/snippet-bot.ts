@@ -117,10 +117,10 @@ function formatViolations(
   return formatExpandable(summary, detail);
 }
 
-/*
+/**
+ * It formats a violation for unmatched region tag.
  */
 function formatMatchingViolation(violation: Violation): string {
-  const loc = violation.location;
   let detail = '';
   if (violation.violationType === 'NO_MATCHING_START_TAG') {
     detail = "doesn't have a matching start tag.";
@@ -129,7 +129,7 @@ function formatMatchingViolation(violation: Violation): string {
   } else if (violation.violationType === 'TAG_ALREADY_STARTED') {
     detail = 'already started.';
   }
-  return `[${loc.file}:${loc.line}](https://github.com/${loc.owner}/${loc.repo}/blob/${loc.sha}/${loc.file}#L${loc.line}), tag \`${loc.regionTag}\` ${detail}`;
+  return `${formatRegionTag(violation.location)} ${detail}`;
 }
 
 /**
@@ -137,7 +137,7 @@ function formatMatchingViolation(violation: Violation): string {
  */
 function formatRegionTag(loc: RegionTagLocation): string {
   const url = `https://github.com/${loc.owner}/${loc.repo}/blob/${loc.sha}/${loc.file}#L${loc.line}`;
-  return `\`${loc.regionTag}\` in [\`${loc.file}\`](${url})`;
+  return `[${loc.file}:${loc.line}](${url}), tag \`${loc.regionTag}\``;
 }
 
 async function downloadFile(url: string, file: string) {
