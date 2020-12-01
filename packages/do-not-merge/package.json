@@ -1,7 +1,7 @@
 {
-  "name": "failurechecker",
-  "version": "1.2.0",
-  "description": "opens issues warning about releases that failed to complete",
+  "name": "do-not-merge",
+  "version": "1.0.0",
+  "description": "Checks for do not merge label on PRs",
   "private": true,
   "author": "Google LLC.",
   "license": "Apache-2.0",
@@ -9,40 +9,34 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "main": "build/src/app.js",
-  "files": [
-    "build/src"
-  ],
   "keywords": [
     "probot",
     "github",
     "probot-app"
   ],
+  "files": [
+    "build/src"
+  ],
   "scripts": {
     "compile": "tsc -p .",
-    "start": "probot run ./build/src/failurechecker.js",
+    "start": "probot run ./build/src/do-not-merge.js",
     "start:local": "node ./build/src/local.js",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
-    "test:snap": "SNAPSHOT_UPDATE=1 npm test",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
     "fix": "gts fix",
     "lint": "gts check"
   },
   "dependencies": {
-    "@octokit/rest": "^18.0.6",
-    "gcf-utils": "^6.2.0"
+    "gcf-utils": "^6.0.0"
   },
   "devDependencies": {
-    "@octokit/types": "^5.5.0",
-    "@probot/octokit-plugin-config": "^1.0.0",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.6.1",
-    "@types/sinon": "^9.0.4",
-    "c8": "^7.1.0",
+    "c8": "^7.3.5",
     "cross-env": "^7.0.0",
     "gts": "^3.0.0",
     "mocha": "^8.0.0",
     "nock": "^13.0.0",
-    "sinon": "^9.0.2",
     "smee-client": "^1.1.0",
     "snap-shot-it": "^7.8.0",
     "typescript": "~4.1.0"
