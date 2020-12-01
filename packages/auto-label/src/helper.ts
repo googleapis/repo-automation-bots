@@ -113,6 +113,7 @@ export function autoDetectLabel(
   // Replace some known firstPart values with their API name.
   const commonConversions = new Map();
   commonConversions.set('video', 'videointelligence');
+  commonConversions.set('spannertest', 'spanner');
   firstPart = commonConversions.get(firstPart) || firstPart;
 
   // Some APIs have "cloud" before the name (e.g. cloudkms and cloudiot).
