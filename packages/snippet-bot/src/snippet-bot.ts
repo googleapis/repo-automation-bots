@@ -125,7 +125,7 @@ function formatMatchingViolation(violation: Violation): string {
   if (violation.violationType === 'NO_MATCHING_START_TAG') {
     detail = "doesn't have a matching start tag.";
   } else if (violation.violationType === 'NO_MATCHING_END_TAG') {
-    detail = "does'nt have a matching end tag.";
+    detail = "doesn't have a matching end tag.";
   } else if (violation.violationType === 'TAG_ALREADY_STARTED') {
     detail = 'already started.';
   }
