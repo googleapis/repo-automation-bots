@@ -15,8 +15,16 @@
 const {execSync} = require('child_process');
 execSync('git fetch origin master');
 const baseRef = process.env.GITHUB_BASE_REF;
-console.log(`base ref: ${baseRef}`);
-const status = execSync(`git diff --name-only origin/${baseRef}`, { encoding: 'utf-8'});
+let status;
+if (baseRef) {
+  console.log(`base ref: ${baseRef}`);
+  status = execSync(`git diff --name-only origin/${baseRef}`, { encoding: 'utf-8'});
+} else {
+  // If we're on the main branch, run tests based on last commit:
+  console.log(`running against last commit`);
+  execSync(`git reset --hard HEAD~1`, { encoding: 'utf-8'});
+  status = execSync(`git diff --name-only origin/master`, { encoding: 'utf-8'});
+}
 console.log(status);
 const changes = status.split('\n');
 let nodePaths = new Set();
