@@ -16,6 +16,11 @@ const {execSync} = require('child_process');
 execSync('git fetch origin master');
 const baseRef = process.env.GITHUB_BASE_REF;
 let status;
+
+execSync('git fetch origin master');
+status = execSync(`git diff --name-only HEAD~1`, { encoding: 'utf-8'});
+console.info(status);
+
 if (baseRef) {
   console.log(`base ref: ${baseRef}`);
   status = execSync(`git diff --name-only origin/${baseRef}`, { encoding: 'utf-8'});
