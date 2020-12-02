@@ -540,6 +540,8 @@ describe('snippet-bot', () => {
         id: 'abc123',
       });
 
+      sinon.assert.calledOnce(getApiLabelsStub);
+      sinon.assert.calledOnce(getSnippetsStub);
       requests.done();
       diffRequests.done();
     });

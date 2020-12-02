@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {getApiLabels} from './api-labels';
-import {ApiLabel} from './api-labels';
+import {ApiLabel, getApiLabels} from './api-labels';
 import {Configuration} from './configuration';
-import {ChangesInPullRequest, ParseResult} from './region-tag-parser';
-import {RegionTagLocation} from './region-tag-parser';
+import {
+  ChangesInPullRequest,
+  ParseResult,
+  RegionTagLocation,
+} from './region-tag-parser';
 import {getSnippets} from './snippets';
-import {SnippetLocation} from './snippets';
 
 type violationTypes =
   | 'PRODUCT_PREFIX'
@@ -31,6 +32,7 @@ type violationTypes =
 export interface Violation {
   location: RegionTagLocation;
   violationType: violationTypes;
+  devsite_urls: string[];
 }
 
 const dataBucket = process.env.DEVREL_SETTINGS_BUCKET || 'devrel-prod-settings';
@@ -69,27 +71,33 @@ export const checkRemovingUsedTagViolations = async (
     }
     for (const k of Object.keys(snippet.languages)) {
       const lang = snippet.languages[k];
-      if (
-        lang.current_locations.some((loc: SnippetLocation) => {
-          return (
-            loc.branch === baseBranch &&
-            loc.repository_path === baseRepositoryPath &&
-            loc.filename === change.file
-          );
-        })
-      ) {
+      let currentUrls: string[] = [];
+      for (const loc of lang.current_locations) {
+        if (
+          loc.branch === baseBranch &&
+          loc.repository_path === baseRepositoryPath &&
+          loc.filename === change.file &&
+          loc.devsite_urls !== undefined &&
+          loc.devsite_urls.length > 0
+        ) {
+          currentUrls = currentUrls.concat(loc.devsite_urls);
+        }
+      }
+      if (currentUrls.length > 0) {
         let violation: Violation;
         // Dispatch the violation depending on the current status.
         if (lang.status === 'IMPLEMENTED') {
           violation = {
             location: change,
             violationType: 'REMOVE_USED_TAG',
+            devsite_urls: currentUrls,
           };
           removeUsedTagViolations.push(violation);
         } else if (lang.status === 'CONFLICT') {
           violation = {
             location: change,
             violationType: 'REMOVE_CONFLICTING_TAG',
+            devsite_urls: currentUrls,
           };
           removeConflictingTagViolations.push(violation);
         }
@@ -124,6 +132,7 @@ export const checkProductPrefixViolations = async (
       ret.push({
         location: change,
         violationType: 'PRODUCT_PREFIX',
+        devsite_urls: [],
       });
     }
   }
