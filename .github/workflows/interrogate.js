@@ -15,7 +15,7 @@
 const {execSync} = require('child_process');
 execSync('git fetch origin master');
 const baseRef = process.env.GITHUB_BASE_REF;
-const defaultBrach = 'master';
+const defaultBranch = 'master';
 let status;
 
 execSync(`git fetch --depth 2 origin ${defaultBranch}`);
