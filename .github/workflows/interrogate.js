@@ -13,13 +13,12 @@
 // limitations under the License.
 
 const {execSync} = require('child_process');
-execSync('git fetch origin master');
 const baseRef = process.env.GITHUB_BASE_REF;
 const defaultBranch = 'master';
 let status;
 
-execSync(`git fetch --depth 2 origin ${defaultBranch}`);
-status = execSync(`git diff --name-only origin/${defaultBrach} HEAD~1`, { encoding: 'utf-8'});
+execSync(`git checkout HEAD^`);
+status = execSync(`git diff --name-only HEAD~1`, { encoding: 'utf-8'});
 console.info(status);
 
 if (baseRef) {
@@ -28,8 +27,8 @@ if (baseRef) {
 } else {
   // If we're on the main branch, run tests based on last commit:
   console.log(`running against last commit`);
-  execSync(`git fetch --depth 2 origin ${defaultBranch}`);
-  status = execSync(`git diff --name-only origin/${defaultBranch} HEAD~1`, { encoding: 'utf-8'});
+  execSync(`git checkout HEAD^`);
+  status = execSync(`git diff --name-only HEAD~1`, { encoding: 'utf-8'});
 }
 console.log(status);
 const changes = status.split('\n');
