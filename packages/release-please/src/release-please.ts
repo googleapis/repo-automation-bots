@@ -14,28 +14,24 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application} from 'probot';
-
-// TODO: fix these imports when release-please exports types from the root
-// See https://github.com/googleapis/release-please/issues/249
-import {BuildOptions} from 'release-please/build/src/release-pr';
-import {ReleasePRFactory} from 'release-please/build/src/release-pr-factory';
-import {getReleaserNames} from 'release-please/build/src/releasers';
 import {
+  BuildOptions,
+  ReleasePRFactory,
+  getReleaserNames,
   GitHubRelease,
   GitHubReleaseOptions,
-} from 'release-please/build/src/github-release';
+} from 'release-please';
 import {Runner} from './runner';
 // eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest'; // Use version from gcf-utils.
+import {Octokit} from '@octokit/rest';
 // We pull in @octokit/request to crreate an appropriate type for the
 // GitHubAPI interface:
 // eslint-disable-next-line node/no-extraneous-import
 import {request} from '@octokit/request';
+import {logger} from 'gcf-utils';
 type RequestBuilderType = typeof request;
 type DefaultFunctionType = RequestBuilderType['defaults'];
 type RequestFunctionType = ReturnType<DefaultFunctionType>;
-
-import {logger} from 'gcf-utils';
 
 type OctokitType = InstanceType<typeof Octokit>;
 
@@ -105,8 +101,7 @@ async function createReleasePR(
     repoUrl,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-      octokit: (github as any) as OctokitType,
+      octokit: (github as {}) as OctokitType,
       graphql: github.graphql,
       request: github.request,
     },
@@ -138,8 +133,7 @@ async function createGitHubRelease(
     packageName,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      octokit: (github as any) as OctokitType,
+      octokit: (github as {}) as OctokitType,
       graphql: github.graphql,
       request: github.request,
     },

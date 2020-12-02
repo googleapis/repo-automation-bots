@@ -13,10 +13,10 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
+import {ProbotOctokit} from 'probot';
 import {logger} from 'gcf-utils';
 
-type OctokitType = InstanceType<typeof Octokit>;
+type OctokitType = InstanceType<typeof ProbotOctokit>;
 
 export interface Label {
   name: string;
