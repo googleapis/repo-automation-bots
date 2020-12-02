@@ -17,10 +17,6 @@ const baseRef = process.env.GITHUB_BASE_REF;
 const defaultBranch = 'master';
 let status;
 
-execSync(`git checkout HEAD^`);
-status = execSync(`git diff --name-only HEAD~1`, { encoding: 'utf-8'});
-console.info(status);
-
 if (baseRef) {
   console.log(`base ref: ${baseRef}`);
   status = execSync(`git diff --name-only origin/${baseRef}`, { encoding: 'utf-8'});
