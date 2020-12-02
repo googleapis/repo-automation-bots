@@ -14,7 +14,6 @@
 
 const {execSync} = require('child_process');
 const baseRef = process.env.GITHUB_BASE_REF;
-const defaultBranch = 'master';
 let status;
 
 if (baseRef) {
