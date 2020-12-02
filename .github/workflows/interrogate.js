@@ -17,7 +17,7 @@ execSync('git fetch origin master');
 const baseRef = process.env.GITHUB_BASE_REF;
 let status;
 
-execSync('git fetch origin master');
+execSync('git fetch --depth 2 origin master');
 status = execSync(`git diff --name-only HEAD~1`, { encoding: 'utf-8'});
 console.info(status);
 
