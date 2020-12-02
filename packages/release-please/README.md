@@ -3,8 +3,8 @@
 > A GitHub App built with [Probot](https://github.com/probot/probot) that proposes releases based on
 > semantic version commits defined by conventionalcommits.org.
 
-This bot wraps the [release-please][release-please] [npm package][npm-package] to provide an easy way
-to integrate with your GitHub repository.
+This bot wraps the [release-please][release-please] [npm package][npm-package]
+to provide an easy way to integrate with your GitHub repository.
 
 ## Setup
 
