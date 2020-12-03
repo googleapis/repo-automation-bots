@@ -163,7 +163,6 @@ export function handler(app: Application) {
   );
 
   // meta comment about the '*' here: https://github.com/octokit/webhooks.js/issues/277
-
   app.on(['schedule.repository' as '*'], async (context: Context) => {
     logger.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
@@ -337,11 +336,17 @@ async function updateRepoTeams(
   logger.info(`Update team access for ${repo}`);
   const [owner, name] = repo.split('/');
 
-  // Cloud DPEs are given default write access to all repositories we manage.
-  rules.push({
-    permission: 'push',
-    team: 'cloud-dpes',
-  });
+  // Cloud DPEs and Cloud DevRel PgMs are given default write access to all repositories we manage.
+  rules.push(
+    {
+      permission: 'push',
+      team: 'cloud-dpes',
+    },
+    {
+      permission: 'push',
+      team: 'cloud-devrel-pgm',
+    }
+  );
 
   try {
     await Promise.all(
