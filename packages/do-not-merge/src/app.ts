@@ -16,4 +16,4 @@ import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './do-not-merge';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['do-not-merge'] = bootstrap.gcf(appFn);
+module.exports['do_not_merge'] = bootstrap.gcf(appFn);
