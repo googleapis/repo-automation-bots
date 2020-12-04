@@ -28,7 +28,7 @@
   "dependencies": {
     "@google-cloud/debug-agent": "^5.1.2",
     "@google-cloud/storage": "^5.0.0",
-    "@octokit/types": "^5.5.0",
+    "@octokit/types": "^6.0.0",
     "gaxios": "^4.0.0",
     "gcf-utils": "^6.1.1"
   },
