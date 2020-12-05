@@ -101,7 +101,8 @@ export = (app: Application) => {
     const pullRequestCommitSha = context.payload.pull_request.head.sha;
 
     try {
-      const {data: files} = await context.github.pulls.listFiles(
+      const files = await context.github.paginate(
+        context.github.pulls.listFiles,
         listFilesParams
       );
 
