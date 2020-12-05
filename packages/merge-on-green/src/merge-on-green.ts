@@ -44,7 +44,7 @@ interface WatchPR {
   author: string;
   url: string;
   reactionId: number;
-  installationId: number;
+  installationId?: number;
 }
 
 interface Label {
@@ -331,6 +331,102 @@ handler.checkPRMergeability = async function checkPRMergeability(
   }
 };
 
+/**
+ * For a given repository, looks through all the PRs and checks to see if they have a MOG label
+ * @param owner the owner of the repo 
+ * @param repo the repo name
+ * @param context the context of the webhook payload
+ * @returns void
+ */
+handler.pickUpPR = async function pickUpPR(
+  owner: string,
+  repo: string,
+  github: Context['github']
+) {
+  const prs = await github.paginate(
+      await github.pulls.list,
+      {
+        owner,
+        repo,
+        state: 'open'
+      }
+    );
+  
+  for (const pr of prs) {
+    const labels = await github.paginate(
+      await github.issues.listLabelsOnIssue,
+      {
+        owner,
+        repo,
+        issue_number: pr.number
+      }
+    );
+
+    const labelFound = labels.find(
+      (label: Label) =>
+        label.name === MERGE_ON_GREEN_LABEL ||
+        label.name === MERGE_ON_GREEN_LABEL_SECURE
+    );
+
+    if (labelFound) {
+        // check to see if the owner has branch protection rules
+        let branchProtection: string[] | undefined;
+        try {
+          branchProtection = (
+            await github.repos.getBranchProtection({
+              owner,
+              repo,
+              branch: 'master',
+            })
+          ).data.required_status_checks.contexts;
+          logger.info(
+            `checking branch protection for ${owner}/${repo}: ${branchProtection}`
+          );
+        } catch (err) {
+          err.message = `Error in getting branch protection\n\n${err.message}`;
+          await github.issues.createComment({
+            owner,
+            repo,
+            issue_number: pr.number,
+            body:
+              "Your PR doesn't have any required checks. Please add required checks to your master branch and then re-add the label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.",
+          });
+          logger.error(err);
+        }
+    
+        // if the owner has branch protection set up, add this PR to the Datastore table
+        if (branchProtection) {
+          // try to create reaction. Save this reaction in the Datastore table since I don't (think)
+          // it is on the pull_request payload.
+          const reactionId = (
+            await github.reactions.createForIssue({
+              owner,
+              repo,
+              issue_number: pr.number,
+              content: 'eyes',
+            })
+          ).data.id;
+
+
+      await handler.addPR(
+        {
+          number: pr.number,
+          owner,
+          repo,
+          state: 'continue',
+          url: pr.html_url,
+          branchProtection: branchProtection,
+          label: labelFound.name,
+          author: pr.user.login,
+          reactionId,
+        },
+        pr.html_url
+      );
+    }
+  }
+};
+};
+
 // TODO: refactor into multiple function exports, this will take some work in
 // gcf-utils.
 
@@ -350,10 +446,28 @@ function handler(app: Application) {
       await handler.cleanDatastoreTable(watchedPRs, app, context);
       return;
     }
+    
+
+    //because we're searching for the PRs, and not getting the installation ID, we have to use
+    //the bot's installation ID to call the API. So, we need to make sure it matches the repo owner
+    if (context.payload.cron_org) {
+      logger.info('Entering job to pick up any hanging PRs');
+      const owner = context.payload.organization.login;
+      const repo = context.payload.repository.name;
+
+      if (context.payload.cron_org !== owner) {
+        logger.info(`skipping run for ${context.payload.cron_org}`);
+        return;
+      }
+      await handler.pickUpPR(owner, repo, context.github);
+      return;
+    }
+
     const start = Date.now();
     await handler.checkPRMergeability(watchedPRs, app, context);
     logger.info(`mergeOnGreen check took ${Date.now() - start}ms`);
   });
+
 
   app.on('pull_request.labeled', async context => {
     const prNumber = context.payload.pull_request.number;

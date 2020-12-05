@@ -37,6 +37,18 @@ interface CheckRuns {
   conclusion: string;
 }
 
+
+interface PR {
+    number: number,
+    owner: string,
+    repo: string,
+    state: string,
+    html_url: string,
+    user: {
+      login: string
+    },
+}
+
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/Fixtures');
@@ -166,6 +178,12 @@ function getPR(mergeable: boolean, mergeableState: string, state: string) {
       mergeable_state: mergeableState,
       user: {login: 'login'},
     });
+}
+
+function getPRsForRepo(pr: PR[]) {
+  return nock('https://api.github.com')
+  .get('/repos/testOwner/testRepo/pulls?state=open')
+  .reply(200, pr)
 }
 
 //meta-note about the schedule.repository as any; currently GH does not support this type, see
@@ -890,6 +908,118 @@ describe('merge-on-green', () => {
         scopes.forEach(s => s.done());
         assert(!removePRStub.called);
       });
+    });
+  
+    describe('pick up PRs', () => {
+      it('adds a PR if the PR was not picked up by a webhook event', async() => {
+      const scopes = [
+        getPRsForRepo([{ 
+          number: 1,
+          owner: 'testOwner',
+          repo: 'testRepo',
+          state: 'continue',
+          html_url: 'https://github.com/testOwner/testRepo/pull/6',
+          user: {
+            login: 'testOwner'
+          },
+        }]),
+        getLabels('automerge'),
+        react(),
+        getBranchProtection(200, ['Special Check']),
+      ];
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          repository: {
+            name: "testRepo",
+            owner: {
+              login: "testOwner",
+            },
+          },
+          organization: {
+            login: "testOwner",
+          },
+          org: 'testOwner',
+          cron_org: "testOwner",
+        },
+        id: 'abc123',
+      });
+
+
+      scopes.forEach(s => s.done());
+      assert(addPRStub.called);
+    });
+
+    it('does not add a PR if no labels were found', async() => {
+      const scopes = [
+        getPRsForRepo([{ 
+          number: 1,
+          owner: 'testOwner',
+          repo: 'testRepo',
+          state: 'continue',
+          html_url: 'https://github.com/testOwner/testRepo/pull/6',
+          user: {
+            login: 'testOwner'
+          },
+        }]),
+        getLabels('notTheRightLabel'),
+      ];
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          repository: {
+            name: "testRepo",
+            owner: {
+              login: "testOwner",
+            },
+          },
+          organization: {
+            login: "testOwner",
+          },
+          org: 'testOwner',
+          cron_org: "testOwner",
+        },
+        id: 'abc123',
+      });
+
+
+      scopes.forEach(s => s.done());
+      assert(!addPRStub.called);
+    });
+
+    it('does not add a PR if no PRs were found', async() => {
+      const scopes = [
+        getPRsForRepo([]),
+      ];
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          repository: {
+            name: "testRepo",
+            owner: {
+              login: "testOwner",
+            },
+          },
+          organization: {
+            login: "testOwner",
+          },
+          org: 'testOwner',
+          cron_org: "testOwner",
+        },
+        id: 'abc123',
+      });
+
+
+      scopes.forEach(s => s.done());
+      assert(!addPRStub.called);
+    });
+
     });
 
     describe('PRs when labeled', () => {
