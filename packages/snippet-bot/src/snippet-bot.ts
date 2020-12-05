@@ -121,7 +121,7 @@ function formatViolations(
       // Also add links to devsite urls.
       detail += '(usage:';
       violation.devsite_urls.forEach((value, index) => {
-        detail += ` [${index + 1}](${value})`;
+        detail += ` [page ${index + 1}](${value})`;
       });
       detail += ').\n';
     } else {
