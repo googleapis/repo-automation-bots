@@ -27,8 +27,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@octokit/plugin-rest-endpoint-methods": "^4.2.0",
-    "@octokit/types": "^5.5.0",
+    "@octokit/openapi-types": "^2.0.0",
     "gcf-utils": "^6.2.0",
     "xml-js": "^1.6.11"
   },

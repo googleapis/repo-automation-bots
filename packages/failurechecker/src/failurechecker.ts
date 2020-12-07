@@ -18,7 +18,6 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, ProbotOctokit} from 'probot';
-import {IssuesListForRepoResponseData} from '@octokit/types';
 import {logger} from 'gcf-utils';
 
 type OctokitType = InstanceType<typeof ProbotOctokit>;
@@ -117,14 +116,12 @@ export function failureChecker(app: Application) {
     prNumber: number,
     github: OctokitType
   ) {
-    const issues = (
-      await github.issues.listForRepo({
-        owner,
-        repo,
-        labels: LABELS,
-        per_page: 32,
-      })
-    ).data as IssuesListForRepoResponseData;
+    const {data: issues} = await github.issues.listForRepo({
+      owner,
+      repo,
+      labels: LABELS,
+      per_page: 32,
+    });
     const warningIssue = issues.find(issue => {
       return issue.title.includes(ISSUE_TITLE);
     });

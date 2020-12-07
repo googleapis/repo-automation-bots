@@ -28,11 +28,10 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@octokit/rest": "^18.0.6",
     "gcf-utils": "^6.2.0"
   },
   "devDependencies": {
-    "@octokit/types": "^5.5.0",
+    "@octokit/types": "^6.0.0",
     "@probot/octokit-plugin-config": "^1.0.0",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.6.1",
