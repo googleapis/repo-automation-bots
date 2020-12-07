@@ -135,7 +135,7 @@ describe('Sync repo settings', () => {
       nockUpdateTeamMembership('yoshi-admins', org, repo),
       nockUpdateTeamMembership('yoshi-ruby-admins', org, repo),
       nockUpdateTeamMembership('yoshi-ruby', org, repo),
-      nockUpdateTeamMembership('cloud-dpes', org, repo),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
     ];
     await receive(org, repo);
@@ -166,7 +166,7 @@ describe('Sync repo settings', () => {
       nockUpdateTeamMembership('yoshi-python-admins', org, repo),
       nockUpdateTeamMembership('yoshi-python', org, repo),
       nockUpdateTeamMembership('python-samples-owners', org, repo),
-      nockUpdateTeamMembership('cloud-dpes', org, repo),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
     ];
     await receive(org, repo);
@@ -203,7 +203,7 @@ describe('Sync repo settings', () => {
       nockUpdateTeamMembership('yoshi-admins', org, repo),
       nockUpdateTeamMembership('yoshi-nodejs-admins', org, repo),
       nockUpdateTeamMembership('yoshi-nodejs', org, repo),
-      nockUpdateTeamMembership('cloud-dpes', org, repo),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
     ];
     await receive(org, repo);
@@ -230,7 +230,7 @@ describe('Sync repo settings', () => {
       nockUpdateRepoSettings(repo, false, true),
       nockUpdateBranchProtection(repo, ['check1', 'check2'], false, true),
       nockUpdateTeamMembership('team1', org, repo),
-      nockUpdateTeamMembership('cloud-dpes', org, repo),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
     ];
     await receive(org, repo);

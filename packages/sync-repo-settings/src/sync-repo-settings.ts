@@ -340,7 +340,7 @@ async function updateRepoTeams(
   rules.push(
     {
       permission: 'push',
-      team: 'cloud-dpes',
+      team: 'cloud-dpe',
     },
     {
       permission: 'push',
