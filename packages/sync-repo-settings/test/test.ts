@@ -147,11 +147,15 @@ describe('Sync repo settings', () => {
   });
 
   it('should ignore repos not represented in required-checks.json', async () => {
+    const org = 'Codertocat';
+    const repo = 'Hello-World';
     const scopes = [
-      nockConfig404('Codertocat', 'Hello-World'),
-      nockLanguagesList('Codertocat', 'Hello-World', {kotlin: 1}),
+      nockConfig404(org, repo),
+      nockLanguagesList(org, repo, {kotlin: 1}),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
+      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
     ];
-    await receive('Codertocat', 'Hello-World');
+    await receive(org, repo);
     scopes.forEach(s => s.done());
   });
 
