@@ -346,6 +346,9 @@ async function scanPullRequest(
         path: file,
         ref: context.payload.pull_request.head.sha,
       });
+      if (blob.data.content === undefined) {
+        continue;
+      }
       const fileContents = Buffer.from(blob.data.content, 'base64').toString(
         'utf8'
       );
