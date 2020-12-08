@@ -224,7 +224,6 @@ export function handler(app: Application) {
       config = extend(true, {}, languageConfig)[language];
       if (!config) {
         logger.info(`no config for language ${language}`);
-        return;
       }
 
       // Check for repositories we're specifically configured to skip
@@ -245,13 +244,10 @@ export function handler(app: Application) {
     }
 
     const jobs: Promise<void>[] = [];
-    if (config!.permissionRules) {
-      jobs.push(updateRepoTeams(repo, context, config.permissionRules));
-    }
-    if (!ignored) {
+    jobs.push(updateRepoTeams(repo, context, config?.permissionRules || []));
+    if (!ignored && config) {
       jobs.push(updateRepoOptions(repo, context, config));
       if (config.branchProtectionRules) {
-        //console.log(JSON.stringify(config.branchProtectionRules))
         jobs.push(
           updateMasterBranchProtection(
             repo,
