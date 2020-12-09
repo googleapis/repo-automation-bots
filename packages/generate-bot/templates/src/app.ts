@@ -16,4 +16,4 @@ import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './{{programName}}';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['{{programName}}'] = bootstrap.gcf(appFn);
+module.exports['{{exportName}}'] = bootstrap.gcf(appFn);
