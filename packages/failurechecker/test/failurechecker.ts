@@ -406,7 +406,7 @@ describe('failurechecker', () => {
     });
   });
 
-  it('ignores a PR both failed and published', async () => {
+  it('closes a PR once failing releases are handled', async () => {
     const requests = nock('https://api.github.com')
       .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
       .reply(
@@ -478,7 +478,7 @@ describe('failurechecker', () => {
     requests.done();
   });
 
-  it('closes a PR once failing releases are handled', async () => {
+  it('ignores a PR both failed and published', async () => {
     const requests = nock('https://api.github.com')
       .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
       .reply(
