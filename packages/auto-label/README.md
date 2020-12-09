@@ -106,7 +106,7 @@ path:
 To define how certain directories should be labeled (Note: labels will respect the deepest path configuration):
 ```yaml
 # In .github/auto-label.yaml
-language:
+path:
   pullrequest: true
   paths:
     .: 'root'
