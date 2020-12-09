@@ -144,7 +144,7 @@ function handler(app: Application) {
     // if missing the label, skip
     if (
       !context.payload.pull_request.labels.some(
-        label => label.name === PRE_RELEASE_LABEL
+        (label: {name: string}) => label.name === PRE_RELEASE_LABEL
       )
     ) {
       app.log.info(
@@ -313,7 +313,7 @@ async function removeLabels(context: Context, app: Application) {
         app.log.info(
           `attempting to remove labels for owner = ${context.payload.repository.owner.login} repo = ${context.payload.repository.name} number = ${pull.number}`
         );
-        await context.github.issues.removeLabels({
+        await context.github.issues.removeAllLabels({
           owner: context.payload.repository.owner.login,
           repo: context.payload.repository.name,
           issue_number: pull.number,

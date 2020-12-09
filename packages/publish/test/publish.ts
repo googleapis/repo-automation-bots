@@ -23,7 +23,9 @@ if (!promises) {
 }
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, Probot} from 'probot';
+import {Application, Probot, ProbotOctokit, createProbot} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {config} from '@probot/octokit-plugin-config';
 import {resolve} from 'path';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
@@ -33,6 +35,7 @@ import {describe, it, beforeEach} from 'mocha';
 
 import handler from '../src/publish';
 
+const TestingOctokit = ProbotOctokit.plugin(config);
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
@@ -52,20 +55,13 @@ describe('publish', () => {
   let probot: Probot;
 
   beforeEach(() => {
-    probot = new Probot({
+    probot = createProbot({
+      githubToken: 'abc123',
       // use a bare instance of octokit, the default version
       // enables retries which makes testing difficult.
       // eslint-disable-next-line node/no-extraneous-require
-      Octokit: require('@octokit/rest').Octokit,
+      Octokit: TestingOctokit,
     });
-    probot.app = {
-      getSignedJsonWebToken() {
-        return 'abc123';
-      },
-      getInstallationAccessToken(): Promise<string> {
-        return Promise.resolve('abc123');
-      },
-    };
     probot.load(handler);
   });
 
@@ -80,7 +76,7 @@ describe('publish', () => {
       resolve(fixturesPath, 'config', 'valid-config.yml')
     );
     const requests = nock('https://api.github.com')
-      .get('/repos/Codertocat/Hello-World/contents/.github/publish.yml')
+      .get('/repos/Codertocat/Hello-World/contents/.github%2Fpublish.yml')
       .reply(200, {content: config.toString('base64')})
       .get('/repos/Codertocat/Hello-World/tarball/0.0.1')
       .reply(
@@ -132,9 +128,9 @@ describe('publish', () => {
       'release_released'
     ));
     const requests = nock('https://api.github.com')
-      .get('/repos/Codertocat/Hello-World/contents/.github/publish.yml')
+      .get('/repos/Codertocat/Hello-World/contents/.github%2Fpublish.yml')
       .reply(404)
-      .get('/repos/Codertocat/.github/contents/.github/publish.yml')
+      .get('/repos/Codertocat/.github/contents/.github%2Fpublish.yml')
       .reply(404);
     await probot.receive({name: 'release.released', payload, id: 'abc123'});
     requests.done();
@@ -165,7 +161,7 @@ describe('publish', () => {
         )
       );
     const apiRequests = nock('https://api.github.com')
-      .get('/repos/Codertocat/Hello-World/contents/.github/publish.yml')
+      .get('/repos/Codertocat/Hello-World/contents/.github%2Fpublish.yml')
       .reply(200, {content: config.toString('base64')})
       .post('/repos/Codertocat/Hello-World/releases', req => {
         snapshot(req.body);
@@ -234,7 +230,7 @@ describe('publish', () => {
         )
       );
     const apiRequests = nock('https://api.github.com')
-      .get('/repos/Codertocat/Hello-World/contents/.github/publish.yml')
+      .get('/repos/Codertocat/Hello-World/contents/.github%2Fpublish.yml')
       .reply(200, {content: config.toString('base64')})
       .post('/repos/Codertocat/Hello-World/releases', req => {
         snapshot(req.body);
