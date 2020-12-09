@@ -192,7 +192,9 @@ describe('failurechecker', () => {
       .reply(200, [])
       .get('/rate_limit')
       .reply(200, {})
-      .get('/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32')
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
+      )
       .reply(200, []);
 
     await probot.receive({
@@ -244,7 +246,9 @@ describe('failurechecker', () => {
       ])
       .get('/rate_limit')
       .reply(200, [])
-      .get('/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32')
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
+      )
       .reply(200, []);
 
     await probot.receive({
@@ -295,7 +299,9 @@ describe('failurechecker', () => {
       ])
       .get('/rate_limit')
       .reply(200, {})
-      .get('/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32')
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
+      )
       .reply(200, []);
 
     await probot.receive({
@@ -357,7 +363,7 @@ describe('failurechecker', () => {
         {
           title: 'Warning: a recent release failed',
           number: 44,
-          body: "The following release PRs may have failed:\n\n* #33",
+          body: 'The following release PRs may have failed:\n\n* #33',
         },
       ])
       .get('/rate_limit')
@@ -424,7 +430,10 @@ describe('failurechecker', () => {
       .reply(200, {
         number: 33,
         merged_at: '2020-01-30T13:33:48Z',
-        labels: [{name: 'autorelease: failed'}, {name: 'autorelease: published'}],
+        labels: [
+          {name: 'autorelease: failed'},
+          {name: 'autorelease: published'},
+        ],
       })
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&sort=updated&direction=desc&per_page=16'
@@ -493,7 +502,10 @@ describe('failurechecker', () => {
       .reply(200, {
         number: 33,
         merged_at: '2020-01-30T13:33:48Z',
-        labels: [{name: 'autorelease: failed'}, {name: 'autorelease: published'}],
+        labels: [
+          {name: 'autorelease: failed'},
+          {name: 'autorelease: published'},
+        ],
       })
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&sort=updated&direction=desc&per_page=16'
@@ -579,7 +591,7 @@ describe('failurechecker', () => {
         {
           title: 'Warning: a recent release failed',
           number: 44,
-          body: "The following release PRs may have failed:\n\n* #33",
+          body: 'The following release PRs may have failed:\n\n* #33',
         },
       ])
       .get('/rate_limit')
