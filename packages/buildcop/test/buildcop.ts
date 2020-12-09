@@ -20,8 +20,6 @@ import nock from 'nock';
 import * as fs from 'fs';
 import * as assert from 'assert';
 import {describe, it, beforeEach} from 'mocha';
-import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = ProbotOctokit.plugin(config);
 
 import {buildcop} from '../src/buildcop';
 const {findTestResults, formatTestCase} = buildcop;
@@ -100,7 +98,10 @@ describe('buildcop', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
     probot.load(buildcop);
   });

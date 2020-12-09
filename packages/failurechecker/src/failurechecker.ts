@@ -25,6 +25,7 @@ type OctokitType = InstanceType<typeof ProbotOctokit>;
 // labels indicative of the fact that a release has not completed yet.
 const RELEASE_LABELS = ['autorelease: pending', 'autorelease: failed'];
 const RELEASE_TYPE_NO_PUBLISH = ['go-yoshi'];
+const SUCCESSFUL_PUBLISH_LABEL = 'autorelease: published';
 
 // We open an issue that a release has failed if it's been longer than 3
 // hours and we're within normal working hours.
@@ -72,6 +73,7 @@ export function failureChecker(app: Application) {
     }
 
     const now = TimeMethods.Date().getTime();
+    const failed: number[] = [];
     for (const label of labels) {
       const results = (
         await context.github.issues.listForRepo({
@@ -99,21 +101,31 @@ export function failureChecker(app: Application) {
               pull_number: issue.number,
             })
           ).data;
-          if (pr.merged_at) {
-            await openWarningIssue(owner, repo, pr.number, context.github);
+          if (
+            pr.merged_at &&
+            !pr.labels.some(l => l.name === SUCCESSFUL_PUBLISH_LABEL)
+          ) {
+            failed.push(pr.number);
           }
         }
       }
     }
+
+    await manageWarningIssue(owner, repo, failed, context.github);
     logger.info(`it's alive! event for ${repo}`);
   });
 
+  function buildIssueBody(prNumbers: number[]): string {
+    const list = prNumbers.map(prNumber => `* #${prNumber}`).join('\n');
+    return `The following release PRs may have failed:\n\n${list}`;
+  }
+
   const ISSUE_TITLE = 'Warning: a recent release failed';
   const LABELS = 'type: process';
-  async function openWarningIssue(
+  async function manageWarningIssue(
     owner: string,
     repo: string,
-    prNumber: number,
+    prNumbers: number[],
     github: OctokitType
   ) {
     const {data: issues} = await github.issues.listForRepo({
@@ -130,16 +142,43 @@ export function failureChecker(app: Application) {
     // a cron effects our usage limits:
     logger.info((await github.rateLimit.get()).data);
 
-    if (warningIssue) {
-      logger.info(`a warning issue was already opened for pr ${prNumber}`);
+    // existing issue and no failures - close the existing issue
+    if (prNumbers.length === 0) {
+      if (warningIssue) {
+        await github.issues.update({
+          owner,
+          repo,
+          issue_number: warningIssue.number,
+          state: 'closed',
+        });
+      }
       return;
     }
-    app.log(`opening warning issue on ${repo} for PR #${prNumber}`);
-    return github.issues.create({
+
+    const body = buildIssueBody(prNumbers);
+
+    if (warningIssue) {
+      if (warningIssue.body === body) {
+        // issue already up-to-date
+        logger.info(`a warning issue was already opened for prs ${prNumbers}`);
+        return;
+      }
+
+      // Update the existing issue
+      await github.issues.update({
+        owner,
+        repo,
+        issue_number: warningIssue.number,
+        body,
+      });
+      return;
+    }
+    app.log(`opening warning issue on ${repo} for PR #${prNumbers}`);
+    await github.issues.create({
       owner,
       repo,
       title: ISSUE_TITLE,
-      body: `The release PR #${prNumber} is still in a pending state after several hours`,
+      body,
       labels: LABELS.split(','),
     });
   }

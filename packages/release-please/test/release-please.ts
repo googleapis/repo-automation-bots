@@ -18,14 +18,11 @@ import {describe, it, beforeEach} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
-// eslint-disable-next-line node/no-extraneous-import
-import {config} from '@probot/octokit-plugin-config';
 import * as fs from 'fs';
 import assert, {fail} from 'assert';
 import {GitHubRelease, ReleasePR, JavaYoshi, Ruby} from 'release-please';
 import nock from 'nock';
 
-const TestingOctokit = ProbotOctokit.plugin(config);
 nock.disableNetConnect();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
@@ -35,7 +32,10 @@ describe('ReleasePleaseBot', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
     probot.load(myProbotApp);
   });
