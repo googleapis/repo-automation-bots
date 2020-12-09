@@ -31,7 +31,6 @@
     "gcf-utils": "^6.2.0"
   },
   "devDependencies": {
-    "@probot/octokit-plugin-config": "^1.0.0",
     "@types/mocha": "^8.0.3",
     "@types/node": "^14.6.0",
     "@types/sinon": "^9.0.4",

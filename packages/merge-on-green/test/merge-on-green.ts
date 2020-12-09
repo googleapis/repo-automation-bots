@@ -22,6 +22,7 @@ import handler from '../src/merge-on-green';
 import {CheckStatus, Reviews, Comment} from '../src/merge-logic';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
+// eslint-disable-next-line node/no-extraneous-import
 import {config} from '@probot/octokit-plugin-config';
 
 const TestingOctokit = ProbotOctokit.plugin(config);
@@ -177,11 +178,14 @@ describe('merge-on-green', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
 
     const app = probot.load(handler);
-    (app.auth as Function) = async () => testingOctokitInstance;
+    app.auth = async () => testingOctokitInstance;
   });
 
   afterEach(() => {
