@@ -67,6 +67,7 @@ describe('failurechecker', () => {
       .reply(200, {
         number: 33,
         merged_at: '2020-01-30T13:33:48Z',
+        labels: [{name: 'autorelease: pending'}],
       })
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&sort=updated&direction=desc&per_page=16'
@@ -138,6 +139,7 @@ describe('failurechecker', () => {
       .reply(200, {
         number: 33,
         merged_at: '2020-01-30T13:33:48Z',
+        labels: [{name: 'autorelease: pending'}],
       })
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
@@ -187,6 +189,10 @@ describe('failurechecker', () => {
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
       )
+      .reply(200, [])
+      .get('/rate_limit')
+      .reply(200, {})
+      .get('/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32')
       .reply(200, []);
 
     await probot.receive({
@@ -235,7 +241,11 @@ describe('failurechecker', () => {
           number: 33,
           updated_at: date,
         },
-      ]);
+      ])
+      .get('/rate_limit')
+      .reply(200, [])
+      .get('/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32')
+      .reply(200, []);
 
     await probot.receive({
       name: 'schedule.repository' as '*',
@@ -282,7 +292,11 @@ describe('failurechecker', () => {
           number: 33,
           updated_at: '2020-01-25T13:33:48Z',
         },
-      ]);
+      ])
+      .get('/rate_limit')
+      .reply(200, {})
+      .get('/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32')
+      .reply(200, []);
 
     await probot.receive({
       name: 'schedule.repository' as '*',
@@ -334,6 +348,7 @@ describe('failurechecker', () => {
       .reply(200, {
         number: 33,
         merged_at: '2020-01-30T13:33:48Z',
+        labels: [{name: 'autorelease: pending'}],
       })
       .get(
         '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
@@ -341,10 +356,16 @@ describe('failurechecker', () => {
       .reply(200, [
         {
           title: 'Warning: a recent release failed',
+          number: 44,
         },
       ])
       .get('/rate_limit')
-      .reply(200, {});
+      .reply(200, {})
+      .patch('/repos/googleapis/nodejs-foo/issues/44', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200, []);
 
     await probot.receive({
       name: 'schedule.repository' as '*',

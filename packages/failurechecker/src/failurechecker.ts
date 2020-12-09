@@ -143,13 +143,15 @@ export function failureChecker(app: Application) {
     logger.info((await github.rateLimit.get()).data);
 
     // existing issue and no failures - close the existing issue
-    if (warningIssue && prNumbers.length === 0) {
-      await github.issues.update({
-        owner,
-        repo,
-        issue_number: warningIssue.number,
-        state: 'closed',
-      });
+    if (prNumbers.length === 0) {
+      if (warningIssue) {
+        await github.issues.update({
+          owner,
+          repo,
+          issue_number: warningIssue.number,
+          state: 'closed',
+        });
+      }
       return;
     }
 
@@ -163,7 +165,7 @@ export function failureChecker(app: Application) {
       }
 
       // Update the existing issue
-      github.issues.update({
+      await github.issues.update({
         owner,
         repo,
         issue_number: warningIssue.number,
@@ -172,7 +174,7 @@ export function failureChecker(app: Application) {
       return;
     }
     app.log(`opening warning issue on ${repo} for PR #${prNumbers}`);
-    return github.issues.create({
+    await github.issues.create({
       owner,
       repo,
       title: ISSUE_TITLE,
