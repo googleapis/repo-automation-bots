@@ -24,7 +24,9 @@ import {
 import {logger} from 'gcf-utils';
 import Ajv from 'ajv';
 import yaml from 'js-yaml';
+// eslint-disable-next-line node/no-extraneous-import
 import {PullsListFilesResponseData} from '@octokit/types';
+import checks from './required-checks.json';
 
 export const configFileName = 'sync-repo-settings.yaml';
 
@@ -38,8 +40,7 @@ type Conclusion =
   | undefined;
 
 // configure the schema validator once
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const schema = require('./schema.json');
+import schema from './schema.json';
 const ajv = new Ajv();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,11 +54,7 @@ function deepFreeze(object: any) {
   }
   return Object.freeze(object);
 }
-
-const languageConfig: LanguageConfig = deepFreeze(
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  require('./required-checks.json')
-);
+const languageConfig: LanguageConfig = deepFreeze(checks);
 
 const repoConfigDefaults: RepoConfig = deepFreeze({
   mergeCommitAllowed: false,
@@ -166,7 +163,6 @@ export function handler(app: Application) {
   );
 
   // meta comment about the '*' here: https://github.com/octokit/webhooks.js/issues/277
-
   app.on(['schedule.repository' as '*'], async (context: Context) => {
     logger.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
@@ -228,7 +224,6 @@ export function handler(app: Application) {
       config = extend(true, {}, languageConfig)[language];
       if (!config) {
         logger.info(`no config for language ${language}`);
-        return;
       }
 
       // Check for repositories we're specifically configured to skip
@@ -249,13 +244,10 @@ export function handler(app: Application) {
     }
 
     const jobs: Promise<void>[] = [];
-    if (config!.permissionRules) {
-      jobs.push(updateRepoTeams(repo, context, config.permissionRules));
-    }
-    if (!ignored) {
+    jobs.push(updateRepoTeams(repo, context, config?.permissionRules || []));
+    if (!ignored && config) {
       jobs.push(updateRepoOptions(repo, context, config));
       if (config.branchProtectionRules) {
-        //console.log(JSON.stringify(config.branchProtectionRules))
         jobs.push(
           updateMasterBranchProtection(
             repo,
@@ -340,11 +332,17 @@ async function updateRepoTeams(
   logger.info(`Update team access for ${repo}`);
   const [owner, name] = repo.split('/');
 
-  // Cloud DPEs are given default write access to all repositories we manage.
-  rules.push({
-    permission: 'push',
-    team: 'cloud-dpes',
-  });
+  // Cloud DPEs and Cloud DevRel PgMs are given default write access to all repositories we manage.
+  rules.push(
+    {
+      permission: 'push',
+      team: 'cloud-dpe',
+    },
+    {
+      permission: 'push',
+      team: 'cloud-devrel-pgm',
+    }
+  );
 
   try {
     await Promise.all(

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {Violation} from './violations';
+
 import parseDiff from 'parse-diff';
 import fetch from 'node-fetch';
 
@@ -22,17 +24,17 @@ import fetch from 'node-fetch';
  */
 export interface ParseResult {
   result: boolean;
-  messages: string[];
+  violations: Violation[];
   tagsFound: boolean;
   startTags: string[];
 }
 
-type ChangeTypes = 'add' | 'del';
+type ChangeTypes = 'add' | 'del' | 'unknown';
 
 /**
  * A single region tag change in a pull request.
  */
-export interface Change {
+export interface RegionTagLocation {
   type: ChangeTypes;
   regionTag: string;
   owner: string;
@@ -46,7 +48,7 @@ export interface Change {
  * The summary of the region tag changes in a pull request.
  */
 export interface ChangesInPullRequest {
-  changes: Change[];
+  changes: RegionTagLocation[];
   added: number;
   deleted: number;
   files: string[];
@@ -67,7 +69,7 @@ export async function parseRegionTagsInPullRequest(
   headRepo: string,
   headSha: string
 ): Promise<ChangesInPullRequest> {
-  const changes: Change[] = [];
+  const changes: RegionTagLocation[] = [];
   const files: string[] = [];
   const ret = {
     changes: changes,
@@ -117,11 +119,14 @@ export async function parseRegionTagsInPullRequest(
  */
 export function parseRegionTags(
   contents: string,
-  filename: string
+  filename: string,
+  owner: string,
+  repo: string,
+  sha: string
 ): ParseResult {
   const result: ParseResult = {
     result: true,
-    messages: [],
+    violations: [],
     tagsFound: false,
     startTags: [],
   };
@@ -145,9 +150,19 @@ export function parseRegionTags(
         if (tag[1] === startMatch[1]) {
           alreadyStarted = true;
           result.result = false;
-          result.messages.push(
-            `${filename}:${lineno}, tag \`${startMatch[1]}\` has already started`
-          );
+          result.violations.push({
+            violationType: 'TAG_ALREADY_STARTED',
+            location: {
+              type: 'unknown',
+              regionTag: startMatch[1],
+              owner: owner,
+              repo: repo,
+              file: filename,
+              sha: sha,
+              line: lineno,
+            },
+            devsite_urls: [],
+          });
         }
       }
       if (!alreadyStarted) {
@@ -169,9 +184,19 @@ export function parseRegionTags(
       if (startTagIndex === -1) {
         // No matching start tag.
         result.result = false;
-        result.messages.push(
-          `${filename}:${lineno}, tag \`${endMatch[1]}\` doesn't have a matching start tag`
-        );
+        result.violations.push({
+          violationType: 'NO_MATCHING_START_TAG',
+          location: {
+            type: 'unknown',
+            regionTag: endMatch[1],
+            owner: owner,
+            repo: repo,
+            file: filename,
+            sha: sha,
+            line: lineno,
+          },
+          devsite_urls: [],
+        });
       } else {
         // Remove the matched start tag
         tags.splice(startTagIndex, 1);
@@ -181,9 +206,19 @@ export function parseRegionTags(
   // After the loop, the temporary list must be empty.
   for (const tag of tags) {
     result.result = false;
-    result.messages.push(
-      `${filename}:${tag[0]}, tag \`${tag[1]}\` doesn't have a matching end tag`
-    );
+    result.violations.push({
+      violationType: 'NO_MATCHING_END_TAG',
+      location: {
+        type: 'unknown',
+        regionTag: tag[1],
+        owner: owner,
+        repo: repo,
+        file: filename,
+        sha: sha,
+        line: tag[0],
+      },
+      devsite_urls: [],
+    });
   }
   return result;
 }

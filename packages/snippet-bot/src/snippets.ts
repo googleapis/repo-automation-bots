@@ -31,7 +31,8 @@ import {logger} from 'gcf-utils';
  *             "repository_path": "googleapis/java-accessapproval",
  *             "filename": "samples/install-without-bom/pom.xml",
  *             "commit": "a4b4143ee94d70a5486d96b9df2903fbba57e0d6",
- *             "branch": "master"
+ *             "branch": "master",
+ *             "devsite_urls": ["https://example.com/usage.html"]
  *           }
  *         ]
  *       }
@@ -49,6 +50,7 @@ export interface SnippetLocation {
   filename: string;
   commit: string;
   branch: string;
+  devsite_urls: string[];
 }
 
 export interface SnippetLanguage {

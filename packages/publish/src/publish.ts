@@ -11,11 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-
-// define types for a few modules used by probot that do not have their
-// own definitions published. Before taking this step, folks should first
-// check whether type bindings are already published.
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, Context} from 'probot';
@@ -85,7 +80,7 @@ function handler(app: Application) {
 
       // Unpack the tarball to the directory we just created:
       await fetch(context.payload.release.tarball_url).then(res => {
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
           const dest = tar.x({
             C: unpackPath,
           });
@@ -174,7 +169,7 @@ function handler(app: Application) {
 
     // Unpack the tarball to the directory we just created:
     await fetch(tarballURL).then(res => {
-      return new Promise((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         const dest = tar.x({
           C: unpackPath,
         });
@@ -418,7 +413,7 @@ function execAsync(
   cwd: string,
   env: {[key: string]: string | undefined}
 ) {
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     const subprocess = spawn(cmd, args, {
       env,
       cwd,

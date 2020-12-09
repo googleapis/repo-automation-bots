@@ -26,6 +26,7 @@ const DEFAULT_TRUSTED_CONTRIBUTORS = [
   'dependabot[bot]',
   'release-please[bot]',
   'gcf-merge-on-green[bot]',
+  'yoshi-code-bot',
 ];
 
 function isTrustedContribution(

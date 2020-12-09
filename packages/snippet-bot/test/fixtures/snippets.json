@@ -10,7 +10,8 @@
             "repository_path": "tmatsuo/repo-automation-bots",
             "filename": "test.py",
             "commit": "xxx",
-            "branch": "master"
+            "branch": "master",
+	    "devsite_urls": ["https://example.com/used.html"]
           }
         ]
       }
