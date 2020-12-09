@@ -14,7 +14,6 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application} from 'probot';
-import {PullsListFilesResponseData} from '@octokit/types';
 import {LicenseType, detectLicenseHeader} from './header-parser';
 import * as minimatch from 'minimatch';
 import {logger} from 'gcf-utils';
@@ -101,109 +100,112 @@ export = (app: Application) => {
     });
     const pullRequestCommitSha = context.payload.pull_request.head.sha;
 
-    // TODO: handle pagination
-    let files: PullsListFilesResponseData;
     try {
-      files = (await context.github.pulls.listFiles(listFilesParams)).data;
+      const files = await context.github.paginate(
+        context.github.pulls.listFiles,
+        listFilesParams
+      );
+
+      let lintError = false;
+      const failureMessages: string[] = [];
+
+      // If we found any new files, verify they all have a valid header
+      for (let i = 0; files[i] !== undefined; i++) {
+        const file = files[i];
+
+        if (configuration.ignoredFile(file.filename)) {
+          logger.info('ignoring file from configuration: ' + file.filename);
+          continue;
+        }
+
+        if (file.status === 'removed') {
+          logger.info('ignoring deleted file: ' + file.filename);
+          continue;
+        }
+
+        if (!configuration.isSourceFile(file.filename)) {
+          logger.info('ignoring non-source file: ' + file.filename);
+          continue;
+        }
+
+        const blob = await context.github.git.getBlob(
+          context.repo({
+            file_sha: file.sha,
+          })
+        );
+
+        const fileContents = Buffer.from(blob.data.content, 'base64').toString(
+          'utf8'
+        );
+
+        const detectedLicense = detectLicenseHeader(fileContents);
+
+        if (!configuration.allowedLicense(detectedLicense.type)) {
+          lintError = true;
+          failureMessages.push(
+            `\`${file.filename}\` is missing a valid license header.`
+          );
+          continue;
+        }
+
+        if (!detectedLicense.copyright) {
+          lintError = true;
+          failureMessages.push(
+            `\`${file.filename}\` is missing a valid copyright line.`
+          );
+          continue;
+        }
+
+        if (file.status === 'added') {
+          // TODO: fix the licenses in all existing codebases so that we don't
+          // get bitten by this rule in every PR.
+          if (
+            !configuration.allowedCopyrightHolder(detectedLicense.copyright)
+          ) {
+            lintError = true;
+            failureMessages.push(
+              `\`${file.filename}\` has an invalid copyright holder: \`${detectedLicense.copyright}\``
+            );
+          }
+
+          // for new files, ensure the license year is the current year for new
+          // files
+          const currentYear = new Date().getFullYear();
+          if (detectedLicense.year !== currentYear) {
+            lintError = true;
+            failureMessages.push(
+              `\`${file.filename}\` should have a copyright year of ${currentYear}`
+            );
+          }
+        }
+      }
+
+      const checkParams = context.repo({
+        name: 'header-check',
+        conclusion: 'success' as Conclusion,
+        head_sha: pullRequestCommitSha,
+        output: {
+          title: 'Headercheck',
+          summary: 'Header check successful',
+          text: 'Header check successful',
+        },
+      });
+
+      if (lintError) {
+        checkParams.conclusion = 'failure';
+        checkParams.output = {
+          title: 'Invalid or missing license headers detected.',
+          summary: 'Some new files are missing headers',
+          text: failureMessages.join('\n'),
+        };
+      }
+
+      // post the status of commit linting to the PR, using:
+      // https://developer.github.com/v3/checks/
+      await context.github.checks.create(checkParams);
     } catch (err) {
       logger.error(err);
       return;
     }
-
-    let lintError = false;
-    const failureMessages: string[] = [];
-
-    // If we found any new files, verify they all have a valid header
-    for (let i = 0; files[i] !== undefined; i++) {
-      const file = files[i];
-
-      if (configuration.ignoredFile(file.filename)) {
-        logger.info('ignoring file from configuration: ' + file.filename);
-        continue;
-      }
-
-      if (file.status === 'removed') {
-        logger.info('ignoring deleted file: ' + file.filename);
-        continue;
-      }
-
-      if (!configuration.isSourceFile(file.filename)) {
-        logger.info('ignoring non-source file: ' + file.filename);
-        continue;
-      }
-
-      const blob = await context.github.git.getBlob(
-        context.repo({
-          file_sha: file.sha,
-        })
-      );
-
-      const fileContents = Buffer.from(blob.data.content, 'base64').toString(
-        'utf8'
-      );
-
-      const detectedLicense = detectLicenseHeader(fileContents);
-
-      if (!configuration.allowedLicense(detectedLicense.type)) {
-        lintError = true;
-        failureMessages.push(
-          `\`${file.filename}\` is missing a valid license header.`
-        );
-        continue;
-      }
-
-      if (!detectedLicense.copyright) {
-        lintError = true;
-        failureMessages.push(
-          `\`${file.filename}\` is missing a valid copyright line.`
-        );
-        continue;
-      }
-
-      if (file.status === 'added') {
-        // TODO: fix the licenses in all existing codebases so that we don't
-        // get bitten by this rule in every PR.
-        if (!configuration.allowedCopyrightHolder(detectedLicense.copyright)) {
-          lintError = true;
-          failureMessages.push(
-            `\`${file.filename}\` has an invalid copyright holder: \`${detectedLicense.copyright}\``
-          );
-        }
-
-        // for new files, ensure the license year is the current year for new
-        // files
-        const currentYear = new Date().getFullYear();
-        if (detectedLicense.year !== currentYear) {
-          lintError = true;
-          failureMessages.push(
-            `\`${file.filename}\` should have a copyright year of ${currentYear}`
-          );
-        }
-      }
-    }
-
-    const checkParams = context.repo({
-      name: 'header-check',
-      conclusion: 'success' as Conclusion,
-      head_sha: pullRequestCommitSha,
-      output: {
-        title: 'Headercheck',
-        summary: 'Header check successful',
-        text: 'Header check successful',
-      },
-    });
-
-    if (lintError) {
-      checkParams.conclusion = 'failure';
-      checkParams.output = {
-        title: 'Invalid or missing license headers detected.',
-        summary: 'Some new files are missing headers',
-        text: failureMessages.join('\n'),
-      };
-    }
-
-    // post the status of commit linting to the PR, using:
-    // https://developer.github.com/v3/checks/
-    await context.github.checks.create(checkParams);
   });
 };

@@ -27,10 +27,11 @@ import {Application, Logger} from 'probot';
 import xmljs from 'xml-js';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import {
-  IssuesListForRepoResponseData,
-  IssuesListCommentsResponseData,
-} from '@octokit/types';
+import {components} from '@octokit/openapi-types';
+
+type IssuesListForRepoResponseItem = components['schemas']['issue-simple'];
+type IssuesListCommentsResponseData = components['schemas']['issue-comment'][];
+type IssuesListForRepoResponseData = IssuesListForRepoResponseItem[];
 
 const ISSUE_LABEL = 'buildcop: issue';
 const FLAKY_LABEL = 'buildcop: flaky';
@@ -78,23 +79,6 @@ const GROUPED_MESSAGE = `Many tests failed at the same time in this package.
   I won't reopen them while this issue is still open.
 
 `;
-
-// Octokit types only exports IssuesListForRepoResponseData, which is an array of
-// IssueListForRepoResponseItems. So, we're declaring this type for whenever we
-// need to refer to a single item rather than an array.
-
-interface IssuesListForRepoResponseItem {
-  id: number;
-  number: number;
-  state: string;
-  title: string;
-  body: string;
-  labels: {
-    name: string;
-  }[];
-  locked: boolean;
-  closed_at: string;
-}
 
 interface TestCase {
   package?: string;
@@ -687,7 +671,7 @@ buildcop.markIssueFlaky = async (
     `[${owner}/${repo}] marking issue #${existingIssue.number} as flaky`
   );
   const existingLabels = existingIssue.labels
-    ?.map(l => l.name)
+    ?.map(l => l.name as string) // "as string" is workaround for https://github.com/github/rest-api-description/issues/112
     .filter(l => !l.startsWith('buildcop'));
   let labelsToAdd = LABELS_FOR_FLAKY_ISSUE;
   // If existingLabels contains a priority or type label, don't add the
@@ -741,7 +725,7 @@ buildcop.containsBuildFailure = async (
   repo: string,
   commit: string
 ): Promise<[boolean, string]> => {
-  const text = issue.body;
+  const text = issue.body as string; // "as string" because it's complicated: https://github.com/github/rest-api-description/issues/113
   if (text.includes(`commit: ${commit}`) && text.includes('status: failed')) {
     const buildURL = buildcop.extractBuildURL(text);
     return [true, buildURL];
@@ -756,8 +740,8 @@ buildcop.containsBuildFailure = async (
   )) as IssuesListCommentsResponseData;
   const comment = comments.find(
     comment =>
-      comment.body.includes(`commit: ${commit}`) &&
-      comment.body.includes('status: failed')
+      (comment.body as string).includes(`commit: ${commit}`) &&
+      (comment.body as string).includes('status: failed')
   );
   const containsFailure = comment !== undefined;
   let buildURL = '';
@@ -904,7 +888,7 @@ function deduplicateTests(tests: TestCase[]): TestCase[] {
 }
 
 // parseClosedAt parses the closed_at field into a date number.
-function parseClosedAt(closedAt: string): number | undefined {
+function parseClosedAt(closedAt: string | null): number | undefined {
   // The type of closed_at is null. But, it is actually a string if the
   // issue is closed. Convert to unknown then to string as a workaround.
   const closedAtString = (closedAt as unknown) as string;

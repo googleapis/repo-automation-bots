@@ -17,12 +17,9 @@
 import myProbotApp from '../src/do-not-merge';
 import {resolve} from 'path';
 import {Probot, createProbot, ProbotOctokit} from 'probot';
-import {config} from '@probot/octokit-plugin-config';
 import nock from 'nock';
 import {describe, it, beforeEach} from 'mocha';
 import snapshot from 'snap-shot-it';
-
-const TestingOctokit = ProbotOctokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -34,7 +31,10 @@ describe('do-not-merge', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
     probot.load(myProbotApp);
   });

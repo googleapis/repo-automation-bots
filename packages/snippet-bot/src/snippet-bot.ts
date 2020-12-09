@@ -25,7 +25,11 @@ import {
   ParseResult,
 } from './region-tag-parser';
 import {invalidateCache} from './snippets';
-import {Violation, checkProductPrefixViolations} from './violations';
+import {
+  Violation,
+  checkProductPrefixViolations,
+  checkRemovingUsedTagViolations,
+} from './violations';
 import {logger, addOrUpdateIssueComment} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
@@ -112,7 +116,17 @@ function formatViolations(
   }
   let detail = '';
   for (const violation of violations) {
-    detail += `- ${formatRegionTag(violation.location)}\n`;
+    detail += `- ${formatRegionTag(violation.location)}`;
+    if (violation.devsite_urls.length > 0) {
+      // Also add links to devsite urls.
+      detail += '(usage:';
+      violation.devsite_urls.forEach((value, index) => {
+        detail += ` [page ${index + 1}](${value})`;
+      });
+      detail += ').\n';
+    } else {
+      detail += '\n';
+    }
   }
   return formatExpandable(summary, detail);
 }
@@ -332,6 +346,9 @@ async function scanPullRequest(
         path: file,
         ref: context.payload.pull_request.head.sha,
       });
+      if (blob.data.content === undefined) {
+        continue;
+      }
       const fileContents = Buffer.from(blob.data.content, 'base64').toString(
         'utf8'
       );
@@ -407,9 +424,19 @@ async function scanPullRequest(
     result,
     configuration
   );
-  // Warnings for removal of region tag in use is disabled for now.
-  const removeUsedTagViolations: Violation[] = [];
-  const removeConflictingTagViolations: Violation[] = [];
+  const removingUsedTagsViolations = await checkRemovingUsedTagViolations(
+    result,
+    configuration,
+    parseResults,
+    context.payload.pull_request.base.repo.full_name,
+    context.payload.pull_request.base.ref
+  );
+  const removeUsedTagViolations = removingUsedTagsViolations.get(
+    'REMOVE_USED_TAG'
+  ) as Violation[];
+  const removeConflictingTagViolations = removingUsedTagsViolations.get(
+    'REMOVE_CONFLICTING_TAG'
+  ) as Violation[];
 
   if (
     productPrefixViolations.length > 0 ||

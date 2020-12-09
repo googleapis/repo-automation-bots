@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
 // Publish bot requires a minimum of Node 10 for the
 // runtime, we uses the lack of fs.promises to detect this.

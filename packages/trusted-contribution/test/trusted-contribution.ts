@@ -12,18 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {describe, it, beforeEach, before} from 'mocha';
+import {describe, it, beforeEach} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot} from 'probot';
-// eslint-disable-next-line node/no-extraneous-import
-import Webhooks from '@octokit/webhooks';
+import {Probot, createProbot, ProbotOctokit} from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
-import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
 
 import myProbotApp from '../src/trusted-contribution';
 
@@ -42,11 +36,12 @@ describe('TrustedContributionTestRunner', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit as any,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
-
     probot.load(myProbotApp);
-
     requests = nock('https://api.github.com');
   });
 
