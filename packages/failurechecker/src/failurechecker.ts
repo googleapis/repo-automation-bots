@@ -25,6 +25,7 @@ type OctokitType = InstanceType<typeof ProbotOctokit>;
 // labels indicative of the fact that a release has not completed yet.
 const RELEASE_LABELS = ['autorelease: pending', 'autorelease: failed'];
 const RELEASE_TYPE_NO_PUBLISH = ['go-yoshi'];
+const SUCCESSFUL_PUBLISH_LABEL = 'autorelease: published';
 
 // We open an issue that a release has failed if it's been longer than 3
 // hours and we're within normal working hours.
@@ -100,7 +101,10 @@ export function failureChecker(app: Application) {
               pull_number: issue.number,
             })
           ).data;
-          if (pr.merged_at) {
+          if (
+            pr.merged_at &&
+            !pr.labels.some(l => l.name === SUCCESSFUL_PUBLISH_LABEL)
+          ) {
             failed.push(pr.number);
           }
         }
@@ -112,7 +116,7 @@ export function failureChecker(app: Application) {
   });
 
   function buildIssueBody(prNumbers: number[]): string {
-    const list = prNumbers.map((prNumber) => `* #${prNumber}`).join("\n")
+    const list = prNumbers.map(prNumber => `* #${prNumber}`).join('\n');
     return `The following release PRs may have failed:\n\n${list}`;
   }
 
@@ -146,7 +150,7 @@ export function failureChecker(app: Application) {
         issue_number: warningIssue.number,
         state: 'closed',
       });
-      return
+      return;
     }
 
     const body = buildIssueBody(prNumbers);
