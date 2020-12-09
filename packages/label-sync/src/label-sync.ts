@@ -19,7 +19,6 @@ import {Storage} from '@google-cloud/storage';
 import * as util from 'util';
 import {logger} from 'gcf-utils';
 import {request} from 'gaxios';
-import {IssuesListLabelsForRepoResponseData} from '@octokit/types';
 
 const storage = new Storage();
 
@@ -221,14 +220,11 @@ async function reconcileLabels(
   repo: string
 ) {
   const newLabels = await getLabels(`${owner}/${repo}`);
-  const options = github.issues.listLabelsForRepo.endpoint.merge({
+  const oldLabels = await github.paginate(github.issues.listLabelsForRepo, {
     owner,
     repo,
     per_page: 100,
   });
-  const oldLabels: IssuesListLabelsForRepoResponseData = await github.paginate(
-    options
-  );
   for (const l of newLabels.labels) {
     // try to find a label with the same name
     const match = oldLabels.find(

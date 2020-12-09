@@ -15,10 +15,13 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Application} from 'probot';
 import lint from '@commitlint/lint';
-import {PullsListCommitsResponseData} from '@octokit/types';
+import {components} from '@octokit/openapi-types';
 
 import {rules} from '@commitlint/config-conventional';
 import {logger} from 'gcf-utils';
+
+type PullsListCommitsResponseData = components['schemas']['commit'][];
+
 // modify rules slightly:
 // see: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-conventional/index.js
 delete rules['type-enum'];
@@ -97,7 +100,8 @@ export = (app: Application) => {
     let checkParams = context.repo({
       name: 'conventionalcommits.org',
       conclusion: 'success' as Conclusion,
-      head_sha: commits[commits.length - 1].sha,
+      // commit.sha can be null as per GitHub's OpenAPI spec  ¯\_(ツ)_/¯
+      head_sha: commits[commits.length - 1].sha as string,
     });
 
     if (lintError) {
@@ -110,8 +114,9 @@ export = (app: Application) => {
         summary +=
           'edit your pull request title to match Conventional Commit guidelines.';
       }
+
       checkParams = context.repo({
-        head_sha: commits[commits.length - 1].sha,
+        head_sha: commits[commits.length - 1].sha as string,
         conclusion: 'failure' as Conclusion,
         name: 'conventionalcommits.org',
         output: {

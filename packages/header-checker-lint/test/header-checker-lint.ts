@@ -21,10 +21,8 @@ import {EventPayloads} from '@octokit/webhooks';
 import {readFileSync} from 'fs';
 import nock from 'nock';
 import {describe, it, beforeEach, before} from 'mocha';
-import {config} from '@probot/octokit-plugin-config';
 import myProbotApp from '../src/header-checker-lint';
 
-const TestingOctokit = ProbotOctokit.plugin(config);
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 nock.disableNetConnect();
 
@@ -34,7 +32,10 @@ describe('HeaderCheckerLint', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
 
     probot.load(myProbotApp);

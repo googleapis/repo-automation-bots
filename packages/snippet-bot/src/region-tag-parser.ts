@@ -161,6 +161,7 @@ export function parseRegionTags(
               sha: sha,
               line: lineno,
             },
+            devsite_urls: [],
           });
         }
       }
@@ -194,6 +195,7 @@ export function parseRegionTags(
             sha: sha,
             line: lineno,
           },
+          devsite_urls: [],
         });
       } else {
         // Remove the matched start tag
@@ -215,6 +217,7 @@ export function parseRegionTags(
         sha: sha,
         line: tag[0],
       },
+      devsite_urls: [],
     });
   }
   return result;
