@@ -13,29 +13,119 @@
 // limitations under the License.
 //
 
-// eslint-disable-next-line node/no-extraneous-import
-import {Context} from 'probot';
 import {logger} from 'gcf-utils';
-import {LanguageConfig, PathConfig} from './auto-label';
 
-// A mapping of languages to their file extensions
-import defaultExtensions from './extensions.json';
+// *** Helper functions for all types fo labels ***
 
 /**
  * Checks whether the intended label already exists
  */
-export function labelExists(context: Context, new_label: string): boolean {
-  const labels = context.payload.issue
-    ? context.payload.issue.labels
-    : context.payload.pull_request.labels;
+export function labelExists(labels: Label[], new_label: string): Label | null {
   for (const label of labels) {
     if (label.name === new_label) {
       logger.info(`Exiting: label ${new_label} already exists`);
-      return true;
+      return label;
     }
   }
-  return false;
+  return null;
 }
+
+// *** Helper functions for product type labels ***
+export interface PathConfig {
+  [index: string]: string | PathConfig;
+}
+
+export interface LanguageConfig {
+  pullrequest?: boolean;
+  labelprefix?: string;
+  extensions?: {
+    [index: string]: string[];
+  };
+  paths?: PathConfig;
+}
+
+export interface Config {
+  product?: boolean;
+  path?: {
+    pullrequest?: boolean;
+    labelprefix?: string;
+  };
+  language?: LanguageConfig;
+}
+
+export interface Label {
+  name: string;
+}
+
+export interface DriftApi {
+  github_label: string;
+}
+
+export interface DriftRepo {
+  github_label: string;
+  repo: string;
+}
+
+/**
+ * autoDetectLabel tries to detect the right api: label based on the issue
+ * title. For example, an issue titled `spanner/transactions: TestSample failed`
+ * would be labeled `api: spanner`.
+ * @param apis
+ * @param title
+ */
+export function autoDetectLabel(
+  apis: DriftApi[] | null,
+  title: string
+): string | undefined {
+  if (!apis || !title) {
+    return undefined;
+  }
+
+  // The Conventional Commits "docs:" and "build:" prefixes are far more common
+  // than the APIs. So, never label those with "api: docs" or "api: build".
+  if (title.startsWith('docs:') || title.startsWith('build:')) {
+    return undefined;
+  }
+
+  // Regex to match the scope of a Conventional Commit message.
+  const conv = /[^(]+\(([^)]+)\):/;
+  const match = title.match(conv);
+
+  let firstPart = match ? match[1] : title;
+
+  // Remove common prefixes. For example,
+  // https://github.com/GoogleCloudPlatform/java-docs-samples/issues/3578.
+  const trimPrefixes = ['com.example.', 'com.google.', 'snippets.'];
+  for (const prefix of trimPrefixes) {
+    if (firstPart.startsWith(prefix)) {
+      firstPart = firstPart.slice(prefix.length);
+    }
+  }
+
+  if (firstPart.startsWith('/')) firstPart = firstPart.substr(1); // Remove leading /.
+  firstPart = firstPart.split(':')[0]; // Before the colon, if there is one.
+  firstPart = firstPart.split('/')[0]; // Before the slash, if there is one.
+  firstPart = firstPart.split('.')[0]; // Before the period, if there is one.
+  firstPart = firstPart.split('_')[0]; // Before the underscore, if there is one.
+  firstPart = firstPart.toLowerCase(); // Convert to lower case.
+  firstPart = firstPart.replace(/\s/, ''); // Remove spaces.
+
+  // Replace some known firstPart values with their API name.
+  const commonConversions = new Map();
+  commonConversions.set('video', 'videointelligence');
+  commonConversions.set('spannertest', 'spanner');
+  firstPart = commonConversions.get(firstPart) || firstPart;
+
+  // Some APIs have "cloud" before the name (e.g. cloudkms and cloudiot).
+  const possibleLabels = [`api: ${firstPart}`, `api: cloud${firstPart}`];
+  return apis.find(api => possibleLabels.indexOf(api.github_label) > -1)
+    ?.github_label;
+}
+
+// *** Helper functions for language and path type labels ***
+
+// A mapping of languages to their file extensions
+import defaultExtensions from './extensions.json';
 
 function getLabelFromPathConfig(
   filename: string,
