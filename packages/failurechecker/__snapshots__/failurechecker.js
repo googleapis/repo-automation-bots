@@ -14,6 +14,18 @@ exports['failurechecker opens an issue on GitHub if there exists a tagged label 
   ]
 }
 
-exports['failurechecker does not open an issue if a prior warning issue is still open 1'] = {
-  "body": "The following release PRs may have failed:\n\n* #33"
+exports['failurechecker ignores a PR both failed and published 1'] = {
+  "state": "closed"
+}
+
+exports['failurechecker updates an issue with new failures 1'] = {
+  "body": "The following release PRs may have failed:\n\n* #33\n* #34"
+}
+
+exports['failurechecker opens an issue with multiple failures 1'] = {
+  "title": "Warning: a recent release failed",
+  "body": "The following release PRs may have failed:\n\n* #33\n* #34",
+  "labels": [
+    "type: process"
+  ]
 }
