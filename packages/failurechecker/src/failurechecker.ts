@@ -72,6 +72,7 @@ export function failureChecker(app: Application) {
     }
 
     const now = TimeMethods.Date().getTime();
+    const failed: number[] = [];
     for (const label of labels) {
       const results = (
         await context.github.issues.listForRepo({
@@ -100,20 +101,27 @@ export function failureChecker(app: Application) {
             })
           ).data;
           if (pr.merged_at) {
-            await openWarningIssue(owner, repo, pr.number, context.github);
+            failed.push(pr.number);
           }
         }
       }
     }
+
+    await manageWarningIssue(owner, repo, failed, context.github);
     logger.info(`it's alive! event for ${repo}`);
   });
 
+  function buildIssueBody(prNumbers: number[]): string {
+    const list = prNumbers.map((prNumber) => `* #${prNumber}`).join("\n")
+    return `The following release PRs may have failed:\n\n${list}`;
+  }
+
   const ISSUE_TITLE = 'Warning: a recent release failed';
   const LABELS = 'type: process';
-  async function openWarningIssue(
+  async function manageWarningIssue(
     owner: string,
     repo: string,
-    prNumber: number,
+    prNumbers: number[],
     github: OctokitType
   ) {
     const {data: issues} = await github.issues.listForRepo({
@@ -130,16 +138,41 @@ export function failureChecker(app: Application) {
     // a cron effects our usage limits:
     logger.info((await github.rateLimit.get()).data);
 
+    // existing issue and no failures - close the existing issue
+    if (warningIssue && prNumbers.length === 0) {
+      await github.issues.update({
+        owner,
+        repo,
+        issue_number: warningIssue.number,
+        state: 'closed',
+      });
+      return
+    }
+
+    const body = buildIssueBody(prNumbers);
+
     if (warningIssue) {
-      logger.info(`a warning issue was already opened for pr ${prNumber}`);
+      if (warningIssue.body === body) {
+        // issue already up-to-date
+        logger.info(`a warning issue was already opened for prs ${prNumbers}`);
+        return;
+      }
+
+      // Update the existing issue
+      github.issues.update({
+        owner,
+        repo,
+        issue_number: warningIssue.number,
+        body,
+      });
       return;
     }
-    app.log(`opening warning issue on ${repo} for PR #${prNumber}`);
+    app.log(`opening warning issue on ${repo} for PR #${prNumbers}`);
     return github.issues.create({
       owner,
       repo,
       title: ISSUE_TITLE,
-      body: `The release PR #${prNumber} is still in a pending state after several hours`,
+      body,
       labels: LABELS.split(','),
     });
   }
