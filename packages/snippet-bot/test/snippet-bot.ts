@@ -22,18 +22,13 @@ import * as snippetsModule from '../src/snippets';
 import {Snippets} from '../src/snippets';
 
 import {resolve} from 'path';
-import {Probot, createProbot} from 'probot';
+import {Probot, createProbot, ProbotOctokit} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
 import assert from 'assert';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sinon from 'sinon';
-
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
-import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -59,8 +54,10 @@ describe('snippet-bot', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      Octokit: TestingOctokit as any,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
     probot.load(myProbotApp);
   });

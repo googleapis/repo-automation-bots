@@ -19,9 +19,6 @@ import nock from 'nock';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sinon from 'sinon';
 import {failureChecker, TimeMethods} from '../src/failurechecker';
-import {config} from '@probot/octokit-plugin-config';
-
-const TestingOctokit = ProbotOctokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -33,7 +30,10 @@ describe('failurechecker', () => {
     sinon.stub(TimeMethods, 'Date').returns(new Date(Date.UTC(2020, 1, 1, 20)));
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
     probot.load(failureChecker);
   });

@@ -32,7 +32,6 @@
     "js-yaml": "^3.14.0"
   },
   "devDependencies": {
-    "@probot/octokit-plugin-config": "^1.0.0",
     "@types/extend": "^3.0.1",
     "@types/js-yaml": "^3.12.5",
     "@types/mocha": "^8.0.0",
@@ -44,7 +43,6 @@
     "mocha": "^8.0.0",
     "nock": "^13.0.0",
     "sinon": "^9.2.1",
-    "snap-shot-it": "^7.9.0",
     "typescript": "~4.1.0"
   },
   "engines": {

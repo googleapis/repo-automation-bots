@@ -32,7 +32,6 @@
     "minimatch": "^3.0.4"
   },
   "devDependencies": {
-    "@probot/octokit-plugin-config": "^1.0.0",
     "@types/minimatch": "^3.0.3",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.6.1",
