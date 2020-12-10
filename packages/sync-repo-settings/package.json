@@ -18,7 +18,7 @@
     "probot-app"
   ],
   "scripts": {
-    "compile": "tsc -p . && cp ./src/required-checks.json ./build/src/required-checks.json.json",
+    "compile": "tsc",
     "start": "probot run ./build/src/sync-repo-settings",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
@@ -26,25 +26,25 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@types/js-yaml": "^3.12.5",
     "ajv": "^6.12.4",
     "extend": "^3.0.2",
-    "gcf-utils": "^6.1.1",
+    "gcf-utils": "^6.2.0",
     "js-yaml": "^3.14.0"
   },
   "devDependencies": {
-    "@octokit/types": "^5.5.0",
-    "@probot/octokit-plugin-config": "^1.0.0",
+    "@octokit/openapi-types": "^2.0.0",
     "@types/extend": "^3.0.1",
+    "@types/js-yaml": "^3.12.5",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.11.6",
+    "@types/sinon": "^9.0.9",
     "c8": "^7.1.0",
     "cross-env": "^7.0.0",
     "gts": "^3.0.0",
     "mocha": "^8.0.0",
     "nock": "^13.0.0",
-    "snap-shot-it": "^7.9.0",
-    "typescript": "^4.0.0"
+    "sinon": "^9.2.1",
+    "typescript": "~4.1.0"
   },
   "engines": {
     "node": ">= 12.18.2"

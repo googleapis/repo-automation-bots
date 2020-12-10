@@ -12,7 +12,9 @@ by Google on GitHub.
 | [blunderbuss] | Assigns issues and PRs randomly to a specific list of users | [install][blunderbuss-app] |
 | [buildcop] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][buildcop-app] |
 | [conventional-commit-lint] | PR checker that ensures that the commit messages follow conventionalcommits.org style | [install][conventional-commit-lint-app] |
+| [do-not-merge] | PR checker that ensures the `do not merge` label is not present | [install][do-not-merge-app]
 | [failurechecker] | Check for automation tasks, e.g., releases, that are in a failed state | [install][failurechecker-app] |
+| [generated-files-bot] | PR checker to notify if you are modifying generated files | [install][generated-files-bot-app]
 | [license-header-lint] | PR checker that ensures that source files contain valid license headers | [install][license-header-lint-app] |
 | [label-sync] | Synchronize labels across organizations | [install][label-sync-app] |
 | [merge-on-green] | Merge a pull-request when all required checks have passed | [install][merge-on-green-app] |
@@ -116,6 +118,10 @@ at the specified schedule.
 [blunderbuss-app]: https://github.com/apps/blunderbuss-gcf
 [conventional-commit-lint]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/conventional-commit-lint
 [conventional-commit-lint-app]: https://github.com/apps/conventional-commit-lint-gcf
+[do-not-merge]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/do-not-merge
+[do-not-merge-app]: https://github.com/apps/do-not-merge-gcf
+[generated-files-bot]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/generated-files-bot
+[generated-files-bot-app]: https://github.com/apps/generated-files-bot
 [license-header-lint]:  https://github.com/googleapis/repo-automation-bots/tree/master/packages/header-checker-lint
 [license-header-lint-app]: https://github.com/apps/license-header-lint-gcf
 [release-please]:  https://github.com/googleapis/repo-automation-bots/tree/master/packages/release-please

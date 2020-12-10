@@ -22,18 +22,13 @@ import * as snippetsModule from '../src/snippets';
 import {Snippets} from '../src/snippets';
 
 import {resolve} from 'path';
-import {Probot, createProbot} from 'probot';
+import {Probot, createProbot, ProbotOctokit} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
 import assert from 'assert';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sinon from 'sinon';
-
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
-import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -59,8 +54,10 @@ describe('snippet-bot', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      Octokit: TestingOctokit as any,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
     probot.load(myProbotApp);
   });
@@ -109,6 +106,28 @@ describe('snippet-bot', () => {
 
       requests.done();
       diffRequests.done();
+    });
+
+    it('quits early for PRs with null head', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const payload = require(resolve(fixturesPath, './pr_event_null_head'));
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+    });
+
+    it('quits early if PR is closed', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const payload = require(resolve(fixturesPath, './pr_event_closed'));
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
     });
 
     it('sets a "failure" context on PR without a warning about removal of region tags in use', async () => {
@@ -518,6 +537,8 @@ describe('snippet-bot', () => {
         id: 'abc123',
       });
 
+      sinon.assert.calledOnce(getApiLabelsStub);
+      sinon.assert.calledOnce(getSnippetsStub);
       requests.done();
       diffRequests.done();
     });

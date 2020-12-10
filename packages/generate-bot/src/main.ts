@@ -20,6 +20,7 @@ import process from 'process';
 
 export interface ProgramOptions {
   programName: string;
+  exportName?: string;
   description: string;
   fileLocation: string;
 }
@@ -56,6 +57,7 @@ export function checkValidity(opts: ProgramOptions) {
     return false;
   }
   opts.programName = opts.programName.toLowerCase();
+  opts.exportName = opts.programName.replace('-', '_');
   return true;
 }
 

@@ -13,10 +13,10 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
+import {ProbotOctokit} from 'probot';
 import {logger} from 'gcf-utils';
 
-type OctokitType = InstanceType<typeof Octokit>;
+type OctokitType = InstanceType<typeof ProbotOctokit>;
 
 export interface Label {
   name: string;
@@ -52,6 +52,9 @@ interface PullRequest {
   mergeable: boolean;
   mergeable_state: string;
   user: {login: string};
+  labels: Array<{
+    name: string;
+  }>;
 }
 
 interface Merge {
@@ -126,6 +129,7 @@ async function getPR(
       user: {
         login: '',
       },
+      labels: [],
     };
   }
 }
@@ -577,7 +581,7 @@ export async function mergeOnGreen(
     getCommentsOnPR(owner, repo, pr, github),
   ]);
   const failedMesssage =
-    'Merge-on-green attempted to merge your PR for 6 hours, but it was not mergeable because either one of your required status checks failed, or one of your required reviews was not approved. Learn more about your required status checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks. You can remove and reapply the label to re-run the bot.';
+    'Merge-on-green attempted to merge your PR for 6 hours, but it was not mergeable because either one of your required status checks failed, one of your required reviews was not approved, or there is a do not merge label. Learn more about your required status checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks. You can remove and reapply the label to re-run the bot.';
   const conflictMessage =
     'Your PR has conflicts that you need to resolve before merge-on-green can automerge';
   const notAuthorizedMessage =
@@ -590,6 +594,11 @@ export async function mergeOnGreen(
   //if the reviews and statuses are green, let's try to merge
   if (checkReview === true && checkStatus === true) {
     const prInfo = await getPR(owner, repo, pr, github);
+    const hasDNMLabel = prInfo.labels?.some(l => l.name === 'do not merge');
+    if (hasDNMLabel) {
+      logger.info(`${owner}/${repo}/${pr} has do not merge label`);
+      return false;
+    }
     let merged = false;
     try {
       logger.info(`attempt to merge ${owner}/${repo}/${pr}`);

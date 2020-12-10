@@ -17,28 +17,7 @@ import {Storage} from '@google-cloud/storage';
 import {Application, Context} from 'probot';
 import {logger} from 'gcf-utils';
 import * as helper from './helper';
-
-export interface PathConfig {
-  [index: string]: string | PathConfig;
-}
-
-export interface LanguageConfig {
-  pullrequest?: boolean;
-  labelprefix?: string;
-  extensions?: {
-    [index: string]: string[];
-  };
-  paths?: PathConfig;
-}
-
-export interface Config {
-  product?: boolean;
-  path?: {
-    pullrequest?: boolean;
-    labelprefix?: string;
-  };
-  language?: LanguageConfig;
-}
+import {DriftRepo, DriftApi, Label, Config} from './helper';
 
 // Default app configs if user didn't specify a .config
 const LABEL_PRODUCT_BY_DEFAULT = true;
@@ -53,19 +32,6 @@ const DEFAULT_CONFIGS = {
 };
 
 import colorsData from './colors.json';
-
-export interface DriftRepo {
-  github_label: string;
-  repo: string;
-}
-
-export interface DriftApi {
-  github_label: string;
-}
-
-interface Label {
-  name: string;
-}
 
 const storage = new Storage();
 
@@ -97,59 +63,6 @@ handler.getDriftApis = async () => {
   return JSON.parse(jsonData).apis as DriftApi[];
 };
 
-// autoDetectLabel tries to detect the right api: label based on the issue
-// title.
-//
-// For example, an issue titled `spanner/transactions: TestSample failed` would
-// be labeled `api: spanner`.
-export function autoDetectLabel(
-  apis: DriftApi[] | null,
-  title: string
-): string | undefined {
-  if (!apis || !title) {
-    return undefined;
-  }
-
-  // The Conventional Commits "docs:" and "build:" prefixes are far more common
-  // than the APIs. So, never label those with "api: docs" or "api: build".
-  if (title.startsWith('docs:') || title.startsWith('build:')) {
-    return undefined;
-  }
-
-  // Regex to match the scope of a Conventional Commit message.
-  const conv = /[^(]+\(([^)]+)\):/;
-  const match = title.match(conv);
-
-  let firstPart = match ? match[1] : title;
-
-  // Remove common prefixes. For example,
-  // https://github.com/GoogleCloudPlatform/java-docs-samples/issues/3578.
-  const trimPrefixes = ['com.example.', 'com.google.', 'snippets.'];
-  for (const prefix of trimPrefixes) {
-    if (firstPart.startsWith(prefix)) {
-      firstPart = firstPart.slice(prefix.length);
-    }
-  }
-
-  if (firstPart.startsWith('/')) firstPart = firstPart.substr(1); // Remove leading /.
-  firstPart = firstPart.split(':')[0]; // Before the colon, if there is one.
-  firstPart = firstPart.split('/')[0]; // Before the slash, if there is one.
-  firstPart = firstPart.split('.')[0]; // Before the period, if there is one.
-  firstPart = firstPart.split('_')[0]; // Before the underscore, if there is one.
-  firstPart = firstPart.toLowerCase(); // Convert to lower case.
-  firstPart = firstPart.replace(/\s/, ''); // Remove spaces.
-
-  // Replace some known firstPart values with their API name.
-  const commonConversions = new Map();
-  commonConversions.set('video', 'videointelligence');
-  firstPart = commonConversions.get(firstPart) || firstPart;
-
-  // Some APIs have "cloud" before the name (e.g. cloudkms and cloudiot).
-  const possibleLabels = [`api: ${firstPart}`, `api: cloud${firstPart}`];
-  return apis.find(api => possibleLabels.indexOf(api.github_label) > -1)
-    ?.github_label;
-}
-
 handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   owner: string,
   repo: string,
@@ -175,7 +88,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
     );
     const apis = await handler.getDriftApis();
-    autoDetectedLabel = autoDetectLabel(apis, issueTitle);
+    autoDetectedLabel = helper.autoDetectLabel(apis, issueTitle);
   }
   const index = driftRepos?.findIndex(r => driftRepo === r) % colorsData.length;
   const colorNumber = index >= 0 ? index : 0;
@@ -198,18 +111,15 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       }
     }
     if (labelsOnIssue) {
-      const foundAPIName = labelsOnIssue.find(
-        (element: Label) => element.name === githubLabel
-      );
+      const foundAPIName = helper.labelExists(labelsOnIssue, githubLabel);
+
       const cleanUpOtherLabels = labelsOnIssue.filter(
         (element: Label) =>
           element.name.startsWith('api') &&
           element.name !== foundAPIName?.name &&
           element.name !== autoDetectedLabel
       );
-      if (foundAPIName) {
-        logger.info('The label already exists on this issue');
-      } else {
+      if (!foundAPIName) {
         await context.github.issues
           .addLabels({
             owner,
@@ -404,6 +314,9 @@ export function handler(app: Application) {
       repo,
       pull_number,
     });
+    const labels = context.payload.issue
+      ? context.payload.issue.labels
+      : context.payload.pull_request.labels;
 
     // If user has turned on path labels by configuring {path: {pullrequest: false, }}
     // By default, this feature is turned off
@@ -414,7 +327,7 @@ export function handler(app: Application) {
         config.path,
         'path'
       );
-      if (path_label && !helper.labelExists(context, path_label)) {
+      if (path_label && !helper.labelExists(labels, path_label)) {
         logger.info(
           `Path label added to PR #${pull_number} in ${owner}/${repo} is ${path_label}`
         );
@@ -438,7 +351,7 @@ export function handler(app: Application) {
         config.language,
         'language'
       );
-      if (language_label && !helper.labelExists(context, language_label)) {
+      if (language_label && !helper.labelExists(labels, language_label)) {
         logger.info(
           `Language label added to PR #${pull_number} in ${owner}/${repo} is ${language_label}`
         );

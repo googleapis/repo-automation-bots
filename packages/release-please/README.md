@@ -3,8 +3,8 @@
 > A GitHub App built with [Probot](https://github.com/probot/probot) that proposes releases based on
 > semantic version commits defined by conventionalcommits.org.
 
-This bot wraps the [release-please][release-please] [npm package][npm-package] to provide an easy way
-to integrate with your GitHub repository.
+This bot wraps the [release-please][release-please] [npm package][npm-package]
+to provide an easy way to integrate with your GitHub repository.
 
 ## Setup
 
@@ -33,9 +33,9 @@ options:
 ## Testing
 
 This bot uses [nock](https://www.npmjs.com/package/nock) for mocking requests
-to GitHub, and [snap-shot-it](https://www.npmjs.com/package/snap-shot-it) for capturing
-responses; This allows updates to the API surface to be treated as a visual diff,
-rather than tediously asserting against each field.
+to GitHub, and [snap-shot-it](https://www.npmjs.com/package/snap-shot-it) for
+capturing responses; This allows updates to the API surface to be treated as a
+visual diff, rather than tediously asserting against each field.
 
 Running tests:
 
@@ -51,7 +51,8 @@ npm run test:snap
 
 ## Contributing
 
-If you have suggestions for how release-please could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
+If you have suggestions for how release-please could be improved, or want to
+report a bug, open an issue! We'd love all and any contributions.
 
 For more, check out the [Contributing Guide](CONTRIBUTING.md).
 

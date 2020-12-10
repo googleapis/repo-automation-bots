@@ -87,6 +87,18 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [6.3.0](https://www.github.com/googleapis/repo-automation-bots/compare/v6.2.0...v6.3.0) (2020-12-02)
+
+
+### Features
+
+* **gcf-utils:** export a function for the comment mark ([#1173](https://www.github.com/googleapis/repo-automation-bots/issues/1173)) ([90981e4](https://www.github.com/googleapis/repo-automation-bots/commit/90981e4e1146e8038e9d532862926682c2ec9a26)), closes [#1160](https://www.github.com/googleapis/repo-automation-bots/issues/1160)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @octokit/plugin-enterprise-compatibility to v1.2.7 ([#1194](https://www.github.com/googleapis/repo-automation-bots/issues/1194)) ([9d07382](https://www.github.com/googleapis/repo-automation-bots/commit/9d073824696f858a820b24496385eb9b295d4ee1))
+
 ## [6.2.0](https://www.github.com/googleapis/repo-automation-bots/compare/v6.1.4...v6.2.0) (2020-11-18)
 
 

@@ -23,11 +23,6 @@ import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
 import * as sinon from 'sinon';
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
-// eslint-disable-next-line node/no-extraneous-import
-import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = (Octokit.plugin(config) as {}) as typeof ProbotOctokit;
 
 nock.disableNetConnect();
 
@@ -44,7 +39,10 @@ describe('Blunderbuss', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
 
     sandbox.stub(blunderbuss, 'sleep').resolves();

@@ -18,12 +18,18 @@
 import {Application, Context} from 'probot';
 import {Configuration, ConfigurationOptions} from './configuration';
 import {DEFAULT_CONFIGURATION, CONFIGURATION_FILE_PATH} from './configuration';
-import {parseRegionTags} from './region-tag-parser';
-import {parseRegionTagsInPullRequest} from './region-tag-parser';
-import {ParseResult} from './region-tag-parser';
+import {
+  parseRegionTags,
+  RegionTagLocation,
+  parseRegionTagsInPullRequest,
+  ParseResult,
+} from './region-tag-parser';
 import {invalidateCache} from './snippets';
-import {Change} from './region-tag-parser';
-import {Violation, checkProductPrefixViolations} from './violations';
+import {
+  Violation,
+  checkProductPrefixViolations,
+  checkRemovingUsedTagViolations,
+} from './violations';
 import {logger, addOrUpdateIssueComment} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
@@ -110,17 +116,42 @@ function formatViolations(
   }
   let detail = '';
   for (const violation of violations) {
-    detail += `- ${formatChangedFile(violation.change)}\n`;
+    detail += `- ${formatRegionTag(violation.location)}`;
+    if (violation.devsite_urls.length > 0) {
+      // Also add links to devsite urls.
+      detail += '(usage:';
+      violation.devsite_urls.forEach((value, index) => {
+        detail += ` [page ${index + 1}](${value})`;
+      });
+      detail += ').\n';
+    } else {
+      detail += '\n';
+    }
   }
   return formatExpandable(summary, detail);
 }
 
 /**
- * It formats a region tag change as a markdown with a permalink to the code.
+ * It formats a violation for unmatched region tag.
  */
-function formatChangedFile(change: Change): string {
-  const url = `https://github.com/${change.owner}/${change.repo}/blob/${change.sha}/${change.file}#L${change.line}`;
-  return `\`${change.regionTag}\` in [\`${change.file}\`](${url})`;
+function formatMatchingViolation(violation: Violation): string {
+  let detail = '';
+  if (violation.violationType === 'NO_MATCHING_START_TAG') {
+    detail = "doesn't have a matching start tag.";
+  } else if (violation.violationType === 'NO_MATCHING_END_TAG') {
+    detail = "doesn't have a matching end tag.";
+  } else if (violation.violationType === 'TAG_ALREADY_STARTED') {
+    detail = 'already started.';
+  }
+  return `${formatRegionTag(violation.location)} ${detail}`;
+}
+
+/**
+ * It formats a region tag location as a markdown with a permalink to the code.
+ */
+function formatRegionTag(loc: RegionTagLocation): string {
+  const url = `https://github.com/${loc.owner}/${loc.repo}/blob/${loc.sha}/${loc.file}#L${loc.line}`;
+  return `[${loc.file}:${loc.line}](${url}), tag \`${loc.regionTag}\``;
 }
 
 async function downloadFile(url: string, file: string) {
@@ -221,19 +252,17 @@ async function fullScan(context: Context, configuration: Configuration) {
         const fileContents = await pfs.readFile(file, 'utf-8');
         const parseResult = parseRegionTags(
           fileContents,
-          file.replace(archiveDir + '/', '')
+          file.replace(archiveDir + '/', ''),
+          owner,
+          repo,
+          commitHash
         );
         if (!parseResult.result) {
           mismatchedTags = true;
-          for (const message of parseResult.messages) {
-            // Create a link to the source code at the commit.
-            const linkedMessage = message.replace(
-              /^(.+):(\d+),/,
-              `- [ ] [$1:$2](https://github.com/${owner}/${repo}/blob/${commitHash}/$1#L$2),`
-            );
-            failureMessages.push(linkedMessage);
+          for (const violation of parseResult.violations) {
+            const formatted = formatMatchingViolation(violation);
+            failureMessages.push(`- [ ] ${formatted}`);
           }
-          parseResult.messages.join('\n');
         }
       } catch (err) {
         err.message = `Failed to read the file: ${err.message}`;
@@ -317,15 +346,25 @@ async function scanPullRequest(
         path: file,
         ref: context.payload.pull_request.head.sha,
       });
+      if (blob.data.content === undefined) {
+        continue;
+      }
       const fileContents = Buffer.from(blob.data.content, 'base64').toString(
         'utf8'
       );
-
-      const parseResult = parseRegionTags(fileContents, file);
+      const parseResult = parseRegionTags(
+        fileContents,
+        file,
+        owner,
+        repo,
+        context.payload.pull_request.head.sha
+      );
       parseResults.set(file, parseResult);
       if (!parseResult.result) {
         mismatchedTags = true;
-        failureMessages.push(parseResult.messages.join('\n'));
+        for (const violation of parseResult.violations) {
+          failureMessages.push(formatMatchingViolation(violation));
+        }
       }
       if (parseResult.tagsFound) {
         tagsFound = true;
@@ -385,9 +424,19 @@ async function scanPullRequest(
     result,
     configuration
   );
-  // Warnings for removal of region tag in use is disabled for now.
-  const removeUsedTagViolations: Violation[] = [];
-  const removeConflictingTagViolations: Violation[] = [];
+  const removingUsedTagsViolations = await checkRemovingUsedTagViolations(
+    result,
+    configuration,
+    parseResults,
+    context.payload.pull_request.base.repo.full_name,
+    context.payload.pull_request.base.ref
+  );
+  const removeUsedTagViolations = removingUsedTagsViolations.get(
+    'REMOVE_USED_TAG'
+  ) as Violation[];
+  const removeConflictingTagViolations = removingUsedTagsViolations.get(
+    'REMOVE_CONFLICTING_TAG'
+  ) as Violation[];
 
   if (
     productPrefixViolations.length > 0 ||
@@ -430,7 +479,7 @@ async function scanPullRequest(
     let detail = '';
     for (const change of result.changes) {
       if (change.type === 'add') {
-        detail += `- ${formatChangedFile(change)}\n`;
+        detail += `- ${formatRegionTag(change)}\n`;
       }
     }
     commentBody += formatExpandable(summary, detail);
@@ -441,7 +490,7 @@ async function scanPullRequest(
     let detail = '';
     for (const change of result.changes) {
       if (change.type === 'del') {
-        detail += `- ${formatChangedFile(change)}\n`;
+        detail += `- ${formatRegionTag(change)}\n`;
       }
     }
     commentBody += formatExpandable(summary, detail);
@@ -581,6 +630,24 @@ export = (app: Application) => {
       'pull_request.synchronize',
     ],
     async context => {
+      // Exit if the PR is closed.
+      if (context.payload.pull_request.state === 'closed') {
+        logger.info(
+          `The pull request ${context.payload.pull_request.url} is closed, exiting.`
+        );
+        return;
+      }
+      // If the head repo is null, we can not proceed.
+      if (
+        context.payload.pull_request.head.repo === undefined ||
+        context.payload.pull_request.head.repo === null
+      ) {
+        logger.info(
+          `The head repo is undefined for ${context.payload.pull_request.url}, exiting.`
+        );
+        return;
+      }
+
       const repoUrl = context.payload.repository.full_name;
       const configOptions = await getConfigOptions(context);
 
