@@ -34,5 +34,22 @@
         ]
       }
     }
+  },
+  "untracked_region_tag": {
+    "title": "",
+    "description": "",
+    "languages": {
+      "PYTHON": {
+        "status": "UNTRACKED",
+        "current_locations": [
+          {
+            "repository_path": "tmatsuo/repo-automation-bots",
+            "filename": "test.py",
+            "commit": "xxx",
+            "branch": "master"
+          }
+        ]
+      }
+    }
   }
 }

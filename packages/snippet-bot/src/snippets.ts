@@ -25,7 +25,7 @@ import {logger} from 'gcf-utils';
  *     "description": null,
  *     "languages": {
  *       "MAVEN_POM": {
- *         "status": "IMPLEMENTED", // or "CONFLICT"
+ *         "status": "IMPLEMENTED", "CONFLICT", or "UNTRACKED"
  *         "current_locations": [
  *           {
  *             "repository_path": "googleapis/java-accessapproval",
@@ -44,7 +44,7 @@ import {logger} from 'gcf-utils';
 
 const storage = new Storage();
 
-export type SnippetStatus = 'IMPLEMENTED' | 'CONFLICT';
+export type SnippetStatus = 'IMPLEMENTED' | 'CONFLICT' | 'UNTRACKED';
 
 export interface SnippetLocation {
   repository_path: string;
