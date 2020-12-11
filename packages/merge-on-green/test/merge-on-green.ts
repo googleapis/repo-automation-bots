@@ -18,11 +18,12 @@ import {resolve} from 'path';
 import nock from 'nock';
 import sinon, {SinonStub} from 'sinon';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-import handler, { checkForBranchProtection } from '../src/merge-on-green';
+import handler, { addPR, checkForBranchProtection } from '../src/merge-on-green';
 import {CheckStatus, Reviews, Comment} from '../src/merge-logic';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
 import {config} from '@probot/octokit-plugin-config';
+import { SSL_OP_NO_COMPRESSION } from 'constants';
 
 const TestingOctokit = ProbotOctokit.plugin(config);
 const testingOctokitInstance = new TestingOctokit({auth: 'abc123'});
@@ -821,15 +822,50 @@ describe('merge-on-green', () => {
     let getPRStub: SinonStub;
 
     beforeEach(() => {
-      // addPRStub = sandbox.stub(handler, 'addPR').callsFake(addPRs());
+      addPRStub = sandbox.stub(handler, 'addPR');
       removePRStub = sandbox.stub(handler, 'removePR');
     });
 
     afterEach(() => {
       addPRStub.restore();
       removePRStub.restore();
+      getPRStub.restore();
     });
 
+    describe('adding method', async () => {
+      it.only('does not add a PR to Datastore', async () => {
+        addPRStub.restore();
+        handler.addPR({
+          number: 1,
+          repo: 'testRepo',
+          owner: 'testOwner',
+          state: 'continue',
+          label: 'automerge',
+          author: 'testOwner',
+          url: 'https://github.com/testOwner/testRepo/pull/6',
+          reactionId: 1,
+        }, 'https://github.com/testOwner/testRepo/pull/6', testingOctokitInstance);
+      
+
+        const scopes = [
+          getBranchProtection(400, []),
+          commentOnPR(),
+        ];
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_labeled'
+        ));
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());      
+      })
+    });
     describe('cleanup repository events', () => {
       it('deletes a PR if PR is closed when cleaning up repository', async () => {
         handler.getDatastore = async () => {
@@ -918,9 +954,8 @@ describe('merge-on-green', () => {
     });
 
     describe('pick up PRs', () => {
-      addPRStub = sandbox.stub(handler, 'addPR').callsFake(addPRs(200, ['Special Check']));
       getPRStub = sandbox.stub(handler, 'getPR').resolves();
-      it.only('adds a PR if the PR was not picked up by a webhook event w automerge label', async () => {
+      it('adds a PR if the PR was not picked up by a webhook event w automerge label', async () => {
         const scopes = [
           searchForPRs([
             {
@@ -962,6 +997,7 @@ describe('merge-on-green', () => {
       });
 
       it('adds a PR if the PR was not picked up by a webhook event w automerge: exact label', async () => {
+        getPRStub = sandbox.stub(handler, 'getPR').resolves();
         const scopes = [
           searchForPRs([], "automerge"),
           searchForPRs([
@@ -976,8 +1012,6 @@ describe('merge-on-green', () => {
               },
             },
           ], 'automerge%3A%20exact'),
-          getBranchProtection(200, ['Special Check']),
-          react(),
         ];
 
         await probot.receive({
@@ -1030,7 +1064,6 @@ describe('merge-on-green', () => {
         });
 
         scopes.forEach(s => s.done());
-        assert(getPRStub.called);
         assert(!addPRStub.called);
       });
 

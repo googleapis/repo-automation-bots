@@ -419,6 +419,7 @@ handler.checkPRMergeability = async function checkPRMergeability(
   }
 };
 
+//TODO: change the search query if expanding the allowlist to search for more authors
 /**
  * For a given repository, looks through all the PRs and checks to see if they have a MOG label
  * @param owner the owner of the repo
@@ -442,7 +443,6 @@ handler.pickUpPR = async function pickUpPR(
       for (const issue of issuesAutomergeLabel) {
     const pullRequestInDatastore: WatchPR = await handler.getPR(issue.html_url);
     if (!pullRequestInDatastore) {
-       logger.info('are we here?')
         await handler.addPR({number: issue.number, owner, repo, state: 'continue', url: issue.html_url, label: "automerge", author: issue.user.login}, issue.html_url, github);
       }
 
