@@ -93,32 +93,32 @@ export const checkRemovingUsedTagViolations = async (
             );
           }
         }
-        if (currentUrls.length > 0) {
-          let violation: Violation;
-          // Dispatch the violation depending on the current status.
-          if (lang.status === 'IMPLEMENTED') {
-            violation = {
-              location: change,
-              violationType: 'REMOVE_USED_TAG',
-              devsite_urls: currentUrls,
-            };
-            removeUsedTagViolations.push(violation);
-          } else if (lang.status === 'CONFLICT') {
-            violation = {
-              location: change,
-              violationType: 'REMOVE_CONFLICTING_TAG',
-              devsite_urls: currentUrls,
-            };
-            removeConflictingTagViolations.push(violation);
-          }
-        }
-        if (sampleBrowserUrls.length > 0) {
-          removeSampleBrowserViolations.push({
+      }
+      if (currentUrls.length > 0) {
+        let violation: Violation;
+        // Dispatch the violation depending on the current status.
+        if (lang.status === 'IMPLEMENTED') {
+          violation = {
             location: change,
-            violationType: 'REMOVE_SAMPLE_BROWSER_PAGE',
-            devsite_urls: sampleBrowserUrls,
-          });
+            violationType: 'REMOVE_USED_TAG',
+            devsite_urls: currentUrls,
+          };
+          removeUsedTagViolations.push(violation);
+        } else if (lang.status === 'CONFLICT') {
+          violation = {
+            location: change,
+            violationType: 'REMOVE_CONFLICTING_TAG',
+            devsite_urls: currentUrls,
+          };
+          removeConflictingTagViolations.push(violation);
         }
+      }
+      if (sampleBrowserUrls.length > 0) {
+        removeSampleBrowserViolations.push({
+          location: change,
+          violationType: 'REMOVE_SAMPLE_BROWSER_PAGE',
+          devsite_urls: sampleBrowserUrls,
+        });
       }
     }
   }
