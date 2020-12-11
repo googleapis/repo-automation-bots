@@ -18,7 +18,7 @@ import {resolve} from 'path';
 import nock from 'nock';
 import sinon, {SinonStub} from 'sinon';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-import handler from '../src/merge-on-green';
+import handler, { checkForBranchProtection } from '../src/merge-on-green';
 import {CheckStatus, Reviews, Comment} from '../src/merge-logic';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
@@ -179,11 +179,19 @@ function getPR(mergeable: boolean, mergeableState: string, state: string) {
     });
 }
 
-function getPRsForRepo(pr: PR[]) {
+function searchForPRs(pr: PR[], labelName: string) {
   return nock('https://api.github.com')
-    .get('/repos/testOwner/testRepo/pulls?state=open')
+    .get(`/search/issues?q=is%3Aopen%20is%3Apr%20user%3Agoogleapis%20user%3AGoogleCloudPlatform%20label%3A%22${labelName}%22`)
     .reply(200, pr);
 }
+
+function addPRs(status: number, requiredStatusChecks: string[]) {
+  const scopes = [getBranchProtection(status, requiredStatusChecks),
+  react()]
+  return scopes;
+}
+
+
 
 //meta-note about the schedule.repository as any; currently GH does not support this type, see
 //open issue for a fix: https://github.com/octokit/webhooks.js/issues/277
@@ -813,7 +821,7 @@ describe('merge-on-green', () => {
     let getPRStub: SinonStub;
 
     beforeEach(() => {
-      addPRStub = sandbox.stub(handler, 'addPR');
+      // addPRStub = sandbox.stub(handler, 'addPR').callsFake(addPRs());
       removePRStub = sandbox.stub(handler, 'removePR');
     });
 
@@ -910,23 +918,23 @@ describe('merge-on-green', () => {
     });
 
     describe('pick up PRs', () => {
-      it('adds a PR if the PR was not picked up by a webhook event', async () => {
+      addPRStub = sandbox.stub(handler, 'addPR').callsFake(addPRs(200, ['Special Check']));
+      getPRStub = sandbox.stub(handler, 'getPR').resolves();
+      it.only('adds a PR if the PR was not picked up by a webhook event w automerge label', async () => {
         const scopes = [
-          getPRsForRepo([
+          searchForPRs([
             {
               number: 1,
               owner: 'testOwner',
               repo: 'testRepo',
               state: 'continue',
-              html_url: 'https://github.com/testOwner/testRepo/pull/6',
+              html_url: 'https://github.com/testOwner/testRepo/pull/1',
               user: {
                 login: 'testOwner',
               },
             },
-          ]),
-          getLabels('automerge'),
-          react(),
-          getBranchProtection(200, ['Special Check']),
+          ], 'automerge'),
+          searchForPRs([], 'automerge%3A%20exact')
         ];
 
         await probot.receive({
@@ -949,12 +957,14 @@ describe('merge-on-green', () => {
         });
 
         scopes.forEach(s => s.done());
+        assert(getPRStub.called);
         assert(addPRStub.called);
       });
 
-      it('does not add a PR if no labels were found', async () => {
+      it('adds a PR if the PR was not picked up by a webhook event w automerge: exact label', async () => {
         const scopes = [
-          getPRsForRepo([
+          searchForPRs([], "automerge"),
+          searchForPRs([
             {
               number: 1,
               owner: 'testOwner',
@@ -965,8 +975,9 @@ describe('merge-on-green', () => {
                 login: 'testOwner',
               },
             },
-          ]),
-          getLabels('notTheRightLabel'),
+          ], 'automerge%3A%20exact'),
+          getBranchProtection(200, ['Special Check']),
+          react(),
         ];
 
         await probot.receive({
@@ -989,11 +1000,15 @@ describe('merge-on-green', () => {
         });
 
         scopes.forEach(s => s.done());
-        assert(!addPRStub.called);
+        assert(getPRStub.called);
+        assert(addPRStub.called);
       });
 
-      it('does not add a PR if no PRs were found', async () => {
-        const scopes = [getPRsForRepo([])];
+      it('does not add a PR if no labels were found under automerge or automerge exact', async () => {
+        const scopes = [
+          searchForPRs([], "automerge"),
+          searchForPRs([], "automerge%3A%20exact")
+        ];
 
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1015,6 +1030,60 @@ describe('merge-on-green', () => {
         });
 
         scopes.forEach(s => s.done());
+        assert(getPRStub.called);
+        assert(!addPRStub.called);
+      });
+
+      it('does not add a PR if label is in Datastore already', async () => {
+        getPRStub = sandbox.stub(handler, 'getPR').resolves({
+          number: 1,
+          repo: 'testRepo',
+          owner: 'testOwner',
+          state: 'continue',
+          branchProtextion: ['Special Check'],
+          label: 'automerge',
+          author: 'testOwner',
+          url: 'https://github.com/testOwner/testRepo/pull/6',
+          reactionId: 1,
+        });
+
+        const scopes = [
+          searchForPRs([
+            {
+              number: 1,
+              owner: 'testOwner',
+              repo: 'testRepo',
+              state: 'continue',
+              html_url: 'https://github.com/testOwner/testRepo/pull/6',
+              user: {
+                login: 'testOwner',
+              },
+            },
+          ], "automerge"),
+          searchForPRs([], "automerge%3A%20exact")
+        ];
+
+        await probot.receive({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'schedule.repository' as any,
+          payload: {
+            repository: {
+              name: 'testRepo',
+              owner: {
+                login: 'testOwner',
+              },
+            },
+            organization: {
+              login: 'testOwner',
+            },
+            org: 'testOwner',
+            cron_org: 'testOwner',
+          },
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+        assert(getPRStub.called);
         assert(!addPRStub.called);
       });
     });

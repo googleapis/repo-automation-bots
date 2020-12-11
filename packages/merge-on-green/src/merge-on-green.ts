@@ -39,11 +39,11 @@ interface WatchPR {
   repo: string;
   owner: string;
   state: 'continue' | 'stop';
-  branchProtection: string[];
+  branchProtection?: string[];
   label: string;
   author: string;
   url: string;
-  reactionId: number;
+  reactionId?: number | undefined;
   installationId?: number;
 }
 
@@ -132,7 +132,7 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
   repo: string,
   prNumber: number,
   label: string,
-  reactionId: number,
+  reactionId: number | undefined,
   github: Context['github']
 ) {
   await github.issues.removeLabel({
@@ -141,6 +141,7 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
     issue_number: prNumber,
     name: label,
   });
+  if (reactionId) {
   await github.reactions.deleteForIssue({
     owner,
     repo,
@@ -148,6 +149,79 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
     reaction_id: reactionId,
   });
 };
+};
+
+/**
+ * Checks if a branch with a PR has branch protection, if not, comments on PR
+ * @param owner type string
+ * @param repo type string
+ * @param prNumber type number
+ * @param github type githup API surface from payload
+ */
+handler.checkForBranchProtection = async function checkForBranchProtection(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  github: Context['github']
+): Promise<string []| undefined>{
+  let branchProtection: string[] | undefined;
+
+  // Check to see if branch protection exists
+  try {
+    branchProtection = (
+      await github.repos.getBranchProtection({
+        owner,
+        repo,
+        branch: 'master',
+      })
+    ).data.required_status_checks.contexts;
+    logger.info(
+      `checking branch protection for ${owner}/${repo}: ${branchProtection}`
+    );
+  // if branch protection doesn't exist, leave a comment on the PR;
+  } catch (err) {
+    err.message = `Error in getting branch protection\n\n${err.message}`;
+    await github.issues.createComment({
+      owner,
+      repo,
+      issue_number: prNumber,
+      body:
+        "Your PR doesn't have any required checks. Please add required checks to your master branch and then re-add the label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.",
+    });
+    logger.error(err);
+  }
+  return branchProtection;
+}
+
+/**
+ * Attempts to create a reaction on the PR, returns the reaction ID
+ * @param owner type string
+ * @param repo type string
+ * @param prNumber type number
+ * @param github type githup API surface from payload
+ */
+handler.createReaction = async function createReaction(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  github: Context['github']
+): Promise<number| undefined>{
+   let reactionId: number | undefined;
+            try {
+              reactionId = (
+                await github.reactions.createForIssue({
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  content: 'eyes',
+                })
+              ).data.id;
+              } catch (err) {
+                logger.error(err);
+              }
+          return reactionId;
+}
+
 
 /**
  * Check if PR has been merged, closed, or unlabeled, then remove from Datastore table
@@ -156,6 +230,7 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
  * @param prNumber type number
  * @param label type string
  * @param reactionId type number or null
+ * @param url type string
  * @param github type githup API surface from payload
  */
 handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
@@ -163,7 +238,7 @@ handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
   repo: string,
   prNumber: number,
   label: string,
-  reactionId: number,
+  reactionId: number | undefined,
   url: string,
   github: Context['github']
 ) {
@@ -214,29 +289,42 @@ handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
 };
 
 /**
- * Adds a PR to datastore when an automerge label is added to a PR
+ * Adds a PR to datastore; first, checks if there's branch protection and adds a reaction Id
  * @param url type string
  * @param wp type Watch PR (owner, repo, pr number, state, url)
+ * @param github type githup API surface from payload
  * @returns void
  */
-handler.addPR = async function addPR(wp: WatchPR, url: string) {
-  const key = datastore.key([TABLE, url]);
-  const entity = {
-    key,
-    data: {
-      created: new Date().toJSON(),
-      owner: wp.owner,
-      repo: wp.repo,
-      number: wp.number,
-      branchProtection: wp.branchProtection,
-      label: wp.label,
-      author: wp.author,
-      reactionId: wp.reactionId,
-      installationId: wp.installationId,
-    },
-    method: 'upsert',
-  };
-  await datastore.save(entity);
+handler.addPR = async function addPR(wp: WatchPR, url: string, github: Context['github']) {
+  // Since a PR cannot be merged without required status checks, we'll check if they exist first
+  const branchProtection = await handler.checkForBranchProtection(wp.owner, wp.repo, wp.number, github);
+  let reactionId: number | undefined;
+  // If the status checks exist, we'll try to react to the PR
+  if (branchProtection) {
+    try {
+      reactionId = await handler.createReaction(wp.owner, wp.repo, wp.number, github);
+    } catch (err) {
+      logger.error(err);
+    }
+    //then, we'll add the PR to the Datastore table
+    const key = datastore.key([TABLE, url]);
+    const entity = {
+      key,
+      data: {
+        created: new Date().toJSON(),
+        owner: wp.owner,
+        repo: wp.repo,
+        number: wp.number,
+        branchProtection: branchProtection,
+        label: wp.label,
+        author: wp.author,
+        reactionId: wp.reactionId,
+        installationId: reactionId,
+      },
+      method: 'upsert',
+    };
+    await datastore.save(entity);
+  }
 };
 
 /**
@@ -300,7 +388,7 @@ handler.checkPRMergeability = async function checkPRMergeability(
             wp.number,
             [MERGE_ON_GREEN_LABEL, MERGE_ON_GREEN_LABEL_SECURE],
             wp.state,
-            wp.branchProtection,
+            wp.branchProtection!,
             wp.label,
             wp.author,
             github
@@ -343,85 +431,30 @@ handler.pickUpPR = async function pickUpPR(
   repo: string,
   github: Context['github']
 ) {
-  const prs = await github.paginate(await github.pulls.list, {
-    owner,
-    repo,
-    state: 'open',
-  });
-
-  for (const pr of prs) {
-    const labels = await github.paginate(
-      await github.issues.listLabelsOnIssue,
-      {
-        owner,
-        repo,
-        issue_number: pr.number,
-      }
-    );
-
-    const labelFound = labels.find(
-      (label: Label) =>
-        label.name === MERGE_ON_GREEN_LABEL ||
-        label.name === MERGE_ON_GREEN_LABEL_SECURE
-    );
-
-    if (labelFound) {
-      // check to see if the owner has branch protection rules
-      let branchProtection: string[] | undefined;
-      try {
-        branchProtection = (
-          await github.repos.getBranchProtection({
-            owner,
-            repo,
-            branch: 'master',
-          })
-        ).data.required_status_checks.contexts;
-        logger.info(
-          `checking branch protection for ${owner}/${repo}: ${branchProtection}`
-        );
-      } catch (err) {
-        err.message = `Error in getting branch protection\n\n${err.message}`;
-        await github.issues.createComment({
-          owner,
-          repo,
-          issue_number: pr.number,
-          body:
-            "Your PR doesn't have any required checks. Please add required checks to your master branch and then re-add the label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.",
-        });
-        logger.error(err);
+  // Github does not support searching the labels with 'OR'. 
+  // The searching for issues is considered to be an "AND" instead of an "OR" .
+  const issuesAutomergeLabel = await github.paginate(await github.search.issuesAndPullRequests, {
+    q: 'is:open is:pr user:googleapis user:GoogleCloudPlatform label:"automerge"'});
+  
+    const issuesAutomergeExactLabel = await github.paginate(await github.search.issuesAndPullRequests, {
+      q: 'is:open is:pr user:googleapis user:GoogleCloudPlatform label:"automerge: exact"'});
+  
+      for (const issue of issuesAutomergeLabel) {
+    const pullRequestInDatastore: WatchPR = await handler.getPR(issue.html_url);
+    if (!pullRequestInDatastore) {
+       logger.info('are we here?')
+        await handler.addPR({number: issue.number, owner, repo, state: 'continue', url: issue.html_url, label: "automerge", author: issue.user.login}, issue.html_url, github);
       }
 
-      // if the owner has branch protection set up, add this PR to the Datastore table
-      if (branchProtection) {
-        // try to create reaction. Save this reaction in the Datastore table since I don't (think)
-        // it is on the pull_request payload.
-        const reactionId = (
-          await github.reactions.createForIssue({
-            owner,
-            repo,
-            issue_number: pr.number,
-            content: 'eyes',
-          })
-        ).data.id;
-
-        await handler.addPR(
-          {
-            number: pr.number,
-            owner,
-            repo,
-            state: 'continue',
-            url: pr.html_url,
-            branchProtection: branchProtection,
-            label: labelFound.name,
-            author: pr.user.login,
-            reactionId,
-          },
-          pr.html_url
-        );
-      }
     }
-  }
-};
+
+    for (const issue of issuesAutomergeExactLabel) {
+      const pullRequestInDatastore: WatchPR = await handler.getPR(issue.html_url);
+      if (!pullRequestInDatastore) {
+          await handler.addPR({number: issue.number, owner, repo, state: 'continue', url: issue.html_url, label: "automerge: exact", author: issue.user.login}, issue.html_url, github);
+        }
+      }
+  };
 
 // TODO: refactor into multiple function exports, this will take some work in
 // gcf-utils.
@@ -504,44 +537,6 @@ function handler(app: Application) {
       return;
     }
 
-    // check to see if the owner has branch protection rules
-    let branchProtection: string[] | undefined;
-    try {
-      branchProtection = (
-        await context.github.repos.getBranchProtection({
-          owner,
-          repo,
-          branch: 'master',
-        })
-      ).data.required_status_checks.contexts;
-      logger.info(
-        `checking branch protection for ${owner}/${repo}: ${branchProtection}`
-      );
-    } catch (err) {
-      err.message = `Error in getting branch protection\n\n${err.message}`;
-      await context.github.issues.createComment({
-        owner,
-        repo,
-        issue_number: prNumber,
-        body:
-          "Your PR doesn't have any required checks. Please add required checks to your master branch and then re-add the label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.",
-      });
-      logger.error(err);
-    }
-
-    // if the owner has branch protection set up, add this PR to the Datastore table
-    if (branchProtection) {
-      // try to create reaction. Save this reaction in the Datastore table since I don't (think)
-      // it is on the pull_request payload.
-      const reactionId = (
-        await context.github.reactions.createForIssue({
-          owner,
-          repo,
-          issue_number: prNumber,
-          content: 'eyes',
-        })
-      ).data.id;
-
       await handler.addPR(
         {
           number: prNumber,
@@ -549,16 +544,14 @@ function handler(app: Application) {
           repo,
           state: 'continue',
           url: context.payload.pull_request.html_url,
-          branchProtection: branchProtection,
           label: label.name,
           author,
-          reactionId,
           installationId,
         },
-        context.payload.pull_request.html_url
+        context.payload.pull_request.html_url,
+        context.github
       );
-    }
-  });
+    });
 
   app.on(['pull_request.unlabeled'], async context => {
     const prNumber = context.payload.pull_request.number;
