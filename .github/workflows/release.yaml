@@ -1,0 +1,83 @@
+on:
+  push:
+    branches:
+      - master
+name: release-please
+jobs:
+  # Create and maintain release PRs:
+  release-please-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - id: release-pr
+        uses: GoogleCloudPlatform/release-please-action@v2
+        with:
+          path: packages/gcf-utils
+          token: ${{ secrets.FORKING_TOKEN }}
+          fork: true
+          release-type: node
+          package-name: gcf-utils
+          command: release-pr
+      # Forking token does not have permission to add label, so we use
+      # this script to do so:
+      - id: label
+        if: ${{ steps.release-pr.outputs.pr }}
+        uses: actions/github-script@v3    
+        with:
+            github-token: ${{secrets.GITHUB_TOKEN}}
+            script: |
+              const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
+              await github.issues.addLabels({
+                owner,
+                repo,
+                issue_number: ${{steps.release-pr.outputs.pr}},
+                labels: ['autorelease: pending']
+              });
+              console.log(`Tagged ${{steps.release-pr.outputs.pr}}`)
+  # Create a release and publish to npm, when release PRs are merged:
+  release-please-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: GoogleCloudPlatform/release-please-action@v2
+        id: tag-release
+        with:
+          path: packages/gcf-utils
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: node
+          package-name: gcf-utils
+          command: github-release
+      - uses: actions/checkout@v2
+        if: ${{ steps.tag-release.outputs.release_created }}
+      - uses: actions/setup-node@v1
+        if: ${{ steps.tag-release.outputs.release_created }}
+        with:
+          node-version: 14
+          registry-url: 'https://wombat-dressing-room.appspot.com/'
+      # Actually publish to npm:
+      - name: publish
+        if: ${{ steps.tag-release.outputs.release_created }}
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+        run: |
+          npm install
+          npm publish
+      # Remove the tagged label, and add the published label:
+      - uses: actions/github-script@v3
+        id: untag-release
+        if: ${{steps.tag-release.outputs.pr}}
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
+            await github.issues.addLabels({
+              owner,
+              repo,
+              issue_number: ${{steps.tag-release.outputs.pr}},
+              labels: ['autorelease: published']
+            });
+            github.issues.removeLabel({
+              owner,
+              repo,
+              issue_number: ${{steps.tag-release.outputs.pr}},
+              name: 'autorelease: tagged',
+            });
+            console.log(`Published ${{steps.tag-release.outputs.pr}}`)
