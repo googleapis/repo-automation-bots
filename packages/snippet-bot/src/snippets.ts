@@ -32,7 +32,8 @@ import {logger} from 'gcf-utils';
  *             "filename": "samples/install-without-bom/pom.xml",
  *             "commit": "a4b4143ee94d70a5486d96b9df2903fbba57e0d6",
  *             "branch": "master",
- *             "devsite_urls": ["https://example.com/usage.html"]
+ *             "devsite_urls": ["https://example.com/usage.html"],
+ *             "sample_browser_urls": ["https://example.com/docs/samples/region_tag"]
  *           }
  *         ]
  *       }
@@ -51,6 +52,7 @@ export interface SnippetLocation {
   commit: string;
   branch: string;
   devsite_urls: string[];
+  sample_browser_urls: string[];
 }
 
 export interface SnippetLanguage {
