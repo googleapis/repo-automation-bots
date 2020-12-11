@@ -11,7 +11,8 @@
             "filename": "test.py",
             "commit": "xxx",
             "branch": "master",
-	    "devsite_urls": ["https://example.com/used.html"]
+	    "devsite_urls": ["https://example.com/used.html"],
+	    "sample_browser_urls": ["https://example.com/sample-browser"]
           }
         ]
       }
