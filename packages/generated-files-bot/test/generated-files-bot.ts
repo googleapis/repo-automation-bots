@@ -312,7 +312,7 @@ describe('generated-files-bot', () => {
             {filename: 'file3.txt'},
             {filename: 'value1'},
           ])
-          .get('/repos/testOwner/testRepo/issues/6/comments')
+          .get('/repos/testOwner/testRepo/issues/6/comments?per_page=50')
           .reply(200, [])
           .post('/repos/testOwner/testRepo/issues/6/comments', body => {
             snapshot(body);
