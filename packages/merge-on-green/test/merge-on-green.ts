@@ -863,7 +863,7 @@ describe('merge-on-green', () => {
           );
           if (branchProtection) {
             try {
-              let reactionId = await handler.createReaction(
+              await handler.createReaction(
                 'testOwner',
                 'testRepo',
                 1,
