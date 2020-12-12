@@ -16,14 +16,13 @@
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import {resolve} from 'path';
 import nock from 'nock';
-import sinon, {expectation, SinonStub} from 'sinon';
+import sinon, {SinonStub} from 'sinon';
 import {describe, it, beforeEach, afterEach} from 'mocha';
-import handler, { addPR, checkForBranchProtection } from '../src/merge-on-green';
+import handler from '../src/merge-on-green';
 import {CheckStatus, Reviews, Comment} from '../src/merge-logic';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
 import {config} from '@probot/octokit-plugin-config';
-import { SSL_OP_NO_COMPRESSION } from 'constants';
 
 const TestingOctokit = ProbotOctokit.plugin(config);
 const testingOctokitInstance = new TestingOctokit({auth: 'abc123'});
@@ -182,17 +181,11 @@ function getPR(mergeable: boolean, mergeableState: string, state: string) {
 
 function searchForPRs(pr: PR[], labelName: string) {
   return nock('https://api.github.com')
-    .get(`/search/issues?q=is%3Aopen%20is%3Apr%20user%3Agoogleapis%20user%3AGoogleCloudPlatform%20label%3A%22${labelName}%22`)
+    .get(
+      `/search/issues?q=is%3Aopen%20is%3Apr%20user%3Agoogleapis%20user%3AGoogleCloudPlatform%20label%3A%22${labelName}%22`
+    )
     .reply(200, pr);
 }
-
-function addPRs(status: number, requiredStatusChecks: string[]) {
-  const scopes = [getBranchProtection(status, requiredStatusChecks),
-  react()]
-  return scopes;
-}
-
-
 
 //meta-note about the schedule.repository as any; currently GH does not support this type, see
 //open issue for a fix: https://github.com/octokit/webhooks.js/issues/277
@@ -837,7 +830,7 @@ describe('merge-on-green', () => {
       it('does not add a PR if no branch protection', async () => {
         addPRStub.restore();
         loggerStub.restore();
-    
+
         const scopes = [
           getRateLimit(5000),
           // we're purposefully calling an error here
@@ -856,22 +849,31 @@ describe('merge-on-green', () => {
           id: 'abc123',
         });
 
-        scopes.forEach(s => s.done());  
-      })
+        scopes.forEach(s => s.done());
+      });
 
       it('adds a PR and reacts if branch protection', async () => {
         addPRStub.restore();
-        addPRStub = sandbox.stub(handler, 'addPR').callsFake(async () => {  
-        const branchProtection = await handler.checkForBranchProtection('testOwner', 'testRepo', 1, testingOctokitInstance);
-        let reactionId: number | undefined;
-        if (branchProtection) {
-          try {
-            reactionId = await handler.createReaction('testOwner', 'testRepo', 1, testingOctokitInstance);
-          } catch (err) {
-            logger.error(err);
+        addPRStub = sandbox.stub(handler, 'addPR').callsFake(async () => {
+          const branchProtection = await handler.checkForBranchProtection(
+            'testOwner',
+            'testRepo',
+            1,
+            testingOctokitInstance
+          );
+          if (branchProtection) {
+            try {
+              let reactionId = await handler.createReaction(
+                'testOwner',
+                'testRepo',
+                1,
+                testingOctokitInstance
+              );
+            } catch (err) {
+              logger.error(err);
+            }
           }
-        }
-        });    
+        });
         const scopes = [
           getRateLimit(5000),
           // we're purposefully calling an error here
@@ -890,9 +892,9 @@ describe('merge-on-green', () => {
           id: 'abc123',
         });
 
-        scopes.forEach(s => s.done()); 
+        scopes.forEach(s => s.done());
+      });
     });
-  });
     describe('cleanup repository events', () => {
       it('deletes a PR if PR is closed when cleaning up repository', async () => {
         handler.getDatastore = async () => {
@@ -985,19 +987,22 @@ describe('merge-on-green', () => {
         getPRStub.restore();
         getPRStub = sandbox.stub(handler, 'getPR').resolves();
         const scopes = [
-          searchForPRs([
-            {
-              number: 1,
-              owner: 'testOwner',
-              repo: 'testRepo',
-              state: 'continue',
-              html_url: 'https://github.com/testOwner/testRepo/pull/1',
-              user: {
-                login: 'testOwner',
+          searchForPRs(
+            [
+              {
+                number: 1,
+                owner: 'testOwner',
+                repo: 'testRepo',
+                state: 'continue',
+                html_url: 'https://github.com/testOwner/testRepo/pull/1',
+                user: {
+                  login: 'testOwner',
+                },
               },
-            },
-          ], 'automerge'),
-          searchForPRs([], 'automerge%3A%20exact')
+            ],
+            'automerge'
+          ),
+          searchForPRs([], 'automerge%3A%20exact'),
         ];
 
         await probot.receive({
@@ -1028,19 +1033,22 @@ describe('merge-on-green', () => {
         getPRStub.restore();
         getPRStub = sandbox.stub(handler, 'getPR').resolves();
         const scopes = [
-          searchForPRs([], "automerge"),
-          searchForPRs([
-            {
-              number: 1,
-              owner: 'testOwner',
-              repo: 'testRepo',
-              state: 'continue',
-              html_url: 'https://github.com/testOwner/testRepo/pull/6',
-              user: {
-                login: 'testOwner',
+          searchForPRs([], 'automerge'),
+          searchForPRs(
+            [
+              {
+                number: 1,
+                owner: 'testOwner',
+                repo: 'testRepo',
+                state: 'continue',
+                html_url: 'https://github.com/testOwner/testRepo/pull/6',
+                user: {
+                  login: 'testOwner',
+                },
               },
-            },
-          ], 'automerge%3A%20exact'),
+            ],
+            'automerge%3A%20exact'
+          ),
         ];
 
         await probot.receive({
@@ -1069,8 +1077,8 @@ describe('merge-on-green', () => {
 
       it('does not add a PR if no labels were found under automerge or automerge exact', async () => {
         const scopes = [
-          searchForPRs([], "automerge"),
-          searchForPRs([], "automerge%3A%20exact")
+          searchForPRs([], 'automerge'),
+          searchForPRs([], 'automerge%3A%20exact'),
         ];
 
         await probot.receive({
@@ -1111,19 +1119,22 @@ describe('merge-on-green', () => {
         });
 
         const scopes = [
-          searchForPRs([
-            {
-              number: 1,
-              owner: 'testOwner',
-              repo: 'testRepo',
-              state: 'continue',
-              html_url: 'https://github.com/testOwner/testRepo/pull/6',
-              user: {
-                login: 'testOwner',
+          searchForPRs(
+            [
+              {
+                number: 1,
+                owner: 'testOwner',
+                repo: 'testRepo',
+                state: 'continue',
+                html_url: 'https://github.com/testOwner/testRepo/pull/6',
+                user: {
+                  login: 'testOwner',
+                },
               },
-            },
-          ], "automerge"),
-          searchForPRs([], "automerge%3A%20exact")
+            ],
+            'automerge'
+          ),
+          searchForPRs([], 'automerge%3A%20exact'),
         ];
 
         await probot.receive({
@@ -1154,9 +1165,7 @@ describe('merge-on-green', () => {
     describe('PRs when labeled', () => {
       handler.allowlist = ['testOwner'];
       it('adds a PR when label is added correctly', async () => {
-        const scopes = [
-          getRateLimit(5000)
-        ];
+        const scopes = [getRateLimit(5000)];
 
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const payload = require(resolve(
@@ -1430,7 +1439,6 @@ describe('merge-on-green', () => {
 
         logger.info('getPR stub called? ' + getPRStub.called);
         logger.info('remove stub called? ' + removePRStub.called);
-
       });
 
       it('does not delete a PR if PR merged is not in the table', async () => {
@@ -1468,7 +1476,6 @@ describe('merge-on-green', () => {
 
         logger.info('getPR stub called? ' + getPRStub.called);
         logger.info('remove stub called? ' + removePRStub.called);
-
       });
     });
   });

@@ -142,13 +142,13 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
     name: label,
   });
   if (reactionId) {
-  await github.reactions.deleteForIssue({
-    owner,
-    repo,
-    issue_number: prNumber,
-    reaction_id: reactionId,
-  });
-};
+    await github.reactions.deleteForIssue({
+      owner,
+      repo,
+      issue_number: prNumber,
+      reaction_id: reactionId,
+    });
+  }
 };
 
 /**
@@ -163,7 +163,7 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
   repo: string,
   prNumber: number,
   github: Context['github']
-): Promise<string []| undefined>{
+): Promise<string[] | undefined> {
   let branchProtection: string[] | undefined;
 
   // Check to see if branch protection exists
@@ -178,7 +178,7 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
     logger.info(
       `checking branch protection for ${owner}/${repo}: ${branchProtection}`
     );
-  // if branch protection doesn't exist, leave a comment on the PR;
+    // if branch protection doesn't exist, leave a comment on the PR;
   } catch (err) {
     err.message = `Error in getting branch protection\n\n${err.message}`;
     await github.issues.createComment({
@@ -191,7 +191,7 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
     logger.error(err);
   }
   return branchProtection;
-}
+};
 
 /**
  * Attempts to create a reaction on the PR, returns the reaction ID
@@ -205,23 +205,22 @@ handler.createReaction = async function createReaction(
   repo: string,
   prNumber: number,
   github: Context['github']
-): Promise<number| undefined>{
-   let reactionId: number | undefined;
-            try {
-              reactionId = (
-                await github.reactions.createForIssue({
-                  owner,
-                  repo,
-                  issue_number: prNumber,
-                  content: 'eyes',
-                })
-              ).data.id;
-              } catch (err) {
-                logger.error(err);
-              }
-          return reactionId;
-}
-
+): Promise<number | undefined> {
+  let reactionId: number | undefined;
+  try {
+    reactionId = (
+      await github.reactions.createForIssue({
+        owner,
+        repo,
+        issue_number: prNumber,
+        content: 'eyes',
+      })
+    ).data.id;
+  } catch (err) {
+    logger.error(err);
+  }
+  return reactionId;
+};
 
 /**
  * Check if PR has been merged, closed, or unlabeled, then remove from Datastore table
@@ -295,14 +294,28 @@ handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
  * @param github type githup API surface from payload
  * @returns void
  */
-handler.addPR = async function addPR(wp: WatchPR, url: string, github: Context['github']) {
+handler.addPR = async function addPR(
+  wp: WatchPR,
+  url: string,
+  github: Context['github']
+) {
   // Since a PR cannot be merged without required status checks, we'll check if they exist first
-  const branchProtection = await handler.checkForBranchProtection(wp.owner, wp.repo, wp.number, github);
+  const branchProtection = await handler.checkForBranchProtection(
+    wp.owner,
+    wp.repo,
+    wp.number,
+    github
+  );
   let reactionId: number | undefined;
   // If the status checks exist, we'll try to react to the PR
   if (branchProtection) {
     try {
-      reactionId = await handler.createReaction(wp.owner, wp.repo, wp.number, github);
+      reactionId = await handler.createReaction(
+        wp.owner,
+        wp.repo,
+        wp.number,
+        github
+      );
     } catch (err) {
       logger.error(err);
     }
@@ -432,31 +445,63 @@ handler.pickUpPR = async function pickUpPR(
   repo: string,
   github: Context['github']
 ) {
-  // Github does not support searching the labels with 'OR'. 
+  // Github does not support searching the labels with 'OR'.
   // The searching for issues is considered to be an "AND" instead of an "OR" .
-  const issuesAutomergeLabel = await github.paginate(await github.search.issuesAndPullRequests, {
-    q: 'is:open is:pr user:googleapis user:GoogleCloudPlatform label:"automerge"'});
-  
-    const issuesAutomergeExactLabel = await github.paginate(await github.search.issuesAndPullRequests, {
-      q: 'is:open is:pr user:googleapis user:GoogleCloudPlatform label:"automerge: exact"'});
-  
-      for (const issue of issuesAutomergeLabel) {
-        logger.info('before getting PR');
+  const issuesAutomergeLabel = await github.paginate(
+    await github.search.issuesAndPullRequests,
+    {
+      q:
+        'is:open is:pr user:googleapis user:GoogleCloudPlatform label:"automerge"',
+    }
+  );
+
+  const issuesAutomergeExactLabel = await github.paginate(
+    await github.search.issuesAndPullRequests,
+    {
+      q:
+        'is:open is:pr user:googleapis user:GoogleCloudPlatform label:"automerge: exact"',
+    }
+  );
+  for (const issue of issuesAutomergeLabel) {
+    logger.info('before getting PR');
     const pullRequestInDatastore: WatchPR = await handler.getPR(issue.html_url);
     if (!pullRequestInDatastore) {
       logger.info('before adding PR');
-        await handler.addPR({number: issue.number, owner, repo, state: 'continue', url: issue.html_url, label: "automerge", author: issue.user.login}, issue.html_url, github);
-      }
-
+      await handler.addPR(
+        {
+          number: issue.number,
+          owner,
+          repo,
+          state: 'continue',
+          url: issue.html_url,
+          label: 'automerge',
+          author: issue.user.login,
+        },
+        issue.html_url,
+        github
+      );
     }
+  }
 
-    for (const issue of issuesAutomergeExactLabel) {
-      const pullRequestInDatastore: WatchPR = await handler.getPR(issue.html_url);
-      if (!pullRequestInDatastore) {
-          await handler.addPR({number: issue.number, owner, repo, state: 'continue', url: issue.html_url, label: "automerge: exact", author: issue.user.login}, issue.html_url, github);
-        }
-      }
-  };
+  for (const issue of issuesAutomergeExactLabel) {
+    const pullRequestInDatastore: WatchPR = await handler.getPR(issue.html_url);
+    if (!pullRequestInDatastore) {
+      await handler.addPR(
+        {
+          number: issue.number,
+          owner,
+          repo,
+          state: 'continue',
+          url: issue.html_url,
+          label: 'automerge: exact',
+          author: issue.user.login,
+        },
+        issue.html_url,
+        github
+      );
+    }
+  }
+};
 
 // TODO: refactor into multiple function exports, this will take some work in
 // gcf-utils.
@@ -539,21 +584,21 @@ function handler(app: Application) {
       return;
     }
 
-      await handler.addPR(
-        {
-          number: prNumber,
-          owner,
-          repo,
-          state: 'continue',
-          url: context.payload.pull_request.html_url,
-          label: label.name,
-          author,
-          installationId,
-        },
-        context.payload.pull_request.html_url,
-        context.github
-      );
-    });
+    await handler.addPR(
+      {
+        number: prNumber,
+        owner,
+        repo,
+        state: 'continue',
+        url: context.payload.pull_request.html_url,
+        label: label.name,
+        author,
+        installationId,
+      },
+      context.payload.pull_request.html_url,
+      context.github
+    );
+  });
 
   app.on(['pull_request.unlabeled'], async context => {
     const prNumber = context.payload.pull_request.number;
