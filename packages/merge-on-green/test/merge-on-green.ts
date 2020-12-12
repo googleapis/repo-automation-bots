@@ -16,7 +16,7 @@
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import {resolve} from 'path';
 import nock from 'nock';
-import sinon, {SinonStub} from 'sinon';
+import sinon, {expectation, SinonStub} from 'sinon';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import handler, { addPR, checkForBranchProtection } from '../src/merge-on-green';
 import {CheckStatus, Reviews, Comment} from '../src/merge-logic';
@@ -824,6 +824,7 @@ describe('merge-on-green', () => {
     beforeEach(() => {
       addPRStub = sandbox.stub(handler, 'addPR');
       removePRStub = sandbox.stub(handler, 'removePR');
+      getPRStub = sandbox.stub(handler, 'getPR');
     });
 
     afterEach(() => {
@@ -832,22 +833,14 @@ describe('merge-on-green', () => {
       getPRStub.restore();
     });
 
-    describe('adding method', async () => {
-      it.only('does not add a PR to Datastore', async () => {
+    describe('adding-a-PR-to-Datastore (addPR) method', async () => {
+      it('does not add a PR if no branch protection', async () => {
         addPRStub.restore();
-        handler.addPR({
-          number: 1,
-          repo: 'testRepo',
-          owner: 'testOwner',
-          state: 'continue',
-          label: 'automerge',
-          author: 'testOwner',
-          url: 'https://github.com/testOwner/testRepo/pull/6',
-          reactionId: 1,
-        }, 'https://github.com/testOwner/testRepo/pull/6', testingOctokitInstance);
-      
-
+        loggerStub.restore();
+    
         const scopes = [
+          getRateLimit(5000),
+          // we're purposefully calling an error here
           getBranchProtection(400, []),
           commentOnPR(),
         ];
@@ -863,9 +856,43 @@ describe('merge-on-green', () => {
           id: 'abc123',
         });
 
-        scopes.forEach(s => s.done());      
+        scopes.forEach(s => s.done());  
       })
+
+      it('adds a PR and reacts if branch protection', async () => {
+        addPRStub.restore();
+        addPRStub = sandbox.stub(handler, 'addPR').callsFake(async () => {  
+        const branchProtection = await handler.checkForBranchProtection('testOwner', 'testRepo', 1, testingOctokitInstance);
+        let reactionId: number | undefined;
+        if (branchProtection) {
+          try {
+            reactionId = await handler.createReaction('testOwner', 'testRepo', 1, testingOctokitInstance);
+          } catch (err) {
+            logger.error(err);
+          }
+        }
+        });    
+        const scopes = [
+          getRateLimit(5000),
+          // we're purposefully calling an error here
+          getBranchProtection(200, ['Special Check']),
+          react(),
+        ];
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_labeled'
+        ));
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done()); 
     });
+  });
     describe('cleanup repository events', () => {
       it('deletes a PR if PR is closed when cleaning up repository', async () => {
         handler.getDatastore = async () => {
@@ -954,8 +981,9 @@ describe('merge-on-green', () => {
     });
 
     describe('pick up PRs', () => {
-      getPRStub = sandbox.stub(handler, 'getPR').resolves();
       it('adds a PR if the PR was not picked up by a webhook event w automerge label', async () => {
+        getPRStub.restore();
+        getPRStub = sandbox.stub(handler, 'getPR').resolves();
         const scopes = [
           searchForPRs([
             {
@@ -997,6 +1025,7 @@ describe('merge-on-green', () => {
       });
 
       it('adds a PR if the PR was not picked up by a webhook event w automerge: exact label', async () => {
+        getPRStub.restore();
         getPRStub = sandbox.stub(handler, 'getPR').resolves();
         const scopes = [
           searchForPRs([], "automerge"),
@@ -1068,6 +1097,7 @@ describe('merge-on-green', () => {
       });
 
       it('does not add a PR if label is in Datastore already', async () => {
+        getPRStub.restore();
         getPRStub = sandbox.stub(handler, 'getPR').resolves({
           number: 1,
           repo: 'testRepo',
@@ -1125,9 +1155,7 @@ describe('merge-on-green', () => {
       handler.allowlist = ['testOwner'];
       it('adds a PR when label is added correctly', async () => {
         const scopes = [
-          getRateLimit(5000),
-          react(),
-          getBranchProtection(200, ['Special Check']),
+          getRateLimit(5000)
         ];
 
         // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -1149,6 +1177,7 @@ describe('merge-on-green', () => {
 
       //This function is supposed to respond with an error
       it('does not add a PR if branch protection errors and comments on PR', async () => {
+        addPRStub.restore();
         loggerStub.restore();
 
         const scopes = [
@@ -1170,10 +1199,6 @@ describe('merge-on-green', () => {
         });
 
         scopes.forEach(s => s.done());
-
-        assert(!addPRStub.called);
-
-        logger.info('stub called? ' + addPRStub.called);
       });
 
       it('does not add a PR if PR is labeled but does not include MOG', async () => {
@@ -1272,6 +1297,7 @@ describe('merge-on-green', () => {
 
     describe('PRs when closed, merged or unlabeled', () => {
       it('deletes a PR from datastore if it was closed', async () => {
+        getPRStub.restore();
         getPRStub = sandbox.stub(handler, 'getPR').resolves({
           number: 1,
           repo: 'testRepo',
@@ -1323,6 +1349,7 @@ describe('merge-on-green', () => {
       });
 
       it('deletes a PR from datastore if it unlabeled MOG', async () => {
+        getPRStub.restore();
         getPRStub = sandbox.stub(handler, 'getPR').resolves({
           number: 1,
           repo: 'testRepo',
@@ -1369,13 +1396,9 @@ describe('merge-on-green', () => {
 
         logger.info('getPR stub called? ' + getPRStub.called);
         logger.info('remove stub called? ' + removePRStub.called);
-
-        getPRStub.restore();
       });
 
       it('does not delete a PR from datastore if it unlabeled another label other than MOG', async () => {
-        getPRStub = sandbox.stub(handler, 'getPR');
-
         await probot.receive({
           name: 'pull_request',
           payload: {
@@ -1408,10 +1431,10 @@ describe('merge-on-green', () => {
         logger.info('getPR stub called? ' + getPRStub.called);
         logger.info('remove stub called? ' + removePRStub.called);
 
-        getPRStub.restore();
       });
 
       it('does not delete a PR if PR merged is not in the table', async () => {
+        getPRStub.restore();
         getPRStub = sandbox.stub(handler, 'getPR').resolves(undefined);
 
         await probot.receive({
@@ -1446,7 +1469,6 @@ describe('merge-on-green', () => {
         logger.info('getPR stub called? ' + getPRStub.called);
         logger.info('remove stub called? ' + removePRStub.called);
 
-        getPRStub.restore();
       });
     });
   });

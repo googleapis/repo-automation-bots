@@ -441,8 +441,10 @@ handler.pickUpPR = async function pickUpPR(
       q: 'is:open is:pr user:googleapis user:GoogleCloudPlatform label:"automerge: exact"'});
   
       for (const issue of issuesAutomergeLabel) {
+        logger.info('before getting PR');
     const pullRequestInDatastore: WatchPR = await handler.getPR(issue.html_url);
     if (!pullRequestInDatastore) {
+      logger.info('before adding PR');
         await handler.addPR({number: issue.number, owner, repo, state: 'continue', url: issue.html_url, label: "automerge", author: issue.user.login}, issue.html_url, github);
       }
 
