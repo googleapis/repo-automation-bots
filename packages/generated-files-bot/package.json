@@ -22,13 +22,13 @@
     "start": "probot run ./build/src/generated-files-bot.js",
     "start:local": "node ./build/src/local.js",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test --timeout 10000",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test --timeout 60000",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "fix": "gts fix",
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "^6.2.0",
+    "gcf-utils": "^6.3.0",
     "js-yaml": "^3.14.0",
     "jsonpath": "^1.0.2"
   },

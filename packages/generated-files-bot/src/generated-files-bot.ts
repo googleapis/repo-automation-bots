@@ -14,7 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, ProbotOctokit} from 'probot';
-import {logger} from 'gcf-utils';
+import {logger, addOrUpdateIssueComment} from 'gcf-utils';
 import {safeLoad} from 'js-yaml';
 import {query} from 'jsonpath';
 
@@ -196,12 +196,14 @@ export function handler(app: Application) {
     // Comment on the pull request if this PR is touching any templated files
     if (touchedTemplates.size > 0) {
       const body = buildCommentMessage(touchedTemplates);
-      await context.github.issues.createComment({
+      await addOrUpdateIssueComment(
+        context.github,
         owner,
         repo,
-        issue_number: pullNumber,
-        body,
-      });
+        pullNumber,
+        context.payload.installation.id,
+        body
+      );
     }
   });
 }

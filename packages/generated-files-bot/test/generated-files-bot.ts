@@ -225,7 +225,10 @@ describe('generated-files-bot', () => {
     beforeEach(() => {
       probot = createProbot({
         githubToken: 'abc123',
-        Octokit: ProbotOctokit,
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
       });
 
       probot.load(handler);
@@ -309,6 +312,8 @@ describe('generated-files-bot', () => {
             {filename: 'file3.txt'},
             {filename: 'value1'},
           ])
+          .get('/repos/testOwner/testRepo/issues/6/comments')
+          .reply(200, [])
           .post('/repos/testOwner/testRepo/issues/6/comments', body => {
             snapshot(body);
             return true;
@@ -344,6 +349,8 @@ describe('generated-files-bot', () => {
             {filename: 'file3.txt'},
             {filename: 'value1'},
           ])
+          .get('/repos/testOwner/testRepo/issues/6/comments?per_page=50')
+          .reply(200, [])
           .post('/repos/testOwner/testRepo/issues/6/comments', body => {
             snapshot(body);
             return true;
