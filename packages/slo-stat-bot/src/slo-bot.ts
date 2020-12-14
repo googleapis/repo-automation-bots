@@ -293,7 +293,7 @@ export = function handler(app: Application) {
       await handleIssues(context.github, issueItem, sloString, labelName);
     }
   );
-  app.on(['schedule.repository' as any], async (context: Context) => {
+  app.on(['schedule.repository' as '*'], async (context: Context) => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
 
