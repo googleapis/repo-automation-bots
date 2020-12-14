@@ -15,7 +15,7 @@
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot} from 'probot';
+import {Probot, createProbot, ProbotOctokit} from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
 import * as assert from 'assert';
@@ -29,10 +29,6 @@ import sinon from 'sinon';
 import * as sloLint from '../src/slo-lint';
 import * as sloAppliesTo from '../src/slo-appliesTo';
 import * as sloCompliant from '../src/slo-compliant';
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
-import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -48,7 +44,10 @@ describe('slo-lint', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit as any,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
 
     probot.load(handler);
