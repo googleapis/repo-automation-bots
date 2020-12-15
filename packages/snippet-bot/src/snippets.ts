@@ -44,8 +44,6 @@ import {logger} from 'gcf-utils';
 
 const storage = new Storage();
 
-export type SnippetStatus = 'IMPLEMENTED' | 'CONFLICT' | 'UNTRACKED';
-
 export interface SnippetLocation {
   repository_path: string;
   filename: string;
@@ -56,7 +54,7 @@ export interface SnippetLocation {
 }
 
 export interface SnippetLanguage {
-  status: SnippetStatus;
+  status: string;
   current_locations: Array<SnippetLocation>;
 }
 
