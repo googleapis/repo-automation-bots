@@ -169,7 +169,7 @@ export function handler(app: Application) {
     const prAuthor = context.payload.pull_request.user.login;
 
     // ignore PRs from a configurable list of authors
-    if (config.ignoreAuthors && config.ignoreAuthors.includes(prAuthor)) {
+    if (config.ignoreAuthors?.includes(prAuthor)) {
       return;
     }
 
