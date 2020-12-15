@@ -31,6 +31,7 @@ interface ExternalManifest {
 export interface Configuration {
   generatedFiles?: string[];
   externalManifests?: ExternalManifest[];
+  ignoreAuthors?: string[];
 }
 
 /**
@@ -165,6 +166,12 @@ export function handler(app: Application) {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const pullNumber = context.payload.pull_request.number;
+    const prAuthor = context.payload.pull_request.user.login;
+
+    // ignore PRs from a configurable list of authors
+    if (config.ignoreAuthors && config.ignoreAuthors.includes(prAuthor)) {
+      return;
+    }
 
     // Read the list of templated files
     const templatedFiles = new Set(

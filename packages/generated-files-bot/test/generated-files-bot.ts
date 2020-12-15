@@ -404,6 +404,23 @@ describe('generated-files-bot', () => {
         });
         requests.done();
       });
+
+      it('ignores PRs from configured autors', async () => {
+        const validConfig = fs.readFileSync(
+          resolve(fixturesPath, 'config', 'ignore-authors.yml')
+        );
+        requests = requests
+          .get(
+            '/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml'
+          )
+          .reply(200, validConfig);
+        await probot.receive({
+          name: 'pull_request',
+          payload: payload,
+          id: 'abc123',
+        });
+        requests.done();
+      });
     });
   });
 });
