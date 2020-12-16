@@ -1,0 +1,11 @@
+generatedFiles:
+- 'file1.txt'
+externalManifests:
+- type: json
+  file: 'manifest.json'
+  jsonpath: '$.key1[*]'
+- type: 'yaml'
+  file: 'manifest.yaml'
+  jsonpath: '$.key2.key3[*]'
+ignoreAuthors:
+- testuser2

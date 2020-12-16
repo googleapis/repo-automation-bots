@@ -97,7 +97,10 @@ export const checkRemovingUsedTagViolations = async (
       if (currentUrls.length > 0) {
         let violation: Violation;
         // Dispatch the violation depending on the current status.
-        if (lang.status === 'IMPLEMENTED') {
+        if (lang.status === 'IMPLEMENTED' || lang.status === 'UNTRACKED') {
+          // `IMPLEMENTED` is a status for region tags tracked by the snippet system.
+          // `UNTRACKED` is a status for region tags which are not tracked.
+          // We consider both cases as a warning.
           violation = {
             location: change,
             violationType: 'REMOVE_USED_TAG',
