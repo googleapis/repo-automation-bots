@@ -17,13 +17,10 @@
 import myProbotApp from '../src/{{programName}}';
 import {resolve} from 'path';
 import {Probot, createProbot, ProbotOctokit} from 'probot';
-import {config} from '@probot/octokit-plugin-config';
 import nock from 'nock';
 import * as fs from 'fs';
 import {describe, it, beforeEach} from 'mocha';
 import * as assert from 'assert';
-
-const TestingOctokit = ProbotOctokit.plugin(config);
 
 nock.disableNetConnect();
 
@@ -39,7 +36,10 @@ describe('{{programName}}', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
     probot.load(myProbotApp);
   });

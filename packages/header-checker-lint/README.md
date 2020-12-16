@@ -10,7 +10,7 @@ You can install this bot [from GitHub][github-app-link].
 ### Configuration
 
 To configure the bot, you can create a configuration file:
-`.bots/header-checker-lint.json`. The contents of this file define a JSON object
+`.github/header-checker-lint.yml`. The contents of this file define a JSON object
 with the following options:
 
 | Name | Description | Type | Default |

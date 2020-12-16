@@ -19,11 +19,9 @@ import {Probot, createProbot, ProbotOctokit} from 'probot';
 import {promises as fs} from 'fs';
 import {handler} from '../src/sync-repo-settings';
 import assert from 'assert';
-import {config} from '@probot/octokit-plugin-config';
 import * as sinon from 'sinon';
 import {logger} from 'gcf-utils';
 
-const TestingOctokit = ProbotOctokit.plugin(config);
 nock.disableNetConnect();
 
 const org = 'googleapis';
@@ -114,7 +112,10 @@ describe('Sync repo settings', () => {
   beforeEach(() => {
     probot = createProbot({
       githubToken: 'abc123',
-      Octokit: TestingOctokit,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
     probot.load(handler);
     sandbox.stub(logger, 'error').throwsArg(0);
@@ -135,7 +136,7 @@ describe('Sync repo settings', () => {
       nockUpdateTeamMembership('yoshi-admins', org, repo),
       nockUpdateTeamMembership('yoshi-ruby-admins', org, repo),
       nockUpdateTeamMembership('yoshi-ruby', org, repo),
-      nockUpdateTeamMembership('cloud-dpes', org, repo),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
     ];
     await receive(org, repo);
@@ -147,11 +148,15 @@ describe('Sync repo settings', () => {
   });
 
   it('should ignore repos not represented in required-checks.json', async () => {
+    const org = 'Codertocat';
+    const repo = 'Hello-World';
     const scopes = [
-      nockConfig404('Codertocat', 'Hello-World'),
-      nockLanguagesList('Codertocat', 'Hello-World', {kotlin: 1}),
+      nockConfig404(org, repo),
+      nockLanguagesList(org, repo, {kotlin: 1}),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
+      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
     ];
-    await receive('Codertocat', 'Hello-World');
+    await receive(org, repo);
     scopes.forEach(s => s.done());
   });
 
@@ -166,7 +171,7 @@ describe('Sync repo settings', () => {
       nockUpdateTeamMembership('yoshi-python-admins', org, repo),
       nockUpdateTeamMembership('yoshi-python', org, repo),
       nockUpdateTeamMembership('python-samples-owners', org, repo),
-      nockUpdateTeamMembership('cloud-dpes', org, repo),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
     ];
     await receive(org, repo);
@@ -203,7 +208,7 @@ describe('Sync repo settings', () => {
       nockUpdateTeamMembership('yoshi-admins', org, repo),
       nockUpdateTeamMembership('yoshi-nodejs-admins', org, repo),
       nockUpdateTeamMembership('yoshi-nodejs', org, repo),
-      nockUpdateTeamMembership('cloud-dpes', org, repo),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
     ];
     await receive(org, repo);
@@ -230,7 +235,7 @@ describe('Sync repo settings', () => {
       nockUpdateRepoSettings(repo, false, true),
       nockUpdateBranchProtection(repo, ['check1', 'check2'], false, true),
       nockUpdateTeamMembership('team1', org, repo),
-      nockUpdateTeamMembership('cloud-dpes', org, repo),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
     ];
     await receive(org, repo);

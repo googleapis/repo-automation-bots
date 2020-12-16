@@ -1,0 +1,27 @@
+# See https://github.com/googleapis/repo-automation-bots/tree/master/packages/auto-label
+
+# Turn of product-based auto-labelling
+product: false
+
+# Label bots by code path
+path:
+  pullrequest: true
+  labelprefix: 'bot: '
+  packages:
+    auto-label: 'auto-label'
+    blunderbuss: 'blunderbuss'
+    buildcop: 'buildcop'
+    conventional-commit-lint: 'conventional-commit-lint'
+    do-not-merge: 'do-not-merge'
+    failurechecker: 'failurechecker'
+    generated-files-bot: 'generated-files-bot'
+    header-checker-lint: 'header-checker-lint'
+    label-sync: 'label-sync'
+    merge-on-green: 'merge-on-green'
+    publish: 'publish'
+    release-please: 'release-please'
+    slo-stat-bot: 'slo-stat-bot'
+    snippet-bot: 'snippet-bot'
+    sync-repo-settings: 'sync-repo-settings'
+    trusted-contribution: 'trusted-contribution'
+

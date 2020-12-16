@@ -25,6 +25,7 @@ type violationTypes =
   | 'PRODUCT_PREFIX'
   | 'REMOVE_USED_TAG'
   | 'REMOVE_CONFLICTING_TAG'
+  | 'REMOVE_SAMPLE_BROWSER_PAGE'
   | 'TAG_ALREADY_STARTED'
   | 'NO_MATCHING_START_TAG'
   | 'NO_MATCHING_END_TAG';
@@ -46,6 +47,7 @@ export const checkRemovingUsedTagViolations = async (
 ): Promise<Map<string, Array<Violation>>> => {
   const removeUsedTagViolations = new Array<Violation>();
   const removeConflictingTagViolations = new Array<Violation>();
+  const removeSampleBrowserViolations = new Array<Violation>();
   const snippets = await getSnippets(dataBucket);
   for (const change of changes.changes) {
     if (change.type !== 'del') {
@@ -72,21 +74,33 @@ export const checkRemovingUsedTagViolations = async (
     for (const k of Object.keys(snippet.languages)) {
       const lang = snippet.languages[k];
       let currentUrls: string[] = [];
+      let sampleBrowserUrls: string[] = [];
       for (const loc of lang.current_locations) {
         if (
           loc.branch === baseBranch &&
           loc.repository_path === baseRepositoryPath &&
-          loc.filename === change.file &&
-          loc.devsite_urls !== undefined &&
-          loc.devsite_urls.length > 0
+          loc.filename === change.file
         ) {
-          currentUrls = currentUrls.concat(loc.devsite_urls);
+          if (loc.devsite_urls !== undefined && loc.devsite_urls.length > 0) {
+            currentUrls = currentUrls.concat(loc.devsite_urls);
+          }
+          if (
+            loc.sample_browser_urls !== undefined &&
+            loc.sample_browser_urls.length > 0
+          ) {
+            sampleBrowserUrls = sampleBrowserUrls.concat(
+              loc.sample_browser_urls
+            );
+          }
         }
       }
       if (currentUrls.length > 0) {
         let violation: Violation;
         // Dispatch the violation depending on the current status.
-        if (lang.status === 'IMPLEMENTED') {
+        if (lang.status === 'IMPLEMENTED' || lang.status === 'UNTRACKED') {
+          // `IMPLEMENTED` is a status for region tags tracked by the snippet system.
+          // `UNTRACKED` is a status for region tags which are not tracked.
+          // We consider both cases as a warning.
           violation = {
             location: change,
             violationType: 'REMOVE_USED_TAG',
@@ -102,11 +116,19 @@ export const checkRemovingUsedTagViolations = async (
           removeConflictingTagViolations.push(violation);
         }
       }
+      if (sampleBrowserUrls.length > 0) {
+        removeSampleBrowserViolations.push({
+          location: change,
+          violationType: 'REMOVE_SAMPLE_BROWSER_PAGE',
+          devsite_urls: sampleBrowserUrls,
+        });
+      }
     }
   }
   const ret: Map<string, Array<Violation>> = new Map([
     ['REMOVE_USED_TAG', removeUsedTagViolations],
     ['REMOVE_CONFLICTING_TAG', removeConflictingTagViolations],
+    ['REMOVE_SAMPLE_BROWSER_PAGE', removeSampleBrowserViolations],
   ]);
   return ret;
 };

@@ -25,14 +25,15 @@ import {logger} from 'gcf-utils';
  *     "description": null,
  *     "languages": {
  *       "MAVEN_POM": {
- *         "status": "IMPLEMENTED", // or "CONFLICT"
+ *         "status": "IMPLEMENTED", "CONFLICT", or "UNTRACKED"
  *         "current_locations": [
  *           {
  *             "repository_path": "googleapis/java-accessapproval",
  *             "filename": "samples/install-without-bom/pom.xml",
  *             "commit": "a4b4143ee94d70a5486d96b9df2903fbba57e0d6",
  *             "branch": "master",
- *             "devsite_urls": ["https://example.com/usage.html"]
+ *             "devsite_urls": ["https://example.com/usage.html"],
+ *             "sample_browser_urls": ["https://example.com/docs/samples/region_tag"]
  *           }
  *         ]
  *       }
@@ -43,18 +44,17 @@ import {logger} from 'gcf-utils';
 
 const storage = new Storage();
 
-export type SnippetStatus = 'IMPLEMENTED' | 'CONFLICT';
-
 export interface SnippetLocation {
   repository_path: string;
   filename: string;
   commit: string;
   branch: string;
   devsite_urls: string[];
+  sample_browser_urls: string[];
 }
 
 export interface SnippetLanguage {
-  status: SnippetStatus;
+  status: string;
   current_locations: Array<SnippetLocation>;
 }
 

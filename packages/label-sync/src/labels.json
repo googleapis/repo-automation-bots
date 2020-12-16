@@ -47,7 +47,7 @@
     },
     {
       "name": "type: process",
-      "description": "A process-releated concern. May include testing, release, or the like.",
+      "description": "A process-related concern. May include testing, release, or the like.",
       "color": "c5def5"
     },
     {
@@ -162,12 +162,12 @@
     },
     {
       "name": "buildcop: flaky",
-      "description": "Tells the Build Cop Bot not to close or comment on this issue",
+      "description": "Tells the Build Cop Bot not to close or comment on this issue.",
       "color": "86d9d7"
     },
     {
       "name": "buildcop: quiet",
-      "description": "Tells the Build Cop Bot to comment less",
+      "description": "Tells the Build Cop Bot to comment less.",
       "color": "86d9d7"
     },
     {
@@ -192,7 +192,7 @@
     },
     {
       "name": "lang: php",
-      "description": "Issues specific to PHP",
+      "description": "Issues specific to PHP.",
       "color": "c281f7"
     },
     {

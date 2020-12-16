@@ -45,6 +45,7 @@ describe('file structure', () => {
     const originalStack = await recursive('./templates');
     GenerateBot.creatingBotFiles({
       programName: '{{programName}}',
+      exportName: '{{exportName}}',
       description: 'description',
       fileLocation: './tmp',
     });
@@ -136,6 +137,16 @@ describe('user input', () => {
 
     const regexLinux = new RegExp('packages/pass');
     assert.strictEqual(regexLinux.test(fileLocation), true);
+  });
+
+  it('checks that the export name uses underscores', () => {
+    const programNameWithDash: GenerateBot.ProgramOptions = {
+      programName: 'with-dash',
+      description: 'pass',
+      fileLocation: 'pass',
+    };
+    GenerateBot.checkValidity(programNameWithDash);
+    assert.strictEqual(programNameWithDash.exportName, 'with_dash');
   });
 });
 
