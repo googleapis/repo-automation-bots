@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, Context} from 'probot';
+import {Application, ProbotOctokit, Context} from 'probot';
 import {Datastore} from '@google-cloud/datastore';
 import {mergeOnGreen} from './merge-logic';
 import {logger} from 'gcf-utils';
@@ -43,7 +43,7 @@ interface WatchPR {
   label: string;
   author: string;
   url: string;
-  reactionId?: number | undefined;
+  reactionId?: number;
   installationId?: number;
 }
 
@@ -133,7 +133,7 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
   prNumber: number,
   label: string,
   reactionId: number | undefined,
-  github: Context['github']
+  github: InstanceType<typeof ProbotOctokit>
 ) {
   await github.issues.removeLabel({
     owner,
@@ -162,7 +162,7 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
   owner: string,
   repo: string,
   prNumber: number,
-  github: Context['github']
+  github: InstanceType<typeof ProbotOctokit>
 ): Promise<string[] | undefined> {
   let branchProtection: string[] | undefined;
 
@@ -204,7 +204,7 @@ handler.createReaction = async function createReaction(
   owner: string,
   repo: string,
   prNumber: number,
-  github: Context['github']
+  github: InstanceType<typeof ProbotOctokit>
 ): Promise<number | undefined> {
   let reactionId: number | undefined;
   try {
@@ -239,7 +239,7 @@ handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
   label: string,
   reactionId: number | undefined,
   url: string,
-  github: Context['github']
+  github: InstanceType<typeof ProbotOctokit>
 ) {
   let pr;
   let labels;
@@ -297,7 +297,7 @@ handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
 handler.addPR = async function addPR(
   wp: WatchPR,
   url: string,
-  github: Context['github']
+  github: InstanceType<typeof ProbotOctokit>
 ) {
   // Since a PR cannot be merged without required status checks, we'll check if they exist first
   const branchProtection = await handler.checkForBranchProtection(
@@ -440,28 +440,21 @@ handler.checkPRMergeability = async function checkPRMergeability(
  * @param context the context of the webhook payload
  * @returns void
  */
-handler.pickUpPR = async function pickUpPR(
+handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
   owner: string,
   repo: string,
-  github: Context['github']
+  github: InstanceType<typeof ProbotOctokit>
 ) {
   // Github does not support searching the labels with 'OR'.
   // The searching for issues is considered to be an "AND" instead of an "OR" .
-  const issuesAutomergeLabel = await github.paginate(
-    await github.search.issuesAndPullRequests,
-    {
-      q:
-        'is:open is:pr user:googleapis user:GoogleCloudPlatform label:"automerge"',
-    }
-  );
-
-  const issuesAutomergeExactLabel = await github.paginate(
-    await github.search.issuesAndPullRequests,
-    {
-      q:
-        'is:open is:pr user:googleapis user:GoogleCloudPlatform label:"automerge: exact"',
-    }
-  );
+  const [issuesAutomergeLabel, issuesAutomergeExactLabel] = await Promise.all([
+    github.paginate(github.search.issuesAndPullRequests, {
+      q: `is:open is:pr user:googleapis user:GoogleCloudPlatform label:"${MERGE_ON_GREEN_LABEL}"`,
+    }),
+    github.paginate(github.search.issuesAndPullRequests, {
+      q: `is:open is:pr user:googleapis user:GoogleCloudPlatform label:"${MERGE_ON_GREEN_LABEL_SECURE}"`,
+    }),
+  ]);
   for (const issue of issuesAutomergeLabel) {
     logger.info('before getting PR');
     const pullRequestInDatastore: WatchPR = await handler.getPR(issue.html_url);
@@ -474,7 +467,7 @@ handler.pickUpPR = async function pickUpPR(
           repo,
           state: 'continue',
           url: issue.html_url,
-          label: 'automerge',
+          label: MERGE_ON_GREEN_LABEL,
           author: issue.user.login,
         },
         issue.html_url,
@@ -493,7 +486,7 @@ handler.pickUpPR = async function pickUpPR(
           repo,
           state: 'continue',
           url: issue.html_url,
-          label: 'automerge: exact',
+          label: MERGE_ON_GREEN_LABEL_SECURE,
           author: issue.user.login,
         },
         issue.html_url,
@@ -534,7 +527,7 @@ function handler(app: Application) {
         logger.info(`skipping run for ${context.payload.cron_org}`);
         return;
       }
-      await handler.pickUpPR(owner, repo, context.github);
+      await handler.scanForMissingPullRequests(owner, repo, context.github);
       return;
     }
 
