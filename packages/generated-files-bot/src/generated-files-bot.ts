@@ -14,7 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, ProbotOctokit} from 'probot';
-import {logger} from 'gcf-utils';
+import {logger, addOrUpdateIssueComment} from 'gcf-utils';
 import {safeLoad} from 'js-yaml';
 import {query} from 'jsonpath';
 
@@ -31,6 +31,7 @@ interface ExternalManifest {
 export interface Configuration {
   generatedFiles?: string[];
   externalManifests?: ExternalManifest[];
+  ignoreAuthors?: string[];
 }
 
 /**
@@ -165,6 +166,12 @@ export function handler(app: Application) {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const pullNumber = context.payload.pull_request.number;
+    const prAuthor = context.payload.pull_request.user.login;
+
+    // ignore PRs from a configurable list of authors
+    if (config.ignoreAuthors?.includes(prAuthor)) {
+      return;
+    }
 
     // Read the list of templated files
     const templatedFiles = new Set(
@@ -196,12 +203,14 @@ export function handler(app: Application) {
     // Comment on the pull request if this PR is touching any templated files
     if (touchedTemplates.size > 0) {
       const body = buildCommentMessage(touchedTemplates);
-      await context.github.issues.createComment({
+      await addOrUpdateIssueComment(
+        context.github,
         owner,
         repo,
-        issue_number: pullNumber,
-        body,
-      });
+        pullNumber,
+        context.payload.installation.id,
+        body
+      );
     }
   });
 }

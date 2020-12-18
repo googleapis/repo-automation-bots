@@ -225,7 +225,10 @@ describe('generated-files-bot', () => {
     beforeEach(() => {
       probot = createProbot({
         githubToken: 'abc123',
-        Octokit: ProbotOctokit,
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
       });
 
       probot.load(handler);
@@ -309,6 +312,8 @@ describe('generated-files-bot', () => {
             {filename: 'file3.txt'},
             {filename: 'value1'},
           ])
+          .get('/repos/testOwner/testRepo/issues/6/comments?per_page=50')
+          .reply(200, [])
           .post('/repos/testOwner/testRepo/issues/6/comments', body => {
             snapshot(body);
             return true;
@@ -344,11 +349,71 @@ describe('generated-files-bot', () => {
             {filename: 'file3.txt'},
             {filename: 'value1'},
           ])
+          .get('/repos/testOwner/testRepo/issues/6/comments?per_page=50')
+          .reply(200, [])
           .post('/repos/testOwner/testRepo/issues/6/comments', body => {
             snapshot(body);
             return true;
           })
           .reply(200);
+        await probot.receive({
+          name: 'pull_request',
+          payload: payload,
+          id: 'abc123',
+        });
+        requests.done();
+      });
+
+      it('updates existing comment', async () => {
+        const validConfig = fs.readFileSync(
+          resolve(fixturesPath, 'config', 'valid-config.yml')
+        );
+        requests = requests
+          .get(
+            '/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml'
+          )
+          .reply(200, validConfig)
+          .get('/repos/testOwner/testRepo/contents/manifest.json')
+          .reply(200, {
+            content: Buffer.from(jsonManifest, 'utf8').toString('base64'),
+          })
+          .get('/repos/testOwner/testRepo/contents/manifest.yaml')
+          .reply(200, {
+            content: Buffer.from(yamlManifest, 'utf8').toString('base64'),
+          })
+          .get('/repos/testOwner/testRepo/pulls/6/files')
+          .reply(200, [
+            {filename: 'file1.txt'},
+            {filename: 'file2.txt'},
+            {filename: 'file3.txt'},
+            {filename: 'value1'},
+          ])
+          .get('/repos/testOwner/testRepo/issues/6/comments?per_page=50')
+          .reply(200, [
+            {id: 123, body: '<!-- probot comment [1219791]-->\n*Warning*: '},
+          ])
+          .patch('/repos/testOwner/testRepo/issues/comments/123', body => {
+            snapshot(body);
+            return true;
+          })
+          .reply(200);
+        await probot.receive({
+          name: 'pull_request',
+          payload: payload,
+          id: 'abc123',
+        });
+        requests.done();
+      });
+
+      it('ignores PRs from configured autors', async () => {
+        const validConfig = fs.readFileSync(
+          resolve(fixturesPath, 'config', 'ignore-authors.yml')
+        );
+        requests = requests
+          .get(
+            '/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml'
+          )
+          .reply(200, validConfig);
         await probot.receive({
           name: 'pull_request',
           payload: payload,

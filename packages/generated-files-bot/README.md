@@ -24,6 +24,7 @@ options:
 | ---- | ----------- | ---- | ------- |
 | `generatedFiles`    | An explicit list of files which are considered templates. | `string[]` | `[]` |
 | `externalManifests` | List of external manifest files to parse. | `ExternalManifest[]` | `[]` |
+| `ignoreAuthors` | List of PR authors to ignore. | `string[]` | `[]` |
 
 External Manifest:
 
