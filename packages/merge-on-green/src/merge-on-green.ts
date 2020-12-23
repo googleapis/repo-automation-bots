@@ -435,14 +435,10 @@ handler.checkPRMergeability = async function checkPRMergeability(
 //TODO: change the search query if expanding the allowlist to search for more authors
 /**
  * For a given repository, looks through all the PRs and checks to see if they have a MOG label
- * @param owner the owner of the repo
- * @param repo the repo name
  * @param context the context of the webhook payload
  * @returns void
  */
 handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
-  owner: string,
-  repo: string,
   github: InstanceType<typeof ProbotOctokit>
 ) {
   // Github does not support searching the labels with 'OR'.
@@ -456,10 +452,11 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
     }),
   ]);
   for (const issue of issuesAutomergeLabel) {
-    logger.info('before getting PR');
     const pullRequestInDatastore: WatchPR = await handler.getPR(issue.html_url);
     if (!pullRequestInDatastore) {
-      logger.info('before adding PR');
+      const ownerAndRepoArray = issue.repository_url.split('/');
+      const owner = ownerAndRepoArray[ownerAndRepoArray.length-2];
+      const repo = ownerAndRepoArray[ownerAndRepoArray.length-1];
       await handler.addPR(
         {
           number: issue.number,
@@ -479,6 +476,9 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
   for (const issue of issuesAutomergeExactLabel) {
     const pullRequestInDatastore: WatchPR = await handler.getPR(issue.html_url);
     if (!pullRequestInDatastore) {
+      const ownerAndRepoArray = issue.repository_url.split('/');
+      const owner = ownerAndRepoArray[ownerAndRepoArray.length-2];
+      const repo = ownerAndRepoArray[ownerAndRepoArray.length-1];
       await handler.addPR(
         {
           number: issue.number,
@@ -518,16 +518,9 @@ function handler(app: Application) {
 
     //because we're searching for the PRs, and not getting the installation ID, we have to use
     //the bot's installation ID to call the API. So, we need to make sure it matches the repo owner
-    if (context.payload.cron_org) {
+    if (context.payload.pickUp === true) {
       logger.info('Entering job to pick up any hanging PRs');
-      const owner = context.payload.organization.login;
-      const repo = context.payload.repository.name;
-
-      if (context.payload.cron_org !== owner) {
-        logger.info(`skipping run for ${context.payload.cron_org}`);
-        return;
-      }
-      await handler.scanForMissingPullRequests(owner, repo, context.github);
+      await handler.scanForMissingPullRequests(context.github);
       return;
     }
 
