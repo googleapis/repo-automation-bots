@@ -1035,7 +1035,8 @@ describe('merge-on-green', () => {
                 owner: 'testOwner',
                 repo: 'testRepo',
                 state: 'continue',
-                repository_url: 'https://api.github.com/repos/testOwner/testRepo',
+                repository_url:
+                  'https://api.github.com/repos/testOwner/testRepo',
                 html_url: 'https://github.com/testOwner/testRepo/pull/1',
                 user: {
                   login: 'testOwner',
@@ -1071,7 +1072,8 @@ describe('merge-on-green', () => {
                 owner: 'testOwner',
                 repo: 'testRepo',
                 state: 'continue',
-                repository_url: 'https://api.github.com/repos/testOwner/testRepo',
+                repository_url:
+                  'https://api.github.com/repos/testOwner/testRepo',
                 html_url: 'https://github.com/testOwner/testRepo/pull/6',
                 user: {
                   login: 'testOwner',
@@ -1133,7 +1135,8 @@ describe('merge-on-green', () => {
                 owner: 'testOwner',
                 repo: 'testRepo',
                 state: 'continue',
-                repository_url: 'https://api.github.com/repos/testOwner/testRepo',
+                repository_url:
+                  'https://api.github.com/repos/testOwner/testRepo',
                 html_url: 'https://github.com/testOwner/testRepo/pull/6',
                 user: {
                   login: 'testOwner',

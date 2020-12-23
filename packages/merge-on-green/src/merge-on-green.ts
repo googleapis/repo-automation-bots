@@ -455,8 +455,8 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
     const pullRequestInDatastore: WatchPR = await handler.getPR(issue.html_url);
     if (!pullRequestInDatastore) {
       const ownerAndRepoArray = issue.repository_url.split('/');
-      const owner = ownerAndRepoArray[ownerAndRepoArray.length-2];
-      const repo = ownerAndRepoArray[ownerAndRepoArray.length-1];
+      const owner = ownerAndRepoArray[ownerAndRepoArray.length - 2];
+      const repo = ownerAndRepoArray[ownerAndRepoArray.length - 1];
       await handler.addPR(
         {
           number: issue.number,
@@ -477,8 +477,8 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
     const pullRequestInDatastore: WatchPR = await handler.getPR(issue.html_url);
     if (!pullRequestInDatastore) {
       const ownerAndRepoArray = issue.repository_url.split('/');
-      const owner = ownerAndRepoArray[ownerAndRepoArray.length-2];
-      const repo = ownerAndRepoArray[ownerAndRepoArray.length-1];
+      const owner = ownerAndRepoArray[ownerAndRepoArray.length - 2];
+      const repo = ownerAndRepoArray[ownerAndRepoArray.length - 1];
       await handler.addPR(
         {
           number: issue.number,
