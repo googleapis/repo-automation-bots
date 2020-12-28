@@ -1051,7 +1051,7 @@ describe('merge-on-green', () => {
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           name: 'schedule.repository' as any,
-          payload: {org: 'testOwner', pickUp: true},
+          payload: {org: 'testOwner', find_hanging_prs: true},
           id: 'abc123',
         });
 
@@ -1087,7 +1087,7 @@ describe('merge-on-green', () => {
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           name: 'schedule.repository' as any,
-          payload: {org: 'testOwner', pickUp: true},
+          payload: {org: 'testOwner', find_hanging_prs: true},
           id: 'abc123',
         });
 
@@ -1105,7 +1105,7 @@ describe('merge-on-green', () => {
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           name: 'schedule.repository' as any,
-          payload: {org: 'testOwner', pickUp: true},
+          payload: {org: 'testOwner', find_hanging_prs: true},
           id: 'abc123',
         });
 
@@ -1151,7 +1151,7 @@ describe('merge-on-green', () => {
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           name: 'schedule.repository' as any,
-          payload: {org: 'testOwner', pickUp: true},
+          payload: {org: 'testOwner', find_hanging_prs: true},
           id: 'abc123',
         });
 

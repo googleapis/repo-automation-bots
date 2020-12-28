@@ -518,7 +518,7 @@ function handler(app: Application) {
 
     //because we're searching for the PRs, and not getting the installation ID, we have to use
     //the bot's installation ID to call the API. So, we need to make sure it matches the repo owner
-    if (context.payload.pickUp === true) {
+    if (context.payload.find_hanging_prs === true) {
       logger.info('Entering job to pick up any hanging PRs');
       await handler.scanForMissingPullRequests(context.github);
       return;
