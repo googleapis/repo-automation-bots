@@ -44,6 +44,7 @@ interface PR {
   repo: string;
   state: string;
   html_url: string;
+  repository_url: string;
   user: {
     login: string;
   };
@@ -1034,6 +1035,8 @@ describe('merge-on-green', () => {
                 owner: 'testOwner',
                 repo: 'testRepo',
                 state: 'continue',
+                repository_url:
+                  'https://api.github.com/repos/testOwner/testRepo',
                 html_url: 'https://github.com/testOwner/testRepo/pull/1',
                 user: {
                   login: 'testOwner',
@@ -1048,19 +1051,7 @@ describe('merge-on-green', () => {
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           name: 'schedule.repository' as any,
-          payload: {
-            repository: {
-              name: 'testRepo',
-              owner: {
-                login: 'testOwner',
-              },
-            },
-            organization: {
-              login: 'testOwner',
-            },
-            org: 'testOwner',
-            cron_org: 'testOwner',
-          },
+          payload: {org: 'testOwner', find_hanging_prs: true},
           id: 'abc123',
         });
 
@@ -1081,6 +1072,8 @@ describe('merge-on-green', () => {
                 owner: 'testOwner',
                 repo: 'testRepo',
                 state: 'continue',
+                repository_url:
+                  'https://api.github.com/repos/testOwner/testRepo',
                 html_url: 'https://github.com/testOwner/testRepo/pull/6',
                 user: {
                   login: 'testOwner',
@@ -1094,19 +1087,7 @@ describe('merge-on-green', () => {
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           name: 'schedule.repository' as any,
-          payload: {
-            repository: {
-              name: 'testRepo',
-              owner: {
-                login: 'testOwner',
-              },
-            },
-            organization: {
-              login: 'testOwner',
-            },
-            org: 'testOwner',
-            cron_org: 'testOwner',
-          },
+          payload: {org: 'testOwner', find_hanging_prs: true},
           id: 'abc123',
         });
 
@@ -1124,19 +1105,7 @@ describe('merge-on-green', () => {
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           name: 'schedule.repository' as any,
-          payload: {
-            repository: {
-              name: 'testRepo',
-              owner: {
-                login: 'testOwner',
-              },
-            },
-            organization: {
-              login: 'testOwner',
-            },
-            org: 'testOwner',
-            cron_org: 'testOwner',
-          },
+          payload: {org: 'testOwner', find_hanging_prs: true},
           id: 'abc123',
         });
 
@@ -1166,6 +1135,8 @@ describe('merge-on-green', () => {
                 owner: 'testOwner',
                 repo: 'testRepo',
                 state: 'continue',
+                repository_url:
+                  'https://api.github.com/repos/testOwner/testRepo',
                 html_url: 'https://github.com/testOwner/testRepo/pull/6',
                 user: {
                   login: 'testOwner',
@@ -1180,19 +1151,7 @@ describe('merge-on-green', () => {
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           name: 'schedule.repository' as any,
-          payload: {
-            repository: {
-              name: 'testRepo',
-              owner: {
-                login: 'testOwner',
-              },
-            },
-            organization: {
-              login: 'testOwner',
-            },
-            org: 'testOwner',
-            cron_org: 'testOwner',
-          },
+          payload: {org: 'testOwner', find_hanging_prs: true},
           id: 'abc123',
         });
 
