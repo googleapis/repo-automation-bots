@@ -26,6 +26,7 @@ type PullsListCommitsResponseData = components['schemas']['commit'][];
 // see: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-conventional/index.js
 delete rules['type-enum'];
 rules['header-max-length'] = [2, 'always', 256];
+rules['body-max-line-length'] = [2, 'always', 256];
 
 type Label = {
   name: string;
