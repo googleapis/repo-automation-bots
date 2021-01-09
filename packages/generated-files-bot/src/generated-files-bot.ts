@@ -15,7 +15,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Application, ProbotOctokit} from 'probot';
 import {logger, addOrUpdateIssueComment} from 'gcf-utils';
-import {safeLoad} from 'js-yaml';
+import {load} from 'js-yaml';
 import {query} from 'jsonpath';
 
 type OctokitType = InstanceType<typeof ProbotOctokit>;
@@ -47,7 +47,7 @@ export function parseManifest(
   type: 'json' | 'yaml',
   jsonpath: string
 ): string[] {
-  const data = type === 'json' ? JSON.parse(content) : safeLoad(content);
+  const data = type === 'json' ? JSON.parse(content) : load(content);
   return query(data, jsonpath);
 }
 

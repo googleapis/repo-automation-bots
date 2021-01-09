@@ -18,7 +18,6 @@ packages/header-checker-lint/*        @googleapis/github-automation @chingor13
 packages/label-sync/*                 @googleapis/github-automation @JustinBeckwith
 packages/merge-on-green/*             @googleapis/github-automation @sofisl
 packages/monitoring-system/*          @googleapis/github-automation @chingor13
-packages/publish/*                    @googleapis/github-automation @bcoe
 packages/release-please/*             @googleapis/github-automation @bcoe @chingor13
 packages/slo-stat-bot/*               @googleapis/github-automation @orthros
 packages/snippet-bot/*                @googleapis/github-automation @tmatsuo

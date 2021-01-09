@@ -29,12 +29,12 @@
     "ajv": "^6.12.4",
     "extend": "^3.0.2",
     "gcf-utils": "^6.2.0",
-    "js-yaml": "^3.14.0"
+    "js-yaml": "^4.0.0"
   },
   "devDependencies": {
     "@octokit/openapi-types": "^2.0.0",
     "@types/extend": "^3.0.1",
-    "@types/js-yaml": "^3.12.5",
+    "@types/js-yaml": "^4.0.0",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.11.6",
     "@types/sinon": "^9.0.9",
