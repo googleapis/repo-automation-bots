@@ -38,6 +38,18 @@ interface CheckRuns {
   conclusion: string;
 }
 
+interface PR {
+  number: number;
+  owner: string;
+  repo: string;
+  state: string;
+  html_url: string;
+  repository_url: string;
+  user: {
+    login: string;
+  };
+}
+
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/Fixtures');
@@ -144,12 +156,6 @@ function getRateLimit(remaining: number) {
     });
 }
 
-function react() {
-  return nock('https://api.github.com')
-    .post('/repos/testOwner/testRepo/issues/1/reactions')
-    .reply(200, {id: 1});
-}
-
 function removeReaction() {
   return nock('https://api.github.com')
     .delete('/repos/testOwner/testRepo/issues/1/reactions/1')
@@ -173,6 +179,14 @@ function getPR(
       user: {login: 'login'},
       labels,
     });
+}
+
+function searchForPRs(pr: PR[], labelName: string) {
+  return nock('https://api.github.com')
+    .get(
+      `/search/issues?q=is%3Aopen%20is%3Apr%20user%3Agoogleapis%20label%3A%22${labelName}%22`
+    )
+    .reply(200, pr);
 }
 
 //meta-note about the schedule.repository as any; currently GH does not support this type, see
@@ -838,13 +852,66 @@ describe('merge-on-green', () => {
     beforeEach(() => {
       addPRStub = sandbox.stub(handler, 'addPR');
       removePRStub = sandbox.stub(handler, 'removePR');
+      getPRStub = sandbox.stub(handler, 'getPR');
     });
 
     afterEach(() => {
       addPRStub.restore();
       removePRStub.restore();
+      getPRStub.restore();
     });
 
+    describe('adding-a-PR-to-Datastore (addPR) method', async () => {
+      it('does not add a PR if no branch protection', async () => {
+        addPRStub.restore();
+        loggerStub.restore();
+
+        const scopes = [
+          // we're purposefully calling an error here
+          getBranchProtection(400, []),
+          commentOnPR(),
+        ];
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_labeled'
+        ));
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('adds a PR if branch protection', async () => {
+        addPRStub.restore();
+        addPRStub = sandbox.stub(handler, 'addPR').callsFake(async () => {
+          await handler.checkForBranchProtection(
+            'testOwner',
+            'testRepo',
+            1,
+            testingOctokitInstance
+          );
+        });
+        const scopes = [getBranchProtection(200, ['Special Check'])];
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_labeled'
+        ));
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+    });
     describe('cleanup repository events', () => {
       it('deletes a PR if PR is closed when cleaning up repository', async () => {
         handler.getDatastore = async () => {
@@ -932,15 +999,147 @@ describe('merge-on-green', () => {
       });
     });
 
+    describe('pick up PRs', () => {
+      it('adds a PR if the PR was not picked up by a webhook event w automerge label', async () => {
+        getPRStub.restore();
+        getPRStub = sandbox.stub(handler, 'getPR').resolves();
+        const scopes = [
+          searchForPRs(
+            [
+              {
+                number: 1,
+                owner: 'testOwner',
+                repo: 'testRepo',
+                state: 'continue',
+                repository_url:
+                  'https://api.github.com/repos/testOwner/testRepo',
+                html_url: 'https://github.com/testOwner/testRepo/pull/1',
+                user: {
+                  login: 'testOwner',
+                },
+              },
+            ],
+            'automerge'
+          ),
+          searchForPRs([], 'automerge%3A%20exact'),
+        ];
+
+        await probot.receive({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'schedule.repository' as any,
+          payload: {org: 'googleapis', find_hanging_prs: true},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+        assert(getPRStub.called);
+        assert(addPRStub.called);
+      });
+
+      it('adds a PR if the PR was not picked up by a webhook event w automerge: exact label', async () => {
+        getPRStub.restore();
+        getPRStub = sandbox.stub(handler, 'getPR').resolves();
+        const scopes = [
+          searchForPRs([], 'automerge'),
+          searchForPRs(
+            [
+              {
+                number: 1,
+                owner: 'testOwner',
+                repo: 'testRepo',
+                state: 'continue',
+                repository_url:
+                  'https://api.github.com/repos/testOwner/testRepo',
+                html_url: 'https://github.com/testOwner/testRepo/pull/6',
+                user: {
+                  login: 'testOwner',
+                },
+              },
+            ],
+            'automerge%3A%20exact'
+          ),
+        ];
+
+        await probot.receive({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'schedule.repository' as any,
+          payload: {org: 'googleapis', find_hanging_prs: true},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+        assert(getPRStub.called);
+        assert(addPRStub.called);
+      });
+
+      it('does not add a PR if no labels were found under automerge or automerge exact', async () => {
+        const scopes = [
+          searchForPRs([], 'automerge'),
+          searchForPRs([], 'automerge%3A%20exact'),
+        ];
+
+        await probot.receive({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'schedule.repository' as any,
+          payload: {org: 'googleapis', find_hanging_prs: true},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+        assert(!addPRStub.called);
+      });
+
+      it('does not add a PR if label is in Datastore already', async () => {
+        getPRStub.restore();
+        getPRStub = sandbox.stub(handler, 'getPR').resolves({
+          number: 1,
+          repo: 'testRepo',
+          owner: 'testOwner',
+          state: 'continue',
+          branchProtextion: ['Special Check'],
+          label: 'automerge',
+          author: 'testOwner',
+          url: 'https://github.com/testOwner/testRepo/pull/6',
+          reactionId: 1,
+        });
+
+        const scopes = [
+          searchForPRs(
+            [
+              {
+                number: 1,
+                owner: 'testOwner',
+                repo: 'testRepo',
+                state: 'continue',
+                repository_url:
+                  'https://api.github.com/repos/testOwner/testRepo',
+                html_url: 'https://github.com/testOwner/testRepo/pull/6',
+                user: {
+                  login: 'testOwner',
+                },
+              },
+            ],
+            'automerge'
+          ),
+          searchForPRs([], 'automerge%3A%20exact'),
+        ];
+
+        await probot.receive({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'schedule.repository' as any,
+          payload: {org: 'googleapis', find_hanging_prs: true},
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+        assert(getPRStub.called);
+        assert(!addPRStub.called);
+      });
+    });
+
     describe('PRs when labeled', () => {
       handler.allowlist = ['testOwner'];
       it('adds a PR when label is added correctly', async () => {
-        const scopes = [
-          getRateLimit(5000),
-          react(),
-          getBranchProtection(200, ['Special Check']),
-        ];
-
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const payload = require(resolve(
           fixturesPath,
@@ -954,19 +1153,15 @@ describe('merge-on-green', () => {
           id: 'abc123',
         });
 
-        scopes.forEach(s => s.done());
         assert(addPRStub.called);
       });
 
       //This function is supposed to respond with an error
       it('does not add a PR if branch protection errors and comments on PR', async () => {
+        addPRStub.restore();
         loggerStub.restore();
 
-        const scopes = [
-          getRateLimit(5000),
-          getBranchProtection(400, []),
-          commentOnPR(),
-        ];
+        const scopes = [getBranchProtection(400, []), commentOnPR()];
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const payload = require(resolve(
           fixturesPath,
@@ -981,10 +1176,6 @@ describe('merge-on-green', () => {
         });
 
         scopes.forEach(s => s.done());
-
-        assert(!addPRStub.called);
-
-        logger.info('stub called? ' + addPRStub.called);
       });
 
       it('does not add a PR if PR is labeled but does not include MOG', async () => {
@@ -1056,33 +1247,11 @@ describe('merge-on-green', () => {
 
         logger.info('stub called? ' + addPRStub.called);
       });
-
-      it('does not execute if there is no more space for requests', async () => {
-        const scopes = [getRateLimit(0)];
-
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const payload = require(resolve(
-          fixturesPath,
-          'events',
-          'pull_request_labeled'
-        ));
-
-        await probot.receive({
-          name: 'pull_request',
-          payload,
-          id: 'abc123',
-        });
-
-        scopes.forEach(s => s.done());
-
-        assert(!addPRStub.called);
-
-        logger.info('stub called? ' + addPRStub.called);
-      });
     });
 
     describe('PRs when closed, merged or unlabeled', () => {
       it('deletes a PR from datastore if it was closed', async () => {
+        getPRStub.restore();
         getPRStub = sandbox.stub(handler, 'getPR').resolves({
           number: 1,
           repo: 'testRepo',
@@ -1134,6 +1303,7 @@ describe('merge-on-green', () => {
       });
 
       it('deletes a PR from datastore if it unlabeled MOG', async () => {
+        getPRStub.restore();
         getPRStub = sandbox.stub(handler, 'getPR').resolves({
           number: 1,
           repo: 'testRepo',
@@ -1180,13 +1350,9 @@ describe('merge-on-green', () => {
 
         logger.info('getPR stub called? ' + getPRStub.called);
         logger.info('remove stub called? ' + removePRStub.called);
-
-        getPRStub.restore();
       });
 
       it('does not delete a PR from datastore if it unlabeled another label other than MOG', async () => {
-        getPRStub = sandbox.stub(handler, 'getPR');
-
         await probot.receive({
           name: 'pull_request',
           payload: {
@@ -1218,11 +1384,10 @@ describe('merge-on-green', () => {
 
         logger.info('getPR stub called? ' + getPRStub.called);
         logger.info('remove stub called? ' + removePRStub.called);
-
-        getPRStub.restore();
       });
 
       it('does not delete a PR if PR merged is not in the table', async () => {
+        getPRStub.restore();
         getPRStub = sandbox.stub(handler, 'getPR').resolves(undefined);
 
         await probot.receive({
@@ -1256,8 +1421,6 @@ describe('merge-on-green', () => {
 
         logger.info('getPR stub called? ' + getPRStub.called);
         logger.info('remove stub called? ' + removePRStub.called);
-
-        getPRStub.restore();
       });
     });
   });
