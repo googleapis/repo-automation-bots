@@ -513,10 +513,11 @@ function handler(app: Application) {
 
         return;
       }
-      const start = Date.now();
-      await handler.checkPRMergeability(watchedPRs, app, context);
-      logger.info(`mergeOnGreen check took ${Date.now() - start}ms`);
     }
+
+    const start = Date.now();
+    await handler.checkPRMergeability(watchedPRs, app, context);
+    logger.info(`mergeOnGreen check took ${Date.now() - start}ms`);
   });
   app.on('pull_request.labeled', async context => {
     const prNumber = context.payload.pull_request.number;
