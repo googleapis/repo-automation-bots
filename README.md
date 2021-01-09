@@ -18,7 +18,6 @@ by Google on GitHub.
 | [license-header-lint] | PR checker that ensures that source files contain valid license headers | [install][license-header-lint-app] |
 | [label-sync] | Synchronize labels across organizations | [install][label-sync-app] |
 | [merge-on-green] | Merge a pull-request when all required checks have passed | [install][merge-on-green-app] |
-| [publish] | Publish to npm, through [Wombat Dressing Room][] | [install][publish-app] |
 | [release-please] | Proposes releases based on semantic version commits | [install][release-please-app] |
 | [snippet-bot] | Check for mismatched region tags in PRs | [install][snippet-bot-app] |
 | [sync-repo-settings] | Synchronize repository settings from a centralized config | [install][sync-repo-settings-app] |
@@ -134,8 +133,6 @@ at the specified schedule.
 [label-sync-app]: https://github.com/apps/gcf-label-sync
 [buildcop]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop
 [buildcop-app]: https://github.com/apps/build-cop-bot
-[publish]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/publish
-[publish-app]: https://github.com/apps/publish-bot
 [merge-on-green]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/merge-on-green
 [merge-on-green-app]: https://github.com/apps/gcf-merge-on-green
 [snippet-bot]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/snippet-bot
