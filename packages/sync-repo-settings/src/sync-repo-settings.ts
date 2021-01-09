@@ -122,7 +122,7 @@ export function handler(app: Application) {
         const configYaml = Buffer.from(blob.data.content, 'base64').toString(
           'utf8'
         );
-        const config = yaml.safeLoad(configYaml);
+        const config = yaml.load(configYaml);
         let isValid = false;
         let errorText = '';
         if (typeof config === 'object') {
