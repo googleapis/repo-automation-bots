@@ -18,7 +18,6 @@ path:
     header-checker-lint: 'header-checker-lint'
     label-sync: 'label-sync'
     merge-on-green: 'merge-on-green'
-    publish: 'publish'
     release-please: 'release-please'
     slo-stat-bot: 'slo-stat-bot'
     snippet-bot: 'snippet-bot'
