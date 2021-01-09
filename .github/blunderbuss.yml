@@ -18,7 +18,6 @@ assign_issues_by:
   - labels:
     - 'bot: conventional-commit-lint'
     - 'bot: failurechecker'
-    - 'bot: publish'
     to:
     - bcoe
   - labels:
@@ -72,7 +71,6 @@ assign_prs_by:
   - labels:
     - 'bot: conventional-commit-lint'
     - 'bot: failurechecker'
-    - 'bot: publish'
     to:
     - bcoe
   - labels:
