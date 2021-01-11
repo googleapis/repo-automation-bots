@@ -9,5 +9,5 @@ require (
 	github.com/google/uuid v1.1.4
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
 	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6 // indirect
-	google.golang.org/genproto v0.0.0-20210108203827-ffc7fda8c3d7
+	google.golang.org/genproto v0.0.0-20210111173611-c7d5778d165c
 )
