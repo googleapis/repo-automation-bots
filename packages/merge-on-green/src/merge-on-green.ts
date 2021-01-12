@@ -18,7 +18,7 @@ import {Datastore} from '@google-cloud/datastore';
 import {mergeOnGreen} from './merge-logic';
 import {logger} from 'gcf-utils';
 
-type GitHubType = InstanceType<typeof ProbotOctokit>
+type GitHubType = InstanceType<typeof ProbotOctokit>;
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
