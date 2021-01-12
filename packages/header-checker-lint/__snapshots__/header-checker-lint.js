@@ -27,7 +27,7 @@ exports['HeaderCheckerLint opened pull request sets a "failure" context on PR, i
   "output": {
     "title": "Invalid or missing license headers detected.",
     "summary": "Some new files are missing headers",
-    "text": "`oauth2_http/java/com/google/auth/http/WrongYear.java` should have a copyright year of 2020"
+    "text": "`oauth2_http/java/com/google/auth/http/WrongYear.java` should have a copyright year of 2021"
   }
 }
 
@@ -49,7 +49,7 @@ exports['HeaderCheckerLint opened pull request sets a "failure" context on PR, i
   "output": {
     "title": "Invalid or missing license headers detected.",
     "summary": "Some new files are missing headers",
-    "text": "`oauth2_http/java/com/google/auth/http/InvalidCopyright.java` has an invalid copyright holder: `Invalid Holder`\n`oauth2_http/java/com/google/auth/http/InvalidCopyright.java` should have a copyright year of 2020"
+    "text": "`oauth2_http/java/com/google/auth/http/InvalidCopyright.java` has an invalid copyright holder: `Invalid Holder`\n`oauth2_http/java/com/google/auth/http/InvalidCopyright.java` should have a copyright year of 2021"
   }
 }
 
@@ -60,7 +60,7 @@ exports['HeaderCheckerLint opened pull request reads a custom configuration file
   "output": {
     "title": "Invalid or missing license headers detected.",
     "summary": "Some new files are missing headers",
-    "text": "`oauth2_http/java/com/google/auth/http/InvalidCopyright.java` should have a copyright year of 2020"
+    "text": "`oauth2_http/java/com/google/auth/http/InvalidCopyright.java` should have a copyright year of 2021"
   }
 }
 
@@ -71,7 +71,7 @@ exports['HeaderCheckerLint opened pull request ignores a valid license 1'] = {
   "output": {
     "title": "Invalid or missing license headers detected.",
     "summary": "Some new files are missing headers",
-    "text": "`oauth2_http/java/com/google/auth/http/NewFile2.java` should have a copyright year of 2020"
+    "text": "`oauth2_http/java/com/google/auth/http/NewFile2.java` should have a copyright year of 2021"
   }
 }
 
@@ -93,7 +93,7 @@ exports['HeaderCheckerLint opened pull request ignores copyright strings in the 
   "output": {
     "title": "Invalid or missing license headers detected.",
     "summary": "Some new files are missing headers",
-    "text": "`oauth2_http/java/com/google/auth/http/CopyrightString.java` should have a copyright year of 2020"
+    "text": "`oauth2_http/java/com/google/auth/http/CopyrightString.java` should have a copyright year of 2021"
   }
 }
 
@@ -126,7 +126,7 @@ exports['HeaderCheckerLint updated pull request sets a "failure" context on PR, 
   "output": {
     "title": "Invalid or missing license headers detected.",
     "summary": "Some new files are missing headers",
-    "text": "`oauth2_http/java/com/google/auth/http/WrongYear.java` should have a copyright year of 2020"
+    "text": "`oauth2_http/java/com/google/auth/http/WrongYear.java` should have a copyright year of 2021"
   }
 }
 
@@ -159,7 +159,7 @@ exports['HeaderCheckerLint updated pull request ignores a valid license 1'] = {
   "output": {
     "title": "Invalid or missing license headers detected.",
     "summary": "Some new files are missing headers",
-    "text": "`oauth2_http/java/com/google/auth/http/NewFile2.java` should have a copyright year of 2020"
+    "text": "`oauth2_http/java/com/google/auth/http/NewFile2.java` should have a copyright year of 2021"
   }
 }
 
