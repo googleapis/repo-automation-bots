@@ -18,6 +18,8 @@ import {Datastore} from '@google-cloud/datastore';
 import {mergeOnGreen} from './merge-logic';
 import {logger} from 'gcf-utils';
 
+type GitHubType = InstanceType<typeof ProbotOctokit>
+
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
 const MAX_TEST_TIME = 1000 * 60 * 60 * 6; // 6 hr.
@@ -144,7 +146,7 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
   prNumber: number,
   label: string,
   reactionId: number,
-  github: InstanceType<typeof ProbotOctokit>
+  github: GitHubType
 ) {
   await github.issues.removeLabel({
     owner,
@@ -176,7 +178,7 @@ handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
   label: string,
   reactionId: number,
   url: string,
-  github: InstanceType<typeof ProbotOctokit>
+  github: GitHubType
 ) {
   let pr;
   let labels;
@@ -235,7 +237,7 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
   owner: string,
   repo: string,
   prNumber: number,
-  github: InstanceType<typeof ProbotOctokit>
+  github: GitHubType
 ): Promise<string[] | undefined> {
   let branchProtection: string[] | undefined;
   // Check to see if branch protection exists
@@ -274,7 +276,7 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
 handler.addPR = async function addPR(
   incomingPR: IncomingPR,
   url: string,
-  github: InstanceType<typeof ProbotOctokit>
+  github: GitHubType
 ) {
   let branchProtection: string[] | undefined;
   try {
@@ -420,7 +422,7 @@ handler.checkPRMergeability = async function checkPRMergeability(
  * @returns void
  */
 handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
-  github: InstanceType<typeof ProbotOctokit>,
+  github: GitHubType,
   org: string
 ) {
   // Github does not support searching the labels with 'OR'.
