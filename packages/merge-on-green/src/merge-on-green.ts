@@ -504,19 +504,12 @@ function handler(app: Application) {
       logger.info('Entering job to pick up any hanging PRs');
       // we cannot search in an org without the bot installation ID, so we need
       // to divide up the cron jobs based on org
-      if (context.payload.org === 'googleapis') {
-        await handler.scanForMissingPullRequests(context.github, 'googleapis');
-      }
-      if (context.payload.org === 'GoogleCloudPlatform') {
-        await handler.scanForMissingPullRequests(
-          context.github,
-          'GoogleCloudPlatform'
-        );
-
-        return;
-      }
+      await handler.scanForMissingPullRequests(
+        context.github,
+        context.payload.org
+      );
+      return;
     }
-
     const start = Date.now();
     await handler.checkPRMergeability(watchedPRs, app, context);
     logger.info(`mergeOnGreen check took ${Date.now() - start}ms`);

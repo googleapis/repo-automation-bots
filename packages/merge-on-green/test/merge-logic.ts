@@ -36,18 +36,6 @@ interface CheckRuns {
   conclusion: string;
 }
 
-interface PR {
-  number: number;
-  owner: string;
-  repo: string;
-  state: string;
-  html_url: string;
-  repository_url: string;
-  user: {
-    login: string;
-  };
-}
-
 nock.disableNetConnect();
 
 function getReviewsCompleted(response: Reviews[]) {
