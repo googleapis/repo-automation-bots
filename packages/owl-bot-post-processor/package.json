@@ -30,6 +30,7 @@
   },
   "homepage": "https://github.com/googleapis/repo-automation-bots#readme",
   "devDependencies": {
+    "@octokit/rest": "^18.0.12",
     "@types/jsonwebtoken": "^8.5.0",
     "@types/mocha": "^8.2.0",
     "@types/node": "^14.14.20",

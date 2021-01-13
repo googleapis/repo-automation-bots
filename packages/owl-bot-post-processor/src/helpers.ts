@@ -15,6 +15,7 @@ import {sign} from 'jsonwebtoken';
 import {readFile} from 'fs/promises';
 import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
+import {Octokit} from '@octokit/rest';
 
 export interface BuildArgs {
   'pem-path': string;
@@ -38,6 +39,15 @@ export async function triggerBuild(argv: BuildArgs) {
   }
   const cb = new CloudBuildClient();
   const [owner, repo] = argv.repo.split('/');
+  const octokit = new Octokit({
+    auth: token.token,
+  });
+  const {data: prData} = await octokit.pulls.get({
+    owner,
+    repo,
+    pull_number: Number(argv.pr),
+  });
+  const [prOwner, prRepo] = prData.head.repo.full_name.split('/');
   const [resp] = await cb.runBuildTrigger({
     projectId: project,
     triggerId: argv.trigger,
@@ -48,15 +58,44 @@ export async function triggerBuild(argv: BuildArgs) {
         _GITHUB_TOKEN: token.token,
         _PR: argv.pr,
         // TODO: we should be able to get this information from the PR:
-        _PR_BRANCH: 'create-pr',
-        _PR_OWNER: 'bcoe',
-        _OWNER: owner,
-        _REPOSITORY: repo,
+        _PR_BRANCH: prData.head.ref,
+        _PR_OWNER: prOwner,
+        _REPOSITORY: prRepo,
         _CONTAINER: 'node',
       },
     },
   });
-  console.info(resp);
+  // Wait for the build to finish:
+  try {
+    await resp.promise();
+    await octokit.checks.create({
+      owner,
+      repo,
+      name: 'OwlBot Post Processor',
+      summary: 'this failed really badly',
+      head_sha: prData.head.sha,
+      conclusion: 'success',
+      output: {
+        title: 'Post-processing container ran successfully',
+        summary: '[TODO]: summary of steps here',
+        text: '[TODO]: full list of steps here',
+      },
+    });
+  } catch (err) {
+    await octokit.checks.create({
+      owner,
+      repo,
+      name: 'OwlBot Post Processor',
+      summary: 'this failed really badly',
+      head_sha: prData.head.sha,
+      conclusion: 'failure',
+      output: {
+        title: 'Post-processing container failed',
+        summary: err.message,
+        text: '[TODO]: full list of steps here',
+      },
+    });
+  }
 }
 
 interface token {

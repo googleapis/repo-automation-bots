@@ -21,7 +21,7 @@ steps:
     entrypoint: node
     args: [
       '-e',
-      'fs.writeFileSync("./foo.txt", "heyo", "utf8")'
+      'fs.writeFileSync("./foo.txt", "this is a different message", "utf8")'
     ]
     dir: '${_REPOSITORY}'
   # Populate global username, email, and credentials for git:
