@@ -64,7 +64,7 @@ steps:
     args: [
       'bash',
       '-c',
-      'git commit -a -m '🦉 Updates from OwlBot'; exit 0'
+      'git commit -a -m "🦉 Updates from OwlBot"; exit 0'
     ]
     dir: ${_REPOSITORY}
   - name: 'gcr.io/cloud-builders/git'
