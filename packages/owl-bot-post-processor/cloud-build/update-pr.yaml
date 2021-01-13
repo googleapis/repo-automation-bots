@@ -1,0 +1,74 @@
+steps:
+  # Clone user/branch that created PR:
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - clone
+      - https://github.com/${_PR_OWNER}/${_REPOSITORY}.git
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - checkout
+      - -b
+      - ${_PR_BRANCH}
+    dir: '${_REPOSITORY}'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - pull
+      - origin
+      - ${_PR_BRANCH}
+    dir: '${_REPOSITORY}'
+  # Run container listed in OwlBot.yaml:
+  - name: ${_CONTAINER}
+    entrypoint: node
+    args: [
+      '-e',
+      'fs.writeFileSync("./foo.txt", "heyo", "utf8")'
+    ]
+    dir: '${_REPOSITORY}'
+  # Populate global username, email, and credentials for git:
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - user.email
+      - 'owl-bot-development[bot]@users.noreply.github.com'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - user.name
+      - 'Owl Bot'
+  - name: 'bash'
+    args:
+      - '-eEuo'
+      - 'pipefail'
+      - '-c'
+      - |-
+        echo https://x-access-token:$$GITHUB_TOKEN@github.com >> ./.git/.git-credentials
+    env:
+      - 'GITHUB_TOKEN=$_GITHUB_TOKEN'
+    dir: ${_REPOSITORY}
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - credential.helper
+      - 'store --file ./.git/.git-credentials'
+  # Commit any changes to working directory:
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - add
+      - .
+    dir: ${_REPOSITORY}
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - commit
+      - -a
+      - -m
+      - 'updates from OwlBot'
+    dir: ${_REPOSITORY}
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - push
+      - origin
+      - ${_PR_BRANCH}
+    dir: ${_REPOSITORY}
