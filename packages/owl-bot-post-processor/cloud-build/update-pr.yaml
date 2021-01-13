@@ -62,7 +62,7 @@ steps:
   - name: 'gcr.io/cloud-builders/git'
     entrypoint: bash
     args: [
-      'bash',
+      '-l',
       '-c',
       'git commit -a -m "🦉 Updates from OwlBot"; exit 0'
     ]
