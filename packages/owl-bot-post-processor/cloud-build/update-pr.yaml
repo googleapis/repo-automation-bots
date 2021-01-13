@@ -66,8 +66,9 @@ steps:
       - 'pipefail'
       - '-c'
       - |-
-        git commit -a -m '🦉 Updates from OwlBot'
-        exit 0
+        # If there have been no updates to files, simply ignore
+        # the error that git commit -a -m  would raise:
+        git commit -a -m '🦉 Updates from OwlBot'; exit 0
     dir: ${_REPOSITORY}
   - name: 'gcr.io/cloud-builders/git'
     args:

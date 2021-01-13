@@ -112,7 +112,6 @@ export async function triggerBuild(
       },
     },
   });
-  logger.log(resp.metadata);
   try {
     // TODO(bcoe): work with fenster@ to figure out why awaiting a long
     // running operation does not behave as expected:
