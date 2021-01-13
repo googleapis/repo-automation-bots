@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as yargs from 'yargs';
+import yargs = require('yargs');
 import {triggerBuildCommand} from './commands/trigger-build';
 yargs(process.argv.slice(2))
   .command(triggerBuildCommand)

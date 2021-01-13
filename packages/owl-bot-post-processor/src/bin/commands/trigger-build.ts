@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import * as yargs from 'yargs';
-import {BuildArgs, triggerBuild} from '../../helpers';
+import yargs = require('yargs');
+import {BuildArgs, createCheck, triggerBuild} from '../../helpers';
 
 export const triggerBuildCommand: yargs.CommandModule<{}, BuildArgs> = {
   command: 'trigger-build',
@@ -55,6 +55,17 @@ export const triggerBuildCommand: yargs.CommandModule<{}, BuildArgs> = {
       });
   },
   async handler(argv) {
-    await triggerBuild(argv);
+    const buildStatus = await triggerBuild(argv);
+    await createCheck({
+      'pem-path': argv['pem-path'],
+      'app-id': argv['app-id'],
+      installation: argv.installation,
+      pr: argv.pr,
+      repo: argv.repo,
+      text: buildStatus.text,
+      summary: buildStatus.summary,
+      conclusion: buildStatus.conclusion,
+      title: `🦉 OwlBot - ${buildStatus.summary}`,
+    });
   },
 };

@@ -60,11 +60,14 @@ steps:
       - .
     dir: ${_REPOSITORY}
   - name: 'gcr.io/cloud-builders/git'
+    entrypoint: bash
     args:
-      - commit
-      - -a
-      - -m
-      - 'updates from OwlBot'
+      - '-eEuo'
+      - 'pipefail'
+      - '-c'
+      - |-
+        git commit -a -m '🦉 Updates from OwlBot'
+        exit 0
     dir: ${_REPOSITORY}
   - name: 'gcr.io/cloud-builders/git'
     args:
