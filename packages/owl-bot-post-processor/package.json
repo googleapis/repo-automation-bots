@@ -2,7 +2,7 @@
   "name": "owl-bot-post-processor",
   "version": "1.0.0",
   "description": "keep pull requests up-to-date with generated code",
-  "bin": "node ./build/src/bin/owl-bot.js",
+  "bin": "./build/src/bin/owl-bot.js",
   "main": "build/src/index.js",
   "scripts": {
     "clean": "gts clean",
@@ -33,6 +33,7 @@
     "@types/jsonwebtoken": "^8.5.0",
     "@types/mocha": "^8.2.0",
     "@types/node": "^14.14.20",
+    "@types/sinon": "^9.0.10",
     "@types/yargs": "^15.0.12",
     "c8": "^7.4.0",
     "gts": "^3.1.0",

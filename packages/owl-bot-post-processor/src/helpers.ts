@@ -75,7 +75,7 @@ export async function triggerBuild(
   octokit?: OctokitType,
   logger = console
 ): Promise<BuildResponse> {
-  const token = await getToken(
+  const token = await helpers.getToken(
     args['pem-path'],
     args['app-id'],
     args.installation
@@ -84,10 +84,10 @@ export async function triggerBuild(
   if (!project) {
     throw Error('gcloud project must be provided');
   }
-  const cb = new CloudBuildClient();
+  const cb = helpers.getCloudBuildInstance();
   const [owner, repo] = args.repo.split('/');
   if (!octokit) {
-    octokit = await getAuthenticatedOctokit(token.token);
+    octokit = await helpers.getAuthenticatedOctokit(token.token);
   }
   const {data: prData} = await octokit.pulls.get({
     owner,
@@ -195,7 +195,7 @@ export async function createCheck(
   logger = console
 ) {
   if (!octokit) {
-    octokit = await getAuthenticatedOctokit({
+    octokit = await helpers.getAuthenticatedOctokit({
       'pem-path': args['pem-path'],
       'app-id': args['app-id'],
       installation: args.installation,
@@ -279,3 +279,16 @@ export async function getAuthenticatedOctokit(
   if (cache) cachedOctokit = octokit;
   return octokit;
 }
+
+function getCloudBuildInstance() {
+  return new CloudBuildClient();
+}
+
+export const helpers = {
+  accessTokenURL,
+  createCheck,
+  getAuthenticatedOctokit,
+  getCloudBuildInstance,
+  getToken,
+  triggerBuild,
+};
