@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-git clone https://github.com/googleapis/googleapis
-git clone https://github.com/googleapis/googleapis-gen
+git clone https://github.com/googleapis/googleapis.git
+git clone git@github.com:googleapis/googleapis-gen.git
 
 export GOOGLEAPIS=googleapis
 export GOOGLEAPIS_GEN=googleapis-gen
