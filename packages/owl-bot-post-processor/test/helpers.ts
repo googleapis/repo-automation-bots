@@ -54,9 +54,9 @@ describe('helpers', () => {
   afterEach(() => {
     sandbox.restore();
   });
-  describe('accessTokenURL', () => {
+  describe('getAccessTokenURL', () => {
     it('returns URI for token endpoint', () => {
-      const uri = helpers.accessTokenURL('12345');
+      const uri = helpers.getAccessTokenURL('12345');
       assert.strictEqual(
         uri,
         'https://api.github.com/app/installations/12345/access_tokens'

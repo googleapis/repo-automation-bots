@@ -242,7 +242,7 @@ export async function getToken(
   };
   const jwt = sign(payload, privateKey, {algorithm: 'RS256'});
   const resp = await request<Token>({
-    url: accessTokenURL(installation),
+    url: getAccessTokenURL(installation),
     method: 'POST',
     headers: {
       Authorization: `Bearer ${jwt}`,
@@ -256,7 +256,7 @@ export async function getToken(
   }
 }
 
-export function accessTokenURL(installation: string) {
+export function getAccessTokenURL(installation: string) {
   return `https://api.github.com/app/installations/${installation}/access_tokens`;
 }
 
@@ -289,8 +289,8 @@ function getCloudBuildInstance() {
 }
 
 export const helpers = {
-  accessTokenURL,
   createCheck,
+  getAccessTokenURL,
   getAuthenticatedOctokit,
   getCloudBuildInstance,
   getToken,
