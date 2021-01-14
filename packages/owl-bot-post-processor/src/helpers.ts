@@ -104,10 +104,12 @@ export async function triggerBuild(
       substitutions: {
         _GITHUB_TOKEN: token.token,
         _PR: args.pr,
-        // TODO: we should be able to get this information from the PR:
         _PR_BRANCH: prData.head.ref,
         _PR_OWNER: prOwner,
         _REPOSITORY: prRepo,
+        // _CONTAINER must contain the image digest. For example:
+        // gcr.io/repo-automation-tools/nodejs-post-processor**@1234abcd**
+        // TODO: read this from OwlBot.yaml.
         _CONTAINER: 'node',
       },
     },
@@ -141,7 +143,7 @@ export async function triggerBuild(
       text,
     };
   } catch (err) {
-    logger.error(err.message);
+    logger.error(err);
     return {
       conclusion: 'failure',
       summary: 'unknown build failure',
