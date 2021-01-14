@@ -232,6 +232,8 @@ export async function getToken(
   const privateKey = await readFileAsync(pemPath);
   const payload = {
     // issued at time
+    // Note: upstream API seems to fail if decimals are included
+    // in unixtime, this is why parseInt is run:
     iat: parseInt('' + Date.now() / 1000),
     // JWT expiration time (10 minute maximum)
     exp: parseInt('' + Date.now() / 1000 + 10 * 60),
