@@ -75,7 +75,7 @@ export async function triggerBuild(
   octokit?: OctokitType,
   logger = console
 ): Promise<BuildResponse> {
-  const token = await core.getToken(
+  const token = await core.getGitHubShortLivedAccessToken(
     args['pem-path'],
     args['app-id'],
     args.installation
@@ -225,7 +225,7 @@ export async function createCheck(
   });
 }
 
-export async function getToken(
+export async function getGitHubShortLivedAccessToken(
   pemPath: string,
   appId: number,
   installation: string
@@ -269,7 +269,7 @@ export async function getAuthenticatedOctokit(
   if (cache && cachedOctokit) return cachedOctokit;
   let tokenString: string;
   if (auth instanceof Object) {
-    const token = await getToken(
+    const token = await getGitHubShortLivedAccessToken(
       auth['pem-path'],
       auth['app-id'],
       auth.installation
@@ -294,6 +294,6 @@ export const core = {
   getAccessTokenURL,
   getAuthenticatedOctokit,
   getCloudBuildInstance,
-  getToken,
+  getGitHubShortLivedAccessToken,
   triggerBuild,
 };

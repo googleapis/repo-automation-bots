@@ -37,7 +37,7 @@ describe('core', () => {
         },
       },
     };
-    sandbox.stub(core, 'getToken').resolves({
+    sandbox.stub(core, 'getGitHubShortLivedAccessToken').resolves({
       token: 'abc123',
       expires_at: '2021-01-13T23:37:43.707Z',
       permissions: {},
