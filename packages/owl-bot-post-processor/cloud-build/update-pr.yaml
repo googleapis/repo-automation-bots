@@ -21,7 +21,7 @@ steps:
     entrypoint: node
     args: [
       '-e',
-      'fs.writeFileSync("./foo.txt", "yet another message", "utf8")'
+      'fs.writeFileSync("./foo2.txt", "yet another message", "utf8")'
     ]
     dir: '${_REPOSITORY}'
   # Populate global username, email, and credentials for git:
@@ -54,11 +54,6 @@ steps:
       - credential.helper
       - 'store --file ./.git/.git-credentials'
   # Commit any changes to working directory:
-  - name: 'gcr.io/cloud-builders/git'
-    args:
-      - add
-      - .
-    dir: ${_REPOSITORY}
   - name: 'gcr.io/cloud-builders/git'
     entrypoint: bash
     args: [

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import yargs = require('yargs');
-import {BuildArgs, createCheck, triggerBuild} from '../../helpers';
+import {BuildArgs, createCheck, triggerBuild} from '../../core';
 
 export const triggerBuildCommand: yargs.CommandModule<{}, BuildArgs> = {
   command: 'trigger-build',

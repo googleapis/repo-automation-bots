@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import * as assert from 'assert';
-import {helpers} from '../src/helpers';
+import {core} from '../src/core';
 // eslint-disable-next-line node/no-unpublished-import
 import * as sinon from 'sinon';
 // eslint-disable-next-line node/no-unpublished-import
@@ -25,7 +25,7 @@ import {Octokit} from '@octokit/rest';
 
 const sandbox = sinon.createSandbox();
 
-describe('helpers', () => {
+describe('core', () => {
   beforeEach(() => {
     const prData = {
       data: {
@@ -37,13 +37,13 @@ describe('helpers', () => {
         },
       },
     };
-    sandbox.stub(helpers, 'getToken').resolves({
+    sandbox.stub(core, 'getToken').resolves({
       token: 'abc123',
       expires_at: '2021-01-13T23:37:43.707Z',
       permissions: {},
       repository_selection: 'included',
     });
-    sandbox.stub(helpers, 'getAuthenticatedOctokit').resolves(({
+    sandbox.stub(core, 'getAuthenticatedOctokit').resolves(({
       pulls: {
         get() {
           return prData;
@@ -56,7 +56,7 @@ describe('helpers', () => {
   });
   describe('getAccessTokenURL', () => {
     it('returns URI for token endpoint', () => {
-      const uri = helpers.getAccessTokenURL('12345');
+      const uri = core.getAccessTokenURL('12345');
       assert.strictEqual(
         uri,
         'https://api.github.com/app/installations/12345/access_tokens'
@@ -77,7 +77,7 @@ describe('helpers', () => {
       let triggerRequest:
         | protos.google.devtools.cloudbuild.v1.IRunBuildTriggerRequest
         | undefined = undefined;
-      sandbox.stub(helpers, 'getCloudBuildInstance').returns(({
+      sandbox.stub(core, 'getCloudBuildInstance').returns(({
         runBuildTrigger(
           request: protos.google.devtools.cloudbuild.v1.IRunBuildTriggerRequest
         ) {
@@ -96,7 +96,7 @@ describe('helpers', () => {
           return [successfulBuild];
         },
       } as any) as CloudBuildClient);
-      const build = await helpers.triggerBuild({
+      const build = await core.triggerBuild({
         'app-id': 12345,
         'pem-path': './fake.pem',
         installation: '12345',
@@ -122,7 +122,7 @@ describe('helpers', () => {
       let triggerRequest:
         | protos.google.devtools.cloudbuild.v1.IRunBuildTriggerRequest
         | undefined = undefined;
-      sandbox.stub(helpers, 'getCloudBuildInstance').returns(({
+      sandbox.stub(core, 'getCloudBuildInstance').returns(({
         runBuildTrigger(
           request: protos.google.devtools.cloudbuild.v1.IRunBuildTriggerRequest
         ) {
@@ -141,7 +141,7 @@ describe('helpers', () => {
           return [successfulBuild];
         },
       } as any) as CloudBuildClient);
-      const build = await helpers.triggerBuild({
+      const build = await core.triggerBuild({
         'app-id': 12345,
         'pem-path': './fake.pem',
         installation: '12345',
