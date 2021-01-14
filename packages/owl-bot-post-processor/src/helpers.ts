@@ -241,7 +241,7 @@ export async function getToken(
     iss: appId,
   };
   const jwt = sign(payload, privateKey, {algorithm: 'RS256'});
-  const resp = await request({
+  const resp = await request<Token>({
     url: accessTokenURL(installation),
     method: 'POST',
     headers: {
@@ -250,9 +250,9 @@ export async function getToken(
     },
   });
   if (resp.status !== 201) {
-    throw Error(`unexpectedd response http = ${resp.status}`);
+    throw Error(`unexpected response http = ${resp.status}`);
   } else {
-    return resp.data as Token;
+    return resp.data;
   }
 }
 
