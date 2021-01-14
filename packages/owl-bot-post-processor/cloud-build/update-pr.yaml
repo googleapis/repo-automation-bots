@@ -55,11 +55,17 @@ steps:
       - 'store --file ./.git/.git-credentials'
   # Commit any changes to working directory:
   - name: 'gcr.io/cloud-builders/git'
+    args:
+      - add
+      - -A
+      - .
+    dir: ${_REPOSITORY}
+  - name: 'gcr.io/cloud-builders/git'
     entrypoint: bash
     args: [
       '-l',
       '-c',
-      'git commit -a -m "🦉 Updates from OwlBot"; exit 0'
+      'git commit -m "🦉 Updates from OwlBot"; exit 0'
     ]
     dir: ${_REPOSITORY}
   - name: 'gcr.io/cloud-builders/git'
