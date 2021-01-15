@@ -52,12 +52,16 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
 
     # Rebuild at the sha.
     git -C "$GOOGLEAPIS" checkout "$sha"
+    # Choose build targets.
     if [[ -z "$BUILD_TARGETS" ]] ; then
         targets=$(cd "$GOOGLEAPIS" && bazel query 'filter(".*\.tar\.gz$", kind("generated file", //...:*))')
     else
         targets="$BUILD_TARGETS"
     fi
-    (cd "$GOOGLEAPIS" && bazel build \
+    # Clean out all the source packages from the previous build.
+    find "$GOOGLEAPIS/bazel-bin" -name "*.tar.gz" | xargs rm
+    # Invoke bazel build.
+    (cd "$GOOGLEAPIS" && bazel build -k \
           --remote_cache=$BAZEL_REMOTE_CACHE \
           --google_default_credentials $targets)
     
@@ -65,8 +69,8 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     rm -rf "$GOOGLEAPIS_GEN/external" "$GOOGLEAPIS_GEN/google" "$GOOGLEAPIS_GEN/grafeas"
 
     # Copy the generated source files into $GOOGLEAPIS_GEN.
-    tars_gzs=$(cd "$GOOGLEAPIS/bazel-out/k8-fastbuild/bin" && find . -name "*.tar.gz")
-    for tar_gz in $tars_gzs ; do
+    for target in $targets ; do
+        tar_gz=$(echo "${target:2}" | tr ":" "/")
         # Strip the .tar.gz to get the relative dir.
         tar="${tar_gz%.*}"
         relative_dir="${tar%.*}"
@@ -74,7 +78,7 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         parent_dir=`dirname $tar_gz`
         target_dir="$GOOGLEAPIS_GEN/$parent_dir"
         mkdir -p "$target_dir"
-        tar -xf "$GOOGLEAPIS/bazel-out/k8-fastbuild/bin/$tar_gz" -C "$target_dir"
+        tar -xf "$GOOGLEAPIS/bazel-bin/$tar_gz" -C "$target_dir"
     done
 
     # Commit and push the files to github.
