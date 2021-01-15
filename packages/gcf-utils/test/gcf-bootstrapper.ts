@@ -73,7 +73,7 @@ describe('GCFBootstrapper', () => {
       bootstrapper = new GCFBootstrapper();
       configStub = sinon
         .stub(bootstrapper, 'getProbotConfig')
-        .resolves({id: 1234, secret: 'foo', webhookPath: 'bar'});
+        .resolves({appId: 1234, secret: 'foo', webhookPath: 'bar'});
       // This replaces the authClient with an auth client that uses an
       // API Key, this ensures that we will not attempt to lookup application
       // default credentials:
@@ -356,7 +356,7 @@ describe('GCFBootstrapper', () => {
       bootstrapper = new GCFBootstrapper();
       configStub = sinon
         .stub(bootstrapper, 'getProbotConfig')
-        .resolves({id: 1234, secret: 'foo', webhookPath: 'bar'});
+        .resolves({appId: 1234, secret: 'foo', webhookPath: 'bar'});
     });
 
     afterEach(() => {

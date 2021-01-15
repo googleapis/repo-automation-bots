@@ -14,7 +14,7 @@
 
 import {GCFBootstrapper} from '../../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
-import {Application} from 'probot';
+import {Probot} from 'probot';
 import {Octokit as GitHubAPI} from '@octokit/rest';
 import {resolve} from 'path';
 import {config} from 'dotenv';
@@ -69,7 +69,7 @@ describe('GCFBootstrapper Integration', () => {
 
     it('is called properly', async () => {
       let called = false;
-      const pb = await bootstrapper.loadProbot((app: Application) => {
+      const pb = await bootstrapper.loadProbot((app: Probot) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         app.on('foo' as any, async () => {
           console.log('We are called!');
@@ -89,11 +89,11 @@ describe('GCFBootstrapper Integration', () => {
 
     it('provides github with logging plugin', async () => {
       let called = false;
-      const pb = await bootstrapper.loadProbot((app: Application) => {
+      const pb = await bootstrapper.loadProbot((app: Probot) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         app.on('foo' as any, async context => {
           assert(
-            (context.github as GitHubAPI & {
+            (context.octokit as GitHubAPI & {
               loggingOctokitPluginVersion: string;
             }).loggingOctokitPluginVersion === OCTOKIT_LOGGING_PLUGIN_VERSION
           );

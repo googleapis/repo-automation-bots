@@ -63,8 +63,8 @@ describe('genkey', () => {
 
     it('creates secrets', async () => {
       opts = {
-        cert: 'asdf',
-        id: 12345,
+        privateKey: 'asdf',
+        appId: 12345,
         secret: 'zxcv',
       };
 

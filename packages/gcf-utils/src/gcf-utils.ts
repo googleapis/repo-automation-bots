@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {
-  createProbot,
-  Probot,
-  ProbotOctokit,
-  ApplicationFunction,
-  Options,
-  Application,
-} from 'probot';
+import {createProbot, Probot, ProbotOctokit, Options} from 'probot';
+import {ApplicationFunction} from 'probot/lib/types';
 
 import getStream from 'get-stream';
 import intoStream from 'into-stream';
@@ -121,7 +115,7 @@ export const addOrUpdateIssueComment = async (
   });
   let found = false;
   for (const comment of listCommentsResponse.data) {
-    if (comment.body.includes(commentMark)) {
+    if (comment.body?.includes(commentMark)) {
       // We found the existing comment, so updating it
       await github.issues.updateComment({
         owner: owner,
@@ -162,7 +156,7 @@ export class GCFBootstrapper {
   ): Promise<Probot> {
     if (!this.probot) {
       const cfg = await this.getProbotConfig(logging);
-      this.probot = createProbot(cfg);
+      this.probot = createProbot({defaults: cfg});
     }
 
     this.probot.load(appFn);
@@ -383,7 +377,7 @@ export class GCFBootstrapper {
   async getAuthenticatedOctokit(installationId: number): Promise<Octokit> {
     // See: https://github.com/probot/probot/issues/1003
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const app = (this.probot as any).apps[0] as Application;
+    const app = (this.probot as any).apps[0] as Probot;
     return ((await app.auth(installationId)) as unknown) as Octokit;
   }
 
