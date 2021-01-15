@@ -19,6 +19,7 @@ cd test-workdir
 {
     # Clone googleapis
     [ -d "googleapis" ] || git clone https://github.com/googleapis/googleapis
+    git -C googleapis checkout master
 
     # Select the sha for HEAD~2
     sha=$(git -C googleapis log -3 --format=%H | tail -1)
