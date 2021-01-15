@@ -61,14 +61,15 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
           --remote_cache=$BAZEL_REMOTE_CACHE \
           --google_default_credentials $targets)
     
+    # Clear out the existing contents of googleapis-gen.
+    rm -rf "$GOOGLEAPIS_GEN/external" "$GOOGLEAPIS_GEN/google" "$GOOGLEAPIS_GEN/grafeas"
+
     # Copy the generated source files into $GOOGLEAPIS_GEN.
     tars_gzs=$(cd "$GOOGLEAPIS/bazel-out/k8-fastbuild/bin" && find . -name "*.tar.gz")
     for tar_gz in $tars_gzs ; do
         # Strip the .tar.gz to get the relative dir.
         tar="${tar_gz%.*}"
         relative_dir="${tar%.*}"
-        # Clear out the existing contents.
-        rm -rf "$GOOGLEAPIS_GEN/$relative_dir"
         # Create the parent directory if it doesn't already exist.
         parent_dir=`dirname $tar_gz`
         target_dir="$GOOGLEAPIS_GEN/$parent_dir"
