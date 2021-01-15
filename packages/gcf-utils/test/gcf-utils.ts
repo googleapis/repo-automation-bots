@@ -18,7 +18,7 @@ import {addOrUpdateIssueComment} from '../src/gcf-utils';
 
 import {resolve} from 'path';
 import snapshot from 'snap-shot-it';
-import {Application, Probot, ProbotOctokit} from 'probot';
+import {Probot, ProbotOctokit} from 'probot';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import nock from 'nock';
 
@@ -27,14 +27,14 @@ nock.disableNetConnect();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 // Test app
-const app = (app: Application) => {
+const app = (app: Probot) => {
   app.on('issues.opened', async context => {
     await addOrUpdateIssueComment(
-      context.github,
+      context.octokit,
       context.payload.repository.owner.login,
       context.payload.repository.name,
       context.payload.issue.number,
-      context.payload.installation.id,
+      context.payload.installation!.id,
       'test comment'
     );
   });
@@ -45,7 +45,7 @@ describe('gcf-utils', () => {
     let probot: Probot;
     beforeEach(() => {
       probot = new Probot({
-        id: 1,
+        appId: 1,
         githubToken: 'test',
         Octokit: ProbotOctokit.defaults({
           retry: {enabled: false},
