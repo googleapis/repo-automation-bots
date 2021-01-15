@@ -27,6 +27,9 @@
 # BUILD_TARGETS: Build targets to rebuild.  Example: 
 # //google/cloud/vision/v1:vision-v1-nodejs.tar.gz
 
+# Fail immediately.
+set -e
+
 # Pull both repos to make sure we're up to date.
 git -C "$GOOGLEAPIS" pull
 git -C "$GOOGLEAPIS_GEN" pull
@@ -59,7 +62,10 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         targets="$BUILD_TARGETS"
     fi
     # Clean out all the source packages from the previous build.
-    find "$GOOGLEAPIS/bazel-bin" -name "*.tar.gz" | xargs rm
+    rm -f $(find -L "$GOOGLEAPIS/bazel-bin" -name "*.tar.gz")
+    # Some api always fails to build.
+    # TODO: file a bug when something fails to build.
+    set +e
     # Invoke bazel build.
     (cd "$GOOGLEAPIS" && bazel build -k \
           --remote_cache=$BAZEL_REMOTE_CACHE \
@@ -80,6 +86,10 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         mkdir -p "$target_dir"
         tar -xf "$GOOGLEAPIS/bazel-bin/$tar_gz" -C "$target_dir"
     done
+
+    # TODO: Check that bazel didn't completely fail.  If it did, we'd generate
+    # TODO: about a thousand PRs to delete all the API source code.
+    set -e
 
     # Commit and push the files to github.
     # Copy the commit message from the commit in googleapis.
