@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,10 +13,12 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, Context} from 'probot';
+import {Application, Context, ProbotOctokit} from 'probot';
 import {Datastore} from '@google-cloud/datastore';
 import {mergeOnGreen} from './merge-logic';
 import {logger} from 'gcf-utils';
+
+type GitHubType = InstanceType<typeof ProbotOctokit>;
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
@@ -34,17 +36,28 @@ handler.allowlist = [
   'sofisl',
 ];
 
-interface WatchPR {
+interface DatastorePR {
   number: number;
   repo: string;
   owner: string;
   state: 'continue' | 'stop';
-  branchProtection: string[];
+  branchProtection?: string[];
   label: string;
   author: string;
   url: string;
   reactionId: number;
-  installationId: number;
+  installationId?: number;
+}
+
+interface IncomingPR {
+  number: number;
+  repo: string;
+  owner: string;
+  state: 'continue' | 'stop';
+  label: string;
+  author: string;
+  url: string;
+  installationId?: number;
 }
 
 interface Label {
@@ -66,9 +79,9 @@ handler.getDatastore = async function getDatastore() {
  * @returns an array of PRs that merge-on-green will then read, which includes the PR's
  * number, state, repo, owner and url (distinct identifier)
  */
-handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
+handler.listPRs = async function listPRs(): Promise<DatastorePR[]> {
   const [prs] = await handler.getDatastore();
-  const result: WatchPR[] = [];
+  const result: DatastorePR[] = [];
   for (const pr of prs) {
     const created = new Date(pr.created).getTime();
     const now = new Date().getTime();
@@ -79,7 +92,7 @@ handler.listPRs = async function listPRs(): Promise<WatchPR[]> {
     if (now - created > MAX_TEST_TIME) {
       state = 'stop';
     }
-    const watchPr: WatchPR = {
+    const watchPr: DatastorePR = {
       number: pr.number,
       repo: pr.repo,
       owner: pr.owner,
@@ -133,7 +146,7 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
   prNumber: number,
   label: string,
   reactionId: number,
-  github: Context['github']
+  github: GitHubType
 ) {
   await github.issues.removeLabel({
     owner,
@@ -165,7 +178,7 @@ handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
   label: string,
   reactionId: number,
   url: string,
-  github: Context['github']
+  github: GitHubType
 ) {
   let pr;
   let labels;
@@ -214,29 +227,101 @@ handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
 };
 
 /**
+ * Checks if a branch with a PR has branch protection, if not, comments on PR
+ * @param owner type string
+ * @param repo type string
+ * @param prNumber type number
+ * @param github type githup API surface from payload
+ */
+handler.checkForBranchProtection = async function checkForBranchProtection(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  github: GitHubType
+): Promise<string[] | undefined> {
+  let branchProtection: string[] | undefined;
+  // Check to see if branch protection exists
+  try {
+    branchProtection = (
+      await github.repos.getBranchProtection({
+        owner,
+        repo,
+        branch: 'master',
+      })
+    ).data.required_status_checks.contexts;
+    logger.info(
+      `checking branch protection for ${owner}/${repo}: ${branchProtection}`
+    );
+    // if branch protection doesn't exist, leave a comment on the PR;
+  } catch (err) {
+    err.message = `Error in getting branch protection\n\n${err.message}`;
+    await github.issues.createComment({
+      owner,
+      repo,
+      issue_number: prNumber,
+      body:
+        "Your PR doesn't have any required checks. Please add required checks to your master branch and then re-add the label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.",
+    });
+    logger.error(err);
+  }
+  return branchProtection;
+};
+
+/**
  * Adds a PR to datastore when an automerge label is added to a PR
  * @param url type string
  * @param wp type Watch PR (owner, repo, pr number, state, url)
  * @returns void
  */
-handler.addPR = async function addPR(wp: WatchPR, url: string) {
-  const key = datastore.key([TABLE, url]);
-  const entity = {
-    key,
-    data: {
-      created: new Date().toJSON(),
-      owner: wp.owner,
-      repo: wp.repo,
-      number: wp.number,
-      branchProtection: wp.branchProtection,
-      label: wp.label,
-      author: wp.author,
-      reactionId: wp.reactionId,
-      installationId: wp.installationId,
-    },
-    method: 'upsert',
-  };
-  await datastore.save(entity);
+handler.addPR = async function addPR(
+  incomingPR: IncomingPR,
+  url: string,
+  github: GitHubType
+) {
+  let branchProtection: string[] | undefined;
+  try {
+    branchProtection = await handler.checkForBranchProtection(
+      incomingPR.owner,
+      incomingPR.repo,
+      incomingPR.number,
+      github
+    );
+  } catch (err) {
+    err.message = `Error in getting branch protection\n\n${err.message}`;
+    logger.error(err.message);
+  }
+
+  // if the owner has branch protection set up, add this PR to the Datastore table
+  if (branchProtection) {
+    // create a reaction. Save this reaction in the Datastore table since I don't (think)
+    // it is on the pull_request payload.
+    const reactionId = (
+      await github.reactions.createForIssue({
+        owner: incomingPR.owner,
+        repo: incomingPR.repo,
+        issue_number: incomingPR.number,
+        content: 'eyes',
+      })
+    ).data.id;
+
+    const key = datastore.key([TABLE, url]);
+    const entity = {
+      key,
+      data: {
+        created: new Date().toJSON(),
+        owner: incomingPR.owner,
+        repo: incomingPR.repo,
+        number: incomingPR.number,
+        branchProtection,
+        label: incomingPR.label,
+        author: incomingPR.author,
+        reactionId,
+        installationId: incomingPR.installationId,
+      },
+      method: 'upsert',
+    };
+    await datastore.save(entity);
+  }
 };
 
 /**
@@ -247,7 +332,7 @@ handler.addPR = async function addPR(wp: WatchPR, url: string) {
  * @returns void
  */
 handler.cleanDatastoreTable = async function cleanDatastoreTable(
-  watchedPRs: WatchPR[],
+  watchedPRs: DatastorePR[],
   app: Application,
   context: Context
 ) {
@@ -281,7 +366,7 @@ handler.cleanDatastoreTable = async function cleanDatastoreTable(
  * @returns void
  */
 handler.checkPRMergeability = async function checkPRMergeability(
-  watchedPRs: WatchPR[],
+  watchedPRs: DatastorePR[],
   app: Application,
   context: Context
 ) {
@@ -300,7 +385,7 @@ handler.checkPRMergeability = async function checkPRMergeability(
             wp.number,
             [MERGE_ON_GREEN_LABEL, MERGE_ON_GREEN_LABEL_SECURE],
             wp.state,
-            wp.branchProtection,
+            wp.branchProtection!,
             wp.label,
             wp.author,
             github
@@ -331,6 +416,70 @@ handler.checkPRMergeability = async function checkPRMergeability(
   }
 };
 
+/**
+ * For a given repository, looks through all the PRs and checks to see if they have a MOG label
+ * @param context the context of the webhook payload
+ * @returns void
+ */
+handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
+  github: GitHubType,
+  org: string
+) {
+  // Github does not support searching the labels with 'OR'.
+  // The searching for issues is considered to be an "AND" instead of an "OR" .
+  const [issuesAutomergeLabel, issuesAutomergeExactLabel] = await Promise.all([
+    github.paginate(github.search.issuesAndPullRequests, {
+      q: `is:open is:pr user:${org} label:"${MERGE_ON_GREEN_LABEL}"`,
+    }),
+    github.paginate(github.search.issuesAndPullRequests, {
+      q: `is:open is:pr user:${org} label:"${MERGE_ON_GREEN_LABEL_SECURE}"`,
+    }),
+  ]);
+  for (const issue of issuesAutomergeLabel) {
+    const pullRequestInDatastore = await handler.getPR(issue.html_url);
+    if (!pullRequestInDatastore) {
+      const ownerAndRepoArray = issue.repository_url.split('/');
+      const owner = ownerAndRepoArray[ownerAndRepoArray.length - 2];
+      const repo = ownerAndRepoArray[ownerAndRepoArray.length - 1];
+      await handler.addPR(
+        {
+          number: issue.number,
+          owner,
+          repo,
+          state: 'continue',
+          url: issue.html_url,
+          label: MERGE_ON_GREEN_LABEL,
+          author: issue.user.login,
+        },
+        issue.html_url,
+        github
+      );
+    }
+  }
+
+  for (const issue of issuesAutomergeExactLabel) {
+    const pullRequestInDatastore = await handler.getPR(issue.html_url);
+    if (!pullRequestInDatastore) {
+      const ownerAndRepoArray = issue.repository_url.split('/');
+      const owner = ownerAndRepoArray[ownerAndRepoArray.length - 2];
+      const repo = ownerAndRepoArray[ownerAndRepoArray.length - 1];
+      await handler.addPR(
+        {
+          number: issue.number,
+          owner,
+          repo,
+          state: 'continue',
+          url: issue.html_url,
+          label: MERGE_ON_GREEN_LABEL_SECURE,
+          author: issue.user.login,
+        },
+        issue.html_url,
+        github
+      );
+    }
+  }
+};
+
 // TODO: refactor into multiple function exports, this will take some work in
 // gcf-utils.
 
@@ -350,11 +499,21 @@ function handler(app: Application) {
       await handler.cleanDatastoreTable(watchedPRs, app, context);
       return;
     }
+
+    if (context.payload.find_hanging_prs === true) {
+      logger.info('Entering job to pick up any hanging PRs');
+      // we cannot search in an org without the bot installation ID, so we need
+      // to divide up the cron jobs based on org
+      await handler.scanForMissingPullRequests(
+        context.github,
+        context.payload.org
+      );
+      return;
+    }
     const start = Date.now();
     await handler.checkPRMergeability(watchedPRs, app, context);
     logger.info(`mergeOnGreen check took ${Date.now() - start}ms`);
   });
-
   app.on('pull_request.labeled', async context => {
     const prNumber = context.payload.pull_request.number;
     const author = context.payload.pull_request.user.login;
@@ -386,70 +545,20 @@ function handler(app: Application) {
     //TODO: we can likely split the database functionality into its own file and
     //import these helper functions for use in the main bot event handling.
 
-    // check our rate limit for next steps
-    const rateLimit = (await context.github.rateLimit.get()).data.resources.core
-      .remaining;
-    if (rateLimit <= 0) {
-      logger.error(
-        `The rate limit is at ${rateLimit}. We are skipping execution until we reset.`
-      );
-      return;
-    }
-
-    // check to see if the owner has branch protection rules
-    let branchProtection: string[] | undefined;
-    try {
-      branchProtection = (
-        await context.github.repos.getBranchProtection({
-          owner,
-          repo,
-          branch: 'master',
-        })
-      ).data.required_status_checks.contexts;
-      logger.info(
-        `checking branch protection for ${owner}/${repo}: ${branchProtection}`
-      );
-    } catch (err) {
-      err.message = `Error in getting branch protection\n\n${err.message}`;
-      await context.github.issues.createComment({
+    await handler.addPR(
+      {
+        number: prNumber,
         owner,
         repo,
-        issue_number: prNumber,
-        body:
-          "Your PR doesn't have any required checks. Please add required checks to your master branch and then re-add the label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.",
-      });
-      logger.error(err);
-    }
-
-    // if the owner has branch protection set up, add this PR to the Datastore table
-    if (branchProtection) {
-      // try to create reaction. Save this reaction in the Datastore table since I don't (think)
-      // it is on the pull_request payload.
-      const reactionId = (
-        await context.github.reactions.createForIssue({
-          owner,
-          repo,
-          issue_number: prNumber,
-          content: 'eyes',
-        })
-      ).data.id;
-
-      await handler.addPR(
-        {
-          number: prNumber,
-          owner,
-          repo,
-          state: 'continue',
-          url: context.payload.pull_request.html_url,
-          branchProtection: branchProtection,
-          label: label.name,
-          author,
-          reactionId,
-          installationId,
-        },
-        context.payload.pull_request.html_url
-      );
-    }
+        state: 'continue',
+        url: context.payload.pull_request.html_url,
+        label: label.name,
+        author,
+        installationId,
+      },
+      context.payload.pull_request.html_url,
+      context.github
+    );
   });
 
   app.on(['pull_request.unlabeled'], async context => {
@@ -475,7 +584,7 @@ function handler(app: Application) {
 
     // Check to see if the PR exists in the table before trying to delete. We also
     // need to do this to get the reaction id to remove the reaction when MOG is finished.
-    const watchedPullRequest: WatchPR = await handler.getPR(
+    const watchedPullRequest: DatastorePR = await handler.getPR(
       context.payload.pull_request.html_url
     );
     logger.info(`PR from Datastore: ${JSON.stringify(watchedPullRequest)}`);
@@ -499,7 +608,7 @@ function handler(app: Application) {
 
     // Check to see if the PR exists in the table before trying to delete. We also
     // need to do this to get the reaction id to remove the reaction when MOG is finished.
-    const watchedPullRequest: WatchPR = await handler.getPR(
+    const watchedPullRequest: DatastorePR = await handler.getPR(
       context.payload.pull_request.html_url
     );
 
