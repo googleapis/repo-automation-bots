@@ -57,7 +57,9 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     git -C "$GOOGLEAPIS" checkout "$sha"
     # Choose build targets.
     if [[ -z "$BUILD_TARGETS" ]] ; then
-        targets=$(cd "$GOOGLEAPIS" && bazel query 'filter(".*\.tar\.gz$", kind("generated file", //...:*))')
+        targets=$(cd "$GOOGLEAPIS" \
+        && bazel query 'filter("-(go|csharp|java|php|ruby|nodejs|py)\.tar\.gz$", kind("generated file", //...:*))' \
+        | grep -v -E ":(proto|grpc|gapic)-.*-java\.tar\.gz$")
     else
         targets="$BUILD_TARGETS"
     fi
