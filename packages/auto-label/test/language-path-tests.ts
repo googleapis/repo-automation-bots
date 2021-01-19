@@ -47,7 +47,7 @@ describe('language-and-path-labeling', () => {
     probot = new Probot({
       githubToken: 'abc123',
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      Octokit: TestingOctokit as any,
+      //Octokit: TestingOctokit as any,
     });
     probot.load(handler);
   });

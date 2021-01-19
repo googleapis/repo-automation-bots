@@ -14,10 +14,13 @@
 
 import {Storage} from '@google-cloud/storage';
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, Context} from 'probot';
+import {Probot, Context} from 'probot';
 import {logger} from 'gcf-utils';
 import * as helper from './helper';
 import {DriftRepo, DriftApi, Label, Config} from './helper';
+import {Endpoints} from '@octokit/types';
+
+type GetFileContentsResponse = Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response'];
 
 // Default app configs if user didn't specify a .config
 const LABEL_PRODUCT_BY_DEFAULT = true;
@@ -72,7 +75,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   context: Context
 ) {
   const driftRepo = driftRepos.find(x => x.repo === `${owner}/${repo}`);
-  const res = await context.github.issues
+  const res = await context.octokit.issues
     .listLabelsOnIssue({
       owner,
       repo,
@@ -96,7 +99,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
 
   if (githubLabel) {
     try {
-      await context.github.issues.createLabel({
+      await context.octokit.issues.createLabel({
         owner,
         repo,
         name: githubLabel,
@@ -120,7 +123,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
           element.name !== autoDetectedLabel
       );
       if (!foundAPIName) {
-        await context.github.issues
+        await context.octokit.issues
           .addLabels({
             owner,
             repo,
@@ -134,7 +137,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
         wasNotAdded = false;
       }
       for (const dirtyLabel of cleanUpOtherLabels) {
-        await context.github.issues
+        await context.octokit.issues
           .removeLabel({
             owner,
             repo,
@@ -144,7 +147,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
           .catch(logger.error);
       }
     } else {
-      await context.github.issues
+      await context.octokit.issues
         .addLabels({
           owner,
           repo,
@@ -166,7 +169,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   const isSampleIssue =
     repo.includes('samples') || issueTitle?.includes('sample');
   if (!foundSamplesTag && isSampleIssue) {
-    await context.github.issues
+    await context.octokit.issues
       .createLabel({
         owner,
         repo,
@@ -174,7 +177,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
         color: colorsData[colorNumber].color,
       })
       .catch(logger.error);
-    await context.github.issues
+    await context.octokit.issues
       .addLabels({
         owner,
         repo,
@@ -194,7 +197,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
 /**
  * Main function, responds to label being added
  */
-export function handler(app: Application) {
+export function handler(app: Probot) {
   // Nightly cron that backfills and corrects api labels
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
@@ -216,13 +219,13 @@ export function handler(app: Application) {
       return;
     }
     //all the issues in the repository
-    const issues = context.github.issues.listForRepo.endpoint.merge({
+    const issues = context.octokit.issues.listForRepo.endpoint.merge({
       owner,
       repo,
     });
     let labelWasNotAddedCount = 0;
     //goes through issues in repository, adds labels as necessary
-    for await (const response of context.github.paginate.iterator(issues)) {
+    for await (const response of context.octokit.paginate.iterator(issues)) {
       const issues = response.data;
       for (const issue of issues) {
         const wasNotAdded = await handler.addLabeltoRepoAndIssue(
@@ -309,14 +312,12 @@ export function handler(app: Application) {
       return;
     }
 
-    const filesChanged = await context.github.pulls.listFiles({
+    const filesChanged = await context.octokit.pulls.listFiles({
       owner,
       repo,
       pull_number,
     });
-    const labels = context.payload.issue
-      ? context.payload.issue.labels
-      : context.payload.pull_request.labels;
+    const labels = context.payload.pull_request.labels;
 
     // If user has turned on path labels by configuring {path: {pullrequest: false, }}
     // By default, this feature is turned off
@@ -331,7 +332,7 @@ export function handler(app: Application) {
         logger.info(
           `Path label added to PR #${pull_number} in ${owner}/${repo} is ${path_label}`
         );
-        await context.github.issues.addLabels({
+        await context.octokit.issues.addLabels({
           owner,
           repo,
           issue_number: pull_number,
@@ -355,7 +356,7 @@ export function handler(app: Application) {
         logger.info(
           `Language label added to PR #${pull_number} in ${owner}/${repo} is ${language_label}`
         );
-        await context.github.issues.addLabels({
+        await context.octokit.issues.addLabels({
           owner,
           repo,
           issue_number: pull_number,
@@ -375,9 +376,9 @@ export function handler(app: Application) {
       const [owner, repo] = repository.full_name.split('/');
 
       // Looks for a config file, breaks if user disabled product labels
-      let response;
+      let response: GetFileContentsResponse | undefined;
       try {
-        response = await context.github.repos.getContent({
+        response = await context.octokit.repos.getContent({
           owner,
           repo,
           path: '.github/auto-label.yaml',
@@ -386,8 +387,10 @@ export function handler(app: Application) {
         e.message = `No auto-label.yaml found in repo upon installation: ${e.message}`;
         logger.info(e);
       }
-      if (response && response.status === 200) {
-        const config_encoded = response.data.content;
+      if (response?.status === 200) {
+        const responseData = response.data as any;
+        console.log(responseData);
+        const config_encoded = responseData.config;
         const config = Buffer.from(config_encoded, 'base64')
           .toString('binary')
           .toLowerCase();
@@ -398,8 +401,8 @@ export function handler(app: Application) {
       }
 
       // goes through issues in repository, adds labels as necessary
-      for await (const response of context.github.paginate.iterator(
-        context.github.issues.listForRepo,
+      for await (const response of context.octokit.paginate.iterator(
+        context.octokit.issues.listForRepo,
         {
           owner,
           repo,

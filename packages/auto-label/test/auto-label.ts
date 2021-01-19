@@ -58,14 +58,14 @@ describe('auto-label', () => {
   let errorStub: sinon.SinonStub;
   let repoStub: sinon.SinonStub;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     probot = new Probot({
       githubToken: 'abc123',
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      Octokit: TestingOctokit as any,
+      //Octokit: TestingOctokit as any,
     });
 
-    probot.load(handler);
+    await probot.load(handler);
 
     // throw and fail the test if we're writing
     errorStub = sandbox.stub(logger, 'error').throwsArg(0);
@@ -748,7 +748,7 @@ describe('auto-label', () => {
   });
 
   describe('installation', async () => {
-    it('responds to an installation event', async () => {
+    it.only('responds to an installation event', async () => {
       const payload = require(resolve(fixturesPath, './events/installation'));
       const product_config = Buffer.from('product: true', 'binary').toString(
         'base64'
