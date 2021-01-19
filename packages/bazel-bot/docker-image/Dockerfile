@@ -16,6 +16,13 @@
 # docker build -t gcr.io/repo-automation-bots/bazel-bot .
 FROM gcr.io/gapic-images/googleapis-bazel
 
+# Install the github command line tool.
+RUN apt-get install -y software-properties-common
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
+RUN apt-add-repository https://cli.github.com/packages
+RUN apt-get update
+RUN apt-get install -y gh
+
 COPY generate-googleapis-gen.sh /generate-googleapis-gen.sh
 COPY docker-main.sh /docker-main.sh
 
