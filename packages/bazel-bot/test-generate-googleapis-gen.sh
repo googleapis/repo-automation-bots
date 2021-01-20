@@ -38,7 +38,7 @@ sha=$(git -C googleapis log -3 --format=%H | tail -1)
 # Create a fake googleapis-gen with the sha tag.
 rm -rf googleapis-gen googleapis-gen-clone
 mkdir googleapis-gen
-git -C googleapis-gen init
+git -C googleapis-gen init --initial-branch=main
 git -C googleapis-gen config user.email "test@example.com"
 git -C googleapis-gen config user.name "Testy McTestFace"
 echo hello > googleapis-gen/hello.txt
@@ -48,7 +48,7 @@ git -C googleapis-gen tag "googleapis-$sha"
 
 # Clone googleapis-gen so git push pushes back to local copy.
 set +e
-git clone googleapis-gen googleapis-gen-clone
+git clone googleapis-gen googleapis-gen-clone -b main
 set -e
 git -C googleapis-gen-clone config user.email "test@example.com"
 git -C googleapis-gen-clone config user.name "Testy McTestFace"
