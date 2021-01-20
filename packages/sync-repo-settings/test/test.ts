@@ -58,6 +58,7 @@ function nockUpdateRepoSettings(
       allow_merge_commit: false,
       allow_rebase_merge: rebaseBoolean,
       allow_squash_merge: squashBoolean,
+      delete_branch_on_merge: true,
     })
     .reply(200);
 }
