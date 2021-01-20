@@ -22,9 +22,14 @@ echo "Working in $TEST_WORKDIR"
 cd "$TEST_WORKDIR"
 
 # Clone googleapis
-[ -d "googleapis" ] || git clone https://github.com/googleapis/googleapis
-git -C googleapis config user.email "test@example.com"
-git -C googleapis config user.name "Testy McTestFace"
+if [ ! -d "googleapis" ] ; then
+    set +e  # Git clone returns an error code because config user.email is not set.
+    # There's no way to set it for the repo and clone it at the same time.  :-/
+    git clone https://github.com/googleapis/googleapis
+    set -e
+    git -C googleapis config user.email "test@example.com"
+    git -C googleapis config user.name "Testy McTestFace"
+fi
 git -C googleapis checkout master
 
 # Select the sha for HEAD~2
@@ -34,15 +39,17 @@ sha=$(git -C googleapis log -3 --format=%H | tail -1)
 rm -rf googleapis-gen googleapis-gen-clone
 mkdir googleapis-gen
 git -C googleapis-gen init
+git -C googleapis-gen config user.email "test@example.com"
+git -C googleapis-gen config user.name "Testy McTestFace"
 echo hello > googleapis-gen/hello.txt
 git -C googleapis-gen add -A
 git -C googleapis-gen commit -m "Hello world."
 git -C googleapis-gen tag "googleapis-$sha"
 
 # Clone googleapis-gen so git push pushes back to local copy.
+set +e
 git clone googleapis-gen googleapis-gen-clone
-git -C googleapis-gen config user.email "test@example.com"
-git -C googleapis-gen config user.name "Testy McTestFace"
+set -e
 git -C googleapis-gen-clone config user.email "test@example.com"
 git -C googleapis-gen-clone config user.name "Testy McTestFace"
 git -C googleapis-gen checkout -b other
