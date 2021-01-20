@@ -27,8 +27,8 @@ options:
 | `primaryBranch`     | The primary branch from which releases are started | `string`   | `master`                                                                              |
 | `releaseLabels`     | List of labels to add to the release PR.           | `string[]` | `null`                                                                                |
 | `releaseType`       | Release strategy                                   | `string`   | strategy detected from the repository's primary language                              |
-| `handleGHRelease`   | Release to GitHub                                  | `boolean`  | should release please create a GitHub release, when release pull-requests are merged? |
-| `bumpMinorPreMajor` | Bump minor for breaking changes before GA          | `boolean`  | whether to bump a minor version before 1.0.0 on a breaking change                     |
+| `handleGHRelease`   | Release to GitHub                                  | `boolean`  | `false`                                                                               |
+| `bumpMinorPreMajor` | Bump minor for breaking changes before GA          | `boolean`  | default from underlying release strategy                                              |
 | `packageName`       | The name of the package to publish to publish to an upstream registry such as npm. | `string` | the repository name                                     |
 | `path`              | Create a release from a path other than the repository's root | `string` | the repository root                                                          |
 | `changelogPath`     | Path to the changelog to write releases notes to when creating a release | `string` | `CHANGELOG.md`                                                    |
@@ -38,11 +38,11 @@ options:
 
 | Name                | Description                                        | Type       | Default                                                                               |
 | ------------------- | -------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------- |
-| `branch`            | The branch from which releases are started         | `string`   | `master`                                                                              |
+| `branch`            | The branch from which releases are started         | `string`   | required                                                                              |
 | `releaseLabels`     | List of labels to add to the release PR.           | `string[]` | `null`                                                                                |
 | `releaseType`       | Release strategy                                   | `string`   | strategy detected from the repository's primary language                              |
-| `handleGHRelease`   | Release to GitHub                                  | `boolean`  | should release please create a GitHub release, when release pull-requests are merged? |
-| `bumpMinorPreMajor` | Bump minor for breaking changes before GA          | `boolean`  | whether to bump a minor version before 1.0.0 on a breaking change                     |
+| `handleGHRelease`   | Release to GitHub                                  | `boolean`  | `false`                                                                               |
+| `bumpMinorPreMajor` | Bump minor for breaking changes before GA          | `boolean`  | default from underlying release strategy                                              |
 | `packageName`       | The name of the package to publish to publish to an upstream registry such as npm. | `string` | the repository name                                     |
 | `path`              | Create a release from a path other than the repository's root | `string` | the repository root                                                          |
 | `changelogPath`     | Path to the changelog to write releases notes to when creating a release | `string` | `CHANGELOG.md`                                                    |
