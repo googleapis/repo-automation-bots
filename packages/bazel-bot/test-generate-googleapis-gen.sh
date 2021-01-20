@@ -12,10 +12,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+set -e
 
-mkdir -p test-workdir
+generate_googleapis_gen=$(realpath docker-image/generate-googleapis-gen.sh)
+TEST_WORKDIR=`realpath test-workdir`
+mkdir -p "$TEST_WORKDIR"
 pushd . 
-cd test-workdir
+echo "Working in $TEST_WORKDIR"
+cd "$TEST_WORKDIR"
 
 # Clone googleapis
 [ -d "googleapis" ] || git clone https://github.com/googleapis/googleapis
@@ -38,12 +42,11 @@ git clone googleapis-gen googleapis-gen-clone
 git -C googleapis-gen checkout -b other
 
 # Test!
-export GOOGLEAPIS=googleapis
 export GOOGLEAPIS_GEN=googleapis-gen-clone
 export BUILD_TARGETS=//google/cloud/vision/v1:vision-v1-nodejs.tar.gz
-bash -x ../generate-googleapis-gen.sh
-
-popd
+bash -x "$generate_googleapis_gen"
 
 # Display the state of googleapis-gen
-git -C test-workdir/googleapis-gen log main
+git -C googleapis-gen log main
+
+popd

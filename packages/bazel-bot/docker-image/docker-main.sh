@@ -13,14 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# TODO: install git credentials.
+
 git clone https://github.com/googleapis/googleapis.git
 git clone git@github.com:googleapis/googleapis-gen.git
 
-export GOOGLEAPIS=googleapis
-export GOOGLEAPIS_GEN=googleapis-gen
 export BAZEL_REMOTE_CACHE=https://storage.googleapis.com/repo-automation-bots-bazel-cache
-
-# TODO: install git credentials.
 
 bash -x generate-googleapis-gen.sh
 

@@ -14,4 +14,3 @@
 
 steps:
   - name: 'gcr.io/repo-automation-bots/bazel-bot'
-

@@ -13,22 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Required environment variables:
-# GOOGLEAPIS: path to clone of https://github.com/googleapis/googleapis with
-#   master branch checked out.
-# GOOGLEAPIS_GEN: path to clone of https://github.com/googleapis/googleapis-gen
-#   with master branch checked out.
-#   Git credentials must have been installed so that a git push to $GOOGLEAPIS_GEN
-#   will succeed.
+# Optional environment variables used for testing.
+#
+# BUILD_TARGETS: Build targets to rebuild.  Example: 
+#   //google/cloud/vision/v1:vision-v1-nodejs.tar.gz
+#
 # BAZEL_REMOTE_CACHE: https path to the bazel remote cache.  Example:
 #   https://storage.googleapis.com/surferjeff-test2-bazel-cache 
 
-# Optional environment variables used for testing.
-# BUILD_TARGETS: Build targets to rebuild.  Example: 
-# //google/cloud/vision/v1:vision-v1-nodejs.tar.gz
-
 # Fail immediately.
 set -e
+
+# path to clone of https://github.com/googleapis/googleapis with
+#   master branch checked out.
+GOOGLEAPIS=${GOOGLEAPIS:="googleapis"}
+
+# path to clone of https://github.com/googleapis/googleapis-gen
+#   with master branch checked out.
+#   Git credentials must have been installed so that a git push to $GOOGLEAPIS_GEN
+#   will succeed.
+GOOGLEAPIS_GEN=${GOOGLEAPIS_GEN:="googleapis-gen"}
 
 # Pull both repos to make sure we're up to date.
 git -C "$GOOGLEAPIS" pull
@@ -63,19 +67,19 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     else
         targets="$BUILD_TARGETS"
     fi
+    # Prepare parameters to use the remote cache, if provided.
+    if [[-n "$BAZEL_REMOTE_CACHE"]] ; then
+        remote_cache="--google_default_credentials --remote_cache='$BAZEL_REMOTE_CACHE'"
+    fi
     # Clean out all the source packages from the previous build.
     rm -f $(find -L "$GOOGLEAPIS/bazel-bin" -name "*.tar.gz")
-    # Some api always fails to build.
+    # Some API always fails to build.  One failing API should not prevent all other
+    # APIs from being updated.
     # TODO: file a bug when something fails to build.
     set +e
     # Invoke bazel build.
-    (cd "$GOOGLEAPIS" && bazel build -k \
-          --remote_cache=$BAZEL_REMOTE_CACHE \
-          --google_default_credentials $targets)
+    (cd "$GOOGLEAPIS" && bazel build -k $remote_cache $targets)
     
-    # Clear out the existing contents of googleapis-gen.
-    rm -rf "$GOOGLEAPIS_GEN/external" "$GOOGLEAPIS_GEN/google" "$GOOGLEAPIS_GEN/grafeas"
-
     # Copy the generated source files into $GOOGLEAPIS_GEN.
     for target in $targets ; do
         tar_gz=$(echo "${target:2}" | tr ":" "/")
@@ -99,11 +103,17 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     echo "Source-Link: https://github.com/googleapis/googleapis/commit/$sha" >> commit-msg.txt
 
     git -C "$GOOGLEAPIS_GEN" add -A
-    git -C "$GOOGLEAPIS_GEN" commit -F "$(realpath commit-msg.txt)"
-    git -C "$GOOGLEAPIS_GEN" tag "googleapis-$sha"
-    git -C "$GOOGLEAPIS_GEN" pull
-    git -C "$GOOGLEAPIS_GEN" push origin
-    git -C "$GOOGLEAPIS_GEN" push origin "googleapis-$sha"
-
+    if git -C "$GOOGLEAPIS_GEN" diff-index --quiet HEAD ; then
+        # No changes to commit or push.
+        git -C "$GOOGLEAPIS_GEN" tag "googleapis-$sha"
+        git -C "$GOOGLEAPIS_GEN" push origin "googleapis-$sha"
+    else
+        # Commit changes and push them.
+        git -C "$GOOGLEAPIS_GEN" commit -F "$(realpath commit-msg.txt)"
+        git -C "$GOOGLEAPIS_GEN" tag "googleapis-$sha"
+        git -C "$GOOGLEAPIS_GEN" pull
+        git -C "$GOOGLEAPIS_GEN" push origin
+        git -C "$GOOGLEAPIS_GEN" push origin "googleapis-$sha"
+    fi
     # TODO: If something failed, open an issue on github/googleapis-gen.
 done
