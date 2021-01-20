@@ -223,7 +223,7 @@ describe('ReleasePleaseBot', () => {
     it('should allow configuring minor bump for breaking change pre 1.0', async () => {
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assertReleaserType("java-yoshi", pr);
+        assertReleaserType('java-yoshi', pr);
         assert(pr.bumpMinorPreMajor);
         executed = true;
       };
