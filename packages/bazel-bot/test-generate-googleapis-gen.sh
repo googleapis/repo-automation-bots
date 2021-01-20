@@ -23,6 +23,8 @@ cd "$TEST_WORKDIR"
 
 # Clone googleapis
 [ -d "googleapis" ] || git clone https://github.com/googleapis/googleapis
+git -C googleapis config user.email "test@example.com"
+git -C googleapis config user.name "Testy McTestFace"
 git -C googleapis checkout master
 
 # Select the sha for HEAD~2
