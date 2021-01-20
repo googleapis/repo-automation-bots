@@ -20,6 +20,7 @@ import {
   getReleaserNames,
   GitHubRelease,
   GitHubReleaseOptions,
+  ReleasePR,
 } from 'release-please';
 import {Runner} from './runner';
 // eslint-disable-next-line node/no-extraneous-import
@@ -40,8 +41,7 @@ interface GitHubAPI {
   request: RequestFunctionType;
 }
 
-interface ConfigurationOptions {
-  primaryBranch: string;
+interface BranchOptions {
   releaseLabels?: string[];
   monorepoTags?: boolean;
   releaseType?: string;
@@ -52,10 +52,20 @@ interface ConfigurationOptions {
   changelogPath?: string;
 }
 
+interface BranchConfiguration extends BranchOptions {
+  branch: string;
+}
+
+interface ConfigurationOptions extends BranchOptions {
+  primaryBranch: string;
+  branches?: BranchConfiguration[];
+}
+
 const DEFAULT_API_URL = 'https://api.github.com';
 const WELL_KNOWN_CONFIGURATION_FILE = 'release-please.yml';
 const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   primaryBranch: 'master',
+  branches: [],
 };
 const FORCE_RUN_LABEL = 'release-please:force-run';
 
@@ -84,37 +94,30 @@ function releaseTypeFromRepoLanguage(language: string | null): string {
   }
 }
 
-// creates or updates the evergreen release-please release PR.
-async function createReleasePR(
-  releaseType: string,
-  packageName: string,
-  repoUrl: string,
-  github: GitHubAPI,
-  releaseLabels?: string[],
-  bumpMinorPreMajor?: boolean,
-  snapshot?: boolean,
-  path?: string,
-  monorepoTags?: boolean
-) {
-  const buildOptions: BuildOptions = {
-    packageName,
-    repoUrl,
-    apiUrl: DEFAULT_API_URL,
-    octokitAPIs: {
-      octokit: (github as {}) as OctokitType,
-      graphql: github.graphql,
-      request: github.request,
-    },
-    bumpMinorPreMajor,
-    snapshot,
-    path,
-    monorepoTags,
-  };
-  if (releaseLabels) {
-    buildOptions.label = releaseLabels.join(',');
+function findBranchConfiguration(
+  branch: string,
+  config: ConfigurationOptions
+): BranchConfiguration | null {
+  // look at primaryBranch first
+  if (branch === config.primaryBranch) {
+    return {
+      ...config,
+      ...{branch},
+    };
   }
 
-  await Runner.runner(ReleasePRFactory.build(releaseType, buildOptions));
+  if (!config.branches) {
+    return null;
+  }
+
+  const found = config.branches.find(branchConfig => {
+    return branch === branchConfig.branch;
+  });
+  if (found) {
+    return found;
+  }
+
+  return null;
 }
 
 // turn a merged release-please release PR into a GitHub release.
@@ -146,11 +149,51 @@ async function createGitHubRelease(
   await Runner.releaser(ghr);
 }
 
+async function doRelease(
+  repoName: string,
+  repoUrl: string,
+  repoLanguage: string,
+  configuration: BranchConfiguration,
+  github: GitHubAPI,
+  snapshot?: boolean
+): Promise<ReleasePR> {
+  const releaseType = configuration.releaseType
+    ? configuration.releaseType
+    : releaseTypeFromRepoLanguage(repoLanguage);
+  const packageName = configuration.packageName || repoName;
+
+  const buildOptions: BuildOptions = {
+    defaultBranch: configuration.branch,
+    packageName,
+    repoUrl,
+    apiUrl: DEFAULT_API_URL,
+    octokitAPIs: {
+      octokit: (github as {}) as OctokitType,
+      graphql: github.graphql,
+      request: github.request,
+    },
+    bumpMinorPreMajor: configuration.bumpMinorPreMajor,
+    path: configuration.path,
+    monorepoTags: configuration.monorepoTags,
+  };
+  if (snapshot !== undefined) {
+    buildOptions.snapshot = snapshot;
+  }
+  if (configuration.releaseLabels) {
+    buildOptions.label = configuration.releaseLabels.join(',');
+  }
+
+  const releasePR = ReleasePRFactory.build(releaseType, buildOptions);
+  await Runner.runner(releasePR);
+  return releasePR;
+}
+
 export = (app: Application) => {
   app.on('push', async context => {
     const repoUrl = context.payload.repository.full_name;
     const branch = context.payload.ref.replace('refs/heads/', '');
     const repoName = context.payload.repository.name;
+    const repoLanguage = context.payload.repository.language;
 
     const remoteConfiguration: ConfigurationOptions | null = (await context.config(
       WELL_KNOWN_CONFIGURATION_FILE
@@ -167,44 +210,34 @@ export = (app: Application) => {
       ...remoteConfiguration,
     };
 
-    if (branch !== configuration.primaryBranch) {
-      logger.info(
-        `Not on primary branch (${configuration.primaryBranch}): ${branch}`
-      );
+    const branchConfiguration = findBranchConfiguration(branch, configuration);
+    if (!branchConfiguration) {
+      logger.info(`Did not find configuration for branch: ${branch}`);
       return;
     }
 
-    const releaseType = configuration.releaseType
-      ? configuration.releaseType
-      : releaseTypeFromRepoLanguage(context.payload.repository.language);
-
     logger.info(`push (${repoUrl})`);
-
-    // TODO: this should be refactored into an interface.
-    await createReleasePR(
-      releaseType,
-      configuration.packageName || repoName,
+    await doRelease(
+      repoName,
       repoUrl,
+      repoLanguage,
+      branchConfiguration,
       context.github as GitHubAPI,
-      configuration.releaseLabels,
-      configuration.bumpMinorPreMajor,
-      false,
-      configuration.path,
-      configuration.monorepoTags
+      undefined
     );
 
     // release-please can handle creating a release on GitHub, we opt not to do
     // this for our repos that have autorelease enabled.
-    if (configuration.handleGHRelease) {
+    if (branchConfiguration.handleGHRelease) {
       logger.info(`handling GitHub release for (${repoUrl})`);
       await createGitHubRelease(
-        configuration.packageName ?? repoName,
+        branchConfiguration.packageName ?? repoName,
         repoUrl,
         context.github as GitHubAPI,
-        configuration.path,
-        configuration.changelogPath ?? 'CHANGELOG.md',
-        configuration.monorepoTags,
-        configuration.releaseType
+        branchConfiguration.path,
+        branchConfiguration.changelogPath ?? 'CHANGELOG.md',
+        branchConfiguration.monorepoTags,
+        branchConfiguration.releaseType
       );
     }
   });
@@ -230,23 +263,45 @@ export = (app: Application) => {
       ...remoteConfiguration,
     };
 
-    logger.info(`schedule.repository (${repoUrl})`);
+    logger.info(
+      `schedule.repository (${repoUrl}, ${configuration.primaryBranch})`
+    );
+    const defaultBranchConfiguration = {
+      ...configuration,
+      ...{branch: configuration.primaryBranch},
+    };
 
-    const releaseType = configuration.releaseType
-      ? configuration.releaseType
-      : 'java-yoshi';
+    // get the repository language
+    const repository = await context.github.repos.get(context.repo());
+    const repoLanguage = repository.data.language;
 
-    // TODO: this should be refactored into an interface.
-    await createReleasePR(
-      releaseType,
-      configuration.packageName || repoName,
+    await doRelease(
+      repoName,
       repoUrl,
+      repoLanguage,
+      defaultBranchConfiguration,
       context.github,
-      configuration.releaseLabels,
-      configuration.bumpMinorPreMajor,
-      true,
-      configuration.path,
-      configuration.monorepoTags
+      true
+    );
+
+    if (!configuration.branches) {
+      return;
+    }
+
+    await Promise.all(
+      configuration.branches.map(branchConfiguration => {
+        logger.info(
+          `schedule.repository (${repoUrl}, ${branchConfiguration.branch})`
+        );
+        return doRelease(
+          repoName,
+          repoUrl,
+          repoLanguage,
+          branchConfiguration,
+          context.github,
+          true
+        );
+      })
     );
   });
 
@@ -270,6 +325,9 @@ export = (app: Application) => {
     const repoUrl = context.payload.repository.full_name;
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
+    const branch = context.payload.pull_request.base.ref;
+    const repoName = context.payload.repository.name;
+    const repoLanguage = context.payload.repository.language;
 
     // remove the label
     await context.github.issues.removeLabel({
@@ -295,24 +353,20 @@ export = (app: Application) => {
       ...remoteConfiguration,
     };
 
+    const branchConfiguration = findBranchConfiguration(branch, configuration);
+    if (!branchConfiguration) {
+      logger.info(`Did not find configuration for branch: ${branch}`);
+      return;
+    }
+
     logger.info(`pull_request.labeled (${repoUrl})`);
-
-    // run release-please
-    const releaseType = configuration.releaseType
-      ? configuration.releaseType
-      : releaseTypeFromRepoLanguage(context.payload.repository.language);
-
-    // TODO: this should be refactored into an interface.
-    await createReleasePR(
-      releaseType,
-      configuration.packageName || repo,
+    await doRelease(
+      repoName,
       repoUrl,
+      repoLanguage,
+      branchConfiguration,
       context.github as GitHubAPI,
-      configuration.releaseLabels,
-      configuration.bumpMinorPreMajor,
-      false,
-      configuration.path,
-      configuration.monorepoTags
+      undefined
     );
   });
 };

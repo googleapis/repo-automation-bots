@@ -271,6 +271,26 @@ describe('ReleasePleaseBot', () => {
       requests.done();
       assert(executed, 'should have executed the runner');
     });
+
+    it('should create the PR if the branch is configured as an alternate branch', async () => {
+      let executed = false;
+      Runner.runner = async (pr: ReleasePR) => {
+        assert(pr instanceof JavaYoshi);
+        executed = true;
+      };
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'multi_branch.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
+        )
+        .reply(200, config);
+
+      await probot.receive({name: 'push', payload, id: 'abc123'});
+      requests.done();
+      assert(executed, 'should have executed the runner');
+    });
   });
 
   describe('nightly event', () => {
@@ -296,11 +316,14 @@ describe('ReleasePleaseBot', () => {
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
+      const repository = require(resolve(fixturesPath, './repository'));
       const requests = nock('https://api.github.com')
         .get(
           '/repos/Codertocat/Hello-World/contents/.github%2Frelease-please.yml'
         )
-        .reply(200, config);
+        .reply(200, config)
+        .get('/repos/Codertocat/Hello-World')
+        .reply(200, repository);
 
       await probot.receive({
         // See: https://github.com/octokit/webhooks.js/issues/277
@@ -310,6 +333,49 @@ describe('ReleasePleaseBot', () => {
       });
       requests.done();
       assert(executed, 'should have executed the runner');
+    });
+
+    it('should try to create a snapshot on multiple branches', async () => {
+      const executedBranches: Map<string, string> = new Map();
+      const payload = {
+        repository: {
+          name: 'Hello-World',
+          full_name: 'Codertocat/Hello-World',
+          owner: {
+            login: 'Codertocat',
+          },
+        },
+        organization: {
+          login: 'Codertocat',
+        },
+        cron_org: 'Codertocat',
+      };
+      Runner.runner = async (pr: ReleasePR) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const releaser = (pr.constructor as any).releaserName;
+        executedBranches.set(pr.defaultBranch!, releaser);
+      };
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'multi_branch.yml')
+      );
+      const repository = require(resolve(fixturesPath, './repository'));
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/Codertocat/Hello-World/contents/.github%2Frelease-please.yml'
+        )
+        .reply(200, config)
+        .get('/repos/Codertocat/Hello-World')
+        .reply(200, repository);
+
+      await probot.receive({
+        // See: https://github.com/octokit/webhooks.js/issues/277
+        name: 'schedule.repository' as '*',
+        payload,
+        id: 'abc123',
+      });
+      requests.done();
+      assert(executedBranches.get('master') === 'java-bom');
+      assert(executedBranches.get('feature-branch') === 'java-yoshi');
     });
   });
 
@@ -325,6 +391,38 @@ describe('ReleasePleaseBot', () => {
       };
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/Codertocat/Hello-World/contents/.github%2Frelease-please.yml'
+        )
+        .reply(200, config)
+        .delete(
+          '/repos/Codertocat/Hello-World/issues/2/labels/release-please%3Aforce-run'
+        )
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request.labeled',
+        payload,
+        id: 'abc123',
+      });
+      requests.done();
+      assert(executed, 'should have executed the runner');
+    });
+
+    it('should try to create a release on an alternate branch', async () => {
+      payload = require(resolve(
+        fixturesPath,
+        './pull_request_labeled_feature_branch'
+      ));
+      let executed = false;
+      Runner.runner = async (pr: ReleasePR) => {
+        assert(pr instanceof JavaYoshi);
+        executed = true;
+      };
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'multi_branch.yml')
       );
       const requests = nock('https://api.github.com')
         .get(
