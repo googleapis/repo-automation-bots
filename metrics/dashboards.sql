@@ -46,7 +46,7 @@ SELECT * FROM (SELECT COUNT(id) as actions, month_start, 13.8 as minutes, 'relea
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id
   FROM `githubarchive.day.20*`
   WHERE
-  _TABLE_SUFFIX BETWEEN '190101' AND '210101' AND
+  _TABLE_SUFFIX BETWEEN '190101' AND '220101' AND
   (
     repo.name LIKE 'googleapis/%' OR
     repo.name LIKE 'GoogleCloudPlatform/%'
@@ -70,7 +70,7 @@ SELECT * FROM (SELECT COUNT(id) as actions, month_start, 4 as minutes, 'renovate
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id
   FROM `githubarchive.day.20*`
   WHERE
-  _TABLE_SUFFIX BETWEEN '190101' AND '210101' AND
+  _TABLE_SUFFIX BETWEEN '190101' AND '220101' AND
   (
     repo.name LIKE 'googleapis/%' OR
     repo.name LIKE 'GoogleCloudPlatform/%'
@@ -93,7 +93,7 @@ SELECT * FROM (SELECT COUNT(id) as actions, month_start, 6.75 as minutes, 'build
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id
   FROM `githubarchive.day.20*`
   WHERE
-  _TABLE_SUFFIX BETWEEN '190101' AND '210101' AND
+  _TABLE_SUFFIX BETWEEN '190101' AND '220101' AND
   (
     repo.name LIKE 'googleapis/%' OR
     repo.name LIKE 'GoogleCloudPlatform/%'
@@ -121,7 +121,7 @@ SELECT * FROM (SELECT COUNT(id) as actions, month_start, 3.5 as minutes, 'pr-ass
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id
   FROM `githubarchive.day.20*`
   WHERE
-  _TABLE_SUFFIX BETWEEN '190101' AND '210101' AND
+  _TABLE_SUFFIX BETWEEN '190101' AND '220101' AND
   (
     repo.name LIKE 'googleapis/%' OR
     repo.name LIKE 'GoogleCloudPlatform/%'
@@ -145,7 +145,7 @@ SELECT * FROM (SELECT COUNT(id) as actions, month_start, 4.3 as minutes, 'landed
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id, JSON_EXTRACT(payload, '$.pull_request.merged_at') as merged
   FROM `githubarchive.day.20*`
   WHERE
-  _TABLE_SUFFIX BETWEEN '190101' AND '210101' AND
+  _TABLE_SUFFIX BETWEEN '190101' AND '220101' AND
   (
     repo.name LIKE 'googleapis/%' OR
     repo.name LIKE 'GoogleCloudPlatform/%'
@@ -168,7 +168,7 @@ SELECT * FROM (SELECT COUNT(id) as prs, month_start, 4.3 as minutes, 'merged-by-
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id, JSON_EXTRACT(payload, '$.pull_request.merged_at') as merged
   FROM `githubarchive.day.20*`
   WHERE
-  _TABLE_SUFFIX BETWEEN '190101' AND '210101' AND
+  _TABLE_SUFFIX BETWEEN '190101' AND '220101' AND
   (
     repo.name LIKE 'googleapis/%' OR
     repo.name LIKE 'GoogleCloudPlatform/%'
@@ -194,7 +194,7 @@ SELECT * FROM (SELECT COUNT(id) as prs, month_start, 3.5 as minutes, 'context-aw
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id, JSON_EXTRACT(payload, '$.pull_request.merged_at') as merged
   FROM `githubarchive.day.20*`
   WHERE
-  _TABLE_SUFFIX BETWEEN '190101' AND '210101' AND
+  _TABLE_SUFFIX BETWEEN '190101' AND '220101' AND
   (
   repo.name LIKE 'googleapis/%' OR
   repo.name LIKE 'GoogleCloudPlatform/%'
