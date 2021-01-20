@@ -60,6 +60,7 @@ const repoConfigDefaults: RepoConfig = deepFreeze({
   mergeCommitAllowed: false,
   squashMergeAllowed: true,
   rebaseMergeAllowed: true,
+  deleteBranchOnMerge: true,
 });
 
 const branchProtectionDefaults = deepFreeze({
@@ -399,6 +400,7 @@ async function updateRepoOptions(
       allow_merge_commit: config.mergeCommitAllowed,
       allow_rebase_merge: config.rebaseMergeAllowed,
       allow_squash_merge: config.squashMergeAllowed,
+      delete_branch_on_merge: config.deleteBranchOnMerge,
     });
     logger.info(`Success updating repo options for ${repo}`);
   } catch (err) {
