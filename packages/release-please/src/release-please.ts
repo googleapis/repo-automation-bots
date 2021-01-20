@@ -149,7 +149,7 @@ async function createGitHubRelease(
   await Runner.releaser(ghr);
 }
 
-async function doRelease(
+async function createReleasePR(
   repoName: string,
   repoUrl: string,
   repoLanguage: string,
@@ -217,7 +217,7 @@ export = (app: Application) => {
     }
 
     logger.info(`push (${repoUrl})`);
-    await doRelease(
+    await createReleasePR(
       repoName,
       repoUrl,
       repoLanguage,
@@ -275,7 +275,7 @@ export = (app: Application) => {
     const repository = await context.github.repos.get(context.repo());
     const repoLanguage = repository.data.language;
 
-    await doRelease(
+    await createReleasePR(
       repoName,
       repoUrl,
       repoLanguage,
@@ -293,7 +293,7 @@ export = (app: Application) => {
         logger.info(
           `schedule.repository (${repoUrl}, ${branchConfiguration.branch})`
         );
-        return doRelease(
+        return createReleasePR(
           repoName,
           repoUrl,
           repoLanguage,
@@ -360,7 +360,7 @@ export = (app: Application) => {
     }
 
     logger.info(`pull_request.labeled (${repoUrl})`);
-    await doRelease(
+    await createReleasePR(
       repoName,
       repoUrl,
       repoLanguage,
