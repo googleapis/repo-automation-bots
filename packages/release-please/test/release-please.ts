@@ -20,11 +20,25 @@ import {resolve} from 'path';
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import * as fs from 'fs';
 import assert, {fail} from 'assert';
-import {GitHubRelease, ReleasePR, JavaYoshi, Ruby} from 'release-please';
+import {GitHubRelease, ReleasePR} from 'release-please';
 import nock from 'nock';
 
 nock.disableNetConnect();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+
+// helper to get the name of the releaser
+function getReleaserName(pr: ReleasePR): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (pr.constructor as any).releaserName;
+}
+
+function assertReleaserType(expectedType: string, pr: ReleasePR) {
+  const releaserName = getReleaserName(pr);
+  assert(
+    expectedType === releaserName,
+    `expected to find ${expectedType}, found ${releaserName}`
+  );
+}
 
 describe('ReleasePleaseBot', () => {
   let probot: Probot;
@@ -50,7 +64,7 @@ describe('ReleasePleaseBot', () => {
     it('should build a release PR', async () => {
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assert(pr instanceof JavaYoshi);
+        assertReleaserType('java-yoshi', pr);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -71,7 +85,7 @@ describe('ReleasePleaseBot', () => {
       let runnerExecuted = false;
       let releaserExecuted = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assert(pr instanceof JavaYoshi);
+        assertReleaserType('java-yoshi', pr);
         runnerExecuted = true;
       };
       Runner.releaser = async (pr: GitHubRelease) => {
@@ -113,7 +127,7 @@ describe('ReleasePleaseBot', () => {
     it('should allow overriding the release strategy from configuration', async () => {
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assert(pr instanceof Ruby);
+        assertReleaserType('ruby', pr);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -192,7 +206,7 @@ describe('ReleasePleaseBot', () => {
     it('should allow an empty config file with the defaults', async () => {
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assert(pr instanceof JavaYoshi);
+        assertReleaserType('java-yoshi', pr);
         executed = true;
       };
       const requests = nock('https://api.github.com')
@@ -209,12 +223,33 @@ describe('ReleasePleaseBot', () => {
     it('should allow configuring minor bump for breaking change pre 1.0', async () => {
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assert(pr instanceof JavaYoshi);
+        assertReleaserType("java-yoshi", pr);
         assert(pr.bumpMinorPreMajor);
         executed = true;
       };
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'minor_pre_major.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
+        )
+        .reply(200, config);
+
+      await probot.receive({name: 'push', payload, id: 'abc123'});
+      requests.done();
+      assert(executed, 'should have executed the runner');
+    });
+
+    it('should detect the default branch if not specified in configuration', async () => {
+      let executed = false;
+      Runner.runner = async (pr: ReleasePR) => {
+        assertReleaserType('node', pr);
+        assert('master' === pr.defaultBranch);
+        executed = true;
+      };
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'release_type_no_primary_branch.yml')
       );
       const requests = nock('https://api.github.com')
         .get(
@@ -255,7 +290,7 @@ describe('ReleasePleaseBot', () => {
     it('should create the PR if the branch is the configured primary branch', async () => {
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assert(pr instanceof JavaYoshi);
+        assertReleaserType('java-yoshi', pr);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -275,7 +310,7 @@ describe('ReleasePleaseBot', () => {
     it('should create the PR if the branch is configured as an alternate branch', async () => {
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assert(pr instanceof JavaYoshi);
+        assertReleaserType('java-yoshi', pr);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -310,7 +345,7 @@ describe('ReleasePleaseBot', () => {
         cron_org: 'Codertocat',
       };
       Runner.runner = async (pr: ReleasePR) => {
-        assert(pr instanceof JavaYoshi);
+        assertReleaserType('java-yoshi', pr);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -351,9 +386,7 @@ describe('ReleasePleaseBot', () => {
         cron_org: 'Codertocat',
       };
       Runner.runner = async (pr: ReleasePR) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const releaser = (pr.constructor as any).releaserName;
-        executedBranches.set(pr.defaultBranch!, releaser);
+        executedBranches.set(pr.defaultBranch!, getReleaserName(pr));
       };
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'multi_branch.yml')
@@ -386,7 +419,7 @@ describe('ReleasePleaseBot', () => {
       payload = require(resolve(fixturesPath, './pull_request_labeled'));
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assert(pr instanceof JavaYoshi);
+        assertReleaserType('java-yoshi', pr);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -418,7 +451,7 @@ describe('ReleasePleaseBot', () => {
       ));
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assert(pr instanceof JavaYoshi);
+        assertReleaserType('java-yoshi', pr);
         executed = true;
       };
       const config = fs.readFileSync(
