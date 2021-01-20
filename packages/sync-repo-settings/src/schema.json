@@ -16,6 +16,10 @@
       "description": "Whether or not PRs are merged with a merge commit on this repository.",
       "type": "boolean"
     },
+    "deleteBranchOnMerge": {
+      "description": "Either true to allow automatically deleting head branches when pull requests are merged, or false to prevent automatic deletion.",
+      "type": "boolean"
+    },
     "branchProtectionRules": {
       "description": "Branch protection rules",
       "type": "array",
