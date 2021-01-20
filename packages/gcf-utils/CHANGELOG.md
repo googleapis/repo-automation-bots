@@ -87,6 +87,14 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [6.3.2](https://www.github.com/googleapis/repo-automation-bots/compare/v6.3.1...v6.3.2) (2021-01-20)
+
+
+### Bug Fixes
+
+* **deps:** update dependency probot to v11.0.3 ([#1284](https://www.github.com/googleapis/repo-automation-bots/issues/1284)) ([ea5ef00](https://www.github.com/googleapis/repo-automation-bots/commit/ea5ef00364ee1ffdebd9f7164e787fb77419b4e6))
+* **deps:** upgrade to Probot 11 ([#1280](https://www.github.com/googleapis/repo-automation-bots/issues/1280)) ([6abbbed](https://www.github.com/googleapis/repo-automation-bots/commit/6abbbed3fc7410b0e416e1823c4512490b2ca9ea))
+
 ### [6.3.1](https://www.github.com/googleapis/repo-automation-bots/compare/v6.3.0...v6.3.1) (2021-01-06)
 
 
