@@ -39,6 +39,10 @@ git -C googleapis-gen tag "googleapis-$sha"
 
 # Clone googleapis-gen so git push pushes back to local copy.
 git clone googleapis-gen googleapis-gen-clone
+git -C googleapis-gen config user.email "test@example.com"
+git -C googleapis-gen config user.name "Testy McTestFace"
+git -C googleapis-gen-clone config user.email "test@example.com"
+git -C googleapis-gen-clone config user.name "Testy McTestFace"
 git -C googleapis-gen checkout -b other
 
 # Test!
