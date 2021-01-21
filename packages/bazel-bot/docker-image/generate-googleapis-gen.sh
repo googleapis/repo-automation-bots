@@ -96,11 +96,8 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     for target in $targets ; do
         let target_count++
         tar_gz=$(echo "${target:2}" | tr ":" "/")
-        # Strip the .tar.gz to get the relative dir.
-        tar="${tar_gz%.*}"
-        relative_dir="${tar%.*}"
         # Create the parent directory if it doesn't already exist.
-        parent_dir=`dirname $tar_gz`
+        parent_dir=$(dirname $tar_gz)
         target_dir="$GOOGLEAPIS_GEN/$parent_dir"
         mkdir -p "$target_dir"
         tar -xf "$GOOGLEAPIS/bazel-bin/$tar_gz" -C "$target_dir" || failed_targets+=($target)
