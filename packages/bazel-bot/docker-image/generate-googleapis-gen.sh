@@ -19,13 +19,13 @@
 #  2. Regenerates the client library code by invoking bazel build on select targets.
 #  3. Pushes changes to googleapis-gen.
 
-# Optional environment variables used for testing.
+# Optional arguments.
 #
 # BUILD_TARGETS: Build targets to rebuild.  Example: 
 #   //google/cloud/vision/v1:vision-v1-nodejs.tar.gz
 #
-# BAZEL_REMOTE_CACHE: https path to the bazel remote cache.  Example:
-#   https://storage.googleapis.com/surferjeff-test2-bazel-cache 
+# BAZEL_FLAGS: additional flags to pass to 'bazel query' and 'bazel build'.
+# Useful for setting a remote cache, coping with different versions of bazel, etc.
 
 # Fail immediately.
 set -e
@@ -73,7 +73,7 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     # Choose build targets.
     if [[ -z "$BUILD_TARGETS" ]] ; then
         targets=$(cd "$GOOGLEAPIS" \
-        && bazel query 'filter("-(go|csharp|java|php|ruby|nodejs|py)\.tar\.gz$", kind("generated file", //...:*))' \
+        && bazel query $BAZEL_FLAGS 'filter("-(go|csharp|java|php|ruby|nodejs|py)\.tar\.gz$", kind("generated file", //...:*))' \
         | grep -v -E ":(proto|grpc|gapic)-.*-java\.tar\.gz$")
     else
         targets="$BUILD_TARGETS"
@@ -84,12 +84,7 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     # APIs from being updated.
     set +e
     # Invoke bazel build.
-    if [[ -n "$BAZEL_REMOTE_CACHE" ]] ; then
-        (cd "$GOOGLEAPIS" && bazel build --google_default_credentials \
-            "--remote_cache=$BAZEL_REMOTE_CACHE" -k $targets)
-    else
-        (cd "$GOOGLEAPIS" && bazel build -k $targets)
-    fi
+    (cd "$GOOGLEAPIS" && bazel build $BAZEL_FLAGS -k $targets)
 
     # Clear out the existing contents of googleapis-gen before we copy back into it,
     # so that deleted APIs will be be removed.
