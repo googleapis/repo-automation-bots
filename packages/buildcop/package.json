@@ -27,7 +27,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@octokit/openapi-types": "^2.0.0",
+    "@octokit/openapi-types": "^3.0.0",
     "gcf-utils": "^6.2.0",
     "xml-js": "^1.6.11"
   },
