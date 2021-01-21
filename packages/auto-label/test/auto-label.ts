@@ -37,7 +37,6 @@ const sandbox = sinon.createSandbox();
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 const driftRepos = JSON.parse(
@@ -61,8 +60,6 @@ describe('auto-label', () => {
   beforeEach(async () => {
     probot = new Probot({
       githubToken: 'abc123',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      //Octokit: TestingOctokit as any,
     });
 
     await probot.load(handler);
