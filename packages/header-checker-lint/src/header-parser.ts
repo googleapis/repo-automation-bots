@@ -28,6 +28,9 @@ const BSD3_REGEX = new RegExp(
   'Redistribution and use in source and binary forms, with or without'
 );
 const MIT_REGEX = new RegExp('Permission is hereby granted, free of charge,');
+const MIT_REFERENCE_REGEX = new RegExp(
+  'Use of this source code is governed by an MIT-style'
+);
 
 // super naive - iterate over lines and use regex
 // TODO: look for the header in comments only
@@ -48,7 +51,7 @@ export function detectLicenseHeader(contents: string): LicenseHeader {
 
     if (line.match(APACHE2_REGEX)) {
       license.type = 'Apache-2.0';
-    } else if (line.match(MIT_REGEX)) {
+    } else if (line.match(MIT_REGEX) || line.match(MIT_REFERENCE_REGEX)) {
       license.type = 'MIT';
     } else if (line.match(BSD3_REGEX)) {
       license.type = 'BSD-3';
