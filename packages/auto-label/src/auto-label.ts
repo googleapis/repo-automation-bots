@@ -390,7 +390,7 @@ export function handler(app: Probot) {
       if (response?.status === 200) {
         const responseData = response.data as any;
         console.log(responseData);
-        const config_encoded = responseData.config;
+        const config_encoded = responseData.content;
         const config = Buffer.from(config_encoded, 'base64')
           .toString('binary')
           .toLowerCase();

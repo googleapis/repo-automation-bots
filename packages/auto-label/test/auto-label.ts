@@ -748,7 +748,7 @@ describe('auto-label', () => {
   });
 
   describe('installation', async () => {
-    it.only('responds to an installation event', async () => {
+    it('responds to an installation event', async () => {
       const payload = require(resolve(fixturesPath, './events/installation'));
       const product_config = Buffer.from('product: true', 'binary').toString(
         'base64'
