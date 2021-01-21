@@ -388,8 +388,9 @@ export function handler(app: Probot) {
         logger.info(e);
       }
       if (response?.status === 200) {
+        // this 'any' is not an ideal solution, but Github types don't seem to understand that content 
+        // can be read from response.data. See: https://github.com/probot/probot/issues/1023 for recommended solution
         const responseData = response.data as any;
-        console.log(responseData);
         const config_encoded = responseData.content;
         const config = Buffer.from(config_encoded, 'base64')
           .toString('binary')

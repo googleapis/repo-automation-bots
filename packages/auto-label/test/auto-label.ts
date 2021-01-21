@@ -29,15 +29,6 @@ import {logger} from 'gcf-utils';
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
-// We provide our own GitHub instance, similar to
-// the one used by gcf-utils, this allows us to turn off
-// methods like retry, and to use @octokit/rest
-// as the base class:
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
-// eslint-disable-next-line node/no-extraneous-import
-import {config} from '@probot/octokit-plugin-config';
-
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 const driftRepos = JSON.parse(
   fs.readFileSync(
