@@ -1,0 +1,8 @@
+primaryBranch: master
+releaseType: java-bom
+releaseLabels:
+  - foo
+  - bar
+branches:
+  - branch: feature-branch
+    releaseType: java-yoshi

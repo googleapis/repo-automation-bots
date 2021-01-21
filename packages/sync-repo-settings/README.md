@@ -35,6 +35,8 @@ branchProtectionRules:
   requiresCodeOwnerReviews: true
   # Require up to date branches
   requiresStrictStatusChecks: true
+  # Automatically delete head branches after merging PRs.  Defaults to `true`.
+  deleteBranchOnMerge: true
   # List of required status check contexts that must pass for commits to be accepted to matching branches.
   requiredStatusCheckContexts:
     - check1
