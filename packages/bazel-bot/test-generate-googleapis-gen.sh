@@ -55,7 +55,8 @@ git -C googleapis-gen-clone config user.name "Testy McTestFace"
 git -C googleapis-gen checkout -b other
 
 # Test!
-export GOOGLEAPIS_GEN=googleapis-gen-clone
+export GOOGLEAPIS_GEN=`realpath googleapis-gen-clone`
+export INSTALL_CREDENTIALS="echo 'Pretending to install credentials...''"
 export BUILD_TARGETS=//google/cloud/vision/v1:vision-v1-nodejs.tar.gz
 bash -x "$generate_googleapis_gen"
 

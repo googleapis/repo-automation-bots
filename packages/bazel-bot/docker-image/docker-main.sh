@@ -13,10 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# TODO: install git credentials.
+git config --global user.email "bazel-bot-development[bot]@users.noreply.github.com"
+git config --global user.name "Bazel Bot"
 
 git clone https://github.com/googleapis/googleapis.git
-git clone git@github.com:googleapis/googleapis-gen.git
+git clone https://github.com/googleapis/googleapis-gen.git
 
 export BAZEL_REMOTE_CACHE=https://storage.googleapis.com/repo-automation-bots-bazel-cache
 

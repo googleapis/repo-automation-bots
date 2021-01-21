@@ -13,6 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script:
+#  1. Scans googleapis-gen and compares to googleapis to see if any new changes to
+#     to the APIs need for their client library code to be regenerated.
+#  2. Regenerates the client library code by invoking bazel build on select targets.
+#  3. Pushes changes to googleapis-gen.
+
 # Optional environment variables used for testing.
 #
 # BUILD_TARGETS: Build targets to rebuild.  Example: 
@@ -26,13 +32,18 @@ set -e
 
 # path to clone of https://github.com/googleapis/googleapis with
 #   master branch checked out.
-GOOGLEAPIS=${GOOGLEAPIS:="googleapis"}
+export GOOGLEAPIS=${GOOGLEAPIS:=`realpath googleapis`}
 
 # path to clone of https://github.com/googleapis/googleapis-gen
 #   with master branch checked out.
-#   Git credentials must have been installed so that a git push to $GOOGLEAPIS_GEN
-#   will succeed.
-GOOGLEAPIS_GEN=${GOOGLEAPIS_GEN:="googleapis-gen"}
+export GOOGLEAPIS_GEN=${GOOGLEAPIS_GEN:=`realpath googleapis-gen`}
+
+# Override in tests.
+INSTALL_CREDENTIALS=${INSTALL_CREDENTIALS:=`realpath install-credentials.sh`}
+
+# If the number of failed build targets exceeds this percent, then googleapis-gen
+# will not be updated.  Prevents a systemic build failure from wiping out googleapis-gen.
+TOTAL_FAILURE_PERCENT=${TOTAL_FAILURE_PERCENT:=10}
 
 # Pull both repos to make sure we're up to date.
 git -C "$GOOGLEAPIS" pull
@@ -67,21 +78,28 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     else
         targets="$BUILD_TARGETS"
     fi
-    # Prepare parameters to use the remote cache, if provided.
-    if [[-n "$BAZEL_REMOTE_CACHE"]] ; then
-        remote_cache="--google_default_credentials --remote_cache='$BAZEL_REMOTE_CACHE'"
-    fi
     # Clean out all the source packages from the previous build.
     rm -f $(find -L "$GOOGLEAPIS/bazel-bin" -name "*.tar.gz")
     # Some API always fails to build.  One failing API should not prevent all other
     # APIs from being updated.
-    # TODO: file a bug when something fails to build.
     set +e
     # Invoke bazel build.
-    (cd "$GOOGLEAPIS" && bazel build -k $remote_cache $targets)
+    if [[ -n "$BAZEL_REMOTE_CACHE" ]] ; then
+        (cd "$GOOGLEAPIS" && bazel build --google_default_credentials \
+            "--remote_cache=$BAZEL_REMOTE_CACHE" -k $targets)
+    else
+        (cd "$GOOGLEAPIS" && bazel build -k $targets)
+    fi
+
+    # Clear out the existing contents of googleapis-gen before we copy back into it,
+    # so that deleted APIs will be be removed.
+    rm -rf "$GOOGLEAPIS_GEN/external" "$GOOGLEAPIS_GEN/google" "$GOOGLEAPIS_GEN/grafeas"
     
-    # Copy the generated source files into $GOOGLEAPIS_GEN.
+    # Untar the generated source files into googleapis-gen.
+    let target_count=0
+    failed_targets=()
     for target in $targets ; do
+        let target_count++
         tar_gz=$(echo "${target:2}" | tr ":" "/")
         # Strip the .tar.gz to get the relative dir.
         tar="${tar_gz%.*}"
@@ -90,24 +108,33 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         parent_dir=`dirname $tar_gz`
         target_dir="$GOOGLEAPIS_GEN/$parent_dir"
         mkdir -p "$target_dir"
-        tar -xf "$GOOGLEAPIS/bazel-bin/$tar_gz" -C "$target_dir"
+        tar -xf "$GOOGLEAPIS/bazel-bin/$tar_gz" -C "$target_dir" || failed_targets+=($target)
     done
 
-    # TODO: Check that bazel didn't completely fail.  If it did, we'd generate
-    # TODO: about a thousand PRs to delete all the API source code.
+    # Report failures.
+    let failed_percent="100 * ${#failed_targets[@]} / $target_count"
     set -e
+    echo "$failed_percent% of targets failed to build."
+    printf '%s\n' "${failed_targets[@]}"
+    if [ $failed_percent -gt $TOTAL_FAILURE_PERCENT ] ; then
+        echo "TODO: use gh to report an issue."
+        continue
+    fi
 
-    # Commit and push the files to github.
-    # Copy the commit message from the commit in googleapis.
-    git -C "$GOOGLEAPIS" log -1 --format=%s%n%b > commit-msg.txt
-    echo "Source-Link: https://github.com/googleapis/googleapis/commit/$sha" >> commit-msg.txt
-
+    # Tell git about the new source code we just copied into googleapis-gen.
     git -C "$GOOGLEAPIS_GEN" add -A
+
+    # Credentials only last 10 minutes, so install them right before git pushing.
+    $INSTALL_CREDENTIALS
+
     if git -C "$GOOGLEAPIS_GEN" diff-index --quiet HEAD ; then
-        # No changes to commit or push.
+        # No changes to commit, so just push the tag.
         git -C "$GOOGLEAPIS_GEN" tag "googleapis-$sha"
         git -C "$GOOGLEAPIS_GEN" push origin "googleapis-$sha"
     else
+        # Copy the commit message from the commit in googleapis.
+        git -C "$GOOGLEAPIS" log -1 --format=%s%n%n%b > commit-msg.txt
+        echo "Source-Link: https://github.com/googleapis/googleapis/commit/$sha" >> commit-msg.txt
         # Commit changes and push them.
         git -C "$GOOGLEAPIS_GEN" commit -F "$(realpath commit-msg.txt)"
         git -C "$GOOGLEAPIS_GEN" tag "googleapis-$sha"
@@ -115,5 +142,4 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         git -C "$GOOGLEAPIS_GEN" push origin
         git -C "$GOOGLEAPIS_GEN" push origin "googleapis-$sha"
     fi
-    # TODO: If something failed, open an issue on github/googleapis-gen.
 done
