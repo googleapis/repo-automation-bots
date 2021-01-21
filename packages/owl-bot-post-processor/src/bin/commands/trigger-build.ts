@@ -11,10 +11,30 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import {
+  createCheck,
+  getAuthenticatedOctokit,
+  getGitHubShortLivedAccessToken,
+  getOwlBotLock,
+  triggerBuild,
+} from '../../core';
+import {promisify} from 'util';
+import {readFile} from 'fs';
 import yargs = require('yargs');
-import {BuildArgs, createCheck, triggerBuild} from '../../core';
 
-export const triggerBuildCommand: yargs.CommandModule<{}, BuildArgs> = {
+const readFileAsync = promisify(readFile);
+
+interface Args {
+  'pem-path': string;
+  'app-id': number;
+  installation: number;
+  repo: string;
+  pr: number;
+  project?: string;
+  trigger: string;
+}
+
+export const triggerBuildCommand: yargs.CommandModule<{}, Args> = {
   command: 'trigger-build',
   describe: 'trigger a build on Cloud Build to post-process a PR',
   builder(yargs) {
@@ -31,7 +51,7 @@ export const triggerBuildCommand: yargs.CommandModule<{}, BuildArgs> = {
       })
       .option('installation', {
         describe: 'installation ID for GitHub app',
-        type: 'string',
+        type: 'number',
         demand: true,
       })
       .option('repo', {
@@ -41,7 +61,7 @@ export const triggerBuildCommand: yargs.CommandModule<{}, BuildArgs> = {
       })
       .option('pr', {
         describe: 'PR to post-process',
-        type: 'string',
+        type: 'number',
         demand: true,
       })
       .option('project', {
@@ -55,17 +75,41 @@ export const triggerBuildCommand: yargs.CommandModule<{}, BuildArgs> = {
       });
   },
   async handler(argv) {
-    const buildStatus = await triggerBuild(argv);
-    await createCheck({
-      'pem-path': argv['pem-path'],
-      'app-id': argv['app-id'],
-      installation: argv.installation,
-      pr: argv.pr,
-      repo: argv.repo,
-      text: buildStatus.text,
-      summary: buildStatus.summary,
-      conclusion: buildStatus.conclusion,
-      title: `🦉 OwlBot - ${buildStatus.summary}`,
-    });
+    const privateKey = await readFileAsync(argv['pem-path'], 'utf8');
+    const token = await getGitHubShortLivedAccessToken(
+      privateKey,
+      argv['app-id'],
+      argv.installation
+    );
+    const octokit = await getAuthenticatedOctokit(token.token);
+    const lock = await getOwlBotLock(argv.repo, Number(argv.pr), octokit);
+    const image = `${lock.docker.image}@${lock.docker.digest}`;
+    const buildStatus = await triggerBuild(
+      {
+        image,
+        project: argv.project,
+        privateKey,
+        appId: argv['app-id'],
+        installation: argv.installation,
+        repo: argv.repo,
+        pr: Number(argv.pr),
+        trigger: argv.trigger,
+      },
+      octokit
+    );
+    await createCheck(
+      {
+        privateKey,
+        appId: argv['app-id'],
+        installation: argv.installation,
+        pr: argv.pr,
+        repo: argv.repo,
+        text: buildStatus.text,
+        summary: buildStatus.summary,
+        conclusion: buildStatus.conclusion,
+        title: `🦉 OwlBot - ${buildStatus.summary}`,
+      },
+      octokit
+    );
   },
 };

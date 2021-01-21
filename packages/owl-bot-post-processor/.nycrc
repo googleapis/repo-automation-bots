@@ -3,7 +3,7 @@
   "reporter": ["text", "lcov"],
   "exclude": [
     "**/*-test",
-    "**/.coverage",
+    "**/coverage",
     "**/apis",
     "**/benchmark",
     "**/conformance",
@@ -17,7 +17,9 @@
     "**/.jsdoc.js",
     "karma.conf.js",
     "webpack-tests.config.js",
-    "webpack.config.js"
+    "webpack.config.js",
+    ".prettierrc.js",
+    ".mocharc.js"
   ],
   "exclude-after-remap": false,
   "all": true

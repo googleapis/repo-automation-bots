@@ -56,7 +56,7 @@ describe('core', () => {
   });
   describe('getAccessTokenURL', () => {
     it('returns URI for token endpoint', () => {
-      const uri = core.getAccessTokenURL('12345');
+      const uri = core.getAccessTokenURL(12345);
       assert.strictEqual(
         uri,
         'https://api.github.com/app/installations/12345/access_tokens'
@@ -97,11 +97,12 @@ describe('core', () => {
         },
       } as any) as CloudBuildClient);
       const build = await core.triggerBuild({
-        'app-id': 12345,
-        'pem-path': './fake.pem',
-        installation: '12345',
+        image: 'node@abc123',
+        appId: 12345,
+        privateKey: 'abc123',
+        installation: 12345,
         repo: 'bcoe/example',
-        pr: '99',
+        pr: 99,
         project: 'fake-project',
         trigger: 'abc123',
       });
@@ -142,17 +143,95 @@ describe('core', () => {
         },
       } as any) as CloudBuildClient);
       const build = await core.triggerBuild({
-        'app-id': 12345,
-        'pem-path': './fake.pem',
-        installation: '12345',
+        image: 'node@abc123',
+        appId: 12345,
+        privateKey: 'abc123',
+        installation: 12345,
         repo: 'bcoe/example',
-        pr: '99',
+        pr: 99,
         project: 'fake-project',
         trigger: 'abc123',
       });
       assert.ok(triggerRequest);
       assert.strictEqual(build.conclusion, 'failure');
       assert.strictEqual(build.summary, '1 steps failed 🙁');
+    });
+  });
+  describe('getOwlBotLock', () => {
+    it('reads .OwlBot.lock.yaml and returns parsed YAML', async () => {
+      const prData = {
+        data: {
+          head: {
+            ref: 'my-feature-branch',
+            repo: {
+              full_name: 'bcoe/example',
+            },
+          },
+        },
+      };
+      const config = `docker:
+  image: node
+  digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
+      const content = {
+        data: {
+          content: Buffer.from(config, 'utf8').toString('base64'),
+          encoding: 'base64',
+        },
+      };
+      const octokit = ({
+        pulls: {
+          get() {
+            return prData;
+          },
+        },
+        repos: {
+          getContent() {
+            return content;
+          },
+        },
+      } as any) as InstanceType<typeof Octokit>;
+      const lock = await core.getOwlBotLock('bcoe/test', 22, octokit);
+      assert.strictEqual(lock.docker.image, 'node');
+      assert.strictEqual(
+        lock.docker.digest,
+        'sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c'
+      );
+    });
+    it('throws error if config is invalid', async () => {
+      const prData = {
+        data: {
+          head: {
+            ref: 'my-feature-branch',
+            repo: {
+              full_name: 'bcoe/example',
+            },
+          },
+        },
+      };
+      const config = `no-docker-key:
+      image: node
+      digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
+      const content = {
+        data: {
+          content: Buffer.from(config, 'utf8').toString('base64'),
+          encoding: 'base64',
+        },
+      };
+      const octokit = ({
+        pulls: {
+          get() {
+            return prData;
+          },
+        },
+        repos: {
+          getContent() {
+            return content;
+          },
+        },
+      } as any) as InstanceType<typeof Octokit>;
+      assert.rejects(async () => {
+        await core.getOwlBotLock('bcoe/test', 22, octokit);
+      }, /batman/);
     });
   });
 });
