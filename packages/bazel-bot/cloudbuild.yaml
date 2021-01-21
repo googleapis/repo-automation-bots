@@ -14,3 +14,4 @@
 
 steps:
   - name: 'gcr.io/repo-automation-bots/bazel-bot'
+  # TODO: set env vars GITHUB_APP_SECRET, GITHUB_APP_ID, and GITHUB_APP_INSTALLATION_ID.

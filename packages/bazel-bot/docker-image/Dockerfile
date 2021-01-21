@@ -14,16 +14,29 @@
 
 # build with:
 # docker build -t gcr.io/repo-automation-bots/bazel-bot .
-FROM gcr.io/gapic-images/googleapis-bazel
 
-# Install the github command line tool.
+##########################################################
+# Build the command-line tool that lets us sign JWTs.
+FROM rust:1.49-buster
+RUN git clone https://github.com/mike-engel/jwt-cli.git
+WORKDIR /jwt-cli
+RUN cargo build --release
+
+##########################################################
+# Build the image.
+FROM gcr.io/gapic-images/googleapis-bazel
+COPY --from=0 /jwt-cli/target/release/jwt /bin/jwt
+
+# Install the github command line tool, and jq to parse json responses.
 RUN apt-get install -y software-properties-common
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
 RUN apt-add-repository https://cli.github.com/packages
 RUN apt-get update
-RUN apt-get install -y gh
+RUN apt-get install -y gh jq
 
 COPY generate-googleapis-gen.sh /generate-googleapis-gen.sh
+COPY install-credentials.sh /install-credentials.sh
 COPY docker-main.sh /docker-main.sh
 
-ENTRYPOINT ["/bin/bash", "docker-main.sh"]
+ENTRYPOINT ["/bin/bash"]
+CMD ["/bin/bash", "/docker-main.sh"]
