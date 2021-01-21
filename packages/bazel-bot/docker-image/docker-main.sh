@@ -19,7 +19,5 @@ git config --global user.name "Bazel Bot"
 git clone https://github.com/googleapis/googleapis.git
 git clone https://github.com/googleapis/googleapis-gen.git
 
-export BAZEL_REMOTE_CACHE=https://storage.googleapis.com/repo-automation-bots-bazel-cache
-
 bash -x generate-googleapis-gen.sh
 
