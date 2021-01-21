@@ -16,9 +16,6 @@
 # This script uses the github app secret to install credentials in the GOOGLEAPIS_GEN
 # repo and the 'gh' command line tool.
 
-# TODO: put this in the build yaml.
-GITHUB_APP_INSTALLATION_ID=14207619
-
 # According to https://docs.github.com/en/developers/apps/authenticating-with-github-apps#authenticating-as-a-github-app
 JWT=$(jwt encode --secret "$GITHUB_APP_SECRET" --iss "$GITHUB_APP_ID" --exp "+10 min" --alg RS256)
 
