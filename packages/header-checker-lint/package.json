@@ -28,7 +28,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "^6.2.0",
+    "gcf-utils": "^7.0.0",
     "minimatch": "^3.0.4"
   },
   "devDependencies": {

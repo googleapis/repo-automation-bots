@@ -14,7 +14,7 @@
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot, ProbotOctokit} from 'probot';
+import {Probot, ProbotOctokit} from 'probot';
 import snapshot from 'snap-shot-it';
 // eslint-disable-next-line node/no-extraneous-import
 import {EventPayloads} from '@octokit/webhooks';
@@ -30,7 +30,7 @@ describe('HeaderCheckerLint', () => {
   let probot: Probot;
 
   beforeEach(() => {
-    probot = createProbot({
+    probot = new Probot({
       githubToken: 'abc123',
       Octokit: ProbotOctokit.defaults({
         retry: {enabled: false},
