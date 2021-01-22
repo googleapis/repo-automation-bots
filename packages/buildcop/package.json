@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@octokit/openapi-types": "^3.0.0",
-    "gcf-utils": "^6.2.0",
+    "gcf-utils": "^7.0.0",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
