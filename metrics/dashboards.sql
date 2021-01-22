@@ -85,11 +85,11 @@ ORDER BY month_start ASC)
 UNION ALL
 
 /*
-Determines how many issues were opened by build-cop-bot, prior to build-cop
+Determines how many issues were opened by flaky-bot, prior to flaky-bot
 users needed to manually detect failing nightly builds, and open issues
 on GitHub.
 */
-SELECT * FROM (SELECT COUNT(id) as actions, month_start, 6.75 as minutes, 'build-cop' as type FROM (
+SELECT * FROM (SELECT COUNT(id) as actions, month_start, 6.75 as minutes, 'flaky-bot' as type FROM (
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id
   FROM `githubarchive.day.20*`
   WHERE
@@ -98,7 +98,10 @@ SELECT * FROM (SELECT COUNT(id) as actions, month_start, 6.75 as minutes, 'build
     repo.name LIKE 'googleapis/%' OR
     repo.name LIKE 'GoogleCloudPlatform/%'
   ) AND
-  actor.login LIKE "build-cop-bot%" AND
+  (
+    actor.login LIKE "flaky-bot%" OR
+    actor.login LIKE "build-cop-bot%"
+  ) AND
   JSON_EXTRACT(payload, '$.action') LIKE '"opened"' AND
   type = 'IssuesEvent'
 )
@@ -157,7 +160,7 @@ WHERE merged IS NOT NULL
 GROUP BY month_start
 ORDER BY month_start ASC)
 
-UNION ALL 
+UNION ALL
 
 /*
 Measures PRs that have been closed by the gcf-merge-on-green bot, i.e., that have been automerged.
@@ -174,7 +177,7 @@ SELECT * FROM (SELECT COUNT(id) as prs, month_start, 4.3 as minutes, 'merged-by-
     repo.name LIKE 'GoogleCloudPlatform/%'
   ) AND
   JSON_EXTRACT(payload, '$.action') LIKE '"closed"'
-  AND JSON_EXTRACT(payload, '$.pull_request.merged_by.login') LIKE '"gcf-merge-on-green[bot]"' 
+  AND JSON_EXTRACT(payload, '$.pull_request.merged_by.login') LIKE '"gcf-merge-on-green[bot]"'
   AND type = 'PullRequestEvent'
 )
 WHERE merged IS NOT NULL
