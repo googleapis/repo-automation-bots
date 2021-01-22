@@ -18,7 +18,7 @@ import * as blunderbuss from '../src/blunderbuss';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot, ProbotOctokit} from 'probot';
+import {Probot, ProbotOctokit} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
@@ -37,7 +37,7 @@ describe('Blunderbuss', () => {
   const sandbox = sinon.createSandbox();
 
   beforeEach(() => {
-    probot = createProbot({
+    probot = new Probot({
       githubToken: 'abc123',
       Octokit: ProbotOctokit.defaults({
         retry: {enabled: false},
@@ -72,7 +72,7 @@ describe('Blunderbuss', () => {
           snapshot(body);
           return true;
         })
-        .reply(200);
+        .reply(201);
 
       await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
@@ -137,7 +137,7 @@ describe('Blunderbuss', () => {
           snapshot(body);
           return true;
         })
-        .reply(200);
+        .reply(201);
 
       await probot.receive({
         name: 'issues',
@@ -204,7 +204,7 @@ describe('Blunderbuss', () => {
           snapshot(body);
           return true;
         })
-        .reply(200);
+        .reply(201);
 
       await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
@@ -226,7 +226,7 @@ describe('Blunderbuss', () => {
           snapshot(body);
           return true;
         })
-        .reply(200)
+        .reply(201)
         .get('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200, [{name: 'api: foo'}]);
 
@@ -247,7 +247,7 @@ describe('Blunderbuss', () => {
           snapshot(body);
           return true;
         })
-        .reply(200);
+        .reply(201);
 
       await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
@@ -371,7 +371,7 @@ describe('Blunderbuss', () => {
           snapshot(body);
           return true;
         })
-        .reply(200);
+        .reply(201);
 
       await probot.receive({
         name: 'pull_request',
@@ -399,7 +399,7 @@ describe('Blunderbuss', () => {
           snapshot(body);
           return true;
         })
-        .reply(200);
+        .reply(201);
 
       await probot.receive({
         name: 'pull_request',
@@ -421,7 +421,7 @@ describe('Blunderbuss', () => {
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config.toString('base64'));
+        .reply(200, config);
 
       await probot.receive({
         name: 'pull_request',
@@ -494,7 +494,7 @@ describe('Blunderbuss', () => {
           snapshot(body);
           return true;
         })
-        .reply(200);
+        .reply(201);
 
       await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
@@ -526,7 +526,7 @@ describe('Blunderbuss', () => {
       const payload = require(resolve(
         fixturesPath,
         'events',
-        'issue_opened_no_assignees'
+        'pull_request_opened_no_assignees'
       ));
 
       const requests = nock('https://api.github.com')
@@ -561,16 +561,13 @@ describe('Blunderbuss', () => {
           snapshot(body);
           return true;
         })
-        .reply(200);
+        .reply(201);
 
       await probot.receive({
         name: 'pull_request',
         payload,
         id: 'abc123',
       });
-      requests.done();
-
-      await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
     });
   });
