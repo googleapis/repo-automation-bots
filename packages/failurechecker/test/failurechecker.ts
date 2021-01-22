@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot, ProbotOctokit} from 'probot';
+import {Probot, ProbotOctokit} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import {describe, it, beforeEach, afterEach} from 'mocha';
@@ -28,7 +28,7 @@ describe('failurechecker', () => {
   beforeEach(() => {
     // Later versions of probot seem to have problems dealing with fake sinon timers.
     sinon.stub(TimeMethods, 'Date').returns(new Date(Date.UTC(2020, 1, 1, 20)));
-    probot = createProbot({
+    probot = new Probot({
       githubToken: 'abc123',
       Octokit: ProbotOctokit.defaults({
         retry: {enabled: false},
