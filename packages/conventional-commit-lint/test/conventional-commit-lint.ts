@@ -16,7 +16,7 @@
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot, ProbotOctokit} from 'probot';
+import {Probot, ProbotOctokit} from 'probot';
 import {describe, it, beforeEach} from 'mocha';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
@@ -35,7 +35,7 @@ describe('ConventionalCommitLint', () => {
   let probot: Probot;
 
   beforeEach(() => {
-    probot = createProbot({
+    probot = new Probot({
       githubToken: 'abc123',
       Octokit: ProbotOctokit.defaults({
         retry: {enabled: false},
