@@ -23,10 +23,10 @@ cd "$TEST_WORKDIR"
 
 # Clone googleapis
 if [ ! -d "googleapis" ] ; then
-    set +e  # Git clone returns an error code because config user.email is not set.
+    # Git clone returns an error code because config user.email is not set.
     # There's no way to set it for the repo and clone it at the same time.  :-/
-    git clone https://github.com/googleapis/googleapis
-    set -e
+    # || true effectively ignares the error.
+    git clone https://github.com/googleapis/googleapis || true
     git -C googleapis config user.email "test@example.com"
     git -C googleapis config user.name "Testy McTestFace"
 fi
@@ -41,15 +41,24 @@ mkdir googleapis-gen
 git -C googleapis-gen init --initial-branch=main
 git -C googleapis-gen config user.email "test@example.com"
 git -C googleapis-gen config user.name "Testy McTestFace"
-echo hello > googleapis-gen/hello.txt
+# Hello.txt lives in the root directory and should not be removed.
+hello_path=googleapis-gen/hello.txt
+echo hello > "$hello_path"
+# keepme.java fails to build and therefore should not be removed.
+mkdir -p googleapis-gen/google/bogus/api
+bogus_file_path=googleapis-gen/google/bogus/api/keepme.java
+echo "import *;" > "$bogus_file_path"
+# garbage.js should be wiped out by newly generated code.
+mkdir -p googleapis-gen/google/cloud/vision/v1/vision-v1-nodejs
+garbage_file_path=googleapis-gen/google/cloud/vision/v1/vision-v1-nodejs/garbage.js
+echo "garbage" > "$garbage_file_path"
+
 git -C googleapis-gen add -A
 git -C googleapis-gen commit -m "Hello world."
 git -C googleapis-gen tag "googleapis-$sha"
 
 # Clone googleapis-gen so git push pushes back to local copy.
-set +e
-git clone googleapis-gen googleapis-gen-clone -b main
-set -e
+git clone googleapis-gen googleapis-gen-clone -b main || true
 git -C googleapis-gen-clone config user.email "test@example.com"
 git -C googleapis-gen-clone config user.name "Testy McTestFace"
 git -C googleapis-gen checkout -b other
@@ -57,10 +66,36 @@ git -C googleapis-gen checkout -b other
 # Test!
 export GOOGLEAPIS_GEN=`realpath googleapis-gen-clone`
 export INSTALL_CREDENTIALS="echo 'Pretending to install credentials...''"
-export BUILD_TARGETS=//google/cloud/vision/v1:vision-v1-nodejs.tar.gz
+export BUILD_TARGETS="//google/cloud/vision/v1:vision-v1-nodejs.tar.gz //google/bogus:api.tar.gz"
 bash -x "$generate_googleapis_gen"
 
 # Display the state of googleapis-gen
-git -C googleapis-gen log main
+git -C googleapis-gen checkout main
+git -C googleapis-gen log --name-only
+
+# Confirm that we added at least one commit.
+commit_count=$(git -C googleapis-gen log --pretty=%H | wc -l)
+if [ $commit_count -lt 2 ] ; then
+    echo "ERROR: There should be a new commit in googlapis-gen"
+    exit 99
+fi
+
+# Confirm the garbage file was removed because it was replaced by new code.
+if [ -e "$garbage_file_path" ] ; then
+    echo "ERROR: $garbage_file_path should have been removed"
+    exit 98
+fi
+
+# Confirm that the source code for the target that failed to build still exists.
+if [ ! -e "$bogus_file_path" ] ; then
+    echo "ERROR: $bogus_file_path should not been removed"
+    exit 97
+fi
+
+# Confirm that hello.txt still exists because it's not in a source code directory.
+if [ ! -e "$hello_path" ] ; then
+    echo "ERROR: $hello_path should not been removed"
+    exit 96
+fi
 
 popd

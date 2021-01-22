@@ -41,10 +41,6 @@ export GOOGLEAPIS_GEN=${GOOGLEAPIS_GEN:=`realpath googleapis-gen`}
 # Override in tests.
 INSTALL_CREDENTIALS=${INSTALL_CREDENTIALS:=`realpath install-credentials.sh`}
 
-# If the number of failed build targets exceeds this percent, then googleapis-gen
-# will not be updated.  Prevents a systemic build failure from wiping out googleapis-gen.
-TOTAL_FAILURE_PERCENT=${TOTAL_FAILURE_PERCENT:=10}
-
 # Pull both repos to make sure we're up to date.
 git -C "$GOOGLEAPIS" pull
 git -C "$GOOGLEAPIS_GEN" pull
@@ -100,7 +96,13 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         parent_dir=$(dirname $tar_gz)
         target_dir="$GOOGLEAPIS_GEN/$parent_dir"
         mkdir -p "$target_dir"
-        tar -xf "$GOOGLEAPIS/bazel-bin/$tar_gz" -C "$target_dir" || failed_targets+=($target)
+        tar -xf "$GOOGLEAPIS/bazel-bin/$tar_gz" -C "$target_dir" || {
+            failed_targets+=($target)
+            # Restore the original source code because bazel failed to generate
+            # the new source code.
+            git -C "$GOOGLEAPIS_GEN" checkout -- "$target_dir"
+            # TODO: report an issue with 'gh'
+        }
     done
 
     # Report failures.
@@ -108,10 +110,6 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     set -e
     echo "$failed_percent% of targets failed to build."
     printf '%s\n' "${failed_targets[@]}"
-    if [ $failed_percent -gt $TOTAL_FAILURE_PERCENT ] ; then
-        echo "TODO: use gh to report an issue."
-        continue
-    fi
 
     # Tell git about the new source code we just copied into googleapis-gen.
     git -C "$GOOGLEAPIS_GEN" add -A
