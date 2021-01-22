@@ -16,7 +16,7 @@
 
 import myProbotApp from '../src/do-not-merge';
 import {resolve} from 'path';
-import {Probot, createProbot, ProbotOctokit} from 'probot';
+import {Probot, ProbotOctokit} from 'probot';
 import nock from 'nock';
 import {describe, it, beforeEach} from 'mocha';
 import snapshot from 'snap-shot-it';
@@ -29,7 +29,7 @@ describe('do-not-merge', () => {
   let probot: Probot;
 
   beforeEach(() => {
-    probot = createProbot({
+    probot = new Probot({
       githubToken: 'abc123',
       Octokit: ProbotOctokit.defaults({
         retry: {enabled: false},
