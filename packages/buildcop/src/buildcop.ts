@@ -23,7 +23,7 @@
  */
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, Logger} from 'probot';
+import {Probot, Logger} from 'probot';
 import xmljs from 'xml-js';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
@@ -104,14 +104,14 @@ export interface BuildCopPayload {
 }
 
 interface PubSubContext {
+  octokit: Octokit;
   readonly event: string;
-  github: Octokit;
   log: Logger;
   payload: BuildCopPayload;
 }
 
 // meta comment about the 'any' here: https://github.com/octokit/webhooks.js/issues/277
-export function buildcop(app: Application) {
+export function buildcop(app: Probot) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('pubsub.message' as any, async (context: PubSubContext) => {
     const owner = context.payload.organization?.login;
@@ -154,14 +154,14 @@ export function buildcop(app: Application) {
     }
 
     // Get the list of issues once, before opening/closing any of them.
-    const options = context.github.issues.listForRepo.endpoint.merge({
+    const options = context.octokit.issues.listForRepo.endpoint.merge({
       owner,
       repo,
       per_page: 100,
       labels: ISSUE_LABEL,
       state: 'all', // Include open and closed issues.
     });
-    let issues = (await context.github.paginate(
+    let issues = (await context.octokit.paginate(
       options
     )) as IssuesListForRepoResponseData;
 
@@ -169,7 +169,7 @@ export function buildcop(app: Application) {
     if (
       await buildcop.deduplicateIssues(results, issues, context, owner, repo)
     ) {
-      issues = await context.github.paginate(options);
+      issues = await context.octokit.paginate(options);
     }
 
     // Open issues for failing tests (including flaky tests).
@@ -236,13 +236,13 @@ buildcop.deduplicateIssues = async (
       context.log.info(
         `[${owner}/${repo}] closing issue #${dup.number} as duplicate of #${issue?.number}`
       );
-      await context.github.issues.createComment({
+      await context.octokit.issues.createComment({
         owner,
         repo,
         issue_number: dup.number,
         body: `Closing as a duplicate of #${issue?.number}`,
       });
-      await context.github.issues.update({
+      await context.octokit.issues.update({
         owner,
         repo,
         issue_number: dup.number,
@@ -308,7 +308,7 @@ buildcop.openIssues = async (
         commit,
         buildURL
       )}`;
-      await context.github.issues.createComment({
+      await context.octokit.issues.createComment({
         owner,
         repo,
         issue_number: groupedIssue.number,
@@ -345,7 +345,7 @@ buildcop.openIssues = async (
           buildURL
         )}`;
       const newIssue = (
-        await context.github.issues.create({
+        await context.octokit.issues.create({
           owner,
           repo,
           title: buildcop.formatGroupedTitle(pkg),
@@ -444,7 +444,7 @@ buildcop.openIssues = async (
           continue;
         }
 
-        await context.github.issues.createComment({
+        await context.octokit.issues.createComment({
           owner,
           repo,
           issue_number: existingIssue.number,
@@ -511,7 +511,7 @@ buildcop.openNewIssue = async (
   }
   body += buildcop.formatBody(failure, commit, buildURL);
   const newIssue = (
-    await context.github.issues.create({
+    await context.octokit.issues.create({
       owner,
       repo,
       title: buildcop.formatTestCase(failure),
@@ -601,13 +601,13 @@ buildcop.closeIssues = async (
     context.log.info(
       `[${owner}/${repo}] closing issue #${issue.number}: ${issue.title}`
     );
-    await context.github.issues.createComment({
+    await context.octokit.issues.createComment({
       owner,
       repo,
       issue_number: issue.number,
       body: `Test passed for commit ${commit} (${buildURL})! Closing this issue.`,
     });
-    await context.github.issues.update({
+    await context.octokit.issues.update({
       owner,
       repo,
       issue_number: issue.number,
@@ -683,7 +683,7 @@ buildcop.markIssueFlaky = async (
     labelsToAdd = labelsToAdd.filter(l => !l.startsWith('type:'));
   }
   const labels = labelsToAdd.concat(existingLabels);
-  await context.github.issues.update({
+  await context.octokit.issues.update({
     owner,
     repo,
     issue_number: existingIssue.number,
@@ -694,7 +694,7 @@ buildcop.markIssueFlaky = async (
     ? FLAKY_AGAIN_MESSAGE
     : FLAKY_MESSAGE;
   body += '\n\n' + reason;
-  await context.github.issues.createComment({
+  await context.octokit.issues.createComment({
     owner,
     repo,
     issue_number: existingIssue.number,
@@ -730,12 +730,12 @@ buildcop.containsBuildFailure = async (
     const buildURL = buildcop.extractBuildURL(text);
     return [true, buildURL];
   }
-  const options = context.github.issues.listComments.endpoint.merge({
+  const options = context.octokit.issues.listComments.endpoint.merge({
     owner,
     repo,
     issue_number: issue.number,
   });
-  const comments = (await context.github.paginate(
+  const comments = (await context.octokit.paginate(
     options
   )) as IssuesListCommentsResponseData;
   const comment = comments.find(
