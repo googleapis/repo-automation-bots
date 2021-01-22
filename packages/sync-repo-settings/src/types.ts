@@ -26,6 +26,10 @@ export interface RepoConfig {
    */
   mergeCommitAllowed?: boolean;
   /**
+   * Either true to allow automatically deleting head branches when pull requests are merged, or false to prevent automatic deletion.
+   */
+  deleteBranchOnMerge?: boolean;
+  /**
    * Branch protection rules
    */
   branchProtectionRules?: BranchProtectionRule[];
