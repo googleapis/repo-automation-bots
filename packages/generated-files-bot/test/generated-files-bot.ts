@@ -14,7 +14,7 @@
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot, ProbotOctokit} from 'probot';
+import {Probot, ProbotOctokit} from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
 import snapshot from 'snap-shot-it';
@@ -223,7 +223,7 @@ describe('generated-files-bot', () => {
     let probot: Probot;
 
     beforeEach(() => {
-      probot = createProbot({
+      probot = new Probot({
         githubToken: 'abc123',
         Octokit: ProbotOctokit.defaults({
           retry: {enabled: false},
