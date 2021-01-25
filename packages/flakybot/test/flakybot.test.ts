@@ -21,8 +21,8 @@ import * as fs from 'fs';
 import * as assert from 'assert';
 import {describe, it, beforeEach} from 'mocha';
 
-import {buildcop} from '../src/buildcop';
-const {findTestResults, formatTestCase} = buildcop;
+import {flakybot} from '../src/flakybot';
+const {findTestResults, formatTestCase} = flakybot;
 
 nock.disableNetConnect();
 
@@ -47,7 +47,7 @@ function buildPayload(inputFixture: string, repo: string) {
 function nockIssues(repo: string, issues: Array<{}> = []) {
   return nock('https://api.github.com')
     .get(
-      `/repos/GoogleCloudPlatform/${repo}/issues?per_page=100&labels=buildcop%3A%20issue&state=all`
+      `/repos/GoogleCloudPlatform/${repo}/issues?per_page=100&labels=flakybot%3A%20issue&state=all`
     )
     .reply(200, issues);
 }
@@ -92,7 +92,7 @@ function nockIssuePatch(repo: string, issueNumber: number) {
     .reply(200);
 }
 
-describe('buildcop', () => {
+describe('flakybot', () => {
   let probot: Probot;
 
   beforeEach(() => {
@@ -103,18 +103,18 @@ describe('buildcop', () => {
         throttle: {enabled: false},
       }),
     });
-    probot.load(buildcop);
+    probot.load(flakybot);
   });
 
   describe('extractBuildURL', () => {
     it('finds a build URL', () => {
       const want = '[Build Status](example.com/my/build)';
-      const input = buildcop.formatBody(
+      const input = flakybot.formatBody(
         {passed: false, testCase: 'TestHello'},
         'abc',
         want
       );
-      const result = buildcop.extractBuildURL(input);
+      const result = flakybot.extractBuildURL(input);
       assert.strictEqual(result, want);
     });
   });
@@ -572,7 +572,7 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: 'Failure!',
-              labels: [{name: 'buildcop: flaky'}],
+              labels: [{name: 'flakybot: flaky'}],
               state: 'open',
             },
             {
@@ -617,7 +617,7 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: 'Failure!',
-              labels: [{name: 'buildcop: quiet'}],
+              labels: [{name: 'flakybot: quiet'}],
               state: 'open',
             },
             {
@@ -680,7 +680,7 @@ describe('buildcop', () => {
               // All of these labels should be kept. New priority and type
               // labels should not be added.
               labels: [
-                {name: 'buildcop: flaky'},
+                {name: 'flakybot: flaky'},
                 {name: 'api: spanner'},
                 {name: 'priority: p2'},
                 {name: 'type: cleanup'},
@@ -933,7 +933,7 @@ describe('buildcop', () => {
               }),
               number: 16,
               body: 'Failure!',
-              labels: [{name: 'buildcop: flaky'}],
+              labels: [{name: 'flakybot: flaky'}],
             },
           ]),
         ];
@@ -1007,7 +1007,7 @@ describe('buildcop', () => {
               title,
               number: 17,
               body: 'Failure!',
-              labels: [{name: 'buildcop: flaky'}],
+              labels: [{name: 'flakybot: flaky'}],
               state: 'open',
             },
             {
@@ -1020,7 +1020,7 @@ describe('buildcop', () => {
               title: title2,
               number: 19,
               body: 'Failure!',
-              labels: [{name: 'buildcop: flaky'}],
+              labels: [{name: 'flakybot: flaky'}],
               state: 'open',
             },
           ]),
@@ -1060,7 +1060,7 @@ describe('buildcop', () => {
               title,
               number: 19,
               body: 'Failure!',
-              labels: [{name: 'buildcop: flaky'}],
+              labels: [{name: 'flakybot: flaky'}],
               state: 'closed',
             },
           ]),
@@ -1209,7 +1209,7 @@ describe('buildcop', () => {
             nockIssues('nodejs-spanner', [
               {
                 // Should be referenced as #8 in snapshot.
-                title: buildcop.formatTestCase({
+                title: flakybot.formatTestCase({
                   passed: false,
                   package: 'Spanner',
                   testCase:
@@ -1238,7 +1238,7 @@ describe('buildcop', () => {
           const scopes = [
             nockIssues('nodejs-spanner', [
               {
-                title: buildcop.formatTestCase({
+                title: flakybot.formatTestCase({
                   passed: false,
                   package: 'Spanner',
                   testCase: 'should create an example database',
@@ -1248,7 +1248,7 @@ describe('buildcop', () => {
                 state: 'open,',
               },
               {
-                title: buildcop.formatGroupedTitle('Spanner'),
+                title: flakybot.formatGroupedTitle('Spanner'),
                 number: 10,
                 body: 'Group failure!',
                 state: 'open',
@@ -1273,11 +1273,11 @@ describe('buildcop', () => {
         it('does not duplicate comment on grouped issue', async () => {
           const payload = buildPayload('node_group.xml', 'nodejs-spanner');
 
-          const testCase = buildcop.groupedTestCase('Spanner');
+          const testCase = flakybot.groupedTestCase('Spanner');
           const scopes = [
             nockIssues('nodejs-spanner', [
               {
-                title: buildcop.formatGroupedTitle('Spanner'),
+                title: flakybot.formatGroupedTitle('Spanner'),
                 number: 10,
                 body: 'Group failure!',
                 state: 'open',
@@ -1285,7 +1285,7 @@ describe('buildcop', () => {
             ]),
             nockGetIssueComments('nodejs-spanner', 10, [
               {
-                body: buildcop.formatBody(testCase, '123', 'build.url'),
+                body: flakybot.formatBody(testCase, '123', 'build.url'),
               },
             ]),
           ];
@@ -1305,7 +1305,7 @@ describe('buildcop', () => {
           const scopes = [
             nockIssues('nodejs-spanner', [
               {
-                title: buildcop.formatTestCase({
+                title: flakybot.formatTestCase({
                   passed: true,
                   package: 'Spanner',
                   testCase: 'should create an example database',
@@ -1315,7 +1315,7 @@ describe('buildcop', () => {
                 state: 'open,',
               },
               {
-                title: buildcop.formatGroupedTitle('Spanner'),
+                title: flakybot.formatGroupedTitle('Spanner'),
                 number: 10,
                 body: 'Group failure!',
                 state: 'open',

@@ -11,7 +11,7 @@ assign_issues_by:
     to:
     - kvg
   - labels:
-    - 'bot: buildcop'
+    - 'bot: flakybot'
     - 'bot: do-not-merge'
     to:
     - tbp
@@ -64,7 +64,7 @@ assign_prs_by:
     to:
     - kvg
   - labels:
-    - 'bot: buildcop'
+    - 'bot: flakybot'
     - 'bot: do-not-merge'
     to:
     - tbp

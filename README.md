@@ -10,7 +10,7 @@ by Google on GitHub.
 | ---- | ----------- | ------- |
 | [auto-label] | Automatically labels issues and PRs with product, language, or directory based labels | [install][auto-label-app] |
 | [blunderbuss] | Assigns issues and PRs randomly to a specific list of users | [install][blunderbuss-app] |
-| [buildcop] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][buildcop-app] |
+| [flakybot] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][flakybot-app] |
 | [conventional-commit-lint] | PR checker that ensures that the commit messages follow conventionalcommits.org style | [install][conventional-commit-lint-app] |
 | [do-not-merge] | PR checker that ensures the `do not merge` label is not present | [install][do-not-merge-app]
 | [failurechecker] | Check for automation tasks, e.g., releases, that are in a failed state | [install][failurechecker-app] |
@@ -131,8 +131,8 @@ at the specified schedule.
 [failurechecker-app]: https://github.com/apps/failure-checker
 [label-sync]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/label-sync
 [label-sync-app]: https://github.com/apps/gcf-label-sync
-[buildcop]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop
-[buildcop-app]: https://github.com/apps/build-cop-bot
+[flakybot]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/flakybot
+[flakybot-app]: https://github.com/apps/flaky-bot
 [merge-on-green]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/merge-on-green
 [merge-on-green-app]: https://github.com/apps/gcf-merge-on-green
 [snippet-bot]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/snippet-bot

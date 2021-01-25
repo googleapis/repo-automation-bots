@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Command buildcop searches for sponge_log.xml files and publishes them to
+// Command flakybot searches for sponge_log.xml files and publishes them to
 // Pub/Sub.
 //
 // You can run it locally by running:
 //   go build
-//   ./buildcop -repo=my-org/my-repo -installation_id=123 -project=my-project
+//   ./flakybot -repo=my-org/my-repo -installation_id=123 -project=my-project
 package main
 
 import (
@@ -38,7 +38,7 @@ import (
 
 func main() {
 	log.SetFlags(0)
-	log.SetPrefix("[Buildcop] ")
+	log.SetPrefix("[FlakyBot] ")
 	log.SetOutput(os.Stderr)
 
 	repo := flag.String("repo", "", "The repo this is for. Defaults to auto-detect from Kokoro environment. If that doesn't work, if your repo is github.com/GoogleCloudPlatform/golang-samples, --repo should be GoogleCloudPlatform/golang-samples")
@@ -66,8 +66,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Println("Sending logs to Build Cop Bot...")
-	log.Println("See https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop.")
+	log.Println("Sending logs to Flaky Bot...")
+	log.Println("See https://github.com/googleapis/repo-automation-bots/tree/master/packages/flakybot.")
 
 	if ok := publish(cfg); !ok {
 		os.Exit(1)
@@ -123,7 +123,7 @@ func (cfg *config) setDefaults() (ok bool) {
 If your repo is github.com/GoogleCloudPlatform/golang-samples, --repo should be GoogleCloudPlatform/golang-samples.
 
 If your repo is not in GoogleCloudPlatform or googleapis, you must also set
---installation_id. See https://github.com/apps/build-cop-bot/.`)
+--installation_id. See https://github.com/apps/flaky-bot/.`)
 		return false
 	}
 
@@ -135,7 +135,7 @@ If your repo is not in GoogleCloudPlatform or googleapis, you must also set
 If your repo is part of GoogleCloudPlatform or googleapis and you see this error,
 file an issue at https://github.com/googleapis/repo-automation-bots/issues.
 Otherwise, set --installation_id with the numeric installation ID.
-See https://github.com/apps/build-cop-bot/.`, cfg.repo)
+See https://github.com/apps/flaky-bot/.`, cfg.repo)
 		return false
 	}
 
@@ -145,7 +145,7 @@ See https://github.com/apps/build-cop-bot/.`, cfg.repo)
 	if cfg.commit == "" {
 		log.Printf(`Unable to detect commit hash (expected the KOKORO_GIT_COMMIT env var).
 Please set --commit_hash to the latest git commit hash.
-See https://github.com/apps/build-cop-bot/.`)
+See https://github.com/apps/flaky-bot/.`)
 		return false
 	}
 
@@ -154,7 +154,7 @@ See https://github.com/apps/build-cop-bot/.`)
 		if buildID == "" {
 			log.Printf(`Unable to build URL (expected the KOKORO_BUILD_ID env var).
 Please set --build_url to the URL of the build.
-See https://github.com/apps/build-cop-bot/.`)
+See https://github.com/apps/flaky-bot/.`)
 			return false
 		}
 		cfg.buildURL = fmt.Sprintf("[Build Status](https://source.cloud.google.com/results/invocations/%s), [Sponge](http://sponge2/%s)", buildID, buildID)
@@ -237,7 +237,7 @@ func processLog(ctx context.Context, cfg *config, topic *pubsub.Topic) filepath.
 		}
 		enc := base64.StdEncoding.EncodeToString(data)
 		msg := message{
-			Name:         "buildcop",
+			Name:         "flakybot",
 			Type:         "function",
 			Location:     "us-central1",
 			Installation: githubInstallation{ID: cfg.installationID},

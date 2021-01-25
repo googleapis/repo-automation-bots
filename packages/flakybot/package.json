@@ -1,5 +1,5 @@
 {
-  "name": "buildcop",
+  "name": "flakybot",
   "version": "1.1.0",
   "description": "creates issues on GitHub for failed kokoro test cases",
   "private": true,

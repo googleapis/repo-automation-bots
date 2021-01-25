@@ -1,4 +1,4 @@
-module github.com/googleapis/repo-automation-bots/packages/buildcop
+module github.com/googleapis/repo-automation-bots/packages/flakybot
 
 go 1.14
 

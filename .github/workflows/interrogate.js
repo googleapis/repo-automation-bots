@@ -39,8 +39,8 @@ for (const change of changes) {
       nodePaths.add(change.split('/')[1]);
     }
   };
-  if (change.startsWith('packages/buildcop/')) {
-    goPaths.add('packages/buildcop')
+  if (change.startsWith('packages/flakybot/')) {
+    goPaths.add('packages/flakybot')
   }
   if (change.startsWith('serverless-scheduler-proxy/')) {
     goPaths.add('serverless-scheduler-proxy');

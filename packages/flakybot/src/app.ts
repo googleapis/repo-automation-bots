@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// buildcop.ts doesn't have the Probot app as a default export.
-// Import the app and run it directly rather than using `probot run`.
+import {GCFBootstrapper} from 'gcf-utils';
+import {flakybot} from './flakybot';
 
-// eslint-disable-next-line node/no-extraneous-import
-import {run} from 'probot';
-import {buildcop} from './buildcop';
-
-run(buildcop);
+const bootstrap = new GCFBootstrapper();
+module.exports.flakybot = bootstrap.gcf(flakybot, {
+  background: false,
+  logging: true,
+});

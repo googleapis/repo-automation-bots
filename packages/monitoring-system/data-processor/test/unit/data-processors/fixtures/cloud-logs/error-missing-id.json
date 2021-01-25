@@ -6,7 +6,7 @@
         "labels": {
             "project_id": "repo-automation-bots",
             "region": "us-central1",
-            "function_name": "buildcop"
+            "function_name": "flakybot"
         }
     },
     "timestamp": "2020-07-30T15:39:27.270Z",
