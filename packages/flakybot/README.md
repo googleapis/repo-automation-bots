@@ -1,6 +1,6 @@
-# Buildcop
+# FlakyBot
 
-The Build Cop Bot manages issues for failing tests.
+The Flaky Bot manages issues for failing tests.
 
 * If a test fails, the bot will open an issue for it.
 * If a test passes, the bot will close the corresponding issue.
@@ -28,15 +28,15 @@ Issues or feature requests? Please
 
 ### General
 
-* Add the `buildcop: quiet` label to tell the bot to comment less on a
+* Add the `flakybot: quiet` label to tell the bot to comment less on a
   particular issue.
-* If a test is detected as flaky, the bot will add the `buildcop: flaky` label,
+* If a test is detected as flaky, the bot will add the `flakybot: flaky` label,
   leave the issue open and stop commenting. A human will then have to fix and
   close the issue.
 
 ### Installation
 
-1. Install the bot on your repo. See https://github.com/apps/build-cop-bot/.
+1. Install the bot on your repo. See https://github.com/apps/flaky-bot/.
    Issues will not start being filed until you finish the rest of the steps.
 
    **Note**: if your repo is in `googleapis`, the bot is already installed.
@@ -44,13 +44,13 @@ Issues or feature requests? Please
    more than one, they can be in multiple directories, and the file names must
    end with `sponge_log.xml`.
 1. If you're _not_ already using Trampoline, add the Trampoline `gfile`
-   directory to your Kokoro job. This contains the `buildcop` binary and service
+   directory to your Kokoro job. This contains the `flakybot` binary and service
    account that will be used to publish the logs.
 
    ```
    gfile_resources: "/bigstore/cloud-devrel-kokoro-resources/trampoline"
    ```
-1. Call the `buildcop` binary for nightly/continuous tests you want issues
+1. Call the `flakybot` binary for nightly/continuous tests you want issues
    filed for.
    When you first add the bot, you may want to call the binary from the PR and
    confirm the bot works. If it doesn't work, file an issue on this repo with a
@@ -58,13 +58,13 @@ Issues or feature requests? Please
 
    ```bash
    if [[ $KOKORO_BUILD_ARTIFACTS_SUBDIR = *"continuous"* ]]; then
-     chmod +x $KOKORO_GFILE_DIR/linux_amd64/buildcop
-     $KOKORO_GFILE_DIR/linux_amd64/buildcop
+     chmod +x $KOKORO_GFILE_DIR/linux_amd64/flakybot
+     $KOKORO_GFILE_DIR/linux_amd64/flakybot
    fi
    ```
 
-   * The path can either be `linux_amd64/buildcop`, `darwin_amd64/buildcop`, or
-     `windows_amd64/buildcop.exe`.
+   * The path can either be `linux_amd64/flakybot`, `darwin_amd64/flakybot`, or
+     `windows_amd64/flakybot.exe`.
 
      File an issue and/or send a PR to update the `Makefile` if you need a
      different platform.
@@ -83,17 +83,17 @@ Issues or feature requests? Please
         will be marked as flaky. The commit is automatically detected from the
         `KOKORO_GIT_COMMIT` environment variable. If that is not set, you must
         set `-commit_hash` to the commit this build is for.
-      * **`-logs_dir`**: By default, the `buildcop` binary looks in the current
+      * **`-logs_dir`**: By default, the `flakybot` binary looks in the current
         working directory for log files (`"."`).
         If your logs are in a different directory, set `-logs_dir` to the
         absolute path to that directory. The directory is recursively searched.
-      * **`-service_account`**: By default, the `buildcop` binary looks in the
+      * **`-service_account`**: By default, the `flakybot` binary looks in the
         `KOKORO_GFILE_DIR` for the Trampoline service account. If that is not
         available (either you're running locally or not using Trampoline), you
         can set `-service_account` to the path to a service account that has
         Pub/Sub publish access to the `repo-automation-bots` topic
         `passthrough`.
-      * **`-build_url`**: By default, the `buildcop` binary uses the
+      * **`-build_url`**: By default, the `flakybot` binary uses the
         `KOKORO_BUILD_ID` environment to detect the build URLs for the build. If
         the build is not on Kokoro, use the `-build_url` flag.
         \[Markdown\](links) are accepted.
@@ -113,20 +113,20 @@ To update snapshots:
 
 `npm run test:snap`
 
-If you have suggestions for how buildcop could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
+If you have suggestions for how flakybot could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
 
 For more, check out the Contributing Guide.
 
-### buildcop.go
+### flakybot.go
 
-This command is used to make it easy for people to send logs to the Build Cop
-bot (see instructions above).
+This command is used to make it easy for people to send logs to the Flaky
+Bot (see instructions above).
 
 To build/run it locally, clone the repo, `cd` to this directory, and run:
 
 ```bash
 go build
-./buildcop -repo=my-org/my-repo -installation_id=123 -project=my-project
+./flakybot -repo=my-org/my-repo -installation_id=123 -project=my-project
 ```
 
 To deploy the script, run:

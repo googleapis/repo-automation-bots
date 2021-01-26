@@ -17,7 +17,7 @@
     "receiveTimestamp": "2020-07-30T14:44:10.511134304Z",
     "resource": {
         "labels": {
-            "function_name": "buildcop",
+            "function_name": "flakybot",
             "project_id": "repo-automation-bots",
             "region": "us-central1"
         },

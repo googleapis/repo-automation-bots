@@ -14,7 +14,7 @@
       "trace": "projects/repo-automation-bots/traces/953fff39f9f199134083061937783f72",
       "resource": {
         "labels": {
-          "function_name": "buildcop",
+          "function_name": "flakybot",
           "region": "us-central1",
           "project_id": "repo-automation-bots"
         },
