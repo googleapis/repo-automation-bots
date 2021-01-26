@@ -23,7 +23,7 @@
  */
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, Logger} from 'probot';
+import {Application, Logger} from 'probot';
 import xmljs from 'xml-js';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
@@ -104,13 +104,13 @@ export interface FlakyBotPayload {
 }
 
 interface PubSubContext {
-  octokit: Octokit;
+  github: Octokit;
   readonly event: string;
   log: Logger;
   payload: FlakyBotPayload;
 }
 
-export function flakybot(app: Probot) {
+export function flakybot(app: Application) {
   // meta comment about the 'any' here: https://github.com/octokit/webhooks.js/issues/277
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('pubsub.message' as any, async (context: PubSubContext) => {
@@ -154,14 +154,14 @@ export function flakybot(app: Probot) {
     }
 
     // Get the list of issues once, before opening/closing any of them.
-    const options = context.octokit.issues.listForRepo.endpoint.merge({
+    const options = context.github.issues.listForRepo.endpoint.merge({
       owner,
       repo,
       per_page: 100,
       labels: ISSUE_LABEL,
       state: 'all', // Include open and closed issues.
     });
-    let issues = (await context.octokit.paginate(
+    let issues = (await context.github.paginate(
       options
     )) as IssuesListForRepoResponseData;
 
@@ -169,7 +169,7 @@ export function flakybot(app: Probot) {
     if (
       await flakybot.deduplicateIssues(results, issues, context, owner, repo)
     ) {
-      issues = await context.octokit.paginate(options);
+      issues = await context.github.paginate(options);
     }
 
     // Open issues for failing tests (including flaky tests).
@@ -236,13 +236,13 @@ flakybot.deduplicateIssues = async (
       context.log.info(
         `[${owner}/${repo}] closing issue #${dup.number} as duplicate of #${issue?.number}`
       );
-      await context.octokit.issues.createComment({
+      await context.github.issues.createComment({
         owner,
         repo,
         issue_number: dup.number,
         body: `Closing as a duplicate of #${issue?.number}`,
       });
-      await context.octokit.issues.update({
+      await context.github.issues.update({
         owner,
         repo,
         issue_number: dup.number,
@@ -308,7 +308,7 @@ flakybot.openIssues = async (
         commit,
         buildURL
       )}`;
-      await context.octokit.issues.createComment({
+      await context.github.issues.createComment({
         owner,
         repo,
         issue_number: groupedIssue.number,
@@ -345,7 +345,7 @@ flakybot.openIssues = async (
           buildURL
         )}`;
       const newIssue = (
-        await context.octokit.issues.create({
+        await context.github.issues.create({
           owner,
           repo,
           title: flakybot.formatGroupedTitle(pkg),
@@ -444,7 +444,7 @@ flakybot.openIssues = async (
           continue;
         }
 
-        await context.octokit.issues.createComment({
+        await context.github.issues.createComment({
           owner,
           repo,
           issue_number: existingIssue.number,
@@ -511,7 +511,7 @@ flakybot.openNewIssue = async (
   }
   body += flakybot.formatBody(failure, commit, buildURL);
   const newIssue = (
-    await context.octokit.issues.create({
+    await context.github.issues.create({
       owner,
       repo,
       title: flakybot.formatTestCase(failure),
@@ -601,13 +601,13 @@ flakybot.closeIssues = async (
     context.log.info(
       `[${owner}/${repo}] closing issue #${issue.number}: ${issue.title}`
     );
-    await context.octokit.issues.createComment({
+    await context.github.issues.createComment({
       owner,
       repo,
       issue_number: issue.number,
       body: `Test passed for commit ${commit} (${buildURL})! Closing this issue.`,
     });
-    await context.octokit.issues.update({
+    await context.github.issues.update({
       owner,
       repo,
       issue_number: issue.number,
@@ -683,7 +683,7 @@ flakybot.markIssueFlaky = async (
     labelsToAdd = labelsToAdd.filter(l => !l.startsWith('type:'));
   }
   const labels = labelsToAdd.concat(existingLabels);
-  await context.octokit.issues.update({
+  await context.github.issues.update({
     owner,
     repo,
     issue_number: existingIssue.number,
@@ -694,7 +694,7 @@ flakybot.markIssueFlaky = async (
     ? FLAKY_AGAIN_MESSAGE
     : FLAKY_MESSAGE;
   body += '\n\n' + reason;
-  await context.octokit.issues.createComment({
+  await context.github.issues.createComment({
     owner,
     repo,
     issue_number: existingIssue.number,
@@ -730,12 +730,12 @@ flakybot.containsBuildFailure = async (
     const buildURL = flakybot.extractBuildURL(text);
     return [true, buildURL];
   }
-  const options = context.octokit.issues.listComments.endpoint.merge({
+  const options = context.github.issues.listComments.endpoint.merge({
     owner,
     repo,
     issue_number: issue.number,
   });
-  const comments = (await context.octokit.paginate(
+  const comments = (await context.github.paginate(
     options
   )) as IssuesListCommentsResponseData;
   const comment = comments.find(
