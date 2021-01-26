@@ -10,7 +10,7 @@ path:
   packages:
     auto-label: 'auto-label'
     blunderbuss: 'blunderbuss'
-    buildcop: 'buildcop'
+    flakybot: 'flakybot'
     conventional-commit-lint: 'conventional-commit-lint'
     do-not-merge: 'do-not-merge'
     failurechecker: 'failurechecker'

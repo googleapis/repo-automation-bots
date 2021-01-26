@@ -194,7 +194,7 @@ func TestDetectInstallationID(t *testing.T) {
 
 func TestJSONMarshalMessage(t *testing.T) {
 	msg := &message{
-		Name:         "buildcop",
+		Name:         "flakybot",
 		Type:         "function",
 		Location:     "us-central1",
 		Installation: githubInstallation{ID: "123"},

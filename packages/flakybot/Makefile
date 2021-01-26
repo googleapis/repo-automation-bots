@@ -19,13 +19,13 @@ DATE=`date +%Y-%m-%d_%H:%M`
 LDFLAGS=-ldflags "-X main.version=${VERSION} -X main.buildDate=${DATE}"
 
 bin:
-	rm -f ${GOPATH}/bin/buildcop
+	rm -f ${GOPATH}/bin/flakybot
 	go install ${LDFLAGS}
 
 cross:
-	GOOS=linux   GOARCH=amd64 go build ${LDFLAGS} -o bin/linux_amd64/buildcop
-	GOOS=darwin  GOARCH=amd64 go build ${LDFLAGS} -o bin/darwin_amd64/buildcop
-	GOOS=windows GOARCH=amd64 go build ${LDFLAGS} -o bin/windows_amd64/buildcop.exe
+	GOOS=linux   GOARCH=amd64 go build ${LDFLAGS} -o bin/linux_amd64/flakybot
+	GOOS=darwin  GOARCH=amd64 go build ${LDFLAGS} -o bin/darwin_amd64/flakybot
+	GOOS=windows GOARCH=amd64 go build ${LDFLAGS} -o bin/windows_amd64/flakybot.exe
 
 upload: cross
 	gsutil -m cp -r bin/* gs://cloud-devrel-kokoro-resources/trampoline/

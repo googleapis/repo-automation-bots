@@ -281,6 +281,9 @@ async function reconcileLabels(
     'kokoro:force-ci',
     'kokoro: force-run',
     'kokoro: run',
+    'buildcop: issue',
+    'buildcop: quiet',
+    'buildcop: flaky',
     'question',
   ];
   for (const l of oldLabels) {

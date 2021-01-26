@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// buildcop.ts doesn't have the Probot app as a default export.
+// flakybot.ts doesn't have the Probot app as a default export.
 // Import the app and run it directly rather than using `probot run`.
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
-import {buildcop} from './buildcop';
+import {flakybot} from './flakybot';
 
-Probot.run(buildcop);
+Probot.run(flakybot);

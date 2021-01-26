@@ -13,10 +13,10 @@
 // limitations under the License.
 
 import {GCFBootstrapper} from 'gcf-utils';
-import {buildcop} from './buildcop';
+import {flakybot} from './flakybot';
 
 const bootstrap = new GCFBootstrapper();
-module.exports.buildcop = bootstrap.gcf(buildcop, {
+module.exports.flakybot = bootstrap.gcf(flakybot, {
   background: false,
   logging: true,
 });

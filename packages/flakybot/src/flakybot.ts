@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /**
- * The build cop bot manages issues for unit tests.
+ * The flaky bot manages issues for unit tests.
  *
  * The input payload should include:
  *  - xunitXML: the base64 encoded xUnit XML log.
@@ -33,9 +33,9 @@ type IssuesListForRepoResponseItem = components['schemas']['issue-simple'];
 type IssuesListCommentsResponseData = components['schemas']['issue-comment'][];
 type IssuesListForRepoResponseData = IssuesListForRepoResponseItem[];
 
-const ISSUE_LABEL = 'buildcop: issue';
-const FLAKY_LABEL = 'buildcop: flaky';
-const QUIET_LABEL = 'buildcop: quiet';
+const ISSUE_LABEL = 'flakybot: issue';
+const FLAKY_LABEL = 'flakybot: flaky';
+const QUIET_LABEL = 'flakybot: quiet';
 const BUG_LABELS = 'type: bug,priority: p1';
 
 const LABELS_FOR_FLAKY_ISSUE = BUG_LABELS.split(',').concat([
@@ -48,9 +48,9 @@ const EVERYTHING_FAILED_TITLE = 'The build failed';
 
 const NEW_ISSUE_MESSAGE = `This test failed!
 
-To configure my behavior, see [the Build Cop Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/buildcop).
+To configure my behavior, see [the Flaky Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/flakybot).
 
-If I'm commenting on this issue too often, add the \`buildcop: quiet\` label and
+If I'm commenting on this issue too often, add the \`flakybot: quiet\` label and
 I will stop commenting.
 
 ---`;
@@ -92,7 +92,7 @@ interface TestResults {
   failures: TestCase[];
 }
 
-export interface BuildCopPayload {
+export interface FlakyBotPayload {
   repo: string;
   organization: {login: string}; // Filled in by gcf-utils.
   repository: {name: string}; // Filled in by gcf-utils.
@@ -104,14 +104,14 @@ export interface BuildCopPayload {
 }
 
 interface PubSubContext {
-  readonly event: string;
   github: Octokit;
+  readonly event: string;
   log: Logger;
-  payload: BuildCopPayload;
+  payload: FlakyBotPayload;
 }
 
-// meta comment about the 'any' here: https://github.com/octokit/webhooks.js/issues/277
-export function buildcop(app: Application) {
+export function flakybot(app: Application) {
+  // meta comment about the 'any' here: https://github.com/octokit/webhooks.js/issues/277
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('pubsub.message' as any, async (context: PubSubContext) => {
     const owner = context.payload.organization?.login;
@@ -124,7 +124,7 @@ export function buildcop(app: Application) {
     let results: TestResults;
     if (context.payload.xunitXML) {
       const xml = Buffer.from(context.payload.xunitXML, 'base64').toString();
-      results = buildcop.findTestResults(xml);
+      results = flakybot.findTestResults(xml);
     } else {
       if (context.payload.testsFailed === undefined) {
         context.log.info(
@@ -167,13 +167,13 @@ export function buildcop(app: Application) {
 
     // If we deduplicate any issues, re-download the issues.
     if (
-      await buildcop.deduplicateIssues(results, issues, context, owner, repo)
+      await flakybot.deduplicateIssues(results, issues, context, owner, repo)
     ) {
       issues = await context.github.paginate(options);
     }
 
     // Open issues for failing tests (including flaky tests).
-    await buildcop.openIssues(
+    await flakybot.openIssues(
       results.failures,
       issues,
       context,
@@ -183,7 +183,7 @@ export function buildcop(app: Application) {
       buildURL
     );
     // Close issues for passing tests (unless they're flaky).
-    await buildcop.closeIssues(
+    await flakybot.closeIssues(
       results,
       issues,
       context,
@@ -201,7 +201,7 @@ export function buildcop(app: Application) {
 // if it explicitly passes.
 // TODO: Check if open issues can be shortened? This could be helpful if we add
 // more shorteners and want "nice" management of "forgotten" issues.
-buildcop.deduplicateIssues = async (
+flakybot.deduplicateIssues = async (
   results: TestResults,
   issues: IssuesListForRepoResponseData,
   context: PubSubContext,
@@ -212,7 +212,7 @@ buildcop.deduplicateIssues = async (
   issues = issues.filter(
     issue =>
       issue.state === 'open' &&
-      tests.find(test => issue.title === buildcop.formatTestCase(test))
+      tests.find(test => issue.title === flakybot.formatTestCase(test))
   );
   const byTitle = new Map<string, IssuesListForRepoResponseData>();
   for (const issue of issues) {
@@ -229,7 +229,7 @@ buildcop.deduplicateIssues = async (
     modified = true;
     // All of the issues will be closed except for the first one. So, sort by
     // flakiness and issue number.
-    issues.sort(buildcop.issueComparator);
+    issues.sort(flakybot.issueComparator);
     // Keep the first issue, close the others.
     const issue = issues.shift();
     for (const dup of issues) {
@@ -255,7 +255,7 @@ buildcop.deduplicateIssues = async (
 };
 
 // For every failure, check if an issue is open. If not, open/reopen one.
-buildcop.openIssues = async (
+flakybot.openIssues = async (
   failures: TestCase[],
   issues: IssuesListForRepoResponseData,
   context: PubSubContext,
@@ -274,7 +274,7 @@ buildcop.openIssues = async (
   for (const [pkg, pkgFailures] of byPackage.entries()) {
     // Look for an existing group issue. If there is one, don't file a new
     // issue.
-    const groupedIssue = buildcop.findGroupedIssue(issues, pkg);
+    const groupedIssue = flakybot.findGroupedIssue(issues, pkg);
     if (groupedIssue) {
       // If a group issue exists, say stuff failed.
       // Don't comment if it's asked to be quiet.
@@ -283,12 +283,12 @@ buildcop.openIssues = async (
       }
 
       // Don't comment if it's flaky.
-      if (buildcop.isFlaky(groupedIssue)) {
+      if (flakybot.isFlaky(groupedIssue)) {
         continue;
       }
 
       // Don't comment if we've already commented with this build failure.
-      const [containsFailure] = await buildcop.containsBuildFailure(
+      const [containsFailure] = await flakybot.containsBuildFailure(
         groupedIssue,
         context,
         owner,
@@ -299,11 +299,11 @@ buildcop.openIssues = async (
         continue;
       }
 
-      const testCase = buildcop.groupedTestCase(pkg);
+      const testCase = flakybot.groupedTestCase(pkg);
       const testString = pkgFailures.length === 1 ? 'test' : 'tests';
       const body = `${
         pkgFailures.length
-      } ${testString} failed in this package for commit ${commit} (${buildURL}).\n\n-----\n${buildcop.formatBody(
+      } ${testString} failed in this package for commit ${commit} (${buildURL}).\n\n-----\n${flakybot.formatBody(
         testCase,
         commit,
         buildURL
@@ -320,9 +320,9 @@ buildcop.openIssues = async (
     // Check if 10 or more tests failed.
     if (pkgFailures.length >= 10) {
       // Open a new issue listing the failing tests.
-      const testCase = buildcop.groupedTestCase(pkg);
+      const testCase = flakybot.groupedTestCase(pkg);
       context.log.info(
-        `[${owner}/${repo}]: creating issue "${buildcop.formatTestCase(
+        `[${owner}/${repo}]: creating issue "${flakybot.formatTestCase(
           testCase
         )}"...`
       );
@@ -330,7 +330,7 @@ buildcop.openIssues = async (
       for (const failure of pkgFailures) {
         if (failure.testCase) {
           failedTestsString += '* ' + failure.testCase;
-          const existingIssue = buildcop.findExistingIssue(issues, failure);
+          const existingIssue = flakybot.findExistingIssue(issues, failure);
           if (existingIssue) {
             failedTestsString += ` (#${existingIssue.number})`;
           }
@@ -339,7 +339,7 @@ buildcop.openIssues = async (
       }
       const body =
         GROUPED_MESSAGE +
-        `Here are the tests that failed:\n${failedTestsString}\n\n-----\n${buildcop.formatBody(
+        `Here are the tests that failed:\n${failedTestsString}\n\n-----\n${flakybot.formatBody(
           testCase,
           commit,
           buildURL
@@ -348,7 +348,7 @@ buildcop.openIssues = async (
         await context.github.issues.create({
           owner,
           repo,
-          title: buildcop.formatGroupedTitle(pkg),
+          title: flakybot.formatGroupedTitle(pkg),
           body,
           labels: LABELS_FOR_NEW_ISSUE,
         })
@@ -359,9 +359,9 @@ buildcop.openIssues = async (
     // There is no grouped failure and there are <10 failing tests in this
     // package. Treat each failure independently.
     for (const failure of pkgFailures) {
-      const existingIssue = buildcop.findExistingIssue(issues, failure);
+      const existingIssue = flakybot.findExistingIssue(issues, failure);
       if (!existingIssue) {
-        await buildcop.openNewIssue(
+        await flakybot.openNewIssue(
           context,
           owner,
           repo,
@@ -379,7 +379,7 @@ buildcop.openIssues = async (
 
         // If the issue is locked, we can't reopen it, so open a new one.
         if (existingIssue.locked) {
-          await buildcop.openNewIssue(
+          await flakybot.openNewIssue(
             context,
             owner,
             repo,
@@ -401,7 +401,7 @@ buildcop.openIssues = async (
           const daysAgoDate = new Date();
           daysAgoDate.setDate(daysAgoDate.getDate() - daysAgo);
           if (closedAt < daysAgoDate.getTime()) {
-            await buildcop.openNewIssue(
+            await flakybot.openNewIssue(
               context,
               owner,
               repo,
@@ -413,8 +413,8 @@ buildcop.openIssues = async (
             continue;
           }
         }
-        const reason = buildcop.formatBody(failure, commit, buildURL);
-        await buildcop.markIssueFlaky(
+        const reason = flakybot.formatBody(failure, commit, buildURL);
+        await flakybot.markIssueFlaky(
           existingIssue,
           context,
           owner,
@@ -428,12 +428,12 @@ buildcop.openIssues = async (
         }
 
         // Don't comment if it's flaky.
-        if (buildcop.isFlaky(existingIssue)) {
+        if (flakybot.isFlaky(existingIssue)) {
           continue;
         }
 
         // Don't comment if we've already commented with this build failure.
-        const [containsFailure] = await buildcop.containsBuildFailure(
+        const [containsFailure] = await flakybot.containsBuildFailure(
           existingIssue,
           context,
           owner,
@@ -448,25 +448,25 @@ buildcop.openIssues = async (
           owner,
           repo,
           issue_number: existingIssue.number,
-          body: buildcop.formatBody(failure, commit, buildURL),
+          body: flakybot.formatBody(failure, commit, buildURL),
         });
       }
     }
   }
 };
 
-buildcop.findGroupedIssue = (
+flakybot.findGroupedIssue = (
   issues: IssuesListForRepoResponseData,
   pkg: string
 ): IssuesListForRepoResponseItem | undefined => {
   // Don't reopen grouped issues.
   return issues.find(
     issue =>
-      issue.title === buildcop.formatGroupedTitle(pkg) && issue.state === 'open'
+      issue.title === flakybot.formatGroupedTitle(pkg) && issue.state === 'open'
   );
 };
 
-buildcop.findExistingIssue = (
+flakybot.findExistingIssue = (
   issues: IssuesListForRepoResponseData,
   failure: TestCase
 ): IssuesListForRepoResponseItem | undefined => {
@@ -474,7 +474,7 @@ buildcop.findExistingIssue = (
   // failed" issue. If the "everything failed" issue is already open, leave it
   // open.
   const matchingIssues = issues.filter(
-    issue => issue.title === buildcop.formatTestCase(failure)
+    issue => issue.title === flakybot.formatTestCase(failure)
   );
   // Prefer open issues in case there are duplicates. There should only be at
   // most one open issue.
@@ -483,15 +483,15 @@ buildcop.findExistingIssue = (
   if (
     matchingIssues.length > 0 &&
     !existingIssue &&
-    buildcop.formatTestCase(failure) !== EVERYTHING_FAILED_TITLE
+    flakybot.formatTestCase(failure) !== EVERYTHING_FAILED_TITLE
   ) {
-    matchingIssues.sort(buildcop.issueComparator);
+    matchingIssues.sort(flakybot.issueComparator);
     existingIssue = matchingIssues[0];
   }
   return existingIssue;
 };
 
-buildcop.openNewIssue = async (
+flakybot.openNewIssue = async (
   context: PubSubContext,
   owner: string,
   repo: string,
@@ -501,7 +501,7 @@ buildcop.openNewIssue = async (
   extraText?: string
 ) => {
   context.log.info(
-    `[${owner}/${repo}]: creating issue "${buildcop.formatTestCase(
+    `[${owner}/${repo}]: creating issue "${flakybot.formatTestCase(
       failure
     )}"...`
   );
@@ -509,12 +509,12 @@ buildcop.openNewIssue = async (
   if (extraText) {
     body = extraText + '\n\n----\n\n';
   }
-  body += buildcop.formatBody(failure, commit, buildURL);
+  body += flakybot.formatBody(failure, commit, buildURL);
   const newIssue = (
     await context.github.issues.create({
       owner,
       repo,
-      title: buildcop.formatTestCase(failure),
+      title: flakybot.formatTestCase(failure),
       body,
       labels: LABELS_FOR_NEW_ISSUE,
     })
@@ -522,9 +522,9 @@ buildcop.openNewIssue = async (
   context.log.info(`[${owner}/${repo}]: created issue #${newIssue.number}`);
 };
 
-// For every buildcop issue, if it's not flaky and it passed and it didn't
+// For every flakybot issue, if it's not flaky and it passed and it didn't
 // previously fail in the same build, close it.
-buildcop.closeIssues = async (
+flakybot.closeIssues = async (
   results: TestResults,
   issues: IssuesListForRepoResponseData,
   context: PubSubContext,
@@ -539,7 +539,7 @@ buildcop.closeIssues = async (
     }
 
     const failure = results.failures.find(failure => {
-      return issue.title === buildcop.formatTestCase(failure);
+      return issue.title === flakybot.formatTestCase(failure);
     });
     // If the test failed, don't close its issue.
     if (failure) {
@@ -549,7 +549,7 @@ buildcop.closeIssues = async (
     const groupedFailure = results.failures.find(failure => {
       return (
         failure.package &&
-        issue.title === buildcop.formatGroupedTitle(failure.package)
+        issue.title === flakybot.formatGroupedTitle(failure.package)
       );
     });
     // If this is a group issue and a test failed in the package, don't close.
@@ -562,9 +562,9 @@ buildcop.closeIssues = async (
       // issue with at least one pass (and no failures, given the groupedFailure
       // check above).
       return (
-        issue.title === buildcop.formatTestCase(pass) ||
+        issue.title === flakybot.formatTestCase(pass) ||
         (pass.package &&
-          issue.title === buildcop.formatGroupedTitle(pass.package))
+          issue.title === flakybot.formatGroupedTitle(pass.package))
       );
     });
     // If the test did not pass, don't close its issue.
@@ -573,7 +573,7 @@ buildcop.closeIssues = async (
     }
 
     // Don't close flaky issues.
-    if (buildcop.isFlaky(issue)) {
+    if (flakybot.isFlaky(issue)) {
       context.log.info(
         `[${owner}/${repo}] #${issue.number} passed, but it's flaky, so I'm not closing it`
       );
@@ -582,7 +582,7 @@ buildcop.closeIssues = async (
 
     // If the issue has a failure in the same build, don't close it.
     // If it passed in one build and failed in another, it's flaky.
-    const [containsFailure, failureURL] = await buildcop.containsBuildFailure(
+    const [containsFailure, failureURL] = await flakybot.containsBuildFailure(
       issue,
       context,
       owner,
@@ -591,7 +591,7 @@ buildcop.closeIssues = async (
     );
     if (containsFailure) {
       const reason = `When run at the same commit (${commit}), this test passed in one build (${buildURL}) and failed in another build (${failureURL}).`;
-      await buildcop.markIssueFlaky(issue, context, owner, repo, reason);
+      await flakybot.markIssueFlaky(issue, context, owner, repo, reason);
       break;
     }
 
@@ -616,7 +616,7 @@ buildcop.closeIssues = async (
   }
 };
 
-buildcop.issueComparator = (
+flakybot.issueComparator = (
   a: IssuesListForRepoResponseItem,
   b: IssuesListForRepoResponseItem
 ) => {
@@ -627,10 +627,10 @@ buildcop.issueComparator = (
     return 1;
   }
   // The issues are either both open or both not-open.
-  if (buildcop.isFlaky(a) && !buildcop.isFlaky(b)) {
+  if (flakybot.isFlaky(a) && !flakybot.isFlaky(b)) {
     return -1;
   }
-  if (!buildcop.isFlaky(a) && buildcop.isFlaky(b)) {
+  if (!flakybot.isFlaky(a) && flakybot.isFlaky(b)) {
     return 1;
   }
   const aClose = parseClosedAt(a.closed_at);
@@ -641,7 +641,7 @@ buildcop.issueComparator = (
   return a.number - b.number; // Earlier issue number first.
 };
 
-buildcop.isFlaky = (issue: IssuesListForRepoResponseItem): boolean => {
+flakybot.isFlaky = (issue: IssuesListForRepoResponseItem): boolean => {
   return hasLabel(issue, FLAKY_LABEL);
 };
 
@@ -660,7 +660,7 @@ function hasLabel(
   return false;
 }
 
-buildcop.markIssueFlaky = async (
+flakybot.markIssueFlaky = async (
   existingIssue: IssuesListForRepoResponseItem,
   context: PubSubContext,
   owner: string,
@@ -672,7 +672,7 @@ buildcop.markIssueFlaky = async (
   );
   const existingLabels = existingIssue.labels
     ?.map(l => l.name as string) // "as string" is workaround for https://github.com/github/rest-api-description/issues/112
-    .filter(l => !l.startsWith('buildcop'));
+    .filter(l => !l.startsWith('flakybot'));
   let labelsToAdd = LABELS_FOR_FLAKY_ISSUE;
   // If existingLabels contains a priority or type label, don't add the
   // default priority and type labels.
@@ -690,7 +690,7 @@ buildcop.markIssueFlaky = async (
     labels,
     state: 'open',
   });
-  let body = buildcop.isFlaky(existingIssue)
+  let body = flakybot.isFlaky(existingIssue)
     ? FLAKY_AGAIN_MESSAGE
     : FLAKY_MESSAGE;
   body += '\n\n' + reason;
@@ -702,7 +702,7 @@ buildcop.markIssueFlaky = async (
   });
 };
 
-buildcop.formatBody = (
+flakybot.formatBody = (
   testCase: TestCase,
   commit: string,
   buildURL: string
@@ -718,7 +718,7 @@ status: ${testCase.passed ? 'passed' : 'failed'}`;
   return body;
 };
 
-buildcop.containsBuildFailure = async (
+flakybot.containsBuildFailure = async (
   issue: IssuesListForRepoResponseItem,
   context: PubSubContext,
   owner: string,
@@ -727,7 +727,7 @@ buildcop.containsBuildFailure = async (
 ): Promise<[boolean, string]> => {
   const text = issue.body as string; // "as string" because it's complicated: https://github.com/github/rest-api-description/issues/113
   if (text.includes(`commit: ${commit}`) && text.includes('status: failed')) {
-    const buildURL = buildcop.extractBuildURL(text);
+    const buildURL = flakybot.extractBuildURL(text);
     return [true, buildURL];
   }
   const options = context.github.issues.listComments.endpoint.merge({
@@ -746,12 +746,12 @@ buildcop.containsBuildFailure = async (
   const containsFailure = comment !== undefined;
   let buildURL = '';
   if (comment) {
-    buildURL = buildcop.extractBuildURL(comment.body!);
+    buildURL = flakybot.extractBuildURL(comment.body!);
   }
   return [containsFailure, buildURL];
 };
 
-buildcop.extractBuildURL = (body: string): string => {
+flakybot.extractBuildURL = (body: string): string => {
   if (!body) {
     return '';
   }
@@ -762,7 +762,7 @@ buildcop.extractBuildURL = (body: string): string => {
   return matches[1];
 };
 
-buildcop.formatTestCase = (failure: TestCase): string => {
+flakybot.formatTestCase = (failure: TestCase): string => {
   if (!failure.package || !failure.testCase) {
     return EVERYTHING_FAILED_TITLE;
   }
@@ -799,7 +799,7 @@ buildcop.formatTestCase = (failure: TestCase): string => {
   return `${pkg}: ${name} failed`;
 };
 
-buildcop.groupedTestCase = (pkg: string): TestCase => {
+flakybot.groupedTestCase = (pkg: string): TestCase => {
   return {
     passed: false,
     package: pkg,
@@ -807,11 +807,11 @@ buildcop.groupedTestCase = (pkg: string): TestCase => {
   };
 };
 
-buildcop.formatGroupedTitle = (pkg: string): string => {
-  return buildcop.formatTestCase(buildcop.groupedTestCase(pkg));
+flakybot.formatGroupedTitle = (pkg: string): string => {
+  return flakybot.formatTestCase(flakybot.groupedTestCase(pkg));
 };
 
-buildcop.findTestResults = (xml: string): TestResults => {
+flakybot.findTestResults = (xml: string): TestResults => {
   const obj = xmljs.xml2js(xml, {compact: true}) as xmljs.ElementCompact;
   const failures: TestCase[] = [];
   const passes: TestCase[] = [];
@@ -882,7 +882,7 @@ buildcop.findTestResults = (xml: string): TestResults => {
 function deduplicateTests(tests: TestCase[]): TestCase[] {
   const uniqueTests = new Map<string, TestCase>();
   tests.forEach(test => {
-    uniqueTests.set(buildcop.formatTestCase(test), test);
+    uniqueTests.set(flakybot.formatTestCase(test), test);
   });
   return Array.from(uniqueTests.values());
 }

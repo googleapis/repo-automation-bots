@@ -156,18 +156,18 @@
       "color": "800080"
     },
     {
-      "name": "buildcop: issue",
-      "description": "An issue filed by the Build Cop Bot. Should not be added manually.",
+      "name": "flakybot: issue",
+      "description": "An issue filed by the Flaky Bot. Should not be added manually.",
       "color": "a9f9f7"
     },
     {
-      "name": "buildcop: flaky",
-      "description": "Tells the Build Cop Bot not to close or comment on this issue.",
+      "name": "flakybot: flaky",
+      "description": "Tells the Flaky Bot not to close or comment on this issue.",
       "color": "86d9d7"
     },
     {
-      "name": "buildcop: quiet",
-      "description": "Tells the Build Cop Bot to comment less.",
+      "name": "flakybot: quiet",
+      "description": "Tells the Flaky Bot to comment less.",
       "color": "86d9d7"
     },
     {

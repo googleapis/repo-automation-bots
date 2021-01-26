@@ -9,7 +9,7 @@
 
 packages/auto-label/*                 @googleapis/github-automation @nicoleczhu @sofisl
 packages/blunderbuss/*                @googleapis/github-automation @kurtisvg
-packages/buildcop/*                   @googleapis/github-automation @tbp
+packages/flakybot/*                   @googleapis/github-automation @tbp
 packages/conventional-commit-lint/*   @googleapis/github-automation @bcoe
 packages/do-not-merge/*               @googleapis/github-automation @tbp
 packages/failurechecker/*             @googleapis/github-automation @bcoe

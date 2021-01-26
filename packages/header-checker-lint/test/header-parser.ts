@@ -22,6 +22,17 @@ import {detectLicenseHeader} from '../src/header-parser';
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 describe('detectLicenseHeader', () => {
+  it('should handle reference mit header', async () => {
+    const contents = fs.readFileSync(
+      resolve(fixturesPath, './mit-header.txt'),
+      'utf-8'
+    );
+    const header = detectLicenseHeader(contents);
+    assert.strictEqual(header.copyright, 'Google LLC');
+    assert.strictEqual(header.year, 2020);
+    assert.strictEqual(header.type, 'MIT');
+  });
+
   it('should handle c-style comments', async () => {
     const contents = fs.readFileSync(
       resolve(fixturesPath, './c-style-header.txt'),
