@@ -25,7 +25,7 @@ cd "$TEST_WORKDIR"
 if [ ! -d "googleapis" ] ; then
     # Git clone returns an error code because config user.email is not set.
     # There's no way to set it for the repo and clone it at the same time.  :-/
-    # || true effectively ignares the error.
+    # || true effectively ignores the error.
     git clone https://github.com/googleapis/googleapis || true
     git -C googleapis config user.email "test@example.com"
     git -C googleapis config user.name "Testy McTestFace"
