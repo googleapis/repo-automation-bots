@@ -14,6 +14,7 @@
 
 import myProbotApp from '../src/canary-bot';
 import {resolve} from 'path';
+/* eslint-disable-next-line node/no-extraneous-import */
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import nock from 'nock';
 import {describe, it, beforeEach} from 'mocha';
