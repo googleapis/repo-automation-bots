@@ -16,4 +16,6 @@ steps:
   - name: 'gcr.io/repo-automation-bots/bazel-bot'
     env:
       - 'BAZEL_FLAGS=--google_default_credentials --remote_cache=https://storage.googleapis.com/repo-automation-bots-bazel-cache'
-      # TODO: set env vars GITHUB_APP_SECRET, GITHUB_APP_ID, and GITHUB_APP_INSTALLATION_ID.
+      - 'GITHUB_APP_INSTALLATION_ID=14395202'
+      - 'GITHUB_APP_ID=97063'
+      # TODO: set env vars GITHUB_APP_SECRET
