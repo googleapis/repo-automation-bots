@@ -27,7 +27,8 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "^7.0.0"
+    "gcf-utils": "^7.0.0",
+    "probot": "^11.0.5"
   },
   "devDependencies": {
     "@types/mocha": "^8.0.0",

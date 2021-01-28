@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 import myProbotApp from '../src/canary-bot';
 import {resolve} from 'path';
 import {Probot, createProbot, ProbotOctokit} from 'probot';
@@ -26,14 +25,16 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 describe('canary-bot', () => {
   let probot: Probot;
 
-  beforeEach(async() => {
-    probot = createProbot({defaults: {
-      githubToken: 'abc123',
-      Octokit: ProbotOctokit.defaults({
-        retry: {enabled: false},
-        throttle: {enabled: false},
-      }),
-    }});
+  beforeEach(async () => {
+    probot = createProbot({
+      defaults: {
+        githubToken: 'abc123',
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
+      },
+    });
     await probot.load(myProbotApp);
   });
 
@@ -42,13 +43,16 @@ describe('canary-bot', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
       const requests = nock('https://api.github.com')
         .post('/repos/testuser2/testRepo/issues/5/comments')
-        .reply(200)
+        .reply(200);
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       requests.done();
     });
 
     it('does not add a comment if the title is wrong', async () => {
-      const payload = require(resolve(fixturesPath, './events/issue_opened_wrong_title'));
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened_wrong_title'
+      ));
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
     });
   });

@@ -15,22 +15,29 @@
 import {Probot} from 'probot';
 import * as fs from 'fs';
 import {resolve} from 'path';
-import { logger } from 'gcf-utils';
+import {logger} from 'gcf-utils';
 
-const packageJsonFile = fs.readFileSync(resolve(__dirname, '../../package.json'), 'utf-8');
+const packageJsonFile = fs.readFileSync(
+  resolve(__dirname, '../../package.json'),
+  'utf-8'
+);
 const packageJson = JSON.parse(packageJsonFile);
 
 export = (app: Probot) => {
   app.on(['issues.opened'], async context => {
-    if(context.payload.issue.title.includes('canary-bot test')) {
+    if (context.payload.issue.title.includes('canary-bot test')) {
       await context.octokit.issues.createComment({
         owner: context.payload.issue.user.login,
         repo: context.payload.repository.name,
         issue_number: context.payload.issue.number,
-        body: `The dependencies and their versions are: ${JSON.stringify(packageJson.dependencies)}`,
-      })
+        body: `The dependencies and their versions are: ${JSON.stringify(
+          packageJson.dependencies
+        )}`,
+      });
     } else {
-      logger.info('The bot is skipping this issue because the title does not include canary-bot test');
+      logger.info(
+        'The bot is skipping this issue because the title does not include canary-bot test'
+      );
     }
   });
 };
