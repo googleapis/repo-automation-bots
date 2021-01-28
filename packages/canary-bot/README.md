@@ -2,7 +2,9 @@
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
 
-This bot uses nock for mocking requests to GitHub, and snap-shot-it for capturing responses; This allows updates to the API surface to be treated as a visual diff, rather than tediously asserting against each field.
+This bot provides a testing ground for changes to other bots. Principally, it allows us to test and deploy changes to gcf-utils and other harness frameworks before deploying it to our bots.
+
+The bot's only functionality is to respond to an issue in which the title includes 'canary-bot test' with the bots list of current dependencies.
 
 ## Running tests:
 

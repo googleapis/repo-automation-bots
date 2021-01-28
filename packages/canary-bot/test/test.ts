@@ -26,9 +26,6 @@ nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-// const packageJsonFile = fs.readFileSync(resolve(__dirname, '.../package.json'), 'utf-8');
-// const packageJson = JSON.parse(packageJsonFile);
-
 describe('canary-bot', () => {
   let probot: Probot;
 
