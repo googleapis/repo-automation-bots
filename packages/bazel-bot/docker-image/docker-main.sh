@@ -19,5 +19,7 @@ git config --global user.name "Bazel Bot"
 git clone https://github.com/googleapis/googleapis.git
 git clone https://github.com/googleapis/googleapis-gen.git
 
-bash -x generate-googleapis-gen.sh
+mydir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+bash -x "$mydir/generate-googleapis-gen.sh"
 
