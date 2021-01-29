@@ -15,7 +15,7 @@
 steps:
 - name: 'gcr.io/cloud-builders/gcloud'
   entrypoint: 'bash'
-  args: [ '-c', "gcloud secrets versions access latest --secret=bazel_bot_github_key --format='get(payload.data)' | tr '_-' '/+' | base64 -d > bazel-bot-github-key.pem" ]
+  args: [ '-c', "gcloud secrets versions access latest --secret=bazel_bot_github_key --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/bazel-bot-github-key.pem" ]
 
 - name: 'gcr.io/repo-automation-bots/bazel-bot'
   env:
