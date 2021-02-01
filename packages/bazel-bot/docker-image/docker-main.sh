@@ -13,11 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -e
+
 git config --global user.email "bazel-bot-development[bot]@users.noreply.github.com"
 git config --global user.name "Bazel Bot"
 
 git clone https://github.com/googleapis/googleapis.git
 git clone https://github.com/googleapis/googleapis-gen.git
 
-bash -x generate-googleapis-gen.sh
+mydir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+bash -x "$mydir/generate-googleapis-gen.sh"
 
