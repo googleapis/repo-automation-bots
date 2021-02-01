@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +13,7 @@
 // limitations under the License.
 import * as assert from 'assert';
 import {core} from '../src/core';
-// eslint-disable-next-line node/no-unpublished-import
 import * as sinon from 'sinon';
-// eslint-disable-next-line node/no-unpublished-import
 import {describe, it, beforeEach, afterEach} from 'mocha';
 
 import * as protos from '@google-cloud/cloudbuild/build/protos/protos';
@@ -49,6 +46,7 @@ describe('core', () => {
           return prData;
         },
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any) as InstanceType<typeof Octokit>);
   });
   afterEach(() => {
@@ -95,6 +93,7 @@ describe('core', () => {
         getBuild() {
           return [successfulBuild];
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any) as CloudBuildClient);
       const build = await core.triggerBuild({
         image: 'node@abc123',
@@ -141,6 +140,7 @@ describe('core', () => {
         getBuild() {
           return [successfulBuild];
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any) as CloudBuildClient);
       const build = await core.triggerBuild({
         image: 'node@abc123',
@@ -189,6 +189,7 @@ describe('core', () => {
             return content;
           },
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any) as InstanceType<typeof Octokit>;
       const lock = await core.getOwlBotLock('bcoe/test', 22, octokit);
       assert.strictEqual(lock.docker.image, 'node');
@@ -228,6 +229,7 @@ describe('core', () => {
             return content;
           },
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any) as InstanceType<typeof Octokit>;
       assert.rejects(async () => {
         await core.getOwlBotLock('bcoe/test', 22, octokit);

@@ -111,8 +111,7 @@ export async function triggerBuild(
     triggerId: args.trigger,
     source: {
       projectId: project,
-      // TODO: switch this to the main branch before we merge:
-      branchName: 'owlbot',
+      branchName: 'master',
       substitutions: {
         _GITHUB_TOKEN: token.token,
         _PR: args.pr.toString(),

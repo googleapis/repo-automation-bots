@@ -95,7 +95,7 @@ describe('OwlBotPostProcessor', () => {
     const config = `docker:
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
-    nock('https://api.github.com')
+    const githubMock = nock('https://api.github.com')
       .get('/repos/bcoe/owl-bot-testing/pulls/')
       .reply(200, payload.pull_request)
       .get(
@@ -114,5 +114,6 @@ describe('OwlBotPostProcessor', () => {
     await probot.receive({name: 'pull_request', payload, id: 'abc123'});
     sandbox.assert.calledOnce(triggerBuildStub);
     sandbox.assert.calledOnce(createCheckStub);
+    githubMock.done();
   });
 });
