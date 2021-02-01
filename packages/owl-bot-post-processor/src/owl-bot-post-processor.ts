@@ -17,18 +17,24 @@ import {Probot} from 'probot';
 import {logger} from 'gcf-utils';
 import {core} from '../src/core';
 
-// The following environment variables must be set in the deployment:
-if (!process.env.APP_ID) throw Error('must set APP_ID');
-const appId = Number(process.env.APP_ID);
-if (!process.env.GCLOUD_PROJECT) throw Error('must set GCLOUD_PROJECT');
-const project: string = process.env.GCLOUD_PROJECT;
-if (!process.env.GITHUB_PRIVATE_KEY) throw Error('must set GITHUB_PRIVATE_KEY');
-const privateKey: string = process.env.GITHUB_PRIVATE_KEY;
-if (!process.env.CLOUD_BUILD_TRIGGER)
-  throw Error('must set CLOUD_BUILD_TRIGGER');
-const trigger: string = process.env.CLOUD_BUILD_TRIGGER;
+export = (privateKey: string | undefined, app: Probot) => {
+  // Fail fast if the Cloud Function doesn't have its environment configured:
+  if (!process.env.APP_ID) {
+    throw Error('must set APP_ID');
+  }
+  const appId = Number(process.env.APP_ID);
+  if (!process.env.PROJECT_ID) {
+    throw Error('must set PROJECT_ID');
+  }
+  const project: string = process.env.PROJECT_ID;
+  if (!process.env.CLOUD_BUILD_TRIGGER) {
+    throw Error('must set CLOUD_BUILD_TRIGGER');
+  }
+  const trigger: string = process.env.CLOUD_BUILD_TRIGGER;
+  if (!privateKey) {
+    throw Error('GitHub app private key must be provided');
+  }
 
-export = (app: Probot) => {
   app.on('pull_request', async context => {
     // If the pull request is from a fork, the label "owlbot:run" must be
     // added by a maintainer to trigger the post processor:

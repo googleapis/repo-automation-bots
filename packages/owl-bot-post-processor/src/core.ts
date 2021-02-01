@@ -91,7 +91,7 @@ export async function triggerBuild(
     args.appId,
     args.installation
   );
-  const project = args.project || process.env.GOOGLE_CLOUD_PROJECT;
+  const project = args.project || process.env.PROJECT_ID;
   if (!project) {
     throw Error('gcloud project must be provided');
   }

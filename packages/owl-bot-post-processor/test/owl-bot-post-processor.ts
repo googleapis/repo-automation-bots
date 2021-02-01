@@ -12,17 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(@bcoe): some of these keys are required by gcf-utils already,
-// make sure we use the same name:
-process.env.APP_ID = '1234354';
-process.env.GCLOUD_PROJECT = 'foo-project';
-process.env.GITHUB_PRIVATE_KEY = 'abc123';
-process.env.CLOUD_BUILD_TRIGGER = 'aef1e540-d401-4b85-8127-b72b5993c20d';
-
 import {core} from '../src/core';
 import {describe, it, beforeEach} from 'mocha';
 import {logger} from 'gcf-utils';
-import OwlBotPostProcessor from '../src/owl-bot-post-processor';
+import owlBotPostProcessor from '../src/owl-bot-post-processor';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import * as sinon from 'sinon';
@@ -34,6 +27,11 @@ const sandbox = sinon.createSandbox();
 describe('OwlBotPostProcessor', () => {
   let probot: Probot;
   beforeEach(() => {
+    sinon.stub(process, 'env').value({
+      APP_ID: '1234354',
+      PROJECT_ID: 'foo-project',
+      CLOUD_BUILD_TRIGGER: 'aef1e540-d401-4b85-8127-b72b5993c20d',
+    });
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
@@ -43,7 +41,9 @@ describe('OwlBotPostProcessor', () => {
         }),
       },
     });
-    probot.load(OwlBotPostProcessor);
+    probot.load((app: Probot) => {
+      owlBotPostProcessor('abc123', app);
+    });
   });
   afterEach(() => {
     sandbox.restore();
