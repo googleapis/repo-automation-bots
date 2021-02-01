@@ -36,8 +36,7 @@ export = (app: Probot) => {
     const base = context.payload.pull_request.base;
     const installation = context.payload.installation?.id;
     if (!installation) {
-      logger.error(`no installation token found for ${head.repo.full_name}`);
-      return;
+      throw Error(`no installation token found for ${head.repo.full_name}`);
     }
     if (head.repo.full_name !== base.repo.full_name) {
       logger.info(

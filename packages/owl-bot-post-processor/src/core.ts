@@ -71,6 +71,9 @@ interface Token {
   repository_selection: string;
 }
 
+// The .github/.OwlBot.lock.yaml is stored on each repository that OwlBot
+// is configured for, and indicates the docker container that should be run
+// for post processing:
 export interface OwlBotLock {
   docker: {
     image: string;
@@ -112,7 +115,7 @@ export async function triggerBuild(
       branchName: 'owlbot',
       substitutions: {
         _GITHUB_TOKEN: token.token,
-        _PR: `${args.pr}`,
+        _PR: args.pr.toString(),
         _PR_BRANCH: prData.head.ref,
         _PR_OWNER: prOwner,
         _REPOSITORY: prRepo,
@@ -296,17 +299,25 @@ function getCloudBuildInstance() {
   return new CloudBuildClient();
 }
 
+/*
+ * Load OwlBot lock file from .github/.OwlBot.lock.yaml.
+ * TODO(bcoe): abstract into common helper that supports .yml.
+ *
+ * @param {string} repoFull - repo in org/repo format.
+ * @param {number} pullNumber - pull request to base branch on.
+ * @param {OctokitType} octokit - authenticated instance of Octokit.
+ */
 const owlBotLockPath = '.github/.OwlBot.lock.yaml';
 export async function getOwlBotLock(
   repoFull: string,
-  pull_number: number,
+  pullNumber: number,
   octokit: OctokitType
 ): Promise<OwlBotLock> {
   const [owner, repo] = repoFull.split('/');
   const {data: prData} = await octokit.pulls.get({
     owner,
     repo,
-    pull_number,
+    pull_number: pullNumber,
   });
   const configRaw = (
     await octokit.repos.getContent({
@@ -326,14 +337,20 @@ export async function getOwlBotLock(
     'utf8'
   );
   const maybeOwlBotLock = load(configString);
-  if (isOwlBotLock(maybeOwlBotLock)) {
+  if (assertIsOwlBotLock(maybeOwlBotLock)) {
     return maybeOwlBotLock;
   } else {
     throw Error(`invalid config ${owlBotLockPath} in ${repoFull}`);
   }
 }
 
-function isOwlBotLock(
+/*
+ * Given a JavaScript object, asserts that it contains the appropriate keys
+ * for .OwlBot.lock.yaml.
+ *
+ * @param {object} maybeOwlBotLock - object to validate.
+ */
+function assertIsOwlBotLock(
   maybeOwlBotLock: YAMLParseResponse
 ): maybeOwlBotLock is OwlBotLock {
   if (typeof maybeOwlBotLock !== 'object') {

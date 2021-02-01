@@ -36,7 +36,6 @@
     "@types/js-yaml": "^4.0.0",
     "@types/jsonwebtoken": "^8.5.0",
     "@types/mocha": "^8.2.0",
-    "@types/nock": "^11.1.0",
     "@types/node": "^14.14.20",
     "@types/sinon": "^9.0.10",
     "@types/yargs": "^15.0.12",
