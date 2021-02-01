@@ -231,9 +231,7 @@ describe('core', () => {
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any) as InstanceType<typeof Octokit>;
-      assert.rejects(async () => {
-        await core.getOwlBotLock('bcoe/test', 22, octokit);
-      }, /batman/);
+      assert.rejects(core.getOwlBotLock('bcoe/test', 22, octokit), /batman/);
     });
   });
 });
