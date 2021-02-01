@@ -4,6 +4,9 @@
   "description": "keep pull requests up-to-date with generated code",
   "bin": "./build/src/bin/owl-bot.js",
   "main": "build/src/index.js",
+  "files": [
+    "build/src"
+  ],
   "engines": {
     "node": ">=10.0.0"
   },
