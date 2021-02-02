@@ -1,8 +1,9 @@
 {
-    "name": "repo-automation-bots",
-    "name_pretty": "Repo Automation Bots",
-    "release_level": "beta",
-    "language": "nodejs",
-    "repo": "googleapis/repo-automation-bots",
-    "distribution_name": "repo-automation-bots"
-  }
+  "name": "repo-automation-bots",
+  "name_pretty": "Repo Automation Bots",
+  "release_level": "beta",
+  "language": "nodejs",
+  "repo": "googleapis/repo-automation-bots",
+  "distribution_name": "repo-automation-bots",
+  "codeowner_team": "@googleapis/github-automation"
+}
