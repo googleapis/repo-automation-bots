@@ -130,7 +130,6 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         # Commit changes and push them.
         git -C "$GOOGLEAPIS_GEN" commit -F "$(realpath commit-msg.txt)"
         git -C "$GOOGLEAPIS_GEN" tag "googleapis-$sha"
-        git -C "$GOOGLEAPIS_GEN" pull
         git -C "$GOOGLEAPIS_GEN" push origin
         git -C "$GOOGLEAPIS_GEN" push origin "googleapis-$sha"
     fi
