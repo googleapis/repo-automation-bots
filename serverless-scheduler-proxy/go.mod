@@ -3,11 +3,7 @@ module github.com/googleapis/repo-automation-bots/serverless-scheduler-proxy
 go 1.12
 
 require (
-	cloud.google.com/go v0.75.0
-	cloud.google.com/go/storage v1.10.0
-	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
+	cloud.google.com/go v0.76.0
 	github.com/google/uuid v1.2.0
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
-	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6 // indirect
-	google.golang.org/genproto v0.0.0-20210125195502-f46fe6c6624a
+	google.golang.org/genproto v0.0.0-20210202153253-cf70463f6119
 )

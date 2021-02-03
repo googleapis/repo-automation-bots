@@ -11,35 +11,36 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import {load} from 'js-yaml';
 import {sign} from 'jsonwebtoken';
-import {promisify} from 'util';
-import {readFile} from 'fs';
 import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {ProbotOctokit} from 'probot';
 
-const readFileAsync = promisify(readFile);
 type OctokitType =
   | InstanceType<typeof Octokit>
   | InstanceType<typeof ProbotOctokit>;
 
-export interface BuildArgs {
-  'pem-path': string;
-  'app-id': number;
-  installation: string;
+type YAMLParseResponse = string | number | object | null | undefined;
+
+interface BuildArgs {
+  image: string;
+  privateKey: string;
+  appId: number;
+  installation: number;
   repo: string;
-  pr: string;
+  pr: number;
   project?: string;
   trigger: string;
 }
 
 export interface CheckArgs {
-  'pem-path': string;
-  'app-id': number;
-  installation: string;
-  pr: string;
+  privateKey: string;
+  appId: number;
+  installation: number;
+  pr: number;
   repo: string;
   summary: string;
   conclusion: 'success' | 'failure';
@@ -48,9 +49,9 @@ export interface CheckArgs {
 }
 
 interface AuthArgs {
-  'pem-path': string;
-  'app-id': number;
-  installation: string;
+  privateKey: string;
+  appId: number;
+  installation: number;
 }
 
 interface BuildResponse {
@@ -70,17 +71,27 @@ interface Token {
   repository_selection: string;
 }
 
+// The .github/.OwlBot.lock.yaml is stored on each repository that OwlBot
+// is configured for, and indicates the docker container that should be run
+// for post processing:
+export interface OwlBotLock {
+  docker: {
+    image: string;
+    digest: string;
+  };
+}
+
 export async function triggerBuild(
   args: BuildArgs,
   octokit?: OctokitType,
   logger = console
 ): Promise<BuildResponse> {
   const token = await core.getGitHubShortLivedAccessToken(
-    args['pem-path'],
-    args['app-id'],
+    args.privateKey,
+    args.appId,
     args.installation
   );
-  const project = args.project || process.env.GOOGLE_CLOUD_PROJECT;
+  const project = args.project || process.env.PROJECT_ID;
   if (!project) {
     throw Error('gcloud project must be provided');
   }
@@ -92,7 +103,7 @@ export async function triggerBuild(
   const {data: prData} = await octokit.pulls.get({
     owner,
     repo,
-    pull_number: Number(args.pr),
+    pull_number: args.pr,
   });
   const [prOwner, prRepo] = prData.head.repo.full_name.split('/');
   const [resp] = await cb.runBuildTrigger({
@@ -100,18 +111,17 @@ export async function triggerBuild(
     triggerId: args.trigger,
     source: {
       projectId: project,
-      // TODO: switch this to the main branch before we merge:
-      branchName: 'owlbot',
+      branchName: 'master',
       substitutions: {
         _GITHUB_TOKEN: token.token,
-        _PR: args.pr,
+        _PR: args.pr.toString(),
         _PR_BRANCH: prData.head.ref,
         _PR_OWNER: prOwner,
         _REPOSITORY: prRepo,
         // _CONTAINER must contain the image digest. For example:
         // gcr.io/repo-automation-tools/nodejs-post-processor**@1234abcd**
         // TODO: read this from OwlBot.yaml.
-        _CONTAINER: 'node',
+        _CONTAINER: args.image,
       },
     },
   });
@@ -199,8 +209,8 @@ export async function createCheck(
 ) {
   if (!octokit) {
     octokit = await core.getAuthenticatedOctokit({
-      'pem-path': args['pem-path'],
-      'app-id': args['app-id'],
+      privateKey: args.privateKey,
+      appId: args.appId,
       installation: args.installation,
     });
   }
@@ -226,11 +236,10 @@ export async function createCheck(
 }
 
 export async function getGitHubShortLivedAccessToken(
-  pemPath: string,
+  privateKey: string,
   appId: number,
-  installation: string
+  installation: number
 ): Promise<Token> {
-  const privateKey = await readFileAsync(pemPath);
   const payload = {
     // issued at time
     // Note: upstream API seems to fail if decimals are included
@@ -257,7 +266,7 @@ export async function getGitHubShortLivedAccessToken(
   }
 }
 
-export function getAccessTokenURL(installation: string) {
+export function getAccessTokenURL(installation: number) {
   return `https://api.github.com/app/installations/${installation}/access_tokens`;
 }
 
@@ -270,8 +279,8 @@ export async function getAuthenticatedOctokit(
   let tokenString: string;
   if (auth instanceof Object) {
     const token = await getGitHubShortLivedAccessToken(
-      auth['pem-path'],
-      auth['app-id'],
+      auth.privateKey,
+      auth.appId,
       auth.installation
     );
     tokenString = token.token;
@@ -289,11 +298,83 @@ function getCloudBuildInstance() {
   return new CloudBuildClient();
 }
 
+/*
+ * Load OwlBot lock file from .github/.OwlBot.lock.yaml.
+ * TODO(bcoe): abstract into common helper that supports .yml.
+ *
+ * @param {string} repoFull - repo in org/repo format.
+ * @param {number} pullNumber - pull request to base branch on.
+ * @param {OctokitType} octokit - authenticated instance of Octokit.
+ */
+const owlBotLockPath = '.github/.OwlBot.lock.yaml';
+export async function getOwlBotLock(
+  repoFull: string,
+  pullNumber: number,
+  octokit: OctokitType
+): Promise<OwlBotLock> {
+  const [owner, repo] = repoFull.split('/');
+  const {data: prData} = await octokit.pulls.get({
+    owner,
+    repo,
+    pull_number: pullNumber,
+  });
+  const configRaw = (
+    await octokit.repos.getContent({
+      owner,
+      repo,
+      path: owlBotLockPath,
+      ref: prData.head.ref,
+    })
+  ).data as {content: string | undefined; encoding: string};
+  if (!configRaw.content) {
+    throw Error(`unable to find ${owlBotLockPath} in ${repoFull}`);
+  }
+  if (configRaw.encoding !== 'base64') {
+    throw Error(`unexpected encoding ${configRaw.encoding} in ${repoFull}`);
+  }
+  const configString = Buffer.from(configRaw.content, 'base64').toString(
+    'utf8'
+  );
+  const maybeOwlBotLock = load(configString);
+  if (assertIsOwlBotLock(maybeOwlBotLock)) {
+    return maybeOwlBotLock;
+  } else {
+    throw Error(`invalid config ${owlBotLockPath} in ${repoFull}`);
+  }
+}
+
+/*
+ * Given a JavaScript object, asserts that it contains the appropriate keys
+ * for .OwlBot.lock.yaml.
+ *
+ * @param {object} maybeOwlBotLock - object to validate.
+ */
+function assertIsOwlBotLock(
+  maybeOwlBotLock: YAMLParseResponse
+): maybeOwlBotLock is OwlBotLock {
+  if (typeof maybeOwlBotLock !== 'object') {
+    throw Error('lock file did not parse as object');
+  }
+  const owlBotLock = maybeOwlBotLock as OwlBotLock;
+  if (typeof owlBotLock.docker !== 'object') {
+    throw Error('lock file did not contain "docker" key');
+  }
+  if (typeof owlBotLock.docker.image !== 'string') {
+    throw Error('docker.image was not a string');
+  }
+  if (typeof owlBotLock.docker.digest !== 'string') {
+    throw Error('docker.digest was not a string');
+  }
+  return true;
+}
+
 export const core = {
   createCheck,
   getAccessTokenURL,
   getAuthenticatedOctokit,
   getCloudBuildInstance,
   getGitHubShortLivedAccessToken,
+  getOwlBotLock,
+  owlBotLockPath,
   triggerBuild,
 };

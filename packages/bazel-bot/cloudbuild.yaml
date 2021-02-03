@@ -13,7 +13,18 @@
 # limitations under the License.
 
 steps:
-  - name: 'gcr.io/repo-automation-bots/bazel-bot'
-    env:
-      - 'BAZEL_FLAGS=--google_default_credentials --remote_cache=https://storage.googleapis.com/repo-automation-bots-bazel-cache'
-      # TODO: set env vars GITHUB_APP_SECRET, GITHUB_APP_ID, and GITHUB_APP_INSTALLATION_ID.
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'bash'
+  args: [ '-c', "gcloud secrets versions access latest --secret=bazel_bot_github_key --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/bazel-bot-github-key.pem" ]
+
+- name: 'gcr.io/repo-automation-bots/bazel-bot'
+  env:
+    - 'BAZEL_FLAGS=--google_default_credentials --remote_cache=https://storage.googleapis.com/repo-automation-bots-bazel-cache'
+    - 'GITHUB_APP_INSTALLATION_ID=14395202'
+    - 'GITHUB_APP_ID=97063'
+    - 'GITHUB_APP_SECRET=/workspace/bazel-bot-github-key.pem'
+
+timeout: '7200s'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
