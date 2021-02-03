@@ -23,8 +23,6 @@ import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {v2 as CloudTasksV2} from '@google-cloud/tasks';
 import {Storage} from '@google-cloud/storage';
 import * as express from 'express';
-import * as fs from 'fs';
-import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {config as ConfigPlugin} from '@probot/octokit-plugin-config';
@@ -34,11 +32,6 @@ import {v4} from 'uuid';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
-const packageJsonFile = fs.readFileSync(
-  resolve(__dirname, '../../package.json'),
-  'utf-8'
-);
-const packageJson = JSON.parse(packageJsonFile);
 
 type ProbotOctokitType = InstanceType<typeof ProbotOctokit>;
 
@@ -155,7 +148,6 @@ export class GCFBootstrapper {
   ): Promise<Probot> {
     if (!this.probot) {
       const cfg = await this.getProbotConfig(logging);
-      console.log(JSON.stringify(packageJson.version));
       this.probot = createProbot({overrides: cfg});
     }
 
