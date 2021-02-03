@@ -15,7 +15,9 @@
 
 import yargs = require('yargs');
 import {triggerBuildCommand} from './commands/trigger-build';
+import {listReposCommand} from './commands/list-repos-affected-by-docker-image';
 yargs(process.argv.slice(2))
   .command(triggerBuildCommand)
+  .command(listReposCommand)
   .demandCommand(1)
   .parse();
