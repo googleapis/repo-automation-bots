@@ -243,6 +243,25 @@ describe('Sync repo settings', () => {
     scopes.forEach(x => x.done());
   });
 
+  it('should use localized config and skip branch protection', async () => {
+    const org = 'googleapis';
+    const repo = 'fake';
+    const content = await fs.readFile(
+      './test/fixtures/localConfigWithoutBranchProtection.yaml'
+    );
+    const scopes = [
+      nock('https://api.github.com')
+        .get(`/repos/${org}/${repo}/contents/.github%2Fsync-repo-settings.yaml`)
+        .reply(200, content),
+      nockUpdateRepoSettings(repo, false, true),
+      nockUpdateTeamMembership('team1', org, repo),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
+      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
+    ];
+    await receive(org, repo);
+    scopes.forEach(x => x.done());
+  });
+
   it('should detect a valid schema', async () => {
     const org = 'googleapis';
     const repo = 'fake';
