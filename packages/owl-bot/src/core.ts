@@ -18,12 +18,11 @@ import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {ProbotOctokit} from 'probot';
+import {OwlBotLock, owlBotLockPath, owlBotLockFrom} from './config-files';
 
 type OctokitType =
   | InstanceType<typeof Octokit>
   | InstanceType<typeof ProbotOctokit>;
-
-type YAMLParseResponse = string | number | object | null | undefined;
 
 interface BuildArgs {
   image: string;
@@ -69,16 +68,6 @@ interface Token {
   expires_at: string;
   permissions: object;
   repository_selection: string;
-}
-
-// The .github/.OwlBot.lock.yaml is stored on each repository that OwlBot
-// is configured for, and indicates the docker container that should be run
-// for post processing:
-export interface OwlBotLock {
-  docker: {
-    image: string;
-    digest: string;
-  };
 }
 
 export async function triggerBuild(
@@ -306,7 +295,6 @@ function getCloudBuildInstance() {
  * @param {number} pullNumber - pull request to base branch on.
  * @param {OctokitType} octokit - authenticated instance of Octokit.
  */
-const owlBotLockPath = '.github/.OwlBot.lock.yaml';
 export async function getOwlBotLock(
   repoFull: string,
   pullNumber: number,
@@ -336,36 +324,7 @@ export async function getOwlBotLock(
     'utf8'
   );
   const maybeOwlBotLock = load(configString);
-  if (assertIsOwlBotLock(maybeOwlBotLock)) {
-    return maybeOwlBotLock;
-  } else {
-    throw Error(`invalid config ${owlBotLockPath} in ${repoFull}`);
-  }
-}
-
-/*
- * Given a JavaScript object, asserts that it contains the appropriate keys
- * for .OwlBot.lock.yaml.
- *
- * @param {object} maybeOwlBotLock - object to validate.
- */
-function assertIsOwlBotLock(
-  maybeOwlBotLock: YAMLParseResponse
-): maybeOwlBotLock is OwlBotLock {
-  if (typeof maybeOwlBotLock !== 'object') {
-    throw Error('lock file did not parse as object');
-  }
-  const owlBotLock = maybeOwlBotLock as OwlBotLock;
-  if (typeof owlBotLock.docker !== 'object') {
-    throw Error('lock file did not contain "docker" key');
-  }
-  if (typeof owlBotLock.docker.image !== 'string') {
-    throw Error('docker.image was not a string');
-  }
-  if (typeof owlBotLock.docker.digest !== 'string') {
-    throw Error('docker.digest was not a string');
-  }
-  return true;
+  return owlBotLockFrom(maybeOwlBotLock);
 }
 
 export const core = {
