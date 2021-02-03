@@ -114,6 +114,8 @@ export function autoDetectLabel(
   const commonConversions = new Map();
   commonConversions.set('video', 'videointelligence');
   commonConversions.set('spannertest', 'spanner');
+  commonConversions.set('spansql', 'spanner');
+  commonConversions.set('media', 'mediatranslation');
   firstPart = commonConversions.get(firstPart) || firstPart;
 
   // Some APIs have "cloud" before the name (e.g. cloudkms and cloudiot).

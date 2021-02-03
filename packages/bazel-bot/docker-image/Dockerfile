@@ -40,4 +40,4 @@ COPY install-credentials.sh /install-credentials.sh
 COPY docker-main.sh /docker-main.sh
 
 ENTRYPOINT ["/bin/bash"]
-CMD ["/bin/bash", "/docker-main.sh"]
+CMD ["/docker-main.sh"]

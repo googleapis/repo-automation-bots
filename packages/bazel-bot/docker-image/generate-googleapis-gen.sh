@@ -38,8 +38,10 @@ export GOOGLEAPIS=${GOOGLEAPIS:=`realpath googleapis`}
 #   with master branch checked out.
 export GOOGLEAPIS_GEN=${GOOGLEAPIS_GEN:=`realpath googleapis-gen`}
 
+mydir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 # Override in tests.
-INSTALL_CREDENTIALS=${INSTALL_CREDENTIALS:=`realpath install-credentials.sh`}
+INSTALL_CREDENTIALS=${INSTALL_CREDENTIALS:="$mydir/install-credentials.sh"}
 
 # Pull both repos to make sure we're up to date.
 git -C "$GOOGLEAPIS" pull
@@ -128,7 +130,6 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         # Commit changes and push them.
         git -C "$GOOGLEAPIS_GEN" commit -F "$(realpath commit-msg.txt)"
         git -C "$GOOGLEAPIS_GEN" tag "googleapis-$sha"
-        git -C "$GOOGLEAPIS_GEN" pull
         git -C "$GOOGLEAPIS_GEN" push origin
         git -C "$GOOGLEAPIS_GEN" push origin "googleapis-$sha"
     fi
