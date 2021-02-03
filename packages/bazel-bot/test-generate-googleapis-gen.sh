@@ -38,7 +38,7 @@ sha=$(git -C googleapis log -3 --format=%H | tail -1)
 # Create a fake googleapis-gen with the sha tag.
 rm -rf googleapis-gen googleapis-gen-clone
 mkdir googleapis-gen
-git -C googleapis-gen init --initial-branch=main
+git -C googleapis-gen init --initial-branch=master
 git -C googleapis-gen config user.email "test@example.com"
 git -C googleapis-gen config user.name "Testy McTestFace"
 # Hello.txt lives in the root directory and should not be removed.
@@ -58,7 +58,7 @@ git -C googleapis-gen commit -m "Hello world."
 git -C googleapis-gen tag "googleapis-$sha"
 
 # Clone googleapis-gen so git push pushes back to local copy.
-git clone googleapis-gen googleapis-gen-clone -b main || true
+git clone googleapis-gen googleapis-gen-clone -b master || true
 git -C googleapis-gen-clone config user.email "test@example.com"
 git -C googleapis-gen-clone config user.name "Testy McTestFace"
 git -C googleapis-gen checkout -b other
@@ -70,7 +70,7 @@ export BUILD_TARGETS="//google/cloud/vision/v1:vision-v1-nodejs.tar.gz //google/
 bash -x "$generate_googleapis_gen"
 
 # Display the state of googleapis-gen
-git -C googleapis-gen checkout main
+git -C googleapis-gen checkout master
 git -C googleapis-gen log --name-only
 
 # Confirm that we added at least one commit.
