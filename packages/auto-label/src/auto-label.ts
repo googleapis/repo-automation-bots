@@ -199,7 +199,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   return wasNotAdded;
 };
 
-function isFile(file: File | any): file is File {
+function isFile(file: File | unknown): file is File {
   return (file as File).content !== undefined;
 }
 
