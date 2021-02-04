@@ -20,7 +20,7 @@ import {Octokit} from '@octokit/rest';
 import {ProbotOctokit} from 'probot';
 import {OwlBotLock, owlBotLockPath, owlBotLockFrom} from './config-files';
 
-type OctokitType =
+export type OctokitType =
   | InstanceType<typeof Octokit>
   | InstanceType<typeof ProbotOctokit>;
 

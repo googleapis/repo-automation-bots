@@ -1,5 +1,5 @@
 {
-  "name": "owl-bot-post-processor",
+  "name": "owl-bot",
   "version": "1.0.0",
   "description": "keep pull requests up-to-date with generated code",
   "bin": "./build/src/bin/owl-bot.js",
@@ -52,6 +52,7 @@
   "dependencies": {
     "@google-cloud/cloudbuild": "^2.0.6",
     "@octokit/rest": "^18.1.0",
+    "firebase-admin": "^9.4.2",
     "ajv": "^7.0.4",
     "gaxios": "^4.1.0",
     "gcf-utils": "^7.1.0",
