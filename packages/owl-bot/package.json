@@ -16,7 +16,6 @@
     "compile": "tsc -p .",
     "fix": "gts fix",
     "lint": "gts check",
-    "prepare": "npm run compile",
     "test": "c8 mocha build/test",
     "pretest": "npm run compile",
     "precompile": "gts clean"
