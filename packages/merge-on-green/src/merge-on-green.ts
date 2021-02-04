@@ -34,7 +34,7 @@ handler.allowlist = [
   'google',
   'bcoe',
   'sofisl',
-  'firebase'
+  'firebase',
 ];
 
 interface DatastorePR {
