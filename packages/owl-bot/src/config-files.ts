@@ -27,7 +27,7 @@ export const owlBotLockPath = '.github/.OwlBot.lock.yaml';
 
 // Throws an exception if the object does not have the necessary structure.
 // Otherwise, returns the same object as an OwlBotLock.
-export function owlBotLockFrom(o: any): OwlBotLock {
+export function owlBotLockFrom(o: Record<string, any>): OwlBotLock {
   if (typeof o.docker !== 'object') {
     throw Error('lock file did not contain "docker" key');
   }

@@ -324,6 +324,9 @@ export async function getOwlBotLock(
     'utf8'
   );
   const maybeOwlBotLock = load(configString);
+  if (maybeOwlBotLock == null || typeof maybeOwlBotLock !== 'object') {
+    throw Error('lock file did not parse as object');
+  }
   return owlBotLockFrom(maybeOwlBotLock);
 }
 
