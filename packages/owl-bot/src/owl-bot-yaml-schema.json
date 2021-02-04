@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": ".OwlBot.yaml Settings Config",
+  "description": "Schema for defining the .OwlBot.yaml config",
+  "additionalProperties": false,
+  "required": ["docker"],
+  "properties": {
+    "docker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["image"],
+      "properties": {
+        "image": {
+          "description": "Name of the docker image to run to post-process this repo, with tag.",
+          "type": "string"
+        }
+      }
+    },
+    "copy-dirs": {
+      "description": "Directories to copy from googleapis-gen",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "dest"],
+        "properties": {
+          "source": {
+            "description": "Source directory to copy from googleapis-gen.",
+            "type": "string"
+          },
+          "dest": {
+            "description": "Destination directory in this repo to copy the files too.  Existing content in the directory will be wiped out and replaced.",
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
