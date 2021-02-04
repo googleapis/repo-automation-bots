@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@google-cloud/cloudbuild": "^2.0.6",
-    "@octokit/rest": "^18.0.12",
+    "@octokit/rest": "^18.1.0",
     "gaxios": "^4.1.0",
     "gcf-utils": "^7.0.0",
     "js-yaml": "^4.0.0",
