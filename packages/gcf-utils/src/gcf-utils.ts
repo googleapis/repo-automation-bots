@@ -14,6 +14,7 @@
 //
 import {createProbot, Probot, ProbotOctokit, Options} from 'probot';
 import {ApplicationFunction} from 'probot/lib/types';
+import {createProbotAuth} from 'octokit-auth-probot';
 
 import getStream from 'get-stream';
 import intoStream from 'into-stream';
@@ -33,15 +34,6 @@ import {v4} from 'uuid';
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
 
 type ProbotOctokitType = InstanceType<typeof ProbotOctokit>;
-
-interface Repos {
-  repos: [
-    {
-      language: string;
-      repo: string;
-    }
-  ];
-}
 
 interface Scheduled {
   repo?: string;
@@ -156,7 +148,7 @@ export class GCFBootstrapper {
   ): Promise<Probot> {
     if (!this.probot) {
       const cfg = await this.getProbotConfig(logging);
-      this.probot = createProbot({defaults: cfg});
+      this.probot = createProbot({overrides: cfg});
     }
 
     this.probot.load(appFn);
@@ -188,13 +180,19 @@ export class GCFBootstrapper {
     const config = JSON.parse(payload);
     if (logging) {
       logger.info('custom logging instance enabled');
-      const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin).plugin(
-        ConfigPlugin
-      );
+      const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin)
+        .plugin(ConfigPlugin)
+        .defaults({authStrategy: createProbotAuth});
       return {...config, Octokit: LoggingOctokit} as Options;
     } else {
       logger.info('custom logging instance not enabled');
-      return {...config, Octokit: Octokit.plugin(ConfigPlugin)} as Options;
+      const DefaultOctokit = Octokit.plugin(ConfigPlugin).defaults({
+        authStrategy: createProbotAuth,
+      });
+      return {
+        ...config,
+        Octokit: DefaultOctokit,
+      } as Options;
     }
   }
 
