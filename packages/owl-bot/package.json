@@ -16,7 +16,6 @@
     "compile": "tsc -p .",
     "fix": "gts fix",
     "lint": "gts check",
-    "prepare": "npm run compile",
     "test": "c8 mocha build/test",
     "pretest": "npm run compile",
     "precompile": "gts clean"
@@ -52,9 +51,9 @@
   },
   "dependencies": {
     "@google-cloud/cloudbuild": "^2.0.6",
-    "@octokit/rest": "^18.0.12",
+    "@octokit/rest": "^18.1.0",
     "gaxios": "^4.1.0",
-    "gcf-utils": "^7.0.0",
+    "gcf-utils": "^7.1.0",
     "js-yaml": "^4.0.0",
     "jsonwebtoken": "^8.5.1",
     "yargs": "^16.2.0"

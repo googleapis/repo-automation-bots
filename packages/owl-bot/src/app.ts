@@ -15,12 +15,12 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
 import {GCFBootstrapper} from 'gcf-utils';
-import owlBotPostProcessor from './owl-bot-post-processor';
+import owlBot from './owl-bot';
 const bootstrap = new GCFBootstrapper();
 // Unlike other probot apps, owl-bot-post-processor requires the ability
 // to generate its own auth token for Cloud Build, we use the helper in
 // GCFBootstrapper to load this from Secret Manager:
-module.exports.owl_bot_post_processor = bootstrap.gcf(async (app: Probot) => {
+module.exports.owl_bot = bootstrap.gcf(async (app: Probot) => {
   const config = await bootstrap.getProbotConfig(false);
-  owlBotPostProcessor(config.privateKey, app);
+  owlBot(config.privateKey, app);
 });

@@ -1,0 +1,4 @@
+rebaseMergeAllowed: false
+permissionRules:
+  - team: team1
+    permission: push
