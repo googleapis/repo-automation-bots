@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "keep pull requests up-to-date with generated code",
   "bin": "./build/src/bin/owl-bot.js",
-  "main": "build/src/index.js",
+  "main": "build/src/app.js",
   "files": [
     "build/src"
   ],
