@@ -13,9 +13,18 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, Logger} from 'probot';
 import {logger} from 'gcf-utils';
-import {core} from '../src/core';
+import {core} from './core';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
+
+interface PubSubContext {
+  github: Octokit;
+  readonly event: string;
+  log: Logger;
+  payload: any; // TODO: make this more perspective.
+}
 
 export = (privateKey: string | undefined, app: Probot) => {
   // Fail fast if the Cloud Function doesn't have its environment configured:
@@ -35,6 +44,8 @@ export = (privateKey: string | undefined, app: Probot) => {
     throw Error('GitHub app private key must be provided');
   }
 
+  // We perform post processing on pull requests.  We run the specified docker container
+  // on the pending pull request and push any changes back to the pull request.
   app.on('pull_request', async context => {
     // If the pull request is from a fork, the label "owlbot:run" must be
     // added by a maintainer to trigger the post processor:
@@ -86,5 +97,9 @@ export = (privateKey: string | undefined, app: Probot) => {
       },
       context.octokit
     );
+  });
+
+  app.on('pubsub.message' as any, async (context: PubSubContext) => {
+    // TODO: all the things.
   });
 };

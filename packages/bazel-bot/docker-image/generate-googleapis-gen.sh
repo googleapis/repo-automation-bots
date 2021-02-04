@@ -78,6 +78,15 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     fi
     # Clean out all the source packages from the previous build.
     rm -f $(find -L "$GOOGLEAPIS/bazel-bin" -name "*.tar.gz")
+    # Confirm that bazel can fetch remote build dependencies before building
+    # with -k.  Otherwise, we can't distinguish a build failure due to a bad proto
+    # vs. a build failure due to transient network issue.
+    if [[ -z "$FETCH_TARGETS" ]] ; then
+        fetch_targets="$targets"
+    else
+        fetch_targets="$FETCH_TARGETS"
+    fi
+    (cd "$GOOGLEAPIS" && bazel fetch $BAZEL_FLAGS $fetch_targets)
     # Some API always fails to build.  One failing API should not prevent all other
     # APIs from being updated.
     set +e

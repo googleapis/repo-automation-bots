@@ -10,6 +10,7 @@ templates = common_templates.node_library()
 s.copy(templates, excludes=[
   '.eslintignore',
   '.eslintrc.json',
+  '.github/CODEOWNERS',
   '.github/release-please.yml',
   '.github/workflows/',
   '.github/publish.yml',
