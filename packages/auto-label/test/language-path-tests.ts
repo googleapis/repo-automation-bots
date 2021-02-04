@@ -23,6 +23,7 @@ import {resolve} from 'path';
 import fs from 'fs';
 import * as sinon from 'sinon';
 import {handler} from '../src/auto-label';
+import {createProbotAuth} from 'octokit-auth-probot';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -37,7 +38,9 @@ const helper = require('../src/helper');
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
+const TestingOctokit = Octokit.plugin(config).defaults({
+  authStrategy: createProbotAuth,
+});
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 describe('language-and-path-labeling', () => {
