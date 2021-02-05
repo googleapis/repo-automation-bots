@@ -52,6 +52,7 @@
   "dependencies": {
     "@google-cloud/cloudbuild": "^2.0.6",
     "@octokit/rest": "^18.1.0",
+    "ajv": "^7.0.4",
     "gaxios": "^4.1.0",
     "gcf-utils": "^7.1.0",
     "js-yaml": "^4.0.0",

@@ -4,11 +4,13 @@
     "lib": ["es2018"],
     "esModuleInterop": true,
     "rootDir": ".",
-    "outDir": "build"
+    "outDir": "build",
+    "resolveJsonModule": true
   },
   "include": [
     "src/*.ts",
     "src/**/*.ts",
+    "src/*.json",
     "test/*.ts",
     "test/**/*.ts",
     "system-test/*.ts"
