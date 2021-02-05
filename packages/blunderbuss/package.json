@@ -28,11 +28,10 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@octokit/webhooks": "^7.24.2",
     "gcf-utils": "^7.1.1"
   },
   "devDependencies": {
-    "@octokit/webhooks-definitions": "^3.57.2",
+    "@octokit/webhooks": "^7.24.2",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.6.1",
     "@types/sinon": "^9.0.4",
