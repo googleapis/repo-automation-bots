@@ -185,7 +185,8 @@ export class GCFBootstrapper {
     }
     if (Object.prototype.hasOwnProperty.call(config, 'id')) {
       config.appId = config.id;
-      delete config.id;    }
+      delete config.id;
+    }
     if (logging) {
       logger.info('custom logging instance enabled');
       const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin)
