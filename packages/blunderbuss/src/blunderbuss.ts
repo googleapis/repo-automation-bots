@@ -16,7 +16,7 @@
 import {Probot, Context} from 'probot';
 import * as util from 'util';
 import {logger} from 'gcf-utils';
-import {EventPayloads} from "@octokit/webhooks";
+import {EventPayloads} from '@octokit/webhooks';
 
 const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';
@@ -31,22 +31,6 @@ interface Configuration {
   assign_issues_by?: ByConfig[];
   assign_prs?: string[];
   assign_prs_by?: ByConfig[];
-}
-
-interface Issue {
-  owner: string;
-  repo: string;
-  number: number;
-  labels: {name: string}[];
-  draft?: boolean;
-}
-
-interface PullRequest {
-  owner: string;
-  repo: string;
-  number: number;
-  labels: {name: string}[];
-  draft?: boolean;
 }
 
 // Randomly returns an item from an array, while ignoring the provided value.
@@ -66,7 +50,10 @@ export const sleep = (ms: number) => {
 };
 
 function isIssue(
-  issue: EventPayloads.WebhookPayloadIssues | EventPayloads.WebhookPayloadPullRequest): issue is EventPayloads.WebhookPayloadIssues {
+  issue:
+    | EventPayloads.WebhookPayloadIssues
+    | EventPayloads.WebhookPayloadPullRequest
+): issue is EventPayloads.WebhookPayloadIssues {
   return (issue as EventPayloads.WebhookPayloadIssues).issue !== undefined;
 }
 
@@ -97,9 +84,11 @@ export function blunderbuss(app: Probot) {
       }
       config = config || {};
 
-      let issue: EventPayloads.WebhookPayloadIssuesIssue | undefined; 
-      let pullRequest: EventPayloads.WebhookPayloadPullRequestPullRequest | undefined;
-      if(isIssue(context.payload)) {
+      let issue: EventPayloads.WebhookPayloadIssuesIssue | undefined;
+      let pullRequest:
+        | EventPayloads.WebhookPayloadPullRequestPullRequest
+        | undefined;
+      if (isIssue(context.payload)) {
         issue = context.payload.issue;
       } else {
         pullRequest = context.payload.pull_request;
@@ -111,18 +100,16 @@ export function blunderbuss(app: Probot) {
       const issueOrPRRepo = context.payload.repository.name;
       // If this is a PR, and it's in draft mode, don't assign it
       if (pullRequest?.draft === true) {
-        logger.info(`Skipping ${repoName}#${pullRequest.number} as it's a draft PR`);
+        logger.info(
+          `Skipping ${repoName}#${pullRequest.number} as it's a draft PR`
+        );
         return;
       }
 
       // Check if the config specifically asks to not assign issues or PRs
       if (
-        (issue &&
-          !config.assign_issues &&
-          !config.assign_issues_by) ||
-        (pullRequest &&
-          !config.assign_prs &&
-          !config.assign_prs_by)
+        (issue && !config.assign_issues && !config.assign_issues_by) ||
+        (pullRequest && !config.assign_prs && !config.assign_prs_by)
       ) {
         const paramName = issue
           ? '"assign_issues" and "assign_issues_by"'
@@ -139,14 +126,9 @@ export function blunderbuss(app: Probot) {
       }
 
       // PRs are a superset of issues, so we can handle them similarly.
-      const assignConfig = issue
-        ? config.assign_issues
-        : config.assign_prs!;
-      const byConfig = issue
-        ? config.assign_issues_by
-        : config.assign_prs_by;
-      const issuePayload =
-        issue || pullRequest;
+      const assignConfig = issue ? config.assign_issues : config.assign_prs!;
+      const byConfig = issue ? config.assign_issues_by : config.assign_prs_by;
+      const issuePayload = issue || pullRequest;
 
       const isLabeled = context.payload.action === 'labeled';
       if (isLabeled) {
@@ -168,7 +150,7 @@ export function blunderbuss(app: Probot) {
         // Don't check all labels to avoid updating an old issue when someone
         // changes a random label.
         const assigneesForNewLabel = findAssignees(byConfig, [
-          context.payload.label?.name!,
+          context.payload.label?.name,
         ]);
         if (
           assigneesForNewLabel.length === 0 &&
@@ -215,7 +197,9 @@ export function blunderbuss(app: Probot) {
         });
         labels = labelResp.data.map(lr => lr.name);
       } else {
-        labels = issue ? issue.labels?.map(l => l.name) : pullRequest?.labels?.map(l => l.name);
+        labels = issue
+          ? issue.labels?.map(l => l.name)
+          : pullRequest?.labels?.map(l => l.name);
       }
       const preferredAssignees = findAssignees(byConfig, labels);
       let possibleAssignees = preferredAssignees.length
@@ -299,7 +283,9 @@ async function expandTeams(
       })
     ).data;
     for (const member of members) {
-      result.push(member?.login!);
+      if (member?.login) {
+        result.push(member?.login);
+      }
     }
   }
   return result;
