@@ -178,6 +178,15 @@ export class GCFBootstrapper {
       throw Error('did not retrieve a payload from SecretManager.');
     }
     const config = JSON.parse(payload);
+
+    if (Object.prototype.hasOwnProperty.call(config, 'cert')) {
+      config.privateKey = config.cert;
+      delete config.cert;
+    }
+    if (Object.prototype.hasOwnProperty.call(config, 'id')) {
+      config.appId = config.id;
+      delete config.id;
+    }
     if (logging) {
       logger.info('custom logging instance enabled');
       const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin)
