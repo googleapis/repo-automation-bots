@@ -15,12 +15,12 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Application} from 'probot';
 import {
-  BuildOptions,
-  ReleasePRFactory,
+  ReleasePROptions,
   getReleaserNames,
   GitHubRelease,
   GitHubReleaseOptions,
   ReleasePR,
+  factory,
 } from 'release-please';
 import {Runner} from './runner';
 // eslint-disable-next-line node/no-extraneous-import
@@ -162,7 +162,7 @@ async function createReleasePR(
     : releaseTypeFromRepoLanguage(repoLanguage);
   const packageName = configuration.packageName || repoName;
 
-  const buildOptions: BuildOptions = {
+  const buildOptions: ReleasePROptions = {
     defaultBranch: configuration.branch,
     packageName,
     repoUrl,
@@ -175,6 +175,7 @@ async function createReleasePR(
     bumpMinorPreMajor: configuration.bumpMinorPreMajor,
     path: configuration.path,
     monorepoTags: configuration.monorepoTags,
+    releaseType,
   };
   if (snapshot !== undefined) {
     buildOptions.snapshot = snapshot;
@@ -183,7 +184,7 @@ async function createReleasePR(
     buildOptions.label = configuration.releaseLabels.join(',');
   }
 
-  const releasePR = ReleasePRFactory.build(releaseType, buildOptions);
+  const releasePR = factory.releasePR(buildOptions);
   await Runner.runner(releasePR);
   return releasePR;
 }
