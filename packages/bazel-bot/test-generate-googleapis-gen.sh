@@ -67,6 +67,7 @@ git -C googleapis-gen checkout -b other
 export GOOGLEAPIS_GEN=`realpath googleapis-gen-clone`
 export INSTALL_CREDENTIALS="echo 'Pretending to install credentials...''"
 export BUILD_TARGETS="//google/cloud/vision/v1:vision-v1-nodejs.tar.gz //google/bogus:api.tar.gz"
+export FETCH_TARGETS="//google/cloud/vision/v1:vision-v1-nodejs.tar.gz"
 bash -x "$generate_googleapis_gen"
 
 # Display the state of googleapis-gen
