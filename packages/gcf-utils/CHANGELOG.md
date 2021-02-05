@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [7.1.1](https://www.github.com/googleapis/repo-automation-bots/compare/v7.0.2...v7.1.1) (2021-02-05)
+
+
+### Bug Fixes
+
+* **gcf-utils:** release as appropriate version ([#1371](https://www.github.com/googleapis/repo-automation-bots/issues/1371)) ([730be51](https://www.github.com/googleapis/repo-automation-bots/commit/730be51d37b584aff02c1725ea04dd7f3f69c726))
+
 ### [7.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/v7.0.1...v7.0.2) (2021-02-05)
 
 
