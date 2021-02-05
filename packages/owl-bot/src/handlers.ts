@@ -13,13 +13,7 @@
 // limitations under the License.
 
 import {OwlBotLock} from './config-files';
-import {
-  findReposWithPostProcessor,
-  Configs,
-  Db,
-  findPullRequestForUpdatingLock,
-  recordPullRequestForUpdatingLock,
-} from './database';
+import {Configs, ConfigsStore} from './database';
 import {Octokit} from '@octokit/rest';
 
 /**
@@ -32,7 +26,7 @@ import {Octokit} from '@octokit/rest';
  *   example: "sha256:1245151230998"
  */
 export async function onPostProcessorPublished(
-  db: Db,
+  configsStore: ConfigsStore,
   octokit: Octokit,
   dockerImageName: string,
   dockerImageDigest: string,
@@ -40,15 +34,15 @@ export async function onPostProcessorPublished(
 ): Promise<void> {
   // Examine all the repos that use the specified docker image for post
   // processing.
-  const repos: [string, Configs][] = await findReposWithPostProcessor(
-    db,
-    dockerImageName
-  );
+  const repos: [
+    string,
+    Configs
+  ][] = await configsStore.findReposWithPostProcessor(dockerImageName);
   for (const [repo, configs] of repos) {
     let stale = true;
     // The lock file may be missing, for example when a new repo is created.
     try {
-      stale = configs.lock!.docker.digest != dockerImageDigest;
+      stale = configs.lock!.docker.digest !== dockerImageDigest;
     } catch (e) {
       logger.log(repo + ' did not have a valid .OwlBot.yaml.lock file.');
     }
@@ -61,7 +55,7 @@ export async function onPostProcessorPublished(
       };
       // TODO(bcoe): construct an octokit with configs.installationId or
       // pass an octokit into this function.
-      createOnePullRequestForUpdatingLock(db, octokit, repo, lock);
+      createOnePullRequestForUpdatingLock(configsStore, octokit, repo, lock);
     }
   }
 }
@@ -76,13 +70,12 @@ export async function onPostProcessorPublished(
  * @returns: the uri of the new or existing pull request
  */
 async function createOnePullRequestForUpdatingLock(
-  db: Db,
+  configsStore: ConfigsStore,
   octokit: Octokit,
   repo: string,
   lock: OwlBotLock
 ): Promise<string> {
-  const existingPullRequest = await findPullRequestForUpdatingLock(
-    db,
+  const existingPullRequest = await configsStore.findPullRequestForUpdatingLock(
     repo,
     lock
   );
@@ -90,6 +83,10 @@ async function createOnePullRequestForUpdatingLock(
     return existingPullRequest;
   }
   const newPullRequest = 'TODO(bcoe): create the pull request.';
-  await recordPullRequestForUpdatingLock(db, repo, lock, newPullRequest);
+  await configsStore.recordPullRequestForUpdatingLock(
+    repo,
+    lock,
+    newPullRequest
+  );
   return newPullRequest;
 }

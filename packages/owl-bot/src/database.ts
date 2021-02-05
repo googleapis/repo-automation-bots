@@ -55,7 +55,7 @@ export async function storeConfigs(
     const doc = await t.get(docRef);
     const prevConfigs = doc.data() as Configs | undefined;
     if (
-      (prevConfigs && prevConfigs.commithash == replaceCommithash) ||
+      (prevConfigs && prevConfigs.commithash === replaceCommithash) ||
       (!prevConfigs && replaceCommithash === null)
     ) {
       t.update(docRef, configs);
@@ -75,40 +75,37 @@ export async function findReposWithPostProcessor(
   return got.docs.map(doc => [doc.id, doc.data() as Configs]);
 }
 
-/**
- * Finds a previously recorded pull request or returns undefined.
- * @param db: database
- * @param repo: full repo name like "googleapis/nodejs-vision"
- * @param lock: The new contents of the lock file.
- * @returns: the string passed to recordPullRequestForUpdatingLock().
- */
-export async function findPullRequestForUpdatingLock(
-  db: Db,
-  repo: string,
-  lock: OwlBotLock
-): Promise<string | undefined> {
-  return 'TODO(SurferJeffAtGoogle): implement.';
-}
+export interface ConfigsStore {
+  // Returns a list of [repo-name, config].
+  findReposWithPostProcessor(
+    dockerImageName: string
+  ): Promise<[string, Configs][]>;
 
-/**
- * Finds a previously recorded pull request or returns undefined.
- * @param db: database
- * @param repo: full repo name like "googleapis/nodejs-vision"
- * @param lock: The new contents of the lock file.
- * @param pullRequestId the string that will be later returned by
- *  findPullRequestForUpdatingLock().
- * @returns true if this pull request was recorded.  Returns false if a
- *   pull request was not recorded because a pull request already exists,
- *   a rare but possible race condition.
- *   In case of false, the caller should close the pull request they
- *   created, to avoid annoying maintainers with duplicate pull requests.
- */
-export async function recordPullRequestForUpdatingLock(
-  db: Db,
-  repo: string,
-  lock: OwlBotLock,
-  pullRequestId: string
-): Promise<boolean> {
-  // TODO(SurferJeffAtGoogle): implement.
-  return true;
+  /**
+   * Finds a previously recorded pull request or returns undefined.
+   * @param repo: full repo name like "googleapis/nodejs-vision"
+   * @param lock: The new contents of the lock file.
+   * @returns: the string passed to recordPullRequestForUpdatingLock().
+   */
+  findPullRequestForUpdatingLock(
+    repo: string,
+    lock: OwlBotLock
+  ): Promise<string | undefined>;
+
+  /**
+   * Finds a previously recorded pull request or returns undefined.
+   * @param repo: full repo name like "googleapis/nodejs-vision"
+   * @param lock: The new contents of the lock file.
+   * @param pullRequestId the string that will be later returned by
+   *  findPullRequestForUpdatingLock().
+   * @returns pullRequestId, which may differ from the argument if there
+   *   already was a pull request recorded.
+   *   In that case, the caller should close the pull request they
+   *   created, to avoid annoying maintainers with duplicate pull requests.
+   */
+  recordPullRequestForUpdatingLock(
+    repo: string,
+    lock: OwlBotLock,
+    pullRequestId: string
+  ): Promise<string>;
 }
