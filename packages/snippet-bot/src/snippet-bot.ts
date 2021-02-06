@@ -597,6 +597,8 @@ export = (app: Probot) => {
       repo: repo,
       pull_number: prNumber,
     });
+    // This line is giving us errors because the payload is
+    // a comment, I'm not sure how to fix this
     context.payload.pull_request = prResponse.data;
     // Invalidate the cache for Snippets.
     invalidateCache();
