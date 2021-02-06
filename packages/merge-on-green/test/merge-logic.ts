@@ -29,6 +29,7 @@ const TestingOctokit = ProbotOctokit.plugin(config).defaults({
   retry: {enabled: false},
   throttle: {enabled: false},
 });
+
 const sandbox = sinon.createSandbox();
 
 interface HeadSha {
@@ -168,6 +169,8 @@ describe('merge-logic', () => {
         Octokit: TestingOctokit,
       },
     });
+
+    probot.load(handler);
   });
 
   afterEach(() => {

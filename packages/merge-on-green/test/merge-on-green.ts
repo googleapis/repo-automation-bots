@@ -31,6 +31,7 @@ const TestingOctokit = ProbotOctokit.plugin(config).defaults({
   retry: {enabled: false},
   throttle: {enabled: false},
 });
+
 const testingOctokitInstance = new TestingOctokit({auth: 'abc123'});
 const sandbox = sinon.createSandbox();
 

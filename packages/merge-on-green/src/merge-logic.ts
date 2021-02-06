@@ -63,11 +63,6 @@ interface Merge {
   message: string;
 }
 
-interface Update {
-  message: string;
-  url: string;
-}
-
 /**
  * Function gets latest commit in a PR
  * @param owner of pr (from Watch PR)
