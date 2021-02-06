@@ -84,10 +84,12 @@ describe('Label Sync', () => {
   >;
 
   beforeEach(() => {
-    probot = createProbot({overrides: {
-      githubToken: 'abc123',
-      Octokit: TestingOctokit as any,
-    }});
+    probot = createProbot({
+      overrides: {
+        githubToken: 'abc123',
+        Octokit: TestingOctokit as any,
+      },
+    });
 
     probot.load(labelSync.handler);
     getApiLabelsStub = sandbox.stub(labelSync, 'getApiLabels').resolves({
