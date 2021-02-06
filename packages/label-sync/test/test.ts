@@ -25,7 +25,10 @@ import * as assert from 'assert';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config);
+import {createProbotAuth} from 'octokit-auth-probot';
+const TestingOctokit = Octokit.plugin(config).defaults({
+  authStrategy: createProbotAuth,
+});
 
 nock.disableNetConnect();
 const fixturesPath = path.resolve(__dirname, '../../test/fixtures');
@@ -81,10 +84,10 @@ describe('Label Sync', () => {
   >;
 
   beforeEach(() => {
-    probot = createProbot({
+    probot = createProbot({overrides: {
       githubToken: 'abc123',
       Octokit: TestingOctokit as any,
-    });
+    }});
 
     probot.load(labelSync.handler);
     getApiLabelsStub = sandbox.stub(labelSync, 'getApiLabels').resolves({
