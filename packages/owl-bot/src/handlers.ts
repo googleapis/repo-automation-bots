@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {OwlBotLock} from './config-files';
+import {createPullRequest} from 'code-suggester';
+import {dump} from 'js-yaml';
+import {OwlBotLock, owlBotLockPath} from './config-files';
 import {Configs, ConfigsStore} from './database';
+import {OctokitType} from './core';
 import {Octokit} from '@octokit/rest';
 
 /**
@@ -27,7 +30,7 @@ import {Octokit} from '@octokit/rest';
  */
 export async function onPostProcessorPublished(
   configsStore: ConfigsStore,
-  octokit: Octokit,
+  octokit: OctokitType,
   dockerImageName: string,
   dockerImageDigest: string,
   logger = console
@@ -53,8 +56,6 @@ export async function onPostProcessorPublished(
           image: dockerImageName,
         },
       };
-      // TODO(bcoe): construct an octokit with configs.installationId or
-      // pass an octokit into this function.
       createOnePullRequestForUpdatingLock(configsStore, octokit, repo, lock);
     }
   }
@@ -65,24 +66,57 @@ export async function onPostProcessorPublished(
  * exist.
  * @param db: database
  * @param octokit: Octokit.
- * @param repo: full repo name like "googleapis/nodejs-vision"
+ * @param repoFull: full repo name like "googleapis/nodejs-vision"
  * @param lock: The new contents of the lock file.
  * @returns: the uri of the new or existing pull request
  */
-async function createOnePullRequestForUpdatingLock(
+export async function createOnePullRequestForUpdatingLock(
   configsStore: ConfigsStore,
-  octokit: Octokit,
-  repo: string,
+  octokit: OctokitType,
+  repoFull: string,
   lock: OwlBotLock
 ): Promise<string> {
   const existingPullRequest = await configsStore.findPullRequestForUpdatingLock(
-    repo,
+    repoFull,
     lock
   );
   if (existingPullRequest) {
     return existingPullRequest;
   }
-  const newPullRequest = 'TODO(bcoe): create the pull request.';
+  const [owner, repo] = repoFull.split('/');
+  // createPullRequest expects file updates as a Map
+  // of objects with content/mode:
+  const changes = new Map();
+  changes.set(owlBotLockPath, {
+    content: dump(lock),
+    mode: '100644',
+  });
+  // Opens a pull request with any files represented in changes:
+  const prNumber = await createPullRequest(
+    octokit as Octokit,
+    changes,
+    {
+      upstreamOwner: owner,
+      upstreamRepo: repo,
+      // TODO(rennie): we should provide a context aware commit
+      // message for this:
+      title: 'Update OwlBot.lock',
+      branch: 'owl-bot-lock-1',
+      // TODO(bcoe): come up with a funny blurb to put in PRs.
+      description:
+        '🦉 flying is not merely some crude, mechanical process. It is a delicate art',
+      // TODO(rennie): we need a way to track what the primary branch
+      // is for a PR.
+      primary: 'main',
+      force: true,
+      fork: false,
+      // TODO(rennie): we should provide a context aware commit
+      // message for this:
+      message: 'Update OwlBot.lock',
+    },
+    {level: 'error'}
+  );
+  const newPullRequest = `https://github.com/${prNumber}/pull/${prNumber}`;
   await configsStore.recordPullRequestForUpdatingLock(
     repo,
     lock,
