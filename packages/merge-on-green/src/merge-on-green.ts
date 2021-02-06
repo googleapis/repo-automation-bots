@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, Context, ProbotOctokit} from 'probot';
+import {Probot, Context, ProbotOctokit} from 'probot';
 import {Datastore} from '@google-cloud/datastore';
 import {mergeOnGreen} from './merge-logic';
 import {logger} from 'gcf-utils';
@@ -334,7 +334,7 @@ handler.addPR = async function addPR(
  */
 handler.cleanDatastoreTable = async function cleanDatastoreTable(
   watchedPRs: DatastorePR[],
-  app: Application,
+  app: Probot,
   context: Context
 ) {
   while (watchedPRs.length) {
@@ -344,7 +344,7 @@ handler.cleanDatastoreTable = async function cleanDatastoreTable(
         logger.info(`checking ${wp.url}, ${wp.installationId} for cleanup`);
         const github = wp.installationId
           ? await app.auth(wp.installationId)
-          : context.github;
+          : context.octokit;
         await handler.checkIfPRIsInvalid(
           wp.owner,
           wp.repo,
@@ -368,7 +368,7 @@ handler.cleanDatastoreTable = async function cleanDatastoreTable(
  */
 handler.checkPRMergeability = async function checkPRMergeability(
   watchedPRs: DatastorePR[],
-  app: Application,
+  app: Probot,
   context: Context
 ) {
   while (watchedPRs.length) {
@@ -378,7 +378,7 @@ handler.checkPRMergeability = async function checkPRMergeability(
         logger.info(`checking ${wp.url}, ${wp.installationId}`);
         const github = wp.installationId
           ? await app.auth(wp.installationId)
-          : context.github;
+          : context.octokit;
         try {
           const remove = await mergeOnGreen(
             wp.owner,
@@ -490,7 +490,7 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
  * @param app type probot
  * @returns void
  */
-function handler(app: Application) {
+function handler(app: Probot) {
   //meta-note about the schedule.repository as any; currently GH does not support this type, see
   //open issue for a fix: https://github.com/octokit/webhooks.js/issues/277
   app.on('schedule.repository' as '*', async context => {
@@ -506,7 +506,7 @@ function handler(app: Application) {
       // we cannot search in an org without the bot installation ID, so we need
       // to divide up the cron jobs based on org
       await handler.scanForMissingPullRequests(
-        context.github,
+        context.octokit,
         context.payload.org
       );
       return;
@@ -520,7 +520,7 @@ function handler(app: Application) {
     const author = context.payload.pull_request.user.login;
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
-    const installationId = context.payload.installation.id;
+    const installationId = context.payload.installation?.id;
 
     const label = context.payload.pull_request.labels.find(
       (label: Label) =>
@@ -558,7 +558,7 @@ function handler(app: Application) {
         installationId,
       },
       context.payload.pull_request.html_url,
-      context.github
+      context.octokit
     );
   });
 
@@ -597,7 +597,7 @@ function handler(app: Application) {
         prNumber,
         watchedPullRequest.label,
         watchedPullRequest.reactionId,
-        context.github
+        context.octokit
       );
     }
   });
@@ -621,7 +621,7 @@ function handler(app: Application) {
         prNumber,
         watchedPullRequest.label,
         watchedPullRequest.reactionId,
-        context.github
+        context.octokit
       );
     }
   });
