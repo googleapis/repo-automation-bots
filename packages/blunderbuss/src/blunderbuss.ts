@@ -150,7 +150,7 @@ export function blunderbuss(app: Probot) {
         // Don't check all labels to avoid updating an old issue when someone
         // changes a random label.
         const assigneesForNewLabel = findAssignees(byConfig, [
-          context.payload.label?.name,
+          context.payload.label!.name!,
         ]);
         if (
           assigneesForNewLabel.length === 0 &&
