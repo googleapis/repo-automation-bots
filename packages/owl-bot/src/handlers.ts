@@ -116,9 +116,9 @@ export async function createOnePullRequestForUpdatingLock(
     },
     {level: 'error'}
   );
-  const newPullRequest = `https://github.com/${prNumber}/pull/${prNumber}`;
+  const newPullRequest = `https://github.com/${repoFull}/pull/${prNumber}`;
   await configsStore.recordPullRequestForUpdatingLock(
-    repo,
+    repoFull,
     lock,
     newPullRequest
   );
