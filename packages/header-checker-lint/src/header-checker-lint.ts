@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
+import {Probot} from 'probot';
 import {LicenseType, detectLicenseHeader} from './header-parser';
 import * as minimatch from 'minimatch';
 import {logger} from 'gcf-utils';
@@ -73,7 +73,7 @@ class Configuration {
   }
 }
 
-export = (app: Application) => {
+export = (app: Probot) => {
   app.on('pull_request', async context => {
     let remoteConfiguration = DEFAULT_CONFIGURATION;
     try {
@@ -101,8 +101,8 @@ export = (app: Application) => {
     const pullRequestCommitSha = context.payload.pull_request.head.sha;
 
     try {
-      const files = await context.github.paginate(
-        context.github.pulls.listFiles,
+      const files = await context.octokit.paginate(
+        context.octokit.pulls.listFiles,
         listFilesParams
       );
 
@@ -128,7 +128,7 @@ export = (app: Application) => {
           continue;
         }
 
-        const blob = await context.github.git.getBlob(
+        const blob = await context.octokit.git.getBlob(
           context.repo({
             file_sha: file.sha,
           })
@@ -202,7 +202,7 @@ export = (app: Application) => {
 
       // post the status of commit linting to the PR, using:
       // https://developer.github.com/v3/checks/
-      await context.github.checks.create(checkParams);
+      await context.octokit.checks.create(checkParams);
     } catch (err) {
       logger.error(err);
       return;
