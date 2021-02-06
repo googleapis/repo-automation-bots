@@ -28,7 +28,7 @@
   "dependencies": {
     "ajv": "^7.0.3",
     "extend": "^3.0.2",
-    "gcf-utils": "^6.2.0",
+    "gcf-utils": "^7.1.1",
     "js-yaml": "^4.0.0"
   },
   "devDependencies": {
