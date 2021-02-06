@@ -44,12 +44,13 @@ describe('ReleasePleaseBot', () => {
   let probot: Probot;
 
   beforeEach(() => {
-    probot = createProbot({
+    probot = createProbot({overrides: {
       githubToken: 'abc123',
       Octokit: ProbotOctokit.defaults({
         retry: {enabled: false},
         throttle: {enabled: false},
       }),
+    }
     });
     probot.load(myProbotApp);
   });
