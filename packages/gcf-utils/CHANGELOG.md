@@ -101,14 +101,14 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 * **gcf-utils:** release as appropriate version ([#1371](https://www.github.com/googleapis/repo-automation-bots/issues/1371)) ([730be51](https://www.github.com/googleapis/repo-automation-bots/commit/730be51d37b584aff02c1725ea04dd7f3f69c726))
 
-### [7.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/v7.0.1...v7.0.2) (2021-02-05)
+### [7.0.2](https://www.github.com/googleapis/repo-automation-bots/) (2021-02-05)
 
 
 ### Bug Fixes
 
 * update secret values for old bots ([#1365](https://www.github.com/googleapis/repo-automation-bots/issues/1365)) ([e88a323](https://www.github.com/googleapis/repo-automation-bots/commit/e88a32367d018dd9973a6b898ca7f7f801b23de4))
 
-### [7.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/v7.0.0...v7.0.1) (2021-02-03)
+### [7.0.1](https://www.github.com/googleapis/repo-automation-bots/) (2021-02-03)
 
 
 ### Bug Fixes
@@ -264,7 +264,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 * **gcf-utils:** add repository details to payload for pub/sub triggered executions ([#758](https://www.github.com/googleapis/repo-automation-bots/issues/758)) ([00faedc](https://www.github.com/googleapis/repo-automation-bots/commit/00faedc0a3f5d1e4b39bda6fc5371edb2f921d2b))
 
-## [0.4.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils@0.4.0...gcf-utils@0.4.1) (2019-07-30)
+## [0.4.1](https://github.com/googleapis/repo-automation-bots/) (2019-07-30)
 
 
 ### Bug Fixes

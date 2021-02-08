@@ -101,3 +101,4 @@ jobs:
         with:
           paths: '**/*.md'
           verbosity: 'ERROR'
+          skip: 'http://devrel/products'
