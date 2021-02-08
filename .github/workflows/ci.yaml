@@ -93,3 +93,10 @@ jobs:
           node-version: 12
       - run: npm install
       - run: node ./.github/workflows/finale.js '${{needs.changeFinder.outputs.requiredJobs}}' ${{secrets.GITHUB_TOKEN}}
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: JustinBeckwith/linkinator-action@v1
+        with:
+          paths: '**/*.md'
