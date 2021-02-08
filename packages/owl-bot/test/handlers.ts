@@ -22,7 +22,7 @@ import * as suggester from 'code-suggester';
 import {Octokit} from '@octokit/rest';
 
 import * as sinon from 'sinon';
-import { OwlBotLock } from '../src/config-files';
+import {OwlBotLock} from '../src/config-files';
 const sandbox = sinon.createSandbox();
 
 type Changes = Array<[string, {content: string; mode: string}]>;
@@ -43,13 +43,27 @@ describe('handlers', () => {
       let recordedURI = '';
       // Mock the database helpers used to check for/update existing PRs:
       class FakeConfigStore implements ConfigsStore {
-        findReposWithPostProcessor(dockerImageName: string): Promise<[string, Configs][]> {
+        findReposWithPostProcessor(
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          dockerImageName: string
+        ): Promise<[string, Configs][]> {
           throw new Error('Method not implemented.');
         }
-        findPullRequestForUpdatingLock(repo: string, lock: OwlBotLock): Promise<string | undefined> {
+        findPullRequestForUpdatingLock(
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          repo: string,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          lock: OwlBotLock
+        ): Promise<string | undefined> {
           return Promise.resolve(undefined);
         }
-        recordPullRequestForUpdatingLock(repo: string, lock: OwlBotLock, pullRequestId: string): Promise<string> {
+        recordPullRequestForUpdatingLock(
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          repo: string,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          lock: OwlBotLock,
+          pullRequestId: string
+        ): Promise<string> {
           recordedURI = pullRequestId;
           return Promise.resolve(recordedURI);
         }
@@ -89,13 +103,28 @@ describe('handlers', () => {
       };
       // Mock the database helpers used to check for/update existing PRs:
       class FakeConfigStore implements ConfigsStore {
-        findReposWithPostProcessor(dockerImageName: string): Promise<[string, Configs][]> {
+        findReposWithPostProcessor(
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          dockerImageName: string
+        ): Promise<[string, Configs][]> {
           throw new Error('Method not implemented.');
         }
-        findPullRequestForUpdatingLock(repo: string, lock: OwlBotLock): Promise<string | undefined> {
+        findPullRequestForUpdatingLock(
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          repo: string,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          lock: OwlBotLock
+        ): Promise<string | undefined> {
           return Promise.resolve('https://github.com/owl/test/pull/99');
         }
-        recordPullRequestForUpdatingLock(repo: string, lock: OwlBotLock, pullRequestId: string): Promise<string> {
+        recordPullRequestForUpdatingLock(
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          repo: string,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          lock: OwlBotLock,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          pullRequestId: string
+        ): Promise<string> {
           throw new Error('Method not implemented.');
         }
       }
