@@ -16,12 +16,13 @@ import * as assert from 'assert';
 import {describe, it, afterEach} from 'mocha';
 
 import {createOnePullRequestForUpdatingLock} from '../src/handlers';
-import {ConfigsStore} from '../src/database';
+import {Configs, ConfigsStore} from '../src/database';
 import {dump} from 'js-yaml';
 import * as suggester from 'code-suggester';
 import {Octokit} from '@octokit/rest';
 
 import * as sinon from 'sinon';
+import { OwlBotLock } from '../src/config-files';
 const sandbox = sinon.createSandbox();
 
 type Changes = Array<[string, {content: string; mode: string}]>;
@@ -41,16 +42,19 @@ describe('handlers', () => {
       const expectedYaml = dump(lock);
       let recordedURI = '';
       // Mock the database helpers used to check for/update existing PRs:
-      const fakeConfigStore = ({
-        findPullRequestForUpdatingLock: () => undefined,
-        recordPullRequestForUpdatingLock: (
-          _repo: string,
-          _lock: object,
-          uri: string
-        ) => {
-          recordedURI = uri;
-        },
-      } as unknown) as ConfigsStore;
+      class FakeConfigStore implements ConfigsStore {
+        findReposWithPostProcessor(dockerImageName: string): Promise<[string, Configs][]> {
+          throw new Error('Method not implemented.');
+        }
+        findPullRequestForUpdatingLock(repo: string, lock: OwlBotLock): Promise<string | undefined> {
+          return Promise.resolve(undefined);
+        }
+        recordPullRequestForUpdatingLock(repo: string, lock: OwlBotLock, pullRequestId: string): Promise<string> {
+          recordedURI = pullRequestId;
+          return Promise.resolve(recordedURI);
+        }
+      }
+      const fakeConfigStore = new FakeConfigStore();
       // Mock the method from code-suggester that opens the upstream
       // PR on GitHub:
       let expectedChanges: Changes = [];
@@ -84,10 +88,18 @@ describe('handlers', () => {
         },
       };
       // Mock the database helpers used to check for/update existing PRs:
-      const fakeConfigStore = ({
-        findPullRequestForUpdatingLock: () =>
-          'https://github.com/owl/test/pull/99',
-      } as unknown) as ConfigsStore;
+      class FakeConfigStore implements ConfigsStore {
+        findReposWithPostProcessor(dockerImageName: string): Promise<[string, Configs][]> {
+          throw new Error('Method not implemented.');
+        }
+        findPullRequestForUpdatingLock(repo: string, lock: OwlBotLock): Promise<string | undefined> {
+          return Promise.resolve('https://github.com/owl/test/pull/99');
+        }
+        recordPullRequestForUpdatingLock(repo: string, lock: OwlBotLock, pullRequestId: string): Promise<string> {
+          throw new Error('Method not implemented.');
+        }
+      }
+      const fakeConfigStore = new FakeConfigStore();
       const expectedURI = await createOnePullRequestForUpdatingLock(
         fakeConfigStore,
         new Octokit(), // Not actually used.
