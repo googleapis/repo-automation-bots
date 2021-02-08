@@ -53,6 +53,7 @@ func main() {
 	mux.Handle("/v0", botCronProxy(cfg))
 	mux.Handle("/v0/cron", botCronProxy(cfg))
 	mux.Handle("/v0/pubsub", botPubSubProxy(cfg))
+	mux.Handle("/v0/container", botContainerProxy(cfg))
 
 	addr := ":" + port
 	log.Printf("starting to listen on %s", addr)
@@ -94,6 +95,21 @@ func rewriteBotPubSubURL(c botConfig) func(*http.Request) {
 			json.Unmarshal(pay.Message.Data, &msg)
 			log.Printf("pubsub message for bot: %v in %v\n", msg.Name, msg.Location)
 			return msg.Name, msg.Location
+		}
+		rewriteBotURL(c, parser, req)
+	}
+}
+
+func rewriteBotContainerURL(c botConfig) func(*http.Request) {
+	return func(req *http.Request) {
+		req.Header.Add("x-github-event", "pubsub.message")
+		parser := func(bodyBytes []byte) (string, string) {
+			var pay PubSubMessage
+			json.Unmarshal(bodyBytes, &pay)
+			log.Printf("handling pubsub message for subscription: %v\n", pay.Subscription)
+			// TODO: pull bot name and location into configuration, once
+			// we validate this approach:
+			return "owl_bot", "us-central1"
 		}
 		rewriteBotURL(c, parser, req)
 	}
@@ -148,6 +164,12 @@ func botCronProxy(cfg botConfig) http.HandlerFunc {
 func botPubSubProxy(cfg botConfig) http.HandlerFunc {
 	return (&httputil.ReverseProxy{
 		Director: rewriteBotPubSubURL(cfg),
+	}).ServeHTTP
+}
+
+func botContainerProxy(cfg botConfig) http.HandlerFunc {
+	return (&httputil.ReverseProxy{
+		Director: rewriteBotContainerURL(cfg),
 	}).ServeHTTP
 }
 
