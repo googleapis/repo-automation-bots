@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-# [1.5.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils@0.6.0...gcf-utils@1.5.0) (2020-01-28)
+# [1.5.0](https://github.com/googleapis/repo-automation-bots/) (2020-01-28)
 
 
 ### Bug Fixes
@@ -68,7 +68,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
-# [0.5.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils@0.4.0...gcf-utils@0.5.0) (2019-08-09)
+# [0.5.0](https://github.com/googleapis/repo-automation-bots/) (2019-08-09)
 
 
 ### Bug Fixes
@@ -128,7 +128,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 * **deps:** update dependency probot to v11.0.4 ([#1285](https://www.github.com/googleapis/repo-automation-bots/issues/1285)) ([3191159](https://www.github.com/googleapis/repo-automation-bots/commit/31911594187c924fa50fdf88d2208f075b4fb8f6))
 
-### [6.3.2](https://www.github.com/googleapis/repo-automation-bots/compare/v6.3.1...v6.3.2) (2021-01-20)
+### [6.3.2](https://www.github.com/googleapis/repo-automation-bots/) (2021-01-20)
 
 
 ### Bug Fixes
@@ -136,7 +136,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 * **deps:** update dependency probot to v11.0.3 ([#1284](https://www.github.com/googleapis/repo-automation-bots/issues/1284)) ([ea5ef00](https://www.github.com/googleapis/repo-automation-bots/commit/ea5ef00364ee1ffdebd9f7164e787fb77419b4e6))
 * **deps:** upgrade to Probot 11 ([#1280](https://www.github.com/googleapis/repo-automation-bots/issues/1280)) ([6abbbed](https://www.github.com/googleapis/repo-automation-bots/commit/6abbbed3fc7410b0e416e1823c4512490b2ca9ea))
 
-### [6.3.1](https://www.github.com/googleapis/repo-automation-bots/compare/v6.3.0...v6.3.1) (2021-01-06)
+### [6.3.1](https://www.github.com/googleapis/repo-automation-bots/) (2021-01-06)
 
 
 ### Bug Fixes
