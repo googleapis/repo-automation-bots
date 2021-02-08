@@ -122,7 +122,7 @@ logger.flush()
 
 ##### GitHub Action Information
 
-`gcf-utils` automatically logs information related to any actions taken by a Bot on GitHub. 
+`gcf-utils` automatically logs information related to any actions taken by a Bot on GitHub.
 
 > Note: only calls to GitHub that make a change to any GitHub objects are logged. Calls to GitHub that simply retrieve information are **not logged**. For example, if a Bot retrieves a list of issues from a repository and then adds a label to some issues, only the 'add label' actions will be logged, not the retrieving of the issues.
 
@@ -142,7 +142,7 @@ The following properties are logged:
 
 #### Manually Log Metrics
 
-`GCFLogger` also allows for custom logs-based metrics in addition to the metrics logged above. 
+`GCFLogger` also allows for custom logs-based metrics in addition to the metrics logged above.
 
 > Note: To have your Bot's custom metrics collected from Cloud Logging and processed with other metrics, please refer to the [data-processor documentation](../monitoring-system/data-processor#add-support-for-a-new-metric-from-an-existing-data-source)
 
@@ -195,7 +195,7 @@ Run `npm run system-test` from the root directory to run the system tests
 
 If you have suggestions for how gcf-utils could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
 
-For more, check out the [Contributing Guide](CONTRIBUTING.md).
+For more, check out the [Contributing Guide](../../CONTRIBUTING.md).
 
 ## License
 
