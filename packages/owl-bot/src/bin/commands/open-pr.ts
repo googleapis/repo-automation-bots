@@ -85,11 +85,17 @@ export const openPR: yargs.CommandModule<{}, Args> = {
       recordPullRequestForUpdatingLock: () => {},
     } as unknown) as ConfigsStore;
     const octokit = await getAuthenticatedOctokit(token.token);
-    createOnePullRequestForUpdatingLock(fakeConfigStore, octokit, argv.repo, {
-      docker: {
-        image: argv['docker-image'],
-        digest: argv['docker-digest'],
+    createOnePullRequestForUpdatingLock(
+      fakeConfigStore,
+      octokit,
+      argv.repo,
+      {
+        docker: {
+          image: argv['docker-image'],
+          digest: argv['docker-digest'],
+        },
       },
-    });
+      new Date()
+    );
   },
 };

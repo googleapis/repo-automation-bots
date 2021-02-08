@@ -69,7 +69,8 @@ describe('handlers', () => {
         fakeConfigStore,
         new Octokit(), // Not actually used.
         'owl/test',
-        lock
+        lock,
+        new Date()
       );
       assert.strictEqual(expectedURI, 'https://github.com/owl/test/pull/22');
       assert.strictEqual(recordedURI, 'https://github.com/owl/test/pull/22');
@@ -91,7 +92,8 @@ describe('handlers', () => {
         fakeConfigStore,
         new Octokit(), // Not actually used.
         'owl/test',
-        lock
+        lock,
+        new Date()
       );
       assert.strictEqual(expectedURI, 'https://github.com/owl/test/pull/99');
     });
