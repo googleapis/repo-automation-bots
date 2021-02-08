@@ -19,6 +19,6 @@ export class Runner {
     await pr.run();
   };
   static releaser = async (release: GitHubRelease) => {
-    await release.createRelease();
+    await release.run();
   };
 }
