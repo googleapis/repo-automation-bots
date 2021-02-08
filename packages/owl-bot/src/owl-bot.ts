@@ -100,6 +100,7 @@ export = (privateKey: string | undefined, app: Probot) => {
   });
 
   app.on('pubsub.message' as any, async (context: PubSubContext) => {
-    // TODO: all the things.
+    // TODO: all the things:
+    console.info(JSON.stringify(context.payload));
   });
 };
