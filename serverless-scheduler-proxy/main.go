@@ -105,8 +105,10 @@ func rewriteBotContainerURL(c botConfig) func(*http.Request) {
 		req.Header.Add("x-github-event", "pubsub.message")
 		parser := func(bodyBytes []byte) (string, string) {
 			var pay PubSubMessage
-			json.Unmarshal(bodyBytes, &pay)
-			log.Printf("handling pubsub message for subscription: %v\n", pay.Subscription)
+			if err := json.Unmarshal(bodyBytes, &pay); err != nil {
+				log.Printf("error occurred parsing container pubsub message: %v\n", err)
+			}
+			log.Printf("handling container pubsub message for subscription: %v\n", pay.Subscription)
 			// TODO: pull bot name and location into configuration, once
 			// we validate this approach:
 			return "owl_bot", "us-central1"
