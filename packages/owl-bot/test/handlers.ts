@@ -84,7 +84,8 @@ describe('handlers', () => {
       };
       // Mock the database helpers used to check for/update existing PRs:
       const fakeConfigStore = ({
-        findPullRequestForUpdatingLock: () => 'https://github.com/owl/test/pull/99',
+        findPullRequestForUpdatingLock: () =>
+          'https://github.com/owl/test/pull/99',
       } as unknown) as ConfigsStore;
       const expectedURI = await createOnePullRequestForUpdatingLock(
         fakeConfigStore,
