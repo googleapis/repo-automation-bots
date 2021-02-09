@@ -13,99 +13,126 @@
 // limitations under the License.
 
 import admin from 'firebase-admin';
-import {OwlBotLock, OwlBotYaml} from './config-files';
-
-export interface Configs {
-  // The body of .Owlbot.lock.yaml.
-  lock: OwlBotLock | undefined;
-  // The body of .Owlbot.yaml.
-  yaml: OwlBotYaml | undefined;
-  // The commit hash from which the config files were retrieved.
-  commithash: string;
-  // The installation id for our github app and this repo.
-  installationId: number;
-}
+import {OwlBotLock} from './config-files';
+import {Configs, ConfigsStore} from './configs-store';
 
 export type Db = admin.firestore.Firestore;
-
-const YAMLS = 'owl-bot-yamls';
-
-export async function getConfigs(
-  db: Db,
-  repo: string
-): Promise<Configs | undefined> {
-  const docRef = db.collection(YAMLS).doc(repo);
-  const doc = await docRef.get();
-  // Should we verify the data?
-  return doc.data() as Configs;
+interface UpdateLockPr {
+  pullRequestId: string;
 }
 
-// Returns true if the store succeeded.
-// Returns false if replaceCommithash differed from the commithash in the
-// db, and therefore nothing was stored.
-export async function storeConfigs(
-  db: Db,
-  repo: string,
-  configs: Configs,
-  replaceCommithash: string | null
-): Promise<boolean> {
-  const docRef = db.collection(YAMLS).doc(repo);
-  let updatedDoc = false;
-  await db.runTransaction(async t => {
-    const doc = await t.get(docRef);
-    const prevConfigs = doc.data() as Configs | undefined;
-    if (
-      (prevConfigs && prevConfigs.commithash === replaceCommithash) ||
-      (!prevConfigs && replaceCommithash === null)
-    ) {
-      t.update(docRef, configs);
-      updatedDoc = true;
-    }
-  });
-  return updatedDoc;
+/**
+ * When firebase sees a / in a doc id, it interprets it as a collection name.
+ * So, we have to escape them.  Also escape +s because we use them for combining
+ * strings into keys.  And use a format that can be decoded by decodeURIComponent().
+ */
+export function encodeId(s: string): string {
+  return s.replace('%', '%25').replace('/', '%2F').replace('+', '%2B');
 }
 
-// Returns a list of [repo-name, config].
-export async function findReposWithPostProcessor(
-  db: Db,
-  dockerImageName: string
-): Promise<[string, Configs][]> {
-  const ref = db.collection(YAMLS);
-  const got = await ref.where('yaml.docker.image', '==', dockerImageName).get();
-  return got.docs.map(doc => [doc.id, doc.data() as Configs]);
+export function decodeId(s: string): string {
+  return decodeURIComponent(s);
 }
 
-export interface ConfigsStore {
-  // Returns a list of [repo-name, config].
-  findReposWithPostProcessor(
-    dockerImageName: string
-  ): Promise<[string, Configs][]>;
+function makeUpdateLockKey(repo: string, lock: OwlBotLock): string {
+  return [repo, lock.docker.image, lock.docker.digest].map(encodeId).join('+');
+}
+
+export class FirestoreConfigsStore implements ConfigsStore {
+  private db: Db;
+  readonly yamls: string;
+  readonly lockUpdatePrs: string;
 
   /**
-   * Finds a previously recorded pull request or returns undefined.
-   * @param repo: full repo name like "googleapis/nodejs-vision"
-   * @param lock: The new contents of the lock file.
-   * @returns: the string passed to recordPullRequestForUpdatingLock().
+   * @param collectionsPrefix should only be overridden in tests.
    */
-  findPullRequestForUpdatingLock(
+  constructor(db: Db, collectionsPrefix = 'owl-bot-') {
+    this.db = db;
+    this.yamls = collectionsPrefix + 'yamls';
+    this.lockUpdatePrs = collectionsPrefix + 'lock-update-prs';
+  }
+
+  async getConfigs(repo: string): Promise<Configs | undefined> {
+    const docRef = this.db.collection(this.yamls).doc(encodeId(repo));
+    const doc = await docRef.get();
+    // Should we verify the data?
+    return doc.data() as Configs;
+  }
+
+  async storeConfigs(
+    repo: string,
+    configs: Configs,
+    replaceCommitHash: string | null
+  ): Promise<boolean> {
+    const docRef = this.db.collection(this.yamls).doc(encodeId(repo));
+    let updatedDoc = false;
+    await this.db.runTransaction(async t => {
+      const doc = await t.get(docRef);
+      const prevConfigs = doc.data() as Configs | undefined;
+      if (
+        (prevConfigs && prevConfigs.commitHash === replaceCommitHash) ||
+        (!prevConfigs && replaceCommitHash === null)
+      ) {
+        t.set(docRef, configs);
+        updatedDoc = true;
+      }
+    });
+    return updatedDoc;
+  }
+
+  async clearConfigs(repo: string): Promise<void> {
+    const docRef = this.db.collection(this.yamls).doc(encodeId(repo));
+    await docRef.delete();
+  }
+
+  async findReposWithPostProcessor(
+    dockerImageName: string
+  ): Promise<[string, Configs][]> {
+    const ref = this.db.collection(this.yamls);
+    const got = await ref
+      .where('yaml.docker.image', '==', dockerImageName)
+      .get();
+    return got.docs.map(doc => [decodeId(doc.id), doc.data() as Configs]);
+  }
+
+  async findPullRequestForUpdatingLock(
     repo: string,
     lock: OwlBotLock
-  ): Promise<string | undefined>;
+  ): Promise<string | undefined> {
+    const docRef = this.db
+      .collection(this.lockUpdatePrs)
+      .doc(makeUpdateLockKey(repo, lock));
+    const got = await docRef.get();
+    return got.exists ? (got.data() as UpdateLockPr).pullRequestId : undefined;
+  }
 
-  /**
-   * Finds a previously recorded pull request or returns undefined.
-   * @param repo: full repo name like "googleapis/nodejs-vision"
-   * @param lock: The new contents of the lock file.
-   * @param pullRequestId the string that will be later returned by
-   *  findPullRequestForUpdatingLock().
-   * @returns pullRequestId, which may differ from the argument if there
-   *   already was a pull request recorded.
-   *   In that case, the caller should close the pull request they
-   *   created, to avoid annoying maintainers with duplicate pull requests.
-   */
-  recordPullRequestForUpdatingLock(
+  async recordPullRequestForUpdatingLock(
     repo: string,
     lock: OwlBotLock,
     pullRequestId: string
-  ): Promise<string>;
+  ): Promise<string> {
+    const docRef = this.db
+      .collection(this.lockUpdatePrs)
+      .doc(makeUpdateLockKey(repo, lock));
+    const data: UpdateLockPr = {pullRequestId: pullRequestId};
+    await this.db.runTransaction(async t => {
+      const got = await t.get(docRef);
+      if (got.exists) {
+        pullRequestId = (got.data() as UpdateLockPr).pullRequestId;
+      } else {
+        t.set(docRef, data);
+      }
+    });
+    return pullRequestId;
+  }
+
+  async clearPullRequestForUpdatingLock(
+    repo: string,
+    lock: OwlBotLock
+  ): Promise<void> {
+    const docRef = this.db
+      .collection(this.lockUpdatePrs)
+      .doc(makeUpdateLockKey(repo, lock));
+    await docRef.delete();
+  }
 }
