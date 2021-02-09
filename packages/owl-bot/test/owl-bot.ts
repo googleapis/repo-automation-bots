@@ -28,13 +28,15 @@ const sandbox = sinon.createSandbox();
 describe('owlBot', () => {
   let probot: Probot;
   beforeEach(() => {
-    sandbox.stub(admin, 'initializeApp');
-    sandbox.stub(admin, 'firestore');
     sandbox.stub(process, 'env').value({
       APP_ID: '1234354',
       PROJECT_ID: 'foo-project',
       CLOUD_BUILD_TRIGGER: 'aef1e540-d401-4b85-8127-b72b5993c20d',
     });
+    // These two methods are called when the app is first
+    // loaded to initialize firestore:
+    sandbox.stub(admin, 'initializeApp');
+    sandbox.stub(admin, 'firestore');
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
