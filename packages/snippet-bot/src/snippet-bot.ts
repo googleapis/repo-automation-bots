@@ -159,6 +159,32 @@ function formatSampleBrowserFyi(violations: Violation[]): string {
 }
 
 /**
+ * It formats an array of Violation for informing removal of frozen region tags.
+ */
+function formatFrozenRegionTagFyi(violations: Violation[]): string {
+  let summary = 'You are about to delete the following frozen region tag';
+  if (violations.length !== 1) {
+    summary += 's';
+  }
+  summary += '.';
+  let detail = '';
+  for (const violation of violations) {
+    detail += `- ${formatRegionTag(violation.location)}`;
+    if (violation.devsite_urls.length > 0) {
+      // Also add links to devsite urls.
+      detail += '(usage:';
+      violation.devsite_urls.forEach((value, index) => {
+        detail += ` [page ${index + 1}](${value})`;
+      });
+      detail += ').\n';
+    } else {
+      detail += '\n';
+    }
+  }
+  return formatExpandable(summary, detail);
+}
+
+/**
  * It formats a violation for unmatched region tag.
  */
 function formatMatchingViolation(violation: Violation): string {
@@ -467,6 +493,9 @@ async function scanPullRequest(
   const removeSampleBrowserViolations = removingUsedTagsViolations.get(
     'REMOVE_SAMPLE_BROWSER_PAGE'
   ) as Violation[];
+  const removeFrozenRegionTagViolations = removingUsedTagsViolations.get(
+    'REMOVE_FROZEN_REGION_TAG'
+  ) as Violation[];
 
   if (
     productPrefixViolations.length > 0 ||
@@ -501,6 +530,11 @@ async function scanPullRequest(
 
   if (removeSampleBrowserViolations.length > 0) {
     commentBody += formatSampleBrowserFyi(removeSampleBrowserViolations);
+    commentBody += '---\n';
+  }
+
+  if (removeFrozenRegionTagViolations.length > 0) {
+    commentBody += formatFrozenRegionTagFyi(removeFrozenRegionTagViolations);
     commentBody += '---\n';
   }
 
