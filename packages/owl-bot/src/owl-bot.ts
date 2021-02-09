@@ -115,6 +115,7 @@ export = (privateKey: string | undefined, app: Probot) => {
   });
 
   app.on('pubsub.message' as any, async (context: PubSubContext) => {
+    // TODO: flesh out tests for pubsub.message handler:
     if (context.payload.action === 'INSERT') {
       const configStore = new FirestoreConfigsStore(db);
       const dockerImageDigest = context.payload.digest.split('@')[1];
