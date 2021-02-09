@@ -18,6 +18,7 @@ import {logger} from 'gcf-utils';
 import {core} from './core';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
+import admin from 'firebase-admin';
 
 interface PubSubContext {
   github: Octokit;
@@ -43,6 +44,14 @@ export = (privateKey: string | undefined, app: Probot) => {
   if (!privateKey) {
     throw Error('GitHub app private key must be provided');
   }
+
+  // Initialize firestore db.
+  admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+    projectId: process.env.FIRESTORE_PROJECT_ID,
+  });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const db = admin.firestore();
 
   // We perform post processing on pull requests.  We run the specified docker container
   // on the pending pull request and push any changes back to the pull request.
