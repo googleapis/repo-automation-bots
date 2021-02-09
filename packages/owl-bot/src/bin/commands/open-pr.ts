@@ -16,7 +16,7 @@
 // node ./build/src/bin/owl-bot.js list-repos --docker-image foo
 
 import {readFile} from 'fs';
-import {ConfigsStore} from '../../database';
+import {ConfigsStore} from '../../configs-store';
 import {createOnePullRequestForUpdatingLock} from '../../handlers';
 import {
   getAuthenticatedOctokit,

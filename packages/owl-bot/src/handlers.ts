@@ -15,7 +15,7 @@
 import {createPullRequest} from 'code-suggester';
 import {dump} from 'js-yaml';
 import {OwlBotLock, owlBotLockPath} from './config-files';
-import {Configs, ConfigsStore} from './database';
+import {Configs, ConfigsStore} from './configs-store';
 import {OctokitType} from './core';
 import {Octokit} from '@octokit/rest';
 

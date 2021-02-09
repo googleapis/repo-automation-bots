@@ -16,7 +16,7 @@ import * as assert from 'assert';
 import {describe, it, afterEach} from 'mocha';
 
 import {createOnePullRequestForUpdatingLock} from '../src/handlers';
-import {Configs, ConfigsStore} from '../src/database';
+import {Configs, ConfigsStore} from '../src/configs-store';
 import {dump} from 'js-yaml';
 import * as suggester from 'code-suggester';
 import {Octokit} from '@octokit/rest';
@@ -43,6 +43,16 @@ describe('handlers', () => {
       let recordedURI = '';
       // Mock the database helpers used to check for/update existing PRs:
       class FakeConfigStore implements ConfigsStore {
+        getConfigs(repo: string): Promise<Configs | undefined> {
+          throw new Error('Method not implemented.');
+        }
+        storeConfigs(
+          repo: string,
+          configs: Configs,
+          replaceCommithash: string | null
+        ): Promise<boolean> {
+          throw new Error('Method not implemented.');
+        }
         findReposWithPostProcessor(
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           dockerImageName: string
@@ -103,6 +113,16 @@ describe('handlers', () => {
       };
       // Mock the database helpers used to check for/update existing PRs:
       class FakeConfigStore implements ConfigsStore {
+        getConfigs(repo: string): Promise<Configs | undefined> {
+          throw new Error('Method not implemented.');
+        }
+        storeConfigs(
+          repo: string,
+          configs: Configs,
+          replaceCommithash: string | null
+        ): Promise<boolean> {
+          throw new Error('Method not implemented.');
+        }
         findReposWithPostProcessor(
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           dockerImageName: string
