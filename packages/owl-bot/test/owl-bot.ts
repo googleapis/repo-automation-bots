@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import admin from 'firebase-admin';
 import {core} from '../src/core';
 import {describe, it, beforeEach} from 'mocha';
 import {logger} from 'gcf-utils';
@@ -27,11 +28,15 @@ const sandbox = sinon.createSandbox();
 describe('owlBot', () => {
   let probot: Probot;
   beforeEach(() => {
-    sinon.stub(process, 'env').value({
+    sandbox.stub(process, 'env').value({
       APP_ID: '1234354',
       PROJECT_ID: 'foo-project',
       CLOUD_BUILD_TRIGGER: 'aef1e540-d401-4b85-8127-b72b5993c20d',
     });
+    // These two methods are called when the app is first
+    // loaded to initialize firestore:
+    sandbox.stub(admin, 'initializeApp');
+    sandbox.stub(admin, 'firestore');
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
