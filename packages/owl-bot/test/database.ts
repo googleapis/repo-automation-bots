@@ -155,4 +155,11 @@ describe('encodeId', () => {
     assert.strictEqual(encoded, chars);
     assert.strictEqual(decodeId(encoded), chars);
   });
+
+  it('encodes repeated special chars', () => {
+    const chars = '/%+/%+/%+';
+    const encoded = encodeId(chars);
+    assert.strictEqual(encoded, '%2F%25%2B%2F%25%2B%2F%25%2B');
+    assert.strictEqual(decodeId(encoded), chars);
+  });
 });

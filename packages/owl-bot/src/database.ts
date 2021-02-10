@@ -27,7 +27,7 @@ interface UpdateLockPr {
  * strings into keys.  And use a format that can be decoded by decodeURIComponent().
  */
 export function encodeId(s: string): string {
-  return s.replace('%', '%25').replace('/', '%2F').replace('+', '%2B');
+  return s.replace(/%/g, '%25').replace(/\//g, '%2F').replace(/\+/g, '%2B');
 }
 
 export function decodeId(s: string): string {
