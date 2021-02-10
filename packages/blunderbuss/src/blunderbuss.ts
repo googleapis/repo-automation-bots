@@ -149,11 +149,15 @@ export function blunderbuss(app: Probot) {
         // Check if the new label has a possible assignee.
         // Don't check all labels to avoid updating an old issue when someone
         // changes a random label.
-        const assigneesForNewLabel = findAssignees(byConfig, [
-          context.payload.label!.name!,
-        ]);
+        let assigneesForNewLabel: string[] | undefined;
+        if (context.payload.label?.name) {
+          assigneesForNewLabel = findAssignees(byConfig, [
+            context.payload.label.name,
+          ]);
+        }
+
         if (
-          assigneesForNewLabel.length === 0 &&
+          assigneesForNewLabel?.length === 0 &&
           context.payload.label?.name !== ASSIGN_LABEL
         ) {
           context.log.info(
