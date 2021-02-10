@@ -43,12 +43,16 @@ describe('handlers', () => {
       let recordedURI = '';
       // Mock the database helpers used to check for/update existing PRs:
       class FakeConfigStore implements ConfigsStore {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         getConfigs(repo: string): Promise<Configs | undefined> {
           throw new Error('Method not implemented.');
         }
         storeConfigs(
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           repo: string,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           configs: Configs,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           replaceCommithash: string | null
         ): Promise<boolean> {
           throw new Error('Method not implemented.');
@@ -97,8 +101,7 @@ describe('handlers', () => {
         fakeConfigStore,
         new Octokit(), // Not actually used.
         'owl/test',
-        lock,
-        new Date()
+        lock
       );
       assert.strictEqual(expectedURI, 'https://github.com/owl/test/pull/22');
       assert.strictEqual(recordedURI, 'https://github.com/owl/test/pull/22');
@@ -113,12 +116,16 @@ describe('handlers', () => {
       };
       // Mock the database helpers used to check for/update existing PRs:
       class FakeConfigStore implements ConfigsStore {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         getConfigs(repo: string): Promise<Configs | undefined> {
           throw new Error('Method not implemented.');
         }
         storeConfigs(
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           repo: string,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           configs: Configs,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           replaceCommithash: string | null
         ): Promise<boolean> {
           throw new Error('Method not implemented.');
@@ -153,8 +160,7 @@ describe('handlers', () => {
         fakeConfigStore,
         new Octokit(), // Not actually used.
         'owl/test',
-        lock,
-        new Date()
+        lock
       );
       assert.strictEqual(expectedURI, 'https://github.com/owl/test/pull/99');
     });

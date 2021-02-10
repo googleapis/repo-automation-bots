@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {logger} from 'gcf-utils';
 import {createPullRequest} from 'code-suggester';
 import {dump} from 'js-yaml';
 import {OwlBotLock, owlBotLockPath} from './config-files';
@@ -33,8 +34,7 @@ export async function onPostProcessorPublished(
   privateKey: string,
   appId: number,
   dockerImageName: string,
-  dockerImageDigest: string,
-  logger = console
+  dockerImageDigest: string
 ): Promise<void> {
   // Examine all the repos that use the specified docker image for post
   // processing.
@@ -48,8 +48,11 @@ export async function onPostProcessorPublished(
     try {
       stale = configs.lock!.docker.digest !== dockerImageDigest;
     } catch (e) {
-      logger.log(repo + ' did not have a valid .OwlBot.yaml.lock file.');
+      logger.error(repo + ' did not have a valid .OwlBot.yaml.lock file.');
     }
+    logger.info(
+      `${repo} ${configs?.lock?.docker?.digest} wants ${dockerImageDigest}`
+    );
     if (stale) {
       const lock: OwlBotLock = {
         docker: {
@@ -63,13 +66,7 @@ export async function onPostProcessorPublished(
         installation: configs.installationId,
       });
       // TODO(bcoe): switch updatedAt to date from PubSub payload:
-      createOnePullRequestForUpdatingLock(
-        configsStore,
-        octokit,
-        repo,
-        lock,
-        new Date()
-      );
+      createOnePullRequestForUpdatingLock(configsStore, octokit, repo, lock);
     }
   }
 }
@@ -87,14 +84,14 @@ export async function createOnePullRequestForUpdatingLock(
   configsStore: ConfigsStore,
   octokit: OctokitType,
   repoFull: string,
-  lock: OwlBotLock,
-  updatedAt: Date
+  lock: OwlBotLock
 ): Promise<string> {
   const existingPullRequest = await configsStore.findPullRequestForUpdatingLock(
     repoFull,
     lock
   );
   if (existingPullRequest) {
+    logger.info(`existing pull request ${existingPullRequest} found`);
     return existingPullRequest;
   }
   const [owner, repo] = repoFull.split('/');
@@ -106,6 +103,7 @@ export async function createOnePullRequestForUpdatingLock(
     mode: '100644',
   });
   // Opens a pull request with any files represented in changes:
+  logger.info(`opening pull request for ${lock.docker.digest}`);
   const prNumber = await createPullRequest(
     octokit as Octokit,
     changes,
@@ -119,7 +117,7 @@ export async function createOnePullRequestForUpdatingLock(
       // TODO(bcoe): come up with a funny blurb to put in PRs.
       description: `Version ${
         lock.docker.digest
-      } was published at ${updatedAt.toISOString()}.`,
+      } was published at ${new Date().toISOString()}.`,
       // TODO(rennie): we need a way to track what the primary branch
       // is for a PR.
       primary: 'main',
