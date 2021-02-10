@@ -57,7 +57,7 @@
     "code-suggester": "^1.8.2",
     "firebase-admin": "^9.4.2",
     "gaxios": "^4.1.0",
-    "gcf-utils": "^7.1.2-candidate.0",
+    "gcf-utils": "^7.1.2-candidate.1",
     "js-yaml": "^4.0.0",
     "jsonwebtoken": "^8.5.1",
     "yargs": "^16.2.0"
