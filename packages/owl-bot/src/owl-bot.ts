@@ -14,7 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import admin from 'firebase-admin';
-import {FirestoreConfigsStore} from './database';
+import {FirestoreConfigsStore, Db} from './database';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
 import {logger} from 'gcf-utils';
@@ -33,7 +33,7 @@ interface PubSubContext {
   };
 }
 
-export = (privateKey: string | undefined, app: Probot) => {
+export = (privateKey: string | undefined, app: Probot, db?: Db) => {
   // Fail fast if the Cloud Function doesn't have its environment configured:
   if (!process.env.APP_ID) {
     throw Error('must set APP_ID');
@@ -51,13 +51,15 @@ export = (privateKey: string | undefined, app: Probot) => {
     throw Error('GitHub app private key must be provided');
   }
 
-  // Initialize firestore db.
-  admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-    projectId: process.env.FIRESTORE_PROJECT_ID,
-  });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const db = admin.firestore();
+  // Initialize firestore db:
+  if (!db) {
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+      projectId: process.env.FIRESTORE_PROJECT_ID,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    db = admin.firestore();
+  }
 
   // We perform post processing on pull requests.  We run the specified docker container
   // on the pending pull request and push any changes back to the pull request.
@@ -114,13 +116,16 @@ export = (privateKey: string | undefined, app: Probot) => {
     );
   });
 
+  // Probot no longer allows custom `.on` in types, so we cast to
+  // any to circumvent this issue:
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('pubsub.message' as any, async (context: PubSubContext) => {
     // TODO: flesh out tests for pubsub.message handler:
+    logger.info(JSON.stringify(context.payload));
     if (context.payload.action === 'INSERT') {
-      const configStore = new FirestoreConfigsStore(db);
+      const configStore = new FirestoreConfigsStore(db!);
       const dockerImageDigest = context.payload.digest.split('@')[1];
       const dockerImageName = context.payload.tag;
-      logger.info(JSON.stringify(context.payload));
       logger.info({dockerImageDigest, dockerImageName});
       await onPostProcessorPublished(
         configStore,
