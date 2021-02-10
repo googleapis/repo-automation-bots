@@ -26,8 +26,8 @@ const sandbox = sinon.createSandbox();
 
 describe('owlBot', () => {
   let probot: Probot;
-  beforeEach(() => {
-    sinon.stub(process, 'env').value({
+  beforeEach(async () => {
+    sandbox.stub(process, 'env').value({
       APP_ID: '1234354',
       PROJECT_ID: 'foo-project',
       CLOUD_BUILD_TRIGGER: 'aef1e540-d401-4b85-8127-b72b5993c20d',
@@ -41,8 +41,9 @@ describe('owlBot', () => {
         }),
       },
     });
-    probot.load((app: Probot) => {
-      owlBot('abc123', app);
+    await probot.load((app: Probot) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      owlBot('abc123', app, sandbox.stub() as any);
     });
   });
   afterEach(() => {
