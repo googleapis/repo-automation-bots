@@ -53,11 +53,11 @@
   "dependencies": {
     "@google-cloud/cloudbuild": "^2.0.6",
     "@octokit/rest": "^18.1.0",
-    "firebase-admin": "^9.4.2",
     "ajv": "^7.0.4",
     "code-suggester": "^1.8.2",
+    "firebase-admin": "^9.4.2",
     "gaxios": "^4.1.0",
-    "gcf-utils": "^7.1.0",
+    "gcf-utils": "^7.1.2-candidate.0",
     "js-yaml": "^4.0.0",
     "jsonwebtoken": "^8.5.1",
     "yargs": "^16.2.0"
