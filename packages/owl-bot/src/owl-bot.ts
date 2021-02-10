@@ -13,18 +13,24 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
+import admin from 'firebase-admin';
+import {FirestoreConfigsStore} from './database';
+// eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
 import {logger} from 'gcf-utils';
 import {core} from './core';
-// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
-import admin from 'firebase-admin';
+import {onPostProcessorPublished} from './handlers';
 
 interface PubSubContext {
   github: Octokit;
   readonly event: string;
   log: Logger;
-  payload: any; // TODO: make this more perspective.
+  payload: {
+    action: string;
+    digest: string;
+    tag: string;
+  };
 }
 
 export = (privateKey: string | undefined, app: Probot) => {
@@ -109,7 +115,20 @@ export = (privateKey: string | undefined, app: Probot) => {
   });
 
   app.on('pubsub.message' as any, async (context: PubSubContext) => {
-    // TODO: all the things:
-    console.info(JSON.stringify(context.payload));
+    // TODO: flesh out tests for pubsub.message handler:
+    if (context.payload.action === 'INSERT') {
+      const configStore = new FirestoreConfigsStore(db);
+      const dockerImageDigest = context.payload.digest.split('@')[1];
+      const dockerImageName = context.payload.tag;
+      logger.info(JSON.stringify(context.payload));
+      logger.info({dockerImageDigest, dockerImageName});
+      await onPostProcessorPublished(
+        configStore,
+        privateKey,
+        appId,
+        dockerImageName,
+        dockerImageDigest
+      );
+    }
   });
 };

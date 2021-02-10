@@ -16,7 +16,7 @@ import {createPullRequest} from 'code-suggester';
 import {dump} from 'js-yaml';
 import {OwlBotLock, owlBotLockPath} from './config-files';
 import {Configs, ConfigsStore} from './configs-store';
-import {OctokitType} from './core';
+import {getAuthenticatedOctokit, OctokitType} from './core';
 import {Octokit} from '@octokit/rest';
 
 /**
@@ -30,7 +30,8 @@ import {Octokit} from '@octokit/rest';
  */
 export async function onPostProcessorPublished(
   configsStore: ConfigsStore,
-  octokit: OctokitType,
+  privateKey: string,
+  appId: number,
   dockerImageName: string,
   dockerImageDigest: string,
   logger = console
@@ -56,6 +57,11 @@ export async function onPostProcessorPublished(
           image: dockerImageName,
         },
       };
+      const octokit = await getAuthenticatedOctokit({
+        privateKey,
+        appId,
+        installation: configs.installationId,
+      });
       // TODO(bcoe): switch updatedAt to date from PubSub payload:
       createOnePullRequestForUpdatingLock(
         configsStore,
