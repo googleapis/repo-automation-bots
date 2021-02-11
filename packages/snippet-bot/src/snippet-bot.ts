@@ -430,7 +430,7 @@ async function scanPullRequest(
 
   if (result.added > 0) {
     const plural = result.added === 1 ? '' : 's';
-    const summary = `You added ${result.added} region tag${plural}.`;
+    const summary = `You are about to add ${result.added} region tag${plural}.`;
     let detail = '';
     for (const change of result.changes) {
       if (change.type === 'add') {
@@ -441,7 +441,7 @@ async function scanPullRequest(
   }
   if (result.deleted > 0) {
     const plural = result.deleted === 1 ? '' : 's';
-    const summary = `You deleted ${result.deleted} region tag${plural}.\n`;
+    const summary = `You are about to delete ${result.deleted} region tag${plural}.\n`;
     let detail = '';
     for (const change of result.changes) {
       if (change.type === 'del') {
