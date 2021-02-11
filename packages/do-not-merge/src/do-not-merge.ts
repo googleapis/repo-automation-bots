@@ -14,7 +14,7 @@
 
 /* eslint-disable node/no-extraneous-import */
 
-import {Application, Context} from 'probot';
+import {Probot, Context} from 'probot';
 import Webhooks from '@octokit/webhooks';
 import {logger} from 'gcf-utils';
 
@@ -31,7 +31,7 @@ const SUCCESS_OUTPUT = {
   summary: 'OK to merge, label not found',
 };
 
-export = (app: Application) => {
+export = (app: Probot) => {
   app.on(
     [
       'pull_request.labeled',
@@ -67,7 +67,7 @@ export = (app: Application) => {
           logger.info(
             `Updating check on ${context.payload.pull_request.url} to success`
           );
-          await context.github.checks.update({
+          await context.octokit.checks.update({
             conclusion: 'success',
             check_run_id: existingCheck.id,
             owner,
@@ -84,7 +84,7 @@ export = (app: Application) => {
           logger.info(
             `Updating check on ${context.payload.pull_request.url} to failure`
           );
-          await context.github.checks.update({
+          await context.octokit.checks.update({
             conclusion: 'failure',
             check_run_id: existingCheck.id,
             owner,
@@ -104,7 +104,7 @@ export = (app: Application) => {
         `Creating failed check on ${context.payload.pull_request.url}`
       );
 
-      await context.github.checks.create({
+      await context.octokit.checks.create({
         conclusion: 'failure',
         name: CHECK_NAME,
         owner,
@@ -123,7 +123,7 @@ async function findCheck(
   sha: string
 ): Promise<{id: number; conclusion: string} | undefined> {
   const checks = (
-    await context.github.checks.listForRef({
+    await context.octokit.checks.listForRef({
       owner,
       repo,
       check_name: CHECK_NAME,

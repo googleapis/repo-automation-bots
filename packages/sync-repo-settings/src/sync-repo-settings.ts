@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, Context} from 'probot';
+import {Probot, Context} from 'probot';
 import extend from 'extend';
 import {
   LanguageConfig,
@@ -80,7 +80,7 @@ const branchProtectionDefaults = deepFreeze({
 /**
  * Main.  On a nightly cron, update the settings for a given repository.
  */
-export function handler(app: Application) {
+export function handler(app: Probot) {
   // Lint any pull requests that touch configuration
   app.on(
     [
@@ -94,8 +94,8 @@ export function handler(app: Application) {
       const number = context.payload.number;
       let files: PullsListFilesResponseData;
       try {
-        files = await context.github.paginate(
-          context.github.pulls.listFiles.endpoint.merge({
+        files = await context.octokit.paginate(
+          context.octokit.pulls.listFiles.endpoint.merge({
             owner,
             repo,
             pull_number: number,
@@ -115,7 +115,7 @@ export function handler(app: Application) {
         ) {
           continue;
         }
-        const blob = await context.github.git.getBlob({
+        const blob = await context.octokit.git.getBlob({
           owner,
           repo,
           file_sha: file.sha,
@@ -154,7 +154,7 @@ export function handler(app: Application) {
             });
         }
         try {
-          await context.github.checks.create(checkParams);
+          await context.octokit.checks.create(checkParams);
         } catch (e) {
           e.message = `Error creating validation status check: ${e.message}`;
           logger.error(e);
@@ -193,7 +193,7 @@ export function handler(app: Application) {
     if (!config) {
       logger.info(`no local config found for ${repo}, checking global config`);
       // Fetch the list of languages used in this repository
-      const langRes = await context.github.repos.listLanguages({
+      const langRes = await context.octokit.repos.listLanguages({
         owner,
         repo: name,
       });
@@ -288,7 +288,7 @@ async function updateMasterBranchProtection(
   logger.debug(`Required status checks ${rule.requiredStatusCheckContexts}`);
 
   try {
-    await context.github.repos.updateBranchProtection({
+    await context.octokit.repos.updateBranchProtection({
       branch: rule.pattern,
       owner,
       repo: name,
@@ -348,7 +348,7 @@ async function updateRepoTeams(
   try {
     await Promise.all(
       rules.map(membership => {
-        return context.github.teams.addOrUpdateRepoPermissionsInOrg({
+        return context.octokit.teams.addOrUpdateRepoPermissionsInOrg({
           team_slug: membership.team,
           owner,
           org: owner,
@@ -393,7 +393,7 @@ async function updateRepoOptions(
   logger.info(`enable squash? ${config.squashMergeAllowed}`);
 
   try {
-    await context.github.repos.update({
+    await context.octokit.repos.update({
       name,
       repo: name,
       owner,

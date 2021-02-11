@@ -63,11 +63,6 @@ interface Merge {
   message: string;
 }
 
-interface Update {
-  message: string;
-  url: string;
-}
-
 /**
  * Function gets latest commit in a PR
  * @param owner of pr (from Watch PR)
@@ -118,7 +113,7 @@ async function getPR(
       repo,
       pull_number: pr,
     });
-    return data.data;
+    return data.data as PullRequest;
   } catch (err) {
     return {
       title: '',
@@ -154,7 +149,7 @@ async function getCommentsOnPR(
       repo,
       issue_number,
     });
-    return data.data;
+    return data.data as Comment[];
   } catch (err) {
     return null;
   }
@@ -336,7 +331,7 @@ async function getReviewsCompleted(
       repo,
       pull_number: pr,
     });
-    return reviewsCompleted.data;
+    return reviewsCompleted.data as Reviews[];
   } catch (err) {
     err.message = `Error getting reviews completed\n\n${err.message}`;
     logger.error(err);
@@ -480,20 +475,16 @@ async function updateBranch(
   repo: string,
   pr: number,
   github: OctokitType
-): Promise<Update | null> {
+) {
   try {
-    const update = (
-      await github.pulls.updateBranch({
-        owner,
-        repo,
-        pull_number: pr,
-      })
-    ).data as Update;
-    return update;
+    await github.pulls.updateBranch({
+      owner,
+      repo,
+      pull_number: pr,
+    });
   } catch (err) {
     err.message = `Error in updating branch: \n\n${err.message}`;
     logger.error(err);
-    return null;
   }
 }
 
