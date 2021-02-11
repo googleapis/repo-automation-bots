@@ -6,6 +6,8 @@ label is removed.
 
 There is no check if the `do not merge` label is never added to the PR.
 
+The `do-not-merge` label is treated the same way as `do not merge`.
+
 ## Development
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.

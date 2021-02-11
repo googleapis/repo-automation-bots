@@ -29,3 +29,15 @@ exports[
     summary: 'Remove the do not merge label before merging',
   },
 };
+
+exports[
+  'do-not-merge responds to events creates failed check when alternative label added 1'
+] = {
+  conclusion: 'failure',
+  name: 'Do Not Merge',
+  head_sha: 'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
+  output: {
+    title: 'Remove the do not merge label before merging',
+    summary: 'Remove the do not merge label before merging',
+  },
+};
