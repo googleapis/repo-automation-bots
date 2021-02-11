@@ -112,11 +112,13 @@ const sandbox = sinon.createSandbox();
 describe('Sync repo settings', () => {
   beforeEach(() => {
     probot = createProbot({
-      githubToken: 'abc123',
-      Octokit: ProbotOctokit.defaults({
-        retry: {enabled: false},
-        throttle: {enabled: false},
-      }),
+      overrides: {
+        githubToken: 'abc123',
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
+      },
     });
     probot.load(handler);
     sandbox.stub(logger, 'error').throwsArg(0);
