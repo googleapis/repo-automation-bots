@@ -151,7 +151,7 @@ export class GCFBootstrapper {
       this.probot = createProbot({overrides: cfg});
     }
 
-    this.probot.load(appFn);
+    await this.probot.load(appFn);
 
     return this.probot;
   }
