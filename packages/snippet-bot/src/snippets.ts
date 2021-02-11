@@ -33,7 +33,8 @@ import {logger} from 'gcf-utils';
  *             "commit": "a4b4143ee94d70a5486d96b9df2903fbba57e0d6",
  *             "branch": "master",
  *             "devsite_urls": ["https://example.com/usage.html"],
- *             "sample_browser_urls": ["https://example.com/docs/samples/region_tag"]
+ *             "sample_browser_urls": ["https://example.com/docs/samples/region_tag"],
+ *             "frozen_devsite_urls": ["https://example.com/usage.html"]
  *           }
  *         ]
  *       }
@@ -51,6 +52,7 @@ export interface SnippetLocation {
   branch: string;
   devsite_urls: string[];
   sample_browser_urls: string[];
+  frozen_devsite_urls: string[];
 }
 
 export interface SnippetLanguage {
