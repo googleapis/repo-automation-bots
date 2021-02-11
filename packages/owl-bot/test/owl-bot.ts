@@ -26,8 +26,8 @@ const sandbox = sinon.createSandbox();
 
 describe('owlBot', () => {
   let probot: Probot;
-  beforeEach(() => {
-    sinon.stub(process, 'env').value({
+  beforeEach(async () => {
+    sandbox.stub(process, 'env').value({
       APP_ID: '1234354',
       PROJECT_ID: 'foo-project',
       CLOUD_BUILD_TRIGGER: 'aef1e540-d401-4b85-8127-b72b5993c20d',
@@ -41,8 +41,9 @@ describe('owlBot', () => {
         }),
       },
     });
-    probot.load((app: Probot) => {
-      owlBot('abc123', app);
+    await probot.load((app: Probot) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      owlBot('abc123', app, sandbox.stub() as any);
     });
   });
   afterEach(() => {
@@ -117,5 +118,33 @@ describe('owlBot', () => {
       sandbox.assert.calledOnce(createCheckStub);
       githubMock.done();
     });
+  });
+  it('loads async app before handling request', async () => {
+    const probot = createProbot({
+      overrides: {
+        githubToken: 'abc123',
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
+      },
+    });
+    await probot.load(async (app: Probot) => {
+      await new Promise(resolve => {
+        setTimeout(() => {
+          return resolve(undefined);
+        }, 100);
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      owlBot('abc123', app, sandbox.stub() as any);
+    });
+    const loggerStub = sandbox.stub(logger, 'info');
+    await probot.receive({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'pubsub.message' as any,
+      payload: {},
+      id: 'abc123',
+    });
+    sandbox.assert.calledOnce(loggerStub);
   });
 });

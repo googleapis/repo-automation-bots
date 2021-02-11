@@ -22,9 +22,14 @@ import {CheckStatus, Reviews, Comment} from '../src/merge-logic';
 import {logger} from 'gcf-utils';
 // eslint-disable-next-line node/no-extraneous-import
 import {config} from '@probot/octokit-plugin-config';
+import {createProbotAuth} from 'octokit-auth-probot';
 
-const TestingOctokit = ProbotOctokit.plugin(config);
-const testingOctokitInstance = new TestingOctokit({auth: 'abc123'});
+const TestingOctokit = ProbotOctokit.plugin(config).defaults({
+  authStrategy: createProbotAuth,
+  retry: {enabled: false},
+  throttle: {enabled: false},
+});
+
 const sandbox = sinon.createSandbox();
 
 interface HeadSha {
@@ -159,15 +164,13 @@ describe('merge-logic', () => {
 
   beforeEach(() => {
     probot = createProbot({
-      githubToken: 'abc123',
-      Octokit: ProbotOctokit.defaults({
-        retry: {enabled: false},
-        throttle: {enabled: false},
-      }),
+      overrides: {
+        githubToken: 'abc123',
+        Octokit: TestingOctokit,
+      },
     });
 
-    const app = probot.load(handler);
-    app.auth = async () => testingOctokitInstance;
+    probot.load(handler);
   });
 
   afterEach(() => {
