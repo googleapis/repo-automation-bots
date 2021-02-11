@@ -34,7 +34,7 @@ const loc: RegionTagLocation = {
   repo: 'repo',
   file: 'file',
   sha: 'sha',
-  line: 42
+  line: 42,
 };
 
 describe('formatBody', () => {
@@ -53,8 +53,11 @@ describe('formatBody', () => {
     assert(result.includes(addition));
     assert(!result.includes(shouldBeTrimmed));
     // A link to our issue page.
-    assert(result.includes(
-      'https://github.com/googleapis/repo-automation-bots/issues'));
+    assert(
+      result.includes(
+        'https://github.com/googleapis/repo-automation-bots/issues'
+      )
+    );
   });
 });
 
@@ -115,6 +118,6 @@ describe('formatMatchingViolation', () => {
       devsite_urls: ['https://example.com/example.html'],
     };
     const result = formatMatchingViolation(violation);
-    assert(result.includes("already started."));
+    assert(result.includes('already started.'));
   });
 });

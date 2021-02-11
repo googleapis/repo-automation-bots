@@ -13,14 +13,10 @@
 // limitations under the License.
 //
 
-import {
-  Configuration,
-  DEFAULT_CONFIGURATION,
-} from '../src//configuration';
-import {
-  checkRemovingUsedTagViolations,
-  Violation,
-} from '../src/violations';
+/* eslint-disable @typescript-eslint/no-var-requires */
+
+import {Configuration, DEFAULT_CONFIGURATION} from '../src//configuration';
+import {checkRemovingUsedTagViolations, Violation} from '../src/violations';
 import {
   ChangesInPullRequest,
   RegionTagLocation,
@@ -44,7 +40,7 @@ describe('checkRemovingUsedTagViolations', () => {
     repo: 'repo',
     file: 'file',
     sha: 'sha',
-    line: 42
+    line: 42,
   };
   const loc2: RegionTagLocation = {
     type: 'del',
@@ -53,14 +49,14 @@ describe('checkRemovingUsedTagViolations', () => {
     repo: 'repo',
     file: 'file',
     sha: 'sha',
-    line: 69
+    line: 69,
   };
   const changes: ChangesInPullRequest = {
     changes: [loc, loc2],
     added: 0,
     deleted: 2,
-    files: ['file']
-  }
+    files: ['file'],
+  };
 
   const config: Configuration = new Configuration({...DEFAULT_CONFIGURATION});
 
@@ -72,7 +68,10 @@ describe('checkRemovingUsedTagViolations', () => {
     sandbox.restore();
   });
   it('should detect removals of used region tags', async () => {
-    const snippets = require(resolve(fixturesPath, './violations-test-snippets'));
+    const snippets = require(resolve(
+      fixturesPath,
+      './violations-test-snippets'
+    ));
     getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
     getSnippetsStub.resolves(snippets);
 
@@ -97,9 +96,9 @@ describe('checkRemovingUsedTagViolations', () => {
     ) as Violation[];
 
     // Expecting we have 1 element in each result.
-    assert(removeUsedTagViolations.length == 1);
-    assert(removeConflictingTagViolations.length == 1);
-    assert(removeSampleBrowserViolations.length == 1);
-    assert(removeFrozenRegionTagViolations.length == 1);
+    assert(removeUsedTagViolations.length === 1);
+    assert(removeConflictingTagViolations.length === 1);
+    assert(removeSampleBrowserViolations.length === 1);
+    assert(removeFrozenRegionTagViolations.length === 1);
   });
 });

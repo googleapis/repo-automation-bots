@@ -369,8 +369,9 @@ async function scanPullRequest(
     // Rendering prefix violations
     if (productPrefixViolations.length > 0) {
       let summary = '';
-      if (productPrefixViolations.length == 1) {
-        summary = 'There is a possible violation for not having product prefix.';
+      if (productPrefixViolations.length === 1) {
+        summary =
+          'There is a possible violation for not having product prefix.';
       } else {
         summary = `There are ${productPrefixViolations.length} possible violations for not having product prefix.`;
       }
@@ -380,8 +381,9 @@ async function scanPullRequest(
     // Rendering used tag violations
     if (removeUsedTagViolations.length > 0) {
       let summary = '';
-      if (removeUsedTagViolations.length == 1) {
-        summary = 'There is a possible violation for removing region tag in use.';
+      if (removeUsedTagViolations.length === 1) {
+        summary =
+          'There is a possible violation for removing region tag in use.';
       } else {
         summary = `There are ${removeUsedTagViolations.length} possible violations for removing region tag in use.`;
       }
@@ -391,8 +393,9 @@ async function scanPullRequest(
 
     if (removeConflictingTagViolations.length > 0) {
       let summary = '';
-      if (removeConflictingTagViolations.length == 1) {
-        summary = 'There is a possible violation for removing conflicting region tag in use.';
+      if (removeConflictingTagViolations.length === 1) {
+        summary =
+          'There is a possible violation for removing conflicting region tag in use.';
       } else {
         summary = `There are ${removeConflictingTagViolations.length} possible violations for removing conflicting region tag in use.`;
       }
