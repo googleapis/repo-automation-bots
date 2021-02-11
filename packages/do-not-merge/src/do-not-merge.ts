@@ -19,6 +19,7 @@ import Webhooks from '@octokit/webhooks';
 import {logger} from 'gcf-utils';
 
 const DO_NOT_MERGE = 'do not merge';
+const DO_NOT_MERGE_2 = 'do-not-merge';
 const CHECK_NAME = 'Do Not Merge';
 
 const FAILURE_OUTPUT = {
@@ -53,7 +54,7 @@ export = (app: Probot) => {
       const sha = context.payload.pull_request.head.sha;
 
       const labelFound = context.payload.pull_request.labels.find(
-        l => l.name === DO_NOT_MERGE
+        l => l.name === DO_NOT_MERGE || l.name === DO_NOT_MERGE_2
       );
 
       const existingCheck = await findCheck(context, owner, repo, sha);
