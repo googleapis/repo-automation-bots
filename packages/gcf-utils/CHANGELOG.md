@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [7.1.2](https://www.github.com/googleapis/repo-automation-bots/compare/v7.1.1...v7.1.2) (2021-02-11)
+
+
+### Bug Fixes
+
+* **owl-bot:** fix two timing related bugs ([#1413](https://www.github.com/googleapis/repo-automation-bots/issues/1413)) ([8a60f32](https://www.github.com/googleapis/repo-automation-bots/commit/8a60f3214a2499a8a34285eead81b60f0b86a745))
+
 ### [7.1.1](https://www.github.com/googleapis/repo-automation-bots/compare/v7.0.2...v7.1.1) (2021-02-05)
 
 
