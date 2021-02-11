@@ -4,6 +4,8 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.76.0
+	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/google/uuid v1.2.0
-	google.golang.org/genproto v0.0.0-20210202153253-cf70463f6119
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
+	google.golang.org/genproto v0.0.0-20210207032614-bba0dbe2a9ea
 )
