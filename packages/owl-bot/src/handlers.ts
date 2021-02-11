@@ -162,14 +162,12 @@ export async function createOnePullRequestForUpdatingLock(
  * @param octokit Octokit
  * @param githubOrg the name of the github org whose repos will be scanned
  * @param orgInstallationId the installation id of the github app.
- *   Won't need to be specified in production once the database has recorded
- *   the installation id for any repo in the org.
  */
 export async function scanGithubForConfigs(
   configsStore: ConfigsStore,
   octokit: OctokitType,
   githubOrg: string,
-  orgInstallationId?: number,
+  orgInstallationId: number,
   logger = console
 ): Promise<void> {
   // Some configurations may not have an installationId yet.
@@ -186,45 +184,15 @@ export async function scanGithubForConfigs(
       const configs = await configsStore.getConfigs(repoFull);
       const defaultBranch = repo.default_branch ?? 'master';
 
-      // Compose the refresh function.
-      const refresh = (installationId: number) => {
-        return refreshConfigs(
-          configsStore,
-          configs,
-          octokit,
-          githubOrg,
-          repo.name,
-          defaultBranch,
-          installationId
-        );
-      };
-
-      // Observe the installationId.
-      if (configs?.installationId) {
-        if (!orgInstallationId) {
-          orgInstallationId = configs.installationId;
-        } else if (orgInstallationId !== configs.installationId) {
-          logger.warn(`Saw two different installation ids for ${repoFull}: \
-        ${orgInstallationId} !== ${configs.installationId}`);
-        }
-      }
-      const installationId = orgInstallationId ?? configs?.installationId;
-      if (installationId) {
-        // Refresh now.
-        await refresh(installationId);
-      } else {
-        // Can't refresh yet because we don't have an installationId.
-        refreshLaters.push(refresh);
-      }
-    }
-    if (refreshLaters.length > 0) {
-      if (!orgInstallationId) {
-        logger.error(`No installation id found for ${githubOrg}.`);
-      } else {
-        for (const refresh of refreshLaters) {
-          await refresh(orgInstallationId);
-        }
-      }
+      await refreshConfigs(
+        configsStore,
+        configs,
+        octokit,
+        githubOrg,
+        repo.name,
+        defaultBranch,
+        orgInstallationId
+      );
     }
   }
 }
