@@ -29,7 +29,10 @@ import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {request} from '@octokit/request';
 import {logger} from 'gcf-utils';
-import { ReleaseType, getReleaserNames } from 'release-please/build/src/releasers';
+import {
+  ReleaseType,
+  getReleaserNames,
+} from 'release-please/build/src/releasers';
 type RequestBuilderType = typeof request;
 type DefaultFunctionType = RequestBuilderType['defaults'];
 type RequestFunctionType = ReturnType<DefaultFunctionType>;
