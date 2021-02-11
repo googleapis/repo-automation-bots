@@ -119,4 +119,32 @@ describe('owlBot', () => {
       githubMock.done();
     });
   });
+  it('loads async app before handling request', async () => {
+    const probot = createProbot({
+      overrides: {
+        githubToken: 'abc123',
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
+      },
+    });
+    await probot.load(async (app: Probot) => {
+      await new Promise(resolve => {
+        setTimeout(() => {
+          return resolve(undefined);
+        }, 100);
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      owlBot('abc123', app, sandbox.stub() as any);
+    });
+    const loggerStub = sandbox.stub(logger, 'info');
+    await probot.receive({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'pubsub.message' as any,
+      payload: {},
+      id: 'abc123',
+    });
+    sandbox.assert.calledOnce(loggerStub);
+  });
 });

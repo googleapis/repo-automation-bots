@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
+import {Probot} from 'probot';
 import {logger} from 'gcf-utils';
 
 interface ConfigurationOptions {
@@ -38,7 +38,7 @@ function isTrustedContribution(
   return trustedContributors.includes(author);
 }
 
-export = (app: Application) => {
+export = (app: Probot) => {
   app.on(['pull_request'], async context => {
     app.log(
       `repo = ${context.payload.repository.name} PR = ${context.payload.pull_request.number} action = ${context.payload.action}`
@@ -69,7 +69,7 @@ export = (app: Application) => {
           issue_number: context.payload.pull_request.number,
           labels: ['kokoro:force-run'],
         });
-        await context.github.issues.addLabels(issuesAddLabelsParams);
+        await context.octokit.issues.addLabels(issuesAddLabelsParams);
       }
     }
   );
