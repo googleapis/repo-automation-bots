@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, Context} from 'probot';
+import {Probot, Context} from 'probot';
 import {createHash} from 'crypto';
 import {Storage} from '@google-cloud/storage';
 import * as util from 'util';
@@ -88,7 +88,7 @@ async function refreshLabels() {
   labelsCache = res.data;
 }
 
-export function handler(app: Application) {
+export function handler(app: Probot) {
   app.on(
     [
       'repository.created',
@@ -106,7 +106,7 @@ export function handler(app: Application) {
         return;
       }
 
-      await reconcileLabels(c.github, owner, repo);
+      await reconcileLabels(c.octokit, owner, repo);
     }
   );
 
@@ -128,14 +128,14 @@ export function handler(app: Application) {
       return;
     }
 
-    await reconcileLabels(c.github, owner, repo);
+    await reconcileLabels(c.octokit, owner, repo);
   });
 
   app.on('installation_repositories.added', async c => {
     await Promise.all(
       c.payload.repositories_added.map((r: Repo) => {
         const [owner, repo] = r.full_name.split('/');
-        return reconcileLabels(c.github, owner, repo);
+        return reconcileLabels(c.octokit, owner, repo);
       })
     );
   });
@@ -215,7 +215,7 @@ export const getApiLabels = async (
  * repository.
  */
 async function reconcileLabels(
-  github: Context['github'],
+  github: Context['octokit'],
   owner: string,
   repo: string
 ) {
