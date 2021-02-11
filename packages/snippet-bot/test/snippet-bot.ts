@@ -542,6 +542,64 @@ describe('snippet-bot', () => {
       requests.done();
       diffRequests.done();
     });
+
+    it('gives fyi message for removing frozen region tag', async () => {
+      sandbox.restore();
+      getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
+      const products = require(resolve(fixturesPath, './products'));
+
+      getApiLabelsStub.resolves(products);
+
+      getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
+      const snippets = require(resolve(fixturesPath, './snippets-frozen'));
+      getSnippetsStub.resolves(snippets);
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
+      const payload = require(resolve(fixturesPath, './pr_event'));
+      const blob = require(resolve(fixturesPath, './failure_blob'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
+        )
+        .reply(200, config)
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
+        )
+        .reply(200, blob)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200)
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
+        )
+        .reply(200, [])
+        .post(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200);
+
+      const diffRequests = nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+        .reply(200, diffResponse);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(getApiLabelsStub);
+      sinon.assert.calledOnce(getSnippetsStub);
+      requests.done();
+      diffRequests.done();
+    });
   });
 
   describe('responds to issue', () => {
