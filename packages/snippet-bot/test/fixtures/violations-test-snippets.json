@@ -1,0 +1,52 @@
+{
+  "tag2": {
+    "title": "",
+    "description": "",
+    "languages": {
+      "PYTHON": {
+        "status": "IMPLEMENTED",
+        "current_locations": [
+          {
+            "repository_path": "owner/repo",
+            "filename": "file",
+            "commit": "sha",
+            "branch": "main",
+	    "devsite_urls": ["https://example.com/example2.html"],
+	    "frozen_devsite_urls": ["https://example.com/example2.html"]
+          }
+        ]
+      }
+    }
+  },
+  "tag": {
+    "title": "",
+    "description": "",
+    "languages": {
+      "PYTHON": {
+        "status": "IMPLEMENTED",
+        "current_locations": [
+          {
+            "repository_path": "owner/repo",
+            "filename": "file",
+            "commit": "sha",
+            "branch": "main",
+	    "devsite_urls": ["https://example.com/example.html"],
+	    "sample_browser_urls": ["https://example.com/sample_browser.html"]
+          }
+        ]
+      },
+      "JAVA": {
+        "status": "CONFLICT",
+        "current_locations": [
+          {
+            "repository_path": "owner/repo",
+            "filename": "file",
+            "commit": "sha",
+            "branch": "main",
+	    "devsite_urls": ["https://example.com/java-example.html"]
+          }
+        ]
+      }
+    }
+  }
+}

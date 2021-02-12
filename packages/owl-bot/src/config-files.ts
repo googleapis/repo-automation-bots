@@ -56,7 +56,7 @@ export interface OwlBotYaml {
   docker: {
     image: string;
   };
-  'copy-dirs': CopyDir[];
+  'copy-dirs'?: CopyDir[];
 }
 
 // The default path where .OwlBot.yaml is expected to be found.

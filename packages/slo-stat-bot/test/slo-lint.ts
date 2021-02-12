@@ -43,11 +43,13 @@ describe('slo-lint', () => {
 
   beforeEach(() => {
     probot = createProbot({
-      githubToken: 'abc123',
-      Octokit: ProbotOctokit.defaults({
-        retry: {enabled: false},
-        throttle: {enabled: false},
-      }),
+      overrides: {
+        githubToken: 'abc123',
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
+      },
     });
 
     probot.load(handler);

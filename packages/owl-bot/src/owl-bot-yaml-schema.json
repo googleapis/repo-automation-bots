@@ -3,7 +3,6 @@
   "title": ".OwlBot.yaml Settings Config",
   "description": "Schema for defining the .OwlBot.yaml config",
   "additionalProperties": false,
-  "required": ["docker"],
   "properties": {
     "docker": {
       "type": "object",

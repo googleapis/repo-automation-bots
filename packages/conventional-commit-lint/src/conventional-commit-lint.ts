@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
+import {Probot} from 'probot';
 import lint from '@commitlint/lint';
 import {components} from '@octokit/openapi-types';
 
@@ -43,7 +43,7 @@ type Conclusion =
 
 const AUTOMERGE_LABEL = 'automerge';
 
-export = (app: Application) => {
+export = (app: Probot) => {
   app.on('pull_request', async context => {
     // Fetch last 100 commits stored on a specific PR.
     const commitParams = context.repo({
@@ -53,7 +53,7 @@ export = (app: Application) => {
 
     let commits: PullsListCommitsResponseData;
     try {
-      commits = (await context.github.pulls.listCommits(commitParams)).data;
+      commits = (await context.octokit.pulls.listCommits(commitParams)).data;
     } catch (err) {
       app.log.error(err);
       return;
@@ -127,6 +127,6 @@ export = (app: Application) => {
         },
       });
     }
-    await context.github.checks.create(checkParams);
+    await context.octokit.checks.create(checkParams);
   });
 };

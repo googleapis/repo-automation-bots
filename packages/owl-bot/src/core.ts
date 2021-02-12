@@ -20,7 +20,7 @@ import {Octokit} from '@octokit/rest';
 import {ProbotOctokit} from 'probot';
 import {OwlBotLock, owlBotLockPath, owlBotLockFrom} from './config-files';
 
-type OctokitType =
+export type OctokitType =
   | InstanceType<typeof Octokit>
   | InstanceType<typeof ProbotOctokit>;
 
@@ -306,23 +306,16 @@ export async function getOwlBotLock(
     repo,
     pull_number: pullNumber,
   });
-  const configRaw = (
-    await octokit.repos.getContent({
-      owner,
-      repo,
-      path: owlBotLockPath,
-      ref: prData.head.ref,
-    })
-  ).data as {content: string | undefined; encoding: string};
-  if (!configRaw.content) {
-    throw Error(`unable to find ${owlBotLockPath} in ${repoFull}`);
-  }
-  if (configRaw.encoding !== 'base64') {
-    throw Error(`unexpected encoding ${configRaw.encoding} in ${repoFull}`);
-  }
-  const configString = Buffer.from(configRaw.content, 'base64').toString(
-    'utf8'
+  const configString = await getFileContent(
+    owner,
+    repo,
+    owlBotLockPath,
+    prData.head.ref,
+    octokit
   );
+  if (configString === undefined) {
+    throw Error(`unable to find ${owlBotLockPath} in ${owner}/${repo}`);
+  }
   const maybeOwlBotLock = load(configString);
   if (maybeOwlBotLock === null || typeof maybeOwlBotLock !== 'object') {
     throw Error('lock file did not parse as object');
@@ -330,11 +323,46 @@ export async function getOwlBotLock(
   return owlBotLockFrom(maybeOwlBotLock);
 }
 
+/**
+ * Octokit makes it surprisingly difficult to fetch the content for a file.
+ * This function makes it easier.
+ * @param owner the github org or user; ex: "googleapis"
+ * @param repo the rep name; ex: "nodejs-vision"
+ * @param path the file path within the repo; ex: ".github/.OwlBot.lock.yaml"
+ * @param ref the commit hash
+ * @param {OctokitType} octokit - authenticated instance of Octokit.
+ */
+export async function getFileContent(
+  owner: string,
+  repo: string,
+  path: string,
+  ref: string,
+  octokit: OctokitType
+): Promise<string | undefined> {
+  const data = (
+    await octokit.repos.getContent({
+      owner,
+      repo,
+      path,
+      ref,
+    })
+  ).data as {content: string | undefined; encoding: string};
+  if (!data.content) {
+    return undefined;
+  }
+  if (data.encoding !== 'base64') {
+    throw Error(`unexpected encoding ${data.encoding} in ${owner}/${repo}`);
+  }
+  const text = Buffer.from(data.content, 'base64').toString('utf8');
+  return text;
+}
+
 export const core = {
   createCheck,
   getAccessTokenURL,
   getAuthenticatedOctokit,
   getCloudBuildInstance,
+  getFileContent,
   getGitHubShortLivedAccessToken,
   getOwlBotLock,
   owlBotLockPath,

@@ -148,7 +148,7 @@ export const getIssueCommentsList = async function getIssueCommentsList(
       repo,
       issue_number: number,
     });
-    return listComments.data;
+    return listComments.data as IssuesListCommentsItem[];
   } catch (err) {
     logger.error(
       `Error in getting issue comments for number ${number}\n ${err.message}`
@@ -259,7 +259,7 @@ export const getCollaborators = async function getCollaborators(
       owner,
       repo,
     });
-    return collaboratorList.data;
+    return collaboratorList.data as ReposListCollaboratorsItem[];
   } catch (err) {
     logger.warn(`Error in getting list of collaborators \n ${err.message}`);
     return null;

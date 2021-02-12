@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, Context, ProbotOctokit} from 'probot';
+import {Probot, Context, ProbotOctokit} from 'probot';
 import {logger} from 'gcf-utils';
 import {doesSloApply} from './slo-appliesTo';
 import {isIssueCompliant, getFilePathContent} from './slo-compliant';
@@ -149,7 +149,7 @@ async function getIssueList(
       repo,
       state,
     });
-    return issueList.data;
+    return issueList.data as IssueListForRepoItem[];
   } catch (err) {
     err.message = `Error in getting list of issues from repo ${repo}: ${err.message}`;
     logger.error(err);
@@ -164,7 +164,7 @@ async function getIssueList(
  * @param app type probot
  * @returns void
  */
-export = function handler(app: Application) {
+export = function handler(app: Probot) {
   app.on(
     [
       'pull_request.opened',
@@ -213,7 +213,7 @@ export = function handler(app: Application) {
       const labels = labelsResponse.map(
         (label: IssueLabelResponseItem) => label.name
       );
-      const sloString = await getSloFile(context.github, owner, repo);
+      const sloString = await getSloFile(context.octokit, owner, repo);
       const issueItem = {
         owner,
         repo,
@@ -224,7 +224,7 @@ export = function handler(app: Application) {
         labels,
       } as IssueItem;
 
-      await handleIssues(context.github, issueItem, sloString, labelName);
+      await handleIssues(context.octokit, issueItem, sloString, labelName);
     }
   );
   app.on(['issues.closed', 'pull_request.closed'], async (context: Context) => {
@@ -241,7 +241,7 @@ export = function handler(app: Application) {
 
     const labelName = await getOoSloLabelName(context);
     if (labels?.includes(labelName)) {
-      await removeLabel(context.github, owner, repo, number, labelName);
+      await removeLabel(context.octokit, owner, repo, number, labelName);
     }
   });
   app.on(
@@ -278,7 +278,7 @@ export = function handler(app: Application) {
       const labels = labelsResponse.map(
         (label: IssueLabelResponseItem) => label.name
       );
-      const sloString = await getSloFile(context.github, owner, repo);
+      const sloString = await getSloFile(context.octokit, owner, repo);
       const issueItem = {
         owner,
         repo,
@@ -290,20 +290,20 @@ export = function handler(app: Application) {
         comment,
       } as IssueItem;
 
-      await handleIssues(context.github, issueItem, sloString, labelName);
+      await handleIssues(context.octokit, issueItem, sloString, labelName);
     }
   );
   app.on(['schedule.repository' as '*'], async (context: Context) => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
 
-    const issueList = await getIssueList(context.github, owner, repo);
+    const issueList = await getIssueList(context.octokit, owner, repo);
 
     if (!issueList) {
       return;
     }
 
-    const sloString = await getSloFile(context.github, owner, repo);
+    const sloString = await getSloFile(context.octokit, owner, repo);
     const labelName = await getOoSloLabelName(context);
 
     for (const issue of issueList) {
@@ -325,7 +325,7 @@ export = function handler(app: Application) {
         labels,
       } as IssueItem;
 
-      await handleIssues(context.github, issueItem, sloString, labelName);
+      await handleIssues(context.octokit, issueItem, sloString, labelName);
     }
   });
 };
