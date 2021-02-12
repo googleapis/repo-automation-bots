@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Application} from 'probot';
+import {Probot} from 'probot';
+import {logger} from 'gcf-utils';
 
 const CONFIGURATION_FILE_PATH = '{{programName}}.yml';
 
@@ -20,18 +21,33 @@ interface Configuration {
   randomBoolean: boolean;
 }
 
-export = (app: Application) => {
-  app.on(['issues.opened', 'pull_request.opened'], async context => {
+export = (app: Probot) => {
+  app.on(['pull_request.opened'], async context => {
     const config = (await context.config(
       CONFIGURATION_FILE_PATH,
       {}
     )) as Configuration;
 
     if (
-      (context.payload.pull_request || context.payload.issue) &&
+      (context.payload.pull_request) &&
       config.randomBoolean
     ) {
-      context.log.info('The bot is alive!');
+      logger.info('The bot is alive!');
+      return;
+    }
+  });
+
+  app.on(['issues.opened'], async context => {
+    const config = (await context.config(
+      CONFIGURATION_FILE_PATH,
+      {}
+    )) as Configuration;
+
+    if (
+      (context.payload.issue) &&
+      config.randomBoolean
+    ) {
+      logger.info('The bot is alive!');
       return;
     }
   });
