@@ -35,6 +35,18 @@ RUN apt-add-repository https://cli.github.com/packages
 RUN apt-get update
 RUN apt-get install -y gh jq
 
+# TODO: Remove this chunk when it gets added to the upstream gcr.io/gapic-images/googleapis-bazel
+### Requirement: Set the correct locale so Ruby strings default to UTF-8, needed for template engine to work
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    locales \
+    && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
+    && locale-gen en_US.UTF-8 \
+    && rm -f /var/lib/apt/lists/*_*
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en
+
+# Copy the source files from this directory.
 COPY generate-googleapis-gen.sh /generate-googleapis-gen.sh
 COPY install-credentials.sh /install-credentials.sh
 COPY docker-main.sh /docker-main.sh
