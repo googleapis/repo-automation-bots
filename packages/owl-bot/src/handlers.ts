@@ -196,8 +196,12 @@ export async function scanGithubForConfigs(
           orgInstallationId
         );
       } catch (err) {
-        if (err.status === 404) continue;
-        else throw err;
+        if (err.status === 404) {
+          logger.warn(`received 404 refreshing ${githubOrg}/${repo.name}`);
+          continue;
+        } else {
+          throw err;
+        }
       }
     }
   }
