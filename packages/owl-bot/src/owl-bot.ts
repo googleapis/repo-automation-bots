@@ -84,6 +84,10 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
       context.payload.number,
       context.octokit
     );
+    if (!lock) {
+      logger.info(`no .OwlBot.lock.yaml found for ${head.repo.full_name}`);
+      return;
+    }
     const image = `${lock.docker.image}@${lock.docker.digest}`;
     // Run time image from .Owlbot.lock.yaml on Cloud Build:
     const buildStatus = await core.triggerBuild(

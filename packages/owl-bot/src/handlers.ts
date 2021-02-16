@@ -167,23 +167,22 @@ export async function scanGithubForConfigs(
   configsStore: ConfigsStore,
   octokit: OctokitType,
   githubOrg: string,
-  orgInstallationId: number,
-  logger = console
+  orgInstallationId: number
 ): Promise<void> {
-  // Some configurations may not have an installationId yet.
-  // Revisit them after we have collected an installationId.
-  type refreshFunction = (installationId: number) => Promise<void>;
-  const refreshLaters: refreshFunction[] = [];
-
-  const repos = octokit.repos.listForOrg.endpoint.merge({org: githubOrg});
-  for await (const response of octokit.paginate.iterator(repos)) {
+  for await (const response of octokit.paginate.iterator(
+    octokit.repos.listForOrg,
+    {
+      org: githubOrg,
+    }
+  )) {
     const repos = response.data as ListReposResponse['data'];
+    logger.info(`response size = ${repos.length}`);
     for (const repo of repos) {
       // Load the current configs from the db.
       const repoFull = `${githubOrg}/${repo.name}`;
       const configs = await configsStore.getConfigs(repoFull);
       const defaultBranch = repo.default_branch ?? 'master';
-
+      logger.info(`refresh config for ${githubOrg}/${repo.name}`);
       await refreshConfigs(
         configsStore,
         configs,
@@ -195,6 +194,7 @@ export async function scanGithubForConfigs(
       );
     }
   }
+  logger.info('finished iterating over repos');
 }
 
 /**

@@ -299,7 +299,7 @@ export async function getOwlBotLock(
   repoFull: string,
   pullNumber: number,
   octokit: OctokitType
-): Promise<OwlBotLock> {
+): Promise<OwlBotLock | undefined> {
   const [owner, repo] = repoFull.split('/');
   const {data: prData} = await octokit.pulls.get({
     owner,
@@ -314,7 +314,7 @@ export async function getOwlBotLock(
     octokit
   );
   if (configString === undefined) {
-    throw Error(`unable to find ${owlBotLockPath} in ${owner}/${repo}`);
+    return configString;
   }
   const maybeOwlBotLock = load(configString);
   if (maybeOwlBotLock === null || typeof maybeOwlBotLock !== 'object') {
@@ -339,22 +339,27 @@ export async function getFileContent(
   ref: string,
   octokit: OctokitType
 ): Promise<string | undefined> {
-  const data = (
-    await octokit.repos.getContent({
-      owner,
-      repo,
-      path,
-      ref,
-    })
-  ).data as {content: string | undefined; encoding: string};
-  if (!data.content) {
-    return undefined;
+  try {
+    const data = (
+      await octokit.repos.getContent({
+        owner,
+        repo,
+        path,
+        ref,
+      })
+    ).data as {content: string | undefined; encoding: string};
+    if (!data.content) {
+      return undefined;
+    }
+    if (data.encoding !== 'base64') {
+      throw Error(`unexpected encoding ${data.encoding} in ${owner}/${repo}`);
+    }
+    const text = Buffer.from(data.content, 'base64').toString('utf8');
+    return text;
+  } catch (err) {
+    if (err.status === 404) return undefined;
+    else throw err;
   }
-  if (data.encoding !== 'base64') {
-    throw Error(`unexpected encoding ${data.encoding} in ${owner}/${repo}`);
-  }
-  const text = Buffer.from(data.content, 'base64').toString('utf8');
-  return text;
 }
 
 export const core = {
