@@ -14,7 +14,7 @@
 
 import admin from 'firebase-admin';
 import {readFile} from 'fs';
-import {FirestoreConfigsStore, Db} from '../../database';
+import {FirestoreConfigsStore} from '../../database';
 import {scanGithubForConfigs} from '../../handlers';
 import {
   getAuthenticatedOctokit,

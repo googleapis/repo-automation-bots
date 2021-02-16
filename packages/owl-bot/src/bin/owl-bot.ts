@@ -15,12 +15,10 @@
 
 import yargs = require('yargs');
 import {triggerBuildCommand} from './commands/trigger-build';
-import {listReposCommand} from './commands/list-repos-affected-by-docker-image';
 import {openPR} from './commands/open-pr';
 import {scanConfigs} from './commands/scan-configs';
 yargs(process.argv.slice(2))
   .command(triggerBuildCommand)
-  .command(listReposCommand)
   .command(openPR)
   .command(scanConfigs)
   .demandCommand(1)

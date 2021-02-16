@@ -169,6 +169,7 @@ export async function scanGithubForConfigs(
   githubOrg: string,
   orgInstallationId: number
 ): Promise<void> {
+  let count = 0; // Count of repos scanned for debugging purposes.
   for await (const response of octokit.paginate.iterator(
     octokit.repos.listForOrg,
     {
@@ -176,22 +177,28 @@ export async function scanGithubForConfigs(
     }
   )) {
     const repos = response.data as ListReposResponse['data'];
-    logger.info(`response size = ${repos.length}`);
+    logger.info(`count = ${count} page size = ${repos.length}`);
     for (const repo of repos) {
+      count++;
       // Load the current configs from the db.
       const repoFull = `${githubOrg}/${repo.name}`;
       const configs = await configsStore.getConfigs(repoFull);
       const defaultBranch = repo.default_branch ?? 'master';
       logger.info(`refresh config for ${githubOrg}/${repo.name}`);
-      await refreshConfigs(
-        configsStore,
-        configs,
-        octokit,
-        githubOrg,
-        repo.name,
-        defaultBranch,
-        orgInstallationId
-      );
+      try {
+        await refreshConfigs(
+          configsStore,
+          configs,
+          octokit,
+          githubOrg,
+          repo.name,
+          defaultBranch,
+          orgInstallationId
+        );
+      } catch (err) {
+        if (err.status === 404) continue;
+        else throw err;
+      }
     }
   }
   logger.info('finished iterating over repos');
@@ -216,8 +223,7 @@ export async function refreshConfigs(
   githubOrg: string,
   repoName: string,
   defaultBranch: string,
-  installationId: number,
-  logger = console
+  installationId: number
 ): Promise<void> {
   // Query github for the commit hash of the default branch.
   const {data: branchData} = await octokit.repos.getBranch({
