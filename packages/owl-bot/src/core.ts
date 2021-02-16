@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import {load} from 'js-yaml';
+import {logger} from 'gcf-utils';
 import {sign} from 'jsonwebtoken';
 import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
@@ -72,8 +73,7 @@ interface Token {
 
 export async function triggerBuild(
   args: BuildArgs,
-  octokit?: OctokitType,
-  logger = console
+  octokit?: OctokitType
 ): Promise<BuildResponse> {
   const token = await core.getGitHubShortLivedAccessToken(
     args.privateKey,
@@ -191,11 +191,7 @@ export async function getHeadCommit(
   else return headCommit as Commit;
 }
 
-export async function createCheck(
-  args: CheckArgs,
-  octokit?: OctokitType,
-  logger = console
-) {
+export async function createCheck(args: CheckArgs, octokit?: OctokitType) {
   if (!octokit) {
     octokit = await core.getAuthenticatedOctokit({
       privateKey: args.privateKey,
