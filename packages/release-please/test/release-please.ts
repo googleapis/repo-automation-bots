@@ -29,7 +29,7 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 // helper to get the name of the releaser
 function getReleaserName(pr: ReleasePR): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (pr.constructor as any).releaserName;
+  return pr.constructor.name;
 }
 
 function assertReleaserType(expectedType: string, pr: ReleasePR) {
@@ -66,7 +66,7 @@ describe('ReleasePleaseBot', () => {
     it('should build a release PR', async () => {
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assertReleaserType('java-yoshi', pr);
+        assertReleaserType('JavaYoshi', pr);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -87,7 +87,7 @@ describe('ReleasePleaseBot', () => {
       let runnerExecuted = false;
       let releaserExecuted = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assertReleaserType('java-yoshi', pr);
+        assertReleaserType('JavaYoshi', pr);
         runnerExecuted = true;
       };
       Runner.releaser = async (pr: GitHubRelease) => {
@@ -129,7 +129,7 @@ describe('ReleasePleaseBot', () => {
     it('should allow overriding the release strategy from configuration', async () => {
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assertReleaserType('ruby', pr);
+        assertReleaserType('Ruby', pr);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -208,7 +208,7 @@ describe('ReleasePleaseBot', () => {
     it('should allow an empty config file with the defaults', async () => {
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assertReleaserType('java-yoshi', pr);
+        assertReleaserType('JavaYoshi', pr);
         executed = true;
       };
       const requests = nock('https://api.github.com')
@@ -225,7 +225,7 @@ describe('ReleasePleaseBot', () => {
     it('should allow configuring minor bump for breaking change pre 1.0', async () => {
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assertReleaserType('java-yoshi', pr);
+        assertReleaserType('JavaYoshi', pr);
         assert(pr.bumpMinorPreMajor);
         executed = true;
       };
@@ -246,7 +246,7 @@ describe('ReleasePleaseBot', () => {
     it('should detect the default branch if not specified in configuration', async () => {
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assertReleaserType('node', pr);
+        assertReleaserType('Node', pr);
         assert('master' === pr.defaultBranch);
         executed = true;
       };
@@ -292,7 +292,7 @@ describe('ReleasePleaseBot', () => {
     it('should create the PR if the branch is the configured primary branch', async () => {
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assertReleaserType('java-yoshi', pr);
+        assertReleaserType('JavaYoshi', pr);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -312,7 +312,7 @@ describe('ReleasePleaseBot', () => {
     it('should create the PR if the branch is configured as an alternate branch', async () => {
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assertReleaserType('java-yoshi', pr);
+        assertReleaserType('JavaYoshi', pr);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -347,7 +347,7 @@ describe('ReleasePleaseBot', () => {
         cron_org: 'Codertocat',
       };
       Runner.runner = async (pr: ReleasePR) => {
-        assertReleaserType('java-yoshi', pr);
+        assertReleaserType('JavaYoshi', pr);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -409,8 +409,8 @@ describe('ReleasePleaseBot', () => {
         id: 'abc123',
       });
       requests.done();
-      assert(executedBranches.get('master') === 'java-bom');
-      assert(executedBranches.get('feature-branch') === 'java-yoshi');
+      assert(executedBranches.get('master') === 'JavaBom');
+      assert(executedBranches.get('feature-branch') === 'JavaYoshi');
     });
   });
 
@@ -421,7 +421,7 @@ describe('ReleasePleaseBot', () => {
       payload = require(resolve(fixturesPath, './pull_request_labeled'));
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assertReleaserType('java-yoshi', pr);
+        assertReleaserType('JavaYoshi', pr);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -453,7 +453,7 @@ describe('ReleasePleaseBot', () => {
       ));
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
-        assertReleaserType('java-yoshi', pr);
+        assertReleaserType('JavaYoshi', pr);
         executed = true;
       };
       const config = fs.readFileSync(

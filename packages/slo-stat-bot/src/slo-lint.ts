@@ -94,7 +94,7 @@ export const handleSlos = async function handleSlos(
   fileSha: string
 ) {
   const sloString = await getFileShaContents(
-    context.github,
+    context.octokit,
     owner,
     repo,
     fileSha
@@ -107,7 +107,7 @@ export const handleSlos = async function handleSlos(
   const sloData = JSON.parse(sloString);
   const res = await lint(schema, sloData);
 
-  await commentPR(context.github, owner, repo, number, res.isValid);
+  await commentPR(context.octokit, owner, repo, number, res.isValid);
   await createCheck(context, res);
 };
 
@@ -264,7 +264,7 @@ async function createCheck(context: Context, validationRes: ValidationResults) {
     });
   }
   try {
-    await context.github.checks.create(checkParams);
+    await context.octokit.checks.create(checkParams);
   } catch (err) {
     logger.error(
       `Error creating check in repo ${context.payload.repository.name} \n ${err.message}`
@@ -288,7 +288,7 @@ export async function handleLint(
   repo: string,
   number: number
 ) {
-  const fileList = await listFiles(context.github, owner, repo, number, 100);
+  const fileList = await listFiles(context.octokit, owner, repo, number, 100);
 
   if (!fileList) {
     return;

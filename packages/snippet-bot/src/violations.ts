@@ -26,6 +26,7 @@ type violationTypes =
   | 'REMOVE_USED_TAG'
   | 'REMOVE_CONFLICTING_TAG'
   | 'REMOVE_SAMPLE_BROWSER_PAGE'
+  | 'REMOVE_FROZEN_REGION_TAG'
   | 'TAG_ALREADY_STARTED'
   | 'NO_MATCHING_START_TAG'
   | 'NO_MATCHING_END_TAG';
@@ -48,6 +49,7 @@ export const checkRemovingUsedTagViolations = async (
   const removeUsedTagViolations = new Array<Violation>();
   const removeConflictingTagViolations = new Array<Violation>();
   const removeSampleBrowserViolations = new Array<Violation>();
+  const removeFrozenRegionTagViolations = new Array<Violation>();
   const snippets = await getSnippets(dataBucket);
   for (const change of changes.changes) {
     if (change.type !== 'del') {
@@ -73,8 +75,9 @@ export const checkRemovingUsedTagViolations = async (
     }
     for (const k of Object.keys(snippet.languages)) {
       const lang = snippet.languages[k];
-      let currentUrls: string[] = [];
+      const currentUrls: string[] = [];
       let sampleBrowserUrls: string[] = [];
+      let frozenRegionTagUrls: string[] = [];
       for (const loc of lang.current_locations) {
         if (
           loc.branch === baseBranch &&
@@ -82,7 +85,17 @@ export const checkRemovingUsedTagViolations = async (
           loc.filename === change.file
         ) {
           if (loc.devsite_urls !== undefined && loc.devsite_urls.length > 0) {
-            currentUrls = currentUrls.concat(loc.devsite_urls);
+            // add the url if the region tag is not frozen.
+            // (frozen == pinned to a commit hash)
+            for (const devsite_url of loc.devsite_urls) {
+              if (
+                loc.frozen_devsite_urls !== undefined &&
+                loc.frozen_devsite_urls.includes(devsite_url)
+              ) {
+                continue;
+              }
+              currentUrls.push(devsite_url);
+            }
           }
           if (
             loc.sample_browser_urls !== undefined &&
@@ -90,6 +103,14 @@ export const checkRemovingUsedTagViolations = async (
           ) {
             sampleBrowserUrls = sampleBrowserUrls.concat(
               loc.sample_browser_urls
+            );
+          }
+          if (
+            loc.frozen_devsite_urls !== undefined &&
+            loc.frozen_devsite_urls.length > 0
+          ) {
+            frozenRegionTagUrls = frozenRegionTagUrls.concat(
+              loc.frozen_devsite_urls
             );
           }
         }
@@ -123,12 +144,20 @@ export const checkRemovingUsedTagViolations = async (
           devsite_urls: sampleBrowserUrls,
         });
       }
+      if (frozenRegionTagUrls.length > 0) {
+        removeFrozenRegionTagViolations.push({
+          location: change,
+          violationType: 'REMOVE_FROZEN_REGION_TAG',
+          devsite_urls: frozenRegionTagUrls,
+        });
+      }
     }
   }
   const ret: Map<string, Array<Violation>> = new Map([
     ['REMOVE_USED_TAG', removeUsedTagViolations],
     ['REMOVE_CONFLICTING_TAG', removeConflictingTagViolations],
     ['REMOVE_SAMPLE_BROWSER_PAGE', removeSampleBrowserViolations],
+    ['REMOVE_FROZEN_REGION_TAG', removeFrozenRegionTagViolations],
   ]);
   return ret;
 };

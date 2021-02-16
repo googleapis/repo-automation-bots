@@ -30,11 +30,13 @@ describe('do-not-merge', () => {
 
   beforeEach(() => {
     probot = createProbot({
-      githubToken: 'abc123',
-      Octokit: ProbotOctokit.defaults({
-        retry: {enabled: false},
-        throttle: {enabled: false},
-      }),
+      overrides: {
+        githubToken: 'abc123',
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
+      },
     });
     probot.load(myProbotApp);
   });
@@ -86,6 +88,34 @@ describe('do-not-merge', () => {
         'events',
         'pull_request_labeled'
       ));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/testOwner/testRepo/commits/c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a/check-runs?check_name=Do%20Not%20Merge&filter=latest'
+        )
+        .reply(200)
+        .post('/repos/testOwner/testRepo/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request.labeled',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+    });
+
+    it('creates failed check when alternative label added', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_labeled'
+      ));
+      payload.pull_request.labels[0].name = 'do-not-merge';
 
       const requests = nock('https://api.github.com')
         .get(

@@ -33,8 +33,12 @@ let bashPaths = new Set();
 for (const change of changes) {
   if (change.startsWith('packages/')) {
     if (change.startsWith('packages/monitoring-system')) {
-      // projects under packages/monitoring-system are nested
-      nodePaths.add(`monitoring-system/${change.split('/')[2]}`);
+      // projects under packages/monitoring-system are nested, but ensure
+      // the files are in the nested directory
+      const parts = change.split('/');
+      if (parts.length > 3) {
+        nodePaths.add(`monitoring-system/${parts[2]}`);
+      }
     } else {
       nodePaths.add(change.split('/')[1]);
     }
