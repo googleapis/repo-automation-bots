@@ -310,6 +310,7 @@ export async function getOwlBotLock(
     octokit
   );
   if (configString === undefined) {
+    logger.warn(`no .OwlBot.lock.yaml found in ${repoFull}`);
     return configString;
   }
   const maybeOwlBotLock = load(configString);
