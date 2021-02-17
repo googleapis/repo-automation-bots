@@ -83,6 +83,10 @@ export const triggerBuildCommand: yargs.CommandModule<{}, Args> = {
     );
     const octokit = await getAuthenticatedOctokit(token.token);
     const lock = await getOwlBotLock(argv.repo, Number(argv.pr), octokit);
+    if (!lock) {
+      console.info('no .OwlBot.lock.yaml found');
+      return;
+    }
     const image = `${lock.docker.image}@${lock.docker.digest}`;
     const buildStatus = await triggerBuild(
       {

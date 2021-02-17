@@ -20,7 +20,7 @@ import {Probot, Logger} from 'probot';
 import {logger} from 'gcf-utils';
 import {core} from './core';
 import {Octokit} from '@octokit/rest';
-import {onPostProcessorPublished} from './handlers';
+import {onPostProcessorPublished, scanGithubForConfigs} from './handlers';
 
 interface PubSubContext {
   github: Octokit;
@@ -84,6 +84,10 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
       context.payload.number,
       context.octokit
     );
+    if (!lock) {
+      logger.info(`no .OwlBot.lock.yaml found for ${head.repo.full_name}`);
+      return;
+    }
     const image = `${lock.docker.image}@${lock.docker.digest}`;
     // Run time image from .Owlbot.lock.yaml on Cloud Build:
     const buildStatus = await core.triggerBuild(
@@ -116,6 +120,8 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
     );
   });
 
+  // Configured to run when a new container is published to container registry:
+  //
   // Probot no longer allows custom `.on` in types, so we cast to
   // any to circumvent this issue:
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -135,5 +141,20 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
         dockerImageDigest
       );
     }
+  });
+
+  // Run periodically, to ensure that up-to-date configuration is stored
+  // for repositories:
+  app.on('schedule.repository' as '*', async context => {
+    const configStore = new FirestoreConfigsStore(db!);
+    logger.info(
+      `scan ${context.payload.org} istallation = ${context.payload.installation.id}`
+    );
+    await scanGithubForConfigs(
+      configStore,
+      context.octokit,
+      context.payload.org,
+      Number(context.payload.installation.id)
+    );
   });
 };
