@@ -16,6 +16,7 @@
 /* eslint-disable node/no-extraneous-import */
 
 import {Probot, Context} from 'probot';
+import {EventPayloads} from '@octokit/webhooks';
 
 import {Configuration, ConfigurationOptions} from './configuration';
 import {DEFAULT_CONFIGURATION, CONFIGURATION_FILE_PATH} from './configuration';
@@ -232,17 +233,14 @@ ${bodyDetail}`
 
 async function scanPullRequest(
   context: Context,
+  pull_request: EventPayloads.WebhookPayloadPullRequestPullRequest,
   configuration: Configuration,
-  refreshing = false,
-  pull_request: any = null
+  refreshing = false
 ) {
   const installationId = context.payload.installation.id;
   const owner = context.payload.repository.owner.login;
   const repo = context.payload.repository.name;
 
-  if (pull_request === null) {
-    pull_request = context.payload.pull_request;
-  }
   // Parse the PR diff and recognize added/deleted region tags.
   const result = await parseRegionTagsInPullRequest(
     pull_request.diff_url,
@@ -526,7 +524,12 @@ export = (app: Probot) => {
     invalidateCache();
 
     // Examine the pull request.
-    await scanPullRequest(context, configuration, true, prResponse.data);
+    await scanPullRequest(
+      context,
+      prResponse.data as EventPayloads.WebhookPayloadPullRequestPullRequest,
+      configuration,
+      true
+    );
   });
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
@@ -586,7 +589,12 @@ export = (app: Probot) => {
     invalidateCache();
 
     // Examine the pull request.
-    await scanPullRequest(context, configuration, true);
+    await scanPullRequest(
+      context,
+      context.payload.pull_request,
+      configuration,
+      true
+    );
   });
 
   app.on(
@@ -627,7 +635,11 @@ export = (app: Probot) => {
         ...configOptions,
       });
       logger.info({config: configuration});
-      await scanPullRequest(context, configuration);
+      await scanPullRequest(
+        context,
+        context.payload.pull_request,
+        configuration
+      );
     }
   );
 };
