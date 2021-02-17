@@ -17,7 +17,7 @@
 // check whether type bindings are already published.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, ProbotOctokit} from 'probot';
+import {Probot, ProbotOctokit} from 'probot';
 import {logger} from 'gcf-utils';
 
 type OctokitType = InstanceType<typeof ProbotOctokit>;
@@ -48,7 +48,7 @@ export const TimeMethods = {
   },
 };
 
-export function failureChecker(app: Application) {
+export function failureChecker(app: Probot) {
   app.on('schedule.repository' as '*', async context => {
     const utcHour = TimeMethods.Date().getUTCHours();
     const owner = context.payload.organization.login;
@@ -76,7 +76,7 @@ export function failureChecker(app: Application) {
     const failed: number[] = [];
     for (const label of labels) {
       const results = (
-        await context.github.issues.listForRepo({
+        await context.octokit.issues.listForRepo({
           owner: context.payload.organization.login,
           repo: context.payload.repository.name,
           labels: label,
@@ -95,7 +95,7 @@ export function failureChecker(app: Application) {
           // Check that the corresponding PR was actually merged,
           // rather than closed:
           const pr = (
-            await context.github.pulls.get({
+            await context.octokit.pulls.get({
               owner,
               repo,
               pull_number: issue.number,
@@ -111,7 +111,7 @@ export function failureChecker(app: Application) {
       }
     }
 
-    await manageWarningIssue(owner, repo, failed, context.github);
+    await manageWarningIssue(owner, repo, failed, context.octokit);
     logger.info(`it's alive! event for ${repo}`);
   });
 

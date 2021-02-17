@@ -29,11 +29,13 @@ describe('failurechecker', () => {
     // Later versions of probot seem to have problems dealing with fake sinon timers.
     sinon.stub(TimeMethods, 'Date').returns(new Date(Date.UTC(2020, 1, 1, 20)));
     probot = createProbot({
-      githubToken: 'abc123',
-      Octokit: ProbotOctokit.defaults({
-        retry: {enabled: false},
-        throttle: {enabled: false},
-      }),
+      overrides: {
+        githubToken: 'abc123',
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
+      },
     });
     probot.load(failureChecker);
   });
