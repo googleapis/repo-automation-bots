@@ -34,19 +34,19 @@ steps:
     entrypoint: docker
     args: ['push', *tag]
 
-  - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-instance"
-    waitFor: ["push-docker"]
-    dir: *workDir
-    entrypoint: gcloud
-    args: [
-      'run', 
-      'deploy', 
-      'data-processor', 
-      '--image', 
-      *tag, 
-      '--platform', 
-      'managed', 
-      '--region', 
-      'us-central1'
-    ]
+  #- name: gcr.io/cloud-builders/gcloud
+  #  id: "deploy-instance"
+  #  waitFor: ["push-docker"]
+  #  dir: *workDir
+  #  entrypoint: gcloud
+  #  args: [
+  #    'run',
+  #    'deploy',
+  #    'data-processor',
+  #    '--image',
+  #    *tag,
+  #    '--platform',
+  #    'managed',
+  #    '--region',
+  #    'us-central1'
+  #  ]

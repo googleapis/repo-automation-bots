@@ -192,9 +192,9 @@ describe('core', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any) as InstanceType<typeof Octokit>;
       const lock = await core.getOwlBotLock('bcoe/test', 22, octokit);
-      assert.strictEqual(lock.docker.image, 'node');
+      assert.strictEqual(lock!.docker.image, 'node');
       assert.strictEqual(
-        lock.docker.digest,
+        lock!.docker.digest,
         'sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c'
       );
     });
@@ -231,7 +231,34 @@ describe('core', () => {
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any) as InstanceType<typeof Octokit>;
-      assert.rejects(core.getOwlBotLock('bcoe/test', 22, octokit), /batman/);
+      assert.rejects(core.getOwlBotLock('bcoe/test', 22, octokit));
+    });
+    it('returns "undefined" if config not found', async () => {
+      const prData = {
+        data: {
+          head: {
+            ref: 'my-feature-branch',
+            repo: {
+              full_name: 'bcoe/example',
+            },
+          },
+        },
+      };
+      const octokit = ({
+        pulls: {
+          get() {
+            return prData;
+          },
+        },
+        repos: {
+          getContent() {
+            throw Object.assign(Error('Not Found'), {status: 404});
+          },
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any) as InstanceType<typeof Octokit>;
+      const config = await core.getOwlBotLock('bcoe/test', 22, octokit);
+      assert.strictEqual(config, undefined);
     });
   });
 });

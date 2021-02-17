@@ -2,6 +2,7 @@
   "report-dir": "coverage",
   "reporter": ["text", "lcov"],
   "exclude": [
+    "**/src/bin/**",
     "**/*-test",
     "**/coverage",
     "**/apis",
