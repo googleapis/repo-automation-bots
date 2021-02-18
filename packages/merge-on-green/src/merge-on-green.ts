@@ -447,9 +447,11 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
       const repo = ownerAndRepoArray[ownerAndRepoArray.length - 1];
       let baseBranch;
       try {
-        baseBranch = (await github.pulls.get({owner, repo, pull_number: issue.number})).data.base.ref;
-      } catch(err) {
-        baseBranch = 'master'
+        baseBranch = (
+          await github.pulls.get({owner, repo, pull_number: issue.number})
+        ).data.base.ref;
+      } catch (err) {
+        baseBranch = 'master';
         logger.error;
       }
       await handler.addPR(
@@ -477,9 +479,11 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
       const repo = ownerAndRepoArray[ownerAndRepoArray.length - 1];
       let baseBranch;
       try {
-        baseBranch = (await github.pulls.get({owner, repo, pull_number: issue.number})).data.base.ref;
-      } catch(err) {
-        baseBranch = 'master'
+        baseBranch = (
+          await github.pulls.get({owner, repo, pull_number: issue.number})
+        ).data.base.ref;
+      } catch (err) {
+        baseBranch = 'master';
         logger.error;
       }
       await handler.addPR(

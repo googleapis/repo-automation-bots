@@ -51,7 +51,11 @@ nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/Fixtures');
 
-function getBranchProtection(branch: string, status: number, requiredStatusChecks: string[]) {
+function getBranchProtection(
+  branch: string,
+  status: number,
+  requiredStatusChecks: string[]
+) {
   return nock('https://api.github.com')
     .get(`/repos/testOwner/testRepo/branches/${branch}/protection`)
     .reply(status, {
