@@ -244,7 +244,10 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
 ): Promise<string[] | undefined> {
   let branchProtection: string[] | undefined;
   // Check to see if branch protection exists
-  const branch = baseBranch ? baseBranch : (await github.pulls.get({owner, repo, pull_number: prNumber})).data.base.ref
+  const branch = baseBranch
+    ? baseBranch
+    : (await github.pulls.get({owner, repo, pull_number: prNumber})).data.base
+        .ref;
   try {
     branchProtection = (
       await github.repos.getBranchProtection({
