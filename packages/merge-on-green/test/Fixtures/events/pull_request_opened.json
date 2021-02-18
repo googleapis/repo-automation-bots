@@ -177,7 +177,7 @@
     },
     "base": {
       "label": "testuser2:master",
-      "ref": "master",
+      "ref": "main",
       "sha": "7dfdda6032153d27e6555482b3e88ded77ae5a6a",
       "user": {
         "login": "testuser2",

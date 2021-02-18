@@ -54,6 +54,7 @@ interface IncomingPR {
   number: number;
   repo: string;
   owner: string;
+  branch: string;
   state: 'continue' | 'stop';
   label: string;
   author: string;
@@ -238,6 +239,7 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
   owner: string,
   repo: string,
   prNumber: number,
+  baseBranch: string,
   github: GitHubType
 ): Promise<string[] | undefined> {
   let branchProtection: string[] | undefined;
@@ -247,7 +249,7 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
       await github.repos.getBranchProtection({
         owner,
         repo,
-        branch: 'master',
+        branch: baseBranch,
       })
     ).data.required_status_checks.contexts;
     logger.info(
@@ -285,6 +287,7 @@ handler.addPR = async function addPR(
       incomingPR.owner,
       incomingPR.repo,
       incomingPR.number,
+      incomingPR.branch,
       github
     );
   } catch (err) {
@@ -442,11 +445,19 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
       const ownerAndRepoArray = issue.repository_url.split('/');
       const owner = ownerAndRepoArray[ownerAndRepoArray.length - 2];
       const repo = ownerAndRepoArray[ownerAndRepoArray.length - 1];
+      let baseBranch;
+      try {
+        baseBranch = (await github.pulls.get({owner, repo, pull_number: issue.number})).data.base.ref;
+      } catch(err) {
+        baseBranch = 'master'
+        logger.error;
+      }
       await handler.addPR(
         {
           number: issue.number,
           owner,
           repo,
+          branch: baseBranch,
           state: 'continue',
           url: issue.html_url,
           label: MERGE_ON_GREEN_LABEL,
@@ -464,11 +475,19 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
       const ownerAndRepoArray = issue.repository_url.split('/');
       const owner = ownerAndRepoArray[ownerAndRepoArray.length - 2];
       const repo = ownerAndRepoArray[ownerAndRepoArray.length - 1];
+      let baseBranch;
+      try {
+        baseBranch = (await github.pulls.get({owner, repo, pull_number: issue.number})).data.base.ref;
+      } catch(err) {
+        baseBranch = 'master'
+        logger.error;
+      }
       await handler.addPR(
         {
           number: issue.number,
           owner,
           repo,
+          branch: baseBranch,
           state: 'continue',
           url: issue.html_url,
           label: MERGE_ON_GREEN_LABEL_SECURE,
@@ -551,6 +570,7 @@ function handler(app: Probot) {
         number: prNumber,
         owner,
         repo,
+        branch: context.payload.pull_request.base.ref,
         state: 'continue',
         url: context.payload.pull_request.html_url,
         label: label.name,
