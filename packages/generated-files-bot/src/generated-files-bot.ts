@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application, ProbotOctokit} from 'probot';
+import {Probot, ProbotOctokit} from 'probot';
 import {logger, addOrUpdateIssueComment} from 'gcf-utils';
 import {load} from 'js-yaml';
 import {query} from 'jsonpath';
@@ -21,6 +21,10 @@ import {query} from 'jsonpath';
 type OctokitType = InstanceType<typeof ProbotOctokit>;
 
 const CONFIGURATION_FILE_PATH = 'generated-files-bot.yml';
+
+interface File {
+  content: string | undefined;
+}
 
 interface ExternalManifest {
   type: 'json' | 'yaml';
@@ -51,6 +55,10 @@ export function parseManifest(
   return query(data, jsonpath);
 }
 
+function isFile(file: File | unknown): file is File {
+  return (file as File).content !== undefined;
+}
+
 /**
  * Return the list of files specified for a single External Manifest configuration
  * @param github Octokit instance
@@ -69,7 +77,10 @@ async function readExternalManifest(
       path: manifest.file,
     })
     .then(result => {
-      const content = Buffer.from(result.data.content, 'base64').toString();
+      let content = '';
+      if (isFile(result.data)) {
+        content = Buffer.from(result.data.content, 'base64').toString();
+      }
       return new Set(parseManifest(content, manifest.type, manifest.jsonpath));
     })
     .catch(e => {
@@ -147,7 +158,7 @@ export function buildCommentMessage(touchedTemplates: Set<string>): string {
   );
 }
 
-export function handler(app: Application) {
+export function handler(app: Probot) {
   app.on(['pull_request.opened', 'pull_request.synchronize'], async context => {
     let config: Configuration = {};
     // Reading the config requires access to code permissions, which are not
@@ -175,7 +186,7 @@ export function handler(app: Application) {
 
     // Read the list of templated files
     const templatedFiles = new Set(
-      await getFileList(config, context.github, owner, repo)
+      await getFileList(config, context.octokit, owner, repo)
     );
     if (templatedFiles.size === 0) {
       logger.warn(
@@ -186,7 +197,7 @@ export function handler(app: Application) {
 
     // Fetch the list of touched files in this pull request
     const pullRequestFiles = await getPullRequestFiles(
-      context.github,
+      context.octokit,
       owner,
       repo,
       pullNumber
@@ -204,11 +215,11 @@ export function handler(app: Application) {
     if (touchedTemplates.size > 0) {
       const body = buildCommentMessage(touchedTemplates);
       await addOrUpdateIssueComment(
-        context.github,
+        context.octokit,
         owner,
         repo,
         pullNumber,
-        context.payload.installation.id,
+        context.payload.installation!.id,
         body
       );
     }
