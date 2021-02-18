@@ -271,7 +271,9 @@ export async function refreshConfigs(
         yaml.load(lockContent) as Record<string, any>
       );
     } catch (e) {
-      logger.error(`${repoFull} has an invalid ${owlBotLockPath} file: ${e.message}`);
+      logger.error(
+        `${repoFull} has an invalid ${owlBotLockPath} file: ${e.message}`
+      );
     }
   }
 
