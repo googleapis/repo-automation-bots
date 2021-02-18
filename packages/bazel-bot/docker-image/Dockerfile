@@ -60,9 +60,10 @@ ENV GOOGLEAPIS_GEN=/googleapis-gen
 # Copy the source files from this directory.
 COPY generate-googleapis-gen.sh /generate-googleapis-gen.sh
 COPY install-credentials.sh /install-credentials.sh
+COPY query-build-targets.sh /query-build-targets.sh
 
 # Build once to cache all the build files for later builds.
-RUN BUILD_ONCE_AND_EXIT=1 /generate-googleapis-gen.sh
+RUN cd /googleapis && bazel build ${BAZEL_FLAGS} -k $(/query-build-targets.sh) || true
 
 ENTRYPOINT ["/bin/bash"]
 CMD ["/docker-main.sh"]

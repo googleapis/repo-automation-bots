@@ -21,9 +21,6 @@
 
 # Optional arguments.
 #
-# BUILD_TARGETS: Build targets to rebuild.  Example: 
-#   //google/cloud/vision/v1:vision-v1-nodejs.tar.gz
-#
 # BAZEL_FLAGS: additional flags to pass to 'bazel query' and 'bazel build'.
 # Useful for setting a remote cache, coping with different versions of bazel, etc.
 
@@ -42,6 +39,7 @@ mydir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 # Override in tests.
 INSTALL_CREDENTIALS=${INSTALL_CREDENTIALS:="$mydir/install-credentials.sh"}
+QUERY_BUILD_TARGETS=${QUERY_BUILD_TARGETS:="$mydir/query-build-targets.sh"}
 
 # Pull both repos to make sure we're up to date.
 git -C "$GOOGLEAPIS" pull
@@ -69,13 +67,8 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     # Rebuild at the sha.
     git -C "$GOOGLEAPIS" checkout "$sha"
     # Choose build targets.
-    if [[ -z "$BUILD_TARGETS" ]] ; then
-        targets=$(cd "$GOOGLEAPIS" \
-        && bazel query $BAZEL_FLAGS 'filter("-(go|csharp|java|php|ruby|nodejs|py)\.tar\.gz$", kind("generated file", //...:*))' \
-        | grep -v -E ":(proto|grpc|gapic)-.*-java\.tar\.gz$")
-    else
-        targets="$BUILD_TARGETS"
-    fi
+
+    BUILD_TARGETS=$($QUERY_BUILD_TARGETS)
     # Clean out all the source packages from the previous build.
     rm -f $(find -L "$GOOGLEAPIS/bazel-bin" -name "*.tar.gz")
     # Confirm that bazel can fetch remote build dependencies before building
@@ -92,10 +85,6 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     set +e
     # Invoke bazel build.
     (cd "$GOOGLEAPIS" && bazel build $BAZEL_FLAGS -k $targets)
-
-    if [[ -n "$BUILD_ONCE_AND_EXIT" ]] ; then 
-        exit 0
-    fi
 
     # Clear out the existing contents of googleapis-gen before we copy back into it,
     # so that deleted APIs will be be removed.
