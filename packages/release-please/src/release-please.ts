@@ -13,10 +13,9 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Application} from 'probot';
+import {Probot} from 'probot';
 import {
   ReleasePROptions,
-  getReleaserNames,
   GitHubRelease,
   GitHubReleaseOptions,
   ReleasePR,
@@ -30,6 +29,10 @@ import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {request} from '@octokit/request';
 import {logger} from 'gcf-utils';
+import {
+  ReleaseType,
+  getReleaserNames,
+} from 'release-please/build/src/releasers';
 type RequestBuilderType = typeof request;
 type DefaultFunctionType = RequestBuilderType['defaults'];
 type RequestFunctionType = ReturnType<DefaultFunctionType>;
@@ -44,7 +47,7 @@ interface GitHubAPI {
 interface BranchOptions {
   releaseLabels?: string[];
   monorepoTags?: boolean;
-  releaseType?: string;
+  releaseType?: ReleaseType;
   packageName?: string;
   handleGHRelease?: boolean;
   bumpMinorPreMajor?: boolean;
@@ -69,7 +72,7 @@ const DEFAULT_CONFIGURATION: ConfigurationOptions = {
 };
 const FORCE_RUN_LABEL = 'release-please:force-run';
 
-function releaseTypeFromRepoLanguage(language: string | null): string {
+function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
   if (language === null) {
     throw Error('repository has no detected language');
   }
@@ -86,7 +89,7 @@ function releaseTypeFromRepoLanguage(language: string | null): string {
     default: {
       const releasers = getReleaserNames();
       if (releasers.includes(language.toLowerCase())) {
-        return language.toLowerCase();
+        return language.toLowerCase() as ReleaseType;
       } else {
         throw Error(`unknown release type: ${language}`);
       }
@@ -128,7 +131,7 @@ async function createGitHubRelease(
   path?: string,
   changelogPath?: string,
   monorepoTags?: boolean,
-  releaseType?: string
+  releaseType?: ReleaseType
 ) {
   const releaseOptions: GitHubReleaseOptions = {
     label: 'autorelease: pending',
@@ -152,7 +155,7 @@ async function createGitHubRelease(
 async function createReleasePR(
   repoName: string,
   repoUrl: string,
-  repoLanguage: string,
+  repoLanguage: string | null,
   configuration: BranchConfiguration,
   github: GitHubAPI,
   snapshot?: boolean
@@ -189,7 +192,7 @@ async function createReleasePR(
   return releasePR;
 }
 
-export = (app: Application) => {
+export = (app: Probot) => {
   app.on('push', async context => {
     const repoUrl = context.payload.repository.full_name;
     const branch = context.payload.ref.replace('refs/heads/', '');
@@ -223,7 +226,7 @@ export = (app: Application) => {
       repoUrl,
       repoLanguage,
       branchConfiguration,
-      context.github as GitHubAPI,
+      context.octokit as GitHubAPI,
       undefined
     );
 
@@ -234,7 +237,7 @@ export = (app: Application) => {
       await createGitHubRelease(
         branchConfiguration.packageName ?? repoName,
         repoUrl,
-        context.github as GitHubAPI,
+        context.octokit as GitHubAPI,
         branchConfiguration.path,
         branchConfiguration.changelogPath ?? 'CHANGELOG.md',
         branchConfiguration.monorepoTags,
@@ -273,7 +276,7 @@ export = (app: Application) => {
     };
 
     // get the repository language
-    const repository = await context.github.repos.get(context.repo());
+    const repository = await context.octokit.repos.get(context.repo());
     const repoLanguage = repository.data.language;
 
     await createReleasePR(
@@ -281,7 +284,7 @@ export = (app: Application) => {
       repoUrl,
       repoLanguage,
       defaultBranchConfiguration,
-      context.github,
+      context.octokit,
       true
     );
 
@@ -299,7 +302,7 @@ export = (app: Application) => {
           repoUrl,
           repoLanguage,
           branchConfiguration,
-          context.github,
+          context.octokit,
           true
         );
       })
@@ -331,7 +334,7 @@ export = (app: Application) => {
     const repoLanguage = context.payload.repository.language;
 
     // remove the label
-    await context.github.issues.removeLabel({
+    await context.octokit.issues.removeLabel({
       name: FORCE_RUN_LABEL,
       issue_number: context.payload.pull_request.number,
       owner,
@@ -366,7 +369,7 @@ export = (app: Application) => {
       repoUrl,
       repoLanguage,
       branchConfiguration,
-      context.github as GitHubAPI,
+      context.octokit as GitHubAPI,
       undefined
     );
   });

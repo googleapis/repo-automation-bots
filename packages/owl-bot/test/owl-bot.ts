@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as assert from 'assert';
 import {core} from '../src/core';
+import * as handlers from '../src/handlers';
 import {describe, it, beforeEach} from 'mocha';
 import {logger} from 'gcf-utils';
 import owlBot from '../src/owl-bot';
@@ -117,6 +119,67 @@ describe('owlBot', () => {
       sandbox.assert.calledOnce(triggerBuildStub);
       sandbox.assert.calledOnce(createCheckStub);
       githubMock.done();
+    });
+  });
+  it('loads async app before handling request', async () => {
+    const probot = createProbot({
+      overrides: {
+        githubToken: 'abc123',
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
+      },
+    });
+    await probot.load(async (app: Probot) => {
+      await new Promise(resolve => {
+        setTimeout(() => {
+          return resolve(undefined);
+        }, 100);
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      owlBot('abc123', app, sandbox.stub() as any);
+    });
+    const loggerStub = sandbox.stub(logger, 'info');
+    await probot.receive({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'pubsub.message' as any,
+      payload: {},
+      id: 'abc123',
+    });
+    sandbox.assert.calledOnce(loggerStub);
+  });
+  describe('scan configs cron', () => {
+    it('invokes scanGithubForConfigs', async () => {
+      const payload = {
+        org: 'googleapis',
+        installation: {
+          id: 12345,
+        },
+      };
+      let org: string | undefined = undefined;
+      let installation: number | undefined = undefined;
+      sandbox.replace(
+        handlers,
+        'scanGithubForConfigs',
+        (
+          _configStore,
+          _octokit,
+          _org: string,
+          _installation: number
+        ): Promise<void> => {
+          org = _org;
+          installation = _installation;
+          return Promise.resolve(undefined);
+        }
+      );
+      await probot.receive({
+        name: 'schedule.repository' as '*',
+        payload,
+        id: 'abc123',
+      });
+      assert.strictEqual(org, 'googleapis');
+      assert.strictEqual(installation, 12345);
     });
   });
 });

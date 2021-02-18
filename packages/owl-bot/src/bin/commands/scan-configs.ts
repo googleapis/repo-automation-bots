@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Run like this:
-// node ./build/src/bin/owl-bot.js list-repos --docker-image foo
-
+import admin from 'firebase-admin';
 import {readFile} from 'fs';
-import {ConfigsStore} from '../../configs-store';
-import {createOnePullRequestForUpdatingLock} from '../../handlers';
+import {FirestoreConfigsStore} from '../../database';
+import {scanGithubForConfigs} from '../../handlers';
 import {
   getAuthenticatedOctokit,
   getGitHubShortLivedAccessToken,
@@ -31,14 +29,14 @@ interface Args {
   'pem-path': string;
   'app-id': number;
   installation: number;
-  'docker-image': string;
-  'docker-digest': string;
-  repo: string;
+  org: string;
+  project: string;
 }
 
-export const openPR: yargs.CommandModule<{}, Args> = {
-  command: 'open-pr',
-  describe: 'Open a pull request with an updated .OwlBot.lock.yaml',
+export const scanConfigs: yargs.CommandModule<{}, Args> = {
+  command: 'scan-configs',
+  describe:
+    'Scan GitHub org for .github/.OwlBot.yaml and .github/.OwlBot.lock.yaml',
   builder(yargs) {
     return yargs
       .option('pem-path', {
@@ -56,19 +54,13 @@ export const openPR: yargs.CommandModule<{}, Args> = {
         type: 'number',
         demand: true,
       })
-      .option('docker-image', {
-        describe:
-          'The full path of the docker image that changed.  ex: gcr.io/repo-automation-bots/nodejs-post-processor',
+      .option('org', {
+        describe: 'organization to scan for configuration files',
         type: 'string',
         demand: true,
       })
-      .option('docker-digest', {
-        describe: 'the docker digest sha',
-        type: 'string',
-        demand: true,
-      })
-      .option('repo', {
-        describe: 'repository to run against, e.g., googleapis/foo',
+      .option('project', {
+        describe: 'project with config database',
         type: 'string',
         demand: true,
       });
@@ -80,21 +72,19 @@ export const openPR: yargs.CommandModule<{}, Args> = {
       argv['app-id'],
       argv.installation
     );
-    const fakeConfigStore = ({
-      findPullRequestForUpdatingLock: () => undefined,
-      recordPullRequestForUpdatingLock: () => {},
-    } as unknown) as ConfigsStore;
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+      projectId: argv.project,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const db = admin.firestore();
     const octokit = await getAuthenticatedOctokit(token.token);
-    await createOnePullRequestForUpdatingLock(
-      fakeConfigStore,
+    const configStore = new FirestoreConfigsStore(db!);
+    await scanGithubForConfigs(
+      configStore,
       octokit,
-      argv.repo,
-      {
-        docker: {
-          image: argv['docker-image'],
-          digest: argv['docker-digest'],
-        },
-      }
+      argv.org,
+      argv.installation
     );
   },
 };

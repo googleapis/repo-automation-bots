@@ -78,7 +78,7 @@ describe('GitHub Data Processor', () => {
       });
     });
 
-    it('collects GitHub Events data and stores it in Firestore', () => {
+    it.skip('collects GitHub Events data and stores it in Firestore', () => {
       mockFirestore.setMockData(fixture1.preTestFirestoreData);
       middleware.setMockResponse(LIST_REPO_EVENTS_ACTION, {
         type: 'resolve',
@@ -167,7 +167,7 @@ describe('GitHub Data Processor', () => {
       processor = new GitHubProcessor({octokit: mockOctokit});
     });
 
-    it('returns events for repository when events exist', () => {
+    it.skip('returns events for repository when events exist', () => {
       middleware.setMockResponse(LIST_REPO_EVENTS_ACTION, {
         type: 'resolve',
         value: fixture1.githubEventsResponse,
@@ -187,7 +187,7 @@ describe('GitHub Data Processor', () => {
       ).then(events => assert.deepEqual(events, []));
     });
 
-    it('returns events with default value if data is missing from GitHub', () => {
+    it.skip('returns events with default value if data is missing from GitHub', () => {
       middleware.setMockResponse(LIST_REPO_EVENTS_ACTION, {
         type: 'resolve',
         value: fixture2.githubEventsResponse,
