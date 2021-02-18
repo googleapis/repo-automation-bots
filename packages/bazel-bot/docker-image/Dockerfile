@@ -66,4 +66,4 @@ COPY query-build-targets.sh /query-build-targets.sh
 RUN cd /googleapis && bazel build ${BAZEL_FLAGS} -k $(/query-build-targets.sh) || true
 
 ENTRYPOINT ["/bin/bash"]
-CMD ["/docker-main.sh"]
+CMD ["/generate-googleapis-gen.sh"]
