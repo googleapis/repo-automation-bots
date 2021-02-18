@@ -167,34 +167,45 @@ export async function scanGithubForConfigs(
   configsStore: ConfigsStore,
   octokit: OctokitType,
   githubOrg: string,
-  orgInstallationId: number,
-  logger = console
+  orgInstallationId: number
 ): Promise<void> {
-  // Some configurations may not have an installationId yet.
-  // Revisit them after we have collected an installationId.
-  type refreshFunction = (installationId: number) => Promise<void>;
-  const refreshLaters: refreshFunction[] = [];
-
-  const repos = octokit.repos.listForOrg.endpoint.merge({org: githubOrg});
-  for await (const response of octokit.paginate.iterator(repos)) {
+  let count = 0; // Count of repos scanned for debugging purposes.
+  for await (const response of octokit.paginate.iterator(
+    octokit.repos.listForOrg,
+    {
+      org: githubOrg,
+    }
+  )) {
     const repos = response.data as ListReposResponse['data'];
+    logger.info(`count = ${count} page size = ${repos.length}`);
     for (const repo of repos) {
+      count++;
       // Load the current configs from the db.
       const repoFull = `${githubOrg}/${repo.name}`;
       const configs = await configsStore.getConfigs(repoFull);
       const defaultBranch = repo.default_branch ?? 'master';
-
-      await refreshConfigs(
-        configsStore,
-        configs,
-        octokit,
-        githubOrg,
-        repo.name,
-        defaultBranch,
-        orgInstallationId
-      );
+      logger.info(`refresh config for ${githubOrg}/${repo.name}`);
+      try {
+        await refreshConfigs(
+          configsStore,
+          configs,
+          octokit,
+          githubOrg,
+          repo.name,
+          defaultBranch,
+          orgInstallationId
+        );
+      } catch (err) {
+        if (err.status === 404) {
+          logger.warn(`received 404 refreshing ${githubOrg}/${repo.name}`);
+          continue;
+        } else {
+          throw err;
+        }
+      }
     }
   }
+  logger.info('finished iterating over repos');
 }
 
 /**
@@ -216,8 +227,7 @@ export async function refreshConfigs(
   githubOrg: string,
   repoName: string,
   defaultBranch: string,
-  installationId: number,
-  logger = console
+  installationId: number
 ): Promise<void> {
   // Query github for the commit hash of the default branch.
   const {data: branchData} = await octokit.repos.getBranch({

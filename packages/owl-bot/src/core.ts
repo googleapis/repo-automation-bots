@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import {load} from 'js-yaml';
+import {logger} from 'gcf-utils';
 import {sign} from 'jsonwebtoken';
 import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
@@ -72,8 +73,7 @@ interface Token {
 
 export async function triggerBuild(
   args: BuildArgs,
-  octokit?: OctokitType,
-  logger = console
+  octokit?: OctokitType
 ): Promise<BuildResponse> {
   const token = await core.getGitHubShortLivedAccessToken(
     args.privateKey,
@@ -191,11 +191,7 @@ export async function getHeadCommit(
   else return headCommit as Commit;
 }
 
-export async function createCheck(
-  args: CheckArgs,
-  octokit?: OctokitType,
-  logger = console
-) {
+export async function createCheck(args: CheckArgs, octokit?: OctokitType) {
   if (!octokit) {
     octokit = await core.getAuthenticatedOctokit({
       privateKey: args.privateKey,
@@ -299,7 +295,7 @@ export async function getOwlBotLock(
   repoFull: string,
   pullNumber: number,
   octokit: OctokitType
-): Promise<OwlBotLock> {
+): Promise<OwlBotLock | undefined> {
   const [owner, repo] = repoFull.split('/');
   const {data: prData} = await octokit.pulls.get({
     owner,
@@ -314,7 +310,8 @@ export async function getOwlBotLock(
     octokit
   );
   if (configString === undefined) {
-    throw Error(`unable to find ${owlBotLockPath} in ${owner}/${repo}`);
+    logger.warn(`no .OwlBot.lock.yaml found in ${repoFull}`);
+    return configString;
   }
   const maybeOwlBotLock = load(configString);
   if (maybeOwlBotLock === null || typeof maybeOwlBotLock !== 'object') {
@@ -339,22 +336,27 @@ export async function getFileContent(
   ref: string,
   octokit: OctokitType
 ): Promise<string | undefined> {
-  const data = (
-    await octokit.repos.getContent({
-      owner,
-      repo,
-      path,
-      ref,
-    })
-  ).data as {content: string | undefined; encoding: string};
-  if (!data.content) {
-    return undefined;
+  try {
+    const data = (
+      await octokit.repos.getContent({
+        owner,
+        repo,
+        path,
+        ref,
+      })
+    ).data as {content: string | undefined; encoding: string};
+    if (!data.content) {
+      return undefined;
+    }
+    if (data.encoding !== 'base64') {
+      throw Error(`unexpected encoding ${data.encoding} in ${owner}/${repo}`);
+    }
+    const text = Buffer.from(data.content, 'base64').toString('utf8');
+    return text;
+  } catch (err) {
+    if (err.status === 404) return undefined;
+    else throw err;
   }
-  if (data.encoding !== 'base64') {
-    throw Error(`unexpected encoding ${data.encoding} in ${owner}/${repo}`);
-  }
-  const text = Buffer.from(data.content, 'base64').toString('utf8');
-  return text;
 }
 
 export const core = {

@@ -463,6 +463,34 @@ describe('scanGithubForConfigs', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any) as InstanceType<typeof Octokit>;
 
+  const octokitWith404OnBranch = ({
+    repos: {
+      getBranch() {
+        throw Object.assign(Error('Not Found'), {status: 404});
+      },
+      listForOrg: {
+        endpoint: {
+          merge() {
+            return 'merge';
+          },
+        },
+      },
+    },
+    paginate: {
+      iterator() {
+        return [
+          {
+            name: 'nodejs-vision',
+            default_branch: 'main',
+          },
+        ].map(configs => {
+          return Promise.resolve({data: [configs]});
+        });
+      },
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any) as InstanceType<typeof Octokit>;
+
   it('works with an installationId', async () => {
     const configsStore = new FakeConfigStore();
     sandbox.stub(core, 'getFileContent').resolves(`
@@ -522,6 +550,20 @@ describe('scanGithubForConfigs', () => {
           },
         ],
       ])
+    );
+  });
+
+  it('recovers from 404 when scanning configs', async () => {
+    const configsStore = new FakeConfigStore();
+    sandbox.stub(core, 'getFileContent').resolves(`
+      docker:
+        image: gcr.io/repo-automation-bots/nodejs-post-processor:latest
+    `);
+    await scanGithubForConfigs(
+      configsStore,
+      octokitWith404OnBranch,
+      'googleapis',
+      45
     );
   });
 });

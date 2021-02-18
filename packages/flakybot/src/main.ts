@@ -16,7 +16,7 @@
 // Import the app and run it directly rather than using `probot run`.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {run} from 'probot';
 import {flakybot} from './flakybot';
 
-Probot.run(flakybot);
+run(flakybot);
