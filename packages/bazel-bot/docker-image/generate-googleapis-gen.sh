@@ -68,7 +68,7 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     git -C "$GOOGLEAPIS" checkout "$sha"
     # Choose build targets.
 
-    BUILD_TARGETS=$($QUERY_BUILD_TARGETS)
+    targets=$($QUERY_BUILD_TARGETS)
     # Clean out all the source packages from the previous build.
     rm -f $(find -L "$GOOGLEAPIS/bazel-bin" -name "*.tar.gz")
     # Confirm that bazel can fetch remote build dependencies before building
