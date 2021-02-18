@@ -46,10 +46,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en
 
+# Clone the repos so they are cached and ready for later.
+ENV BAZEL_FLAGS=--google_default_credentials --remote_cache=https://storage.googleapis.com/repo-automation-bots-bazel-cache
+RUN git config --global user.email "bazel-bot-development[bot]@users.noreply.github.com"
+RUN git config --global user.name "Bazel Bot"
+
+RUN git clone https://github.com/googleapis/googleapis.git
+RUN git clone https://github.com/googleapis/googleapis-gen.git
+
+ENV GOOGLEAPIS=/googleapis
+ENV GOOGLEAPIS_GEN=/googleapis-gen
+
 # Copy the source files from this directory.
 COPY generate-googleapis-gen.sh /generate-googleapis-gen.sh
 COPY install-credentials.sh /install-credentials.sh
-COPY docker-main.sh /docker-main.sh
+
+# Build once to cache all the build files for later builds.
+RUN BUILD_ONCE_AND_EXIT=1 /generate-googleapis-gen.sh
 
 ENTRYPOINT ["/bin/bash"]
 CMD ["/docker-main.sh"]

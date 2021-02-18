@@ -19,7 +19,6 @@ steps:
 
 - name: 'gcr.io/repo-automation-bots/bazel-bot'
   env:
-    - 'BAZEL_FLAGS=--google_default_credentials --remote_cache=https://storage.googleapis.com/repo-automation-bots-bazel-cache'
     - 'GITHUB_APP_INSTALLATION_ID=14395202'
     - 'GITHUB_APP_ID=97063'
     - 'GITHUB_APP_SECRET=/workspace/bazel-bot-github-key.pem'

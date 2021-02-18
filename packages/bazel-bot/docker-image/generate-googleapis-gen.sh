@@ -93,6 +93,10 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     # Invoke bazel build.
     (cd "$GOOGLEAPIS" && bazel build $BAZEL_FLAGS -k $targets)
 
+    if [[ -n "$BUILD_ONCE_AND_EXIT" ]] ; then 
+        exit 0
+    fi
+
     # Clear out the existing contents of googleapis-gen before we copy back into it,
     # so that deleted APIs will be be removed.
     rm -rf "$GOOGLEAPIS_GEN/external" "$GOOGLEAPIS_GEN/google" "$GOOGLEAPIS_GEN/grafeas"
