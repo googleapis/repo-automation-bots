@@ -38,6 +38,7 @@
   "devDependencies": {
     "@types/js-yaml": "^4.0.0",
     "@types/jsonwebtoken": "^8.5.0",
+    "@types/minimatch": "^3.0.3",
     "@types/mocha": "^8.2.0",
     "@types/node": "^14.14.20",
     "@types/sinon": "^9.0.10",
@@ -60,6 +61,7 @@
     "gcf-utils": "^7.1.2",
     "js-yaml": "^4.0.0",
     "jsonwebtoken": "^8.5.1",
+    "minimatch": "^3.0.4",
     "yargs": "^16.2.0"
   }
 }

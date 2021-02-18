@@ -47,13 +47,14 @@ export function owlBotLockFrom(o: Record<string, any>): OwlBotLock {
 export interface CopyDir {
   source: string;
   dest: string;
+  'strip-prefix'?: string;
 }
 
 // The .github/.OwlBot.yaml is stored on each repository that OwlBot
 // is configured for, and indicates the docker container that should be run
 // for post processing and which files from googleapis-gen should be copied.
 export interface OwlBotYaml {
-  docker: {
+  docker?: {
     image: string;
   };
   'copy-dirs'?: CopyDir[];

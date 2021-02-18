@@ -14,7 +14,12 @@
 
 import {describe, it, before} from 'mocha';
 import admin from 'firebase-admin';
-import {FirestoreConfigsStore, encodeId, decodeId} from '../src/database';
+import {
+  FirestoreConfigsStore,
+  encodeId,
+  decodeId,
+  newMinimatchFromSource,
+} from '../src/database';
 import {Configs} from '../src/configs-store';
 import {v4 as uuidv4} from 'uuid';
 import * as assert from 'assert';
@@ -42,29 +47,30 @@ describe('database', () => {
     }
   });
 
-  it('store configs', async () => {
+  it('stores and retrieves configs', async () => {
     const db = admin.firestore();
     const store = new FirestoreConfigsStore(db, 'test-');
-    const repo = 'googleapis/' + uuidv4();
+    const repoA = 'googleapis/' + uuidv4();
+    const repoB = 'googleapis/' + uuidv4();
     const dockerImageA = uuidv4();
     const dockerImageB = uuidv4();
 
     // Confirm that the new repo and dockerImage aren't stored yet.
-    const noConfigs = await store.getConfigs(repo);
+    const noConfigs = await store.getConfigs(repoA);
     assert.strictEqual(noConfigs, undefined);
     const noRepos = await store.findReposWithPostProcessor(dockerImageA);
     assert.deepStrictEqual(noRepos, []);
 
     // Insert some configs.
-    const configs: Configs = {
+    const configsA: Configs = {
       yaml: {
         docker: {
           image: dockerImageA,
         },
         'copy-dirs': [
           {
-            source: 'alpha',
-            dest: 'beta',
+            source: '/alpha',
+            dest: '/beta',
           },
         ],
       },
@@ -78,65 +84,162 @@ describe('database', () => {
       branchName: 'main',
       installationId: 42,
     };
-    assert.ok(await store.storeConfigs(repo, configs, null));
+    assert.ok(await store.storeConfigs(repoA, configsA, null));
+    const configsB: Configs = {
+      yaml: {
+        'copy-dirs': [
+          {
+            source: '/gamma',
+            dest: '/omega',
+          },
+        ],
+      },
+      commitHash: 'def',
+      branchName: 'master',
+      installationId: 53,
+    };
+    assert.ok(await store.storeConfigs(repoB, configsB, null));
     try {
       // We should find the repo when we search for its docker image.
       let repos = await store.findReposWithPostProcessor(dockerImageA);
-      assert.deepStrictEqual(repos, [[repo, configs]]);
+      assert.deepStrictEqual(repos, [[repoA, configsA]]);
 
       // And not find it if we search for a different docker image.
       repos = await store.findReposWithPostProcessor(dockerImageB);
       assert.deepStrictEqual(repos, []);
 
       // Confirm that storing with a mismatched hash doesn't store.
-      assert.ok(!(await store.storeConfigs(repo, configs, 'xyz')));
+      assert.ok(!(await store.storeConfigs(repoA, configsA, 'xyz')));
 
       // Specify a new docker image and store again.
-      configs.yaml!.docker.image = dockerImageB;
-      configs.commitHash = 'def';
-      assert.ok(await store.storeConfigs(repo, configs, 'abc'));
+      configsA.yaml!.docker!.image = dockerImageB;
+      configsA.commitHash = 'def';
+      assert.ok(await store.storeConfigs(repoA, configsA, 'abc'));
 
       // Make sure we find it now for dockerImageB.
       repos = await store.findReposWithPostProcessor(dockerImageB);
-      assert.deepStrictEqual(repos, [[repo, configs]]);
+      assert.deepStrictEqual(repos, [[repoA, configsA]]);
 
       // And not find it if we search for a different docker image.
       repos = await store.findReposWithPostProcessor(dockerImageA);
       assert.deepStrictEqual(repos, []);
 
-      // Test pull requests.
-      assert.strictEqual(
-        await store.findPullRequestForUpdatingLock(repo, configs.lock!),
-        undefined
-      );
+      // Test findReposAffectedByFileChanges().
+      const reposAffected = await store.findReposAffectedByFileChanges([
+        '/alpha/source.js',
+      ]);
+      assert.deepStrictEqual(reposAffected, [repoA]);
+    } finally {
+      await store.clearConfigs(repoA);
+    }
+  });
 
-      // First one gets recorded.
-      const pullRequestId = store.recordPullRequestForUpdatingLock(
-        repo,
-        configs.lock!,
+  it('stores and retrieves PRs for lock updates', async () => {
+    const db = admin.firestore();
+    const store = new FirestoreConfigsStore(db, 'test-');
+    const repoA = 'googleapis/' + uuidv4();
+    const dockerImageA = uuidv4();
+    const configsA: Configs = {
+      yaml: {
+        docker: {
+          image: dockerImageA,
+        },
+        'copy-dirs': [
+          {
+            source: '/alpha',
+            dest: '/beta',
+          },
+        ],
+      },
+      lock: {
+        docker: {
+          image: dockerImageA,
+          digest: '123',
+        },
+      },
+      commitHash: 'abc',
+      branchName: 'main',
+      installationId: 42,
+    };
+
+    // Test pull requests.
+    assert.strictEqual(
+      await store.findPullRequestForUpdatingLock(repoA, configsA.lock!),
+      undefined
+    );
+
+    // First one gets recorded.
+    const pullRequestId = store.recordPullRequestForUpdatingLock(
+      repoA,
+      configsA.lock!,
+      '10'
+    );
+    try {
+      assert.strictEqual(await pullRequestId, '10');
+      assert.strictEqual(
+        await store.findPullRequestForUpdatingLock(repoA, configsA.lock!),
         '10'
       );
-      try {
-        assert.strictEqual(await pullRequestId, '10');
-        assert.strictEqual(
-          await store.findPullRequestForUpdatingLock(repo, configs.lock!),
-          '10'
-        );
 
-        // Second one does not.
-        assert.strictEqual(
-          await store.recordPullRequestForUpdatingLock(
-            repo,
-            configs.lock!,
-            '11'
-          ),
-          '10'
-        );
-      } finally {
-        await store.clearPullRequestForUpdatingLock(repo, configs.lock!);
-      }
+      // Second one does not.
+      assert.strictEqual(
+        await store.recordPullRequestForUpdatingLock(
+          repoA,
+          configsA.lock!,
+          '11'
+        ),
+        '10'
+      );
     } finally {
-      await store.clearConfigs(repo);
+      await store.clearPullRequestForUpdatingLock(repoA, configsA.lock!);
+    }
+  });
+
+  it('stores and retrieves PRs for file changes', async () => {
+    const db = admin.firestore();
+    const store = new FirestoreConfigsStore(db, 'test-');
+    const repoA = 'googleapis/' + uuidv4();
+    const googleapisGenCommitHash = uuidv4();
+
+    // Test pull requests.
+    assert.strictEqual(
+      await store.findPullRequestForChangedFiles(
+        repoA,
+        googleapisGenCommitHash
+      ),
+      undefined
+    );
+
+    // First one gets recorded.
+    const pullRequestId = store.recordPullRequestForChangedFiles(
+      repoA,
+      googleapisGenCommitHash,
+      '10'
+    );
+    try {
+      assert.strictEqual(await pullRequestId, '10');
+      assert.strictEqual(
+        await store.findPullRequestForChangedFiles(
+          repoA,
+          googleapisGenCommitHash
+        ),
+        '10'
+      );
+
+      // Second one does not.
+      assert.strictEqual(
+        await store.recordPullRequestForChangedFiles(
+          repoA,
+          googleapisGenCommitHash,
+          '11'
+        ),
+        '10'
+      );
+    } finally {
+      await store.clearPullRequestForChangedFiles(
+        repoA,
+        googleapisGenCommitHash
+      );
     }
   });
 });
@@ -161,5 +264,18 @@ describe('encodeId', () => {
     const encoded = encodeId(chars);
     assert.strictEqual(encoded, '%2F%25%2B%2F%25%2B%2F%25%2B');
     assert.strictEqual(decodeId(encoded), chars);
+  });
+});
+
+describe('confirm my understanding of minmatch', () => {
+  it('matches patterns', () => {
+    // All these patterns should be equivelent.
+    const patterns = ['/a/*/b', '/a/*/b/', '/a/*/b/*', '/a/*/b/**'];
+    for (const pattern of patterns) {
+      const mm = newMinimatchFromSource(pattern);
+      assert.ok(mm.match('/a/x/b/y'));
+      assert.ok(mm.match('/a/x/b/y/z/q'));
+      assert.ok(!mm.match('/a/b/c'));
+    }
   });
 });

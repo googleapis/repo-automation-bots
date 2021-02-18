@@ -64,7 +64,7 @@ export interface ConfigsStore {
    * Finds a previously recorded pull request or returns undefined.
    * @param repo full repo name like "googleapis/nodejs-vision"
    * @param lock The new contents of the lock file.
-   * @returns: the string passed to recordPullRequestForUpdatingLock().
+   * @returns the string passed to recordPullRequestForUpdatingLock().
    */
   findPullRequestForUpdatingLock(
     repo: string,
@@ -72,7 +72,7 @@ export interface ConfigsStore {
   ): Promise<string | undefined>;
 
   /**
-   * Finds a previously recorded pull request or returns undefined.
+   * Records a pull request created to update the lock file.
    * @param repo full repo name like "googleapis/nodejs-vision"
    * @param lock The new contents of the lock file.
    * @param pullRequestId the string that will be later returned by
@@ -85,6 +85,46 @@ export interface ConfigsStore {
   recordPullRequestForUpdatingLock(
     repo: string,
     lock: OwlBotLock,
+    pullRequestId: string
+  ): Promise<string>;
+
+  /**
+   * Finds repositories who list one of the changed files as a source in
+   * copy-files.
+   * @param changedFilePaths file paths in googleapis that changed.
+   *   ex: ["/google/cloud/vision/v1/vision-v1-nodejs/src/v1/image_annotator_client.ts"]
+   * @returns the list of repo names.
+   *   ex: ["googleapis/nodejs-vision", "googleapis/python-vision"]
+   */
+  findReposAffectedByFileChanges(changedFilePaths: string[]): Promise<string[]>;
+
+  /**
+   * Finds a previously recorded pull request or returns undefined.
+   * @param repo full repo name like "googleapis/nodejs-vision"
+   * @param googleapisGenCommitHash the commit hash for the commit to
+   *   googleapis-gen in which the files were changed
+   * @returns the string passed to recordPullRequestChangedFiles().
+   */
+  findPullRequestForChangedFiles(
+    repo: string,
+    googleapisGenCommitHash: string
+  ): Promise<string | undefined>;
+
+  /**
+   * Records a pull request created to update the lock file.
+   * @param repo full repo name like "googleapis/nodejs-vision"
+   * @param googleapisGenCommitHash the commit hash for the commit to
+   *   googleapis-gen in which the files were changed
+   * @param pullRequestId the string that will be later returned by
+   *  findPullRequestForUpdatingLock().
+   * @returns pullRequestId, which may differ from the argument if there
+   *   already was a pull request recorded.
+   *   In that case, the caller should close the pull request they
+   *   created, to avoid annoying maintainers with duplicate pull requests.
+   */
+  recordPullRequestForChangedFiles(
+    repo: string,
+    googleapisGenCommitHash: string,
     pullRequestId: string
   ): Promise<string>;
 }
