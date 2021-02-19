@@ -195,7 +195,7 @@ describe('database', () => {
     }
   });
 
-  it('stores and retrieves PRs for file changes', async () => {
+  it('stores and retrieves pubsub message ids for copy tasks', async () => {
     const db = admin.firestore();
     const store = new FirestoreConfigsStore(db, 'test-');
     const repoA = 'googleapis/' + uuidv4();
@@ -203,7 +203,7 @@ describe('database', () => {
 
     // Test pull requests.
     assert.strictEqual(
-      await store.findPullRequestForChangedFiles(
+      await store.findPubsubMessageIdForCopyTask(
         repoA,
         googleapisGenCommitHash
       ),
@@ -211,7 +211,7 @@ describe('database', () => {
     );
 
     // First one gets recorded.
-    const pullRequestId = store.recordPullRequestForChangedFiles(
+    const pullRequestId = store.recordPubsubMessageIdForCopyTask(
       repoA,
       googleapisGenCommitHash,
       '10'
@@ -219,7 +219,7 @@ describe('database', () => {
     try {
       assert.strictEqual(await pullRequestId, '10');
       assert.strictEqual(
-        await store.findPullRequestForChangedFiles(
+        await store.findPubsubMessageIdForCopyTask(
           repoA,
           googleapisGenCommitHash
         ),
@@ -228,7 +228,7 @@ describe('database', () => {
 
       // Second one does not.
       assert.strictEqual(
-        await store.recordPullRequestForChangedFiles(
+        await store.recordPubsubMessageIdForCopyTask(
           repoA,
           googleapisGenCommitHash,
           '11'
@@ -236,7 +236,7 @@ describe('database', () => {
         '10'
       );
     } finally {
-      await store.clearPullRequestForChangedFiles(
+      await store.clearPubsubMessageIdForCopyTask(
         repoA,
         googleapisGenCommitHash
       );

@@ -97,34 +97,4 @@ export interface ConfigsStore {
    *   ex: ["googleapis/nodejs-vision", "googleapis/python-vision"]
    */
   findReposAffectedByFileChanges(changedFilePaths: string[]): Promise<string[]>;
-
-  /**
-   * Finds a previously recorded pull request or returns undefined.
-   * @param repo full repo name like "googleapis/nodejs-vision"
-   * @param googleapisGenCommitHash the commit hash for the commit to
-   *   googleapis-gen in which the files were changed
-   * @returns the string passed to recordPullRequestChangedFiles().
-   */
-  findPullRequestForChangedFiles(
-    repo: string,
-    googleapisGenCommitHash: string
-  ): Promise<string | undefined>;
-
-  /**
-   * Records a pull request created to update the lock file.
-   * @param repo full repo name like "googleapis/nodejs-vision"
-   * @param googleapisGenCommitHash the commit hash for the commit to
-   *   googleapis-gen in which the files were changed
-   * @param pullRequestId the string that will be later returned by
-   *  findPullRequestForUpdatingLock().
-   * @returns pullRequestId, which may differ from the argument if there
-   *   already was a pull request recorded.
-   *   In that case, the caller should close the pull request they
-   *   created, to avoid annoying maintainers with duplicate pull requests.
-   */
-  recordPullRequestForChangedFiles(
-    repo: string,
-    googleapisGenCommitHash: string,
-    pullRequestId: string
-  ): Promise<string>;
 }

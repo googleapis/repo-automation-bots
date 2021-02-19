@@ -16,10 +16,15 @@ import admin from 'firebase-admin';
 import {OwlBotLock} from './config-files';
 import {Configs, ConfigsStore} from './configs-store';
 import {IMinimatch, Minimatch} from 'minimatch';
+import {CopyTasksStore} from './copy-tasks-store';
 
 export type Db = admin.firestore.Firestore;
 interface UpdatePr {
   pullRequestId: string;
+}
+
+interface CopyTask {
+  pubsubMessageId: string;
 }
 
 /**
@@ -46,11 +51,11 @@ function makeUpdateFilesKey(
   return [repo, googleapisGenCommitHash].map(encodeId).join('+');
 }
 
-export class FirestoreConfigsStore implements ConfigsStore {
+export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
   private db: Db;
   readonly yamls: string;
   readonly lockUpdatePrs: string;
-  readonly changedFilesPrs: string;
+  readonly copyTasks: string;
 
   /**
    * @param collectionsPrefix should only be overridden in tests.
@@ -59,7 +64,7 @@ export class FirestoreConfigsStore implements ConfigsStore {
     this.db = db;
     this.yamls = collectionsPrefix + 'yamls';
     this.lockUpdatePrs = collectionsPrefix + 'lock-update-prs';
-    this.changedFilesPrs = collectionsPrefix + 'changed-files-prs';
+    this.copyTasks = collectionsPrefix + 'copy-tasks';
   }
 
   async getConfigs(repo: string): Promise<Configs | undefined> {
@@ -171,43 +176,43 @@ export class FirestoreConfigsStore implements ConfigsStore {
     return result;
   }
 
-  async findPullRequestForChangedFiles(
+  async findPubsubMessageIdForCopyTask(
     repo: string,
     googleapisGenCommitHash: string
   ): Promise<string | undefined> {
     const docRef = this.db
-      .collection(this.changedFilesPrs)
+      .collection(this.copyTasks)
       .doc(makeUpdateFilesKey(repo, googleapisGenCommitHash));
     const got = await docRef.get();
-    return got.exists ? (got.data() as UpdatePr).pullRequestId : undefined;
+    return got.exists ? (got.data() as CopyTask).pubsubMessageId : undefined;
   }
 
-  async recordPullRequestForChangedFiles(
+  async recordPubsubMessageIdForCopyTask(
     repo: string,
     googleapisGenCommitHash: string,
-    pullRequestId: string
+    pubsubMessageId: string
   ): Promise<string> {
     const docRef = this.db
-      .collection(this.changedFilesPrs)
+      .collection(this.copyTasks)
       .doc(makeUpdateFilesKey(repo, googleapisGenCommitHash));
-    const data: UpdatePr = {pullRequestId: pullRequestId};
+    const data: CopyTask = {pubsubMessageId};
     await this.db.runTransaction(async t => {
       const got = await t.get(docRef);
       if (got.exists) {
-        pullRequestId = (got.data() as UpdatePr).pullRequestId;
+        pubsubMessageId = (got.data() as CopyTask).pubsubMessageId;
       } else {
         t.set(docRef, data);
       }
     });
-    return pullRequestId;
+    return pubsubMessageId;
   }
 
-  async clearPullRequestForChangedFiles(
+  async clearPubsubMessageIdForCopyTask(
     repo: string,
     googleapisGenCommitHash: string
   ): Promise<void> {
     const docRef = this.db
-      .collection(this.changedFilesPrs)
+      .collection(this.copyTasks)
       .doc(makeUpdateFilesKey(repo, googleapisGenCommitHash));
     await docRef.delete();
   }

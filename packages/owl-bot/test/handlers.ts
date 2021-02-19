@@ -58,19 +58,6 @@ describe('handlers', () => {
       let recordedURI = '';
       // Mock the database helpers used to check for/update existing PRs:
       class FakeConfigStore implements ConfigsStore {
-        findPullRequestForChangedFiles(
-          repo: string,
-          googleapisGenCommitHash: string
-        ): Promise<string | undefined> {
-          throw new Error('Method not implemented.');
-        }
-        recordPullRequestForChangedFiles(
-          repo: string,
-          googleapisGenCommitHash: string,
-          pullRequestId: string
-        ): Promise<string> {
-          throw new Error('Method not implemented.');
-        }
         findReposAffectedByFileChanges(
           changedFilePaths: string[]
         ): Promise<string[]> {
@@ -149,19 +136,6 @@ describe('handlers', () => {
       };
       // Mock the database helpers used to check for/update existing PRs:
       class FakeConfigStore implements ConfigsStore {
-        findPullRequestForChangedFiles(
-          repo: string,
-          googleapisGenCommitHash: string
-        ): Promise<string | undefined> {
-          throw new Error('Method not implemented.');
-        }
-        recordPullRequestForChangedFiles(
-          repo: string,
-          googleapisGenCommitHash: string,
-          pullRequestId: string
-        ): Promise<string> {
-          throw new Error('Method not implemented.');
-        }
         findReposAffectedByFileChanges(
           changedFilePaths: string[]
         ): Promise<string[]> {
@@ -223,19 +197,6 @@ class FakeConfigStore implements ConfigsStore {
 
   constructor(configs?: Map<string, Configs>) {
     this.configs = configs ?? new Map<string, Configs>();
-  }
-  findPullRequestForChangedFiles(
-    repo: string,
-    googleapisGenCommitHash: string
-  ): Promise<string | undefined> {
-    throw new Error('Method not implemented.');
-  }
-  recordPullRequestForChangedFiles(
-    repo: string,
-    googleapisGenCommitHash: string,
-    pullRequestId: string
-  ): Promise<string> {
-    throw new Error('Method not implemented.');
   }
   findReposAffectedByFileChanges(
     changedFilePaths: string[]
