@@ -82,7 +82,8 @@ export async function onPostProcessorPublished(
         configsStore,
         octokit,
         repo,
-        lock
+        lock,
+        configs
       );
     }
   }
@@ -101,7 +102,8 @@ export async function createOnePullRequestForUpdatingLock(
   configsStore: ConfigsStore,
   octokit: OctokitType,
   repoFull: string,
-  lock: OwlBotLock
+  lock: OwlBotLock,
+  configs?: Configs
 ): Promise<string> {
   const existingPullRequest = await configsStore.findPullRequestForUpdatingLock(
     repoFull,
@@ -130,14 +132,14 @@ export async function createOnePullRequestForUpdatingLock(
       // TODO(rennie): we should provide a context aware commit
       // message for this:
       title: 'chore: update OwlBot.lock with new version of post-processor',
-      branch: 'owl-bot-lock-1',
+      branch: `owlbot-lock-${new Date().toISOString().split('.')[0]}`,
       // TODO(bcoe): come up with a funny blurb to put in PRs.
       description: `Version ${
         lock.docker.digest
       } was published at ${new Date().toISOString()}.`,
       // TODO(rennie): we need a way to track what the primary branch
       // is for a PR.
-      primary: 'main',
+      primary: configs?.branchName ?? 'main',
       force: true,
       fork: false,
       // TODO(rennie): we should provide a context aware commit

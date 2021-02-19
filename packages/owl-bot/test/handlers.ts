@@ -36,8 +36,6 @@ import {
   getAuthenticatedOctokit,
   getGitHubShortLivedAccessToken,
 } from '../src/core';
-import {promisify} from 'util';
-import {readFile} from 'fs';
 const sandbox = sinon.createSandbox();
 
 type Changes = Array<[string, {content: string; mode: string}]>;
