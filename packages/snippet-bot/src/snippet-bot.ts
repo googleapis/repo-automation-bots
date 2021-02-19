@@ -412,6 +412,8 @@ async function scanPullRequest(
       }
       commentBody += formatViolations(removeConflictingTagViolations, summary);
     }
+    commentBody +=
+      '**The end of the violation section. All the stuff below is FYI purposes only.**\n\n';
     commentBody += '---\n';
   }
 
