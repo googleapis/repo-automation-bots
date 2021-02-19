@@ -131,20 +131,16 @@ export async function createOnePullRequestForUpdatingLock(
       upstreamRepo: repo,
       // TODO(rennie): we should provide a context aware commit
       // message for this:
-      title: 'chore: update OwlBot.lock with new version of post-processor',
-      branch: `owlbot-lock-${new Date().toISOString().split('.')[0]}`,
-      // TODO(bcoe): come up with a funny blurb to put in PRs.
+      title: 'build: update .OwlBot.lock with new version of post-processor',
+      branch: `owlbot-lock-${Date.now()}`,
       description: `Version ${
         lock.docker.digest
       } was published at ${new Date().toISOString()}.`,
-      // TODO(rennie): we need a way to track what the primary branch
-      // is for a PR.
       primary: configs?.branchName ?? 'main',
       force: true,
       fork: false,
-      // TODO(rennie): we should provide a context aware commit
-      // message for this:
-      message: 'Update OwlBot.lock',
+      // TODO(bcoe): replace this message with last commit to synthtool:
+      message: 'build: update .OwlBot.lock with new version of post-processor',
     },
     {level: 'error'}
   );
