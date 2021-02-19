@@ -16,29 +16,40 @@ import {Probot} from 'probot';
 import {logger} from 'gcf-utils';
 import {join} from 'path';
 import yaml from 'js-yaml';
-import {Validator} from 'jsonschema';
-import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';
-const validator = new Validator();
-console.log(join(__dirname, '../', '../', 'src', 'valid-pr-schema.json'))
-const schema = require(join(__dirname, '../', '../', 'src', 'valid-pr-schema.json'));
+import Ajv from 'ajv';
+const ajv = new Ajv();
 
-//TODO: checks that yaml is valid
+interface ErrorMessage {
+    wrongProperty: Record<string, any>,
+    message: string | undefined
+}
+const schema = require(join(
+  __dirname,
+  '../',
+  '../',
+  'src',
+  'valid-pr-schema.json'
+));
+
 export function validateYaml(configYaml: string): Boolean {
-    try {
-        const isYaml = yaml.load(configYaml);
-        if(typeof isYaml === 'object') {
-            return true;
-        } else {
-            return false;
-        }
-    } catch (err) {
-        return false;
+  try {
+    const isYaml = yaml.load(configYaml);
+    if (typeof isYaml === 'object') {
+      return true;
+    } else {
+      return false;
     }
+  } catch (err) {
+    return false;
+  }
 }
 
-export function validateSchema(configYaml: string | undefined | null | number | object) {
-    const isValid = validator.validate(configYaml, schema);
-    console.log(JSON.stringify(isValid);
-    return isValid;
+export async function validateSchema(
+  configYaml: string | undefined | null | number | object
+): Promise<ErrorMessage[] | Boolean | undefined> {
+  const validateSchema = await ajv.compile(schema);
+  const isValid = await validateSchema(configYaml);
+  const errorText = (await validateSchema).errors?.map(x => {return {"wrongProperty": x.params, "message": x.message}})
+  console.log(errorText);
+  return (isValid ? isValid : errorText);
 }
-
