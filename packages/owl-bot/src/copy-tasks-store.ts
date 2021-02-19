@@ -14,7 +14,8 @@
 
 // Stores information about copy tasks that we have posted to Pubsub,
 // so that we don't kick off duplicate tasks.  A 'copy task' copies
-// generated source files from
+// generated source files from googleapis/googleapis-gen to target
+// repos like googleapis/nodejs-vision.
 export interface CopyTasksStore {
   /**
    * Finds a previously recorded message id or returns undefined.
