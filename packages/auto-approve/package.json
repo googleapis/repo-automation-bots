@@ -1,0 +1,47 @@
+{
+  "name": "auto-approve",
+  "version": "1.0.0",
+  "description": "Approves and tags pull requests that meet user-defined criteria",
+  "private": true,
+  "author": "Google LLC.",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "main": "build/src/app.js",
+  "keywords": [
+    "probot",
+    "github",
+    "probot-app"
+  ],
+  "files": [
+    "build/src"
+  ],
+  "scripts": {
+    "compile": "tsc",
+    "start": "probot run ./build/src/auto-approve",
+    "pretest": "npm run compile",
+    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
+    "fix": "gts fix",
+    "lint": "gts check"
+  },
+  "dependencies": {
+    "gcf-utils": "^7.0.0",
+    "jsonschema": "^1.4.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "^8.0.0",
+    "@types/node": "^12.6.1",
+    "c8": "^7.3.5",
+    "cross-env": "^7.0.0",
+    "gts": "^3.0.0",
+    "mocha": "^8.0.0",
+    "nock": "^13.0.0",
+    "smee-client": "^1.1.0",
+    "snap-shot-it": "^7.9.6",
+    "typescript": "~4.1.0"
+  },
+  "engines": {
+    "node": ">= 12.18.2"
+  }
+}
