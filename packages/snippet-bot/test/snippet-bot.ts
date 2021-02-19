@@ -22,7 +22,7 @@ import * as snippetsModule from '../src/snippets';
 import {Snippets} from '../src/snippets';
 
 import {resolve} from 'path';
-import {Probot, createProbot, ProbotOctokit} from 'probot';
+import {Probot, ProbotOctokit} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
@@ -52,7 +52,7 @@ describe('snippet-bot', () => {
   let invalidateCacheStub: sinon.SinonStub;
 
   beforeEach(() => {
-    probot = createProbot({
+    probot = new Probot({
       githubToken: 'abc123',
       Octokit: ProbotOctokit.defaults({
         retry: {enabled: false},

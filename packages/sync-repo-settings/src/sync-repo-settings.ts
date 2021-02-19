@@ -27,7 +27,7 @@ import yaml from 'js-yaml';
 import {operations} from '@octokit/openapi-types';
 import checks from './required-checks.json';
 
-type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
+type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['content']['application/json'];
 export const configFileName = 'sync-repo-settings.yaml';
 
 type Conclusion =
