@@ -266,8 +266,7 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
       owner,
       repo,
       issue_number: prNumber,
-      body:
-        `Your PR doesn't have any required checks. Please add required checks to your ${branch} branch and then re-add the label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.`,
+      body: `Your PR doesn't have any required checks. Please add required checks to your ${branch} branch and then re-add the label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.`,
     });
     logger.error(err);
   }
