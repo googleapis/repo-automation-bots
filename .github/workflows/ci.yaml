@@ -101,4 +101,4 @@ jobs:
         with:
           paths: '**/*.md'
           verbosity: 'ERROR'
-          skip: 'http://devrel/products'
+          skip: 'node_modules/ http://devrel/products http://localhost:3000'
