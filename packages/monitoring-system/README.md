@@ -6,13 +6,13 @@ A system to collect metrics on GitHub Repo Automation Bot executions and make it
 
 ### Bot SRE: View currently configured metrics
 
-Currently, there are 3 ways to view Automation Bot metrics, each of which are described below. 
+Currently, there are 3 ways to view Automation Bot metrics, each of which are described below.
 
 The roadmap for this project includes supporting all metrics in the [Metrics Dashboard](#Metrics-Dashboard) so you don't have to choose from the 3 methods below.
 
 #### (Option 1) Cloud Logging: Logs-based metrics only
 
-Logs-based metrics are one of the sources from which the Monitoring System collects data. You can view these metrics directly in Cloud Logging as well in the repo-automation-bots GCP Project (internal). 
+Logs-based metrics are one of the sources from which the Monitoring System collects data. You can view these metrics directly in Cloud Logging as well in the repo-automation-bots GCP Project (internal).
 
 > Note: You will need access to this project in order to view the logs
 
@@ -20,9 +20,9 @@ For more information on which metrics are emitted via logs, refer to the [gcf-ut
 
 #### (Option 2) Metrics Dashboard: subset of all metrics
 
-A subset of the metrics mined by the Monitoring System are visualized on the [Metrics Dashboard deployed here](https://repo-automation-bots-metrics.web.app/). 
+A subset of the metrics mined by the Monitoring System are visualized on the [Metrics Dashboard deployed here](https://repo-automation-bots-metrics.web.app/).
 
-> Note: You will need an `@google.com` account to be able to access the data on the dashboard. 
+> Note: You will need an `@google.com` account to be able to access the data on the dashboard.
 
 In the future, we will be making all metrics available via this dashboard. To learn more, see the [Metrics Dashboard section](#Metrics-Dashboard) below
 
@@ -67,9 +67,9 @@ The Firestore instance currently being used by the Monitoring System is deployed
 
 ### Metrics Dashboard
 
-A web-based dashboard to visualize metrics collected and mined by the Monitoring System. The current dashboard [is deployed here](https://repo-automation-bots-metrics.web.app/). 
+A web-based dashboard to visualize metrics collected and mined by the Monitoring System. The current dashboard [is deployed here](https://repo-automation-bots-metrics.web.app/).
 
-> Note: You will need an `@google.com` account to be able to access the data on the dashboard. 
+> Note: You will need an `@google.com` account to be able to access the data on the dashboard.
 
 Currently, the dashboard only supports a subset of the metrics available via the Monitoring System. Adding more metrics to the dashboard is an ongoing effort.
 
@@ -79,7 +79,7 @@ Currently, the dashboard only supports a subset of the metrics available via the
 
 If you have suggestions for how monitoring-system could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
 
-For more, check out the [Contributing Guide](CONTRIBUTING.md).
+For more, check out the [Contributing Guide](../../CONTRIBUTING.md).
 
 ## License
 
