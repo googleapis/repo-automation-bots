@@ -30,6 +30,10 @@
           "dest": {
             "description": "Destination directory in this repo to copy the files too.  Existing content in the directory will be wiped out and replaced.",
             "type": "string"
+          },
+          "strip-prefix": {
+            "description": "Strip matching directory component names from src before copying to dest.",
+            "type": "string"
           }
         }
       }
