@@ -10,7 +10,7 @@ Where label-sync creates and cleans up labels in your repository, auto-label add
 **note**: This bot is currently only useful for Googlers. If you're looking for a general purpose label sync bot, we suggest using the [Settings Probot App](https://probot.github.io/apps/settings/).
 
 ## Using the bot
-If you have admin rights on your repository, you can follow the [installation](https://github.com/apps/gcf-label-sync) guide. Labels will be synchronized in a few situations:
+If you have admin rights on your repository, you can follow the [installation](https://github.com/apps/google-cloud-label-sync) guide. Labels will be synchronized in a few situations:
 - Initially when the application is installed
 - Any time a label is modified (deleted, edited)
 - On repository create or transfer
