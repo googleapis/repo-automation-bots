@@ -31,6 +31,8 @@
     "jsonschema": "^1.4.0"
   },
   "devDependencies": {
+    "@octokit/rest": "^18.2.0",
+    "@probot/octokit-plugin-config": "^1.0.3",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.6.1",
     "c8": "^7.3.5",

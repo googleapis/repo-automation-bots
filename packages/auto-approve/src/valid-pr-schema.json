@@ -70,10 +70,14 @@
                 "maxItems": 2,
                 "items": {
                   "enum": [
-                    "README.md$",
-                    "synth.metadata$"
+                    "README.md",
+                    ".github/readme/synth.metadata/synth.metadata"
                   ]
                 }
+              },
+              "maxFiles": {
+                "type": "number",
+                "maximum": 2
               }
             }
           }
@@ -102,6 +106,10 @@
                     "CHANGELOG.md$"
                   ]
                 }
+              },
+              "maxFiles": {
+                "type": "number",
+                "maximum": 3
               }
             }
           }

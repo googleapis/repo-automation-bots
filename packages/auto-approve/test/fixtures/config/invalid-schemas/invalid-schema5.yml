@@ -4,8 +4,8 @@ rules:
 - author: "yoshi-automation"
   title: "chore: regenerate README"
   changedFiles:
-  - "README.md$"
-  - "synth.metadata$"
+  - "README.md"
+  - ".github/readme/synth.metadata/synth.metadata"
 - author: "yoshi-code-bot"
   title: "^chore: release"
   changedFiles:
