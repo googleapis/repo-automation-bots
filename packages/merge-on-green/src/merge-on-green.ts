@@ -54,6 +54,7 @@ interface IncomingPR {
   number: number;
   repo: string;
   owner: string;
+  branch?: string;
   state: 'continue' | 'stop';
   label: string;
   author: string;
@@ -238,16 +239,21 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
   owner: string,
   repo: string,
   prNumber: number,
+  baseBranch: string | undefined,
   github: GitHubType
 ): Promise<string[] | undefined> {
   let branchProtection: string[] | undefined;
   // Check to see if branch protection exists
+  const branch = baseBranch
+    ? baseBranch
+    : (await github.pulls.get({owner, repo, pull_number: prNumber})).data.base
+        .ref;
   try {
     branchProtection = (
       await github.repos.getBranchProtection({
         owner,
         repo,
-        branch: 'master',
+        branch,
       })
     ).data.required_status_checks.contexts;
     logger.info(
@@ -260,8 +266,7 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
       owner,
       repo,
       issue_number: prNumber,
-      body:
-        "Your PR doesn't have any required checks. Please add required checks to your master branch and then re-add the label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.",
+      body: `Your PR doesn't have any required checks. Please add required checks to your ${branch} branch and then re-add the label. Learn more about enabling these checks here: https://help.github.com/en/github/administering-a-repository/enabling-required-status-checks.`,
     });
     logger.error(err);
   }
@@ -285,6 +290,7 @@ handler.addPR = async function addPR(
       incomingPR.owner,
       incomingPR.repo,
       incomingPR.number,
+      incomingPR.branch,
       github
     );
   } catch (err) {
@@ -551,6 +557,7 @@ function handler(app: Probot) {
         number: prNumber,
         owner,
         repo,
+        branch: context.payload.pull_request.base.ref,
         state: 'continue',
         url: context.payload.pull_request.html_url,
         label: label.name,

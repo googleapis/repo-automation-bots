@@ -244,12 +244,12 @@ function checkForRequiredSC(checkRuns: CheckRun[], check: string) {
 }
 
 /**
- * Function calls the branch protection for master branch, as well as the check runs and check statuses, to see
+ * Function calls the branch protection for base branch, as well as the check runs and check statuses, to see
  * if all required checks have passed
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
  * @param pr pr number
- * @param requiredChecks a string array of required checks grabbed from master branch protection
+ * @param requiredChecks a string array of required checks grabbed from base branch protection
  * @param headSha the latest commit in the PR
  * @param github unique installation id for each function
  * @returns a boolean of whether all required checks have passed
@@ -520,7 +520,7 @@ async function commentOnPR(
 }
 
 /**
- * Main function. Checks whether PR is open and whether there are is any master branch protection. If there
+ * Main function. Checks whether PR is open and whether there are is any base branch protection. If there
  * is, MOG continues checking to make sure reviews are approved and statuses have passed.
  * @param owner of pr (from Watch PR)
  * @param repo of pr (from Watch PR)
