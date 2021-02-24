@@ -13,9 +13,8 @@
 // limitations under the License.
 
 import admin from 'firebase-admin';
-import {OwlBotLock} from './config-files';
+import {OwlBotLock, regExpFromYamlString} from './config-files';
 import {Configs, ConfigsStore} from './configs-store';
-import {IMinimatch, Minimatch} from 'minimatch';
 import {CopyTasksStore} from './copy-tasks-store';
 
 export type Db = admin.firestore.Firestore;
@@ -163,10 +162,10 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
     const result: string[] = [];
     snapshot.forEach(doc => {
       const configs = doc.data() as Configs | undefined;
-      match_loop: for (const copy of configs?.yaml?.['copy-dirs'] ?? []) {
-        const mm = newMinimatchFromSource(copy.source);
+      match_loop: for (const copy of configs?.yaml?.['deep-copy-regex'] ?? []) {
+        const regExp = regExpFromYamlString(copy.source);
         for (const path of changedFilePaths) {
-          if (mm.match(path)) {
+          if (regExp.test(path)) {
             result.push(decodeId(doc.id));
             break match_loop;
           }
@@ -216,23 +215,4 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
       .doc(makeUpdateFilesKey(repo, googleapisGenCommitHash));
     await docRef.delete();
   }
-}
-
-// Exported for testing purposes.
-export function newMinimatchFromSource(pattern: string): IMinimatch {
-  return new Minimatch(makePatternMatchAllSubdirs(pattern), {matchBase: true});
-}
-
-function makePatternMatchAllSubdirs(pattern: string): string {
-  // Make sure pattern always ends with /**
-  if (pattern.endsWith('/**')) {
-    // Good, nothing to do.
-  } else if (pattern.endsWith('/*')) {
-    pattern += '*';
-  } else if (pattern.endsWith('/')) {
-    pattern += '**';
-  } else {
-    pattern += '/**';
-  }
-  return pattern;
 }
