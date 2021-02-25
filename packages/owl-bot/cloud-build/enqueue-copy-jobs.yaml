@@ -3,12 +3,13 @@ steps:
   - name: 'gcr.io/cloud-builders/git'
     args:
       - clone
+      - --single-branch
       - https://github.com/googleapis/googleapis-gen.git
   - name: 'gcr.io/repo-automation-bots/owlbot-cli'
     args:
       - enqueue-copy-tasks
       - --private-key
-      - ${_PRIVATE_KEY}
+      - "${_PRIVATE_KEY}"
       - --app-id
       - ${_APP_ID}
       - --installation

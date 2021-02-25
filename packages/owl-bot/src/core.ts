@@ -184,7 +184,7 @@ export async function triggerEnqueueCopyJobs(
     triggerId: opts.trigger,
     source: {
       projectId: opts.project,
-      branchName: 'master',
+      branchName: 'enqueue-copy-jobs',
       substitutions: {
         _PRIVATE_KEY: opts.privateKey.toString(),
         _APP_ID: opts.appId.toString(),
