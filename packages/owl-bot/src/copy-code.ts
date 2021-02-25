@@ -19,7 +19,7 @@ import {
   owlBotYamlPath,
   owlBotYamlFromText,
   OwlBotYaml,
-  regExpFromYamlString,
+  toFullMatchRegExp,
 } from './config-files';
 import path from 'path';
 import {v4 as uuidv4} from 'uuid';
@@ -248,7 +248,7 @@ export function copyDirs(
   for (const deepCopy of yaml['deep-copy-regex'] ?? []) {
     const rmDest = deepCopy['rm-dest'];
     if (rmDest && stat(destDir)) {
-      const rmRegExp = regExpFromYamlString(rmDest);
+      const rmRegExp = toFullMatchRegExp(rmDest);
       const allDestPaths = glob.sync('**', {cwd: destDir});
       deadPaths.push(...allDestPaths.filter(path => rmRegExp.test('/' + path)));
     }
@@ -263,7 +263,7 @@ export function copyDirs(
 
   // Copy the files from source to dest.
   for (const deepCopy of yaml['deep-copy-regex'] ?? []) {
-    const regExp = regExpFromYamlString(deepCopy.source);
+    const regExp = toFullMatchRegExp(deepCopy.source);
     const allSourcePaths = glob.sync('**', {cwd: sourceDir});
     const sourcePathsToCopy = allSourcePaths.filter(path =>
       regExp.test('/' + path)

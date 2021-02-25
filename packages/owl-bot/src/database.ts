@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import admin from 'firebase-admin';
-import {OwlBotLock, regExpFromYamlString} from './config-files';
+import {OwlBotLock, toFullMatchRegExp} from './config-files';
 import {Configs, ConfigsStore} from './configs-store';
 import {CopyTasksStore} from './copy-tasks-store';
 
@@ -163,7 +163,7 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
     snapshot.forEach(doc => {
       const configs = doc.data() as Configs | undefined;
       match_loop: for (const copy of configs?.yaml?.['deep-copy-regex'] ?? []) {
-        const regExp = regExpFromYamlString(copy.source);
+        const regExp = toFullMatchRegExp(copy.source);
         for (const path of changedFilePaths) {
           if (regExp.test(path)) {
             result.push(decodeId(doc.id));
