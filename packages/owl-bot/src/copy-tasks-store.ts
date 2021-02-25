@@ -46,4 +46,17 @@ export interface CopyTasksStore {
     googleapisGenCommitHash: string,
     pubsubMessageId: string
   ): Promise<string>;
+
+  /**
+   * Finds repos for which a copy task has not been initiated yet.
+   * @param repos a list of full repo names like ["googleapis/nodejs-vision"]
+   * @param googleapisGenCommitHash the commit hash for the commit to
+   *   googleapis-gen in which the files were changed
+   * @returns a subset of the repos param, the list of repos for which a
+   *   pubsub message id has not yet been recorded
+   */
+  filterMissingCopyTasks(
+    repos: string[],
+    googleapisGenCommitHash: string
+  ): Promise<string[]>;
 }
