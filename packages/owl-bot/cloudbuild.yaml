@@ -42,3 +42,4 @@ steps:
     id: "build-docker"
     entrypoint: docker
     args: ['build', '-t', 'gcr.io/repo-automation-bots/owlbot-cli']
+    dir: 'packages/owl-bot'

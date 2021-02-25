@@ -1,0 +1,13 @@
+steps:
+  # Clone user/branch that created PR:
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - clone
+      - https://github.com/googleapis/googleapis-gen.git
+  - name: 'gcr.io/repo-automation-bots/owlbot-cli'
+    args:
+      - --help
+      - -b
+      - ${_PR_BRANCH}
+    dir: 'googleapis-gen'
+

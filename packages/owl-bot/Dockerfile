@@ -31,6 +31,7 @@ RUN apk update && apk upgrade && \
 # RUN npm ci --only=production
 RUN npm install
 RUN npm run compile
+RUN chmod 755 /usr/src/app/build/src/bin/owl-bot.js
 
 # Run the web service on container startup.
-ENTRYPOINT ["build/src/bin/owl-bot"]
+ENTRYPOINT ["/usr/src/app/build/src/bin/owl-bot.js"]
