@@ -5,11 +5,15 @@ steps:
       - clone
       - --single-branch
       - https://github.com/googleapis/googleapis-gen.git
+  - name: gcr.io/cloud-builders/gcloud
+    entrypoint: /bin/bash
+    args: ['-c', 'echo "${_PRIVATE_KEY}" > private-key.pem']
+    dir: 'googleapis-gen'
   - name: 'gcr.io/repo-automation-bots/owlbot-cli'
     args:
       - enqueue-copy-tasks
-      - --private-key
-      - "${_PRIVATE_KEY}"
+      - --pem-path
+      - ./private-key.pem
       - --app-id
       - ${_APP_ID}
       - --installation

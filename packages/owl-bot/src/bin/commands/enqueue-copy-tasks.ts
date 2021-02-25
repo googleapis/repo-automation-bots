@@ -29,7 +29,7 @@ import {logger} from 'gcf-utils';
 const readFileAsync = promisify(readFile);
 
 interface Args {
-  'pem-path'?: string;
+  'pem-path': string;
   'app-id': number;
   installation: number;
   repo: string;
@@ -37,7 +37,6 @@ interface Args {
   project: string;
   'firestore-project': string;
   queue: string;
-  'private-key'?: string;
   trigger?: string;
 }
 
@@ -50,12 +49,7 @@ export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
       .option('pem-path', {
         describe: 'provide path to private key for requesting JWT',
         type: 'string',
-        demand: false,
-      })
-      .option('private-key', {
-        describe: 'the private key PEM',
-        type: 'string',
-        demand: false,
+        demand: true,
       })
       .option('app-id', {
         describe: 'GitHub AppID',
@@ -98,10 +92,7 @@ export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
       });
   },
   async handler(argv) {
-    let privateKey = argv['private-key'];
-    if (argv['pem-path']) {
-      privateKey = await readFileAsync(argv['pem-path'], 'utf8');
-    }
+    const privateKey = await readFileAsync(argv['pem-path'], 'utf8');
     if (!privateKey) throw Error('pem-path or private-key must be provided');
     if (argv.trigger) {
       await triggerEnqueueCopyJobs({
