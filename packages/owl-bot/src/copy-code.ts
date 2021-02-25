@@ -116,7 +116,15 @@ export async function copyCodeAndCreatePullRequest(
         owner,
         repo,
         title: `${owlBotYamlPath} is missing or defective`,
-        body: `While attempting to copy files from\n${sourceLink}\n\n${e.inner}`,
+        body: `While attempting to copy files from
+${sourceLink}
+
+After fixing ${owlBotYamlPath}, re-attempt this copy by running the following command
+in a local copy of this repo:
+  docker run -v /repo:$(pwd) -w /repo gcr.io/repo-automation-bots/owl-bot -- copy-code \
+    --source-repo-commit-hash ${args['source-repo-commit-hash']}
+
+${e.inner}`,
       });
       logger.error(`Created issue ${issue.data.html_url}`);
       return; // Success because we don't want to retry.
