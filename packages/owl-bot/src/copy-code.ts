@@ -96,10 +96,10 @@ export async function copyCodeAndCreatePullRequest(
   const [owner, repo] = args['dest-repo'].split('/');
 
   try {
-    copyCode(
+    await copyCode(
       args['source-repo'],
       args['source-repo-commit-hash'],
-      destBranch,
+      destDir,
       workDir,
       logger
     );
@@ -119,10 +119,12 @@ export async function copyCodeAndCreatePullRequest(
         body: `While attempting to copy files from
 ${sourceLink}
 
-After fixing ${owlBotYamlPath}, re-attempt this copy by running the following command
-in a local copy of this repo:
+After fixing ${owlBotYamlPath}, re-attempt this copy by running the following
+command in a local clone of this repo:
+\`\`\`
   docker run -v /repo:$(pwd) -w /repo gcr.io/repo-automation-bots/owl-bot -- copy-code \
     --source-repo-commit-hash ${args['source-repo-commit-hash']}
+\`\`\`
 
 ${e.inner}`,
       });
