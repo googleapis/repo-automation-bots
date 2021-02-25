@@ -158,9 +158,10 @@ ${e.inner}`,
 
   // Push to origin.
   cmd(
-    `git remote set-url origin https://x-access-token:${token.token}@github.com/googleapis/googleapis-gen.git`
+    `git remote set-url origin https://x-access-token:${token.token}@github.com/${args["dest-repo"]}.git`,
+    {cwd: destDir}
   );
-  cmd(`git push origin ${destBranch}`);
+  cmd(`git push origin ${destBranch}`, {cwd: destDir});
 
   // Create a pull request.
   const pull = await octokit.pulls.create({
