@@ -1,14 +1,19 @@
 steps:
-  # Clone user/branch that created PR:
+  # Clone googleapis-gen, so that we can list modified files:
   - name: 'gcr.io/cloud-builders/git'
     args:
       - clone
       - --single-branch
+      - --depth=50
       - https://github.com/googleapis/googleapis-gen.git
+  # Output the GitHub private key to disk for benefit of CLI:
   - name: gcr.io/cloud-builders/gcloud
     entrypoint: /bin/bash
-    args: ['-c', 'echo "${_PRIVATE_KEY}" > private-key.pem']
+    args: ['-c', 'echo "$$PRIVATE_KEY" > private-key.pem']
     dir: 'googleapis-gen'
+    env:
+      - 'PRIVATE_KEY=$_PRIVATE_KEY'
+  # Run the "enqueue-copy-tasks" CLI task:
   - name: 'gcr.io/repo-automation-bots/owlbot-cli'
     args:
       - enqueue-copy-tasks
