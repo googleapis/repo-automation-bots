@@ -156,6 +156,45 @@ export async function triggerPostProcessBuild(
   }
 }
 
+interface EnqueueJobsOpts {
+  privateKey: string;
+  appId: number;
+  installation: number;
+  project: string;
+  firestoreProject: string;
+  queue: string;
+  trigger: string;
+}
+
+/*
+ * Triggers a Cloud Build job that runs the enqueue copy tasks
+ * CLI command. The reason for pulling this out into a Cloud Build job,
+ * is GitHub's 3000 file limit on listing files modified by a commit.
+ * In Cloud Build we clone the whole googleapis-gen repo and use this
+ * as a foundation.
+ *
+ * @param opts see EnqueueJobsOpts.
+ */
+export async function triggerEnqueueCopyJobs(
+  opts: EnqueueJobsOpts,
+): Promise<void> {
+  const cb = core.getCloudBuildInstance();
+  await cb.runBuildTrigger({
+    projectId: opts.project,
+    triggerId: opts.trigger,
+    source: {
+      projectId: opts.project,
+      branchName: 'master',
+      substitutions: {
+        _PRIVATE_KEY: opts.privateKey.toString(),
+        _APP_ID: opts.appId.toString(),
+        _INSTALLATION: opts.installation.toString(),
+        _FIRESTORE_PROJECT: opts.firestoreProject,
+      },
+    },
+  });
+}
+
 async function waitForBuild(
   projectId: string,
   id: string,
@@ -459,5 +498,6 @@ export const core = {
   getOwlBotLock,
   getPubSubClient,
   owlBotLockPath,
+  triggerEnqueueCopyJobs,
   triggerPostProcessBuild,
 };

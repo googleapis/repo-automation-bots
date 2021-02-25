@@ -18,6 +18,7 @@ import {
   getGitHubShortLivedAccessToken,
   getFilesModifiedBySha,
   getLastNCommits,
+  triggerEnqueueCopyJobs,
 } from '../../core';
 import {FirestoreConfigsStore} from '../../database';
 import {promisify} from 'util';
@@ -28,7 +29,7 @@ import {logger} from 'gcf-utils';
 const readFileAsync = promisify(readFile);
 
 interface Args {
-  'pem-path': string;
+  'pem-path'?: string;
   'app-id': number;
   installation: number;
   repo: string;
@@ -36,6 +37,8 @@ interface Args {
   project: string;
   'firestore-project': string;
   queue: string;
+  'private-key'?: string;
+  trigger?: string;
 }
 
 export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
@@ -47,7 +50,12 @@ export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
       .option('pem-path', {
         describe: 'provide path to private key for requesting JWT',
         type: 'string',
-        demand: true,
+        demand: false,
+      })
+      .option('private-key', {
+        describe: 'the private key PEM',
+        type: 'string',
+        demand: false,
       })
       .option('app-id', {
         describe: 'GitHub AppID',
@@ -83,42 +91,66 @@ export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
         describe: 'queue to publish PR update jobs to',
         type: 'string',
         default: 'projects/repo-automation-bots/topics/owlbot-prs',
+      })
+      .option('trigger', {
+        describe: 'enqueue copy job trigger (if this should be run in background)',
+        type: 'string',
       });
   },
   async handler(argv) {
-    const privateKey = await readFileAsync(argv['pem-path'], 'utf8');
-    const token = await getGitHubShortLivedAccessToken(
-      privateKey,
-      argv['app-id'],
-      argv.installation
-    );
-    const octokit = await getAuthenticatedOctokit(token.token);
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-      projectId: argv.project,
-    });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const db = admin.firestore();
-    const configStore = new FirestoreConfigsStore(db!);
-
-    const shas = await getLastNCommits(argv.repo, octokit, 1);
-    console.info(shas);
-    // TODO: stop hardcoding this once we've tested the system:
-    const sha = 'e6133c51dc822c0516a07cdf61fb4def9a460df2';
-    const files = await getFilesModifiedBySha(argv['git-path'], sha);
-    const repos = await configStore.findReposAffectedByFileChanges(files);
-    for (const repo of repos) {
-      let messageId = await configStore.findPubsubMessageIdForCopyTask(
-        repo,
-        sha
+    let privateKey = argv['private-key'];
+    if (argv['pem-path']) {
+      privateKey = await readFileAsync(argv['pem-path'], 'utf8');
+    }
+    if (!privateKey) throw Error('pem-path or private-key must be provided');
+    if (argv.trigger) {
+      await triggerEnqueueCopyJobs({
+        privateKey,
+        appId: argv['app-id'],
+        installation: argv.installation,
+        project: argv.project,
+        firestoreProject: argv['firestore-project'],
+        queue: argv.queue,
+        trigger: argv.trigger,
+      });
+    } else {
+      const token = await getGitHubShortLivedAccessToken(
+        privateKey,
+        argv['app-id'],
+        argv.installation
       );
-      if (messageId) {
-        logger.info(`${repo} has copy job ${messageId}`);
-        continue;
+      const octokit = await getAuthenticatedOctokit(token.token);
+      admin.initializeApp({
+        credential: admin.credential.applicationDefault(),
+        projectId: argv['firestore-project'],
+      });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const db = admin.firestore();
+      const configStore = new FirestoreConfigsStore(db!);
+
+      const shas = await getLastNCommits(argv.repo, octokit, 1);
+      console.info(shas);
+      // TODO: stop hardcoding this once we've tested the system:
+      const sha = 'e6133c51dc822c0516a07cdf61fb4def9a460df2';
+      const files = await getFilesModifiedBySha(argv['git-path'], sha);
+      const repos = await configStore.findReposAffectedByFileChanges(files);
+      for (const repo of repos) {
+        let messageId = await configStore.findPubsubMessageIdForCopyTask(
+          repo,
+          sha
+        );
+        if (messageId) {
+          logger.info(`${repo} has copy job ${messageId}`);
+          continue;
+        }
+        logger.info(`enqueue ${argv.repo}`);
+        messageId = await enqueueCopyTask(argv.queue, argv.repo, repo, sha);
+        await configStore.recordPubsubMessageIdForCopyTask(
+          repo,
+          sha,
+          messageId
+        );
       }
-      logger.info(`enqueue ${argv.repo}`);
-      messageId = await enqueueCopyTask(argv.queue, argv.repo, repo, sha);
-      await configStore.recordPubsubMessageIdForCopyTask(repo, sha, messageId);
     }
   },
 };

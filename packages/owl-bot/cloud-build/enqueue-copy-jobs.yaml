@@ -6,8 +6,15 @@ steps:
       - https://github.com/googleapis/googleapis-gen.git
   - name: 'gcr.io/repo-automation-bots/owlbot-cli'
     args:
-      - --help
-      - -b
-      - ${_PR_BRANCH}
+      - enqueue-copy-tasks
+      - --private-key
+      - ${_PRIVATE_KEY}
+      - --app-id
+      - ${_APP_ID}
+      - --installation
+      - ${_INSTALLATION}
+      - --firestore-project
+      - ${_FIRESTORE_PROJECT}
+      - --git-path
+      - ./
     dir: 'googleapis-gen'
-
