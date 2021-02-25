@@ -95,7 +95,7 @@ describe('core', () => {
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any) as CloudBuildClient);
-      const build = await core.triggerBuild({
+      const build = await core.triggerPostProcessBuild({
         image: 'node@abc123',
         appId: 12345,
         privateKey: 'abc123',
@@ -142,7 +142,7 @@ describe('core', () => {
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any) as CloudBuildClient);
-      const build = await core.triggerBuild({
+      const build = await core.triggerPostProcessBuild({
         image: 'node@abc123',
         appId: 12345,
         privateKey: 'abc123',
@@ -259,6 +259,19 @@ describe('core', () => {
       } as any) as InstanceType<typeof Octokit>;
       const config = await core.getOwlBotLock('bcoe/test', 22, octokit);
       assert.strictEqual(config, undefined);
+    });
+  });
+  describe('getFilesModifiedBySha', () => {
+    it('returns files modified for a given sha for a repo pointed to by path', async () => {
+      // Use a SHA and path pointing to repo-automation-bots itself, in
+      // production this will point to a clone of googleapis-gen:
+      const sha = '8b60a780fe4869b44ab33a53d645a9d7a4604108';
+      const filesModified = await core.getFilesModifiedBySha('./', sha);
+      assert.deepStrictEqual(filesModified, [
+        'packages/owl-bot/src/handlers.ts',
+        'packages/owl-bot/src/bin/owl-bot.ts',
+        'packages/owl-bot/src/bin/commands/validate.ts',
+      ]);
     });
   });
 });

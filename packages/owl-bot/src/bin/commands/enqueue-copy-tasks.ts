@@ -1,0 +1,124 @@
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+import admin from 'firebase-admin';
+import {
+  enqueueCopyTask,
+  getAuthenticatedOctokit,
+  getGitHubShortLivedAccessToken,
+  getFilesModifiedBySha,
+  getLastNCommits,
+} from '../../core';
+import {FirestoreConfigsStore} from '../../database';
+import {promisify} from 'util';
+import {readFile} from 'fs';
+import yargs = require('yargs');
+import {logger} from 'gcf-utils';
+
+const readFileAsync = promisify(readFile);
+
+interface Args {
+  'pem-path': string;
+  'app-id': number;
+  installation: number;
+  repo: string;
+  'git-path': string;
+  project: string;
+  'firestore-project': string;
+  queue: string;
+}
+
+export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
+  command: 'enqueue-copy-tasks',
+  describe:
+    'look at most recent commits to repo and enqueue copy tasks for those repos',
+  builder(yargs) {
+    return yargs
+      .option('pem-path', {
+        describe: 'provide path to private key for requesting JWT',
+        type: 'string',
+        demand: true,
+      })
+      .option('app-id', {
+        describe: 'GitHub AppID',
+        type: 'number',
+        demand: true,
+      })
+      .option('installation', {
+        describe: 'installation ID for GitHub app',
+        type: 'number',
+        demand: true,
+      })
+      .option('repo', {
+        describe: 'repository to monitor for changes',
+        type: 'string',
+        default: 'googleapis/googleapis-gen',
+      })
+      .option('git-path', {
+        describe: 'path on disk of repo to monitor for changes',
+        type: 'string',
+        demand: true,
+      })
+      .option('project', {
+        describe: 'gcloud project',
+        type: 'string',
+        default: 'repo-automation-bots',
+      })
+      .option('firestore-project', {
+        describe: 'project used for firestore database',
+        type: 'string',
+        default: 'repo-automation-bots-metrics',
+      })
+      .option('queue', {
+        describe: 'queue to publish PR update jobs to',
+        type: 'string',
+        default: 'projects/repo-automation-bots/topics/owlbot-prs',
+      });
+  },
+  async handler(argv) {
+    const privateKey = await readFileAsync(argv['pem-path'], 'utf8');
+    const token = await getGitHubShortLivedAccessToken(
+      privateKey,
+      argv['app-id'],
+      argv.installation
+    );
+    const octokit = await getAuthenticatedOctokit(token.token);
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+      projectId: argv.project,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const db = admin.firestore();
+    const configStore = new FirestoreConfigsStore(db!);
+
+    const shas = await getLastNCommits(argv.repo, octokit, 1);
+    console.info(shas);
+    // TODO: stop hardcoding this once we've tested the system:
+    const sha = 'e6133c51dc822c0516a07cdf61fb4def9a460df2';
+    const files = await getFilesModifiedBySha(argv['git-path'], sha);
+    const repos = await configStore.findReposAffectedByFileChanges(files);
+    for (const repo of repos) {
+      let messageId = await configStore.findPubsubMessageIdForCopyTask(
+        repo,
+        sha
+      );
+      if (messageId) {
+        logger.info(`${repo} has copy job ${messageId}`);
+        continue;
+      }
+      logger.info(`enqueue ${argv.repo}`);
+      messageId = await enqueueCopyTask(argv.queue, argv.repo, repo, sha);
+      await configStore.recordPubsubMessageIdForCopyTask(repo, sha, messageId);
+    }
+  },
+};

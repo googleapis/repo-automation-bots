@@ -36,3 +36,9 @@ steps:
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
       - "nodejs12"
+  
+  # Build the owlbot command line, which is used in the schedule PRs build:
+  - name: 'gcr.io/cloud-builders/docker'
+    id: "build-docker"
+    entrypoint: docker
+    args: ['build', '-t', 'gcr.io/repo-automation-bots/owlbot-cli']

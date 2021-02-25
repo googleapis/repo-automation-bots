@@ -109,11 +109,13 @@ describe('owlBot', () => {
           content: Buffer.from(config).toString('base64'),
           encoding: 'base64',
         });
-      const triggerBuildStub = sandbox.stub(core, 'triggerBuild').resolves({
-        text: 'the text for check',
-        summary: 'summary for check',
-        conclusion: 'success',
-      });
+      const triggerBuildStub = sandbox
+        .stub(core, 'triggerPostProcessBuild')
+        .resolves({
+          text: 'the text for check',
+          summary: 'summary for check',
+          conclusion: 'success',
+        });
       const createCheckStub = sandbox.stub(core, 'createCheck');
       await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       sandbox.assert.calledOnce(triggerBuildStub);
@@ -182,4 +184,37 @@ describe('owlBot', () => {
       assert.strictEqual(installation, 12345);
     });
   });
+  /*describe('push to googleapis-gen', () => {
+    it('publishes jobs when googleapis-gen has files updated', async () => {
+      const payload = require('../../test/fixtures/push.json');
+      let paths: string[] = [];
+      sandbox.replace(
+        handlers,
+        'publishRepoUpdateJobs',
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        (_configStore, _paths: string[]): Promise<void> => {
+          paths = _paths;
+          return Promise.resolve();
+        }
+      );
+      await probot.receive({
+        name: 'push',
+        id: 'abc123',
+        payload,
+      });
+      assert.deepStrictEqual(paths, [
+        'google-cloud-spanner-bom/pom.xml',
+        'google-cloud-spanner/pom.xml',
+        'grpc-google-cloud-spanner-admin-database-v1/pom.xml',
+        'grpc-google-cloud-spanner-admin-instance-v1/pom.xml',
+        'grpc-google-cloud-spanner-v1/pom.xml',
+        'pom.xml',
+        'proto-google-cloud-spanner-admin-database-v1/pom.xml',
+        'proto-google-cloud-spanner-admin-instance-v1/pom.xml',
+        'proto-google-cloud-spanner-v1/pom.xml',
+        'samples/snapshot/pom.xml',
+        'versions.txt',
+      ]);
+    });
+  });*/
 });

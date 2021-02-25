@@ -161,7 +161,9 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
     // to optimize if performance becomes a problem.
     const snapshot = await this.db.collection(this.yamls).get();
     const result: string[] = [];
+    let i = 0;
     snapshot.forEach(doc => {
+      i++;
       const configs = doc.data() as Configs | undefined;
       match_loop: for (const copy of configs?.yaml?.['copy-dirs'] ?? []) {
         const mm = newMinimatchFromSource(copy.source);
@@ -173,6 +175,7 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
         }
       }
     });
+    console.info(`walked ${i} configs`);
     return result;
   }
 

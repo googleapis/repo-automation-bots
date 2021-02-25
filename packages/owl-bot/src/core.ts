@@ -11,8 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import {exec} from 'child_process';
+import {promisify} from 'util';
+const execAsync = promisify(exec);
 import {load} from 'js-yaml';
 import {logger} from 'gcf-utils';
+import {PubSub} from '@google-cloud/pubsub';
 import {sign} from 'jsonwebtoken';
 import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
@@ -71,7 +75,7 @@ interface Token {
   repository_selection: string;
 }
 
-export async function triggerBuild(
+export async function triggerPostProcessBuild(
   args: BuildArgs,
   octokit?: OctokitType
 ): Promise<BuildResponse> {
@@ -359,14 +363,101 @@ export async function getFileContent(
   }
 }
 
+/**
+ * Given a git repository and sha, returns the files modified by the
+ * given commit.
+ * @param path path to git repository on disk.
+ * @param sha commit to list modified files for.
+ */
+export async function getFilesModifiedBySha(path: string, sha: string) {
+  const out = await execAsync(`git show --name-only ${sha}`, {
+    cwd: path,
+  });
+  if (out.stderr) throw Error(out.stderr);
+  const filesRaw = out.stdout.trim();
+  const files = [];
+  // We walk the output in reverse, since the file list is shown at the end
+  // of git show:
+  for (const file of filesRaw.split(/\r?\n/).reverse()) {
+    // There will be a blank line between the commit message and the
+    // files list, we use this as a stopping point:
+    if (file === '') break;
+    files.push(file);
+  }
+  return files;
+}
+
+/**
+ * Returns the last 'n' commits made to a repository.
+ * @param repoFull org/repo
+ * @param octokit authenticated octokit instance.
+ * @param n number of commits to return.
+ */
+export async function getLastNCommits(
+  repoFull: string,
+  octokit: OctokitType,
+  n = 10
+): Promise<string[]> {
+  const [owner, repo] = repoFull.split('/');
+  const commits = (
+    await octokit.repos.listCommits({
+      owner,
+      repo,
+      per_page: n,
+    })
+  ).data;
+  return commits.map(c => c.sha);
+}
+
+/**
+ * Given a repository source repository and destination repository
+ * copies the appropriate files represented by a SHA.
+ * @param topicName PubSub topic to publish to.
+ * @param sourceRepo org/repo.
+ * @param destRepo org/repo.
+ * @param sha SHA in source repo to copy.
+ */
+export async function enqueueCopyTask(
+  topicName: string,
+  sourceRepo: string,
+  destRepo: string,
+  sha: string
+): Promise<string> {
+  const pubSubClient = core.getPubSubClient();
+  const dataBuffer = Buffer.from(
+    JSON.stringify({
+      sourceRepo,
+      destRepo,
+      sha,
+    })
+  );
+  return await pubSubClient.topic(topicName).publish(dataBuffer);
+}
+
+/*
+ * Get a PubSub instance.
+ * @param projectId
+ */
+let pubSubClient: PubSub;
+export function getPubSubClient(projectId?: string) {
+  if (!pubSubClient) {
+    pubSubClient = new PubSub({projectId});
+  }
+  return pubSubClient;
+}
+
 export const core = {
   createCheck,
+  enqueueCopyTask,
   getAccessTokenURL,
   getAuthenticatedOctokit,
   getCloudBuildInstance,
+  getFilesModifiedBySha,
   getFileContent,
   getGitHubShortLivedAccessToken,
+  getLastNCommits,
   getOwlBotLock,
+  getPubSubClient,
   owlBotLockPath,
-  triggerBuild,
+  triggerPostProcessBuild,
 };
