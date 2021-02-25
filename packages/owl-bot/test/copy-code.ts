@@ -78,6 +78,7 @@ describe('copyDirs', () => {
         {
           source: '/b/(y)',
           dest: '/src/$1',
+          'rm-dest': '',
         },
       ],
     };
@@ -96,6 +97,7 @@ describe('copyDirs', () => {
         {
           source: '/a',
           dest: '/m/n',
+          'rm-dest': '',
         },
       ],
     };

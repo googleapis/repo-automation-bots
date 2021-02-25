@@ -22,13 +22,16 @@ describe('config-files', () => {
 deep-copy-regex:
   - source: /google/cloud/vision
     dest: /src
+    rm-dest: ''
 
 docker:
   image: gcr.io/cloud-devrel-resources/synthtool-nodejs:prod
 `;
     const config = owlBotYamlFromText(text);
     assert.deepStrictEqual(config, {
-      'deep-copy-regex': [{source: '/google/cloud/vision', dest: '/src'}],
+      'deep-copy-regex': [
+        {source: '/google/cloud/vision', 'rm-dest': '', dest: '/src'},
+      ],
       docker: {image: 'gcr.io/cloud-devrel-resources/synthtool-nodejs:prod'},
     });
   });

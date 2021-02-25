@@ -48,7 +48,7 @@ export function owlBotLockFrom(o: Record<string, any>): OwlBotLock {
 export interface DeepCopyRegex {
   source: string;
   dest: string;
-  'rm-dest'?: string;
+  'rm-dest': string;
 }
 
 // The .github/.OwlBot.yaml is stored on each repository that OwlBot
@@ -64,13 +64,25 @@ export interface OwlBotYaml {
 // The default path where .OwlBot.yaml is expected to be found.
 export const owlBotYamlPath = '.github/.OwlBot.yaml';
 
+function validatePath(path: string, fieldName: string) {
+  if (path && path[0] !== '/') {
+    throw `I expected the first character of ${fieldName} to be a '/'.  Instead, I found ${path}.`;
+  }
+}
+
 // Throws an exception if the object does not have the necessary structure.
 // Otherwise, returns the same object as an OwlBotYaml.
 export function owlBotYamlFromText(yamlText: string): OwlBotYaml {
   const o = yaml.load(yamlText) ?? {};
   const validate = new Ajv().compile(owlBotYamlSchema);
   if (validate(o)) {
-    return o as OwlBotYaml;
+    const yaml = o as OwlBotYaml;
+    for (const deepCopy of yaml['deep-copy-regex'] ?? []) {
+      validatePath(deepCopy.dest, 'dest');
+      validatePath(deepCopy.source, 'source');
+      validatePath(deepCopy['rm-dest'], 'rm-dest');
+    }
+    return yaml;
   } else {
     throw validate.errors;
   }

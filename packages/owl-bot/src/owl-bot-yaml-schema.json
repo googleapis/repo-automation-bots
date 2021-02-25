@@ -21,7 +21,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["source", "dest"],
+        "required": ["source", "dest", "rm-dest"],
         "properties": {
           "source": {
             "description": "Source directory, as a regular expression to copy from googleapis-gen.",

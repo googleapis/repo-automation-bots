@@ -66,6 +66,7 @@ describe('database', () => {
           {
             source: '/alpha',
             dest: '/beta',
+            'rm-dest': '',
           },
         ],
       },
@@ -86,6 +87,7 @@ describe('database', () => {
           {
             source: '/gamma',
             dest: '/omega',
+            'rm-dest': '',
           },
         ],
       },
@@ -143,6 +145,7 @@ describe('database', () => {
           {
             source: '/alpha',
             dest: '/beta',
+            'rm-dest': '',
           },
         ],
       },
