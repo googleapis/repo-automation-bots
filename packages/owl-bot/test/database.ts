@@ -199,6 +199,7 @@ describe('database', () => {
     const db = admin.firestore();
     const store = new FirestoreConfigsStore(db, 'test-');
     const repoA = 'googleapis/' + uuidv4();
+    const repoB = 'googleapis/' + uuidv4();
     const googleapisGenCommitHash = uuidv4();
 
     // Test pull requests.
@@ -208,6 +209,14 @@ describe('database', () => {
         googleapisGenCommitHash
       ),
       undefined
+    );
+
+    assert.deepStrictEqual(
+      await store.filterMissingCopyTasks(
+        [repoA, repoB],
+        googleapisGenCommitHash
+      ),
+      [repoA, repoB]
     );
 
     // First one gets recorded.
@@ -234,6 +243,14 @@ describe('database', () => {
           '11'
         ),
         '10'
+      );
+
+      assert.deepStrictEqual(
+        await store.filterMissingCopyTasks(
+          [repoA, repoB],
+          googleapisGenCommitHash
+        ),
+        [repoB]
       );
     } finally {
       await store.clearPubsubMessageIdForCopyTask(

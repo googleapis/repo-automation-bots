@@ -207,6 +207,22 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
     return pubsubMessageId;
   }
 
+  async filterMissingCopyTasks(
+    repos: string[],
+    googleapisGenCommitHash: string
+  ): Promise<string[]> {
+    const snapshot = this.db.collection(this.copyTasks);
+    const result: string[] = [];
+    for (const repo of repos) {
+      const docId = makeUpdateFilesKey(repo, googleapisGenCommitHash);
+      const got = await snapshot.doc(docId).get();
+      if (!got.exists) {
+        result.push(repo);
+      }
+    }
+    return result;
+  }
+
   async clearPubsubMessageIdForCopyTask(
     repo: string,
     googleapisGenCommitHash: string
