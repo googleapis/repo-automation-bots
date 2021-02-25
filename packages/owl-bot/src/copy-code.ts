@@ -158,15 +158,25 @@ ${e.inner}`,
 
   // Push to origin.
   cmd(
-    `git remote set-url origin https://x-access-token:${token.token}@github.com/${args["dest-repo"]}.git`,
+    `git remote set-url origin https://x-access-token:${token.token}@github.com/${args['dest-repo']}.git`,
     {cwd: destDir}
   );
   cmd(`git push origin ${destBranch}`, {cwd: destDir});
+
+  // Use the commit's subject and body as the pull request's title and body.
+  const title = cmd('git log -1 --format=%s', {
+    cwd: destDir,
+  }).toString('utf8');
+  const body = cmd('git log -1 --format=%b', {
+    cwd: destDir,
+  }).toString('utf8');
 
   // Create a pull request.
   const pull = await octokit.pulls.create({
     owner,
     repo,
+    title,
+    body,
     head: destBranch,
     base: githubRepo.data.default_branch,
   });
