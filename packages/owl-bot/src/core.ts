@@ -411,6 +411,8 @@ export async function getFileContent(
 export async function getFilesModifiedBySha(path: string, sha: string) {
   const out = await execAsync(`git show --name-only ${sha}`, {
     cwd: path,
+    // Handle 100,000+ files changing:
+    maxBuffer: 1024 * 1024 * 512,
   });
   if (out.stderr) throw Error(out.stderr);
   const filesRaw = out.stdout.trim();
