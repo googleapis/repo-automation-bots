@@ -4,8 +4,8 @@ steps:
     args:
       - clone
       - --single-branch
-      - --depth=50
       - https://github.com/googleapis/googleapis-gen.git
+      # - --depth=50
   # Output the GitHub private key to disk for benefit of CLI:
   - name: gcr.io/cloud-builders/gcloud
     entrypoint: /bin/bash

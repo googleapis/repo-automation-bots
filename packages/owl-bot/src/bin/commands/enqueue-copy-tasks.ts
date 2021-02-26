@@ -122,8 +122,9 @@ export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
       const shas = await getLastNCommits(argv.repo, octokit, 1);
       console.info(shas);
       // TODO: stop hardcoding this once we've tested the system:
-      const sha = '9d14cd16d94886f7f10a243e1b5a6876946f32bb';
+      const sha = 'b32470c59b90b1bb22c29d285474c19870d6f3f1';
       const files = await getFilesModifiedBySha(argv['git-path'], sha);
+      logger.info(`found ${files.length} files changed`);
       const repos = await configStore.findReposAffectedByFileChanges(files);
       for (const repo of repos) {
         let messageId = await configStore.findPubsubMessageIdForCopyTask(
