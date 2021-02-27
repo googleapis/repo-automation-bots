@@ -388,8 +388,7 @@ export class GCFBootstrapper {
     // See: https://github.com/probot/probot/issues/1003
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cfg = await this.getProbotConfig(wrapOptions?.logging);
-    return new Octokit({
-      authStrategy: createProbotAuth,
+    return new cfg.Octokit!({
       auth: {
         appId: cfg.appId,
         privateKey: cfg.privateKey,
