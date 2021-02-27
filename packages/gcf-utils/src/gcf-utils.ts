@@ -381,11 +381,21 @@ export class GCFBootstrapper {
   }
 
   // TODO: How do we still get access to this installation token?
-  async getAuthenticatedOctokit(installationId: number): Promise<Octokit> {
+  async getAuthenticatedOctokit(
+    installationId: number,
+    wrapOptions?: WrapOptions
+  ): Promise<Octokit> {
     // See: https://github.com/probot/probot/issues/1003
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const app = (this.probot as any).apps[0] as Probot;
-    return ((await app.auth(installationId)) as unknown) as Octokit;
+    const cfg = await this.getProbotConfig(wrapOptions?.logging);
+    return new Octokit({
+      authStrategy: createProbotAuth,
+      auth: {
+        appId: cfg.appId,
+        privateKey: cfg.privateKey,
+        installationId,
+      },
+    });
   }
 
   private async scheduledToTask(
