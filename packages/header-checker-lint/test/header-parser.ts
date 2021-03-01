@@ -73,7 +73,7 @@ describe('detectLicenseHeader', () => {
     );
     const header = detectLicenseHeader(contents);
     assert.strictEqual(header.copyright, 'Google, Inc');
-    assert.strictEqual(header.year, 2021);
+    assert.strictEqual(header.year, 2016);
     assert.strictEqual(header.type, 'Apache-2.0');
   });
 
