@@ -95,28 +95,21 @@ export async function copyCodeAndCreatePullRequest(
 
   const [owner, repo] = args['dest-repo'].split('/');
 
+  let yaml: OwlBotYaml;
   try {
-    await copyCode(
-      args['source-repo'],
-      args['source-repo-commit-hash'],
-      destDir,
-      workDir,
-      logger
-    );
+    yaml = await loadOwlBotYaml(destDir);
   } catch (err) {
-    if (err.kind === 'BadOwlbotYamlError') {
-      logger.error(err);
-      // Create a github issue.
-      const e = err as BadOwlbotYamlError;
-      const sourceLink = sourceLinkFrom(
-        args['source-repo'],
-        args['source-repo-commit-hash']
-      );
-      const issue = await octokit.issues.create({
-        owner,
-        repo,
-        title: `${owlBotYamlPath} is missing or defective`,
-        body: `While attempting to copy files from
+    logger.error(err);
+    // Create a github issue.
+    const sourceLink = sourceLinkFrom(
+      args['source-repo'],
+      args['source-repo-commit-hash']
+    );
+    const issue = await octokit.issues.create({
+      owner,
+      repo,
+      title: `${owlBotYamlPath} is missing or defective`,
+      body: `While attempting to copy files from
 ${sourceLink}
 
 After fixing ${owlBotYamlPath}, re-attempt this copy by running the following
@@ -126,14 +119,19 @@ command in a local clone of this repo:
     --source-repo-commit-hash ${args['source-repo-commit-hash']}
 \`\`\`
 
-${e.inner}`,
-      });
-      logger.error(`Created issue ${issue.data.html_url}`);
-      return; // Success because we don't want to retry.
-    } else {
-      throw err;
-    }
+${err}`,
+    });
+    logger.error(`Created issue ${issue.data.html_url}`);
+    return; // Success because we don't want to retry.
   }
+  await copyCode(
+    args['source-repo'],
+    args['source-repo-commit-hash'],
+    destDir,
+    workDir,
+    yaml,
+    logger
+  );
 
   // Check for existing pull request one more time before we push.
   const privateKey = await readFileAsync(args['pem-path'], 'utf8');
@@ -183,49 +181,46 @@ ${e.inner}`,
   logger.info(`Created pull request ${pull.data.html_url}`);
 }
 
-// Thrown when the .OwlBot.yaml error is invalid.
-interface BadOwlbotYamlError {
-  kind: 'BadOwlbotYamlError';
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  inner: any; // The inner error that was thrown.
+/**
+ * Loads the OwlBot yaml from the dest directory.  Throws an exception if not found
+ * or invalid.
+ */
+export async function loadOwlBotYaml(destDir: string): Promise<OwlBotYaml> {
+  // Load the OwlBot.yaml file in dest.
+  const yamlPath = path.join(destDir, owlBotYamlPath);
+  const text = await readFileAsync(yamlPath, 'utf8');
+  return owlBotYamlFromText(text);
 }
 
 /**
  * Copies the code from a source repo to a locally checked out repo.
  *
- * @param sourceRepo usually 'googleapis/googleapis-gen'
+ * @param sourceRepo usually 'googleapis/googleapis-gen';  May also be a local path
+ *   to a git repo directory.
  * @param sourceCommitHash the commit hash to copy from googleapis-gen.
  * @param destDir the locally checkout out repo with an .OwlBot.yaml file.
  * @param workDir a working directory where googleapis-gen will be cloned.
+ * @param yaml the yaml file loaded from the destDir
  */
 export async function copyCode(
   sourceRepo: string,
   sourceCommitHash: string,
-  destDir: string | undefined,
+  destDir: string,
   workDir: string,
+  yaml: OwlBotYaml,
   logger = console
 ) {
-  destDir = destDir ?? process.cwd();
-
-  // Load the OwlBot.yaml file in dest.
-  const yamlPath = path.join(destDir, owlBotYamlPath);
-  let yaml: OwlBotYaml;
-  try {
-    const text = await readFileAsync(yamlPath, 'utf8');
-    yaml = owlBotYamlFromText(text);
-  } catch (e) {
-    const err: BadOwlbotYamlError = {
-      kind: 'BadOwlbotYamlError',
-      inner: e,
-    };
-    throw err;
-  }
-
   const cmd = newCmd(logger);
-  const sourceDir = path.join(workDir, 'source');
-  cmd(
-    `git clone --single-branch "https://github.com/${sourceRepo}.git" ${sourceDir}`
-  );
+  let sourceDir: string;
+  if (stat(sourceRepo)?.isDirectory()) {
+    logger.info(`Using local source repo directory ${sourceRepo}`);
+    sourceDir = sourceRepo;
+  } else {
+    sourceDir = path.join(workDir, 'source');
+    cmd(
+      `git clone --single-branch "https://github.com/${sourceRepo}.git" ${sourceDir}`
+    );
+  }
   // Check out the specific hash we want to copy from.
   cmd(`git checkout ${sourceCommitHash}`, {cwd: sourceDir});
 

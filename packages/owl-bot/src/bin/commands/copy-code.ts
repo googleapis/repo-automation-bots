@@ -16,7 +16,7 @@
 
 import tmp from 'tmp';
 import yargs = require('yargs');
-import {copyCode} from '../../copy-code';
+import {copyCode, loadOwlBotYaml} from '../../copy-code';
 
 interface Args {
   'source-repo': string;
@@ -49,11 +49,13 @@ export const copyCodeCommand: yargs.CommandModule<{}, Args> = {
       });
   },
   async handler(argv) {
+    const destDir = argv.dest ?? process.cwd();
     await copyCode(
       argv['source-repo'],
       argv['source-repo-commit-hash'],
-      argv.dest,
-      tmp.dirSync().name
+      destDir,
+      tmp.dirSync().name,
+      await loadOwlBotYaml(destDir)
     );
   },
 };
