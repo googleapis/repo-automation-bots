@@ -101,4 +101,4 @@ jobs:
         with:
           paths: '**/*.md'
           verbosity: 'ERROR'
-          skip: 'node_modules/ http://devrel/products http://localhost:3000'
+          skip: 'node_modules/ http://devrel/products http://localhost:3000 https://www.github.com/googleapis/repo-automation-bots/compare/*'
