@@ -15,6 +15,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {ProbotOctokit, Context} from 'probot';
 import Ajv, {ErrorObject} from 'ajv';
+import addFormats from 'ajv-formats';
 import {logger} from 'gcf-utils';
 import {convertToArray} from './slo-appliesTo';
 import {SLORules} from './types';
@@ -154,6 +155,7 @@ export const lint = async function lint(
   sloData: SLORules[]
 ): Promise<ValidationResults> {
   const ajv = new Ajv();
+  addFormats(ajv);
   const validate = ajv.compile(schema);
   let isValid = await validate(sloData);
 
