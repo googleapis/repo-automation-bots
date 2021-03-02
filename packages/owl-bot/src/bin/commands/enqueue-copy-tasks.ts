@@ -17,7 +17,7 @@ import {
   getAuthenticatedOctokit,
   getGitHubShortLivedAccessToken,
   getFilesModifiedBySha,
-  getLastNCommits,
+  commitsIterator,
   triggerEnqueueCopyJobs,
 } from '../../core';
 import {FirestoreConfigsStore} from '../../database';
@@ -32,7 +32,7 @@ interface Args {
   'pem-path': string;
   'app-id': number;
   installation: number;
-  repo: string;
+  'source-repo': string;
   'git-path': string;
   project: string;
   'firestore-project': string;
@@ -61,15 +61,15 @@ export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
         type: 'number',
         demand: true,
       })
-      .option('repo', {
+      .option('source-repo', {
         describe: 'repository to monitor for changes',
         type: 'string',
         default: 'googleapis/googleapis-gen',
       })
       .option('git-path', {
-        describe: 'path on disk of repo to monitor for changes',
+        describe: 'where on disk is source-repo checked out?',
         type: 'string',
-        demand: true,
+        default: './',
       })
       .option('project', {
         describe: 'gcloud project',
@@ -82,13 +82,13 @@ export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
         default: 'repo-automation-bots-metrics',
       })
       .option('queue', {
-        describe: 'queue to publish PR update jobs to',
+        describe: 'pubsub queue to publish PR update jobs to',
         type: 'string',
         default: 'projects/repo-automation-bots/topics/owlbot-prs',
       })
       .option('trigger', {
         describe:
-          'enqueue copy job trigger (if this should be run in background)',
+          'the UUID of the Cloud Build trigger to run (if triggering a remote task)',
         type: 'string',
       });
   },
@@ -96,6 +96,8 @@ export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
     const privateKey = await readFileAsync(argv['pem-path'], 'utf8');
     if (!privateKey) throw Error('pem-path or private-key must be provided');
     if (argv.trigger) {
+      // If a trigger is provided, run enqueue copy tasks in a remote
+      // Cloud Build environment:
       await triggerEnqueueCopyJobs({
         privateKey,
         appId: argv['app-id'],
@@ -106,6 +108,7 @@ export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
         trigger: argv.trigger,
       });
     } else {
+      // If no trigger is provided, run enqueue copy tasks locally:
       const token = await getGitHubShortLivedAccessToken(
         privateKey,
         argv['app-id'],
@@ -120,10 +123,11 @@ export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
       const db = admin.firestore();
       const configStore = new FirestoreConfigsStore(db!);
 
-      const shas = await getLastNCommits(argv.repo, octokit, 1);
-      console.info(shas);
-      // TODO: stop hardcoding this once we've tested the system:
-      const sha = 'b32470c59b90b1bb22c29d285474c19870d6f3f1';
+      let sha: string | undefined = undefined;
+      for await (const s of commitsIterator(argv['source-repo'], octokit)) {
+        sha = s;
+      }
+      if (!sha) throw Error(`no commits found for ${argv['source-repo']}`);
       const files = await getFilesModifiedBySha(argv['git-path'], sha);
       logger.info(`found ${files.length} files changed`);
       const repos = await configStore.findReposAffectedByFileChanges(files);
@@ -133,11 +137,18 @@ export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
           sha
         );
         if (messageId) {
-          logger.info(`${repo} has copy job ${messageId}`);
+          logger.info(
+            `${repo} already has copy job ${messageId} for ${sha}, so I won't create another one`
+          );
           continue;
         }
-        logger.info(`enqueue ${argv.repo}`);
-        messageId = await enqueueCopyTask(argv.queue, argv.repo, repo, sha);
+        logger.info(`${argv.repo} has no copy job for ${sha}, so creating one`);
+        messageId = await enqueueCopyTask(
+          argv.queue,
+          argv['source-repo'],
+          repo,
+          sha
+        );
         await configStore.recordPubsubMessageIdForCopyTask(
           repo,
           sha,

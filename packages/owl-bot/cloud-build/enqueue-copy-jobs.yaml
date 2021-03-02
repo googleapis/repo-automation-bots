@@ -1,3 +1,20 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# GitHub has a 3000 file limit, when listing files modified by a diff, see:
+# https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/limits-for-viewing-content-and-diffs-in-a-repository#diff-limits
+# for this reason, we use a clone of the repository to determine modified files:
 steps:
   # Clone googleapis-gen, so that we can list modified files:
   - name: 'gcr.io/cloud-builders/git'
@@ -5,7 +22,7 @@ steps:
       - clone
       - --single-branch
       - https://github.com/googleapis/googleapis-gen.git
-      # - --depth=50
+      - --depth=50
   # Output the GitHub private key to disk for benefit of CLI:
   - name: gcr.io/cloud-builders/gcloud
     entrypoint: /bin/bash
@@ -13,7 +30,8 @@ steps:
     dir: 'googleapis-gen'
     env:
       - 'PRIVATE_KEY=$_PRIVATE_KEY'
-  # Run the "enqueue-copy-tasks" CLI task:
+  # Run job that enqueues a copy task for each repository affected
+  # by updated files:
   - name: 'gcr.io/repo-automation-bots/owlbot-cli'
     args:
       - enqueue-copy-tasks

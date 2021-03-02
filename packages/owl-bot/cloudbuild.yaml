@@ -37,7 +37,9 @@ steps:
       - "$_FUNCTION_REGION"
       - "nodejs12"
   
-  # Build the owlbot command line, which is used in the schedule PRs build:
+  # Build the CLI container whenever we merge changes to the owl-bot folder.
+  # this container is used to run helpers from OwlBot in a Cloud Build
+  # environment:
   - name: 'gcr.io/cloud-builders/docker'
     id: "build-docker"
     entrypoint: docker

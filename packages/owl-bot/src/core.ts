@@ -432,22 +432,25 @@ export async function getFilesModifiedBySha(path: string, sha: string) {
  * Returns the last 'n' commits made to a repository.
  * @param repoFull org/repo
  * @param octokit authenticated octokit instance.
- * @param n number of commits to return.
  */
-export async function getLastNCommits(
+export async function* commitsIterator(
   repoFull: string,
   octokit: OctokitType,
-  n = 10
-): Promise<string[]> {
+  per_page = 25
+) {
   const [owner, repo] = repoFull.split('/');
-  const commits = (
-    await octokit.repos.listCommits({
+  for await (const response of octokit.paginate.iterator(
+    octokit.reos.listCommits,
+    {
       owner,
       repo,
-      per_page: n,
-    })
-  ).data;
-  return commits.map(c => c.sha);
+      per_page,
+    }
+  )) {
+    for (const commit of response.data) {
+      yield commit.sha;
+    }
+  }
 }
 
 /**
@@ -488,6 +491,7 @@ export function getPubSubClient(projectId?: string) {
 }
 
 export const core = {
+  commitsIterator,
   createCheck,
   enqueueCopyTask,
   getAccessTokenURL,
@@ -496,7 +500,6 @@ export const core = {
   getFilesModifiedBySha,
   getFileContent,
   getGitHubShortLivedAccessToken,
-  getLastNCommits,
   getOwlBotLock,
   getPubSubClient,
   owlBotLockPath,
