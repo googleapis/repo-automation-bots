@@ -176,7 +176,7 @@ interface EnqueueJobsOpts {
  * @param opts see EnqueueJobsOpts.
  */
 export async function triggerEnqueueCopyJobs(
-  opts: EnqueueJobsOpts,
+  opts: EnqueueJobsOpts
 ): Promise<void> {
   const cb = core.getCloudBuildInstance();
   await cb.runBuildTrigger({

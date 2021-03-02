@@ -11,10 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import {describe, it, beforeEach, afterEach} from 'mocha';
+
 import * as assert from 'assert';
+import {execSync} from 'child_process';
+import * as path from 'path';
+import rimraf from 'rimraf';
 import {core} from '../src/core';
 import * as sinon from 'sinon';
-import {describe, it, beforeEach, afterEach} from 'mocha';
+import {mkdirSync, writeFileSync} from 'fs';
 
 import * as protos from '@google-cloud/cloudbuild/build/protos/protos';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
@@ -262,16 +267,91 @@ describe('core', () => {
     });
   });
   describe('getFilesModifiedBySha', () => {
-    it('returns files modified for a given sha for a repo pointed to by path', async () => {
-      // Use a SHA and path pointing to repo-automation-bots itself, in
-      // production this will point to a clone of googleapis-gen:
-      const sha = '8b60a780fe4869b44ab33a53d645a9d7a4604108';
-      const filesModified = await core.getFilesModifiedBySha('./', sha);
-      assert.deepStrictEqual(filesModified, [
-        'packages/owl-bot/src/handlers.ts',
-        'packages/owl-bot/src/bin/owl-bot.ts',
-        'packages/owl-bot/src/bin/commands/validate.ts',
-      ]);
+    const gitFixture = 'tmp';
+    const testRepo = 'test-repo';
+    beforeEach(() => {
+      rimraf.sync(gitFixture);
+      mkdirSync(gitFixture, {recursive: true});
+    });
+    afterEach(() => {
+      // rimraf.sync(gitFixture);
+    });
+    it('returns files added at sha', async () => {
+      // Initialize git repo:
+      execSync(`git init ${testRepo}`, {cwd: gitFixture});
+      // Write a couple files:
+      writeFileSync(path.join(gitFixture, testRepo, 'a.txt'), 'hello', 'utf8');
+      writeFileSync(path.join(gitFixture, testRepo, 'b.txt'), 'hello', 'utf8');
+      // Commit the changes:
+      const fullRepoPath = path.join(gitFixture, testRepo);
+      execSync('git add .', {cwd: fullRepoPath});
+      execSync("git commit -a -m 'feat: add two files'", {
+        cwd: fullRepoPath,
+      });
+      // Grab the current sha:
+      const sha = execSync('git rev-parse HEAD', {
+        cwd: fullRepoPath,
+      }).toString('utf8');
+      const filesModified = await core.getFilesModifiedBySha(fullRepoPath, sha);
+      assert.deepStrictEqual(filesModified, ['b.txt', 'a.txt']);
+    });
+    it('returns files removed at sha', async () => {
+      // Initialize git repo:
+      execSync(`git init ${testRepo}`, {cwd: gitFixture});
+      // Write a couple files:
+      writeFileSync(path.join(gitFixture, testRepo, 'a.txt'), 'hello', 'utf8');
+      writeFileSync(path.join(gitFixture, testRepo, 'b.txt'), 'hello', 'utf8');
+      // Commit the changes:
+      const fullRepoPath = path.join(gitFixture, testRepo);
+      execSync('git add .', {cwd: fullRepoPath});
+      execSync("git commit -a -m 'feat: add two files'", {
+        cwd: fullRepoPath,
+      });
+      // Remove a file:
+      rimraf.sync(path.join(gitFixture, testRepo, 'a.txt'));
+      // Commit the change:
+      execSync('git add .', {cwd: fullRepoPath});
+      execSync("git commit -a -m 'fix: removed tricksy file'", {
+        cwd: fullRepoPath,
+      });
+      // Grab the current sha:
+      const sha = execSync('git rev-parse HEAD', {
+        cwd: fullRepoPath,
+      }).toString('utf8');
+      const filesModified = await core.getFilesModifiedBySha(fullRepoPath, sha);
+      assert.deepStrictEqual(filesModified, ['a.txt']);
+    });
+    it('returns files added and removed at same sha', async () => {
+      // Initialize git repo:
+      execSync(`git init ${testRepo}`, {cwd: gitFixture});
+      // Write a couple files:
+      writeFileSync(path.join(gitFixture, testRepo, 'a.txt'), 'hello', 'utf8');
+      writeFileSync(path.join(gitFixture, testRepo, 'b.txt'), 'hello', 'utf8');
+      // Commit the changes:
+      const fullRepoPath = path.join(gitFixture, testRepo);
+      execSync('git add .', {cwd: fullRepoPath});
+      execSync("git commit -a -m 'feat: add two files'", {
+        cwd: fullRepoPath,
+      });
+      // Remove a file:
+      rimraf.sync(path.join(gitFixture, testRepo, 'a.txt'));
+      // Add a file:
+      writeFileSync(
+        path.join(gitFixture, testRepo, 'c.txt'),
+        'goodbye',
+        'utf8'
+      );
+      // Commit the change:
+      execSync('git add .', {cwd: fullRepoPath});
+      execSync("git commit -a -m 'feat: remove and add file'", {
+        cwd: fullRepoPath,
+      });
+      // Grab the current sha:
+      const sha = execSync('git rev-parse HEAD', {
+        cwd: fullRepoPath,
+      }).toString('utf8');
+      const filesModified = await core.getFilesModifiedBySha(fullRepoPath, sha);
+      assert.deepStrictEqual(filesModified, ['c.txt', 'a.txt']);
     });
   });
 });

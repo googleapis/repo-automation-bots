@@ -87,7 +87,8 @@ export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
         default: 'projects/repo-automation-bots/topics/owlbot-prs',
       })
       .option('trigger', {
-        describe: 'enqueue copy job trigger (if this should be run in background)',
+        describe:
+          'enqueue copy job trigger (if this should be run in background)',
         type: 'string',
       });
   },
