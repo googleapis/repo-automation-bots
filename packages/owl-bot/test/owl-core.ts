@@ -269,12 +269,19 @@ describe('core', () => {
   describe('getFilesModifiedBySha', () => {
     const gitFixture = 'tmp';
     const testRepo = 'test-repo';
+    before(() => {
+      // If we're in a CI/CD environment set git username and email:
+      if (process.env.CI) {
+        execSync('git config --global user.email "beepboop@example.com"');
+        execSync('git config --global user.name "HAL 9000"');
+      }
+    });
     beforeEach(() => {
       rimraf.sync(gitFixture);
       mkdirSync(gitFixture, {recursive: true});
     });
     afterEach(() => {
-      // rimraf.sync(gitFixture);
+      rimraf.sync(gitFixture);
     });
     it('returns files added at sha', async () => {
       // Initialize git repo:
