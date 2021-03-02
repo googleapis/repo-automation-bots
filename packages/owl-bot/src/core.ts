@@ -440,7 +440,7 @@ export async function* commitsIterator(
 ) {
   const [owner, repo] = repoFull.split('/');
   for await (const response of octokit.paginate.iterator(
-    octokit.reos.listCommits,
+    octokit.repos.listCommits,
     {
       owner,
       repo,
