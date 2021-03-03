@@ -13,12 +13,10 @@
 // limitations under the License.
 import admin from 'firebase-admin';
 import {
-  enqueueCopyTask,
   getAuthenticatedOctokit,
   getGitHubShortLivedAccessToken,
   getFilesModifiedBySha,
   commitsIterator,
-  triggerEnqueueCopyJobs,
 } from '../../core';
 import {FirestoreConfigsStore} from '../../database';
 import {promisify} from 'util';
@@ -85,76 +83,35 @@ export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
         describe: 'pubsub queue to publish PR update jobs to',
         type: 'string',
         default: 'projects/repo-automation-bots/topics/owlbot-prs',
-      })
-      .option('trigger', {
-        describe:
-          'the UUID of the Cloud Build trigger to run (if triggering a remote task)',
-        type: 'string',
       });
   },
   async handler(argv) {
     const privateKey = await readFileAsync(argv['pem-path'], 'utf8');
-    if (!privateKey) throw Error('pem-path or private-key must be provided');
-    if (argv.trigger) {
-      // If a trigger is provided, run enqueue copy tasks in a remote
-      // Cloud Build environment:
-      await triggerEnqueueCopyJobs({
-        privateKey,
-        appId: argv['app-id'],
-        installation: argv.installation,
-        project: argv.project,
-        firestoreProject: argv['firestore-project'],
-        queue: argv.queue,
-        trigger: argv.trigger,
-      });
-    } else {
-      // If no trigger is provided, run enqueue copy tasks locally:
-      const token = await getGitHubShortLivedAccessToken(
-        privateKey,
-        argv['app-id'],
-        argv.installation
-      );
-      const octokit = await getAuthenticatedOctokit(token.token);
-      admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
-        projectId: argv['firestore-project'],
-      });
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const db = admin.firestore();
-      const configStore = new FirestoreConfigsStore(db!);
+    // If no trigger is provided, run enqueue copy tasks locally:
+    const token = await getGitHubShortLivedAccessToken(
+      privateKey,
+      argv['app-id'],
+      argv.installation
+    );
+    const octokit = await getAuthenticatedOctokit(token.token);
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+      projectId: argv['firestore-project'],
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const db = admin.firestore();
+    const configStore = new FirestoreConfigsStore(db!);
 
-      let sha: string | undefined = undefined;
-      for await (const s of commitsIterator(argv['source-repo'], octokit)) {
-        sha = s;
-      }
-      if (!sha) throw Error(`no commits found for ${argv['source-repo']}`);
-      const files = await getFilesModifiedBySha(argv['git-path'], sha);
-      logger.info(`found ${files.length} files changed`);
-      const repos = await configStore.findReposAffectedByFileChanges(files);
-      for (const repo of repos) {
-        let messageId = await configStore.findPubsubMessageIdForCopyTask(
-          repo,
-          sha
-        );
-        if (messageId) {
-          logger.info(
-            `${repo} already has copy job ${messageId} for ${sha}, so I won't create another one`
-          );
-          continue;
-        }
-        logger.info(`${argv.repo} has no copy job for ${sha}, so creating one`);
-        messageId = await enqueueCopyTask(
-          argv.queue,
-          argv['source-repo'],
-          repo,
-          sha
-        );
-        await configStore.recordPubsubMessageIdForCopyTask(
-          repo,
-          sha,
-          messageId
-        );
-      }
+    let sha: string | undefined = undefined;
+    for await (const s of commitsIterator(argv['source-repo'], octokit)) {
+      sha = s;
+    }
+    if (!sha) throw Error(`no commits found for ${argv['source-repo']}`);
+    const files = await getFilesModifiedBySha(argv['git-path'], sha);
+    logger.info(`found ${files.length} files changed`);
+    const repos = await configStore.findReposAffectedByFileChanges(files);
+    for (const repo of repos) {
+      logger.info(`perform copy operations for ${repo}`);
     }
   },
 };

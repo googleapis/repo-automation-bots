@@ -157,30 +157,4 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
       Number(context.payload.installation.id)
     );
   });
-
-  /*
-  const GOOGLE_API_GEN_REPO = 'googleapis/googleapis-gen';
-  app.on('push', async context => {
-    const configStore = new FirestoreConfigsStore(db!);
-    logger.info(`push event for ${context.payload.repository.full_name}`);
-    if (context.payload.repository.full_name === GOOGLE_API_GEN_REPO) {
-      const pathSet: Set<string> = new Set();
-      for (const commit of context.payload.commits) {
-        const allPaths = [
-          ...commit.added,
-          ...commit.removed,
-          ...commit.modified,
-        ];
-        for (const path of allPaths) {
-          pathSet.add(path);
-        }
-      }
-      const paths = Array.from(pathSet);
-      if (paths.length) {
-        await publishRepoUpdateJobs(configStore, Array.from(pathSet));
-      } else {
-        logger.info(`no updates to ${GOOGLE_API_GEN_REPO}`);
-      }
-    }
-  });*/
 };

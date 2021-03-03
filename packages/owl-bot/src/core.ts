@@ -156,45 +156,6 @@ export async function triggerPostProcessBuild(
   }
 }
 
-interface EnqueueJobsOpts {
-  privateKey: string;
-  appId: number;
-  installation: number;
-  project: string;
-  firestoreProject: string;
-  queue: string;
-  trigger: string;
-}
-
-/*
- * Triggers a Cloud Build job that runs the enqueue copy tasks
- * CLI command. The reason for pulling this out into a Cloud Build job,
- * is GitHub's 3000 file limit on listing files modified by a commit.
- * In Cloud Build we clone the whole googleapis-gen repo and use this
- * as a foundation.
- *
- * @param opts see EnqueueJobsOpts.
- */
-export async function triggerEnqueueCopyJobs(
-  opts: EnqueueJobsOpts
-): Promise<void> {
-  const cb = core.getCloudBuildInstance();
-  await cb.runBuildTrigger({
-    projectId: opts.project,
-    triggerId: opts.trigger,
-    source: {
-      projectId: opts.project,
-      branchName: 'enqueue-copy-jobs',
-      substitutions: {
-        _PRIVATE_KEY: opts.privateKey.toString(),
-        _APP_ID: opts.appId.toString(),
-        _INSTALLATION: opts.installation.toString(),
-        _FIRESTORE_PROJECT: opts.firestoreProject,
-      },
-    },
-  });
-}
-
 async function waitForBuild(
   projectId: string,
   id: string,
@@ -453,31 +414,6 @@ export async function* commitsIterator(
   }
 }
 
-/**
- * Given a repository source repository and destination repository
- * copies the appropriate files represented by a SHA.
- * @param topicName PubSub topic to publish to.
- * @param sourceRepo org/repo.
- * @param destRepo org/repo.
- * @param sha SHA in source repo to copy.
- */
-export async function enqueueCopyTask(
-  topicName: string,
-  sourceRepo: string,
-  destRepo: string,
-  sha: string
-): Promise<string> {
-  const pubSubClient = core.getPubSubClient();
-  const dataBuffer = Buffer.from(
-    JSON.stringify({
-      sourceRepo,
-      destRepo,
-      sha,
-    })
-  );
-  return await pubSubClient.topic(topicName).publish(dataBuffer);
-}
-
 /*
  * Get a PubSub instance.
  * @param projectId
@@ -493,7 +429,6 @@ export function getPubSubClient(projectId?: string) {
 export const core = {
   commitsIterator,
   createCheck,
-  enqueueCopyTask,
   getAccessTokenURL,
   getAuthenticatedOctokit,
   getCloudBuildInstance,
@@ -503,6 +438,5 @@ export const core = {
   getOwlBotLock,
   getPubSubClient,
   owlBotLockPath,
-  triggerEnqueueCopyJobs,
   triggerPostProcessBuild,
 };

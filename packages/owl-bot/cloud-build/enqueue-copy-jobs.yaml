@@ -23,13 +23,11 @@ steps:
       - --single-branch
       - https://github.com/googleapis/googleapis-gen.git
       - --depth=50
-  # Output the GitHub private key to disk for benefit of CLI:
-  - name: gcr.io/cloud-builders/gcloud
-    entrypoint: /bin/bash
-    args: ['-c', 'echo "$$PRIVATE_KEY" > private-key.pem']
+  # Copy the GitHub PEM file from Secret Manager for OwlBot:
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args: [ '-c', "gcloud secrets versions access latest --secret=owlbot_github_key --format='get(payload.data)' | tr '_-' '/+' | base64 -d > private-key.pem" ]
     dir: 'googleapis-gen'
-    env:
-      - 'PRIVATE_KEY=$_PRIVATE_KEY'
   # Run job that enqueues a copy task for each repository affected
   # by updated files:
   - name: 'gcr.io/repo-automation-bots/owlbot-cli'
