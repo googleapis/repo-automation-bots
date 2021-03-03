@@ -16,7 +16,6 @@ import {promisify} from 'util';
 const execAsync = promisify(exec);
 import {load} from 'js-yaml';
 import {logger} from 'gcf-utils';
-import {PubSub} from '@google-cloud/pubsub';
 import {sign} from 'jsonwebtoken';
 import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
@@ -414,18 +413,6 @@ export async function* commitsIterator(
   }
 }
 
-/*
- * Get a PubSub instance.
- * @param projectId
- */
-let pubSubClient: PubSub;
-export function getPubSubClient(projectId?: string) {
-  if (!pubSubClient) {
-    pubSubClient = new PubSub({projectId});
-  }
-  return pubSubClient;
-}
-
 export const core = {
   commitsIterator,
   createCheck,
@@ -436,7 +423,6 @@ export const core = {
   getFileContent,
   getGitHubShortLivedAccessToken,
   getOwlBotLock,
-  getPubSubClient,
   owlBotLockPath,
   triggerPostProcessBuild,
 };
