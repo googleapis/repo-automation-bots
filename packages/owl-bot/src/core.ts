@@ -389,7 +389,7 @@ export async function getFilesModifiedBySha(path: string, sha: string) {
 }
 
 /**
- * Returns the last 'n' commits made to a repository.
+ * Returns an iterator that returns the most recent commits added to a repository.
  * @param repoFull org/repo
  * @param octokit authenticated octokit instance.
  */
