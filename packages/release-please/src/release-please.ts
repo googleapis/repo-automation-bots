@@ -15,9 +15,8 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
 import {
-  ReleasePROptions,
-  GitHubRelease,
-  GitHubReleaseOptions,
+  ReleasePRFactoryOptions,
+  GitHubReleaseFactoryOptions,
   ReleasePR,
   factory,
 } from 'release-please';
@@ -133,7 +132,7 @@ async function createGitHubRelease(
   monorepoTags?: boolean,
   releaseType?: ReleaseType
 ) {
-  const releaseOptions: GitHubReleaseOptions = {
+  const releaseOptions: GitHubReleaseFactoryOptions = {
     label: 'autorelease: pending',
     repoUrl,
     packageName,
@@ -148,7 +147,7 @@ async function createGitHubRelease(
     monorepoTags,
     releaseType,
   };
-  const ghr = new GitHubRelease(releaseOptions);
+  const ghr = factory.githubRelease(releaseOptions);
   await Runner.releaser(ghr);
 }
 
@@ -165,7 +164,7 @@ async function createReleasePR(
     : releaseTypeFromRepoLanguage(repoLanguage);
   const packageName = configuration.packageName || repoName;
 
-  const buildOptions: ReleasePROptions = {
+  const buildOptions: ReleasePRFactoryOptions = {
     defaultBranch: configuration.branch,
     packageName,
     repoUrl,
