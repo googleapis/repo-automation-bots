@@ -35,7 +35,6 @@ interface Args {
   project: string;
   'firestore-project': string;
   queue: string;
-  trigger?: string;
 }
 
 export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
@@ -87,7 +86,6 @@ export const enqueueCopyTasks: yargs.CommandModule<{}, Args> = {
   },
   async handler(argv) {
     const privateKey = await readFileAsync(argv['pem-path'], 'utf8');
-    // If no trigger is provided, run enqueue copy tasks locally:
     const token = await getGitHubShortLivedAccessToken(
       privateKey,
       argv['app-id'],
