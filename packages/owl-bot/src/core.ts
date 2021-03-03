@@ -21,12 +21,8 @@ import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
-import {ProbotOctokit} from 'probot';
 import {OwlBotLock, owlBotLockPath, owlBotLockFrom} from './config-files';
-
-export type OctokitType =
-  | InstanceType<typeof Octokit>
-  | InstanceType<typeof ProbotOctokit>;
+import {OctokitType} from './octokit-util';
 
 interface BuildArgs {
   image: string;
