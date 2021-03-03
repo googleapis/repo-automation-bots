@@ -32,7 +32,12 @@ export interface OctokitParams {
   installation: number;
 }
 
+/**
+ * Creates an authenticated instance of octokit.
+ */
 export async function octokitFrom(argv: OctokitParams): Promise<OctokitType> {
+  // TODO: replace all instances of the following code with a call to
+  //       octokitFrom().
   const privateKey = await readFileAsync(argv['pem-path'], 'utf8');
   const token = await getGitHubShortLivedAccessToken(
     privateKey,

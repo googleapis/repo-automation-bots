@@ -30,8 +30,12 @@ import {core} from './core';
 import tmp from 'tmp';
 import glob from 'glob';
 
-const readFileAsync = promisify(readFile);
+// This code generally uses Sync functions because:
+// 1. None of our current designs including calling this code from a web
+//    server or other multi-processing enviornment.
+// 2. Calling sync functions yields simpler code.
 
+const readFileAsync = promisify(readFile);
 export interface Args extends OctokitParams {
   'source-repo': string;
   'source-repo-commit-hash': string;
@@ -303,11 +307,13 @@ export function copyDirs(
 }
 
 /**
- * Searches for instances of the sourceCommitHash in recent pull requests and commits.
+ * Searches for instances of the sourceCommitHash in recent pull requests and
+ * commits.
  *
  * @param octokit an octokit instance
  * @param destRepo the repo to search
  * @param sourceCommitHash the string to search for
+ * @returns true if there's a PR or issue with the commit hash exists
  */
 export async function copyExists(
   octokit: OctokitType,
