@@ -15,7 +15,8 @@
 // To Run: node ./build/src/bin/owl-bot.js copy-code-and-create-pull-request <args>
 
 import yargs = require('yargs');
-import {Args, copyCodeAndCreatePullRequest} from '../../copy-code';
+import {Args, copyCodeAndCreatePullRequest, copyExists} from '../../copy-code';
+import {octokitFrom} from '../../octokit-util';
 
 export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
   {},
@@ -60,6 +61,14 @@ export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
       });
   },
   async handler(argv) {
-    await copyCodeAndCreatePullRequest(argv);
+    const octokit = await octokitFrom(argv);
+    const exists = await copyExists(
+      octokit,
+      argv['dest-repo'],
+      argv['source-repo-commit-hash']
+    );
+    if (!exists) {
+      await copyCodeAndCreatePullRequest(argv);
+    }
   },
 };

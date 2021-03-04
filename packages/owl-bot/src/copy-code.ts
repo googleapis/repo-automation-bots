@@ -43,11 +43,11 @@ export interface Args extends OctokitParams {
 }
 
 // Creates a function that first prints, then executes a shell command.
-type Cmd = (
+export type Cmd = (
   command: string,
   options?: proc.ExecSyncOptions | undefined
 ) => Buffer;
-function newCmd(logger = console): Cmd {
+export function newCmd(logger = console): Cmd {
   const cmd = (
     command: string,
     options?: proc.ExecSyncOptions | undefined
@@ -71,16 +71,6 @@ export async function copyCodeAndCreatePullRequest(
   args: Args,
   logger = console
 ): Promise<void> {
-  let octokit = await octokitFrom(args);
-  if (
-    await copyExists(
-      octokit,
-      args['dest-repo'],
-      args['source-repo-commit-hash']
-    )
-  ) {
-    return; // Copy already exists.  Don't copy again.
-  }
   const workDir = tmp.dirSync().name;
   logger.info(`Working in ${workDir}`);
 
@@ -109,6 +99,7 @@ export async function copyCodeAndCreatePullRequest(
       args['source-repo'],
       args['source-repo-commit-hash']
     );
+    const octokit = await octokitFrom(args);
     const issue = await octokit.issues.create({
       owner,
       repo,
@@ -145,7 +136,7 @@ ${err}`,
     args.installation
   );
   // Octokit token may have expired; refresh it.
-  octokit = await core.getAuthenticatedOctokit(token.token);
+  const octokit = await core.getAuthenticatedOctokit(token.token);
   if (
     await copyExists(
       octokit,
@@ -197,6 +188,34 @@ export async function loadOwlBotYaml(destDir: string): Promise<OwlBotYaml> {
 }
 
 /**
+ * Clones remote repos.  Returns local repos unchanged.
+ * @param repo a full repo name like googleapis/nodejs-vision, or a path to a local directory
+ * @param workDir a local directory where the cloned repo will be created
+ * @param logger a logger
+ * @param depth the depth param to pass to git clone.
+ * @returns the path to the local repo.
+ */
+export function toLocalRepo(
+  repo: string,
+  workDir: string,
+  logger = console,
+  depth = 100
+): string {
+  if (stat(repo)?.isDirectory()) {
+    logger.info(`Using local source repo directory ${repo}`);
+    return repo;
+  } else {
+    const [, repoName] = repo.split('/');
+    const localDir = path.join(workDir, repoName);
+    const cmd = newCmd(logger);
+    cmd(
+      `git clone --depth=${depth} "https://github.com/${repo}.git" ${localDir}`
+    );
+    return localDir;
+  }
+}
+
+/**
  * Copies the code from a source repo to a locally checked out repo.
  *
  * @param sourceRepo usually 'googleapis/googleapis-gen';  May also be a local path
@@ -215,16 +234,7 @@ export async function copyCode(
   logger = console
 ) {
   const cmd = newCmd(logger);
-  let sourceDir: string;
-  if (stat(sourceRepo)?.isDirectory()) {
-    logger.info(`Using local source repo directory ${sourceRepo}`);
-    sourceDir = sourceRepo;
-  } else {
-    sourceDir = path.join(workDir, 'source');
-    cmd(
-      `git clone --single-branch "https://github.com/${sourceRepo}.git" ${sourceDir}`
-    );
-  }
+  const sourceDir = toLocalRepo(sourceRepo, workDir, logger);
   // Check out the specific hash we want to copy from.
   cmd(`git checkout ${sourceCommitHash}`, {cwd: sourceDir});
 
