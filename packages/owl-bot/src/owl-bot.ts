@@ -90,7 +90,7 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
     }
     const image = `${lock.docker.image}@${lock.docker.digest}`;
     // Run time image from .Owlbot.lock.yaml on Cloud Build:
-    const buildStatus = await core.triggerBuild(
+    const buildStatus = await core.triggerPostProcessBuild(
       {
         image,
         project,
