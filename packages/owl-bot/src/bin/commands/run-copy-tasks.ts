@@ -63,8 +63,6 @@ export const runCopyTasks: yargs.CommandModule<{}, Args> = {
       });
   },
   async handler(argv) {
-    // Octokit instance used to interact with googleapis org:
-    const octokit = await octokitFrom(argv);
     admin.initializeApp({
       credential: admin.credential.applicationDefault(),
       projectId: argv.project,
@@ -76,7 +74,7 @@ export const runCopyTasks: yargs.CommandModule<{}, Args> = {
       argv['source-repo'],
       argv['git-path'],
       configStore,
-      octokit
+      argv
     );
   },
 };

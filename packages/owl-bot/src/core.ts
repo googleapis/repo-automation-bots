@@ -379,7 +379,9 @@ export async function getFilesModifiedBySha(path: string, sha: string) {
     // There will be a blank line between the commit message and the
     // files list, we use this as a stopping point:
     if (file === '') break;
-    files.push(file);
+    // TODO(bcoe): discuss with rennie about what we should do with leading
+    // strict regex that didn't catch leading "/".
+    files.push(file.charAt(0) === '/' ? file : `/${file}`);
   }
   return files;
 }

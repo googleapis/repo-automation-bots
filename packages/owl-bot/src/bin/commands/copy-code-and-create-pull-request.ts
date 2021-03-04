@@ -16,13 +16,6 @@
 
 import yargs = require('yargs');
 import {Args, copyCodeAndCreatePullRequest} from '../../copy-code';
-import {octokitFrom} from '../../octokit-util';
-import {
-  getAuthenticatedOctokit,
-  getGitHubShortLivedAccessToken,
-  getFilesModifiedBySha,
-  commitsIterator,
-} from '../../core';
 
 export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
   {},
@@ -67,8 +60,6 @@ export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
       });
   },
   async handler(argv) {
-    const octokit = await octokitFrom(argv);
-
-    await copyCodeAndCreatePullRequest(argv, console, octokit);
+    await copyCodeAndCreatePullRequest(argv);
   },
 };

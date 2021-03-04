@@ -244,7 +244,7 @@ export async function refreshConfigs(
     configs?.commitHash === commitHash &&
     configs?.branchName === defaultBranch
   ) {
-    logger.info(`Configs for ${repoFull} or up to date.`);
+    logger.info(`Configs for ${repoFull} are up to date.`);
     return; // configsStore is up to date.
   }
 

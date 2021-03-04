@@ -72,12 +72,10 @@ function sourceLinkFrom(sourceRepo: string, sourceCommitHash: string): string {
  */
 export async function copyCodeAndCreatePullRequest(
   args: Args,
-  logger = console,
-  octokit?: OctokitType
+  logger = console
 ): Promise<void> {
-  if (!octokit) {
-    octokit = await octokitFrom(args);
-  }
+  // TODO(bcoe): do we need to instantiate Octokit multiple times?
+  let octokit = await octokitFrom(args);
   if (
     await copyExists(
       octokit,
@@ -90,6 +88,8 @@ export async function copyCodeAndCreatePullRequest(
   const workDir = tmp.dirSync().name;
   logger.info(`Working in ${workDir}`);
 
+  // TODO(bcoe): is this clone necessary if we're already cloned the
+  // repository in the cloud build job at the start of this job?
   const destDir = path.join(workDir, 'dest');
   const destBranch = 'owl-bot-' + uuidv4();
 
@@ -371,6 +371,7 @@ export async function copyExists(
 
 interface CopyTask {
   destRepo: string;
+  hash: string;
 }
 
 /**
@@ -386,22 +387,46 @@ export async function runCopyAlgorithm(
   sourceRepo: string,
   gitPath: string,
   database: ConfigsStore,
-  octokit: OctokitType,
+  octokitArgs: OctokitParams,
   maxWalk = 15
 ) {
-  const task: Array<CopyTask> = [];
+  const octokit = await octokitFrom(octokitArgs);
+  const tasks: Array<CopyTask> = [];
   let count = 0;
-  for await (const sha of commitsIterator(sourceRepo, octokit)) {
+  // Iterate over the maxWalk most recent commits to sourceRepo,
+  // checking for repos that require an update. The update required
+  // is pushed onto a stack, so that PRs are created in reverse
+  // chronological order:
+  //
+  // TODO(@bcoe): talk to rennie about the problem of commits that
+  // have no repos associated with them.
+  for await (const hash of commitsIterator(sourceRepo, octokit)) {
     if (count++ > maxWalk) break;
-    logger.info(`process sha ${sha}`);
-    if (sha !== '9cad23306ce3c220a494a91a7e3edc9a68b1df63') continue;
-    const files = await core.getFilesModifiedBySha(gitPath, sha);
+    logger.info(`process commit ${hash}`);
+    const files = await core.getFilesModifiedBySha(gitPath, hash);
     const repos = await database.findReposAffectedByFileChanges(files);
-    console.info(repos);
-    if (repos.length) {
-      console.info(`repos affected by ${sha}`, repos);
-    } else {
-      logger.info(`0 repos affected by ${sha}`);
+    if (!repos.length) continue;
+    for (const repo of repos) {
+      if (await copyExists(octokit, repo, hash)) {
+        logger.info(`Copy PR exits for ${repo} at ${hash}`);
+      } else {
+        logger.info(`Copy PR did not exist for ${repo} at ${hash}`);
+        tasks.push({
+          destRepo: repo,
+          hash,
+        });
+      }
     }
+  }
+  // Now actually create the pull requests:
+  for (const task of tasks) {
+    await copyCodeAndCreatePullRequest({
+      'source-repo': sourceRepo,
+      'dest-repo': task.destRepo,
+      'source-repo-commit-hash': task.hash,
+      'app-id': octokitArgs['app-id'],
+      'pem-path': octokitArgs['pem-path'],
+      installation: octokitArgs['installation'],
+    });
   }
 }

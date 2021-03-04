@@ -164,7 +164,6 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
     snapshot.forEach(doc => {
       i++;
       const configs = doc.data() as Configs | undefined;
-      console.info(configs?.yaml?.['deep-copy-regex']);
       match_loop: for (const copy of configs?.yaml?.['deep-copy-regex'] ?? []) {
         const regExp = toFullMatchRegExp(copy.source);
         for (const path of changedFilePaths) {
@@ -175,7 +174,6 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
         }
       }
     });
-    console.info(`walked ${i} configs`);
     return result;
   }
 
