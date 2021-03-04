@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {logger} from 'gcf-utils';
 import {promisify} from 'util';
 import {readFile} from 'fs';
 import * as proc from 'child_process';
@@ -29,6 +30,8 @@ import {OctokitParams, octokitFrom, OctokitType} from './octokit-util';
 import {core} from './core';
 import tmp from 'tmp';
 import glob from 'glob';
+import {commitsIterator} from './core';
+import {ConfigsStore} from './configs-store';
 
 // This code generally uses Sync functions because:
 // 1. None of our current designs including calling this code from a web
@@ -69,9 +72,12 @@ function sourceLinkFrom(sourceRepo: string, sourceCommitHash: string): string {
  */
 export async function copyCodeAndCreatePullRequest(
   args: Args,
-  logger = console
+  logger = console,
+  octokit?: OctokitType
 ): Promise<void> {
-  let octokit = await octokitFrom(args);
+  if (!octokit) {
+    octokit = await octokitFrom(args);
+  }
   if (
     await copyExists(
       octokit,
@@ -361,4 +367,41 @@ export async function copyExists(
 
   logger.info(`${sourceCommitHash} not found in ${destRepo}.`);
   return false;
+}
+
+interface CopyTask {
+  destRepo: string;
+}
+
+/**
+ * Searches for instances of the sourceCommitHash in recent pull requests and
+ * commits.
+ *
+ * @param sourceRepo the repo to copy commits from (org/repo).
+ * @param gitPath the local checkout of source repo, i.e., googelapis-gen.
+ * @param octokit an octokit instance
+ * @param maxWalk how far back should commits be walked?
+ */
+export async function runCopyAlgorithm(
+  sourceRepo: string,
+  gitPath: string,
+  database: ConfigsStore,
+  octokit: OctokitType,
+  maxWalk = 15
+) {
+  const task: Array<CopyTask> = [];
+  let count = 0;
+  for await (const sha of commitsIterator(sourceRepo, octokit)) {
+    if (count++ > maxWalk) break;
+    logger.info(`process sha ${sha}`);
+    if (sha !== '9cad23306ce3c220a494a91a7e3edc9a68b1df63') continue;
+    const files = await core.getFilesModifiedBySha(gitPath, sha);
+    const repos = await database.findReposAffectedByFileChanges(files);
+    console.info(repos);
+    if (repos.length) {
+      console.info(`repos affected by ${sha}`, repos);
+    } else {
+      logger.info(`0 repos affected by ${sha}`);
+    }
+  }
 }
