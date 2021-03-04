@@ -109,11 +109,13 @@ describe('owlBot', () => {
           content: Buffer.from(config).toString('base64'),
           encoding: 'base64',
         });
-      const triggerBuildStub = sandbox.stub(core, 'triggerBuild').resolves({
-        text: 'the text for check',
-        summary: 'summary for check',
-        conclusion: 'success',
-      });
+      const triggerBuildStub = sandbox
+        .stub(core, 'triggerPostProcessBuild')
+        .resolves({
+          text: 'the text for check',
+          summary: 'summary for check',
+          conclusion: 'success',
+        });
       const createCheckStub = sandbox.stub(core, 'createCheck');
       await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       sandbox.assert.calledOnce(triggerBuildStub);
