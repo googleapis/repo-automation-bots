@@ -63,62 +63,69 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
 
   // We perform post processing on pull requests.  We run the specified docker container
   // on the pending pull request and push any changes back to the pull request.
-  app.on('pull_request', async context => {
-    // If the pull request is from a fork, the label "owlbot:run" must be
-    // added by a maintainer to trigger the post processor:
-    const head = context.payload.pull_request.head;
-    const base = context.payload.pull_request.base;
-    const installation = context.payload.installation?.id;
-    if (!installation) {
-      throw Error(`no installation token found for ${head.repo.full_name}`);
-    }
-    if (head.repo.full_name !== base.repo.full_name) {
-      logger.info(
-        `head ${head.repo.full_name} does not match base ${base.repo.full_name} skipping`
+  app.on(
+    [
+      'pull_request.opened',
+      'pull_request.synchronize',
+      'pull_request.reopened',
+    ],
+    async context => {
+      // If the pull request is from a fork, the label "owlbot:run" must be
+      // added by a maintainer to trigger the post processor:
+      const head = context.payload.pull_request.head;
+      const base = context.payload.pull_request.base;
+      const installation = context.payload.installation?.id;
+      if (!installation) {
+        throw Error(`no installation token found for ${head.repo.full_name}`);
+      }
+      if (head.repo.full_name !== base.repo.full_name) {
+        logger.info(
+          `head ${head.repo.full_name} does not match base ${base.repo.full_name} skipping`
+        );
+        return;
+      }
+      // Fetch the .Owlbot.lock.yaml from the head ref:
+      const lock = await core.getOwlBotLock(
+        head.repo.full_name,
+        context.payload.number,
+        context.octokit
       );
-      return;
+      if (!lock) {
+        logger.info(`no .OwlBot.lock.yaml found for ${head.repo.full_name}`);
+        return;
+      }
+      const image = `${lock.docker.image}@${lock.docker.digest}`;
+      // Run time image from .Owlbot.lock.yaml on Cloud Build:
+      const buildStatus = await core.triggerPostProcessBuild(
+        {
+          image,
+          project,
+          privateKey,
+          appId,
+          installation,
+          repo: head.repo.full_name,
+          pr: context.payload.number,
+          trigger,
+        },
+        context.octokit
+      );
+      // Update pull request with status of job:
+      await core.createCheck(
+        {
+          privateKey,
+          appId,
+          installation,
+          pr: context.payload.number,
+          repo: head.repo.full_name,
+          text: buildStatus.text,
+          summary: buildStatus.summary,
+          conclusion: buildStatus.conclusion,
+          title: `🦉 OwlBot - ${buildStatus.summary}`,
+        },
+        context.octokit
+      );
     }
-    // Fetch the .Owlbot.lock.yaml from the head ref:
-    const lock = await core.getOwlBotLock(
-      head.repo.full_name,
-      context.payload.number,
-      context.octokit
-    );
-    if (!lock) {
-      logger.info(`no .OwlBot.lock.yaml found for ${head.repo.full_name}`);
-      return;
-    }
-    const image = `${lock.docker.image}@${lock.docker.digest}`;
-    // Run time image from .Owlbot.lock.yaml on Cloud Build:
-    const buildStatus = await core.triggerBuild(
-      {
-        image,
-        project,
-        privateKey,
-        appId,
-        installation,
-        repo: head.repo.full_name,
-        pr: context.payload.number,
-        trigger,
-      },
-      context.octokit
-    );
-    // Update pull request with status of job:
-    await core.createCheck(
-      {
-        privateKey,
-        appId,
-        installation,
-        pr: context.payload.number,
-        repo: head.repo.full_name,
-        text: buildStatus.text,
-        summary: buildStatus.summary,
-        conclusion: buildStatus.conclusion,
-        title: `🦉 OwlBot - ${buildStatus.summary}`,
-      },
-      context.octokit
-    );
-  });
+  );
 
   // Configured to run when a new container is published to container registry:
   //

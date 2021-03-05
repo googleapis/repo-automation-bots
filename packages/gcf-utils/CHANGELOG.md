@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [7.1.3](https://www.github.com/googleapis/repo-automation-bots/compare/v7.1.2...v7.1.3) (2021-03-01)
+
+
+### Bug Fixes
+
+* authenticate octokit instance properly when receiving payload from cloud scheduler ([#1461](https://www.github.com/googleapis/repo-automation-bots/issues/1461)) ([c968d8a](https://www.github.com/googleapis/repo-automation-bots/commit/c968d8aa83f8175b0ba942e3fceed3f27ddc78a9))
+
 ### [7.1.2](https://www.github.com/googleapis/repo-automation-bots/compare/v7.1.1...v7.1.2) (2021-02-11)
 
 

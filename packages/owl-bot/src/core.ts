@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import {exec} from 'child_process';
+import {promisify} from 'util';
+const execAsync = promisify(exec);
 import {load} from 'js-yaml';
 import {logger} from 'gcf-utils';
 import {sign} from 'jsonwebtoken';
@@ -18,12 +21,8 @@ import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
-import {ProbotOctokit} from 'probot';
 import {OwlBotLock, owlBotLockPath, owlBotLockFrom} from './config-files';
-
-export type OctokitType =
-  | InstanceType<typeof Octokit>
-  | InstanceType<typeof ProbotOctokit>;
+import {OctokitType} from './octokit-util';
 
 interface BuildArgs {
   image: string;
@@ -71,7 +70,7 @@ interface Token {
   repository_selection: string;
 }
 
-export async function triggerBuild(
+export async function triggerPostProcessBuild(
   args: BuildArgs,
   octokit?: OctokitType
 ): Promise<BuildResponse> {
@@ -359,14 +358,67 @@ export async function getFileContent(
   }
 }
 
+/**
+ * Given a git repository and sha, returns the files modified by the
+ * given commit.
+ * @param path path to git repository on disk.
+ * @param sha commit to list modified files for.
+ */
+export async function getFilesModifiedBySha(path: string, sha: string) {
+  const out = await execAsync(`git show --name-only ${sha}`, {
+    cwd: path,
+    // Handle 100,000+ files changing:
+    maxBuffer: 1024 * 1024 * 512,
+  });
+  if (out.stderr) throw Error(out.stderr);
+  const filesRaw = out.stdout.trim();
+  const files = [];
+  // We walk the output in reverse, since the file list is shown at the end
+  // of git show:
+  for (const file of filesRaw.split(/\r?\n/).reverse()) {
+    // There will be a blank line between the commit message and the
+    // files list, we use this as a stopping point:
+    if (file === '') break;
+    files.push(file);
+  }
+  return files;
+}
+
+/**
+ * Returns an iterator that returns the most recent commits added to a repository.
+ * @param repoFull org/repo
+ * @param octokit authenticated octokit instance.
+ */
+export async function* commitsIterator(
+  repoFull: string,
+  octokit: OctokitType,
+  per_page = 25
+) {
+  const [owner, repo] = repoFull.split('/');
+  for await (const response of octokit.paginate.iterator(
+    octokit.repos.listCommits,
+    {
+      owner,
+      repo,
+      per_page,
+    }
+  )) {
+    for (const commit of response.data) {
+      yield commit.sha;
+    }
+  }
+}
+
 export const core = {
+  commitsIterator,
   createCheck,
   getAccessTokenURL,
   getAuthenticatedOctokit,
   getCloudBuildInstance,
+  getFilesModifiedBySha,
   getFileContent,
   getGitHubShortLivedAccessToken,
   getOwlBotLock,
   owlBotLockPath,
-  triggerBuild,
+  triggerPostProcessBuild,
 };

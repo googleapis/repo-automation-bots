@@ -247,7 +247,7 @@ describe('ReleasePleaseBot', () => {
       let executed = false;
       Runner.runner = async (pr: ReleasePR) => {
         assertReleaserType('Node', pr);
-        assert('master' === pr.defaultBranch);
+        assert('master' === pr.gh.defaultBranch);
         executed = true;
       };
       const config = fs.readFileSync(
@@ -388,7 +388,7 @@ describe('ReleasePleaseBot', () => {
         cron_org: 'Codertocat',
       };
       Runner.runner = async (pr: ReleasePR) => {
-        executedBranches.set(pr.defaultBranch!, getReleaserName(pr));
+        executedBranches.set(pr.gh.defaultBranch!, getReleaserName(pr));
       };
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'multi_branch.yml')

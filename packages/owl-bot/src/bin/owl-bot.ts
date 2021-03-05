@@ -18,11 +18,20 @@ import {triggerBuildCommand} from './commands/trigger-build';
 import {openPR} from './commands/open-pr';
 import {scanConfigs} from './commands/scan-configs';
 import {validate} from './commands/validate';
+import {enqueueCopyTasks} from './commands/enqueue-copy-tasks';
+import {copyExists} from './commands/copy-exists';
+import {copyCodeCommand} from './commands/copy-code';
+import {copyCodeAndCreatePullRequestCommand} from './commands/copy-code-and-create-pull-request';
+
 yargs(process.argv.slice(2))
   .command(triggerBuildCommand)
   .command(openPR)
   .command(scanConfigs)
   .command(validate)
+  .command(enqueueCopyTasks)
+  .command(copyExists)
+  .command(copyCodeCommand)
+  .command(copyCodeAndCreatePullRequestCommand)
   .demandCommand(1)
   .strictCommands()
   .parse();

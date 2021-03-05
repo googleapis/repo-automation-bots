@@ -15,24 +15,24 @@
         }
       }
     },
-    "copy-dirs": {
+    "deep-copy-regex": {
       "description": "Directories to copy from googleapis-gen",
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["source", "dest"],
+        "required": ["source", "dest", "rm-dest"],
         "properties": {
           "source": {
-            "description": "Source directory to copy from googleapis-gen.",
+            "description": "Source directory, as a regular expression to copy from googleapis-gen.",
             "type": "string"
           },
           "dest": {
-            "description": "Destination directory in this repo to copy the files too.  Existing content in the directory will be wiped out and replaced.",
+            "description": "Destination directory to copy files too.  Will usually refer to groups in the source regex with $1 syntax.",
             "type": "string"
           },
-          "strip-prefix": {
-            "description": "Strip matching directory component names from src before copying to dest.",
+          "rm-dest": {
+            "description": "Remove directories in the destination repo before copying files in.  Also a regular expression.",
             "type": "string"
           }
         }

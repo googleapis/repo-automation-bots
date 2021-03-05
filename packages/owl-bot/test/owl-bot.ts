@@ -71,7 +71,11 @@ describe('owlBot', () => {
         },
       };
       const loggerStub = sandbox.stub(logger, 'info');
-      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123',
+      });
       sandbox.assert.calledWith(
         loggerStub,
         sandbox.match(/.*does not match base.*/)
@@ -109,13 +113,19 @@ describe('owlBot', () => {
           content: Buffer.from(config).toString('base64'),
           encoding: 'base64',
         });
-      const triggerBuildStub = sandbox.stub(core, 'triggerBuild').resolves({
-        text: 'the text for check',
-        summary: 'summary for check',
-        conclusion: 'success',
-      });
+      const triggerBuildStub = sandbox
+        .stub(core, 'triggerPostProcessBuild')
+        .resolves({
+          text: 'the text for check',
+          summary: 'summary for check',
+          conclusion: 'success',
+        });
       const createCheckStub = sandbox.stub(core, 'createCheck');
-      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+      await probot.receive({
+        name: 'pull_request.synchronize',
+        payload,
+        id: 'abc123',
+      });
       sandbox.assert.calledOnce(triggerBuildStub);
       sandbox.assert.calledOnce(createCheckStub);
       githubMock.done();
