@@ -228,6 +228,29 @@ describe('auto-label', () => {
       ghRequests.done();
     });
 
+    it('ignores ignorelist repos', async () => {
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'valid-config.yml')
+      );
+      const payload = require(resolve(
+        fixturesPath,
+        './events/issue_opened_ignore_list'
+      ));
+
+      const ghRequests = nock('https://api.github.com')
+        .get(
+          '/repos/googleapis/gapic-generator-java/contents/.github%2Fauto-label.yaml'
+        )
+        .reply(200, config);
+
+      await probot.receive({
+        name: 'issues',
+        payload,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
     it('auto detects and labels a Spanner issue', async () => {
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid-config.yml')

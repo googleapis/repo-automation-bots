@@ -23,6 +23,8 @@ import {Endpoints} from '@octokit/types';
 type IssueResponse = Endpoints['GET /repos/{owner}/{repo}/issues']['response'];
 type ConfigResponse = Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response'];
 
+const ignoreList = ['googleapis/gapic-generator-java', 'gapic-generator-php'];
+
 // Default app configs if user didn't specify a .config
 const LABEL_PRODUCT_BY_DEFAULT = true;
 const DEFAULT_CONFIGS = {
@@ -79,6 +81,11 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   driftRepos: DriftRepo[],
   context: Context
 ) {
+  if (ignoreList.includes(`${owner}/${repo}`)) {
+    logger.info(`Skipping ${owner}/${repo} in the ignore list`);
+    return;
+  }
+
   const driftRepo = driftRepos.find(x => x.repo === `${owner}/${repo}`);
   const res = await context.octokit.issues
     .listLabelsOnIssue({
