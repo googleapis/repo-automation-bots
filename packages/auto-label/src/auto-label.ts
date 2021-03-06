@@ -23,7 +23,10 @@ import {Endpoints} from '@octokit/types';
 type IssueResponse = Endpoints['GET /repos/{owner}/{repo}/issues']['response'];
 type ConfigResponse = Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response'];
 
-const ignoreList = ['googleapis/gapic-generator-java', 'gapic-generator-php'];
+const ignoreList = [
+  'googleapis/gapic-generator-java',
+  'googleapis/gapic-generator-php',
+];
 
 // Default app configs if user didn't specify a .config
 const LABEL_PRODUCT_BY_DEFAULT = true;
