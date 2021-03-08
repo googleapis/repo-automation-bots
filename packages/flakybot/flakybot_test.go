@@ -16,13 +16,18 @@ package main
 
 import (
 	"bytes"
+	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
+	"cloud.google.com/go/pubsub"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -213,5 +218,59 @@ func TestJSONMarshalMessage(t *testing.T) {
 	}
 	if diff := cmp.Diff(msg, got); diff != "" {
 		t.Fatalf("JSON Marshal -> Unmarshal got diff:\n%v", diff)
+	}
+}
+
+type fakePublisher struct {
+	called []string
+}
+
+func (p *fakePublisher) publish(_ context.Context, msg *pubsub.Message) (serverID string, err error) {
+	p.called = append(p.called, string(msg.Data))
+	return "", nil
+}
+
+func TestProcessLog(t *testing.T) {
+	filesToCreate := []string{"sponge_log.xml", "hello/sponge_log.xml", "unused.txt"}
+
+	tmpdir, err := os.MkdirTemp(os.TempDir(), "flakybot-")
+	if err != nil {
+		t.Fatalf("os.MkdirTemp: %v", err)
+	}
+
+	content := []byte("unused")
+	wantEnc := base64.StdEncoding.EncodeToString(content)
+
+	for _, f := range filesToCreate {
+		f = filepath.Join(tmpdir, f)
+		dir := filepath.Dir(f)
+		if err := os.MkdirAll(dir, 0777); err != nil && err != os.ErrExist {
+			t.Fatalf("os.MkdirAll: %v", err)
+		}
+		if err := os.WriteFile(f, content, 0644); err != nil {
+			t.Fatalf("os.WriteFile: %v", err)
+		}
+	}
+
+	cfg := &config{
+		installationID: "installation-id",
+		repo:           "googleapis/repo-automation-bogs",
+		commit:         "abc123",
+		buildURL:       "https://google.com",
+	}
+
+	p := &fakePublisher{}
+
+	if err := filepath.WalkDir(tmpdir, processLog(context.Background(), cfg, p)); err != nil {
+		t.Fatalf("Error publishing logs: %v", err)
+	}
+
+	if got := len(p.called); got != 2 {
+		t.Errorf("processLog called %d times, want %d", got, 2)
+	}
+	for _, got := range p.called {
+		if !strings.Contains(got, wantEnc) {
+			t.Errorf("processLog published message %v, want to contain %q", got, wantEnc)
+		}
 	}
 }
