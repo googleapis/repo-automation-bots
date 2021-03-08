@@ -27,7 +27,6 @@ const DEFAULT_TRUSTED_CONTRIBUTORS = [
   'release-please[bot]',
   'gcf-merge-on-green[bot]',
   'yoshi-code-bot',
-  'gcf-owl-bot',
   'gcf-owl-bot[bot]',
 ];
 
