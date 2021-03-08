@@ -25,7 +25,7 @@ steps:
       - config
       - --global
       - user.email
-      - 'owl-bot-development[bot]@users.noreply.github.com'
+      - 'gcf-owl-bot[bot]@users.noreply.github.com'
   - name: 'gcr.io/cloud-builders/git'
     args:
       - config

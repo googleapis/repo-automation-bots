@@ -66,6 +66,17 @@ describe('detectLicenseHeader', () => {
     assert.strictEqual(header.type, 'Apache-2.0');
   });
 
+  it('should handle a copyright line with Google, Inc', async () => {
+    const contents = fs.readFileSync(
+      resolve(fixturesPath, './google-inc.txt'),
+      'utf-8'
+    );
+    const header = detectLicenseHeader(contents);
+    assert.strictEqual(header.copyright, 'Google, Inc');
+    assert.strictEqual(header.year, 2016);
+    assert.strictEqual(header.type, 'Apache-2.0');
+  });
+
   it('should handle inline java-style comments', async () => {
     const contents = fs.readFileSync(
       resolve(fixturesPath, './inline-java-style-header.txt'),

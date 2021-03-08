@@ -26,7 +26,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -180,9 +180,10 @@ func publish(cfg *config) (ok bool) {
 		return false
 	}
 	topic := client.Topic(cfg.topicID)
+	p := &publisher{topic: topic}
 
 	// Handle logs in the current directory.
-	if err := filepath.Walk(cfg.logsDir, processLog(ctx, cfg, topic)); err != nil {
+	if err := filepath.WalkDir(cfg.logsDir, processLog(ctx, cfg, p)); err != nil {
 		log.Printf("Error publishing logs: %v", err)
 		return false
 	}
@@ -222,18 +223,30 @@ func detectInstallationID(repo string) string {
 	return ""
 }
 
+type messagePublisher interface {
+	publish(context.Context, *pubsub.Message) (serverID string, err error)
+}
+
+type publisher struct {
+	topic *pubsub.Topic
+}
+
+func (p *publisher) publish(ctx context.Context, msg *pubsub.Message) (serverID string, err error) {
+	return p.topic.Publish(ctx, msg).Get(ctx)
+}
+
 // processLog is used to process log files and publish them to Pub/Sub.
-func processLog(ctx context.Context, cfg *config, topic *pubsub.Topic) filepath.WalkFunc {
-	return func(path string, info os.FileInfo, err error) error {
+func processLog(ctx context.Context, cfg *config, p messagePublisher) fs.WalkDirFunc {
+	return func(path string, dirEntry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if !strings.HasSuffix(info.Name(), "sponge_log.xml") {
+		if !strings.HasSuffix(dirEntry.Name(), "sponge_log.xml") {
 			return nil
 		}
-		data, err := ioutil.ReadFile(path)
+		data, err := os.ReadFile(path)
 		if err != nil {
-			return fmt.Errorf("ioutil.ReadFile(%q): %v", path, err)
+			return fmt.Errorf("os.ReadFile(%q): %v", path, err)
 		}
 		enc := base64.StdEncoding.EncodeToString(data)
 		msg := message{
@@ -253,7 +266,7 @@ func processLog(ctx context.Context, cfg *config, topic *pubsub.Topic) filepath.
 		pubsubMsg := &pubsub.Message{
 			Data: data,
 		}
-		id, err := topic.Publish(ctx, pubsubMsg).Get(ctx)
+		id, err := p.publish(ctx, pubsubMsg)
 		if err != nil {
 			return fmt.Errorf("Pub/Sub Publish.Get: %v", err)
 		}
