@@ -19,13 +19,13 @@ steps:
   # Copy the GitHub PEM file from Secret Manager for OwlBot:
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
-    args: [ '-c', "gcloud secrets versions access latest --secret=owlbot_github_key --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /private-key.pem" ]
+    args: [ '-c', "gcloud secrets versions access latest --secret=owlbot_github_key --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/private-key.pem" ]
   # main
   - name: 'gcr.io/repo-automation-bots/owlbot-cli'
     args:
       - scan-googleapis-gen-and-create-pull-requests
       - --pem-path
-      - /private-key.pem
+      - /workspace/private-key.pem
       - --app-id
       - ${_APP_ID}
       - --installation
