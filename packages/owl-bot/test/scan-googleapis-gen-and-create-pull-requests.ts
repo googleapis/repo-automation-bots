@@ -37,7 +37,7 @@ describe('scanGoogleapisGenAndCreatePullRequests', () => {
   function makeAbcRepo(): string {
     // Create a git repo.
     const dir = tmp.dirSync().name;
-    cmd('git init', {cwd: dir});
+    cmd('git init -b main', {cwd: dir});
     cmd('git config user.email "test@example.com"', {cwd: dir});
     cmd('git config user.name "test"', {cwd: dir});
 
@@ -63,7 +63,7 @@ describe('scanGoogleapisGenAndCreatePullRequests', () => {
 
   function makeRepoWithOwlBotYaml(owlBotYaml: OwlBotYaml): string {
     const dir = tmp.dirSync().name;
-    cmd('git init', {cwd: dir});
+    cmd('git init -b main', {cwd: dir});
     cmd('git config user.email "test@example.com"', {cwd: dir});
     cmd('git config user.name "test"', {cwd: dir});
 
