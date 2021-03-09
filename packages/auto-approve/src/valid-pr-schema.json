@@ -63,15 +63,15 @@
             "properties": {
               "title": {
                 "type": "string",
-                "const": "chore: regenerate README"
+                "const": "^chore: regenerate README$"
               },
               "changedFiles": {
                 "type": "array",
                 "maxItems": 2,
                 "items": {
                   "enum": [
-                    "README.md",
-                    ".github/readme/synth.metadata/synth.metadata"
+                    "^README.md$",
+                    "^.github/readme/synth.metadata/synth.metadata$"
                   ]
                 }
               },

@@ -1,5 +1,6 @@
 import {ProbotOctokit} from 'probot';
 import {operations} from '@octokit/openapi-types';
+import { file } from 'googleapis/build/src/apis/file';
 type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
 
 interface validPR {
@@ -8,18 +9,26 @@ interface validPR {
     changedFiles?: string[],
     maxFiles?: number
 }
-//fix pr any type to correct type
-export async function checkPRAgainstConfig(config: validPR[], pr: any, octokit: InstanceType<typeof ProbotOctokit>, owner: string, repo: string, prNumber: number): Promise<Boolean> {
+//TODO: fix pr any type to correct type
+export async function checkPRAgainstConfig(config: validPR[], pr: any, octokit: InstanceType<typeof ProbotOctokit>): Promise<Boolean> {
     const validTypeOfPR = config.find(x => x.author === pr.user.login); 
+
     if (validTypeOfPR) {
+        // setting these to true, as this should be the default if 
+        // changedFiles and maxFiles are not set in the JSON schema
+        let filePathsMatch = true;
+        let fileCountMatch = true;
+        //check if changed file paths match
         if (validTypeOfPR.changedFiles) {
-            const changedFiles = await getChangedFiles(octokit, owner, repo, prNumber);
-            const filesMatch = checkFilePathsMatch(changedFiles, validTypeOfPR);
+            const changedFiles = await getChangedFiles(octokit, pr.user.login, pr.head.repo.name, pr.number);
+            filePathsMatch = checkFilePathsMatch(changedFiles, validTypeOfPR);
         } 
         //check if Valid number of max files
         if (validTypeOfPR.maxFiles) {
-            const numberOfFiles = 
-        }
+            fileCountMatch = (pr.changedFiles === validTypeOfPR.maxFiles);
+        } 
+
+        return (filePathsMatch && fileCountMatch);
     } else {
         return false;
     }
@@ -28,19 +37,10 @@ export async function checkPRAgainstConfig(config: validPR[], pr: any, octokit: 
 export function checkFilePathsMatch(prFiles: string[], validTypeOfPR: validPR) {
     let filesMatch = true;
     for (const file of prFiles) {
-       for (const pattern of validTypeOfPR.changedFiles!) {
-            if (pattern.includes('^') || pattern.includes('$')) {
-                if (!file.match(pattern)) {
-                    filesMatch = false;
-                }             
-            } else {
-                if (file !== pattern) {
-                    filesMatch = false;
-                }       
-            }
-       }
+        if (!validTypeOfPR.changedFiles!.some(x => file.match(x))) {
+            filesMatch = false;
+        }
     }
-
     return filesMatch;
 }
 

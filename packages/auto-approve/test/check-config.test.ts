@@ -6,7 +6,6 @@ import {
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import * as fs from 'fs';
-import snapshot from 'snap-shot-it';
 import yaml from 'js-yaml';
 import nock from 'nock';
 const {Octokit} = require('@octokit/rest');
