@@ -320,28 +320,38 @@ export async function copyExists(
   // pull requests.  So enumerate them.
   const owner = destRepo.owner;
   const repo = destRepo.repo;
-  const pulls = await octokit.pulls.list({owner, repo, per_page: 100});
+  const pulls = await octokit.pulls.list({
+    owner,
+    repo,
+    per_page: 100,
+    state: 'all',
+  });
   for (const pull of pulls.data) {
     const pos: number = pull.body?.indexOf(sourceCommitHash) ?? -1;
     if (pos >= 0) {
       logger.info(
-        `Pull request ${pull.number} with ${sourceCommitHash} exists in ${destRepo}.`
+        `Pull request ${pull.number} with ${sourceCommitHash} exists in ${owner}/${repo}.`
       );
       return true;
     }
   }
   // And enumerate recent issues too.
-  const issues = await octokit.issues.listForRepo({owner, repo, per_page: 100});
+  const issues = await octokit.issues.listForRepo({
+    owner,
+    repo,
+    per_page: 100,
+    state: 'all',
+  });
   for (const issue of issues.data) {
     const pos: number = issue.body?.indexOf(sourceCommitHash) ?? -1;
     if (pos >= 0) {
       logger.info(
-        `Issue ${issue.number} with ${sourceCommitHash} exists in ${destRepo}.`
+        `Issue ${issue.number} with ${sourceCommitHash} exists in ${owner}/${repo}.`
       );
       return true;
     }
   }
 
-  logger.info(`${sourceCommitHash} not found in ${destRepo}.`);
+  logger.info(`${sourceCommitHash} not found in ${owner}/${repo}.`);
   return false;
 }
