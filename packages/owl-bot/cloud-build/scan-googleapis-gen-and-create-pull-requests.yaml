@@ -20,6 +20,19 @@ steps:
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args: [ '-c', "gcloud secrets versions access latest --secret=owlbot_github_key --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/private-key.pem" ]
+  # Populate global username, email for git:
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - user.email
+      - 'gcf-owl-bot[bot]@users.noreply.github.com'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - user.name
+      - 'Owl Bot'
   # main
   - name: 'gcr.io/repo-automation-bots/owlbot-cli'
     args:
