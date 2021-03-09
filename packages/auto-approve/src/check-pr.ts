@@ -2,14 +2,14 @@ import {ProbotOctokit} from 'probot';
 import {operations} from '@octokit/openapi-types';
 // type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
 
-interface validPR {
+export interface ValidPr {
     author: string,
     title: string, 
     changedFiles?: string[],
     maxFiles?: number
 }
 //TODO: fix pr any type to correct type
-export async function checkPRAgainstConfig(config: validPR[], pr: any, octokit: InstanceType<typeof ProbotOctokit>): Promise<Boolean> {
+export async function checkPRAgainstConfig(config: ValidPr[], pr: any, octokit: InstanceType<typeof ProbotOctokit>): Promise<Boolean> {
     const validTypeOfPR = config.find(x => x.author === pr.user.login); 
 
     if (validTypeOfPR) {
@@ -33,10 +33,19 @@ export async function checkPRAgainstConfig(config: validPR[], pr: any, octokit: 
     }
 }
 
-export function checkFilePathsMatch(prFiles: string[], validTypeOfPR: validPR) {
+/**
+ * Returns true if all changes to the prFiles are permitted by the PR type.
+ *
+ * @param prFiles list of file paths printed by 'git log --name-only'
+ * @param validTypeOfPR a valid pull request
+ */
+export function checkFilePathsMatch(prFiles: string[], validTypeOfPR: ValidPr): boolean {
+    if (!validTypeOfPR.changedFiles) {
+        return true;
+    }
     let filesMatch = true;
     for (const file of prFiles) {
-        if (!validTypeOfPR.changedFiles!.some(x => file.match(x))) {
+        if (!validTypeOfPR.changedFiles.some(x => file.match(x))) {
             filesMatch = false;
         }
     }

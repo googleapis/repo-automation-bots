@@ -71,7 +71,7 @@
                 "items": {
                   "enum": [
                     "^README.md$",
-                    "^.github/readme/synth.metadata/synth.metadata$"
+                    "^\\.github/readme/synth\\.metadata/synth\\.metadata$"
                   ]
                 }
               },
