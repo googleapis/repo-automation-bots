@@ -1,7 +1,6 @@
 import {ProbotOctokit} from 'probot';
 import {operations} from '@octokit/openapi-types';
-import { file } from 'googleapis/build/src/apis/file';
-type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
+// type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
 
 interface validPR {
     author: string,

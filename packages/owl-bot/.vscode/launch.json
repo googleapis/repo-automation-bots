@@ -1,0 +1,138 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Mocha scan-googleapis-gen-and-create-pull-requests",
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "args": [
+                "-r",
+                "ts-node/register",
+                "--timeout",
+                "999999",
+                "--colors",
+                "${workspaceFolder}/test/scan-googleapis-gen-and-create-pull-requests.ts",
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "protocol": "inspector",
+            "preLaunchTask": "tsc: build - tsconfig.json",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Mocha database",
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "args": [
+                "-r",
+                "ts-node/register",
+                "--timeout",
+                "999999",
+                "--colors",
+                "${workspaceFolder}/test/database.ts",
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "protocol": "inspector",
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "env": {"GOOGLE_APPLICATION_CREDENTIALS": "/usr/local/google/home/rennie/Downloads/surferjeff-firestore-61054c4cc178.json"}
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Mocha copy-code.ts",
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "args": [
+                "-r",
+                "ts-node/register",
+                "--timeout",
+                "999999",
+                "--colors",
+                "${workspaceFolder}/test/copy-code.ts",
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "protocol": "inspector",
+            "preLaunchTask": "tsc: build - tsconfig.json",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "copy-code java-asset",
+            "program": "${workspaceFolder}/build/src/bin/owl-bot.js",
+            "args": [
+                "copy-code",
+                "--dest", "/usr/local/google/home/rennie/gitrepos/java-asset",
+                "--source-repo-commit-hash", "e7694b40a0432b7cd243f163eee941028c263be6",
+                "--source-repo", "/tmp/tmp-613026-XcdYLpNtFNFw/source"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "protocol": "inspector",
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "outFiles": ["${workspaceFolder}/build/**/*.js"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "copy-code nodejs-phishing-protection",
+            "program": "${workspaceFolder}/build/src/bin/owl-bot.js",
+            "args": [
+                "copy-code",
+                "--dest", "/usr/local/google/home/rennie/gitrepos/nodejs-phishing-protection",
+                "--source-repo-commit-hash", "e7694b40a0432b7cd243f163eee941028c263be6"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "protocol": "inspector",
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "outFiles": ["${workspaceFolder}/build/**/*.js"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "create-pull-request nodejs-dialogflow",
+            "program": "${workspaceFolder}/build/src/bin/owl-bot.js",
+            "args": [
+                "copy-code-and-create-pull-request",
+                "--pem-path", "/usr/local/google/home/rennie/Downloads/owl-bot-secret-key.pem",
+                "--app-id", "99011",
+                "--installation", "14695777",
+                "--source-repo", "googleapis/googleapis-gen",
+                "--dest-repo", "googleapis/nodejs-dialogflow",
+                "--source-repo-commit-hash", "8a88f0b4223b681e675ebdf8476d0abc9688ee4a"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "protocol": "inspector",
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "outFiles": ["${workspaceFolder}/build/**/*.js"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "scan-googleapis-gen-and-create-pull-requests",
+            "program": "${workspaceFolder}/build/src/bin/owl-bot.js",
+            "args": [
+                "scan-googleapis-gen-and-create-pull-requests",
+                "--pem-path", "/usr/local/google/home/rennie/Downloads/owl-bot-secret-key.pem",
+                "--app-id", "99011",
+                "--installation", "14695777",
+                // "--source-repo", "/tmp/tmp-1185614-iyxc2GcOVFnZ/googleapis-gen",
+                "--firestore-project", "surferjeff-firestore",
+                "--clone-depth", "20"
+
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "protocol": "inspector",
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "outFiles": ["${workspaceFolder}/build/**/*.js"],
+            "env": {"GOOGLE_APPLICATION_CREDENTIALS": "/usr/local/google/home/rennie/Downloads/surferjeff-firestore-61054c4cc178.json"}
+        }
+    ]
+}

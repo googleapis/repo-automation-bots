@@ -117,7 +117,7 @@ describe('check for config', () => {
               'googleapis-publisher',
               'yoshi-automation',
               'yoshi-code-bot',
-
+            ]
           },
         },
       ]);
