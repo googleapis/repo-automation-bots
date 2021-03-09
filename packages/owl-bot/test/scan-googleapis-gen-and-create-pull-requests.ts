@@ -33,10 +33,13 @@ import {FakeConfigsStore} from './fake-configs-store';
 
 describe('scanGoogleapisGenAndCreatePullRequests', () => {
   const cmd = cc.newCmd();
+
   function makeAbcRepo(): string {
     // Create a git repo.
     const dir = tmp.dirSync().name;
     cmd('git init', {cwd: dir});
+    cmd('git config user.email "test@example.com"', {cwd: dir});
+    cmd('git config user.name "test"', {cwd: dir});
 
     // Add 3 commits
     makeDirTree(dir, ['a.txt:1']);
@@ -61,6 +64,8 @@ describe('scanGoogleapisGenAndCreatePullRequests', () => {
   function makeRepoWithOwlBotYaml(owlBotYaml: OwlBotYaml): string {
     const dir = tmp.dirSync().name;
     cmd('git init', {cwd: dir});
+    cmd('git config user.email "test@example.com"', {cwd: dir});
+    cmd('git config user.name "test"', {cwd: dir});
 
     const yamlPath = path.join(dir, owlBotYamlPath);
     fs.mkdirSync(path.dirname(yamlPath), {recursive: true});
