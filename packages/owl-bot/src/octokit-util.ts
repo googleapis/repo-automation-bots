@@ -18,7 +18,7 @@ import {Octokit} from '@octokit/rest';
 import {ProbotOctokit} from 'probot';
 import {promisify} from 'util';
 import {readFile} from 'fs';
-import {getGitHubShortLivedAccessToken, core} from './core';
+import {core} from './core';
 
 const readFileAsync = promisify(readFile);
 
@@ -33,16 +33,45 @@ export interface OctokitParams {
 }
 
 /**
- * Creates an authenticated instance of octokit.
+ * Creates an authenticated token for octokit.
  */
-export async function octokitFrom(argv: OctokitParams): Promise<OctokitType> {
-  // TODO: replace all instances of the following code with a call to
-  //       octokitFrom().
+export async function octokitTokenFrom(argv: OctokitParams): Promise<string> {
   const privateKey = await readFileAsync(argv['pem-path'], 'utf8');
-  const token = await getGitHubShortLivedAccessToken(
+  const token = await core.getGitHubShortLivedAccessToken(
     privateKey,
     argv['app-id'],
     argv.installation
   );
-  return await core.getAuthenticatedOctokit(token.token);
+  return token.token;
+}
+
+/**
+ * Creates an authenticated instance of octokit.
+ */
+export async function octokitFrom(argv: OctokitParams): Promise<OctokitType> {
+  const token = await octokitTokenFrom(argv);
+  return await core.getAuthenticatedOctokit(token, false);
+}
+
+/**
+ * Interface lets us easily replace in tests.
+ */
+export interface OctokitFactory {
+  getGitHubShortLivedAccessToken(): Promise<string>;
+  getShortLivedOctokit(token?: string): Promise<OctokitType>;
+}
+
+/**
+ * Creates an octokit factory from the common params.
+ */
+export function octokitFactoryFrom(params: OctokitParams): OctokitFactory {
+  return {
+    getGitHubShortLivedAccessToken() {
+      return octokitTokenFrom(params);
+    },
+    async getShortLivedOctokit(token?: string) {
+      const atoken = token ?? (await octokitTokenFrom(params));
+      return await core.getAuthenticatedOctokit(atoken, false);
+    },
+  };
 }
