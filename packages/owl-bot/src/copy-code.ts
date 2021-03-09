@@ -316,19 +316,6 @@ export async function copyExists(
   sourceCommitHash: string,
   logger = console
 ): Promise<boolean> {
-  const q = `repo:${destRepo}+${sourceCommitHash}`;
-  const foundCommits = await octokit.search.commits({q});
-  if (foundCommits.data.total_count > 0) {
-    logger.info(`Commit with ${sourceCommitHash} exists in ${destRepo}.`);
-    return true;
-  }
-  const found = await octokit.search.issuesAndPullRequests({q});
-  for (const item of found.data.items) {
-    logger.info(
-      `Issue or pull request ${item.number} with ${sourceCommitHash} exists in ${destRepo}.`
-    );
-    return true;
-  }
   // I observed octokit.search.issuesAndPullRequests() not finding recent, open
   // pull requests.  So enumerate them.
   const owner = destRepo.owner;
