@@ -17,6 +17,7 @@
 import yargs = require('yargs');
 import * as copyCode from '../../copy-code';
 import {octokitFrom} from '../../octokit-util';
+import {githubRepoFromOwnerSlashName} from '../../github-repo';
 
 export interface Args {
   'pem-path': string;
@@ -63,7 +64,7 @@ export const copyExists: yargs.CommandModule<{}, Args> = {
     const octokit = await octokitFrom(argv);
     await copyCode.copyExists(
       octokit,
-      argv['dest-repo'],
+      githubRepoFromOwnerSlashName(argv['dest-repo']),
       argv['source-repo-commit-hash']
     );
   },

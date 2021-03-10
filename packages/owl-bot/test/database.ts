@@ -64,7 +64,7 @@ describe('database', () => {
         },
         'deep-copy-regex': [
           {
-            source: '/alpha',
+            source: '/alpha/.*',
             dest: '/beta',
             'rm-dest': '',
           },
@@ -85,7 +85,7 @@ describe('database', () => {
       yaml: {
         'deep-copy-regex': [
           {
-            source: '/gamma',
+            source: '/gamma/.*',
             dest: '/omega',
             'rm-dest': '',
           },
@@ -125,7 +125,8 @@ describe('database', () => {
       const reposAffected = await store.findReposAffectedByFileChanges([
         '/alpha/source.js',
       ]);
-      assert.deepStrictEqual(reposAffected, [repoA]);
+      const repoNamesAffected = reposAffected.map(x => `${x.owner}/${x.repo}`);
+      assert.deepStrictEqual(repoNamesAffected, [repoA]);
     } finally {
       await store.clearConfigs(repoA);
     }

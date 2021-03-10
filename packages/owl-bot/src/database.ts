@@ -16,6 +16,7 @@ import admin from 'firebase-admin';
 import {OwlBotLock, toFullMatchRegExp} from './config-files';
 import {Configs, ConfigsStore} from './configs-store';
 import {CopyTasksStore} from './copy-tasks-store';
+import {GithubRepo, githubRepoFromOwnerSlashName} from './github-repo';
 
 export type Db = admin.firestore.Firestore;
 interface UpdatePr {
@@ -152,14 +153,14 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
 
   async findReposAffectedByFileChanges(
     changedFilePaths: string[]
-  ): Promise<string[]> {
+  ): Promise<GithubRepo[]> {
     // This loop runs in time O(n*m), where
     // n = changedFilePaths.length
     // m = # repos stored in config store.
     // It scans all the values in the collection.  There are many opportunities
     // to optimize if performance becomes a problem.
     const snapshot = await this.db.collection(this.yamls).get();
-    const result: string[] = [];
+    const result: GithubRepo[] = [];
     let i = 0;
     snapshot.forEach(doc => {
       i++;
@@ -168,7 +169,7 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
         const regExp = toFullMatchRegExp(copy.source);
         for (const path of changedFilePaths) {
           if (regExp.test(path)) {
-            result.push(decodeId(doc.id));
+            result.push(githubRepoFromOwnerSlashName(decodeId(doc.id)));
             break match_loop;
           }
         }

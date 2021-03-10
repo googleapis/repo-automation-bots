@@ -25,10 +25,10 @@ import path from 'path';
 import {v4 as uuidv4} from 'uuid';
 import * as fs from 'fs';
 import * as fse from 'fs-extra';
-import {OctokitParams, octokitFrom, OctokitType} from './octokit-util';
-import {core} from './core';
+import {OctokitType, OctokitFactory} from './octokit-util';
 import tmp from 'tmp';
 import glob from 'glob';
+import {GithubRepo} from './github-repo';
 
 // This code generally uses Sync functions because:
 // 1. None of our current designs including calling this code from a web
@@ -36,18 +36,13 @@ import glob from 'glob';
 // 2. Calling sync functions yields simpler code.
 
 const readFileAsync = promisify(readFile);
-export interface Args extends OctokitParams {
-  'source-repo': string;
-  'source-repo-commit-hash': string;
-  'dest-repo': string;
-}
 
 // Creates a function that first prints, then executes a shell command.
-type Cmd = (
+export type Cmd = (
   command: string,
   options?: proc.ExecSyncOptions | undefined
 ) => Buffer;
-function newCmd(logger = console): Cmd {
+export function newCmd(logger = console): Cmd {
   const cmd = (
     command: string,
     options?: proc.ExecSyncOptions | undefined
@@ -68,19 +63,12 @@ function sourceLinkFrom(sourceRepo: string, sourceCommitHash: string): string {
  * pull request.
  */
 export async function copyCodeAndCreatePullRequest(
-  args: Args,
+  sourceRepo: string,
+  sourceRepoCommitHash: string,
+  destRepo: GithubRepo,
+  octokitFactory: OctokitFactory,
   logger = console
 ): Promise<void> {
-  let octokit = await octokitFrom(args);
-  if (
-    await copyExists(
-      octokit,
-      args['dest-repo'],
-      args['source-repo-commit-hash']
-    )
-  ) {
-    return; // Copy already exists.  Don't copy again.
-  }
   const workDir = tmp.dirSync().name;
   logger.info(`Working in ${workDir}`);
 
@@ -90,25 +78,22 @@ export async function copyCodeAndCreatePullRequest(
   const cmd = newCmd(logger);
 
   // Clone the dest repo.
-  cmd(
-    `git clone --single-branch "https://github.com/${args['dest-repo']}.git" ${destDir}`
-  );
+  const cloneUrl = destRepo.getCloneUrl();
+  cmd(`git clone --single-branch "${cloneUrl}" ${destDir}`);
 
   // Check out a dest branch.
   cmd(`git checkout -b ${destBranch}`, {cwd: destDir});
 
-  const [owner, repo] = args['dest-repo'].split('/');
-
+  const owner = destRepo.owner;
+  const repo = destRepo.repo;
   let yaml: OwlBotYaml;
   try {
     yaml = await loadOwlBotYaml(destDir);
   } catch (err) {
     logger.error(err);
     // Create a github issue.
-    const sourceLink = sourceLinkFrom(
-      args['source-repo'],
-      args['source-repo-commit-hash']
-    );
+    const sourceLink = sourceLinkFrom(sourceRepo, sourceRepoCommitHash);
+    const octokit = await octokitFactory.getShortLivedOctokit();
     const issue = await octokit.issues.create({
       owner,
       repo,
@@ -120,7 +105,7 @@ After fixing ${owlBotYamlPath}, re-attempt this copy by running the following
 command in a local clone of this repo:
 \`\`\`
   docker run -v /repo:$(pwd) -w /repo gcr.io/repo-automation-bots/owl-bot -- copy-code \
-    --source-repo-commit-hash ${args['source-repo-commit-hash']}
+    --source-repo-commit-hash ${sourceRepoCommitHash}
 \`\`\`
 
 ${err}`,
@@ -129,8 +114,8 @@ ${err}`,
     return; // Success because we don't want to retry.
   }
   await copyCode(
-    args['source-repo'],
-    args['source-repo-commit-hash'],
+    sourceRepo,
+    sourceRepoCommitHash,
     destDir,
     workDir,
     yaml,
@@ -138,40 +123,31 @@ ${err}`,
   );
 
   // Check for existing pull request one more time before we push.
-  const privateKey = await readFileAsync(args['pem-path'], 'utf8');
-  const token = await core.getGitHubShortLivedAccessToken(
-    privateKey,
-    args['app-id'],
-    args.installation
-  );
+  const token = await octokitFactory.getGitHubShortLivedAccessToken();
   // Octokit token may have expired; refresh it.
-  octokit = await core.getAuthenticatedOctokit(token.token);
-  if (
-    await copyExists(
-      octokit,
-      args['dest-repo'],
-      args['source-repo-commit-hash']
-    )
-  ) {
+  const octokit = await octokitFactory.getShortLivedOctokit(token);
+  if (await copyExists(octokit, destRepo, sourceRepoCommitHash)) {
     return; // Mid-air collision!
   }
 
   const githubRepo = await octokit.repos.get({owner, repo});
 
   // Push to origin.
-  cmd(
-    `git remote set-url origin https://x-access-token:${token.token}@github.com/${args['dest-repo']}.git`,
-    {cwd: destDir}
-  );
+  const pushUrl = destRepo.getCloneUrl(token);
+  cmd(`git remote set-url origin ${pushUrl}`, {cwd: destDir});
   cmd(`git push origin ${destBranch}`, {cwd: destDir});
 
   // Use the commit's subject and body as the pull request's title and body.
-  const title = cmd('git log -1 --format=%s', {
+  const title: string = cmd('git log -1 --format=%s', {
     cwd: destDir,
-  }).toString('utf8');
-  const body = cmd('git log -1 --format=%b', {
+  })
+    .toString('utf8')
+    .trim();
+  const body: string = cmd('git log -1 --format=%b', {
     cwd: destDir,
-  }).toString('utf8');
+  })
+    .toString('utf8')
+    .trim();
 
   // Create a pull request.
   const pull = await octokit.pulls.create({
@@ -197,6 +173,34 @@ export async function loadOwlBotYaml(destDir: string): Promise<OwlBotYaml> {
 }
 
 /**
+ * Clones remote repos.  Returns local repos unchanged.
+ * @param repo a full repo name like googleapis/nodejs-vision, or a path to a local directory
+ * @param workDir a local directory where the cloned repo will be created
+ * @param logger a logger
+ * @param depth the depth param to pass to git clone.
+ * @returns the path to the local repo.
+ */
+export function toLocalRepo(
+  repo: string,
+  workDir: string,
+  logger = console,
+  depth = 100
+): string {
+  if (stat(repo)?.isDirectory()) {
+    logger.info(`Using local source repo directory ${repo}`);
+    return repo;
+  } else {
+    const [, repoName] = repo.split('/');
+    const localDir = path.join(workDir, repoName);
+    const cmd = newCmd(logger);
+    cmd(
+      `git clone --depth=${depth} "https://github.com/${repo}.git" ${localDir}`
+    );
+    return localDir;
+  }
+}
+
+/**
  * Copies the code from a source repo to a locally checked out repo.
  *
  * @param sourceRepo usually 'googleapis/googleapis-gen';  May also be a local path
@@ -215,16 +219,7 @@ export async function copyCode(
   logger = console
 ) {
   const cmd = newCmd(logger);
-  let sourceDir: string;
-  if (stat(sourceRepo)?.isDirectory()) {
-    logger.info(`Using local source repo directory ${sourceRepo}`);
-    sourceDir = sourceRepo;
-  } else {
-    sourceDir = path.join(workDir, 'source');
-    cmd(
-      `git clone --single-branch "https://github.com/${sourceRepo}.git" ${sourceDir}`
-    );
-  }
+  const sourceDir = toLocalRepo(sourceRepo, workDir, logger);
   // Check out the specific hash we want to copy from.
   cmd(`git checkout ${sourceCommitHash}`, {cwd: sourceDir});
 
@@ -243,7 +238,7 @@ export async function copyCode(
 }
 
 // returns undefined instead of throwing an exception.
-function stat(path: string): fs.Stats | undefined {
+export function stat(path: string): fs.Stats | undefined {
   try {
     return fs.statSync(path);
   } catch (e) {
@@ -317,48 +312,46 @@ export function copyDirs(
  */
 export async function copyExists(
   octokit: OctokitType,
-  destRepo: string,
+  destRepo: GithubRepo,
   sourceCommitHash: string,
   logger = console
 ): Promise<boolean> {
-  const q = `repo:${destRepo}+${sourceCommitHash}`;
-  const foundCommits = await octokit.search.commits({q});
-  if (foundCommits.data.total_count > 0) {
-    logger.info(`Commit with ${sourceCommitHash} exists in ${destRepo}.`);
-    return true;
-  }
-  const found = await octokit.search.issuesAndPullRequests({q});
-  for (const item of found.data.items) {
-    logger.info(
-      `Issue or pull request ${item.number} with ${sourceCommitHash} exists in ${destRepo}.`
-    );
-    return true;
-  }
   // I observed octokit.search.issuesAndPullRequests() not finding recent, open
   // pull requests.  So enumerate them.
-  const [owner, repo] = destRepo.split('/');
-  const pulls = await octokit.pulls.list({owner, repo, per_page: 100});
+  const owner = destRepo.owner;
+  const repo = destRepo.repo;
+  const pulls = await octokit.pulls.list({
+    owner,
+    repo,
+    per_page: 100,
+    state: 'all',
+  });
   for (const pull of pulls.data) {
     const pos: number = pull.body?.indexOf(sourceCommitHash) ?? -1;
     if (pos >= 0) {
       logger.info(
-        `Pull request ${pull.number} with ${sourceCommitHash} exists in ${destRepo}.`
+        `Pull request ${pull.number} with ${sourceCommitHash} exists in ${owner}/${repo}.`
       );
       return true;
     }
   }
   // And enumerate recent issues too.
-  const issues = await octokit.issues.listForRepo({owner, repo, per_page: 100});
+  const issues = await octokit.issues.listForRepo({
+    owner,
+    repo,
+    per_page: 100,
+    state: 'all',
+  });
   for (const issue of issues.data) {
     const pos: number = issue.body?.indexOf(sourceCommitHash) ?? -1;
     if (pos >= 0) {
       logger.info(
-        `Issue ${issue.number} with ${sourceCommitHash} exists in ${destRepo}.`
+        `Issue ${issue.number} with ${sourceCommitHash} exists in ${owner}/${repo}.`
       );
       return true;
     }
   }
 
-  logger.info(`${sourceCommitHash} not found in ${destRepo}.`);
+  logger.info(`${sourceCommitHash} not found in ${owner}/${repo}.`);
   return false;
 }

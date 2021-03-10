@@ -292,7 +292,7 @@ describe('core', () => {
       // Commit the changes:
       const fullRepoPath = path.join(gitFixture, testRepo);
       execSync('git add .', {cwd: fullRepoPath});
-      execSync("git commit -a -m 'feat: add two files'", {
+      execSync('git commit -a -m "feat: add two files"', {
         cwd: fullRepoPath,
       });
       // Grab the current sha:
@@ -311,14 +311,14 @@ describe('core', () => {
       // Commit the changes:
       const fullRepoPath = path.join(gitFixture, testRepo);
       execSync('git add .', {cwd: fullRepoPath});
-      execSync("git commit -a -m 'feat: add two files'", {
+      execSync('git commit -a -m "feat: add two files"', {
         cwd: fullRepoPath,
       });
       // Remove a file:
       rimraf.sync(path.join(gitFixture, testRepo, 'a.txt'));
       // Commit the change:
       execSync('git add .', {cwd: fullRepoPath});
-      execSync("git commit -a -m 'fix: removed tricksy file'", {
+      execSync('git commit -a -m "fix: removed tricksy file"', {
         cwd: fullRepoPath,
       });
       // Grab the current sha:
@@ -337,7 +337,7 @@ describe('core', () => {
       // Commit the changes:
       const fullRepoPath = path.join(gitFixture, testRepo);
       execSync('git add .', {cwd: fullRepoPath});
-      execSync("git commit -a -m 'feat: add two files'", {
+      execSync('git commit -a -m "feat: add two files"', {
         cwd: fullRepoPath,
       });
       // Remove a file:
@@ -350,7 +350,7 @@ describe('core', () => {
       );
       // Commit the change:
       execSync('git add .', {cwd: fullRepoPath});
-      execSync("git commit -a -m 'feat: remove and add file'", {
+      execSync('git commit -a -m "feat: remove and add file"', {
         cwd: fullRepoPath,
       });
       // Grab the current sha:
