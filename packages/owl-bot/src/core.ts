@@ -415,6 +415,38 @@ export async function* commitsIterator(
   }
 }
 
+/*
+ * Detect whether there's an update loop created by OwlBot post-processor.
+ *
+ * @param owner owner of repo.
+ * @param repo short repo name.
+ * @param prNumber PR to check for loop.
+ * @param octokit authenticated instance of octokit.
+ */
+const OWLBOT_USER = 'gcf-owl-bot[bot]';
+async function hasOwlBotLoop(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  octokit: Octokit
+): Promise<boolean> {
+  const circuitBreaker = 3;
+  const commits = (
+    await octokit.pulls.listCommits({
+      pull_number: prNumber,
+      owner,
+      repo,
+    })
+  ).data;
+  let count = 0;
+  for (const commit of commits) {
+    if (commit?.author?.login === OWLBOT_USER) count++;
+    else count = 0;
+    if (count >= circuitBreaker) return true;
+  }
+  return false;
+}
+
 export const core = {
   commitsIterator,
   createCheck,
@@ -425,6 +457,7 @@ export const core = {
   getFileContent,
   getGitHubShortLivedAccessToken,
   getOwlBotLock,
+  hasOwlBotLoop,
   owlBotLockPath,
   triggerPostProcessBuild,
 };

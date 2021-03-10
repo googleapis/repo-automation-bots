@@ -8,7 +8,7 @@
     "build/src"
   ],
   "engines": {
-    "node": ">=10.0.0"
+    "node": ">=12.0.0"
   },
   "scripts": {
     "start": "probot run ./build/src/owl-bot-post-processor.js",
