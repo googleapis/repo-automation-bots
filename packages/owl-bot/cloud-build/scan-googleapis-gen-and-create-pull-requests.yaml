@@ -45,3 +45,5 @@ steps:
       - ${_INSTALLATION}
       - --firestore-project
       - ${_FIRESTORE_PROJECT}
+
+timeout: '7200s'
