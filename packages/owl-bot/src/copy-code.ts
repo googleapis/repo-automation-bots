@@ -272,7 +272,7 @@ export function copyDirs(
     deadPath = path.join(destDir, deadPath);
     if (stat(deadPath)) {
       logger.info(`rm -r ${deadPath}`);
-      fs.rmSync(deadPath, {recursive: true});
+      fs.rmdirSync(deadPath, {recursive: true});
     }
   }
 
