@@ -77,7 +77,8 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
         throw Error(`no installation token found for ${head.repo.full_name}`);
       }
       // If the pull request is from a fork, the label "owlbot:run" must be
-      // added by a maintainer to trigger the post processor:
+      // added by a maintainer to trigger the post processor.
+      // TODO(bcoe): add support for "owlbot:run" label.
       if (head.repo.full_name !== base.repo.full_name) {
         logger.info(
           `head ${head.repo.full_name} does not match base ${base.repo.full_name} skipping`
