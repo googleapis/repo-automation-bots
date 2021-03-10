@@ -228,7 +228,7 @@ describe('auto-label', () => {
       ghRequests.done();
     });
 
-    it.only('ignores repos that are not enabled', async () => {
+    it('ignores repos that are not enabled', async () => {
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid-config-not-enabled.yml')
       );
