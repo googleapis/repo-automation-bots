@@ -153,9 +153,6 @@ describe('owlBot', () => {
           },
         },
       };
-      const config = `docker:
-      image: node
-      digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
       const hasOwlBotLoopStub = sandbox
         .stub(core, 'hasOwlBotLoop')
         .resolves(true);
