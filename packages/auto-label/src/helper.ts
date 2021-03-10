@@ -45,6 +45,7 @@ export interface LanguageConfig {
 }
 
 export interface Config {
+  enabled?: boolean;
   product?: boolean;
   path?: {
     pullrequest?: boolean;

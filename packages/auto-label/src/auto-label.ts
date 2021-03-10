@@ -84,11 +84,6 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   driftRepos: DriftRepo[],
   context: Context
 ) {
-  if (ignoreList.includes(`${owner}/${repo}`)) {
-    logger.info(`Skipping ${owner}/${repo} in the ignore list`);
-    return;
-  }
-
   const driftRepo = driftRepos.find(x => x.repo === `${owner}/${repo}`);
   const res = await context.octokit.issues
     .listLabelsOnIssue({
@@ -224,11 +219,16 @@ export function handler(app: Probot) {
       'auto-label.yaml',
       DEFAULT_CONFIGS
     );
-    if (!config?.product) return;
 
-    logger.info(`running for org ${context.payload.cron_org}`);
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
+
+    if (!config?.product || !config?.enabled) {
+      logger.info(`Skipping for ${owner}/${repo}`);
+      return;
+    }
+
+    logger.info(`running for org ${context.payload.cron_org}`);
     if (context.payload.cron_org !== owner) {
       logger.info(`skipping run for ${context.payload.cron_org}`);
       return;
@@ -280,11 +280,15 @@ export function handler(app: Probot) {
       'auto-label.yaml',
       DEFAULT_CONFIGS
     );
-    if (!config?.product) return;
-
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const issueNumber = context.payload.issue.number;
+
+    if (!config?.product || !config?.enabled) {
+      logger.info(`Skipping for ${owner}/${repo}`);
+      return;
+    }
+
     const driftRepos = await handler.getDriftRepos();
     if (!driftRepos) {
       return;
@@ -309,6 +313,11 @@ export function handler(app: Probot) {
     );
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
+
+    if (!config?.enabled) {
+      logger.info(`Skipping for ${owner}/${repo}`);
+      return;
+    }
     const pull_number = context.payload.pull_request.number;
 
     if (config?.product) {

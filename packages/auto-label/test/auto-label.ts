@@ -228,19 +228,15 @@ describe('auto-label', () => {
       ghRequests.done();
     });
 
-    it('ignores ignorelist repos', async () => {
+    it.only('ignores repos that are not enabled', async () => {
       const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
+        resolve(fixturesPath, 'config', 'valid-config-not-enabled.yml')
       );
-      const payload = require(resolve(
-        fixturesPath,
-        './events/issue_opened_ignore_list'
-      ));
+
+      const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
-        .get(
-          '/repos/googleapis/gapic-generator-java/contents/.github%2Fauto-label.yaml'
-        )
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
         .reply(200, config);
 
       await probot.receive({
