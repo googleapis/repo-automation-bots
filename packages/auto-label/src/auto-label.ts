@@ -218,7 +218,7 @@ export function handler(app: Probot) {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
 
-    if (!config?.product || !config?.enabled) {
+    if (!config?.product || config?.enabled === false) {
       logger.info(`Skipping for ${owner}/${repo}`);
       return;
     }
@@ -279,7 +279,7 @@ export function handler(app: Probot) {
     const repo = context.payload.repository.name;
     const issueNumber = context.payload.issue.number;
 
-    if (!config?.product || !config?.enabled) {
+    if (!config?.product || config?.enabled === false) {
       logger.info(`Skipping for ${owner}/${repo}`);
       return;
     }
@@ -309,7 +309,7 @@ export function handler(app: Probot) {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
 
-    if (!config?.enabled) {
+    if (config?.enabled === false) {
       logger.info(`Skipping for ${owner}/${repo}`);
       return;
     }
