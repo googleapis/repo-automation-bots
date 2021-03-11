@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import Ajv from 'ajv';
+import yaml from 'js-yaml';
 import owlBotYamlSchema from './owl-bot-yaml-schema.json';
 
 // The .github/.OwlBot.lock.yaml is stored on each repository that OwlBot
@@ -44,10 +45,10 @@ export function owlBotLockFrom(o: Record<string, any>): OwlBotLock {
   return o as OwlBotLock;
 }
 
-export interface CopyDir {
+export interface DeepCopyRegex {
   source: string;
   dest: string;
-  'strip-prefix'?: string;
+  'rm-dest': string;
 }
 
 // The .github/.OwlBot.yaml is stored on each repository that OwlBot
@@ -57,20 +58,43 @@ export interface OwlBotYaml {
   docker?: {
     image: string;
   };
-  'copy-dirs'?: CopyDir[];
+  'deep-copy-regex'?: DeepCopyRegex[];
 }
 
 // The default path where .OwlBot.yaml is expected to be found.
 export const owlBotYamlPath = '.github/.OwlBot.yaml';
 
+function validatePath(path: string, fieldName: string) {
+  if (path && path[0] !== '/') {
+    throw `I expected the first character of ${fieldName} to be a '/'.  Instead, I found ${path}.`;
+  }
+}
+
 // Throws an exception if the object does not have the necessary structure.
 // Otherwise, returns the same object as an OwlBotYaml.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function owlBotYamlFrom(o: Record<string, any>): OwlBotYaml {
+export function owlBotYamlFromText(yamlText: string): OwlBotYaml {
+  const o = yaml.load(yamlText) ?? {};
   const validate = new Ajv().compile(owlBotYamlSchema);
   if (validate(o)) {
-    return o as OwlBotYaml;
+    const yaml = o as OwlBotYaml;
+    for (const deepCopy of yaml['deep-copy-regex'] ?? []) {
+      validatePath(deepCopy.dest, 'dest');
+      validatePath(deepCopy.source, 'source');
+      validatePath(deepCopy['rm-dest'], 'rm-dest');
+    }
+    return yaml;
   } else {
     throw validate.errors;
   }
+}
+
+/**
+ * Given a source string from a yaml, convert it into a regular expression.
+ *
+ * Adds a ^ and a $ so the expression only matches complete strings.
+ */
+export function toFullMatchRegExp(regexp: string): RegExp {
+  const leading = regexp[0] === '^' ? '' : '^';
+  const trailing = regexp[regexp.length - 1] === '$' ? '' : '$';
+  return new RegExp(`${leading}${regexp}${trailing}`);
 }

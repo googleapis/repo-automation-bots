@@ -13,10 +13,10 @@
 // limitations under the License.
 
 import admin from 'firebase-admin';
-import {OwlBotLock} from './config-files';
+import {OwlBotLock, toFullMatchRegExp} from './config-files';
 import {Configs, ConfigsStore} from './configs-store';
-import {IMinimatch, Minimatch} from 'minimatch';
 import {CopyTasksStore} from './copy-tasks-store';
+import {GithubRepo, githubRepoFromOwnerSlashName} from './github-repo';
 
 export type Db = admin.firestore.Firestore;
 interface UpdatePr {
@@ -153,26 +153,29 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
 
   async findReposAffectedByFileChanges(
     changedFilePaths: string[]
-  ): Promise<string[]> {
+  ): Promise<GithubRepo[]> {
     // This loop runs in time O(n*m), where
     // n = changedFilePaths.length
     // m = # repos stored in config store.
     // It scans all the values in the collection.  There are many opportunities
     // to optimize if performance becomes a problem.
     const snapshot = await this.db.collection(this.yamls).get();
-    const result: string[] = [];
+    const result: GithubRepo[] = [];
+    let i = 0;
     snapshot.forEach(doc => {
+      i++;
       const configs = doc.data() as Configs | undefined;
-      match_loop: for (const copy of configs?.yaml?.['copy-dirs'] ?? []) {
-        const mm = newMinimatchFromSource(copy.source);
+      match_loop: for (const copy of configs?.yaml?.['deep-copy-regex'] ?? []) {
+        const regExp = toFullMatchRegExp(copy.source);
         for (const path of changedFilePaths) {
-          if (mm.match(path)) {
-            result.push(decodeId(doc.id));
+          if (regExp.test(path)) {
+            result.push(githubRepoFromOwnerSlashName(decodeId(doc.id)));
             break match_loop;
           }
         }
       }
     });
+    console.info(`walked ${i} configs`);
     return result;
   }
 
@@ -232,23 +235,4 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
       .doc(makeUpdateFilesKey(repo, googleapisGenCommitHash));
     await docRef.delete();
   }
-}
-
-// Exported for testing purposes.
-export function newMinimatchFromSource(pattern: string): IMinimatch {
-  return new Minimatch(makePatternMatchAllSubdirs(pattern), {matchBase: true});
-}
-
-function makePatternMatchAllSubdirs(pattern: string): string {
-  // Make sure pattern always ends with /**
-  if (pattern.endsWith('/**')) {
-    // Good, nothing to do.
-  } else if (pattern.endsWith('/*')) {
-    pattern += '*';
-  } else if (pattern.endsWith('/')) {
-    pattern += '**';
-  } else {
-    pattern += '/**';
-  }
-  return pattern;
 }

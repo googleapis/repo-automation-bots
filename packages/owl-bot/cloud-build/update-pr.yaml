@@ -4,6 +4,19 @@ steps:
     args:
       - clone
       - https://github.com/${_PR_OWNER}/${_REPOSITORY}.git
+  # Populate global username, email for git:
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - user.email
+      - 'gcf-owl-bot[bot]@users.noreply.github.com'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - user.name
+      - 'Owl Bot'
   - name: 'gcr.io/cloud-builders/git'
     args:
       - checkout
@@ -19,19 +32,7 @@ steps:
   # Run container listed in OwlBot.yaml:
   - name: ${_CONTAINER}
     dir: '${_REPOSITORY}'
-  # Populate global username, email, and credentials for git:
-  - name: 'gcr.io/cloud-builders/git'
-    args:
-      - config
-      - --global
-      - user.email
-      - 'owl-bot-development[bot]@users.noreply.github.com'
-  - name: 'gcr.io/cloud-builders/git'
-    args:
-      - config
-      - --global
-      - user.name
-      - 'Owl Bot'
+  # Populate credentials for push to GitHub:
   - name: 'bash'
     args:
       - '-eEuo'

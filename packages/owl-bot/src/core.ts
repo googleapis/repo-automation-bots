@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import {exec} from 'child_process';
+import {promisify} from 'util';
+const execAsync = promisify(exec);
 import {load} from 'js-yaml';
 import {logger} from 'gcf-utils';
 import {sign} from 'jsonwebtoken';
@@ -18,12 +21,8 @@ import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
-import {ProbotOctokit} from 'probot';
 import {OwlBotLock, owlBotLockPath, owlBotLockFrom} from './config-files';
-
-export type OctokitType =
-  | InstanceType<typeof Octokit>
-  | InstanceType<typeof ProbotOctokit>;
+import {OctokitType} from './octokit-util';
 
 interface BuildArgs {
   image: string;
@@ -71,7 +70,7 @@ interface Token {
   repository_selection: string;
 }
 
-export async function triggerBuild(
+export async function triggerPostProcessBuild(
   args: BuildArgs,
   octokit?: OctokitType
 ): Promise<BuildResponse> {
@@ -359,14 +358,115 @@ export async function getFileContent(
   }
 }
 
+/**
+ * Given a git repository and sha, returns the files modified by the
+ * given commit.
+ * @param path path to git repository on disk.
+ * @param sha commit to list modified files for.
+ * @returns a list of file paths.
+ */
+export async function getFilesModifiedBySha(
+  path: string,
+  sha: string
+): Promise<string[]> {
+  // --no-renames to avoid
+  // warning: inexact rename detection was skipped due to too many files.
+  const out = await execAsync(`git show --name-only --no-renames ${sha}`, {
+    cwd: path,
+    // Handle 100,000+ files changing:
+    maxBuffer: 1024 * 1024 * 512,
+  });
+  if (out.stderr) throw Error(out.stderr);
+  const filesRaw = out.stdout.trim();
+  const files = [];
+  // We walk the output in reverse, since the file list is shown at the end
+  // of git show:
+  for (const file of filesRaw.split(/\r?\n/).reverse()) {
+    // There will be a blank line between the commit message and the
+    // files list, we use this as a stopping point:
+    if (file === '') break;
+    files.push(file);
+  }
+  return files;
+}
+
+/**
+ * Returns an iterator that returns the most recent commits added to a repository.
+ * @param repoFull org/repo
+ * @param octokit authenticated octokit instance.
+ */
+export async function* commitsIterator(
+  repoFull: string,
+  octokit: OctokitType,
+  per_page = 25
+) {
+  const [owner, repo] = repoFull.split('/');
+  for await (const response of octokit.paginate.iterator(
+    octokit.repos.listCommits,
+    {
+      owner,
+      repo,
+      per_page,
+    }
+  )) {
+    for (const commit of response.data) {
+      yield commit.sha;
+    }
+  }
+}
+
+const OWLBOT_USER = 'gcf-owl-bot[bot]';
+/*
+ * Detect whether there's an update loop created by OwlBot post-processor.
+ *
+ * @param owner owner of repo.
+ * @param repo short repo name.
+ * @param prNumber PR to check for loop.
+ * @param octokit authenticated instance of octokit.
+ */
+async function hasOwlBotLoop(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  octokit: Octokit
+): Promise<boolean> {
+  // If N (where N=circuitBreaker) commits are added to a pull-request
+  // by the post-processor one after another, this indicates that we're
+  // potentially looping, e.g., flip flopping a date between 2020 and 2021.
+  //
+  // It's okay to have 2 commits from Owl-Bot in a row, e.g., a commit for
+  // a code update plus the post processor.
+  //
+  // It's also okay to run the post-processor many more than circuitBreaker
+  // times on a long lived PR, with human edits being made.
+  const circuitBreaker = 3;
+  const commits = (
+    await octokit.pulls.listCommits({
+      pull_number: prNumber,
+      owner,
+      repo,
+    })
+  ).data;
+  let count = 0;
+  for (const commit of commits) {
+    if (commit?.author?.login === OWLBOT_USER) count++;
+    else count = 0;
+    if (count >= circuitBreaker) return true;
+  }
+  return false;
+}
+
 export const core = {
+  commitsIterator,
   createCheck,
   getAccessTokenURL,
   getAuthenticatedOctokit,
   getCloudBuildInstance,
+  getFilesModifiedBySha,
   getFileContent,
   getGitHubShortLivedAccessToken,
   getOwlBotLock,
+  hasOwlBotLoop,
   owlBotLockPath,
-  triggerBuild,
+  triggerPostProcessBuild,
 };

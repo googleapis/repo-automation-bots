@@ -14,12 +14,7 @@
 
 import {describe, it, before} from 'mocha';
 import admin from 'firebase-admin';
-import {
-  FirestoreConfigsStore,
-  encodeId,
-  decodeId,
-  newMinimatchFromSource,
-} from '../src/database';
+import {FirestoreConfigsStore, encodeId, decodeId} from '../src/database';
 import {Configs} from '../src/configs-store';
 import {v4 as uuidv4} from 'uuid';
 import * as assert from 'assert';
@@ -67,10 +62,11 @@ describe('database', () => {
         docker: {
           image: dockerImageA,
         },
-        'copy-dirs': [
+        'deep-copy-regex': [
           {
-            source: '/alpha',
+            source: '/alpha/.*',
             dest: '/beta',
+            'rm-dest': '',
           },
         ],
       },
@@ -87,10 +83,11 @@ describe('database', () => {
     assert.ok(await store.storeConfigs(repoA, configsA, null));
     const configsB: Configs = {
       yaml: {
-        'copy-dirs': [
+        'deep-copy-regex': [
           {
-            source: '/gamma',
+            source: '/gamma/.*',
             dest: '/omega',
+            'rm-dest': '',
           },
         ],
       },
@@ -128,7 +125,8 @@ describe('database', () => {
       const reposAffected = await store.findReposAffectedByFileChanges([
         '/alpha/source.js',
       ]);
-      assert.deepStrictEqual(reposAffected, [repoA]);
+      const repoNamesAffected = reposAffected.map(x => `${x.owner}/${x.repo}`);
+      assert.deepStrictEqual(repoNamesAffected, [repoA]);
     } finally {
       await store.clearConfigs(repoA);
     }
@@ -144,10 +142,11 @@ describe('database', () => {
         docker: {
           image: dockerImageA,
         },
-        'copy-dirs': [
+        'deep-copy-regex': [
           {
             source: '/alpha',
             dest: '/beta',
+            'rm-dest': '',
           },
         ],
       },
@@ -281,18 +280,5 @@ describe('encodeId', () => {
     const encoded = encodeId(chars);
     assert.strictEqual(encoded, '%2F%25%2B%2F%25%2B%2F%25%2B');
     assert.strictEqual(decodeId(encoded), chars);
-  });
-});
-
-describe('confirm my understanding of minmatch', () => {
-  it('matches patterns', () => {
-    // All these patterns should be equivelent.
-    const patterns = ['/a/*/b', '/a/*/b/', '/a/*/b/*', '/a/*/b/**'];
-    for (const pattern of patterns) {
-      const mm = newMinimatchFromSource(pattern);
-      assert.ok(mm.match('/a/x/b/y'));
-      assert.ok(mm.match('/a/x/b/y/z/q'));
-      assert.ok(!mm.match('/a/b/c'));
-    }
   });
 });

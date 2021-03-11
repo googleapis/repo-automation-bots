@@ -71,7 +71,11 @@ describe('owlBot', () => {
         },
       };
       const loggerStub = sandbox.stub(logger, 'info');
-      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123',
+      });
       sandbox.assert.calledWith(
         loggerStub,
         sandbox.match(/.*does not match base.*/)
@@ -109,16 +113,58 @@ describe('owlBot', () => {
           content: Buffer.from(config).toString('base64'),
           encoding: 'base64',
         });
-      const triggerBuildStub = sandbox.stub(core, 'triggerBuild').resolves({
-        text: 'the text for check',
-        summary: 'summary for check',
-        conclusion: 'success',
-      });
+      const triggerBuildStub = sandbox
+        .stub(core, 'triggerPostProcessBuild')
+        .resolves({
+          text: 'the text for check',
+          summary: 'summary for check',
+          conclusion: 'success',
+        });
+      const hasOwlBotLoopStub = sandbox
+        .stub(core, 'hasOwlBotLoop')
+        .resolves(false);
       const createCheckStub = sandbox.stub(core, 'createCheck');
-      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+      await probot.receive({
+        name: 'pull_request.synchronize',
+        payload,
+        id: 'abc123',
+      });
       sandbox.assert.calledOnce(triggerBuildStub);
       sandbox.assert.calledOnce(createCheckStub);
+      sandbox.assert.calledOnce(hasOwlBotLoopStub);
       githubMock.done();
+    });
+    it('returns early and throws if postprocessor appears to be looping', async () => {
+      const payload = {
+        installation: {
+          id: 12345,
+        },
+        pull_request: {
+          head: {
+            repo: {
+              full_name: 'bcoe/owl-bot-testing',
+            },
+            ref: 'abc123',
+          },
+          base: {
+            repo: {
+              full_name: 'bcoe/owl-bot-testing',
+            },
+          },
+        },
+      };
+      const hasOwlBotLoopStub = sandbox
+        .stub(core, 'hasOwlBotLoop')
+        .resolves(true);
+      await assert.rejects(
+        probot.receive({
+          name: 'pull_request.synchronize',
+          payload,
+          id: 'abc123',
+        }),
+        /too many OwlBot updates/
+      );
+      sandbox.assert.calledOnce(hasOwlBotLoopStub);
     });
   });
   it('loads async app before handling request', async () => {
