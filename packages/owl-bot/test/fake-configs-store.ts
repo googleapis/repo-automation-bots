@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {Configs, ConfigsStore} from '../src/configs-store';
-import {OwlBotLock, toFullMatchRegExp} from '../src/config-files';
+import {OwlBotLock, toFrontMatchRegExp} from '../src/config-files';
 import {GithubRepo, githubRepoFromOwnerSlashName} from '../src/github-repo';
 // There are lots of unused args on fake functions, and that's ok.
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -32,7 +32,7 @@ export class FakeConfigsStore implements ConfigsStore {
     const result: GithubRepo[] = [];
     for (const [repoName, config] of this.configs) {
       repoLoop: for (const deepCopy of config.yaml?.['deep-copy-regex'] ?? []) {
-        const regexp = toFullMatchRegExp(deepCopy.source);
+        const regexp = toFrontMatchRegExp(deepCopy.source);
         for (const filePath of changedFilePaths) {
           if (regexp.test(filePath)) {
             result.push(
