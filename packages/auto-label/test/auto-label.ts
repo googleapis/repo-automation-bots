@@ -228,6 +228,25 @@ describe('auto-label', () => {
       ghRequests.done();
     });
 
+    it('ignores repos that are not enabled', async () => {
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'valid-config-not-enabled.yml')
+      );
+
+      const payload = require(resolve(fixturesPath, './events/issue_opened'));
+
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
+        .reply(200, config);
+
+      await probot.receive({
+        name: 'issues',
+        payload,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
     it('auto detects and labels a Spanner issue', async () => {
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid-config.yml')
