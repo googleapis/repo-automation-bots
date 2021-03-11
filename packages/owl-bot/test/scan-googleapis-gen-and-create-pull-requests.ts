@@ -225,7 +225,7 @@ describe('scanGoogleapisGenAndCreatePullRequests', () => {
     assert.strictEqual(pull.base, 'main');
     assert.strictEqual(
       pull.body,
-      `Source-Link: https://github.com/${abcRepo}/commit/${abcCommits[1]}`
+      `Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}`
     );
 
     // Confirm the pull request branch contains the new file.

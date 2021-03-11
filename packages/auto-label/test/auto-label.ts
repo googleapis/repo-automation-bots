@@ -446,25 +446,35 @@ describe('auto-label', () => {
         fixturesPath,
         './events/issue_opened_spanner'
       ));
-      payload['issue']['title'] = 'docs: they are awesome';
 
-      const ghRequests = nock('https://api.github.com')
-        .get(
-          '/repos/GoogleCloudPlatform/golang-samples/contents/.github%2Fauto-label.yaml'
-        )
-        .reply(200, config)
-        .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
-        .reply(200, [
-          {
-            name: 'samples',
-          },
-        ]);
-      await probot.receive({
-        name: 'issues',
-        payload,
-        id: 'abc123',
-      });
-      ghRequests.done();
+      const titles = [
+        'docs: they are awesome',
+        'fix(docs): still awesome',
+        'build(foo): still never flake',
+        'ci(build): never flake',
+      ];
+
+      for (const title of titles) {
+        payload['issue']['title'] = title;
+
+        const ghRequests = nock('https://api.github.com')
+          .get(
+            '/repos/GoogleCloudPlatform/golang-samples/contents/.github%2Fauto-label.yaml'
+          )
+          .reply(200, config)
+          .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
+          .reply(200, [
+            {
+              name: 'samples',
+            },
+          ]);
+        await probot.receive({
+          name: 'issues',
+          payload,
+          id: 'abc123',
+        });
+        ghRequests.done();
+      }
     });
   });
 
