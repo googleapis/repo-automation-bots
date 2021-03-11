@@ -18,6 +18,7 @@ import {execSync} from 'child_process';
 import * as path from 'path';
 import rimraf from 'rimraf';
 import {core} from '../src/core';
+import nock from 'nock';
 import * as sinon from 'sinon';
 import {mkdirSync, writeFileSync} from 'fs';
 
@@ -25,6 +26,7 @@ import * as protos from '@google-cloud/cloudbuild/build/protos/protos';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
 
+nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
 describe('core', () => {
@@ -292,7 +294,7 @@ describe('core', () => {
       // Commit the changes:
       const fullRepoPath = path.join(gitFixture, testRepo);
       execSync('git add .', {cwd: fullRepoPath});
-      execSync("git commit -a -m 'feat: add two files'", {
+      execSync('git commit -a -m "feat: add two files"', {
         cwd: fullRepoPath,
       });
       // Grab the current sha:
@@ -311,14 +313,14 @@ describe('core', () => {
       // Commit the changes:
       const fullRepoPath = path.join(gitFixture, testRepo);
       execSync('git add .', {cwd: fullRepoPath});
-      execSync("git commit -a -m 'feat: add two files'", {
+      execSync('git commit -a -m "feat: add two files"', {
         cwd: fullRepoPath,
       });
       // Remove a file:
       rimraf.sync(path.join(gitFixture, testRepo, 'a.txt'));
       // Commit the change:
       execSync('git add .', {cwd: fullRepoPath});
-      execSync("git commit -a -m 'fix: removed tricksy file'", {
+      execSync('git commit -a -m "fix: removed tricksy file"', {
         cwd: fullRepoPath,
       });
       // Grab the current sha:
@@ -337,7 +339,7 @@ describe('core', () => {
       // Commit the changes:
       const fullRepoPath = path.join(gitFixture, testRepo);
       execSync('git add .', {cwd: fullRepoPath});
-      execSync("git commit -a -m 'feat: add two files'", {
+      execSync('git commit -a -m "feat: add two files"', {
         cwd: fullRepoPath,
       });
       // Remove a file:
@@ -350,7 +352,7 @@ describe('core', () => {
       );
       // Commit the change:
       execSync('git add .', {cwd: fullRepoPath});
-      execSync("git commit -a -m 'feat: remove and add file'", {
+      execSync('git commit -a -m "feat: remove and add file"', {
         cwd: fullRepoPath,
       });
       // Grab the current sha:
@@ -359,6 +361,71 @@ describe('core', () => {
       }).toString('utf8');
       const filesModified = await core.getFilesModifiedBySha(fullRepoPath, sha);
       assert.deepStrictEqual(filesModified, ['c.txt', 'a.txt']);
+    });
+  });
+  describe('hasOwlBotLoop', () => {
+    it('returns false if post processor not looping', async () => {
+      const commits = [
+        // Two PRs from gcf-owl-bot[bot] are expected: a PR to
+        // submit files, followed by a commit from the post processor:
+        {
+          author: {
+            login: 'gcf-owl-bot[bot]',
+          },
+        },
+        {
+          author: {
+            login: 'gcf-owl-bot[bot]',
+          },
+        },
+        {
+          author: {
+            login: 'bcoe',
+          },
+        },
+        {
+          author: {
+            login: 'gcf-owl-bot[bot]',
+          },
+        },
+      ];
+      const githubMock = nock('https://api.github.com')
+        .get('/repos/bcoe/foo/pulls/22/commits')
+        .reply(200, commits);
+      const loop = await core.hasOwlBotLoop('bcoe', 'foo', 22, new Octokit());
+      assert.strictEqual(loop, false);
+      githubMock.done();
+    });
+    it('returns true if post processor looping', async () => {
+      const commits = [
+        // Three commits from OwlBot in a row should not happen:
+        {
+          author: {
+            login: 'gcf-owl-bot[bot]',
+          },
+        },
+        {
+          author: {
+            login: 'gcf-owl-bot[bot]',
+          },
+        },
+        {
+          author: {
+            login: 'gcf-owl-bot[bot]',
+          },
+        },
+        {
+          author: {
+            login: 'bcoe',
+          },
+        },
+      ];
+      const githubMock = nock('https://api.github.com')
+        .get('/repos/bcoe/foo/pulls/22/commits')
+        .reply(200, commits);
+      const loop = await core.hasOwlBotLoop('bcoe', 'foo', 22, new Octokit());
+      assert.strictEqual(loop, true);
+      githubMock.done();
     });
   });
 });

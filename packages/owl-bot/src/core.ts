@@ -415,6 +415,47 @@ export async function* commitsIterator(
   }
 }
 
+const OWLBOT_USER = 'gcf-owl-bot[bot]';
+/*
+ * Detect whether there's an update loop created by OwlBot post-processor.
+ *
+ * @param owner owner of repo.
+ * @param repo short repo name.
+ * @param prNumber PR to check for loop.
+ * @param octokit authenticated instance of octokit.
+ */
+async function hasOwlBotLoop(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  octokit: Octokit
+): Promise<boolean> {
+  // If N (where N=circuitBreaker) commits are added to a pull-request
+  // by the post-processor one after another, this indicates that we're
+  // potentially looping, e.g., flip flopping a date between 2020 and 2021.
+  //
+  // It's okay to have 2 commits from Owl-Bot in a row, e.g., a commit for
+  // a code update plus the post processor.
+  //
+  // It's also okay to run the post-processor many more than circuitBreaker
+  // times on a long lived PR, with human edits being made.
+  const circuitBreaker = 3;
+  const commits = (
+    await octokit.pulls.listCommits({
+      pull_number: prNumber,
+      owner,
+      repo,
+    })
+  ).data;
+  let count = 0;
+  for (const commit of commits) {
+    if (commit?.author?.login === OWLBOT_USER) count++;
+    else count = 0;
+    if (count >= circuitBreaker) return true;
+  }
+  return false;
+}
+
 export const core = {
   commitsIterator,
   createCheck,
@@ -425,6 +466,7 @@ export const core = {
   getFileContent,
   getGitHubShortLivedAccessToken,
   getOwlBotLock,
+  hasOwlBotLoop,
   owlBotLockPath,
   triggerPostProcessBuild,
 };

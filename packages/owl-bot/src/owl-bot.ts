@@ -70,20 +70,37 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
       'pull_request.reopened',
     ],
     async context => {
-      // If the pull request is from a fork, the label "owlbot:run" must be
-      // added by a maintainer to trigger the post processor:
       const head = context.payload.pull_request.head;
       const base = context.payload.pull_request.base;
       const installation = context.payload.installation?.id;
       if (!installation) {
         throw Error(`no installation token found for ${head.repo.full_name}`);
       }
+      // If the pull request is from a fork, the label "owlbot:run" must be
+      // added by a maintainer to trigger the post processor.
+      // TODO(bcoe): add support for "owlbot:run" label.
       if (head.repo.full_name !== base.repo.full_name) {
         logger.info(
           `head ${head.repo.full_name} does not match base ${base.repo.full_name} skipping`
         );
         return;
       }
+
+      // Detect looping OwlBot behavior and break the cycle:
+      const [owner, repo] = head.repo.full_name.split('/');
+      if (
+        await core.hasOwlBotLoop(
+          owner,
+          repo,
+          context.payload.pull_request.number,
+          context.octokit
+        )
+      ) {
+        throw Error(
+          `too many OwlBot updates created in a row for ${owner}/${repo}`
+        );
+      }
+
       // Fetch the .Owlbot.lock.yaml from the head ref:
       const lock = await core.getOwlBotLock(
         head.repo.full_name,
