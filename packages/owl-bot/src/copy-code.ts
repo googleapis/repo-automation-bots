@@ -53,9 +53,11 @@ export function newCmd(logger = console): Cmd {
   return cmd;
 }
 
-// Composes a link to the source commit that triggered the copy.
-function sourceLinkFrom(sourceRepo: string, sourceCommitHash: string): string {
-  return `https://github.com/${sourceRepo}/commit/${sourceCommitHash}`;
+/**
+ * Composes a link to the source commit that triggered the copy.
+ */
+function sourceLinkFrom(sourceCommitHash: string): string {
+  return `https://github.com/googleapis/googleapis-gen/commit/${sourceCommitHash}`;
 }
 
 /**
@@ -92,7 +94,7 @@ export async function copyCodeAndCreatePullRequest(
   } catch (err) {
     logger.error(err);
     // Create a github issue.
-    const sourceLink = sourceLinkFrom(sourceRepo, sourceRepoCommitHash);
+    const sourceLink = sourceLinkFrom(sourceRepoCommitHash);
     const octokit = await octokitFactory.getShortLivedOctokit();
     const issue = await octokit.issues.create({
       owner,
@@ -230,7 +232,7 @@ export async function copyCode(
   let commitMsg = cmd('git log -1 --format=%s%n%n%b', {
     cwd: sourceDir,
   }).toString('utf8');
-  const sourceLink = sourceLinkFrom(sourceRepo, sourceCommitHash);
+  const sourceLink = sourceLinkFrom(sourceCommitHash);
   commitMsg += `Source-Link: ${sourceLink}\n`;
   fs.writeFileSync(commitMsgPath, commitMsg);
   cmd('git add -A', {cwd: destDir});
