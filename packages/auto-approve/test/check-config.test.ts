@@ -79,7 +79,7 @@ describe('check for config', () => {
     //title does not correspond to author
       assert.deepStrictEqual(await invalidateSchema(2), [
         {
-          wrongProperty: {allowedValue: 'chore: regenerate README'},
+          wrongProperty: {allowedValue: '^chore: regenerate README$'},
           message: 'should be equal to constant',
         },
       ]);

@@ -102,8 +102,8 @@
                 "maxItems": 2,
                 "items": {
                   "enum": [
-                    "package.json$",
-                    "CHANGELOG.md$"
+                    "package\\.json$",
+                    "CHANGELOG\\.md$"
                   ]
                 }
               },

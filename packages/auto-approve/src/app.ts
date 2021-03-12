@@ -16,4 +16,4 @@ import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './auto-approve';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['auto_approve'] = bootstrap.gcf(appFn);
+//module.exports['auto_approve'] = bootstrap.gcf(appFn);
