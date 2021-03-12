@@ -25,12 +25,9 @@ nock.disableNetConnect();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 describe('release-brancher', () => {
-
   describe('responds to events', () => {
-    it('responds to a PR', async () => {
-    });
+    it('responds to a PR', async () => {});
 
-    it('responds to issues', async () => {
-    });
+    it('responds to issues', async () => {});
   });
 });

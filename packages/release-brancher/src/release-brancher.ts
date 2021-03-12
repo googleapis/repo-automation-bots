@@ -48,7 +48,7 @@ export class Runner {
   octokit: Octokit;
   upstreamRepo: string;
   upstreamOwner: string;
-  
+
   constructor(options: RunnerOptions) {
     this.branchName = options.branchName;
     this.targetTag = options.targetTag;
@@ -57,7 +57,7 @@ export class Runner {
     this.upstreamRepo = options.upstreamRepo;
     this.upstreamOwner = options.upstreamOwner;
   }
-  
+
   async getTargetSha(tag: string): Promise<string | undefined> {
     const resp = await this.octokit.git.listMatchingRefs({
       owner: this.upstreamOwner,
@@ -88,7 +88,7 @@ export class Runner {
   async createBranch(): Promise<string> {
     const existing = await this.getBranch(this.branchName);
     if (existing) {
-      console.log(`branch ${this.branchName} already exists`)
+      console.log(`branch ${this.branchName} already exists`);
       return existing;
     }
 
@@ -97,7 +97,7 @@ export class Runner {
       console.log(`couldn't find SHA for tag ${this.targetTag}`);
       throw new Error(`couldn't find SHA for tag ${this.targetTag}`);
     }
-    
+
     console.log(`creating branch ${this.branchName} as SHA ${sha}`);
     const response = await this.octokit.git.createRef({
       owner: this.upstreamOwner,
@@ -108,13 +108,13 @@ export class Runner {
     return response.data.object.sha;
   }
 
-  async getFileContents(path: string): Promise<string|undefined> {
+  async getFileContents(path: string): Promise<string | undefined> {
     try {
-      const response = await this.octokit.repos.getContent({
+      const response = (await this.octokit.repos.getContent({
         owner: this.upstreamOwner,
         repo: this.upstreamRepo,
         path,
-      }) as {data: {content: string}};
+      })) as {data: {content: string}};
       return Buffer.from(response.data.content, 'base64').toString('utf8');
     } catch (e) {
       if (e.status === 404) {
@@ -124,14 +124,16 @@ export class Runner {
     }
   }
 
-  updateReleasePleaseConfig(content: string): string|undefined {
+  updateReleasePleaseConfig(content: string): string | undefined {
     const config = yaml.load(content) as ReleasePleaseConfig;
     const branches = config.branches || [];
     delete config.branches;
 
-    if (branches.find(branch => {
-      return branch.branch === this.branchName;
-    })) {
+    if (
+      branches.find(branch => {
+        return branch.branch === this.branchName;
+      })
+    ) {
       // already found branch
       return undefined;
     }
@@ -151,16 +153,18 @@ export class Runner {
   updateSyncRepoSettings(content: string): string | undefined {
     const config = yaml.load(content) as SyncRepoSettingsConfig;
     const branches = config.branchProtectionRules || [];
-    if (branches.find(branch => {
-      return branch.pattern === this.branchName;
-    })) {
+    if (
+      branches.find(branch => {
+        return branch.pattern === this.branchName;
+      })
+    ) {
       // already found branch
       return undefined;
     }
     const found = branches[0];
     const newRule = {
       ...found,
-      pattern: this.branchName
+      pattern: this.branchName,
     };
     config.branchProtectionRules.push(newRule);
     return yaml.dump(config);
@@ -175,7 +179,7 @@ export class Runner {
       if (newContent) {
         changes.set('.github/release-please.yml', {
           mode: '100644',
-          content: yaml.dump(newContent)
+          content: yaml.dump(newContent),
         });
       }
     }
@@ -189,21 +193,21 @@ export class Runner {
           content: yaml.dump(newContent, {
             noRefs: true,
             condenseFlow: true,
-          })
+          }),
         });
       }
     }
 
-    const message = `build: configure branch ${this.branchName} as a release branch`
+    const message = `build: configure branch ${this.branchName} as a release branch`;
     await createPullRequest(this.octokit, changes, {
       upstreamRepo: this.upstreamRepo,
       upstreamOwner: this.upstreamOwner,
       message,
       title: message,
-      description: "enable releases",
+      description: 'enable releases',
       branch: `release-brancher/${this.branchName}`,
       force: true,
-    })
+    });
     return 123;
   }
 }

@@ -12,27 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// To Run: node ./build/src/bin/owl-bot.js copy-code-and-create-pull-request <args>
-
 import yargs = require('yargs');
-import { Runner } from '../../release-brancher';
-// import {octokitFactoryFrom, OctokitParams} from '../../octokit-util';
-// import {githubRepoFromOwnerSlashName} from '../../github-repo';
+import {Runner} from '../../release-brancher';
 
 interface Args {
   'branch-name': string;
   'target-tag': string;
   'release-type'?: string;
   'github-token': string;
-  'repo': string;
+  repo: string;
 }
 
-export const createPullRequestCommand: yargs.CommandModule<
-  {},
-  Args
-> = {
+export const createPullRequestCommand: yargs.CommandModule<{}, Args> = {
   command: 'create-pull-request',
-  describe: 'create a new release branch and send pull request to add release configuration',
+  describe:
+    'create a new release branch and send pull request to add release configuration',
   builder(yargs) {
     return yargs
       .option('branch-name', {
@@ -52,7 +46,7 @@ export const createPullRequestCommand: yargs.CommandModule<
       .option('github-token', {
         describe: 'GitHub access token',
         type: 'string',
-        coerce: (arg) => {
+        coerce: arg => {
           return arg || process.env.GITHUB_TOKEN;
         },
         demand: true,
@@ -64,16 +58,16 @@ export const createPullRequestCommand: yargs.CommandModule<
       });
   },
   async handler(argv) {
-    const [owner, repo] = argv.repo.split("/");
+    const [owner, repo] = argv.repo.split('/');
     const runner = new Runner({
-      releaseType: argv["release-type"],
+      releaseType: argv['release-type'],
       upstreamRepo: repo,
       upstreamOwner: owner,
-      branchName: argv["branch-name"],
-      targetTag: argv["target-tag"],
-      gitHubToken: argv["github-token"],
+      branchName: argv['branch-name'],
+      targetTag: argv['target-tag'],
+      gitHubToken: argv['github-token'],
     });
-    // await runner.createBranch();
-    await runner.createPullRequest()
+    await runner.createBranch();
+    await runner.createPullRequest();
   },
 };
