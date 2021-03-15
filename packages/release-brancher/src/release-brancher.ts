@@ -147,12 +147,20 @@ export class Runner {
     }
     branches.push(newBranchConfig);
     newConfig.branches = branches;
-    return yaml.dump(newConfig);
+    return yaml.dump(newConfig, {
+      noRefs: true
+    });
   }
 
   updateSyncRepoSettings(content: string): string | undefined {
     const config = yaml.load(content) as SyncRepoSettingsConfig;
     const branches = config.branchProtectionRules || [];
+
+    if (branches.length === 0) {
+      // no configured branch protection - we cannot infer what to do
+      return undefined;
+    }
+
     if (
       branches.find(branch => {
         return branch.pattern === this.branchName;
@@ -161,13 +169,17 @@ export class Runner {
       // already found branch
       return undefined;
     }
+    // TODO: consider fetching the default branch name from the GitHub API
     const found = branches[0];
     const newRule = {
       ...found,
       pattern: this.branchName,
     };
-    config.branchProtectionRules.push(newRule);
-    return yaml.dump(config);
+    branches.push(newRule);
+    config.branchProtectionRules = branches;
+    return yaml.dump(config, {
+      noRefs: true
+    });
   }
 
   async createPullRequest(): Promise<number> {
@@ -179,7 +191,7 @@ export class Runner {
       if (newContent) {
         changes.set('.github/release-please.yml', {
           mode: '100644',
-          content: yaml.dump(newContent),
+          content: newContent,
         });
       }
     }
@@ -190,16 +202,13 @@ export class Runner {
       if (newContent) {
         changes.set('.github/sync-repo-settings.yaml', {
           mode: '100644',
-          content: yaml.dump(newContent, {
-            noRefs: true,
-            condenseFlow: true,
-          }),
+          content: newContent,
         });
       }
     }
 
     const message = `build: configure branch ${this.branchName} as a release branch`;
-    await createPullRequest(this.octokit, changes, {
+    return await createPullRequest(this.octokit, changes, {
       upstreamRepo: this.upstreamRepo,
       upstreamOwner: this.upstreamOwner,
       message,
@@ -207,7 +216,7 @@ export class Runner {
       description: 'enable releases',
       branch: `release-brancher/${this.branchName}`,
       force: true,
+      fork: false,
     });
-    return 123;
   }
 }

@@ -1,0 +1,20 @@
+# Whether or not rebase-merging is enabled on this repository.
+# Defaults to `true`
+rebaseMergeAllowed: false
+
+# Whether or not squash-merging is enabled on this repository.
+# Defaults to `true`
+squashMergeAllowed: true
+
+# Whether or not PRs are merged with a merge commit on this repository.
+# Defaults to `false`
+mergeCommitAllowed: false
+
+# List of explicit permissions to add (additive only)
+permissionRules:
+- team: yoshi-admins
+  permission: admin
+- team: yoshi-java-admins
+  permission: admin
+- team: yoshi-java
+  permission: push

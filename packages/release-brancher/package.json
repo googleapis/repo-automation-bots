@@ -23,7 +23,7 @@
     "start": "probot run ./build/src/release-brancher.js",
     "start:local": "node ./build/src/local.js",
     "pretest": "npm run compile",
-    "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
+    "test": "cross-env LOG_LEVEL=fatal mocha --exit build/test",
     "fix": "gts fix",
     "lint": "gts check"
   },
@@ -44,7 +44,13 @@
     "gts": "^3.0.0",
     "mocha": "^8.0.0",
     "nock": "^13.0.0",
-    "typescript": "~4.2.0"
+    "typescript": "~4.2.0",
+    "snap-shot-it": "^7.0.0"
+  },
+  "config": {
+    "snap-shot-it": {
+      "sortSnapshots": true
+    }
   },
   "engines": {
     "node": ">= 12.18.2"
