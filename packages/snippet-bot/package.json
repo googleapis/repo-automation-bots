@@ -32,7 +32,7 @@
     "gcf-utils": "^7.1.1",
     "minimatch": "^3.0.4",
     "node-fetch": "^2.6.0",
-    "parse-diff": "^0.7.1",
+    "parse-diff": "^0.8.0",
     "tar": "^6.0.5",
     "tmp-promise": "^3.0.2"
   },
