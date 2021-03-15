@@ -67,7 +67,7 @@ export const createPullRequestCommand: yargs.CommandModule<{}, Args> = {
       targetTag: argv['target-tag'],
       gitHubToken: argv['github-token'],
     });
-    // await runner.createBranch();
+    await runner.createBranch();
     await runner.createPullRequest();
   },
 };

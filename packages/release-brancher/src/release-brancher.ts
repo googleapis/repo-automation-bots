@@ -58,7 +58,7 @@ export class Runner {
     this.upstreamOwner = options.upstreamOwner;
   }
 
-  async getTargetSha(tag: string): Promise<string | undefined> {
+  private async getTargetSha(tag: string): Promise<string | undefined> {
     const resp = await this.octokit.git.listMatchingRefs({
       owner: this.upstreamOwner,
       repo: this.upstreamRepo,
@@ -69,7 +69,7 @@ export class Runner {
     })?.object.sha;
   }
 
-  async getBranch(branchName: string): Promise<string | undefined> {
+  private async getBranch(branchName: string): Promise<string | undefined> {
     try {
       const existing = await this.octokit.git.getRef({
         owner: this.upstreamOwner,
@@ -105,7 +105,7 @@ export class Runner {
       ref: `refs/heads/${this.branchName}`,
       sha,
     });
-    return response.data.object.sha;
+    return response.data.ref;
   }
 
   async getFileContents(path: string): Promise<string | undefined> {

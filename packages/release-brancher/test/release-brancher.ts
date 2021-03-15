@@ -15,12 +15,17 @@
 import {resolve} from 'path';
 import nock from 'nock';
 import * as fs from 'fs';
+import * as sinon from 'sinon';
+import * as suggester from 'code-suggester';
 import {describe, it, beforeEach} from 'mocha';
 import * as assert from 'assert';
 import snapshot from 'snap-shot-it';
 import { Runner } from '../src/release-brancher';
+import { Octokit } from '@octokit/rest';
+import { CreatePullRequestUserOptions } from 'code-suggester/build/src/types';
 
 nock.disableNetConnect();
+const sandbox = sinon.createSandbox();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
@@ -30,6 +35,10 @@ function loadFixture(path: string): string {
 
 describe('Runner', () => {
   let runner: Runner;
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   describe('updateReleasePleaseConfig', () => {
     describe('without releaseType', () => {
       beforeEach(() => {
@@ -147,6 +156,181 @@ describe('Runner', () => {
       });
       const newConfig = runner.updateSyncRepoSettings(config);
       assert.equal(newConfig, undefined);
+    });
+  });
+
+  describe('createBranch', () => {
+    it('ignores if branch already exists', async () => {
+      runner = new Runner({
+        branchName: '1.x',
+        targetTag: 'v1.3.0',
+        gitHubToken: 'sometoken',
+        upstreamOwner: 'testOwner',
+        upstreamRepo: 'testRepo',
+      });
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/git/ref/heads%2F1.x')
+        .reply(200, {ref: "refs/heads/1.x"});
+      const ref = await runner.createBranch();
+      assert.ok(ref);
+      assert.equal(ref, "refs/heads/1.x");
+      requests.done();
+    });
+
+    it('errors if cannot find SHA for tag', async () => {
+      runner = new Runner({
+        branchName: '1.x',
+        targetTag: 'v1.3.0',
+        gitHubToken: 'sometoken',
+        upstreamOwner: 'testOwner',
+        upstreamRepo: 'testRepo',
+      });
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/git/ref/heads%2F1.x')
+        .reply(404)
+        .get('/repos/testOwner/testRepo/git/matching-refs/tags%2Fv1.3.0')
+        .reply(404);
+
+      let caught = false;
+      try {
+        const ref = await runner.createBranch();
+        assert.fail('should not reach here');
+      } catch (e) {
+        caught = true;
+      }
+      assert.ok(caught);
+      requests.done();
+    });
+
+    it('creates a branch', async () => {
+      runner = new Runner({
+        branchName: '1.x',
+        targetTag: 'v1.3.0',
+        gitHubToken: 'sometoken',
+        upstreamOwner: 'testOwner',
+        upstreamRepo: 'testRepo',
+      });
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/git/ref/heads%2F1.x')
+        .reply(404)
+        .get('/repos/testOwner/testRepo/git/matching-refs/tags%2Fv1.3.0')
+        .reply(200, [{ref: 'refs/tags/v1.3.0', object: {sha: 'abcd1234'}}])
+        .post('/repos/testOwner/testRepo/git/refs', (body) => {
+          snapshot(body);
+          return body;
+        })
+        .reply(201, {ref: 'refs/heads/1.x'});
+      const ref = await runner.createBranch();
+      assert.ok(ref);
+      assert.equal(ref, "refs/heads/1.x");
+      requests.done();
+    });
+  });
+
+  describe('createPullRequest', () => {
+    it('opens or creates a new pull request', async () => {
+      runner = new Runner({
+        branchName: '1.x',
+        targetTag: 'v1.3.0',
+        gitHubToken: 'sometoken',
+        upstreamOwner: 'testOwner',
+        upstreamRepo: 'testRepo',
+      });
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github%2Frelease-please.yml')
+        .reply(200, {
+          content: Buffer.from(loadFixture('release-please/basic.yaml'), 'utf8').toString('base64')
+        })
+        .get('/repos/testOwner/testRepo/contents/.github%2Fsync-repo-settings.yaml')
+        .reply(200, {
+          content: Buffer.from(loadFixture('sync-repo-settings/basic.yaml')).toString('base64')
+        });
+      sandbox.replace(
+        suggester,
+        'createPullRequest',
+        (
+          _octokit: Octokit,
+          changes: suggester.Changes | null | undefined,
+          options: CreatePullRequestUserOptions
+        ): Promise<number> => {
+          assert.ok(changes);
+
+          // Map does not work well with snapshot
+          snapshot('pr-changes', Array.from(changes.entries()));
+          snapshot('pr-options', options);
+          return Promise.resolve(2345);
+        }
+      );
+      const pullNumber = await runner.createPullRequest();
+      assert.equal(pullNumber, 2345);
+      
+      requests.done();
+    });
+
+    it('ignores already configured files', async () => {
+      runner = new Runner({
+        branchName: '3.1.x',
+        targetTag: 'v3.1.2',
+        gitHubToken: 'sometoken',
+        upstreamOwner: 'testOwner',
+        upstreamRepo: 'testRepo',
+      });
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github%2Frelease-please.yml')
+        .reply(200, {
+          content: Buffer.from(loadFixture('release-please/with-extra-branches.yaml'), 'utf8').toString('base64')
+        })
+        .get('/repos/testOwner/testRepo/contents/.github%2Fsync-repo-settings.yaml')
+        .reply(200, {
+          content: Buffer.from(loadFixture('sync-repo-settings/with-extra-branches.yaml')).toString('base64')
+        });
+      sandbox.replace(
+        suggester,
+        'createPullRequest',
+        (
+          _octokit: Octokit,
+          changes: suggester.Changes | null | undefined,
+        ): Promise<number> => {
+          assert.ok(changes);
+          assert.equal(0, changes.size);
+          return Promise.resolve(0);
+        }
+      );
+      const pullNumber = await runner.createPullRequest();
+      assert.equal(pullNumber, 0);
+      
+      requests.done();
+    });
+
+    it('ignores missing files', async () => {
+      runner = new Runner({
+        branchName: '1.x',
+        targetTag: 'v1.3.0',
+        gitHubToken: 'sometoken',
+        upstreamOwner: 'testOwner',
+        upstreamRepo: 'testRepo',
+      });
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github%2Frelease-please.yml')
+        .reply(404)
+        .get('/repos/testOwner/testRepo/contents/.github%2Fsync-repo-settings.yaml')
+        .reply(404);
+      sandbox.replace(
+        suggester,
+        'createPullRequest',
+        (
+          _octokit: Octokit,
+          changes: suggester.Changes | null | undefined,
+        ): Promise<number> => {
+          assert.ok(changes);
+          assert.equal(0, changes.size);
+          return Promise.resolve(0);
+        }
+      );
+      const pullNumber = await runner.createPullRequest();
+      assert.equal(pullNumber, 0);
+      
+      requests.done();
     });
   });
 });
