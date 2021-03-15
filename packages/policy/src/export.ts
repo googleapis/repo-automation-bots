@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import util from 'util';
 import {BigQuery, BigQueryDate} from '@google-cloud/bigquery';
 import {PolicyResult} from './policy';
 
@@ -30,7 +31,12 @@ interface BigQueryPolicyResult extends PolicyResult {
  * @param result The Policy Result for a single repository
  */
 export async function exportToBigQuery(result: PolicyResult) {
-  const r = result as BigQueryPolicyResult;
-  r.recordDate = BigQuery.date(new Date().toISOString().slice(0, 10));
-  await bigquery.dataset(datasetId).table(tableId).insert([r]);
+  try {
+    await bigquery.dataset(datasetId).table(tableId).insert([result]);
+  } catch (e) {
+    // dumping the error like this is required because error objects from BigQuery
+    // contain nested data, including insert errors in arrays.
+    console.error(util.inspect(e, false, null));
+    throw e;
+  }
 }

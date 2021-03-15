@@ -24,6 +24,12 @@ Instructions are provided in [googleapis/repo-automation-bots](https://github.co
 
 This bot uses nock for mocking requests to GitHub, and snap-shot-it for capturing responses; This allows updates to the API surface to be treated as a visual diff, rather than tediously asserting against each field.
 
+This bot specifically has a dependency on BigQuery. The desired schema for the BigQuery table is stored in `policy-bigquery-schema.json`, and can be re-created if needed with `bq`:
+
+```
+bq mk --table repo-automation-bots:PolicyResults.PolicyResults policy-bigquery-schema.json
+```
+
 ## Running as a local CLI
 For local testing purposes, you may want to check the policy of a single repository, or do a policy check on a collection of repositories.  You can do this locally, without waiting for the bot cron to complete.  In a directory with the cloned repository:
 
