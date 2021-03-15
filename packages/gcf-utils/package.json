@@ -63,7 +63,7 @@
     "nock": "^13.0.0",
     "sinon": "^9.0.0",
     "snap-shot-it": "^7.8.0",
-    "sonic-boom": "1.3.2",
+    "sonic-boom": "1.4.0",
     "stream-mock": "^2.0.5",
     "typescript": "^4.0.0"
   },
