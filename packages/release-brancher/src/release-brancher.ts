@@ -148,7 +148,7 @@ export class Runner {
     branches.push(newBranchConfig);
     newConfig.branches = branches;
     return yaml.dump(newConfig, {
-      noRefs: true
+      noRefs: true,
     });
   }
 
@@ -178,7 +178,7 @@ export class Runner {
     branches.push(newRule);
     config.branchProtectionRules = branches;
     return yaml.dump(config, {
-      noRefs: true
+      noRefs: true,
     });
   }
 

@@ -20,9 +20,9 @@ import * as suggester from 'code-suggester';
 import {describe, it, beforeEach} from 'mocha';
 import * as assert from 'assert';
 import snapshot from 'snap-shot-it';
-import { Runner } from '../src/release-brancher';
-import { Octokit } from '@octokit/rest';
-import { CreatePullRequestUserOptions } from 'code-suggester/build/src/types';
+import {Runner} from '../src/release-brancher';
+import {Octokit} from '@octokit/rest';
+import {CreatePullRequestUserOptions} from 'code-suggester/build/src/types';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -56,7 +56,7 @@ describe('Runner', () => {
         assert.ok(newConfig);
         snapshot(newConfig);
       });
-  
+
       it('updates a config with extra branches already configured', async () => {
         const config = loadFixture('release-please/with-extra-branches.yaml');
         const newConfig = runner.updateReleasePleaseConfig(config);
@@ -81,7 +81,7 @@ describe('Runner', () => {
         assert.ok(newConfig);
         snapshot(newConfig);
       });
-  
+
       it('updates a config with extra branches already configured', async () => {
         const config = loadFixture('release-please/with-extra-branches.yaml');
         const newConfig = runner.updateReleasePleaseConfig(config);
@@ -170,10 +170,10 @@ describe('Runner', () => {
       });
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/git/ref/heads%2F1.x')
-        .reply(200, {ref: "refs/heads/1.x"});
+        .reply(200, {ref: 'refs/heads/1.x'});
       const ref = await runner.createBranch();
       assert.ok(ref);
-      assert.equal(ref, "refs/heads/1.x");
+      assert.equal(ref, 'refs/heads/1.x');
       requests.done();
     });
 
@@ -191,14 +191,7 @@ describe('Runner', () => {
         .get('/repos/testOwner/testRepo/git/matching-refs/tags%2Fv1.3.0')
         .reply(404);
 
-      let caught = false;
-      try {
-        const ref = await runner.createBranch();
-        assert.fail('should not reach here');
-      } catch (e) {
-        caught = true;
-      }
-      assert.ok(caught);
+      await assert.rejects(runner.createBranch());
       requests.done();
     });
 
@@ -215,14 +208,14 @@ describe('Runner', () => {
         .reply(404)
         .get('/repos/testOwner/testRepo/git/matching-refs/tags%2Fv1.3.0')
         .reply(200, [{ref: 'refs/tags/v1.3.0', object: {sha: 'abcd1234'}}])
-        .post('/repos/testOwner/testRepo/git/refs', (body) => {
+        .post('/repos/testOwner/testRepo/git/refs', body => {
           snapshot(body);
           return body;
         })
         .reply(201, {ref: 'refs/heads/1.x'});
       const ref = await runner.createBranch();
       assert.ok(ref);
-      assert.equal(ref, "refs/heads/1.x");
+      assert.equal(ref, 'refs/heads/1.x');
       requests.done();
     });
   });
@@ -239,11 +232,18 @@ describe('Runner', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Frelease-please.yml')
         .reply(200, {
-          content: Buffer.from(loadFixture('release-please/basic.yaml'), 'utf8').toString('base64')
+          content: Buffer.from(
+            loadFixture('release-please/basic.yaml'),
+            'utf8'
+          ).toString('base64'),
         })
-        .get('/repos/testOwner/testRepo/contents/.github%2Fsync-repo-settings.yaml')
+        .get(
+          '/repos/testOwner/testRepo/contents/.github%2Fsync-repo-settings.yaml'
+        )
         .reply(200, {
-          content: Buffer.from(loadFixture('sync-repo-settings/basic.yaml')).toString('base64')
+          content: Buffer.from(
+            loadFixture('sync-repo-settings/basic.yaml')
+          ).toString('base64'),
         });
       sandbox.replace(
         suggester,
@@ -263,7 +263,7 @@ describe('Runner', () => {
       );
       const pullNumber = await runner.createPullRequest();
       assert.equal(pullNumber, 2345);
-      
+
       requests.done();
     });
 
@@ -278,18 +278,25 @@ describe('Runner', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Frelease-please.yml')
         .reply(200, {
-          content: Buffer.from(loadFixture('release-please/with-extra-branches.yaml'), 'utf8').toString('base64')
+          content: Buffer.from(
+            loadFixture('release-please/with-extra-branches.yaml'),
+            'utf8'
+          ).toString('base64'),
         })
-        .get('/repos/testOwner/testRepo/contents/.github%2Fsync-repo-settings.yaml')
+        .get(
+          '/repos/testOwner/testRepo/contents/.github%2Fsync-repo-settings.yaml'
+        )
         .reply(200, {
-          content: Buffer.from(loadFixture('sync-repo-settings/with-extra-branches.yaml')).toString('base64')
+          content: Buffer.from(
+            loadFixture('sync-repo-settings/with-extra-branches.yaml')
+          ).toString('base64'),
         });
       sandbox.replace(
         suggester,
         'createPullRequest',
         (
           _octokit: Octokit,
-          changes: suggester.Changes | null | undefined,
+          changes: suggester.Changes | null | undefined
         ): Promise<number> => {
           assert.ok(changes);
           assert.equal(0, changes.size);
@@ -298,7 +305,7 @@ describe('Runner', () => {
       );
       const pullNumber = await runner.createPullRequest();
       assert.equal(pullNumber, 0);
-      
+
       requests.done();
     });
 
@@ -313,14 +320,16 @@ describe('Runner', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Frelease-please.yml')
         .reply(404)
-        .get('/repos/testOwner/testRepo/contents/.github%2Fsync-repo-settings.yaml')
+        .get(
+          '/repos/testOwner/testRepo/contents/.github%2Fsync-repo-settings.yaml'
+        )
         .reply(404);
       sandbox.replace(
         suggester,
         'createPullRequest',
         (
           _octokit: Octokit,
-          changes: suggester.Changes | null | undefined,
+          changes: suggester.Changes | null | undefined
         ): Promise<number> => {
           assert.ok(changes);
           assert.equal(0, changes.size);
@@ -329,7 +338,7 @@ describe('Runner', () => {
       );
       const pullNumber = await runner.createPullRequest();
       assert.equal(pullNumber, 0);
-      
+
       requests.done();
     });
   });
