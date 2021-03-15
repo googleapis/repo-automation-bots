@@ -41,4 +41,4 @@ If you have suggestions for how release-brancher could be improved, or want to r
 For more, check out the Contributing Guide.
 
 License
-Apache 2.0 © 2019 Google LLC.
+Apache 2.0 © 2021 Google LLC.
