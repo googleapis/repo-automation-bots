@@ -1,8 +1,34 @@
 # release-brancher
 
-Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
+This project is designed to be a CLI for branching new release branches.
 
-This bot uses nock for mocking requests to GitHub, and snap-shot-it for capturing responses; This allows updates to the API surface to be treated as a visual diff, rather than tediously asserting against each field.
+## Installation
+
+`npm i release-brancher`
+
+## Create Pull Request
+
+```bash
+release-brancher create-pull-request --branch-name="1.x" \
+  --target-tag="v1.3.0" --repo="googleapis/java-asset"
+```
+
+This command will:
+
+1. Create a new branch (if necessary), branched from the specified target tag
+2. Create a pull request to the default branch that
+  a. Adds release-please configuration for the new branch
+  b. Sets up branch protection for the new branch
+
+### Options
+
+| Option | Description | Default |
+| ------ | ----------- | ------- |
+| branch-name | Name of the new release branch | *Required* |
+| target-tag | Tag of release to branch from | *Required* |
+| repo | Repository slug (owner/repo) | *Required* |
+| github-token | Personal access token. Can alternatively be set via the `GITHUB_TOKEN` environment variable | *Required* |
+| release-type | release-please strategy to set | Detected from the primary branch's release-please configuration |
 
 ## Running tests:
 
