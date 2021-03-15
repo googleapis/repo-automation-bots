@@ -145,7 +145,7 @@ describe('Runner', () => {
       assert.equal(newConfig, undefined);
     });
 
-    it('ignores branch if repo has no branch protection enabled', () => {
+    it('throws if repo has no branch protection enabled', () => {
       const config = loadFixture('sync-repo-settings/no-branches.yaml');
       runner = new Runner({
         branchName: '3.1.x',
@@ -154,8 +154,9 @@ describe('Runner', () => {
         upstreamOwner: 'testOwner',
         upstreamRepo: 'testRepo',
       });
-      const newConfig = runner.updateSyncRepoSettings(config);
-      assert.equal(newConfig, undefined);
+      assert.throws(() => {
+        runner.updateSyncRepoSettings(config);
+      });
     });
   });
 

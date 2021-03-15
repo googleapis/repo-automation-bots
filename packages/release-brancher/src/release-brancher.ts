@@ -158,7 +158,7 @@ export class Runner {
 
     if (branches.length === 0) {
       // no configured branch protection - we cannot infer what to do
-      return undefined;
+      throw new Error('Cannot find exising branch protection rules: aborting');
     }
 
     if (
