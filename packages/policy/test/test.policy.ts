@@ -325,17 +325,21 @@ describe('policy', () => {
       sinon.stub(policy, 'hasSecurityPolicy').resolves(true),
     ];
     const result = await policy.checkRepoPolicy(repo);
+    const [org, name] = repo.full_name.split('/');
     const expected = {
-      repo: repo.full_name,
+      repo: name,
+      org,
+      topics: [],
       language: repo.language,
-      renovate: true,
-      license: true,
-      codeOfConduct: true,
-      contributing: true,
-      codeowners: true,
-      branchProtection: true,
-      mergeCommitsDisabled: true,
-      securityPolicy: true,
+      hasRenovateConfig: true,
+      hasValidLicense: true,
+      hasCodeOfConduct: true,
+      hasContributing: true,
+      hasCodeowners: true,
+      hasBranchProtection: true,
+      hasMergeCommitsDisabled: true,
+      hasSecurityPolicy: true,
+      timestamp: result.timestamp,
     };
     assert.deepStrictEqual(result, expected);
     stubs.forEach(x => assert.ok(x.calledOnce));

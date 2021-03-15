@@ -25,6 +25,8 @@ interface BigQueryPolicyResult extends PolicyResult {
 
 /**
  * Given a single policy result, write the record to a BigQuery table.
+ * This operates in an append-only fashion, writing a growing list
+ * of results over time.
  * @param result The Policy Result for a single repository
  */
 export async function exportToBigQuery(result: PolicyResult) {

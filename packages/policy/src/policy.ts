@@ -31,16 +31,58 @@ export type GitHubRepo = operations['repos/get']['responses']['200']['content'][
 export const githubRawBase = 'https://raw.githubusercontent.com';
 
 export interface PolicyResult {
+  /**
+   * The short name of the GitHub repository, not including the org/owner
+   */
   repo: string;
+  /**
+   * The GitHub organization name of the given repository
+   */
+  org: string;
+  /**
+   * A list of repository topics for the given repository
+   */
+  topics: string[];
+  /**
+   * Primary programming language used in the repository
+   */
   language: string;
-  renovate: boolean;
-  license: boolean;
-  codeOfConduct: boolean;
-  contributing: boolean;
-  codeowners: boolean;
-  branchProtection: boolean;
-  mergeCommitsDisabled: boolean;
-  securityPolicy: boolean;
+  /**
+   * Does the repository have a `renovate.json` available in the root?
+   */
+  hasRenovateConfig: boolean;
+  /**
+   * Does the repository have a LICENSE file in an approved location, with a valid LICENSE?
+   */
+  hasValidLicense: boolean;
+  /**
+   * Does the repository have a CODE_OF_CONDUCT file available?
+   */
+  hasCodeOfConduct: boolean;
+  /**
+   * Does the repository have a CONTRIBUTING file available?
+   */
+  hasContributing: boolean;
+  /**
+   * Does the repository have a CODEOWNERS file available?
+   */
+  hasCodeowners: boolean;
+  /**
+   * Does the repository have Branch Proection configured in a safe way?
+   */
+  hasBranchProtection: boolean;
+  /**
+   * Does the repository have merge commits disabled?
+   */
+  hasMergeCommitsDisabled: boolean;
+  /**
+   * Does the repository have a SECURITY file available?
+   */
+  hasSecurityPolicy: boolean;
+  /**
+   * Date when the scan was run for this repository
+   */
+  timestamp: Date;
 }
 
 export function getPolicy(octokit: Octokit) {
@@ -56,7 +98,13 @@ export class Policy {
    */
   async getRepo(name: string): Promise<GitHubRepo> {
     const [owner, repo] = name.split('/');
-    const res = await this.octokit.repos.get({owner, repo});
+    const res = await this.octokit.repos.get({
+      owner,
+      repo,
+      headers: {
+        accept: 'application/vnd.github.mercy-preview+json',
+      },
+    });
     return res.data;
   }
 
@@ -74,6 +122,11 @@ export class Policy {
         page,
         per_page: 100,
         q: search,
+        headers: {
+          // This header is required to obtain `topic` info, which we want to
+          // include for queryability purposes.
+          accept: 'application/vnd.github.mercy-preview+json',
+        },
       });
       repos.push(...((res.data.items as {}[]) as GitHubRepo[]));
       if (res.data.items.length < 100) {
@@ -235,14 +288,14 @@ export class Policy {
    */
   async checkRepoPolicy(repo: GitHubRepo): Promise<PolicyResult> {
     const [
-      renovate,
-      license,
-      codeOfConduct,
-      contributing,
-      codeowners,
-      branchProtection,
-      mergeCommitsDisabled,
-      securityPolicy,
+      hasRenovateConfig,
+      hasValidLicense,
+      hasCodeOfConduct,
+      hasContributing,
+      hasCodeowners,
+      hasBranchProtection,
+      hasMergeCommitsDisabled,
+      hasSecurityPolicy,
     ] = await Promise.all([
       this.hasRenovate(repo),
       this.hasLicense(repo),
@@ -253,17 +306,21 @@ export class Policy {
       this.hasMergeCommitsDisabled(repo),
       this.hasSecurityPolicy(repo),
     ]);
-    const results = {
-      repo: repo.full_name,
+    const [org, name] = repo.full_name.split('/');
+    const results: PolicyResult = {
+      repo: name,
+      org: org,
+      topics: repo.topics || [],
       language: repo.language || '',
-      renovate,
-      license,
-      codeOfConduct,
-      contributing,
-      codeowners,
-      branchProtection,
-      mergeCommitsDisabled,
-      securityPolicy,
+      hasRenovateConfig,
+      hasValidLicense,
+      hasCodeOfConduct,
+      hasContributing,
+      hasCodeowners,
+      hasBranchProtection,
+      hasMergeCommitsDisabled,
+      hasSecurityPolicy,
+      timestamp: new Date(),
     };
     return results;
   }
