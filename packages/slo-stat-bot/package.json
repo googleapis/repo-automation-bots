@@ -30,7 +30,8 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "ajv": "^6.12.2",
+    "ajv": "^7.0.0",
+    "ajv-formats": "^1.5.1",
     "gcf-utils": "^7.1.1",
     "moment": "^2.27.0"
   },
