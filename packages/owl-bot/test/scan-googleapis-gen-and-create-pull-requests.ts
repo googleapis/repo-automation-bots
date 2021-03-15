@@ -131,6 +131,7 @@ describe('scanGoogleapisGenAndCreatePullRequests', () => {
 
   class FakeIssues {
     issues: any[] = [];
+    updates: any[] = [];
 
     constructor(issues: any[] = []) {
       this.issues = issues;
@@ -144,6 +145,11 @@ describe('scanGoogleapisGenAndCreatePullRequests', () => {
       this.issues.push(issue);
       issue.html_url = `http://github.com/fake/issues/${this.issues.length}`;
       return Promise.resolve({data: issue});
+    }
+
+    update(issue: any) {
+      this.updates.push(issue);
+      return Promise.resolve();
     }
   }
 
@@ -164,6 +170,7 @@ describe('scanGoogleapisGenAndCreatePullRequests', () => {
 
   it('copies files and creates a pull request', async () => {
     const pulls = new FakePulls();
+    const issues = new FakeIssues();
     const octokit = {
       search: {
         commits() {
@@ -174,7 +181,7 @@ describe('scanGoogleapisGenAndCreatePullRequests', () => {
         },
       },
       pulls: pulls,
-      issues: new FakeIssues(),
+      issues: issues,
       repos: {
         get() {
           return {
@@ -227,6 +234,9 @@ describe('scanGoogleapisGenAndCreatePullRequests', () => {
       pull.body,
       `Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}`
     );
+
+    // Confirm it set the label.
+    assert.deepStrictEqual(issues.updates[0].labels, ['owl-bot-copy']);
 
     // Confirm the pull request branch contains the new file.
     cmd(`git checkout ${pull.head}`, {cwd: destDir});
