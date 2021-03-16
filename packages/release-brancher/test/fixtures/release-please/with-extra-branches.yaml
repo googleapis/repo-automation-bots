@@ -1,0 +1,6 @@
+releaseType: java-yoshi
+bumpMinorPreMajor: true
+branches:
+- branch: 3.1.x
+  releaseType: java-yoshi
+  bumpMinorPreMajor: true
