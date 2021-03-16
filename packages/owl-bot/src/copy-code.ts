@@ -19,7 +19,7 @@ import {
   owlBotYamlPath,
   owlBotYamlFromText,
   OwlBotYaml,
-  toFullMatchRegExp,
+  toFrontMatchRegExp,
 } from './config-files';
 import path from 'path';
 import {v4 as uuidv4} from 'uuid';
@@ -260,27 +260,57 @@ export function copyDirs(
   yaml: OwlBotYaml,
   logger = console
 ): void {
+  // Prepare to exclude paths.
+  const excludes: RegExp[] = (yaml['deep-preserve-regex'] ?? []).map(x =>
+    toFrontMatchRegExp(x)
+  );
+  const excluded = (path: string) => {
+    if (excludes.some(x => x.test(path))) {
+      logger.info(`Excluding ${path}.`);
+      return true;
+    } else {
+      return false;
+    }
+  };
+
   // Wipe out the existing contents of the dest directory.
   const deadPaths: string[] = [];
-  for (const deepCopy of yaml['deep-copy-regex'] ?? []) {
-    const rmDest = deepCopy['rm-dest'];
+  for (const rmDest of yaml['deep-remove-regex'] ?? []) {
     if (rmDest && stat(destDir)) {
-      const rmRegExp = toFullMatchRegExp(rmDest);
+      const rmRegExp = toFrontMatchRegExp(rmDest);
       const allDestPaths = glob.sync('**', {cwd: destDir});
-      deadPaths.push(...allDestPaths.filter(path => rmRegExp.test('/' + path)));
+      const matchingDestPaths = allDestPaths.filter(path =>
+        rmRegExp.test('/' + path)
+      );
+      deadPaths.push(
+        ...matchingDestPaths.filter(path => !excluded('/' + path))
+      );
     }
   }
+  const deadDirs: string[] = [];
+  // Remove files first.
   for (let deadPath of deadPaths) {
     deadPath = path.join(destDir, deadPath);
-    if (stat(deadPath)) {
-      logger.info(`rm -r ${deadPath}`);
-      fs.rmdirSync(deadPath, {recursive: true});
+    if (stat(deadPath)?.isDirectory()) {
+      deadDirs.push(deadPath);
+    } else {
+      logger.info(`rm  ${deadPath}`);
+      fs.rmSync(deadPath);
+    }
+  }
+  // Then remove directories.  Some removes may fail because inner files were excluded.
+  for (const deadDir of deadDirs) {
+    logger.info(`rmdir  ${deadDir}`);
+    try {
+      fs.rmdirSync(deadDir);
+    } catch (e) {
+      logger.info(e);
     }
   }
 
   // Copy the files from source to dest.
   for (const deepCopy of yaml['deep-copy-regex'] ?? []) {
-    const regExp = toFullMatchRegExp(deepCopy.source);
+    const regExp = toFrontMatchRegExp(deepCopy.source);
     const allSourcePaths = glob.sync('**', {cwd: sourceDir});
     const sourcePathsToCopy = allSourcePaths.filter(path =>
       regExp.test('/' + path)
@@ -288,15 +318,19 @@ export function copyDirs(
     for (const sourcePath of sourcePathsToCopy) {
       const fullSourcePath = path.join(sourceDir, sourcePath);
       const relPath = ('/' + sourcePath).replace(regExp, deepCopy.dest);
-      const fullDestPath = path.join(destDir, relPath);
-      const dirName = path.dirname(fullDestPath);
-      if (!stat(dirName)?.isDirectory()) {
-        logger.info('mkdir ' + dirName);
-        fs.mkdirSync(dirName, {recursive: true});
+      if (excluded(relPath)) {
+        continue;
       }
-      logger.info(`cp -r ${fullSourcePath} ${fullDestPath}`);
+      const fullDestPath = path.join(destDir, relPath);
+      if (stat(fullSourcePath)?.isDirectory()) {
+        if (!stat(fullDestPath)?.isDirectory()) {
+          logger.info('mkdir ' + fullDestPath);
+          fs.mkdirSync(fullDestPath, {recursive: true});
+        }
+        continue;
+      }
+      logger.info(`cp ${fullSourcePath} ${fullDestPath}`);
       fse.copySync(fullSourcePath, fullDestPath, {
-        recursive: true,
         overwrite: true,
       });
     }
