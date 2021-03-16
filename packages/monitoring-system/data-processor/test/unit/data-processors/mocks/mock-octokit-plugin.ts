@@ -16,6 +16,7 @@
 
 import {Octokit} from '@octokit/rest';
 import {OctokitMiddleware} from './octokit-middleware';
+import {OctokitRequestOptions} from './octokit-request-parser';
 
 /**
  * Intercepts outgoing Octokit requests and reroutes
@@ -26,6 +27,8 @@ module.exports = (
   pluginOptions: {middleware: OctokitMiddleware}
 ) => {
   octokit.hook.wrap('request', async (request, options) => {
-    return await pluginOptions.middleware.getMockResponse(options);
+    return await pluginOptions.middleware.getMockResponse(
+      options as OctokitRequestOptions
+    );
   });
 };
