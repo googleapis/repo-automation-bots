@@ -88,7 +88,7 @@ export class Runner {
   /**
    * Creates a branch from the tag specified at initialization.
    * If the branch already exists, this is a no-op.
-   * 
+   *
    * @throws {Error} If the specified tag cannot be found.
    * @returns {string} The new branch ref.
    */
@@ -194,7 +194,7 @@ export class Runner {
    * release-please and sync-repo-settings configurations. If an existing
    * pull request already exists, it will force-push changes to the
    * existing pull request.
-   * 
+   *
    * @returns {number} The pull request number.
    */
   async createPullRequest(): Promise<number> {
