@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// This file manages the logic to check whether a given config file is valid
+
+// eslint-disable-next-line node/no-extraneous-import
 import {ProbotOctokit} from 'probot';
 import {join} from 'path';
 import yaml from 'js-yaml';
@@ -24,8 +27,8 @@ interface File {
   content: string | undefined;
 }
 
-interface ErrorMessage {
-  wrongProperty: Record<string, any>;
+export interface ErrorMessage {
+  wrongProperty: Record<string, string>;
   message: string | undefined;
 }
 const schema = require(join(
@@ -40,19 +43,31 @@ function isFile(file: File | unknown): file is File {
   return (file as File).content !== undefined;
 }
 
-export function validateYaml(configYaml: string): Boolean {
+/**
+ * Takes in the auto-approve.yml file and checks to see that it is formatted correctly
+ *
+ * @param configYaml the string of auto-approve.yml
+ * @returns true if it is a valid YAML object, an error message if it is not valid
+ */
+export function validateYaml(configYaml: string): Boolean | string {
   try {
     const isYaml = yaml.load(configYaml);
     if (typeof isYaml === 'object') {
       return true;
     } else {
-      return false;
+      return 'File is not a YAML object';
     }
   } catch (err) {
-    return false;
+    return 'File is not properly configured YAML';
   }
 }
 
+/**
+ * Takes in the auto-approve.yml file and checks to see that the schema matches the valid-pr-schema.json rules
+ *
+ * @param configYaml the string of auto-approve.yml
+ * @returns true if it matches valid-pr-schema.json, the error messages if it doesn't match
+ */
 export async function validateSchema(
   configYaml: string | undefined | null | number | object
 ): Promise<ErrorMessage[] | Boolean | undefined> {
@@ -64,6 +79,15 @@ export async function validateSchema(
   return isValid ? isValid : errorText;
 }
 
+/**
+ * Confirms that the codeowners file contains a line that sets @googleapis/github/automation as codeowners for auto-approve.yml
+ *
+ * @param octokit Octokit instance to make calls to github API
+ * @param owner of the repo of the incoming PR
+ * @param repo of the incoming PR
+ * @param codeOwnersPRFile if the incoming PR includes a codeowners file, that codeowners file; undefined if not
+ * @returns true if codeowners file is appropriately configured, the error message if not
+ */
 export async function checkCodeOwners(
   octokit: InstanceType<typeof ProbotOctokit>,
   owner: string,
@@ -73,33 +97,45 @@ export async function checkCodeOwners(
   let codeOwnersFile;
   const createCodeownersMessage = `You must create a CODEOWNERS file for the configuration file for auto-approve.yml that lives in .github/CODEWONERS in your repository, and contains this line: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/; please make sure it is accessible publicly.`;
   const addToExistingCodeownersMessage = `You must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`;
-  try {
-    codeOwnersFile = (
-      await octokit.repos.getContent({
-        owner,
-        repo,
-        path: '.github/CODEOWNERS',
-      })
-    ).data;
-  } catch (err) {
-    if (err.status === 403 || err.status === 404) {
-      return createCodeownersMessage;
-    } else {
-      throw err;
-    }
-  }
-  
-  if (codeOwnersFile && isFile(codeOwnersFile)) {
-    const file = Buffer.from(codeOwnersFile.content, 'base64').toString('utf8');
+
+  // If the CODEOWNERS file is being changed, make sure it includes the following regex. Otherwise, see if the
+  // existing CODEOWNERS file has that regex. If the CODEOWNERS file is being changed and the blob does not
+  // contain this regex, fail the check
+  if (codeOwnersPRFile) {
     if (
-      file.match(
+      codeOwnersPRFile?.match(
         /(\n|^)\.github\/auto-approve\.yml(\s*)@googleapis\/github-automation(\s*)/gm
       )
     ) {
       return true;
     } else {
+      return addToExistingCodeownersMessage;
+    }
+  } else {
+    // see if CODEOWNERS file exists in the repository
+    try {
+      codeOwnersFile = (
+        await octokit.repos.getContent({
+          owner,
+          repo,
+          path: '.github/CODEOWNERS',
+        })
+      ).data;
+    } catch (err) {
+      if (err.status === 403 || err.status === 404) {
+        return createCodeownersMessage;
+      } else {
+        throw err;
+      }
+    }
+
+    // if CODEOWNERS exists, make sure it is configured appropriately
+    if (codeOwnersFile && isFile(codeOwnersFile)) {
+      const file = Buffer.from(codeOwnersFile.content, 'base64').toString(
+        'utf8'
+      );
       if (
-        codeOwnersPRFile?.match(
+        file.match(
           /(\n|^)\.github\/auto-approve\.yml(\s*)@googleapis\/github-automation(\s*)/gm
         )
       ) {
@@ -107,10 +143,9 @@ export async function checkCodeOwners(
       } else {
         return addToExistingCodeownersMessage;
       }
+    } else {
+      // if CODEOWNERS doesn't exist, ask user to create it
+      return createCodeownersMessage;
     }
-    // GH forces us to check if the content is a file, so we need to add this else block.
-    // but, it should never really be reached.
-  } else {
-    return createCodeownersMessage;
   }
 }

@@ -12,9 +12,9 @@
     "number": 6,
     "state": "open",
     "locked": false,
-    "title": "Assign pr",
+    "title": "Not the right title!",
     "user": {
-      "login": "testuser2",
+      "login": "googleapis-publisher",
       "id": 31518063,
       "node_id": "MDQ6VXNlcjMxNTE4MDYz",
       "avatar_url": "https://avatars3.githubusercontent.com/u/31518063?v=4",

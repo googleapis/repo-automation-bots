@@ -6,8 +6,10 @@ rules:
   changedFiles:
   - "^README.md$"
   - "^\\.github/readme/synth\\.metadata/synth\\.metadata$"
+  maxFiles: 2
 - author: "yoshi-code-bot"
   title: "^chore: release"
   changedFiles:
   - "package\\.json$"
   - "CHANGELOG\\.md$"
+  maxFiles: 3

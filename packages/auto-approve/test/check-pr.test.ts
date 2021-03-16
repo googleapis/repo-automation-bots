@@ -4,7 +4,6 @@ import * as fs from 'fs';
 import {
   ValidPr,
   checkFilePathsMatch,
-  getChangedFiles,
   checkPRAgainstConfig,
 } from '../src/check-pr';
 import nock from 'nock';
@@ -19,7 +18,7 @@ const octokit = new Octokit({
 
 function listChangedFilesPR(status: number, response: {filename: string}[]) {
   return nock('https://api.github.com')
-    .get('/repos/owner/repo/pulls/1/files')
+    .get('/repos/testOwner/testRepo/pulls/1/files')
     .reply(status, response);
 }
 
@@ -76,18 +75,6 @@ describe('check pr against config', async () => {
     });
   });
 
-  describe('returns names of files that were changed', async () => {
-    it('should fetch the names of the files changed of PR', async () => {
-      const scopes = listChangedFilesPR(200, [
-        {filename: 'changedFile1'},
-        {filename: 'changedFile2'},
-      ]);
-      const files = await getChangedFiles(octokit, 'owner', 'repo', 1);
-      scopes.done();
-      assert.deepStrictEqual(files, ['changedFile1', 'changedFile2']);
-    });
-  });
-
   describe('main pr functioning', async () => {
     const fixturesPath = resolve(__dirname, '../../test/fixtures');
     const validPR = yaml.load(
@@ -97,9 +84,7 @@ describe('check pr against config', async () => {
       )
     ) as {rules: ValidPr[]};
 
-    console.log(validPR);
-
-    it('should fail if PR does not match the validPRConfig', async () => {
+    it('should return false if PR does not match author in validPRConfig', async () => {
       const pr = require(resolve(
         fixturesPath,
         'events',
@@ -108,6 +93,91 @@ describe('check pr against config', async () => {
 
       const prMatchesConfig = await checkPRAgainstConfig(validPR, pr, octokit);
       assert.strictEqual(prMatchesConfig, false);
+    });
+
+    it('should return false if PR does not match title', async () => {
+      const pr = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_right_author_wrong_title'
+      ));
+
+      const prMatchesConfig = await checkPRAgainstConfig(validPR, pr, octokit);
+      assert.strictEqual(prMatchesConfig, false);
+    });
+
+    it('should return false if PR changed files do not match allowed changed files in config', async () => {
+      const pr = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_right_author_and_title'
+      ));
+
+      const scopes = listChangedFilesPR(200, [
+        {filename: 'changedFile1'},
+        {filename: 'changedFile2'},
+      ]);
+
+      const prMatchesConfig = await checkPRAgainstConfig(validPR, pr, octokit);
+
+      scopes.done();
+      assert.strictEqual(prMatchesConfig, false);
+    });
+
+    it('should return false if number of changed files does not match allowed number of changed files', async () => {
+      const pr = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_right_author_and_title'
+      ));
+
+      const scopes = listChangedFilesPR(200, [
+        {filename: 'README.md'},
+        {filename: '.github/readme/synth.metadata/synth.metadata'},
+        {filename: 'README.md'},
+      ]);
+
+      const prMatchesConfig = await checkPRAgainstConfig(validPR, pr, octokit);
+
+      scopes.done();
+      assert.strictEqual(prMatchesConfig, false);
+    });
+
+    it('should return true if all elements of PR match', async () => {
+      const pr = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_right_author_and_title_file_count'
+      ));
+
+      const scopes = listChangedFilesPR(200, [
+        {filename: 'README.md'},
+        {filename: '.github/readme/synth.metadata/synth.metadata'},
+      ]);
+
+      const prMatchesConfig = await checkPRAgainstConfig(validPR, pr, octokit);
+
+      scopes.done();
+      assert.ok(prMatchesConfig);
+    });
+
+    it('should return true if all elements of PR match, and some are left blank in the config', async () => {
+      const validPR = yaml.load(
+        fs.readFileSync(
+          resolve(fixturesPath, 'config', 'valid-schemas', 'valid-schema2.yml'),
+          'utf8'
+        )
+      ) as {rules: ValidPr[]};
+
+      const pr = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_right_author_and_title_partial_schema'
+      ));
+
+      const prMatchesConfig = await checkPRAgainstConfig(validPR, pr, octokit);
+
+      assert.ok(prMatchesConfig);
     });
   });
 });

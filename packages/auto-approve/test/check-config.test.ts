@@ -47,7 +47,7 @@ describe('check for config', () => {
             'utf8'
           )
         ),
-        false
+        'File is not properly configured YAML'
       );
     });
 
@@ -76,7 +76,7 @@ describe('check for config', () => {
     });
 
     it('should fail if title does not match first author', async () => {
-    //title does not correspond to author
+      //title does not correspond to author
       assert.deepStrictEqual(await invalidateSchema(2), [
         {
           wrongProperty: {allowedValue: '^chore: regenerate README$'},
@@ -117,7 +117,7 @@ describe('check for config', () => {
               'googleapis-publisher',
               'yoshi-automation',
               'yoshi-code-bot',
-            ]
+            ],
           },
         },
       ]);
@@ -166,7 +166,7 @@ describe('check for config', () => {
     });
 
     it('should return true if YAML has any one of the possible valid options', async () => {
-      assert.strictEqual(
+      assert.ok(
         await validateSchema(
           yaml.load(
             fs.readFileSync(
@@ -174,8 +174,7 @@ describe('check for config', () => {
               'utf8'
             )
           )
-        ),
-        true
+        )
       );
     });
 
@@ -195,7 +194,7 @@ describe('check for config', () => {
   });
 
   describe('codeowner file behavior', async () => {
-    it('should ask to change codeowners, if codeowners file is not properly formatted for config path (and the CODEOWNERS is not in the PR)', async () => {
+    it('should ask to change CODEOWNERS, if CODEOWNERS file is not configured properly (and the CODEOWNERS is not in the PR)', async () => {
       const codeownersFileResponse = fs.readFileSync(
         './test/fixtures/config/invalid-codeowners/invalid-codeowners1',
         'utf8'
@@ -250,18 +249,12 @@ describe('check for config', () => {
     });
 
     it('should accept a well-configured CODEOWNERS file in PR', async () => {
-      const codeownersFileResponse = fs.readFileSync(
-        './test/fixtures/config/invalid-codeowners/invalid-codeowners1',
-        'utf8'
-      );
-      const scopes = getCodeOwnersFile(codeownersFileResponse, 200);
       const response = await checkCodeOwners(
         octokit,
         'owner',
         'repo',
         fs.readFileSync('./test/fixtures/config/valid-codeowners', 'utf8')
       );
-      scopes.done();
       assert.deepStrictEqual(response, true);
     });
 
@@ -277,6 +270,22 @@ describe('check for config', () => {
       assert.strictEqual(
         response,
         `You must create a CODEOWNERS file for the configuration file for auto-approve.yml that lives in .github/CODEWONERS in your repository, and contains this line: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/; please make sure it is accessible publicly.`
+      );
+    });
+
+    it('should ask to change CODEOWNERS file in PR if it is not correctly formatted', async () => {
+      const response = await checkCodeOwners(
+        octokit,
+        'owner',
+        'repo',
+        fs.readFileSync(
+          './test/fixtures/config/invalid-codeowners/invalid-codeowners1',
+          'utf8'
+        )
+      );
+      assert.deepStrictEqual(
+        response,
+        `You must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
       );
     });
   });

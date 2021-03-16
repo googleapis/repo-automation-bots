@@ -13,7 +13,10 @@
 // limitations under the License.
 
 import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './auto-approve';
+import {handler} from './auto-approve';
 
 const bootstrap = new GCFBootstrapper();
-//module.exports['auto_approve'] = bootstrap.gcf(appFn);
+module.exports['auto_approve'] = bootstrap.gcf(handler, {
+  background: false,
+  logging: true,
+});
