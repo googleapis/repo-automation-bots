@@ -47,7 +47,7 @@ export const createPullRequestCommand: yargs.CommandModule<{}, Args> = {
         describe: 'GitHub access token',
         type: 'string',
         coerce: arg => {
-          return arg || process.env.GITHUB_TOKEN;
+          return arg || process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
         },
         demand: true,
       })
