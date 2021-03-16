@@ -85,12 +85,16 @@ export interface PolicyResult {
   timestamp: Date;
 }
 
-export function getPolicy(octokit: Octokit) {
-  return new Policy(octokit);
+export function getPolicy(octokit: Octokit, logger: Logger) {
+  return new Policy(octokit, logger);
+}
+
+export interface Logger {
+  warn: (message: string) => void;
 }
 
 export class Policy {
-  constructor(private octokit: Octokit) {}
+  constructor(private octokit: Octokit, private logger: Logger) {}
 
   /**
    * Fetch the Repository metadata from the GitHub API
@@ -128,6 +132,9 @@ export class Policy {
           accept: 'application/vnd.github.mercy-preview+json',
         },
       });
+      if (res.data.incomplete_results) {
+        this.logger.warn(`Incomplete results from repo query: ${search}`);
+      }
       repos.push(...((res.data.items as {}[]) as GitHubRepo[]));
       if (res.data.items.length < 100) {
         break;

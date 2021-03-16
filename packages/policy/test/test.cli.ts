@@ -47,7 +47,7 @@ describe('cli', () => {
 
   it('should call getRepo if passed a single repo', async () => {
     process.env.GH_TOKEN = 'token';
-    const p = new policy.Policy(new Octokit());
+    const p = new policy.Policy(new Octokit(), console);
     const repoMetadata = {} as policy.GitHubRepo;
     const policyMetadata = {} as policy.PolicyResult;
     const getRepoStub = sinon.stub(p, 'getRepo').resolves(repoMetadata);

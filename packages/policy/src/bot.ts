@@ -34,7 +34,7 @@ export function policyBot(app: Probot) {
       return;
     }
 
-    const policy = getPolicy(context.octokit);
+    const policy = getPolicy(context.octokit, logger);
     const repoMetadata = await policy.getRepo(repo);
     const result = await policy.checkRepoPolicy(repoMetadata);
     await exportToBigQuery(result);

@@ -23,7 +23,7 @@ nock.disableNetConnect();
 
 const githubHost = 'https://api.github.com';
 const octokit = new Octokit();
-const policy = getPolicy(octokit);
+const policy = getPolicy(octokit, console);
 
 describe('policy', () => {
   afterEach(() => {
@@ -50,6 +50,18 @@ describe('policy', () => {
     const metadata = await policy.getRepos(search);
     assert.deepStrictEqual(metadata, items);
     scope.done();
+  });
+
+  it('should warn for incomplete test results', async () => {
+    const search = 'org:googleapis is:public archived:false';
+    const res = {incomplete_results: true, items: []};
+    const scope = nock(githubHost)
+      .get(`/search/repositories?page=1&per_page=100&q=${search}`)
+      .reply(200, res);
+    const stub = sinon.stub(console, 'warn');
+    await policy.getRepos(search);
+    scope.done();
+    assert.ok(stub.getCalls()[0].firstArg.startsWith('Incomplete results'));
   });
 
   it('should perform a basic file exists check', async () => {

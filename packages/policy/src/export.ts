@@ -13,16 +13,12 @@
 // limitations under the License.
 
 import util from 'util';
-import {BigQuery, BigQueryDate} from '@google-cloud/bigquery';
+import {BigQuery} from '@google-cloud/bigquery';
 import {PolicyResult} from './policy';
 
 const bigquery = new BigQuery();
 const datasetId = 'PolicyResults';
 const tableId = 'PolicyResults';
-
-interface BigQueryPolicyResult extends PolicyResult {
-  recordDate: BigQueryDate;
-}
 
 /**
  * Given a single policy result, write the record to a BigQuery table.

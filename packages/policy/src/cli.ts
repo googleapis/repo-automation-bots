@@ -59,7 +59,7 @@ export async function main(cli: meow.Result<{}>) {
   const octokit = new Octokit({
     auth: token,
   });
-  const policy = getPolicy(octokit);
+  const policy = getPolicy(octokit, console);
   if (flags.repo) {
     const repo = await policy.getRepo(flags.repo);
     repos.push(repo);
