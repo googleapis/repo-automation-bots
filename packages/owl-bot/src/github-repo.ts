@@ -20,6 +20,7 @@ export interface GithubRepo {
   getCloneUrl(accessToken?: string): string;
   readonly owner: string;
   readonly repo: string;
+  toString(): string;
 }
 
 /**
@@ -34,6 +35,9 @@ export function githubRepoFromOwnerSlashName(arg: string): GithubRepo {
       return accessToken
         ? `https://x-access-token:${accessToken}@github.com/${arg}.git`
         : `https://github.com/${arg}.git`;
+    },
+    toString(): string {
+      return arg;
     },
   };
 }

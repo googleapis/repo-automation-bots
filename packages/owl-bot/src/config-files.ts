@@ -48,7 +48,6 @@ export function owlBotLockFrom(o: Record<string, any>): OwlBotLock {
 export interface DeepCopyRegex {
   source: string;
   dest: string;
-  'rm-dest': string;
 }
 
 // The .github/.OwlBot.yaml is stored on each repository that OwlBot
@@ -59,6 +58,8 @@ export interface OwlBotYaml {
     image: string;
   };
   'deep-copy-regex'?: DeepCopyRegex[];
+  'deep-remove-regex'?: string[];
+  'deep-preserve-regex'?: string[];
 }
 
 // The default path where .OwlBot.yaml is expected to be found.
@@ -80,7 +81,12 @@ export function owlBotYamlFromText(yamlText: string): OwlBotYaml {
     for (const deepCopy of yaml['deep-copy-regex'] ?? []) {
       validatePath(deepCopy.dest, 'dest');
       validatePath(deepCopy.source, 'source');
-      validatePath(deepCopy['rm-dest'], 'rm-dest');
+    }
+    for (const removePath of yaml['deep-remove-regex'] ?? []) {
+      validatePath(removePath, 'deep-remove-regex');
+    }
+    for (const excludePath of yaml['deep-preserve-regex'] ?? []) {
+      validatePath(excludePath, 'deep-preserve-regex');
     }
     return yaml;
   } else {
@@ -91,10 +97,9 @@ export function owlBotYamlFromText(yamlText: string): OwlBotYaml {
 /**
  * Given a source string from a yaml, convert it into a regular expression.
  *
- * Adds a ^ and a $ so the expression only matches complete strings.
+ * Adds a ^ so the expression only matches the beginning of strings.
  */
-export function toFullMatchRegExp(regexp: string): RegExp {
+export function toFrontMatchRegExp(regexp: string): RegExp {
   const leading = regexp[0] === '^' ? '' : '^';
-  const trailing = regexp[regexp.length - 1] === '$' ? '' : '$';
-  return new RegExp(`${leading}${regexp}${trailing}`);
+  return new RegExp(`${leading}${regexp}`);
 }
