@@ -20,8 +20,6 @@
   ],
   "scripts": {
     "compile": "tsc -p .",
-    "start": "probot run ./build/src/release-brancher.js",
-    "start:local": "node ./build/src/local.js",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal mocha --exit build/test",
     "fix": "gts fix",
