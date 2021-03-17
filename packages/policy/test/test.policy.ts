@@ -192,7 +192,6 @@ describe('policy', () => {
     } as GitHubRepo;
     const res = {
       required_pull_request_reviews: {
-        required_approving_review_count: 1,
         require_code_owner_reviews: true,
       },
       required_status_checks: {
