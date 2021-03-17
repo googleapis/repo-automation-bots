@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {GCFBootstrapper} from 'gcf-utils';
-import {handler} from './sync-repo-settings';
+import {handler} from './bot';
 
 const bootstrap = new GCFBootstrapper();
 module.exports['sync_repo_settings'] = bootstrap.gcf(handler, {

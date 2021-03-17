@@ -17,7 +17,7 @@ import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import {promises as fs} from 'fs';
-import {handler} from '../src/sync-repo-settings';
+import {handler} from '../src/bot';
 import assert from 'assert';
 import * as sinon from 'sinon';
 import {logger} from 'gcf-utils';
