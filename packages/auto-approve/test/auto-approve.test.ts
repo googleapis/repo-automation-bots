@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {handler, logicForConfigCheck} from '../src/auto-approve';
+import {handler} from '../src/auto-approve';
 import * as getPRInfo from '../src/get-PR-info';
 import * as checkConfig from '../src/check-config';
 import * as checkPR from '../src/check-pr';
@@ -21,25 +21,38 @@ import {resolve} from 'path';
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import nock from 'nock';
 import sinon, {SinonStub} from 'sinon';
-import * as fs from 'fs';
 import {describe, it, beforeEach} from 'mocha';
 import * as assert from 'assert';
-import yaml from 'js-yaml';
+import snapshot from 'snap-shot-it';
 
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
-//const sandbox = sinon.createSandbox();
+const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
 
-function getConfigFile(response: string, status: number) {
-  return nock('https://api.github.com')
-    .get('/repos/testOwner/testRepo/contents/.github%2Fauto-approve.yml')
-    .reply(status, {response});
+function getConfigFile(response: string | undefined, status: number) {
+  if (status === 404) {
+    return (
+      nock('https://api.github.com')
+        // This second stub is required as octokit does a second attempt on a different endpoint
+        .get('/repos/testOwner/.github/contents/.github%2Fauto-approve.yml')
+        .reply(404)
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-approve.yml')
+        .reply(404)
+    );
+  } else {
+    return nock('https://api.github.com')
+      .get('/repos/testOwner/testRepo/contents/.github%2Fauto-approve.yml')
+      .reply(status, {response});
+  }
 }
 
 function submitReview(status: number) {
   return nock('https://api.github.com')
-    .post('/repos/testOwner/testRepo/pulls/1/reviews/1/events')
+    .post('/repos/testOwner/testRepo/pulls/1/reviews/1/events', body => {
+      snapshot(body);
+      return true;
+    })
     .reply(status);
 }
 
@@ -51,7 +64,10 @@ function addLabels(status: number) {
 
 function createCheck(status: number) {
   return nock('https://api.github.com')
-    .post('/repos/testOwner/testRepo/check-runs')
+    .post('/repos/testOwner/testRepo/check-runs', body => {
+      snapshot(body);
+      return true;
+    })
     .reply(status);
 }
 
@@ -94,81 +110,156 @@ describe('auto-approve', () => {
   });
 
   describe('main auto-approve function', () => {
-    describe('pull request-handling logic', () => {
-      describe('config exists', () => {
-        it('approves and tags a PR if a config exists & is valid & PR is valid', async () => {
-          checkPRAgainstConfigStub.returns(true);
-          validateYamlStub.returns(true);
-          validateSchemaStub.returns(true);
-          checkCodeOwnersStub.returns(true);
+    describe('config exists', () => {
+      it('approves and tags a PR if a config exists & is valid & PR is valid', async () => {
+        checkPRAgainstConfigStub.returns(true);
+        validateYamlStub.returns(true);
+        validateSchemaStub.returns(true);
+        checkCodeOwnersStub.returns(true);
 
-          const payload = require(resolve(
-            fixturesPath,
-            'events',
-            'pull_request_opened'
-          ));
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened'
+        ));
 
-          const scopes = [
-            getConfigFile('fake-config', 200),
-            submitReview(200),
-            addLabels(200),
-            createCheck(200),
-          ];
+        const scopes = [
+          getConfigFile('fake-config', 200),
+          submitReview(200),
+          addLabels(200),
+          createCheck(200),
+        ];
 
-          await probot.receive({
-            name: 'pull_request.opened',
-            payload,
-            id: 'abc123',
-          });
-
-          scopes.forEach(scope => scope.done());
+        await probot.receive({
+          name: 'pull_request.opened',
+          payload,
+          id: 'abc123',
         });
 
-        it('submits a failing check if config exists but is not valid', async () => {
-          checkPRAgainstConfigStub.returns(true);
-          validateYamlStub.returns(false);
-          validateSchemaStub.returns(true);
-          checkCodeOwnersStub.returns(true);
+        scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
+      });
 
-          const payload = require(resolve(
-            fixturesPath,
-            'events',
-            'pull_request_opened'
-          ));
+      it('submits a failing check if config exists but is not valid', async () => {
+        checkPRAgainstConfigStub.returns(true);
+        validateYamlStub.returns(false);
+        validateSchemaStub.returns(true);
+        checkCodeOwnersStub.returns(true);
 
-          const scopes = [getConfigFile('fake-config', 200), createCheck(200)];
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened'
+        ));
 
-          await probot.receive({
-            name: 'pull_request.opened',
-            payload,
-            id: 'abc123',
-          });
+        const scopes = [getConfigFile('fake-config', 200), createCheck(200)];
 
-          scopes.forEach(scope => scope.done());
+        await probot.receive({
+          name: 'pull_request.opened',
+          payload,
+          id: 'abc123',
         });
 
-        it('logs to the console if config is valid but PR is not', async () => {
-          checkPRAgainstConfigStub.returns(false);
-          validateYamlStub.returns(true);
-          validateSchemaStub.returns(true);
-          checkCodeOwnersStub.returns(true);
+        scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
+      });
 
-          const payload = require(resolve(
-            fixturesPath,
-            'events',
-            'pull_request_opened'
-          ));
+      it('logs to the console if config is valid but PR is not', async () => {
+        checkPRAgainstConfigStub.returns(false);
+        validateYamlStub.returns(true);
+        validateSchemaStub.returns(true);
+        checkCodeOwnersStub.returns(true);
 
-          const scopes = [getConfigFile('fake-config', 200), createCheck(200)];
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened'
+        ));
 
-          await probot.receive({
-            name: 'pull_request.opened',
-            payload,
-            id: 'abc123',
-          });
+        const scopes = [getConfigFile('fake-config', 200), createCheck(200)];
 
-          scopes.forEach(scope => scope.done());
+        await probot.receive({
+          name: 'pull_request.opened',
+          payload,
+          id: 'abc123',
         });
+
+        scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
+      });
+    });
+    describe('config does not exist', () => {
+      it('ignores the PR, if config does not exist on repo or PR', async () => {
+        getBlobFromPRFilesStub.returns(undefined);
+
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened'
+        ));
+
+        const scopes = [getConfigFile(undefined, 404)];
+
+        await probot.receive({
+          name: 'pull_request.opened',
+          payload,
+          id: 'abc123',
+        });
+        scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
+      });
+
+      it('attempts to get codeowners file and create a passing status check if PR contains correct config', async () => {
+        getBlobFromPRFilesStub.returns('fake-file');
+        validateYamlStub.returns(true);
+        validateSchemaStub.returns(true);
+        checkCodeOwnersStub.returns(true);
+
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened'
+        ));
+
+        const scopes = [getConfigFile(undefined, 404), createCheck(200)];
+
+        await probot.receive({
+          name: 'pull_request.opened',
+          payload,
+          id: 'abc123',
+        });
+        scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
+        assert.ok(getBlobFromPRFilesStub.calledTwice);
+      });
+
+      it('attempts to get codeowners file and create a failing status check if PR contains wrong config, and error messages check out', async () => {
+        getBlobFromPRFilesStub.returns('fake-file');
+        validateYamlStub.returns('File is not properly configured YAML');
+        validateSchemaStub.returns({
+          wrongProperty: 'wrongProperty',
+          message: 'message',
+        });
+        checkCodeOwnersStub.returns(
+          `You must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
+        );
+
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened'
+        ));
+
+        const scopes = [getConfigFile(undefined, 404), createCheck(200)];
+
+        await probot.receive({
+          name: 'pull_request.opened',
+          payload,
+          id: 'abc123',
+        });
+        scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
+        assert.ok(getBlobFromPRFilesStub.calledTwice);
       });
     });
   });

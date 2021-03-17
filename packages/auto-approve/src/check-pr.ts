@@ -1,6 +1,6 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {ProbotOctokit} from 'probot';
-import {operations} from '@octokit/openapi-types';
+import {PullRequestEvent} from '@octokit/webhooks-definitions/schema';
 import {getChangedFiles} from './get-PR-info';
 import {logger} from 'gcf-utils';
 // type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
@@ -25,7 +25,7 @@ export interface ValidPr {
  */
 export async function checkPRAgainstConfig(
   config: {rules: ValidPr[]},
-  pr: any,
+  pr: PullRequestEvent,
   octokit: InstanceType<typeof ProbotOctokit>
 ): Promise<Boolean> {
   const repoOwner = pr.pull_request.head.repo.owner.login;

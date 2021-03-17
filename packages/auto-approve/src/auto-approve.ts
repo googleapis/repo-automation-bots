@@ -48,11 +48,8 @@ export async function logicForConfigCheck(
   // Check if the YAML is formatted correctly
   const isYamlValid = validateYaml(config);
 
-  console.log(`IS YAML VALID: ${isYamlValid}`);
   // Check if config has correct schema
   const isSchemaValid = await validateSchema(config);
-
-  console.log(`IS SCHEMA VALID: ${isSchemaValid}`);
 
   // Check if codeowners includes @github-automation for auto-approve.yml file
   const isCodeOwnersCorrect = await checkCodeOwners(
@@ -61,8 +58,6 @@ export async function logicForConfigCheck(
     repo,
     codeOwnersFile
   );
-
-  console.log(`IS CODEOWNERS VALID: ${isCodeOwnersCorrect}`)
 
   // If all files are correct, then submit a passing check for the config
   if (
@@ -127,15 +122,18 @@ export function handler(app: Probot) {
       const owner = pr.pull_request.head.repo.owner.login;
       const repo = pr.pull_request.head.repo.name;
       const prNumber = pr.number;
+      let config: Configuration | null;
 
       // Get auto-approve.yml file if it exists
-      const config = (await context.config(
-        CONFIGURATION_FILE_PATH,
-        {}
-      )) as Configuration;
-
-      console.log(config);
-      console.log(typeof config);
+      // Reading the config requires access to code permissions, which are not
+      // always available for private repositories.
+      try {
+        config = await context.config<Configuration>(CONFIGURATION_FILE_PATH);
+      } catch (err) {
+        err.message = `Error reading configuration: ${err.message}`;
+        logger.error(err);
+        config = null;
+      }
 
       const PRFiles = await getChangedFiles(
         context.octokit,
@@ -193,7 +191,6 @@ export function handler(app: Probot) {
           context.payload.pull_request.head.sha
         );
 
-        console.log(isConfigValid);
         // Check to see whether the incoming PR matches the incoming PR
         const isPRValid = await checkPRAgainstConfig(
           config,
@@ -216,6 +213,7 @@ export function handler(app: Probot) {
             issue_number: prNumber,
             labels: ['automerge: exact'],
           });
+          logger.info(`Auto-approved and tagged ${owner}/${repo}/${prNumber}`);
         } else if (isConfigValid && !isPRValid) {
           // If config is valid but PR isn't, log that it is not valid, but don't comment on PR since that would be noisy
           logger.info(
