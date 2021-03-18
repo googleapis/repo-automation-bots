@@ -96,21 +96,23 @@ describe('policy', () => {
   });
 
   it('should check for renovate', async () => {
-    const file = 'renovate.json';
+    const files = ['renovate.json', 'renovate.json5'];
     const repo = {
       full_name: 'googleapis/nodejs-storage',
       default_branch: 'main',
     } as GitHubRepo;
-    const fileUrl = `/${repo.full_name}/${repo.default_branch}/${file}`;
-    const magicUrl = `/${repo.full_name}/${repo.default_branch}/.github/${file}`;
-    const scope = nock(githubRawBase)
-      .get(fileUrl)
-      .reply(200)
-      .get(magicUrl)
-      .reply(404);
+    const scopes = files.map(file => {
+      const fileUrl = `/${repo.full_name}/${repo.default_branch}/${file}`;
+      const magicUrl = `/${repo.full_name}/${repo.default_branch}/.github/${file}`;
+      return nock(githubRawBase)
+        .get(fileUrl)
+        .reply(200)
+        .get(magicUrl)
+        .reply(404);
+    });
     const hasRenovate = await policy.hasRenovate(repo);
     assert.ok(hasRenovate);
-    scope.done();
+    scopes.forEach(x => x.done());
   });
 
   it('should check for CODEOWNERS', async () => {
