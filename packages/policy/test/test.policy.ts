@@ -194,7 +194,6 @@ describe('policy', () => {
     } as GitHubRepo;
     const res = {
       required_pull_request_reviews: {
-        required_approving_review_count: 1,
         require_code_owner_reviews: true,
       },
       required_status_checks: {
@@ -226,26 +225,6 @@ describe('policy', () => {
       default_branch: 'main',
     } as GitHubRepo;
     const res = {
-      required_status_checks: {
-        contexts: ['check1'],
-      },
-    };
-    const url = `/repos/${repo.full_name}/branches/${repo.default_branch}/protection`;
-    const scope = nock(githubHost).get(url).reply(200, res);
-    const good = await policy.hasBranchProtection(repo);
-    assert.ok(!good);
-    scope.done();
-  });
-
-  it('should fail branch protection on missing required reviews', async () => {
-    const repo = {
-      full_name: 'googleapis/nodejs-storage',
-      default_branch: 'main',
-    } as GitHubRepo;
-    const res = {
-      required_pull_request_reviews: {
-        require_code_owner_reviews: true,
-      },
       required_status_checks: {
         contexts: ['check1'],
       },

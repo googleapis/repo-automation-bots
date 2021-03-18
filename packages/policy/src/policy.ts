@@ -217,13 +217,6 @@ export class Policy {
       return false;
     }
     if (
-      (data.required_pull_request_reviews.required_approving_review_count ||
-        0) < 1
-    ) {
-      // require at least one code reviewer
-      return false;
-    }
-    if (
       !data.required_status_checks ||
       data.required_status_checks.contexts.length === 0
     ) {
