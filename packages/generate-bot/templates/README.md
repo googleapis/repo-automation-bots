@@ -15,4 +15,4 @@ If you have suggestions for how {{programName}} could be improved, or want to re
 For more, check out the Contributing Guide.
 
 License
-Apache 2.0 © 2019 Google LLC.
+Apache 2.0 © 2021 Google LLC.
