@@ -178,7 +178,11 @@ export class Policy {
    * RenovateBot is enabled
    */
   async hasRenovate(repo: GitHubRepo) {
-    return this.checkFileExists(repo, 'renovate.json', true);
+    const results = await Promise.all([
+      this.checkFileExists(repo, 'renovate.json', true),
+      this.checkFileExists(repo, 'renovate.json5', true),
+    ]);
+    return results.find(x => x === true) || false;
   }
 
   /**
