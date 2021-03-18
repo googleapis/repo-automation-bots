@@ -1,0 +1,26 @@
+on:
+  push:
+    branches:
+      - master
+name: release-please
+jobs:
+  gcf-utils:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: GoogleCloudPlatform/release-please-action@v2
+        with:
+          release-type: node
+          package-name: gcf-utils
+          path: packages/gcf-utils
+          command: release-pr
+          monorepo-tags: true
+  release-brancher:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: GoogleCloudPlatform/release-please-action@v2
+        with:
+          release-type: node
+          package-name: release-brancher
+          path: packages/release-brancher
+          command: release-pr
+          monorepo-tags: true
