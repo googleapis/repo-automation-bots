@@ -99,17 +99,16 @@ export function handler(app: Probot) {
           head_sha: context.payload.pull_request.head.sha,
           conclusion: 'success' as Conclusion,
           output: {
-            title: 'Successful sync-repo-settings.yaml check',
-            summary: 'sync-repo-settings.yaml matches the required schema',
+            title: `Successful ${configFileName} check`,
+            summary: `${configFileName} matches the required schema`,
             text: 'Success',
           },
         });
         if (!isValid) {
           (checkParams.conclusion = 'failure'),
             (checkParams.output = {
-              title: 'Invalid sync-repo-settings.yaml schema 😱',
-              summary:
-                'sync-repo-settings.yaml does not match the required schema 😱',
+              title: `Invalid ${configFileName} schema 😱`,
+              summary: `${configFileName} does not match the required schema 😱`,
               text: errorText,
             });
         }
@@ -142,7 +141,7 @@ export function handler(app: Probot) {
         for (const list of fileChangedLists) {
           if (commit[list]) {
             for (const file of commit[list]) {
-              if (file?.includes('sync-repo-settings.yaml')) {
+              if (file?.includes(configFileName)) {
                 return true;
               }
             }
@@ -193,7 +192,7 @@ export function handler(app: Probot) {
 async function getConfig(context: Context) {
   let config!: RepoConfig | null;
   try {
-    config = await context.config<RepoConfig>('sync-repo-settings.yaml');
+    config = await context.config<RepoConfig>(configFileName);
   } catch (err) {
     err.message = `Error reading configuration: ${err.message}`;
     logger.error(err);

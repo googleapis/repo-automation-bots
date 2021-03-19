@@ -17,7 +17,7 @@ import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import {promises as fs} from 'fs';
-import {handler} from '../src/bot';
+import {handler, configFileName} from '../src/bot';
 import assert from 'assert';
 import * as sinon from 'sinon';
 import {logger} from 'gcf-utils';
@@ -41,9 +41,9 @@ function nockUpdateTeamMembership(team: string, org: string, repo: string) {
 
 function nockConfig404(org = 'googleapis', repo = 'api-common-java') {
   return nock('https://api.github.com')
-    .get(`/repos/${org}/${repo}/contents/.github%2Fsync-repo-settings.yaml`)
+    .get(`/repos/${org}/${repo}/contents/.github%2F${configFileName}`)
     .reply(404)
-    .get(`/repos/${org}/.github/contents/.github%2Fsync-repo-settings.yaml`)
+    .get(`/repos/${org}/.github/contents/.github%2F${configFileName}`)
     .reply(404);
 }
 
@@ -231,7 +231,7 @@ describe('Sync repo settings', () => {
     const content = await fs.readFile('./test/fixtures/localConfig.yaml');
     const scopes = [
       nock('https://api.github.com')
-        .get(`/repos/${org}/${repo}/contents/.github%2Fsync-repo-settings.yaml`)
+        .get(`/repos/${org}/${repo}/contents/.github%2F${configFileName}`)
         .reply(200, content),
       nockUpdateRepoSettings(repo, false, true),
       nockUpdateBranchProtection(repo, ['check1', 'check2'], false, true),
@@ -251,7 +251,7 @@ describe('Sync repo settings', () => {
     );
     const scopes = [
       nock('https://api.github.com')
-        .get(`/repos/${org}/${repo}/contents/.github%2Fsync-repo-settings.yaml`)
+        .get(`/repos/${org}/${repo}/contents/.github%2F${configFileName}`)
         .reply(200, content),
       nockUpdateRepoSettings(repo, false, true),
       nockUpdateTeamMembership('team1', org, repo),
@@ -277,7 +277,7 @@ describe('Sync repo settings', () => {
         .reply(200, [
           {
             sha: fileSha,
-            filename: '.github/sync-repo-settings.yaml',
+            filename: `.github/${configFileName}`,
             status: 'added',
           },
         ]),
@@ -331,7 +331,7 @@ describe('Sync repo settings', () => {
         .reply(200, [
           {
             sha: fileSha,
-            filename: '.github/sync-repo-settings.yaml',
+            filename: `.github/${configFileName}`,
             status: 'added',
           },
         ]),
@@ -386,7 +386,7 @@ describe('Sync repo settings', () => {
         .reply(200, [
           {
             sha: fileSha,
-            filename: '.github/sync-repo-settings.yaml',
+            filename: `.github/${configFileName}`,
             status: 'added',
           },
         ]),
@@ -496,7 +496,7 @@ describe('Sync repo settings', () => {
         },
         commits: [
           {
-            added: ['.github/sync-repo-settings.yaml'],
+            added: [`.github/${configFileName}`],
           },
         ],
       },
