@@ -61,9 +61,9 @@ export async function logicForConfigCheck(
 
   // If all files are correct, then submit a passing check for the config
   if (
-    isYamlValid === true &&
-    isSchemaValid === true &&
-    isCodeOwnersCorrect === true
+    isYamlValid.isValid === true &&
+    isSchemaValid.isValid === true &&
+    isCodeOwnersCorrect.isValid === true
   ) {
     await octokit.checks.create({
       owner,
@@ -84,15 +84,12 @@ export async function logicForConfigCheck(
     // logging the appropriate error messages
     const errorMessage =
       'See the following errors in your auto-approve.yml config:\n' +
-      `${
-        typeof isCodeOwnersCorrect === 'string' ? isCodeOwnersCorrect : ''
-      }\n` +
-      `${typeof isYamlValid === 'string' ? isYamlValid : ''}\n` +
-      `${
-        typeof isSchemaValid === 'object'
-          ? JSON.stringify(isSchemaValid, null, 2)
-          : ''
-      }`;
+      `${isCodeOwnersCorrect.checkType}:\n` +
+      `${isCodeOwnersCorrect.message}\n` +
+      `${isYamlValid.checkType}:\n` +
+      `${isYamlValid.message}\n` +
+      `${isSchemaValid.checkType}:\n` +
+      `${isSchemaValid.message}\n`;
 
     await octokit.checks.create({
       owner,
@@ -199,7 +196,7 @@ export function handler(app: Probot) {
         );
 
         // If both PR and config are valid, pull in approving-mechanism to tag and approve PR
-        if (isPRValid && isConfigValid) {
+        if (isPRValid === true && isConfigValid === true) {
           await context.octokit.pulls.submitReview({
             owner,
             repo,

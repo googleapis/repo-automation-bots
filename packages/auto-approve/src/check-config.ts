@@ -31,6 +31,14 @@ export interface ErrorMessage {
   wrongProperty: Record<string, string>;
   message: string | undefined;
 }
+
+export interface validationResult {
+  checkType: 'Yaml' | 'Schema' | 'Codeowners';
+  isValid: boolean;
+  errorMessages?: ErrorMessage[];
+  message?: string | undefined;
+}
+
 const schema = require(join(
   __dirname,
   '../',
@@ -49,17 +57,23 @@ function isFile(file: File | unknown): file is File {
  * @param configYaml the string of auto-approve.yml
  * @returns true if it is a valid YAML object, an error message if it is not valid
  */
-export function validateYaml(configYaml: string): Boolean | string {
+export function validateYaml(configYaml: string): validationResult {
+  let isValid: boolean;
+  let message: string | undefined = undefined;
   try {
     const isYaml = yaml.load(configYaml);
     if (typeof isYaml === 'object') {
-      return true;
+      isValid = true;
     } else {
-      return 'File is not a YAML object';
+      message = 'File is not a YAML object';
+      isValid = false;
     }
   } catch (err) {
-    return 'File is not properly configured YAML';
+    message = 'File is not properly configured YAML';
+    isValid = false;
   }
+
+  return {checkType: 'Yaml', isValid, message};
 }
 
 /**
@@ -70,13 +84,17 @@ export function validateYaml(configYaml: string): Boolean | string {
  */
 export async function validateSchema(
   configYaml: string | undefined | null | number | object
-): Promise<ErrorMessage[] | Boolean | undefined> {
+): Promise<validationResult> {
   const validateSchema = await ajv.compile(schema);
   const isValid = await validateSchema(configYaml);
   const errorText = (await validateSchema).errors?.map(x => {
     return {wrongProperty: x.params, message: x.message};
   });
-  return isValid ? isValid : errorText;
+  return {
+    checkType: 'Schema',
+    isValid: isValid === true ? true : false,
+    errorMessages: errorText,
+  };
 }
 
 /**
@@ -93,8 +111,10 @@ export async function checkCodeOwners(
   owner: string,
   repo: string,
   codeOwnersPRFile: string | undefined
-): Promise<Boolean | string> {
+): Promise<validationResult> {
   let codeOwnersFile;
+  let isValid = false;
+  let message: string | undefined = undefined;
   const createCodeownersMessage = `You must create a CODEOWNERS file for the configuration file for auto-approve.yml that lives in .github/CODEWONERS in your repository, and contains this line: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/; please make sure it is accessible publicly.`;
   const addToExistingCodeownersMessage = `You must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`;
 
@@ -107,9 +127,9 @@ export async function checkCodeOwners(
         /(\n|^)\.github\/auto-approve\.yml(\s*)@googleapis\/github-automation(\s*)/gm
       )
     ) {
-      return true;
+      isValid = true;
     } else {
-      return addToExistingCodeownersMessage;
+      message = addToExistingCodeownersMessage;
     }
   } else {
     // see if CODEOWNERS file exists in the repository
@@ -123,7 +143,7 @@ export async function checkCodeOwners(
       ).data;
     } catch (err) {
       if (err.status === 403 || err.status === 404) {
-        return createCodeownersMessage;
+        message = createCodeownersMessage;
       } else {
         throw err;
       }
@@ -139,13 +159,15 @@ export async function checkCodeOwners(
           /(\n|^)\.github\/auto-approve\.yml(\s*)@googleapis\/github-automation(\s*)/gm
         )
       ) {
-        return true;
+        isValid = true;
       } else {
-        return addToExistingCodeownersMessage;
+        message = addToExistingCodeownersMessage;
       }
     } else {
       // if CODEOWNERS doesn't exist, ask user to create it
-      return createCodeownersMessage;
+      message = createCodeownersMessage;
     }
   }
+
+  return {checkType: 'Codeowners', isValid, message};
 }

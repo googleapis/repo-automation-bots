@@ -113,9 +113,9 @@ describe('auto-approve', () => {
     describe('config exists', () => {
       it('approves and tags a PR if a config exists & is valid & PR is valid', async () => {
         checkPRAgainstConfigStub.returns(true);
-        validateYamlStub.returns(true);
-        validateSchemaStub.returns(true);
-        checkCodeOwnersStub.returns(true);
+        validateYamlStub.returns({checkType: 'Yaml', isValid: true});
+        validateSchemaStub.returns({checkType: 'Schema', isValid: true});
+        checkCodeOwnersStub.returns({checkType: 'Codeowners', isValid: true});
 
         const payload = require(resolve(
           fixturesPath,
@@ -142,9 +142,9 @@ describe('auto-approve', () => {
 
       it('submits a failing check if config exists but is not valid', async () => {
         checkPRAgainstConfigStub.returns(true);
-        validateYamlStub.returns(false);
-        validateSchemaStub.returns(true);
-        checkCodeOwnersStub.returns(true);
+        validateYamlStub.returns({checkType: 'Yaml', isValid: false});
+        validateSchemaStub.returns({checkType: 'Schema', isValid: true});
+        checkCodeOwnersStub.returns({checkType: 'Codeowners', isValid: true});
 
         const payload = require(resolve(
           fixturesPath,
@@ -166,9 +166,9 @@ describe('auto-approve', () => {
 
       it('logs to the console if config is valid but PR is not', async () => {
         checkPRAgainstConfigStub.returns(false);
-        validateYamlStub.returns(true);
-        validateSchemaStub.returns(true);
-        checkCodeOwnersStub.returns(true);
+        validateYamlStub.returns({checkType: 'Yaml', isValid: true});
+        validateSchemaStub.returns({checkType: 'Schema', isValid: true});
+        checkCodeOwnersStub.returns({checkType: 'Codeowners', isValid: true});
 
         const payload = require(resolve(
           fixturesPath,
@@ -211,9 +211,9 @@ describe('auto-approve', () => {
 
       it('attempts to get codeowners file and create a passing status check if PR contains correct config', async () => {
         getBlobFromPRFilesStub.returns('fake-file');
-        validateYamlStub.returns(true);
-        validateSchemaStub.returns(true);
-        checkCodeOwnersStub.returns(true);
+        validateYamlStub.returns({checkType: 'Yaml', isValid: true});
+        validateSchemaStub.returns({checkType: 'Schema', isValid: true});
+        checkCodeOwnersStub.returns({checkType: 'Codeowners', isValid: true});
 
         const payload = require(resolve(
           fixturesPath,
@@ -235,14 +235,26 @@ describe('auto-approve', () => {
 
       it('attempts to get codeowners file and create a failing status check if PR contains wrong config, and error messages check out', async () => {
         getBlobFromPRFilesStub.returns('fake-file');
-        validateYamlStub.returns('File is not properly configured YAML');
-        validateSchemaStub.returns({
-          wrongProperty: 'wrongProperty',
-          message: 'message',
+        validateYamlStub.returns({
+          checkType: 'Yaml',
+          isValid: false,
+          message: 'File is not properly configured YAML',
         });
-        checkCodeOwnersStub.returns(
-          `You must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
-        );
+        validateSchemaStub.returns({
+          checkType: 'Schema',
+          isValid: false,
+          errorMessages: [
+            {
+              wrongProperty: 'wrongProperty',
+              message: 'message',
+            },
+          ],
+        });
+        checkCodeOwnersStub.returns({
+          checkType: 'Codeowners',
+          isValid: false,
+          message: `You must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`,
+        });
 
         const payload = require(resolve(
           fixturesPath,

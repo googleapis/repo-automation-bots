@@ -48,9 +48,9 @@ export async function checkPRAgainstConfig(
   const prNumber = pr.number;
   const title = pr.pull_request.title;
 
-  const validTypeOfPR = config.rules.find(x => x.author === prAuthor);
+  const rulesToValidateAgainst = config.rules.find(x => x.author === prAuthor);
 
-  if (validTypeOfPR) {
+  if (rulesToValidateAgainst) {
     // setting these to true, as this should be the default if
     // changedFiles and maxFiles are not set in the JSON schema
     let filePathsMatch = true;
@@ -60,11 +60,14 @@ export async function checkPRAgainstConfig(
     // on the config (as title is not optional, vs. the other config settings)
     let titlesMatch = false;
 
-    if (title.match(validTypeOfPR.title)) {
+    // Since there's only one allowed title per author right now, we don't need to
+    // add complicated logic to see which title should match the incoming PR; but,
+    // this could be logic we work into the future.
+    if (title.match(rulesToValidateAgainst.title)) {
       titlesMatch = true;
     }
     //check if changed file paths match
-    if (validTypeOfPR.changedFiles) {
+    if (rulesToValidateAgainst.changedFiles) {
       const changedFiles = await getChangedFiles(
         octokit,
         repoOwner,
@@ -73,16 +76,16 @@ export async function checkPRAgainstConfig(
       );
       filePathsMatch = checkFilePathsMatch(
         changedFiles.map(x => x.filename),
-        validTypeOfPR
+        rulesToValidateAgainst
       );
     }
 
     //check if Valid number of max files
-    if (validTypeOfPR.maxFiles) {
-      fileCountMatch = pr.pull_request.changed_files <= validTypeOfPR.maxFiles;
+    if (rulesToValidateAgainst.maxFiles) {
+      fileCountMatch = pr.pull_request.changed_files <= rulesToValidateAgainst.maxFiles;
     }
     logger.info(
-      `Info for ${repoOwner}/${repo}/${prNumber}\nAuthor: ${validTypeOfPR.author}\nTitles Match? ${titlesMatch}\nFile Paths Match? ${filePathsMatch}\nFile Count Matches? ${fileCountMatch}`
+      `Info for ${repoOwner}/${repo}/${prNumber}\nAuthor: ${rulesToValidateAgainst.author}\nTitles Match? ${titlesMatch}\nFile Paths Match? ${filePathsMatch}\nFile Count Matches? ${fileCountMatch}`
     );
 
     return titlesMatch && filePathsMatch && fileCountMatch;
