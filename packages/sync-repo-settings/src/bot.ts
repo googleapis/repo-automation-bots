@@ -123,6 +123,48 @@ export function handler(app: Probot) {
     }
   );
 
+  /**
+   * On pushes to the default branch, check to see if the
+   * .github/sync-repo-settings.yaml file was included.
+   * If so, run the settings sync for that repo.
+   */
+  app.on('push', async context => {
+    const branch = context.payload.ref;
+    const defaultBranch = context.payload.repository.default_branch;
+    if (branch !== `refs/head/${defaultBranch}`) {
+      return;
+    }
+    // Look at all commits, and all files changed during those commits.
+    // If they contain a `sync-repo-settings.yaml`, re-sync the repo.
+    function includesConfig() {
+      const fileChangedLists = ['added', 'modified', 'removed'];
+      for (const commit of context.payload.commits) {
+        for (const list of fileChangedLists) {
+          if (commit[list]) {
+            for (const file of commit[list]) {
+              if (file?.includes('sync-repo-settings.yaml')) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+      return false;
+    }
+    if (!includesConfig()) {
+      return;
+    }
+
+    const owner = context.payload.organization?.login;
+    const name = context.payload.repository.name;
+    const config = await getConfig(context);
+    const repoSettings = new SyncRepoSettings(context.octokit, logger);
+    await repoSettings.syncRepoSettings({
+      repo: `${owner}/${name}`,
+      config: config!,
+    });
+  });
+
   // meta comment about the '*' here: https://github.com/octokit/webhooks.js/issues/277
   app.on(['schedule.repository' as '*'], async (context: Context) => {
     logger.info(`running for org ${context.payload.cron_org}`);
@@ -134,27 +176,27 @@ export function handler(app: Probot) {
       return;
     }
 
-    /**
-     * Allow repositories to optionally provide their own, localized config.
-     * Check the `.github/sync-repo-settings.yaml` file, and if available,
-     * use that config over any config broadly provided here.
-     */
-    let config!: RepoConfig | null;
-    try {
-      config = await context.config<RepoConfig>('sync-repo-settings.yaml');
-    } catch (err) {
-      err.message = `Error reading configuration: ${err.message}`;
-      logger.error(err);
-    }
-
-    if (context.payload.cron_org !== owner) {
-      logger.info(`skipping run for ${context.payload.cron_org}`);
-      return;
-    }
+    const config = await getConfig(context);
     const repoSettings = new SyncRepoSettings(context.octokit, logger);
     await repoSettings.syncRepoSettings({
       repo: `${owner}/${name}`,
       config: config!,
     });
   });
+}
+
+/**
+ * Allow repositories to optionally provide their own, localized config.
+ * Check the `.github/sync-repo-settings.yaml` file, and if available,
+ * use that config over any config broadly provided here.
+ */
+async function getConfig(context: Context) {
+  let config!: RepoConfig | null;
+  try {
+    config = await context.config<RepoConfig>('sync-repo-settings.yaml');
+  } catch (err) {
+    err.message = `Error reading configuration: ${err.message}`;
+    logger.error(err);
+  }
+  return config;
 }

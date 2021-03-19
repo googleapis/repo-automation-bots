@@ -86,11 +86,9 @@ function nockUpdateBranchProtection(
     .reply(200);
 }
 
-// meta comment about the 'any' here: https://github.com/octokit/webhooks.js/issues/277
 async function receive(org: string, repo: string, cronOrg?: string) {
   await probot.receive({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    name: 'schedule.repository' as any,
+    name: 'schedule.repository' as '*',
     payload: {
       repository: {
         name: repo,
@@ -425,5 +423,85 @@ describe('Sync repo settings', () => {
       id: 'abc123',
     });
     scopes.forEach(x => x.done());
+  });
+
+  it('should not sync settings for pushes with no changes to the config', async () => {
+    const org = 'Codertocat';
+    const repo = 'Hello-World';
+    await probot.receive({
+      name: 'push',
+      payload: {
+        ref: 'refs/head/main',
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+          default_branch: 'main',
+        },
+        organization: {
+          login: org,
+        },
+        commits: [],
+      },
+      id: 'abc123',
+    });
+  });
+
+  it('should not sync settings for pushes to non-default branches', async () => {
+    const org = 'Codertocat';
+    const repo = 'Hello-World';
+    await probot.receive({
+      name: 'push',
+      payload: {
+        ref: 'refs/head/not-default-lol',
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+          default_branch: 'main',
+        },
+        organization: {
+          login: org,
+        },
+        commits: [],
+      },
+      id: 'abc123',
+    });
+  });
+
+  it('should sync settings for pushes that modify the config', async () => {
+    const org = 'Codertocat';
+    const repo = 'Hello-World';
+    const scopes = [
+      nockConfig404(org, repo),
+      nockLanguagesList(org, repo, {kotlin: 1}),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
+      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
+    ];
+    await probot.receive({
+      name: 'push',
+      payload: {
+        ref: 'refs/head/main',
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+          default_branch: 'main',
+        },
+        organization: {
+          login: org,
+        },
+        commits: [
+          {
+            added: ['.github/sync-repo-settings.yaml'],
+          },
+        ],
+      },
+      id: 'abc123',
+    });
+    scopes.forEach(s => s.done());
   });
 });
