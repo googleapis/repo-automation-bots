@@ -82,7 +82,8 @@ export async function checkPRAgainstConfig(
 
     //check if Valid number of max files
     if (rulesToValidateAgainst.maxFiles) {
-      fileCountMatch = pr.pull_request.changed_files <= rulesToValidateAgainst.maxFiles;
+      fileCountMatch =
+        pr.pull_request.changed_files <= rulesToValidateAgainst.maxFiles;
     }
     logger.info(
       `Info for ${repoOwner}/${repo}/${prNumber}\nAuthor: ${rulesToValidateAgainst.author}\nTitles Match? ${titlesMatch}\nFile Paths Match? ${filePathsMatch}\nFile Count Matches? ${fileCountMatch}`
