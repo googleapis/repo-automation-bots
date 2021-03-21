@@ -17,6 +17,7 @@ import {Probot, Context} from 'probot';
 import {logger} from 'gcf-utils';
 import {getPolicy} from './policy';
 import {exportToBigQuery} from './export';
+import {submitFixes} from './changer';
 
 export const allowedOrgs = ['googleapis', 'googlecloudplatform'];
 
@@ -38,5 +39,6 @@ export function policyBot(app: Probot) {
     const repoMetadata = await policy.getRepo(repo);
     const result = await policy.checkRepoPolicy(repoMetadata);
     await exportToBigQuery(result);
+    await submitFixes(result, context.octokit);
   });
 }

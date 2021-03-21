@@ -22,6 +22,7 @@ import {describe, it, afterEach, beforeEach} from 'mocha';
 import * as assert from 'assert';
 import * as policy from '../src/policy';
 import * as bq from '../src/export';
+import * as changer from '../src/changer';
 import {policyBot} from '../src/bot';
 
 nock.disableNetConnect();
@@ -82,6 +83,7 @@ describe('bot', () => {
       .stub(p, 'checkRepoPolicy')
       .resolves(fakeResult);
     const exportStub = sinon.stub(bq, 'exportToBigQuery').resolves();
+    const submitFixesStub = sinon.stub(changer, 'submitFixes').resolves();
 
     await probot.receive({
       name: 'schedule.repository' as '*',
@@ -103,5 +105,6 @@ describe('bot', () => {
     assert.ok(getRepoStub.calledOnce);
     assert.ok(checkPolicyStub.calledOnce);
     assert.ok(exportStub.calledOnce);
+    assert.ok(submitFixesStub.calledOnce);
   });
 });
