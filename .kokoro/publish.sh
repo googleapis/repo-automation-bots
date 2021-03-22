@@ -16,6 +16,12 @@
 
 set -eo pipefail
 
+if [ -z "${AUTORELEASE_PR}" ]
+then
+  echo "Need to specify AUTORELEASE_PR environment variable"
+  exit 1
+fi
+
 export NPM_CONFIG_PREFIX=/home/node/.npm-global
 
 # Start the releasetool reporter
@@ -24,8 +30,8 @@ python3 -m releasetool publish-reporter-script > /tmp/publisher-script; source /
 
 cd $(dirname $0)/..
 
-NPM_TOKEN=$(cat $KOKORO_KEYSTORE_DIR/73713_repo-automation-bots-npm-token)
+NPM_TOKEN=$(cat ${KOKORO_KEYSTORE_DIR}/secret_manager/npm_publish_token)
 echo "//wombat-dressing-room.appspot.com/:_authToken=${NPM_TOKEN}" > ~/.npmrc
 
 npm install
-npm publish --access=public --registry=https://wombat-dressing-room.appspot.com
+mono-repo-publish --pr-url="${AUTORELEASE_PR}"
