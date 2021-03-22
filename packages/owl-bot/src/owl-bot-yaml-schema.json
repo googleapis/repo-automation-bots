@@ -4,6 +4,10 @@
   "description": "Schema for defining the .OwlBot.yaml config",
   "additionalProperties": false,
   "properties": {
+    "begin-after-commit-hash": {
+      "type": "string",
+      "description": "Start creating pull requests after this googleapis-gen commit hash."
+    },
     "docker": {
       "type": "object",
       "additionalProperties": false,
