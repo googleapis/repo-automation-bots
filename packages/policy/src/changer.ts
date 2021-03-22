@@ -48,7 +48,19 @@ export async function addCodeOfConduct(
   repo: string,
   octokit: Octokit
 ) {
+  // first, make sure there's no open PR for this
+  const title = 'chore: add a Code of Conduct';
+  const prs = await octokit.search.issuesAndPullRequests({
+    q: `repo:${owner}/${repo} "${title}" in:title`,
+  });
+  if (prs.data.total_count > 0) {
+    return;
+  }
+
+  // fetch the CoC from `googleapis/.github`
   const content = await getCoC();
+
+  // submit the PR
   const changes: Changes = new Map([
     [
       'CODE_OF_CONDUCT.md',
@@ -59,8 +71,8 @@ export async function addCodeOfConduct(
     ],
   ]);
   await createPullRequest(octokit, changes, {
-    title: 'chore: add a Code of Conduct',
-    message: 'chore: add a Code of Conduct',
+    title,
+    message: title,
     description: 'add a code of conduct',
     upstreamOwner: owner,
     upstreamRepo: repo,
