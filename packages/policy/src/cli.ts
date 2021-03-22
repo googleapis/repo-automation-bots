@@ -18,11 +18,13 @@ import meow from 'meow';
 import {Octokit} from '@octokit/rest';
 import {exportToBigQuery} from './export';
 import {getPolicy, GitHubRepo} from './policy';
+import {submitFixes} from './changer';
 
 interface Flags {
   repo?: string;
   search?: string;
   export?: boolean;
+  autofix?: boolean;
 }
 
 const cli = meow(
@@ -34,15 +36,17 @@ const cli = meow(
     --repo        Filter by a given repository
     --search      Provide a GitHub repository search filter to limit the repositories used
     --export      Export the results to BigQuery.
+    --autofix     Where possible, submit a PR to fix any issues.
 
 	Examples
-    $ policy [--repo][--search QUERY]
+    $ policy [--repo][--search QUERY][--autofix]
 
 `,
   {
     flags: {
       repo: {type: 'string'},
       search: {type: 'string'},
+      autofix: {type: 'boolean'},
     },
   }
 );
@@ -75,6 +79,9 @@ export async function main(cli: meow.Result<{}>) {
     console.log(res);
     if (flags.export) {
       await exportToBigQuery(res);
+    }
+    if (flags.autofix) {
+      await submitFixes(res, octokit);
     }
   }
 }
