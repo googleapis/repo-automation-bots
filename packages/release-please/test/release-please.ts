@@ -22,6 +22,7 @@ import * as fs from 'fs';
 import assert, {fail} from 'assert';
 import {GitHubRelease, ReleasePR} from 'release-please';
 import nock from 'nock';
+import {Manifest} from 'release-please/build/src/manifest';
 
 nock.disableNetConnect();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
@@ -262,6 +263,51 @@ describe('ReleasePleaseBot', () => {
       await probot.receive({name: 'push', payload, id: 'abc123'});
       requests.done();
       assert(executed, 'should have executed the runner');
+    });
+
+    describe('for manifest releases', () => {
+      it('should build a release PR', async () => {
+        let executed = false;
+        Runner.manifest = async (manifest: Manifest) => {
+          executed = true;
+        };
+        const config = fs.readFileSync(
+          resolve(fixturesPath, 'config', 'manifest.yml')
+        );
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
+          )
+          .reply(200, config);
+
+        await probot.receive({name: 'push', payload, id: 'abc123'});
+        requests.done();
+        assert(executed, 'should have executed the runner');
+      });
+
+      it('should handle GitHub releases, if configured', async () => {
+        let runnerExecuted = false;
+        let releaserExecuted = false;
+        Runner.manifest = async (manifest: Manifest) => {
+          runnerExecuted = true;
+        };
+        Runner.manifestRelease = async (manifest: Manifest) => {
+          releaserExecuted = true;
+        };
+        const config = fs.readFileSync(
+          resolve(fixturesPath, 'config', 'manifest_handle_gh_release.yml')
+        );
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
+          )
+          .reply(200, config);
+
+        await probot.receive({name: 'push', payload, id: 'abc123'});
+        requests.done();
+        assert(runnerExecuted, 'should have executed the runner');
+        assert(releaserExecuted, 'GitHub release should have run');
+      });
     });
   });
 

@@ -32,6 +32,7 @@ options:
 | `packageName`       | The name of the package to publish to publish to an upstream registry such as npm. | `string` | the repository name                                     |
 | `path`              | Create a release from a path other than the repository's root | `string` | the repository root                                                          |
 | `changelogPath`     | Path to the changelog to write releases notes to when creating a release | `string` | `CHANGELOG.md`                                                    |
+| `manifest`          | Whether or not this is a manifest release          | `boolean`  | `false`                                                                               |
 | `branches`          | Additional release branches to track               | `BranchConfiguration[]` | `[]`                                                                     |
 
 `BranchConfiguration`:
@@ -46,6 +47,7 @@ options:
 | `packageName`       | The name of the package to publish to publish to an upstream registry such as npm. | `string` | the repository name                                     |
 | `path`              | Create a release from a path other than the repository's root | `string` | the repository root                                                          |
 | `changelogPath`     | Path to the changelog to write releases notes to when creating a release | `string` | `CHANGELOG.md`                                                    |
+| `manifest`          | Whether or not this is a manifest release          | `boolean`  | `false`                                                                               |
 
 
 ## Testing
