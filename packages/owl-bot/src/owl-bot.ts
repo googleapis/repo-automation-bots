@@ -104,7 +104,7 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
       // Fetch the .Owlbot.lock.yaml from the head ref:
       const lock = await core.getOwlBotLock(
         head.repo.full_name,
-        context.payload.number,
+        context.payload.pull_request.number,
         context.octokit
       );
       if (!lock) {
@@ -121,7 +121,7 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
           appId,
           installation,
           repo: head.repo.full_name,
-          pr: context.payload.number,
+          pr: context.payload.pull_request.number,
           trigger,
         },
         context.octokit
@@ -132,7 +132,7 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
           privateKey,
           appId,
           installation,
-          pr: context.payload.number,
+          pr: context.payload.pull_request.number,
           repo: head.repo.full_name,
           text: buildStatus.text,
           summary: buildStatus.summary,
@@ -141,6 +141,23 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
         },
         context.octokit
       );
+      // If running post-processor has created a noop change, close the
+      // pull request:
+      const files = (
+        await context.octokit.pulls.listFiles({
+          owner,
+          repo,
+          pull_number: context.payload.pull_request.number,
+        })
+      ).data;
+      if (!files.length) {
+        await context.octokit.pulls.update({
+          owner,
+          repo,
+          pull_number: context.payload.pull_request.number,
+          state: 'closed',
+        });
+      }
     }
   );
 
