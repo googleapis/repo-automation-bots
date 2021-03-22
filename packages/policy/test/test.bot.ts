@@ -107,4 +107,58 @@ describe('bot', () => {
     assert.ok(exportStub.calledOnce);
     assert.ok(submitFixesStub.calledOnce);
   });
+
+  it('should skip archived repos', async () => {
+    const repo = 'nodejs-storage';
+    const org = 'googleapis';
+    const fakeRepo = {archived: true} as policy.GitHubRepo;
+    const p = new policy.Policy(new Octokit(), console);
+    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
+    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
+    await probot.receive({
+      name: 'schedule.repository' as '*',
+      payload: {
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+        },
+        organization: {
+          login: org,
+        },
+        cron_org: org,
+      },
+      id: 'abc123',
+    });
+    assert.ok(getRepoStub.calledOnce);
+    assert.ok(getPolicyStub.calledOnce);
+  });
+
+  it('should skip private repos', async () => {
+    const repo = 'nodejs-storage';
+    const org = 'googleapis';
+    const fakeRepo = {private: true} as policy.GitHubRepo;
+    const p = new policy.Policy(new Octokit(), console);
+    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
+    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
+    await probot.receive({
+      name: 'schedule.repository' as '*',
+      payload: {
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+        },
+        organization: {
+          login: org,
+        },
+        cron_org: org,
+      },
+      id: 'abc123',
+    });
+    assert.ok(getRepoStub.calledOnce);
+    assert.ok(getPolicyStub.calledOnce);
+  });
 });
