@@ -51,7 +51,7 @@ export async function addCodeOfConduct(
   // first, make sure there's no open PR for this
   const title = 'chore: add a Code of Conduct';
   const prs = await octokit.search.issuesAndPullRequests({
-    q: `repo:${owner}/${repo} "${title}" in:title`,
+    q: `repo:${owner}/${repo} "${title}" in:title is:open`,
   });
   if (prs.data.total_count > 0) {
     return;

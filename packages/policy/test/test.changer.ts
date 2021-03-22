@@ -59,7 +59,7 @@ describe('changer', () => {
     const octokit = new Octokit();
     const scope = nock('https://api.github.com')
       .get(
-        '/search/issues?q=repo%3Agoogleapis%2Fnodejs-storage%20%22chore%3A%20add%20a%20Code%20of%20Conduct%22%20in%3Atitle'
+        '/search/issues?q=repo%3Agoogleapis%2Fnodejs-storage%20%22chore%3A%20add%20a%20Code%20of%20Conduct%22%20in%3Atitle%20is%3Aopen'
       )
       .reply(200, {total_count: 0});
     const stub = sinon.stub(suggester, 'createPullRequest').resolves();
@@ -72,7 +72,7 @@ describe('changer', () => {
     const octokit = new Octokit();
     const scope = nock('https://api.github.com')
       .get(
-        '/search/issues?q=repo%3Agoogleapis%2Fnodejs-storage%20%22chore%3A%20add%20a%20Code%20of%20Conduct%22%20in%3Atitle'
+        '/search/issues?q=repo%3Agoogleapis%2Fnodejs-storage%20%22chore%3A%20add%20a%20Code%20of%20Conduct%22%20in%3Atitle%20is%3Aopen'
       )
       .reply(200, {total_count: 1});
     await changer.submitFixes(result, octokit);
