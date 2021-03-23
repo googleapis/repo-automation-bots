@@ -156,7 +156,7 @@ async function waitForBuild(
   id: string,
   client: CloudBuildClient
 ) {
-  for (let i = 0; i < 120; i++) {
+  for (let i = 0; i < 60; i++) {
     const [build] = await client.getBuild({projectId, id});
     if (build.status !== 'WORKING' && build.status !== 'QUEUED') {
       return build;
@@ -165,10 +165,10 @@ async function waitForBuild(
     await new Promise(resolve => {
       setTimeout(() => {
         return resolve(undefined);
-      }, 5000);
+      }, 10000);
     });
   }
-  throw Error(`timed out waiting for buuild ${id}`);
+  throw Error(`timed out waiting for build ${id}`);
 }
 
 export async function getHeadCommit(

@@ -31,6 +31,7 @@
   "dependencies": {
     "@google-cloud/bigquery": "^5.5.0",
     "@octokit/rest": "^18.3.5",
+    "code-suggester": "^1.9.2",
     "gaxios": "^4.2.0",
     "gcf-utils": "^7.0.0"
   },
@@ -45,7 +46,7 @@
     "meow": "^9.0.0",
     "mocha": "^8.0.0",
     "nock": "^13.0.0",
-    "sinon": "^9.2.4",
+    "sinon": "^10.0.0",
     "smee-client": "^1.1.0",
     "typescript": "~4.2.0"
   },

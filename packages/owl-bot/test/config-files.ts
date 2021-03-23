@@ -29,6 +29,8 @@ deep-remove-regex:
 deep-preserve-regex:
   - /src/index.ts
 
+begin-after-commit-hash: abc123
+
 docker:
   image: gcr.io/cloud-devrel-resources/synthtool-nodejs:prod
 `;
@@ -37,6 +39,7 @@ docker:
       'deep-copy-regex': [{source: '/google/cloud/vision', dest: '/src'}],
       'deep-preserve-regex': ['/src/index.ts'],
       'deep-remove-regex': ['/src'],
+      'begin-after-commit-hash': 'abc123',
       docker: {image: 'gcr.io/cloud-devrel-resources/synthtool-nodejs:prod'},
     });
   });

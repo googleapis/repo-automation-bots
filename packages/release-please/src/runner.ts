@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {ReleasePR, GitHubRelease} from 'release-please';
+import {Manifest} from 'release-please/build/src/manifest';
 
 export class Runner {
   static runner = async (pr: ReleasePR) => {
@@ -20,5 +21,11 @@ export class Runner {
   };
   static releaser = async (release: GitHubRelease) => {
     await release.run();
+  };
+  static manifest = async (manifest: Manifest) => {
+    await manifest.pullRequest();
+  };
+  static manifestRelease = async (manifest: Manifest) => {
+    await manifest.githubRelease();
   };
 }
