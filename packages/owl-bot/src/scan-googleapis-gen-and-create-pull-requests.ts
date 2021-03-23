@@ -23,12 +23,40 @@ import {
 } from './copy-code';
 import {getFilesModifiedBySha} from '.';
 import {GithubRepo} from './github-repo';
+import {OwlBotYaml} from './config-files';
 
 interface Todo {
   repo: GithubRepo;
   commitHash: string;
 }
 
+/**
+ * Tests if the commit hash in googleapis-gen's history is older than
+ * the config's begin-after-commit-hash.
+ * @param yaml The OwlBotYaml or undefined if it couldn't be pulled from the
+ *             database.
+ * @param commitIndex the index of the commit hash to compare to the config's
+ *                    begin-after-commit-hash
+ * @param commitHashes the list of commit hashes in googleapi-gen's history,
+ *                     in order from newest to oldest.
+ */
+function isCommitHashTooOld(
+  yaml: OwlBotYaml | undefined,
+  commitIndex: number,
+  commitHashes: string[]
+): boolean {
+  const beginAfterCommitHash = yaml?.['begin-after-commit-hash']?.trim() ?? '';
+  const beginIndex = beginAfterCommitHash
+    ? commitHashes.indexOf(beginAfterCommitHash)
+    : -1;
+  return beginIndex >= 0 && beginIndex <= commitIndex;
+}
+
+/**
+ * Scans googleapis-gen and creates pull requests in target repos
+ * (ex: nodejs-vision) when corresponding code has been updated.
+ * @param sourceRepo normally 'googleapis/googlapis-gen'
+ */
 export async function scanGoogleapisGenAndCreatePullRequests(
   sourceRepo: string,
   octokitFactory: OctokitFactory,
@@ -46,14 +74,17 @@ export async function scanGoogleapisGenAndCreatePullRequests(
   const cmd = newCmd(logger);
   const stdout = cmd(`git log -${cloneDepth} --format=%H`, {cwd: sourceDir});
   const text = stdout.toString('utf8');
-  const commitHashes = text.split(/\r?\n/).filter(x => x);
+  const commitHashes = text
+    .split(/\r?\n/)
+    .map(s => s.trim())
+    .filter(x => x);
 
   const todoStack: Todo[] = [];
   let octokit: null | OctokitType = null;
 
   // Search the commit history for commits that still need to be copied
   // to destination repos.
-  for (const commitHash of commitHashes) {
+  for (const [commitIndex, commitHash] of commitHashes.entries()) {
     const commitText = cmd(`git log -1 --pretty=oneline ${commitHash}`, {
       cwd: sourceDir,
     }).toString('utf8');
@@ -71,7 +102,17 @@ export async function scanGoogleapisGenAndCreatePullRequests(
     const stackSize = todoStack.length;
     for (const repo of repos) {
       octokit = octokit ?? (await octokitFactory.getShortLivedOctokit());
-      if (!(await copyExists(octokit, repo, commitHash, logger))) {
+      if (
+        isCommitHashTooOld(
+          (await configsStore.getConfigs(repo.toString()))?.yaml,
+          commitIndex,
+          commitHashes
+        )
+      ) {
+        logger.info(
+          `Ignoring ${repo.toString()} because ${commitHash} is too old.`
+        );
+      } else if (!(await copyExists(octokit, repo, commitHash, logger))) {
         const todo: Todo = {repo, commitHash};
         logger.info(`Pushing todo onto stack: ${todo}`);
         todoStack.push(todo);
