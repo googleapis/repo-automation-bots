@@ -23,12 +23,40 @@ import {
 } from './copy-code';
 import {getFilesModifiedBySha} from '.';
 import {GithubRepo} from './github-repo';
+import {OwlBotYaml} from './config-files';
 
 interface Todo {
   repo: GithubRepo;
   commitHash: string;
 }
 
+/**
+ * Tests if the commit hash in googleapis-gen's history is older than
+ * the config's begin-after-commit-hash.
+ * @param yaml The OwlBotYaml or undefined if it couldn't be pulled from the
+ *             database.
+ * @param commitIndex the index of the commit hash to compare to the config's
+ *                    begin-after-commit-hash
+ * @param commitHashes the list of commit hashes in googleapi-gen's history,
+ *                     in order from newest to oldest.
+ */
+function isCommitHashTooOld(
+  yaml: OwlBotYaml | undefined,
+  commitIndex: number,
+  commitHashes: string[]
+): boolean {
+  const beginAfterCommitHash = yaml?.['begin-after-commit-hash']?.trim() ?? '';
+  const beginIndex = beginAfterCommitHash
+    ? commitHashes.indexOf(beginAfterCommitHash)
+    : -1;
+  return beginIndex >= 0 && beginIndex <= commitIndex;
+}
+
+/**
+ * Scans googleapis-gen and creates pull requests in target repos
+ * (ex: nodejs-vision) when corresponding code has been updated.
+ * @param sourceRepo normally 'googleapis/googlapis-gen'
+ */
 export async function scanGoogleapisGenAndCreatePullRequests(
   sourceRepo: string,
   octokitFactory: OctokitFactory,
@@ -74,18 +102,15 @@ export async function scanGoogleapisGenAndCreatePullRequests(
     const stackSize = todoStack.length;
     for (const repo of repos) {
       octokit = octokit ?? (await octokitFactory.getShortLivedOctokit());
-      // Compare the config's begin-after-commit-hash and this commit hash,
-      // and don't create a pull request if this commit hash is older.
-      const repoString = repo.toString();
-      const configs = await configsStore.getConfigs(repoString);
-      const beginAfterCommitHash =
-        configs?.yaml?.['begin-after-commit-hash']?.trim() ?? '';
-      const beginIndex = beginAfterCommitHash
-        ? commitHashes.indexOf(beginAfterCommitHash)
-        : -1;
-      if (beginIndex >= 0 && beginIndex <= commitIndex) {
+      if (
+        isCommitHashTooOld(
+          (await configsStore.getConfigs(repo.toString()))?.yaml,
+          commitIndex,
+          commitHashes
+        )
+      ) {
         logger.info(
-          `Ignoring ${repoString} because ${commitHash} is older than ${beginAfterCommitHash}.`
+          `Ignoring ${repo.toString()} because ${commitHash} is too old.`
         );
       } else if (!(await copyExists(octokit, repo, commitHash, logger))) {
         const todo: Todo = {repo, commitHash};
