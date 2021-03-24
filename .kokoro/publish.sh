@@ -34,4 +34,4 @@ NPM_TOKEN=$(cat "${KOKORO_KEYSTORE_DIR}/secret_manager/npm_publish_token")
 echo "//wombat-dressing-room.appspot.com/:_authToken=${NPM_TOKEN}" > ~/.npmrc
 
 npm install
-mono-repo-publish --pr-url="${AUTORELEASE_PR}"
+npx mono-repo-publish --pr-url="${AUTORELEASE_PR}"
