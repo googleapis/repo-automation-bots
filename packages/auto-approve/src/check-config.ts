@@ -32,13 +32,6 @@ export interface ErrorMessage {
   message: string | undefined;
 }
 
-export interface validationResult {
-  checkType: 'Yaml' | 'Schema' | 'Codeowners';
-  isValid: boolean;
-  errorMessages?: ErrorMessage[];
-  message?: string | undefined;
-}
-
 const schema = require(join(
   __dirname,
   '../',
@@ -55,46 +48,38 @@ function isFile(file: File | unknown): file is File {
  * Takes in the auto-approve.yml file and checks to see that it is formatted correctly
  *
  * @param configYaml the string of auto-approve.yml
- * @returns true if it is a valid YAML object, an error message if it is not valid
+ * @returns undefined if the yaml is valid, otherwise an error message.
  */
-export function validateYaml(configYaml: string): validationResult {
-  let isValid: boolean;
+export function validateYaml(configYaml: string): string | undefined {
   let message: string | undefined = undefined;
   try {
     const isYaml = yaml.load(configYaml);
-    if (typeof isYaml === 'object') {
-      isValid = true;
-    } else {
+    if (!(typeof isYaml === 'object')) {
       message = 'File is not a YAML object';
-      isValid = false;
     }
   } catch (err) {
     message = 'File is not properly configured YAML';
-    isValid = false;
   }
 
-  return {checkType: 'Yaml', isValid, message};
+  return message;
 }
 
 /**
  * Takes in the auto-approve.yml file and checks to see that the schema matches the valid-pr-schema.json rules
  *
  * @param configYaml the string of auto-approve.yml
- * @returns true if it matches valid-pr-schema.json, the error messages if it doesn't match
+ * @returns undefined if the yaml is valid, otherwise an error message.
  */
 export async function validateSchema(
   configYaml: string | undefined | null | number | object
-): Promise<validationResult> {
+): Promise<ErrorMessage[] | undefined> {
   const validateSchema = await ajv.compile(schema);
-  const isValid = await validateSchema(configYaml);
+  await validateSchema(configYaml);
   const errorText = (await validateSchema).errors?.map(x => {
     return {wrongProperty: x.params, message: x.message};
   });
-  return {
-    checkType: 'Schema',
-    isValid: isValid === true ? true : false,
-    errorMessages: errorText,
-  };
+  console.log(errorText);
+  return errorText;
 }
 
 /**
@@ -104,16 +89,15 @@ export async function validateSchema(
  * @param owner of the repo of the incoming PR
  * @param repo of the incoming PR
  * @param codeOwnersPRFile if the incoming PR includes a codeowners file, that codeowners file; undefined if not
- * @returns true if codeowners file is appropriately configured, the error message if not
+ * @returns undefined if the yaml is valid, otherwise an error message.
  */
 export async function checkCodeOwners(
   octokit: InstanceType<typeof ProbotOctokit>,
   owner: string,
   repo: string,
   codeOwnersPRFile: string | undefined
-): Promise<validationResult> {
+): Promise<string | undefined> {
   let codeOwnersFile;
-  let isValid = false;
   let message: string | undefined = undefined;
   const createCodeownersMessage = `You must create a CODEOWNERS file for the configuration file for auto-approve.yml that lives in .github/CODEWONERS in your repository, and contains this line: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/; please make sure it is accessible publicly.`;
   const addToExistingCodeownersMessage = `You must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`;
@@ -123,12 +107,10 @@ export async function checkCodeOwners(
   // contain this regex, fail the check
   if (codeOwnersPRFile) {
     if (
-      codeOwnersPRFile?.match(
+      !codeOwnersPRFile?.match(
         /(\n|^)\.github\/auto-approve\.yml(\s*)@googleapis\/github-automation(\s*)/gm
       )
     ) {
-      isValid = true;
-    } else {
       message = addToExistingCodeownersMessage;
     }
   } else {
@@ -155,12 +137,10 @@ export async function checkCodeOwners(
         'utf8'
       );
       if (
-        file.match(
+        !file.match(
           /(\n|^)\.github\/auto-approve\.yml(\s*)@googleapis\/github-automation(\s*)/gm
         )
       ) {
-        isValid = true;
-      } else {
         message = addToExistingCodeownersMessage;
       }
     } else {
@@ -169,5 +149,5 @@ export async function checkCodeOwners(
     }
   }
 
-  return {checkType: 'Codeowners', isValid, message};
+  return message;
 }

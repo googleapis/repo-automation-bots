@@ -61,9 +61,9 @@ export async function logicForConfigCheck(
 
   // If all files are correct, then submit a passing check for the config
   if (
-    isYamlValid.isValid === true &&
-    isSchemaValid.isValid === true &&
-    isCodeOwnersCorrect.isValid === true
+    isYamlValid === undefined &&
+    isSchemaValid === undefined &&
+    isCodeOwnersCorrect === undefined
   ) {
     await octokit.checks.create({
       owner,
@@ -84,12 +84,13 @@ export async function logicForConfigCheck(
     // logging the appropriate error messages
     const errorMessage =
       'See the following errors in your auto-approve.yml config:\n' +
-      `${isCodeOwnersCorrect.checkType}:\n` +
-      `${isCodeOwnersCorrect.message}\n` +
-      `${isYamlValid.checkType}:\n` +
-      `${isYamlValid.message}\n` +
-      `${isSchemaValid.checkType}:\n` +
-      `${isSchemaValid.message}\n`;
+      `${isCodeOwnersCorrect ? isCodeOwnersCorrect : ''}\n` +
+      `${isYamlValid ? isYamlValid : ''}\n` +
+      `${
+        isSchemaValid
+          ? 'Schema is invalid\n' + JSON.stringify(isSchemaValid)
+          : ''
+      }\n`;
 
     await octokit.checks.create({
       owner,
