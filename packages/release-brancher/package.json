@@ -1,5 +1,5 @@
 {
-  "name": "release-brancher",
+  "name": "@googleapis/release-brancher",
   "version": "1.0.0",
   "description": "Cut release branches",
   "bin": "./build/src/bin/release-brancher.js",
