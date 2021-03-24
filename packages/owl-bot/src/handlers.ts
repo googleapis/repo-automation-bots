@@ -86,6 +86,11 @@ export async function onPostProcessorPublished(
         lock,
         configs
       );
+      // We were hitting GitHub's abuse detection algorithm,
+      // add a short sleep between creating PRs to help circumvent:
+      await new Promise(resolve => {
+        setTimeout(resolve, 500);
+      });
     }
   }
 }

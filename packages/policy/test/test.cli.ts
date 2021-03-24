@@ -20,6 +20,8 @@ import {Octokit} from '@octokit/rest';
 import meow from 'meow';
 import * as policy from '../src/policy';
 import * as cli from '../src/cli';
+import * as changer from '../src/changer';
+import * as bq from '../src/export';
 
 nock.disableNetConnect();
 
@@ -64,5 +66,43 @@ describe('cli', () => {
     assert.ok(getRepoStub.calledOnce);
     assert.ok(getPolicyStub.calledOnce);
     assert.ok(checkRepoPolicyStub.calledOnce);
+  });
+
+  it('should attempt to autofix if asked nicely', async () => {
+    process.env.GH_TOKEN = 'token';
+    const p = new policy.Policy(new Octokit(), console);
+    const repoMetadata = {} as policy.GitHubRepo;
+    const policyMetadata = {} as policy.PolicyResult;
+    sinon.stub(p, 'getRepo').resolves(repoMetadata);
+    sinon.stub(p, 'checkRepoPolicy').resolves(policyMetadata);
+    sinon.stub(policy, 'getPolicy').returns(p);
+    const fixStub = sinon.stub(changer, 'submitFixes').resolves();
+    const m = ({
+      flags: {
+        repo: 'googleapis/nodejs-storage',
+        autofix: true,
+      },
+    } as unknown) as meow.Result<{}>;
+    await cli.main(m);
+    assert.ok(fixStub.calledOnce);
+  });
+
+  it('should attempt to export if asked nicely', async () => {
+    process.env.GH_TOKEN = 'token';
+    const p = new policy.Policy(new Octokit(), console);
+    const repoMetadata = {} as policy.GitHubRepo;
+    const policyMetadata = {} as policy.PolicyResult;
+    sinon.stub(p, 'getRepo').resolves(repoMetadata);
+    sinon.stub(p, 'checkRepoPolicy').resolves(policyMetadata);
+    sinon.stub(policy, 'getPolicy').returns(p);
+    const exportStub = sinon.stub(bq, 'exportToBigQuery').resolves();
+    const m = ({
+      flags: {
+        repo: 'googleapis/nodejs-storage',
+        export: true,
+      },
+    } as unknown) as meow.Result<{}>;
+    await cli.main(m);
+    assert.ok(exportStub.calledOnce);
   });
 });

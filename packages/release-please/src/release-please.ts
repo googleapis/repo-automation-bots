@@ -32,6 +32,7 @@ import {
   ReleaseType,
   getReleaserNames,
 } from 'release-please/build/src/releasers';
+import {Manifest} from 'release-please/build/src/manifest';
 type RequestBuilderType = typeof request;
 type DefaultFunctionType = RequestBuilderType['defaults'];
 type RequestFunctionType = ReturnType<DefaultFunctionType>;
@@ -52,6 +53,7 @@ interface BranchOptions {
   bumpMinorPreMajor?: boolean;
   path?: string;
   changelogPath?: string;
+  manifest?: boolean;
 }
 
 interface BranchConfiguration extends BranchOptions {
@@ -68,6 +70,7 @@ const WELL_KNOWN_CONFIGURATION_FILE = 'release-please.yml';
 const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   primaryBranch: 'master',
   branches: [],
+  manifest: false,
 };
 const FORCE_RUN_LABEL = 'release-please:force-run';
 
@@ -126,11 +129,8 @@ function findBranchConfiguration(
 async function createGitHubRelease(
   packageName: string,
   repoUrl: string,
-  github: GitHubAPI,
-  path?: string,
-  changelogPath?: string,
-  monorepoTags?: boolean,
-  releaseType?: ReleaseType
+  configuration: BranchConfiguration,
+  github: GitHubAPI
 ) {
   const releaseOptions: GitHubReleaseFactoryOptions = {
     label: 'autorelease: pending',
@@ -142,13 +142,18 @@ async function createGitHubRelease(
       graphql: github.graphql,
       request: github.request,
     },
-    path,
-    changelogPath,
-    monorepoTags,
-    releaseType,
+    path: configuration.path,
+    changelogPath: configuration.changelogPath ?? 'CHANGELOG.md',
+    monorepoTags: configuration.monorepoTags,
+    releaseType: configuration.releaseType,
   };
-  const ghr = factory.githubRelease(releaseOptions);
-  await Runner.releaser(ghr);
+  if (configuration.manifest) {
+    const manifest = factory.manifest(releaseOptions);
+    await Runner.manifestRelease(manifest);
+  } else {
+    const ghr = factory.githubRelease(releaseOptions);
+    await Runner.releaser(ghr);
+  }
 }
 
 async function createReleasePR(
@@ -158,7 +163,7 @@ async function createReleasePR(
   configuration: BranchConfiguration,
   github: GitHubAPI,
   snapshot?: boolean
-): Promise<ReleasePR> {
+): Promise<ReleasePR | Manifest> {
   const releaseType = configuration.releaseType
     ? configuration.releaseType
     : releaseTypeFromRepoLanguage(repoLanguage);
@@ -186,9 +191,15 @@ async function createReleasePR(
     buildOptions.label = configuration.releaseLabels.join(',');
   }
 
-  const releasePR = factory.releasePR(buildOptions);
-  await Runner.runner(releasePR);
-  return releasePR;
+  if (configuration.manifest) {
+    const manifest = factory.manifest(buildOptions);
+    await Runner.manifest(manifest);
+    return manifest;
+  } else {
+    const releasePR = factory.releasePR(buildOptions);
+    await Runner.runner(releasePR);
+    return releasePR;
+  }
 }
 
 export = (app: Probot) => {
@@ -236,11 +247,8 @@ export = (app: Probot) => {
       await createGitHubRelease(
         branchConfiguration.packageName ?? repoName,
         repoUrl,
-        context.octokit as GitHubAPI,
-        branchConfiguration.path,
-        branchConfiguration.changelogPath ?? 'CHANGELOG.md',
-        branchConfiguration.monorepoTags,
-        branchConfiguration.releaseType
+        branchConfiguration,
+        context.octokit as GitHubAPI
       );
     }
   });

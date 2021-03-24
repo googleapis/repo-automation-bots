@@ -19,10 +19,12 @@ import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import * as fs from 'fs';
-import assert, {fail} from 'assert';
+import * as sinon from 'sinon';
+import assert from 'assert';
 import {GitHubRelease, ReleasePR} from 'release-please';
 import nock from 'nock';
 
+const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
@@ -56,6 +58,10 @@ describe('ReleasePleaseBot', () => {
     probot.load(myProbotApp);
   });
 
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   describe('push to master branch', () => {
     let payload: {};
 
@@ -65,10 +71,10 @@ describe('ReleasePleaseBot', () => {
 
     it('should build a release PR', async () => {
       let executed = false;
-      Runner.runner = async (pr: ReleasePR) => {
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
         assertReleaserType('JavaYoshi', pr);
         executed = true;
-      };
+      });
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -86,14 +92,14 @@ describe('ReleasePleaseBot', () => {
     it('should handle GitHub releases, if configured', async () => {
       let runnerExecuted = false;
       let releaserExecuted = false;
-      Runner.runner = async (pr: ReleasePR) => {
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
         assertReleaserType('JavaYoshi', pr);
         runnerExecuted = true;
-      };
-      Runner.releaser = async (pr: GitHubRelease) => {
+      });
+      sandbox.replace(Runner, 'releaser', async (pr: GitHubRelease) => {
         assert(pr instanceof GitHubRelease);
         releaserExecuted = true;
-      };
+      });
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid_handle_gh_release.yml')
       );
@@ -110,9 +116,7 @@ describe('ReleasePleaseBot', () => {
     });
 
     it('should ignore if the branch is the configured primary branch', async () => {
-      Runner.runner = async () => {
-        fail('should not be running a release');
-      };
+      sandbox.stub(Runner, 'runner').rejects('should not be running a release');
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'feature_branch_as_primary.yml')
       );
@@ -128,10 +132,10 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow overriding the release strategy from configuration', async () => {
       let executed = false;
-      Runner.runner = async (pr: ReleasePR) => {
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
         assertReleaserType('Ruby', pr);
         executed = true;
-      };
+      });
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'ruby_release.yml')
       );
@@ -148,10 +152,10 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow overriding the package-name from configuration', async () => {
       let executed = false;
-      Runner.runner = async (pr: ReleasePR) => {
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
         assert.deepStrictEqual(pr.packageName, '@google-cloud/foo');
         executed = true;
-      };
+      });
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'ruby_release_alternate_pkg_name.yml')
       );
@@ -168,10 +172,10 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow overriding the release tags from configuration', async () => {
       let executed = false;
-      Runner.runner = async (pr: ReleasePR) => {
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
         assert.deepStrictEqual(pr.labels, ['foo', 'bar']);
         executed = true;
-      };
+      });
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -187,9 +191,7 @@ describe('ReleasePleaseBot', () => {
     });
 
     it('should ignore webhook if not configured', async () => {
-      Runner.runner = async () => {
-        fail('should not be running a release');
-      };
+      sandbox.stub(Runner, 'runner').rejects('should not be running a release');
       const requests = nock('https://api.github.com')
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
@@ -207,10 +209,10 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow an empty config file with the defaults', async () => {
       let executed = false;
-      Runner.runner = async (pr: ReleasePR) => {
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
         assertReleaserType('JavaYoshi', pr);
         executed = true;
-      };
+      });
       const requests = nock('https://api.github.com')
         .get(
           '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
@@ -224,11 +226,11 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow configuring minor bump for breaking change pre 1.0', async () => {
       let executed = false;
-      Runner.runner = async (pr: ReleasePR) => {
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
         assertReleaserType('JavaYoshi', pr);
         assert(pr.bumpMinorPreMajor);
         executed = true;
-      };
+      });
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'minor_pre_major.yml')
       );
@@ -245,11 +247,11 @@ describe('ReleasePleaseBot', () => {
 
     it('should detect the default branch if not specified in configuration', async () => {
       let executed = false;
-      Runner.runner = async (pr: ReleasePR) => {
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
         assertReleaserType('Node', pr);
         assert('master' === pr.gh.defaultBranch);
         executed = true;
-      };
+      });
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'release_type_no_primary_branch.yml')
       );
@@ -263,6 +265,44 @@ describe('ReleasePleaseBot', () => {
       requests.done();
       assert(executed, 'should have executed the runner');
     });
+
+    describe('for manifest releases', () => {
+      it('should build a release PR', async () => {
+        const manifest = sandbox.stub(Runner, 'manifest').resolves();
+        const config = fs.readFileSync(
+          resolve(fixturesPath, 'config', 'manifest.yml')
+        );
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
+          )
+          .reply(200, config);
+
+        await probot.receive({name: 'push', payload, id: 'abc123'});
+        requests.done();
+        assert(manifest.called, 'should have executed the runner');
+      });
+
+      it('should handle GitHub releases, if configured', async () => {
+        const manifest = sandbox.stub(Runner, 'manifest').resolves();
+        const manifestRelease = sandbox
+          .stub(Runner, 'manifestRelease')
+          .resolves();
+        const config = fs.readFileSync(
+          resolve(fixturesPath, 'config', 'manifest_handle_gh_release.yml')
+        );
+        const requests = nock('https://api.github.com')
+          .get(
+            '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
+          )
+          .reply(200, config);
+
+        await probot.receive({name: 'push', payload, id: 'abc123'});
+        requests.done();
+        assert(manifest.called, 'should have executed the runner');
+        assert(manifestRelease.called, 'GitHub release should have run');
+      });
+    });
   });
 
   describe('push to non-master branch', () => {
@@ -273,9 +313,7 @@ describe('ReleasePleaseBot', () => {
     });
 
     it('should ignore the webhook', async () => {
-      Runner.runner = async () => {
-        fail('should not be running a release');
-      };
+      sandbox.stub(Runner, 'runner').rejects('should not be running a release');
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -291,10 +329,10 @@ describe('ReleasePleaseBot', () => {
 
     it('should create the PR if the branch is the configured primary branch', async () => {
       let executed = false;
-      Runner.runner = async (pr: ReleasePR) => {
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
         assertReleaserType('JavaYoshi', pr);
         executed = true;
-      };
+      });
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'feature_branch_as_primary.yml')
       );
@@ -311,10 +349,10 @@ describe('ReleasePleaseBot', () => {
 
     it('should create the PR if the branch is configured as an alternate branch', async () => {
       let executed = false;
-      Runner.runner = async (pr: ReleasePR) => {
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
         assertReleaserType('JavaYoshi', pr);
         executed = true;
-      };
+      });
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'multi_branch.yml')
       );
@@ -346,10 +384,10 @@ describe('ReleasePleaseBot', () => {
         },
         cron_org: 'Codertocat',
       };
-      Runner.runner = async (pr: ReleasePR) => {
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
         assertReleaserType('JavaYoshi', pr);
         executed = true;
-      };
+      });
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -387,9 +425,9 @@ describe('ReleasePleaseBot', () => {
         },
         cron_org: 'Codertocat',
       };
-      Runner.runner = async (pr: ReleasePR) => {
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
         executedBranches.set(pr.gh.defaultBranch!, getReleaserName(pr));
-      };
+      });
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'multi_branch.yml')
       );
@@ -420,10 +458,10 @@ describe('ReleasePleaseBot', () => {
     it('should try to create a release', async () => {
       payload = require(resolve(fixturesPath, './pull_request_labeled'));
       let executed = false;
-      Runner.runner = async (pr: ReleasePR) => {
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
         assertReleaserType('JavaYoshi', pr);
         executed = true;
-      };
+      });
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -452,10 +490,10 @@ describe('ReleasePleaseBot', () => {
         './pull_request_labeled_feature_branch'
       ));
       let executed = false;
-      Runner.runner = async (pr: ReleasePR) => {
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
         assertReleaserType('JavaYoshi', pr);
         executed = true;
-      };
+      });
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'multi_branch.yml')
       );
@@ -480,9 +518,7 @@ describe('ReleasePleaseBot', () => {
 
     it('should ignore other labels', async () => {
       payload = require(resolve(fixturesPath, './pull_request_labeled_other'));
-      Runner.runner = async () => {
-        fail('should not be running a release');
-      };
+      sandbox.stub(Runner, 'runner').rejects('should not be running a release');
 
       await probot.receive({
         name: 'pull_request.labeled',

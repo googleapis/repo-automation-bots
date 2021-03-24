@@ -22,6 +22,7 @@ import {describe, it, afterEach, beforeEach} from 'mocha';
 import * as assert from 'assert';
 import * as policy from '../src/policy';
 import * as bq from '../src/export';
+import * as changer from '../src/changer';
 import {policyBot} from '../src/bot';
 
 nock.disableNetConnect();
@@ -82,6 +83,7 @@ describe('bot', () => {
       .stub(p, 'checkRepoPolicy')
       .resolves(fakeResult);
     const exportStub = sinon.stub(bq, 'exportToBigQuery').resolves();
+    const submitFixesStub = sinon.stub(changer, 'submitFixes').resolves();
 
     await probot.receive({
       name: 'schedule.repository' as '*',
@@ -103,5 +105,60 @@ describe('bot', () => {
     assert.ok(getRepoStub.calledOnce);
     assert.ok(checkPolicyStub.calledOnce);
     assert.ok(exportStub.calledOnce);
+    assert.ok(submitFixesStub.calledOnce);
+  });
+
+  it('should skip archived repos', async () => {
+    const repo = 'nodejs-storage';
+    const org = 'googleapis';
+    const fakeRepo = {archived: true} as policy.GitHubRepo;
+    const p = new policy.Policy(new Octokit(), console);
+    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
+    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
+    await probot.receive({
+      name: 'schedule.repository' as '*',
+      payload: {
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+        },
+        organization: {
+          login: org,
+        },
+        cron_org: org,
+      },
+      id: 'abc123',
+    });
+    assert.ok(getRepoStub.calledOnce);
+    assert.ok(getPolicyStub.calledOnce);
+  });
+
+  it('should skip private repos', async () => {
+    const repo = 'nodejs-storage';
+    const org = 'googleapis';
+    const fakeRepo = {private: true} as policy.GitHubRepo;
+    const p = new policy.Policy(new Octokit(), console);
+    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
+    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
+    await probot.receive({
+      name: 'schedule.repository' as '*',
+      payload: {
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+        },
+        organization: {
+          login: org,
+        },
+        cron_org: org,
+      },
+      id: 'abc123',
+    });
+    assert.ok(getRepoStub.calledOnce);
+    assert.ok(getPolicyStub.calledOnce);
   });
 });

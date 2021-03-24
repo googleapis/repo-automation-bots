@@ -17,7 +17,7 @@ import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import {promises as fs} from 'fs';
-import {handler} from '../src/bot';
+import {handler, configFileName} from '../src/bot';
 import assert from 'assert';
 import * as sinon from 'sinon';
 import {logger} from 'gcf-utils';
@@ -41,9 +41,9 @@ function nockUpdateTeamMembership(team: string, org: string, repo: string) {
 
 function nockConfig404(org = 'googleapis', repo = 'api-common-java') {
   return nock('https://api.github.com')
-    .get(`/repos/${org}/${repo}/contents/.github%2Fsync-repo-settings.yaml`)
+    .get(`/repos/${org}/${repo}/contents/.github%2F${configFileName}`)
     .reply(404)
-    .get(`/repos/${org}/.github/contents/.github%2Fsync-repo-settings.yaml`)
+    .get(`/repos/${org}/.github/contents/.github%2F${configFileName}`)
     .reply(404);
 }
 
@@ -86,11 +86,9 @@ function nockUpdateBranchProtection(
     .reply(200);
 }
 
-// meta comment about the 'any' here: https://github.com/octokit/webhooks.js/issues/277
 async function receive(org: string, repo: string, cronOrg?: string) {
   await probot.receive({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    name: 'schedule.repository' as any,
+    name: 'schedule.repository' as '*',
     payload: {
       repository: {
         name: repo,
@@ -233,7 +231,7 @@ describe('Sync repo settings', () => {
     const content = await fs.readFile('./test/fixtures/localConfig.yaml');
     const scopes = [
       nock('https://api.github.com')
-        .get(`/repos/${org}/${repo}/contents/.github%2Fsync-repo-settings.yaml`)
+        .get(`/repos/${org}/${repo}/contents/.github%2F${configFileName}`)
         .reply(200, content),
       nockUpdateRepoSettings(repo, false, true),
       nockUpdateBranchProtection(repo, ['check1', 'check2'], false, true),
@@ -253,7 +251,7 @@ describe('Sync repo settings', () => {
     );
     const scopes = [
       nock('https://api.github.com')
-        .get(`/repos/${org}/${repo}/contents/.github%2Fsync-repo-settings.yaml`)
+        .get(`/repos/${org}/${repo}/contents/.github%2F${configFileName}`)
         .reply(200, content),
       nockUpdateRepoSettings(repo, false, true),
       nockUpdateTeamMembership('team1', org, repo),
@@ -279,7 +277,7 @@ describe('Sync repo settings', () => {
         .reply(200, [
           {
             sha: fileSha,
-            filename: '.github/sync-repo-settings.yaml',
+            filename: `.github/${configFileName}`,
             status: 'added',
           },
         ]),
@@ -333,7 +331,7 @@ describe('Sync repo settings', () => {
         .reply(200, [
           {
             sha: fileSha,
-            filename: '.github/sync-repo-settings.yaml',
+            filename: `.github/${configFileName}`,
             status: 'added',
           },
         ]),
@@ -388,7 +386,7 @@ describe('Sync repo settings', () => {
         .reply(200, [
           {
             sha: fileSha,
-            filename: '.github/sync-repo-settings.yaml',
+            filename: `.github/${configFileName}`,
             status: 'added',
           },
         ]),
@@ -425,5 +423,85 @@ describe('Sync repo settings', () => {
       id: 'abc123',
     });
     scopes.forEach(x => x.done());
+  });
+
+  it('should not sync settings for pushes with no changes to the config', async () => {
+    const org = 'Codertocat';
+    const repo = 'Hello-World';
+    await probot.receive({
+      name: 'push',
+      payload: {
+        ref: 'refs/head/main',
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+          default_branch: 'main',
+        },
+        organization: {
+          login: org,
+        },
+        commits: [],
+      },
+      id: 'abc123',
+    });
+  });
+
+  it('should not sync settings for pushes to non-default branches', async () => {
+    const org = 'Codertocat';
+    const repo = 'Hello-World';
+    await probot.receive({
+      name: 'push',
+      payload: {
+        ref: 'refs/head/not-default-lol',
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+          default_branch: 'main',
+        },
+        organization: {
+          login: org,
+        },
+        commits: [],
+      },
+      id: 'abc123',
+    });
+  });
+
+  it('should sync settings for pushes that modify the config', async () => {
+    const org = 'Codertocat';
+    const repo = 'Hello-World';
+    const scopes = [
+      nockConfig404(org, repo),
+      nockLanguagesList(org, repo, {kotlin: 1}),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
+      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
+    ];
+    await probot.receive({
+      name: 'push',
+      payload: {
+        ref: 'refs/head/main',
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+          default_branch: 'main',
+        },
+        organization: {
+          login: org,
+        },
+        commits: [
+          {
+            added: [`.github/${configFileName}`],
+          },
+        ],
+      },
+      id: 'abc123',
+    });
+    scopes.forEach(s => s.done());
   });
 });

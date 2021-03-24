@@ -60,6 +60,7 @@ export interface OwlBotYaml {
   'deep-copy-regex'?: DeepCopyRegex[];
   'deep-remove-regex'?: string[];
   'deep-preserve-regex'?: string[];
+  'begin-after-commit-hash'?: string;
 }
 
 // The default path where .OwlBot.yaml is expected to be found.

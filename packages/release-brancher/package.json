@@ -1,9 +1,8 @@
 {
-  "name": "release-brancher",
-  "version": "1.0.0",
+  "name": "@google-cloud/release-brancher",
+  "version": "1.0.1",
   "description": "Cut release branches",
   "bin": "./build/src/bin/release-brancher.js",
-  "private": true,
   "author": "Google LLC.",
   "license": "Apache-2.0",
   "repository": "https://github.com/googleapis/repo-automation-bots.git",
@@ -20,6 +19,7 @@
   ],
   "scripts": {
     "compile": "tsc -p .",
+    "prepare": "npm run compile",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal mocha --exit build/test",
     "fix": "gts fix",
@@ -43,7 +43,7 @@
     "gts": "^3.0.0",
     "mocha": "^8.0.0",
     "nock": "^13.0.0",
-    "sinon": "^9.2.4",
+    "sinon": "^10.0.0",
     "snap-shot-it": "^7.0.0",
     "typescript": "~4.2.0"
   },
