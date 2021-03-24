@@ -1,6 +1,6 @@
 {
-  "name": "release-brancher",
-  "version": "1.0.0",
+  "name": "@google-cloud/release-brancher",
+  "version": "1.0.1",
   "description": "Cut release branches",
   "bin": "./build/src/bin/release-brancher.js",
   "author": "Google LLC.",
@@ -19,6 +19,7 @@
   ],
   "scripts": {
     "compile": "tsc -p .",
+    "prepare": "npm run compile",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal mocha --exit build/test",
     "fix": "gts fix",
