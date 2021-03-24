@@ -4,7 +4,7 @@ This project is designed to be a CLI for branching new release branches.
 
 ## Installation
 
-`npm i @googleapis/release-brancher`
+`npm i @google-cloud/release-brancher`
 
 ## Create Pull Request
 
