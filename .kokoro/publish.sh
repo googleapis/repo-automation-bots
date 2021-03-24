@@ -30,8 +30,7 @@ python3 -m releasetool publish-reporter-script > /tmp/publisher-script; source /
 
 cd $(dirname $0)/..
 
-NPM_TOKEN=$(cat "${KOKORO_KEYSTORE_DIR}/secret_manager/npm_publish_token")
-echo "//wombat-dressing-room.appspot.com/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+NPM_TOKEN=$(cat "${KOKORO_KEYSTORE_DIR}/secret_manager/repo_automation_bots_npm_publish_token")
+printf "//wombat-dressing-room.appspot.com/:_authToken=${NPM_TOKEN}\nregistry=https://wombat-dressing-room.appspot.com" > ~/.npmrc
 
-npm install
 npx mono-repo-publish --pr-url="${AUTORELEASE_PR}"
