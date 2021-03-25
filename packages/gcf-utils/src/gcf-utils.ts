@@ -384,7 +384,7 @@ export class GCFBootstrapper {
         parentSpan.end();
 
         // force reporting all closed spans
-        // this.traceProcessor.forceFlush();
+        this.traceProcessor.forceFlush();
       }
     };
   }
