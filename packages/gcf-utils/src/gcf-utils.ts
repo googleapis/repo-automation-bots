@@ -29,6 +29,15 @@ import {config as ConfigPlugin} from '@probot/octokit-plugin-config';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger} from './logging/gcf-logger';
 import {v4} from 'uuid';
+import opentelemetry from '@opentelemetry/api';
+import {NodeTracerProvider} from '@opentelemetry/node';
+import {
+  SimpleSpanProcessor,
+  SpanProcessor,
+  InMemorySpanExporter,
+  SpanExporter,
+} from '@opentelemetry/tracing';
+import {TraceExporter} from '@google-cloud/opentelemetry-cloud-trace-exporter';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
@@ -134,12 +143,26 @@ export class GCFBootstrapper {
   secretsClient: SecretManagerV1.SecretManagerServiceClient;
   cloudTasksClient: CloudTasksV2.CloudTasksClient;
   storage: Storage;
+  traceProcessor: SpanProcessor;
 
-  constructor(secretsClient?: SecretManagerV1.SecretManagerServiceClient) {
+  constructor(
+    secretsClient?: SecretManagerV1.SecretManagerServiceClient,
+    traceExporter?: SpanExporter
+  ) {
     this.secretsClient =
       secretsClient || new SecretManagerV1.SecretManagerServiceClient();
     this.cloudTasksClient = new CloudTasksV2.CloudTasksClient();
     this.storage = new Storage();
+    const provider = new NodeTracerProvider();
+
+    // Initialize the exporter. When your application is running on Google Cloud,
+    // you don't need to provide auth credentials or a project id.
+    const exporter = traceExporter ?? new TraceExporter();
+    this.traceProcessor = new SimpleSpanProcessor(exporter);
+
+    // Configure the span processor to send spans to the exporter
+    provider.addSpanProcessor(this.traceProcessor);
+    opentelemetry.trace.setGlobalTracerProvider(provider);
   }
 
   async loadProbot(
@@ -254,6 +277,11 @@ export class GCFBootstrapper {
     wrapOptions?: WrapOptions
   ): (request: express.Request, response: express.Response) => Promise<void> {
     return async (request: express.Request, response: express.Response) => {
+      const tracer = opentelemetry.trace.getTracer('gcf-utils');
+
+      // Create a span. A span must be closed.
+      const parentSpan = tracer.startSpan('main');
+
       wrapOptions = wrapOptions ?? {background: true, logging: false};
 
       this.probot =
@@ -267,6 +295,7 @@ export class GCFBootstrapper {
         name,
         taskId
       );
+      parentSpan.setAttribute('triggerType', triggerType);
 
       /**
        * Note: any logs written before resetting bindings may contain
@@ -307,12 +336,17 @@ export class GCFBootstrapper {
 
           // TODO: find out the best way to get this type, and whether we can
           // keep using a custom event name.
-          await this.probot.receive({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            name: name as any,
-            id,
-            payload: body,
-          });
+          const span = tracer.startSpan('execute probot');
+          try {
+            await this.probot.receive({
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              name: name as any,
+              id,
+              payload: body,
+            });
+          } finally {
+            span.end();
+          }
         } else if (triggerType === TriggerType.SCHEDULER) {
           // TODO: currently we assume that scheduled events walk all repos
           // managed by the client libraries team, it would be good to get more
@@ -320,12 +354,17 @@ export class GCFBootstrapper {
           // installation ID:
           await this.handleScheduled(id, request, name, signature, wrapOptions);
         } else if (triggerType === TriggerType.GITHUB) {
-          await this.enqueueTask({
-            id,
-            name,
-            signature,
-            body: JSON.stringify(request.body),
-          });
+          const span = tracer.startSpan('enqueue task');
+          try {
+            await this.enqueueTask({
+              id,
+              name,
+              signature,
+              body: JSON.stringify(request.body),
+            });
+          } finally {
+            span.end();
+          }
         }
 
         response.send({
@@ -338,10 +377,15 @@ export class GCFBootstrapper {
           statusCode: 500,
           body: JSON.stringify({message: err.message}),
         });
-        return;
-      }
+      } finally {
+        logger.flushSync();
 
-      logger.flushSync();
+        // close the main span
+        parentSpan.end();
+
+        // force reporting all closed spans
+        // this.traceProcessor.forceFlush();
+      }
     };
   }
 
@@ -562,14 +606,21 @@ export class GCFBootstrapper {
       if (!process.env.WEBHOOK_TMP) {
         throw Error('no tmp directory configured');
       }
-      const bucket = this.storage.bucket(process.env.WEBHOOK_TMP);
-      const file = bucket.file(payload.tmpUrl);
-      const readable = file.createReadStream({
-        validation: process.env.NODE_ENV !== 'test',
-      });
-      const content = await getStream(readable);
-      console.info(`downloaded payload from ${payload.tmpUrl}`);
-      return JSON.parse(content);
+
+      const tracer = opentelemetry.trace.getTracer('gcf-utils');
+      const span = tracer.startSpan('maybeDownloadOriginalBody');
+      try {
+        const bucket = this.storage.bucket(process.env.WEBHOOK_TMP);
+        const file = bucket.file(payload.tmpUrl);
+        const readable = file.createReadStream({
+          validation: process.env.NODE_ENV !== 'test',
+        });
+        const content = await getStream(readable);
+        logger.info(`downloaded payload from ${payload.tmpUrl}`);
+        return JSON.parse(content);
+      } finally {
+        span.end();
+      }
     } else {
       return payload;
     }

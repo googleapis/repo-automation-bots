@@ -23,6 +23,7 @@ import assert from 'assert';
 
 import {v1} from '@google-cloud/secret-manager';
 import {GoogleAuth} from 'google-auth-library';
+import {InMemorySpanExporter} from '@opentelemetry/tracing';
 
 // Resource path helper used by tasks requires that the following
 // environment variables exist in the environment:
@@ -66,11 +67,13 @@ describe('GCFBootstrapper', () => {
     let bootstrapper: GCFBootstrapper;
 
     let enqueueTask: sinon.SinonStub;
+    let traceExporter: InMemorySpanExporter;
 
     async function mockBootstrapper(wrapOpts?: WrapOptions) {
       req = express.request;
 
-      bootstrapper = new GCFBootstrapper();
+      traceExporter = new InMemorySpanExporter();
+      bootstrapper = new GCFBootstrapper(undefined, traceExporter);
       configStub = sinon
         .stub(bootstrapper, 'getProbotConfig')
         .resolves({appId: 1234, secret: 'foo', webhookPath: 'bar'});
