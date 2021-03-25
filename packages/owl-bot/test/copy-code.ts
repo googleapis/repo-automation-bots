@@ -147,6 +147,59 @@ describe('copyDirs', () => {
       'grpc-google-cloud-asset-v1p1beta1/src/maven.xml:I should not be overwritten.',
     ]);
   });
+
+  it('copies files in order', () => {
+    const tempDir = tmp.dirSync().name;
+    const sourceDir = path.join(tempDir, 'googleapis');
+    // prepare the source
+    makeDirTree(path.join(sourceDir), ['a/x.txt:a', 'b/x.txt:b', 'c/x.txt:c']);
+
+    // Copy a/x.txt last.
+    const destDir = path.join(tempDir, 'destA');
+    copyDirs(sourceDir, destDir, {
+      'deep-copy-regex': [
+        {
+          source: '/.*/(x.txt)',
+          dest: '/$1',
+        },
+        {
+          source: '/a/(x.txt)', // should overwrite earlier copies
+          dest: '/$1',
+        },
+      ],
+    });
+    assert.deepStrictEqual(collectDirTree(destDir), ['x.txt:a']);
+
+    // Copy b/x.txt last.
+    copyDirs(sourceDir, destDir, {
+      'deep-copy-regex': [
+        {
+          source: '/.*/(x.txt)',
+          dest: '/$1',
+        },
+        {
+          source: '/b/(x.txt)', // should overwrite earlier copies
+          dest: '/$1',
+        },
+      ],
+    });
+    assert.deepStrictEqual(collectDirTree(destDir), ['x.txt:b']);
+
+    // Copy c/x.txt last.
+    copyDirs(sourceDir, destDir, {
+      'deep-copy-regex': [
+        {
+          source: '/.*/(x.txt)',
+          dest: '/$1',
+        },
+        {
+          source: '/c/(x.txt)', // should overwrite earlier copies
+          dest: '/$1',
+        },
+      ],
+    });
+    assert.deepStrictEqual(collectDirTree(destDir), ['x.txt:c']);
+  });
 });
 
 describe('copyCode', function () {

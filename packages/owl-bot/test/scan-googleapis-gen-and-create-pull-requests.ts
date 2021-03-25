@@ -55,6 +55,7 @@ const bYaml: OwlBotYaml = {
 
 class FakeIssues {
   issues: any[] = [];
+  updates: any[] = [];
 
   constructor(issues: any[] = []) {
     this.issues = issues;
@@ -68,6 +69,11 @@ class FakeIssues {
     this.issues.push(issue);
     issue.html_url = `http://github.com/fake/issues/${this.issues.length}`;
     return Promise.resolve({data: issue});
+  }
+
+  update(issue: any) {
+    this.updates.push(issue);
+    return Promise.resolve();
   }
 }
 
@@ -172,7 +178,8 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
     const [destRepo, configsStore] = makeDestRepoAndConfigsStore(bYaml);
 
     const pulls = new FakePulls();
-    const octokit = newFakeOctokit(pulls);
+    const issues = new FakeIssues();
+    const octokit = newFakeOctokit(pulls, issues);
     await scanGoogleapisGenAndCreatePullRequests(
       abcRepo,
       factory(octokit),
@@ -190,6 +197,9 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
       pull.body,
       `Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}`
     );
+
+    // Confirm it set the label.
+    assert.deepStrictEqual(issues.updates[0].labels, ['owl-bot-copy']);
 
     // Confirm the pull request branch contains the new file.
     const destDir = destRepo.getCloneUrl();
