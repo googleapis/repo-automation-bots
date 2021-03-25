@@ -161,6 +161,12 @@ ${err}`,
     base: githubRepo.data.default_branch,
   });
   logger.info(`Created pull request ${pull.data.html_url}`);
+  await octokit.issues.update({
+    owner,
+    repo,
+    issue_number: pull.data.number,
+    labels: ['owl-bot-copy'],
+  });
 }
 
 /**

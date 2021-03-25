@@ -36,7 +36,7 @@
     "gcf-utils": "^7.0.0"
   },
   "devDependencies": {
-    "@octokit/openapi-types": "^5.3.2",
+    "@octokit/openapi-types": "^6.0.0",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.6.1",
     "@types/sinon": "^9.0.11",
