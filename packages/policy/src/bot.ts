@@ -42,6 +42,14 @@ export function policyBot(app: Probot) {
     }
     const result = await policy.checkRepoPolicy(repoMetadata);
     await exportToBigQuery(result);
-    await submitFixes(result, context.octokit);
+
+    // specifically wrap this in a try/catch to avoid retries if the fix
+    // causes any errors.  Otherwise, the entire function is retried, and the
+    // result is recorded twice.
+    try {
+      await submitFixes(result, context.octokit);
+    } catch (e) {
+      logger.error(e);
+    }
   });
 }
