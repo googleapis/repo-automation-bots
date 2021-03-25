@@ -63,6 +63,9 @@ function sourceLinkFrom(sourceCommitHash: string): string {
 /**
  * Copies the code from googleapis-gen to the dest repo, and creates a
  * pull request.
+ * @param sourceRepo: the source repository, either a local path or googleapis/googleapis-gen
+ * @param sourceRepoCommit: the commit from which to copy code. Empty means the most recent commit.
+ * @param destRepo: the destination repository, either a local path or a github path like googleapis/nodejs-vision.
  */
 export async function copyCodeAndCreatePullRequest(
   sourceRepo: string,
@@ -115,7 +118,7 @@ ${err}`,
     logger.error(`Created issue ${issue.data.html_url}`);
     return; // Success because we don't want to retry.
   }
-  await copyCode(
+  sourceRepoCommitHash = await copyCode(
     sourceRepo,
     sourceRepoCommitHash,
     destDir,
@@ -213,10 +216,14 @@ export function toLocalRepo(
  *
  * @param sourceRepo usually 'googleapis/googleapis-gen';  May also be a local path
  *   to a git repo directory.
- * @param sourceCommitHash the commit hash to copy from googleapis-gen.
+ * @param sourceCommitHash the commit hash to copy from googleapis-gen; pass
+ *   the empty string to use the most recent commit hash in sourceRepo.
  * @param destDir the locally checkout out repo with an .OwlBot.yaml file.
  * @param workDir a working directory where googleapis-gen will be cloned.
  * @param yaml the yaml file loaded from the destDir
+ * @returns the commit hash from which code was copied. That will match sourceCommitHash
+ *    parameter if it was provided.  If not, it will be the most recent commit from
+ *    the source repo.
  */
 export async function copyCode(
   sourceRepo: string,
@@ -225,11 +232,17 @@ export async function copyCode(
   workDir: string,
   yaml: OwlBotYaml,
   logger = console
-) {
+): Promise<string> {
   const cmd = newCmd(logger);
   const sourceDir = toLocalRepo(sourceRepo, workDir, logger);
   // Check out the specific hash we want to copy from.
-  cmd(`git checkout ${sourceCommitHash}`, {cwd: sourceDir});
+  if (sourceCommitHash) {
+    cmd(`git checkout ${sourceCommitHash}`, {cwd: sourceDir});
+  } else {
+    sourceCommitHash = cmd('git log -1 --format=%H', {cwd: sourceDir})
+      .toString('utf8')
+      .trim();
+  }
 
   copyDirs(sourceDir, destDir, yaml, logger);
 
@@ -243,6 +256,7 @@ export async function copyCode(
   fs.writeFileSync(commitMsgPath, commitMsg);
   cmd('git add -A', {cwd: destDir});
   cmd(`git commit -F "${commitMsgPath}" --allow-empty`, {cwd: destDir});
+  return sourceCommitHash;
 }
 
 // returns undefined instead of throwing an exception.
