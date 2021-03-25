@@ -210,7 +210,8 @@ export function toLocalRepo(
  *
  * @param sourceRepo usually 'googleapis/googleapis-gen';  May also be a local path
  *   to a git repo directory.
- * @param sourceCommitHash the commit hash to copy from googleapis-gen.
+ * @param sourceCommitHash the commit hash to copy from googleapis-gen; pass
+ *   the empty string to use the most recent commit hash in sourceRepo.
  * @param destDir the locally checkout out repo with an .OwlBot.yaml file.
  * @param workDir a working directory where googleapis-gen will be cloned.
  * @param yaml the yaml file loaded from the destDir
@@ -220,7 +221,7 @@ export function toLocalRepo(
  */
 export async function copyCode(
   sourceRepo: string,
-  sourceCommitHash: string | undefined,
+  sourceCommitHash: string,
   destDir: string,
   workDir: string,
   yaml: OwlBotYaml,
