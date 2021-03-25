@@ -64,7 +64,7 @@ do
     --description="Deploy ${botName}" \
     --included-files="${directory}/**" \
     --name="${triggerName}" \
-    --branch-pattern="${branch}" \
+    --branch-pattern="^${branch}$" \
     --build-config="${config}" \
     --substitutions="${substitutions},_DIRECTORY=${directory}"
 
