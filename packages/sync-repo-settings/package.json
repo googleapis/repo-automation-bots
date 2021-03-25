@@ -32,7 +32,7 @@
     "js-yaml": "^4.0.0"
   },
   "devDependencies": {
-    "@octokit/openapi-types": "^5.1.0",
+    "@octokit/openapi-types": "^6.0.0",
     "@octokit/rest": "^18.3.5",
     "@types/extend": "^3.0.1",
     "@types/js-yaml": "^4.0.0",
