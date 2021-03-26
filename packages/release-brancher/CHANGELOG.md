@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.0.3](https://www.github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.0.2...release-brancher-v1.0.3) (2021-03-26)
+
+
+### Bug Fixes
+
+* **deps:** loosen nodejs version requirement ([#1570](https://www.github.com/googleapis/repo-automation-bots/issues/1570)) ([e639095](https://www.github.com/googleapis/repo-automation-bots/commit/e639095052b68284b54aa93657287447dd12a44a))
+
 ### [1.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.0.1...release-brancher-v1.0.2) (2021-03-24)
 
 
