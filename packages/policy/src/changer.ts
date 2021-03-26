@@ -15,6 +15,7 @@
 import {Octokit} from '@octokit/rest';
 import {createPullRequest, Changes} from 'code-suggester';
 import {request} from 'gaxios';
+import {v4 as uuid} from 'uuid';
 import {PolicyResult} from './policy';
 
 export const cocUrl =
@@ -77,6 +78,7 @@ export async function addCodeOfConduct(
     upstreamOwner: owner,
     upstreamRepo: repo,
     fork: false,
+    branch: `policy-bot-${uuid()}`,
   });
 }
 
