@@ -49,7 +49,8 @@ if [ -z "${REPO_OWNER}" ]
 then
   REMOTE=$(git config --get remote.origin.url)
   REMOTE_REGEX="^(https|git)(:\/\/|@)([^\/:]+)[\/:]([^\/:]+)\/(.+).git$"
-  if [[ ${REMOTE} =~ ${REMOTE_REGEX} ]]; then
+  if [[ ${REMOTE} =~ ${REMOTE_REGEX} ]]
+  then
     REPO_OWNER=${BASH_REMATCH[4]}
   else
     echo "Need to set REPO_OWNER environment variable"
@@ -68,7 +69,7 @@ do
   # test to see if the deployment trigger already exists
   if gcloud beta builds triggers describe "${triggerName}" --project="${PROJECT_ID}" &>/dev/null
   then
-    # trigger already exists, skip
+    echo "${triggerName} already exists, skipping"
     continue
   fi
 
@@ -85,6 +86,8 @@ do
     --branch-pattern="^${BRANCH_NAME}$" \
     --build-config="${config}" \
     --substitutions="${SUBSTITUTIONS},_DIRECTORY=${directory}"
+
+  echo "Triggering initial build for ${triggerShortName}"
 
   # trigger the first deployment
   gcloud beta builds triggers run "${triggerName}" \
