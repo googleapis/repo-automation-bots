@@ -15,7 +15,7 @@
 steps:
   - name: gcr.io/$PROJECT_ID/trigger-sync
     env:
-      - "REPO_OWNER=$REPO_OWNER"
+      - "REPO_OWNER=$_REPO_OWNER"
       - "REPO_NAME=$REPO_NAME"
       - "BRANCH_NAME=$BRANCH_NAME"
       - "PROJECT_ID=$PROJECT_ID"
