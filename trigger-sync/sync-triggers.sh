@@ -19,19 +19,23 @@
 
 set -eo pipefail
 
-if [ -z "${PROJECT_ID} "]
+if [ -z "${PROJECT_ID}" ]
 then
   echo "Need to set PROJECT_ID environment variable"
   exit 1
 fi
 
-if [ -z "${REPO_NAME} "]
+if [ -z "${REPO_NAME}" ]
 then
   echo "Need to set REPO_NAME environment variable"
   exit 1
 fi
 
-echo $REPO_NAME
+if [ -z "${REPO_OWNER}" ]
+then
+  echo "Need to set REPO_OWNER environment variable"
+  exit 1
+fi
 
 if [[ $# -lt 1 ]]
 then
@@ -39,7 +43,7 @@ then
   exit 1
 fi
 
-if [ -z "${BRANCH_NAME} "]
+if [ -z "${BRANCH_NAME}" ]
 then
   BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 fi
