@@ -19,10 +19,24 @@
 
 set -eo pipefail
 
+if [[ $# -lt 1 ]]
+then
+  echo "Usage: $0 <substitutions>"
+  exit 1
+fi
+
+# propagate substitution variables to deploy triggers
+SUBSTITUTIONS=$1
+
 if [ -z "${PROJECT_ID}" ]
 then
   echo "Need to set PROJECT_ID environment variable"
   exit 1
+fi
+
+if [ -z "${BRANCH_NAME}" ]
+then
+  BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 fi
 
 if [ -z "${REPO_NAME}" ]
@@ -33,23 +47,14 @@ fi
 
 if [ -z "${REPO_OWNER}" ]
 then
-  echo "Need to set REPO_OWNER environment variable"
-  exit 1
+  REMOTE=$(git config --get remote.origin.url)
+  REMOTE_REGEX="^(https|git)(:\/\/|@)([^\/:]+)[\/:]([^\/:]+)\/(.+).git$"
+  if [[ ${REMOTE} =~ ${REMOTE_REGEX} ]]; then
+    REPO_OWNER=${BASH_REMATCH[4]}
+  else
+    echo "Need to set REPO_OWNER environment variable"
+  fi
 fi
-
-if [[ $# -lt 1 ]]
-then
-  echo "Usage: $0 <substitutions>"
-  exit 1
-fi
-
-if [ -z "${BRANCH_NAME}" ]
-then
-  BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
-fi
-
-# propagate substitution variables to deploy triggers
-SUBSTITUTIONS=$1
 
 # find all non-root cloudbuild.yaml configs
 for config in $(find -- */ -name 'cloudbuild.yaml' | sort -u)
