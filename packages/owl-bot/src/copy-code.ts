@@ -118,7 +118,7 @@ ${err}`,
     logger.error(`Created issue ${issue.data.html_url}`);
     return; // Success because we don't want to retry.
   }
-  sourceRepoCommitHash = await copyCode(
+  const {sourceCommitHash, commitMsgPath} = await copyCode(
     sourceRepo,
     sourceRepoCommitHash,
     destDir,
@@ -126,12 +126,14 @@ ${err}`,
     yaml,
     logger
   );
+  cmd('git add -A', {cwd: destDir});
+  cmd(`git commit -F "${commitMsgPath}" --allow-empty`, {cwd: destDir});
 
   // Check for existing pull request one more time before we push.
   const token = await octokitFactory.getGitHubShortLivedAccessToken();
   // Octokit token may have expired; refresh it.
   const octokit = await octokitFactory.getShortLivedOctokit(token);
-  if (await copyExists(octokit, destRepo, sourceRepoCommitHash)) {
+  if (await copyExists(octokit, destRepo, sourceCommitHash)) {
     return; // Mid-air collision!
   }
 
@@ -223,7 +225,8 @@ export function toLocalRepo(
  * @param yaml the yaml file loaded from the destDir
  * @returns the commit hash from which code was copied. That will match sourceCommitHash
  *    parameter if it was provided.  If not, it will be the most recent commit from
- *    the source repo.
+ *    the source repo.  Also returns the path to the text file to use as a
+ *    commit message for a pull request.
  */
 export async function copyCode(
   sourceRepo: string,
@@ -232,7 +235,7 @@ export async function copyCode(
   workDir: string,
   yaml: OwlBotYaml,
   logger = console
-): Promise<string> {
+): Promise<{sourceCommitHash: string; commitMsgPath: string}> {
   const cmd = newCmd(logger);
   const sourceDir = toLocalRepo(sourceRepo, workDir, logger);
   // Check out the specific hash we want to copy from.
@@ -254,9 +257,8 @@ export async function copyCode(
   const sourceLink = sourceLinkFrom(sourceCommitHash);
   commitMsg += `Source-Link: ${sourceLink}\n`;
   fs.writeFileSync(commitMsgPath, commitMsg);
-  cmd('git add -A', {cwd: destDir});
-  cmd(`git commit -F "${commitMsgPath}" --allow-empty`, {cwd: destDir});
-  return sourceCommitHash;
+  logger.log(`Wrote commit message to ${commitMsgPath}`);
+  return {sourceCommitHash, commitMsgPath};
 }
 
 // returns undefined instead of throwing an exception.
