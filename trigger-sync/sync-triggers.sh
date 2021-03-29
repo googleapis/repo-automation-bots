@@ -58,8 +58,10 @@ do
   triggerShortName=$(dirname "${config}" | rev | cut -d/ -f1 | rev)
   triggerName=$(dirname "${config}" | sed 's/\//-/g')
 
+  echo "Checking for ${triggerName}"
+
   # test to see if the deployment trigger already exists
-  if gcloud beta builds triggers describe "${triggerName}" --project="${project}" &>/dev/null
+  if gcloud beta builds triggers describe "${triggerName}" --project="${PROJECT_ID}" &>/dev/null
   then
     # trigger already exists, skip
     continue
@@ -68,7 +70,7 @@ do
   echo "Syncing trigger for ${triggerShortName}"
 
   # create the trigger
-  echo gcloud beta builds triggers create github \
+  gcloud beta builds triggers create github \
     --project="${PROJECT_ID}" \
     --repo-name="${REPO_NAME}" \
     --repo-owner="${REPO_OWNER}" \
@@ -80,7 +82,7 @@ do
     --substitutions="${SUBSTITUTIONS},_DIRECTORY=${directory}"
 
   # trigger the first deployment
-  echo gcloud beta builds triggers run "${triggerName}" \
+  gcloud beta builds triggers run "${triggerName}" \
     --project="${PROJECT_ID}" \
     --branch="${BRANCH_NAME}"
 done
