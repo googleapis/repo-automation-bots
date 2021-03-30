@@ -113,9 +113,9 @@ describe('auto-approve', () => {
     describe('config exists', () => {
       it('approves and tags a PR if a config exists & is valid & PR is valid', async () => {
         checkPRAgainstConfigStub.returns(true);
-        validateYamlStub.returns(undefined);
+        validateYamlStub.returns('');
         validateSchemaStub.returns(undefined);
-        checkCodeOwnersStub.returns(undefined);
+        checkCodeOwnersStub.returns('');
 
         const payload = require(resolve(
           fixturesPath,
@@ -144,7 +144,7 @@ describe('auto-approve', () => {
         checkPRAgainstConfigStub.returns(true);
         validateYamlStub.returns('File is not properly configured YAML');
         validateSchemaStub.returns(undefined);
-        checkCodeOwnersStub.returns(undefined);
+        checkCodeOwnersStub.returns('');
 
         const payload = require(resolve(
           fixturesPath,
@@ -166,9 +166,9 @@ describe('auto-approve', () => {
 
       it('logs to the console if config is valid but PR is not', async () => {
         checkPRAgainstConfigStub.returns(false);
-        validateYamlStub.returns(undefined);
+        validateYamlStub.returns('');
         validateSchemaStub.returns(undefined);
-        checkCodeOwnersStub.returns(undefined);
+        checkCodeOwnersStub.returns('');
 
         const payload = require(resolve(
           fixturesPath,
@@ -211,9 +211,9 @@ describe('auto-approve', () => {
 
       it('attempts to get codeowners file and create a passing status check if PR contains correct config', async () => {
         getBlobFromPRFilesStub.returns('fake-file');
-        validateYamlStub.returns(undefined);
+        validateYamlStub.returns('');
         validateSchemaStub.returns(undefined);
-        checkCodeOwnersStub.returns(undefined);
+        checkCodeOwnersStub.returns('');
 
         const payload = require(resolve(
           fixturesPath,

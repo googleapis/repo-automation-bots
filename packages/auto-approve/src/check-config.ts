@@ -50,8 +50,8 @@ function isFile(file: File | unknown): file is File {
  * @param configYaml the string of auto-approve.yml
  * @returns undefined if the yaml is valid, otherwise an error message.
  */
-export function validateYaml(configYaml: string): string | undefined {
-  let message: string | undefined = undefined;
+export function validateYaml(configYaml: string): string {
+  let message = '';
   try {
     const isYaml = yaml.load(configYaml);
     if (!(typeof isYaml === 'object')) {
@@ -78,7 +78,6 @@ export async function validateSchema(
   const errorText = (await validateSchema).errors?.map(x => {
     return {wrongProperty: x.params, message: x.message};
   });
-  console.log(errorText);
   return errorText;
 }
 
@@ -96,9 +95,9 @@ export async function checkCodeOwners(
   owner: string,
   repo: string,
   codeOwnersPRFile: string | undefined
-): Promise<string | undefined> {
+): Promise<string> {
   let codeOwnersFile;
-  let message: string | undefined = undefined;
+  let message = '';
   const createCodeownersMessage = `You must create a CODEOWNERS file for the configuration file for auto-approve.yml that lives in .github/CODEWONERS in your repository, and contains this line: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/; please make sure it is accessible publicly.`;
   const addToExistingCodeownersMessage = `You must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`;
 

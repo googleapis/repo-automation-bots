@@ -61,9 +61,9 @@ export async function logicForConfigCheck(
 
   // If all files are correct, then submit a passing check for the config
   if (
-    isYamlValid === undefined &&
+    isYamlValid === '' &&
     isSchemaValid === undefined &&
-    isCodeOwnersCorrect === undefined
+    isCodeOwnersCorrect === ''
   ) {
     await octokit.checks.create({
       owner,

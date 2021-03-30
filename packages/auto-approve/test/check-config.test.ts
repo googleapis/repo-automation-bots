@@ -61,7 +61,7 @@ describe('check for config', () => {
           'utf8'
         )
       );
-      snapshot(isYamlValid ? isYamlValid : 'undefined');
+      snapshot(isYamlValid);
     });
 
     it('should return true if YAML is valid', async () => {
@@ -71,7 +71,7 @@ describe('check for config', () => {
           'utf8'
         )
       );
-      assert.strictEqual(isYamlValid, undefined);
+      assert.strictEqual(isYamlValid, '');
     });
   });
 
@@ -217,7 +217,7 @@ describe('check for config', () => {
         undefined
       );
       scopes.done();
-      assert.strictEqual(response, undefined);
+      assert.strictEqual(response, '');
     });
 
     it('should accept a well-configured CODEOWNERS file in PR', async () => {
@@ -227,7 +227,7 @@ describe('check for config', () => {
         'repo',
         fs.readFileSync('./test/fixtures/config/valid-codeowners', 'utf8')
       );
-      assert.strictEqual(response, undefined);
+      assert.strictEqual(response, '');
     });
 
     it('should ask to create a codeowners file if it does not exist', async () => {
