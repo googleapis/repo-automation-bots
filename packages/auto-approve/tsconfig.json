@@ -1,0 +1,15 @@
+{
+  "extends": "gts/tsconfig-google",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "rootDir": ".",
+    "outDir": "build"
+  },
+  "include": [
+    "src/*.ts",
+    "src/*.json",
+    "src/**/*.ts",
+    "test/*.ts",
+    "test/**/*.ts"
+  ]
+}

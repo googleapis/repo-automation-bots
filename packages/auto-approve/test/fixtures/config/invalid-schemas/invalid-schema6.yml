@@ -1,0 +1,11 @@
+rules:
+- author: "googleapis-publisher"
+- author: "yoshi-automation"
+  changedFiles:
+  - "README.md"
+  - ".github/readme/synth.metadata/synth.metadata"
+- author: "yoshi-code-bot"
+  title: "chore: release 2.0"
+  changedFiles:
+  - "package.json$"
+  - "CHANGELOG.md$"
