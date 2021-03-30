@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-# [1.5.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils@0.6.0...gcf-utils@1.5.0) (2020-01-28)
+# [1.5.0](https://github.com/googleapis/repo-automation-bots/) (2020-01-28)
 
 
 ### Bug Fixes
@@ -68,7 +68,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
-# [0.5.0](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils@0.4.0...gcf-utils@0.5.0) (2019-08-09)
+# [0.5.0](https://github.com/googleapis/repo-automation-bots/) (2019-08-09)
 
 
 ### Bug Fixes
@@ -87,6 +87,20 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [7.1.4](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v7.1.3...gcf-utils-v7.1.4) (2021-03-24)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @octokit/plugin-enterprise-compatibility to v1.2.10 ([#1518](https://www.github.com/googleapis/repo-automation-bots/issues/1518)) ([6e6d40b](https://www.github.com/googleapis/repo-automation-bots/commit/6e6d40b2eed46ee13e9272654a3097f81a83ee8f))
+
+### [7.1.3](https://www.github.com/googleapis/repo-automation-bots/compare/v7.1.2...v7.1.3) (2021-03-01)
+
+
+### Bug Fixes
+
+* authenticate octokit instance properly when receiving payload from cloud scheduler ([#1461](https://www.github.com/googleapis/repo-automation-bots/issues/1461)) ([c968d8a](https://www.github.com/googleapis/repo-automation-bots/commit/c968d8aa83f8175b0ba942e3fceed3f27ddc78a9))
+
 ### [7.1.2](https://www.github.com/googleapis/repo-automation-bots/compare/v7.1.1...v7.1.2) (2021-02-11)
 
 
@@ -101,14 +115,14 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 * **gcf-utils:** release as appropriate version ([#1371](https://www.github.com/googleapis/repo-automation-bots/issues/1371)) ([730be51](https://www.github.com/googleapis/repo-automation-bots/commit/730be51d37b584aff02c1725ea04dd7f3f69c726))
 
-### [7.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/v7.0.1...v7.0.2) (2021-02-05)
+### [7.0.2](https://www.github.com/googleapis/repo-automation-bots/) (2021-02-05)
 
 
 ### Bug Fixes
 
 * update secret values for old bots ([#1365](https://www.github.com/googleapis/repo-automation-bots/issues/1365)) ([e88a323](https://www.github.com/googleapis/repo-automation-bots/commit/e88a32367d018dd9973a6b898ca7f7f801b23de4))
 
-### [7.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/v7.0.0...v7.0.1) (2021-02-03)
+### [7.0.1](https://www.github.com/googleapis/repo-automation-bots/) (2021-02-03)
 
 
 ### Bug Fixes
@@ -128,7 +142,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 * **deps:** update dependency probot to v11.0.4 ([#1285](https://www.github.com/googleapis/repo-automation-bots/issues/1285)) ([3191159](https://www.github.com/googleapis/repo-automation-bots/commit/31911594187c924fa50fdf88d2208f075b4fb8f6))
 
-### [6.3.2](https://www.github.com/googleapis/repo-automation-bots/compare/v6.3.1...v6.3.2) (2021-01-20)
+### [6.3.2](https://www.github.com/googleapis/repo-automation-bots/) (2021-01-20)
 
 
 ### Bug Fixes
@@ -136,7 +150,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 * **deps:** update dependency probot to v11.0.3 ([#1284](https://www.github.com/googleapis/repo-automation-bots/issues/1284)) ([ea5ef00](https://www.github.com/googleapis/repo-automation-bots/commit/ea5ef00364ee1ffdebd9f7164e787fb77419b4e6))
 * **deps:** upgrade to Probot 11 ([#1280](https://www.github.com/googleapis/repo-automation-bots/issues/1280)) ([6abbbed](https://www.github.com/googleapis/repo-automation-bots/commit/6abbbed3fc7410b0e416e1823c4512490b2ca9ea))
 
-### [6.3.1](https://www.github.com/googleapis/repo-automation-bots/compare/v6.3.0...v6.3.1) (2021-01-06)
+### [6.3.1](https://www.github.com/googleapis/repo-automation-bots/) (2021-01-06)
 
 
 ### Bug Fixes
@@ -264,7 +278,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 * **gcf-utils:** add repository details to payload for pub/sub triggered executions ([#758](https://www.github.com/googleapis/repo-automation-bots/issues/758)) ([00faedc](https://www.github.com/googleapis/repo-automation-bots/commit/00faedc0a3f5d1e4b39bda6fc5371edb2f921d2b))
 
-## [0.4.1](https://github.com/googleapis/repo-automation-bots/compare/gcf-utils@0.4.0...gcf-utils@0.4.1) (2019-07-30)
+## [0.4.1](https://github.com/googleapis/repo-automation-bots/) (2019-07-30)
 
 
 ### Bug Fixes
@@ -280,15 +294,15 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Bug Fixes
 
-* **deps:** update dependency @google-cloud/storage to v3 ([#9](https://github.com//issues/9)) ([1c98b01](https://github.com//commit/1c98b01))
-* **lint:** get linting working ([#8](https://github.com//issues/8)) ([70a6bcd](https://github.com//commit/70a6bcd))
-* don't use absolute path for gts config ([#3](https://github.com//issues/3)) ([6deba89](https://github.com//commit/6deba89))
+* **deps:** update dependency @google-cloud/storage to v3 ([#9](https://github.com/googleapis/repo-automation-bots/issues/9)) ([1c98b01](https://github.com/googleapis/repo-automation-bots/commit/1c98b01))
+* **lint:** get linting working ([#8](https://github.com/googleapis/repo-automation-bots/issues/8)) ([70a6bcd](https://github.com/googleapis/repo-automation-bots/commit/70a6bcd))
+* don't use absolute path for gts config ([#3](https://github.com/googleapis/repo-automation-bots/issues/3)) ([6deba89](https://github.com/googleapis/repo-automation-bots/commit/6deba89))
 
 
 ### Features
 
-* **infra:** Created bootstrapping infra for GCF ([5ec6d24](https://github.com//commit/5ec6d24))
-* added utils for running probot apps in gcf ([#2](https://github.com//issues/2)) ([0032e84](https://github.com//commit/0032e84))
+* **infra:** Created bootstrapping infra for GCF ([5ec6d24](https://github.com/googleapis/repo-automation-bots/commit/5ec6d24))
+* added utils for running probot apps in gcf ([#2](https://github.com/googleapis/repo-automation-bots/issues/2)) ([0032e84](https://github.com/googleapis/repo-automation-bots/commit/0032e84))
 
 
 
@@ -299,15 +313,15 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Bug Fixes
 
-* **deps:** update dependency @google-cloud/storage to v3 ([#9](https://github.com//issues/9)) ([1c98b01](https://github.com//commit/1c98b01))
-* **lint:** get linting working ([#8](https://github.com//issues/8)) ([70a6bcd](https://github.com//commit/70a6bcd))
-* don't use absolute path for gts config ([#3](https://github.com//issues/3)) ([6deba89](https://github.com//commit/6deba89))
+* **deps:** update dependency @google-cloud/storage to v3 ([#9](https://github.com/googleapis/repo-automation-bots/issues/9)) ([1c98b01](https://github.com/googleapis/repo-automation-bots/commit/1c98b01))
+* **lint:** get linting working ([#8](https://github.com/googleapis/repo-automation-bots/issues/8)) ([70a6bcd](https://github.com/googleapis/repo-automation-bots/commit/70a6bcd))
+* don't use absolute path for gts config ([#3](https://github.com/googleapis/repo-automation-bots/issues/3)) ([6deba89](https://github.com/googleapis/repo-automation-bots/commit/6deba89))
 
 
 ### Features
 
-* **infra:** Created bootstrapping infra for GCF ([5ec6d24](https://github.com//commit/5ec6d24))
-* added utils for running probot apps in gcf ([#2](https://github.com//issues/2)) ([0032e84](https://github.com//commit/0032e84))
+* **infra:** Created bootstrapping infra for GCF ([5ec6d24](https://github.com/googleapis/repo-automation-bots/commit/5ec6d24))
+* added utils for running probot apps in gcf ([#2](https://github.com/googleapis/repo-automation-bots/issues/2)) ([0032e84](https://github.com/googleapis/repo-automation-bots/commit/0032e84))
 
 
 
@@ -318,12 +332,12 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Bug Fixes
 
-* **deps:** update dependency @google-cloud/storage to v3 ([#9](https://github.com//issues/9)) ([1c98b01](https://github.com//commit/1c98b01))
-* **lint:** get linting working ([#8](https://github.com//issues/8)) ([70a6bcd](https://github.com//commit/70a6bcd))
-* don't use absolute path for gts config ([#3](https://github.com//issues/3)) ([6deba89](https://github.com//commit/6deba89))
+* **deps:** update dependency @google-cloud/storage to v3 ([#9](https://github.com/googleapis/repo-automation-bots/issues/9)) ([1c98b01](https://github.com/googleapis/repo-automation-bots/commit/1c98b01))
+* **lint:** get linting working ([#8](https://github.com/googleapis/repo-automation-bots/issues/8)) ([70a6bcd](https://github.com/googleapis/repo-automation-bots/commit/70a6bcd))
+* don't use absolute path for gts config ([#3](https://github.com/googleapis/repo-automation-bots/issues/3)) ([6deba89](https://github.com/googleapis/repo-automation-bots/commit/6deba89))
 
 
 ### Features
 
-* **infra:** Created bootstrapping infra for GCF ([5ec6d24](https://github.com//commit/5ec6d24))
-* added utils for running probot apps in gcf ([#2](https://github.com//issues/2)) ([0032e84](https://github.com//commit/0032e84))
+* **infra:** Created bootstrapping infra for GCF ([5ec6d24](https://github.com/googleapis/repo-automation-bots/commit/5ec6d24))
+* added utils for running probot apps in gcf ([#2](https://github.com/googleapis/repo-automation-bots/issues/2)) ([0032e84](https://github.com/googleapis/repo-automation-bots/commit/0032e84))

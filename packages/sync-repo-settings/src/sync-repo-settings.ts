@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// eslint-disable-next-line node/no-extraneous-import
-import {Probot, Context} from 'probot';
 import extend from 'extend';
 import {
   LanguageConfig,
@@ -21,27 +19,17 @@ import {
   BranchProtectionRule,
   PermissionRule,
 } from './types';
-import {logger} from 'gcf-utils';
-import Ajv from 'ajv';
-import yaml from 'js-yaml';
-import {operations} from '@octokit/openapi-types';
+import {Octokit} from '@octokit/rest';
 import checks from './required-checks.json';
 
-type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
+export interface Logger {
+  info(message: string): void;
+  debug(message: string | {}): void;
+  warn(message: string | {}): void;
+  error(message: string | {}): void;
+}
+
 export const configFileName = 'sync-repo-settings.yaml';
-
-type Conclusion =
-  | 'success'
-  | 'failure'
-  | 'neutral'
-  | 'cancelled'
-  | 'timed_out'
-  | 'action_required'
-  | undefined;
-
-// configure the schema validator once
-import schema from './schema.json';
-const ajv = new Ajv();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function deepFreeze(object: any) {
@@ -77,123 +65,24 @@ const branchProtectionDefaults = deepFreeze({
   requiredStatusCheckContexts: [],
 });
 
-/**
- * Main.  On a nightly cron, update the settings for a given repository.
- */
-export function handler(app: Probot) {
-  // Lint any pull requests that touch configuration
-  app.on(
-    [
-      'pull_request.opened',
-      'pull_request.reopened',
-      'pull_request.synchronize',
-    ],
-    async (context: Context) => {
-      const owner = context.payload.repository.owner.login;
-      const repo = context.payload.repository.name;
-      const number = context.payload.number;
-      let files: PullsListFilesResponseData;
-      try {
-        files = await context.octokit.paginate(
-          context.octokit.pulls.listFiles.endpoint.merge({
-            owner,
-            repo,
-            pull_number: number,
-            per_page: 100,
-          })
-        );
-      } catch (e) {
-        e.message = `Error fetching files for PR ${owner}/${repo}#${number}\n\n${e.message}`;
-        logger.error(e);
-        return;
-      }
-      for (const file of files) {
-        if (
-          file.status === 'deleted' ||
-          (file.filename !== `.github/${configFileName}` &&
-            (repo !== '.github' || file.filename !== configFileName))
-        ) {
-          continue;
-        }
-        const blob = await context.octokit.git.getBlob({
-          owner,
-          repo,
-          file_sha: file.sha,
-        });
-        const configYaml = Buffer.from(blob.data.content, 'base64').toString(
-          'utf8'
-        );
-        const config = yaml.load(configYaml);
-        let isValid = false;
-        let errorText = '';
-        if (typeof config === 'object') {
-          const validateSchema = ajv.compile(schema);
-          isValid = await validateSchema(config);
-          errorText = JSON.stringify(validateSchema.errors, null, 4);
-        } else {
-          errorText = `${configFileName} is not valid YAML 😱`;
-        }
+export interface SyncRepoSettingsOptions {
+  config?: RepoConfig;
+  repo: string;
+}
 
-        const checkParams = context.repo({
-          name: 'sync-repo-settings-check',
-          head_sha: context.payload.pull_request.head.sha,
-          conclusion: 'success' as Conclusion,
-          output: {
-            title: 'Successful sync-repo-settings.yaml check',
-            summary: 'sync-repo-settings.yaml matches the required schema',
-            text: 'Success',
-          },
-        });
-        if (!isValid) {
-          (checkParams.conclusion = 'failure'),
-            (checkParams.output = {
-              title: 'Invalid sync-repo-settings.yaml schema 😱',
-              summary:
-                'sync-repo-settings.yaml does not match the required schema 😱',
-              text: errorText,
-            });
-        }
-        try {
-          await context.octokit.checks.create(checkParams);
-        } catch (e) {
-          e.message = `Error creating validation status check: ${e.message}`;
-          logger.error(e);
-        }
-      }
-    }
-  );
+export class SyncRepoSettings {
+  constructor(private octokit: Octokit, private logger: Logger) {}
 
-  // meta comment about the '*' here: https://github.com/octokit/webhooks.js/issues/277
-  app.on(['schedule.repository' as '*'], async (context: Context) => {
-    logger.info(`running for org ${context.payload.cron_org}`);
-    const owner = context.payload.organization.login;
-    const name = context.payload.repository.name;
-    const repo = `${owner}/${name}`;
-
-    if (context.payload.cron_org !== owner) {
-      logger.info(`skipping run for ${context.payload.cron_org}`);
-      return;
-    }
-
+  async syncRepoSettings(options: SyncRepoSettingsOptions) {
+    let config = options.config;
+    const logger = this.logger;
+    const repo = options.repo;
+    const [owner, name] = repo.split('/');
     let ignored = false;
-
-    /**
-     * Allow repositories to optionally provide their own, localized config.
-     * Check the `.github/sync-repo-settings.yaml` file, and if available,
-     * use that config over any config broadly provided here.
-     */
-    let config!: RepoConfig | null;
-    try {
-      config = await context.config<RepoConfig>('sync-repo-settings.yaml');
-    } catch (err) {
-      err.message = `Error reading configuration: ${err.message}`;
-      logger.error(err);
-    }
-
     if (!config) {
       logger.info(`no local config found for ${repo}, checking global config`);
       // Fetch the list of languages used in this repository
-      const langRes = await context.octokit.repos.listLanguages({
+      const langRes = await this.octokit.repos.listLanguages({
         owner,
         repo: name,
       });
@@ -245,177 +134,167 @@ export function handler(app: Probot) {
     }
 
     const jobs: Promise<void>[] = [];
-    jobs.push(updateRepoTeams(repo, context, config?.permissionRules || []));
+    jobs.push(this.updateRepoTeams(repo, config?.permissionRules || []));
     if (!ignored && config) {
-      jobs.push(updateRepoOptions(repo, context, config));
+      jobs.push(this.updateRepoOptions(repo, config));
       if (config.branchProtectionRules) {
         jobs.push(
-          updateMasterBranchProtection(
-            repo,
-            context,
-            config.branchProtectionRules
-          )
+          this.updateMasterBranchProtection(repo, config.branchProtectionRules)
         );
       }
     }
     await Promise.all(jobs);
-  });
-}
+  }
 
-/**
- * Enable master branch protection, and required status checks
- * @param repos List of repos to iterate.
- */
-async function updateMasterBranchProtection(
-  repo: string,
-  context: Context,
-  rules: BranchProtectionRule[]
-) {
-  logger.info(`Updating master branch protection for ${repo}`);
-  const [owner, name] = repo.split('/');
+  /**
+   * Enable master branch protection, and required status checks
+   * @param repos List of repos to iterate.
+   */
+  async updateMasterBranchProtection(
+    repo: string,
+    rules: BranchProtectionRule[]
+  ) {
+    const logger = this.logger;
+    logger.info(`Updating master branch protection for ${repo}`);
+    const [owner, name] = repo.split('/');
 
-  // TODO: add support for mutiple rules
-  let rule = rules[0];
-  logger.debug('Rules before applying defaults:');
-  logger.debug(rule);
+    // TODO: add support for mutiple rules
+    let rule = rules[0];
+    logger.debug('Rules before applying defaults:');
+    logger.debug(rule);
 
-  // Combine user settings with a lax set of defaults
-  rule = extend(true, {}, branchProtectionDefaults, rule);
+    // Combine user settings with a lax set of defaults
+    rule = extend(true, {}, branchProtectionDefaults, rule);
 
-  logger.debug('Rules after applying defaults:');
-  logger.debug(rule);
+    logger.debug('Rules after applying defaults:');
+    logger.debug(rule);
 
-  logger.debug(`Required status checks ${rule.requiredStatusCheckContexts}`);
+    logger.debug(`Required status checks ${rule.requiredStatusCheckContexts}`);
 
-  try {
-    await context.octokit.repos.updateBranchProtection({
-      branch: rule.pattern,
-      owner,
-      repo: name,
-      required_pull_request_reviews: {
-        required_approving_review_count: rule.requiredApprovingReviewCount,
-        dismiss_stale_reviews: rule.dismissesStaleReviews,
-        require_code_owner_reviews: rule.requiresCodeOwnerReviews,
-      },
-      required_status_checks: {
-        contexts: rule.requiredStatusCheckContexts!,
-        strict: rule.requiresStrictStatusChecks!,
-      },
-      enforce_admins: rule.isAdminEnforced!,
-      restrictions: null!,
-      headers: {
-        accept: 'application/vnd.github.luke-cage-preview+json',
-      },
-    });
-    logger.info(`Success updating master branch protection for ${repo}`);
-  } catch (err) {
-    if (err.status === 401) {
-      logger.warn(
-        `updateMasterBranchProtection: warning received ${err.status} updating ${owner}/${name}`
-      );
-    } else {
-      err.message = `updateMasterBranchProtection: error received ${err.status} updating ${owner}/${name}\n\n${err.message}`;
-      logger.error(err);
-      return;
+    try {
+      await this.octokit.repos.updateBranchProtection({
+        branch: rule.pattern,
+        owner,
+        repo: name,
+        required_pull_request_reviews: {
+          required_approving_review_count: rule.requiredApprovingReviewCount,
+          dismiss_stale_reviews: rule.dismissesStaleReviews,
+          require_code_owner_reviews: rule.requiresCodeOwnerReviews,
+        },
+        required_status_checks: {
+          contexts: rule.requiredStatusCheckContexts!,
+          strict: rule.requiresStrictStatusChecks!,
+        },
+        enforce_admins: rule.isAdminEnforced!,
+        restrictions: null!,
+        headers: {
+          accept: 'application/vnd.github.luke-cage-preview+json',
+        },
+      });
+      logger.info(`Success updating master branch protection for ${repo}`);
+    } catch (err) {
+      if (err.status === 401) {
+        logger.warn(
+          `updateMasterBranchProtection: warning received ${err.status} updating ${owner}/${name}`
+        );
+      } else {
+        err.message = `updateMasterBranchProtection: error received ${err.status} updating ${owner}/${name}\n\n${err.message}`;
+        logger.error(err);
+        return;
+      }
     }
   }
-}
 
-/**
- * Ensure the correct teams are added to the repository
- * @param repos List of repos to iterate.
- */
-async function updateRepoTeams(
-  repo: string,
-  context: Context,
-  rules: PermissionRule[]
-) {
-  logger.info(`Update team access for ${repo}`);
-  const [owner, name] = repo.split('/');
+  /**
+   * Ensure the correct teams are added to the repository
+   * @param repos List of repos to iterate.
+   */
+  async updateRepoTeams(repo: string, rules: PermissionRule[]) {
+    const logger = this.logger;
+    logger.info(`Update team access for ${repo}`);
+    const [owner, name] = repo.split('/');
 
-  // Cloud DPEs and Cloud DevRel PgMs are given default write access to all repositories we manage.
-  rules.push(
-    {
-      permission: 'push',
-      team: 'cloud-dpe',
-    },
-    {
-      permission: 'push',
-      team: 'cloud-devrel-pgm',
-    }
-  );
-
-  try {
-    await Promise.all(
-      rules.map(membership => {
-        return context.octokit.teams.addOrUpdateRepoPermissionsInOrg({
-          team_slug: membership.team,
-          owner,
-          org: owner,
-          permission: membership.permission as 'push',
-          repo: name,
-        });
-      })
+    // Cloud DPEs and Cloud DevRel PgMs are given default write access to all repositories we manage.
+    rules.push(
+      {
+        permission: 'push',
+        team: 'cloud-dpe',
+      },
+      {
+        permission: 'push',
+        team: 'cloud-devrel-pgm',
+      }
     );
-    logger.info(`Success updating repo in org for ${repo}`);
-  } catch (err) {
-    const knownErrors = [
-      401, // bot does not have permission to access this repository.
-      404, // team being added does not exist on repo.
-    ];
-    if (knownErrors.includes(err.status)) {
-      logger.warn(
-        `updateRepoTeams: warning received ${err.status} updating ${owner}/${name}`
+
+    try {
+      await Promise.all(
+        rules.map(membership => {
+          return this.octokit.teams.addOrUpdateRepoPermissionsInOrg({
+            team_slug: membership.team,
+            owner,
+            org: owner,
+            permission: membership.permission as 'push',
+            repo: name,
+          });
+        })
       );
-    } else {
-      err.message = `updateRepoTeams: error received ${err.status} updating ${owner}/${name}\n\n${err.message}`;
-      logger.error(err);
-      return;
+      logger.info(`Success updating repo in org for ${repo}`);
+    } catch (err) {
+      const knownErrors = [
+        401, // bot does not have permission to access this repository.
+        404, // team being added does not exist on repo.
+      ];
+      if (knownErrors.includes(err.status)) {
+        logger.warn(
+          `updateRepoTeams: warning received ${err.status} updating ${owner}/${name}`
+        );
+      } else {
+        err.message = `updateRepoTeams: error received ${err.status} updating ${owner}/${name}\n\n${err.message}`;
+        logger.error(err);
+        return;
+      }
     }
   }
-}
 
-/**
- * Update the main repository options
- * @param repos List of repos to iterate.
- */
-async function updateRepoOptions(
-  repo: string,
-  context: Context,
-  config: RepoConfig
-) {
-  logger.info(`Updating commit settings for ${repo}`);
-  const [owner, name] = repo.split('/');
-  config = extend(true, {}, repoConfigDefaults, config);
-  logger.info(`name: ${name}`);
-  logger.info(`owner: ${owner}`);
-  logger.info(`enable rebase? ${config.rebaseMergeAllowed}`);
-  logger.info(`enable squash? ${config.squashMergeAllowed}`);
+  /**
+   * Update the main repository options
+   * @param repos List of repos to iterate.
+   */
+  async updateRepoOptions(repo: string, config: RepoConfig) {
+    const logger = this.logger;
+    logger.info(`Updating commit settings for ${repo}`);
+    const [owner, name] = repo.split('/');
+    config = extend(true, {}, repoConfigDefaults, config);
+    logger.info(`name: ${name}`);
+    logger.info(`owner: ${owner}`);
+    logger.info(`enable rebase? ${config.rebaseMergeAllowed}`);
+    logger.info(`enable squash? ${config.squashMergeAllowed}`);
 
-  try {
-    await context.octokit.repos.update({
-      name,
-      repo: name,
-      owner,
-      allow_merge_commit: config.mergeCommitAllowed,
-      allow_rebase_merge: config.rebaseMergeAllowed,
-      allow_squash_merge: config.squashMergeAllowed,
-      delete_branch_on_merge: config.deleteBranchOnMerge,
-    });
-    logger.info(`Success updating repo options for ${repo}`);
-  } catch (err) {
-    const knownErrors = [
-      401, // bot does not have permission to access this repository.
-      403, // thrown if repo is archived.
-    ];
-    if (knownErrors.includes(err.status)) {
-      logger.warn(
-        `updateRepoOptions: warning received ${err.status} updating ${owner}/${name}`
-      );
-    } else {
-      err.message = `updateRepoOptions: error received ${err.status} updating ${owner}/${name}\n\n${err.message}`;
-      logger.error(err);
-      return;
+    try {
+      await this.octokit.repos.update({
+        name,
+        repo: name,
+        owner,
+        allow_merge_commit: config.mergeCommitAllowed,
+        allow_rebase_merge: config.rebaseMergeAllowed,
+        allow_squash_merge: config.squashMergeAllowed,
+        delete_branch_on_merge: config.deleteBranchOnMerge,
+      });
+      logger.info(`Success updating repo options for ${repo}`);
+    } catch (err) {
+      const knownErrors = [
+        401, // bot does not have permission to access this repository.
+        403, // thrown if repo is archived.
+      ];
+      if (knownErrors.includes(err.status)) {
+        logger.warn(
+          `updateRepoOptions: warning received ${err.status} updating ${owner}/${name}`
+        );
+      } else {
+        err.message = `updateRepoOptions: error received ${err.status} updating ${owner}/${name}\n\n${err.message}`;
+        logger.error(err);
+        return;
+      }
     }
   }
 }

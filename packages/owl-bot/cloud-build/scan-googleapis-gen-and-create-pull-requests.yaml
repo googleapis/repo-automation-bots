@@ -1,0 +1,49 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# GitHub has a 3000 file limit, when listing files modified by a diff, see:
+# https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/limits-for-viewing-content-and-diffs-in-a-repository#diff-limits
+# for this reason, we use a clone of the repository to determine modified files:
+steps:
+  # Copy the GitHub PEM file from Secret Manager for OwlBot:
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args: [ '-c', "gcloud secrets versions access latest --secret=owlbot_github_key --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/private-key.pem" ]
+  # Populate global username, email for git:
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - user.email
+      - 'gcf-owl-bot[bot]@users.noreply.github.com'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - user.name
+      - 'Owl Bot'
+  # main
+  - name: 'gcr.io/repo-automation-bots/owlbot-cli'
+    args:
+      - scan-googleapis-gen-and-create-pull-requests
+      - --pem-path
+      - /workspace/private-key.pem
+      - --app-id
+      - ${_APP_ID}
+      - --installation
+      - ${_INSTALLATION}
+      - --firestore-project
+      - ${_FIRESTORE_PROJECT}
+
+timeout: '7200s'

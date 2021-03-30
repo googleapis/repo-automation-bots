@@ -19,16 +19,17 @@ import {
   OwlBotLock,
   owlBotLockFrom,
   owlBotLockPath,
-  owlBotYamlFrom,
+  owlBotYamlFromText,
   owlBotYamlPath,
 } from './config-files';
 import {Configs, ConfigsStore} from './configs-store';
-import {getAuthenticatedOctokit, OctokitType, core} from './core';
+import {getAuthenticatedOctokit, core} from './core';
 import {Octokit} from '@octokit/rest';
 import yaml from 'js-yaml';
 // Conflicting linters think the next line is extraneous or necessary.
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints} from '@octokit/types';
+import {OctokitType} from './octokit-util';
 
 type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
 
@@ -82,8 +83,14 @@ export async function onPostProcessorPublished(
         configsStore,
         octokit,
         repo,
-        lock
+        lock,
+        configs
       );
+      // We were hitting GitHub's abuse detection algorithm,
+      // add a short sleep between creating PRs to help circumvent:
+      await new Promise(resolve => {
+        setTimeout(resolve, 500);
+      });
     }
   }
 }
@@ -101,7 +108,8 @@ export async function createOnePullRequestForUpdatingLock(
   configsStore: ConfigsStore,
   octokit: OctokitType,
   repoFull: string,
-  lock: OwlBotLock
+  lock: OwlBotLock,
+  configs?: Configs
 ): Promise<string> {
   const existingPullRequest = await configsStore.findPullRequestForUpdatingLock(
     repoFull,
@@ -129,20 +137,16 @@ export async function createOnePullRequestForUpdatingLock(
       upstreamRepo: repo,
       // TODO(rennie): we should provide a context aware commit
       // message for this:
-      title: 'chore: update OwlBot.lock with new version of post-processor',
-      branch: 'owl-bot-lock-1',
-      // TODO(bcoe): come up with a funny blurb to put in PRs.
+      title: 'build: update .OwlBot.lock with new version of post-processor',
+      branch: `owlbot-lock-${Date.now()}`,
       description: `Version ${
         lock.docker.digest
       } was published at ${new Date().toISOString()}.`,
-      // TODO(rennie): we need a way to track what the primary branch
-      // is for a PR.
-      primary: 'main',
+      primary: configs?.branchName ?? 'main',
       force: true,
       fork: false,
-      // TODO(rennie): we should provide a context aware commit
-      // message for this:
-      message: 'Update OwlBot.lock',
+      // TODO(bcoe): replace this message with last commit to synthtool:
+      message: 'build: update .OwlBot.lock with new version of post-processor',
     },
     {level: 'error'}
   );
@@ -271,7 +275,9 @@ export async function refreshConfigs(
         yaml.load(lockContent) as Record<string, any>
       );
     } catch (e) {
-      logger.error(`${repoFull} has an invalid ${owlBotLockPath} file: ${e}`);
+      logger.error(
+        `${repoFull} has an invalid ${owlBotLockPath} file: ${e.message}`
+      );
     }
   }
 
@@ -285,10 +291,7 @@ export async function refreshConfigs(
   );
   if (yamlContent) {
     try {
-      newConfigs.yaml = owlBotYamlFrom(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        yaml.load(yamlContent) as Record<string, any>
-      );
+      newConfigs.yaml = owlBotYamlFromText(yamlContent);
     } catch (e) {
       logger.error(`${repoFull} has an invalid ${owlBotYamlPath} file: ${e}`);
     }

@@ -1,0 +1,58 @@
+{
+  "name": "@google-cloud/release-brancher",
+  "version": "1.0.3",
+  "description": "Cut release branches",
+  "bin": "./build/src/bin/release-brancher.js",
+  "author": "Google LLC.",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "main": "build/src/app.js",
+  "keywords": [
+    "probot",
+    "github",
+    "probot-app"
+  ],
+  "files": [
+    "build/src"
+  ],
+  "scripts": {
+    "compile": "tsc -p .",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "test": "cross-env LOG_LEVEL=fatal mocha --exit build/test",
+    "fix": "gts fix",
+    "lint": "gts check"
+  },
+  "dependencies": {
+    "@octokit/rest": "^18.0.1",
+    "code-suggester": "^1.9.1",
+    "yargs": "^17.0.0-candidate.6",
+    "js-yaml": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.0",
+    "@types/mocha": "^8.0.0",
+    "@types/node": "^12.6.1",
+    "@types/pino": "^6.3.6",
+    "@types/sinon": "^9.0.11",
+    "@types/yargs": "^16.0.0",
+    "c8": "^7.3.5",
+    "cross-env": "^7.0.0",
+    "gts": "^3.0.0",
+    "mocha": "^8.0.0",
+    "nock": "^13.0.0",
+    "sinon": "^10.0.0",
+    "snap-shot-it": "^7.0.0",
+    "typescript": "~4.2.0"
+  },
+  "config": {
+    "snap-shot-it": {
+      "sortSnapshots": true
+    }
+  },
+  "engines": {
+    "node": ">= 12.16.0"
+  }
+}

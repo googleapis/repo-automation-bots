@@ -45,6 +45,7 @@ export interface LanguageConfig {
 }
 
 export interface Config {
+  enabled?: boolean;
   product?: boolean;
   path?: {
     pullrequest?: boolean;
@@ -81,12 +82,6 @@ export function autoDetectLabel(
     return undefined;
   }
 
-  // The Conventional Commits "docs:" and "build:" prefixes are far more common
-  // than the APIs. So, never label those with "api: docs" or "api: build".
-  if (title.startsWith('docs:') || title.startsWith('build:')) {
-    return undefined;
-  }
-
   // Regex to match the scope of a Conventional Commit message.
   const conv = /[^(]+\(([^)]+)\):/;
   const match = title.match(conv);
@@ -109,6 +104,12 @@ export function autoDetectLabel(
   firstPart = firstPart.split('_')[0]; // Before the underscore, if there is one.
   firstPart = firstPart.toLowerCase(); // Convert to lower case.
   firstPart = firstPart.replace(/\s/, ''); // Remove spaces.
+
+  // The Conventional Commits "docs" and "build" prefixes are far more common
+  // than the APIs. So, never label those with "api: docs" or "api: build".
+  if (firstPart === 'docs' || firstPart === 'build') {
+    return undefined;
+  }
 
   // Replace some known firstPart values with their API name.
   const commonConversions = new Map();

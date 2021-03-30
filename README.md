@@ -130,7 +130,7 @@ at the specified schedule.
 [failurechecker]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/failurechecker
 [failurechecker-app]: https://github.com/apps/failure-checker
 [label-sync]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/label-sync
-[label-sync-app]: https://github.com/apps/gcf-label-sync
+[label-sync-app]: https://github.com/apps/google-cloud-label-sync
 [flakybot]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/flakybot
 [flakybot-app]: https://github.com/apps/flaky-bot
 [merge-on-green]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/merge-on-green

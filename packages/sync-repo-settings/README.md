@@ -49,4 +49,5 @@ permissionRules:
     permission: push
 ```
 
+Settings will be immediately applied after committing the config to the default branch.
 The bot is currently configured to run on a cron job, and updates settings 1am PST.

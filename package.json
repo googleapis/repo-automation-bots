@@ -13,6 +13,7 @@
   "devDependencies": {
     "c8": "^7.1.0",
     "gaxios": "^4.0.0",
-    "smee-client": "^1.1.0"
+    "smee-client": "^1.1.0",
+    "@google-cloud/mono-repo-publish": "^1.0.0"
   }
 }

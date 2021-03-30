@@ -228,6 +228,25 @@ describe('auto-label', () => {
       ghRequests.done();
     });
 
+    it('ignores repos that are not enabled', async () => {
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'valid-config-not-enabled.yml')
+      );
+
+      const payload = require(resolve(fixturesPath, './events/issue_opened'));
+
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
+        .reply(200, config);
+
+      await probot.receive({
+        name: 'issues',
+        payload,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
     it('auto detects and labels a Spanner issue', async () => {
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid-config.yml')
@@ -427,25 +446,35 @@ describe('auto-label', () => {
         fixturesPath,
         './events/issue_opened_spanner'
       ));
-      payload['issue']['title'] = 'docs: they are awesome';
 
-      const ghRequests = nock('https://api.github.com')
-        .get(
-          '/repos/GoogleCloudPlatform/golang-samples/contents/.github%2Fauto-label.yaml'
-        )
-        .reply(200, config)
-        .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
-        .reply(200, [
-          {
-            name: 'samples',
-          },
-        ]);
-      await probot.receive({
-        name: 'issues',
-        payload,
-        id: 'abc123',
-      });
-      ghRequests.done();
+      const titles = [
+        'docs: they are awesome',
+        'fix(docs): still awesome',
+        'build(foo): still never flake',
+        'ci(build): never flake',
+      ];
+
+      for (const title of titles) {
+        payload['issue']['title'] = title;
+
+        const ghRequests = nock('https://api.github.com')
+          .get(
+            '/repos/GoogleCloudPlatform/golang-samples/contents/.github%2Fauto-label.yaml'
+          )
+          .reply(200, config)
+          .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
+          .reply(200, [
+            {
+              name: 'samples',
+            },
+          ]);
+        await probot.receive({
+          name: 'issues',
+          payload,
+          id: 'abc123',
+        });
+        ghRequests.done();
+      }
     });
   });
 

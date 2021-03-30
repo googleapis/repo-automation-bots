@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {OwlBotLock, OwlBotYaml} from './config-files';
+import {GithubRepo} from './github-repo';
 
 export interface Configs {
   // The body of .Owlbot.lock.yaml.
@@ -64,7 +65,7 @@ export interface ConfigsStore {
    * Finds a previously recorded pull request or returns undefined.
    * @param repo full repo name like "googleapis/nodejs-vision"
    * @param lock The new contents of the lock file.
-   * @returns: the string passed to recordPullRequestForUpdatingLock().
+   * @returns the string passed to recordPullRequestForUpdatingLock().
    */
   findPullRequestForUpdatingLock(
     repo: string,
@@ -72,7 +73,7 @@ export interface ConfigsStore {
   ): Promise<string | undefined>;
 
   /**
-   * Finds a previously recorded pull request or returns undefined.
+   * Records a pull request created to update the lock file.
    * @param repo full repo name like "googleapis/nodejs-vision"
    * @param lock The new contents of the lock file.
    * @param pullRequestId the string that will be later returned by
@@ -87,4 +88,16 @@ export interface ConfigsStore {
     lock: OwlBotLock,
     pullRequestId: string
   ): Promise<string>;
+
+  /**
+   * Finds repositories who list one of the changed files as a source in
+   * copy-files.
+   * @param changedFilePaths file paths in googleapis that changed.
+   *   ex: ["/google/cloud/vision/v1/vision-v1-nodejs/src/v1/image_annotator_client.ts"]
+   * @returns the list of repo names.
+   *   ex: ["googleapis/nodejs-vision", "googleapis/python-vision"]
+   */
+  findReposAffectedByFileChanges(
+    changedFilePaths: string[]
+  ): Promise<GithubRepo[]>;
 }

@@ -318,7 +318,7 @@ export class GCFBootstrapper {
           // managed by the client libraries team, it would be good to get more
           // clever and instead pull up a list of repos we're installed on by
           // installation ID:
-          await this.handleScheduled(id, request, name, signature);
+          await this.handleScheduled(id, request, name, signature, wrapOptions);
         } else if (triggerType === TriggerType.GITHUB) {
           await this.enqueueTask({
             id,
@@ -349,14 +349,18 @@ export class GCFBootstrapper {
     id: string,
     req: express.Request,
     eventName: string,
-    signature: string
+    signature: string,
+    wrapOptions: WrapOptions | undefined
   ) {
     const body: Scheduled = this.parseRequestBody(req);
     if (body.repo) {
       // Job was scheduled for a single repository:
       await this.scheduledToTask(body.repo, id, body, eventName, signature);
     } else {
-      const octokit = await this.getAuthenticatedOctokit(body.installation.id);
+      const octokit = await this.getAuthenticatedOctokit(
+        body.installation.id,
+        wrapOptions
+      );
       // Installations API documented here: https://developer.github.com/v3/apps/installations/
       const installationsPaginated = octokit.paginate.iterator(
         octokit.apps.listReposAccessibleToInstallation,
@@ -381,11 +385,20 @@ export class GCFBootstrapper {
   }
 
   // TODO: How do we still get access to this installation token?
-  async getAuthenticatedOctokit(installationId: number): Promise<Octokit> {
+  async getAuthenticatedOctokit(
+    installationId: number,
+    wrapOptions?: WrapOptions
+  ): Promise<Octokit> {
     // See: https://github.com/probot/probot/issues/1003
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const app = (this.probot as any).apps[0] as Probot;
-    return ((await app.auth(installationId)) as unknown) as Octokit;
+    const cfg = await this.getProbotConfig(wrapOptions?.logging);
+    return new cfg.Octokit!({
+      auth: {
+        appId: cfg.appId,
+        privateKey: cfg.privateKey,
+        installationId,
+      },
+    });
   }
 
   private async scheduledToTask(

@@ -4,6 +4,10 @@
   "description": "Schema for defining the .OwlBot.yaml config",
   "additionalProperties": false,
   "properties": {
+    "begin-after-commit-hash": {
+      "type": "string",
+      "description": "Start creating pull requests after this googleapis-gen commit hash."
+    },
     "docker": {
       "type": "object",
       "additionalProperties": false,
@@ -15,8 +19,8 @@
         }
       }
     },
-    "copy-dirs": {
-      "description": "Directories to copy from googleapis-gen",
+    "deep-copy-regex": {
+      "description": "Directories and files to copy from googleapis-gen",
       "type": "array",
       "items": {
         "type": "object",
@@ -24,14 +28,28 @@
         "required": ["source", "dest"],
         "properties": {
           "source": {
-            "description": "Source directory to copy from googleapis-gen.",
+            "description": "Source directory, as a regular expression to copy from googleapis-gen.",
             "type": "string"
           },
           "dest": {
-            "description": "Destination directory in this repo to copy the files too.  Existing content in the directory will be wiped out and replaced.",
+            "description": "Destination directory to copy files too.  Will usually refer to groups in the source regex with $1 syntax.",
             "type": "string"
           }
         }
+      }
+    },
+    "deep-remove-regex": {
+      "description": "Directories files to remove from the local repo before copying in new code.",
+      "type": "array",
+      "items": {
+        "type": "string" 
+      }
+    },
+    "deep-preserve-regex": {
+      "description": "Directories files in the local repo to leave untouched during copy and remove.",
+      "type": "array",
+      "items": {
+        "type": "string"
       }
     }
   }

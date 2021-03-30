@@ -15,7 +15,9 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable node/no-extraneous-import */
 
-import {Application, Context} from 'probot';
+import {Probot, Context} from 'probot';
+import {EventPayloads} from '@octokit/webhooks';
+
 import {Configuration, ConfigurationOptions} from './configuration';
 import {DEFAULT_CONFIGURATION, CONFIGURATION_FILE_PATH} from './configuration';
 import {
@@ -36,10 +38,10 @@ import {
   checkProductPrefixViolations,
   checkRemovingUsedTagViolations,
 } from './violations';
+
 import {logger, addOrUpdateIssueComment} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
-
 import tar from 'tar';
 import util from 'util';
 import fs from 'fs';
@@ -60,6 +62,14 @@ type Conclusion =
 // Solely for avoid using `any` type.
 interface Label {
   name: string;
+}
+
+interface File {
+  content: string | undefined;
+}
+
+function isFile(file: File | unknown): file is File {
+  return (file as File).content !== undefined;
 }
 
 const FULL_SCAN_ISSUE_TITLE = 'snippet-bot full scan';
@@ -189,7 +199,7 @@ async function fullScan(context: Context, configuration: Configuration) {
     if (mismatchedTags) {
       bodyDetail = failureMessages.join('\n');
     }
-    await context.github.issues.update({
+    await context.octokit.issues.update({
       owner: owner,
       repo: repo,
       issue_number: issueNumber,
@@ -205,7 +215,7 @@ ${bodyDetail}`
   } catch (err) {
     err.message = `Failed to scan files: ${err.message}`;
     logger.error(err);
-    await context.github.issues.update({
+    await context.octokit.issues.update({
       owner: owner,
       repo: repo,
       issue_number: issueNumber,
@@ -223,6 +233,7 @@ ${bodyDetail}`
 
 async function scanPullRequest(
   context: Context,
+  pull_request: EventPayloads.WebhookPayloadPullRequestPullRequest,
   configuration: Configuration,
   refreshing = false
 ) {
@@ -232,13 +243,13 @@ async function scanPullRequest(
 
   // Parse the PR diff and recognize added/deleted region tags.
   const result = await parseRegionTagsInPullRequest(
-    context.payload.pull_request.diff_url,
-    context.payload.pull_request.base.repo.owner.login,
-    context.payload.pull_request.base.repo.name,
-    context.payload.pull_request.base.sha,
-    context.payload.pull_request.head.repo.owner.login,
-    context.payload.pull_request.head.repo.name,
-    context.payload.pull_request.head.sha
+    pull_request.diff_url,
+    pull_request.base.repo.owner.login,
+    pull_request.base.repo.name,
+    pull_request.base.sha,
+    pull_request.head.repo.owner.login,
+    pull_request.head.repo.name,
+    pull_request.head.sha
   );
 
   let mismatchedTags = false;
@@ -255,13 +266,13 @@ async function scanPullRequest(
       continue;
     }
     try {
-      const blob = await context.github.repos.getContent({
-        owner: context.payload.pull_request.head.repo.owner.login,
-        repo: context.payload.pull_request.head.repo.name,
+      const blob = await context.octokit.repos.getContent({
+        owner: pull_request.head.repo.owner.login,
+        repo: pull_request.head.repo.name,
         path: file,
-        ref: context.payload.pull_request.head.sha,
+        ref: pull_request.head.sha,
       });
-      if (blob.data.content === undefined) {
+      if (!isFile(blob.data)) {
         continue;
       }
       const fileContents = Buffer.from(blob.data.content, 'base64').toString(
@@ -272,7 +283,7 @@ async function scanPullRequest(
         file,
         owner,
         repo,
-        context.payload.pull_request.head.sha
+        pull_request.head.sha
       );
       parseResults.set(file, parseResult);
       if (!parseResult.result) {
@@ -299,7 +310,7 @@ async function scanPullRequest(
   const checkParams = context.repo({
     name: 'Mismatched region tag',
     conclusion: 'success' as Conclusion,
-    head_sha: context.payload.pull_request.head.sha,
+    head_sha: pull_request.head.sha,
     output: {
       title: 'Region tag check',
       summary: 'Region tag successful',
@@ -319,7 +330,7 @@ async function scanPullRequest(
   // post the status of commit linting to the PR, using:
   // https://developer.github.com/v3/checks/
   if (tagsFound) {
-    await context.github.checks.create(checkParams);
+    await context.octokit.checks.create(checkParams);
   }
 
   let commentBody = '';
@@ -332,7 +343,7 @@ async function scanPullRequest(
   }
 
   // Add or update a comment on the PR.
-  const prNumber = context.payload.pull_request.number;
+  const prNumber = pull_request.number;
 
   // First check product prefix for added region tags.
   const productPrefixViolations = await checkProductPrefixViolations(
@@ -343,8 +354,8 @@ async function scanPullRequest(
     result,
     configuration,
     parseResults,
-    context.payload.pull_request.base.repo.full_name,
-    context.payload.pull_request.base.ref
+    pull_request.base.repo.full_name,
+    pull_request.base.ref
   );
   const removeUsedTagViolations = removingUsedTagsViolations.get(
     'REMOVE_USED_TAG'
@@ -401,6 +412,8 @@ async function scanPullRequest(
       }
       commentBody += formatViolations(removeConflictingTagViolations, summary);
     }
+    commentBody +=
+      '**The end of the violation section. All the stuff below is FYI purposes only.**\n\n';
     commentBody += '---\n';
   }
 
@@ -460,7 +473,7 @@ ${REFRESH_UI}
 `;
 
   await addOrUpdateIssueComment(
-    context.github,
+    context.octokit,
     owner,
     repo,
     prNumber,
@@ -473,13 +486,13 @@ ${REFRESH_UI}
  * Creates a comment mark used for addOrupdateissuecomment.
  * I'll move this function to gcf-utils later.
  */
-function getCommentMark(installationId: string): string {
+function getCommentMark(installationId: number | undefined): string {
   return `<!-- probot comment [${installationId}]-->`;
 }
 
-export = (app: Application) => {
+export = (app: Probot) => {
   app.on('issue_comment.edited', async context => {
-    const commentMark = getCommentMark(context.payload.installation.id);
+    const commentMark = getCommentMark(context.payload.installation?.id);
 
     // If the comment is made by bots, and the comment has the refresh
     // checkbox checked, we'll proceed.
@@ -504,17 +517,21 @@ export = (app: Application) => {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const prNumber = context.payload.issue.number;
-    const prResponse = await context.github.pulls.get({
+    const prResponse = await context.octokit.pulls.get({
       owner: owner,
       repo: repo,
       pull_number: prNumber,
     });
-    context.payload.pull_request = prResponse.data;
     // Invalidate the cache for Snippets.
     invalidateCache();
 
     // Examine the pull request.
-    await scanPullRequest(context, configuration, true);
+    await scanPullRequest(
+      context,
+      prResponse.data as EventPayloads.WebhookPayloadPullRequestPullRequest,
+      configuration,
+      true
+    );
   });
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
@@ -561,7 +578,7 @@ export = (app: Application) => {
     }
     // Remove the label and proceed.
     try {
-      await context.github.issues.removeLabel(
+      await context.octokit.issues.removeLabel(
         context.issue({name: REFRESH_LABEL})
       );
     } catch (err) {
@@ -574,7 +591,12 @@ export = (app: Application) => {
     invalidateCache();
 
     // Examine the pull request.
-    await scanPullRequest(context, configuration, true);
+    await scanPullRequest(
+      context,
+      context.payload.pull_request,
+      configuration,
+      true
+    );
   });
 
   app.on(
@@ -615,7 +637,11 @@ export = (app: Application) => {
         ...configOptions,
       });
       logger.info({config: configuration});
-      await scanPullRequest(context, configuration);
+      await scanPullRequest(
+        context,
+        context.payload.pull_request,
+        configuration
+      );
     }
   );
 };

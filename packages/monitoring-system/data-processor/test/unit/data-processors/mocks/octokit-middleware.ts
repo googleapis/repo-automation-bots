@@ -90,7 +90,7 @@ export class OctokitMiddleware {
    * Get the mock response associated with the given request options
    * @param options
    */
-  public getMockResponse(options: OctokitRequestOptions): Promise<{}> {
+  public getMockResponse<T>(options: OctokitRequestOptions): Promise<T> {
     const action = OctokitRequestParser.parseActionDetails(options);
     const {
       type,
@@ -109,7 +109,7 @@ export class OctokitMiddleware {
       if (response.type === 'reject') {
         reject(response.value);
       } else {
-        resolve(response.value);
+        resolve(response.value as T);
       }
     });
   }

@@ -16,7 +16,7 @@ import {
   getAuthenticatedOctokit,
   getGitHubShortLivedAccessToken,
   getOwlBotLock,
-  triggerBuild,
+  triggerPostProcessBuild,
 } from '../../core';
 import {promisify} from 'util';
 import {readFile} from 'fs';
@@ -88,7 +88,7 @@ export const triggerBuildCommand: yargs.CommandModule<{}, Args> = {
       return;
     }
     const image = `${lock.docker.image}@${lock.docker.digest}`;
-    const buildStatus = await triggerBuild(
+    const buildStatus = await triggerPostProcessBuild(
       {
         image,
         project: argv.project,

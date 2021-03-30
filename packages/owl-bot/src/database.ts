@@ -13,12 +13,18 @@
 // limitations under the License.
 
 import admin from 'firebase-admin';
-import {OwlBotLock} from './config-files';
+import {OwlBotLock, toFrontMatchRegExp} from './config-files';
 import {Configs, ConfigsStore} from './configs-store';
+import {CopyTasksStore} from './copy-tasks-store';
+import {GithubRepo, githubRepoFromOwnerSlashName} from './github-repo';
 
 export type Db = admin.firestore.Firestore;
-interface UpdateLockPr {
+interface UpdatePr {
   pullRequestId: string;
+}
+
+interface CopyTask {
+  pubsubMessageId: string;
 }
 
 /**
@@ -38,10 +44,18 @@ function makeUpdateLockKey(repo: string, lock: OwlBotLock): string {
   return [repo, lock.docker.image, lock.docker.digest].map(encodeId).join('+');
 }
 
-export class FirestoreConfigsStore implements ConfigsStore {
+function makeUpdateFilesKey(
+  repo: string,
+  googleapisGenCommitHash: string
+): string {
+  return [repo, googleapisGenCommitHash].map(encodeId).join('+');
+}
+
+export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
   private db: Db;
   readonly yamls: string;
   readonly lockUpdatePrs: string;
+  readonly copyTasks: string;
 
   /**
    * @param collectionsPrefix should only be overridden in tests.
@@ -50,6 +64,7 @@ export class FirestoreConfigsStore implements ConfigsStore {
     this.db = db;
     this.yamls = collectionsPrefix + 'yamls';
     this.lockUpdatePrs = collectionsPrefix + 'lock-update-prs';
+    this.copyTasks = collectionsPrefix + 'copy-tasks';
   }
 
   async getConfigs(repo: string): Promise<Configs | undefined> {
@@ -103,7 +118,7 @@ export class FirestoreConfigsStore implements ConfigsStore {
       .collection(this.lockUpdatePrs)
       .doc(makeUpdateLockKey(repo, lock));
     const got = await docRef.get();
-    return got.exists ? (got.data() as UpdateLockPr).pullRequestId : undefined;
+    return got.exists ? (got.data() as UpdatePr).pullRequestId : undefined;
   }
 
   async recordPullRequestForUpdatingLock(
@@ -114,11 +129,11 @@ export class FirestoreConfigsStore implements ConfigsStore {
     const docRef = this.db
       .collection(this.lockUpdatePrs)
       .doc(makeUpdateLockKey(repo, lock));
-    const data: UpdateLockPr = {pullRequestId: pullRequestId};
+    const data: UpdatePr = {pullRequestId: pullRequestId};
     await this.db.runTransaction(async t => {
       const got = await t.get(docRef);
       if (got.exists) {
-        pullRequestId = (got.data() as UpdateLockPr).pullRequestId;
+        pullRequestId = (got.data() as UpdatePr).pullRequestId;
       } else {
         t.set(docRef, data);
       }
@@ -133,6 +148,91 @@ export class FirestoreConfigsStore implements ConfigsStore {
     const docRef = this.db
       .collection(this.lockUpdatePrs)
       .doc(makeUpdateLockKey(repo, lock));
+    await docRef.delete();
+  }
+
+  async findReposAffectedByFileChanges(
+    changedFilePaths: string[]
+  ): Promise<GithubRepo[]> {
+    // This loop runs in time O(n*m), where
+    // n = changedFilePaths.length
+    // m = # repos stored in config store.
+    // It scans all the values in the collection.  There are many opportunities
+    // to optimize if performance becomes a problem.
+    const snapshot = await this.db.collection(this.yamls).get();
+    const result: GithubRepo[] = [];
+    let i = 0;
+    snapshot.forEach(doc => {
+      i++;
+      const configs = doc.data() as Configs | undefined;
+      match_loop: for (const copy of configs?.yaml?.['deep-copy-regex'] ?? []) {
+        const regExp = toFrontMatchRegExp(copy.source);
+        for (const path of changedFilePaths) {
+          if (regExp.test(path)) {
+            result.push(githubRepoFromOwnerSlashName(decodeId(doc.id)));
+            break match_loop;
+          }
+        }
+      }
+    });
+    console.info(`walked ${i} configs`);
+    return result;
+  }
+
+  async findPubsubMessageIdForCopyTask(
+    repo: string,
+    googleapisGenCommitHash: string
+  ): Promise<string | undefined> {
+    const docRef = this.db
+      .collection(this.copyTasks)
+      .doc(makeUpdateFilesKey(repo, googleapisGenCommitHash));
+    const got = await docRef.get();
+    return got.exists ? (got.data() as CopyTask).pubsubMessageId : undefined;
+  }
+
+  async recordPubsubMessageIdForCopyTask(
+    repo: string,
+    googleapisGenCommitHash: string,
+    pubsubMessageId: string
+  ): Promise<string> {
+    const docRef = this.db
+      .collection(this.copyTasks)
+      .doc(makeUpdateFilesKey(repo, googleapisGenCommitHash));
+    const data: CopyTask = {pubsubMessageId};
+    await this.db.runTransaction(async t => {
+      const got = await t.get(docRef);
+      if (got.exists) {
+        pubsubMessageId = (got.data() as CopyTask).pubsubMessageId;
+      } else {
+        t.set(docRef, data);
+      }
+    });
+    return pubsubMessageId;
+  }
+
+  async filterMissingCopyTasks(
+    repos: string[],
+    googleapisGenCommitHash: string
+  ): Promise<string[]> {
+    const snapshot = this.db.collection(this.copyTasks);
+    const result: string[] = [];
+    for (const repo of repos) {
+      const docId = makeUpdateFilesKey(repo, googleapisGenCommitHash);
+      const got = await snapshot.doc(docId).get();
+      if (!got.exists) {
+        result.push(repo);
+      }
+    }
+    return result;
+  }
+
+  async clearPubsubMessageIdForCopyTask(
+    repo: string,
+    googleapisGenCommitHash: string
+  ): Promise<void> {
+    const docRef = this.db
+      .collection(this.copyTasks)
+      .doc(makeUpdateFilesKey(repo, googleapisGenCommitHash));
     await docRef.delete();
   }
 }

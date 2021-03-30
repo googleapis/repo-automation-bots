@@ -1,0 +1,67 @@
+[
+  {
+    "mode": "REQUIRED",
+    "name": "repo",
+    "type": "STRING"
+  },
+  {
+    "mode": "REQUIRED",
+    "name": "org",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "language",
+    "type": "STRING"
+  },
+  {
+    "mode": "REQUIRED",
+    "name": "hasRenovateConfig",
+    "type": "BOOLEAN"
+  },
+  {
+    "mode": "REQUIRED",
+    "name": "hasValidLicense",
+    "type": "BOOLEAN"
+  },
+  {
+    "mode": "REQUIRED",
+    "name": "hasCodeOfConduct",
+    "type": "BOOLEAN"
+  },
+  {
+    "mode": "REQUIRED",
+    "name": "hasContributing",
+    "type": "BOOLEAN"
+  },
+  {
+    "mode": "REQUIRED",
+    "name": "hasCodeowners",
+    "type": "BOOLEAN"
+  },
+  {
+    "mode": "REQUIRED",
+    "name": "hasBranchProtection",
+    "type": "BOOLEAN"
+  },
+  {
+    "mode": "REQUIRED",
+    "name": "hasMergeCommitsDisabled",
+    "type": "BOOLEAN"
+  },
+  {
+    "mode": "REQUIRED",
+    "name": "hasSecurityPolicy",
+    "type": "BOOLEAN"
+  },
+  {
+    "mode": "REPEATED",
+    "name": "topics",
+    "type": "STRING"
+  },
+  {
+    "mode": "REQUIRED",
+    "name": "timestamp",
+    "type": "TIMESTAMP"
+  }
+]

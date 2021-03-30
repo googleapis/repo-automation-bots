@@ -51,9 +51,13 @@ nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/Fixtures');
 
-function getBranchProtection(status: number, requiredStatusChecks: string[]) {
+function getBranchProtection(
+  branch: string,
+  status: number,
+  requiredStatusChecks: string[]
+) {
   return nock('https://api.github.com')
-    .get('/repos/testOwner/testRepo/branches/master/protection')
+    .get(`/repos/testOwner/testRepo/branches/${branch}/protection`)
     .reply(status, {
       required_status_checks: {
         contexts: requiredStatusChecks,
@@ -149,7 +153,7 @@ describe('merge-on-green wrapper logic', () => {
 
       const scopes = [
         // we're purposefully calling an error here
-        getBranchProtection(400, []),
+        getBranchProtection('main', 400, []),
         commentOnPR(),
       ];
       // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -173,10 +177,11 @@ describe('merge-on-green wrapper logic', () => {
           'testOwner',
           'testRepo',
           1,
+          'main',
           testingOctokitInstance
         );
       });
-      const scopes = [getBranchProtection(200, ['Special Check'])];
+      const scopes = [getBranchProtection('main', 200, ['Special Check'])];
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,
@@ -197,7 +202,7 @@ describe('merge-on-green wrapper logic', () => {
     it('does not add a PR if branch protection errors and comments on PR when PR labeled', async () => {
       loggerStub.restore();
 
-      const scopes = [getBranchProtection(400, []), commentOnPR()];
+      const scopes = [getBranchProtection('main', 400, []), commentOnPR()];
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(
         fixturesPath,

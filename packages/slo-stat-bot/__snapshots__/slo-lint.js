@@ -13,7 +13,7 @@ exports['slo-lint handleSLOs is triggered Error is logged if creating check on P
   "output": {
     "title": "Commit message did not follow Conventional Commits",
     "summary": "issue_slo_rules.json does not follow the slo_rules schema.",
-    "text": "[\n    {\n        \"keyword\": \"required\",\n        \"dataPath\": \"[0].complianceSettings\",\n        \"schemaPath\": \"#/definitions/complianceSettings/required\",\n        \"params\": {\n            \"missingProperty\": \"resolutionTime\"\n        },\n        \"message\": \"should have required property 'resolutionTime'\"\n    }\n]"
+    "text": "[\n    {\n        \"keyword\": \"required\",\n        \"dataPath\": \"/0/complianceSettings\",\n        \"schemaPath\": \"#/definitions/complianceSettings/required\",\n        \"params\": {\n            \"missingProperty\": \"resolutionTime\"\n        },\n        \"message\": \"should have required property 'resolutionTime'\"\n    }\n]"
   }
 }
 
@@ -28,7 +28,7 @@ exports['slo-lint handleSLOs is triggered An error comment and failure check is 
   "output": {
     "title": "Commit message did not follow Conventional Commits",
     "summary": "issue_slo_rules.json does not follow the slo_rules schema.",
-    "text": "[\n    {\n        \"keyword\": \"required\",\n        \"dataPath\": \"[0].complianceSettings\",\n        \"schemaPath\": \"#/definitions/complianceSettings/required\",\n        \"params\": {\n            \"missingProperty\": \"resolutionTime\"\n        },\n        \"message\": \"should have required property 'resolutionTime'\"\n    }\n]"
+    "text": "[\n    {\n        \"keyword\": \"required\",\n        \"dataPath\": \"/0/complianceSettings\",\n        \"schemaPath\": \"#/definitions/complianceSettings/required\",\n        \"params\": {\n            \"missingProperty\": \"resolutionTime\"\n        },\n        \"message\": \"should have required property 'resolutionTime'\"\n    }\n]"
   }
 }
 
@@ -45,6 +45,6 @@ exports['slo-lint handleSLOs is triggered Error is logged if commenting on PR fa
   "output": {
     "title": "Commit message did not follow Conventional Commits",
     "summary": "issue_slo_rules.json does not follow the slo_rules schema.",
-    "text": "[\n    {\n        \"keyword\": \"required\",\n        \"dataPath\": \"[0].complianceSettings\",\n        \"schemaPath\": \"#/definitions/complianceSettings/required\",\n        \"params\": {\n            \"missingProperty\": \"resolutionTime\"\n        },\n        \"message\": \"should have required property 'resolutionTime'\"\n    }\n]"
+    "text": "[\n    {\n        \"keyword\": \"required\",\n        \"dataPath\": \"/0/complianceSettings\",\n        \"schemaPath\": \"#/definitions/complianceSettings/required\",\n        \"params\": {\n            \"missingProperty\": \"resolutionTime\"\n        },\n        \"message\": \"should have required property 'resolutionTime'\"\n    }\n]"
   }
 }

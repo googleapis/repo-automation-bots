@@ -1,0 +1,58 @@
+{
+  "name": "policy",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "author": "Google LLC.",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "main": "build/src/app.js",
+  "keywords": [
+    "probot",
+    "github",
+    "probot-app"
+  ],
+  "files": [
+    "build/src"
+  ],
+  "bin": {
+    "policy": "build/src/cli.js"
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "start": "probot run ./build/src/bot.js",
+    "pretest": "npm run compile",
+    "test": "c8 mocha build/test",
+    "fix": "gts fix",
+    "lint": "gts check"
+  },
+  "dependencies": {
+    "@google-cloud/bigquery": "^5.5.0",
+    "@octokit/rest": "^18.3.5",
+    "code-suggester": "^1.9.2",
+    "gaxios": "^4.2.0",
+    "gcf-utils": "^7.0.0",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@octokit/openapi-types": "^6.0.0",
+    "@types/mocha": "^8.0.0",
+    "@types/node": "^12.6.1",
+    "@types/sinon": "^9.0.11",
+    "@types/uuid": "^8.3.0",
+    "c8": "^7.3.5",
+    "cross-env": "^7.0.0",
+    "gts": "^3.0.0",
+    "meow": "^9.0.0",
+    "mocha": "^8.0.0",
+    "nock": "^13.0.0",
+    "sinon": "^10.0.0",
+    "smee-client": "^1.1.0",
+    "typescript": "~4.2.0"
+  },
+  "engines": {
+    "node": ">= 12.18.2"
+  }
+}

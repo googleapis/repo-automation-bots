@@ -65,7 +65,8 @@
                         "contributors": {
                             "description": "One of: WRITE|ADMIN|OWNER. Where WRITE responders have permission for pull and push to the repo. ADMIN responders are all users who are admin of repo. OWNER is the owner of the repo. All users in the designated group are responders",
                             "type": "string",
-                            "enum": ["WRITE", "ADMIN", "OWNER"]
+                            "enum": ["WRITE", "ADMIN", "OWNER"],
+                            "default": "WRITE"
                         },
                         "users": {
                             "description": "An array of users that are responders",
@@ -76,10 +77,7 @@
                         }
                     },
                     "minProperties": 1
-                },
-                "default": {
-                    "contributors": "WRITE"
-                } 
+                }
             },
             "required": ["responseTime", "resolutionTime"]
         },
@@ -94,7 +92,7 @@
         }
     },
 
-    "type:": "array",
+    "type": "array",
     "items": {
         "$ref": "#/definitions/SLO"
     }

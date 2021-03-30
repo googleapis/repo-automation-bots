@@ -7,3 +7,4 @@ tmp
 __pycache__/*
 lerna-debug.log
 *.pem
+.vscode

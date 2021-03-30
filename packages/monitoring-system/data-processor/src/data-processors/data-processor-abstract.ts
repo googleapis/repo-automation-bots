@@ -36,7 +36,7 @@ export abstract class DataProcessor {
    * Collect new data from data source, process it, and store it in the database
    * @throws if there is an error while processing data source
    */
-  public abstract async collectAndProcess(): Promise<void>;
+  public abstract collectAndProcess(): Promise<void>;
 
   /**
    * Inserts the given document into the specified collection in Firestore, following these rules:

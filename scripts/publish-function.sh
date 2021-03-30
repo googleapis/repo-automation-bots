@@ -50,6 +50,12 @@ gcloud functions deploy "${functionName}" \
   --region "${functionRegion}" \
   --update-env-vars DRIFT_PRO_BUCKET="${bucket}",KEY_LOCATION="${keyLocation}",KEY_RING="${keyRing}",GCF_SHORT_FUNCTION_NAME="${functionName}",PROJECT_ID="${project}",GCF_LOCATION="${functionRegion}",PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1',WEBHOOK_TMP=tmp-webhook-payloads
 
+echo "Adding ability for allUsers to execute the Function"
+gcloud alpha functions add-iam-policy-binding "${functionName}" \
+  --region="${functionRegion}" \
+  --member=allUsers \
+  --role=roles/cloudfunctions.invoker
+
 echo "Deploying Queue ${queueName}"
 
 verb="create"
@@ -61,4 +67,5 @@ gcloud tasks queues ${verb} "${queueName}" \
   --max-concurrent-dispatches="2048" \
   --max-attempts="100" \
   --max-retry-duration="43200s" \
-  --max-dispatches-per-second="500"
+  --max-dispatches-per-second="500" \
+  --min-backoff="5s"
