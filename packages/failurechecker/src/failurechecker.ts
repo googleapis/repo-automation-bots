@@ -19,6 +19,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, ProbotOctokit} from 'probot';
 import {logger} from 'gcf-utils';
+import { SlowBuffer } from 'node:buffer';
 
 type OctokitType = InstanceType<typeof ProbotOctokit>;
 
@@ -103,8 +104,14 @@ export function failureChecker(app: Probot) {
           ).data;
           if (
             pr.merged_at &&
+            pr.labels.some(l => labels.includes(l.name!)) &&
             !pr.labels.some(l => l.name === SUCCESSFUL_PUBLISH_LABEL)
           ) {
+            logger.info(
+              `found failure for ${owner}/${repo} pr = ${
+                pr.number
+              } labels = ${labels.join(',')}`
+            );
             failed.push(pr.number);
           }
         }

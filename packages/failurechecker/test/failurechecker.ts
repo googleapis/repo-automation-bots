@@ -695,4 +695,62 @@ describe('failurechecker', () => {
     });
     requests.done();
   });
+  it('does not open a failure issue if PR is missing appropriate labels', async () => {
+    const requests = nock('https://api.github.com')
+      .get('/repos/bcoe/nodejs-foo/contents/.github%2Frelease-please.yml')
+      .reply(
+        200,
+        Buffer.from(
+          JSON.stringify({
+            releaseType: 'node',
+          })
+        )
+      )
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20pending&state=closed&sort=updated&direction=desc&per_page=16'
+      )
+      .reply(200, [
+        {
+          number: 33,
+          updated_at: '2020-01-30T13:33:48Z',
+        },
+      ])
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20tagged&state=closed&sort=updated&direction=desc&per_page=16'
+      )
+      .reply(200, [])
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=autorelease%3A%20failed&state=closed&sort=updated&direction=desc&per_page=16'
+      )
+      .reply(200, [])
+      .get(
+        '/repos/googleapis/nodejs-foo/issues?labels=type%3A%20process&per_page=32'
+      )
+      .reply(200, [])
+      .get('/rate_limit')
+      .reply(200, {})
+      .get('/repos/googleapis/nodejs-foo/pulls/33')
+      .reply(200, {
+        number: 33,
+        merged_at: '2020-01-30T13:33:48Z',
+        labels: [],
+      });
+
+    await probot.receive({
+      name: 'schedule.repository' as '*',
+      payload: {
+        repository: {
+          name: 'nodejs-foo',
+          owner: {
+            login: 'bcoe',
+          },
+        },
+        organization: {
+          login: 'googleapis',
+        },
+      },
+      id: 'abc123',
+    });
+    requests.done();
+  });
 });
