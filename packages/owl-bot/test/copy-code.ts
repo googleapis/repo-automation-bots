@@ -14,7 +14,7 @@
 
 import {describe, it} from 'mocha';
 import * as assert from 'assert';
-import {copyCode, copyDirs, newCmd} from '../src/copy-code';
+import {copyCode, copyDirs, newCmd, stat} from '../src/copy-code';
 import path from 'path';
 import * as fs from 'fs';
 import tmp from 'tmp';
@@ -230,14 +230,15 @@ describe('copyCode', function () {
 
   it('copies code at a specific commit hash.', async () => {
     const destRepo = makeRepoWithOwlBotYaml(owlBotYaml);
-    const commitHash = await copyCode(
+    const {sourceCommitHash, commitMsgPath} = await copyCode(
       abcRepo,
       abcCommits[1],
       destRepo,
       tmp.dirSync().name,
       owlBotYaml
     );
-    assert.strictEqual(commitHash, abcCommits[1]);
+    assert.strictEqual(sourceCommitHash, abcCommits[1]);
+    assert.ok(stat(commitMsgPath)!.size > 0);
     assert.deepStrictEqual(collectDirTree(destRepo), [
       'src',
       'src/a.txt:1',
@@ -247,14 +248,16 @@ describe('copyCode', function () {
 
   it('copies code at most recent commit hash.', async () => {
     const destRepo = makeRepoWithOwlBotYaml(owlBotYaml);
-    const commitHash = await copyCode(
+    const {sourceCommitHash, commitMsgPath} = await copyCode(
       abcRepo,
       '',
       destRepo,
       tmp.dirSync().name,
       owlBotYaml
     );
-    assert.strictEqual(commitHash, abcCommits[0]);
+
+    assert.strictEqual(sourceCommitHash, abcCommits[0]);
+    assert.ok(stat(commitMsgPath)!.size > 0);
     assert.deepStrictEqual(collectDirTree(destRepo), [
       'src',
       'src/a.txt:1',

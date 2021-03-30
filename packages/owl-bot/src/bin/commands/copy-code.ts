@@ -39,6 +39,7 @@ export const copyCodeCommand: yargs.CommandModule<{}, Args> = {
         describe:
           'The commit hash of the source repo from which to copy files.',
         type: 'string',
+        demand: false,
         default: '',
       })
       .option('dest', {
