@@ -19,7 +19,6 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, ProbotOctokit} from 'probot';
 import {logger} from 'gcf-utils';
-import { SlowBuffer } from 'node:buffer';
 
 type OctokitType = InstanceType<typeof ProbotOctokit>;
 
