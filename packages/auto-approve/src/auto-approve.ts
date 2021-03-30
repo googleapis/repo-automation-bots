@@ -37,7 +37,7 @@ const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
  * @param headSha the sha upon which to check whether the config and the CODEOWNERS file are configured correctly
  * @returns true if the status check passed, false otherwise
  */
-export async function logicForConfigCheck(
+export async function validateConfig(
   owner: string,
   repo: string,
   config: string,
@@ -161,7 +161,7 @@ export function handler(app: Probot) {
           );
 
           // Decide whether to add a passing or failing status checks
-          await logicForConfigCheck(
+          await validateConfig(
             owner,
             repo,
             prConfig,
@@ -180,7 +180,7 @@ export function handler(app: Probot) {
         // Then, check to see whether the incoming PR matches the config
 
         // If config is not valid, this function will submit a failing check, and will not merge the PR
-        const isConfigValid = await logicForConfigCheck(
+        const isConfigValid = await validateConfig(
           owner,
           repo,
           config.toString(),
