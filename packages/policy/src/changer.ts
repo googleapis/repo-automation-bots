@@ -16,7 +16,7 @@ import {Octokit} from '@octokit/rest';
 import {createPullRequest, Changes} from 'code-suggester';
 import {request} from 'gaxios';
 import {v4 as uuid} from 'uuid';
-import {PolicyResult} from './policy';
+import {PolicyResult, GitHubRepo} from './policy';
 
 export const cocUrl =
   'https://raw.githubusercontent.com/googleapis/.github/master/CODE_OF_CONDUCT.md';
@@ -44,15 +44,11 @@ export async function getCoC() {
  * @param repo Repository name - ex: "repo-automation-bots"
  * @param octokit Pre-authenticated octokit instance
  */
-export async function addCodeOfConduct(
-  owner: string,
-  repo: string,
-  octokit: Octokit
-) {
+export async function addCodeOfConduct(repo: GitHubRepo, octokit: Octokit) {
   // first, make sure there's no open PR for this
   const title = 'chore: add a Code of Conduct';
   const prs = await octokit.search.issuesAndPullRequests({
-    q: `repo:${owner}/${repo} "${title}" in:title is:open`,
+    q: `repo:${repo.full_name} "${title}" in:title is:open`,
   });
   if (prs.data.total_count > 0) {
     return;
@@ -71,13 +67,16 @@ export async function addCodeOfConduct(
       },
     ],
   ]);
+
+  const [owner, name] = repo.full_name.split('/');
   await createPullRequest(octokit, changes, {
     title,
     message: title,
     description: 'add a code of conduct',
     upstreamOwner: owner,
-    upstreamRepo: repo,
+    upstreamRepo: name,
     fork: false,
+    primary: repo.default_branch,
     retry: 0,
     branch: `policy-bot-${uuid()}`,
   });
@@ -89,8 +88,12 @@ export async function addCodeOfConduct(
  * @param result The Policy result for a single repository.
  * @param octokit A pre-authenticated octokit instance.
  */
-export async function submitFixes(result: PolicyResult, octokit: Octokit) {
+export async function submitFixes(
+  result: PolicyResult,
+  repo: GitHubRepo,
+  octokit: Octokit
+) {
   if (!result.hasCodeOfConduct) {
-    await addCodeOfConduct(result.org, result.repo, octokit);
+    await addCodeOfConduct(repo, octokit);
   }
 }

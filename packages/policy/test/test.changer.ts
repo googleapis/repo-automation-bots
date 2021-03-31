@@ -19,7 +19,7 @@ import assert from 'assert';
 import {URL} from 'url';
 import {describe, it, afterEach} from 'mocha';
 import * as suggester from 'code-suggester';
-import {PolicyResult} from '../src/policy';
+import {GitHubRepo, PolicyResult} from '../src/policy';
 import * as changer from '../src/changer';
 
 nock.disableNetConnect();
@@ -40,6 +40,11 @@ describe('changer', () => {
     hasValidLicense: true,
     timestamp: new Date(),
   };
+
+  const repo = ({
+    full_name: 'googleapis/nodejs-storage',
+    default_branch: 'main',
+  } as unknown) as GitHubRepo;
 
   afterEach(() => {
     nock.cleanAll();
@@ -63,7 +68,7 @@ describe('changer', () => {
       )
       .reply(200, {total_count: 0});
     const stub = sinon.stub(suggester, 'createPullRequest').resolves();
-    await changer.submitFixes(result, octokit);
+    await changer.submitFixes(result, repo, octokit);
     assert.ok(stub.calledOnce);
     scope.done();
   });
@@ -75,7 +80,7 @@ describe('changer', () => {
         '/search/issues?q=repo%3Agoogleapis%2Fnodejs-storage%20%22chore%3A%20add%20a%20Code%20of%20Conduct%22%20in%3Atitle%20is%3Aopen'
       )
       .reply(200, {total_count: 1});
-    await changer.submitFixes(result, octokit);
+    await changer.submitFixes(result, repo, octokit);
     scope.done();
   });
 });
