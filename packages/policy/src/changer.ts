@@ -78,6 +78,7 @@ export async function addCodeOfConduct(
     upstreamOwner: owner,
     upstreamRepo: repo,
     fork: false,
+    retry: 0,
     branch: `policy-bot-${uuid()}`,
   });
 }
