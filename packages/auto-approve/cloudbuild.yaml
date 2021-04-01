@@ -36,3 +36,4 @@ steps:
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
       - "nodejs12"
+      
