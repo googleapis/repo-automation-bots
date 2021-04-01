@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.1.1](https://www.github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.1.0...mono-repo-publish-v1.1.1) (2021-04-01)
+
+
+### Bug Fixes
+
+* **mono-repo-publish:** links should point to repo-automation-bots ([#1597](https://www.github.com/googleapis/repo-automation-bots/issues/1597)) ([90e94a0](https://www.github.com/googleapis/repo-automation-bots/commit/90e94a000e61de4026fff18e40f315ba5f1ef002))
+
 ## [1.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.0.1...mono-repo-publish-v1.1.0) (2021-04-01)
 
 
