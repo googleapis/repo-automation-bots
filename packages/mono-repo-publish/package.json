@@ -1,0 +1,36 @@
+{
+  "name": "@google-cloud/mono-repo-publish",
+  "version": "1.0.1",
+  "description": "publishes submodules based on the last merged release PR",
+  "main": "index.js",
+  "bin": "bin/mono-repo-publish.js",
+  "scripts": {
+    "test": "c8 --reporter html --reporter text mocha test/*",
+    "posttest": "semistandard",
+    "fix": "semistandard --fix",
+    "lint": "semistandard"
+  },
+  "files": [
+    "src",
+    "bin"
+  ],
+  "repository": "sofisl/mono-repo-publish",
+  "author": "Google LLC",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/sofisl/mono-repo-publish/issues"
+  },
+  "homepage": "https://github.com/sofisl/mono-repo-publish#readme",
+  "devDependencies": {
+    "c8": "^7.4.0",
+    "mocha": "^8.2.1",
+    "nock": "^13.0.5",
+    "semistandard": "^16.0.0",
+    "sinon": "^9.2.4"
+  },
+  "dependencies": {
+    "@octokit/auth-app": "^2.11.0",
+    "@octokit/rest": "^18.1.0",
+    "yargs": "^16.2.0"
+  }
+}
