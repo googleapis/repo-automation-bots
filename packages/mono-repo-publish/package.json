@@ -7,7 +7,8 @@
   "scripts": {
     "test": "c8 --reporter html --reporter text mocha test/*",
     "posttest": "semistandard",
-    "fix": "semistandard --fix"
+    "fix": "semistandard --fix",
+    "lint": "semistandard"
   },
   "files": [
     "src",
