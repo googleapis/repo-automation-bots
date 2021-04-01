@@ -1,0 +1,5 @@
+node_modules
+.secrets
+.env
+coverage/
+src/apis/**
