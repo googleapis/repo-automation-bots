@@ -14,13 +14,11 @@
     "src",
     "bin"
   ],
-  "repository": "sofisl/mono-repo-publish",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "author": "Google LLC",
   "license": "Apache-2.0",
-  "bugs": {
-    "url": "https://github.com/sofisl/mono-repo-publish/issues"
-  },
-  "homepage": "https://github.com/sofisl/mono-repo-publish#readme",
   "devDependencies": {
     "c8": "^7.4.0",
     "mocha": "^8.2.1",
