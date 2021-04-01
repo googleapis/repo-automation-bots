@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.0.1...mono-repo-publish-v1.1.0) (2021-04-01)
+
+
+### Features
+
+* **mono-repo-publish:** migrate to repo-automation-bots ([#1593](https://www.github.com/googleapis/repo-automation-bots/issues/1593)) ([debbfda](https://www.github.com/googleapis/repo-automation-bots/commit/debbfda8d897800142fb178c5f2f11b3d7f395a3))
+
 ### [1.0.1](https://www.github.com/sofisl/mono-repo-publish/compare/v1.0.0...v1.0.1) (2021-03-23)
 
 
