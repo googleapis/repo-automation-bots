@@ -16,7 +16,6 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {ProbotOctokit} from 'probot';
-import {join} from 'path';
 import yaml from 'js-yaml';
 import Ajv from 'ajv';
 const ajv = new Ajv();
@@ -32,13 +31,7 @@ export interface ErrorMessage {
   message: string | undefined;
 }
 
-const schema = require(join(
-  __dirname,
-  '../',
-  '../',
-  'src',
-  'valid-pr-schema.json'
-));
+import schema from './valid-pr-schema.json';
 
 function isFile(file: File | unknown): file is File {
   return (file as File).content !== undefined;
