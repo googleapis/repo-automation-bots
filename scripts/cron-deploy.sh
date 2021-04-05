@@ -17,7 +17,7 @@
 set -e
 set -o pipefail
 
-if [ $# -ne 3 ]; then
+if [ $# -ne 4 ]; then
     echo "Wrong number of arguments passed" && exit 1
 fi
 
