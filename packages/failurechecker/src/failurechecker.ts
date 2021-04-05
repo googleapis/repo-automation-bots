@@ -103,8 +103,14 @@ export function failureChecker(app: Probot) {
           ).data;
           if (
             pr.merged_at &&
+            pr.labels.some(l => labels.includes(l.name!)) &&
             !pr.labels.some(l => l.name === SUCCESSFUL_PUBLISH_LABEL)
           ) {
+            logger.info(
+              `found failure for ${owner}/${repo} pr = ${
+                pr.number
+              } labels = ${labels.join(',')}`
+            );
             failed.push(pr.number);
           }
         }

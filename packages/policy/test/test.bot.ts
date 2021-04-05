@@ -20,6 +20,7 @@ import nock from 'nock';
 import sinon from 'sinon';
 import {describe, it, afterEach, beforeEach} from 'mocha';
 import * as assert from 'assert';
+import {logger} from 'gcf-utils';
 import * as policy from '../src/policy';
 import * as bq from '../src/export';
 import * as changer from '../src/changer';
@@ -160,5 +161,44 @@ describe('bot', () => {
     });
     assert.ok(getRepoStub.calledOnce);
     assert.ok(getPolicyStub.calledOnce);
+  });
+
+  it('should still succeed if submitFixes fails, and log a result', async () => {
+    const repo = 'nodejs-storage';
+    const org = 'googleapis';
+    const fakeRepo = {} as policy.GitHubRepo;
+    const fakeResult = {} as policy.PolicyResult;
+    const p = new policy.Policy(new Octokit(), console);
+    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
+    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
+    const checkPolicyStub = sinon
+      .stub(p, 'checkRepoPolicy')
+      .resolves(fakeResult);
+    const exportStub = sinon.stub(bq, 'exportToBigQuery').resolves();
+    const submitFixesStub = sinon.stub(changer, 'submitFixes').throws();
+    const errStub = sinon.stub(logger, 'error');
+
+    await probot.receive({
+      name: 'schedule.repository' as '*',
+      payload: {
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+        },
+        organization: {
+          login: org,
+        },
+        cron_org: org,
+      },
+      id: 'abc123',
+    });
+    assert.ok(getPolicyStub.calledOnce);
+    assert.ok(getRepoStub.calledOnce);
+    assert.ok(checkPolicyStub.calledOnce);
+    assert.ok(exportStub.calledOnce);
+    assert.ok(submitFixesStub.calledOnce);
+    assert.ok(errStub.calledOnce);
   });
 });

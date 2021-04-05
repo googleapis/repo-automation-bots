@@ -12,20 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import tmp from 'tmp';
 import * as assert from 'assert';
 import {describe, it} from 'mocha';
 import {scanGoogleapisGenAndCreatePullRequests} from '../src/scan-googleapis-gen-and-create-pull-requests';
 import * as cc from '../src/copy-code';
-import {makeDirTree} from './dir-tree';
 import {OctokitFactory, OctokitType} from '../src/octokit-util';
-import {OwlBotYaml, owlBotYamlPath} from '../src/config-files';
+import {OwlBotYaml} from '../src/config-files';
 import * as fs from 'fs';
 import path from 'path';
-import yaml from 'js-yaml';
 import {GithubRepo} from '../src/github-repo';
 import {FakeConfigsStore} from './fake-configs-store';
 import {ConfigsStore} from '../src/configs-store';
+import {makeAbcRepo, makeRepoWithOwlBotYaml} from './make-repos';
 
 // Use anys to mock parts of the octokit API.
 // We'll still see compile time errors if in the src/ code if there's a type error
@@ -33,45 +31,6 @@ import {ConfigsStore} from '../src/configs-store';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 const cmd = cc.newCmd();
-
-function makeAbcRepo(): string {
-  // Create a git repo.
-  const dir = tmp.dirSync().name;
-  cmd('git init -b main', {cwd: dir});
-  cmd('git config user.email "test@example.com"', {cwd: dir});
-  cmd('git config user.name "test"', {cwd: dir});
-
-  // Add 3 commits
-  makeDirTree(dir, ['a.txt:1']);
-  cmd('git add -A', {cwd: dir});
-  cmd('git commit -m a', {cwd: dir});
-
-  makeDirTree(dir, ['b.txt:2']);
-  cmd('git add -A', {cwd: dir});
-  cmd('git commit -m b', {cwd: dir});
-
-  makeDirTree(dir, ['c.txt:3']);
-  cmd('git add -A', {cwd: dir});
-  cmd('git commit -m c', {cwd: dir});
-  return dir;
-}
-
-function makeRepoWithOwlBotYaml(owlBotYaml: OwlBotYaml): string {
-  const dir = tmp.dirSync().name;
-  cmd('git init -b main', {cwd: dir});
-  cmd('git config user.email "test@example.com"', {cwd: dir});
-  cmd('git config user.name "test"', {cwd: dir});
-
-  const yamlPath = path.join(dir, owlBotYamlPath);
-  fs.mkdirSync(path.dirname(yamlPath), {recursive: true});
-  const text = yaml.dump(owlBotYaml);
-  fs.writeFileSync(yamlPath, text);
-
-  cmd('git add -A', {cwd: dir});
-  cmd('git commit -m "Hello OwlBot"', {cwd: dir});
-
-  return dir;
-}
 
 function factory(octokit: any): OctokitFactory {
   return {
