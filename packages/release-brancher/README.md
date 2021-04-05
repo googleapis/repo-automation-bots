@@ -27,6 +27,8 @@ This command will:
 2. Create a pull request to the default branch that
   * Adds release-please configuration for the new branch
   * Sets up branch protection for the new branch
+3. Create a pull request to the new branch that duplicates any GitHub Actions
+   workflows, replacing the default branch with the new branch
 
 ### Options
 

@@ -159,6 +159,26 @@ permissionRules:
 
 `
 
+exports['Runner updateWorkflows updates pull request branch lists 1'] = `
+'on':
+  push: null
+  pull_request:
+    branches:
+      - 1.x
+      - other
+
+`
+
+exports['Runner updateWorkflows updates push branch lists 1'] = `
+'on':
+  push:
+    branches:
+      - 1.x
+      - other
+  pull_request: null
+
+`
+
 exports['pr-changes'] = [
   [
     ".github/release-please.yml",
@@ -183,6 +203,42 @@ exports['pr-options'] = {
   "title": "build: configure branch 1.x as a release branch",
   "description": "enable releases",
   "branch": "release-brancher/1.x",
+  "force": true,
+  "fork": false
+}
+
+exports['workflows-pr-changes'] = [
+  [
+    ".github/workflows/ci.yaml",
+    {
+      "mode": "100644",
+      "content": "'on':\n  push:\n    branches:\n      - 1.x\n      - other\n  pull_request: null\n"
+    }
+  ]
+]
+
+exports['workflows-pr-no-changes'] = []
+
+exports['workflows-pr-no-options'] = {
+  "upstreamRepo": "testRepo",
+  "upstreamOwner": "testOwner",
+  "message": "ci: setup workflows for new release branch",
+  "title": "ci: setup workflows for new release branch",
+  "description": "enable releases",
+  "branch": "release-brancher/ci/1.x",
+  "primary": "1.x",
+  "force": true,
+  "fork": false
+}
+
+exports['workflows-pr-options'] = {
+  "upstreamRepo": "testRepo",
+  "upstreamOwner": "testOwner",
+  "message": "ci: setup workflows for new release branch",
+  "title": "ci: setup workflows for new release branch",
+  "description": "enable releases",
+  "branch": "release-brancher/ci/1.x",
+  "primary": "1.x",
   "force": true,
   "fork": false
 }
