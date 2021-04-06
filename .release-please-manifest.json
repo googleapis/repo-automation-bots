@@ -1,5 +1,5 @@
 {
   "packages/gcf-utils": "7.1.4",
-  "packages/mono-repo-publish": "1.1.1",
-  "packages/release-brancher": "1.0.3"
+  "packages/mono-repo-publish": "1.1.2",
+  "packages/release-brancher": "1.1.0"
 }
