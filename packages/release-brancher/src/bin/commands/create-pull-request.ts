@@ -69,5 +69,6 @@ export const createPullRequestCommand: yargs.CommandModule<{}, Args> = {
     });
     await runner.createBranch();
     await runner.createPullRequest();
+    await runner.createWorkflowPullRequest();
   },
 };
