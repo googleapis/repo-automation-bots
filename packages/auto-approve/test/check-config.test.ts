@@ -90,12 +90,8 @@ describe('check for config', () => {
 
     it('should fail if title does not match second author', async () => {
       //title does not correspond to author
-      assert.deepStrictEqual(await invalidateSchema(3), [
-        {
-          wrongProperty: {allowedValue: '^chore: release'},
-          message: 'should be equal to constant',
-        },
-      ]);
+      const isSchemaValid = await invalidateSchema(3);
+      snapshot(isSchemaValid ? isSchemaValid : 'undefined');
     });
 
     it('should fail if title does not match third author', async () => {
