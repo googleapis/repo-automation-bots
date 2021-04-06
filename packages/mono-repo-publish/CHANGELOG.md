@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.1.2](https://www.github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.1.1...mono-repo-publish-v1.1.2) (2021-04-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @octokit/auth-app to v3 ([#1603](https://www.github.com/googleapis/repo-automation-bots/issues/1603)) ([06480d6](https://www.github.com/googleapis/repo-automation-bots/commit/06480d6e7340d3332566d1619dff1a0710a93617))
+
 ### [1.1.1](https://www.github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.1.0...mono-repo-publish-v1.1.1) (2021-04-01)
 
 
