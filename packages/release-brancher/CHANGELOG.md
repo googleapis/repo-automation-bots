@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.0.3...release-brancher-v1.1.0) (2021-04-06)
+
+
+### Features
+
+* create a second pull request to the new branch duplicating ci config ([#1613](https://www.github.com/googleapis/repo-automation-bots/issues/1613)) ([a2a61be](https://www.github.com/googleapis/repo-automation-bots/commit/a2a61be9b73bb60391dda28808ac860849abe875))
+
 ### [1.0.3](https://www.github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.0.2...release-brancher-v1.0.3) (2021-03-26)
 
 
