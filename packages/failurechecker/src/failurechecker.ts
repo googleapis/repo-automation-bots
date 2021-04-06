@@ -24,7 +24,7 @@ type OctokitType = InstanceType<typeof ProbotOctokit>;
 
 // labels indicative of the fact that a release has not completed yet.
 const RELEASE_LABELS = ['autorelease: pending', 'autorelease: failed'];
-const RELEASE_TYPE_NO_PUBLISH = ['go-yoshi'];
+const RELEASE_TYPE_NO_PUBLISH = ['go-yoshi', 'simple'];
 const SUCCESSFUL_PUBLISH_LABEL = 'autorelease: published';
 
 // We open an issue that a release has failed if it's been longer than 3
