@@ -16,7 +16,12 @@
 import {Probot, Context} from 'probot';
 import * as util from 'util';
 import {logger} from 'gcf-utils';
-import {EventPayloads} from '@octokit/webhooks';
+import {
+  PullRequestEvent,
+  IssuesEvent,
+  Issue,
+  PullRequest,
+} from '@octokit/webhooks-definitions/schema';
 
 const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';
@@ -49,12 +54,8 @@ export const sleep = (ms: number) => {
   return new Promise(r => setTimeout(r, ms));
 };
 
-function isIssue(
-  issue:
-    | EventPayloads.WebhookPayloadIssues
-    | EventPayloads.WebhookPayloadPullRequest
-): issue is EventPayloads.WebhookPayloadIssues {
-  return (issue as EventPayloads.WebhookPayloadIssues).issue !== undefined;
+function isIssue(issue: IssuesEvent | PullRequestEvent): issue is IssuesEvent {
+  return (issue as IssuesEvent).issue !== undefined;
 }
 
 export function blunderbuss(app: Probot) {
@@ -68,7 +69,7 @@ export function blunderbuss(app: Probot) {
       'pull_request.edited',
       'pull_request.labeled',
     ],
-    async context => {
+    async (context: Context) => {
       let config: Configuration = {};
       try {
         // Reading the config requires access to code permissions, which are not
@@ -84,10 +85,8 @@ export function blunderbuss(app: Probot) {
       }
       config = config || {};
 
-      let issue: EventPayloads.WebhookPayloadIssuesIssue | undefined;
-      let pullRequest:
-        | EventPayloads.WebhookPayloadPullRequestPullRequest
-        | undefined;
+      let issue: Issue | undefined;
+      let pullRequest: PullRequest | undefined;
       if (isIssue(context.payload)) {
         issue = context.payload.issue;
       } else {
