@@ -160,6 +160,92 @@ describe('Runner', () => {
     });
   });
 
+  describe('updateWorkflows', () => {
+    it('ignores workflows without branch lists that match', () => {
+      const config = loadFixture('workflows/empty-objects.yaml');
+      runner = new Runner({
+        branchName: '1.x',
+        targetTag: 'v1.3.0',
+        gitHubToken: 'sometoken',
+        upstreamOwner: 'testOwner',
+        upstreamRepo: 'testRepo',
+      });
+      const newConfig = runner.updateWorkflow(config, 'main');
+      assert.ok(newConfig);
+      assert.deepStrictEqual(newConfig, config);
+    });
+
+    it('updates push branch lists', () => {
+      const config = loadFixture('workflows/only-push.yaml');
+      runner = new Runner({
+        branchName: '1.x',
+        targetTag: 'v1.3.0',
+        gitHubToken: 'sometoken',
+        upstreamOwner: 'testOwner',
+        upstreamRepo: 'testRepo',
+      });
+      const newConfig = runner.updateWorkflow(config, 'main');
+      assert.ok(newConfig);
+      snapshot(newConfig);
+    });
+
+    it('ignores non-matching push branch lists', () => {
+      const config = loadFixture('workflows/only-push.yaml');
+      runner = new Runner({
+        branchName: '1.x',
+        targetTag: 'v1.3.0',
+        gitHubToken: 'sometoken',
+        upstreamOwner: 'testOwner',
+        upstreamRepo: 'testRepo',
+      });
+      const newConfig = runner.updateWorkflow(config, 'master');
+      assert.ok(newConfig);
+      assert.deepStrictEqual(newConfig, config);
+    });
+
+    it('updates pull request branch lists', () => {
+      const config = loadFixture('workflows/only-pull-request.yaml');
+      runner = new Runner({
+        branchName: '1.x',
+        targetTag: 'v1.3.0',
+        gitHubToken: 'sometoken',
+        upstreamOwner: 'testOwner',
+        upstreamRepo: 'testRepo',
+      });
+      const newConfig = runner.updateWorkflow(config, 'main');
+      assert.ok(newConfig);
+      snapshot(newConfig);
+    });
+
+    it('ignores non-matching pull branch lists', () => {
+      const config = loadFixture('workflows/only-pull-request.yaml');
+      runner = new Runner({
+        branchName: '1.x',
+        targetTag: 'v1.3.0',
+        gitHubToken: 'sometoken',
+        upstreamOwner: 'testOwner',
+        upstreamRepo: 'testRepo',
+      });
+      const newConfig = runner.updateWorkflow(config, 'master');
+      assert.ok(newConfig);
+      assert.deepStrictEqual(newConfig, config);
+    });
+
+    it('ignores empty objects', () => {
+      const config = loadFixture('workflows/empty-objects.yaml');
+      runner = new Runner({
+        branchName: '1.x',
+        targetTag: 'v1.3.0',
+        gitHubToken: 'sometoken',
+        upstreamOwner: 'testOwner',
+        upstreamRepo: 'testRepo',
+      });
+      const newConfig = runner.updateWorkflow(config, 'master');
+      assert.ok(newConfig);
+      assert.deepStrictEqual(newConfig, config);
+    });
+  });
+
   describe('createBranch', () => {
     it('ignores if branch already exists', async () => {
       runner = new Runner({
@@ -339,6 +425,140 @@ describe('Runner', () => {
       );
       const pullNumber = await runner.createPullRequest();
       assert.equal(pullNumber, 0);
+
+      requests.done();
+    });
+  });
+
+  describe('createWorkflowPullRequest', () => {
+    it('opens or creates a new pull request', async () => {
+      runner = new Runner({
+        branchName: '1.x',
+        targetTag: 'v1.3.0',
+        gitHubToken: 'sometoken',
+        upstreamOwner: 'testOwner',
+        upstreamRepo: 'testRepo',
+      });
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/git/matching-refs/tags%2Fv1.3.0')
+        .reply(200, [{ref: 'refs/tags/v1.3.0', object: {sha: 'abcd1234'}}])
+        .get('/repos/testOwner/testRepo/git/trees/abcd1234?recursive=true')
+        .reply(200, {
+          sha: 'abcd1234',
+          tree: [
+            {
+              path: '.github/workflows/ci.yaml',
+            },
+            {
+              path: '.github/workflows/approve.yaml',
+            },
+          ],
+        })
+        .get('/repos/testOwner/testRepo')
+        .reply(200, {
+          name: 'testRepo',
+          full_name: 'testOwner/testRepo',
+          default_branch: 'main',
+        })
+        .get('/repos/testOwner/testRepo/contents/.github%2Fworkflows%2Fci.yaml')
+        .reply(200, {
+          content: Buffer.from(
+            loadFixture('workflows/only-push.yaml'),
+            'utf8'
+          ).toString('base64'),
+        })
+        .get(
+          '/repos/testOwner/testRepo/contents/.github%2Fworkflows%2Fapprove.yaml'
+        )
+        .reply(200, {
+          content: Buffer.from(
+            loadFixture('workflows/empty-objects.yaml')
+          ).toString('base64'),
+        });
+      sandbox.replace(
+        suggester,
+        'createPullRequest',
+        (
+          _octokit: Octokit,
+          changes: suggester.Changes | null | undefined,
+          options: CreatePullRequestUserOptions
+        ): Promise<number> => {
+          assert.ok(changes);
+
+          // Map does not work well with snapshot
+          snapshot('workflows-pr-changes', Array.from(changes.entries()));
+          snapshot('workflows-pr-options', options);
+          return Promise.resolve(2345);
+        }
+      );
+      const pullNumber = await runner.createWorkflowPullRequest();
+      assert.equal(pullNumber, 2345);
+
+      requests.done();
+    });
+
+    it('ignores non-matching branches a new pull request', async () => {
+      runner = new Runner({
+        branchName: '1.x',
+        targetTag: 'v1.3.0',
+        gitHubToken: 'sometoken',
+        upstreamOwner: 'testOwner',
+        upstreamRepo: 'testRepo',
+      });
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/git/matching-refs/tags%2Fv1.3.0')
+        .reply(200, [{ref: 'refs/tags/v1.3.0', object: {sha: 'abcd1234'}}])
+        .get('/repos/testOwner/testRepo/git/trees/abcd1234?recursive=true')
+        .reply(200, {
+          sha: 'abcd1234',
+          tree: [
+            {
+              path: '.github/workflows/ci.yaml',
+            },
+            {
+              path: '.github/workflows/approve.yaml',
+            },
+          ],
+        })
+        .get('/repos/testOwner/testRepo')
+        .reply(200, {
+          name: 'testRepo',
+          full_name: 'testOwner/testRepo',
+          default_branch: 'other-main-branch',
+        })
+        .get('/repos/testOwner/testRepo/contents/.github%2Fworkflows%2Fci.yaml')
+        .reply(200, {
+          content: Buffer.from(
+            loadFixture('workflows/only-push.yaml'),
+            'utf8'
+          ).toString('base64'),
+        })
+        .get(
+          '/repos/testOwner/testRepo/contents/.github%2Fworkflows%2Fapprove.yaml'
+        )
+        .reply(200, {
+          content: Buffer.from(
+            loadFixture('workflows/empty-objects.yaml')
+          ).toString('base64'),
+        });
+      sandbox.replace(
+        suggester,
+        'createPullRequest',
+        (
+          _octokit: Octokit,
+          changes: suggester.Changes | null | undefined,
+          options: CreatePullRequestUserOptions
+        ): Promise<number> => {
+          assert.ok(changes);
+
+          // Map does not work well with snapshot
+          snapshot('workflows-pr-no-changes', Array.from(changes.entries()));
+          snapshot('workflows-pr-no-options', options);
+          return Promise.resolve(2345);
+        }
+      );
+      const pullNumber = await runner.createWorkflowPullRequest();
+      assert.equal(pullNumber, 2345);
 
       requests.done();
     });

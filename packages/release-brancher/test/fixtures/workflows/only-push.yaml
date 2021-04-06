@@ -1,0 +1,7 @@
+on: 
+  # Trigger the workflow on push but only for the main branch
+  push:
+    branches:
+      - main
+      - other
+  pull_request:

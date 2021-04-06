@@ -41,6 +41,17 @@ interface SyncRepoSettingsConfig {
   branchProtectionRules: SyncRepoSettingsBranchConfig[];
 }
 
+interface GitHubActionConfig {
+  on: {
+    push?: {
+      branches?: string[];
+    };
+    pull_request?: {
+      branches?: string[];
+    };
+  };
+}
+
 export class Runner {
   branchName: string;
   targetTag: string;
@@ -83,6 +94,14 @@ export class Runner {
       }
       throw e;
     }
+  }
+
+  private async getDefaultBranch(): Promise<string> {
+    const response = await this.octokit.repos.get({
+      owner: this.upstreamOwner,
+      repo: this.upstreamRepo,
+    });
+    return response.data.default_branch;
   }
 
   /**
@@ -230,6 +249,90 @@ export class Runner {
       title: message,
       description: 'enable releases',
       branch: `release-brancher/${this.branchName}`,
+      force: true,
+      fork: false,
+    });
+  }
+
+  /**
+   * Replace the default branch name in GitHub actions config.
+   */
+  updateWorkflow(content: string, defaultBranch: string): string {
+    const config = yaml.load(content) as GitHubActionConfig;
+    let updated = false;
+    if (config.on.push?.branches) {
+      const index = config.on.push.branches.indexOf(defaultBranch);
+      if (index !== -1) {
+        config.on.push.branches[index] = this.branchName;
+        updated = true;
+      }
+    }
+    if (config.on.pull_request?.branches) {
+      const index = config.on.pull_request.branches.indexOf(defaultBranch);
+      if (index !== -1) {
+        config.on.pull_request.branches[index] = this.branchName;
+        updated = true;
+      }
+    }
+    if (updated) {
+      return yaml.dump(config, {
+        noRefs: true,
+      });
+    }
+    return content;
+  }
+
+  /**
+   * Opens a pull request against the new release branch with updated
+   * GitHub action workflows. If an existing pull request already exists,
+   * it will force-push changes to the existing pull request.
+   *
+   * @returns {number} The pull request number.
+   */
+  async createWorkflowPullRequest(): Promise<number> {
+    const sha = await this.getTargetSha(this.targetTag);
+    if (!sha) {
+      console.log(`couldn't find SHA for tag ${this.targetTag}`);
+      throw new Error(`couldn't find SHA for tag ${this.targetTag}`);
+    }
+
+    const response = await this.octokit.git.getTree({
+      owner: this.upstreamOwner,
+      repo: this.upstreamRepo,
+      tree_sha: sha,
+      recursive: 'true',
+    });
+    const changes: Changes = new Map();
+    const files = response.data.tree.filter(file => {
+      return (
+        file.path &&
+        file.path.startsWith('.github/workflows/') &&
+        file.path.endsWith('.yaml')
+      );
+    });
+
+    const defaultBranch = await this.getDefaultBranch();
+    for (const file of files) {
+      const content = await this.getFileContents(file.path!);
+      if (content) {
+        const newContent = this.updateWorkflow(content, defaultBranch);
+        if (newContent !== content) {
+          changes.set(file.path!, {
+            mode: '100644',
+            content: newContent,
+          });
+        }
+      }
+    }
+    const message = 'ci: setup workflows for new release branch';
+    return await createPullRequest(this.octokit, changes, {
+      upstreamRepo: this.upstreamRepo,
+      upstreamOwner: this.upstreamOwner,
+      message,
+      title: message,
+      description: 'enable releases',
+      branch: `release-brancher/ci/${this.branchName}`,
+      primary: this.branchName,
       force: true,
       fork: false,
     });
