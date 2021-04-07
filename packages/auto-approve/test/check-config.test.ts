@@ -20,7 +20,6 @@ import {
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import * as fs from 'fs';
-import yaml from 'js-yaml';
 import nock from 'nock';
 import snapshot from 'snap-shot-it';
 const {Octokit} = require('@octokit/rest');
