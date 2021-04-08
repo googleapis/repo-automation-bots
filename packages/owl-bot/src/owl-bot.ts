@@ -63,11 +63,13 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
 
   // We perform post processing on pull requests.  We run the specified docker container
   // on the pending pull request and push any changes back to the pull request.
+  const OWLBOT_RUN_LABEL = 'owlbot:run';
   app.on(
     [
       'pull_request.opened',
       'pull_request.synchronize',
       'pull_request.reopened',
+      'pull_request.labeled',
     ],
     async context => {
       const head = context.payload.pull_request.head;
@@ -76,12 +78,26 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
       if (!installation) {
         throw Error(`no installation token found for ${head.repo.full_name}`);
       }
+      const hasRunLabel = !!context.payload.pull_request.labels.filter(
+        l => l.name === OWLBOT_RUN_LABEL
+      ).length;
+
       // If the pull request is from a fork, the label "owlbot:run" must be
       // added by a maintainer to trigger the post processor.
-      // TODO(bcoe): add support for "owlbot:run" label.
-      if (head.repo.full_name !== base.repo.full_name) {
+      if (head.repo.full_name !== base.repo.full_name && !hasRunLabel) {
         logger.info(
           `head ${head.repo.full_name} does not match base ${base.repo.full_name} skipping`
+        );
+        return;
+      }
+      // If the pull request is *not* from a fork, ignore label being added
+      // (we will be running OwlBot post processor for the push itself);
+      if (
+        head.repo.full_name === base.repo.full_name &&
+        context.payload.action === 'labeled'
+      ) {
+        logger.info(
+          `head ${head.repo.full_name} matches ${base.repo.full_name} skipping labeled action`
         );
         return;
       }
