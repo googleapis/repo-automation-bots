@@ -201,6 +201,7 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
         summary: buildStatus.summary,
         conclusion: buildStatus.conclusion,
         title: `🦉 OwlBot - ${buildStatus.summary}`,
+        detailsURL: buildStatus.detailsURL,
       },
       octokit
     );
