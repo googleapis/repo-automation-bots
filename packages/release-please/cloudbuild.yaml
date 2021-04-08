@@ -36,3 +36,15 @@ steps:
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
       - "nodejs12"
+
+  - name: gcr.io/cloud-builders/gcloud
+    id: "cron-deploy"
+    waitFor: ["-"]
+    entrypoint: bash
+    args:
+      - "-e"
+      - "./scripts/cron-deploy.sh"
+      - "$_SCHEDULER_SERVICE_ACCOUNT_EMAIL"
+      - "$_FUNCTION_REGION"
+      - "$_REGION"
+      - "$_DIRECTORY"

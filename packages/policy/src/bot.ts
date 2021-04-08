@@ -47,7 +47,7 @@ export function policyBot(app: Probot) {
     // causes any errors.  Otherwise, the entire function is retried, and the
     // result is recorded twice.
     try {
-      await submitFixes(result, context.octokit);
+      await submitFixes(result, repoMetadata, context.octokit);
     } catch (e) {
       logger.error(e);
     }

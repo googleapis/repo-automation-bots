@@ -81,7 +81,7 @@ export async function main(cli: meow.Result<{}>) {
       await exportToBigQuery(res);
     }
     if (flags.autofix) {
-      await submitFixes(res, octokit);
+      await submitFixes(res, repo, octokit);
     }
   }
 }

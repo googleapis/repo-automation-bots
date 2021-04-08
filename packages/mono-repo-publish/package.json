@@ -1,0 +1,34 @@
+{
+  "name": "@google-cloud/mono-repo-publish",
+  "version": "1.1.2",
+  "description": "publishes submodules based on the last merged release PR",
+  "main": "index.js",
+  "bin": "bin/mono-repo-publish.js",
+  "scripts": {
+    "test": "c8 --reporter html --reporter text mocha test/*",
+    "posttest": "semistandard",
+    "fix": "semistandard --fix",
+    "lint": "semistandard"
+  },
+  "files": [
+    "src",
+    "bin"
+  ],
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "author": "Google LLC",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "c8": "^7.4.0",
+    "mocha": "^8.2.1",
+    "nock": "^13.0.5",
+    "semistandard": "^16.0.0",
+    "sinon": "^9.2.4"
+  },
+  "dependencies": {
+    "@octokit/auth-app": "^3.0.0",
+    "@octokit/rest": "^18.1.0",
+    "yargs": "^16.2.0"
+  }
+}

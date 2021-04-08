@@ -1,0 +1,4 @@
+rules:
+- author: "yoshi-code-bot"
+  title: "chore: release"
+  changedFiles: "README.md$"

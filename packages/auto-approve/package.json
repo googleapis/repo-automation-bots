@@ -1,0 +1,55 @@
+{
+  "name": "auto-approve",
+  "version": "1.0.0",
+  "description": "Approves and tags pull requests that meet user-defined criteria",
+  "private": true,
+  "author": "Google LLC.",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "main": "build/src/app.js",
+  "keywords": [
+    "probot",
+    "github",
+    "probot-app"
+  ],
+  "files": [
+    "build/src"
+  ],
+  "scripts": {
+    "compile": "tsc",
+    "start": "probot run ./build/src/auto-approve",
+    "pretest": "npm run compile",
+    "test": "cross-env c8 mocha --exit build/test",
+    "fix": "gts fix",
+    "lint": "gts check"
+  },
+  "dependencies": {
+    "ajv": "^8.0.5",
+    "gcf-utils": "^7.1.3"
+  },
+  "devDependencies": {
+    "@octokit/rest": "^18.2.0",
+    "@octokit/webhooks": "^8.5.4",
+    "@octokit/webhooks-definitions": "^3.62.6",
+    "@probot/octokit-plugin-config": "^1.0.3",
+    "@types/mocha": "^8.0.0",
+    "@types/node": "^12.6.1",
+    "@types/sinon": "^9.0.11",
+    "c8": "^7.3.5",
+    "cross-env": "^7.0.0",
+    "gts": "^3.0.0",
+    "js-yaml": "^4.0.0",
+    "mocha": "^8.0.0",
+    "nock": "^13.0.11",
+    "sinon": "^9.2.4",
+    "smee-client": "^1.1.0",
+    "snap-shot-it": "^7.9.6",
+    "ts-node": "^9.1.1",
+    "typescript": "~4.1.0"
+  },
+  "engines": {
+    "node": ">= 12.18.2"
+  }
+}
