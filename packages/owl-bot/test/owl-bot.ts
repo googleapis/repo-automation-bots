@@ -122,6 +122,7 @@ describe('owlBot', () => {
           text: 'the text for check',
           summary: 'summary for check',
           conclusion: 'success',
+          detailsURL: 'http://www.example.com',
         });
       const hasOwlBotLoopStub = sandbox
         .stub(core, 'hasOwlBotLoop')
@@ -214,6 +215,7 @@ describe('owlBot', () => {
           text: 'the text for check',
           summary: 'summary for check',
           conclusion: 'success',
+          detailsURL: 'http://www.example.com',
         });
       const hasOwlBotLoopStub = sandbox
         .stub(core, 'hasOwlBotLoop')
