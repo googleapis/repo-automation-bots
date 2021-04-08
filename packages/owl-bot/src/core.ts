@@ -115,12 +115,12 @@ export async function triggerPostProcessBuild(
       },
     },
   });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const buildId: string = (resp as any).metadata.build.id;
   try {
     // TODO(bcoe): work with fenster@ to figure out why awaiting a long
     // running operation does not behave as expected:
     // const [build] = await resp.promise();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const build = await waitForBuild(project, buildId, cb);
     if (!build.steps) throw Error('trigger contained no steps');
     const successMessage = `successfully ran ${build.steps.length} steps 🎉!`;
