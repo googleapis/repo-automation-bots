@@ -43,6 +43,7 @@ export interface CheckArgs {
   repo: string;
   summary: string;
   conclusion: 'success' | 'failure';
+  detailsURL: string;
   text: string;
   title: string;
 }
@@ -57,6 +58,7 @@ interface BuildResponse {
   conclusion: 'success' | 'failure';
   summary: string;
   text: string;
+  detailsURL: string;
 }
 
 interface Commit {
@@ -113,12 +115,12 @@ export async function triggerPostProcessBuild(
       },
     },
   });
+  const buildId: string = (resp as any).metadata.build.id;
   try {
     // TODO(bcoe): work with fenster@ to figure out why awaiting a long
     // running operation does not behave as expected:
     // const [build] = await resp.promise();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const buildId: string = (resp as any).metadata.build.id;
     const build = await waitForBuild(project, buildId, cb);
     if (!build.steps) throw Error('trigger contained no steps');
     const successMessage = `successfully ran ${build.steps.length} steps 🎉!`;
@@ -140,6 +142,7 @@ export async function triggerPostProcessBuild(
       conclusion,
       summary,
       text,
+      detailsURL: detailsUrl(buildId, project)
     };
   } catch (err) {
     logger.error(err);
@@ -147,8 +150,15 @@ export async function triggerPostProcessBuild(
       conclusion: 'failure',
       summary: 'unknown build failure',
       text: 'unknown build failure',
+      detailsURL: detailsUrl(buildId, project),
     };
   }
+}
+
+// Helper to build a link to the Cloud Build job, which peers in DPE
+// can use to view a given post processor run:
+function detailsUrl(buildID: string, project: string): string {
+  return `https://console.cloud.google.com/cloud-build/builds;region=global/${buildID}?project=${project}`;
 }
 
 async function waitForBuild(
@@ -211,6 +221,7 @@ export async function createCheck(args: CheckArgs, octokit?: OctokitType) {
     summary: args.summary,
     head_sha: headCommit.sha as string,
     conclusion: args.conclusion,
+    details_url: args.detailsURL,
     output: {
       title: args.title,
       summary: args.summary,
