@@ -139,7 +139,7 @@ describe('owlBot', () => {
       sandbox.assert.calledOnce(hasOwlBotLoopStub);
       githubMock.done();
     });
-    it('triggers build when "owlbot:run" label is added', async () => {
+    it('triggers build when "owlbot:run" label is added to fork', async () => {
       const payload = {
         installation: {
           id: 12345,
@@ -178,7 +178,72 @@ describe('owlBot', () => {
           encoding: 'base64',
         })
         .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
-        .reply(200, [{filename: 'foo.txt'}]);
+        .reply(200, [{filename: 'foo.txt'}])
+        .delete('/repos/bcoe/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+        .reply(200);
+      const triggerBuildStub = sandbox
+        .stub(core, 'triggerPostProcessBuild')
+        .resolves({
+          text: 'the text for check',
+          summary: 'summary for check',
+          conclusion: 'success',
+        });
+      const hasOwlBotLoopStub = sandbox
+        .stub(core, 'hasOwlBotLoop')
+        .resolves(false);
+      const createCheckStub = sandbox.stub(core, 'createCheck');
+      await probot.receive({
+        name: 'pull_request.labeled',
+        payload,
+        id: 'abc123',
+      });
+      sandbox.assert.calledOnce(triggerBuildStub);
+      sandbox.assert.calledOnce(createCheckStub);
+      sandbox.assert.calledOnce(hasOwlBotLoopStub);
+      githubMock.done();
+    });
+    it('triggers build when "owlbot:run" label is added to PR from same repo', async () => {
+      const payload = {
+        installation: {
+          id: 12345,
+        },
+        pull_request: {
+          number: 33,
+          labels: [
+            {
+              name: 'owlbot:run',
+            },
+          ],
+          head: {
+            repo: {
+              full_name: 'rennie/owl-bot-testing',
+            },
+            ref: 'abc123',
+          },
+          base: {
+            repo: {
+              full_name: 'rennie/owl-bot-testing',
+            },
+          },
+        },
+      };
+      const config = `docker:
+      image: node
+      digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
+      const githubMock = nock('https://api.github.com')
+        .get('/repos/rennie/owl-bot-testing/pulls/33')
+        .reply(200, payload.pull_request)
+        .get(
+          '/repos/rennie/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        )
+        .reply(200, {
+          content: Buffer.from(config).toString('base64'),
+          encoding: 'base64',
+        })
+        .get('/repos/rennie/owl-bot-testing/pulls/33/files')
+        .reply(200, [{filename: 'foo.txt'}])
+        .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+        .reply(200);
       const triggerBuildStub = sandbox
         .stub(core, 'triggerPostProcessBuild')
         .resolves({
@@ -227,10 +292,10 @@ describe('owlBot', () => {
       });
       sandbox.assert.calledWith(
         loggerStub,
-        sandbox.match(/.*does not match base.*/)
+        sandbox.match(/.*skipping labels.*/)
       );
     });
-    it('returns early if PR *not* from fork and label added', async () => {
+    it('returns early if PR from same repo and label other than owlbot:run added', async () => {
       const payload = {
         action: 'labeled',
         installation: {
@@ -258,7 +323,7 @@ describe('owlBot', () => {
       });
       sandbox.assert.calledWith(
         loggerStub,
-        sandbox.match(/.*skipping labeled action.*/)
+        sandbox.match(/.*skipping labels.*/)
       );
     });
     it('returns early and throws if postprocessor appears to be looping', async () => {

@@ -64,118 +64,164 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
   // We perform post processing on pull requests.  We run the specified docker container
   // on the pending pull request and push any changes back to the pull request.
   const OWLBOT_RUN_LABEL = 'owlbot:run';
+  app.on(['pull_request.labeled'], async context => {
+    const head = context.payload.pull_request.head.repo.full_name;
+    const base = context.payload.pull_request.base.repo.full_name;
+    const [owner, repo] = head.split('/');
+    const installation = context.payload.installation?.id;
+    const prNumber = context.payload.pull_request.number;
+
+    if (!installation) {
+      throw Error(`no installation token found for ${head}`);
+    }
+
+    const hasRunLabel = !!context.payload.pull_request.labels.filter(
+      l => l.name === OWLBOT_RUN_LABEL
+    ).length;
+
+    // If the pull request is *not* from a fork, ignore label being added
+    // (we will be running OwlBot post processor for the push itself);
+    if (!hasRunLabel) {
+      logger.info(
+        `skipping labels ${context.payload.pull_request.labels
+          .map(l => l.name)
+          .join(', ')} ${head} for ${base}`
+      );
+      return;
+    }
+
+    await runPostProcessor(
+      {
+        head,
+        base,
+        prNumber,
+        installation,
+        owner,
+        repo,
+      },
+      context.octokit
+    );
+
+    await context.octokit.issues.removeLabel({
+      name: OWLBOT_RUN_LABEL,
+      issue_number: prNumber,
+      owner,
+      repo,
+    });
+  });
+
   app.on(
     [
       'pull_request.opened',
       'pull_request.synchronize',
       'pull_request.reopened',
-      'pull_request.labeled',
     ],
     async context => {
-      const head = context.payload.pull_request.head;
-      const base = context.payload.pull_request.base;
+      const head = context.payload.pull_request.head.repo.full_name;
+      const base = context.payload.pull_request.base.repo.full_name;
+      const [owner, repo] = head.split('/');
       const installation = context.payload.installation?.id;
+      const prNumber = context.payload.pull_request.number;
+
       if (!installation) {
-        throw Error(`no installation token found for ${head.repo.full_name}`);
+        throw Error(`no installation token found for ${head}`);
       }
-      const hasRunLabel = !!context.payload.pull_request.labels.filter(
-        l => l.name === OWLBOT_RUN_LABEL
-      ).length;
 
       // If the pull request is from a fork, the label "owlbot:run" must be
       // added by a maintainer to trigger the post processor.
-      if (head.repo.full_name !== base.repo.full_name && !hasRunLabel) {
-        logger.info(
-          `head ${head.repo.full_name} does not match base ${base.repo.full_name} skipping`
-        );
-        return;
-      }
-      // If the pull request is *not* from a fork, ignore label being added
-      // (we will be running OwlBot post processor for the push itself);
-      if (
-        head.repo.full_name === base.repo.full_name &&
-        context.payload.action === 'labeled'
-      ) {
-        logger.info(
-          `head ${head.repo.full_name} matches ${base.repo.full_name} skipping labeled action`
-        );
+      if (head !== base) {
+        logger.info(`head ${head} does not match base ${base} skipping`);
         return;
       }
 
-      // Detect looping OwlBot behavior and break the cycle:
-      const [owner, repo] = head.repo.full_name.split('/');
-      if (
-        await core.hasOwlBotLoop(
+      await runPostProcessor(
+        {
+          head,
+          base,
+          prNumber,
+          installation,
           owner,
           repo,
-          context.payload.pull_request.number,
-          context.octokit
-        )
-      ) {
-        throw Error(
-          `too many OwlBot updates created in a row for ${owner}/${repo}`
-        );
-      }
-
-      // Fetch the .Owlbot.lock.yaml from the head ref:
-      const lock = await core.getOwlBotLock(
-        head.repo.full_name,
-        context.payload.pull_request.number,
-        context.octokit
-      );
-      if (!lock) {
-        logger.info(`no .OwlBot.lock.yaml found for ${head.repo.full_name}`);
-        return;
-      }
-      const image = `${lock.docker.image}@${lock.docker.digest}`;
-      // Run time image from .Owlbot.lock.yaml on Cloud Build:
-      const buildStatus = await core.triggerPostProcessBuild(
-        {
-          image,
-          project,
-          privateKey,
-          appId,
-          installation,
-          repo: head.repo.full_name,
-          pr: context.payload.pull_request.number,
-          trigger,
         },
         context.octokit
       );
-      // Update pull request with status of job:
-      await core.createCheck(
-        {
-          privateKey,
-          appId,
-          installation,
-          pr: context.payload.pull_request.number,
-          repo: head.repo.full_name,
-          text: buildStatus.text,
-          summary: buildStatus.summary,
-          conclusion: buildStatus.conclusion,
-          title: `🦉 OwlBot - ${buildStatus.summary}`,
-        },
-        context.octokit
-      );
-      // If running post-processor has created a noop change, close the
-      // pull request:
-      const files = (
-        await context.octokit.pulls.listFiles({
-          owner,
-          repo,
-          pull_number: context.payload.pull_request.number,
-        })
-      ).data;
-      if (!files.length) {
-        await context.octokit.pulls.update({
-          owner,
-          repo,
-          pull_number: context.payload.pull_request.number,
-          state: 'closed',
-        });
-      }
     }
   );
+
+  interface RunPostProcessorOpts {
+    head: string;
+    base: string;
+    prNumber: number;
+    installation: number;
+    owner: string;
+    repo: string;
+  }
+  const runPostProcessor = async (
+    opts: RunPostProcessorOpts,
+    octokit: Octokit
+  ) => {
+    // Detect looping OwlBot behavior and break the cycle:
+    if (
+      await core.hasOwlBotLoop(opts.owner, opts.repo, opts.prNumber, octokit)
+    ) {
+      throw Error(
+        `too many OwlBot updates created in a row for ${opts.owner}/${opts.repo}`
+      );
+    }
+    // Fetch the .Owlbot.lock.yaml from the head ref:
+    const lock = await core.getOwlBotLock(opts.head, opts.prNumber, octokit);
+    if (!lock) {
+      logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
+      return;
+    }
+    const image = `${lock.docker.image}@${lock.docker.digest}`;
+    // Run time image from .Owlbot.lock.yaml on Cloud Build:
+    const buildStatus = await core.triggerPostProcessBuild(
+      {
+        image,
+        project,
+        privateKey,
+        appId,
+        installation: opts.installation,
+        repo: opts.head,
+        pr: opts.prNumber,
+        trigger,
+      },
+      octokit
+    );
+    // Update pull request with status of job:
+    await core.createCheck(
+      {
+        privateKey,
+        appId,
+        installation: opts.installation,
+        pr: opts.prNumber,
+        repo: opts.head,
+        text: buildStatus.text,
+        summary: buildStatus.summary,
+        conclusion: buildStatus.conclusion,
+        title: `🦉 OwlBot - ${buildStatus.summary}`,
+      },
+      octokit
+    );
+    // If running post-processor has created a noop change, close the
+    // pull request:
+    const files = (
+      await octokit.pulls.listFiles({
+        owner: opts.owner,
+        repo: opts.repo,
+        pull_number: opts.prNumber,
+      })
+    ).data;
+    if (!files.length) {
+      await octokit.pulls.update({
+        owner: opts.owner,
+        repo: opts.repo,
+        pull_number: opts.prNumber,
+        state: 'closed',
+      });
+    }
+  };
 
   // Configured to run when a new container is published to container registry:
   //
