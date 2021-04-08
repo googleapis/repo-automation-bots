@@ -142,7 +142,7 @@ export async function triggerPostProcessBuild(
       conclusion,
       summary,
       text,
-      detailsURL: detailsUrl(buildId, project)
+      detailsURL: detailsUrl(buildId, project),
     };
   } catch (err) {
     logger.error(err);
