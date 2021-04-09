@@ -303,6 +303,26 @@ describe('ReleasePleaseBot', () => {
         assert(manifestRelease.called, 'GitHub release should have run');
       });
     });
+
+    it('should allow configuring extra files', async () => {
+      let executed = false;
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
+        assert.deepStrictEqual(pr.extraFiles, ['src/com/google/foo/Version.java']);
+        executed = true;
+      });
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'extra_files.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
+        )
+        .reply(200, config);
+
+      await probot.receive({name: 'push', payload, id: 'abc123'});
+      requests.done();
+      assert(executed, 'should have executed the runner');
+    });
   });
 
   describe('push to non-master branch', () => {
