@@ -307,7 +307,9 @@ describe('ReleasePleaseBot', () => {
     it('should allow configuring extra files', async () => {
       let executed = false;
       sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assert.deepStrictEqual(pr.extraFiles, ['src/com/google/foo/Version.java']);
+        assert.deepStrictEqual(pr.extraFiles, [
+          'src/com/google/foo/Version.java',
+        ]);
         executed = true;
       });
       const config = fs.readFileSync(
