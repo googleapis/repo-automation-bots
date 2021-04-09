@@ -54,6 +54,7 @@ interface BranchOptions {
   path?: string;
   changelogPath?: string;
   manifest?: boolean;
+  extraFiles?: string[];
 }
 
 interface BranchConfiguration extends BranchOptions {
@@ -146,6 +147,7 @@ async function createGitHubRelease(
     changelogPath: configuration.changelogPath ?? 'CHANGELOG.md',
     monorepoTags: configuration.monorepoTags,
     releaseType: configuration.releaseType,
+    extraFiles: configuration.extraFiles,
   };
   if (configuration.manifest) {
     const manifest = factory.manifest(releaseOptions);
@@ -183,6 +185,7 @@ async function createReleasePR(
     path: configuration.path,
     monorepoTags: configuration.monorepoTags,
     releaseType,
+    extraFiles: configuration.extraFiles,
   };
   if (snapshot !== undefined) {
     buildOptions.snapshot = snapshot;
