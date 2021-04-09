@@ -111,6 +111,7 @@ export const triggerBuildCommand: yargs.CommandModule<{}, Args> = {
         text: buildStatus.text,
         summary: buildStatus.summary,
         conclusion: buildStatus.conclusion,
+        detailsURL: buildStatus.detailsURL,
         title: `🦉 OwlBot - ${buildStatus.summary}`,
       },
       octokit
