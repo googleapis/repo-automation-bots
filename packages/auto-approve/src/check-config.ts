@@ -64,10 +64,12 @@ export function validateYaml(configYaml: string): string {
  * @returns undefined if the yaml is valid, otherwise an error message.
  */
 export async function validateSchema(
-  configYaml: string | undefined | null | number | object
+  configYaml: string | object
 ): Promise<ErrorMessage[] | undefined> {
+  const parsedYaml =
+    typeof configYaml === 'string' ? yaml.load(configYaml) : configYaml;
   const validateSchema = await ajv.compile(schema);
-  await validateSchema(configYaml);
+  await validateSchema(parsedYaml);
   const errorText = (await validateSchema).errors?.map(x => {
     return {wrongProperty: x.params, message: x.message};
   });

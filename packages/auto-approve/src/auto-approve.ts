@@ -21,7 +21,7 @@ import {ValidPr, checkPRAgainstConfig} from './check-pr';
 import {getChangedFiles, getBlobFromPRFiles} from './get-PR-info';
 import {validateYaml, validateSchema, checkCodeOwners} from './check-config.js';
 
-interface Configuration {
+export interface Configuration {
   rules: ValidPr[];
 }
 const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
@@ -40,13 +40,13 @@ const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
 export async function validateConfig(
   owner: string,
   repo: string,
-  config: string,
+  config: string | Configuration,
   codeOwnersFile: string | undefined,
   octokit: InstanceType<typeof ProbotOctokit>,
   headSha: string
 ): Promise<Boolean> {
-  // Check if the YAML is formatted correctly
-  const isYamlValid = validateYaml(config);
+  // Check if the YAML is formatted correctly if it's in a PR
+  const isYamlValid = typeof config === 'string' ? validateYaml(config) : '';
 
   // Check if config has correct schema
   const isSchemaValid = await validateSchema(config);
@@ -114,7 +114,11 @@ export async function validateConfig(
  */
 export function handler(app: Probot) {
   app.on(
-    ['pull_request.opened', 'pull_request.reopened', 'pull_request.edited'],
+    [
+      'pull_request.opened',
+      'pull_request.reopened',
+      'pull_request.synchronize',
+    ],
     async (context: Context) => {
       const pr = context.payload;
       const owner = pr.pull_request.head.repo.owner.login;
@@ -183,7 +187,7 @@ export function handler(app: Probot) {
         const isConfigValid = await validateConfig(
           owner,
           repo,
-          config.toString(),
+          config,
           undefined,
           context.octokit,
           context.payload.pull_request.head.sha
