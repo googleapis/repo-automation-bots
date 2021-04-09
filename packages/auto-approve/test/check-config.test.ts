@@ -20,7 +20,6 @@ import {
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import * as fs from 'fs';
-import yaml from 'js-yaml';
 import nock from 'nock';
 import snapshot from 'snap-shot-it';
 const {Octokit} = require('@octokit/rest');
@@ -43,11 +42,9 @@ function getCodeOwnersFile(response: string | undefined, status: number) {
 
 async function invalidateSchema(configNum: number) {
   return await validateSchema(
-    yaml.load(
-      fs.readFileSync(
-        `./test/fixtures/config/invalid-schemas/invalid-schema${configNum}.yml`,
-        'utf8'
-      )
+    fs.readFileSync(
+      `./test/fixtures/config/invalid-schemas/invalid-schema${configNum}.yml`,
+      'utf8'
     )
   );
 }
@@ -126,11 +123,9 @@ describe('check for config', () => {
 
     it('should return true if YAML has all of the possible valid options', async () => {
       const isSchemaValid = await validateSchema(
-        yaml.load(
-          fs.readFileSync(
-            './test/fixtures/config/valid-schemas/valid-schema1.yml',
-            'utf8'
-          )
+        fs.readFileSync(
+          './test/fixtures/config/valid-schemas/valid-schema1.yml',
+          'utf8'
         )
       );
       assert.strictEqual(isSchemaValid, undefined);
@@ -138,11 +133,9 @@ describe('check for config', () => {
 
     it('should return true if YAML has any one of the possible valid options', async () => {
       const isSchemaValid = await validateSchema(
-        yaml.load(
-          fs.readFileSync(
-            './test/fixtures/config/valid-schemas/valid-schema2.yml',
-            'utf8'
-          )
+        fs.readFileSync(
+          './test/fixtures/config/valid-schemas/valid-schema2.yml',
+          'utf8'
         )
       );
       assert.strictEqual(isSchemaValid, undefined);
@@ -150,11 +143,9 @@ describe('check for config', () => {
 
     it('should return true if YAML has some of the possible valid options', async () => {
       const isSchemaValid = await validateSchema(
-        yaml.load(
-          fs.readFileSync(
-            './test/fixtures/config/valid-schemas/valid-schema3.yml',
-            'utf8'
-          )
+        fs.readFileSync(
+          './test/fixtures/config/valid-schemas/valid-schema3.yml',
+          'utf8'
         )
       );
       assert.strictEqual(isSchemaValid, undefined);

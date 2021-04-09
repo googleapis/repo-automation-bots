@@ -113,7 +113,6 @@ describe('auto-approve', () => {
     describe('config exists', () => {
       it('approves and tags a PR if a config exists & is valid & PR is valid', async () => {
         checkPRAgainstConfigStub.returns(true);
-        validateYamlStub.returns('');
         validateSchemaStub.returns(undefined);
         checkCodeOwnersStub.returns('');
 
@@ -142,8 +141,12 @@ describe('auto-approve', () => {
 
       it('submits a failing check if config exists but is not valid', async () => {
         checkPRAgainstConfigStub.returns(true);
-        validateYamlStub.returns('File is not properly configured YAML');
-        validateSchemaStub.returns(undefined);
+        validateSchemaStub.returns([
+          {
+            wrongProperty: 'wrongProperty',
+            message: 'message',
+          },
+        ]);
         checkCodeOwnersStub.returns('');
 
         const payload = require(resolve(
@@ -166,7 +169,6 @@ describe('auto-approve', () => {
 
       it('logs to the console if config is valid but PR is not', async () => {
         checkPRAgainstConfigStub.returns(false);
-        validateYamlStub.returns('');
         validateSchemaStub.returns(undefined);
         checkCodeOwnersStub.returns('');
 
