@@ -15,10 +15,12 @@
 // limitations under the License.
 
 import yargs = require('yargs');
-import {sync} from './commands/sync';
+import {remoteSync} from './commands/remote-sync';
+import {localSync} from './commands/local-sync';
 
 yargs(process.argv.slice(2))
-  .command(sync)
+  .command(localSync)
+  .command(remoteSync)
   .demandCommand(1)
   .strictCommands()
   .parse();

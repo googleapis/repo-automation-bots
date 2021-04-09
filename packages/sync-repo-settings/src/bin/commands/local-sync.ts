@@ -17,22 +17,24 @@ import {logger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
 import {SyncRepoSettings} from '../../sync-repo-settings';
 import * as yaml from 'js-yaml';
+import {RepoConfig} from '../../types';
+import {readFileSync} from 'fs';
 
 interface Args {
-  branch?: string;
+  file: string;
   'github-token': string;
   repo: string;
 }
 
-export const sync: yargs.CommandModule<{}, Args> = {
-  command: 'create-pull-request',
-  describe:
-    'create a new release branch and send pull request to add release configuration',
+export const localSync: yargs.CommandModule<{}, Args> = {
+  command: 'local-sync',
+  describe: 'sync repository settings from a local configuration file',
   builder(yargs) {
     return yargs
-      .option('branch', {
-        describe: 'name of new branch to create',
+      .option('file', {
+        describe: 'path to configuration file',
         type: 'string',
+        demand: true,
       })
       .option('github-token', {
         describe: 'GitHub access token',
@@ -43,29 +45,23 @@ export const sync: yargs.CommandModule<{}, Args> = {
         demand: true,
       })
       .option('repo', {
-        describe: 'target repository',
+        describe: 'target repository in the form of owner/repo',
         type: 'string',
         demand: true,
       });
   },
   async handler(argv) {
-    const [owner, repo] = argv.repo.split('/');
     const octokit = new Octokit({
-      auth: argv["github-token"]
+      auth: argv['github-token'],
     });
 
-    const response = (await octokit.repos.getContent({
-      owner,
-      repo,
-      path: ".github/sync-repo-settings",
-    })).data;
-    console.log(response);
-    // const config = yaml.load(response);
+    const content = readFileSync(argv.file).toString('utf-8');
+    const config = yaml.load(content) as RepoConfig;
 
     const runner = new SyncRepoSettings(octokit, logger);
-    // await runner.syncRepoSettings({
-    //   repo: argv.repo,
-    //   config,
-    // });
+    await runner.syncRepoSettings({
+      repo: argv.repo,
+      config,
+    });
   },
 };
