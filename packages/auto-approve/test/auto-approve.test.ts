@@ -190,7 +190,7 @@ describe('auto-approve', () => {
         assert.ok(getChangedFilesStub.calledOnce);
       });
     });
-    describe('config does not exist', () => {
+    describe('config does not exist in PR', () => {
       it('ignores the PR, if config does not exist on repo or PR', async () => {
         getBlobFromPRFilesStub.returns(undefined);
 
@@ -212,18 +212,18 @@ describe('auto-approve', () => {
       });
 
       it('attempts to get codeowners file and create a passing status check if PR contains correct config', async () => {
-        getBlobFromPRFilesStub.returns('fake-file');
-        validateYamlStub.returns('');
-        validateSchemaStub.returns(undefined);
-        checkCodeOwnersStub.returns('');
-
         const payload = require(resolve(
           fixturesPath,
           'events',
           'pull_request_opened'
         ));
 
-        const scopes = [getConfigFile(undefined, 404), createCheck(200)];
+        getBlobFromPRFilesStub.returns('fake-file');
+        validateYamlStub.returns('');
+        validateSchemaStub.returns(undefined);
+        checkCodeOwnersStub.returns('');
+
+        const scopes = [createCheck(200)];
 
         await probot.receive({
           name: 'pull_request.opened',
@@ -236,6 +236,12 @@ describe('auto-approve', () => {
       });
 
       it('attempts to get codeowners file and create a failing status check if PR contains wrong config, and error messages check out', async () => {
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened'
+        ));
+
         getBlobFromPRFilesStub.returns('fake-file');
         validateYamlStub.returns('File is not properly configured YAML');
         validateSchemaStub.returns([
@@ -248,13 +254,7 @@ describe('auto-approve', () => {
           `You must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
         );
 
-        const payload = require(resolve(
-          fixturesPath,
-          'events',
-          'pull_request_opened'
-        ));
-
-        const scopes = [getConfigFile(undefined, 404), createCheck(200)];
+        const scopes = [createCheck(200)];
 
         await probot.receive({
           name: 'pull_request.opened',
