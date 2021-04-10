@@ -1,3 +1,5 @@
+  node ./.github/workflows/finale.js '["changeFinder","test (release-brancher)"]' ***
+
 {
   "packages/gcf-utils": "7.1.4",
   "packages/mono-repo-publish": "1.1.2",
