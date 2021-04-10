@@ -12,14 +12,14 @@
   "files": [
     "build/src"
   ],
-  "bin": "build/src/bin/sync-repo-settings.js",
+  "bin": "build/src/cli.js",
   "keywords": [
     "probot",
     "github",
     "probot-app"
   ],
   "scripts": {
-    "compile": "tsc -p .",
+    "compile": "tsc",
     "start": "probot run ./build/src/sync-repo-settings",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",

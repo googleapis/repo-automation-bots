@@ -1,10 +1,12 @@
+#!/usr/bin/env node
+
 // Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,13 +17,15 @@
 import yargs = require('yargs');
 import {logger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
-import {SyncRepoSettings} from '../../sync-repo-settings';
+import {SyncRepoSettings} from './sync-repo-settings';
 import * as yaml from 'js-yaml';
-import {RepoConfig} from '../../types';
+import {RepoConfig} from './types';
+import {readFileSync} from 'fs';
 
 interface Args {
+  file?: string;
   branch?: string;
-  'github-token': string;
+  "github-token": string;
   repo: string;
 }
 
@@ -29,25 +33,36 @@ async function getFileContent(
   octokit: Octokit,
   owner: string,
   repo: string,
-  branch: string,
+  branch: string | undefined,
   path: string
 ): Promise<string> {
-  const response = (
-    await octokit.repos.getContent({
-      owner,
-      repo,
-      path,
-      ref: branch,
-    })
-  ).data as {content: string};
+  const args = branch
+    ? {
+        owner,
+        repo,
+        path,
+        ref: branch,
+      }
+    : {
+        owner,
+        repo,
+        path,
+      };
+  const response = (await octokit.repos.getContent(args)).data as {
+    content: string;
+  };
   return Buffer.from(response.content, 'base64').toString('utf8');
 }
 
-export const remoteSync: yargs.CommandModule<{}, Args> = {
+const remoteSync: yargs.CommandModule<{}, Args> = {
   command: 'remote-sync',
   describe: 'sync repository settings from a remote configuration',
   builder(yargs) {
     return yargs
+      .option('file', {
+        describe: 'path to configuration file',
+        type: 'string',
+      })
       .option('branch', {
         describe: 'branch to fetch sync-repo-settings.yaml from',
         type: 'string',
@@ -72,14 +87,22 @@ export const remoteSync: yargs.CommandModule<{}, Args> = {
       auth: argv['github-token'],
     });
 
-    const content = await getFileContent(
-      octokit,
-      owner,
-      repo,
-      argv.branch ?? 'master',
-      '.github/sync-repo-settings.yaml'
-    );
-    const config = yaml.load(content) as RepoConfig;
+    let config: RepoConfig;
+    if (argv.file) {
+      // load from local file
+      const content = readFileSync(argv.file).toString('utf-8');
+      config = yaml.load(content) as RepoConfig;
+    } else {
+      // load from repo
+      const content = await getFileContent(
+        octokit,
+        owner,
+        repo,
+        argv.branch,
+        '.github/sync-repo-settings.yaml'
+      );
+      config = yaml.load(content) as RepoConfig;
+    }
 
     const runner = new SyncRepoSettings(octokit, logger);
     await runner.syncRepoSettings({
@@ -88,3 +111,5 @@ export const remoteSync: yargs.CommandModule<{}, Args> = {
     });
   },
 };
+
+yargs(process.argv.slice(2)).command(remoteSync).strictCommands().parse();
