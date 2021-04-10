@@ -16,14 +16,13 @@
   ],
   "files": [
     "build/src"
-  ],
+ ],
   "scripts": {
     "compile": "tsc -p .",
     "prepare": "npm run compile",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal mocha --exit build/test",
     "fix": "gts fix",
-    "lint": "gts check"
   },
   "dependencies": {
     "@octokit/rest": "^18.0.1",
