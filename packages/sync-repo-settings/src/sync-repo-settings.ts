@@ -187,7 +187,9 @@ export class SyncRepoSettings {
           accept: 'application/vnd.github.luke-cage-preview+json',
         },
       });
-      logger.info(`Success updating branch protection for ${repo}:${rule.pattern}`);
+      logger.info(
+        `Success updating branch protection for ${repo}:${rule.pattern}`
+      );
     } catch (err) {
       if (err.status === 401) {
         logger.warn(
