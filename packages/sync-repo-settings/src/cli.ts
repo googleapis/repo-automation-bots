@@ -68,7 +68,8 @@ const remoteSync: yargs.CommandModule<{}, Args> = {
         type: 'string',
       })
       .option('github-token', {
-        describe: 'GitHub access token',
+        describe:
+          'GitHub access token. Can also be set via the `GITHUB_TOKEN` environment variable.',
         type: 'string',
         coerce: arg => {
           return arg || process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
