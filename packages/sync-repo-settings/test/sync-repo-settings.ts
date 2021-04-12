@@ -72,7 +72,7 @@ describe('SyncRepoSettings', () => {
     const branchProtection = updateBranch.args[0][0];
 
     // ensure we set a default value not set in the yaml
-    assert.equal(branchProtection?.branch, 'master');
+    assert.strictEqual(branchProtection?.branch, 'master');
     assert.ok(branchProtection?.enforce_admins);
   });
 
