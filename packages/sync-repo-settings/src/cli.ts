@@ -112,13 +112,11 @@ const sync: yargs.CommandModule<{}, Args> = {
   },
 };
 
-// export the parser for testing
-export const parser = yargs
-  .command(sync)
-  .showHelpOnFail(false)
-  .strictCommands();
+export function parser(): yargs.Argv {
+  return yargs.command(sync).showHelpOnFail(false).strictCommands();
+}
 
 // Only run the command if we're running this file directly
 if (require.main === module) {
-  parser.parse(process.argv);
+  parser().parse(process.argv);
 }

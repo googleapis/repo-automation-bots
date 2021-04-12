@@ -44,7 +44,7 @@ describe('cli', () => {
       GH_TOKEN: undefined,
     });
     try {
-      await cli.parser.exitProcess(false).parse('--repo=testOwner/testRepo');
+      await cli.parser().exitProcess(false).parse('--repo=testOwner/testRepo');
       assert.fail('should not get here');
     } catch (e) {
       assert.ok(e.toString().match('Missing required argument: github-token'));
@@ -67,7 +67,7 @@ describe('cli', () => {
     const stub = sandbox
       .stub(SyncRepoSettings.prototype, 'syncRepoSettings')
       .resolves();
-    await cli.parser.exitProcess(false).parse('--repo=testOwner/testRepo');
+    await cli.parser().exitProcess(false).parse('--repo=testOwner/testRepo');
     assert.ok(
       stub.calledWith(
         sinon.match(options => {
@@ -95,7 +95,8 @@ describe('cli', () => {
     const stub = sandbox
       .stub(SyncRepoSettings.prototype, 'syncRepoSettings')
       .resolves();
-    await cli.parser
+    await cli
+      .parser()
       .exitProcess(false)
       .parse('--repo=testOwner/testRepo --github-token=some-token');
     assert.ok(
@@ -117,7 +118,8 @@ describe('cli', () => {
     const stub = sandbox
       .stub(SyncRepoSettings.prototype, 'syncRepoSettings')
       .resolves();
-    await cli.parser
+    await cli
+      .parser()
       .exitProcess(false)
       .parse(
         '--repo=testOwner/testRepo --github-token=some-token --file=./test/fixtures/localConfig.yaml'
