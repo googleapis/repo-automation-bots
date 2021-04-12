@@ -16,107 +16,123 @@ import nock from 'nock';
 import {describe, it, afterEach} from 'mocha';
 import assert from 'assert';
 import sinon from 'sinon';
+import mockedEnv from 'mocked-env';
+import {RestoreFn} from 'mocked-env';
 import * as cli from '../src/cli';
-import yargs from 'yargs';
+import * as yaml from 'js-yaml';
+import {SyncRepoSettings} from '../src/sync-repo-settings';
+import {readFileSync} from 'fs';
+import {resolve} from 'path';
+
+const sandbox = sinon.createSandbox();
 
 nock.disableNetConnect();
 
 describe('cli', () => {
+  let restore: RestoreFn;
+
   afterEach(() => {
-    sinon.restore();
-  });
-
-  it('should succeed 1', () => {
-    assert.ok(true);
-  });
-
-  it('should throw if no token is available', async () => {
-    process.env.GITHUB_TOKEN = '';
-    process.env.GH_TOKEN = '';
-    try {
-      await cli.parser
-        .fail((msg: string, err: Error, yargs: yargs.Argv) => {
-          yargs.exit(1, err);
-          throw new Error(msg);
-        })
-        .parse('--repo=testOwner/testRepo');
-      assert.fail('should not get here');
-    } catch (e) {
-      console.log(e.toString());
+    sandbox.restore();
+    if (restore) {
+      restore();
     }
   });
 
-  it('should succeed', () => {
-    assert.ok(true);
+  it('should throw if no token is available', async () => {
+    restore = mockedEnv({
+      GITHUB_TOKEN: undefined,
+      GH_TOKEN: undefined,
+    });
+    try {
+      await cli.parser.exitProcess(false).parse('--repo=testOwner/testRepo');
+      assert.fail('should not get here');
+    } catch (e) {
+      assert.ok(e.toString().match('Missing required argument: github-token'));
+    }
   });
 
-  // it('should show help if no flags are passed', async () => {
-  //   process.env.GH_TOKEN = 'token';
-  //   const showHelp = sinon.stub();
-  //   const m = ({
-  //     showHelp,
-  //     flags: {},
-  //   } as unknown) as meow.Result<{}>;
-  //   await cli.main(m);
-  //   assert.ok(showHelp.calledOnce);
-  // });
+  it('loads github-token from environment', async () => {
+    restore = mockedEnv({
+      GITHUB_TOKEN: 'some-token',
+    });
+    const config = readFileSync(resolve('./test/fixtures', 'localConfig.yaml'));
+    nock('https://api.github.com')
+      .get(
+        '/repos/testOwner/testRepo/contents/.github%2Fsync-repo-settings.yaml'
+      )
+      .reply(200, {
+        sha: 'abc123',
+        content: config.toString('base64'),
+      });
+    const stub = sandbox
+      .stub(SyncRepoSettings.prototype, 'syncRepoSettings')
+      .resolves();
+    await cli.parser.exitProcess(false).parse('--repo=testOwner/testRepo');
+    assert.ok(
+      stub.calledWith(
+        sinon.match(options => {
+          assert.strictEqual(options.repo, 'testOwner/testRepo');
+          assert.deepStrictEqual(
+            options.config,
+            yaml.load(config.toString('utf-8'))
+          );
+          return true;
+        })
+      )
+    );
+  });
 
-  // it('should call getRepo if passed a single repo', async () => {
-  //   process.env.GH_TOKEN = 'token';
-  //   const p = new policy.Policy(new Octokit(), console);
-  //   const repoMetadata = {} as policy.GitHubRepo;
-  //   const policyMetadata = {} as policy.PolicyResult;
-  //   const getRepoStub = sinon.stub(p, 'getRepo').resolves(repoMetadata);
-  //   const checkRepoPolicyStub = sinon
-  //     .stub(p, 'checkRepoPolicy')
-  //     .resolves(policyMetadata);
-  //   const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
-  //   const m = ({
-  //     flags: {
-  //       repo: 'googleapis/nodejs-storage',
-  //     },
-  //   } as unknown) as meow.Result<{}>;
-  //   await cli.main(m);
-  //   assert.ok(getRepoStub.calledOnce);
-  //   assert.ok(getPolicyStub.calledOnce);
-  //   assert.ok(checkRepoPolicyStub.calledOnce);
-  // });
+  it('should run remote configuration', async () => {
+    const config = readFileSync(resolve('./test/fixtures', 'localConfig.yaml'));
+    nock('https://api.github.com')
+      .get(
+        '/repos/testOwner/testRepo/contents/.github%2Fsync-repo-settings.yaml'
+      )
+      .reply(200, {
+        sha: 'abc123',
+        content: config.toString('base64'),
+      });
+    const stub = sandbox
+      .stub(SyncRepoSettings.prototype, 'syncRepoSettings')
+      .resolves();
+    await cli.parser
+      .exitProcess(false)
+      .parse('--repo=testOwner/testRepo --github-token=some-token');
+    assert.ok(
+      stub.calledWith(
+        sinon.match(options => {
+          assert.strictEqual(options.repo, 'testOwner/testRepo');
+          assert.deepStrictEqual(
+            options.config,
+            yaml.load(config.toString('utf-8'))
+          );
+          return true;
+        })
+      )
+    );
+  });
 
-  // it('should attempt to autofix if asked nicely', async () => {
-  //   process.env.GH_TOKEN = 'token';
-  //   const p = new policy.Policy(new Octokit(), console);
-  //   const repoMetadata = {} as policy.GitHubRepo;
-  //   const policyMetadata = {} as policy.PolicyResult;
-  //   sinon.stub(p, 'getRepo').resolves(repoMetadata);
-  //   sinon.stub(p, 'checkRepoPolicy').resolves(policyMetadata);
-  //   sinon.stub(policy, 'getPolicy').returns(p);
-  //   const fixStub = sinon.stub(changer, 'submitFixes').resolves();
-  //   const m = ({
-  //     flags: {
-  //       repo: 'googleapis/nodejs-storage',
-  //       autofix: true,
-  //     },
-  //   } as unknown) as meow.Result<{}>;
-  //   await cli.main(m);
-  //   assert.ok(fixStub.calledOnce);
-  // });
-
-  // it('should attempt to export if asked nicely', async () => {
-  //   process.env.GH_TOKEN = 'token';
-  //   const p = new policy.Policy(new Octokit(), console);
-  //   const repoMetadata = {} as policy.GitHubRepo;
-  //   const policyMetadata = {} as policy.PolicyResult;
-  //   sinon.stub(p, 'getRepo').resolves(repoMetadata);
-  //   sinon.stub(p, 'checkRepoPolicy').resolves(policyMetadata);
-  //   sinon.stub(policy, 'getPolicy').returns(p);
-  //   const exportStub = sinon.stub(bq, 'exportToBigQuery').resolves();
-  //   const m = ({
-  //     flags: {
-  //       repo: 'googleapis/nodejs-storage',
-  //       export: true,
-  //     },
-  //   } as unknown) as meow.Result<{}>;
-  //   await cli.main(m);
-  //   assert.ok(exportStub.calledOnce);
-  // });
+  it('should run local configuration', async () => {
+    const config = readFileSync(resolve('./test/fixtures', 'localConfig.yaml'));
+    const stub = sandbox
+      .stub(SyncRepoSettings.prototype, 'syncRepoSettings')
+      .resolves();
+    await cli.parser
+      .exitProcess(false)
+      .parse(
+        '--repo=testOwner/testRepo --github-token=some-token --file=./test/fixtures/localConfig.yaml'
+      );
+    assert.ok(
+      stub.calledWith(
+        sinon.match(options => {
+          assert.strictEqual(options.repo, 'testOwner/testRepo');
+          assert.deepStrictEqual(
+            options.config,
+            yaml.load(config.toString('utf-8'))
+          );
+          return true;
+        })
+      )
+    );
+  });
 });

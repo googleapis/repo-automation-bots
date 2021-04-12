@@ -105,7 +105,7 @@ const sync: yargs.CommandModule<{}, Args> = {
       config = yaml.load(content) as RepoConfig;
     }
 
-    new SyncRepoSettings(octokit, logger).syncRepoSettings({
+    await new SyncRepoSettings(octokit, logger).syncRepoSettings({
       repo: argv.repo,
       config,
     });
