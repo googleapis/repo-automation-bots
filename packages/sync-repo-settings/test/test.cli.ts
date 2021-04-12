@@ -16,7 +16,6 @@ import nock from 'nock';
 import {describe, it, afterEach} from 'mocha';
 import assert from 'assert';
 import sinon from 'sinon';
-import {Octokit} from '@octokit/rest';
 import * as cli from '../src/cli';
 import yargs from 'yargs';
 
@@ -35,14 +34,16 @@ describe('cli', () => {
     process.env.GITHUB_TOKEN = '';
     process.env.GH_TOKEN = '';
     try {
-      const argv = await cli.parser.fail((msg: string, err: Error, yargs: yargs.Argv) => {
-        throw new Error(msg);
-      }).parse('--repo=testOwner/testRepo');
+      await cli.parser
+        .fail((msg: string, err: Error, yargs: yargs.Argv) => {
+          yargs.exit(1, err);
+          throw new Error(msg);
+        })
+        .parse('--repo=testOwner/testRepo');
       assert.fail('should not get here');
     } catch (e) {
       console.log(e.toString());
     }
-
   });
 
   it('should succeed', () => {
