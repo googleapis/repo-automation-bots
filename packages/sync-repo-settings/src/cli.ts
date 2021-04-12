@@ -25,7 +25,7 @@ import {readFileSync} from 'fs';
 interface Args {
   file?: string;
   branch?: string;
-  "github-token": string;
+  'github-token': string;
   repo: string;
 }
 
