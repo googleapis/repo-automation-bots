@@ -54,8 +54,8 @@ async function getFileContent(
   return Buffer.from(response.content, 'base64').toString('utf8');
 }
 
-const remoteSync: yargs.CommandModule<{}, Args> = {
-  command: 'remote-sync',
+const sync: yargs.CommandModule<{}, Args> = {
+  command: '$0',
   describe: 'sync repository settings from a remote configuration',
   builder(yargs) {
     return yargs
@@ -105,12 +105,20 @@ const remoteSync: yargs.CommandModule<{}, Args> = {
       config = yaml.load(content) as RepoConfig;
     }
 
-    const runner = new SyncRepoSettings(octokit, logger);
-    await runner.syncRepoSettings({
+    new SyncRepoSettings(octokit, logger).syncRepoSettings({
       repo: argv.repo,
       config,
     });
   },
 };
 
-yargs(process.argv.slice(2)).command(remoteSync).strictCommands().parse();
+// export the parser for testing
+export const parser = yargs
+  .command(sync)
+  .showHelpOnFail(false)
+  .strictCommands();
+
+// Only run the command if we're running this file directly
+if (require.main === module) {
+  parser.parse(process.argv);
+}
