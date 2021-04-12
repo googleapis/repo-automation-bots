@@ -153,7 +153,7 @@ export class SyncRepoSettings {
    */
   async updateBranchProtection(repo: string, rule: BranchProtectionRule) {
     const logger = this.logger;
-    logger.info(`Updating master branch protection for ${repo}`);
+    logger.info(`Updating ${rule.pattern} branch protection for ${repo}`);
     const [owner, name] = repo.split('/');
 
     logger.debug('Rules before applying defaults:');
