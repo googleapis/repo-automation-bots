@@ -139,7 +139,7 @@ export async function createOnePullRequestForUpdatingLock(
       // message for this:
       title: 'build: update .OwlBot.lock with new version of post-processor',
       branch: `owlbot-lock-${Date.now()}`,
-      description: `Version ${
+      description: `This PR updates the docker container used for OwlBot. This container performs post-processing tasks when pull-requests are opened on your repository, such as:\n\n* copying generated files into place.\n* generating common files from templates.\n\nVersion ${
         lock.docker.digest
       } was published at ${new Date().toISOString()}.`,
       primary: configs?.branchName ?? 'main',
