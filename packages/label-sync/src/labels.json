@@ -6,6 +6,11 @@
       "color": "00ff00"
     },
     {
+      "name": "eol",
+      "description": "End of life. Deprecating support for a previous version.",
+      "color": "c9abb2"
+    },
+    {
       "name": "status: blocked",
       "description": "Resolving the issue is dependent on other work.",
       "color": "f9d0c4"
