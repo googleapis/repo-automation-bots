@@ -50,11 +50,11 @@ describe('generated-files-bot', () => {
     describe('json input', () => {
       it('should parse a simple jsonpath', () => {
         const values = parseManifest(jsonManifest, 'json', '$.key1[*]');
-        assert.deepStrictEqual(values, ['value1', 'value2']);
+        assert.deepStrictEqual(values, [{path: 'value1'}, {path: 'value2'}]);
       });
       it('should parse a nested jsonpath', () => {
         const values = parseManifest(jsonManifest, 'json', '$.key2.key3[*]');
-        assert.deepStrictEqual(values, ['value3']);
+        assert.deepStrictEqual(values, [{path: 'value3'}]);
       });
     });
 
@@ -62,11 +62,11 @@ describe('generated-files-bot', () => {
       it('should parse a jsonpath', () => {
         it('should parse a simple jsonpath', () => {
           const values = parseManifest(yamlManifest, 'yaml', '$.key1[*]');
-          assert.deepStrictEqual(values, ['value1', 'value2']);
+          assert.deepStrictEqual(values, [{path: 'value1'}, {path: 'value2'}]);
         });
         it('should parse a nested jsonpath', () => {
           const values = parseManifest(yamlManifest, 'yaml', '$.key2.key3[*]');
-          assert.deepStrictEqual(values, ['value3']);
+          assert.deepStrictEqual(values, [{path: 'value3'}]);
         });
       });
     });
@@ -75,7 +75,16 @@ describe('generated-files-bot', () => {
   describe('getFileList', async () => {
     it('should read from the explicit file list', async () => {
       const config = {
-        generatedFiles: ['file1.txt', 'file2.txt'],
+        generatedFiles: [
+          'file1.txt',
+          'file2.txt',
+          {
+            path: 'file3.txt',
+          },
+          {
+            path: '**.txt',
+          },
+        ],
       };
       const list = await getFileList(
         config,
@@ -83,7 +92,12 @@ describe('generated-files-bot', () => {
         'owner',
         'repo'
       );
-      assert.deepStrictEqual(list, ['file1.txt', 'file2.txt']);
+      assert.deepStrictEqual(list, [
+        {path: 'file1.txt'},
+        {path: 'file2.txt'},
+        {path: 'file3.txt'},
+        {path: '**.txt'},
+      ]);
     });
 
     it('should combine multiple manifests', async () => {
@@ -116,7 +130,11 @@ describe('generated-files-bot', () => {
         'owner',
         'repo'
       );
-      assert.deepStrictEqual(list, ['value1', 'value2', 'value3']);
+      assert.deepStrictEqual(list, [
+        {path: 'value1'},
+        {path: 'value2'},
+        {path: 'value3'},
+      ]);
       requests.done();
     });
 
@@ -151,7 +169,12 @@ describe('generated-files-bot', () => {
         'owner',
         'repo'
       );
-      assert.deepStrictEqual(list, ['file1.txt', 'value1', 'value2', 'value3']);
+      assert.deepStrictEqual(list, [
+        {path: 'file1.txt'},
+        {path: 'value1'},
+        {path: 'value2'},
+        {path: 'value3'},
+      ]);
       requests.done();
     });
 
@@ -313,6 +336,11 @@ describe('generated-files-bot', () => {
             {filename: 'file2.txt'},
             {filename: 'file3.txt'},
             {filename: 'value1'},
+            {filename: 'test.html'},
+            {filename: 'test/index.html'},
+            {filename: 'docs/README.md'},
+            {filename: 'should-not-match/README.md'},
+            {filename: 'src/.data/test.json'},
           ])
           .get('/repos/testOwner/testRepo/issues/6/comments?per_page=50')
           .reply(200, [])
@@ -407,7 +435,7 @@ describe('generated-files-bot', () => {
         requests.done();
       });
 
-      it('ignores PRs from configured autors', async () => {
+      it('ignores PRs from configured authors', async () => {
         const validConfig = fs.readFileSync(
           resolve(fixturesPath, 'config', 'ignore-authors.yml')
         );

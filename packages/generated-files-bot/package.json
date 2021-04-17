@@ -30,11 +30,13 @@
   "dependencies": {
     "gcf-utils": "^7.1.1",
     "js-yaml": "^4.0.0",
-    "jsonpath": "^1.0.2"
+    "jsonpath": "^1.0.2",
+    "minimatch": "^3.0.4"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.0",
     "@types/jsonpath": "^0.2.0",
+    "@types/minimatch": "^3.0.4",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.6.1",
     "c8": "^7.1.0",
