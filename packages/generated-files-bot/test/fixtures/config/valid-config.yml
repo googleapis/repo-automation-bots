@@ -2,6 +2,7 @@ generatedFiles:
 - 'file1.txt'
 - path: '**.html'
 - path: 'docs/**.md'
+  message: 'docs are auto-generated'
 - path: 'src/.data/**.json'
 externalManifests:
 - type: json

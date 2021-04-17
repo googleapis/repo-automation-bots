@@ -28,9 +28,10 @@ options:
 
 Generated File:
 
-| Name   | Description                                                                                                          | Type     |
-| ------ | -------------------------------------------------------------------------------------------------------------------- | -------- |
-| `path` | A path or [minimatch-compatible](https://www.npmjs.com/package/minimatch) pattern matching a generated file or files | `string` |
+| Name      | Description                                                                                                          | Type     | Required |
+| --------- | -------------------------------------------------------------------------------------------------------------------- | -------- | -------- |
+| `path`    | A path or [minimatch-compatible](https://www.npmjs.com/package/minimatch) pattern matching a generated file or files | `string` | yes      |
+| `message` | An optional, helpful message to display when a particular generated file has been edited                             | `string` | no       |
 
 External Manifest:
 
