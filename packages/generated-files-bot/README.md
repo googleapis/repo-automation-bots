@@ -20,19 +20,25 @@ To configure the bot, you can create a configuration file:
 `.github/generated-files-bot.yml`. The contents of this file allow for the following
 options:
 
-| Name | Description | Type | Default |
-| ---- | ----------- | ---- | ------- |
-| `generatedFiles`    | An explicit list of files which are considered templates. | `string[]` | `[]` |
-| `externalManifests` | List of external manifest files to parse. | `ExternalManifest[]` | `[]` |
-| `ignoreAuthors` | List of PR authors to ignore. | `string[]` | `[]` |
+| Name                | Description                                                        | Type                          | Default |
+| ------------------- | ------------------------------------------------------------------ | ----------------------------- | ------- |
+| `generatedFiles`    | An explicit list of files/patterns which are considered templates. | `(string \| GeneratedFile)[]` | `[]`    |
+| `externalManifests` | List of external manifest files to parse.                          | `ExternalManifest[]`          | `[]`    |
+| `ignoreAuthors`     | List of PR authors to ignore.                                      | `string[]`                    | `[]`    |
+
+Generated File:
+
+| Name   | Description                                                                                                          | Type     |
+| ------ | -------------------------------------------------------------------------------------------------------------------- | -------- |
+| `path` | A path or [minimatch-compatible](https://www.npmjs.com/package/minimatch) pattern matching a generated file or files | `string` |
 
 External Manifest:
 
-| Name | Description | Type |
-| ---- | ----------- | ---- |
-| `type` | Manifest file format | `"json"` or `"yaml"` |
-| `file` | Path to the manifest in the repository | `string` |
-| `jsonpath` | [JsonPath query](https://goessner.net/articles/JsonPath/) to find the list of template files | `string` |
+| Name       | Description                                                                                  | Type                 |
+| ---------- | -------------------------------------------------------------------------------------------- | -------------------- |
+| `type`     | Manifest file format                                                                         | `"json"` or `"yaml"` |
+| `file`     | Path to the manifest in the repository                                                       | `string`             |
+| `jsonpath` | [JsonPath query](https://goessner.net/articles/JsonPath/) to find the list of template files | `string`             |
 
 ## Testing
 

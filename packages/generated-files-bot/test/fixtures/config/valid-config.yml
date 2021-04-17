@@ -1,5 +1,8 @@
 generatedFiles:
 - 'file1.txt'
+- path: '**.html'
+- path: 'docs/**.md'
+- path: 'src/.data/**.json'
 externalManifests:
 - type: json
   file: 'manifest.json'
