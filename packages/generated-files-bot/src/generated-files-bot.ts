@@ -177,9 +177,9 @@ export function buildCommentMessage(touchedTemplates: GeneratedFile[]): string {
   const lines: string[] = [];
   for (const {path, message} of touchedTemplates) {
     // an optional, custom message
-    const m = message ? ` - ${message}` : '';
+    const customMessage = message ? ` - ${message}` : '';
 
-    lines.push(`* ${path}${m}`);
+    lines.push(`* ${path}${customMessage}`);
   }
   return (
     '*Warning*: This pull request is touching the following templated files:\n\n' +
