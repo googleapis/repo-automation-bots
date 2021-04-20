@@ -146,12 +146,13 @@ The following properties are logged:
 
 > Note: To have your Bot's custom metrics collected from Cloud Logging and processed with other metrics, please refer to the [data-processor documentation](../monitoring-system/data-processor#add-support-for-a-new-metric-from-an-existing-data-source)
 
-To log a metric with field `foo` and value `bar`:
+To log a metric for the event `foo`, with additional structured information
+`bar`:
 
 ```typescript
 import {logger} from 'gcf-utils'
 
-logger.metric({foo: 'bar'})
+logger.metric('foo', {bar: 'http://www.example.com'})
 ```
 
 ## Development Setup
