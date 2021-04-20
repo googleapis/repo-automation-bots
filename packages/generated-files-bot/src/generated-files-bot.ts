@@ -17,6 +17,7 @@ import {Probot, ProbotOctokit} from 'probot';
 import {logger, addOrUpdateIssueComment} from 'gcf-utils';
 import {load} from 'js-yaml';
 import {query} from 'jsonpath';
+import {match} from 'minimatch';
 
 type OctokitType = InstanceType<typeof ProbotOctokit>;
 
@@ -32,10 +33,31 @@ interface ExternalManifest {
   jsonpath: string;
 }
 
+interface GeneratedFile {
+  path: string;
+  message?: string;
+}
+
 export interface Configuration {
-  generatedFiles?: string[];
+  generatedFiles?: (string | GeneratedFile)[];
   externalManifests?: ExternalManifest[];
   ignoreAuthors?: string[];
+}
+
+function normalizeGeneratedFiles(
+  items: (string | GeneratedFile)[]
+): GeneratedFile[] {
+  const collection: GeneratedFile[] = [];
+
+  for (const item of items) {
+    if (typeof item === 'string') {
+      collection.push({path: item});
+    } else {
+      collection.push(item);
+    }
+  }
+
+  return collection;
 }
 
 /**
@@ -50,9 +72,11 @@ export function parseManifest(
   content: string,
   type: 'json' | 'yaml',
   jsonpath: string
-): string[] {
+): GeneratedFile[] {
   const data = type === 'json' ? JSON.parse(content) : load(content);
-  return query(data, jsonpath);
+  const items = query(data, jsonpath);
+
+  return normalizeGeneratedFiles(items);
 }
 
 function isFile(file: File | unknown): file is File {
@@ -69,7 +93,7 @@ async function readExternalManifest(
   manifest: ExternalManifest,
   owner: string,
   repo: string
-): Promise<Set<string>> {
+): Promise<GeneratedFile[]> {
   return github.repos
     .getContent({
       owner,
@@ -81,12 +105,12 @@ async function readExternalManifest(
       if (isFile(result.data)) {
         content = Buffer.from(result.data.content, 'base64').toString();
       }
-      return new Set(parseManifest(content, manifest.type, manifest.jsonpath));
+      return parseManifest(content, manifest.type, manifest.jsonpath);
     })
     .catch(e => {
       logger.warn(`error loading manifest: ${manifest.file}`);
       logger.warn(e);
-      return new Set();
+      return [];
     });
 }
 
@@ -101,13 +125,14 @@ export async function getFileList(
   github: OctokitType,
   owner: string,
   repo: string
-): Promise<string[]> {
-  const fileList: string[] = [];
+): Promise<GeneratedFile[]> {
+  const fileList: GeneratedFile[] = [];
   if (config.generatedFiles) {
-    for (const file of config.generatedFiles) {
-      fileList.push(file);
+    for (const item of normalizeGeneratedFiles(config.generatedFiles)) {
+      fileList.push(item);
     }
   }
+
   if (config.externalManifests) {
     for (const externalManifest of config.externalManifests) {
       for (const file of await readExternalManifest(
@@ -120,6 +145,7 @@ export async function getFileList(
       }
     }
   }
+
   return fileList;
 }
 
@@ -147,10 +173,13 @@ export async function getPullRequestFiles(
   return pullRequestFiles;
 }
 
-export function buildCommentMessage(touchedTemplates: Set<string>): string {
+export function buildCommentMessage(touchedTemplates: GeneratedFile[]): string {
   const lines: string[] = [];
-  for (const filename of touchedTemplates) {
-    lines.push(`* ${filename}`);
+  for (const {path, message} of touchedTemplates) {
+    // an optional, custom message
+    const customMessage = message ? ` - ${message}` : '';
+
+    lines.push(`* ${path}${customMessage}`);
   }
   return (
     '*Warning*: This pull request is touching the following templated files:\n\n' +
@@ -185,10 +214,14 @@ export function handler(app: Probot) {
     }
 
     // Read the list of templated files
-    const templatedFiles = new Set(
-      await getFileList(config, context.octokit, owner, repo)
+    const templatedFiles = await getFileList(
+      config,
+      context.octokit,
+      owner,
+      repo
     );
-    if (templatedFiles.size === 0) {
+
+    if (!templatedFiles.length) {
       logger.warn(
         'No templated files specified. Please check your configuration.'
       );
@@ -204,16 +237,23 @@ export function handler(app: Probot) {
     );
 
     // Compare list of PR touched files against the list of
-    const touchedTemplates = new Set<string>();
-    for (const file of pullRequestFiles) {
-      if (templatedFiles.has(file)) {
-        touchedTemplates.add(file);
+    const touchedTemplates: GeneratedFile[] = [];
+    for (const {path, message} of templatedFiles) {
+      // `dot` enabled dot matching (i.e. 'a/**/b' will match 'a/.d/b')
+      const matches = match(pullRequestFiles, path, {dot: true});
+
+      for (const path of matches) {
+        touchedTemplates.push({
+          path,
+          message,
+        });
       }
     }
 
     // Comment on the pull request if this PR is touching any templated files
-    if (touchedTemplates.size > 0) {
+    if (touchedTemplates.length > 0) {
       const body = buildCommentMessage(touchedTemplates);
+
       await addOrUpdateIssueComment(
         context.octokit,
         owner,

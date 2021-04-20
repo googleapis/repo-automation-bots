@@ -19,7 +19,7 @@ squashMergeAllowed: true
 # Defaults to `false`
 mergeCommitAllowed: false
 
-# Rules for master branch protection
+# Rules for branch protection (add multiple entries to configure multiple branches)
 branchProtectionRules:
 # Identifies the protection rule pattern. Name of the branch to be protected.
 # Defaults to `master`

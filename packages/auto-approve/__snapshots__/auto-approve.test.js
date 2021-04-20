@@ -27,7 +27,7 @@ exports[
     title: 'Auto-approve.yml check',
     summary: 'auto-approve.yml config check failed',
     text:
-      'See the following errors in your auto-approve.yml config:\n\nFile is not properly configured YAML\n\n',
+      'See the following errors in your auto-approve.yml config:\n\n\nSchema is invalid\n[{"wrongProperty":"wrongProperty","message":"message"}]\n',
   },
 };
 

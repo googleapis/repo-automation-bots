@@ -138,28 +138,24 @@ export class SyncRepoSettings {
     if (!ignored && config) {
       jobs.push(this.updateRepoOptions(repo, config));
       if (config.branchProtectionRules) {
-        jobs.push(
-          this.updateMasterBranchProtection(repo, config.branchProtectionRules)
-        );
+        config.branchProtectionRules.forEach(rule => {
+          jobs.push(this.updateBranchProtection(repo, rule));
+        });
       }
     }
     await Promise.all(jobs);
   }
 
   /**
-   * Enable master branch protection, and required status checks
-   * @param repos List of repos to iterate.
+   * Enable branch protection, and required status checks
+   * @param repo Owner/Repo to update
+   * @param rule The branch protection rules
    */
-  async updateMasterBranchProtection(
-    repo: string,
-    rules: BranchProtectionRule[]
-  ) {
+  async updateBranchProtection(repo: string, rule: BranchProtectionRule) {
     const logger = this.logger;
-    logger.info(`Updating master branch protection for ${repo}`);
+    logger.info(`Updating ${rule.pattern} branch protection for ${repo}`);
     const [owner, name] = repo.split('/');
 
-    // TODO: add support for mutiple rules
-    let rule = rules[0];
     logger.debug('Rules before applying defaults:');
     logger.debug(rule);
 
@@ -191,14 +187,16 @@ export class SyncRepoSettings {
           accept: 'application/vnd.github.luke-cage-preview+json',
         },
       });
-      logger.info(`Success updating master branch protection for ${repo}`);
+      logger.info(
+        `Success updating branch protection for ${repo}:${rule.pattern}`
+      );
     } catch (err) {
       if (err.status === 401) {
         logger.warn(
-          `updateMasterBranchProtection: warning received ${err.status} updating ${owner}/${name}`
+          `updateBranchProtection: warning received ${err.status} updating ${owner}/${name}`
         );
       } else {
-        err.message = `updateMasterBranchProtection: error received ${err.status} updating ${owner}/${name}\n\n${err.message}`;
+        err.message = `updateBranchProtection: error received ${err.status} updating ${owner}/${name}\n\n${err.message}`;
         logger.error(err);
         return;
       }
