@@ -30,7 +30,7 @@
   "dependencies": {
     "@octokit/webhooks": "^8.12.0",
     "gcf-utils": "^7.1.3",
-    "release-please": "^11.7.0"
+    "release-please": "^11.8.0"
   },
   "devDependencies": {
     "@types/mocha": "^8.0.0",
