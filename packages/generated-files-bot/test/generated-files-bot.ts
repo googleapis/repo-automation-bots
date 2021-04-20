@@ -227,9 +227,10 @@ describe('generated-files-bot', () => {
 
   describe('buildCommentMessage', () => {
     it('should build a list of templates in the comment', () => {
-      const templateList = new Set<string>();
-      templateList.add('file1.txt');
-      templateList.add('file2.txt');
+      const templateList = [
+        {path: 'file1.txt'},
+        {path: 'file2.txt', message: '`file2.txt` can be modified elsewhere'},
+      ];
 
       const body = buildCommentMessage(templateList);
       assert.strictEqual(
@@ -237,7 +238,7 @@ describe('generated-files-bot', () => {
         `*Warning*: This pull request is touching the following templated files:
 
 * file1.txt
-* file2.txt`
+* file2.txt - \`file2.txt\` can be modified elsewhere`
       );
     });
   });

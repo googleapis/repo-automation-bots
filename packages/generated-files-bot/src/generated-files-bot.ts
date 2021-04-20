@@ -35,6 +35,7 @@ interface ExternalManifest {
 
 interface GeneratedFile {
   path: string;
+  message?: string;
 }
 
 export interface Configuration {
@@ -172,10 +173,13 @@ export async function getPullRequestFiles(
   return pullRequestFiles;
 }
 
-export function buildCommentMessage(touchedTemplates: Set<string>): string {
+export function buildCommentMessage(touchedTemplates: GeneratedFile[]): string {
   const lines: string[] = [];
-  for (const filename of touchedTemplates) {
-    lines.push(`* ${filename}`);
+  for (const {path, message} of touchedTemplates) {
+    // an optional, custom message
+    const customMessage = message ? ` - ${message}` : '';
+
+    lines.push(`* ${path}${customMessage}`);
   }
   return (
     '*Warning*: This pull request is touching the following templated files:\n\n' +
@@ -233,19 +237,23 @@ export function handler(app: Probot) {
     );
 
     // Compare list of PR touched files against the list of
-    const touchedTemplates = new Set<string>();
-    for (const {path} of templatedFiles) {
+    const touchedTemplates: GeneratedFile[] = [];
+    for (const {path, message} of templatedFiles) {
       // `dot` enabled dot matching (i.e. 'a/**/b' will match 'a/.d/b')
       const matches = match(pullRequestFiles, path, {dot: true});
 
-      for (const file of matches) {
-        touchedTemplates.add(file);
+      for (const path of matches) {
+        touchedTemplates.push({
+          path,
+          message,
+        });
       }
     }
 
     // Comment on the pull request if this PR is touching any templated files
-    if (touchedTemplates.size > 0) {
+    if (touchedTemplates.length > 0) {
       const body = buildCommentMessage(touchedTemplates);
+
       await addOrUpdateIssueComment(
         context.octokit,
         owner,
