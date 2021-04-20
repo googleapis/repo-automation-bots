@@ -841,6 +841,7 @@ describe('auto-label', () => {
         {title: 'com.google.spanner.helper: ignored', want: 'api: spanner'},
         {title: 'fix(snippets.spanner.helper): ignored', want: 'api: spanner'},
         {title: 'snippets.video: ignored', want: 'api: videointelligence'},
+        {title: 'data-science-onramp.video-intelligence.ignored: ignored', want: 'api: videointelligence'},
         {title: 'unknown: ignored', want: undefined},
         {title: 'spanner with no separator', want: undefined},
         {title: 'fix(unknown): ignored', want: undefined},
