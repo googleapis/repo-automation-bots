@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2020 Google LLC
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,57 +19,78 @@
 
 set -eo pipefail
 
-if [[ $# -ne 6 ]]
+if [[ $# -lt 1 ]]
 then
-  echo "Usage: $0 <project> <bucket> <functionRegion> <keyRing> <region> <schedulerServiceAccountEmail>"
+  echo "Usage: $0 <substitutions>"
   exit 1
 fi
 
-project=$1
-bucket=$2
-functionRegion=$3
-keyRing=$4
-region=$5
-schedulerServiceAccountEmail=$6
-
-# change this configuration for testing
-branch="master"
-repoOwner="googleapis"
-repoName="repo-automation-bots"
-
 # propagate substitution variables to deploy triggers
-substitutions="_BUCKET=${bucket},_FUNCTION_REGION=${functionRegion},_KEY_RING=${keyRing},_REGION=${region},_SCHEDULER_SERVICE_ACCOUNT_EMAIL=${schedulerServiceAccountEmail}"
+SUBSTITUTIONS=$1
+
+if [ -z "${PROJECT_ID}" ]
+then
+  echo "Need to set PROJECT_ID environment variable"
+  exit 1
+fi
+
+if [ -z "${BRANCH_NAME}" ]
+then
+  BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+fi
+
+if [ -z "${REPO_NAME}" ]
+then
+  echo "Need to set REPO_NAME environment variable"
+  exit 1
+fi
+
+if [ -z "${REPO_OWNER}" ]
+then
+  REMOTE=$(git config --get remote.origin.url)
+  REMOTE_REGEX="^(https|git)(:\/\/|@)([^\/:]+)[\/:]([^\/:]+)\/(.+).git$"
+  if [[ ${REMOTE} =~ ${REMOTE_REGEX} ]]
+  then
+    REPO_OWNER=${BASH_REMATCH[4]}
+  else
+    echo "Need to set REPO_OWNER environment variable"
+  fi
+fi
 
 # find all non-root cloudbuild.yaml configs
 for config in $(find -- */ -name 'cloudbuild.yaml' | sort -u)
 do
   directory=$(dirname "${config}")
-  botName=$(dirname "${config}" | rev | cut -d/ -f1 | rev)
+  triggerShortName=$(dirname "${config}" | rev | cut -d/ -f1 | rev)
   triggerName=$(dirname "${config}" | sed 's/\//-/g')
 
+  echo "Checking for ${triggerName}"
+
   # test to see if the deployment trigger already exists
-  if gcloud beta builds triggers describe "${triggerName}" --project="${project}" &>/dev/null
+  if gcloud beta builds triggers describe "${triggerName}" --project="${PROJECT_ID}" &>/dev/null
   then
-    # trigger already exists, skip
+    echo "${triggerName} already exists, skipping"
     continue
   fi
 
-  echo "Syncing trigger for ${botName}"
+  echo "Syncing trigger for ${triggerShortName}"
 
   # create the trigger
   gcloud beta builds triggers create github \
-    --project="${project}" \
-    --repo-name="${repoName}" \
-    --repo-owner="${repoOwner}" \
-    --description="Deploy ${botName}" \
+    --project="${PROJECT_ID}" \
+    --repo-name="${REPO_NAME}" \
+    --repo-owner="${REPO_OWNER}" \
+    --description="Trigger ${triggerShortName}" \
     --included-files="${directory}/**" \
     --name="${triggerName}" \
-    --branch-pattern="^${branch}$" \
+    --branch-pattern="^${BRANCH_NAME}$" \
     --build-config="${config}" \
-    --substitutions="${substitutions},_DIRECTORY=${directory}"
+    --substitutions="${SUBSTITUTIONS},_DIRECTORY=${directory}"
+
+  echo "Triggering initial build for ${triggerShortName}"
 
   # trigger the first deployment
   gcloud beta builds triggers run "${triggerName}" \
-    --project="${project}" \
-    --branch="${branch}"
+    --project="${PROJECT_ID}" \
+    --branch="${BRANCH_NAME}"
 done

@@ -1,10 +1,10 @@
-# Copyright 2019 Google LLC
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#     https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,11 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-steps:
-  - name: gcr.io/$PROJECT_ID/trigger-sync
-    env:
-      - "REPO_NAME=$REPO_NAME"
-      - "BRANCH_NAME=$BRANCH_NAME"
-      - "PROJECT_ID=$PROJECT_ID"
-    args:
-      - "_BUCKET=$_BUCKET,_FUNCTION_REGION=$_FUNCTION_REGION,_KEY_RING=$_KEY_RING,_REGION=$_REGION,_SCHEDULER_SERVICE_ACCOUNT_EMAIL=$_SCHEDULER_SERVICE_ACCOUNT_EMAIL"
+FROM gcr.io/google.com/cloudsdktool/cloud-sdk
+
+ADD trigger-sync/sync-triggers.sh /sync-triggers.sh
+
+ENTRYPOINT [ "/sync-triggers.sh" ]
