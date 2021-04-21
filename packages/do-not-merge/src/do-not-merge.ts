@@ -78,7 +78,7 @@ export = (app: Probot) => {
         }
         return;
       }
-      logger.info('Do not merge label found');
+      logger.metric('do_not_merge.add_label');
       if (existingCheck) {
         // If the check already exists and is _not_ a failure, make it a failure.
         if (existingCheck.conclusion !== 'failure') {

@@ -28,6 +28,7 @@ import xmljs from 'xml-js';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {components} from '@octokit/openapi-types';
+import { logger } from 'gcf-utils';
 
 type IssuesListForRepoResponseItem = components['schemas']['issue-simple'];
 type IssuesListCommentsResponseData = components['schemas']['issue-comment'][];
@@ -519,7 +520,11 @@ flakybot.openNewIssue = async (
       labels: LABELS_FOR_NEW_ISSUE,
     })
   ).data;
-  context.log.info(`[${owner}/${repo}]: created issue #${newIssue.number}`);
+  logger.metric('flakybot.open_new_issue', {
+    owner,
+    repo,
+    number: newIssue.number,
+  });
 };
 
 // For every flakybot issue, if it's not flaky and it passed and it didn't
