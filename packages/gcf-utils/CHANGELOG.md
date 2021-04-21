@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [7.2.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v7.2.0...gcf-utils-v7.2.1) (2021-04-21)
+
+
+### Bug Fixes
+
+* **gcf-utils:** address octokit type regressions ([#1660](https://www.github.com/googleapis/repo-automation-bots/issues/1660)) ([79f7c3f](https://www.github.com/googleapis/repo-automation-bots/commit/79f7c3f0a875b187e170a4bf50f0235d02a02230))
+
 ## [7.2.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v7.1.4...gcf-utils-v7.2.0) (2021-04-21)
 
 
