@@ -250,12 +250,6 @@ describe('GCFBootstrapper', () => {
       // Fake download from Cloud Storage, again with the goal of ensuring
       // we're using the streams API appropriately:
       const downloaded = nock('https://storage.googleapis.com')
-        .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?')
-        .reply(200, {
-          metadata: {
-            contentEncoding: 'text/plain',
-          },
-        })
         .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
         .reply(
           200,

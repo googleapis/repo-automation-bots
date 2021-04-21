@@ -89,8 +89,14 @@ export function autoDetectLabel(
   let firstPart = match ? match[1] : title;
 
   // Remove common prefixes. For example,
-  // https://github.com/GoogleCloudPlatform/java-docs-samples/issues/3578.
-  const trimPrefixes = ['com.example.', 'com.google.', 'snippets.'];
+  // https://github.com/GoogleCloudPlatform/java-docs-samples/issues/3578 and
+  // https://github.com/GoogleCloudPlatform/python-docs-samples/issues/5657.
+  const trimPrefixes = [
+    'com.example.',
+    'com.google.',
+    'snippets.',
+    'data-science-onramp.',
+  ];
   for (const prefix of trimPrefixes) {
     if (firstPart.startsWith(prefix)) {
       firstPart = firstPart.slice(prefix.length);
@@ -104,6 +110,7 @@ export function autoDetectLabel(
   firstPart = firstPart.split('_')[0]; // Before the underscore, if there is one.
   firstPart = firstPart.toLowerCase(); // Convert to lower case.
   firstPart = firstPart.replace(/\s/, ''); // Remove spaces.
+  firstPart = firstPart.replace('-', ''); // Remove dashes.
 
   // The Conventional Commits "docs" and "build" prefixes are far more common
   // than the APIs. So, never label those with "api: docs" or "api: build".
