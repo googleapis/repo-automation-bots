@@ -28,7 +28,7 @@ import xmljs from 'xml-js';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {components} from '@octokit/openapi-types';
-import { logger } from 'gcf-utils';
+import {logger} from 'gcf-utils';
 
 type IssuesListForRepoResponseItem = components['schemas']['issue-simple'];
 type IssuesListCommentsResponseData = components['schemas']['issue-comment'][];

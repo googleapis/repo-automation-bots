@@ -78,7 +78,6 @@ export = (app: Probot) => {
         }
         return;
       }
-      logger.metric('do_not_merge.add_label');
       if (existingCheck) {
         // If the check already exists and is _not_ a failure, make it a failure.
         if (existingCheck.conclusion !== 'failure') {
@@ -104,7 +103,6 @@ export = (app: Probot) => {
       logger.info(
         `Creating failed check on ${context.payload.pull_request.url}`
       );
-
       await context.octokit.checks.create({
         conclusion: 'failure',
         name: CHECK_NAME,
@@ -113,6 +111,7 @@ export = (app: Probot) => {
         head_sha: sha,
         output: FAILURE_OUTPUT,
       });
+      logger.metric('do_not_merge.add_label');
     }
   );
 };

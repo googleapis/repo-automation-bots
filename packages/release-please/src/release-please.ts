@@ -384,7 +384,7 @@ export = (app: Probot) => {
     );
   });
 
-  app.on('release.created', async (context) => {
+  app.on('release.created', async context => {
     const repoUrl = context.payload.repository.full_name;
     const remoteConfiguration = (await context.config(
       WELL_KNOWN_CONFIGURATION_FILE
@@ -399,5 +399,5 @@ export = (app: Probot) => {
     // Releases are still currently handled by autorelease, we hook into the
     // release.created webhook just to log this metric:
     logger.metric('release_please.release_created');
-  })
+  });
 };
