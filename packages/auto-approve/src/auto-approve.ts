@@ -137,7 +137,7 @@ export function handler(app: Probot) {
       // if it exists in the repo. If it's being modified, we want to submit
       // a check, and NOT auto-approve; if it isn't, then we want to check
       // the main branch, confirm that the auto-approve.yml file is correct,
-      // and then check to see whether the incoming PR matches the config to 
+      // and then check to see whether the incoming PR matches the config to
       // decide whether we can automerge
       const prConfig = await getBlobFromPRFiles(
         context.octokit,
