@@ -99,7 +99,7 @@ export const addOrUpdateIssueComment = async (
   commentBody: string
 ) => {
   const commentMark = getCommentMark(installationId);
-  const listCommentsResponse = await github.rest.issues.listComments({
+  const listCommentsResponse = await github.issues.listComments({
     owner: owner,
     repo: repo,
     per_page: 50, // I think 50 is enough, but I may be wrong.
@@ -109,7 +109,7 @@ export const addOrUpdateIssueComment = async (
   for (const comment of listCommentsResponse.data) {
     if (comment.body?.includes(commentMark)) {
       // We found the existing comment, so updating it
-      await github.rest.issues.updateComment({
+      await github.issues.updateComment({
         owner: owner,
         repo: repo,
         comment_id: comment.id,
@@ -119,7 +119,7 @@ export const addOrUpdateIssueComment = async (
     }
   }
   if (!found) {
-    await github.rest.issues.createComment({
+    await github.issues.createComment({
       owner: owner,
       repo: repo,
       issue_number: issueNumber,
