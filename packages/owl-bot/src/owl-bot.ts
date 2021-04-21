@@ -79,8 +79,7 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
       l => l.name === OWLBOT_RUN_LABEL
     ).length;
 
-    // If the pull request is *not* from a fork, ignore label being added
-    // (we will be running OwlBot post processor for the push itself);
+    // Only run post-processor if appropriate label added:
     if (!hasRunLabel) {
       logger.info(
         `skipping labels ${context.payload.pull_request.labels
@@ -108,6 +107,7 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
       owner,
       repo,
     });
+    logger.metric('owlbot.run_post_processor');
   });
 
   app.on(
@@ -145,6 +145,7 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
         },
         context.octokit
       );
+      logger.metric('owlbot.run_post_processor');
     }
   );
 
