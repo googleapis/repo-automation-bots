@@ -16,6 +16,7 @@ import pino from 'pino';
 import SonicBoom from 'sonic-boom';
 
 type Destination = NodeJS.WritableStream | SonicBoom;
+type LogEntry = {[key: string]: unknown};
 
 /**
  * A logger standardized logger for Google Cloud Functions
@@ -104,14 +105,28 @@ export class GCFLogger {
   /**
    * Log at the metric level
    */
+  public metric(msg: string, entry: LogEntry | string): void;
   public metric(msg: string, ...args: any[]): void;
   public metric(obj: object, msg?: string, ...args: any[]): void;
   public metric(
     objOrMsg: object | string,
-    addMsg?: string,
+    addMsg?: LogEntry | string,
     ...args: any[]
   ): void {
-    this.log('metric', objOrMsg, addMsg, ...args);
+    let payload: LogEntry = {
+      count: 1,
+      event: 'unknown',
+    };
+    if (typeof objOrMsg === 'string') {
+      payload.event = objOrMsg;
+    } else {
+      payload = {...payload, ...objOrMsg};
+    }
+    if (typeof addMsg === 'object') {
+      payload = {...payload, ...addMsg};
+      addMsg = undefined;
+    }
+    this.log('metric', {...payload, type: 'metric'}, addMsg, ...args);
   }
 
   private log(
@@ -160,7 +175,6 @@ export class GCFLogger {
   public resetBindings() {
     // Pino provides no way to remove bindings
     // so we have to throw away the old logger
-    console.log('resetting');
     this.initPinoLogger(this.destination);
   }
 

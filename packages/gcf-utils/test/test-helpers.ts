@@ -65,7 +65,7 @@ export function validateLogs(
   logs: LogLine[],
   expectedLineCount?: number,
   expectedMessages?: string[],
-  expectedProperties?: Array<{[idx: string]: string}>,
+  expectedProperties?: Array<{[idx: string]: string | number}>,
   expectedLogLevel?: {pino: number; cloudLogging: string}
 ): void {
   if (expectedLineCount) {
