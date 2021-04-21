@@ -483,20 +483,21 @@ ${REFRESH_UI}
 
   // emit metrics, ignoring errors.
   try {
-    logger.metric("snippet-bot-violations", {
+    logger.metric('snippet-bot-violations', {
       target: pull_request.url,
-      violation_type: "UNMATCHED_REGION_TAG",
-      count: failureMessages.length
+      violation_type: 'UNMATCHED_REGION_TAG',
+      count: failureMessages.length,
     });
-    logger.metric("snippet-bot-violations", {
+    logger.metric('snippet-bot-violations', {
       target: pull_request.url,
-      violation_type: "MISSING_PRODUCT_PREFIX",
+      violation_type: 'MISSING_PRODUCT_PREFIX',
       count: productPrefixViolations.length,
     });
-    logger.metric("snippet-bot-violations", {
+    logger.metric('snippet-bot-violations', {
       target: pull_request.url,
-      violation_type: "REMOVING_USED_TAG",
-      count: removeConflictingTagViolations.length + removeUsedTagViolations.length,
+      violation_type: 'REMOVING_USED_TAG',
+      count:
+        removeConflictingTagViolations.length + removeUsedTagViolations.length,
     });
   } catch (err) {
     err.message = `Error emitting metrics: ${err.message}`;
