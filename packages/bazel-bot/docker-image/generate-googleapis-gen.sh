@@ -22,7 +22,7 @@
 # Optional arguments.
 #
 # BUILD_TARGETS: Build targets to rebuild.  Example: 
-#   //google/cloud/vision/v1:vision-v1-nodejs.tar.gz
+#   //google/cloud/vision/v1:vision-v1-nodejs
 #
 # BAZEL_FLAGS: additional flags to pass to 'bazel query' and 'bazel build'.
 # Useful for setting a remote cache, coping with different versions of bazel, etc.
@@ -71,8 +71,8 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     # Choose build targets.
     if [[ -z "$BUILD_TARGETS" ]] ; then
         targets=$(cd "$GOOGLEAPIS" \
-        && bazel query $BAZEL_FLAGS 'filter("-(go|csharp|java|php|ruby|nodejs|py)\.tar\.gz$", kind("generated file", //...:*))' \
-        | grep -v -E ":(proto|grpc|gapic)-.*-java\.tar\.gz$")
+        && bazel query $BAZEL_FLAGS  'filter("-(go|csharp|java|php|ruby|nodejs|py)$", kind("rule", //...:*))' \
+        | grep -v -E ":(proto|grpc|gapic)-.*-java$")
     else
         targets="$BUILD_TARGETS"
     fi
@@ -102,7 +102,7 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
     failed_targets=()
     for target in $targets ; do
         let target_count++
-        tar_gz=$(echo "${target:2}" | tr ":" "/")
+        tar_gz=$(echo "${target:2}.tar.gz" | tr ":" "/")
         # Create the parent directory if it doesn't already exist.
         parent_dir=$(dirname $tar_gz)
         target_dir="$GOOGLEAPIS_GEN/$parent_dir"

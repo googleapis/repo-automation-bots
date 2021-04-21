@@ -150,12 +150,19 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
   reactionId: number,
   github: GitHubType
 ) {
-  await github.issues.removeLabel({
-    owner,
-    repo,
-    issue_number: prNumber,
-    name: label,
-  });
+  try {
+    await github.issues.removeLabel({
+      owner,
+      repo,
+      issue_number: prNumber,
+      name: label,
+    });
+  } catch (err) {
+    // Ignoring 404 errors.
+    if (err.status !== 404) {
+      throw err;
+    }
+  }
   await github.reactions.deleteForIssue({
     owner,
     repo,
