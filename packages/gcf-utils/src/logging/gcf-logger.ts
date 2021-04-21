@@ -116,7 +116,6 @@ export class GCFLogger {
     let payload: LogEntry = {
       count: 1,
       event: 'unknown',
-      type: 'metric',
     };
     if (typeof objOrMsg === 'string') {
       payload.event = objOrMsg;
@@ -127,7 +126,7 @@ export class GCFLogger {
       payload = {...payload, ...addMsg};
       addMsg = undefined;
     }
-    this.log('metric', payload, addMsg, ...args);
+    this.log('metric', {...payload, type: 'metric'}, addMsg, ...args);
   }
 
   private log(

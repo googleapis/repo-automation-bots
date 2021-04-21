@@ -80,6 +80,17 @@ describe('GCFLogger', () => {
           logLevels['metric']
         );
       });
+      it('does not allow type to be accidentally overridden', () => {
+        logger.metric('release-created', {type: 'foo'});
+        const loggedLines: LogLine[] = readLogsAsObjects(destination);
+        validateLogs(
+          loggedLines,
+          1,
+          [],
+          [{event: 'release-created', count: 1, type: 'metric'}],
+          logLevels['metric']
+        );
+      });
       it('populates event, count, type, structured logs, when object provided as second argument', () => {
         logger.metric('release-created', {
           url: 'https://www.example.com',
