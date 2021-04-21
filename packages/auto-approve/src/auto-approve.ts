@@ -28,7 +28,8 @@ const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
 
 /**
  * Takes in the auto-approve.yml file and (if it exists) the CODEOWNERS file
- * and checks both files to ensure they match schema, format, and appropriate CODEOWNERS
+ * and checks both files to ensure they match schema, format, and appropriate CODEOWNERS; then,
+ * submits a passing or failing status check on Github
  *
  * @param owner owner of the repo of the incoming PR
  * @param repo string, the name of the repo of the incoming PR
@@ -37,7 +38,7 @@ const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
  * @param headSha the sha upon which to check whether the config and the CODEOWNERS file are configured correctly
  * @returns true if the status check passed, false otherwise
  */
-export async function validateConfig(
+export async function evaluateAndSubmitCheckForConfig(
   owner: string,
   repo: string,
   config: string | Configuration,
@@ -134,7 +135,10 @@ export function handler(app: Probot) {
 
       // Check to see if the config is being modified in the PR, before we check
       // if it exists in the repo. If it's being modified, we want to submit
-      // a check
+      // a check, and NOT auto-approve; if it isn't, then we want to check
+      // the main branch, confirm that the auto-approve.yml file is correct,
+      // and then check to see whether the incoming PR matches the config to 
+      // decide whether we can automerge
       const prConfig = await getBlobFromPRFiles(
         context.octokit,
         owner,
@@ -154,7 +158,13 @@ export function handler(app: Probot) {
         );
 
         // Decide whether to add a passing or failing status checks
-        await validateConfig(
+        // We do not need to save the return value for this function,
+        // since we are not going to do anything else with the PR if
+        // the PR is modifying auto-approve.yml. If we have entered this
+        // code block, it means that the PR has modified the config file,
+        // and we do not want to do anything other than submit a check for
+        // that config.
+        await evaluateAndSubmitCheckForConfig(
           owner,
           repo,
           prConfig,
@@ -178,7 +188,7 @@ export function handler(app: Probot) {
         // Then, check to see whether the incoming PR matches the config
         if (config) {
           // If config is not valid, this function will submit a failing check, and will not merge the PR
-          const isConfigValid = await validateConfig(
+          const isConfigValid = await evaluateAndSubmitCheckForConfig(
             owner,
             repo,
             config,

@@ -110,7 +110,7 @@ describe('auto-approve', () => {
   });
 
   describe('main auto-approve function', () => {
-    describe('config exists', () => {
+    describe('config exists on main branch', () => {
       it('approves and tags a PR if a config exists & is valid & PR is valid', async () => {
         checkPRAgainstConfigStub.returns(true);
         validateSchemaStub.returns(undefined);
@@ -188,6 +188,29 @@ describe('auto-approve', () => {
 
         scopes.forEach(scope => scope.done());
         assert.ok(getChangedFilesStub.calledOnce);
+      });
+
+      // Confirming that we are first checking if auto-approve.yml is being modified
+      // before we decide whether to check if auto-approve.yml is on main branch
+      it('will not check config on master if the config is modified on PR', async () => {
+        getBlobFromPRFilesStub.returns('fake-file');
+
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened'
+        ));
+
+        const scope = createCheck(200);
+
+        await probot.receive({
+          name: 'pull_request.opened',
+          payload,
+          id: 'abc123',
+        });
+
+        scope.done();
+        getBlobFromPRFilesStub.reset();
       });
     });
     describe('config does not exist in PR', () => {
