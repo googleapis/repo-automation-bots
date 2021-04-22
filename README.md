@@ -8,6 +8,7 @@ by Google on GitHub.
 
 | Name | Description | Install |
 | ---- | ----------- | ------- |
+| [auto-approve] | Automatically approves and merges PRs matching user-specified configs | [install][auto-approve] |
 | [auto-label] | Automatically labels issues and PRs with product, language, or directory based labels | [install][auto-label-app] |
 | [blunderbuss] | Assigns issues and PRs randomly to a specific list of users | [install][blunderbuss-app] |
 | [flakybot] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][flakybot-app] |
@@ -110,7 +111,7 @@ at the specified schedule.
 
 ![High Level Architecture](./architecture.png)
 
-
+[auto-approve]: https://github.com/apps/auto-approve-bot
 [auto-label]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/auto-label
 [auto-label-app]: https://github.com/apps/product-auto-label
 [blunderbuss]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/blunderbuss

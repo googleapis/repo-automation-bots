@@ -110,7 +110,7 @@ describe('auto-approve', () => {
   });
 
   describe('main auto-approve function', () => {
-    describe('config exists', () => {
+    describe('config exists on main branch', () => {
       it('approves and tags a PR if a config exists & is valid & PR is valid', async () => {
         checkPRAgainstConfigStub.returns(true);
         validateSchemaStub.returns(undefined);
@@ -189,8 +189,31 @@ describe('auto-approve', () => {
         scopes.forEach(scope => scope.done());
         assert.ok(getChangedFilesStub.calledOnce);
       });
+
+      // Confirming that we are first checking if auto-approve.yml is being modified
+      // before we decide whether to check if auto-approve.yml is on main branch
+      it('will not check config on master if the config is modified on PR', async () => {
+        getBlobFromPRFilesStub.returns('fake-file');
+
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened'
+        ));
+
+        const scope = createCheck(200);
+
+        await probot.receive({
+          name: 'pull_request.opened',
+          payload,
+          id: 'abc123',
+        });
+
+        scope.done();
+        getBlobFromPRFilesStub.reset();
+      });
     });
-    describe('config does not exist', () => {
+    describe('config does not exist in PR', () => {
       it('ignores the PR, if config does not exist on repo or PR', async () => {
         getBlobFromPRFilesStub.returns(undefined);
 
@@ -212,18 +235,18 @@ describe('auto-approve', () => {
       });
 
       it('attempts to get codeowners file and create a passing status check if PR contains correct config', async () => {
-        getBlobFromPRFilesStub.returns('fake-file');
-        validateYamlStub.returns('');
-        validateSchemaStub.returns(undefined);
-        checkCodeOwnersStub.returns('');
-
         const payload = require(resolve(
           fixturesPath,
           'events',
           'pull_request_opened'
         ));
 
-        const scopes = [getConfigFile(undefined, 404), createCheck(200)];
+        getBlobFromPRFilesStub.returns('fake-file');
+        validateYamlStub.returns('');
+        validateSchemaStub.returns(undefined);
+        checkCodeOwnersStub.returns('');
+
+        const scopes = [createCheck(200)];
 
         await probot.receive({
           name: 'pull_request.opened',
@@ -236,6 +259,12 @@ describe('auto-approve', () => {
       });
 
       it('attempts to get codeowners file and create a failing status check if PR contains wrong config, and error messages check out', async () => {
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened'
+        ));
+
         getBlobFromPRFilesStub.returns('fake-file');
         validateYamlStub.returns('File is not properly configured YAML');
         validateSchemaStub.returns([
@@ -248,13 +277,7 @@ describe('auto-approve', () => {
           `You must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
         );
 
-        const payload = require(resolve(
-          fixturesPath,
-          'events',
-          'pull_request_opened'
-        ));
-
-        const scopes = [getConfigFile(undefined, 404), createCheck(200)];
+        const scopes = [createCheck(200)];
 
         await probot.receive({
           name: 'pull_request.opened',
