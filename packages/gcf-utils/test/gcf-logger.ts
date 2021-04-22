@@ -40,6 +40,7 @@ describe('GCFLogger', () => {
 
     function testAllLevels() {
       for (const level of Object.keys(logLevels)) {
+        if (level === 'metric') continue; // Metric is special case with own tests.
         it(`logs ${level} level string`, () => {
           logger[level]('hello world');
           const loggedLines: LogLine[] = readLogsAsObjects(destination);
@@ -66,6 +67,62 @@ describe('GCFLogger', () => {
         });
       }
     }
+
+    describe('metric', () => {
+      it('populates event, count, type, when single string argument provided', () => {
+        logger.metric('release-created');
+        const loggedLines: LogLine[] = readLogsAsObjects(destination);
+        validateLogs(
+          loggedLines,
+          1,
+          [],
+          [{event: 'release-created', count: 1, type: 'metric'}],
+          logLevels['metric']
+        );
+      });
+      it('does not allow type to be accidentally overridden', () => {
+        logger.metric('release-created', {type: 'foo'});
+        const loggedLines: LogLine[] = readLogsAsObjects(destination);
+        validateLogs(
+          loggedLines,
+          1,
+          [],
+          [{event: 'release-created', count: 1, type: 'metric'}],
+          logLevels['metric']
+        );
+      });
+      it('populates event, count, type, structured logs, when object provided as second argument', () => {
+        logger.metric('release-created', {
+          url: 'https://www.example.com',
+        });
+        const loggedLines: LogLine[] = readLogsAsObjects(destination);
+        validateLogs(
+          loggedLines,
+          1,
+          [],
+          [
+            {
+              event: 'release-created',
+              count: 1,
+              type: 'metric',
+              url: 'https://www.example.com',
+            },
+          ],
+          logLevels['metric']
+        );
+      });
+      it('allows count to be overridden', () => {
+        logger.metric('release-created', {count: 4});
+        const loggedLines: LogLine[] = readLogsAsObjects(destination);
+        validateLogs(
+          loggedLines,
+          1,
+          [],
+          [{event: 'release-created', count: 4, type: 'metric'}],
+          logLevels['metric']
+        );
+      });
+    });
 
     beforeEach(() => {
       destination = new ObjectWritableMock();
