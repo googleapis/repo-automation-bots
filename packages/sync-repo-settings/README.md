@@ -19,7 +19,7 @@ squashMergeAllowed: true
 # Defaults to `false`
 mergeCommitAllowed: false
 
-# Rules for master branch protection
+# Rules for branch protection (add multiple entries to configure multiple branches)
 branchProtectionRules:
 # Identifies the protection rule pattern. Name of the branch to be protected.
 # Defaults to `master`
@@ -51,3 +51,37 @@ permissionRules:
 
 Settings will be immediately applied after committing the config to the default branch.
 The bot is currently configured to run on a cron job, and updates settings 1am PST.
+
+## Using the CLI
+
+This library also provides a command line binary: `sync-repo-settings`. It can be used
+to simulate the bot's behavior (pull the configuration from the remote repository) or
+using a local file.
+
+To authenticate, set the `GITHUB_TOKEN` environment variable to a personal access token
+that has admin access on the repository.
+
+### Remote configuration
+
+To use with a repostory's installed configuration at `.github/sync-repo-settings.yaml`:
+
+```bash
+sync-repo-settings --repo=<owner/repo to update> [--branch=<optional branch name>]
+```
+
+### Local configuration
+
+To use with a local file:
+
+```bash
+sync-repo-settings --repo=<owner/repo to update> --file=path/to/config.yaml [--branch=<optional branch name>]
+```
+
+### Full Options
+
+| Option | Description | Default |
+| ------ | ----------- | ------- |
+| repo | Repository slug (owner/repo) | *Required* |
+| branch | Name of the branch to fetch remote configuration from | (default repository branch) |
+| file | Path to local configuration file | |
+| github-token | Personal access token. Can alternatively be set via the `GITHUB_TOKEN` environment variable | *Required* |

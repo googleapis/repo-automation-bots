@@ -480,6 +480,24 @@ ${REFRESH_UI}
     installationId,
     commentBody
   );
+
+  // emit metrics
+  logger.metric('snippet-bot-violations', {
+    target: pull_request.url,
+    violation_type: 'UNMATCHED_REGION_TAG',
+    count: failureMessages.length,
+  });
+  logger.metric('snippet-bot-violations', {
+    target: pull_request.url,
+    violation_type: 'MISSING_PRODUCT_PREFIX',
+    count: productPrefixViolations.length,
+  });
+  logger.metric('snippet-bot-violations', {
+    target: pull_request.url,
+    violation_type: 'REMOVING_USED_TAG',
+    count:
+      removeConflictingTagViolations.length + removeUsedTagViolations.length,
+  });
 }
 
 /**

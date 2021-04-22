@@ -54,6 +54,7 @@ interface BranchOptions {
   path?: string;
   changelogPath?: string;
   manifest?: boolean;
+  extraFiles?: string[];
 }
 
 interface BranchConfiguration extends BranchOptions {
@@ -146,6 +147,7 @@ async function createGitHubRelease(
     changelogPath: configuration.changelogPath ?? 'CHANGELOG.md',
     monorepoTags: configuration.monorepoTags,
     releaseType: configuration.releaseType,
+    extraFiles: configuration.extraFiles,
   };
   if (configuration.manifest) {
     const manifest = factory.manifest(releaseOptions);
@@ -183,6 +185,7 @@ async function createReleasePR(
     path: configuration.path,
     monorepoTags: configuration.monorepoTags,
     releaseType,
+    extraFiles: configuration.extraFiles,
   };
   if (snapshot !== undefined) {
     buildOptions.snapshot = snapshot;
@@ -379,5 +382,22 @@ export = (app: Probot) => {
       context.octokit as GitHubAPI,
       undefined
     );
+  });
+
+  app.on('release.created', async context => {
+    const repoUrl = context.payload.repository.full_name;
+    const remoteConfiguration = (await context.config(
+      WELL_KNOWN_CONFIGURATION_FILE
+    )) as ConfigurationOptions | null;
+
+    // If no configuration is specified,
+    if (!remoteConfiguration) {
+      logger.info(`release-please not configured for (${repoUrl})`);
+      return;
+    }
+
+    // Releases are still currently handled by autorelease, we hook into the
+    // release.created webhook just to log this metric:
+    logger.metric('release_please.release_created');
   });
 };

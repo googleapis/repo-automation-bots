@@ -274,8 +274,6 @@ export class GCFBootstrapper {
        */
       logger.resetBindings();
       logger.addBindings(buildTriggerInfo(triggerType, id, name, request.body));
-      logger.metric(`Execution started by ${triggerType}`);
-
       try {
         if (triggerType === TriggerType.UNKNOWN) {
           response.sendStatus(400);
@@ -389,16 +387,23 @@ export class GCFBootstrapper {
     installationId: number,
     wrapOptions?: WrapOptions
   ): Promise<Octokit> {
-    // See: https://github.com/probot/probot/issues/1003
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cfg = await this.getProbotConfig(wrapOptions?.logging);
-    return new cfg.Octokit!({
-      auth: {
-        appId: cfg.appId,
-        privateKey: cfg.privateKey,
-        installationId,
-      },
-    });
+    const opts = {
+      appId: cfg.appId,
+      privateKey: cfg.privateKey,
+      installationId,
+    };
+    if (wrapOptions?.logging) {
+      const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin)
+        .plugin(ConfigPlugin)
+        .defaults({authStrategy: createProbotAuth});
+      return new LoggingOctokit(opts);
+    } else {
+      const DefaultOctokit = Octokit.plugin(ConfigPlugin).defaults({
+        authStrategy: createProbotAuth,
+      });
+      return new DefaultOctokit(opts);
+    }
   }
 
   private async scheduledToTask(
