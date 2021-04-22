@@ -595,6 +595,7 @@ export async function mergeOnGreen(
       logger.info(`attempt to merge ${owner}/${repo}/${pr}`);
       await merge(owner, repo, pr, prInfo, github);
       merged = true;
+      logger.metric('merge_on_green.merged');
     } catch (err) {
       // Not checking here whether err.status=405 as that seems to apply to more than one error type,
       // so checking the body instead.

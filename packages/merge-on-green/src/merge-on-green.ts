@@ -262,7 +262,7 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
         repo,
         branch,
       })
-    ).data.required_status_checks.contexts;
+    ).data.required_status_checks?.contexts;
     logger.info(
       `checking branch protection for ${owner}/${repo}: ${branchProtection}`
     );
@@ -335,6 +335,7 @@ handler.addPR = async function addPR(
       method: 'upsert',
     };
     await datastore.save(entity);
+    logger.metric('merge_on_green.labeled');
   }
 };
 
