@@ -28,7 +28,8 @@ const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
 
 /**
  * Takes in the auto-approve.yml file and (if it exists) the CODEOWNERS file
- * and checks both files to ensure they match schema, format, and appropriate CODEOWNERS
+ * and checks both files to ensure they match schema, format, and appropriate CODEOWNERS; then,
+ * submits a passing or failing status check on Github
  *
  * @param owner owner of the repo of the incoming PR
  * @param repo string, the name of the repo of the incoming PR
@@ -37,7 +38,7 @@ const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
  * @param headSha the sha upon which to check whether the config and the CODEOWNERS file are configured correctly
  * @returns true if the status check passed, false otherwise
  */
-export async function validateConfig(
+export async function evaluateAndSubmitCheckForConfig(
   owner: string,
   repo: string,
   config: string | Configuration,
@@ -124,18 +125,6 @@ export function handler(app: Probot) {
       const owner = pr.pull_request.head.repo.owner.login;
       const repo = pr.pull_request.head.repo.name;
       const prNumber = pr.number;
-      let config: Configuration | null;
-
-      // Get auto-approve.yml file if it exists
-      // Reading the config requires access to code permissions, which are not
-      // always available for private repositories.
-      try {
-        config = await context.config<Configuration>(CONFIGURATION_FILE_PATH);
-      } catch (err) {
-        err.message = `Error reading configuration: ${err.message}`;
-        logger.error(err);
-        config = null;
-      }
 
       const PRFiles = await getChangedFiles(
         context.octokit,
@@ -144,82 +133,109 @@ export function handler(app: Probot) {
         prNumber
       );
 
-      // If there's no config, check to see if the PR is creating the auto-approve.yml file
-      if (!config) {
-        const prConfig = await getBlobFromPRFiles(
+      // Check to see if the config is being modified in the PR, before we check
+      // if it exists in the repo. If it's being modified, we want to submit
+      // a check, and NOT auto-approve; if it isn't, then we want to check
+      // the main branch, confirm that the auto-approve.yml file is correct,
+      // and then check to see whether the incoming PR matches the config to
+      // decide whether we can automerge
+      const prConfig = await getBlobFromPRFiles(
+        context.octokit,
+        owner,
+        repo,
+        PRFiles,
+        `.github/${CONFIGURATION_FILE_PATH}`
+      );
+
+      if (prConfig) {
+        // Attempt to get the CODEOWNERS file if it exists
+        const codeOwnersFile = await getBlobFromPRFiles(
           context.octokit,
           owner,
           repo,
           PRFiles,
-          `.github/${CONFIGURATION_FILE_PATH}`
+          '.github/CODEOWNERS'
         );
 
-        if (prConfig) {
-          // Attempt to get the CODEOWNERS file if it exists
-          const codeOwnersFile = await getBlobFromPRFiles(
-            context.octokit,
-            owner,
-            repo,
-            PRFiles,
-            '.github/CODEOWNERS'
-          );
-
-          // Decide whether to add a passing or failing status checks
-          await validateConfig(
-            owner,
-            repo,
-            prConfig,
-            codeOwnersFile,
-            context.octokit,
-            context.payload.pull_request.head.sha
-          );
-        } else {
-          // If config isn't in the PR or the repo, ignore the PR
-          logger.info(
-            `Neither repo nor PR contains an auto-approve.yml file, skipping for ${owner}/${repo}/${prNumber}`
-          );
-        }
-      } else {
-        // If there is a config, first confirm that it matches the guidelines
-        // Then, check to see whether the incoming PR matches the config
-
-        // If config is not valid, this function will submit a failing check, and will not merge the PR
-        const isConfigValid = await validateConfig(
+        // Decide whether to add a passing or failing status checks
+        // We do not need to save the return value for this function,
+        // since we are not going to do anything else with the PR if
+        // the PR is modifying auto-approve.yml. If we have entered this
+        // code block, it means that the PR has modified the config file,
+        // and we do not want to do anything other than submit a check for
+        // that config.
+        await evaluateAndSubmitCheckForConfig(
           owner,
           repo,
-          config,
-          undefined,
+          prConfig,
+          codeOwnersFile,
           context.octokit,
           context.payload.pull_request.head.sha
         );
-
-        // Check to see whether the incoming PR matches the incoming PR
-        const isPRValid = await checkPRAgainstConfig(
-          config,
-          context.payload,
-          context.octokit
-        );
-
-        // If both PR and config are valid, pull in approving-mechanism to tag and approve PR
-        if (isPRValid === true && isConfigValid === true) {
-          await context.octokit.pulls.submitReview({
+      } else {
+        let config: Configuration | null;
+        // Get auto-approve.yml file if it exists
+        // Reading the config requires access to code permissions, which are not
+        // always available for private repositories.
+        try {
+          config = await context.config<Configuration>(CONFIGURATION_FILE_PATH);
+        } catch (err) {
+          err.message = `Error reading configuration: ${err.message}`;
+          logger.error(err);
+          config = null;
+        }
+        // If there is a config, first confirm that it matches the guidelines
+        // Then, check to see whether the incoming PR matches the config
+        if (config) {
+          // If config is not valid, this function will submit a failing check, and will not merge the PR
+          const isConfigValid = await evaluateAndSubmitCheckForConfig(
             owner,
             repo,
-            pull_number: prNumber,
-            review_id: prNumber,
-            event: 'APPROVE',
-          });
-          await context.octokit.issues.addLabels({
-            owner,
-            repo,
-            issue_number: prNumber,
-            labels: ['automerge: exact'],
-          });
-          logger.info(`Auto-approved and tagged ${owner}/${repo}/${prNumber}`);
-        } else if (isConfigValid && !isPRValid) {
-          // If config is valid but PR isn't, log that it is not valid, but don't comment on PR since that would be noisy
+            config,
+            undefined,
+            context.octokit,
+            context.payload.pull_request.head.sha
+          );
+
+          // If config isn't valid, skip the rest of the execution;
+          if (!isConfigValid) {
+            return;
+          }
+
+          // Check to see whether the incoming PR matches the incoming PR
+          const isPRValid = await checkPRAgainstConfig(
+            config,
+            context.payload,
+            context.octokit
+          );
+
+          // If both PR and config are valid, pull in approving-mechanism to tag and approve PR
+          if (isPRValid === true && isConfigValid === true) {
+            await context.octokit.pulls.submitReview({
+              owner,
+              repo,
+              pull_number: prNumber,
+              review_id: prNumber,
+              event: 'APPROVE',
+            });
+            await context.octokit.issues.addLabels({
+              owner,
+              repo,
+              issue_number: prNumber,
+              labels: ['automerge: exact'],
+            });
+            logger.info(
+              `Auto-approved and tagged ${owner}/${repo}/${prNumber}`
+            );
+          } else if (isConfigValid && !isPRValid) {
+            // If config is valid but PR isn't, log that it is not valid, but don't comment on PR since that would be noisy
+            logger.info(
+              `PR does not match criteria for auto-approving, not merging for ${owner}/${repo}/${prNumber}`
+            );
+          }
+        } else {
           logger.info(
-            `PR does not match criteria for auto-approving, not merging for ${owner}/${repo}/${prNumber}`
+            `Config does not exist in PR or repo, skipping execution for ${owner}/${repo}/${prNumber}`
           );
         }
       }
