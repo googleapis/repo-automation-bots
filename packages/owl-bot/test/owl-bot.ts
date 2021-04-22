@@ -115,7 +115,9 @@ describe('owlBot', () => {
           encoding: 'base64',
         })
         .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
-        .reply(200, [{filename: 'foo.txt'}]);
+        .reply(200, [{filename: 'foo.txt'}])
+        .get('/repos/bcoe/owl-bot-testing/pulls/33')
+        .reply(200, payload.pull_request);
       const triggerBuildStub = sandbox
         .stub(core, 'triggerPostProcessBuild')
         .resolves({
