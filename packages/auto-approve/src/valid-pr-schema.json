@@ -28,7 +28,7 @@
           "enum": [
             "googleapis-publisher",
             "yoshi-automation",
-            "yoshi-code-bot"
+            "release-please"
           ]
         }
       },
@@ -87,7 +87,7 @@
             "properties": {
               "author": {
                 "type": "string",
-                "const": "yoshi-code-bot"
+                "const": "release-please"
               }
             }
           },
