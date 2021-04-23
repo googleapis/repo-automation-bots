@@ -46,8 +46,8 @@ rules:
 # (Optional) The max amount of files changed in a PR. 
   maxFiles: 2
 
-# Option 3: incoming PRs from yoshi-code-bot
-- author: "yoshi-code-bot"
+# Option 3: incoming PRs from release-please[bot] for Node
+- author: "release-please[bot]"
 
 # Title for PRs from yoshi-code-bot MUST start with `chore: release`.
   title: "^chore: release"
