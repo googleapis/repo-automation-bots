@@ -14,6 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {ProbotOctokit} from 'probot';
+import {logger} from 'gcf-utils';
 
 // This file gets information about the incoming pull request, such as what files were changed, etc.
 
@@ -36,15 +37,24 @@ export async function getChangedFiles(
   repo: string,
   prNumber: number
 ): Promise<File[]> {
-  return (
-    await octokit.pulls.listFiles({
-      owner,
-      repo,
-      pull_number: prNumber,
-    })
-  ).data;
+  try {
+    return (
+      await octokit.pulls.listFiles({
+        owner,
+        repo,
+        pull_number: prNumber,
+      })
+    ).data;
+  } catch (err) {
+    // These errors happen frequently, so adding cleaner logging; will still throw error
+    if (err === 404) {
+      logger.error(
+        `Not found error, ${err.code}, ${err.message} for ${owner}/${repo}/${prNumber}`
+      );
+    }
+    throw err;
+  }
 }
-
 /**
  * Gets the blob of a file from an array of changed files from a PR
  *

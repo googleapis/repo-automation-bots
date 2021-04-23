@@ -46,8 +46,8 @@ rules:
 # (Optional) The max amount of files changed in a PR. 
   maxFiles: 2
 
-# Option 3: incoming PRs from yoshi-code-bot
-- author: "yoshi-code-bot"
+# Option 3: incoming PRs from release-please[bot] for Node
+- author: "release-please[bot]"
 
 # Title for PRs from yoshi-code-bot MUST start with `chore: release`.
   title: "^chore: release"
@@ -62,6 +62,18 @@ rules:
 
 # (Optional) The max amount of files changed in a PR. 
   maxFiles: 3
+```
+Next, create a CODEWONERS file, under `.github/CODEOWNERS` in your repository. You must add a line that adds the Github Automation team as a codeowner for the `auto-approve.yml` file you have created, and they will be alerted anytime there is a change to the file. See the example below.
+
+```
+# Code owners file.
+# This file controls who is tagged for review for any given pull request.
+#
+# For syntax help see:
+# https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners#codeowners-syntax
+
+
+.github/auto-approve.yml                 @googleapis/github-automation
 ```
 
 The bot is triggered every time a PR is opened, reopened, or edited.
