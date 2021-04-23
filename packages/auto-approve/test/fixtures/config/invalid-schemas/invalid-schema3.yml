@@ -1,4 +1,4 @@
 rules:
-- author: "release-please"
+- author: "release-please[bot]"
   title: "chore: release"
   changedFiles: "README.md$"

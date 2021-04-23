@@ -44,7 +44,7 @@ exports['check for config whether YAML file has valid schema should fail if auth
       "allowedValues": [
         "googleapis-publisher",
         "yoshi-automation",
-        "release-please"
+        "release-please[bot]"
       ]
     },
     "message": "must be equal to one of the allowed values"

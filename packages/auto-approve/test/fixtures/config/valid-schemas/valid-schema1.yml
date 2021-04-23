@@ -7,7 +7,7 @@ rules:
   - "^README.md$"
   - "^\\.github/readme/synth\\.metadata/synth\\.metadata$"
   maxFiles: 2
-- author: "release-please"
+- author: "release-please[bot]"
   title: "^chore: release"
   changedFiles:
   - "package\\.json$"
