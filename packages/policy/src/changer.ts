@@ -37,7 +37,7 @@ const fileCache = new Map<string, string>();
  * Gets the contents of the given URL and caches it.
  * The file is fetched once and cached for the lifetime of the program.
  *
- * @param path the URL.
+ * @param url the URL.
  * @returns contents of the file.
  */
 async function cachedGet(url: string) {
