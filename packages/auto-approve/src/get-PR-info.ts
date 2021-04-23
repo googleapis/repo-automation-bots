@@ -13,8 +13,8 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {logger} from 'gcf-utils';
 import {ProbotOctokit} from 'probot';
+import {logger} from 'gcf-utils';
 
 // This file gets information about the incoming pull request, such as what files were changed, etc.
 
