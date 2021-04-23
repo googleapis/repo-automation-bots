@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.1.1](https://www.github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.1.0...release-brancher-v1.1.1) (2021-04-23)
+
+
+### Bug Fixes
+
+* update release-brancher PR title to force and initial sp release ([#1674](https://www.github.com/googleapis/repo-automation-bots/issues/1674)) ([fe95c8b](https://www.github.com/googleapis/repo-automation-bots/commit/fe95c8b5a753365a4c8d80daac06899de169b203))
+
 ## [1.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.0.3...release-brancher-v1.1.0) (2021-04-06)
 
 
