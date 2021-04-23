@@ -211,11 +211,10 @@ export function handler(app: Probot) {
 
           // If both PR and config are valid, pull in approving-mechanism to tag and approve PR
           if (isPRValid === true && isConfigValid === true) {
-            await context.octokit.pulls.submitReview({
+            await context.octokit.pulls.createReview({
               owner,
               repo,
               pull_number: prNumber,
-              review_id: prNumber,
               event: 'APPROVE',
             });
             await context.octokit.issues.addLabels({
