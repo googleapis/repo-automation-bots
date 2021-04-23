@@ -72,6 +72,8 @@ interface Token {
   repository_selection: string;
 }
 
+const UPDATE_LOCK_PULL_REQUEST_LABEL = 'owl-bot-update-lock';
+
 export async function triggerPostProcessBuild(
   args: BuildArgs,
   octokit?: OctokitType
@@ -502,7 +504,7 @@ async function updatePullRequestAfterPostProcessor(
     });
     if (
       pull.draft &&
-      pull.labels.find(label => label.name === 'owl-bot-update-lock')
+      pull.labels.find(label => label.name === UPDATE_LOCK_PULL_REQUEST_LABEL)
     ) {
       if (1 === files.length && files[0].filename === owlBotLockPath) {
         // It only updated the lock file.  No reason to merge this pull request.
@@ -541,4 +543,5 @@ export const core = {
   owlBotLockPath,
   triggerPostProcessBuild,
   updatePullRequestAfterPostProcessor,
+  UPDATE_LOCK_PULL_REQUEST_LABEL,
 };

@@ -243,7 +243,7 @@ describe('owlBot', () => {
       pull_request: {
         number: 33,
         draft: true,
-        labels: [{name: 'owl-bot-update-lock'}],
+        labels: [{name: core.UPDATE_LOCK_PULL_REQUEST_LABEL}],
         head: {
           repo: {
             full_name: 'bcoe/owl-bot-testing',
@@ -308,7 +308,7 @@ describe('owlBot', () => {
       pull_request: {
         number: 33,
         draft: true,
-        labels: [{name: 'owl-bot-update-lock'}],
+        labels: [{name: core.UPDATE_LOCK_PULL_REQUEST_LABEL}],
         head: {
           repo: {
             full_name: 'bcoe/owl-bot-testing',
@@ -435,7 +435,7 @@ describe('owlBot', () => {
       pull_request: {
         number: 33,
         draft: false,
-        labels: [{name: 'owl-bot-update-lock'}],
+        labels: [{name: core.UPDATE_LOCK_PULL_REQUEST_LABEL}],
         head: {
           repo: {
             full_name: 'bcoe/owl-bot-testing',
