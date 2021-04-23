@@ -272,7 +272,7 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{ filename: owlBotLockPath}])
+      .reply(200, [{filename: owlBotLockPath}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       // Update to closed state:
@@ -337,7 +337,7 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{ filename: owlBotLockPath}, {filename: 'README.md'}])
+      .reply(200, [{filename: owlBotLockPath}, {filename: 'README.md'}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       // Promote to "ready for review."
@@ -365,7 +365,7 @@ describe('owlBot', () => {
     sandbox.assert.calledOnce(hasOwlBotLoopStub);
     githubMock.done();
   });
-  it('leaves PR open because it doesn\'t have owl-bot label', async () => {
+  it("leaves PR open because it doesn't have owl-bot label", async () => {
     const payload = {
       installation: {
         id: 12345,
@@ -402,9 +402,9 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{ filename: owlBotLockPath}])
+      .reply(200, [{filename: owlBotLockPath}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
-      .reply(200, payload.pull_request)
+      .reply(200, payload.pull_request);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
       .resolves({
@@ -427,7 +427,7 @@ describe('owlBot', () => {
     sandbox.assert.calledOnce(hasOwlBotLoopStub);
     githubMock.done();
   });
-  it('leaves PR open because it\'s not a draft', async () => {
+  it("leaves PR open because it's not a draft", async () => {
     const payload = {
       installation: {
         id: 12345,
@@ -464,9 +464,9 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{ filename: owlBotLockPath}])
+      .reply(200, [{filename: owlBotLockPath}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
-      .reply(200, payload.pull_request)
+      .reply(200, payload.pull_request);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
       .resolves({
