@@ -63,9 +63,7 @@ rules:
 # (Optional) The max amount of files changed in a PR. 
   maxFiles: 3
 ```
-Next, create a CODEWONERS file, under `.github/CODEOWNERS` in your repository. You
-must add a line that adds the Github Automation team as a codeowner for the `auto-approve.yml` file you have created, and they will be alerted anytime there is
-a change to the file. See the example below.
+Next, create a CODEWONERS file, under `.github/CODEOWNERS` in your repository. You must add a line that adds the Github Automation team as a codeowner for the `auto-approve.yml` file you have created, and they will be alerted anytime there is a change to the file. See the example below.
 
 ```
 # Code owners file.
