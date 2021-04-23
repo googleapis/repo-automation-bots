@@ -78,7 +78,6 @@ export class SyncRepoSettings {
     const logger = this.logger;
     const repo = options.repo;
     const [owner, name] = repo.split('/');
-    let ignored = false;
     if (!config) {
       logger.info(`no local config found for ${repo}, checking global config`);
       // Fetch the list of languages used in this repository
@@ -115,27 +114,11 @@ export class SyncRepoSettings {
       if (!config) {
         logger.info(`no config for language ${language}`);
       }
-
-      // Check for repositories we're specifically configured to skip
-      ignored = !!languageConfig[language]?.ignoredRepos?.find(x => x === repo);
-      if (ignored) {
-        logger.info(`ignoring repo ${repo}`);
-      }
-
-      if (languageConfig[language]?.repoOverrides) {
-        const customConfig = languageConfig[language].repoOverrides!.find(
-          x => x.repo === repo
-        );
-        if (customConfig) {
-          logger.info(`Discovered override config for ${repo}`);
-          config.branchProtectionRules = customConfig.branchProtectionRules;
-        }
-      }
     }
 
     const jobs: Promise<void>[] = [];
     jobs.push(this.updateRepoTeams(repo, config?.permissionRules || []));
-    if (!ignored && config) {
+    if (config) {
       jobs.push(this.updateRepoOptions(repo, config));
       if (config.branchProtectionRules) {
         config.branchProtectionRules.forEach(rule => {
