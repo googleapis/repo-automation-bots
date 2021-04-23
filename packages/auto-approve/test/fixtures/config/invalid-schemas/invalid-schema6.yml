@@ -4,7 +4,7 @@ rules:
   changedFiles:
   - "README.md"
   - ".github/readme/synth.metadata/synth.metadata"
-- author: "yoshi-code-bot"
+- author: "release-please"
   title: "chore: release 2.0"
   changedFiles:
   - "package.json$"
