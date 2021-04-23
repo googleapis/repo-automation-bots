@@ -276,7 +276,7 @@ describe('owlBot', () => {
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       // Update to closed state:
-      .patch('/repos/bcoe/owl-bot-testing/pulls/33')
+      .patch('/repos/bcoe/owl-bot-testing/pulls/33', {state: 'closed'})
       .reply(200);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
@@ -340,8 +340,8 @@ describe('owlBot', () => {
       .reply(200, [{ filename: owlBotLockPath}, {filename: 'README.md'}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
-      // Update to closed state:
-      .patch('/repos/bcoe/owl-bot-testing/pulls/33')
+      // Promote to "ready for review."
+      .patch('/repos/bcoe/owl-bot-testing/pulls/33', {draft: false})
       .reply(200);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
