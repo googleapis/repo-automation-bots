@@ -116,7 +116,15 @@ describe('check pr against config', async () => {
         'pull_request_opened_right_author_wrong_title'
       ));
 
+      const scopes = listChangedFilesPR(200, [
+        {filename: 'docs/dyn/index.md'},
+        {filename: 'docs/dyn/valid.html'},
+        {filename: 'googleapiclient/discovery_cache/documents/valid.json'},
+      ]);
+
       const prMatchesConfig = await checkPRAgainstConfig(validPR, pr, octokit);
+      scopes.done();
+
       assert.strictEqual(prMatchesConfig, false);
     });
 

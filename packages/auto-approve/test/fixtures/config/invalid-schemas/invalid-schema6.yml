@@ -1,5 +1,5 @@
 rules:
-- author: "googleapis-publisher"
+- author: "yoshi-code-bot"
 - author: "yoshi-automation"
   changedFiles:
   - "README.md"
