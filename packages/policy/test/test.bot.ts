@@ -72,10 +72,49 @@ describe('bot', () => {
     // successfully, skipping all of the interesting stuff.
   });
 
-  it('runs the check and saves the result', async () => {
+  it('should run the check and saves the result', async () => {
     const repo = 'nodejs-storage';
     const org = 'googleapis';
     const fakeRepo = {} as policy.GitHubRepo;
+    const fakeResult = {} as policy.PolicyResult;
+    const p = new policy.Policy(new Octokit(), console);
+    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
+    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
+    const checkPolicyStub = sinon
+      .stub(p, 'checkRepoPolicy')
+      .resolves(fakeResult);
+    const exportStub = sinon.stub(bq, 'exportToBigQuery').resolves();
+    const submitFixesStub = sinon.stub(changer, 'submitFixes').resolves();
+
+    await probot.receive({
+      name: 'schedule.repository' as '*',
+      payload: {
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+        },
+        organization: {
+          login: org,
+        },
+        cron_org: org,
+      },
+      id: 'abc123',
+    });
+    assert.ok(getPolicyStub.calledOnce);
+    assert.ok(getRepoStub.calledOnce);
+    assert.ok(checkPolicyStub.calledOnce);
+    assert.ok(exportStub.calledOnce);
+    assert.ok(submitFixesStub.calledOnce);
+  });
+
+  it('should run checks for sample repos in GoogleCloudPlatform', async () => {
+    const repo = 'nodejs-docs-samples';
+    const org = 'GoogleCloudPlatform';
+    const fakeRepo = {
+      topics: ['samples'],
+    } as policy.GitHubRepo;
     const fakeResult = {} as policy.PolicyResult;
     const p = new policy.Policy(new Octokit(), console);
     const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
@@ -140,6 +179,33 @@ describe('bot', () => {
     const repo = 'nodejs-storage';
     const org = 'googleapis';
     const fakeRepo = {private: true} as policy.GitHubRepo;
+    const p = new policy.Policy(new Octokit(), console);
+    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
+    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
+    await probot.receive({
+      name: 'schedule.repository' as '*',
+      payload: {
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+        },
+        organization: {
+          login: org,
+        },
+        cron_org: org,
+      },
+      id: 'abc123',
+    });
+    assert.ok(getRepoStub.calledOnce);
+    assert.ok(getPolicyStub.calledOnce);
+  });
+
+  it('should skip GoogleCloudPlatform repos without magic repo topics', async () => {
+    const repo = 'nodejs-storage';
+    const org = 'GoogleCloudPlatform';
+    const fakeRepo = {} as policy.GitHubRepo;
     const p = new policy.Policy(new Octokit(), console);
     const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
     const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
