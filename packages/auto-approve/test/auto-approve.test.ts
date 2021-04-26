@@ -49,7 +49,7 @@ function getConfigFile(response: string | undefined, status: number) {
 
 function submitReview(status: number) {
   return nock('https://api.github.com')
-    .post('/repos/testOwner/testRepo/pulls/1/reviews/1/events', body => {
+    .post('/repos/testOwner/testRepo/pulls/1/reviews', body => {
       snapshot(body);
       return true;
     })
