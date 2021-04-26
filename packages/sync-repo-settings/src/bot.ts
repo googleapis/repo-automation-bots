@@ -14,15 +14,12 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Context} from 'probot';
-import {RepoConfig} from './types';
 import {logger} from 'gcf-utils';
-import Ajv from 'ajv';
-import yaml from 'js-yaml';
 import {operations} from '@octokit/openapi-types';
 import {SyncRepoSettings} from './sync-repo-settings';
+import {configFileName, getConfig, validateConfig} from './config';
 
 type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['content']['application/json'];
-export const configFileName = 'sync-repo-settings.yaml';
 
 type Conclusion =
   | 'success'
@@ -32,10 +29,6 @@ type Conclusion =
   | 'timed_out'
   | 'action_required'
   | undefined;
-
-// configure the schema validator once
-import schema from './schema.json';
-const ajv = new Ajv();
 
 /**
  * Main.  On a nightly cron, update the settings for a given repository.
@@ -83,17 +76,7 @@ export function handler(app: Probot) {
         const configYaml = Buffer.from(blob.data.content, 'base64').toString(
           'utf8'
         );
-        const config = yaml.load(configYaml);
-        let isValid = false;
-        let errorText = '';
-        if (typeof config === 'object') {
-          const validateSchema = ajv.compile(schema);
-          isValid = await validateSchema(config);
-          errorText = JSON.stringify(validateSchema.errors, null, 4);
-        } else {
-          errorText = `${configFileName} is not valid YAML 😱`;
-        }
-
+        const {errorText, isValid} = await validateConfig(configYaml);
         const checkParams = context.repo({
           name: 'sync-repo-settings-check',
           head_sha: context.payload.pull_request.head.sha,
@@ -156,7 +139,11 @@ export function handler(app: Probot) {
 
     const owner = context.payload.organization?.login;
     const name = context.payload.repository.name;
-    const config = await getConfig(context);
+    const config = await getConfig({
+      octokit: context.octokit,
+      owner: context.repo().owner,
+      repo: context.repo().repo,
+    });
     const repoSettings = new SyncRepoSettings(context.octokit, logger);
     await repoSettings.syncRepoSettings({
       repo: `${owner}/${name}`,
@@ -175,27 +162,15 @@ export function handler(app: Probot) {
       return;
     }
 
-    const config = await getConfig(context);
+    const config = await getConfig({
+      octokit: context.octokit,
+      owner: context.repo().owner,
+      repo: context.repo().repo,
+    });
     const repoSettings = new SyncRepoSettings(context.octokit, logger);
     await repoSettings.syncRepoSettings({
       repo: `${owner}/${name}`,
       config: config!,
     });
   });
-}
-
-/**
- * Allow repositories to optionally provide their own, localized config.
- * Check the `.github/sync-repo-settings.yaml` file, and if available,
- * use that config over any config broadly provided here.
- */
-async function getConfig(context: Context) {
-  let config!: RepoConfig | null;
-  try {
-    config = await context.config<RepoConfig>(configFileName);
-  } catch (err) {
-    err.message = `Error reading configuration: ${err.message}`;
-    logger.error(err);
-  }
-  return config;
 }

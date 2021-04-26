@@ -1,0 +1,23 @@
+configs:
+- name: false
+  selector: "org:googleapis is:public archived:false language:javascript language:typescript"
+  rebaseMergeAllowed: false
+  branchProtectionRules:
+  - requiresCodeOwnerReviews: true
+    requiredStatusCheckContexts:
+      - check1
+      - check2
+  - pattern: feature-branch
+    requiresCodeOwnerReviews: true
+    requiredStatusCheckContexts:
+      - check1
+      - check2
+  permissionRules:
+    - team: team1
+      permission: push
+
+- name: default
+  selector: "org:googleapis is:public archived:false"
+  mergeCommitAllowed: false
+  rebaseMergeAllowed: true
+  squashMergeAllowd: true
