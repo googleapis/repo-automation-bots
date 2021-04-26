@@ -142,23 +142,12 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
         },
         context.octokit
       );
-      // If running post-processor has created a noop change, close the
-      // pull request:
-      const files = (
-        await context.octokit.pulls.listFiles({
-          owner,
-          repo,
-          pull_number: context.payload.pull_request.number,
-        })
-      ).data;
-      if (!files.length) {
-        await context.octokit.pulls.update({
-          owner,
-          repo,
-          pull_number: context.payload.pull_request.number,
-          state: 'closed',
-        });
-      }
+      await core.updatePullRequestAfterPostProcessor(
+        owner,
+        repo,
+        context.payload.pull_request.number,
+        context.octokit
+      );
     }
   );
 
