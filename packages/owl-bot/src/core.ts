@@ -72,6 +72,8 @@ interface Token {
   repository_selection: string;
 }
 
+const UPDATE_LOCK_PULL_REQUEST_LABEL = 'owl-bot-update-lock';
+
 export async function triggerPostProcessBuild(
   args: BuildArgs,
   octokit?: OctokitType
@@ -467,6 +469,66 @@ async function hasOwlBotLoop(
   return false;
 }
 
+/**
+ * After the post processor runs, we may want to close the pull request or
+ * promote it to "ready for review."
+ */
+async function updatePullRequestAfterPostProcessor(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  octokit: Octokit
+): Promise<void> {
+  // If running post-processor has created a noop change, close the
+  // pull request:
+  const files = (
+    await octokit.pulls.listFiles({
+      owner,
+      repo,
+      pull_number: prNumber,
+    })
+  ).data;
+  if (!files.length) {
+    await octokit.pulls.update({
+      owner,
+      repo,
+      pull_number: prNumber,
+      state: 'closed',
+    });
+  } else {
+    // If the pull request is a DRAFT lock file update, close it or promote it.
+    const {data: pull} = await octokit.pulls.get({
+      owner,
+      repo,
+      pull_number: prNumber,
+    });
+    if (
+      pull.draft &&
+      pull.labels.find(label => label.name === UPDATE_LOCK_PULL_REQUEST_LABEL)
+    ) {
+      if (1 === files.length && files[0].filename === owlBotLockPath) {
+        // It only updated the lock file.  No reason to merge this pull request.
+        // Close it.
+        await octokit.pulls.update({
+          owner,
+          repo,
+          pull_number: prNumber,
+          state: 'closed',
+        });
+      } else {
+        // It triggered changes to READMEs, scripts, etc.  Promote it to
+        // "Ready for review".
+        await octokit.pulls.update({
+          owner,
+          repo,
+          pull_number: prNumber,
+          draft: false,
+        });
+      }
+    }
+  }
+}
+
 export const core = {
   commitsIterator,
   createCheck,
@@ -480,4 +542,6 @@ export const core = {
   hasOwlBotLoop,
   owlBotLockPath,
   triggerPostProcessBuild,
+  updatePullRequestAfterPostProcessor,
+  UPDATE_LOCK_PULL_REQUEST_LABEL,
 };

@@ -6,5 +6,5 @@ require (
 	cloud.google.com/go v0.81.0
 	github.com/google/uuid v1.2.0
 	golang.org/x/mod v0.4.1 // indirect
-	google.golang.org/genproto v0.0.0-20210416161957-9910b6c460de
+	google.golang.org/genproto v0.0.0-20210423144448-3a41ef94ed2b
 )
