@@ -12,22 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {describe, it, beforeEach} from 'mocha';
+import {describe, it, afterEach, beforeEach} from 'mocha';
+import assert from 'assert';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import nock from 'nock';
+import sinon from 'sinon';
 import * as fs from 'fs';
+import {logger} from 'gcf-utils';
 
 import myProbotApp from '../src/trusted-contribution';
 
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
-
-// TODO: stop disabling warn once the following upstream patch is landed:
-// https://github.com/probot/probot/pull/926
-global.console.warn = () => {};
 
 describe('TrustedContributionTestRunner', () => {
   let probot: Probot;
@@ -47,6 +46,11 @@ describe('TrustedContributionTestRunner', () => {
     requests = nock('https://api.github.com');
   });
 
+  afterEach(() => {
+    nock.cleanAll();
+    sinon.restore();
+  });
+
   describe('without configuration file', () => {
     beforeEach(() => {
       requests = requests
@@ -55,7 +59,6 @@ describe('TrustedContributionTestRunner', () => {
         )
         .reply(404)
         .get(
-          // FIXME(#68): why is this necessary?
           '/repos/chingor13/.github/contents/.github%2Ftrusted-contribution.yml'
         )
         .reply(404);
@@ -523,5 +526,70 @@ describe('TrustedContributionTestRunner', () => {
         requests.done();
       });
     });
+  });
+
+  it('should add a comment if configured with annotations', async () => {
+    requests
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Ftrusted-contribution.yml'
+      )
+      .replyWithFile(200, './test/fixtures/gcbrun.yml')
+      .post(
+        '/repos/chingor13/google-auth-library-java/issues/3/comments',
+        () => true
+      )
+      .reply(200);
+
+    await probot.receive({
+      name: 'pull_request',
+      payload: {
+        action: 'opened',
+        pull_request: {
+          number: 3,
+          user: {
+            login: 'renovate-bot',
+          },
+        },
+        repository: {
+          name: 'google-auth-library-java',
+          owner: {
+            login: 'chingor13',
+          },
+        },
+      },
+      id: 'abc123',
+    });
+    requests.done();
+  });
+
+  it('should log an error if the config cannot be fetched', async () => {
+    requests = requests
+      .get(
+        '/repos/chingor13/google-auth-library-java/contents/.github%2Ftrusted-contribution.yml'
+      )
+      .reply(500);
+    const errorStub = sinon.stub(logger, 'error');
+
+    await probot.receive({
+      name: 'pull_request',
+      payload: {
+        action: 'opened',
+        pull_request: {
+          number: 3,
+          user: {
+            login: 'not-real',
+          },
+        },
+        repository: {
+          name: 'google-auth-library-java',
+          owner: {
+            login: 'chingor13',
+          },
+        },
+      },
+      id: 'abc123',
+    });
+    assert.ok(errorStub.calledOnce);
+    requests.done();
   });
 });

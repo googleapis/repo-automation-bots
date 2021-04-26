@@ -60,6 +60,15 @@ describe('changer', () => {
     scope.done();
   });
 
+  it('should get a SECURITY.md', async () => {
+    const cocText = 'coc';
+    const url = new URL(changer.securityUrl);
+    const scope = nock(url.origin).get(url.pathname).reply(200, cocText);
+    const coc = await changer.getSecurity();
+    assert.strictEqual(coc, cocText);
+    scope.done();
+  });
+
   it('should submit code of conduct fixes', async () => {
     const octokit = new Octokit();
     const scope = nock('https://api.github.com')
