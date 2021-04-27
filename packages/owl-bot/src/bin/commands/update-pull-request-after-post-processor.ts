@@ -28,7 +28,7 @@ export const updatePullRequestAfterPostProcessorCommand: yargs.CommandModule<
   {},
   Args
 > = {
-  command: 'update-pull-request-after-post-processor.ts',
+  command: 'update-pull-request-after-post-processor',
   describe:
     'Updates a pull request after the post processor ran.  May close it or promote it from DRAFT.',
   builder(yargs) {
