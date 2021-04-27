@@ -145,12 +145,6 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
         },
         context.octokit
       );
-      await core.updatePullRequestAfterPostProcessor(
-        owner,
-        repo,
-        context.payload.pull_request.number,
-        context.octokit
-      );
     }
   );
 
@@ -211,23 +205,13 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
       },
       octokit
     );
-    // If running post-processor has created a noop change, close the
-    // pull request:
-    const files = (
-      await octokit.pulls.listFiles({
-        owner: opts.owner,
-        repo: opts.repo,
-        pull_number: opts.prNumber,
-      })
-    ).data;
-    if (!files.length) {
-      await octokit.pulls.update({
-        owner: opts.owner,
-        repo: opts.repo,
-        pull_number: opts.prNumber,
-        state: 'closed',
-      });
-    }
+
+    await core.updatePullRequestAfterPostProcessor(
+      opts.owner,
+      opts.repo,
+      opts.prNumber,
+      octokit
+    );
   };
 
   // Configured to run when a new container is published to container registry:
