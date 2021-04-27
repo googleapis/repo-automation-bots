@@ -1,0 +1,9 @@
+{
+    "node": {
+        "releaseRules": {
+            "targetFile": "package.json",
+            "oldRegexVersion": "-[\\s]*\"version\":[\\s]\"([0-9]*)*\\.([0-9]*\\.[0-9]*\",",
+            "newRegexVersion": "\\+[\\s]*\"version\":[\\s]\"([0-9]*)*\\.([0-9]*\\.[0-9]*\","
+        }
+    }
+}

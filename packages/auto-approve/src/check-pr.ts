@@ -15,7 +15,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {ProbotOctokit} from 'probot';
 import {PullRequestEvent} from '@octokit/webhooks-definitions/schema';
-import {getChangedFiles} from './get-PR-info';
+import {getChangedFiles, getBlobFromPRFiles} from './get-PR-info';
 import {logger} from 'gcf-utils';
 // type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
 
@@ -26,6 +26,7 @@ export interface ValidPr {
   title: string;
   changedFiles?: string[];
   maxFiles?: number;
+  checkBumpVersion?: boolean;
 }
 
 //TODO: fix pr any type to correct type
@@ -66,14 +67,16 @@ export async function checkPRAgainstConfig(
     if (title.match(rulesToValidateAgainst.title)) {
       titlesMatch = true;
     }
+
+    // We only want to make the changed files API call under a small subset of options
+    const changedFiles =
+      rulesToValidateAgainst.changedFiles ||
+      rulesToValidateAgainst.checkBumpVersion
+        ? await getChangedFiles(octokit, repoOwner, repo, prNumber)
+        : [];
+
     //check if changed file paths match
     if (rulesToValidateAgainst.changedFiles) {
-      const changedFiles = await getChangedFiles(
-        octokit,
-        repoOwner,
-        repo,
-        prNumber
-      );
       filePathsMatch = checkFilePathsMatch(
         changedFiles.map(x => x.filename),
         rulesToValidateAgainst
@@ -88,6 +91,10 @@ export async function checkPRAgainstConfig(
     logger.info(
       `Info for ${repoOwner}/${repo}/${prNumber}\nAuthor: ${rulesToValidateAgainst.author}\nTitles Match? ${titlesMatch}\nFile Paths Match? ${filePathsMatch}\nFile Count Matches? ${fileCountMatch}`
     );
+
+    if (rulesToValidateAgainst.checkBumpVersion) {
+      getBlobFromPRFiles(octokit);
+    }
 
     return titlesMatch && filePathsMatch && fileCountMatch;
   } else {

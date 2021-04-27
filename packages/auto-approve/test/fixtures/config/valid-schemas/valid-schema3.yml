@@ -5,6 +5,7 @@ rules:
   title: "^chore: regenerate README$"
   changedFiles:
   - "^\\.github/readme/synth\\.metadata/synth\\.metadata$"
+  checkBumpVersion: true
 - author: "release-please[bot]"
   title: "^chore: release"
 
