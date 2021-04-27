@@ -85,6 +85,15 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
         );
         return;
       }
+      // If PR opened by OwlBot, log metric for benefit of dashboards:
+      if (
+        context.payload.action === 'opened' &&
+        context.payload.sender.login === core.OWLBOT_USER
+      ) {
+        logger.metric('owlbot.opened', {
+          url: context.payload.pull_request.url,
+        });
+      }
 
       // Detect looping OwlBot behavior and break the cycle:
       const [owner, repo] = head.repo.full_name.split('/');
@@ -142,6 +151,9 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
         },
         context.octokit
       );
+      logger.metric(`owlbot.${buildStatus.conclusion}`, {
+        url: context.payload.pull_request.url,
+      });
       await core.updatePullRequestAfterPostProcessor(
         owner,
         repo,

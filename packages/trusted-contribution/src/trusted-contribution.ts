@@ -87,6 +87,9 @@ export = (app: Probot) => {
               labels: [annotation.text],
             });
             await context.octokit.issues.addLabels(issuesAddLabelsParams);
+            logger.metric('trusted_contribution.labeled', {
+              url: context.payload.pull_request.url,
+            });
           } else if (annotation.type === 'comment') {
             await context.octokit.issues.createComment({
               issue_number: context.payload.pull_request.number,

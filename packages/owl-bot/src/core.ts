@@ -541,6 +541,7 @@ export const core = {
   getOwlBotLock,
   hasOwlBotLoop,
   owlBotLockPath,
+  OWLBOT_USER,
   triggerPostProcessBuild,
   updatePullRequestAfterPostProcessor,
   UPDATE_LOCK_PULL_REQUEST_LABEL,
