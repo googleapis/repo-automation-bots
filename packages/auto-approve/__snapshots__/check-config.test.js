@@ -57,6 +57,7 @@ exports[
         'googleapis-publisher',
         'yoshi-automation',
         'release-please[bot]',
+        'yoshi-code-bot',
       ],
     },
     message: 'must be equal to one of the allowed values',

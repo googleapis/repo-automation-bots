@@ -7,4 +7,7 @@ rules:
   - "^\\.github/readme/synth\\.metadata/synth\\.metadata$"
 - author: "release-please[bot]"
   title: "^chore: release"
-
+- author: "yoshi-code-bot"
+  title: "^chore: Update discovery artifacts"
+  changedFiles:
+  - "^docs/dyn/index.md$"
