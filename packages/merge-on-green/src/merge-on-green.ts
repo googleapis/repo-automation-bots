@@ -335,7 +335,9 @@ handler.addPR = async function addPR(
       method: 'upsert',
     };
     await datastore.save(entity);
-    logger.metric('merge_on_green.labeled');
+    logger.metric('merge_on_green.labeled', {
+      repo: `${incomingPR.owner}/${incomingPR.repo}`,
+    });
   }
 };
 

@@ -398,6 +398,8 @@ export = (app: Probot) => {
 
     // Releases are still currently handled by autorelease, we hook into the
     // release.created webhook just to log this metric:
-    logger.metric('release_please.release_created');
+    logger.metric('release_please.release_created', {
+      url: context.payload.repository.releases_url,
+    });
   });
 };
