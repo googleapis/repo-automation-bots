@@ -65,26 +65,6 @@
         "team": "python-samples-owners",
         "permission": "push"
       }
-    ],
-    "repoOverrides": [
-      {
-        "repo": "googleapis/python-bigtable",
-        "branchProtectionRules": [
-          {
-            "requiresStrictStatusChecks": false,
-            "requiredStatusCheckContexts": [
-              "Kokoro",
-              "cla/google"
-            ]
-          }
-        ]
-      }
-    ],
-    "ignoredRepos": [
-      "GoogleCloudPlatform/python-docs-samples",
-      "GoogleCloudPlatform/getting-started-python",
-      "googleapis/sample-tester",
-      "googleapis/google-cloud-python"
     ]
   },
   "nodejs": {
@@ -119,54 +99,6 @@
         "team": "yoshi-nodejs",
         "permission": "push"
       }
-    ],
-    "ignoredRepos": [
-      "GoogleCloudPlatform/nodejs-docs-samples",
-      "GoogleCloudPlatform/nodejs-getting-started",
-      "googleapis/google-cloud-node",
-      "googleapis/gapic-generator-typescript",
-      "googleapis/aip",
-      "googleapis/release-please",
-      "google-cloudevents-nodejs"
-    ]
-  },
-  "ruby": {
-    "branchProtectionRules": [
-      {
-        "requiresStrictStatusChecks": true,
-        "requiredStatusCheckContexts": [
-          "OSx",
-          "Ubuntu",
-          "Windows",
-          "cla/google"
-        ]
-      }
-    ],
-    "permissionRules": [
-      {
-        "team": "yoshi-admins",
-        "permission": "admin"
-      },
-      {
-        "team": "yoshi-ruby-admins",
-        "permission": "admin"
-      },
-      {
-        "team": "yoshi-ruby",
-        "permission": "push"
-      }
-    ],
-    "ignoredRepos": [
-      "googleapis/discovery-artifact-manager",
-      "googleapis/gax-ruby",
-      "googleapis/google-api-ruby-client",
-      "googleapis/google-auth-library-ruby",
-      "googleapis/google-cloud-ruby",
-      "googleapis/ruby-style",
-      "googleapis/signet",
-      "googleapis/gapic-generator-ruby",
-      "GoogleCloudPlatform/ruby-docs-samples",
-      "GoogleCloudPlatform/getting-started-ruby"
     ]
   }
 }

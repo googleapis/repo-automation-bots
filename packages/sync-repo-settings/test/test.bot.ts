@@ -129,21 +129,6 @@ describe('Sync repo settings', () => {
     nock.cleanAll();
   });
 
-  it('should ignore repos in ignored repos in required-checks.json', async () => {
-    const repo = 'gax-ruby';
-    const scopes = [
-      nockConfig404(org, repo),
-      nockLanguagesList(org, repo, {ruby: 1}),
-      nockUpdateTeamMembership('yoshi-admins', org, repo),
-      nockUpdateTeamMembership('yoshi-ruby-admins', org, repo),
-      nockUpdateTeamMembership('yoshi-ruby', org, repo),
-      nockUpdateTeamMembership('cloud-dpe', org, repo),
-      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
-    ];
-    await receive(org, repo);
-    scopes.forEach(x => x.done());
-  });
-
   it('should skip for the wrong context', async () => {
     await receive('googleapis', 'api-common-java', 'GoogleCloudPlatform');
   });
@@ -154,24 +139,6 @@ describe('Sync repo settings', () => {
     const scopes = [
       nockConfig404(org, repo),
       nockLanguagesList(org, repo, {kotlin: 1}),
-      nockUpdateTeamMembership('cloud-dpe', org, repo),
-      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
-    ];
-    await receive(org, repo);
-    scopes.forEach(s => s.done());
-  });
-
-  it('should override master branch protection if the repo is overridden', async () => {
-    const repo = 'python-bigtable';
-    const scopes = [
-      nockConfig404(org, repo),
-      nockLanguagesList(org, repo, {python: 1}),
-      nockUpdateRepoSettings(repo, true, true),
-      nockUpdateBranchProtection(repo, ['Kokoro', 'cla/google'], false, false),
-      nockUpdateTeamMembership('yoshi-admins', org, repo),
-      nockUpdateTeamMembership('yoshi-python-admins', org, repo),
-      nockUpdateTeamMembership('yoshi-python', org, repo),
-      nockUpdateTeamMembership('python-samples-owners', org, repo),
       nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
     ];

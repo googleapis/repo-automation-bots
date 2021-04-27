@@ -145,7 +145,12 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
         },
         context.octokit
       );
-      logger.metric('owlbot.run_post_processor');
+      await core.updatePullRequestAfterPostProcessor(
+        owner,
+        repo,
+        context.payload.pull_request.number,
+        context.octokit
+      );
     }
   );
 

@@ -7,9 +7,15 @@ rules:
   - "^README.md$"
   - "^\\.github/readme/synth\\.metadata/synth\\.metadata$"
   maxFiles: 2
-- author: "yoshi-code-bot"
+- author: "release-please[bot]"
   title: "^chore: release"
   changedFiles:
   - "package\\.json$"
   - "CHANGELOG\\.md$"
   maxFiles: 3
+- author: "yoshi-code-bot"
+  title: "^chore: Update discovery artifacts"
+  changedFiles:
+  - "^docs/dyn/index.md$"
+  - "^docs/dyn/.*\\.html$"
+  - "^googleapiclient/discovery_cache/documents/.*\\.json$"

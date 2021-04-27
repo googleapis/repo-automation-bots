@@ -324,13 +324,13 @@ export class Runner {
         }
       }
     }
-    const message = 'ci: setup workflows for new release branch';
+    const message = 'feat: configure initial sp version';
     return await createPullRequest(this.octokit, changes, {
       upstreamRepo: this.upstreamRepo,
       upstreamOwner: this.upstreamOwner,
       message,
       title: message,
-      description: 'enable releases',
+      description: 'Configures CI for branch',
       branch: `release-brancher/ci/${this.branchName}`,
       primary: this.branchName,
       force: true,

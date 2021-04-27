@@ -28,6 +28,7 @@
           "enum": [
             "googleapis-publisher",
             "yoshi-automation",
+            "release-please[bot]",
             "yoshi-code-bot"
           ]
         }
@@ -87,7 +88,7 @@
             "properties": {
               "author": {
                 "type": "string",
-                "const": "yoshi-code-bot"
+                "const": "release-please[bot]"
               }
             }
           },
@@ -113,7 +114,35 @@
               }
             }
           }
-        }
+        },
+        {
+            "if": {
+              "properties": {
+                "author": {
+                  "type": "string",
+                  "const": "yoshi-code-bot"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "const": "^chore: Update discovery artifacts"
+                },
+                "changedFiles": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "^docs/dyn/index.md$",
+                      "^docs/dyn/.*\\.html$",
+                      "^googleapiclient/discovery_cache/documents/.*\\.json$"
+                    ]
+                  }
+                }
+              }
+            }
+          }
       ]
     }
   }
