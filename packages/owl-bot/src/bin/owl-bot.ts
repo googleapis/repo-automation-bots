@@ -23,6 +23,7 @@ import {copyExists} from './commands/copy-exists';
 import {copyCodeCommand} from './commands/copy-code';
 import {copyCodeAndCreatePullRequestCommand} from './commands/copy-code-and-create-pull-request';
 import {scanGoogleapisGenAndCreatePullRequestsCommand} from './commands/scan-googleapis-gen-and-create-pull-requests';
+import {updatePullRequestAfterPostProcessorCommand} from './commands/update-pull-request-after-post-processor';
 
 yargs(process.argv.slice(2))
   .command(triggerBuildCommand)
@@ -34,6 +35,7 @@ yargs(process.argv.slice(2))
   .command(copyCodeCommand)
   .command(scanGoogleapisGenAndCreatePullRequestsCommand)
   .command(copyCodeAndCreatePullRequestCommand)
+  .command(updatePullRequestAfterPostProcessorCommand)
   .demandCommand(1)
   .strictCommands()
   .parse();
