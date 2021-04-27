@@ -75,16 +75,20 @@ describe('bot', () => {
   it('should run the check and saves the result', async () => {
     const repo = 'nodejs-storage';
     const org = 'googleapis';
-    const fakeRepo = {} as policy.GitHubRepo;
+    const fakeRepo = {
+      full_name: 'googleapis/nodejs-storage',
+    } as policy.GitHubRepo;
     const fakeResult = {} as policy.PolicyResult;
     const p = new policy.Policy(new Octokit(), console);
+    const c = new changer.Changer(new Octokit(), fakeRepo);
     const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
+    const getChangerStub = sinon.stub(changer, 'getChanger').returns(c);
     const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
     const checkPolicyStub = sinon
       .stub(p, 'checkRepoPolicy')
       .resolves(fakeResult);
     const exportStub = sinon.stub(bq, 'exportToBigQuery').resolves();
-    const submitFixesStub = sinon.stub(changer, 'submitFixes').resolves();
+    const submitFixesStub = sinon.stub(c, 'submitFixes').resolves();
 
     await probot.receive({
       name: 'schedule.repository' as '*',
@@ -103,6 +107,7 @@ describe('bot', () => {
       id: 'abc123',
     });
     assert.ok(getPolicyStub.calledOnce);
+    assert.ok(getChangerStub.calledOnce);
     assert.ok(getRepoStub.calledOnce);
     assert.ok(checkPolicyStub.calledOnce);
     assert.ok(exportStub.calledOnce);
@@ -114,16 +119,19 @@ describe('bot', () => {
     const org = 'GoogleCloudPlatform';
     const fakeRepo = {
       topics: ['samples'],
+      full_name: 'googleapis/nodejs-storage',
     } as policy.GitHubRepo;
     const fakeResult = {} as policy.PolicyResult;
     const p = new policy.Policy(new Octokit(), console);
+    const c = new changer.Changer(new Octokit(), fakeRepo);
     const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
+    const getChangerStub = sinon.stub(changer, 'getChanger').returns(c);
     const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
     const checkPolicyStub = sinon
       .stub(p, 'checkRepoPolicy')
       .resolves(fakeResult);
     const exportStub = sinon.stub(bq, 'exportToBigQuery').resolves();
-    const submitFixesStub = sinon.stub(changer, 'submitFixes').resolves();
+    const submitFixesStub = sinon.stub(c, 'submitFixes').resolves();
 
     await probot.receive({
       name: 'schedule.repository' as '*',
@@ -141,6 +149,7 @@ describe('bot', () => {
       },
       id: 'abc123',
     });
+    assert.ok(getChangerStub.calledOnce);
     assert.ok(getPolicyStub.calledOnce);
     assert.ok(getRepoStub.calledOnce);
     assert.ok(checkPolicyStub.calledOnce);
@@ -232,16 +241,20 @@ describe('bot', () => {
   it('should still succeed if submitFixes fails, and log a result', async () => {
     const repo = 'nodejs-storage';
     const org = 'googleapis';
-    const fakeRepo = {} as policy.GitHubRepo;
+    const fakeRepo = {
+      full_name: 'googleapis/nodejs-storage',
+    } as policy.GitHubRepo;
     const fakeResult = {} as policy.PolicyResult;
     const p = new policy.Policy(new Octokit(), console);
+    const c = new changer.Changer(new Octokit(), fakeRepo);
     const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
+    const getChangerStub = sinon.stub(changer, 'getChanger').returns(c);
     const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
     const checkPolicyStub = sinon
       .stub(p, 'checkRepoPolicy')
       .resolves(fakeResult);
     const exportStub = sinon.stub(bq, 'exportToBigQuery').resolves();
-    const submitFixesStub = sinon.stub(changer, 'submitFixes').throws();
+    const submitFixesStub = sinon.stub(c, 'submitFixes').throws();
     const errStub = sinon.stub(logger, 'error');
 
     await probot.receive({
@@ -260,6 +273,7 @@ describe('bot', () => {
       },
       id: 'abc123',
     });
+    assert.ok(getChangerStub.calledOnce);
     assert.ok(getPolicyStub.calledOnce);
     assert.ok(getRepoStub.calledOnce);
     assert.ok(checkPolicyStub.calledOnce);
