@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 SELECT 
-    COUNT(jsonPayload.count) as LABELED,
+    COUNT(jsonPayload.count) as MERGED,
     DATE_TRUNC(DATE(timestamp, "America/Los_Angeles"), DAY) as day
 FROM `repo-automation-bots.automation_metrics.cloudfunctions_googleapis_com_cloud_functions`
     WHERE resource.labels.function_name = "merge_on_green"
