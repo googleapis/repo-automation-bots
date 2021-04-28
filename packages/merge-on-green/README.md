@@ -106,15 +106,15 @@ have passed. Briefly speaking, the bot does the following:
         Status Check
     -   Three statuses that can result:
         -   Success: Merge
-        -   If all steps above come out as ‘true’, the bot will update the
+          -   If all steps above come out as ‘true’, the bot will update the
             branch the PR was called from, merge the PR, and remove the
             Datastore entry so that the bot no longer tries to merge that PR
-    -   Fail: Keep Checking
-        -   If one of the steps fail, then the Datastore entry will remain, and
+        - Fail: Keep Checking
+          -   If one of the steps fail, then the Datastore entry will remain, and
             the bot will keep checking the variables above until they become
             true or the cron job times out
-    -   Fail: Delete
-        -   Once the cron job times out, it will pass a ‘stop’ state to the
+        - Fail: Delete
+          -   Once the cron job times out, it will pass a ‘stop’ state to the
             logic above. If this flag is set to ‘stop’, the bot will post a
             failed check-run on the PR and ask the user to try again. The bot
             will also delete the entry from Datastore so it does not keep
