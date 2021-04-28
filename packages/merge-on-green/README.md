@@ -105,7 +105,7 @@ have passed. Briefly speaking, the bot does the following:
         checks. If it cannot find them,or if anyhas failed, MOG will fail the
         Status Check
     -   Three statuses that can result:
-        -   Success: Merge
+        - Success: Merge
           -   If all steps above come out as ‘true’, the bot will update the
             branch the PR was called from, merge the PR, and remove the
             Datastore entry so that the bot no longer tries to merge that PR
