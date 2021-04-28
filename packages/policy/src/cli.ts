@@ -18,7 +18,7 @@ import meow from 'meow';
 import {Octokit} from '@octokit/rest';
 import {exportToBigQuery} from './export';
 import {getPolicy, GitHubRepo} from './policy';
-import {submitFixes} from './changer';
+import {getChanger} from './changer';
 
 interface Flags {
   repo?: string;
@@ -81,7 +81,8 @@ export async function main(cli: meow.Result<{}>) {
       await exportToBigQuery(res);
     }
     if (flags.autofix) {
-      await submitFixes(res, repo, octokit);
+      const changer = getChanger(octokit, repo);
+      await changer.submitFixes(res);
     }
   }
 }
