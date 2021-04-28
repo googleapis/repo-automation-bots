@@ -262,6 +262,10 @@ export function handler(app: Probot) {
         context.payload.installation!.id,
         body
       );
+
+      logger.metric('generated_files_bot.detected_modified_templated_files', {
+        touchedTemplates: touchedTemplates.length,
+      });
     }
   });
 }
