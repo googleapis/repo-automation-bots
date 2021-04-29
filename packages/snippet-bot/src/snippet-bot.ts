@@ -399,12 +399,12 @@ async function scanPullRequest(
     pull_request.base.repo.full_name,
     pull_request.base.ref
   );
-  const removeUsedTagViolations = removingUsedTagsViolations.get(
-    'REMOVE_USED_TAG'
-  ) as Violation[];
-  const removeConflictingTagViolations = removingUsedTagsViolations.get(
-    'REMOVE_CONFLICTING_TAG'
-  ) as Violation[];
+  const removeUsedTagViolations = [
+    ...(removingUsedTagsViolations.get('REMOVE_USED_TAG') as Violation[]),
+    ...(removingUsedTagsViolations.get(
+      'REMOVE_CONFLICTING_TAG'
+    ) as Violation[]),
+  ];
   const removeSampleBrowserViolations = removingUsedTagsViolations.get(
     'REMOVE_SAMPLE_BROWSER_PAGE'
   ) as Violation[];
@@ -412,10 +412,33 @@ async function scanPullRequest(
     'REMOVE_FROZEN_REGION_TAG'
   ) as Violation[];
 
+  // status check for productPrefixViolations
+  const prefixCheckParams = context.repo({
+    name: 'Region tag product prefix',
+    conclusion: 'success' as Conclusion,
+    head_sha: pull_request.head.sha,
+    output: {
+      title: 'No violations',
+      summary: 'No violations found',
+      text: 'All the tags have appropriate product prefix',
+    },
+  });
+
+  // status check for productPrefixViolations
+  const removeUsedTagCheckParams = context.repo({
+    name: 'Disruptive region tag removal',
+    conclusion: 'success' as Conclusion,
+    head_sha: pull_request.head.sha,
+    output: {
+      title: 'No violations',
+      summary: 'No violations found',
+      text: 'No disruptive region tag removal',
+    },
+  });
+
   if (
     productPrefixViolations.length > 0 ||
-    removeUsedTagViolations.length > 0 ||
-    removeConflictingTagViolations.length > 0
+    removeUsedTagViolations.length > 0
   ) {
     commentBody += 'Here is the summary of possible violations 😱';
 
@@ -428,7 +451,17 @@ async function scanPullRequest(
       } else {
         summary = `There are ${productPrefixViolations.length} possible violations for not having product prefix.`;
       }
-      commentBody += formatViolations(productPrefixViolations, summary);
+      const productPrefixViolationsDetail = formatViolations(
+        productPrefixViolations,
+        summary
+      );
+      commentBody += productPrefixViolationsDetail;
+      prefixCheckParams.conclusion = 'failure';
+      prefixCheckParams.output = {
+        title: 'Missing region tag prefix',
+        summary: 'Some region tags do not have appropriate prefix',
+        text: productPrefixViolationsDetail,
+      };
     }
 
     // Rendering used tag violations
@@ -441,19 +474,19 @@ async function scanPullRequest(
         summary = `There are ${removeUsedTagViolations.length} possible violations for removing region tag in use.`;
       }
 
-      commentBody += formatViolations(removeUsedTagViolations, summary);
+      const removeUsedTagViolationsDetail = formatViolations(
+        removeUsedTagViolations,
+        summary
+      );
+      commentBody += removeUsedTagViolationsDetail;
+      removeUsedTagCheckParams.conclusion = 'failure';
+      removeUsedTagCheckParams.output = {
+        title: 'Removal of region tags in use',
+        summary: '',
+        text: removeUsedTagViolationsDetail,
+      };
     }
 
-    if (removeConflictingTagViolations.length > 0) {
-      let summary = '';
-      if (removeConflictingTagViolations.length === 1) {
-        summary =
-          'There is a possible violation for removing conflicting region tag in use.';
-      } else {
-        summary = `There are ${removeConflictingTagViolations.length} possible violations for removing conflicting region tag in use.`;
-      }
-      commentBody += formatViolations(removeConflictingTagViolations, summary);
-    }
     commentBody +=
       '**The end of the violation section. All the stuff below is FYI purposes only.**\n\n';
     commentBody += '---\n';
@@ -535,6 +568,31 @@ ${REFRESH_UI}
     commentBody
   );
 
+  // Status checks for missing region tag prefix
+  if (
+    configuration.alwaysCreateStatusCheck() ||
+    productPrefixViolations.length > 0
+  ) {
+    try {
+      await context.octokit.checks.create(prefixCheckParams);
+    } catch (e) {
+      e.message = `Error creating prefix status check: ${e.message}`;
+      logger.error(e);
+    }
+  }
+
+  // Status checks for disruptive region tag removal
+  if (
+    configuration.alwaysCreateStatusCheck() ||
+    removeUsedTagViolations.length > 0
+  ) {
+    try {
+      await context.octokit.checks.create(removeUsedTagCheckParams);
+    } catch (e) {
+      e.message = `Error creating disruptive removal status check: ${e.message}`;
+      logger.error(e);
+    }
+  }
   // emit metrics
   logger.metric('snippet-bot-violations', {
     target: pull_request.url,
@@ -549,8 +607,7 @@ ${REFRESH_UI}
   logger.metric('snippet-bot-violations', {
     target: pull_request.url,
     violation_type: 'REMOVING_USED_TAG',
-    count:
-      removeConflictingTagViolations.length + removeUsedTagViolations.length,
+    count: removeUsedTagViolations.length,
   });
 }
 
