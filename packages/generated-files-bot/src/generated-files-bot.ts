@@ -210,6 +210,7 @@ export function handler(app: Probot) {
 
     // ignore PRs from a configurable list of authors
     if (config.ignoreAuthors?.includes(prAuthor)) {
+      logger.metric('generated_files_bot.ignored_author');
       return;
     }
 
@@ -225,6 +226,11 @@ export function handler(app: Probot) {
       logger.warn(
         'No templated files specified. Please check your configuration.'
       );
+
+      logger.metric('generated_files_bot.missing_templated_file', {
+        repo: context.payload.repository.name,
+        owner: context.payload.repository.owner.login,
+      });
       return;
     }
 
@@ -262,6 +268,10 @@ export function handler(app: Probot) {
         context.payload.installation!.id,
         body
       );
+
+      logger.metric('generated_files_bot.detected_modified_templated_files', {
+        touchedTemplates: touchedTemplates.length,
+      });
     }
   });
 }
