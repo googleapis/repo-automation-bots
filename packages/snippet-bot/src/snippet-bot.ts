@@ -433,7 +433,7 @@ async function scanPullRequest(
     },
   });
 
-  // status check for productPrefixViolations
+  // status check for removeUsedTagViolations
   const removeUsedTagCheckParams = context.repo({
     name: 'Disruptive region tag removal',
     conclusion: 'success' as Conclusion,
