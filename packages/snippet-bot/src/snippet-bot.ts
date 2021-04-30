@@ -79,6 +79,7 @@ function isFile(file: File | unknown): file is File {
 const FULL_SCAN_ISSUE_TITLE = 'snippet-bot full scan';
 
 const REFRESH_LABEL = 'snippet-bot:force-run';
+const NO_PREFIX_REQ_LABEL = 'snippet-bot:no-prefix-req';
 
 const REFRESH_UI = '- [ ] Refresh this comment';
 const REFRESH_STRING = '- [x] Refresh this comment';
@@ -263,6 +264,11 @@ async function scanPullRequest(
   let tagsFound = false;
   const failureMessages: string[] = [];
 
+  // Whether to ignore prefix requirement.
+  const noPrefixReq = pull_request.labels.some((label: Label) => {
+    return label.name === NO_PREFIX_REQ_LABEL;
+  });
+
   // Keep track of start tags in all the files.
   const parseResults = new Map<string, ParseResult>();
 
@@ -388,10 +394,13 @@ async function scanPullRequest(
   const prNumber = pull_request.number;
 
   // First check product prefix for added region tags.
-  const productPrefixViolations = await checkProductPrefixViolations(
-    result,
-    configuration
-  );
+  let productPrefixViolations: Array<Violation> = [];
+  if (!noPrefixReq) {
+    productPrefixViolations = await checkProductPrefixViolations(
+      result,
+      configuration
+    );
+  }
   const removingUsedTagsViolations = await checkRemovingUsedTagViolations(
     result,
     configuration,
