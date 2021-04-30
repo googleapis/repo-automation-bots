@@ -21,6 +21,10 @@ import {logger} from 'gcf-utils';
 export interface File {
   sha: string;
   filename: string;
+  patch?: string;
+  additions?: number;
+  deletions?: number;
+  changes?: number;
 }
 /**
  * Returns file names of the PR that were changed.

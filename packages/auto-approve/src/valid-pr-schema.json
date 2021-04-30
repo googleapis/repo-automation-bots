@@ -110,9 +110,6 @@
               "maxFiles": {
                 "type": "number",
                 "maximum": 3
-              },
-              "checkBumpVersion": {
-                "type": "boolean"
               }
             }
           }
