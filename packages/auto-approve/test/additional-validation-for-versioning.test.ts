@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import nock from 'nock';
 import {
   getTargetFile,
   getVersions,
@@ -23,12 +22,6 @@ import {
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import languageVersioningRules from '../src/language-versioning-rules.json';
-
-const {Octokit} = require('@octokit/rest');
-
-const octokit = new Octokit({
-  auth: 'mypersonalaccesstoken123',
-});
 
 describe('run additional versioning checks', () => {
   describe('get target file tests', () => {
