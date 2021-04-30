@@ -83,6 +83,9 @@ const REFRESH_LABEL = 'snippet-bot:force-run';
 const REFRESH_UI = '- [ ] Refresh this comment';
 const REFRESH_STRING = '- [x] Refresh this comment';
 
+// Github issue comment API has a limit of 65536 characters.
+const MAX_CHARS_IN_COMMENT = 64000;
+
 async function downloadFile(url: string, file: string) {
   const response = await fetch(url);
   if (response.ok) {
@@ -501,6 +504,18 @@ async function scanPullRequest(
       }
     }
     commentBody += formatExpandable(summary, detail);
+  }
+
+  // Trim the commentBody when it's too long.
+  if (commentBody.length > MAX_CHARS_IN_COMMENT) {
+    commentBody = commentBody.substring(0, MAX_CHARS_IN_COMMENT);
+    // Also trim the string after the last newline to prevent a broken
+    // UI rendering.
+    const newLineIndex = commentBody.lastIndexOf('\n');
+    if (newLineIndex !== -1) {
+      commentBody = commentBody.substring(0, newLineIndex);
+    }
+    commentBody += '\n...(The comment is too long, omitted)\n';
   }
 
   commentBody += `---
