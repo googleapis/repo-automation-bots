@@ -29,6 +29,18 @@ export interface Versions {
   newMinorVersion: string;
 }
 
+/**
+ * Takes all of the files changed in a given PR, and checks them against a set of
+ * language rules, to see if there are additional rules for that kind of file. In this case,
+ * a given file name, plus the author of the PR, act as the 'key' to search for in the list
+ * of rules in the json file.
+ *
+ * @param changedFiles an array of changed files from a PR
+ * @param author the author of the PR
+ * @param languageRules the json representation of additional rules for each kind of file
+ * @returns an object containing the specific file to be scrutinized and the rules to scrutinize it by,
+ * or undefined if not found.
+ */
 export function getTargetFile(
   changedFiles: File[],
   author: string,
@@ -59,6 +71,16 @@ export function getTargetFile(
   }
 }
 
+/**
+ * Given a patch for a file that was changed in a PR, and a regular expression to search
+ * for the old version number and a regular expression to search for the new version number,
+ * this function will return the old and new versions of a package.
+ *
+ * @param versionFile the changed file that has additional rules to conform to
+ * @param oldVersionRegex the regular exp to find the old version number of whatever is being changed
+ * @param newVersionRegex the regular exp to find the new version number of whatever is being changed
+ * @returns the previous and new major and minor versions of a package in an object containing those 4 properties.
+ */
 export function getVersions(
   versionFile: File | undefined,
   oldVersionRegex: string,
@@ -100,6 +122,12 @@ export function getVersions(
   return {oldMajorVersion, oldMinorVersion, newMajorVersion, newMinorVersion};
 }
 
+/**
+ * This function determines whether the major version of a package was changed.
+ *
+ * @param versions an object containing the previous and newer versions of the package being updated
+ * @returns whether the major version changed.
+ */
 export function isMajorVersionChanging(versions: Versions): boolean {
   return Number(versions.newMajorVersion) - Number(versions.oldMajorVersion) ===
     0
@@ -107,12 +135,24 @@ export function isMajorVersionChanging(versions: Versions): boolean {
     : true;
 }
 
+/**
+ * This function determines whether the minor version of a package was updated.
+ *
+ * @param versions an object containing the previous and newer versions of the package being updated
+ * @returns whether the minor version was upgraded.
+ */
 export function isMinorVersionUpgraded(versions: Versions): boolean {
   return Number(versions.newMinorVersion) - Number(versions.oldMinorVersion) > 0
     ? true
     : false;
 }
 
+/**
+ * This function determines whether there was at most one change in the given file.
+ *
+ * @param versionFile the file that has the specific rules to conform to
+ * @returns if only one dependency was changed in the file
+ */
 export function isOneDependencyChanged(versionFile: File): boolean {
   return (
     versionFile.additions === 1 &&

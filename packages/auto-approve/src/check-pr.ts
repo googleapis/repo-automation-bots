@@ -38,7 +38,6 @@ export interface ValidPr {
   maxFiles?: number;
 }
 
-//TODO: fix pr any type to correct type
 /**
  * Checks that a given PR matches the rules in the auto-approve.yml file in the repository
  *
@@ -124,6 +123,15 @@ export async function checkPRAgainstConfig(
   }
 }
 
+/**
+ * Runs additional validation checks when a version is upgraded to ensure that the
+ * version is only upgraded, not downgraded, and that the major version is not bumped.
+ * Also ensures that only one package is changed at a time.
+ *
+ * @param file The incoming target file that has a matching ruleset in language-versioning-rules
+ * @param pr The matching ruleset of the file above from language-versioning-rules
+ * @returns true if the package was upgraded appropriately, and had only one thing changed
+ */
 export function runVersioningValidation(addtlValidationFile: {
   file: File | undefined;
   fileRule: FileSpecificRule | undefined;
