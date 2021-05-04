@@ -56,6 +56,7 @@ exports[
       allowedValues: [
         'googleapis-publisher',
         'yoshi-automation',
+        'release-please[bot]',
         'yoshi-code-bot',
       ],
     },

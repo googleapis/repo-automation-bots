@@ -1,4 +1,4 @@
 rules:
-- author: "yoshi-code-bot"
+- author: "release-please[bot]"
   title: "chore: release"
   changedFiles: "README.md$"

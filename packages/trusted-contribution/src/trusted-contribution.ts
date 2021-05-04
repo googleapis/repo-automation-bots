@@ -16,8 +16,14 @@
 import {Probot} from 'probot';
 import {logger} from 'gcf-utils';
 
+interface Annotation {
+  type: 'comment' | 'label';
+  text: string;
+}
+
 interface ConfigurationOptions {
   trustedContributors?: string[];
+  annotations?: Annotation[];
 }
 
 const WELL_KNOWN_CONFIGURATION_FILE = 'trusted-contribution.yml';
@@ -28,6 +34,13 @@ const DEFAULT_TRUSTED_CONTRIBUTORS = [
   'gcf-merge-on-green[bot]',
   'yoshi-code-bot',
   'gcf-owl-bot[bot]',
+  'google-cloud-policy-bot[bot]',
+];
+const DEFAULT_ANNOTATIONS: Annotation[] = [
+  {
+    type: 'label',
+    text: 'kokoro:force-run',
+  },
 ];
 
 function isTrustedContribution(
@@ -66,11 +79,27 @@ export = (app: Probot) => {
       remoteConfiguration = remoteConfiguration! || {};
       // TODO: add additional verification that only dependency version changes occurred.
       if (isTrustedContribution(remoteConfiguration, PR_AUTHOR)) {
-        const issuesAddLabelsParams = context.repo({
-          issue_number: context.payload.pull_request.number,
-          labels: ['kokoro:force-run'],
-        });
-        await context.octokit.issues.addLabels(issuesAddLabelsParams);
+        const annotations =
+          remoteConfiguration.annotations || DEFAULT_ANNOTATIONS;
+        for (const annotation of annotations) {
+          if (annotation.type === 'label') {
+            const issuesAddLabelsParams = context.repo({
+              issue_number: context.payload.pull_request.number,
+              labels: [annotation.text],
+            });
+            await context.octokit.issues.addLabels(issuesAddLabelsParams);
+            logger.metric('trusted_contribution.labeled', {
+              url: context.payload.pull_request.url,
+            });
+          } else if (annotation.type === 'comment') {
+            await context.octokit.issues.createComment({
+              issue_number: context.payload.pull_request.number,
+              body: annotation.text,
+              owner: context.repo().owner,
+              repo: context.repo().repo,
+            });
+          }
+        }
       }
     }
   );

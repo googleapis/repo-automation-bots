@@ -17,7 +17,7 @@ import {Probot, Context} from 'probot';
 import {logger} from 'gcf-utils';
 import {getPolicy} from './policy';
 import {exportToBigQuery} from './export';
-import {submitFixes} from './changer';
+import {getChanger} from './changer';
 
 export const allowedOrgs = ['googleapis', 'googlecloudplatform'];
 
@@ -37,9 +37,21 @@ export function policyBot(app: Probot) {
 
     const policy = getPolicy(context.octokit, logger);
     const repoMetadata = await policy.getRepo(repo);
+
+    // Skip archived or private repositories
     if (repoMetadata.private || repoMetadata.archived) {
       return;
     }
+
+    // For the GoogleCloudPlatform org, only scan or try to fix repositories
+    // with a 'samples' or 'libraries' repository topic.
+    if (owner.toLowerCase() === 'googlecloudplatform') {
+      const topics = repoMetadata.topics || [];
+      if (!(topics.includes('samples') || topics.includes('libraries'))) {
+        return;
+      }
+    }
+
     const result = await policy.checkRepoPolicy(repoMetadata);
     await exportToBigQuery(result);
 
@@ -47,7 +59,8 @@ export function policyBot(app: Probot) {
     // causes any errors.  Otherwise, the entire function is retried, and the
     // result is recorded twice.
     try {
-      await submitFixes(result, repoMetadata, context.octokit);
+      const changer = getChanger(context.octokit, repoMetadata);
+      await changer.submitFixes(result);
     } catch (e) {
       logger.error(e);
     }

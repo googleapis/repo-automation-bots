@@ -16,7 +16,7 @@
     },
     {
       "packageNames": ["google.golang.org/genproto"],
-      "schedule": "after 2pm on monday"
+      "schedule": "after 7pm on monday"
     }
   ],
   "lockFileMaintenance": {
