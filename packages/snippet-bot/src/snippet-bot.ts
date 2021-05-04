@@ -272,6 +272,16 @@ async function scanPullRequest(
   // Keep track of start tags in all the files.
   const parseResults = new Map<string, ParseResult>();
 
+  const configCheckParams = context.repo({
+    name: 'snippet-bot config schema',
+    conclusion: 'success' as Conclusion,
+    head_sha: pull_request.head.sha,
+    output: {
+      title: 'config file OK',
+      summary: `.github/${CONFIGURATION_FILE_PATH} matches the required schema`,
+      text: 'Success',
+    },
+  });
   // If we found any new files, verify they all have matching region tags.
   for (const file of result.files) {
     if (configuration.ignoredFile(file)) {
@@ -294,16 +304,6 @@ async function scanPullRequest(
       // Checking the config file schema.
       if (file === `.github/${CONFIGURATION_FILE_PATH}`) {
         const {isValid, errorText} = await validateConfiguration(fileContents);
-        const configCheckParams = context.repo({
-          name: 'snippet-bot config schema',
-          conclusion: 'success' as Conclusion,
-          head_sha: pull_request.head.sha,
-          output: {
-            title: 'config file OK',
-            summary: `.github/${CONFIGURATION_FILE_PATH} matches the required schema`,
-            text: 'Success',
-          },
-        });
         if (!isValid) {
           configCheckParams.conclusion = 'failure';
           configCheckParams.output = {
@@ -311,14 +311,6 @@ async function scanPullRequest(
             summary: `.github/${CONFIGURATION_FILE_PATH} does not match the required schema`,
             text: errorText!,
           };
-        }
-        if (configuration.alwaysCreateStatusCheck() || !isValid) {
-          try {
-            await context.octokit.checks.create(configCheckParams);
-          } catch (e) {
-            e.message = `Error creating validation status check: ${e.message}`;
-            logger.error(e);
-          }
         }
       }
       const parseResult = parseRegionTags(
@@ -350,6 +342,12 @@ async function scanPullRequest(
     }
   }
 
+  if (
+    configuration.alwaysCreateStatusCheck() ||
+    configCheckParams.conclusion === 'failure'
+  ) {
+    await context.octokit.checks.create(configCheckParams);
+  }
   const checkParams = context.repo({
     name: 'Mismatched region tag',
     conclusion: 'success' as Conclusion,
@@ -373,12 +371,7 @@ async function scanPullRequest(
   // post the status of commit linting to the PR, using:
   // https://developer.github.com/v3/checks/
   if (configuration.alwaysCreateStatusCheck() || tagsFound) {
-    try {
-      await context.octokit.checks.create(checkParams);
-    } catch (e) {
-      e.message = `Error creating validation status check: ${e.message}`;
-      logger.error(e);
-    }
+    await context.octokit.checks.create(checkParams);
   }
 
   let commentBody = '';
@@ -582,12 +575,7 @@ ${REFRESH_UI}
     configuration.alwaysCreateStatusCheck() ||
     productPrefixViolations.length > 0
   ) {
-    try {
-      await context.octokit.checks.create(prefixCheckParams);
-    } catch (e) {
-      e.message = `Error creating prefix status check: ${e.message}`;
-      logger.error(e);
-    }
+    await context.octokit.checks.create(prefixCheckParams);
   }
 
   // Status checks for disruptive region tag removal
@@ -595,12 +583,7 @@ ${REFRESH_UI}
     configuration.alwaysCreateStatusCheck() ||
     removeUsedTagViolations.length > 0
   ) {
-    try {
-      await context.octokit.checks.create(removeUsedTagCheckParams);
-    } catch (e) {
-      e.message = `Error creating disruptive removal status check: ${e.message}`;
-      logger.error(e);
-    }
+    await context.octokit.checks.create(removeUsedTagCheckParams);
   }
   // emit metrics
   logger.metric('snippet-bot-violations', {
