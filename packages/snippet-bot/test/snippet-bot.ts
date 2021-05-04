@@ -198,6 +198,11 @@ describe('snippet-bot', () => {
             return true;
           }
         )
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
@@ -272,6 +277,11 @@ describe('snippet-bot', () => {
             return true;
           }
         )
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
@@ -382,6 +392,11 @@ describe('snippet-bot', () => {
             return true;
           }
         )
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
@@ -398,7 +413,7 @@ describe('snippet-bot', () => {
       diffRequests.done();
     });
 
-    it('does not submit a check on PR if there are no region tags', async () => {
+    it('does not submit a check for unmatched region tags on PR if there are no region tags', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event'));
@@ -424,6 +439,11 @@ describe('snippet-bot', () => {
             return true;
           }
         )
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
@@ -484,6 +504,67 @@ describe('snippet-bot', () => {
             return true;
           }
         )
+        .reply(200);
+
+      const diffRequests = nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+        .reply(200, diffResponse);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+      diffRequests.done();
+    });
+
+    it('submits 4 check on PR because alwaysCreateStatusCheck is true', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
+      const payload = require(resolve(fixturesPath, './pr_event'));
+
+      const ignoreConfig = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'ignore-and-always-config.yml')
+      );
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
+        )
+        .reply(200, ignoreConfig)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200)
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
+        )
+        .reply(200, [])
+        .post(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
@@ -562,6 +643,16 @@ describe('snippet-bot', () => {
             return true;
           }
         )
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
         .reply(200);
 
       const diffRequests = nock('https://github.com')
@@ -575,6 +666,66 @@ describe('snippet-bot', () => {
       });
 
       sinon.assert.calledOnce(getApiLabelsStub);
+      sinon.assert.calledOnce(getSnippetsStub);
+      requests.done();
+      diffRequests.done();
+    });
+
+    it('does not give warnings about wrong product prefix with snippet-bot:no-prefix-req label', async () => {
+      sandbox.restore();
+      getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
+      const snippets = require(resolve(fixturesPath, './snippets'));
+      getSnippetsStub.resolves(snippets);
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
+      const payload = require(resolve(
+        fixturesPath,
+        './pr_event_no_prefix_req'
+      ));
+      const blob = require(resolve(fixturesPath, './failure_blob'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
+        )
+        .reply(200, config)
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
+        )
+        .reply(200, blob)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200)
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
+        )
+        .reply(200, [])
+        .post(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      const diffRequests = nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+        .reply(200, diffResponse);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
       sinon.assert.calledOnce(getSnippetsStub);
       requests.done();
       diffRequests.done();
@@ -620,6 +771,16 @@ describe('snippet-bot', () => {
             return true;
           }
         )
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
         .reply(200);
 
       const diffRequests = nock('https://github.com')

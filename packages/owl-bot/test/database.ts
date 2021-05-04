@@ -44,7 +44,7 @@ describe('database', () => {
 
   it('stores and retrieves configs', async () => {
     const db = admin.firestore();
-    const store = new FirestoreConfigsStore(db, 'test-');
+    const store = new FirestoreConfigsStore(db, 'test-' + uuidv4() + '-');
     const repoA = 'googleapis/' + uuidv4();
     const repoB = 'googleapis/' + uuidv4();
     const dockerImageA = uuidv4();
