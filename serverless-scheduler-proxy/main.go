@@ -192,6 +192,7 @@ func getBotSecret(ctx context.Context, b botConfig, botName string) ([]byte, err
 	if err != nil {
 		return nil, fmt.Errorf("failed to create secretmanager client: %v", err)
 	}
+	defer client.Close()
 
 	// Build the request.
 	req := &secretmanagerpb.AccessSecretVersionRequest{
