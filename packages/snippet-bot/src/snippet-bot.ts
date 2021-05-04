@@ -79,6 +79,7 @@ function isFile(file: File | unknown): file is File {
 const FULL_SCAN_ISSUE_TITLE = 'snippet-bot full scan';
 
 const REFRESH_LABEL = 'snippet-bot:force-run';
+const NO_PREFIX_REQ_LABEL = 'snippet-bot:no-prefix-req';
 
 const REFRESH_UI = '- [ ] Refresh this comment';
 const REFRESH_STRING = '- [x] Refresh this comment';
@@ -263,9 +264,24 @@ async function scanPullRequest(
   let tagsFound = false;
   const failureMessages: string[] = [];
 
+  // Whether to ignore prefix requirement.
+  const noPrefixReq = pull_request.labels.some((label: Label) => {
+    return label.name === NO_PREFIX_REQ_LABEL;
+  });
+
   // Keep track of start tags in all the files.
   const parseResults = new Map<string, ParseResult>();
 
+  const configCheckParams = context.repo({
+    name: 'snippet-bot config schema',
+    conclusion: 'success' as Conclusion,
+    head_sha: pull_request.head.sha,
+    output: {
+      title: 'config file OK',
+      summary: `.github/${CONFIGURATION_FILE_PATH} matches the required schema`,
+      text: 'Success',
+    },
+  });
   // If we found any new files, verify they all have matching region tags.
   for (const file of result.files) {
     if (configuration.ignoredFile(file)) {
@@ -288,16 +304,6 @@ async function scanPullRequest(
       // Checking the config file schema.
       if (file === `.github/${CONFIGURATION_FILE_PATH}`) {
         const {isValid, errorText} = await validateConfiguration(fileContents);
-        const configCheckParams = context.repo({
-          name: 'snippet-bot config schema',
-          conclusion: 'success' as Conclusion,
-          head_sha: pull_request.head.sha,
-          output: {
-            title: 'config file OK',
-            summary: `.github/${CONFIGURATION_FILE_PATH} matches the required schema`,
-            text: 'Success',
-          },
-        });
         if (!isValid) {
           configCheckParams.conclusion = 'failure';
           configCheckParams.output = {
@@ -305,14 +311,6 @@ async function scanPullRequest(
             summary: `.github/${CONFIGURATION_FILE_PATH} does not match the required schema`,
             text: errorText!,
           };
-        }
-        if (configuration.alwaysCreateStatusCheck() || !isValid) {
-          try {
-            await context.octokit.checks.create(configCheckParams);
-          } catch (e) {
-            e.message = `Error creating validation status check: ${e.message}`;
-            logger.error(e);
-          }
         }
       }
       const parseResult = parseRegionTags(
@@ -344,6 +342,12 @@ async function scanPullRequest(
     }
   }
 
+  if (
+    configuration.alwaysCreateStatusCheck() ||
+    configCheckParams.conclusion === 'failure'
+  ) {
+    await context.octokit.checks.create(configCheckParams);
+  }
   const checkParams = context.repo({
     name: 'Mismatched region tag',
     conclusion: 'success' as Conclusion,
@@ -367,12 +371,7 @@ async function scanPullRequest(
   // post the status of commit linting to the PR, using:
   // https://developer.github.com/v3/checks/
   if (configuration.alwaysCreateStatusCheck() || tagsFound) {
-    try {
-      await context.octokit.checks.create(checkParams);
-    } catch (e) {
-      e.message = `Error creating validation status check: ${e.message}`;
-      logger.error(e);
-    }
+    await context.octokit.checks.create(checkParams);
   }
 
   let commentBody = '';
@@ -388,10 +387,13 @@ async function scanPullRequest(
   const prNumber = pull_request.number;
 
   // First check product prefix for added region tags.
-  const productPrefixViolations = await checkProductPrefixViolations(
-    result,
-    configuration
-  );
+  let productPrefixViolations: Array<Violation> = [];
+  if (!noPrefixReq) {
+    productPrefixViolations = await checkProductPrefixViolations(
+      result,
+      configuration
+    );
+  }
   const removingUsedTagsViolations = await checkRemovingUsedTagViolations(
     result,
     configuration,
@@ -399,12 +401,12 @@ async function scanPullRequest(
     pull_request.base.repo.full_name,
     pull_request.base.ref
   );
-  const removeUsedTagViolations = removingUsedTagsViolations.get(
-    'REMOVE_USED_TAG'
-  ) as Violation[];
-  const removeConflictingTagViolations = removingUsedTagsViolations.get(
-    'REMOVE_CONFLICTING_TAG'
-  ) as Violation[];
+  const removeUsedTagViolations = [
+    ...(removingUsedTagsViolations.get('REMOVE_USED_TAG') as Violation[]),
+    ...(removingUsedTagsViolations.get(
+      'REMOVE_CONFLICTING_TAG'
+    ) as Violation[]),
+  ];
   const removeSampleBrowserViolations = removingUsedTagsViolations.get(
     'REMOVE_SAMPLE_BROWSER_PAGE'
   ) as Violation[];
@@ -412,10 +414,33 @@ async function scanPullRequest(
     'REMOVE_FROZEN_REGION_TAG'
   ) as Violation[];
 
+  // status check for productPrefixViolations
+  const prefixCheckParams = context.repo({
+    name: 'Region tag product prefix',
+    conclusion: 'success' as Conclusion,
+    head_sha: pull_request.head.sha,
+    output: {
+      title: 'No violations',
+      summary: 'No violations found',
+      text: 'All the tags have appropriate product prefix',
+    },
+  });
+
+  // status check for removeUsedTagViolations
+  const removeUsedTagCheckParams = context.repo({
+    name: 'Disruptive region tag removal',
+    conclusion: 'success' as Conclusion,
+    head_sha: pull_request.head.sha,
+    output: {
+      title: 'No violations',
+      summary: 'No violations found',
+      text: 'No disruptive region tag removal',
+    },
+  });
+
   if (
     productPrefixViolations.length > 0 ||
-    removeUsedTagViolations.length > 0 ||
-    removeConflictingTagViolations.length > 0
+    removeUsedTagViolations.length > 0
   ) {
     commentBody += 'Here is the summary of possible violations 😱';
 
@@ -428,7 +453,17 @@ async function scanPullRequest(
       } else {
         summary = `There are ${productPrefixViolations.length} possible violations for not having product prefix.`;
       }
-      commentBody += formatViolations(productPrefixViolations, summary);
+      const productPrefixViolationsDetail = formatViolations(
+        productPrefixViolations,
+        summary
+      );
+      commentBody += productPrefixViolationsDetail;
+      prefixCheckParams.conclusion = 'failure';
+      prefixCheckParams.output = {
+        title: 'Missing region tag prefix',
+        summary: 'Some region tags do not have appropriate prefix',
+        text: productPrefixViolationsDetail,
+      };
     }
 
     // Rendering used tag violations
@@ -441,19 +476,19 @@ async function scanPullRequest(
         summary = `There are ${removeUsedTagViolations.length} possible violations for removing region tag in use.`;
       }
 
-      commentBody += formatViolations(removeUsedTagViolations, summary);
+      const removeUsedTagViolationsDetail = formatViolations(
+        removeUsedTagViolations,
+        summary
+      );
+      commentBody += removeUsedTagViolationsDetail;
+      removeUsedTagCheckParams.conclusion = 'failure';
+      removeUsedTagCheckParams.output = {
+        title: 'Removal of region tags in use',
+        summary: '',
+        text: removeUsedTagViolationsDetail,
+      };
     }
 
-    if (removeConflictingTagViolations.length > 0) {
-      let summary = '';
-      if (removeConflictingTagViolations.length === 1) {
-        summary =
-          'There is a possible violation for removing conflicting region tag in use.';
-      } else {
-        summary = `There are ${removeConflictingTagViolations.length} possible violations for removing conflicting region tag in use.`;
-      }
-      commentBody += formatViolations(removeConflictingTagViolations, summary);
-    }
     commentBody +=
       '**The end of the violation section. All the stuff below is FYI purposes only.**\n\n';
     commentBody += '---\n';
@@ -535,6 +570,21 @@ ${REFRESH_UI}
     commentBody
   );
 
+  // Status checks for missing region tag prefix
+  if (
+    configuration.alwaysCreateStatusCheck() ||
+    productPrefixViolations.length > 0
+  ) {
+    await context.octokit.checks.create(prefixCheckParams);
+  }
+
+  // Status checks for disruptive region tag removal
+  if (
+    configuration.alwaysCreateStatusCheck() ||
+    removeUsedTagViolations.length > 0
+  ) {
+    await context.octokit.checks.create(removeUsedTagCheckParams);
+  }
   // emit metrics
   logger.metric('snippet-bot-violations', {
     target: pull_request.url,
@@ -549,8 +599,7 @@ ${REFRESH_UI}
   logger.metric('snippet-bot-violations', {
     target: pull_request.url,
     violation_type: 'REMOVING_USED_TAG',
-    count:
-      removeConflictingTagViolations.length + removeUsedTagViolations.length,
+    count: removeUsedTagViolations.length,
   });
 }
 
