@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as cc from '../src/copy-code';
 import tmp from 'tmp';
 import {makeDirTree} from './dir-tree';
 import * as fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
 import {OwlBotYaml, owlBotYamlPath} from '../src/config-files';
+import {newCmd} from '../src/cmd';
 
 /**
  * Makes a repo with three commits and 3 simple text files.
@@ -26,7 +26,7 @@ import {OwlBotYaml, owlBotYamlPath} from '../src/config-files';
  * @returns the local file path to the new repo
  */
 export function makeAbcRepo(logger = console): string {
-  const cmd = cc.newCmd(logger);
+  const cmd = newCmd(logger);
 
   // Create a git repo.
   const dir = tmp.dirSync().name;
@@ -58,7 +58,7 @@ export function makeRepoWithOwlBotYaml(
   owlBotYaml: OwlBotYaml,
   logger = console
 ): string {
-  const cmd = cc.newCmd(logger);
+  const cmd = newCmd(logger);
 
   const dir = tmp.dirSync().name;
   cmd('git init -b main', {cwd: dir});
