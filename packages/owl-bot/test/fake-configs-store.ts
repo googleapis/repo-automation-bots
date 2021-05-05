@@ -26,6 +26,19 @@ export class FakeConfigsStore implements ConfigsStore {
     this.configs = configs ?? new Map<string, Configs>();
     this.githubRepos = new Map();
   }
+  findBuildIdForUpdatingLock(
+    repo: string,
+    lock: OwlBotLock
+  ): Promise<string | undefined> {
+    throw new Error('Method not implemented.');
+  }
+  recordBuildIdForUpdatingLock(
+    repo: string,
+    lock: OwlBotLock,
+    buildId: string
+  ): Promise<string> {
+    throw new Error('Method not implemented.');
+  }
   findReposAffectedByFileChanges(
     changedFilePaths: string[]
   ): Promise<GithubRepo[]> {
@@ -68,19 +81,6 @@ export class FakeConfigsStore implements ConfigsStore {
   findReposWithPostProcessor(
     dockerImageName: string
   ): Promise<[string, Configs][]> {
-    throw new Error('Method not implemented.');
-  }
-  findPullRequestForUpdatingLock(
-    repo: string,
-    lock: OwlBotLock
-  ): Promise<string | undefined> {
-    throw new Error('Method not implemented.');
-  }
-  recordPullRequestForUpdatingLock(
-    repo: string,
-    lock: OwlBotLock,
-    pullRequestId: string
-  ): Promise<string> {
     throw new Error('Method not implemented.');
   }
 }

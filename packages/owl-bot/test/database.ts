@@ -160,34 +160,30 @@ describe('database', () => {
 
     // Test pull requests.
     assert.strictEqual(
-      await store.findPullRequestForUpdatingLock(repoA, configsA.lock!),
+      await store.findBuildIdForUpdatingLock(repoA, configsA.lock!),
       undefined
     );
 
     // First one gets recorded.
-    const pullRequestId = store.recordPullRequestForUpdatingLock(
+    const BuildId = store.recordBuildIdForUpdatingLock(
       repoA,
       configsA.lock!,
       '10'
     );
     try {
-      assert.strictEqual(await pullRequestId, '10');
+      assert.strictEqual(await BuildId, '10');
       assert.strictEqual(
-        await store.findPullRequestForUpdatingLock(repoA, configsA.lock!),
+        await store.findBuildIdForUpdatingLock(repoA, configsA.lock!),
         '10'
       );
 
       // Second one does not.
       assert.strictEqual(
-        await store.recordPullRequestForUpdatingLock(
-          repoA,
-          configsA.lock!,
-          '11'
-        ),
+        await store.recordBuildIdForUpdatingLock(repoA, configsA.lock!, '11'),
         '10'
       );
     } finally {
-      await store.clearPullRequestForUpdatingLock(repoA, configsA.lock!);
+      await store.clearBuildForUpdatingLock(repoA, configsA.lock!);
     }
   });
 
@@ -216,13 +212,13 @@ describe('database', () => {
     );
 
     // First one gets recorded.
-    const pullRequestId = store.recordPubsubMessageIdForCopyTask(
+    const BuildId = store.recordPubsubMessageIdForCopyTask(
       repoA,
       googleapisGenCommitHash,
       '10'
     );
     try {
-      assert.strictEqual(await pullRequestId, '10');
+      assert.strictEqual(await BuildId, '10');
       assert.strictEqual(
         await store.findPubsubMessageIdForCopyTask(
           repoA,
