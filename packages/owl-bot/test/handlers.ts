@@ -15,38 +15,33 @@
 
 // There are lots of unused args on fake functions, and that's ok.
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as assert from 'assert';
 import {describe, it, afterEach} from 'mocha';
 
 import {
-  createOnePullRequestForUpdatingLock,
+  triggerOneBuildForUpdatingLock,
   refreshConfigs,
   scanGithubForConfigs,
 } from '../src/handlers';
 import {Configs, ConfigsStore} from '../src/configs-store';
 import {dump} from 'js-yaml';
-import * as suggester from 'code-suggester';
 import {Octokit} from '@octokit/rest';
 import * as sinon from 'sinon';
 import {OwlBotLock} from '../src/config-files';
-import {
-  core,
-  getAuthenticatedOctokit,
-  getGitHubShortLivedAccessToken,
-} from '../src/core';
+import {core} from '../src/core';
 import {FakeConfigsStore} from './fake-configs-store';
 import {GithubRepo} from '../src/github-repo';
+import {CloudBuildClient} from '@google-cloud/cloudbuild';
 const sandbox = sinon.createSandbox();
-
-type Changes = Array<[string, {content: string; mode: string}]>;
 
 describe('handlers', () => {
   afterEach(() => {
     sandbox.restore();
   });
-  describe('createOnePullRequestForUpdatingLock', () => {
-    it('updates .github/.OwlBot.lock.yaml if no pull request found', async () => {
+  describe('triggerOneBuildForUpdatingLock', () => {
+    it('creates a cloud build if no existing build id found', async () => {
       const lock = {
         docker: {
           image: 'foo-image',
@@ -54,7 +49,7 @@ describe('handlers', () => {
         },
       };
       const expectedYaml = dump(lock);
-      let recordedURI = '';
+      let recordedId = '';
       // Mock the database helpers used to check for/update existing PRs:
       class FakeConfigStore implements ConfigsStore {
         findReposAffectedByFileChanges(
@@ -82,7 +77,7 @@ describe('handlers', () => {
         ): Promise<[string, Configs][]> {
           throw new Error('Method not implemented.');
         }
-        findPullRequestForUpdatingLock(
+        findBuildIdForUpdatingLock(
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           repo: string,
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -90,43 +85,72 @@ describe('handlers', () => {
         ): Promise<string | undefined> {
           return Promise.resolve(undefined);
         }
-        recordPullRequestForUpdatingLock(
+        recordBuildIdForUpdatingLock(
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           repo: string,
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           lock: OwlBotLock,
-          pullRequestId: string
+          buildId: string
         ): Promise<string> {
-          recordedURI = pullRequestId;
-          return Promise.resolve(recordedURI);
+          recordedId = buildId;
+          return Promise.resolve(recordedId);
         }
       }
       const fakeConfigStore = new FakeConfigStore();
       // Mock the method from code-suggester that opens the upstream
       // PR on GitHub:
-      let expectedChanges: Changes = [];
+      const calls: any[][] = [];
       sandbox.replace(
-        suggester,
-        'createPullRequest',
-        (_octokit, changes): Promise<number> => {
-          if (changes) {
-            expectedChanges = [...((changes as unknown) as Changes)];
-          }
-          return Promise.resolve(22);
+        core,
+        'getCloudBuildInstance',
+        (): CloudBuildClient => {
+          return ({
+            runBuildTrigger: (...args: any[]) => {
+              calls.push(args);
+              return [
+                {
+                  metadata: {
+                    build: {
+                      id: '73',
+                    },
+                  },
+                },
+              ];
+            },
+          } as unknown) as CloudBuildClient;
         }
       );
 
-      const expectedURI = await createOnePullRequestForUpdatingLock(
+      const expectedBuildId = await triggerOneBuildForUpdatingLock(
         fakeConfigStore,
-        new Octokit(), // Not actually used.
         'owl/test',
-        lock
+        lock,
+        'test-project',
+        'test-trigger'
       );
-      assert.strictEqual(expectedURI, 'https://github.com/owl/test/pull/22');
-      assert.strictEqual(recordedURI, 'https://github.com/owl/test/pull/22');
-      assert.strictEqual(expectedChanges[0][1].content, expectedYaml);
+      assert.strictEqual(expectedBuildId, '73');
+      assert.strictEqual(recordedId, '73');
+      assert.deepStrictEqual(calls, [
+        [
+          {
+            projectId: 'test-project',
+            source: {
+              projectId: 'test-project',
+              substitutions: {
+                _CONTAINER: 'foo-image@sha256:abc123',
+                _LOCK_FILE_PATH: '.github/.OwlBot.lock.yaml',
+                _OWL_BOT_CLI: 'gcr.io/repo-automation-bots/owlbot-cli',
+                _PR_BRANCH: 'owl-bot-update-lock-abc123',
+                _PR_OWNER: 'owl',
+                _REPOSITORY: 'test',
+              },
+            },
+            triggerId: 'test-trigger',
+          },
+        ],
+      ]);
     });
-    it('returns existing pull request URI, if PR has already been created', async () => {
+    it('returns existing build Id, if build has already been triggered', async () => {
       const lock = {
         docker: {
           image: 'foo-image',
@@ -160,7 +184,7 @@ describe('handlers', () => {
         ): Promise<[string, Configs][]> {
           throw new Error('Method not implemented.');
         }
-        findPullRequestForUpdatingLock(
+        findBuildIdForUpdatingLock(
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           repo: string,
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -168,23 +192,24 @@ describe('handlers', () => {
         ): Promise<string | undefined> {
           return Promise.resolve('https://github.com/owl/test/pull/99');
         }
-        recordPullRequestForUpdatingLock(
+        recordBuildIdForUpdatingLock(
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           repo: string,
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           lock: OwlBotLock,
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          pullRequestId: string
+          BuildIdId: string
         ): Promise<string> {
           throw new Error('Method not implemented.');
         }
       }
       const fakeConfigStore = new FakeConfigStore();
-      const expectedURI = await createOnePullRequestForUpdatingLock(
+      const expectedURI = await triggerOneBuildForUpdatingLock(
         fakeConfigStore,
-        new Octokit(), // Not actually used.
         'owl/test',
-        lock
+        lock,
+        'test-project',
+        'test-trigger'
       );
       assert.strictEqual(expectedURI, 'https://github.com/owl/test/pull/99');
     });

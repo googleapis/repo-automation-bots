@@ -13,8 +13,6 @@
 // limitations under the License.
 
 import {logger} from 'gcf-utils';
-import {createPullRequest} from 'code-suggester';
-import {dump} from 'js-yaml';
 import {
   OwlBotLock,
   owlBotLockFrom,
@@ -23,13 +21,13 @@ import {
   owlBotYamlPath,
 } from './config-files';
 import {Configs, ConfigsStore} from './configs-store';
-import {getAuthenticatedOctokit, core} from './core';
-import {Octokit} from '@octokit/rest';
+import {core} from './core';
 import yaml from 'js-yaml';
 // Conflicting linters think the next line is extraneous or necessary.
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints} from '@octokit/types';
 import {OctokitType} from './octokit-util';
+import {githubRepoFromOwnerSlashName} from './github-repo';
 
 type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
 
@@ -73,17 +71,22 @@ export async function onPostProcessorPublished(
           image: dockerImageName,
         },
       };
-      const octokit = await getAuthenticatedOctokit({
-        privateKey,
-        appId,
-        installation: configs.installationId,
-      });
-      // TODO(bcoe): switch updatedAt to date from PubSub payload:
-      await createOnePullRequestForUpdatingLock(
+      if (!process.env.PROJECT_ID) {
+        throw Error('must set environment variable PROJECT_ID');
+      }
+      const project: string = process.env.PROJECT_ID;
+      if (!process.env.UPDATE_LOCK_BUILD_TRIGGER_ID) {
+        throw Error(
+          'must set environment variable UPDATE_LOCK_BUILD_TRIGGER_ID'
+        );
+      }
+      const triggerId: string = process.env.UPDATE_LOCK_BUILD_TRIGGER_ID;
+      await triggerOneBuildForUpdatingLock(
         configsStore,
-        octokit,
         repo,
         lock,
+        project,
+        triggerId,
         configs
       );
       // We were hitting GitHub's abuse detection algorithm,
@@ -95,70 +98,58 @@ export async function onPostProcessorPublished(
   }
 }
 
+// const UPDATE_LOCK_BUILD_TRIGGER_ID = 'd63288e8-3fb9-4469-b11a-9302fbe7783e';
+
 /**
- * Creates a pull request to update .OwlBot.lock.yaml, if one doesn't already
+ * Creates a cloud build to update .OwlBot.lock.yaml, if one doesn't already
  * exist.
  * @param db: database
- * @param octokit: Octokit.
  * @param repoFull: full repo name like "googleapis/nodejs-vision"
  * @param lock: The new contents of the lock file.
- * @returns: the uri of the new or existing pull request
+ * @param project: a google cloud project id
+ * @returns: the build id.
  */
-export async function createOnePullRequestForUpdatingLock(
+export async function triggerOneBuildForUpdatingLock(
   configsStore: ConfigsStore,
-  octokit: OctokitType,
   repoFull: string,
   lock: OwlBotLock,
-  configs?: Configs
+  project: string,
+  triggerId: string,
+  configs?: Configs,
+  owlBotCli = 'gcr.io/repo-automation-bots/owlbot-cli'
 ): Promise<string> {
-  const existingPullRequest = await configsStore.findPullRequestForUpdatingLock(
+  const existingBuildId = await configsStore.findBuildIdForUpdatingLock(
     repoFull,
     lock
   );
-  if (existingPullRequest) {
-    logger.info(`existing pull request ${existingPullRequest} found`);
-    return existingPullRequest;
+  if (existingBuildId) {
+    logger.info(`existing build id ${existingBuildId} found.`);
+    return existingBuildId;
   }
-  const [owner, repo] = repoFull.split('/');
-  // createPullRequest expects file updates as a Map
-  // of objects with content/mode:
-  const changes = new Map();
-  changes.set(owlBotLockPath, {
-    content: dump(lock),
-    mode: '100644',
-  });
-  // Opens a pull request with any files represented in changes:
-  logger.info(`opening pull request for ${lock.docker.digest}`);
-  const prNumber = await createPullRequest(
-    octokit as Octokit,
-    changes,
-    {
-      upstreamOwner: owner,
-      upstreamRepo: repo,
-      // TODO(rennie): we should provide a context aware commit
-      // message for this:
-      title: 'build: update .OwlBot.lock with new version of post-processor',
-      branch: `owlbot-lock-${Date.now()}`,
-      description: `This PR updates the docker container used for OwlBot. This container performs post-processing tasks when pull-requests are opened on your repository, such as:\n\n* copying generated files into place.\n* generating common files from templates.\n\nVersion ${
-        lock.docker.digest
-      } was published at ${new Date().toISOString()}.`,
-      primary: configs?.branchName ?? 'main',
-      force: true,
-      fork: false,
-      // TODO(bcoe): replace this message with last commit to synthtool:
-      message: 'build: update .OwlBot.lock with new version of post-processor',
-      draft: true,
-      labels: [core.UPDATE_LOCK_PULL_REQUEST_LABEL],
+  const repo = githubRepoFromOwnerSlashName(repoFull);
+  const cb = core.getCloudBuildInstance();
+  const [, digest] = lock.docker.digest.split(':'); // Strip sha256: prefix
+  logger.info(`triggering build for ${repoFull}.`);
+  const [resp] = await cb.runBuildTrigger({
+    projectId: project,
+    triggerId: triggerId,
+    source: {
+      projectId: project,
+      substitutions: {
+        _PR_OWNER: repo.owner,
+        _REPOSITORY: repo.repo,
+        _PR_BRANCH: `owl-bot-update-lock-${digest}`,
+        _LOCK_FILE_PATH: owlBotLockPath,
+        _CONTAINER: `${lock.docker.image}@${lock.docker.digest}`,
+        _OWL_BOT_CLI: owlBotCli,
+      },
     },
-    {level: 'error'}
-  );
-  const newPullRequest = `https://github.com/${repoFull}/pull/${prNumber}`;
-  await configsStore.recordPullRequestForUpdatingLock(
-    repoFull,
-    lock,
-    newPullRequest
-  );
-  return newPullRequest;
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const buildId: string = (resp as any).metadata.build.id;
+  logger.info(`created build id ${buildId}.`);
+  await configsStore.recordBuildIdForUpdatingLock(repoFull, lock, buildId);
+  return buildId;
 }
 
 /**

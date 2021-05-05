@@ -62,31 +62,29 @@ export interface ConfigsStore {
   ): Promise<[string, Configs][]>;
 
   /**
-   * Finds a previously recorded pull request or returns undefined.
+   * Finds a previously recorded cloud build id or returns undefined.
    * @param repo full repo name like "googleapis/nodejs-vision"
    * @param lock The new contents of the lock file.
    * @returns the string passed to recordPullRequestForUpdatingLock().
    */
-  findPullRequestForUpdatingLock(
+  findBuildIdForUpdatingLock(
     repo: string,
     lock: OwlBotLock
   ): Promise<string | undefined>;
 
   /**
-   * Records a pull request created to update the lock file.
+   * Records a cloud build id created to update the lock file.
    * @param repo full repo name like "googleapis/nodejs-vision"
    * @param lock The new contents of the lock file.
-   * @param pullRequestId the string that will be later returned by
-   *  findPullRequestForUpdatingLock().
-   * @returns pullRequestId, which may differ from the argument if there
+   * @param buildIdId the string that will be later returned by
+   *  findBuildIdForUpdatingLock().
+   * @returns buildId, which may differ from the argument if there
    *   already was a pull request recorded.
-   *   In that case, the caller should close the pull request they
-   *   created, to avoid annoying maintainers with duplicate pull requests.
    */
-  recordPullRequestForUpdatingLock(
+  recordBuildIdForUpdatingLock(
     repo: string,
     lock: OwlBotLock,
-    pullRequestId: string
+    buildId: string
   ): Promise<string>;
 
   /**

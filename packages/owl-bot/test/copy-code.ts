@@ -14,13 +14,14 @@
 
 import {describe, it} from 'mocha';
 import * as assert from 'assert';
-import {copyCode, copyDirs, newCmd, stat} from '../src/copy-code';
+import {copyCode, copyDirs, stat} from '../src/copy-code';
 import path from 'path';
 import * as fs from 'fs';
 import tmp from 'tmp';
 import {OwlBotYaml} from '../src/config-files';
 import {collectDirTree, makeDirTree} from './dir-tree';
 import {makeAbcRepo, makeRepoWithOwlBotYaml} from './make-repos';
+import {newCmd} from '../src/cmd';
 
 describe('copyDirs', () => {
   /**
