@@ -63,7 +63,7 @@
     "ajv": "^8.0.5",
     "code-suggester": "^1.11.0",
     "firebase-admin": "^9.4.2",
-    "fs-extra": "^9.1.0",
+    "fs-extra": "^10.0.0",
     "gaxios": "^4.1.0",
     "gcf-utils": "^7.2.1",
     "glob": "^7.1.6",
