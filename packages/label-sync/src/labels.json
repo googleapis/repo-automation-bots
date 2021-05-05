@@ -176,6 +176,11 @@
       "color": "86d9d7"
     },
     {
+      "name": "next major: breaking change",
+      "description": "this is a change that we should wait to bundle into the next major version",
+      "color": "b5e67b"
+    },
+    {
       "name": "samples",
       "description": "Issues that are directly related to samples.",
       "color": "9932CC"
