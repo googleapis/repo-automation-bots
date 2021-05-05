@@ -24,7 +24,16 @@ export type Db = admin.firestore.Firestore;
  * A google cloud build that updates ta repo.
  */
 interface UpdateBuild {
+  // The id provided build google cloud build.
   buildId: string;
+  // Gets marked true after a cron job confirms the the google cloud build
+  // job completed.
+  buildCompletionObserved: boolean;
+  // Set when completion observed.
+  buildSucceeded?: boolean;
+  // Maybe a link to a github issue or pull request.  Mainly for debugging
+  // purposes.
+  buildResult?: string;
 }
 
 interface CopyTask {
@@ -133,7 +142,7 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
     const docRef = this.db
       .collection(this.lockUpdateBuilds)
       .doc(makeUpdateLockKey(repo, lock));
-    const data: UpdateBuild = {buildId};
+    const data: UpdateBuild = {buildId, buildCompletionObserved: false};
     await this.db.runTransaction(async t => {
       const got = await t.get(docRef);
       if (got.exists) {
