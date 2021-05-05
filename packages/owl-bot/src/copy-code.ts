@@ -28,6 +28,7 @@ import {OctokitType, OctokitFactory} from './octokit-util';
 import tmp from 'tmp';
 import glob from 'glob';
 import {GithubRepo} from './github-repo';
+import {OWL_BOT_COPY} from './core';
 import {newCmd} from './cmd';
 import {createPullRequestFromLastCommit} from './create-pr';
 
@@ -128,7 +129,7 @@ ${err}`,
     destDir,
     destBranch,
     destRepo.getCloneUrl(token),
-    ['owl-bot-copy'],
+    [OWL_BOT_COPY],
     octokit,
     logger
   );
