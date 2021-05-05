@@ -37,7 +37,7 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "@octokit/openapi-types": "^6.0.0",
+    "@octokit/openapi-types": "^7.0.0",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.6.1",
     "@types/sinon": "^9.0.11",
