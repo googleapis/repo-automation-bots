@@ -148,7 +148,7 @@ export async function createOnePullRequestForUpdatingLock(
       // TODO(bcoe): replace this message with last commit to synthtool:
       message: 'build: update .OwlBot.lock with new version of post-processor',
       draft: true,
-      labels: [core.UPDATE_LOCK_PULL_REQUEST_LABEL],
+      labels: [core.OWL_BOT_LOCK_UPDATE],
     },
     {level: 'error'}
   );
