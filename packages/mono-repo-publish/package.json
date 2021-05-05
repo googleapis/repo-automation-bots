@@ -29,6 +29,6 @@
   "dependencies": {
     "@octokit/auth-app": "^3.0.0",
     "@octokit/rest": "^18.1.0",
-    "yargs": "^16.2.0"
+    "yargs": "^17.0.0"
   }
 }

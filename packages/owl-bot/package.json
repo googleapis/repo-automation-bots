@@ -71,6 +71,6 @@
     "jsonwebtoken": "^8.5.1",
     "minimatch": "^3.0.4",
     "tmp": "^0.2.1",
-    "yargs": "^16.2.0"
+    "yargs": "^17.0.0"
   }
 }
