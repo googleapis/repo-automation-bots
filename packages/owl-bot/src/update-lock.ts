@@ -51,7 +51,7 @@ export async function maybeCreatePullRequestForLockUpdate(
       cwd,
       branch,
       githubRepo.getCloneUrl(token),
-      [core.UPDATE_LOCK_PULL_REQUEST_LABEL],
+      [core.OWL_BOT_LOCK_UPDATE],
       octokit,
       logger
     );
