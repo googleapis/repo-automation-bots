@@ -26,6 +26,7 @@ export async function maybeCreatePullRequestForLockUpdate(
 ): Promise<void> {
   const cmd = newCmd(logger);
   const cwd = localRepoDir ?? '.';
+  // 'git status' returns the empty string when no changes are pending.
   const status = cmd('git status --porcelain', {cwd}).toString('utf8').trim();
   if (status) {
     // Commit additional changes.
