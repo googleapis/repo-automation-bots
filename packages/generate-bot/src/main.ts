@@ -31,7 +31,7 @@ export function checkValidity(opts: ProgramOptions) {
 
   if (validName.test(botName)) {
     console.log(
-      'Only letters, hyphens, are underscores are permitted in the bot name. Please try again.'
+      'Only letters, hyphens, and underscores are permitted in the bot name. Please try again.'
     );
     return false;
   }
