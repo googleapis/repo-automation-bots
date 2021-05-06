@@ -16,7 +16,7 @@
 set -eo pipefail
 
 if [ $# -lt 6 ]; then
-  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <functionRegion> [functionRuntime]"
+  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <functionRegion> [functionRuntime] [timeout]"
   exit 1
 fi
 
@@ -26,7 +26,9 @@ bucket=$3
 keyLocation=$4
 keyRing=$5
 functionRegion=$6
-timeout=$7
+# Optional parameter. If not specified, this flag won't be set when
+# deploying the bot.
+timeout=$8
 
 # To use a different runtime for a bot, give 7th parameter in bot's
 # cloudbuild.yaml.
