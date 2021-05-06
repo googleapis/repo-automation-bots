@@ -22,6 +22,7 @@ import {
   Issue,
   PullRequest,
 } from '@octokit/webhooks-definitions/schema';
+import {DatastoreLock} from './datastore-lock';
 
 const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';
@@ -87,10 +88,13 @@ export function blunderbuss(app: Probot) {
 
       let issue: Issue | undefined;
       let pullRequest: PullRequest | undefined;
+      let lockTarget: string;
       if (isIssue(context.payload)) {
         issue = context.payload.issue;
+        lockTarget = context.payload.issue.url;
       } else {
         pullRequest = context.payload.pull_request;
+        lockTarget = context.payload.pull_request.url;
       }
       const repoName = context.payload.repository.full_name;
 
@@ -129,6 +133,10 @@ export function blunderbuss(app: Probot) {
       const byConfig = issue ? config.assign_issues_by : config.assign_prs_by;
       const issuePayload = issue || pullRequest;
 
+      // Acquire the lock.
+      const lock = new DatastoreLock('blunderbuss', lockTarget);
+      await lock.acquire();
+
       const isLabeled = context.payload.action === 'labeled';
       if (isLabeled) {
         // Only assign an issue that already has an assignee if labeled with
@@ -143,6 +151,7 @@ export function blunderbuss(app: Probot) {
             issueOrPRNumber,
             context.payload.label?.name
           );
+          lock.release();
           return;
         }
         // Check if the new label has a possible assignee.
@@ -165,6 +174,7 @@ export function blunderbuss(app: Probot) {
             issueOrPRNumber,
             context.payload.label?.name
           );
+          lock.release();
           return;
         }
         if (context.payload.label?.name === ASSIGN_LABEL) {
@@ -184,6 +194,7 @@ export function blunderbuss(app: Probot) {
             issueOrPRNumber
           )
         );
+        lock.release();
         return;
       }
 
@@ -218,12 +229,14 @@ export function blunderbuss(app: Probot) {
             issueOrPRNumber
           )
         );
+        lock.release();
         return;
       }
 
       const resp = await context.octokit.issues.addAssignees(
         context.issue({assignees: [assignee]})
       );
+      lock.release();
       if (resp.status !== 201) {
         context.log.error(
           util.format(
