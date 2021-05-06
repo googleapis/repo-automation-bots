@@ -26,6 +26,7 @@ bucket=$3
 keyLocation=$4
 keyRing=$5
 functionRegion=$6
+timeout=$7
 
 # To use a different runtime for a bot, give 7th parameter in bot's
 # cloudbuild.yaml.
@@ -48,7 +49,8 @@ gcloud functions deploy "${functionName}" \
   --trigger-http \
   --runtime "${functionRuntime}" \
   --region "${functionRegion}" \
-  --update-env-vars DRIFT_PRO_BUCKET="${bucket}",KEY_LOCATION="${keyLocation}",KEY_RING="${keyRing}",GCF_SHORT_FUNCTION_NAME="${functionName}",PROJECT_ID="${project}",GCF_LOCATION="${functionRegion}",PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1',WEBHOOK_TMP=tmp-webhook-payloads
+  --update-env-vars DRIFT_PRO_BUCKET="${bucket}",KEY_LOCATION="${keyLocation}",KEY_RING="${keyRing}",GCF_SHORT_FUNCTION_NAME="${functionName}",PROJECT_ID="${project}",GCF_LOCATION="${functionRegion}",PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1',WEBHOOK_TMP=tmp-webhook-payloads \
+  ${timeout:+--timeout "${timeout}"}
 
 echo "Adding ability for allUsers to execute the Function"
 gcloud alpha functions add-iam-policy-binding "${functionName}" \
