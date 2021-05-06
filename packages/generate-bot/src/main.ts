@@ -26,18 +26,12 @@ export interface ProgramOptions {
 }
 
 export function checkValidity(opts: ProgramOptions) {
-  const validName = /[^-A-Za-z_\s]+/;
-  let string = JSON.stringify(opts);
-  string = string
-    .replace('{"programName":', '')
-    .replace(',"description":', '')
-    .replace(',"fileLocation":', '')
-    .replace(/"/g, '')
-    .replace(/}$/, '');
+  const validName = /[^-A-Za-z_]+/;
+  const botName = opts.programName;
 
-  if (validName.test(string)) {
+  if (validName.test(botName)) {
     console.log(
-      'You used an invalid character, like an integer. Please try again.'
+      'Only letters, hyphens, are underscores are permitted in the bot name. Please try again.'
     );
     return false;
   }
@@ -57,7 +51,7 @@ export function checkValidity(opts: ProgramOptions) {
     return false;
   }
   opts.programName = opts.programName.toLowerCase();
-  opts.exportName = opts.programName.replace('-', '_');
+  opts.exportName = opts.programName.replace(/-/g, '_');
   return true;
 }
 
