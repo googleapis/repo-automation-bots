@@ -116,7 +116,8 @@ export class DatastoreLock {
         return AcquireResult.LockActive;
       }
     } catch (err) {
-      logger.debug(err);
+      err.message = `Error acquiring a lock: ${err.message}`;
+      logger.error(err);
       await transaction.rollback();
       return AcquireResult.Failure;
     }
@@ -139,7 +140,8 @@ export class DatastoreLock {
       await transaction.commit();
       return true;
     } catch (err) {
-      logger.debug(err);
+      err.message = `Error releasing a lock: ${err.message}`;
+      logger.error(err);
       await transaction.rollback();
       return false;
     }
