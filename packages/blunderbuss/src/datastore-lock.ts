@@ -51,7 +51,7 @@ export class DatastoreLock {
     if (lockExpiry > MAX_LOCK_EXPIRY) {
       throw new Error(
         `lockExpiry is too long, max is ${MAX_LOCK_EXPIRY}, ` +
-        `given ${lockExpiry}`
+          `given ${lockExpiry}`
       );
     }
     this.datastore = new Datastore();
@@ -143,7 +143,9 @@ export class DatastoreLock {
         return true;
       }
       if (entity.uuid !== this.uniqueId) {
-        throw new Error(`The lock for ${this.target} was acquired by another process.`);
+        throw new Error(
+          `The lock for ${this.target} was acquired by another process.`
+        );
       }
       // The lock is created by myself.
       transaction.delete(this.key);
