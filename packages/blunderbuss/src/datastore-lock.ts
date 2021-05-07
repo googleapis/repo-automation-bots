@@ -21,6 +21,7 @@ const MAX_LOCK_EXPIRY = 60 * 1000; // 60 seconds
 const LOCK_ACQUIRE_TIMEOUT = 120 * 1000; // 120 seconds
 const BACKOFF_INITIAL_DELAY = 2 * 1000; // 1 seconds
 const BACKOFF_MAX_DELAY = 10 * 1000; // 10 seconds
+const DATASTORE_LOCK_ERROR_NAME = 'DatastoreLockError';
 
 enum AcquireResult {
   Success = 1,
@@ -143,15 +144,20 @@ export class DatastoreLock {
         return true;
       }
       if (entity.uuid !== this.uniqueId) {
-        throw new Error(
+        const err = new Error(
           `The lock for ${this.target} was acquired by another process.`
         );
+        err.name = DATASTORE_LOCK_ERROR_NAME;
+        throw err;
       }
       // The lock is created by myself.
       transaction.delete(this.key);
       await transaction.commit();
       return true;
     } catch (err) {
+      if (err.name === DATASTORE_LOCK_ERROR_NAME) {
+        throw err;
+      }
       err.message = `Error releasing a lock: ${err.message}`;
       logger.error(err);
       await transaction.rollback();
