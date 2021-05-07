@@ -76,7 +76,7 @@ steps:
   # Fetch our github credentials because we may need to push to github.
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
-    args: [ '-c', "gcloud secrets versions access latest --secret=owl_bot_github_key --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/owl-bot-github-key.pem" ]
+    args: [ '-c', "gcloud secrets versions access latest --secret=owlbot_github_key --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/owl-bot-github-key.pem" ]
 
   # Examine the changed files and possibly create a pull request.
   - name: ${_OWL_BOT_CLI}
