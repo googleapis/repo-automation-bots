@@ -137,7 +137,7 @@ export function blunderbuss(app: Probot) {
       const lock = new DatastoreLock('blunderbuss', lockTarget);
       const lockResult = await lock.acquire();
       if (!lockResult) {
-        throw new Error('Failed to acquire a lock');
+        throw new Error('Failed to acquire a lock for ${lockTarget}');
       }
 
       const isLabeled = context.payload.action === 'labeled';
