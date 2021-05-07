@@ -46,6 +46,7 @@
     "@types/sinon": "^9.0.8",
     "@types/tar": "^4.0.3",
     "@types/tmp": "^0.2.0",
+    "@octokit/webhooks-definitions": "^3.67.3",
     "c8": "^7.1.0",
     "cross-env": "^7.0.0",
     "gts": "^3.0.0",
