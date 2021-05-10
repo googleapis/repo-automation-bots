@@ -69,7 +69,9 @@ export async function copyCodeAndCreatePullRequest(
   const cmd = newCmd(logger);
 
   // Clone the dest repo.
-  const cloneUrl = destRepo.getCloneUrl();
+  const cloneUrl = destRepo.getCloneUrl(
+    await octokitFactory.getGitHubShortLivedAccessToken()
+  );
   cmd(`git clone --single-branch "${cloneUrl}" ${destDir}`);
 
   // Check out a dest branch.
