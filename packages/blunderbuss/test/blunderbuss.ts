@@ -15,7 +15,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import * as blunderbuss from '../src/blunderbuss';
-import {describe, it, beforeEach, afterEach} from 'mocha';
+import {describe, it, before, beforeEach, after, afterEach} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
@@ -23,6 +23,7 @@ import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
 import * as sinon from 'sinon';
+import DataStoreEmulator from 'google-datastore-emulator';
 
 nock.disableNetConnect();
 
@@ -35,6 +36,22 @@ global.console.warn = () => {};
 describe('Blunderbuss', () => {
   let probot: Probot;
   const sandbox = sinon.createSandbox();
+  let emulator: DataStoreEmulator;
+  before(() => {
+    nock.enableNetConnect('127.0.0.1');
+    nock.enableNetConnect('localhost');
+    const options = {
+      useDocker: true,
+    };
+
+    emulator = new DataStoreEmulator(options);
+
+    return emulator.start();
+  });
+  after(() => {
+    emulator.stop();
+    nock.disableNetConnect();
+  });
 
   beforeEach(() => {
     probot = createProbot({
