@@ -46,6 +46,8 @@ steps:
   # Run container listed in OwlBot.yaml:
   - name: ${_CONTAINER}
     dir: '${_REPOSITORY}'
+    env:
+      - 'BASE_REF=$_BASE_REF'
   # Populate credentials for push to GitHub:
   - name: 'bash'
     args:

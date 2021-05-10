@@ -116,6 +116,7 @@ export async function triggerPostProcessBuild(
         // gcr.io/repo-automation-tools/nodejs-post-processor**@1234abcd**
         // TODO: read this from OwlBot.yaml.
         _CONTAINER: args.image,
+        _BASE_REF: prData.base.ref,
       },
     },
   });
