@@ -172,6 +172,11 @@ export function handler(app: Probot) {
           context.octokit,
           context.payload.pull_request.head.sha
         );
+
+        logger.metric('auto_approve.status_check', {
+          repo: `${owner}/${repo}`,
+          pr: pr,
+        });
       } else {
         let config: Configuration | null;
         // Get auto-approve.yml file if it exists
@@ -222,6 +227,10 @@ export function handler(app: Probot) {
               repo,
               issue_number: prNumber,
               labels: ['automerge: exact'],
+            });
+            logger.metric('auto_approve.approved_tagged', {
+              repo: `${owner}/${repo}`,
+              pr: pr,
             });
             logger.info(
               `Auto-approved and tagged ${owner}/${repo}/${prNumber}`

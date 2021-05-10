@@ -66,9 +66,6 @@ export async function checkPRAgainstConfig(
     let fileCountMatch = true;
     let versionChecks = true;
 
-    // Set the default to true, but exit early if the titles don't match
-    const titlesMatch = true;
-
     // Since there's only one allowed title per author right now, we don't need to
     // add complicated logic to see which title should match the incoming PR; but,
     // this could be logic we work into the future.
@@ -99,7 +96,7 @@ export async function checkPRAgainstConfig(
       versionChecks = runVersioningValidation(fileAndFileRule);
     }
 
-    //check if changed file paths match
+    //check if changed file paths match1
     if (rulesToValidateAgainst.changedFiles) {
       filePathsMatch = checkFilePathsMatch(
         changedFiles.map(x => x.filename),
@@ -113,10 +110,10 @@ export async function checkPRAgainstConfig(
         pr.pull_request.changed_files <= rulesToValidateAgainst.maxFiles;
     }
     logger.info(
-      `Info for ${repoOwner}/${repo}/${prNumber}\nAuthor: ${rulesToValidateAgainst.author}\nTitles Match? ${titlesMatch}\nFile Paths Match? ${filePathsMatch}\nFile Count Matches? ${fileCountMatch}\nVersions are correct? ${versionChecks}`
+      `Info for ${repoOwner}/${repo}/${prNumber}\nAuthor: ${rulesToValidateAgainst.author}\nFile Paths Match? ${filePathsMatch}\nFile Count Matches? ${fileCountMatch}\nVersions are correct? ${versionChecks}`
     );
 
-    return titlesMatch && filePathsMatch && fileCountMatch && versionChecks;
+    return filePathsMatch && fileCountMatch && versionChecks;
   } else {
     logger.info(`${repoOwner}/${repo}/${prNumber} does not match config`);
     return false;
@@ -132,9 +129,9 @@ export async function checkPRAgainstConfig(
  * @param pr The matching ruleset of the file above from language-versioning-rules
  * @returns true if the package was upgraded appropriately, and had only one thing changed
  */
-export function runVersioningValidation(addtlValidationFile: {
-  file: File | undefined;
-  fileRule: FileSpecificRule | undefined;
+export function runVersioningValidation(addtlValidationFile?: {
+  file: File;
+  fileRule: FileSpecificRule;
 }): boolean {
   let majorBump = true;
   let minorBump = false;

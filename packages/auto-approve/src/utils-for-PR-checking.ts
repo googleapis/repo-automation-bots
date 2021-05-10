@@ -129,10 +129,7 @@ export function getVersions(
  * @returns whether the major version changed.
  */
 export function isMajorVersionChanging(versions: Versions): boolean {
-  return Number(versions.newMajorVersion) - Number(versions.oldMajorVersion) ===
-    0
-    ? false
-    : true;
+  return versions.newMajorVersion === versions.oldMajorVersion;
 }
 
 /**
@@ -142,9 +139,7 @@ export function isMajorVersionChanging(versions: Versions): boolean {
  * @returns whether the minor version was upgraded.
  */
 export function isMinorVersionUpgraded(versions: Versions): boolean {
-  return Number(versions.newMinorVersion) - Number(versions.oldMinorVersion) > 0
-    ? true
-    : false;
+  return Number(versions.newMinorVersion) > Number(versions.oldMinorVersion);
 }
 
 /**
