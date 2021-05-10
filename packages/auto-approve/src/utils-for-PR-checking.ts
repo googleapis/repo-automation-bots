@@ -129,7 +129,7 @@ export function getVersions(
  * @returns whether the major version changed.
  */
 export function isMajorVersionChanging(versions: Versions): boolean {
-  return versions.newMajorVersion === versions.oldMajorVersion;
+  return versions.newMajorVersion !== versions.oldMajorVersion;
 }
 
 /**

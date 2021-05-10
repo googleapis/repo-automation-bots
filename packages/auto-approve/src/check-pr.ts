@@ -129,7 +129,7 @@ export async function checkPRAgainstConfig(
  * @param pr The matching ruleset of the file above from language-versioning-rules
  * @returns true if the package was upgraded appropriately, and had only one thing changed
  */
-export function runVersioningValidation(addtlValidationFile?: {
+function runVersioningValidation(addtlValidationFile?: {
   file: File;
   fileRule: FileSpecificRule;
 }): boolean {
