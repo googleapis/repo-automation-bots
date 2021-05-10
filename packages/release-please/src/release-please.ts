@@ -19,6 +19,7 @@ import {
   GitHubReleaseFactoryOptions,
   ReleasePR,
   factory,
+  setLogger,
 } from 'release-please';
 import {Runner} from './runner';
 // eslint-disable-next-line node/no-extraneous-import
@@ -233,6 +234,9 @@ export = (app: Probot) => {
       return;
     }
 
+    // use gcf-logger as logger for release-please
+    setLogger(logger);
+
     logger.info(`push (${repoUrl})`);
     await createReleasePR(
       repoName,
@@ -276,6 +280,9 @@ export = (app: Probot) => {
       ...DEFAULT_CONFIGURATION,
       ...remoteConfiguration,
     };
+
+    // use gcf-logger as logger for release-please
+    setLogger(logger);
 
     logger.info(
       `schedule.repository (${repoUrl}, ${configuration.primaryBranch})`

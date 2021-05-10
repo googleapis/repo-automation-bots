@@ -298,15 +298,15 @@ async function reconcileLabels(
 
   // now clean up common labels we don't want
   const labelsToDelete = [
-    'bug',
-    'enhancement',
-    'kokoro:force-ci',
-    'kokoro: force-run',
+    'bug', // prefer type: bug
+    'enhancement', // type: feature request
+    'question', // type: question
+    'kokoro:force-ci', // just wrong
+    'kokoro: force-run', // errornous spaces
     'kokoro: run',
-    'buildcop: issue',
+    'buildcop: issue', // flakybot is the new name
     'buildcop: quiet',
     'buildcop: flaky',
-    'question',
   ];
   for (const l of oldLabels) {
     if (labelsToDelete.includes(l.name)) {
