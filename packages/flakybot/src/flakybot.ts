@@ -29,6 +29,14 @@ import xmljs from 'xml-js';
 import {Octokit} from '@octokit/rest';
 import {components} from '@octokit/openapi-types';
 import {logger} from 'gcf-utils';
+import {getConfig, ConfigChecker} from './config';
+import schema from './config-schema.json';
+
+export interface Config {
+  defaultIssuePriority: string;
+}
+const DEFAULT_CONFIG = {defaultIssuePriority: 'p1'};
+export const CONFIG_FILENAME = 'flakybot.yaml';
 
 type IssuesListForRepoResponseItem = components['schemas']['issue-simple'];
 type IssuesListCommentsResponseData = components['schemas']['issue-comment'][];
@@ -37,13 +45,19 @@ type IssuesListForRepoResponseData = IssuesListForRepoResponseItem[];
 const ISSUE_LABEL = 'flakybot: issue';
 const FLAKY_LABEL = 'flakybot: flaky';
 const QUIET_LABEL = 'flakybot: quiet';
-const BUG_LABELS = 'type: bug,priority: p1';
 
-const LABELS_FOR_FLAKY_ISSUE = BUG_LABELS.split(',').concat([
-  ISSUE_LABEL,
-  FLAKY_LABEL,
-]);
-const LABELS_FOR_NEW_ISSUE = BUG_LABELS.split(',').concat([ISSUE_LABEL]);
+function getLabelsForFlakyIssue(config: Config): string[] {
+  return [
+    'type: bug',
+    `priority: ${config.defaultIssuePriority}`,
+    ISSUE_LABEL,
+    FLAKY_LABEL,
+  ];
+}
+
+function getLabelsForNewIssue(config: Config): string[] {
+  return ['type: bug', `priority: ${config.defaultIssuePriority}`, ISSUE_LABEL];
+}
 
 const EVERYTHING_FAILED_TITLE = 'The build failed';
 
@@ -112,6 +126,18 @@ interface PubSubContext {
 }
 
 export function flakybot(app: Probot) {
+  app.on(
+    [
+      'pull_request.opened',
+      'pull_request.reopened',
+      'pull_request.edited',
+      'pull_request.synchronize',
+    ],
+    async context => {
+      const configChecker = new ConfigChecker<Config>(schema, CONFIG_FILENAME);
+      await configChecker.validateConfigChanges(context);
+    }
+  );
   // meta comment about the 'any' here: https://github.com/octokit/webhooks.js/issues/277
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('pubsub.message' as any, async (context: PubSubContext) => {
@@ -120,6 +146,14 @@ export function flakybot(app: Probot) {
     const commit = context.payload.commit || '[TODO: set commit]';
     const buildURL = context.payload.buildURL || '[TODO: set buildURL]';
 
+    const config = (await getConfig<Config>(
+      context,
+      owner,
+      repo,
+      CONFIG_FILENAME,
+      DEFAULT_CONFIG
+    )) as Config; // This is safe because we pass the default config.
+    logger.debug(`config: ${config}`);
     context.log.info(`[${owner}/${repo}] processing ${buildURL}`);
 
     let results: TestResults;
@@ -178,6 +212,7 @@ export function flakybot(app: Probot) {
       results.failures,
       issues,
       context,
+      config,
       owner,
       repo,
       commit,
@@ -188,6 +223,7 @@ export function flakybot(app: Probot) {
       results,
       issues,
       context,
+      config,
       owner,
       repo,
       commit,
@@ -260,6 +296,7 @@ flakybot.openIssues = async (
   failures: TestCase[],
   issues: IssuesListForRepoResponseData,
   context: PubSubContext,
+  config: Config,
   owner: string,
   repo: string,
   commit: string,
@@ -351,7 +388,7 @@ flakybot.openIssues = async (
           repo,
           title: flakybot.formatGroupedTitle(pkg),
           body,
-          labels: LABELS_FOR_NEW_ISSUE,
+          labels: getLabelsForNewIssue(config),
         })
       ).data;
       context.log.info(`[${owner}/${repo}]: created issue #${newIssue.number}`);
@@ -364,6 +401,7 @@ flakybot.openIssues = async (
       if (!existingIssue) {
         await flakybot.openNewIssue(
           context,
+          config,
           owner,
           repo,
           commit,
@@ -382,6 +420,7 @@ flakybot.openIssues = async (
         if (existingIssue.locked) {
           await flakybot.openNewIssue(
             context,
+            config,
             owner,
             repo,
             commit,
@@ -404,6 +443,7 @@ flakybot.openIssues = async (
           if (closedAt < daysAgoDate.getTime()) {
             await flakybot.openNewIssue(
               context,
+              config,
               owner,
               repo,
               commit,
@@ -418,6 +458,7 @@ flakybot.openIssues = async (
         await flakybot.markIssueFlaky(
           existingIssue,
           context,
+          config,
           owner,
           repo,
           reason
@@ -494,6 +535,7 @@ flakybot.findExistingIssue = (
 
 flakybot.openNewIssue = async (
   context: PubSubContext,
+  config: Config,
   owner: string,
   repo: string,
   commit: string,
@@ -517,7 +559,7 @@ flakybot.openNewIssue = async (
       repo,
       title: flakybot.formatTestCase(failure),
       body,
-      labels: LABELS_FOR_NEW_ISSUE,
+      labels: getLabelsForNewIssue(config),
     })
   ).data;
   logger.metric('flakybot.open_new_issue', {
@@ -533,6 +575,7 @@ flakybot.closeIssues = async (
   results: TestResults,
   issues: IssuesListForRepoResponseData,
   context: PubSubContext,
+  config: Config,
   owner: string,
   repo: string,
   commit: string,
@@ -596,7 +639,14 @@ flakybot.closeIssues = async (
     );
     if (containsFailure) {
       const reason = `When run at the same commit (${commit}), this test passed in one build (${buildURL}) and failed in another build (${failureURL}).`;
-      await flakybot.markIssueFlaky(issue, context, owner, repo, reason);
+      await flakybot.markIssueFlaky(
+        issue,
+        context,
+        config,
+        owner,
+        repo,
+        reason
+      );
       break;
     }
 
@@ -668,6 +718,7 @@ function hasLabel(
 flakybot.markIssueFlaky = async (
   existingIssue: IssuesListForRepoResponseItem,
   context: PubSubContext,
+  config: Config,
   owner: string,
   repo: string,
   reason: string
@@ -678,7 +729,7 @@ flakybot.markIssueFlaky = async (
   const existingLabels = existingIssue.labels
     ?.map(l => l.name as string) // "as string" is workaround for https://github.com/github/rest-api-description/issues/112
     .filter(l => !l.startsWith('flakybot'));
-  let labelsToAdd = LABELS_FOR_FLAKY_ISSUE;
+  let labelsToAdd = getLabelsForFlakyIssue(config);
   // If existingLabels contains a priority or type label, don't add the
   // default priority and type labels.
   if (existingLabels?.find(l => l.startsWith('priority:'))) {

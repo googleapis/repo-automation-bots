@@ -297,3 +297,13 @@ exports['flakybot app xunitXML Grouped issues closes group issues when all tests
 exports['flakybot app xunitXML Grouped issues closes group issues when all tests pass 4'] = {
   "state": "closed"
 }
+
+exports['flakybot app testsFailed opens an issue with priority p2 1'] = {
+  "title": "The build failed",
+  "body": "This test failed!\n\nTo configure my behavior, see [the Flaky Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/flakybot).\n\nIf I'm commenting on this issue too often, add the `flakybot: quiet` label and\nI will stop commenting.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed",
+  "labels": [
+    "type: bug",
+    "priority: p2",
+    "flakybot: issue"
+  ]
+}
