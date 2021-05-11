@@ -32,7 +32,7 @@ timeout=$8
 
 # To use a different runtime for a bot, give 7th parameter in bot's
 # cloudbuild.yaml.
-if [ $# -eq 7 ]; then
+if [ $# -ge 7 ]; then
     functionRuntime=$7
 else
     functionRuntime=nodejs10
