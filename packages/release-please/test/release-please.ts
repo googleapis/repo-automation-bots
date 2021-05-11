@@ -190,6 +190,33 @@ describe('ReleasePleaseBot', () => {
       assert(executed, 'should have executed the runner');
     });
 
+    it('should allow overriding the release label when creating a release', async () => {
+      let runnerExecuted = false;
+      let releaserExecuted = false;
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
+        assertReleaserType('JavaYoshi', pr);
+        runnerExecuted = true;
+      });
+      sandbox.replace(Runner, 'releaser', async (pr: GitHubRelease) => {
+        assert(pr instanceof GitHubRelease);
+        assert.strictEqual(pr.releaseLabel, 'autorelease: published');
+        releaserExecuted = true;
+      });
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'override_release_tag.yml')
+      );
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/contents/.github%2Frelease-please.yml'
+        )
+        .reply(200, config);
+
+      await probot.receive({name: 'push', payload, id: 'abc123'});
+      requests.done();
+      assert(runnerExecuted, 'should have executed the runner');
+      assert(releaserExecuted, 'GitHub release should have run');
+    });
+
     it('should ignore webhook if not configured', async () => {
       sandbox.stub(Runner, 'runner').rejects('should not be running a release');
       const requests = nock('https://api.github.com')
