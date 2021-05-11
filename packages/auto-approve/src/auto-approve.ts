@@ -231,9 +231,9 @@ export function handler(app: Probot) {
 
           // If both PR and config are valid, pull in approving-mechanism to tag and approve PR
           if (isPRValid === true && isConfigValid === true) {
-          // The value for the secret name is currently hard-coded since we only have one account that
-          // has user-based permissions. We should think about operationalizing this
-          // in the future (perhaps as an env var in our publish scripts).
+            // The value for the secret name is currently hard-coded since we only have one account that
+            // has user-based permissions. We should think about operationalizing this
+            // in the future (perhaps as an env var in our publish scripts).
             const octokit = await exports.authenticateWithSecret(
               process.env.PROJECT_ID || '',
               'yoshi-approver'
