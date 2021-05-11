@@ -16,7 +16,7 @@
 /* eslint-disable node/no-extraneous-import */
 
 import {Probot, Context} from 'probot';
-import {EventPayloads} from '@octokit/webhooks';
+import {PullRequest} from '@octokit/webhooks-definitions/schema';
 
 import {
   Configuration,
@@ -241,7 +241,7 @@ ${bodyDetail}`
 
 async function scanPullRequest(
   context: Context,
-  pull_request: EventPayloads.WebhookPayloadPullRequestPullRequest,
+  pull_request: PullRequest,
   configuration: Configuration,
   refreshing = false
 ) {
@@ -649,7 +649,7 @@ export = (app: Probot) => {
     // Examine the pull request.
     await scanPullRequest(
       context,
-      prResponse.data as EventPayloads.WebhookPayloadPullRequestPullRequest,
+      prResponse.data as PullRequest,
       configuration,
       true
     );
@@ -714,7 +714,7 @@ export = (app: Probot) => {
     // Examine the pull request.
     await scanPullRequest(
       context,
-      context.payload.pull_request,
+      context.payload.pull_request as PullRequest,
       configuration,
       true
     );
@@ -760,7 +760,7 @@ export = (app: Probot) => {
       logger.info({config: configuration});
       await scanPullRequest(
         context,
-        context.payload.pull_request,
+        context.payload.pull_request as PullRequest,
         configuration
       );
     }
