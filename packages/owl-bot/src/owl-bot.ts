@@ -97,7 +97,7 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
         installation,
         owner,
         repo,
-        defaultBranch: context.payload.repository.default_branch,
+        defaultBranch: context.payload?.repository?.default_branch,
       },
       context.octokit
     );
@@ -143,7 +143,7 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
           installation,
           owner,
           repo,
-          defaultBranch: context.payload.repository.default_branch,
+          defaultBranch: context.payload?.repository?.default_branch,
         },
         context.octokit
       );
@@ -157,7 +157,7 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
     installation: number;
     owner: string;
     repo: string;
-    defaultBranch: string;
+    defaultBranch?: string;
   }
   const runPostProcessor = async (
     opts: RunPostProcessorOpts,
