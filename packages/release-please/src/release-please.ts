@@ -56,6 +56,7 @@ interface BranchOptions {
   changelogPath?: string;
   manifest?: boolean;
   extraFiles?: string[];
+  releaseLabel?: string;
 }
 
 interface BranchConfiguration extends BranchOptions {
@@ -149,6 +150,7 @@ async function createGitHubRelease(
     monorepoTags: configuration.monorepoTags,
     releaseType: configuration.releaseType,
     extraFiles: configuration.extraFiles,
+    releaseLabel: configuration.releaseLabel,
   };
   if (configuration.manifest) {
     const manifest = factory.manifest(releaseOptions);
