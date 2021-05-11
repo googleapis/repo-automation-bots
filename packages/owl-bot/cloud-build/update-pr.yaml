@@ -47,7 +47,7 @@ steps:
   - name: ${_CONTAINER}
     dir: '${_REPOSITORY}'
     env:
-      - 'BASE_REF=$_BASE_REF'
+      - 'DEFAULT_BRANCH=$_DEFAULT_BRANCH'
   # Populate credentials for push to GitHub:
   - name: 'bash'
     args:
