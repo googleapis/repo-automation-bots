@@ -21,7 +21,7 @@ import {Probot, createProbot, ProbotOctokit} from 'probot';
 import * as fs from 'fs';
 import * as sinon from 'sinon';
 import assert from 'assert';
-import {GitHubRelease, ReleasePR} from 'release-please';
+import {GitHubRelease, ReleasePR, factory} from 'release-please';
 import nock from 'nock';
 
 const sandbox = sinon.createSandbox();
@@ -100,6 +100,7 @@ describe('ReleasePleaseBot', () => {
         assert(pr instanceof GitHubRelease);
         releaserExecuted = true;
       });
+      const releaseSpy = sandbox.spy(factory, 'githubRelease');
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid_handle_gh_release.yml')
       );
@@ -113,6 +114,7 @@ describe('ReleasePleaseBot', () => {
       requests.done();
       assert(runnerExecuted, 'should have executed the runner');
       assert(releaserExecuted, 'GitHub release should have run');
+      assert(releaseSpy.calledWith(sinon.match.has('releaseLabel', undefined)));
     });
 
     it('should ignore if the branch is the configured primary branch', async () => {
@@ -202,6 +204,7 @@ describe('ReleasePleaseBot', () => {
         assert.strictEqual(pr.releaseLabel, 'autorelease: published');
         releaserExecuted = true;
       });
+      const releaseSpy = sandbox.spy(factory, 'githubRelease');
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'override_release_tag.yml')
       );
@@ -215,6 +218,11 @@ describe('ReleasePleaseBot', () => {
       requests.done();
       assert(runnerExecuted, 'should have executed the runner');
       assert(releaserExecuted, 'GitHub release should have run');
+      assert(
+        releaseSpy.calledWith(
+          sinon.match.has('releaseLabel', 'autorelease: published')
+        )
+      );
     });
 
     it('should ignore webhook if not configured', async () => {
