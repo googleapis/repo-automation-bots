@@ -18,11 +18,13 @@ import {collectConfigs, Configs, ConfigsStore} from './configs-store';
 import {core} from './core';
 import tmp from 'tmp';
 import AdmZip from 'adm-zip';
+import * as fs from 'fs';
 // Conflicting linters think the next line is extraneous or necessary.
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints} from '@octokit/types';
 import {OctokitType} from './octokit-util';
 import {githubRepoFromOwnerSlashName} from './github-repo';
+import path from 'path';
 
 type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
 
@@ -237,7 +239,7 @@ export async function refreshConfigs(
     configs?.commitHash === commitHash &&
     configs?.branchName === defaultBranch
   ) {
-    logger.info(`Configs for ${repoFull} or up to date.`);
+    logger.info(`Configs for ${repoFull} are up to date.`);
     return; // configsStore is up to date.
   }
 
@@ -255,10 +257,14 @@ export async function refreshConfigs(
   });
 
   const tmpDir = tmp.dirSync().name;
-  const zip = new AdmZip(response.data as Buffer);
+  const zip = new AdmZip(Buffer.from(response.data as ArrayBuffer));
   zip.extractAllTo(tmpDir);
 
-  const [lock, yamls] = collectConfigs(tmpDir);
+  // The root directory of the zip is <repo-name>-<short-hash>.
+  // That's actually the directory we want to work in.
+  const [rootDir] = fs.readdirSync(tmpDir);
+
+  const [lock, yamls] = collectConfigs(path.join(tmpDir, rootDir));
   if (lock) {
     newConfigs.lock = lock;
   }
