@@ -17,6 +17,8 @@ steps:
   - name: 'gcr.io/cloud-builders/git'
     args:
       - clone
+      - -b
+      - ${_PR_BRANCH}
       - https://github.com/${_PR_OWNER}/${_REPOSITORY}.git
   # Populate global username, email for git:
   - name: 'gcr.io/cloud-builders/git'
@@ -31,18 +33,6 @@ steps:
       - --global
       - user.name
       - 'Owl Bot'
-  - name: 'gcr.io/cloud-builders/git'
-    args:
-      - checkout
-      - -b
-      - ${_PR_BRANCH}
-    dir: '${_REPOSITORY}'
-  - name: 'gcr.io/cloud-builders/git'
-    args:
-      - pull
-      - origin
-      - ${_PR_BRANCH}
-    dir: '${_REPOSITORY}'
   # Run container listed in OwlBot.yaml:
   - name: ${_CONTAINER}
     dir: '${_REPOSITORY}'
