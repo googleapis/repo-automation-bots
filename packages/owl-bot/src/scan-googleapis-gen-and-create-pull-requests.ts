@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ConfigsStore} from './configs-store';
+import {AffectedRepo, ConfigsStore, OwlBotYamlAndPath} from './configs-store';
 import {OctokitType, OctokitFactory} from './octokit-util';
 import tmp from 'tmp';
 import {
@@ -21,12 +21,10 @@ import {
   toLocalRepo,
 } from './copy-code';
 import {getFilesModifiedBySha} from '.';
-import {GithubRepo} from './github-repo';
-import {OwlBotYaml} from './config-files';
 import {newCmd} from './cmd';
 
 interface Todo {
-  repo: GithubRepo;
+  repo: AffectedRepo;
   commitHash: string;
 }
 
@@ -41,15 +39,35 @@ interface Todo {
  *                     in order from newest to oldest.
  */
 function isCommitHashTooOld(
-  yaml: OwlBotYaml | undefined,
+  yamls: OwlBotYamlAndPath[] | undefined,
   commitIndex: number,
   commitHashes: string[]
 ): boolean {
-  const beginAfterCommitHash = yaml?.['begin-after-commit-hash']?.trim() ?? '';
+  // Compare to begin-after-commit-hash declared in .OwlBot.yaml.
+  let beginAfterCommitHash = '';
+  for (const yaml of yamls ?? []) {
+    const hash = yaml.yaml['begin-after-commit-hash']?.trim();
+    if (hash) {
+      beginAfterCommitHash = hash;
+      break;
+    }
+  }
   const beginIndex = beginAfterCommitHash
     ? commitHashes.indexOf(beginAfterCommitHash)
     : -1;
-  return beginIndex >= 0 && beginIndex <= commitIndex;
+  if (beginIndex >= 0 && beginIndex <= commitIndex) {
+    return true;
+  }
+  // Compare to environment variable.
+  if (process.env.OWL_BOT_BEGIN_AFTER_COMMIT_HASH) {
+    const beginIndex = commitHashes.indexOf(
+      process.env.OWL_BOT_BEGIN_AFTER_COMMIT_HASH
+    );
+    if (beginIndex >= 0 && beginIndex <= commitIndex) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -102,15 +120,16 @@ export async function scanGoogleapisGenAndCreatePullRequests(
     const stackSize = todoStack.length;
     for (const repo of repos) {
       octokit = octokit ?? (await octokitFactory.getShortLivedOctokit());
+      const repoFullName = repo.repo.toString();
       if (
         isCommitHashTooOld(
-          (await configsStore.getConfigs(repo.toString()))?.yaml,
+          (await configsStore.getConfigs(repoFullName))?.yamls,
           commitIndex,
           commitHashes
         )
       ) {
         logger.info(
-          `Ignoring ${repo.toString()} because ${commitHash} is too old.`
+          `Ignoring ${repoFullName} because ${commitHash} is too old.`
         );
       } else if (!(await copyExists(octokit, repo, commitHash, logger))) {
         const todo: Todo = {repo, commitHash};

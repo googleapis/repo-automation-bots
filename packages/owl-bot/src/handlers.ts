@@ -13,16 +13,11 @@
 // limitations under the License.
 
 import {logger} from 'gcf-utils';
-import {
-  OwlBotLock,
-  owlBotLockFrom,
-  owlBotLockPath,
-  owlBotYamlFromText,
-  owlBotYamlPath,
-} from './config-files';
-import {Configs, ConfigsStore} from './configs-store';
+import {OwlBotLock, owlBotLockPath} from './config-files';
+import {collectConfigs, Configs, ConfigsStore} from './configs-store';
 import {core} from './core';
-import yaml from 'js-yaml';
+import tmp from 'tmp';
+import AdmZip from 'adm-zip';
 // Conflicting linters think the next line is extraneous or necessary.
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints} from '@octokit/types';
@@ -253,42 +248,24 @@ export async function refreshConfigs(
     commitHash: commitHash,
   };
 
-  // Query github for the contents of the lock file.
-  const lockContent = await core.getFileContent(
-    githubOrg,
-    repoName,
-    owlBotLockPath,
-    commitHash,
-    octokit
-  );
-  if (lockContent) {
-    try {
-      newConfigs.lock = owlBotLockFrom(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        yaml.load(lockContent) as Record<string, any>
-      );
-    } catch (e) {
-      logger.error(
-        `${repoFull} has an invalid ${owlBotLockPath} file: ${e.message}`
-      );
-    }
+  const response = await octokit.repos.downloadZipballArchive({
+    owner: githubOrg,
+    repo: repoName,
+    ref: commitHash,
+  });
+
+  const tmpDir = tmp.dirSync().name;
+  const zip = new AdmZip(response.data as Buffer);
+  zip.extractAllTo(tmpDir);
+
+  const [lock, yamls] = collectConfigs(tmpDir);
+  if (lock) {
+    newConfigs.lock = lock;
+  }
+  if (yamls && yamls.length > 0) {
+    newConfigs.yamls = yamls;
   }
 
-  // Query github for the contents of the yaml file.
-  const yamlContent = await core.getFileContent(
-    githubOrg,
-    repoName,
-    owlBotYamlPath,
-    commitHash,
-    octokit
-  );
-  if (yamlContent) {
-    try {
-      newConfigs.yaml = owlBotYamlFromText(yamlContent);
-    } catch (e) {
-      logger.error(`${repoFull} has an invalid ${owlBotYamlPath} file: ${e}`);
-    }
-  }
   // Store the new configs back into the database.
   const stored = await configsStore.storeConfigs(
     repoFull,

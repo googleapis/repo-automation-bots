@@ -14,8 +14,8 @@
 
 import {promisify} from 'util';
 import {readFile} from 'fs';
+import * as crypto from 'crypto';
 import {
-  owlBotYamlPath,
   owlBotYamlFromText,
   OwlBotYaml,
   toFrontMatchRegExp,
@@ -27,10 +27,10 @@ import * as fse from 'fs-extra';
 import {OctokitType, OctokitFactory} from './octokit-util';
 import tmp from 'tmp';
 import glob from 'glob';
-import {GithubRepo} from './github-repo';
 import {OWL_BOT_COPY} from './core';
 import {newCmd} from './cmd';
 import {createPullRequestFromLastCommit} from './create-pr';
+import {AffectedRepo} from './configs-store';
 
 // This code generally uses Sync functions because:
 // 1. None of our current designs including calling this code from a web
@@ -46,6 +46,12 @@ function sourceLinkFrom(sourceCommitHash: string): string {
   return `https://github.com/googleapis/googleapis-gen/commit/${sourceCommitHash}`;
 }
 
+const copyTagFooter = 'Copy-Tag: ';
+
+export function indexOfCopyTagFooter(body: string): number {
+  return body.indexOf('\n' + copyTagFooter);
+}
+
 /**
  * Copies the code from googleapis-gen to the dest repo, and creates a
  * pull request.
@@ -56,7 +62,7 @@ function sourceLinkFrom(sourceCommitHash: string): string {
 export async function copyCodeAndCreatePullRequest(
   sourceRepo: string,
   sourceRepoCommitHash: string,
-  destRepo: GithubRepo,
+  destRepo: AffectedRepo,
   octokitFactory: OctokitFactory,
   logger = console
 ): Promise<void> {
@@ -69,7 +75,7 @@ export async function copyCodeAndCreatePullRequest(
   const cmd = newCmd(logger);
 
   // Clone the dest repo.
-  const cloneUrl = destRepo.getCloneUrl(
+  const cloneUrl = destRepo.repo.getCloneUrl(
     await octokitFactory.getGitHubShortLivedAccessToken()
   );
   cmd(`git clone --single-branch "${cloneUrl}" ${destDir}`);
@@ -77,11 +83,13 @@ export async function copyCodeAndCreatePullRequest(
   // Check out a dest branch.
   cmd(`git checkout -b ${destBranch}`, {cwd: destDir});
 
-  const owner = destRepo.owner;
-  const repo = destRepo.repo;
+  const owner = destRepo.repo.owner;
+  const repo = destRepo.repo.repo;
   let yaml: OwlBotYaml;
+  const copyTagLine =
+    copyTagFooter + copyTagFrom(destRepo.yamlPath, sourceRepoCommitHash) + '\n';
   try {
-    yaml = await loadOwlBotYaml(destDir);
+    yaml = await loadOwlBotYaml(path.join(destDir, destRepo.yamlPath));
   } catch (err) {
     logger.error(err);
     // Create a github issue.
@@ -90,18 +98,20 @@ export async function copyCodeAndCreatePullRequest(
     const issue = await octokit.issues.create({
       owner,
       repo,
-      title: `${owlBotYamlPath} is missing or defective`,
+      title: `${destRepo.yamlPath} is missing or defective`,
       body: `While attempting to copy files from
 ${sourceLink}
 
-After fixing ${owlBotYamlPath}, re-attempt this copy by running the following
+After fixing ${destRepo.yamlPath}, re-attempt this copy by running the following
 command in a local clone of this repo:
 \`\`\`
   docker run -v /repo:$(pwd) -w /repo gcr.io/repo-automation-bots/owl-bot -- copy-code \
     --source-repo-commit-hash ${sourceRepoCommitHash}
 \`\`\`
 
-${err}`,
+${err}
+
+${copyTagLine}`,
     });
     logger.error(`Created issue ${issue.data.html_url}`);
     return; // Success because we don't want to retry.
@@ -115,6 +125,7 @@ ${err}`,
     logger
   );
   cmd('git add -A', {cwd: destDir});
+  fs.appendFileSync(commitMsgPath, copyTagLine);
   cmd(`git commit -F "${commitMsgPath}" --allow-empty`, {cwd: destDir});
 
   // Check for existing pull request one more time before we push.
@@ -130,7 +141,7 @@ ${err}`,
     repo,
     destDir,
     destBranch,
-    destRepo.getCloneUrl(token),
+    destRepo.repo.getCloneUrl(token),
     [OWL_BOT_COPY],
     octokit,
     logger
@@ -141,9 +152,8 @@ ${err}`,
  * Loads the OwlBot yaml from the dest directory.  Throws an exception if not found
  * or invalid.
  */
-export async function loadOwlBotYaml(destDir: string): Promise<OwlBotYaml> {
+export async function loadOwlBotYaml(yamlPath: string): Promise<OwlBotYaml> {
   // Load the OwlBot.yaml file in dest.
-  const yamlPath = path.join(destDir, owlBotYamlPath);
   const text = await readFileAsync(yamlPath, 'utf8');
   return owlBotYamlFromText(text);
 }
@@ -323,6 +333,18 @@ export function copyDirs(
 }
 
 /**
+ * Creates a unique tag we can easily search for in pull request and issue
+ * bodies that identifies a copy operation.
+ */
+export function copyTagFrom(owlBotYamlPath: string, sourceCommitHash: string) {
+  return crypto
+    .createHash('sha256')
+    .update(owlBotYamlPath)
+    .update(sourceCommitHash)
+    .digest('hex');
+}
+
+/**
  * Searches for instances of the sourceCommitHash in recent pull requests and
  * commits.
  *
@@ -333,29 +355,47 @@ export function copyDirs(
  */
 export async function copyExists(
   octokit: OctokitType,
-  destRepo: GithubRepo,
+  destRepo: AffectedRepo,
   sourceCommitHash: string,
   logger = console
 ): Promise<boolean> {
   // I observed octokit.search.issuesAndPullRequests() not finding recent, open
   // pull requests.  So enumerate them.
-  const owner = destRepo.owner;
-  const repo = destRepo.repo;
+  const owner = destRepo.repo.owner;
+  const repo = destRepo.repo.repo;
   const pulls = await octokit.pulls.list({
     owner,
     repo,
     per_page: 100,
     state: 'all',
   });
-  for (const pull of pulls.data) {
-    const pos: number = pull.body?.indexOf(sourceCommitHash) ?? -1;
-    if (pos >= 0) {
-      logger.info(
-        `Pull request ${pull.number} with ${sourceCommitHash} exists in ${owner}/${repo}.`
-      );
-      return true;
+  const copyTag = copyTagFrom(destRepo.yamlPath, sourceCommitHash);
+
+  // A generic function that finds matches in either pull request or issue
+  // bodies.
+  const findInBodies = (
+    kind: 'Pull request' | 'Issue',
+    response: {data: {number: number; body?: string | null}[]}
+  ): boolean => {
+    for (const issue of response.data) {
+      const copyTagPos = indexOfCopyTagFooter(issue.body ?? '');
+      const needle =
+        copyTagPos >= 0 // Find the needle in a haystack.
+          ? copyTag // It's a new issue with a copy tag.
+          : sourceCommitHash; // It's an old issue without a copy tag.
+      const pos: number = issue.body?.indexOf(needle) ?? -1;
+      if (pos >= 0) {
+        logger.info(
+          `${kind} ${issue.number} with ${sourceCommitHash} exists in ${owner}/${repo}.`
+        );
+        return true;
+      }
     }
-  }
+    return false;
+  };
+
+  if (findInBodies('Pull request', pulls)) return true;
+
   // And enumerate recent issues too.
   const issues = await octokit.issues.listForRepo({
     owner,
@@ -363,15 +403,8 @@ export async function copyExists(
     per_page: 100,
     state: 'all',
   });
-  for (const issue of issues.data) {
-    const pos: number = issue.body?.indexOf(sourceCommitHash) ?? -1;
-    if (pos >= 0) {
-      logger.info(
-        `Issue ${issue.number} with ${sourceCommitHash} exists in ${owner}/${repo}.`
-      );
-      return true;
-    }
-  }
+
+  if (findInBodies('Issue', issues)) return true;
 
   logger.info(`${sourceCommitHash} not found in ${owner}/${repo}.`);
   return false;

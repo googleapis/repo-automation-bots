@@ -86,12 +86,20 @@ function makeDestRepoAndConfigsStore(
           branchName: 'main',
           commitHash: '456',
           installationId: 42,
-          yaml: yaml,
+          yamls: [
+            {
+              yaml: yaml,
+              path: '.github/.OwlBot.yaml',
+            },
+          ],
         },
       ],
     ])
   );
-  configsStore.githubRepos.set(destRepo.toString(), destRepo);
+  configsStore.githubRepos.set(destRepo.toString(), {
+    repo: destRepo,
+    yamlPath: '.github/.OwlBot.yaml',
+  });
   return [destRepo, configsStore];
 }
 
@@ -140,10 +148,15 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
     assert.strictEqual(pull.repo, 'nodejs-spell-check');
     assert.strictEqual(pull.title, 'b');
     assert.strictEqual(pull.base, 'main');
+    const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
     assert.strictEqual(
       pull.body,
-      `Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}`
+      `Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}
+Copy-Tag: ${copyTag}`
     );
+
+    // Confirm the pull request body contains a properly formatted Copy-Tag footer.
+    assert.notStrictEqual(-1, cc.indexOfCopyTagFooter(pull.body));
 
     // Confirm it set the label.
     assert.deepStrictEqual(issues.updates[0].labels, ['owl-bot-copy']);
