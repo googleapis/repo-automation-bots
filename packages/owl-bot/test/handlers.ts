@@ -221,7 +221,7 @@ function zipWithOwlBotYaml(): AdmZip {
   const zip = new AdmZip();
   zip.addZipComment('This is a test.');
   zip.addFile(
-    '.github/.OwlBot.yaml',
+    'repo-abc123/.github/.OwlBot.yaml',
     Buffer.from(
       `
     docker:
@@ -254,6 +254,10 @@ describe('refreshConfigs', () => {
           if (!zip) {
             zip = new AdmZip();
             zip.addZipComment('This is a test.');
+            zip.addFile(
+              'repo-123/README.txt',
+              Buffer.from('This is a very useful API.')
+            );
           }
           return {data: zip.toBuffer()};
         },
@@ -305,7 +309,7 @@ describe('refreshConfigs', () => {
     const configsStore = new FakeConfigsStore();
     const zip = new AdmZip();
     zip.addFile(
-      '.github/.OwlBot.lock.yaml',
+      'repo-abc123/.github/.OwlBot.lock.yaml',
       Buffer.from(
         `
       docker:
