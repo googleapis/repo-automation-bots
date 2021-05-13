@@ -135,10 +135,11 @@ export function flakybot(app: Probot) {
     ],
     async context => {
       const configChecker = new ConfigChecker<Config>(schema, CONFIG_FILENAME);
+      const {owner, repo} = context.repo();
       await configChecker.validateConfigChanges(
         context.octokit,
-        context.payload.pull_request.head.user.login,
-        context.payload.repository.name,
+        owner,
+        repo,
         context.payload.pull_request.head.sha,
         context.payload.pull_request.number
       );
@@ -345,13 +346,12 @@ flakybot.openIssues = async (
 
       const testCase = flakybot.groupedTestCase(pkg);
       const testString = pkgFailures.length === 1 ? 'test' : 'tests';
-      const body = `${
-        pkgFailures.length
-      } ${testString} failed in this package for commit ${commit} (${buildURL}).\n\n-----\n${flakybot.formatBody(
-        testCase,
-        commit,
-        buildURL
-      )}`;
+      const body = `${pkgFailures.length
+        } ${testString} failed in this package for commit ${commit} (${buildURL}).\n\n-----\n${flakybot.formatBody(
+          testCase,
+          commit,
+          buildURL
+        )}`;
       await context.octokit.issues.createComment({
         owner,
         repo,
