@@ -33,9 +33,9 @@ import {getConfigWithDefault, ConfigChecker} from './config';
 import schema from './config-schema.json';
 
 export interface Config {
-  defaultIssuePriority: string;
+  issuePriority: string;
 }
-const DEFAULT_CONFIG = {defaultIssuePriority: 'p1'};
+const DEFAULT_CONFIG: Config = {issuePriority: 'p1'};
 export const CONFIG_FILENAME = 'flakybot.yaml';
 
 type IssuesListForRepoResponseItem = components['schemas']['issue-simple'];
@@ -49,14 +49,14 @@ const QUIET_LABEL = 'flakybot: quiet';
 function getLabelsForFlakyIssue(config: Config): string[] {
   return [
     'type: bug',
-    `priority: ${config.defaultIssuePriority}`,
+    `priority: ${config.issuePriority}`,
     ISSUE_LABEL,
     FLAKY_LABEL,
   ];
 }
 
 function getLabelsForNewIssue(config: Config): string[] {
-  return ['type: bug', `priority: ${config.defaultIssuePriority}`, ISSUE_LABEL];
+  return ['type: bug', `priority: ${config.issuePriority}`, ISSUE_LABEL];
 }
 
 const EVERYTHING_FAILED_TITLE = 'The build failed';

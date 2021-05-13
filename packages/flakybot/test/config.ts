@@ -180,7 +180,7 @@ describe('config', () => {
         repo,
         filename
       );
-      assert.strictEqual(fetchedConfig?.defaultIssuePriority, 'p2');
+      assert.strictEqual(fetchedConfig?.issuePriority, 'p2');
       scope.done();
     });
     it('fetch the config file from the org .github repo', async () => {
@@ -202,7 +202,7 @@ describe('config', () => {
         repo,
         filename
       );
-      assert.strictEqual(fetchedConfig?.defaultIssuePriority, 'p2');
+      assert.strictEqual(fetchedConfig?.issuePriority, 'p2');
       scope.done();
     });
   });

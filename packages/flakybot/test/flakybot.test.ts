@@ -365,7 +365,7 @@ describe('flakybot', () => {
         const scopes = [
           nockIssues('golang-samples'),
           nockNewIssue('golang-samples'),
-          nockGetConfig('golang-samples', 'defaultIssuePriority: p2'),
+          nockGetConfig('golang-samples', 'issuePriority: p2'),
         ];
 
         await probot.receive({
