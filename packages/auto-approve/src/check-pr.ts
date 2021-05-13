@@ -110,7 +110,16 @@ export async function checkPRAgainstConfig(
         pr.pull_request.changed_files <= rulesToValidateAgainst.maxFiles;
     }
     logger.info(
-      `Info for ${repoOwner}/${repo}/${prNumber}\nAuthor: ${rulesToValidateAgainst.author}\nFile Paths Match? ${filePathsMatch}\nFile Count Matches? ${fileCountMatch}\nVersions are correct? ${versionChecks}`
+      `Info for ${repoOwner}/${repo}/${prNumber} Author: ${rulesToValidateAgainst.author}`
+    );
+    logger.info(
+      `Info for ${repoOwner}/${repo}/${prNumber} File Paths Match? ${filePathsMatch}`
+    );
+    logger.info(
+      `Info for ${repoOwner}/${repo}/${prNumber} File Count Matches? ${fileCountMatch}`
+    );
+    logger.info(
+      `Info for ${repoOwner}/${repo}/${prNumber} Versions are correct? ${versionChecks}`
     );
 
     return filePathsMatch && fileCountMatch && versionChecks;
@@ -145,9 +154,9 @@ function runVersioningValidation(addtlValidationFile?: {
   // We can assert addtlValidationFile exists since we exit if it doesn't
   // before we enter these checks
   const versions = getVersions(
-    addtlValidationFile.file!,
-    addtlValidationFile.fileRule!.oldRegexVersion,
-    addtlValidationFile.fileRule!.newRegexVersion
+    addtlValidationFile.file,
+    addtlValidationFile.fileRule.oldRegexVersion,
+    addtlValidationFile.fileRule.newRegexVersion
   );
 
   if (versions) {
