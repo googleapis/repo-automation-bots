@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@octokit/rest": "^18.0.1",
-    "code-suggester": "^1.9.1",
+    "code-suggester": "^2.0.0",
     "yargs": "^17.0.0-candidate.6",
     "js-yaml": "^4.0.0"
   },
