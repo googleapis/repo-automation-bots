@@ -1,5 +1,6 @@
 {
+  "packages/datastore-lock": "1.0.0",
   "packages/gcf-utils": "7.2.2",
   "packages/mono-repo-publish": "1.1.2",
-  "packages/release-brancher": "1.1.1"
+  "packages/release-brancher": "1.1.2"
 }

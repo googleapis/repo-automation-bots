@@ -20,8 +20,10 @@ import nock from 'nock';
 import * as fs from 'fs';
 import * as assert from 'assert';
 import {describe, it, beforeEach} from 'mocha';
+import * as sinon from 'sinon';
 
-import {flakybot} from '../src/flakybot';
+import {flakybot, CONFIG_FILENAME} from '../src/flakybot';
+import {ConfigChecker} from '../src/config';
 const {findTestResults, formatTestCase} = flakybot;
 
 nock.disableNetConnect();
@@ -59,6 +61,14 @@ function nockNewIssue(repo: string) {
       return true;
     })
     .reply(200);
+}
+
+function nockGetConfig(repo: string, configString: string) {
+  return nock('https://api.github.com')
+    .get(
+      `/repos/GoogleCloudPlatform/${repo}/contents/.github%2F${CONFIG_FILENAME}`
+    )
+    .reply(200, Buffer.from(configString).toString('base64'));
 }
 
 function nockGetIssueComments(
@@ -104,6 +114,22 @@ describe('flakybot', () => {
       }),
     });
     probot.load(flakybot);
+  });
+
+  describe('pullRequestHandler', () => {
+    it('calls ConfigChecker', async () => {
+      const payload = require(resolve(fixturesPath, './pr_event'));
+      const checkerStub = sinon
+        .stub(ConfigChecker.prototype, 'validateConfigChanges')
+        .resolves(undefined);
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+      // Only checks if it' called with a pull request event.
+      sinon.assert.calledOnce(checkerStub);
+    });
   });
 
   describe('extractBuildURL', () => {
@@ -290,12 +316,14 @@ describe('flakybot', () => {
       };
 
       const requests = nock('https://api.github.com');
+      const configScope = nockGetConfig('golang-samples', '');
       await probot.receive({
         name: 'pubsub.message' as '*',
         payload,
         id: 'abc123',
       });
       requests.done();
+      configScope.done();
     });
 
     describe('testsFailed', () => {
@@ -312,6 +340,32 @@ describe('flakybot', () => {
         const scopes = [
           nockIssues('golang-samples'),
           nockNewIssue('golang-samples'),
+          nockGetConfig('golang-samples', ''),
+        ];
+
+        await probot.receive({
+          name: 'pubsub.message' as '*',
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+      });
+
+      it('opens an issue with priority p2', async () => {
+        const payload = {
+          repo: 'GoogleCloudPlatform/golang-samples',
+          organization: {login: 'GoogleCloudPlatform'},
+          repository: {name: 'golang-samples'},
+          commit: '123',
+          buildURL: 'http://example.com',
+          testsFailed: true,
+        };
+
+        const scopes = [
+          nockIssues('golang-samples'),
+          nockNewIssue('golang-samples'),
+          nockGetConfig('golang-samples', 'issuePriority: p2'),
         ];
 
         await probot.receive({
@@ -343,6 +397,7 @@ describe('flakybot', () => {
             },
           ]),
           nockNewIssue('golang-samples'),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -375,6 +430,7 @@ describe('flakybot', () => {
           ]),
           nockGetIssueComments('golang-samples', 16),
           nockIssueComment('golang-samples', 16),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -394,6 +450,7 @@ describe('flakybot', () => {
         const scopes = [
           nockIssues('golang-samples'),
           nockNewIssue('golang-samples'),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -414,6 +471,7 @@ describe('flakybot', () => {
         const scopes = [
           nockIssues('python-docs-samples'),
           nockNewIssue('python-docs-samples'),
+          nockGetConfig('python-docs-samples', ''),
         ];
 
         await probot.receive({
@@ -434,6 +492,7 @@ describe('flakybot', () => {
         const scopes = [
           nockIssues('python-docs-samples'),
           nockNewIssue('python-docs-samples'),
+          nockGetConfig('python-docs-samples', ''),
         ];
 
         await probot.receive({
@@ -448,7 +507,11 @@ describe('flakybot', () => {
       it('opens an issue [Java]', async () => {
         const payload = buildPayload('java_one_failed.xml', 'java-vision');
 
-        const scopes = [nockIssues('java-vision'), nockNewIssue('java-vision')];
+        const scopes = [
+          nockIssues('java-vision'),
+          nockNewIssue('java-vision'),
+          nockGetConfig('java-vision', ''),
+        ];
 
         await probot.receive({
           name: 'pubsub.message' as '*',
@@ -465,6 +528,7 @@ describe('flakybot', () => {
         const scopes = [
           nockIssues('java-datastore'),
           nockNewIssue('java-datastore'),
+          nockGetConfig('java-datastore', ''),
         ];
 
         await probot.receive({
@@ -482,6 +546,7 @@ describe('flakybot', () => {
         const scopes = [
           nockIssues('nodejs-spanner'),
           nockNewIssue('nodejs-spanner'),
+          nockGetConfig('nodejs-spanner', ''),
         ];
 
         await probot.receive({
@@ -502,6 +567,7 @@ describe('flakybot', () => {
         const scopes = [
           nockIssues('ruby-docs-samples'),
           nockNewIssue('ruby-docs-samples'),
+          nockGetConfig('ruby-docs-samples', ''),
         ];
 
         await probot.receive({
@@ -544,6 +610,7 @@ describe('flakybot', () => {
           ]),
           nockGetIssueComments('golang-samples', 16),
           nockIssueComment('golang-samples', 16),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -589,6 +656,7 @@ describe('flakybot', () => {
           ]),
           nockGetIssueComments('golang-samples', 17),
           nockIssueComment('golang-samples', 17),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -634,6 +702,7 @@ describe('flakybot', () => {
           ]),
           nockGetIssueComments('golang-samples', 17),
           nockIssueComment('golang-samples', 17),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -648,7 +717,10 @@ describe('flakybot', () => {
       it('handles a testsuite with no test cases', async () => {
         const payload = buildPayload('no_tests.xml', 'golang-samples');
 
-        const scopes = [nockIssues('golang-samples')];
+        const scopes = [
+          nockIssues('golang-samples'),
+          nockGetConfig('golang-samples', ''),
+        ];
 
         await probot.receive({
           name: 'pubsub.message' as '*',
@@ -691,6 +763,7 @@ describe('flakybot', () => {
           ]),
           nockIssueComment('golang-samples', 16),
           nockIssuePatch('golang-samples', 16),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -720,6 +793,7 @@ describe('flakybot', () => {
           nockIssueComment('golang-samples', 16),
           nockGetIssueComments('golang-samples', 16),
           nockIssuePatch('golang-samples', 16),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -752,6 +826,7 @@ describe('flakybot', () => {
           nockIssueComment('python-docs-samples', 16),
           nockGetIssueComments('python-docs-samples', 16),
           nockIssuePatch('python-docs-samples', 16),
+          nockGetConfig('python-docs-samples', ''),
         ];
 
         await probot.receive({
@@ -781,6 +856,7 @@ describe('flakybot', () => {
           nockIssueComment('java-vision', 16),
           nockGetIssueComments('java-vision', 16),
           nockIssuePatch('java-vision', 16),
+          nockGetConfig('java-vision', ''),
         ];
 
         await probot.receive({
@@ -808,6 +884,7 @@ describe('flakybot', () => {
               body: 'Failure!',
             },
           ]),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -844,6 +921,7 @@ describe('flakybot', () => {
             ]),
           nockIssueComment('golang-samples', 16),
           nockIssuePatch('golang-samples', 16),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -874,6 +952,7 @@ describe('flakybot', () => {
           ]),
           nockIssueComment('golang-samples', 16),
           nockIssuePatch('golang-samples', 16),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -908,6 +987,7 @@ describe('flakybot', () => {
                 body: 'status: failed\ncommit: 123',
               },
             ]),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -936,6 +1016,7 @@ describe('flakybot', () => {
               labels: [{name: 'flakybot: flaky'}],
             },
           ]),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -969,6 +1050,7 @@ describe('flakybot', () => {
           ]),
           nockNewIssue('golang-samples'),
           nockNewIssue('golang-samples'),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -1027,6 +1109,7 @@ describe('flakybot', () => {
           nockIssueComment('golang-samples', 18),
           nockIssuePatch('golang-samples', 18),
           nockIssues('golang-samples'), // Real response would include all issues again.
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -1066,6 +1149,7 @@ describe('flakybot', () => {
           ]),
           nockIssueComment('golang-samples', 19),
           nockIssuePatch('golang-samples', 19),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -1111,6 +1195,7 @@ describe('flakybot', () => {
           ]),
           nockIssueComment('golang-samples', 19),
           nockIssuePatch('golang-samples', 19),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -1128,6 +1213,7 @@ describe('flakybot', () => {
         const scopes = [
           nockIssues('golang-samples'),
           nockNewIssue('golang-samples'),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -1158,6 +1244,7 @@ describe('flakybot', () => {
             },
           ]),
           nockNewIssue('golang-samples'),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -1190,6 +1277,7 @@ describe('flakybot', () => {
             },
           ]),
           nockNewIssue('golang-samples'),
+          nockGetConfig('golang-samples', ''),
         ];
 
         await probot.receive({
@@ -1221,6 +1309,7 @@ describe('flakybot', () => {
               },
             ]),
             nockNewIssue('nodejs-spanner'),
+            nockGetConfig('nodejs-spanner', ''),
           ];
 
           await probot.receive({
@@ -1259,6 +1348,7 @@ describe('flakybot', () => {
             nockGetIssueComments('nodejs-spanner', 9),
             nockIssueComment('nodejs-spanner', 9),
             nockIssuePatch('nodejs-spanner', 9),
+            nockGetConfig('nodejs-spanner', ''),
           ];
 
           await probot.receive({
@@ -1288,6 +1378,7 @@ describe('flakybot', () => {
                 body: flakybot.formatBody(testCase, '123', 'build.url'),
               },
             ]),
+            nockGetConfig('nodejs-spanner', ''),
           ];
 
           await probot.receive({
@@ -1327,6 +1418,7 @@ describe('flakybot', () => {
             nockIssueComment('nodejs-spanner', 10),
             nockGetIssueComments('nodejs-spanner', 10),
             nockIssuePatch('nodejs-spanner', 10),
+            nockGetConfig('nodejs-spanner', ''),
           ];
 
           await probot.receive({

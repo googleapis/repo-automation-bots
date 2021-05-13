@@ -1,0 +1,53 @@
+{
+  "name": "@github-automations/datastore-lock",
+  "version": "1.0.0",
+  "description": "Distributed lock backed by Google Cloud Datastore",
+  "scripts": {
+    "compile": "tsc -p .",
+    "pretest": "npm run compile && docker pull google/cloud-sdk",
+    "prepare": "npm run compile",
+    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha ./build/test",
+    "system-test": "npm run pretest && cross-env LOG_LEVEL=fatal mocha ./build/test/integration",
+    "fix": "gts fix",
+    "lint": "gts check"
+  },
+  "main": "./build/src/datastore-lock.js",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "dependencies": {
+    "@google-cloud/datastore": "^6.4.0",
+    "gcf-utils": "^7.2.2",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.17",
+    "@types/chai-as-promised": "^7.1.3",
+    "@types/mocha": "^8.2.2",
+    "@types/node": "^15.0.3",
+    "@types/sinon": "^10.0.0",
+    "c8": "^7.7.2",
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
+    "cross-env": "^7.0.3",
+    "dotenv": "^9.0.2",
+    "google-datastore-emulator": "^4.0.0",
+    "gts": "^3.1.0",
+    "mocha": "^8.4.0",
+    "nock": "^13.0.11",
+    "sinon": "^10.0.0",
+    "typescript": "^4.2.4"
+  },
+  "engines": {
+    "node": ">= 12.18.2"
+  },
+  "keywords": [
+    "google cloud datastore",
+    "lock"
+  ],
+  "author": "Takashi Matsuo <tmatsuo@google.com>",
+  "license": "Apache-2.0",
+  "files": [
+    "build/src"
+  ]
+}
