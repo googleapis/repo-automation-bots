@@ -46,7 +46,13 @@ const app = (app: Probot) => {
         schema,
         CONFIG_FILENAME
       );
-      await configChecker.validateConfigChanges(context);
+      await configChecker.validateConfigChanges(
+        context.octokit,
+        context.payload.pull_request.head.user.login,
+        context.payload.repository.name,
+        context.payload.pull_request.head.sha,
+        context.payload.pull_request.number
+      );
     }
   );
 };
@@ -153,7 +159,6 @@ describe('config', () => {
   const config = fs.readFileSync(
     resolve(fixturesPath, 'testdata', 'config.yaml')
   );
-  const context = {octokit: octokit};
 
   beforeEach(() => {});
 
@@ -170,7 +175,7 @@ describe('config', () => {
         .reply(200, Buffer.from(config).toString('base64'));
 
       const fetchedConfig = await getConfig<Config>(
-        context,
+        octokit,
         owner,
         repo,
         filename
@@ -192,7 +197,7 @@ describe('config', () => {
         .reply(200, Buffer.from(config).toString('base64'));
 
       const fetchedConfig = await getConfig<Config>(
-        context,
+        octokit,
         owner,
         repo,
         filename

@@ -16,7 +16,6 @@ import Ajv from 'ajv';
 import yaml from 'js-yaml';
 import path from 'path';
 
-import {Context} from 'probot';
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
 
@@ -75,20 +74,26 @@ export class ConfigChecker<T> {
     return {isValid: isValid, errorText: errorText};
   }
 
-  public async validateConfigChanges(context: Context): Promise<void> {
-    const listFilesParams = context.repo({
-      pull_number: context.payload.pull_request.number,
+  public async validateConfigChanges(
+    octokit: Octokit,
+    owner: string,
+    repo: string,
+    commitSha: string,
+    prNumber: number
+  ): Promise<void> {
+    const listFilesParams = {
+      owner: owner,
+      repo: repo,
+      pull_number: prNumber,
       per_page: 100,
-    });
-    const pullRequestCommitSha = context.payload.pull_request.head.sha;
+    };
     try {
       let errorText = '';
-      const files = await context.octokit.paginate(
-        context.octokit.pulls.listFiles,
+      const files = await octokit.paginate(
+        octokit.pulls.listFiles,
         listFilesParams
       );
-      for (let i = 0; files[i] !== undefined; i++) {
-        const file = files[i];
+      for (const file of files) {
         if (file.status === 'removed') {
           continue;
         }
@@ -100,11 +105,11 @@ export class ConfigChecker<T> {
             `but the config file must be ${this.configPath}\n`;
         }
         if (file.filename === this.configPath) {
-          const blob = await context.octokit.git.getBlob(
-            context.repo({
-              file_sha: file.sha,
-            })
-          );
+          const blob = await octokit.git.getBlob({
+            owner: owner,
+            repo: repo,
+            file_sha: file.sha,
+          });
           const fileContents = Buffer.from(
             blob.data.content,
             'base64'
@@ -115,17 +120,19 @@ export class ConfigChecker<T> {
           }
         }
         if (errorText !== '') {
-          const checkParams = context.repo({
+          const checkParams = {
+            owner: owner,
+            repo: repo,
             name: `${this.configName} config schema`,
             conclusion: 'failure' as Conclusion,
-            head_sha: pullRequestCommitSha,
+            head_sha: commitSha,
             output: {
               title: 'Config schema error',
               summary: 'An error found in the config file',
               text: errorText,
             },
-          });
-          await context.octokit.checks.create(checkParams);
+          };
+          await octokit.checks.create(checkParams);
         }
       }
     } catch (err) {
@@ -136,15 +143,57 @@ export class ConfigChecker<T> {
 }
 
 export async function getConfig<T>(
-  context: OctokitContext,
+  octokit: Octokit,
   owner: string,
   repo: string,
-  fileName: string,
-  defaultConfig?: T
+  fileName: string
 ): Promise<T | null> {
   const path = `.github/${fileName}`;
   try {
-    const resp = await context.octokit.repos.getContent({
+    const resp = await octokit.repos.getContent({
+      owner: owner,
+      repo: repo,
+      path: path,
+    });
+    const loaded =
+      yaml.load(Buffer.from(resp.data.toString(), 'base64').toString()) || {};
+    return Object.assign({}, undefined, loaded);
+  } catch (err) {
+    if (err.status === 404 && repo !== '.github') {
+      // Try to get it from the `.github` repo.
+      try {
+        const resp = await octokit.repos.getContent({
+          owner: owner,
+          repo: '.github',
+          path: path,
+        });
+        const loaded =
+          yaml.load(Buffer.from(resp.data.toString(), 'base64').toString()) ||
+          {};
+        return Object.assign({}, undefined, loaded);
+      } catch (err) {
+        if (err.status === 404) {
+          return null;
+        } else {
+          throw err;
+        }
+      }
+    } else {
+      throw err;
+    }
+  }
+}
+
+export async function getConfigWithDefault<T>(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  fileName: string,
+  defaultConfig: T
+): Promise<T> {
+  const path = `.github/${fileName}`;
+  try {
+    const resp = await octokit.repos.getContent({
       owner: owner,
       repo: repo,
       path: path,
@@ -156,7 +205,7 @@ export async function getConfig<T>(
     if (err.status === 404 && repo !== '.github') {
       // Try to get it from the `.github` repo.
       try {
-        const resp = await context.octokit.repos.getContent({
+        const resp = await octokit.repos.getContent({
           owner: owner,
           repo: '.github',
           path: path,
@@ -167,11 +216,7 @@ export async function getConfig<T>(
         return Object.assign({}, defaultConfig, loaded);
       } catch (err) {
         if (err.status === 404) {
-          if (defaultConfig) {
-            return defaultConfig;
-          } else {
-            return null;
-          }
+          return defaultConfig;
         } else {
           throw err;
         }

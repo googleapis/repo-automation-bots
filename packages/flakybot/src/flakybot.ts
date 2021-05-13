@@ -29,7 +29,7 @@ import xmljs from 'xml-js';
 import {Octokit} from '@octokit/rest';
 import {components} from '@octokit/openapi-types';
 import {logger} from 'gcf-utils';
-import {getConfig, ConfigChecker} from './config';
+import {getConfigWithDefault, ConfigChecker} from './config';
 import schema from './config-schema.json';
 
 export interface Config {
@@ -135,7 +135,13 @@ export function flakybot(app: Probot) {
     ],
     async context => {
       const configChecker = new ConfigChecker<Config>(schema, CONFIG_FILENAME);
-      await configChecker.validateConfigChanges(context);
+      await configChecker.validateConfigChanges(
+        context.octokit,
+        context.payload.pull_request.head.user.login,
+        context.payload.repository.name,
+        context.payload.pull_request.head.sha,
+        context.payload.pull_request.number
+      );
     }
   );
   // meta comment about the 'any' here: https://github.com/octokit/webhooks.js/issues/277
@@ -146,13 +152,13 @@ export function flakybot(app: Probot) {
     const commit = context.payload.commit || '[TODO: set commit]';
     const buildURL = context.payload.buildURL || '[TODO: set buildURL]';
 
-    const config = (await getConfig<Config>(
-      context,
+    const config = await getConfigWithDefault<Config>(
+      context.octokit,
       owner,
       repo,
       CONFIG_FILENAME,
       DEFAULT_CONFIG
-    )) as Config; // This is safe because we pass the default config.
+    );
     logger.debug(`config: ${config}`);
     context.log.info(`[${owner}/${repo}] processing ${buildURL}`);
 
