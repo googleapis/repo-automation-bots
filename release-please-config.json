@@ -9,6 +9,9 @@
     },
     "packages/mono-repo-publish": {
       "release-type": "node"
+    },
+    "packages/datastore-lock": {
+      "release-type": "node"
     }
   }
 }
