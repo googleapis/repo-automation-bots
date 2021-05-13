@@ -223,7 +223,7 @@ describe('check pr against config', async () => {
   });
 
   describe('additional validation checks', async () => {
-    it('should correctly identify a PR that needs special attention', async () => {
+    it('should correctly identify and pass a PR that requires additional validation', async () => {
       const validPR = yaml.load(
         fs.readFileSync(
           resolve(fixturesPath, 'config', 'valid-schemas', 'valid-schema4.yml'),

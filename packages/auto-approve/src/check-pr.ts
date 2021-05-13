@@ -64,7 +64,7 @@ export async function checkPRAgainstConfig(
     // changedFiles and maxFiles are not set in the JSON schema
     let filePathsMatch = true;
     let fileCountMatch = true;
-    let versionChecks = true;
+    const versionChecks = true;
 
     // Since there's only one allowed title per author right now, we don't need to
     // add complicated logic to see which title should match the incoming PR; but,
@@ -93,7 +93,7 @@ export async function checkPRAgainstConfig(
     if (fileAndFileRule) {
       // TODO: make the checks conditional based on the different kinds of conditions
       // to be checked, i.e., runDependencyUpgradeValidation, etc.
-      versionChecks = runVersioningValidation(fileAndFileRule);
+      if (!runVersioningValidation(fileAndFileRule)) return false;
     }
 
     //check if changed file paths match1
