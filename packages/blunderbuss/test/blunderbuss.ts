@@ -15,7 +15,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import * as blunderbuss from '../src/blunderbuss';
-import {describe, it, before, beforeEach, after, afterEach} from 'mocha';
+import {DatastoreLock} from '@github-automations/datastore-lock';
+import {describe, it, beforeEach, afterEach, after} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
@@ -23,9 +24,11 @@ import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
 import * as sinon from 'sinon';
-import DataStoreEmulator from 'google-datastore-emulator';
+import * as chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 
 nock.disableNetConnect();
+chai.use(chaiAsPromised);
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
@@ -36,23 +39,16 @@ global.console.warn = () => {};
 describe('Blunderbuss', () => {
   let probot: Probot;
   const sandbox = sinon.createSandbox();
-  let emulator: DataStoreEmulator;
-  before(() => {
-    nock.enableNetConnect('127.0.0.1');
-    nock.enableNetConnect('localhost');
-    const options = {
-      useDocker: true,
-    };
 
-    emulator = new DataStoreEmulator(options);
-
-    return emulator.start();
-  });
-  after(() => {
-    emulator.stop();
-    nock.disableNetConnect();
-  });
-
+  const datastoreLockAcquireStub = sandbox.stub(
+    DatastoreLock.prototype,
+    'acquire'
+  );
+  const datastoreLockReleaseStub = sandbox.stub(
+    DatastoreLock.prototype,
+    'release'
+  );
+  const sleepStub = sandbox.stub(blunderbuss, 'sleep');
   beforeEach(() => {
     probot = createProbot({
       overrides: {
@@ -64,11 +60,20 @@ describe('Blunderbuss', () => {
       },
     });
 
-    sandbox.stub(blunderbuss, 'sleep').resolves();
     probot.load(blunderbuss.blunderbuss);
+    // By default, DatastoreLock stubs just suceeds.
+    datastoreLockAcquireStub.resolves(true);
+    datastoreLockReleaseStub.resolves(true);
+    // Sleep does nothing.
+    sleepStub.resolves();
   });
 
   afterEach(() => {
+    sandbox.reset();
+    nock.cleanAll();
+  });
+
+  after(() => {
     sandbox.restore();
     nock.cleanAll();
   });
@@ -199,6 +204,28 @@ describe('Blunderbuss', () => {
         .reply(404, {});
 
       await probot.receive({name: 'issues', payload, id: 'abc123'});
+      requests.done();
+    });
+
+    it('throws an error when failed to acquire the lock', async () => {
+      datastoreLockAcquireStub.reset();
+      datastoreLockAcquireStub.resolves(false);
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_correct_label'
+      ));
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'on_label.yml')
+      );
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config);
+
+      await chai
+        .expect(probot.receive({name: 'issues', payload, id: 'abc123'}))
+        .to.be.rejectedWith(Error);
       requests.done();
     });
 
