@@ -206,10 +206,14 @@ export function handler(app: Probot) {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const pullNumber = context.payload.pull_request.number;
+    const prAuthor = context.payload.pull_request.user.login;
     const sender = context.payload.sender.login;
 
     // ignore PRs from a configurable list of authors
-    if (config.ignoreAuthors?.includes(sender)) {
+    if (
+      config.ignoreAuthors?.includes(prAuthor) ||
+      config.ignoreAuthors?.includes(sender)
+    ) {
       logger.metric('generated_files_bot.ignored_author');
       return;
     }
