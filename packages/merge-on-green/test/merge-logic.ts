@@ -17,12 +17,19 @@ import {Probot, createProbot, ProbotOctokit} from 'probot';
 import nock from 'nock';
 import sinon, {SinonStub} from 'sinon';
 import {describe, it, beforeEach, afterEach} from 'mocha';
+import assert from 'assert';
 import handler from '../src/merge-on-green';
-import {CheckStatus, Reviews, Comment} from '../src/merge-logic';
+import {
+  CheckStatus,
+  Reviews,
+  Comment,
+  getLatestCommit,
+} from '../src/merge-logic';
 import {logger} from 'gcf-utils';
 // eslint-disable-next-line node/no-extraneous-import
 import {config} from '@probot/octokit-plugin-config';
 import {createProbotAuth} from 'octokit-auth-probot';
+import {resolve} from 'path';
 
 const TestingOctokit = ProbotOctokit.plugin(config).defaults({
   authStrategy: createProbotAuth,
@@ -31,6 +38,7 @@ const TestingOctokit = ProbotOctokit.plugin(config).defaults({
 });
 
 const sandbox = sinon.createSandbox();
+const fixturesPath = resolve(__dirname, '../../test/Fixtures');
 
 interface HeadSha {
   sha: string;
@@ -49,9 +57,9 @@ function getReviewsCompleted(response: Reviews[]) {
     .reply(200, response);
 }
 
-function getLatestCommit(response: HeadSha[]) {
+function mockLatestCommit(response: HeadSha[]) {
   return nock('https://api.github.com')
-    .get('/repos/testOwner/testRepo/pulls/1/commits?per_page=100&page=1')
+    .get('/repos/testOwner/testRepo/pulls/1/commits')
     .reply(200, response);
 }
 
@@ -212,7 +220,7 @@ describe('merge-logic', () => {
     it('merges a PR on green', async () => {
       const scopes = [
         getRateLimit(5000),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -257,7 +265,7 @@ describe('merge-logic', () => {
             id: 12345,
           },
         ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
@@ -284,7 +292,7 @@ describe('merge-logic', () => {
             id: 12345,
           },
         ]),
-        getLatestCommit([]),
+        mockLatestCommit([]),
         getStatusi('', [
           {state: 'success', context: 'Kokoro - Test: Binary Compatibility'},
         ]),
@@ -311,7 +319,7 @@ describe('merge-logic', () => {
             id: 12345,
           },
         ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
           name: '',
@@ -340,7 +348,7 @@ describe('merge-logic', () => {
             id: 12345,
           },
         ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'failure', context: 'Special Check'},
         ]),
@@ -367,7 +375,7 @@ describe('merge-logic', () => {
             id: 12345,
           },
         ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
           name: 'Special Check',
@@ -400,7 +408,7 @@ describe('merge-logic', () => {
             id: 12345,
           },
         ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
           name: 'Special Check',
@@ -423,7 +431,7 @@ describe('merge-logic', () => {
       const scopes = [
         getRateLimit(5000),
         getReviewsCompleted([]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', []),
         getRuns('6dcb09b5b57875f334f61aebed695e2e4193db5e', {
           name: 'Special Check',
@@ -447,7 +455,7 @@ describe('merge-logic', () => {
 
       const scopes = [
         getRateLimit(5000),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -480,7 +488,7 @@ describe('merge-logic', () => {
 
       const scopes = [
         getRateLimit(5000),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -521,7 +529,7 @@ describe('merge-logic', () => {
             id: 12345,
           },
         ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
@@ -589,7 +597,7 @@ describe('merge-logic', () => {
             id: 12345,
           },
         ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'failure', context: 'Special Check'},
         ]),
@@ -637,7 +645,7 @@ describe('merge-logic', () => {
             id: 12345,
           },
         ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         //Intentionally giving this status check a misleading name. We want subtests to match the beginning
         //of required status checks, not the other way around. i.e., if the required status check is "passes"
         //then it should reject a status check called "passe", but pass one called "passesS"
@@ -689,7 +697,7 @@ describe('merge-logic', () => {
             id: 12345,
           },
         ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {
             state: 'success',
@@ -741,7 +749,7 @@ describe('merge-logic', () => {
             id: 12345,
           },
         ]),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getStatusi('6dcb09b5b57875f334f61aebed695e2e4193db5e', [
           {state: 'success', context: 'Special Check'},
         ]),
@@ -782,7 +790,7 @@ describe('merge-logic', () => {
 
       const scopes = [
         getRateLimit(5000),
-        getLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
+        mockLatestCommit([{sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e'}]),
         getReviewsCompleted([
           {
             user: {login: 'octocat'},
@@ -812,6 +820,30 @@ describe('merge-logic', () => {
       });
 
       scopes.forEach(s => s.done());
+    });
+  });
+
+  describe('gets latest commit', () => {
+    it('gets the latest commit if there were more than 100', async () => {
+      const arrayOfCommits = [];
+      for (let i = 0; i < 102; i++) {
+        if (i === 101) {
+          arrayOfCommits.push({sha: '6dcb09b5blastcommitaebed695e2e4193db5e'});
+        } else {
+          arrayOfCommits.push({
+            sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+          });
+        }
+      }
+      const lastCommitRequest = mockLatestCommit(arrayOfCommits);
+      const lastCommit = await getLatestCommit(
+        'testOwner',
+        'testRepo',
+        1,
+        new TestingOctokit({auth: 'abc123'})
+      );
+      lastCommitRequest.done();
+      assert.match(lastCommit, /lastcommit/);
     });
   });
 });

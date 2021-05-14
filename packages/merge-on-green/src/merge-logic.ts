@@ -71,23 +71,19 @@ interface Merge {
  * @param github unique installation id for each function
  * @returns most recent sha as a string
  */
-async function getLatestCommit(
+export async function getLatestCommit(
   owner: string,
   repo: string,
   pr: number,
   github: OctokitType
 ): Promise<string> {
   try {
-    // TODO: consider switching this to an async iterator, which would work
-    // for more than 100.
-    const data = await github.pulls.listCommits({
+    const commits = await github.paginate(github.pulls.listCommits, {
       owner,
       repo,
       pull_number: pr,
-      per_page: 100,
-      page: 1,
     });
-    return data.data[data.data.length - 1].sha;
+    return commits[commits.length - 1].sha;
   } catch (err) {
     return '';
   }
@@ -609,7 +605,6 @@ export async function mergeOnGreen(
 
   // TODO(sofisl): Remove once metrics have been collected (06/15/21)
   maybeLogMergeability(owner, repo, pr, github, checkStatus, checkReview);
-
   //if the reviews and statuses are green, let's try to merge
   if (checkReview === true && checkStatus === true) {
     const prInfo = await getPR(owner, repo, pr, github);
