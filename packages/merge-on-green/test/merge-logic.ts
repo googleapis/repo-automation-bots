@@ -825,9 +825,17 @@ describe('merge-logic', () => {
 
   describe('gets latest commit', () => {
     it('gets the latest commit if there were more than 100', async () => {
-      const lastCommitRequest = mockLatestCommit(
-        require(resolve(fixturesPath, 'events', 'longListOfCommits'))
-      );
+      const arrayOfCommits = [];
+      for (let i = 0; i < 102; i++) {
+        if (i === 101) {
+          arrayOfCommits.push({sha: '6dcb09b5blastcommitaebed695e2e4193db5e'});
+        } else {
+          arrayOfCommits.push({
+            sha: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+          });
+        }
+      }
+      const lastCommitRequest = mockLatestCommit(arrayOfCommits);
       const lastCommit = await getLatestCommit(
         'testOwner',
         'testRepo',
