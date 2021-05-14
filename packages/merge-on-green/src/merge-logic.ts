@@ -519,6 +519,31 @@ async function commentOnPR(
   }
 }
 
+// TODO(sofisl): Remove once metrics have been collected (06/15/21)
+// This function logs Github's mergeability assessment of a given PR, but only
+// ~20% of the time, given that this is an expensive API call, and we only care
+// about answering the question.
+async function maybeLogMergeability(
+  owner: string,
+  repo: string,
+  pr: number,
+  github: OctokitType,
+  checkReviews: boolean,
+  checkStatus: boolean
+) {
+  if (Math.random() > 0.8) {
+    const prInfo = await getPR(owner, repo, pr, github);
+    logger.metric('merge_on_green.mergeability_sample', {
+      repo: `${owner}/${repo}/`,
+      number: pr,
+      mergeable: prInfo.mergeable,
+      mergeable_state: prInfo.mergeable_state,
+      checkReviews,
+      checkStatus,
+    });
+  }
+}
+
 /**
  * Main function. Checks whether PR is open and whether there are is any base branch protection. If there
  * is, MOG continues checking to make sure reviews are approved and statuses have passed.
@@ -582,6 +607,9 @@ export async function mergeOnGreen(
     `checkReview = ${checkReview} checkStatus = ${checkStatus} state = ${state} ${owner}/${repo}/${pr}`
   );
 
+  // TODO(sofisl): Remove once metrics have been collected (06/15/21)
+  maybeLogMergeability(owner, repo, pr, github, checkStatus, checkReview);
+
   //if the reviews and statuses are green, let's try to merge
   if (checkReview === true && checkStatus === true) {
     const prInfo = await getPR(owner, repo, pr, github);
@@ -593,13 +621,27 @@ export async function mergeOnGreen(
     let merged = false;
     try {
       logger.info(`attempt to merge ${owner}/${repo}/${pr}`);
+      logger.metric('merge_on_green.attempt_to_merge', {
+        repo: `${owner}/${repo}`,
+        number: pr,
+        mergeable: prInfo.mergeable,
+        mergeable_state: prInfo.mergeable_state,
+      });
       await merge(owner, repo, pr, prInfo, github);
       merged = true;
       logger.metric('merge_on_green.merged', {
-        repo: `${owner}/${repo}`,
-        pr: pr,
+        repo: `${owner}/${repo}/`,
+        number: pr,
+        mergeable: prInfo.mergeable,
+        mergeable_state: prInfo.mergeable_state,
       });
     } catch (err) {
+      logger.metric('merge_on_green.failed_to_merge', {
+        repo: `${owner}/${repo}`,
+        number: pr,
+        mergeable: prInfo.mergeable,
+        mergeable_state: prInfo.mergeable_state,
+      });
       // Not checking here whether err.status=405 as that seems to apply to more than one error type,
       // so checking the body instead.
       if (err.message.includes('not authorized to push to this branch')) {
