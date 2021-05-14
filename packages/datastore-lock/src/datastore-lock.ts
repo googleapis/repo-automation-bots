@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
 import {v4 as uuidv4} from 'uuid';
 import {Datastore, Key} from '@google-cloud/datastore';
@@ -18,7 +19,7 @@ import {logger} from 'gcf-utils';
 
 const DEFAULT_LOCK_EXPIRY = 20 * 1000; // 20 seconds
 const MAX_LOCK_EXPIRY = 60 * 1000; // 60 seconds
-const LOCK_ACQUIRE_TIMEOUT = 120 * 1000; // 120 seconds
+const DEFAULT_LOCK_ACQUIRE_TIMEOUT = 120 * 1000; // 120 seconds
 const BACKOFF_INITIAL_DELAY = 2 * 1000; // 1 seconds
 const BACKOFF_MAX_DELAY = 10 * 1000; // 10 seconds
 const DATASTORE_LOCK_ERROR_NAME = 'DatastoreLockError';
@@ -43,11 +44,13 @@ export class DatastoreLock {
   private datastore: Datastore;
   private key: Key;
   private lockExpiry: number;
+  private lockAcquireTimeout: number;
 
   constructor(
     lockId: string,
     target: string,
-    lockExpiry: number = DEFAULT_LOCK_EXPIRY
+    lockExpiry: number = DEFAULT_LOCK_EXPIRY,
+    lockAcquireTimeout: number = DEFAULT_LOCK_ACQUIRE_TIMEOUT
   ) {
     if (lockExpiry > MAX_LOCK_EXPIRY) {
       throw new Error(
@@ -61,6 +64,7 @@ export class DatastoreLock {
     this.key = this.datastore.key([this.kind, this.target]);
     this.uniqueId = uuidv4();
     this.lockExpiry = lockExpiry;
+    this.lockAcquireTimeout = lockAcquireTimeout;
   }
 
   /**
@@ -72,7 +76,7 @@ export class DatastoreLock {
     let waitTime = BACKOFF_INITIAL_DELAY + Math.floor(Math.random() * 1000);
     const maxDelay = BACKOFF_MAX_DELAY + Math.floor(Math.random() * 1000);
 
-    while (Date.now() - startTime < LOCK_ACQUIRE_TIMEOUT) {
+    while (Date.now() - startTime < this.lockAcquireTimeout) {
       const result = await this._acquire();
       if (result === AcquireResult.Success) {
         return true;

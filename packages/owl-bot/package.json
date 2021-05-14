@@ -63,7 +63,7 @@
     "@octokit/rest": "^18.5.3",
     "adm-zip": "^0.5.5",
     "ajv": "^8.0.5",
-    "code-suggester": "^1.11.0",
+    "code-suggester": "^2.0.0",
     "firebase-admin": "^9.4.2",
     "fs-extra": "^10.0.0",
     "gaxios": "^4.1.0",

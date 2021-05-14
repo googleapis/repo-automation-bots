@@ -31,7 +31,6 @@ describe('datastore-lock', () => {
     nock.enableNetConnect('localhost');
     const options = {
       useDocker: true,
-      port: 8082,
     };
 
     emulator = new DataStoreEmulator(options);
@@ -46,12 +45,24 @@ describe('datastore-lock', () => {
 
   describe('lock test', () => {
     it('successfully acquires and releases the lock', async () => {
-      const l = new DatastoreLock('blunderbuss-test', 'test', 0);
-      const l2 = new DatastoreLock('blunderbuss-test', 'test', 0);
+      const l = new DatastoreLock('datastore-lock-test', 'test', 500);
+      const l2 = new DatastoreLock('datastore-lock-test', 'test', 0);
+      const l3 = new DatastoreLock('datastore-lock-test', 'test', 0);
       assert(await l.acquire());
       assert(await l2.acquire());
+      assert(await l3.acquire());
       await chai.expect(l.release()).to.be.rejectedWith(Error);
-      assert(await l2.release());
+      await chai.expect(l2.release()).to.be.rejectedWith(Error);
+      assert(await l3.release());
+    });
+    it('fails for acquiring and releasing the lock', async () => {
+      // This should fail, for better code coverage.
+      const l = new DatastoreLock('xxxxx'.repeat(1024), 'test', 0, 50);
+      assert(!(await l.acquire()));
+      assert(!(await l.release()));
+      assert.throws(() => {
+        new DatastoreLock('datastore-lock-test', 'test', 120 * 1000 + 1);
+      }, Error);
     });
   });
 });
