@@ -153,6 +153,8 @@ function getPR(
 describe('merge-logic', () => {
   let probot: Probot;
   let loggerStub: SinonStub;
+  // TODO(sofisl): Remove once metrics have been collected (06/15/21)
+  let mathRandomStub: SinonStub;
 
   before(() => {
     loggerStub = sandbox.stub(logger, 'error').throwsArg(0);
@@ -171,11 +173,15 @@ describe('merge-logic', () => {
     });
 
     probot.load(handler);
+    // TODO(sofisl): Remove once metrics have been collected (06/15/21)
+    mathRandomStub = sinon.stub(Math, 'random').returns(0.1);
   });
 
   afterEach(() => {
     //loggerStub.restore();
     nock.cleanAll();
+    // TODO(sofisl): Remove once metrics have been collected (06/15/21)
+    mathRandomStub.restore();
   });
 
   handler.removePR = async () => {
