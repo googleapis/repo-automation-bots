@@ -300,11 +300,19 @@ describe('auto-approve', () => {
   });
 
   describe('gets secrets and authenticates separately for approval', () => {
+    const sandbox = sinon.createSandbox();
+    afterEach(() => {
+      sandbox.restore();
+    });
+
     it('creates a separate octokit instance and authenticates with secret in secret manager', async () => {
-      const secretOctokit = new Octokit({auth: '123'});
       checkPRAgainstConfigStub.returns(true);
       validateSchemaStub.returns(undefined);
       checkCodeOwnersStub.returns('');
+
+      const secretOctokit = new Octokit({auth: '123'});
+      sandbox.spy(secretOctokit.pulls, 'createReview');
+      sandbox.spy(secretOctokit.issues, 'addLabels');
       getSecretStub.returns(secretOctokit);
 
       const payload = require(resolve(
@@ -328,7 +336,8 @@ describe('auto-approve', () => {
 
       scopes.forEach(scope => scope.done());
       assert.ok(getSecretStub.calledOnce);
-      assert.strictEqual(secretOctokit instanceof TestingOctokit, false);
+      assert.ok(secretOctokit.pulls.createReview.calledOnce);
+      assert.ok(secretOctokit.issues.addLabels.calledOnce);
     });
   });
 });
