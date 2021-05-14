@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {handler} from '../src/auto-approve';
+import * as autoApprove from '../src/auto-approve';
 import * as getPRInfo from '../src/get-PR-info';
 import * as checkConfig from '../src/check-config';
 import * as checkPR from '../src/check-pr';
@@ -25,10 +25,17 @@ import {describe, it, beforeEach} from 'mocha';
 import * as assert from 'assert';
 import snapshot from 'snap-shot-it';
 
+const {Octokit} = require('@octokit/rest');
+
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
+
+const TestingOctokit = ProbotOctokit.defaults({
+  retry: {enabled: false},
+  throttle: {enabled: false},
+});
 
 function getConfigFile(response: string | undefined, status: number) {
   if (status === 404) {
@@ -79,18 +86,16 @@ describe('auto-approve', () => {
   let validateSchemaStub: SinonStub;
   let validateYamlStub: SinonStub;
   let checkCodeOwnersStub: SinonStub;
+  let getSecretStub: SinonStub;
 
   beforeEach(() => {
     probot = createProbot({
       defaults: {
         githubToken: 'abc123',
-        Octokit: ProbotOctokit.defaults({
-          retry: {enabled: false},
-          throttle: {enabled: false},
-        }),
+        Octokit: TestingOctokit,
       },
     });
-    probot.load(handler);
+    probot.load(autoApprove.handler);
 
     checkPRAgainstConfigStub = sinon.stub(checkPR, 'checkPRAgainstConfig');
     getChangedFilesStub = sinon.stub(getPRInfo, 'getChangedFiles');
@@ -98,6 +103,7 @@ describe('auto-approve', () => {
     validateSchemaStub = sinon.stub(checkConfig, 'validateSchema');
     validateYamlStub = sinon.stub(checkConfig, 'validateYaml');
     checkCodeOwnersStub = sinon.stub(checkConfig, 'checkCodeOwners');
+    getSecretStub = sinon.stub(autoApprove, 'authenticateWithSecret');
   });
 
   afterEach(() => {
@@ -107,6 +113,7 @@ describe('auto-approve', () => {
     validateSchemaStub.restore();
     validateYamlStub.restore();
     checkCodeOwnersStub.restore();
+    getSecretStub.restore();
   });
 
   describe('main auto-approve function', () => {
@@ -115,6 +122,7 @@ describe('auto-approve', () => {
         checkPRAgainstConfigStub.returns(true);
         validateSchemaStub.returns(undefined);
         checkCodeOwnersStub.returns('');
+        getSecretStub.returns(new Octokit({auth: '123'}));
 
         const payload = require(resolve(
           fixturesPath,
@@ -288,6 +296,48 @@ describe('auto-approve', () => {
         assert.ok(getChangedFilesStub.calledOnce);
         assert.ok(getBlobFromPRFilesStub.calledTwice);
       });
+    });
+  });
+
+  describe('gets secrets and authenticates separately for approval', () => {
+    const sandbox = sinon.createSandbox();
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('creates a separate octokit instance and authenticates with secret in secret manager', async () => {
+      checkPRAgainstConfigStub.returns(true);
+      validateSchemaStub.returns(undefined);
+      checkCodeOwnersStub.returns('');
+
+      const secretOctokit = new Octokit({auth: '123'});
+      sandbox.spy(secretOctokit.pulls, 'createReview');
+      sandbox.spy(secretOctokit.issues, 'addLabels');
+      getSecretStub.returns(secretOctokit);
+
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened'
+      ));
+
+      const scopes = [
+        getConfigFile('fake-config', 200),
+        submitReview(200),
+        addLabels(200),
+        createCheck(200),
+      ];
+
+      await probot.receive({
+        name: 'pull_request.opened',
+        payload,
+        id: 'abc123',
+      });
+
+      scopes.forEach(scope => scope.done());
+      assert.ok(getSecretStub.calledOnce);
+      assert.ok(secretOctokit.pulls.createReview.calledOnce);
+      assert.ok(secretOctokit.issues.addLabels.calledOnce);
     });
   });
 });
