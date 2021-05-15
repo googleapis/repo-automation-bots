@@ -25,6 +25,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
 import xmljs from 'xml-js';
+import {DatastoreLock} from '@github-automations/datastore-lock';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {components} from '@octokit/openapi-types';
@@ -321,45 +322,61 @@ flakybot.openIssues = async (
     // issue.
     const groupedIssue = flakybot.findGroupedIssue(issues, pkg);
     if (groupedIssue) {
-      // If a group issue exists, say stuff failed.
-      // Don't comment if it's asked to be quiet.
-      if (hasLabel(groupedIssue, QUIET_LABEL)) {
-        continue;
-      }
+      // Acquire the lock, then fetch the issue and update, release the lock.
+      const lock = new DatastoreLock('flakybot', groupedIssue.url);
+      // Ignore the failure because it's not fatal.
+      await lock.acquire();
+      try {
+        // We need to re fetch the issue.
+        const issue = await context.octokit.issues.get({
+          owner: owner,
+          repo: repo,
+          issue_number: groupedIssue.number,
+        });
+        // Then update the new issue.
+        const groupedIssueToModify = issue.data as IssuesListForRepoResponseItem;
 
-      // Don't comment if it's flaky.
-      if (flakybot.isFlaky(groupedIssue)) {
-        continue;
-      }
+        // If a group issue exists, say stuff failed.
+        // Don't comment if it's asked to be quiet.
+        if (hasLabel(groupedIssueToModify, QUIET_LABEL)) {
+          continue;
+        }
 
-      // Don't comment if we've already commented with this build failure.
-      const [containsFailure] = await flakybot.containsBuildFailure(
-        groupedIssue,
-        context,
-        owner,
-        repo,
-        commit
-      );
-      if (containsFailure) {
-        continue;
-      }
+        // Don't comment if it's flaky.
+        if (flakybot.isFlaky(groupedIssueToModify)) {
+          continue;
+        }
+        // Don't comment if we've already commented with this build failure.
+        const [containsFailure] = await flakybot.containsBuildFailure(
+          groupedIssueToModify,
+          context,
+          owner,
+          repo,
+          commit
+        );
+        if (containsFailure) {
+          continue;
+        }
 
-      const testCase = flakybot.groupedTestCase(pkg);
-      const testString = pkgFailures.length === 1 ? 'test' : 'tests';
-      const body = `${
-        pkgFailures.length
-      } ${testString} failed in this package for commit ${commit} (${buildURL}).\n\n-----\n${flakybot.formatBody(
-        testCase,
-        commit,
-        buildURL
-      )}`;
-      await context.octokit.issues.createComment({
-        owner,
-        repo,
-        issue_number: groupedIssue.number,
-        body,
-      });
-      continue;
+        const testCase = flakybot.groupedTestCase(pkg);
+        const testString = pkgFailures.length === 1 ? 'test' : 'tests';
+        const body = `${
+          pkgFailures.length
+        } ${testString} failed in this package for commit ${commit} (${buildURL}).\n\n-----\n${flakybot.formatBody(
+          testCase,
+          commit,
+          buildURL
+        )}`;
+        await context.octokit.issues.createComment({
+          owner,
+          repo,
+          issue_number: groupedIssueToModify.number,
+          body,
+        });
+        continue;
+      } finally {
+        await lock.release();
+      }
     }
     // There is no grouped issue for this package.
     // Check if 10 or more tests failed.
@@ -420,34 +437,25 @@ flakybot.openIssues = async (
       context.log.info(
         `[${owner}/${repo}] existing issue #${existingIssue.number}: state: ${existingIssue.state}`
       );
-      if (existingIssue.state === 'closed') {
-        // If there is an existing closed issue, it might be flaky.
+      // Acquire the lock, then fetch the issue and update, release the lock.
+      const lock = new DatastoreLock('flakybot', existingIssue.url);
+      // Ignore the failure because it's not fatal.
+      await lock.acquire();
 
-        // If the issue is locked, we can't reopen it, so open a new one.
-        if (existingIssue.locked) {
-          await flakybot.openNewIssue(
-            context,
-            config,
-            owner,
-            repo,
-            commit,
-            buildURL,
-            failure,
-            `Note: #${existingIssue.number} was also for this test, but it is locked`
-          );
-          continue;
-        }
+      try {
+        // We need to re fetch the issue.
+        const issue = await context.octokit.issues.get({
+          owner: owner,
+          repo: repo,
+          issue_number: existingIssue.number,
+        });
+        // Work on the refreshed issue.
+        const existingIssueToModify = issue.data as IssuesListForRepoResponseItem;
+        if (existingIssueToModify.state === 'closed') {
+          // If there is an existing closed issue, it might be flaky.
 
-        // If the existing issue has been closed for more than 10 days, open
-        // a new issue instead.
-        //
-        // If this doesn't work, we'll mark the issue as flaky.
-        const closedAt = parseClosedAt(existingIssue.closed_at);
-        if (closedAt) {
-          const daysAgo = 10;
-          const daysAgoDate = new Date();
-          daysAgoDate.setDate(daysAgoDate.getDate() - daysAgo);
-          if (closedAt < daysAgoDate.getTime()) {
+          // If the issue is locked, we can't reopen it, so open a new one.
+          if (existingIssueToModify.locked) {
             await flakybot.openNewIssue(
               context,
               config,
@@ -456,49 +464,75 @@ flakybot.openIssues = async (
               commit,
               buildURL,
               failure,
-              `Note: #${existingIssue.number} was also for this test, but it was closed more than ${daysAgo} days ago. So, I didn't mark it flaky.`
+              `Note: #${existingIssueToModify.number} was also for this test, but it is locked`
             );
             continue;
           }
-        }
-        const reason = flakybot.formatBody(failure, commit, buildURL);
-        await flakybot.markIssueFlaky(
-          existingIssue,
-          context,
-          config,
-          owner,
-          repo,
-          reason
-        );
-      } else {
-        // Don't comment if it's asked to be quiet.
-        if (hasLabel(existingIssue, QUIET_LABEL)) {
-          continue;
-        }
 
-        // Don't comment if it's flaky.
-        if (flakybot.isFlaky(existingIssue)) {
-          continue;
-        }
+          // If the existing issue has been closed for more than 10 days, open
+          // a new issue instead.
+          //
+          // If this doesn't work, we'll mark the issue as flaky.
+          const closedAt = parseClosedAt(existingIssueToModify.closed_at);
+          if (closedAt) {
+            const daysAgo = 10;
+            const daysAgoDate = new Date();
+            daysAgoDate.setDate(daysAgoDate.getDate() - daysAgo);
+            if (closedAt < daysAgoDate.getTime()) {
+              await flakybot.openNewIssue(
+                context,
+                config,
+                owner,
+                repo,
+                commit,
+                buildURL,
+                failure,
+                `Note: #${existingIssueToModify.number} was also for this test, but it was closed more than ${daysAgo} days ago. So, I didn't mark it flaky.`
+              );
+              continue;
+            }
+          }
+          const reason = flakybot.formatBody(failure, commit, buildURL);
+          await flakybot.markIssueFlaky(
+            existingIssueToModify,
+            context,
+            config,
+            owner,
+            repo,
+            reason
+          );
+        } else {
+          // Don't comment if it's asked to be quiet.
+          if (hasLabel(existingIssueToModify, QUIET_LABEL)) {
+            continue;
+          }
 
-        // Don't comment if we've already commented with this build failure.
-        const [containsFailure] = await flakybot.containsBuildFailure(
-          existingIssue,
-          context,
-          owner,
-          repo,
-          commit
-        );
-        if (containsFailure) {
-          continue;
-        }
+          // Don't comment if it's flaky.
+          if (flakybot.isFlaky(existingIssueToModify)) {
+            continue;
+          }
 
-        await context.octokit.issues.createComment({
-          owner,
-          repo,
-          issue_number: existingIssue.number,
-          body: flakybot.formatBody(failure, commit, buildURL),
-        });
+          // Don't comment if we've already commented with this build failure.
+          const [containsFailure] = await flakybot.containsBuildFailure(
+            existingIssueToModify,
+            context,
+            owner,
+            repo,
+            commit
+          );
+          if (containsFailure) {
+            continue;
+          }
+
+          await context.octokit.issues.createComment({
+            owner,
+            repo,
+            issue_number: existingIssueToModify.number,
+            body: flakybot.formatBody(failure, commit, buildURL),
+          });
+        }
+      } finally {
+        await lock.release();
       }
     }
   }
