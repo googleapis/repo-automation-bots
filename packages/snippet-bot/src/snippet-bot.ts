@@ -719,6 +719,22 @@ export = (app: Probot) => {
       }
       const repoUrl = context.payload.repository.full_name;
       const {owner, repo} = context.repo();
+
+      // We should first check the config schema. Otherwise, we'll miss
+      // the opportunity for checking the schema when adding the config
+      // file for the first time.
+      const configChecker = new ConfigChecker<ConfigurationOptions>(
+        schema,
+        CONFIGURATION_FILE_PATH
+      );
+      await configChecker.validateConfigChanges(
+        context.octokit,
+        owner,
+        repo,
+        context.payload.pull_request.head.sha,
+        context.payload.pull_request.number
+      );
+
       const configOptions = await getConfig<ConfigurationOptions>(
         context.octokit,
         owner,
@@ -734,17 +750,6 @@ export = (app: Probot) => {
         ...configOptions,
       });
       logger.info({config: configuration});
-      const configChecker = new ConfigChecker<ConfigurationOptions>(
-        schema,
-        CONFIGURATION_FILE_PATH
-      );
-      await configChecker.validateConfigChanges(
-        context.octokit,
-        owner,
-        repo,
-        context.payload.pull_request.head.sha,
-        context.payload.pull_request.number
-      );
       await scanPullRequest(
         context,
         context.payload.pull_request as PullRequest,

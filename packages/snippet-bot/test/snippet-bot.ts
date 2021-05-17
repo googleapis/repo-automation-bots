@@ -30,7 +30,6 @@ import {Octokit} from '@octokit/rest';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
-import assert from 'assert';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sinon from 'sinon';
 
@@ -554,6 +553,15 @@ describe('snippet-bot', () => {
         payload,
         id: 'abc123',
       });
+      // Make sure we check the config schema when
+      // adding the config file for the first time.
+      validateConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
+        14
+      );
     });
 
     it('gives warnings about removing region tag in use', async () => {
