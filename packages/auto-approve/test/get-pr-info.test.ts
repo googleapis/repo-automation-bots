@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import nock from 'nock';
-import {getChangedFiles, getBlobFromPRFiles} from '../src/get-PR-info';
+import {getChangedFiles, getBlobFromPRFiles} from '../src/get-pr-info';
 import {describe, it} from 'mocha';
 import assert from 'assert';
 
