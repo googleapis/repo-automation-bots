@@ -15,7 +15,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {ProbotOctokit} from 'probot';
 import {PullRequestEvent} from '@octokit/webhooks-definitions/schema';
-import {getChangedFiles, File} from './get-PR-info';
+import {getChangedFiles, File} from './get-pr-info';
 import {logger} from 'gcf-utils';
 import {
   FileSpecificRule,

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {handler} from '../src/auto-approve';
-import * as getPRInfo from '../src/get-PR-info';
+import * as getPRInfo from '../src/get-pr-info';
 import * as checkConfig from '../src/check-config';
 import * as checkPR from '../src/check-pr';
 import {resolve} from 'path';

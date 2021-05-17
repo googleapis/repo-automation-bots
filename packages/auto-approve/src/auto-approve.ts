@@ -18,7 +18,7 @@
 import {Probot, Context, ProbotOctokit} from 'probot';
 import {logger} from 'gcf-utils';
 import {ValidPr, checkPRAgainstConfig} from './check-pr';
-import {getChangedFiles, getBlobFromPRFiles} from './get-PR-info';
+import {getChangedFiles, getBlobFromPRFiles} from './get-pr-info';
 import {validateYaml, validateSchema, checkCodeOwners} from './check-config.js';
 
 export interface Configuration {

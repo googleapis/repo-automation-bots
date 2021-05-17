@@ -15,7 +15,7 @@
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import * as fs from 'fs';
-import {File} from '../src/get-PR-info';
+import {File} from '../src/get-pr-info';
 import * as checkPR from '../src/check-pr';
 import {checkFilePathsMatch} from '../src/utils-for-PR-checking';
 import nock from 'nock';

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {File} from './get-PR-info';
+import {File} from './get-pr-info';
 import {ValidPr} from './check-pr';
 
 export interface FileSpecificRule {
