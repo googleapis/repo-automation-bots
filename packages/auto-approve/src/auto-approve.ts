@@ -18,7 +18,7 @@
 import {Probot, Context, ProbotOctokit} from 'probot';
 import {logger} from 'gcf-utils';
 import {ValidPr, checkPRAgainstConfig} from './check-pr';
-import {getChangedFiles, getBlobFromPRFiles} from './get-PR-info';
+import {getChangedFiles, getBlobFromPRFiles} from './get-pr-info';
 import {validateYaml, validateSchema, checkCodeOwners} from './check-config.js';
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {Octokit} from '@octokit/rest';
@@ -192,6 +192,11 @@ export function handler(app: Probot) {
           context.octokit,
           context.payload.pull_request.head.sha
         );
+
+        logger.metric('auto_approve.status_check', {
+          repo: `${owner}/${repo}`,
+          pr: pr,
+        });
       } else {
         let config: Configuration | null;
         // Get auto-approve.yml file if it exists
@@ -249,6 +254,10 @@ export function handler(app: Probot) {
               repo,
               issue_number: prNumber,
               labels: ['automerge: exact'],
+            });
+            logger.metric('auto_approve.approved_tagged', {
+              repo: `${owner}/${repo}`,
+              pr: pr,
             });
             logger.info(
               `Auto-approved and tagged ${owner}/${repo}/${prNumber}`
