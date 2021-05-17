@@ -17,7 +17,7 @@ import assert from 'assert';
 import * as fs from 'fs';
 import {File} from '../src/get-pr-info';
 import * as checkPR from '../src/check-pr';
-import {checkFilePathsMatch} from '../src/utils-for-PR-checking';
+import {checkFilePathsMatch} from '../src/utils-for-pr-checking';
 import nock from 'nock';
 import {resolve} from 'path';
 import yaml from 'js-yaml';

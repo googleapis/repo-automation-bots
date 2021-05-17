@@ -18,7 +18,7 @@ import {
   isMajorVersionChanging,
   isMinorVersionUpgraded,
   isOneDependencyChanged,
-} from '../src/utils-for-PR-checking';
+} from '../src/utils-for-pr-checking';
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import languageVersioningRules from '../src/language-versioning-rules.json';

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {handler} from '../src/auto-approve';
+import * as autoApprove from '../src/auto-approve';
 import * as getPRInfo from '../src/get-pr-info';
 import * as checkConfig from '../src/check-config';
 import * as checkPR from '../src/check-pr';
