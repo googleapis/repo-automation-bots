@@ -25,7 +25,7 @@ import {
   isMinorVersionUpgraded,
   isOneDependencyChanged,
   checkFilePathsMatch,
-} from './utils-for-PR-checking';
+} from './utils-for-pr-checking';
 import languageVersioningRules from './language-versioning-rules.json';
 // type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
 
