@@ -35,6 +35,7 @@ options:
 | `manifest`          | Whether or not this is a manifest release          | `boolean`  | `false`                                                                               |
 | `extraFiles`        | Additional files to track (if language supports it) | `string[]` | `[]`                                                                                 |
 | `branches`          | Additional release branches to track               | `BranchConfiguration[]` | `[]`                                                                     |
+| `releaseLabel`      | The label applied to pull request after creating the GitHub release | `string` | release-please default (`autorelease: tagged`)                         |
 
 `BranchConfiguration`:
 
@@ -50,6 +51,7 @@ options:
 | `changelogPath`     | Path to the changelog to write releases notes to when creating a release | `string` | `CHANGELOG.md`                                                    |
 | `manifest`          | Whether or not this is a manifest release          | `boolean`  | `false`                                                                               |
 | `extraFiles`        | Additional files to track (if language supports it) | `string[]` | `[]`                                                                                 |
+| `releaseLabel`      | The label applied to pull request after creating the GitHub release | `string` | release-please default (`autorelease: tagged`)                         |
 
 ### Usage
 

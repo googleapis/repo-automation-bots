@@ -15,6 +15,11 @@
  */
 
 /*
+DEPRECATED: we are migrating towards dashboards based on logger.metric,
+with their SQL stored in individual files within this folder.
+*/
+
+/*
 SQL Helpers:
 */
 CREATE TEMP FUNCTION json2array(json STRING)

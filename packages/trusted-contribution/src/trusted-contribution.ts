@@ -34,6 +34,7 @@ const DEFAULT_TRUSTED_CONTRIBUTORS = [
   'gcf-merge-on-green[bot]',
   'yoshi-code-bot',
   'gcf-owl-bot[bot]',
+  'google-cloud-policy-bot[bot]',
 ];
 const DEFAULT_ANNOTATIONS: Annotation[] = [
   {
@@ -87,6 +88,9 @@ export = (app: Probot) => {
               labels: [annotation.text],
             });
             await context.octokit.issues.addLabels(issuesAddLabelsParams);
+            logger.metric('trusted_contribution.labeled', {
+              url: context.payload.pull_request.url,
+            });
           } else if (annotation.type === 'comment') {
             await context.octokit.issues.createComment({
               issue_number: context.payload.pull_request.number,

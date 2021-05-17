@@ -19,6 +19,7 @@ import {
   GitHubReleaseFactoryOptions,
   ReleasePR,
   factory,
+  setLogger,
 } from 'release-please';
 import {Runner} from './runner';
 // eslint-disable-next-line node/no-extraneous-import
@@ -55,6 +56,7 @@ interface BranchOptions {
   changelogPath?: string;
   manifest?: boolean;
   extraFiles?: string[];
+  releaseLabel?: string;
 }
 
 interface BranchConfiguration extends BranchOptions {
@@ -148,6 +150,7 @@ async function createGitHubRelease(
     monorepoTags: configuration.monorepoTags,
     releaseType: configuration.releaseType,
     extraFiles: configuration.extraFiles,
+    releaseLabel: configuration.releaseLabel,
   };
   if (configuration.manifest) {
     const manifest = factory.manifest(releaseOptions);
@@ -233,6 +236,9 @@ export = (app: Probot) => {
       return;
     }
 
+    // use gcf-logger as logger for release-please
+    setLogger(logger);
+
     logger.info(`push (${repoUrl})`);
     await createReleasePR(
       repoName,
@@ -276,6 +282,9 @@ export = (app: Probot) => {
       ...DEFAULT_CONFIGURATION,
       ...remoteConfiguration,
     };
+
+    // use gcf-logger as logger for release-please
+    setLogger(logger);
 
     logger.info(
       `schedule.repository (${repoUrl}, ${configuration.primaryBranch})`

@@ -83,3 +83,22 @@ exports[
       'See the following errors in your auto-approve.yml config:\nYou must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/auto-approve.yml  @googleapis/github-automation/\nFile is not properly configured YAML\nSchema is invalid\n[{"wrongProperty":"wrongProperty","message":"message"}]\n',
   },
 };
+
+exports[
+  'auto-approve gets secrets and authenticates separately for approval creates a separate octokit instance and authenticates with secret in secret manager 1'
+] = {
+  head_sha: 'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
+  name: 'Auto-approve.yml check',
+  conclusion: 'success',
+  output: {
+    title: 'Auto-approve.yml check',
+    summary: 'Successful auto-approve.yml config check',
+    text: '',
+  },
+};
+
+exports[
+  'auto-approve gets secrets and authenticates separately for approval creates a separate octokit instance and authenticates with secret in secret manager 2'
+] = {
+  event: 'APPROVE',
+};

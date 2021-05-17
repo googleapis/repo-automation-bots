@@ -22,6 +22,7 @@ import {
   Issue,
   PullRequest,
 } from '@octokit/webhooks-definitions/schema';
+import {DatastoreLock} from '@github-automations/datastore-lock';
 
 const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';
@@ -85,167 +86,190 @@ export function blunderbuss(app: Probot) {
       }
       config = config || {};
 
-      let issue: Issue | undefined;
-      let pullRequest: PullRequest | undefined;
+      let lockTarget: string;
       if (isIssue(context.payload)) {
-        issue = context.payload.issue;
+        lockTarget = context.payload.issue.url;
       } else {
-        pullRequest = context.payload.pull_request;
-      }
-      const repoName = context.payload.repository.full_name;
-
-      const issueOrPRNumber = issue?.number || pullRequest?.number;
-      const issueOrPROwner = issue?.user.login || pullRequest?.user.login;
-      const issueOrPRRepo = context.payload.repository.name;
-      // If this is a PR, and it's in draft mode, don't assign it
-      if (pullRequest?.draft === true) {
-        logger.info(
-          `Skipping ${repoName}#${pullRequest.number} as it's a draft PR`
-        );
-        return;
+        lockTarget = context.payload.pull_request.url;
       }
 
-      // Check if the config specifically asks to not assign issues or PRs
-      if (
-        (issue && !config.assign_issues && !config.assign_issues_by) ||
-        (pullRequest && !config.assign_prs && !config.assign_prs_by)
-      ) {
-        const paramName = issue
-          ? '"assign_issues" and "assign_issues_by"'
-          : '"assign_prs" and "assign_prs_by"';
-        context.log.info(
-          util.format(
-            '[%s] #%s ignored: %s not in config',
-            repoName,
-            issueOrPRNumber,
-            paramName
-          )
-        );
-        return;
+      // Acquire the lock.
+      const lock = new DatastoreLock('blunderbuss', lockTarget);
+      const lockResult = await lock.acquire();
+      if (!lockResult) {
+        throw new Error('Failed to acquire a lock for ${lockTarget}');
       }
 
-      // PRs are a superset of issues, so we can handle them similarly.
-      const assignConfig = issue ? config.assign_issues : config.assign_prs!;
-      const byConfig = issue ? config.assign_issues_by : config.assign_prs_by;
-      const issuePayload = issue || pullRequest;
-
-      const isLabeled = context.payload.action === 'labeled';
-      if (isLabeled) {
-        // Only assign an issue that already has an assignee if labeled with
-        // ASSIGN_LABEL.
-        if (
-          context.payload.label?.name !== ASSIGN_LABEL &&
-          issuePayload!.assignees?.length
-        ) {
-          context.log.info(
-            '[%s] #%s ignored: incorrect label ("%s") because it is already assigned',
-            repoName,
-            issueOrPRNumber,
-            context.payload.label?.name
-          );
-          return;
-        }
-        // Check if the new label has a possible assignee.
-        // Don't check all labels to avoid updating an old issue when someone
-        // changes a random label.
-        let assigneesForNewLabel: string[] | undefined;
-        if (context.payload.label?.name) {
-          assigneesForNewLabel = findAssignees(byConfig, [
-            context.payload.label.name,
-          ]);
-        }
-
-        if (
-          assigneesForNewLabel?.length === 0 &&
-          context.payload.label?.name !== ASSIGN_LABEL
-        ) {
-          context.log.info(
-            '[%s] #%s ignored: incorrect label ("%s")',
-            repoName,
-            issueOrPRNumber,
-            context.payload.label?.name
-          );
-          return;
-        }
-        if (context.payload.label?.name === ASSIGN_LABEL) {
-          // Remove the label so the user knows the event was processed (even if not successfully).
-          await context.octokit.issues.removeLabel(
-            context.issue({name: ASSIGN_LABEL})
-          );
-        }
+      try {
+        await assign(context, config);
+      } finally {
+        lock.release();
       }
+    }
+  );
+}
 
-      // Allow the label to force a new assignee, even if one is already assigned.
-      if (!isLabeled && issuePayload!.assignees.length !== 0) {
-        context.log.info(
-          util.format(
-            '[%s] #%s ignored: already has assignee(s)',
-            repoName,
-            issueOrPRNumber
-          )
-        );
-        return;
-      }
+async function assign(context: Context, config: Configuration) {
+  let issue: Issue | undefined;
+  let pullRequest: PullRequest | undefined;
+  if (isIssue(context.payload)) {
+    issue = context.payload.issue;
+  } else {
+    pullRequest = context.payload.pull_request;
+  }
 
-      let labels: string[] | undefined = [];
-      if (byConfig !== undefined && context.payload.action === 'opened') {
-        // It is possible that blunderbuss is running before other bots have
-        // a chance to add extra labels. Wait and re-pull fresh labels
-        // before comparing against the config.
-        await sleep(10_000);
-        const labelResp = await context.octokit.issues.listLabelsOnIssue({
-          issue_number: issueOrPRNumber!,
-          owner: context.payload.repository.owner.login,
-          repo: context.payload.repository.name,
-        });
-        labels = labelResp.data.map(lr => lr.name);
-      } else {
-        labels = issue
-          ? issue.labels?.map(l => l.name)
-          : pullRequest?.labels?.map(l => l.name);
-      }
-      const preferredAssignees = findAssignees(byConfig, labels);
-      let possibleAssignees = preferredAssignees.length
-        ? preferredAssignees
-        : assignConfig || [];
-      possibleAssignees = await expandTeams(possibleAssignees, context);
-      const assignee = randomFrom(possibleAssignees, issuePayload!.user.login);
-      if (!assignee) {
-        context.log.info(
-          util.format(
-            '[%s] #%s not assigned: no valid assignee(s)',
-            repoName,
-            issueOrPRNumber
-          )
-        );
-        return;
-      }
+  const repoName = context.payload.repository.full_name;
 
-      const resp = await context.octokit.issues.addAssignees(
-        context.issue({assignees: [assignee]})
-      );
-      if (resp.status !== 201) {
-        context.log.error(
-          util.format(
-            '[%s] #%s could not be assined to %s: status %d',
-            repoName,
-            issueOrPRNumber,
-            assignee,
-            resp.status
-          )
-        );
-        return;
-      }
+  const issueOrPRNumber = issue?.number || pullRequest?.number;
+  const issueOrPROwner = issue?.user.login || pullRequest?.user.login;
+  const issueOrPRRepo = context.payload.repository.name;
+  // If this is a PR, and it's in draft mode, don't assign it
+  if (pullRequest?.draft === true) {
+    logger.info(
+      `Skipping ${repoName}#${pullRequest.number} as it's a draft PR`
+    );
+    return;
+  }
+
+  // Check if the config specifically asks to not assign issues or PRs
+  if (
+    (issue && !config.assign_issues && !config.assign_issues_by) ||
+    (pullRequest && !config.assign_prs && !config.assign_prs_by)
+  ) {
+    const paramName = issue
+      ? '"assign_issues" and "assign_issues_by"'
+      : '"assign_prs" and "assign_prs_by"';
+    context.log.info(
+      util.format(
+        '[%s] #%s ignored: %s not in config',
+        repoName,
+        issueOrPRNumber,
+        paramName
+      )
+    );
+    return;
+  }
+
+  // PRs are a superset of issues, so we can handle them similarly.
+  const assignConfig = issue ? config.assign_issues : config.assign_prs!;
+  const byConfig = issue ? config.assign_issues_by : config.assign_prs_by;
+  const issuePayload = issue || pullRequest;
+
+  const isLabeled = context.payload.action === 'labeled';
+  if (isLabeled) {
+    // Only assign an issue that already has an assignee if labeled with
+    // ASSIGN_LABEL.
+    if (
+      context.payload.label?.name !== ASSIGN_LABEL &&
+      issuePayload!.assignees?.length
+    ) {
       context.log.info(
-        util.format(
-          '[%s] #%s was assigned to %s',
-          issueOrPROwner,
-          issueOrPRRepo,
-          issueOrPRNumber,
-          assignee
-        )
+        '[%s] #%s ignored: incorrect label ("%s") because it is already assigned',
+        repoName,
+        issueOrPRNumber,
+        context.payload.label?.name
+      );
+      return;
+    }
+    // Check if the new label has a possible assignee.
+    // Don't check all labels to avoid updating an old issue when someone
+    // changes a random label.
+    let assigneesForNewLabel: string[] | undefined;
+    if (context.payload.label?.name) {
+      assigneesForNewLabel = findAssignees(byConfig, [
+        context.payload.label.name,
+      ]);
+    }
+
+    if (
+      assigneesForNewLabel?.length === 0 &&
+      context.payload.label?.name !== ASSIGN_LABEL
+    ) {
+      context.log.info(
+        '[%s] #%s ignored: incorrect label ("%s")',
+        repoName,
+        issueOrPRNumber,
+        context.payload.label?.name
+      );
+      return;
+    }
+    if (context.payload.label?.name === ASSIGN_LABEL) {
+      // Remove the label so the user knows the event was processed (even if not successfully).
+      await context.octokit.issues.removeLabel(
+        context.issue({name: ASSIGN_LABEL})
       );
     }
+  }
+
+  // Allow the label to force a new assignee, even if one is already assigned.
+  if (!isLabeled && issuePayload!.assignees.length !== 0) {
+    context.log.info(
+      util.format(
+        '[%s] #%s ignored: already has assignee(s)',
+        repoName,
+        issueOrPRNumber
+      )
+    );
+    return;
+  }
+
+  let labels: string[] | undefined = [];
+  if (byConfig !== undefined && context.payload.action === 'opened') {
+    // It is possible that blunderbuss is running before other bots have
+    // a chance to add extra labels. Wait and re-pull fresh labels
+    // before comparing against the config.
+    await sleep(10_000);
+    const labelResp = await context.octokit.issues.listLabelsOnIssue({
+      issue_number: issueOrPRNumber!,
+      owner: context.payload.repository.owner.login,
+      repo: context.payload.repository.name,
+    });
+    labels = labelResp.data.map(lr => lr.name);
+  } else {
+    labels = issue
+      ? issue.labels?.map(l => l.name)
+      : pullRequest?.labels?.map(l => l.name);
+  }
+  const preferredAssignees = findAssignees(byConfig, labels);
+  let possibleAssignees = preferredAssignees.length
+    ? preferredAssignees
+    : assignConfig || [];
+  possibleAssignees = await expandTeams(possibleAssignees, context);
+  const assignee = randomFrom(possibleAssignees, issuePayload!.user.login);
+  if (!assignee) {
+    context.log.info(
+      util.format(
+        '[%s] #%s not assigned: no valid assignee(s)',
+        repoName,
+        issueOrPRNumber
+      )
+    );
+    return;
+  }
+
+  const resp = await context.octokit.issues.addAssignees(
+    context.issue({assignees: [assignee]})
+  );
+  if (resp.status !== 201) {
+    context.log.error(
+      util.format(
+        '[%s] #%s could not be assined to %s: status %d',
+        repoName,
+        issueOrPRNumber,
+        assignee,
+        resp.status
+      )
+    );
+    return;
+  }
+  context.log.info(
+    util.format(
+      '[%s] #%s was assigned to %s',
+      issueOrPROwner,
+      issueOrPRRepo,
+      issueOrPRNumber,
+      assignee
+    )
   );
 }
 

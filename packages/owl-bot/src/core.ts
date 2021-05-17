@@ -33,6 +33,7 @@ interface BuildArgs {
   pr: number;
   project?: string;
   trigger: string;
+  defaultBranch?: string;
 }
 
 export interface CheckArgs {
@@ -72,7 +73,9 @@ interface Token {
   repository_selection: string;
 }
 
-const UPDATE_LOCK_PULL_REQUEST_LABEL = 'owl-bot-update-lock';
+export const OWL_BOT_LOCK_UPDATE = 'owl-bot-update-lock';
+export const OWL_BOT_COPY = 'owl-bot-copy';
+export const OWL_BOT_IGNORE = 'owl-bot-ignore';
 
 export async function triggerPostProcessBuild(
   args: BuildArgs,
@@ -114,6 +117,7 @@ export async function triggerPostProcessBuild(
         // gcr.io/repo-automation-tools/nodejs-post-processor**@1234abcd**
         // TODO: read this from OwlBot.yaml.
         _CONTAINER: args.image,
+        _DEFAULT_BRANCH: args.defaultBranch ?? 'master',
       },
     },
   });
@@ -479,6 +483,26 @@ async function updatePullRequestAfterPostProcessor(
   prNumber: number,
   octokit: Octokit
 ): Promise<void> {
+  const {data: pull} = await octokit.pulls.get({
+    owner,
+    repo,
+    pull_number: prNumber,
+  });
+  // If someone asked owl bot to ignore this PR, never close or promote it.
+  if (pull.labels.find(label => label.name === OWL_BOT_IGNORE)) {
+    logger.info(
+      `Ignoring ${owner}/${repo} #${prNumber} because it's labeled with ${OWL_BOT_IGNORE}.`
+    );
+    return;
+  }
+  // If the pull request was not created by owl bot, never close or promote it.
+  const owlBotLabels = [OWL_BOT_LOCK_UPDATE, OWL_BOT_COPY];
+  if (!pull.labels.find(label => owlBotLabels.indexOf(label.name ?? '') >= 0)) {
+    logger.info(
+      `Ignoring ${owner}/${repo} #${prNumber} because it's not labled with ${owlBotLabels}.`
+    );
+    return;
+  }
   // If running post-processor has created a noop change, close the
   // pull request:
   const files = (
@@ -497,14 +521,9 @@ async function updatePullRequestAfterPostProcessor(
     });
   } else {
     // If the pull request is a DRAFT lock file update, close it or promote it.
-    const {data: pull} = await octokit.pulls.get({
-      owner,
-      repo,
-      pull_number: prNumber,
-    });
     if (
       pull.draft &&
-      pull.labels.find(label => label.name === UPDATE_LOCK_PULL_REQUEST_LABEL)
+      pull.labels.find(label => label.name === OWL_BOT_LOCK_UPDATE)
     ) {
       if (1 === files.length && files[0].filename === owlBotLockPath) {
         // It only updated the lock file.  No reason to merge this pull request.
@@ -543,5 +562,5 @@ export const core = {
   owlBotLockPath,
   triggerPostProcessBuild,
   updatePullRequestAfterPostProcessor,
-  UPDATE_LOCK_PULL_REQUEST_LABEL,
+  OWL_BOT_LOCK_UPDATE: OWL_BOT_LOCK_UPDATE,
 };

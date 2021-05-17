@@ -89,14 +89,8 @@ export function autoDetectLabel(
   let firstPart = match ? match[1] : title;
 
   // Remove common prefixes. For example,
-  // https://github.com/GoogleCloudPlatform/java-docs-samples/issues/3578 and
-  // https://github.com/GoogleCloudPlatform/python-docs-samples/issues/5657.
-  const trimPrefixes = [
-    'com.example.',
-    'com.google.',
-    'snippets.',
-    'data-science-onramp.',
-  ];
+  // https://github.com/GoogleCloudPlatform/java-docs-samples/issues/3578
+  const trimPrefixes = ['com.example.', 'com.google.', 'snippets.'];
   for (const prefix of trimPrefixes) {
     if (firstPart.startsWith(prefix)) {
       firstPart = firstPart.slice(prefix.length);

@@ -14,7 +14,6 @@
 
 import {promisify} from 'util';
 import {readFile} from 'fs';
-import * as proc from 'child_process';
 import {
   owlBotYamlPath,
   owlBotYamlFromText,
@@ -29,6 +28,9 @@ import {OctokitType, OctokitFactory} from './octokit-util';
 import tmp from 'tmp';
 import glob from 'glob';
 import {GithubRepo} from './github-repo';
+import {OWL_BOT_COPY} from './core';
+import {newCmd} from './cmd';
+import {createPullRequestFromLastCommit} from './create-pr';
 
 // This code generally uses Sync functions because:
 // 1. None of our current designs including calling this code from a web
@@ -36,22 +38,6 @@ import {GithubRepo} from './github-repo';
 // 2. Calling sync functions yields simpler code.
 
 const readFileAsync = promisify(readFile);
-
-// Creates a function that first prints, then executes a shell command.
-export type Cmd = (
-  command: string,
-  options?: proc.ExecSyncOptions | undefined
-) => Buffer;
-export function newCmd(logger = console): Cmd {
-  const cmd = (
-    command: string,
-    options?: proc.ExecSyncOptions | undefined
-  ): Buffer => {
-    logger.info(command);
-    return proc.execSync(command, options);
-  };
-  return cmd;
-}
 
 /**
  * Composes a link to the source commit that triggered the copy.
@@ -83,7 +69,9 @@ export async function copyCodeAndCreatePullRequest(
   const cmd = newCmd(logger);
 
   // Clone the dest repo.
-  const cloneUrl = destRepo.getCloneUrl();
+  const cloneUrl = destRepo.getCloneUrl(
+    await octokitFactory.getGitHubShortLivedAccessToken()
+  );
   cmd(`git clone --single-branch "${cloneUrl}" ${destDir}`);
 
   // Check out a dest branch.
@@ -137,41 +125,16 @@ ${err}`,
     return; // Mid-air collision!
   }
 
-  const githubRepo = await octokit.repos.get({owner, repo});
-
-  // Push to origin.
-  const pushUrl = destRepo.getCloneUrl(token);
-  cmd(`git remote set-url origin ${pushUrl}`, {cwd: destDir});
-  cmd(`git push origin ${destBranch}`, {cwd: destDir});
-
-  // Use the commit's subject and body as the pull request's title and body.
-  const title: string = cmd('git log -1 --format=%s', {
-    cwd: destDir,
-  })
-    .toString('utf8')
-    .trim();
-  const body: string = cmd('git log -1 --format=%b', {
-    cwd: destDir,
-  })
-    .toString('utf8')
-    .trim();
-
-  // Create a pull request.
-  const pull = await octokit.pulls.create({
+  await createPullRequestFromLastCommit(
     owner,
     repo,
-    title,
-    body,
-    head: destBranch,
-    base: githubRepo.data.default_branch,
-  });
-  logger.info(`Created pull request ${pull.data.html_url}`);
-  await octokit.issues.update({
-    owner,
-    repo,
-    issue_number: pull.data.number,
-    labels: ['owl-bot-copy'],
-  });
+    destDir,
+    destBranch,
+    destRepo.getCloneUrl(token),
+    [OWL_BOT_COPY],
+    octokit,
+    logger
+  );
 }
 
 /**

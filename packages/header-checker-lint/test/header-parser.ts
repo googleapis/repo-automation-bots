@@ -98,4 +98,15 @@ describe('detectLicenseHeader', () => {
     assert.strictEqual(header.year, 2020);
     assert.strictEqual(header.type, 'Apache-2.0');
   });
+
+  it('should handle html-style comments', async () => {
+    const contents = fs.readFileSync(
+      resolve(fixturesPath, './html-style-header.txt'),
+      'utf-8'
+    );
+    const header = detectLicenseHeader(contents);
+    assert.strictEqual(header.copyright, 'Google LLC');
+    assert.strictEqual(header.year, 2021);
+    assert.strictEqual(header.type, 'Apache-2.0');
+  });
 });

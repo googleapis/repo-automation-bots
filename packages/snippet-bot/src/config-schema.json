@@ -1,0 +1,19 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Sync Repo Settings Config",
+    "description": "Schema for defining the sync repo settings config",
+    "additionalProperties": false,
+    "properties": {
+	"ignoreFiles": {
+	    "description": "A list of file patterns for ignoring",
+	    "type": "array",
+	    "items": {
+		"type": "string"
+	    }
+	},
+	"alwaysCreateStatusCheck": {
+	    "description": "Indicates whether the bot always create status checks",
+	    "type": "boolean",
+	}
+    }
+}

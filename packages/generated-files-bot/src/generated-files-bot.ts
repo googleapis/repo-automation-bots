@@ -207,9 +207,14 @@ export function handler(app: Probot) {
     const repo = context.payload.repository.name;
     const pullNumber = context.payload.pull_request.number;
     const prAuthor = context.payload.pull_request.user.login;
+    const sender = context.payload.sender.login;
 
     // ignore PRs from a configurable list of authors
-    if (config.ignoreAuthors?.includes(prAuthor)) {
+    if (
+      config.ignoreAuthors?.includes(prAuthor) ||
+      config.ignoreAuthors?.includes(sender)
+    ) {
+      logger.metric('generated_files_bot.ignored_author');
       return;
     }
 
@@ -225,6 +230,11 @@ export function handler(app: Probot) {
       logger.warn(
         'No templated files specified. Please check your configuration.'
       );
+
+      logger.metric('generated_files_bot.missing_templated_file', {
+        repo: context.payload.repository.name,
+        owner: context.payload.repository.owner.login,
+      });
       return;
     }
 
@@ -262,6 +272,10 @@ export function handler(app: Probot) {
         context.payload.installation!.id,
         body
       );
+
+      logger.metric('generated_files_bot.detected_modified_templated_files', {
+        touchedTemplates: touchedTemplates.length,
+      });
     }
   });
 }

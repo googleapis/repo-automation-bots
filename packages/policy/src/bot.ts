@@ -17,7 +17,7 @@ import {Probot, Context} from 'probot';
 import {logger} from 'gcf-utils';
 import {getPolicy} from './policy';
 import {exportToBigQuery} from './export';
-import {submitFixes} from './changer';
+import {getChanger} from './changer';
 
 export const allowedOrgs = ['googleapis', 'googlecloudplatform'];
 
@@ -59,7 +59,8 @@ export function policyBot(app: Probot) {
     // causes any errors.  Otherwise, the entire function is retried, and the
     // result is recorded twice.
     try {
-      await submitFixes(result, repoMetadata, context.octokit);
+      const changer = getChanger(context.octokit, repoMetadata);
+      await changer.submitFixes(result);
     } catch (e) {
       logger.error(e);
     }

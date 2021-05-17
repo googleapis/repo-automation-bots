@@ -75,7 +75,7 @@ export const scanGoogleapisGenAndCreatePullRequestsCommand: yargs.CommandModule<
     });
     const db = admin.firestore();
     const configsStore = new FirestoreConfigsStore(db!);
-    scanGoogleapisGenAndCreatePullRequests(
+    await scanGoogleapisGenAndCreatePullRequests(
       argv['source-repo'],
       octokitFactoryFrom(argv),
       configsStore,

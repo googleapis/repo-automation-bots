@@ -99,10 +99,21 @@ export function handler(app: Probot) {
     async c => {
       const [owner, repo] = c.payload.repository.full_name.split('/');
 
-      // Allow the label sync logic to be ignored for a repository:
-      const remoteConfiguration = await loadConfig(c);
+      // Allow the label sync logic to be ignored for a repository.
+      // Since there's a feature for ignoring, it should skip the repo
+      // when failed to fetch the config.
+      let remoteConfiguration: ConfigurationOptions | null = null;
+      try {
+        remoteConfiguration = await loadConfig(c);
+      } catch (err) {
+        err.message =
+          'Error reading configuration for ' +
+          `${c.payload.repository.full_name}, skipping: ${err.message}`;
+        logger.error(err);
+        return;
+      }
       if (remoteConfiguration?.ignored) {
-        logger.info(`skipping repository ${repo}`);
+        logger.info(`skipping repository ${c.payload.repository.full_name}`);
         return;
       }
 
@@ -114,10 +125,21 @@ export function handler(app: Probot) {
     const owner = c.payload.organization.login;
     const repo = c.payload.repository.name;
 
-    // Allow the label sync logic to be ignored for a repository:
-    const remoteConfiguration = await loadConfig(c);
+    // Allow the label sync logic to be ignored for a repository.
+    // Since there's a feature for ignoring, it should skip the repo
+    // when failed to fetch the config.
+    let remoteConfiguration: ConfigurationOptions | null = null;
+    try {
+      remoteConfiguration = await loadConfig(c);
+    } catch (err) {
+      err.message =
+        'Error reading configuration for ' +
+        `${c.payload.repository.full_name}, skipping: ${err.message}`;
+      logger.error(err);
+      return;
+    }
     if (remoteConfiguration?.ignored) {
-      logger.info(`skipping repository ${repo}`);
+      logger.info(`skipping repository ${c.payload.repository.full_name}`);
       return;
     }
 
@@ -276,15 +298,15 @@ async function reconcileLabels(
 
   // now clean up common labels we don't want
   const labelsToDelete = [
-    'bug',
-    'enhancement',
-    'kokoro:force-ci',
-    'kokoro: force-run',
+    'bug', // prefer type: bug
+    'enhancement', // type: feature request
+    'question', // type: question
+    'kokoro:force-ci', // just wrong
+    'kokoro: force-run', // errornous spaces
     'kokoro: run',
-    'buildcop: issue',
+    'buildcop: issue', // flakybot is the new name
     'buildcop: quiet',
     'buildcop: flaky',
-    'question',
   ];
   for (const l of oldLabels) {
     if (labelsToDelete.includes(l.name)) {
