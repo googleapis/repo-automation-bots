@@ -21,7 +21,7 @@
   "scripts": {
     "compile": "tsc -p .",
     "start": "probot run ./build/src/blunderbuss.js",
-    "pretest": "npm run compile && docker pull google/cloud-sdk",
+    "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha build/test",
     "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "fix": "gts fix",
@@ -34,10 +34,14 @@
   "devDependencies": {
     "@octokit/webhooks": "^9.0.0",
     "@octokit/webhooks-definitions": "^3.67.0",
+    "@types/chai": "^4.2.17",
+    "@types/chai-as-promised": "^7.1.3",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.6.1",
     "@types/sinon": "^9.0.4",
     "c8": "^7.1.0",
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
     "cross-env": "^7.0.0",
     "google-datastore-emulator": "^4.0.0",
     "gts": "^3.0.0",
