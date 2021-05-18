@@ -17,6 +17,7 @@ import yaml from 'js-yaml';
 import path from 'path';
 
 import {Octokit} from '@octokit/rest';
+
 import {logger} from 'gcf-utils';
 
 type Conclusion =
@@ -35,6 +36,14 @@ export interface OctokitContext {
 export interface ValidateConfigResult {
   isValid: boolean;
   errorText: string | undefined;
+}
+
+interface File {
+  content: string | undefined;
+}
+
+function isFile(file: File | unknown): file is File {
+  return (file as File).content !== undefined;
 }
 
 export class ConfigChecker<T> {
@@ -151,9 +160,16 @@ export async function getConfig<T>(
       repo: repo,
       path: path,
     });
-    const loaded =
-      yaml.load(Buffer.from(resp.data.toString(), 'base64').toString()) || {};
-    return Object.assign({}, undefined, loaded);
+    if (isFile(resp.data)) {
+      const loaded =
+        yaml.load(
+          Buffer.from(resp.data.content.toString(), 'base64').toString()
+        ) || {};
+      return Object.assign({}, undefined, loaded);
+    } else {
+      // This should not happen.
+      throw new Error('could not handle getContent result.');
+    }
   } catch (err) {
     if (err.status === 404 && repo !== '.github') {
       // Try to get it from the `.github` repo.
@@ -163,10 +179,16 @@ export async function getConfig<T>(
           repo: '.github',
           path: path,
         });
-        const loaded =
-          yaml.load(Buffer.from(resp.data.toString(), 'base64').toString()) ||
-          {};
-        return Object.assign({}, undefined, loaded);
+        if (isFile(resp.data)) {
+          const loaded =
+            yaml.load(
+              Buffer.from(resp.data.content.toString(), 'base64').toString()
+            ) || {};
+          return Object.assign({}, undefined, loaded);
+        } else {
+          // This should not happen.
+          throw new Error('could not handle getContent result.');
+        }
       } catch (err) {
         if (err.status === 404) {
           return null;
@@ -194,9 +216,16 @@ export async function getConfigWithDefault<T>(
       repo: repo,
       path: path,
     });
-    const loaded =
-      yaml.load(Buffer.from(resp.data.toString(), 'base64').toString()) || {};
-    return Object.assign({}, defaultConfig, loaded);
+    if (isFile(resp.data)) {
+      const loaded =
+        yaml.load(
+          Buffer.from(resp.data.content.toString(), 'base64').toString()
+        ) || {};
+      return Object.assign({}, defaultConfig, loaded);
+    } else {
+      // This should not happen.
+      throw new Error('could not handle getContent result.');
+    }
   } catch (err) {
     if (err.status === 404 && repo !== '.github') {
       // Try to get it from the `.github` repo.
@@ -206,10 +235,16 @@ export async function getConfigWithDefault<T>(
           repo: '.github',
           path: path,
         });
-        const loaded =
-          yaml.load(Buffer.from(resp.data.toString(), 'base64').toString()) ||
-          {};
-        return Object.assign({}, defaultConfig, loaded);
+        if (isFile(resp.data)) {
+          const loaded =
+            yaml.load(
+              Buffer.from(resp.data.content.toString(), 'base64').toString()
+            ) || {};
+          return Object.assign({}, defaultConfig, loaded);
+        } else {
+          // This should not happen.
+          throw new Error('could not handle getContent result.');
+        }
       } catch (err) {
         if (err.status === 404) {
           return defaultConfig;
