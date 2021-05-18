@@ -83,8 +83,8 @@ const copyTagFooter = 'Copy-Tag: ';
 /**
  * Finds a copy tag footer in the body of a git commit message.
  */
-export function indexOfCopyTagFooter(body: string): number {
-  return body.indexOf('\n' + copyTagFooter);
+export function bodyIncludesCopyTagFooter(body: string): boolean {
+  return body.includes('\n' + copyTagFooter);
 }
 
 /**
@@ -402,13 +402,12 @@ export async function copyExists(
     response: {data: {number: number; body?: string | null}[]}
   ): boolean => {
     for (const issue of response.data) {
-      const copyTagPos = indexOfCopyTagFooter(issue.body ?? '');
-      const needle =
-        copyTagPos >= 0 // Find the needle in a haystack.
-          ? copyTag // It's a new issue with a copy tag.
-          : sourceCommitHash; // It's an old issue without a copy tag.
-      const pos: number = issue.body?.indexOf(needle) ?? -1;
-      if (pos >= 0) {
+      const bodyIncludesCopyTag = bodyIncludesCopyTagFooter(issue.body ?? '');
+      const needle = bodyIncludesCopyTag // Find the needle in a haystack.
+        ? copyTag // It's a new issue with a copy tag.
+        : sourceCommitHash; // It's an old issue without a copy tag.
+      const foundNeedle: boolean = issue.body?.includes(needle) ?? false;
+      if (foundNeedle) {
         logger.info(
           `${kind} ${issue.number} with ${sourceCommitHash} exists in ${owner}/${repo}.`
         );

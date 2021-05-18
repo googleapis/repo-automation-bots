@@ -156,7 +156,7 @@ Copy-Tag: ${copyTag}`
     );
 
     // Confirm the pull request body contains a properly formatted Copy-Tag footer.
-    assert.notStrictEqual(-1, cc.indexOfCopyTagFooter(pull.body));
+    assert.strictEqual(true, cc.bodyIncludesCopyTagFooter(pull.body));
 
     // Confirm it set the label.
     assert.deepStrictEqual(issues.updates[0].labels, ['owl-bot-copy']);
