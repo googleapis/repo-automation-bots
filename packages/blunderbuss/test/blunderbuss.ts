@@ -686,9 +686,6 @@ describe('Blunderbuss', () => {
         id: 'abc123',
       });
       requests.done();
-
-      await probot.receive({name: 'issues', payload, id: 'abc123'});
-      requests.done();
     });
   });
 });

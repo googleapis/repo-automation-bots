@@ -160,11 +160,12 @@ async function assign(context: Context, config: Configuration) {
   const issuePayload = issue || pullRequest;
 
   // Reload the issue and use the assignee for counting.
-  const param = context.repo({issue_number: issuePayload?.number as number});
   let refreshedIssueResponse: getIssueResponse | null = null;
 
   try {
-    refreshedIssueResponse = await context.octokit.issues.get(param);
+    refreshedIssueResponse = await context.octokit.issues.get(
+      context.repo({issue_number: issueOrPRNumber as number})
+    );
   } catch (err) {
     if (err.status === 404) {
       context.log.info(
