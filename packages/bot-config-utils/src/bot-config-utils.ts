@@ -17,7 +17,6 @@ import yaml from 'js-yaml';
 import path from 'path';
 
 import {Octokit} from '@octokit/rest';
-
 import {logger} from 'gcf-utils';
 
 type Conclusion =
