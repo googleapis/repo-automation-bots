@@ -30,13 +30,16 @@ import {DatastoreLock} from '@google-automations/datastore-lock';
 import {Octokit} from '@octokit/rest';
 import {components} from '@octokit/openapi-types';
 import {logger} from 'gcf-utils';
-import {getConfigWithDefault, ConfigChecker} from './config';
+import {
+  getConfigWithDefault,
+  ConfigChecker,
+} from '@google-automations/bot-config-utils';
 import schema from './config-schema.json';
 
 export interface Config {
   issuePriority: string;
 }
-const DEFAULT_CONFIG: Config = {issuePriority: 'p1'};
+export const DEFAULT_CONFIG: Config = {issuePriority: 'p1'};
 export const CONFIG_FILENAME = 'flakybot.yaml';
 
 type IssuesListForRepoResponseItem = components['schemas']['issue-simple'];
