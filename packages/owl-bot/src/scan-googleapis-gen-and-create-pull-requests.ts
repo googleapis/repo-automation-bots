@@ -55,19 +55,7 @@ function isCommitHashTooOld(
   const beginIndex = beginAfterCommitHash
     ? commitHashes.indexOf(beginAfterCommitHash)
     : -1;
-  if (beginIndex >= 0 && beginIndex <= commitIndex) {
-    return true;
-  }
-  // Compare to environment variable.
-  if (process.env.OWL_BOT_BEGIN_AFTER_COMMIT_HASH) {
-    const beginIndex = commitHashes.indexOf(
-      process.env.OWL_BOT_BEGIN_AFTER_COMMIT_HASH
-    );
-    if (beginIndex >= 0 && beginIndex <= commitIndex) {
-      return true;
-    }
-  }
-  return false;
+  return beginIndex >= 0 && beginIndex <= commitIndex;
 }
 
 /**
