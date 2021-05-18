@@ -40,7 +40,7 @@ import {
 } from './violations';
 import schema from './config-schema.json';
 
-import {ConfigChecker, getConfig} from '@github-automations/bot-config-utils';
+import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import {logger, addOrUpdateIssueComment} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';

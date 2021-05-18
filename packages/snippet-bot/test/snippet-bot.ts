@@ -19,11 +19,11 @@
 import myProbotApp from '../src/snippet-bot';
 import * as apiLabelsModule from '../src/api-labels';
 import * as snippetsModule from '../src/snippets';
-import * as configUtilsModule from '@github-automations/bot-config-utils';
 import {CONFIGURATION_FILE_PATH} from '../src/configuration';
 import {Snippets} from '../src/snippets';
 
-import {ConfigChecker} from '@github-automations/bot-config-utils';
+import * as configUtilsModule from '@google-automations/bot-config-utils';
+import {ConfigChecker} from '@google-automations/bot-config-utils';
 import {resolve} from 'path';
 import {Probot, ProbotOctokit} from 'probot';
 import {Octokit} from '@octokit/rest';
