@@ -28,7 +28,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@github-automations/datastore-lock": "^1.0.0",
+    "@google-automations/datastore-lock": "^2.0.0",
     "gcf-utils": "^7.1.1"
   },
   "devDependencies": {

@@ -23,7 +23,7 @@ import {
   PullRequest,
 } from '@octokit/webhooks-definitions/schema';
 import {Endpoints} from '@octokit/types';
-import {DatastoreLock} from '@github-automations/datastore-lock';
+import {DatastoreLock} from '@google-automations/datastore-lock';
 
 const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';

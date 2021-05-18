@@ -15,7 +15,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import * as blunderbuss from '../src/blunderbuss';
-import {DatastoreLock} from '@github-automations/datastore-lock';
+import {DatastoreLock} from '@google-automations/datastore-lock';
 import {describe, it, beforeEach, afterEach, after} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
