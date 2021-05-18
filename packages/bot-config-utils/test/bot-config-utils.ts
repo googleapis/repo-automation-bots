@@ -240,13 +240,35 @@ function getConfigFile(
   status: number,
   responseFile?: string
 ) {
-  let config: Buffer;
+  const response = {
+    name: '',
+    path: '',
+    sha: '',
+    size: 48,
+    url: '',
+    html_url: '',
+    git_url: '',
+    download_url: '',
+    type: 'file',
+    content: '',
+    encoding: 'base64',
+    _links: {
+      self: '',
+      git: '',
+      html: '',
+    },
+  };
   if (status === 200) {
     if (responseFile) {
-      config = fs.readFileSync(resolve(fixturesPath, responseFile));
+      const config = fs.readFileSync(resolve(fixturesPath, responseFile));
+      const content = config.toString('base64');
+      response.name = responseFile;
+      response.path = `.github/${responseFile}`;
+      response.content = content;
+      response.size = content.length;
       return nock('https://api.github.com')
         .get(`/repos/${owner}/${repo}/contents/.github%2F${filename}`)
-        .reply(200, Buffer.from(config).toString('base64'));
+        .reply(200, response);
     } else {
       throw Error('responseFile is needed for status 200');
     }
