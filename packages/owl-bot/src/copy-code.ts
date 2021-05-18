@@ -46,8 +46,43 @@ function sourceLinkFrom(sourceCommitHash: string): string {
   return `https://github.com/googleapis/googleapis-gen/commit/${sourceCommitHash}`;
 }
 
+/**
+ * Owl bot must avoid creating duplicate pull requests that copy code from
+ * googleapis-gen.  Duplicate pull requests would annoy and confuse library
+ * maintainers.
+ *
+ * To avoid creating duplicate pull requests, owl bot creates a unique id,
+ * called a copy tag, for each copy operation.
+ *
+ * Before multiple .OwlBot.yaml files were permitted in a single repo, the
+ * commit hash from googleapis-gen effectively functioned as a unique id
+ * for the copy operation.  However, with multiple .OwlBot.yamls in a single
+ * library repo, the commit hash from googleapis-gen no longer uniquely
+ * identifies the copy operation.  There is potentially one copy operation for
+ * each .OwlBot.yaml.  Therefore, Owl bot composes a unique copy tag comprising
+ * the commit hash from googleapis-gen and the path to owlBotYaml in the library
+ * repo.
+ *
+ * Before creating a copy-code pull request, Owl Bot first checks if a pull
+ * request or issue already exists with the same copy tag.  If one exists, then
+ * Owl Bot does not create a second, duplicate pull request.
+ */
+export function copyTagFrom(owlBotYamlPath: string, sourceCommitHash: string) {
+  return crypto
+    .createHash('sha256')
+    .update(owlBotYamlPath)
+    .update(sourceCommitHash)
+    .digest('hex');
+}
+
+/**
+ * Precedes the copy tag in a body of a git commit message.
+ */
 const copyTagFooter = 'Copy-Tag: ';
 
+/**
+ * Finds a copy tag footer in the body of a git commit message.
+ */
 export function indexOfCopyTagFooter(body: string): number {
   return body.indexOf('\n' + copyTagFooter);
 }
@@ -333,20 +368,9 @@ export function copyDirs(
 }
 
 /**
- * Creates a unique tag we can easily search for in pull request and issue
- * bodies that identifies a copy operation.
- */
-export function copyTagFrom(owlBotYamlPath: string, sourceCommitHash: string) {
-  return crypto
-    .createHash('sha256')
-    .update(owlBotYamlPath)
-    .update(sourceCommitHash)
-    .digest('hex');
-}
-
-/**
- * Searches for instances of the sourceCommitHash in recent pull requests and
- * commits.
+ * Searches for copy tags in recent pull requests and commits.  Pull requests
+ * created by older versions of Owl Bot do not contain a copy tag; for those
+ * pull requests, we search for the commit hash from googleapis-gen.
  *
  * @param octokit an octokit instance
  * @param destRepo the repo to search
