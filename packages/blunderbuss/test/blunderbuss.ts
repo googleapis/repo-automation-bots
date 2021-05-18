@@ -86,10 +86,7 @@ describe('Blunderbuss', () => {
         fixturesPath,
         './events/issue_opened_no_assignees'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/no_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -114,10 +111,7 @@ describe('Blunderbuss', () => {
         'events',
         'issue_opened_with_assignees'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/with_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/with_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -138,10 +132,7 @@ describe('Blunderbuss', () => {
         'events',
         'issue_opened_no_assignees'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/with_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/with_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -181,10 +172,7 @@ describe('Blunderbuss', () => {
         'events',
         'issue_correct_label'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/with_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/with_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -218,10 +206,7 @@ describe('Blunderbuss', () => {
         'events',
         'issue_wrong_label'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/no_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -282,10 +267,7 @@ describe('Blunderbuss', () => {
         'events',
         'issue_correct_label'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/no_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'on_label.yml')
       );
@@ -314,10 +296,7 @@ describe('Blunderbuss', () => {
         fixturesPath,
         './events/issue_opened_no_assignees'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/no_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       payload.issue.labels = [{name: 'api: foo'}];
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'on_label.yml')
@@ -341,10 +320,7 @@ describe('Blunderbuss', () => {
 
     it('assigns labeled issue by label', async () => {
       const payload = require(resolve(fixturesPath, 'events', 'issue_labeled'));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/no_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'on_label.yml')
       );
@@ -370,10 +346,7 @@ describe('Blunderbuss', () => {
         'events',
         'issue_labeled_with_assignees'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/with_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/with_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'on_label.yml')
       );
@@ -394,10 +367,7 @@ describe('Blunderbuss', () => {
         'events',
         'issue_labeled_for_team'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/no_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'on_label.yml')
       );
@@ -429,10 +399,7 @@ describe('Blunderbuss', () => {
         'events',
         'issue_opened_no_assignees'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/no_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'assign_by.yml')
       );
@@ -460,10 +427,7 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_opened_no_assignees'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/no_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -493,10 +457,7 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_opened_no_assignees'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/no_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'pr_with_team.yml')
       );
@@ -528,10 +489,7 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_opened_no_assignees'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/no_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       payload.pull_request.labels = [{name: 'api: foo'}];
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'on_label.yml')
@@ -562,10 +520,7 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_opened_with_assignees'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/with_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/with_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -632,10 +587,7 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_correct_label'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/no_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -665,10 +617,7 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_wrong_label'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/no_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -714,10 +663,7 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_opened_no_assignees'
       ));
-      const issue = require(resolve(
-        fixturesPath,
-        './issues/no_assignees'
-      ));
+      const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'pr_on_label.yml')
       );

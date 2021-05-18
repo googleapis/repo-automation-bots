@@ -40,8 +40,8 @@ interface Configuration {
   assign_prs_by?: ByConfig[];
 }
 
-type getIssueResponse = Endpoints[
-  "GET /repos/{owner}/{repo}/issues/{issue_number}"]["response"];
+type getIssueResponse =
+  Endpoints['GET /repos/{owner}/{repo}/issues/{issue_number}']['response'];
 
 // Randomly returns an item from an array, while ignoring the provided value.
 // Returns undefined if no options remain.
@@ -165,14 +165,13 @@ async function assign(context: Context, config: Configuration) {
 
   try {
     refreshedIssueResponse = await context.octokit.issues.get(param);
-
   } catch (err) {
     if (err.status === 404) {
       context.log.info(
         '[%s] #%s ignored: got 404 on refreshing the issue',
         repoName,
-        issueOrPRNumber,
-      )
+        issueOrPRNumber
+      );
       return;
     } else {
       throw err;
