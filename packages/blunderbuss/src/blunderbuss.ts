@@ -22,6 +22,7 @@ import {
   Issue,
   PullRequest,
 } from '@octokit/webhooks-definitions/schema';
+import {Endpoints} from '@octokit/types';
 import {DatastoreLock} from '@github-automations/datastore-lock';
 
 const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
@@ -38,6 +39,9 @@ interface Configuration {
   assign_prs?: string[];
   assign_prs_by?: ByConfig[];
 }
+
+type getIssueResponse = Endpoints[
+  "GET /repos/{owner}/{repo}/issues/{issue_number}"]["response"];
 
 // Randomly returns an item from an array, while ignoring the provided value.
 // Returns undefined if no options remain.
@@ -155,13 +159,37 @@ async function assign(context: Context, config: Configuration) {
   const byConfig = issue ? config.assign_issues_by : config.assign_prs_by;
   const issuePayload = issue || pullRequest;
 
+  // Reload the issue and use the assignee for counting.
+  const param = context.repo({issue_number: issuePayload?.number as number});
+  let refreshedIssueResponse: getIssueResponse | null = null;
+
+  try {
+    refreshedIssueResponse = await context.octokit.issues.get(param);
+
+  } catch (err) {
+    if (err.status === 404) {
+      context.log.info(
+        '[%s] #%s ignored: got 404 on refreshing the issue',
+        repoName,
+        issueOrPRNumber,
+      )
+      return;
+    } else {
+      throw err;
+    }
+  }
+
+  // Just to comfort typescript type system.
+  if (refreshedIssueResponse === null) {
+    return;
+  }
   const isLabeled = context.payload.action === 'labeled';
   if (isLabeled) {
     // Only assign an issue that already has an assignee if labeled with
     // ASSIGN_LABEL.
     if (
       context.payload.label?.name !== ASSIGN_LABEL &&
-      issuePayload!.assignees?.length
+      refreshedIssueResponse.data.assignees?.length
     ) {
       context.log.info(
         '[%s] #%s ignored: incorrect label ("%s") because it is already assigned',
@@ -202,7 +230,7 @@ async function assign(context: Context, config: Configuration) {
   }
 
   // Allow the label to force a new assignee, even if one is already assigned.
-  if (!isLabeled && issuePayload!.assignees.length !== 0) {
+  if (!isLabeled && refreshedIssueResponse.data.assignees?.length !== 0) {
     context.log.info(
       util.format(
         '[%s] #%s ignored: already has assignee(s)',

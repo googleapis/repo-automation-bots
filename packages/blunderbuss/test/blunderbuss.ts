@@ -86,12 +86,18 @@ describe('Blunderbuss', () => {
         fixturesPath,
         './events/issue_opened_no_assignees'
       ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/no_assignees'
+      ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
         .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/5')
+        .reply(200, issue)
         .post('/repos/testOwner/testRepo/issues/5/assignees', body => {
           snapshot(body);
           return true;
@@ -108,13 +114,43 @@ describe('Blunderbuss', () => {
         'events',
         'issue_opened_with_assignees'
       ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/with_assignees'
+      ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config);
+        .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/5')
+        .reply(200, issue);
+
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
+      requests.done();
+    });
+
+    it('ignores when refreshed issues have assingnee(s)', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        'events',
+        'issue_opened_no_assignees'
+      ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/with_assignees'
+      ));
+      const config = fs.readFileSync(
+        resolve(fixturesPath, 'config', 'valid.yml')
+      );
+
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+        .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/5')
+        .reply(200, issue);
 
       await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
@@ -145,7 +181,10 @@ describe('Blunderbuss', () => {
         'events',
         'issue_correct_label'
       ));
-
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/with_assignees'
+      ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -153,6 +192,8 @@ describe('Blunderbuss', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
         .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/4')
+        .reply(200, issue)
         .delete(
           '/repos/testOwner/testRepo/issues/4/labels/blunderbuss%3A%20assign'
         )
@@ -177,13 +218,19 @@ describe('Blunderbuss', () => {
         'events',
         'issue_wrong_label'
       ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/no_assignees'
+      ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config);
+        .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/4')
+        .reply(200, issue);
 
       await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
@@ -235,6 +282,10 @@ describe('Blunderbuss', () => {
         'events',
         'issue_correct_label'
       ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/no_assignees'
+      ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'on_label.yml')
       );
@@ -242,6 +293,8 @@ describe('Blunderbuss', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
         .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/4')
+        .reply(200, issue)
         .delete(
           '/repos/testOwner/testRepo/issues/4/labels/blunderbuss%3A%20assign'
         )
@@ -261,6 +314,10 @@ describe('Blunderbuss', () => {
         fixturesPath,
         './events/issue_opened_no_assignees'
       ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/no_assignees'
+      ));
       payload.issue.labels = [{name: 'api: foo'}];
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'on_label.yml')
@@ -268,6 +325,8 @@ describe('Blunderbuss', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
         .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/5')
+        .reply(200, issue)
         .post('/repos/testOwner/testRepo/issues/5/assignees', body => {
           snapshot(body);
           return true;
@@ -282,6 +341,10 @@ describe('Blunderbuss', () => {
 
     it('assigns labeled issue by label', async () => {
       const payload = require(resolve(fixturesPath, 'events', 'issue_labeled'));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/no_assignees'
+      ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'on_label.yml')
       );
@@ -289,6 +352,8 @@ describe('Blunderbuss', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
         .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/4')
+        .reply(200, issue)
         .post('/repos/testOwner/testRepo/issues/4/assignees', body => {
           snapshot(body);
           return true;
@@ -305,13 +370,19 @@ describe('Blunderbuss', () => {
         'events',
         'issue_labeled_with_assignees'
       ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/with_assignees'
+      ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'on_label.yml')
       );
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config);
+        .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/4')
+        .reply(200, issue);
 
       await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
@@ -323,6 +394,10 @@ describe('Blunderbuss', () => {
         'events',
         'issue_labeled_for_team'
       ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/no_assignees'
+      ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'on_label.yml')
       );
@@ -330,7 +405,9 @@ describe('Blunderbuss', () => {
       const scopes = [
         nock('https://api.github.com')
           .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-          .reply(200, config),
+          .reply(200, config)
+          .get('/repos/testOwner/testRepo/issues/4')
+          .reply(200, issue),
         nock('https://api.github.com')
           .get('/orgs/googleapis/teams/team-awesome/members')
           .reply(200, [{login: 'user123'}]),
@@ -352,6 +429,10 @@ describe('Blunderbuss', () => {
         'events',
         'issue_opened_no_assignees'
       ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/no_assignees'
+      ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'assign_by.yml')
       );
@@ -359,7 +440,9 @@ describe('Blunderbuss', () => {
       const scopes = [
         nock('https://api.github.com')
           .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-          .reply(200, config),
+          .reply(200, config)
+          .get('/repos/testOwner/testRepo/issues/5')
+          .reply(200, issue),
         nock('https://api.github.com')
           .get('/repos/testOwner/testRepo/issues/5/labels')
           .reply(200, []),
@@ -377,6 +460,10 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_opened_no_assignees'
       ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/no_assignees'
+      ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -384,6 +471,8 @@ describe('Blunderbuss', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
         .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/6')
+        .reply(200, issue)
         .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
           snapshot(body);
           return true;
@@ -404,6 +493,10 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_opened_no_assignees'
       ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/no_assignees'
+      ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'pr_with_team.yml')
       );
@@ -411,6 +504,8 @@ describe('Blunderbuss', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
         .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/6')
+        .reply(200, issue)
         .get('/orgs/googleapis/teams/team-awesome/members')
         .reply(200, [{login: 'user123'}])
         .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
@@ -433,6 +528,10 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_opened_no_assignees'
       ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/no_assignees'
+      ));
       payload.pull_request.labels = [{name: 'api: foo'}];
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'on_label.yml')
@@ -441,6 +540,8 @@ describe('Blunderbuss', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
         .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/6')
+        .reply(200, issue)
         .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
           snapshot(body);
           return true;
@@ -461,13 +562,19 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_opened_with_assignees'
       ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/with_assignees'
+      ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config.toString('base64'));
+        .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/6')
+        .reply(200, issue);
 
       await probot.receive({
         name: 'pull_request',
@@ -525,6 +632,10 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_correct_label'
       ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/no_assignees'
+      ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
@@ -532,6 +643,8 @@ describe('Blunderbuss', () => {
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
         .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/6')
+        .reply(200, issue)
         .delete(
           '/repos/testOwner/testRepo/issues/6/labels/blunderbuss%3A%20assign'
         )
@@ -552,13 +665,19 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_wrong_label'
       ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/no_assignees'
+      ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'valid.yml')
       );
 
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config);
+        .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/6')
+        .reply(200, issue);
 
       await probot.receive({
         name: 'pull_request',
@@ -595,12 +714,18 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_opened_no_assignees'
       ));
+      const issue = require(resolve(
+        fixturesPath,
+        './issues/no_assignees'
+      ));
       const config = fs.readFileSync(
         resolve(fixturesPath, 'config', 'pr_on_label.yml')
       );
       const requests = nock('https://api.github.com')
         .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
         .reply(200, config)
+        .get('/repos/testOwner/testRepo/issues/6')
+        .reply(200, issue)
         .get('/repos/testOwner/testRepo/issues/6/labels')
         .reply(200, [{name: 'samples'}])
         .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
