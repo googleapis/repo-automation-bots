@@ -14,17 +14,14 @@
 
 import {logger} from 'gcf-utils';
 import {OwlBotLock, owlBotLockPath} from './config-files';
-import {collectConfigs, Configs, ConfigsStore} from './configs-store';
+import {Configs, ConfigsStore} from './configs-store';
 import {core} from './core';
-import tmp from 'tmp';
-import AdmZip from 'adm-zip';
-import * as fs from 'fs';
 // Conflicting linters think the next line is extraneous or necessary.
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints} from '@octokit/types';
 import {OctokitType} from './octokit-util';
 import {githubRepoFromOwnerSlashName} from './github-repo';
-import path from 'path';
+import {fetchConfigs} from './fetch-configs';
 
 type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
 
@@ -250,21 +247,11 @@ export async function refreshConfigs(
     commitHash: commitHash,
   };
 
-  const response = await octokit.repos.downloadZipballArchive({
+  const [lock, yamls] = await fetchConfigs(octokit, {
     owner: githubOrg,
     repo: repoName,
     ref: commitHash,
   });
-
-  const tmpDir = tmp.dirSync().name;
-  const zip = new AdmZip(Buffer.from(response.data as ArrayBuffer));
-  zip.extractAllTo(tmpDir);
-
-  // The root directory of the zip is <repo-name>-<short-hash>.
-  // That's actually the directory we want to work in.
-  const [rootDir] = fs.readdirSync(tmpDir);
-
-  const [lock, yamls] = collectConfigs(path.join(tmpDir, rootDir));
   if (lock) {
     newConfigs.lock = lock;
   }
