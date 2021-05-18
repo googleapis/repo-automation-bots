@@ -29,7 +29,7 @@
   "dependencies": {
     "ajv": "^8.3.0",
     "js-yaml": "^4.1.0",
-    "@github-automations/datastore-lock": "^1.0.0",
+    "@google-automations/datastore-lock": "^2.0.0",
     "@octokit/openapi-types": "^7.0.0",
     "@octokit/types": "^6.14.2",
     "@octokit/rest": "^18.5.3",

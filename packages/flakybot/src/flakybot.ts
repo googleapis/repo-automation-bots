@@ -25,7 +25,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
 import xmljs from 'xml-js';
-import {DatastoreLock} from '@github-automations/datastore-lock';
+import {DatastoreLock} from '@google-automations/datastore-lock';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {components} from '@octokit/openapi-types';
