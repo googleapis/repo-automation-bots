@@ -136,7 +136,7 @@ export function handler(app: Probot) {
       return false;
     }
     if (!includesConfig()) {
-      logger.info("skipping push that does not modify config");
+      logger.info('skipping push that does not modify config');
       logger.debug(context.payload.commits);
       return;
     }
