@@ -19,17 +19,13 @@ import {Octokit} from '@octokit/rest';
 import snapshot from 'snap-shot-it';
 // eslint-disable-next-line node/no-extraneous-import
 import {EventPayloads} from '@octokit/webhooks';
-import {readFileSync} from 'fs';
 import nock from 'nock';
 import {describe, it, beforeEach, before} from 'mocha';
 import * as sinon from 'sinon';
 import * as botConfigUtilsModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 
-import {
-  WELL_KNOWN_CONFIGURATION_FILE,
-  ConfigurationOptions
-} from '../src/config';
+import {WELL_KNOWN_CONFIGURATION_FILE} from '../src/config';
 import myProbotApp from '../src/header-checker-lint';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
@@ -58,10 +54,7 @@ describe('HeaderCheckerLint', () => {
 
     beforeEach(() => {
       payload = require(resolve(fixturesPath, './pull_request_opened'));
-      getConfigStub = sandbox.stub(
-        botConfigUtilsModule,
-        'getConfig'
-      );
+      getConfigStub = sandbox.stub(botConfigUtilsModule, 'getConfig');
       // By default, getConfigStub resolves to null.
       getConfigStub.resolves(null);
       validateConfigStub = sandbox.stub(
@@ -111,7 +104,7 @@ describe('HeaderCheckerLint', () => {
         'chingor13',
         'google-auth-library-java',
         '87139750cdcf551e8fe8d90c129527a4f358321c',
-        3,
+        3
       );
     });
 
@@ -214,10 +207,7 @@ describe('HeaderCheckerLint', () => {
 
     it('reads a custom configuration file', async () => {
       const config = {
-        'allowedCopyrightHolders': [
-          'Invalid Holder',
-          'Google LLC'
-        ]
+        allowedCopyrightHolders: ['Invalid Holder', 'Google LLC'],
       };
       getConfigStub.reset();
       getConfigStub.resolves(config);
@@ -278,9 +268,7 @@ describe('HeaderCheckerLint', () => {
 
     it('ignores an ignored files', async () => {
       const config = {
-        'ignoreFiles': [
-          '**/*.java'
-        ]
+        ignoreFiles: ['**/*.java'],
       };
       getConfigStub.reset();
       getConfigStub.resolves(config);
@@ -288,7 +276,6 @@ describe('HeaderCheckerLint', () => {
         fixturesPath,
         './invalid_copyright_added'
       ));
-      const invalidFile = require(resolve(fixturesPath, './invalid_copyright'));
       const requests = nock('https://api.github.com')
         .get(
           '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
@@ -339,10 +326,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     beforeEach(() => {
-      getConfigStub = sandbox.stub(
-        botConfigUtilsModule,
-        'getConfig'
-      );
+      getConfigStub = sandbox.stub(botConfigUtilsModule, 'getConfig');
       // By default, getConfigStub resolves to null.
       getConfigStub.resolves(null);
       validateConfigStub = sandbox.stub(

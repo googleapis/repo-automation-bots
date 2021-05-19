@@ -33,6 +33,7 @@
     "minimatch": "^3.0.4"
   },
   "devDependencies": {
+    "@octokit/rest": "^18.5.3",
     "@types/minimatch": "^3.0.3",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.6.1",
