@@ -55,8 +55,6 @@ describe('HeaderCheckerLint', () => {
     beforeEach(() => {
       payload = require(resolve(fixturesPath, './pull_request_opened'));
       getConfigStub = sandbox.stub(botConfigUtilsModule, 'getConfig');
-      // By default, getConfigStub resolves to null.
-      getConfigStub.resolves(null);
       validateConfigStub = sandbox.stub(
         ConfigChecker.prototype,
         'validateConfigChanges'
@@ -70,6 +68,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if new source file is missing license', async () => {
+      getConfigStub.resolves(null);
       const invalidFiles = require(resolve(
         fixturesPath,
         './missing_license_added'
@@ -109,6 +108,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if a modified source file is missing license', async () => {
+      getConfigStub.resolves(null);
       const invalidFiles = require(resolve(
         fixturesPath,
         './missing_license_modified'
@@ -134,6 +134,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if the new source file is added and has wrong year', async () => {
+      getConfigStub.resolves(null);
       const invalidFiles = require(resolve(fixturesPath, './wrong_year_added'));
       const blob = require(resolve(fixturesPath, './wrong_year'));
       const requests = nock('https://api.github.com')
@@ -156,6 +157,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if the source file is missing copyright', async () => {
+      getConfigStub.resolves(null);
       const invalidFiles = require(resolve(
         fixturesPath,
         './missing_copyright_added'
@@ -181,6 +183,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if the source file has an invalid copyright holder', async () => {
+      getConfigStub.resolves(null);
       const invalidFiles = require(resolve(
         fixturesPath,
         './invalid_copyright_added'
@@ -209,7 +212,6 @@ describe('HeaderCheckerLint', () => {
       const config = {
         allowedCopyrightHolders: ['Invalid Holder', 'Google LLC'],
       };
-      getConfigStub.reset();
       getConfigStub.resolves(config);
       const invalidFiles = require(resolve(
         fixturesPath,
@@ -236,12 +238,12 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('handles an invalid configuration file', async () => {
-      getConfigStub.reset();
       getConfigStub.rejects(new Error('Failed to parse the config'));
       await probot.receive({name: 'pull_request', payload, id: 'abc123'});
     });
 
     it('ignores a valid license', async () => {
+      getConfigStub.resolves(null);
       const validFiles = require(resolve(
         fixturesPath,
         './valid_license_added'
@@ -270,7 +272,6 @@ describe('HeaderCheckerLint', () => {
       const config = {
         ignoreFiles: ['**/*.java'],
       };
-      getConfigStub.reset();
       getConfigStub.resolves(config);
       const invalidFiles = require(resolve(
         fixturesPath,
@@ -291,6 +292,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('ignores copyright strings in the body', async () => {
+      getConfigStub.resolves(null);
       const validFiles = require(resolve(
         fixturesPath,
         './copyright_string_added'
@@ -327,8 +329,6 @@ describe('HeaderCheckerLint', () => {
 
     beforeEach(() => {
       getConfigStub = sandbox.stub(botConfigUtilsModule, 'getConfig');
-      // By default, getConfigStub resolves to null.
-      getConfigStub.resolves(null);
       validateConfigStub = sandbox.stub(
         ConfigChecker.prototype,
         'validateConfigChanges'
@@ -342,6 +342,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if new source file is missing license', async () => {
+      getConfigStub.resolves(null);
       const invalidFiles = require(resolve(
         fixturesPath,
         './missing_license_added'
@@ -367,6 +368,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if a modified source file is missing license', async () => {
+      getConfigStub.resolves(null);
       const invalidFiles = require(resolve(
         fixturesPath,
         './missing_license_modified'
@@ -392,6 +394,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if the new source file is added and has wrong year', async () => {
+      getConfigStub.resolves(null);
       const invalidFiles = require(resolve(fixturesPath, './wrong_year_added'));
       const blob = require(resolve(fixturesPath, './wrong_year'));
       const requests = nock('https://api.github.com')
@@ -414,6 +417,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if the source file is missing copyright', async () => {
+      getConfigStub.resolves(null);
       const invalidFiles = require(resolve(
         fixturesPath,
         './missing_copyright_modified'
@@ -439,6 +443,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "success" context on PR, on modified file with invalid copyright header', async () => {
+      getConfigStub.resolves(null);
       const invalidFiles = require(resolve(
         fixturesPath,
         './invalid_copyright_modified'
@@ -464,6 +469,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('ignores a valid license', async () => {
+      getConfigStub.resolves(null);
       const validFiles = require(resolve(
         fixturesPath,
         './valid_license_added'
@@ -489,6 +495,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('ignores copyright strings in the body', async () => {
+      getConfigStub.resolves(null);
       const validFiles = require(resolve(
         fixturesPath,
         './copyright_string_modified'
@@ -514,6 +521,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('ignores a deleted file', async () => {
+      getConfigStub.resolves(null);
       const validFiles = require(resolve(
         fixturesPath,
         './deleted_file_ignored'
