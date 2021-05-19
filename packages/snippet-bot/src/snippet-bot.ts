@@ -332,7 +332,12 @@ async function scanPullRequest(
   let commentBody = '';
 
   if (result.changes.length === 0) {
-    if (!refreshing) {
+    // If this run is initiated by a user with the force-run label
+    // or refresh checkbox, we don't exit.
+    //
+    // Also, the config `alwaysCreateStatusCheck` is true, we need
+    // to create successfull status checks, so we don't exit.
+    if (!refreshing && !configuration.alwaysCreateStatusCheck()) {
       return;
     }
     commentBody += 'No region tags are edited in this PR.\n';

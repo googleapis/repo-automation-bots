@@ -597,7 +597,9 @@ describe('snippet-bot', () => {
 
     it('submits 3 checks on PR because alwaysCreateStatusCheck is true', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
+      const diffResponse = fs.readFileSync(
+        resolve(fixturesPath, 'diff_without_regiontag_changes.txt')
+      );
       const payload = require(resolve(fixturesPath, './pr_event'));
 
       getConfigStub.reset();
