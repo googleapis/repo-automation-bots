@@ -115,6 +115,7 @@ export function handler(app: Probot) {
     const branch = context.payload.ref;
     const defaultBranch = context.payload.repository.default_branch;
     if (branch !== `refs/head/${defaultBranch}`) {
+      logger.info(`skipping non-default branch: ${branch}`);
       return;
     }
     // Look at all commits, and all files changed during those commits.
@@ -135,6 +136,8 @@ export function handler(app: Probot) {
       return false;
     }
     if (!includesConfig()) {
+      logger.info("skipping push that does not modify config");
+      logger.debug(context.payload.commits);
       return;
     }
 
