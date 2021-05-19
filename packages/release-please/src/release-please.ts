@@ -118,13 +118,17 @@ function findBranchConfiguration(
     return null;
   }
 
-  const found = config.branches.find(branchConfig => {
-    return branch === branchConfig.branch;
-  });
-  if (found) {
-    return found;
+  try {
+    const found = config.branches.find(branchConfig => {
+      return branch === branchConfig.branch;
+    });
+    if (found) {
+      return found;
+    }
+  } catch (err) {
+    err.message = `got an error finding the branch config: ${err.message}`;
+    logger.error(err);
   }
-
   return null;
 }
 
