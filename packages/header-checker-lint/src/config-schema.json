@@ -3,6 +3,7 @@
     "title": "Header Checker Lint config schema",
     "description": "Schema for defining the header-checker-lint",
     "additionalProperties": false,
+    "type": "object",
     "properties": {
 	"allowedCopyrightHolders": {
 	    "description": "A list of allowed copyright holders",
