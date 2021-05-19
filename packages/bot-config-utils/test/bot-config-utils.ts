@@ -41,7 +41,7 @@ const CONFIG_FILENAME_YML = 'test.yml';
 
 const defaultConfig: TestConfig = {testConfig: 'defaultValue'};
 
-let configFromConfigChecker: TestConfig | undefined;
+let configFromConfigChecker: TestConfig | null;
 
 // Test app
 const app = (app: Probot) => {
@@ -163,8 +163,8 @@ describe('config test app', () => {
       }),
     });
     probot.load(app);
-    // It always start from undefined.
-    configFromConfigChecker = undefined;
+    // It always start from null.
+    configFromConfigChecker = null;
   });
   afterEach(() => {
     nock.cleanAll();
@@ -205,7 +205,7 @@ describe('config test app', () => {
       for (const scope of scopes) {
         scope.done();
       }
-      assert.strictEqual(configFromConfigChecker, undefined);
+      assert.strictEqual(configFromConfigChecker, null);
     });
     it('creates a failing status check for broken yaml file', async () => {
       const payload = require(resolve(fixturesPath, 'pr_event'));
@@ -222,7 +222,7 @@ describe('config test app', () => {
       for (const scope of scopes) {
         scope.done();
       }
-      assert.strictEqual(configFromConfigChecker, undefined);
+      assert.strictEqual(configFromConfigChecker, null);
     });
     it('creates a failing status check for a wrong file name', async () => {
       const payload = require(resolve(fixturesPath, 'pr_event'));
@@ -237,7 +237,7 @@ describe('config test app', () => {
       for (const scope of scopes) {
         scope.done();
       }
-      assert.strictEqual(configFromConfigChecker, undefined);
+      assert.strictEqual(configFromConfigChecker, null);
     });
   });
 });
