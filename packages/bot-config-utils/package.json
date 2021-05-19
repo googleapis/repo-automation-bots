@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/bot-config-utils",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Utilities for github bot config",
   "scripts": {
     "compile": "tsc -p .",
