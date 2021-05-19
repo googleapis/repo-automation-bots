@@ -157,7 +157,7 @@ async function assign(context: Context, config: Configuration) {
   // PRs are a superset of issues, so we can handle them similarly.
   const assignConfig = issue ? config.assign_issues : config.assign_prs!;
   const byConfig = issue ? config.assign_issues_by : config.assign_prs_by;
-  const issuePayload = issue || pullRequest;
+  const user = issue ? issue.user.login : pullRequest!.user.login;
 
   // Reload the issue and use the assignee for counting.
   let refreshedIssueResponse: getIssueResponse | null = null;
@@ -179,17 +179,13 @@ async function assign(context: Context, config: Configuration) {
     }
   }
 
-  // Just to comfort typescript type system.
-  if (refreshedIssueResponse === null) {
-    return;
-  }
   const isLabeled = context.payload.action === 'labeled';
   if (isLabeled) {
     // Only assign an issue that already has an assignee if labeled with
     // ASSIGN_LABEL.
     if (
       context.payload.label?.name !== ASSIGN_LABEL &&
-      refreshedIssueResponse.data.assignees?.length
+      refreshedIssueResponse!.data.assignees?.length
     ) {
       context.log.info(
         '[%s] #%s ignored: incorrect label ("%s") because it is already assigned',
@@ -230,7 +226,7 @@ async function assign(context: Context, config: Configuration) {
   }
 
   // Allow the label to force a new assignee, even if one is already assigned.
-  if (!isLabeled && refreshedIssueResponse.data.assignees?.length !== 0) {
+  if (!isLabeled && refreshedIssueResponse!.data.assignees?.length !== 0) {
     context.log.info(
       util.format(
         '[%s] #%s ignored: already has assignee(s)',
@@ -263,7 +259,7 @@ async function assign(context: Context, config: Configuration) {
     ? preferredAssignees
     : assignConfig || [];
   possibleAssignees = await expandTeams(possibleAssignees, context);
-  const assignee = randomFrom(possibleAssignees, issuePayload!.user.login);
+  const assignee = randomFrom(possibleAssignees, user);
   if (!assignee) {
     context.log.info(
       util.format(
