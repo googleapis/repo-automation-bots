@@ -1,8 +1,9 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Sync Repo Settings Config",
-    "description": "Schema for defining the sync repo settings config",
+    "title": "snippet-bot config",
+    "description": "Schema for defining the snippet-bot config",
     "additionalProperties": false,
+    "type": "object",
     "properties": {
 	"ignoreFiles": {
 	    "description": "A list of file patterns for ignoring",
