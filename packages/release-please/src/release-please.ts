@@ -126,7 +126,8 @@ function findBranchConfiguration(
       return found;
     }
   } catch (err) {
-    err.message = `got an error finding the branch config: ${err.message}`;
+    err.message = `got an error finding the branch config: ${err.message},` +
+      `config: JSON.stringify(config)`;
     logger.error(err);
   }
   return null;
