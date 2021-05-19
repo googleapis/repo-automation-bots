@@ -5,7 +5,7 @@ This is a small library for handling bot config file.
 ## Install
 
 ```bash
-npm i @github-automations/bot-config-utils
+npm i @google-automations/bot-config-utils
 ```
 
 ## Get the config
@@ -16,7 +16,7 @@ interface. The code assumes we're in the probot handler.
 ```typescript
 import {
   getConfig,
-} from '@github-automations/bot-config-utils';
+} from '@google-automations/bot-config-utils';
 
 interface Config {
   myConfig: string;
@@ -38,7 +38,7 @@ You can use a similar method that supports default value.
 ```typescript
 import {
   getConfigWithDefault,
-} from '@github-automations/bot-config-utils';
+} from '@google-automations/bot-config-utils';
 
 interface Config {
   myConfig: string;
@@ -88,7 +88,7 @@ You also need to provide a schema definition. Here is an example definition:
 
 Here is a sample handler(this assumes you're developping a Probot app):
 ```typescript
-import {ConfigChecker} from '@github-automations/bot-config-utils';
+import {ConfigChecker} from '@google-automations/bot-config-utils';
 import schema from './config-schema.json';
 
 // ...

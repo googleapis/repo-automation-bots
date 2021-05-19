@@ -11,13 +11,13 @@ library allows the bot to acquire a lock on sth.
 ### Install
 
 ```bash
-npm i @github-automations/datastore-lock
+npm i @google-automations/datastore-lock
 ```
 
 ### Usage
 
 ```typescript
-import {DatastoreLock} from '@github-automations/datastore-lock';
+import {DatastoreLock} from '@google-automations/datastore-lock';
 
 // Most of the cases, you can just pass `lockId` and `target`.
 // `lockId` is usually the bot name.
