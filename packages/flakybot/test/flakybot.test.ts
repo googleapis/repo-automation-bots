@@ -935,9 +935,7 @@ describe('flakybot', () => {
           },
         ];
 
-        const scopes = [
-          nockIssues('golang-samples', issues),
-        ];
+        const scopes = [nockIssues('golang-samples', issues)];
 
         await probot.receive({
           name: 'pubsub.message' as '*',
@@ -1072,9 +1070,7 @@ describe('flakybot', () => {
           },
         ];
 
-        const scopes = [
-          nockIssues('golang-samples', issues),
-        ];
+        const scopes = [nockIssues('golang-samples', issues)];
 
         await probot.receive({
           name: 'pubsub.message' as '*',
