@@ -37,6 +37,118 @@ nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
+function createConfigResponse(configFile: string) {
+  const config = fs.readFileSync(resolve(fixturesPath, configFile));
+  const base64Config = config.toString('base64');
+  return {
+    sha: '',
+    node_id: '',
+    size: base64Config.length,
+    url: '',
+    content: base64Config,
+    encoding: 'base64',
+  };
+}
+
+describe('snippet-bot config validation', () => {
+  let probot: Probot;
+  const sandbox = sinon.createSandbox();
+
+  let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
+  let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
+  let getConfigStub: sinon.SinonStub;
+
+  beforeEach(() => {
+    probot = new Probot({
+      githubToken: 'abc123',
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
+    });
+    probot.load(myProbotApp);
+    getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
+    const products = require(resolve(fixturesPath, './products'));
+    getApiLabelsStub.resolves(products);
+    const testSnippets = {};
+    getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
+    getSnippetsStub.resolves(testSnippets);
+    getConfigStub = sandbox.stub(configUtilsModule, 'getConfig');
+    getConfigStub.resolves({ignoreFiles: ['ignore.py']});
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+    sandbox.restore();
+  });
+
+  it('submits a failing check with a broken config file', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const payload = require(resolve(fixturesPath, './pr_event'));
+    const files_payload = require(resolve(
+      fixturesPath,
+      './pr_files_config_added'
+    ));
+
+    const configBlob = createConfigResponse('broken_config.yaml');
+    const requests = nock('https://api.github.com')
+      .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+      .reply(200, files_payload)
+      .get(
+        '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+      )
+      .reply(200, configBlob)
+      .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200);
+
+    const diffRequests = nock('https://github.com')
+      .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+      .reply(404, {});
+
+    await probot.receive({
+      name: 'pull_request',
+      payload,
+      id: 'abc123',
+    });
+
+    requests.done();
+    diffRequests.done();
+  });
+  it('does not submits a failing check with a correct config file', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const payload = require(resolve(fixturesPath, './pr_event'));
+    const files_payload = require(resolve(
+      fixturesPath,
+      './pr_files_config_added'
+    ));
+
+    const configBlob = createConfigResponse('correct_config.yaml');
+    const requests = nock('https://api.github.com')
+      .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+      .reply(200, files_payload)
+      .get(
+        '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+      )
+      .reply(200, configBlob);
+
+    const diffRequests = nock('https://github.com')
+      .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+      .reply(404, {});
+
+    await probot.receive({
+      name: 'pull_request',
+      payload,
+      id: 'abc123',
+    });
+
+    requests.done();
+    diffRequests.done();
+  });
+});
+
 describe('snippet-bot', () => {
   let probot: Probot;
 
