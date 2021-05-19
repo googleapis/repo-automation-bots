@@ -12,14 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Ajv from 'ajv';
-import yaml from 'js-yaml';
 import * as minimatch from 'minimatch';
-import schema from './config-schema.json';
-
-// configure the schema validator once
-const ajv = new Ajv();
-const validateSchema = ajv.compile(schema);
 
 export interface ConfigurationOptions {
   ignoreFiles: string[];
@@ -52,25 +45,4 @@ export class Configuration {
   alwaysCreateStatusCheck(): boolean {
     return this.options.alwaysCreateStatusCheck;
   }
-}
-
-/**
- * Given a config in its raw yaml form, validate that it matches our config
- * schema.  Return any validation errors from ajv.
- * @param configYaml Raw text containing the YAML to validate.
- * @returns
- */
-export async function validateConfiguration(configYaml: string) {
-  const config = yaml.load(configYaml) as ConfigurationOptions;
-  let isValid = false;
-  let errorText: string | undefined;
-  if (typeof config === 'object') {
-    isValid = await validateSchema(config);
-    if (!isValid) {
-      errorText = JSON.stringify(validateSchema.errors, null, 4);
-    }
-  } else {
-    errorText = `.github/${CONFIGURATION_FILE_PATH} is not valid YAML 😱`;
-  }
-  return {isValid, errorText};
 }
