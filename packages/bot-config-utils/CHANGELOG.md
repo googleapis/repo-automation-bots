@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v2.0.0...bot-config-utils-v2.1.0) (2021-05-19)
+
+
+### Features
+
+* **bot-config-utils:** allow fetching the config from the PR head ([#1793](https://www.github.com/googleapis/repo-automation-bots/issues/1793)) ([ce08ddd](https://www.github.com/googleapis/repo-automation-bots/commit/ce08ddd3186e1498c566bc9de4e8ef995f05b308))
+
 ## [2.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v1.0.0...bot-config-utils-v2.0.0) (2021-05-18)
 
 

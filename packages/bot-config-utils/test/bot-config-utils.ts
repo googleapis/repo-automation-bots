@@ -41,6 +41,8 @@ const CONFIG_FILENAME_YML = 'test.yml';
 
 const defaultConfig: TestConfig = {testConfig: 'defaultValue'};
 
+let configFromConfigChecker: TestConfig | undefined;
+
 // Test app
 const app = (app: Probot) => {
   app.on(
@@ -62,6 +64,7 @@ const app = (app: Probot) => {
         context.payload.pull_request.head.sha,
         context.payload.pull_request.number
       );
+      configFromConfigChecker = configChecker.getConfig();
     }
   );
 };
@@ -160,6 +163,8 @@ describe('config test app', () => {
       }),
     });
     probot.load(app);
+    // It always start from undefined.
+    configFromConfigChecker = undefined;
   });
   afterEach(() => {
     nock.cleanAll();
@@ -181,6 +186,7 @@ describe('config test app', () => {
       for (const scope of scopes) {
         scope.done();
       }
+      assert.strictEqual(configFromConfigChecker?.testConfig, 'testValue');
     });
     it('creates a failing status check for a wrong config', async () => {
       const payload = require(resolve(fixturesPath, 'pr_event'));
@@ -199,6 +205,7 @@ describe('config test app', () => {
       for (const scope of scopes) {
         scope.done();
       }
+      assert.strictEqual(configFromConfigChecker, undefined);
     });
     it('creates a failing status check for broken yaml file', async () => {
       const payload = require(resolve(fixturesPath, 'pr_event'));
@@ -215,6 +222,7 @@ describe('config test app', () => {
       for (const scope of scopes) {
         scope.done();
       }
+      assert.strictEqual(configFromConfigChecker, undefined);
     });
     it('creates a failing status check for a wrong file name', async () => {
       const payload = require(resolve(fixturesPath, 'pr_event'));
@@ -229,6 +237,7 @@ describe('config test app', () => {
       for (const scope of scopes) {
         scope.done();
       }
+      assert.strictEqual(configFromConfigChecker, undefined);
     });
   });
 });
