@@ -1,5 +1,5 @@
 {
-  "packages/bot-config-utils": "2.1.0",
+  "packages/bot-config-utils": "3.0.0",
   "packages/datastore-lock": "2.0.0",
   "packages/gcf-utils": "7.2.2",
   "packages/mono-repo-publish": "1.1.2",
