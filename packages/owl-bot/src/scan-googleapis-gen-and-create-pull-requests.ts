@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {AffectedRepo, ConfigsStore, OwlBotYamlAndPath} from './configs-store';
+import {ConfigsStore} from './configs-store';
 import {OctokitType, OctokitFactory} from './octokit-util';
 import tmp from 'tmp';
 import {
@@ -21,10 +21,12 @@ import {
   toLocalRepo,
 } from './copy-code';
 import {getFilesModifiedBySha} from '.';
+import {GithubRepo} from './github-repo';
+import {OwlBotYaml} from './config-files';
 import {newCmd} from './cmd';
 
 interface Todo {
-  repo: AffectedRepo;
+  repo: GithubRepo;
   commitHash: string;
 }
 
@@ -39,19 +41,11 @@ interface Todo {
  *                     in order from newest to oldest.
  */
 function isCommitHashTooOld(
-  yamls: OwlBotYamlAndPath[] | undefined,
+  yaml: OwlBotYaml | undefined,
   commitIndex: number,
   commitHashes: string[]
 ): boolean {
-  // Compare to begin-after-commit-hash declared in .OwlBot.yaml.
-  let beginAfterCommitHash = '';
-  for (const yaml of yamls ?? []) {
-    const hash = yaml.yaml['begin-after-commit-hash']?.trim();
-    if (hash) {
-      beginAfterCommitHash = hash;
-      break;
-    }
-  }
+  const beginAfterCommitHash = yaml?.['begin-after-commit-hash']?.trim() ?? '';
   const beginIndex = beginAfterCommitHash
     ? commitHashes.indexOf(beginAfterCommitHash)
     : -1;
@@ -108,16 +102,15 @@ export async function scanGoogleapisGenAndCreatePullRequests(
     const stackSize = todoStack.length;
     for (const repo of repos) {
       octokit = octokit ?? (await octokitFactory.getShortLivedOctokit());
-      const repoFullName = repo.repo.toString();
       if (
         isCommitHashTooOld(
-          (await configsStore.getConfigs(repoFullName))?.yamls,
+          (await configsStore.getConfigs(repo.toString()))?.yaml,
           commitIndex,
           commitHashes
         )
       ) {
         logger.info(
-          `Ignoring ${repoFullName} because ${commitHash} is too old.`
+          `Ignoring ${repo.toString()} because ${commitHash} is too old.`
         );
       } else if (!(await copyExists(octokit, repo, commitHash, logger))) {
         const todo: Todo = {repo, commitHash};
