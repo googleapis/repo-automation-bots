@@ -14,8 +14,9 @@
 
 import admin from 'firebase-admin';
 import {OwlBotLock, toFrontMatchRegExp} from './config-files';
-import {AffectedRepo, Configs, ConfigsStore} from './configs-store';
-import {githubRepoFromOwnerSlashName} from './github-repo';
+import {Configs, ConfigsStore} from './configs-store';
+import {CopyTasksStore} from './copy-tasks-store';
+import {GithubRepo, githubRepoFromOwnerSlashName} from './github-repo';
 
 export type Db = admin.firestore.Firestore;
 
@@ -35,22 +36,8 @@ interface UpdateBuild {
   buildResult?: string;
 }
 
-interface PackedConfigs extends Configs {
-  dockerImage?: string;
-}
-
-function packConfigs(configs: Configs): PackedConfigs {
-  const packed: PackedConfigs = configs;
-  for (const yaml of configs.yamls ?? []) {
-    if (yaml.yaml.docker?.image) {
-      packed.dockerImage = yaml.yaml.docker?.image;
-    }
-  }
-  return packed;
-}
-
-function unpackConfigs(packed: PackedConfigs): Configs {
-  return packed;
+interface CopyTask {
+  pubsubMessageId: string;
 }
 
 /**
@@ -70,25 +57,34 @@ function makeUpdateLockKey(repo: string, lock: OwlBotLock): string {
   return [repo, lock.docker.image, lock.docker.digest].map(encodeId).join('+');
 }
 
-export class FirestoreConfigsStore implements ConfigsStore {
+function makeUpdateFilesKey(
+  repo: string,
+  googleapisGenCommitHash: string
+): string {
+  return [repo, googleapisGenCommitHash].map(encodeId).join('+');
+}
+
+export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
   private db: Db;
-  readonly repoConfigs: string;
+  readonly yamls: string;
   readonly lockUpdateBuilds: string;
+  readonly copyTasks: string;
 
   /**
    * @param collectionsPrefix should only be overridden in tests.
    */
   constructor(db: Db, collectionsPrefix = 'owl-bot-') {
     this.db = db;
-    this.repoConfigs = collectionsPrefix + 'repo-configs';
+    this.yamls = collectionsPrefix + 'yamls';
     this.lockUpdateBuilds = collectionsPrefix + 'lock-update-builds';
+    this.copyTasks = collectionsPrefix + 'copy-tasks';
   }
 
   async getConfigs(repo: string): Promise<Configs | undefined> {
-    const docRef = this.db.collection(this.repoConfigs).doc(encodeId(repo));
+    const docRef = this.db.collection(this.yamls).doc(encodeId(repo));
     const doc = await docRef.get();
     // Should we verify the data?
-    return unpackConfigs(doc.data() as PackedConfigs);
+    return doc.data() as Configs;
   }
 
   async storeConfigs(
@@ -96,16 +92,16 @@ export class FirestoreConfigsStore implements ConfigsStore {
     configs: Configs,
     replaceCommitHash: string | null
   ): Promise<boolean> {
-    const docRef = this.db.collection(this.repoConfigs).doc(encodeId(repo));
+    const docRef = this.db.collection(this.yamls).doc(encodeId(repo));
     let updatedDoc = false;
     await this.db.runTransaction(async t => {
       const doc = await t.get(docRef);
-      const prevConfigs = doc.data() as PackedConfigs | undefined;
+      const prevConfigs = doc.data() as Configs | undefined;
       if (
         (prevConfigs && prevConfigs.commitHash === replaceCommitHash) ||
         (!prevConfigs && replaceCommitHash === null)
       ) {
-        t.set(docRef, packConfigs(configs));
+        t.set(docRef, configs);
         updatedDoc = true;
       }
     });
@@ -113,15 +109,17 @@ export class FirestoreConfigsStore implements ConfigsStore {
   }
 
   async clearConfigs(repo: string): Promise<void> {
-    const docRef = this.db.collection(this.repoConfigs).doc(encodeId(repo));
+    const docRef = this.db.collection(this.yamls).doc(encodeId(repo));
     await docRef.delete();
   }
 
   async findReposWithPostProcessor(
     dockerImageName: string
   ): Promise<[string, Configs][]> {
-    const ref = this.db.collection(this.repoConfigs);
-    const got = await ref.where('dockerImage', '==', dockerImageName).get();
+    const ref = this.db.collection(this.yamls);
+    const got = await ref
+      .where('yaml.docker.image', '==', dockerImageName)
+      .get();
     return got.docs.map(doc => [decodeId(doc.id), doc.data() as Configs]);
   }
 
@@ -168,34 +166,86 @@ export class FirestoreConfigsStore implements ConfigsStore {
 
   async findReposAffectedByFileChanges(
     changedFilePaths: string[]
-  ): Promise<AffectedRepo[]> {
+  ): Promise<GithubRepo[]> {
     // This loop runs in time O(n*m), where
     // n = changedFilePaths.length
-    // m = # .OwlBot.yaml files stored in config store.
+    // m = # repos stored in config store.
     // It scans all the values in the collection.  There are many opportunities
     // to optimize if performance becomes a problem.
-    const snapshot = await this.db.collection(this.repoConfigs).get();
-    const result: AffectedRepo[] = [];
+    const snapshot = await this.db.collection(this.yamls).get();
+    const result: GithubRepo[] = [];
     let i = 0;
     snapshot.forEach(doc => {
       i++;
       const configs = doc.data() as Configs | undefined;
-      for (const yaml of configs?.yamls ?? []) {
-        match_loop: for (const copy of yaml.yaml['deep-copy-regex'] ?? []) {
-          const regExp = toFrontMatchRegExp(copy.source);
-          for (const path of changedFilePaths) {
-            if (regExp.test(path)) {
-              result.push({
-                repo: githubRepoFromOwnerSlashName(decodeId(doc.id)),
-                yamlPath: yaml.path,
-              });
-              break match_loop;
-            }
+      match_loop: for (const copy of configs?.yaml?.['deep-copy-regex'] ?? []) {
+        const regExp = toFrontMatchRegExp(copy.source);
+        for (const path of changedFilePaths) {
+          if (regExp.test(path)) {
+            result.push(githubRepoFromOwnerSlashName(decodeId(doc.id)));
+            break match_loop;
           }
         }
       }
     });
     console.info(`walked ${i} configs`);
     return result;
+  }
+
+  async findPubsubMessageIdForCopyTask(
+    repo: string,
+    googleapisGenCommitHash: string
+  ): Promise<string | undefined> {
+    const docRef = this.db
+      .collection(this.copyTasks)
+      .doc(makeUpdateFilesKey(repo, googleapisGenCommitHash));
+    const got = await docRef.get();
+    return got.exists ? (got.data() as CopyTask).pubsubMessageId : undefined;
+  }
+
+  async recordPubsubMessageIdForCopyTask(
+    repo: string,
+    googleapisGenCommitHash: string,
+    pubsubMessageId: string
+  ): Promise<string> {
+    const docRef = this.db
+      .collection(this.copyTasks)
+      .doc(makeUpdateFilesKey(repo, googleapisGenCommitHash));
+    const data: CopyTask = {pubsubMessageId};
+    await this.db.runTransaction(async t => {
+      const got = await t.get(docRef);
+      if (got.exists) {
+        pubsubMessageId = (got.data() as CopyTask).pubsubMessageId;
+      } else {
+        t.set(docRef, data);
+      }
+    });
+    return pubsubMessageId;
+  }
+
+  async filterMissingCopyTasks(
+    repos: string[],
+    googleapisGenCommitHash: string
+  ): Promise<string[]> {
+    const snapshot = this.db.collection(this.copyTasks);
+    const result: string[] = [];
+    for (const repo of repos) {
+      const docId = makeUpdateFilesKey(repo, googleapisGenCommitHash);
+      const got = await snapshot.doc(docId).get();
+      if (!got.exists) {
+        result.push(repo);
+      }
+    }
+    return result;
+  }
+
+  async clearPubsubMessageIdForCopyTask(
+    repo: string,
+    googleapisGenCommitHash: string
+  ): Promise<void> {
+    const docRef = this.db
+      .collection(this.copyTasks)
+      .doc(makeUpdateFilesKey(repo, googleapisGenCommitHash));
+    await docRef.delete();
   }
 }

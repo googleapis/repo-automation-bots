@@ -25,7 +25,6 @@ export interface Args {
   installation: number;
   'source-repo-commit-hash': string;
   'dest-repo': string;
-  'dest-owlbot-yaml': string;
 }
 
 export const copyExists: yargs.CommandModule<{}, Args> = {
@@ -59,23 +58,13 @@ export const copyExists: yargs.CommandModule<{}, Args> = {
           'The github repository to copy files to.  Example: googleapis/nodejs-vision.',
         type: 'string',
         demand: true,
-      })
-      .option('dest-owlbot-yaml', {
-        describe:
-          'Relative directory to the .OwlBot.yaml file specifying which files to copy.  Example: .github/.OwlBot.yaml',
-        type: 'string',
-        default: '.github/.OwlBot.yaml',
-        demand: false,
       });
   },
   async handler(argv) {
     const octokit = await octokitFrom(argv);
     await copyCode.copyExists(
       octokit,
-      {
-        repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
-        yamlPath: argv['dest-owlbot-yaml'],
-      },
+      githubRepoFromOwnerSlashName(argv['dest-repo']),
       argv['source-repo-commit-hash']
     );
   },
