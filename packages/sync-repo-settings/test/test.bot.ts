@@ -398,7 +398,7 @@ describe('Sync repo settings', () => {
     await probot.receive({
       name: 'push',
       payload: {
-        ref: 'refs/head/main',
+        ref: 'refs/heads/main',
         repository: {
           name: repo,
           owner: {
@@ -421,7 +421,7 @@ describe('Sync repo settings', () => {
     await probot.receive({
       name: 'push',
       payload: {
-        ref: 'refs/head/not-default-lol',
+        ref: 'refs/heads/not-default-lol',
         repository: {
           name: repo,
           owner: {
@@ -450,7 +450,7 @@ describe('Sync repo settings', () => {
     await probot.receive({
       name: 'push',
       payload: {
-        ref: 'refs/head/main',
+        ref: 'refs/heads/main',
         repository: {
           name: repo,
           owner: {
