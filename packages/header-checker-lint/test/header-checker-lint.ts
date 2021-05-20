@@ -70,6 +70,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if new source file is missing license', async () => {
+      checkerGetConfigStub.returns(null);
       getConfigStub.resolves(null);
       const invalidFiles = require(resolve(
         fixturesPath,
@@ -110,6 +111,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if a modified source file is missing license', async () => {
+      checkerGetConfigStub.returns(null);
       getConfigStub.resolves(null);
       const invalidFiles = require(resolve(
         fixturesPath,
@@ -136,6 +138,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if the new source file is added and has wrong year', async () => {
+      checkerGetConfigStub.returns(null);
       getConfigStub.resolves(null);
       const invalidFiles = require(resolve(fixturesPath, './wrong_year_added'));
       const blob = require(resolve(fixturesPath, './wrong_year'));
@@ -159,6 +162,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if the source file is missing copyright', async () => {
+      checkerGetConfigStub.returns(null);
       getConfigStub.resolves(null);
       const invalidFiles = require(resolve(
         fixturesPath,
@@ -185,6 +189,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('sets a "failure" context on PR, if the source file has an invalid copyright holder', async () => {
+      checkerGetConfigStub.returns(null);
       getConfigStub.resolves(null);
       const invalidFiles = require(resolve(
         fixturesPath,
@@ -211,6 +216,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('reads a custom configuration file', async () => {
+      checkerGetConfigStub.returns(null);
       const config = {
         allowedCopyrightHolders: ['Invalid Holder', 'Google LLC'],
       };
@@ -240,11 +246,13 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('handles an invalid configuration file', async () => {
+      checkerGetConfigStub.returns(null);
       getConfigStub.rejects(new Error('Failed to parse the config'));
       await probot.receive({name: 'pull_request', payload, id: 'abc123'});
     });
 
     it('ignores a valid license', async () => {
+      checkerGetConfigStub.returns(null);
       getConfigStub.resolves(null);
       const validFiles = require(resolve(
         fixturesPath,
@@ -291,10 +299,12 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
       await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+      checkerGetConfigStub.calledOnceWith();
       requests.done();
     });
 
     it('ignores an ignored files', async () => {
+      checkerGetConfigStub.returns(null);
       const config = {
         ignoreFiles: ['**/*.java'],
       };
@@ -318,6 +328,7 @@ describe('HeaderCheckerLint', () => {
     });
 
     it('ignores copyright strings in the body', async () => {
+      checkerGetConfigStub.returns(null);
       getConfigStub.resolves(null);
       const validFiles = require(resolve(
         fixturesPath,
