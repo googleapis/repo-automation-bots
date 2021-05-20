@@ -24,9 +24,7 @@ export interface Label {
 }
 
 // Internal interface.
-interface LabelWithColor {
-  name: string;
-  description: string;
+interface LabelWithColor extends Label {
   color: string;
 }
 
