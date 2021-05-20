@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v2.1.0...bot-config-utils-v3.0.0) (2021-05-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **bot-config-utils:** match the return type of getConfigs (#1802)
+
+### Bug Fixes
+
+* **bot-config-utils:** match the return type of getConfigs ([#1802](https://www.github.com/googleapis/repo-automation-bots/issues/1802)) ([98d5025](https://www.github.com/googleapis/repo-automation-bots/commit/98d5025f5e8f9b8bc5de737793a7f1af366a425f))
+
 ## [2.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v2.0.0...bot-config-utils-v2.1.0) (2021-05-19)
 
 

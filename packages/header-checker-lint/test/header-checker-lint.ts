@@ -51,6 +51,7 @@ describe('HeaderCheckerLint', () => {
     const sandbox = sinon.createSandbox();
     let getConfigStub: sinon.SinonStub;
     let validateConfigStub: sinon.SinonStub;
+    let checkerGetConfigStub: sinon.SinonStub;
 
     beforeEach(() => {
       payload = require(resolve(fixturesPath, './pull_request_opened'));
@@ -59,6 +60,7 @@ describe('HeaderCheckerLint', () => {
         ConfigChecker.prototype,
         'validateConfigChanges'
       );
+      checkerGetConfigStub = sandbox.stub(ConfigChecker.prototype, 'getConfig');
       validateConfigStub.resolves(undefined);
     });
 
@@ -264,6 +266,30 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
 
+      await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+      requests.done();
+    });
+
+    it('ignores due to the config from the PR head', async () => {
+      const config = {
+        ignoreFiles: ['**/*.java'],
+      };
+      getConfigStub.resolves(null);
+      checkerGetConfigStub.returns(config);
+      const invalidFiles = require(resolve(
+        fixturesPath,
+        './invalid_copyright_added'
+      ));
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/chingor13/google-auth-library-java/pulls/3/files?per_page=100'
+        )
+        .reply(200, invalidFiles)
+        .post('/repos/chingor13/google-auth-library-java/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
       await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
     });

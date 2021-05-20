@@ -51,12 +51,13 @@ export class ConfigChecker<T> {
   private configPath: string;
   private badConfigPaths: Array<string>;
   private configName: string;
-  private config: T | undefined;
+  private config: T | null;
   constructor(schema: object, configFileName: string) {
     this.schema = schema;
     this.ajv = new Ajv();
     this.configPath = `.github/${configFileName}`;
     this.badConfigPaths = new Array<string>();
+    this.config = null;
     const parsed = path.parse(this.configPath);
     if (parsed.ext === '.yml') {
       this.badConfigPaths.push(`${parsed.dir}/${parsed.name}.yaml`);
@@ -87,7 +88,7 @@ export class ConfigChecker<T> {
     return {isValid: isValid, errorText: errorText};
   }
 
-  public getConfig(): T | undefined {
+  public getConfig(): T | null {
     return this.config;
   }
 
