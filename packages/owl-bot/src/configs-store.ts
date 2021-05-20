@@ -12,45 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  OwlBotLock,
-  owlBotLockFrom,
-  owlBotLockPath,
-  OwlBotYaml,
-  owlBotYamlFromText,
-} from './config-files';
+import {OwlBotLock, OwlBotYaml} from './config-files';
 import {GithubRepo} from './github-repo';
-import * as fs from 'fs';
-import path from 'path';
-import {load} from 'js-yaml';
-import {glob} from 'glob';
-
-export interface OwlBotYamlAndPath {
-  // The path in the repository where the .OwlBot.yaml was found.
-  path: string;
-  // The contents of the .OwlBot.yaml.
-  yaml: OwlBotYaml;
-}
 
 export interface Configs {
+  // The body of .Owlbot.lock.yaml.
   lock?: OwlBotLock;
   // The body of .Owlbot.yaml.
-  yamls?: OwlBotYamlAndPath[];
+  yaml?: OwlBotYaml;
   // The commit hash from which the config files were retrieved.
   commitHash: string;
   // The branch name from which the config files were retrieved.
   branchName: string;
   // The installation id for our github app and this repo.
   installationId: number;
-}
-
-/**
- * A repo affected by a change and the path to .OwlBot.yaml
- */
-export interface AffectedRepo {
-  repo: GithubRepo;
-  // path to .OwlBot.yaml
-  yamlPath: string;
 }
 
 export interface ConfigsStore {
@@ -122,39 +97,5 @@ export interface ConfigsStore {
    */
   findReposAffectedByFileChanges(
     changedFilePaths: string[]
-  ): Promise<AffectedRepo[]>;
-}
-
-/**
- * Examines the contents of a local repo directory and collects owl bot config
- * files.
- */
-export function collectConfigs(
-  dir: string
-): [OwlBotLock | undefined, OwlBotYamlAndPath[]] {
-  let lock: OwlBotLock | undefined;
-  const yamls: OwlBotYamlAndPath[] = [];
-
-  // .OwlBot.lock.yaml is always in a known location.
-  const lockPath = path.join(dir, owlBotLockPath);
-  if (fs.existsSync(lockPath)) {
-    const lockText = fs.readFileSync(lockPath, 'utf8');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const lockYaml = load(lockText) as Record<string, any>;
-    lock = owlBotLockFrom(lockYaml);
-  }
-  // .OwlBot.yamls may be scattered throughout the directory.  Find them.
-  const yamlPaths = glob.sync(path.join('**', '.OwlBot.yaml'), {cwd: dir});
-  // Glob ignores .dot files, and we need to look in the .github directory.
-  yamlPaths.push(
-    ...glob.sync(path.join('.github', '**', '.OwlBot.yaml'), {cwd: dir})
-  );
-  for (const yamlPath of yamlPaths) {
-    const yamlText = fs.readFileSync(path.join(dir, yamlPath), 'utf8');
-    yamls.push({
-      path: yamlPath,
-      yaml: owlBotYamlFromText(yamlText),
-    });
-  }
-  return [lock, yamls];
+  ): Promise<GithubRepo[]>;
 }
