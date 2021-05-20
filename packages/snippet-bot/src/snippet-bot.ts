@@ -20,6 +20,7 @@ import {PullRequest} from '@octokit/webhooks-definitions/schema';
 
 import {Configuration, ConfigurationOptions} from './configuration';
 import {DEFAULT_CONFIGURATION, CONFIGURATION_FILE_PATH} from './configuration';
+import {REFRESH_LABEL, NO_PREFIX_REQ_LABEL, SNIPPET_BOT_LABELS} from './labels';
 import {
   parseRegionTags,
   parseRegionTagsInPullRequest,
@@ -41,6 +42,7 @@ import {
 import schema from './config-schema.json';
 
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
+import {syncLabels} from '@google-automations/label-utils';
 import {logger, addOrUpdateIssueComment} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
@@ -75,9 +77,6 @@ function isFile(file: File | unknown): file is File {
 }
 
 const FULL_SCAN_ISSUE_TITLE = 'snippet-bot full scan';
-
-const REFRESH_LABEL = 'snippet-bot:force-run';
-const NO_PREFIX_REQ_LABEL = 'snippet-bot:no-prefix-req';
 
 const REFRESH_UI = '- [ ] Refresh this comment';
 const REFRESH_STRING = '- [x] Refresh this comment';
@@ -572,6 +571,21 @@ function getCommentMark(installationId: number | undefined): string {
 }
 
 export = (app: Probot) => {
+  app.on('schedule.repository' as '*', async context => {
+    const owner = context.payload.organization.login;
+    const repo = context.payload.repository.name;
+    const configOptions = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repo,
+      CONFIGURATION_FILE_PATH
+    );
+    if (configOptions === null) {
+      logger.info(`snippet-bot is not configured for ${owner}/${repo}.`);
+      return;
+    }
+    await syncLabels(context.octokit, owner, repo, SNIPPET_BOT_LABELS);
+  });
   app.on('issue_comment.edited', async context => {
     const commentMark = getCommentMark(context.payload.installation?.id);
 
