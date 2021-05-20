@@ -34,12 +34,17 @@ export async function fetchConfigs(
   const response = await octokit.repos.downloadZipballArchive(githubRepo);
 
   const tmpDir = tmp.dirSync().name;
-  const zip = new AdmZip(Buffer.from(response.data as ArrayBuffer));
-  zip.extractAllTo(tmpDir);
+  try {
+    const zip = new AdmZip(Buffer.from(response.data as ArrayBuffer));
+    zip.extractAllTo(tmpDir);
 
-  // The root directory of the zip is <repo-name>-<short-hash>.
-  // That's actually the directory we want to work in.
-  const [rootDir] = fs.readdirSync(tmpDir);
+    // The root directory of the zip is <repo-name>-<short-hash>.
+    // That's actually the directory we want to work in.
+    const [rootDir] = fs.readdirSync(tmpDir);
 
-  return collectConfigs(path.join(tmpDir, rootDir));
+    return collectConfigs(path.join(tmpDir, rootDir));
+  } finally {
+    // When running in cloud functions, space is limited, so clean up.
+    fs.rmSync(tmpDir, {recursive: true});
+  }
 }
