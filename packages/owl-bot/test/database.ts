@@ -58,22 +58,17 @@ describe('database', () => {
 
     // Insert some configs.
     const configsA: Configs = {
-      yamls: [
-        {
-          yaml: {
-            docker: {
-              image: dockerImageA,
-            },
-            'deep-copy-regex': [
-              {
-                source: '/alpha/.*',
-                dest: '/beta',
-              },
-            ],
-          },
-          path: '/q/r/.OwlBot.yaml',
+      yaml: {
+        docker: {
+          image: dockerImageA,
         },
-      ],
+        'deep-copy-regex': [
+          {
+            source: '/alpha/.*',
+            dest: '/beta',
+          },
+        ],
+      },
       lock: {
         docker: {
           image: dockerImageA,
@@ -86,19 +81,14 @@ describe('database', () => {
     };
     assert.ok(await store.storeConfigs(repoA, configsA, null));
     const configsB: Configs = {
-      yamls: [
-        {
-          yaml: {
-            'deep-copy-regex': [
-              {
-                source: '/gamma/.*',
-                dest: '/omega',
-              },
-            ],
+      yaml: {
+        'deep-copy-regex': [
+          {
+            source: '/gamma/.*',
+            dest: '/omega',
           },
-          path: 'w/x/.OwlBot.yaml',
-        },
-      ],
+        ],
+      },
       commitHash: 'def',
       branchName: 'master',
       installationId: 53,
@@ -117,7 +107,7 @@ describe('database', () => {
       assert.ok(!(await store.storeConfigs(repoA, configsA, 'xyz')));
 
       // Specify a new docker image and store again.
-      configsA.yamls![0].yaml.docker!.image = dockerImageB;
+      configsA.yaml!.docker!.image = dockerImageB;
       configsA.commitHash = 'def';
       assert.ok(await store.storeConfigs(repoA, configsA, 'abc'));
 
@@ -133,9 +123,7 @@ describe('database', () => {
       const reposAffected = await store.findReposAffectedByFileChanges([
         '/alpha/source.js',
       ]);
-      const repoNamesAffected = reposAffected.map(
-        x => `${x.repo.owner}/${x.repo.repo}`
-      );
+      const repoNamesAffected = reposAffected.map(x => `${x.owner}/${x.repo}`);
       assert.deepStrictEqual(repoNamesAffected, [repoA]);
     } finally {
       await store.clearConfigs(repoA);
@@ -148,22 +136,17 @@ describe('database', () => {
     const repoA = 'googleapis/' + uuidv4();
     const dockerImageA = uuidv4();
     const configsA: Configs = {
-      yamls: [
-        {
-          path: '.github/.OwlBot.yaml',
-          yaml: {
-            docker: {
-              image: dockerImageA,
-            },
-            'deep-copy-regex': [
-              {
-                source: '/alpha',
-                dest: '/beta',
-              },
-            ],
-          },
+      yaml: {
+        docker: {
+          image: dockerImageA,
         },
-      ],
+        'deep-copy-regex': [
+          {
+            source: '/alpha',
+            dest: '/beta',
+          },
+        ],
+      },
       lock: {
         docker: {
           image: dockerImageA,
@@ -201,6 +184,71 @@ describe('database', () => {
       );
     } finally {
       await store.clearBuildForUpdatingLock(repoA, configsA.lock!);
+    }
+  });
+
+  it('stores and retrieves pubsub message ids for copy tasks', async () => {
+    const db = admin.firestore();
+    const store = new FirestoreConfigsStore(db, 'test-');
+    const repoA = 'googleapis/' + uuidv4();
+    const repoB = 'googleapis/' + uuidv4();
+    const googleapisGenCommitHash = uuidv4();
+
+    // Test pull requests.
+    assert.strictEqual(
+      await store.findPubsubMessageIdForCopyTask(
+        repoA,
+        googleapisGenCommitHash
+      ),
+      undefined
+    );
+
+    assert.deepStrictEqual(
+      await store.filterMissingCopyTasks(
+        [repoA, repoB],
+        googleapisGenCommitHash
+      ),
+      [repoA, repoB]
+    );
+
+    // First one gets recorded.
+    const BuildId = store.recordPubsubMessageIdForCopyTask(
+      repoA,
+      googleapisGenCommitHash,
+      '10'
+    );
+    try {
+      assert.strictEqual(await BuildId, '10');
+      assert.strictEqual(
+        await store.findPubsubMessageIdForCopyTask(
+          repoA,
+          googleapisGenCommitHash
+        ),
+        '10'
+      );
+
+      // Second one does not.
+      assert.strictEqual(
+        await store.recordPubsubMessageIdForCopyTask(
+          repoA,
+          googleapisGenCommitHash,
+          '11'
+        ),
+        '10'
+      );
+
+      assert.deepStrictEqual(
+        await store.filterMissingCopyTasks(
+          [repoA, repoB],
+          googleapisGenCommitHash
+        ),
+        [repoB]
+      );
+    } finally {
+      await store.clearPubsubMessageIdForCopyTask(
+        repoA,
+        googleapisGenCommitHash
+      );
     }
   });
 });
