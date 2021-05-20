@@ -89,11 +89,8 @@ export = (app: Probot) => {
         context.payload.pull_request.head.sha,
         context.payload.pull_request.number
       );
-      const configFromHead = configChecker.getConfig();
-      let remoteConfiguration: ConfigurationOptions | null;
-      if (configFromHead) {
-        remoteConfiguration = configFromHead;
-      } else {
+      let remoteConfiguration: ConfigurationOptions | null = configChecker.getConfig();
+      if (remoteConfiguration === null) {
         try {
           remoteConfiguration = await getConfig<ConfigurationOptions>(
             context.octokit,
