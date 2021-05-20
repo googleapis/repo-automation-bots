@@ -23,7 +23,6 @@ interface Args extends OctokitParams {
   'source-repo': string;
   'source-repo-commit-hash': string;
   'dest-repo': string;
-  'dest-owlbot-yaml': string;
 }
 
 export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
@@ -66,33 +65,20 @@ export const copyCodeAndCreatePullRequestCommand: yargs.CommandModule<
           'The github repository to copy files to.  Example: googleapis/nodejs-vision.',
         type: 'string',
         demand: true,
-      })
-      .option('dest-owlbot-yaml', {
-        describe:
-          'Relative directory to the .OwlBot.yaml file specifying which files to copy.  Example: .github/.OwlBot.yaml',
-        type: 'string',
-        default: '.github/.OwlBot.yaml',
-        demand: false,
       });
   },
   async handler(argv) {
     const octokitFactory = await octokitFactoryFrom(argv);
     const exists = await cc.copyExists(
       await octokitFactory.getShortLivedOctokit(),
-      {
-        repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
-        yamlPath: argv['dest-owlbot-yaml'],
-      },
+      githubRepoFromOwnerSlashName(argv['dest-repo']),
       argv['source-repo-commit-hash']
     );
     if (!exists) {
       await cc.copyCodeAndCreatePullRequest(
         argv['source-repo'],
         argv['source-repo-commit-hash'],
-        {
-          repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
-          yamlPath: argv['dest-owlbot-yaml'],
-        },
+        githubRepoFromOwnerSlashName(argv['dest-repo']),
         octokitFactory
       );
     }
