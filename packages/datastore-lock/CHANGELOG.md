@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/datastore-lock-v1.0.0...datastore-lock-v2.0.0) (2021-05-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename organization to google-automations (#1789)
+
+### Bug Fixes
+
+* rename organization to google-automations ([#1789](https://www.github.com/googleapis/repo-automation-bots/issues/1789)) ([1b8540a](https://www.github.com/googleapis/repo-automation-bots/commit/1b8540a6733ca75efe9e6cea415daa4a627add47))
+
 ## [1.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/datastore-lock-v0.1.0...datastore-lock-v1.0.0) (2021-05-13)
 
 

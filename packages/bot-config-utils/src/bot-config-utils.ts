@@ -51,11 +51,13 @@ export class ConfigChecker<T> {
   private configPath: string;
   private badConfigPaths: Array<string>;
   private configName: string;
+  private config: T | null;
   constructor(schema: object, configFileName: string) {
     this.schema = schema;
     this.ajv = new Ajv();
     this.configPath = `.github/${configFileName}`;
     this.badConfigPaths = new Array<string>();
+    this.config = null;
     const parsed = path.parse(this.configPath);
     if (parsed.ext === '.yml') {
       this.badConfigPaths.push(`${parsed.dir}/${parsed.name}.yaml`);
@@ -75,6 +77,8 @@ export class ConfigChecker<T> {
       isValid = validateSchema(config);
       if (!isValid) {
         errorText = JSON.stringify(validateSchema.errors, null, 4);
+      } else {
+        this.config = config;
       }
     } catch (err) {
       // failed to load the yaml file
@@ -82,6 +86,10 @@ export class ConfigChecker<T> {
         `.github/${this.configPath} is not valid YAML 😱 \n` + err.message;
     }
     return {isValid: isValid, errorText: errorText};
+  }
+
+  public getConfig(): T | null {
+    return this.config;
   }
 
   public async validateConfigChanges(

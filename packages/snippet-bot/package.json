@@ -28,10 +28,9 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "ajv": "^8.2.0",
+    "@google-automations/bot-config-utils": "^3.0.0",
     "@google-cloud/storage": "^5.4.0",
     "gcf-utils": "^7.2.1",
-    "js-yaml": "^4.1.0",
     "minimatch": "^3.0.4",
     "node-fetch": "^2.6.0",
     "parse-diff": "^0.8.0",

@@ -18,11 +18,7 @@
 import {Probot, Context} from 'probot';
 import {PullRequest} from '@octokit/webhooks-definitions/schema';
 
-import {
-  Configuration,
-  ConfigurationOptions,
-  validateConfiguration,
-} from './configuration';
+import {Configuration, ConfigurationOptions} from './configuration';
 import {DEFAULT_CONFIGURATION, CONFIGURATION_FILE_PATH} from './configuration';
 import {
   parseRegionTags,
@@ -42,7 +38,9 @@ import {
   checkProductPrefixViolations,
   checkRemovingUsedTagViolations,
 } from './violations';
+import schema from './config-schema.json';
 
+import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import {logger, addOrUpdateIssueComment} from 'gcf-utils';
 import fetch from 'node-fetch';
 import tmp from 'tmp-promise';
@@ -108,21 +106,6 @@ async function getFiles(dir: string, allFiles: string[]) {
     )
   );
   return allFiles;
-}
-
-async function getConfigOptions(
-  context: Context
-): Promise<ConfigurationOptions | null> {
-  let configOptions: ConfigurationOptions | null = null;
-  try {
-    configOptions = await context.config<ConfigurationOptions>(
-      CONFIGURATION_FILE_PATH
-    );
-  } catch (err) {
-    err.message = `Error reading configuration: ${err.message}`;
-    logger.error(err);
-  }
-  return configOptions;
 }
 
 async function fullScan(context: Context, configuration: Configuration) {
@@ -272,16 +255,6 @@ async function scanPullRequest(
   // Keep track of start tags in all the files.
   const parseResults = new Map<string, ParseResult>();
 
-  const configCheckParams = context.repo({
-    name: 'snippet-bot config schema',
-    conclusion: 'success' as Conclusion,
-    head_sha: pull_request.head.sha,
-    output: {
-      title: 'config file OK',
-      summary: `.github/${CONFIGURATION_FILE_PATH} matches the required schema`,
-      text: 'Success',
-    },
-  });
   // If we found any new files, verify they all have matching region tags.
   for (const file of result.files) {
     if (configuration.ignoredFile(file)) {
@@ -301,18 +274,6 @@ async function scanPullRequest(
       const fileContents = Buffer.from(blob.data.content, 'base64').toString(
         'utf8'
       );
-      // Checking the config file schema.
-      if (file === `.github/${CONFIGURATION_FILE_PATH}`) {
-        const {isValid, errorText} = await validateConfiguration(fileContents);
-        if (!isValid) {
-          configCheckParams.conclusion = 'failure';
-          configCheckParams.output = {
-            title: 'config file Error',
-            summary: `.github/${CONFIGURATION_FILE_PATH} does not match the required schema`,
-            text: errorText!,
-          };
-        }
-      }
       const parseResult = parseRegionTags(
         fileContents,
         file,
@@ -342,12 +303,6 @@ async function scanPullRequest(
     }
   }
 
-  if (
-    configuration.alwaysCreateStatusCheck() ||
-    configCheckParams.conclusion === 'failure'
-  ) {
-    await context.octokit.checks.create(configCheckParams);
-  }
   const checkParams = context.repo({
     name: 'Mismatched region tag',
     conclusion: 'success' as Conclusion,
@@ -377,7 +332,12 @@ async function scanPullRequest(
   let commentBody = '';
 
   if (result.changes.length === 0) {
-    if (!refreshing) {
+    // If this run is initiated by a user with the force-run label
+    // or refresh checkbox, we don't exit.
+    //
+    // Also, the config `alwaysCreateStatusCheck` is true, we need
+    // to create successfull status checks, so we don't exit.
+    if (!refreshing && !configuration.alwaysCreateStatusCheck()) {
       return;
     }
     commentBody += 'No region tags are edited in this PR.\n';
@@ -624,7 +584,14 @@ export = (app: Probot) => {
       return;
     }
     const repoUrl = context.payload.repository.full_name;
-    const configOptions = await getConfigOptions(context);
+
+    const {owner, repo} = context.repo();
+    const configOptions = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repo,
+      CONFIGURATION_FILE_PATH
+    );
 
     if (configOptions === null) {
       logger.info(`snippet-bot is not configured for ${repoUrl}.`);
@@ -635,8 +602,6 @@ export = (app: Probot) => {
       ...configOptions,
     });
     logger.info({config: configuration});
-    const owner = context.payload.repository.owner.login;
-    const repo = context.payload.repository.name;
     const prNumber = context.payload.issue.number;
     const prResponse = await context.octokit.pulls.get({
       owner: owner,
@@ -657,7 +622,13 @@ export = (app: Probot) => {
 
   app.on(['issues.opened', 'issues.reopened'], async context => {
     const repoUrl = context.payload.repository.full_name;
-    const configOptions = await getConfigOptions(context);
+    const {owner, repo} = context.repo();
+    const configOptions = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repo,
+      CONFIGURATION_FILE_PATH
+    );
 
     if (configOptions === null) {
       logger.info(`snippet-bot is not configured for ${repoUrl}.`);
@@ -673,7 +644,13 @@ export = (app: Probot) => {
 
   app.on('pull_request.labeled', async context => {
     const repoUrl = context.payload.repository.full_name;
-    const configOptions = await getConfigOptions(context);
+    const {owner, repo} = context.repo();
+    const configOptions = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repo,
+      CONFIGURATION_FILE_PATH
+    );
 
     if (configOptions === null) {
       logger.info(`snippet-bot is not configured for ${repoUrl}.`);
@@ -745,10 +722,30 @@ export = (app: Probot) => {
         );
         return;
       }
-
       const repoUrl = context.payload.repository.full_name;
-      const configOptions = await getConfigOptions(context);
+      const {owner, repo} = context.repo();
 
+      // We should first check the config schema. Otherwise, we'll miss
+      // the opportunity for checking the schema when adding the config
+      // file for the first time.
+      const configChecker = new ConfigChecker<ConfigurationOptions>(
+        schema,
+        CONFIGURATION_FILE_PATH
+      );
+      await configChecker.validateConfigChanges(
+        context.octokit,
+        owner,
+        repo,
+        context.payload.pull_request.head.sha,
+        context.payload.pull_request.number
+      );
+
+      const configOptions = await getConfig<ConfigurationOptions>(
+        context.octokit,
+        owner,
+        repo,
+        CONFIGURATION_FILE_PATH
+      );
       if (configOptions === null) {
         logger.info(`snippet-bot is not configured for ${repoUrl}.`);
         return;

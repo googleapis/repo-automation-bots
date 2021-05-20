@@ -19,14 +19,17 @@
 import myProbotApp from '../src/snippet-bot';
 import * as apiLabelsModule from '../src/api-labels';
 import * as snippetsModule from '../src/snippets';
+import {CONFIGURATION_FILE_PATH} from '../src/configuration';
 import {Snippets} from '../src/snippets';
 
+import * as configUtilsModule from '@google-automations/bot-config-utils';
+import {ConfigChecker} from '@google-automations/bot-config-utils';
 import {resolve} from 'path';
 import {Probot, ProbotOctokit} from 'probot';
+import {Octokit} from '@octokit/rest';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
-import assert from 'assert';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import * as sinon from 'sinon';
 
@@ -34,22 +37,26 @@ nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-describe('snippet-bot', () => {
+function createConfigResponse(configFile: string) {
+  const config = fs.readFileSync(resolve(fixturesPath, configFile));
+  const base64Config = config.toString('base64');
+  return {
+    sha: '',
+    node_id: '',
+    size: base64Config.length,
+    url: '',
+    content: base64Config,
+    encoding: 'base64',
+  };
+}
+
+describe('snippet-bot config validation', () => {
   let probot: Probot;
-
-  const config = fs.readFileSync(
-    resolve(fixturesPath, 'config', 'valid-config.yml')
-  );
-
-  const tarBall = fs.readFileSync(
-    resolve(fixturesPath, 'tmatsuo-python-docs-samples-abcde.tar.gz')
-  );
-
   const sandbox = sinon.createSandbox();
 
   let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
   let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
-  let invalidateCacheStub: sinon.SinonStub;
+  let getConfigStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = new Probot({
@@ -60,39 +67,136 @@ describe('snippet-bot', () => {
       }),
     });
     probot.load(myProbotApp);
+    getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
+    const products = require(resolve(fixturesPath, './products'));
+    getApiLabelsStub.resolves(products);
+    const testSnippets = {};
+    getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
+    getSnippetsStub.resolves(testSnippets);
+    getConfigStub = sandbox.stub(configUtilsModule, 'getConfig');
+    getConfigStub.resolves({ignoreFiles: ['ignore.py']});
   });
 
   afterEach(() => {
     nock.cleanAll();
+    sandbox.restore();
   });
 
-  describe('reads the config file', () => {
-    it('confirms the value in the config file', async () => {
-      assert(config.toString().includes('ignore.py'));
+  it('submits a failing check with a broken config file', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const payload = require(resolve(fixturesPath, './pr_event'));
+    const files_payload = require(resolve(
+      fixturesPath,
+      './pr_files_config_added'
+    ));
+
+    const configBlob = createConfigResponse('broken_config.yaml');
+    const requests = nock('https://api.github.com')
+      .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+      .reply(200, files_payload)
+      .get(
+        '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+      )
+      .reply(200, configBlob)
+      .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200);
+
+    const diffRequests = nock('https://github.com')
+      .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+      .reply(404, {});
+
+    await probot.receive({
+      name: 'pull_request',
+      payload,
+      id: 'abc123',
     });
+
+    requests.done();
+    diffRequests.done();
+  });
+  it('does not submits a failing check with a correct config file', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const payload = require(resolve(fixturesPath, './pr_event'));
+    const files_payload = require(resolve(
+      fixturesPath,
+      './pr_files_config_added'
+    ));
+
+    const configBlob = createConfigResponse('correct_config.yaml');
+    const requests = nock('https://api.github.com')
+      .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+      .reply(200, files_payload)
+      .get(
+        '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
+      )
+      .reply(200, configBlob);
+
+    const diffRequests = nock('https://github.com')
+      .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+      .reply(404, {});
+
+    await probot.receive({
+      name: 'pull_request',
+      payload,
+      id: 'abc123',
+    });
+
+    requests.done();
+    diffRequests.done();
+  });
+});
+
+describe('snippet-bot', () => {
+  let probot: Probot;
+
+  const tarBall = fs.readFileSync(
+    resolve(fixturesPath, 'tmatsuo-python-docs-samples-abcde.tar.gz')
+  );
+
+  const sandbox = sinon.createSandbox();
+
+  let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
+  let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
+  let invalidateCacheStub: sinon.SinonStub;
+  let getConfigStub: sinon.SinonStub;
+  let validateConfigStub: sinon.SinonStub;
+
+  beforeEach(() => {
+    probot = new Probot({
+      githubToken: 'abc123',
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
+    });
+    probot.load(myProbotApp);
+    getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
+    const products = require(resolve(fixturesPath, './products'));
+    getApiLabelsStub.resolves(products);
+    const testSnippets = {};
+    getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
+    getSnippetsStub.resolves(testSnippets);
+    getConfigStub = sandbox.stub(configUtilsModule, 'getConfig');
+    getConfigStub.resolves({ignoreFiles: ['ignore.py']});
+    validateConfigStub = sandbox.stub(
+      ConfigChecker.prototype,
+      'validateConfigChanges'
+    );
+    validateConfigStub.resolves(undefined);
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+    sandbox.restore();
   });
 
   describe('responds to PR', () => {
-    beforeEach(() => {
-      getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
-      const products = require(resolve(fixturesPath, './products'));
-      getApiLabelsStub.resolves(products);
-      const testSnippets = {};
-      getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
-      getSnippetsStub.resolves(testSnippets);
-    });
-    afterEach(() => {
-      sandbox.restore();
-    });
     it('quits early', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './pr_event'));
-
-      const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, config);
 
       const diffRequests = nock('https://github.com')
         .get('/tmatsuo/repo-automation-bots/pull/14.diff')
@@ -104,8 +208,20 @@ describe('snippet-bot', () => {
         id: 'abc123',
       });
 
-      requests.done();
       diffRequests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
+      validateConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
+        14
+      );
     });
 
     it('quits early for PRs with null head', async () => {
@@ -130,43 +246,6 @@ describe('snippet-bot', () => {
       });
     });
 
-    it('submits a failing check with a broken config file', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const payload = require(resolve(fixturesPath, './pr_event'));
-
-      const blob = require(resolve(fixturesPath, './broken_config'));
-      const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, config)
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
-        )
-        .reply(200, blob)
-        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
-          snapshot(body);
-          return true;
-        })
-        .reply(200);
-
-      const diffResponse = fs.readFileSync(
-        resolve(fixturesPath, 'diff-broken-config.txt')
-      );
-      const diffRequests = nock('https://github.com')
-        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
-        .reply(200, diffResponse);
-
-      await probot.receive({
-        name: 'pull_request',
-        payload,
-        id: 'abc123',
-      });
-
-      requests.done();
-      diffRequests.done();
-    });
-
     it('sets a "failure" context on PR without a warning about removal of region tags in use', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
@@ -174,10 +253,6 @@ describe('snippet-bot', () => {
       const blob = require(resolve(fixturesPath, './failure_blob'));
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, config)
         .get(
           '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
         )
@@ -217,6 +292,12 @@ describe('snippet-bot', () => {
 
       requests.done();
       diffRequests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
     });
 
     it('quits early for normal labels', async () => {
@@ -225,19 +306,17 @@ describe('snippet-bot', () => {
         fixturesPath,
         './pr_event_label_ignored'
       ));
-      const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, config);
-
       await probot.receive({
         name: 'pull_request',
         payload,
         id: 'abc123',
       });
-
-      requests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
     });
 
     it('responds to snippet-bot:force-run label, invalidating the Snippet cache', async () => {
@@ -248,10 +327,6 @@ describe('snippet-bot', () => {
       const blob = require(resolve(fixturesPath, './failure_blob'));
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, config)
         .delete(
           // For removing the label.
           '/repos/tmatsuo/repo-automation-bots/issues/14/labels/snippet-bot%3Aforce-run'
@@ -297,6 +372,12 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnce(invalidateCacheStub);
       requests.done();
       diffRequests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
     });
 
     it('quits early for an irelevant issue_comment.edited event', async () => {
@@ -309,6 +390,12 @@ describe('snippet-bot', () => {
         payload,
         id: 'abc123',
       });
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
     });
 
     it('responds to refresh checkbox, invalidating the Snippet cache, updating without region tag changes', async () => {
@@ -321,10 +408,6 @@ describe('snippet-bot', () => {
       const prResponse = require(resolve(fixturesPath, './pr_response'));
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, config)
         .get('/repos/tmatsuo/repo-automation-bots/pulls/14')
         .reply(200, prResponse)
 
@@ -354,6 +437,12 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnce(invalidateCacheStub);
       requests.done();
       diffRequests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
     });
 
     it('ignores 404 error upon label deletion', async () => {
@@ -363,10 +452,6 @@ describe('snippet-bot', () => {
       const blob = require(resolve(fixturesPath, './failure_blob'));
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, config)
         .delete(
           // For removing the label.
           '/repos/tmatsuo/repo-automation-bots/issues/14/labels/snippet-bot%3Aforce-run'
@@ -411,6 +496,12 @@ describe('snippet-bot', () => {
 
       requests.done();
       diffRequests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
     });
 
     it('does not submit a check for unmatched region tags on PR if there are no region tags', async () => {
@@ -420,10 +511,6 @@ describe('snippet-bot', () => {
       const blob = require(resolve(fixturesPath, './blob_no_region_tags'));
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, config)
         .get(
           '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
         )
@@ -458,25 +545,12 @@ describe('snippet-bot', () => {
 
       requests.done();
       diffRequests.done();
-    });
-
-    it('exits early when it failed to read the config', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const payload = require(resolve(fixturesPath, './pr_event'));
-
-      const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(403, {content: 'Permission denied'});
-
-      await probot.receive({
-        name: 'pull_request',
-        payload,
-        id: 'abc123',
-      });
-
-      requests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
     });
 
     it('does not submit a check on PR by ignoreFile', async () => {
@@ -484,15 +558,10 @@ describe('snippet-bot', () => {
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event'));
 
-      const ignoreConfig = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'ignore-config.yml')
-      );
+      getConfigStub.reset();
+      getConfigStub.resolves({ignoreFiles: ['test.py']});
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, ignoreConfig)
         .get(
           '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
@@ -518,27 +587,28 @@ describe('snippet-bot', () => {
 
       requests.done();
       diffRequests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
     });
 
-    it('submits 4 check on PR because alwaysCreateStatusCheck is true', async () => {
+    it('submits 3 checks on PR because alwaysCreateStatusCheck is true', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
+      const diffResponse = fs.readFileSync(
+        resolve(fixturesPath, 'diff_without_regiontag_changes.txt')
+      );
       const payload = require(resolve(fixturesPath, './pr_event'));
 
-      const ignoreConfig = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'ignore-and-always-config.yml')
-      );
+      getConfigStub.reset();
+      getConfigStub.resolves({
+        ignoreFiles: ['test.py'],
+        alwaysCreateStatusCheck: true,
+      });
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, ignoreConfig)
-        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
-          snapshot(body);
-          return true;
-        })
-        .reply(200)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
@@ -579,50 +649,50 @@ describe('snippet-bot', () => {
 
       requests.done();
       diffRequests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
     });
 
     it('quits early if there is no config file', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './pr_event'));
-
-      // probot tries to fetch the org's config too.
-      const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(404, 'Not Found')
-        .get('/repos/tmatsuo/.github/contents/.github%2Fsnippet-bot.yml')
-        .reply(404, 'Not Found');
-
+      getConfigStub.reset();
+      getConfigStub.resolves(null);
       await probot.receive({
         name: 'pull_request',
         payload,
         id: 'abc123',
       });
-
-      requests.done();
+      // Make sure we check the config schema when
+      // adding the config file for the first time.
+      validateConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
+        14
+      );
     });
 
     it('gives warnings about removing region tag in use', async () => {
-      sandbox.restore();
-      getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
+      getApiLabelsStub.reset();
       const products = require(resolve(fixturesPath, './products'));
-
       getApiLabelsStub.resolves(products);
 
-      getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
+      getSnippetsStub.reset();
       const snippets = require(resolve(fixturesPath, './snippets'));
       getSnippetsStub.resolves(snippets);
+
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
       const payload = require(resolve(fixturesPath, './pr_event'));
       const blob = require(resolve(fixturesPath, './failure_blob'));
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, config)
         .get(
           '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
         )
@@ -669,11 +739,16 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnce(getSnippetsStub);
       requests.done();
       diffRequests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
     });
 
     it('does not give warnings about wrong product prefix with snippet-bot:no-prefix-req label', async () => {
-      sandbox.restore();
-      getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
+      getSnippetsStub.reset();
       const snippets = require(resolve(fixturesPath, './snippets'));
       getSnippetsStub.resolves(snippets);
       // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -686,10 +761,6 @@ describe('snippet-bot', () => {
 
       const requests = nock('https://api.github.com')
         .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, config)
-        .get(
           '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
         )
         .reply(200, blob)
@@ -729,16 +800,21 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnce(getSnippetsStub);
       requests.done();
       diffRequests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
     });
 
     it('gives fyi message for removing frozen region tag', async () => {
-      sandbox.restore();
-      getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
+      getApiLabelsStub.reset();
       const products = require(resolve(fixturesPath, './products'));
 
       getApiLabelsStub.resolves(products);
 
-      getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
+      getSnippetsStub.reset();
       const snippets = require(resolve(fixturesPath, './snippets-frozen'));
       getSnippetsStub.resolves(snippets);
       // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -747,10 +823,6 @@ describe('snippet-bot', () => {
       const blob = require(resolve(fixturesPath, './failure_blob'));
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, config)
         .get(
           '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
         )
@@ -797,6 +869,12 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnce(getSnippetsStub);
       requests.done();
       diffRequests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
     });
   });
 
@@ -805,28 +883,23 @@ describe('snippet-bot', () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './issue_event_no_scan'));
 
-      const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/python-docs-samples/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, config);
-
       await probot.receive({
         name: 'issues',
         payload,
         id: 'abc123',
       });
-
-      requests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
     });
+
     it('reports failure upon download failure', async () => {
       const payload = require(resolve(fixturesPath, './issue_event'));
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/python-docs-samples/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, config)
         .patch('/repos/tmatsuo/python-docs-samples/issues/10', body => {
           snapshot(body);
           return true;
@@ -845,16 +918,18 @@ describe('snippet-bot', () => {
 
       requests.done();
       tarBallRequests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
     });
     it('reports the scan result', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './issue_event'));
 
       const requests = nock('https://api.github.com')
-        .get(
-          '/repos/tmatsuo/python-docs-samples/contents/.github%2Fsnippet-bot.yml'
-        )
-        .reply(200, config)
         .patch('/repos/tmatsuo/python-docs-samples/issues/10', body => {
           snapshot(body);
           return true;
@@ -875,6 +950,12 @@ describe('snippet-bot', () => {
 
       requests.done();
       tarBallRequests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
     });
   });
 });

