@@ -114,7 +114,7 @@ export function handler(app: Probot) {
   app.on('push', async context => {
     const branch = context.payload.ref;
     const defaultBranch = context.payload.repository.default_branch;
-    if (branch !== `refs/head/${defaultBranch}`) {
+    if (branch !== `refs/heads/${defaultBranch}`) {
       logger.info(`skipping non-default branch: ${branch}`);
       return;
     }
