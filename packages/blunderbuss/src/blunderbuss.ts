@@ -22,7 +22,8 @@ import {
   Issue,
   PullRequest,
 } from '@octokit/webhooks-definitions/schema';
-import {DatastoreLock} from '@github-automations/datastore-lock';
+import {Endpoints} from '@octokit/types';
+import {DatastoreLock} from '@google-automations/datastore-lock';
 
 const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';
@@ -38,6 +39,9 @@ interface Configuration {
   assign_prs?: string[];
   assign_prs_by?: ByConfig[];
 }
+
+type getIssueResponse =
+  Endpoints['GET /repos/{owner}/{repo}/issues/{issue_number}']['response'];
 
 // Randomly returns an item from an array, while ignoring the provided value.
 // Returns undefined if no options remain.
@@ -153,7 +157,27 @@ async function assign(context: Context, config: Configuration) {
   // PRs are a superset of issues, so we can handle them similarly.
   const assignConfig = issue ? config.assign_issues : config.assign_prs!;
   const byConfig = issue ? config.assign_issues_by : config.assign_prs_by;
-  const issuePayload = issue || pullRequest;
+  const user = issue ? issue.user.login : pullRequest!.user.login;
+
+  // Reload the issue and use the assignee for counting.
+  let refreshedIssueResponse: getIssueResponse | null = null;
+
+  try {
+    refreshedIssueResponse = await context.octokit.issues.get(
+      context.repo({issue_number: issueOrPRNumber as number})
+    );
+  } catch (err) {
+    if (err.status === 404) {
+      context.log.info(
+        '[%s] #%s ignored: got 404 on refreshing the issue',
+        repoName,
+        issueOrPRNumber
+      );
+      return;
+    } else {
+      throw err;
+    }
+  }
 
   const isLabeled = context.payload.action === 'labeled';
   if (isLabeled) {
@@ -161,7 +185,7 @@ async function assign(context: Context, config: Configuration) {
     // ASSIGN_LABEL.
     if (
       context.payload.label?.name !== ASSIGN_LABEL &&
-      issuePayload!.assignees?.length
+      refreshedIssueResponse!.data.assignees?.length
     ) {
       context.log.info(
         '[%s] #%s ignored: incorrect label ("%s") because it is already assigned',
@@ -202,7 +226,7 @@ async function assign(context: Context, config: Configuration) {
   }
 
   // Allow the label to force a new assignee, even if one is already assigned.
-  if (!isLabeled && issuePayload!.assignees.length !== 0) {
+  if (!isLabeled && refreshedIssueResponse!.data.assignees?.length !== 0) {
     context.log.info(
       util.format(
         '[%s] #%s ignored: already has assignee(s)',
@@ -235,7 +259,7 @@ async function assign(context: Context, config: Configuration) {
     ? preferredAssignees
     : assignConfig || [];
   possibleAssignees = await expandTeams(possibleAssignees, context);
-  const assignee = randomFrom(possibleAssignees, issuePayload!.user.login);
+  const assignee = randomFrom(possibleAssignees, user);
   if (!assignee) {
     context.log.info(
       util.format(
