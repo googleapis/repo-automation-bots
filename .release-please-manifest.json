@@ -1,6 +1,6 @@
 {
   "packages/bot-config-utils": "3.0.0",
-  "packages/cron-utils": "0.1.0",
+  "packages/cron-utils": "1.0.0",
   "packages/datastore-lock": "2.0.0",
   "packages/gcf-utils": "8.0.0",
   "packages/label-utils": "1.0.0",
