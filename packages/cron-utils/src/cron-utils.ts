@@ -175,6 +175,7 @@ export async function createOrUpdateCron(
           },
           body: Buffer.from(JSON.stringify(bodyContent), 'utf-8'),
         },
+        timeZone: 'America/Los_Angeles',
       },
     });
     return job?.name ?? null;
