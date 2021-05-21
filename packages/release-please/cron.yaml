@@ -1,0 +1,10 @@
+cron:
+  - name: release-please
+    # crontab formatted schedule
+    schedule: 0 1 * * *
+    description: run release-please snapshots
+    # extra request parameters for scheduler http request
+    params:
+      installation:
+        id: 1848216
+      cron_org: googleapis
