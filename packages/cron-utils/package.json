@@ -1,0 +1,54 @@
+{
+  "name": "@google-automations/cron-utils",
+  "version": "0.1.0",
+  "description": "Utilities for setting up bot crons",
+  "scripts": {
+    "compile": "tsc -p .",
+    "pretest": "npm run compile",
+    "prepare": "npm run compile",
+    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha ./build/test",
+    "system-test": "npm run pretest && cross-env LOG_LEVEL=fatal mocha ./build/test/integration",
+    "fix": "gts fix",
+    "lint": "gts check"
+  },
+  "bin": "./build/src/cli.js",
+  "main": "./build/src/cron-utils.js",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "dependencies": {
+    "@google-cloud/scheduler": "^2.2.1",
+    "@googleapis/run": "^2.0.0",
+    "js-yaml": "^4.0.0",
+    "yargs": "^17.0.0"
+  },
+  "devDependencies": {
+    "@octokit/rest": "^18.5.3",
+    "@types/js-yaml": "^4.0.1",
+    "@types/mocha": "^8.2.2",
+    "@types/node": "^15.0.3",
+    "@types/sinon": "^10.0.0",
+    "@types/yargs": "^16.0.2",
+    "c8": "^7.7.2",
+    "cross-env": "^7.0.3",
+    "dotenv": "^9.0.2",
+    "gts": "^3.1.0",
+    "mocha": "^8.4.0",
+    "nock": "^13.0.11",
+    "sinon": "^10.0.0",
+    "snap-shot-it": "^7.9.6",
+    "typescript": "^4.2.4"
+  },
+  "engines": {
+    "node": ">= 12.18.2"
+  },
+  "keywords": [
+    "github labels",
+    "Probot"
+  ],
+  "author": "Jeff Ching <chingor@google.com>",
+  "license": "Apache-2.0",
+  "files": [
+    "build/src"
+  ]
+}
