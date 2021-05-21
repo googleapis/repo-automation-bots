@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './blunderbuss';
-
-const bootstrap = new GCFBootstrapper();
-module.exports['blunderbuss'] = bootstrap.gcf(appFn, {
-  background: true,
-  logging: true,
-});
+export const sleep = (ms: number) => {
+  return new Promise(r => setTimeout(r, ms));
+};

@@ -24,21 +24,15 @@ import {
 } from '@octokit/webhooks-definitions/schema';
 import {Endpoints} from '@octokit/types';
 import {DatastoreLock} from '@google-automations/datastore-lock';
+import {
+  ConfigChecker,
+  getConfigWithDefault,
+} from '@google-automations/bot-config-utils';
+import {sleep} from './utils';
+import schema from './config-schema.json';
+import {ByConfig, CONFIGURATION_FILE_PATH, Configuration} from './config';
 
-const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 const ASSIGN_LABEL = 'blunderbuss: assign';
-
-class ByConfig {
-  labels: string[] = [];
-  to: string[] = [];
-}
-
-interface Configuration {
-  assign_issues?: string[];
-  assign_issues_by?: ByConfig[];
-  assign_prs?: string[];
-  assign_prs_by?: ByConfig[];
-}
 
 type getIssueResponse =
   Endpoints['GET /repos/{owner}/{repo}/issues/{issue_number}']['response'];
@@ -55,15 +49,11 @@ function randomFrom(items: string[], ignore: string): string | undefined {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-export const sleep = (ms: number) => {
-  return new Promise(r => setTimeout(r, ms));
-};
-
 function isIssue(issue: IssuesEvent | PullRequestEvent): issue is IssuesEvent {
   return (issue as IssuesEvent).issue !== undefined;
 }
 
-export function blunderbuss(app: Probot) {
+export = (app: Probot) => {
   app.on(
     [
       'issues.opened',
@@ -73,22 +63,50 @@ export function blunderbuss(app: Probot) {
       'pull_request.reopened',
       'pull_request.edited',
       'pull_request.labeled',
+      'pull_request.synchronize',
     ],
     async (context: Context) => {
+      const {owner, repo} = context.repo();
+      // First check the config schema for pull requests.
+      if (
+        context.payload.pull_request &&
+        (context.payload.action === 'opened' ||
+          context.payload.action === 'reopened' ||
+          context.payload.action === 'synchronize')
+      ) {
+        const configChecker = new ConfigChecker<Configuration>(
+          schema,
+          CONFIGURATION_FILE_PATH
+        );
+        const {owner, repo} = context.repo();
+        await configChecker.validateConfigChanges(
+          context.octokit,
+          owner,
+          repo,
+          context.payload.pull_request.head.sha,
+          context.payload.pull_request.number
+        );
+      }
+      // For blunderbuss, synchronize event is irelevant.
+      if (context.payload.action === 'synchronize') {
+        return;
+      }
       let config: Configuration = {};
       try {
         // Reading the config requires access to code permissions, which are not
         // always available for private repositories.
-        config = (await context.config<Configuration>(
+        config = await getConfigWithDefault<Configuration>(
+          context.octokit,
+          owner,
+          repo,
           CONFIGURATION_FILE_PATH,
           {}
-        ))!;
+        );
       } catch (err) {
         err.message = `Error reading configuration: ${err.message}`;
         logger.error(err);
         return;
       }
-      config = config || {};
 
       let lockTarget: string;
       if (isIssue(context.payload)) {
@@ -111,7 +129,7 @@ export function blunderbuss(app: Probot) {
       }
     }
   );
-}
+};
 
 async function assign(context: Context, config: Configuration) {
   let issue: Issue | undefined;
