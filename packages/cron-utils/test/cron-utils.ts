@@ -23,25 +23,18 @@ import {
   createOrUpdateCron,
 } from '../src/cron-utils';
 import {v1} from '@google-cloud/scheduler';
+import {GoogleAuth} from 'google-auth-library';
 
 nock.disableNetConnect();
 
 const sandbox = sinon.createSandbox();
 
 describe('getServerlessSchedulerProxyUrl', () => {
-  let authScope: nock.Scope;
-  beforeEach(() => {
-    authScope = nock('https://oauth2.googleapis.com')
-      .post('/token')
-      .reply(200, {
-        access_token: 'some-token',
-        token_type: 'Bearer',
-      });
-  });
   afterEach(() => {
-    assert.ok(authScope.isDone());
+    sandbox.restore();
   });
   it('should fetch the proxy url', async () => {
+    const adcStub = sandbox.stub(GoogleAuth.prototype, 'getClient').resolves();
     const runScope = nock('https://run.googleapis.com')
       .get(
         '/v1/projects/my-project-id/locations/my-region/services/serverless-scheduler-proxy'
@@ -59,8 +52,10 @@ describe('getServerlessSchedulerProxyUrl', () => {
     );
     assert.strictEqual(url, 'http://some.domain/path');
     assert.ok(runScope.isDone());
+    sinon.assert.calledOnce(adcStub);
   });
   it('rejects on not found', async () => {
+    const adcStub = sandbox.stub(GoogleAuth.prototype, 'getClient').resolves();
     const runScope = nock('https://run.googleapis.com')
       .get(
         '/v1/projects/my-project-id/locations/my-region/services/serverless-scheduler-proxy'
@@ -70,6 +65,7 @@ describe('getServerlessSchedulerProxyUrl', () => {
       return getServerlessSchedulerProxyUrl('my-project-id', 'my-region');
     });
     assert.ok(runScope.isDone());
+    sinon.assert.calledOnce(adcStub);
   });
 });
 
