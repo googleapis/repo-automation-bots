@@ -24,23 +24,20 @@ nock.disableNetConnect();
 
 describe('cli', () => {
   let getProxyUrlStub: sinon.SinonStub;
-  let parseLegacyCronFileStub: sinon.SinonStub;
-  let parseCronEntriesStub: sinon.SinonStub;
-  let createOrUpdateCronStub: sinon.SinonStub;
   beforeEach(() => {
     getProxyUrlStub = sandbox.stub(
       cron_utils,
       'getServerlessSchedulerProxyUrl'
     );
-    parseLegacyCronFileStub = sandbox.stub(cron_utils, 'parseLegacyCronFile');
-    parseCronEntriesStub = sandbox.stub(cron_utils, 'parseCronEntries');
-    createOrUpdateCronStub = sandbox.stub(cron_utils, 'createOrUpdateCron');
   });
   afterEach(() => {
     sandbox.restore();
   });
   it('should reject if no scheduler proxy url found', async () => {
     getProxyUrlStub.rejects();
+    sandbox.replace(cron_utils, 'createOrUpdateCron', async () => {
+      assert.fail('should not get here');
+    });
     cli
       .parser()
       .exitProcess(false)
@@ -51,25 +48,31 @@ describe('cli', () => {
           assert.ok(err);
         }
       );
-    sinon.assert.calledOnce(getProxyUrlStub);
-    sinon.assert.notCalled(parseLegacyCronFileStub);
-    sinon.assert.notCalled(parseCronEntriesStub);
-    sinon.assert.notCalled(createOrUpdateCronStub);
+    sandbox.assert.calledOnce(getProxyUrlStub);
   });
   it('should handle updating crons', async () => {
     getProxyUrlStub.resolves('https://scheduler.proxy/');
-    parseLegacyCronFileStub.returns([]);
-    parseCronEntriesStub.returns([{name: 'cron-name', schedule: '0 1 * * *'}]);
-    createOrUpdateCronStub.resolves('abc123');
+    sandbox.replace(cron_utils, 'parseLegacyCronFile', () => {
+      return [];
+    });
+    sandbox.replace(cron_utils, 'parseCronEntries', () => {
+      return [{name: 'cron-name', schedule: '0 1 * * *'}];
+    });
+    sandbox.replace(cron_utils, 'createOrUpdateCron', async () => {
+      return 'abc123';
+    });
     cli
       .parser()
       .exitProcess(false)
       .parse(
-        'deploy --scheduler-service-account=foo@bar.com --function-region=us-central1 --region=us-central1 --function-name=my-name'
+        'deploy --scheduler-service-account=foo@bar.com --function-region=us-central1 --region=us-central1 --function-name=my-name',
+        this,
+        (err, argv, output) => {
+          console.log('error', err);
+          console.log('argv', argv);
+          console.log('output', output);
+        }
       );
-    sinon.assert.calledOnce(getProxyUrlStub);
-    sinon.assert.calledOnce(parseLegacyCronFileStub);
-    sinon.assert.calledOnce(parseCronEntriesStub);
-    sinon.assert.calledOnce(createOrUpdateCronStub);
+    sandbox.assert.calledOnce(getProxyUrlStub);
   });
 });
