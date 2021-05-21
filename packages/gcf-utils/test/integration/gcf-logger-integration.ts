@@ -41,6 +41,9 @@ describe('GCFLogger Integration', () => {
 
   function testAllLevels() {
     for (const level of Object.keys(logLevels)) {
+      if (level === 'metric') {
+        continue;
+      }
       it(`logs ${level} level string`, done => {
         logger[level]('hello world');
         destination.on('ready', () => {
