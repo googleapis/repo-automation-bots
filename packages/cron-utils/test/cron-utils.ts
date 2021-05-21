@@ -178,4 +178,35 @@ describe('createOrUpdateCron', () => {
     );
     assert.strictEqual(job, 'projects/my-project/regions/my-region/jobs/abcd');
   });
+  it('adds additional parameters', async () => {
+    const cronEntry = {
+      name: 'test-cron',
+      description: 'some-description',
+      schedule: '0 1 * * *',
+      params: {
+        foo: 'bar',
+      },
+    };
+    sandbox
+      .stub(v1.CloudSchedulerClient.prototype, 'getJob')
+      .rejects({code: 5});
+    const createJobStub = sandbox
+      .stub(v1.CloudSchedulerClient.prototype, 'createJob')
+      .resolves([{name: 'projects/my-project/regions/my-region/jobs/abcd'}]);
+    const job = await createOrUpdateCron(
+      cronEntry,
+      'my-project',
+      'my-region',
+      'my-function-region',
+      'https://base.url/',
+      'my-account@google.com'
+    );
+    assert.strictEqual(job, 'projects/my-project/regions/my-region/jobs/abcd');
+    sinon.assert.calledOnce(createJobStub);
+
+    const body = JSON.parse(
+      createJobStub.getCall(0).args[0].job!.httpTarget!.body!.toString()
+    );
+    assert.strictEqual(body['foo'], 'bar');
+  });
 });

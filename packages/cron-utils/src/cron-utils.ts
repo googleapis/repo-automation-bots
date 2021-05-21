@@ -150,7 +150,9 @@ export async function createOrUpdateCron(
     const [job] = await client.updateJob({job: updatedJob});
     return job?.name ?? null;
   } else {
+    const extraParams = cronEntry.params ?? {};
     const bodyContent = {
+      ...extraParams,
       Name: cronEntry.name,
       Type: 'function',
       Location: functionRegion,
