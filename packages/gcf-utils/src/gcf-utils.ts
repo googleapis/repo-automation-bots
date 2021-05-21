@@ -397,12 +397,12 @@ export class GCFBootstrapper {
       const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin)
         .plugin(ConfigPlugin)
         .defaults({authStrategy: createProbotAuth});
-      return new LoggingOctokit(opts);
+      return new LoggingOctokit({auth: opts});
     } else {
       const DefaultOctokit = Octokit.plugin(ConfigPlugin).defaults({
         authStrategy: createProbotAuth,
       });
-      return new DefaultOctokit(opts);
+      return new DefaultOctokit({auth: opts});
     }
   }
 

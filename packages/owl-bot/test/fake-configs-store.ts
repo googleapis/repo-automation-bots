@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {AffectedRepo, Configs, ConfigsStore} from '../src/configs-store';
+import {Configs, ConfigsStore} from '../src/configs-store';
 import {OwlBotLock, toFrontMatchRegExp} from '../src/config-files';
-import {githubRepoFromOwnerSlashName} from '../src/github-repo';
+import {GithubRepo, githubRepoFromOwnerSlashName} from '../src/github-repo';
 // There are lots of unused args on fake functions, and that's ok.
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 export class FakeConfigsStore implements ConfigsStore {
   readonly configs: Map<string, Configs>;
-  readonly githubRepos: Map<string, AffectedRepo>;
+  readonly githubRepos: Map<string, GithubRepo>;
 
   constructor(configs?: Map<string, Configs>) {
     this.configs = configs ?? new Map<string, Configs>();
@@ -41,20 +41,18 @@ export class FakeConfigsStore implements ConfigsStore {
   }
   findReposAffectedByFileChanges(
     changedFilePaths: string[]
-  ): Promise<AffectedRepo[]> {
-    const result: AffectedRepo[] = [];
+  ): Promise<GithubRepo[]> {
+    const result: GithubRepo[] = [];
     for (const [repoName, config] of this.configs) {
-      repoLoop: for (const yaml of config.yamls ?? []) {
-        for (const deepCopy of yaml.yaml['deep-copy-regex'] ?? []) {
-          const regexp = toFrontMatchRegExp(deepCopy.source);
-          for (const filePath of changedFilePaths) {
-            if (regexp.test(filePath)) {
-              const repo =
-                this.githubRepos.get(repoName)?.repo ??
-                githubRepoFromOwnerSlashName(repoName);
-              result.push({repo, yamlPath: yaml.path});
-              break repoLoop;
-            }
+      repoLoop: for (const deepCopy of config.yaml?.['deep-copy-regex'] ?? []) {
+        const regexp = toFrontMatchRegExp(deepCopy.source);
+        for (const filePath of changedFilePaths) {
+          if (regexp.test(filePath)) {
+            result.push(
+              this.githubRepos.get(repoName) ??
+                githubRepoFromOwnerSlashName(repoName)
+            );
+            break repoLoop;
           }
         }
       }

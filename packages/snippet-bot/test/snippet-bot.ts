@@ -17,12 +17,14 @@
 /* eslint-disable node/no-extraneous-import */
 
 import myProbotApp from '../src/snippet-bot';
+import {SNIPPET_BOT_LABELS} from '../src/labels';
 import * as apiLabelsModule from '../src/api-labels';
 import * as snippetsModule from '../src/snippets';
 import {CONFIGURATION_FILE_PATH} from '../src/configuration';
 import {Snippets} from '../src/snippets';
 
 import * as configUtilsModule from '@google-automations/bot-config-utils';
+import * as labelUtilsModule from '@google-automations/label-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import {resolve} from 'path';
 import {Probot, ProbotOctokit} from 'probot';
@@ -49,6 +51,90 @@ function createConfigResponse(configFile: string) {
     encoding: 'base64',
   };
 }
+
+describe('snippet-bot scheduler handler', () => {
+  let probot: Probot;
+  const sandbox = sinon.createSandbox();
+  let getConfigStub: sinon.SinonStub;
+  let syncLabelsStub: sinon.SinonStub;
+
+  beforeEach(() => {
+    probot = new Probot({
+      githubToken: 'abc123',
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
+    });
+    probot.load(myProbotApp);
+    getConfigStub = sandbox.stub(configUtilsModule, 'getConfig');
+    syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+    sandbox.restore();
+  });
+
+  it('does not call syncLabels for repos without the config', async () => {
+    getConfigStub.resolves(null);
+    await probot.receive({
+      name: 'schedule.repository' as '*',
+      payload: {
+        repository: {
+          name: 'testRepo',
+          owner: {
+            login: 'testOwner',
+          },
+        },
+        organization: {
+          login: 'googleapis',
+        },
+      },
+      id: 'abc123',
+    });
+    getConfigStub.calledOnceWith(
+      sinon.match.instanceOf(Octokit),
+      'testOwner',
+      'testRepo',
+      CONFIGURATION_FILE_PATH
+    );
+    sinon.assert.notCalled(syncLabelsStub);
+  });
+  it('calls syncLabels for repos with the config', async () => {
+    getConfigStub.resolves({
+      alwaysCreateStatusCheck: false,
+      ignoreFiles: [],
+    });
+    await probot.receive({
+      name: 'schedule.repository' as '*',
+      payload: {
+        repository: {
+          name: 'testRepo',
+          owner: {
+            login: 'testOwner',
+          },
+        },
+        organization: {
+          login: 'googleapis',
+        },
+      },
+      id: 'abc123',
+    });
+    getConfigStub.calledOnceWith(
+      sinon.match.instanceOf(Octokit),
+      'testOwner',
+      'testRepo',
+      CONFIGURATION_FILE_PATH
+    );
+    syncLabelsStub.calledOnceWith(
+      sinon.match.instanceOf(Octokit),
+      'testOwner',
+      'testRepo',
+      SNIPPET_BOT_LABELS
+    );
+  });
+});
 
 describe('snippet-bot config validation', () => {
   let probot: Probot;
