@@ -93,6 +93,9 @@ export async function checkPRAgainstConfig(
     if (fileAndFileRule) {
       // TODO: make the checks conditional based on the different kinds of conditions
       // to be checked, i.e., runDependencyUpgradeValidation, etc.
+      logger.info(
+        `Special rules were found for ${repoOwner}/${repo}/${prNumber}`
+      );
       if (!runVersioningValidation(fileAndFileRule)) return false;
     }
 
