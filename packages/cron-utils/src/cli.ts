@@ -94,5 +94,5 @@ export function parser(): yargs.Argv {
 
 // Only run the command if we're running this file directly
 if (require.main === module) {
-  parser().parse(process.argv);
+  parser().parse(process.argv.slice(2));
 }
