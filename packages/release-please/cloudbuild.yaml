@@ -37,7 +37,7 @@ steps:
       - "$_FUNCTION_REGION"
       - "nodejs12"
 
-  - name: gcr.io/cloud-builders/gcloud
+  - name: gcr.io/cloud-builders/npm
     id: "cron-deploy"
     waitFor: ["-"]
     entrypoint: bash
