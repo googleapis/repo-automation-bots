@@ -1,61 +1,62 @@
-# Utility for syncing bot labels
+# Utility for deploying repo-automation-bot crons
 
-This is a small utility for syncing bot specific labels.
+This is a small utility for configuring scheduled cron tasks for
+repo-automation-bots.
 
 ## Usage
 
 ### Install
 
 ```bash
-npm i @google-automations/cron-utils
+npm i -g @google-automations/cron-utils
 ```
 
 ### Usage
 
-`syncLabels` will automatically create or update the labels.  The
-color is determined by its name and should be consistent among
-repositories.
+This library provides a `cron-utils` binary script that deploys scheduled
+triggers for `gcf-utils` based bots.
 
-Here is a simple example:
-```typescript
-import {syncLabels} from '@google-automations/cron-utils';
-const myLabels = [
-  {
-    name: 'my-bot:my-label',
-    description: 'label description'
-  },
-];
-await syncLabels(context.octokit, owner, repo, myLabels);
+To run, call the `cron-utils` binary from the root directory of your bot.
+You will need a `cron.yaml` and/or `cron` file in that directory.
+
+```bash
+cron-utils deploy \
+  --scheduler-service-account=[some-service-account]@[project-name].iam.gserviceaccount.com \
+  --function-region=us-central1 \
+  --region=us-central1 \
+  --function-name=[name of target function] \
+  --project=[project-id]
 ```
 
-Here is another example for syncing the label in
-`installation_repositories.added` event:
+| Option | Description | Default |
+| ------ | ----------- | ------- |
+| scheduler-service-account | Service account email that signs requests to the scheduler proxy | *Required* |
+| function-region | Region where the function is deployed | *Required* |
+| region | Region where the scheduler proxy is deployed | *Required* |
+| function-name | Name of the target function/bot | *Required* |
+| project | Name of the project where function and scheduler proxy are deployed | `repo-automation-bots` |
 
-```typescript
-interface Repo {
-  full_name: string;
-}
+### cron.yaml
 
-const myLabels = [
-  {
-    name: 'my-bot:my-label',
-    description: 'label description'
-  },
-];
+You can specify one or more cron tasks via a `cron.yaml` config file
+at the root of your bot.
 
-export = (app: Probot) => {
-  app.on('installation_repositories.added', async context => {
-    await Promise.all(
-      context.payload.repositories_added.map((r: Repo) => {
-        const [owner, repo] = r.full_name.split('/');
-        return syncLabels(
-          context.octokit,
-          owner,
-          repo,
-          myLabels
-        );
-      })
-    );
-  });
-}
+```yaml
+cron:
+- name: name of cron
+  # crontab formatted schedule
+  schedule: 0 1 * * *
+  description: optional description
+  # extra request parameters for scheduler http request
+  params:
+    foo: bar
 ```
+
+### `cron` file (legacy)
+
+You can specify a single cron task via a `cron` config file at the
+root of your bot. The task name will default to the bot name (folder name)
+and will not have a description.
+
+The contents of the `cron` file should be a text representation of the
+crontab schedule.
