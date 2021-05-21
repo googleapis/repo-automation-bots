@@ -26,28 +26,13 @@ FUNCTION_REGION=$2
 REGION=$3
 DIRECTORY=$4
 
-# Get the endpoint for serverless-scheduler-proxy
-proxyurl=$(gcloud beta run services describe serverless-scheduler-proxy \
-    --platform managed \
-    --region "$REGION" \
-    --format="value(status.address.url)")
+npm i -g @google-automations/cron-utils
 
 pushd "${DIRECTORY}"
-functionname=$(echo "${DIRECTORY}" | rev | cut -d/ -f1 | rev)
-schedule=$(cat "cron")
-if gcloud beta scheduler jobs describe "$functionname" 2>/dev/null; then
-    # We have an existing job. Update the schedule
-    gcloud beta scheduler jobs update http "$functionname" --schedule "$schedule" \
-            --uri="$proxyurl/v0"
-    else
-    # Make a cloud scheduler job
-    gcloud beta scheduler jobs create http "$functionname" \
-            --schedule "$schedule" \
-            --http-method=POST \
-            --uri="$proxyurl/v0" \
-            --oidc-service-account-email="$SCHEDULER_SERVICE_ACCOUNT_EMAIL" \
-            --oidc-token-audience="$proxyurl" \
-            --message-body="{\"Name\": \"$functionname\", \"Type\" : \"function\", \"Location\": \"$FUNCTION_REGION\"}" \
-            --headers=Content-Type=application/json
-fi
-popd
+FUNCTION_NAME=$(echo "${DIRECTORY}" | rev | cut -d/ -f1 | rev)
+
+cron-utils deploy \
+  --scheduler-service-account="$SCHEDULER_SERVICE_ACCOUNT_EMAIL" \
+  --function-region="$FUNCTION_REGION" \
+  --region="${REGION}" \
+  --function-name="${FUNCTION_NAME}"
