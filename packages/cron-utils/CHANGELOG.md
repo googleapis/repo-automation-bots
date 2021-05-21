@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/cron-utils-v1.0.1...cron-utils-v1.0.2) (2021-05-21)
+
+
+### Bug Fixes
+
+* **cron-utils:** set timezone to Americas/Los_Angeles ([#1840](https://www.github.com/googleapis/repo-automation-bots/issues/1840)) ([e7540b6](https://www.github.com/googleapis/repo-automation-bots/commit/e7540b6539c2ea7d40a7c9e94c4c02b917066506))
+
 ### [1.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/cron-utils-v1.0.0...cron-utils-v1.0.1) (2021-05-21)
 
 
