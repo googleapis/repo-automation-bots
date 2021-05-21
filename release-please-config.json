@@ -4,6 +4,9 @@
     "packages/bot-config-utils": {
       "release-type": "node"
     },
+    "packages/cron-utils": {
+      "release-type": "node"
+    },
     "packages/gcf-utils": {
       "release-type": "node"
     },
