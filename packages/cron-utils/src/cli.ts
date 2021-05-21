@@ -26,6 +26,7 @@ interface Args {
   'function-region': string;
   'function-name': string;
   region: string;
+  project: string;
 }
 const deployCommand: yargs.CommandModule<{}, Args> = {
   command: 'deploy',
@@ -51,12 +52,16 @@ const deployCommand: yargs.CommandModule<{}, Args> = {
         describe: 'name of the function',
         type: 'string',
         demand: true,
+      })
+      .option('project', {
+        describe: 'project to deploy to',
+        type: 'string',
+        default: 'repo-automation-bots',
       });
   },
   async handler(argv) {
-    const projectId = 'repo-automation-bots';
     const proxyUrl = await getServerlessSchedulerProxyUrl(
-      projectId,
+      argv['project'],
       argv['region']
     );
     if (!proxyUrl) {
@@ -72,7 +77,7 @@ const deployCommand: yargs.CommandModule<{}, Args> = {
       cronEntries.map(cronEntry => {
         return createOrUpdateCron(
           cronEntry,
-          projectId,
+          argv['project'],
           argv['region'],
           argv['function-region'],
           proxyUrl,
