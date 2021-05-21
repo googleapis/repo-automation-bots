@@ -59,17 +59,14 @@ describe('GCFBootstrapper Integration', () => {
     afterEach(() => {});
 
     it('creates authenticated Octokit', async () => {
-      const installationId =
-        process.env.INSTALLATION_ID || '';
+      const installationId = process.env.INSTALLATION_ID || '';
       const octokit = await bootstrapper.getAuthenticatedOctokit(
         Number(installationId)
       );
-      await octokit.apps.listReposAccessibleToInstallation(
-        {
-          per_page: 1,
-          page: 1
-        }
-      );
+      await octokit.apps.listReposAccessibleToInstallation({
+        per_page: 1,
+        page: 1,
+      });
     });
   });
   describe('getProbotConfig', () => {
