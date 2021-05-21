@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/cron-utils-v1.0.0...cron-utils-v1.0.1) (2021-05-21)
+
+
+### Bug Fixes
+
+* **cron-utils:** slice args ([#1837](https://www.github.com/googleapis/repo-automation-bots/issues/1837)) ([d602ffb](https://www.github.com/googleapis/repo-automation-bots/commit/d602ffbf7e2923d897297a7892920cf4c9cb816f))
+
 ## [1.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/cron-utils-v0.1.0...cron-utils-v1.0.0) (2021-05-21)
 
 
