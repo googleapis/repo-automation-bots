@@ -28,7 +28,7 @@
   "dependencies": {
     "@google-cloud/secret-manager": "^3.6.0",
     "ajv": "^8.0.5",
-    "gcf-utils": "^7.1.3"
+    "gcf-utils": "^8.0.0"
   },
   "devDependencies": {
     "@octokit/rest": "^18.2.0",

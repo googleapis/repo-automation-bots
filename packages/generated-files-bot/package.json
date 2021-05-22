@@ -28,7 +28,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "^7.2.2",
+    "gcf-utils": "^8.0.0",
     "js-yaml": "^4.0.0",
     "jsonpath": "^1.0.2",
     "minimatch": "^3.0.4"

@@ -28,7 +28,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "^7.1.3"
+    "gcf-utils": "^8.0.0"
   },
   "devDependencies": {
     "@octokit/types": "^6.0.0",

@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@google-automations/datastore-lock": "^2.0.0",
-    "gcf-utils": "^7.1.1"
+    "gcf-utils": "^8.0.0"
   },
   "devDependencies": {
     "@octokit/webhooks": "^9.0.0",

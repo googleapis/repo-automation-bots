@@ -32,7 +32,7 @@
     "@commitlint/config-conventional": "^12.0.0",
     "@commitlint/lint": "^12.0.0",
     "@octokit/openapi-types": "^7.0.0",
-    "gcf-utils": "^7.1.1"
+    "gcf-utils": "^8.0.0"
   },
   "devDependencies": {
     "@types/mocha": "^8.0.0",
