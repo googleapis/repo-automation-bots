@@ -48,6 +48,7 @@
     "cross-env": "^7.0.0",
     "google-datastore-emulator": "^4.0.0",
     "gts": "^3.0.0",
+    "js-yaml": "^4.1.0",
     "mocha": "^8.0.0",
     "nock": "^13.0.0",
     "sinon": "^10.0.0",
