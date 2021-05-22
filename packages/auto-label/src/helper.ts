@@ -17,6 +17,21 @@ import {logger} from 'gcf-utils';
 
 // *** Helper functions for all types fo labels ***
 
+export const CONFIG_FILE_NAME = 'auto-label.yaml';
+
+// Default app configs if user didn't specify a .config
+export const LABEL_PRODUCT_BY_DEFAULT = true;
+
+export const DEFAULT_CONFIGS = {
+  product: LABEL_PRODUCT_BY_DEFAULT,
+  language: {
+    pullrequest: false,
+  },
+  path: {
+    pullrequest: false,
+  },
+};
+
 /**
  * Checks whether the intended label already exists
  */
@@ -50,6 +65,7 @@ export interface Config {
   path?: {
     pullrequest?: boolean;
     labelprefix?: string;
+    paths?: PathConfig;
   };
   language?: LanguageConfig;
 }
