@@ -29,7 +29,7 @@ DIRECTORY=$4
 npm i -g @google-automations/cron-utils
 
 pushd "${DIRECTORY}"
-FUNCTION_NAME=$(echo "${DIRECTORY}" | rev | cut -d/ -f1 | rev)
+FUNCTION_NAME=$(echo "${DIRECTORY}" | rev | cut -d/ -f1 | rev | tr '-' '_')
 
 cron-utils deploy \
   --scheduler-service-account="$SCHEDULER_SERVICE_ACCOUNT_EMAIL" \
