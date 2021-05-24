@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './blunderbuss';
+export const CONFIGURATION_FILE_PATH = 'blunderbuss.yml';
 
-const bootstrap = new GCFBootstrapper();
-module.exports['blunderbuss'] = bootstrap.gcf(appFn, {
-  background: true,
-  logging: true,
-});
+export class ByConfig {
+  labels: string[] = [];
+  to: string[] = [];
+}
+
+export interface Configuration {
+  assign_issues?: string[];
+  assign_issues_by?: ByConfig[];
+  assign_prs?: string[];
+  assign_prs_by?: ByConfig[];
+}
