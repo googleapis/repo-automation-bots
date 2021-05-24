@@ -1,0 +1,51 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "blunderbuss config",
+    "description": "Schema for defining the blunderbuss config",
+    "additionalProperties": false,
+    "type": "object",
+    "definitions": {
+	"ByConfig": {
+	    "type": "object",
+	    "additionalProperties": false,
+	    "properties": {
+		"labels": {
+		    "type": "array",
+		    "items": {
+			"type": "string"
+		    }
+		},
+		"to": {
+		    "type": "array",
+		    "items": {
+			"type": "string"
+		    }
+		}
+	    }
+	}
+    },
+    "properties": {
+	"assign_issues": {
+	    "type": "array",
+	    "items": {
+		"type": "string"
+	    }
+	},
+	"assign_issues_by": {
+	    "type": "array",
+	    "items": {"$ref": "#/definitions/ByConfig"},
+	    "default": []
+	},
+	"assign_prs": {
+	    "type": "array",
+	    "items": {
+		"type": "string"
+	    }
+	},
+	"assign_prs_by": {
+	    "type": "array",
+	    "items": {"$ref": "#/definitions/ByConfig"},
+	    "default": []
+	}
+    }
+}
