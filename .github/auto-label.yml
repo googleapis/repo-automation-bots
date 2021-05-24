@@ -1,5 +1,5 @@
 # See https://github.com/googleapis/repo-automation-bots/tree/master/packages/auto-label
-
+testing: "config schema check"
 # Turn of product-based auto-labelling
 product: false
 
