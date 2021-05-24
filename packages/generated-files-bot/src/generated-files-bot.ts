@@ -13,35 +13,27 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, ProbotOctokit} from 'probot';
+import {Context, Probot, ProbotOctokit} from 'probot';
 import {logger, addOrUpdateIssueComment} from 'gcf-utils';
 import {load} from 'js-yaml';
 import {query} from 'jsonpath';
 import {match} from 'minimatch';
+import {
+  ConfigChecker,
+  getConfigWithDefault,
+} from '@google-automations/bot-config-utils';
+import {
+  CONFIGURATION_FILE_PATH,
+  ExternalManifest,
+  GeneratedFile,
+  Configuration,
+} from './config';
+import schema from './config-schema.json';
 
 type OctokitType = InstanceType<typeof ProbotOctokit>;
 
-const CONFIGURATION_FILE_PATH = 'generated-files-bot.yml';
-
 interface File {
   content: string | undefined;
-}
-
-interface ExternalManifest {
-  type: 'json' | 'yaml';
-  file: string;
-  jsonpath: string;
-}
-
-interface GeneratedFile {
-  path: string;
-  message?: string;
-}
-
-export interface Configuration {
-  generatedFiles?: (string | GeneratedFile)[];
-  externalManifests?: ExternalManifest[];
-  ignoreAuthors?: string[];
 }
 
 function normalizeGeneratedFiles(
@@ -187,95 +179,115 @@ export function buildCommentMessage(touchedTemplates: GeneratedFile[]): string {
   );
 }
 
+async function mainLogic(
+  context: Context,
+  config: Configuration,
+  owner: string,
+  repo: string
+) {
+  const pullNumber = context.payload.pull_request.number;
+  const prAuthor = context.payload.pull_request.user.login;
+  const sender = context.payload.sender.login;
+
+  // ignore PRs from a configurable list of authors
+  if (
+    config.ignoreAuthors?.includes(prAuthor) ||
+    config.ignoreAuthors?.includes(sender)
+  ) {
+    logger.metric('generated_files_bot.ignored_author');
+    return;
+  }
+
+  // Read the list of templated files
+  const templatedFiles = await getFileList(
+    config,
+    context.octokit,
+    owner,
+    repo
+  );
+
+  if (!templatedFiles.length) {
+    logger.warn(
+      'No templated files specified. Please check your configuration.'
+    );
+
+    logger.metric('generated_files_bot.missing_templated_file', {
+      repo: context.payload.repository.name,
+      owner: context.payload.repository.owner.login,
+    });
+    return;
+  }
+
+  // Fetch the list of touched files in this pull request
+  const pullRequestFiles = await getPullRequestFiles(
+    context.octokit,
+    owner,
+    repo,
+    pullNumber
+  );
+
+  // Compare list of PR touched files against the list of
+  const touchedTemplates: GeneratedFile[] = [];
+  for (const {path, message} of templatedFiles) {
+    // `dot` enabled dot matching (i.e. 'a/**/b' will match 'a/.d/b')
+    const matches = match(pullRequestFiles, path, {dot: true});
+
+    for (const path of matches) {
+      touchedTemplates.push({
+        path,
+        message,
+      });
+    }
+  }
+
+  // Comment on the pull request if this PR is touching any templated files
+  if (touchedTemplates.length > 0) {
+    const body = buildCommentMessage(touchedTemplates);
+
+    await addOrUpdateIssueComment(
+      context.octokit,
+      owner,
+      repo,
+      pullNumber,
+      context.payload.installation!.id,
+      body
+    );
+
+    logger.metric('generated_files_bot.detected_modified_templated_files', {
+      touchedTemplates: touchedTemplates.length,
+    });
+  }
+}
+
 export function handler(app: Probot) {
   app.on(['pull_request.opened', 'pull_request.synchronize'], async context => {
+    const {owner, repo} = context.repo();
+    // First check the config schema for the PR.
+    const configChecker = new ConfigChecker<Configuration>(
+      schema,
+      CONFIGURATION_FILE_PATH
+    );
+    await configChecker.validateConfigChanges(
+      context.octokit,
+      owner,
+      repo,
+      context.payload.pull_request.head.sha,
+      context.payload.pull_request.number
+    );
     let config: Configuration = {};
-    // Reading the config requires access to code permissions, which are not
-    // always available for private repositories.
     try {
-      config = (await context.config(
+      config = await getConfigWithDefault<Configuration>(
+        context.octokit,
+        owner,
+        repo,
         CONFIGURATION_FILE_PATH,
         {}
-      )) as Configuration;
+      );
     } catch (err) {
       err.message = `Error reading configuration: ${err.message}`;
       logger.error(err);
       return;
     }
-
-    const owner = context.payload.repository.owner.login;
-    const repo = context.payload.repository.name;
-    const pullNumber = context.payload.pull_request.number;
-    const prAuthor = context.payload.pull_request.user.login;
-    const sender = context.payload.sender.login;
-
-    // ignore PRs from a configurable list of authors
-    if (
-      config.ignoreAuthors?.includes(prAuthor) ||
-      config.ignoreAuthors?.includes(sender)
-    ) {
-      logger.metric('generated_files_bot.ignored_author');
-      return;
-    }
-
-    // Read the list of templated files
-    const templatedFiles = await getFileList(
-      config,
-      context.octokit,
-      owner,
-      repo
-    );
-
-    if (!templatedFiles.length) {
-      logger.warn(
-        'No templated files specified. Please check your configuration.'
-      );
-
-      logger.metric('generated_files_bot.missing_templated_file', {
-        repo: context.payload.repository.name,
-        owner: context.payload.repository.owner.login,
-      });
-      return;
-    }
-
-    // Fetch the list of touched files in this pull request
-    const pullRequestFiles = await getPullRequestFiles(
-      context.octokit,
-      owner,
-      repo,
-      pullNumber
-    );
-
-    // Compare list of PR touched files against the list of
-    const touchedTemplates: GeneratedFile[] = [];
-    for (const {path, message} of templatedFiles) {
-      // `dot` enabled dot matching (i.e. 'a/**/b' will match 'a/.d/b')
-      const matches = match(pullRequestFiles, path, {dot: true});
-
-      for (const path of matches) {
-        touchedTemplates.push({
-          path,
-          message,
-        });
-      }
-    }
-
-    // Comment on the pull request if this PR is touching any templated files
-    if (touchedTemplates.length > 0) {
-      const body = buildCommentMessage(touchedTemplates);
-
-      await addOrUpdateIssueComment(
-        context.octokit,
-        owner,
-        repo,
-        pullNumber,
-        context.payload.installation!.id,
-        body
-      );
-
-      logger.metric('generated_files_bot.detected_modified_templated_files', {
-        touchedTemplates: touchedTemplates.length,
-      });
-    }
+    await mainLogic(context, config, owner, repo);
   });
 }
