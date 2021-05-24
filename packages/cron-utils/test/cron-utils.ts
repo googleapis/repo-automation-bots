@@ -116,6 +116,7 @@ describe('createOrUpdateCron', () => {
       'my-project',
       'my-region',
       'my-function-region',
+      'my-function-name',
       'https://base.url/',
       'my-account@google.com'
     );
@@ -138,6 +139,7 @@ describe('createOrUpdateCron', () => {
       'my-project',
       'my-region',
       'my-function-region',
+      'my-function-name',
       'https://base.url/',
       'my-account@google.com'
     );
@@ -163,6 +165,7 @@ describe('createOrUpdateCron', () => {
       'my-project',
       'my-region',
       'my-function-region',
+      'my-function-name',
       'https://base.url/',
       'my-account@google.com'
     );
