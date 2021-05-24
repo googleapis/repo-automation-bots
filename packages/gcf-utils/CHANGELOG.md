@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [8.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v8.0.0...gcf-utils-v8.0.1) (2021-05-24)
+
+
+### Bug Fixes
+
+* **gcf-utils:** skip archived repository for scheduler task ([#1853](https://www.github.com/googleapis/repo-automation-bots/issues/1853)) ([706c502](https://www.github.com/googleapis/repo-automation-bots/commit/706c50267690924298a565a46ad62c290bf2f655))
+
 ## [8.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v7.2.2...gcf-utils-v8.0.0) (2021-05-21)
 
 
