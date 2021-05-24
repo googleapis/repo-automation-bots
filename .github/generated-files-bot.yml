@@ -1,4 +1,3 @@
-testing: "config schema check"
 generatedFiles:
 - path: '.kokoro/**'
   message: '`.kokoro` files are templated and should be updated in [`synthtool`](https://github.com/googleapis/synthtool)'
