@@ -1,0 +1,62 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "generated-files-bot config",
+    "description": "Schema for defining the generated-files-bot config",
+    "additionalProperties": false,
+    "type": "object",
+    "definitions": {
+	"ExternalManifest": {
+	    "type": "object",
+	    "additionalProperties": false,
+	    "properties": {
+		"type": {
+		    "type": "string",
+		    "pattern": "^(json|yaml)$"
+		},
+		"file": {
+		    "type": "string"
+		},
+		"jsonpath": {
+		    "type": "string"
+		}
+	    },
+	    "required": ["type", "file", "jsonpath"]
+	},
+	"GeneratedFile": {
+	    "type": "object",
+	    "additionalProperties": false,
+	    "properties": {
+		"path": {
+		    "type": "string"
+		},
+		"message": {
+		    "type": "string"
+		}
+	    },
+	    "required": ["path"]
+	}
+    },
+    "properties": {
+	"generatedFiles": {
+	    "type": "array",
+	    "items": {
+		"anyOf": [
+		    { "type": "string" },
+		    {"$ref": "#/definitions/GeneratedFile"}
+		]
+	    }
+	},
+	"externalManifests": {
+	    "type": "array",
+	    "items": {
+		"$ref": "#/definitions/ExternalManifest"
+	    }
+	},
+	"ignoreAuthors": {
+	    "type": "array",
+	    "items": {
+		"type": "string"
+	    }
+	}
+    }
+}
