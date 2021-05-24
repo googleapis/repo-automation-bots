@@ -370,6 +370,9 @@ export class GCFBootstrapper {
       );
       for await (const response of installationsPaginated) {
         for (const repo of response.data) {
+          if (repo.archived === true || repo.disabled === true) {
+            continue;
+          }
           await this.scheduledToTask(
             repo.full_name,
             id,
