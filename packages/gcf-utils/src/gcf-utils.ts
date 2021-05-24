@@ -370,13 +370,15 @@ export class GCFBootstrapper {
       );
       for await (const response of installationsPaginated) {
         for (const repo of response.data) {
-          await this.scheduledToTask(
-            repo.full_name,
-            id,
-            body,
-            eventName,
-            signature
-          );
+          if (repo.archived === false) {
+            await this.scheduledToTask(
+              repo.full_name,
+              id,
+              body,
+              eventName,
+              signature
+            );
+          }
         }
       }
     }
