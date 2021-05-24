@@ -33,6 +33,7 @@ interface BuildArgs {
   pr: number;
   project?: string;
   trigger: string;
+  defaultBranch?: string;
 }
 
 export interface CheckArgs {
@@ -116,6 +117,7 @@ export async function triggerPostProcessBuild(
         // gcr.io/repo-automation-tools/nodejs-post-processor**@1234abcd**
         // TODO: read this from OwlBot.yaml.
         _CONTAINER: args.image,
+        _DEFAULT_BRANCH: args.defaultBranch ?? 'master',
       },
     },
   });

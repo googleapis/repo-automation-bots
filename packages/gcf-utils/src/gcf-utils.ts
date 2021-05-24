@@ -370,6 +370,9 @@ export class GCFBootstrapper {
       );
       for await (const response of installationsPaginated) {
         for (const repo of response.data) {
+          if (repo.archived === true || repo.disabled === true) {
+            continue;
+          }
           await this.scheduledToTask(
             repo.full_name,
             id,
@@ -397,12 +400,12 @@ export class GCFBootstrapper {
       const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin)
         .plugin(ConfigPlugin)
         .defaults({authStrategy: createProbotAuth});
-      return new LoggingOctokit(opts);
+      return new LoggingOctokit({auth: opts});
     } else {
       const DefaultOctokit = Octokit.plugin(ConfigPlugin).defaults({
         authStrategy: createProbotAuth,
       });
-      return new DefaultOctokit(opts);
+      return new DefaultOctokit({auth: opts});
     }
   }
 

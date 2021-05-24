@@ -24,9 +24,17 @@ import fs from 'fs';
 import snapshot from 'snap-shot-it';
 import * as sinon from 'sinon';
 import {handler} from '../src/auto-label';
-import {autoDetectLabel, DriftRepo, DriftApi} from '../src/helper';
+import {
+  DEFAULT_CONFIGS,
+  autoDetectLabel,
+  DriftRepo,
+  DriftApi,
+} from '../src/helper';
+import {loadConfig} from './test-helper';
 import {logger} from 'gcf-utils';
 import {createProbotAuth} from 'octokit-auth-probot';
+import * as botConfigModule from '@google-automations/bot-config-utils';
+import {ConfigChecker} from '@google-automations/bot-config-utils';
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
@@ -60,6 +68,8 @@ describe('auto-label', () => {
   let probot: Probot;
   let errorStub: sinon.SinonStub;
   let repoStub: sinon.SinonStub;
+  let getConfigWithDefaultStub: sinon.SinonStub;
+  let validateConfigStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = new Probot({
@@ -73,6 +83,16 @@ describe('auto-label', () => {
     // throw and fail the test if we're writing
     errorStub = sandbox.stub(logger, 'error').throwsArg(0);
     repoStub = sandbox.stub(handler, 'getDriftRepos').resolves(driftRepos);
+    getConfigWithDefaultStub = sandbox.stub(
+      botConfigModule,
+      'getConfigWithDefault'
+    );
+    validateConfigStub = sandbox.stub(
+      ConfigChecker.prototype,
+      'validateConfigChanges'
+    );
+    // We test the config schema compatibility in config-compatibility.ts
+    validateConfigStub.resolves();
     sandbox.stub(handler, 'getDriftApis').resolves(driftApis);
   });
 
@@ -83,14 +103,11 @@ describe('auto-label', () => {
 
   describe('responds to events', () => {
     it('responds to issues and creates appropriate labels when there are no labels', async () => {
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
-      );
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
-        .reply(200, config)
         .post('/repos/testOwner/testRepo/labels')
         .reply(200, [
           {
@@ -117,13 +134,10 @@ describe('auto-label', () => {
 
     //should get a 422 error when creating the label on the repo, we're mocking it already exists
     it('responds to issues and does not create labels if they are not needed', async () => {
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
-      );
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
-        .reply(200, config)
         .post('/repos/testOwner/testRepo/labels')
         .reply(422, [
           {
@@ -148,14 +162,11 @@ describe('auto-label', () => {
 
     //should get a 422 error when creating the label on the repo, we're mocking it already exists
     it('responds to issues and adds a label to an issue, even if the label already exists on the repo', async () => {
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
-      );
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
-        .reply(200, config)
         .post('/repos/testOwner/testRepo/labels')
         .reply(422, [
           {
@@ -184,20 +195,15 @@ describe('auto-label', () => {
       errorStub.restore();
       errorStub = sandbox.stub(logger, 'error');
       repoStub.restore();
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
-      );
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
       const fileStub = sandbox.stub(handler, 'getDriftFile').resolves('');
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
-      const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
-        .reply(200, config);
       await probot.receive({
         name: 'issues',
         payload,
         id: 'abc123',
       });
-      ghRequests.done();
       fileStub.restore();
       const loggerArg = errorStub.firstCall.args[0];
       assert.ok(loggerArg instanceof Error);
@@ -208,16 +214,13 @@ describe('auto-label', () => {
     });
 
     it('returns null if there is no match on the repo', async () => {
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
-      );
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
       const payload = require(resolve(
         fixturesPath,
         './events/issue_opened_no_match_repo'
       ));
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/notThere/contents/.github%2Fauto-label.yaml')
-        .reply(200, config)
         .get('/repos/testOwner/notThere/issues/5/labels')
         .reply(200);
       await probot.receive({
@@ -229,28 +232,21 @@ describe('auto-label', () => {
     });
 
     it('ignores repos that are not enabled', async () => {
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config-not-enabled.yml')
-      );
+      const config = loadConfig('valid-config-not-enabled.yml');
+      getConfigWithDefaultStub.resolves(config);
 
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
-
-      const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
-        .reply(200, config);
 
       await probot.receive({
         name: 'issues',
         payload,
         id: 'abc123',
       });
-      ghRequests.done();
     });
 
     it('auto detects and labels a Spanner issue', async () => {
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
-      );
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
 
       const payload = require(resolve(
         fixturesPath,
@@ -258,10 +254,6 @@ describe('auto-label', () => {
       ));
 
       const ghRequests = nock('https://api.github.com')
-        .get(
-          '/repos/GoogleCloudPlatform/golang-samples/contents/.github%2Fauto-label.yaml'
-        )
-        .reply(200, config)
         .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
         .reply(200)
         .post('/repos/GoogleCloudPlatform/golang-samples/labels')
@@ -299,9 +291,8 @@ describe('auto-label', () => {
     });
 
     it('auto detects and labels a Cloud IoT issue', async () => {
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
-      );
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
 
       const payload = require(resolve(
         fixturesPath,
@@ -310,10 +301,6 @@ describe('auto-label', () => {
       payload['issue']['title'] = 'Cloud IoT: TestDeploy failed';
 
       const ghRequests = nock('https://api.github.com')
-        .get(
-          '/repos/GoogleCloudPlatform/golang-samples/contents/.github%2Fauto-label.yaml'
-        )
-        .reply(200, config)
         .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
         .reply(200)
         .post('/repos/GoogleCloudPlatform/golang-samples/labels')
@@ -351,9 +338,8 @@ describe('auto-label', () => {
     });
 
     it('auto detects and labels a Spanner pull request', async () => {
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
-      );
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
 
       const payload = require(resolve(
         fixturesPath,
@@ -361,8 +347,6 @@ describe('auto-label', () => {
       ));
 
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/notThere/contents/.github%2Fauto-label.yaml')
-        .reply(200, config)
         .get('/repos/testOwner/notThere/issues/12/labels')
         .reply(200)
         .post('/repos/testOwner/notThere/labels')
@@ -382,12 +366,18 @@ describe('auto-label', () => {
         id: 'abc123',
       });
       ghRequests.done();
+      validateConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'testOwner',
+        'notThere',
+        '19f6a66851125917fa07615dcbc0cd13dad56981',
+        12
+      );
     });
 
     it('does not re-label an issue', async () => {
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
-      );
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
       const payload = require(resolve(
         fixturesPath,
         './events/issue_opened_spanner'
@@ -395,10 +385,6 @@ describe('auto-label', () => {
       payload['issue']['title'] = 'spanner: this is actually about App Engine';
 
       const ghRequests = nock('https://api.github.com')
-        .get(
-          '/repos/GoogleCloudPlatform/golang-samples/contents/.github%2Fauto-label.yaml'
-        )
-        .reply(200, config)
         .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
         .reply(200, [
           {
@@ -438,9 +424,8 @@ describe('auto-label', () => {
         undefined,
         'expected an `api: docs` repo in downloadedfile.json'
       );
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
-      );
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
 
       const payload = require(resolve(
         fixturesPath,
@@ -458,10 +443,6 @@ describe('auto-label', () => {
         payload['issue']['title'] = title;
 
         const ghRequests = nock('https://api.github.com')
-          .get(
-            '/repos/GoogleCloudPlatform/golang-samples/contents/.github%2Fauto-label.yaml'
-          )
-          .reply(200, config)
           .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
           .reply(200, [
             {
@@ -480,12 +461,9 @@ describe('auto-label', () => {
 
   describe('schedule repository', () => {
     it('responds to a scheduled event', async () => {
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
-      );
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
           {
@@ -525,12 +503,9 @@ describe('auto-label', () => {
     });
 
     it('deletes extraneous labels', async () => {
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
-      );
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
           {
@@ -578,12 +553,9 @@ describe('auto-label', () => {
     });
 
     it('will not create labels that already exist', async () => {
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
-      );
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
           {
@@ -614,14 +586,9 @@ describe('auto-label', () => {
     });
 
     it('will add a samples tag for a samples repo', async () => {
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
-      );
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
       const ghRequests = nock('https://api.github.com')
-        .get(
-          '/repos/testOwner/testRepo-samples/contents/.github%2Fauto-label.yaml'
-        )
-        .reply(200, config)
         .get('/repos/testOwner/testRepo-samples/issues')
         .reply(200, [
           {
@@ -671,12 +638,9 @@ describe('auto-label', () => {
     });
 
     it('will add a samples tag for a samples issue', async () => {
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid-config.yml')
-      );
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
           {
@@ -726,10 +690,9 @@ describe('auto-label', () => {
     });
 
     it('will run by default if there is no auto-label config file', async () => {
-      const config = undefined;
+      // TODO: Migrate to a test without the config stub.
+      getConfigWithDefaultStub.resolves(DEFAULT_CONFIGS);
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
           {
@@ -782,14 +745,8 @@ describe('auto-label', () => {
   describe('installation', async () => {
     it('responds to an installation event', async () => {
       const payload = require(resolve(fixturesPath, './events/installation'));
-      const product_config = Buffer.from('product: true', 'binary').toString(
-        'base64'
-      );
+      getConfigWithDefaultStub.resolves({product: true});
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-label.yaml')
-        .reply(200, {
-          content: product_config,
-        })
         .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
           {
@@ -842,7 +799,7 @@ describe('auto-label', () => {
         {title: 'fix(snippets.spanner.helper): ignored', want: 'api: spanner'},
         {title: 'snippets.video: ignored', want: 'api: videointelligence'},
         {
-          title: 'data-science-onramp.video-intelligence.ignored: ignored',
+          title: 'video-intelligence.ignored: ignored',
           want: 'api: videointelligence',
         },
         {title: 'unknown: ignored', want: undefined},

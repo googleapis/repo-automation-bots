@@ -1,0 +1,38 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Header Checker Lint config schema",
+    "description": "Schema for defining the header-checker-lint",
+    "additionalProperties": false,
+    "type": "object",
+    "properties": {
+	"allowedCopyrightHolders": {
+	    "description": "A list of allowed copyright holders",
+	    "type": "array",
+	    "items": {
+		"type": "string"
+	    }
+	},
+	"allowedLicenses": {
+	    "description": "A list of allowed licenses",
+	    "type": "array",
+	    "items": {
+		"type": "string",
+		"pattern": "^(Apache-2\\.0|MIT|BSD-3)$"
+	    }
+	},
+	"ignoreFiles": {
+	    "description": "A list of file patterns for ignoring",
+	    "type": "array",
+	    "items": {
+		"type": "string"
+	    }
+	},
+	"sourceFileExtensions": {
+	    "description": "A list of file extensions",
+	    "type": "array",
+	    "items": {
+		"type": "string"
+	    }
+	},
+    }
+}

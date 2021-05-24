@@ -87,6 +87,24 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [8.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v8.0.0...gcf-utils-v8.0.1) (2021-05-24)
+
+
+### Bug Fixes
+
+* **gcf-utils:** skip archived repository for scheduler task ([#1853](https://www.github.com/googleapis/repo-automation-bots/issues/1853)) ([706c502](https://www.github.com/googleapis/repo-automation-bots/commit/706c50267690924298a565a46ad62c290bf2f655))
+
+## [8.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v7.2.2...gcf-utils-v8.0.0) (2021-05-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **gcf-utils:** fix getAuthenticatedOctokit (#1826)
+
+### Bug Fixes
+
+* **gcf-utils:** fix getAuthenticatedOctokit ([#1826](https://www.github.com/googleapis/repo-automation-bots/issues/1826)) ([c602f0f](https://www.github.com/googleapis/repo-automation-bots/commit/c602f0f8de126173c6a0e13fb3b7942cc732df84))
+
 ### [7.2.2](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v7.2.1...gcf-utils-v7.2.2) (2021-04-23)
 
 
