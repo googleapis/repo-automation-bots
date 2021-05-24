@@ -114,7 +114,6 @@ export async function createOrUpdateCron(
     Location: functionRegion,
   };
   const jobParams = {
-    name: jobName,
     schedule: cronEntry.schedule,
     description: cronEntry.description,
     httpTarget: {
@@ -151,7 +150,10 @@ export async function createOrUpdateCron(
   } else {
     const [job] = await client.createJob({
       parent,
-      job: jobParams,
+      job: {
+        name: jobName,
+        ...jobParams,
+      },
     });
     return job?.name ?? null;
   }

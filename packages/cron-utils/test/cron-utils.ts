@@ -127,11 +127,14 @@ describe('createOrUpdateCron', () => {
       name: 'test-cron',
       description: 'some-description',
       schedule: '0 1 * * *',
+      params: {
+        foo: 'bar',
+      },
     };
     sandbox
       .stub(v1.CloudSchedulerClient.prototype, 'getJob')
       .resolves([{name: 'projects/my-project/regions/my-region/jobs/abcd'}]);
-    sandbox
+    const updateStub = sandbox
       .stub(v1.CloudSchedulerClient.prototype, 'updateJob')
       .resolves([{name: 'projects/my-project/regions/my-region/jobs/abcd'}]);
     const job = await createOrUpdateCron(
@@ -144,6 +147,15 @@ describe('createOrUpdateCron', () => {
       'my-account@google.com'
     );
     assert.strictEqual(job, 'projects/my-project/regions/my-region/jobs/abcd');
+    sinon.assert.calledOnce(updateStub);
+    const updatedJob = updateStub.getCall(0).args[0].job!;
+    assert.strictEqual(updatedJob.timeZone, 'America/Los_Angeles');
+    assert.ok(updatedJob.httpTarget?.body);
+    const body = JSON.parse(updatedJob.httpTarget.body.toString());
+    assert.strictEqual(body['Location'], 'my-function-region');
+    assert.strictEqual(body['Name'], 'my-function-name');
+    assert.strictEqual(body['Type'], 'function');
+    assert.strictEqual(body['foo'], 'bar');
   });
   it('adds additional parameters', async () => {
     const cronEntry = {
