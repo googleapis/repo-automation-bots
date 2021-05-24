@@ -27,11 +27,11 @@ cron:
       cleanUp: false
       find_hanging_prs: true
   - name: merge-on-green-hanging-prs-gcp
-  description: "picks up hanging PRs if the webhook was missed (GoogleCloudPlatform)"
-  schedule: "0 * * * *"
-  params:
-    installation:
-      id: 6882761
-    org: GoogleCloudPlatform
-    cleanUp: false
-    find_hanging_prs: true
+    description: "picks up hanging PRs if the webhook was missed (GoogleCloudPlatform)"
+    schedule: "0 * * * *"
+    params:
+      installation:
+        id: 6882761
+      org: GoogleCloudPlatform
+      cleanUp: false
+      find_hanging_prs: true
