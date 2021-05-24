@@ -1,5 +1,6 @@
 # See https://github.com/googleapis/repo-automation-bots/tree/master/packages/blunderbuss
 
+testing: "config schema check"
 assign_issues_by:
   - labels:
     - 'bot: auto-label'
