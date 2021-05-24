@@ -65,32 +65,6 @@ export async function getServerlessSchedulerProxyUrl(
 }
 
 /**
- * Parses the legacy `cron` file and coerces into a CronEntry. The cron file
- * is a simple text file that contains a crontab-like entry.
- * @param path {string} Path to the `cron` file.
- * @param name {string} Name of the cron entry.
- * @param description {string} Description of the cron entry.
- * @returns {CronEntry[]} The parsed cron entry as a list (or empty)
- */
-export function parseLegacyCronFile(
-  path: string,
-  name: string,
-  description?: string
-): CronEntry[] {
-  if (!existsSync(path)) {
-    return [];
-  }
-  const schedule = readFileSync(path).toString('utf-8').trim();
-  return [
-    {
-      name,
-      description,
-      schedule,
-    },
-  ];
-}
-
-/**
  * Parse multiple cron entries from a `cron.yaml` file. The cron file
  * is a YAML file with a root `cron` field that contains a list of
  * CronEntry data structures.

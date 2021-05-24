@@ -18,7 +18,6 @@ import * as assert from 'assert';
 import sinon from 'sinon';
 import {
   getServerlessSchedulerProxyUrl,
-  parseLegacyCronFile,
   parseCronEntries,
   createOrUpdateCron,
 } from '../src/cron-utils';
@@ -66,36 +65,6 @@ describe('getServerlessSchedulerProxyUrl', () => {
     });
     assert.ok(runScope.isDone());
     sinon.assert.calledOnce(adcStub);
-  });
-});
-
-describe('parseLegacyCron', () => {
-  it('pulls the schedule from the file', () => {
-    const cronEntries = parseLegacyCronFile(
-      './test/fixtures/cron.txt',
-      'some-name'
-    );
-    assert.strictEqual(1, cronEntries.length);
-    const cronEntry = cronEntries[0];
-    assert.strictEqual(cronEntry.schedule, '0 1 * * *');
-    assert.strictEqual(cronEntry.name, 'some-name');
-    assert.strictEqual(cronEntry.description, undefined);
-  });
-  it('sets the description', () => {
-    const cronEntries = parseLegacyCronFile(
-      './test/fixtures/cron.txt',
-      'some-name',
-      'some-description'
-    );
-    assert.strictEqual(1, cronEntries.length);
-    const cronEntry = cronEntries[0];
-    assert.strictEqual(cronEntry.schedule, '0 1 * * *');
-    assert.strictEqual(cronEntry.name, 'some-name');
-    assert.strictEqual(cronEntry.description, 'some-description');
-  });
-  it('returns empty list on not found', () => {
-    const cronEntries = parseLegacyCronFile('./non-existent-file', 'some-name');
-    assert.deepStrictEqual(cronEntries, []);
   });
 });
 

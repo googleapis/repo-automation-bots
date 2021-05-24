@@ -52,9 +52,6 @@ describe('cli', () => {
   });
   it('should handle updating crons', async () => {
     getProxyUrlStub.resolves('https://scheduler.proxy/');
-    sandbox.replace(cron_utils, 'parseLegacyCronFile', () => {
-      return [];
-    });
     sandbox.replace(cron_utils, 'parseCronEntries', () => {
       return [{name: 'cron-name', schedule: '0 1 * * *'}];
     });
