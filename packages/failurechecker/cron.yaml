@@ -1,0 +1,6 @@
+cron:
+  - name: failurechecker
+    schedule: 0 * * * *
+    params:
+      installation:
+        id: 5417808

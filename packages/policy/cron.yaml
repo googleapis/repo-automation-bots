@@ -1,0 +1,7 @@
+cron:
+  - name: policy
+    schedule: 0 2 * * *
+    params:
+      installation:
+        id: 15630733
+      cron_org: googleapis

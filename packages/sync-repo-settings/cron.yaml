@@ -1,0 +1,15 @@
+cron:
+  - name: sync_repo_settings
+    schedule: 0 1 * * *
+    description: sync the repo settings for googleapis.
+    params:
+      installation:
+        id: 7185635
+      cron_org: googleapis
+  - name: sync_repo_settings_gcp
+    description: sync the repo settings for GoogleCloudPlatform.
+    schedule: 0 2 * * *
+    params:
+      installation:
+        id: 7185664
+      cron_org: GoogleCloudPlatform

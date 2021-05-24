@@ -1,0 +1,15 @@
+cron:
+  - name: auto_label
+    schedule: 0 1 * * *
+    description: auto_label for googleapis
+    params:
+      installation:
+        id: 6495518
+      cron_org: googleapis
+  - name: auto_label_gcp
+    description: auto_label for GCP
+    schedule: 0 2 * * *
+    params:
+      installation:
+        id: 7546665
+      cron_org: GoogleCloudPlatform
