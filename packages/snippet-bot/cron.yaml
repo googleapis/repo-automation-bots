@@ -1,0 +1,15 @@
+cron:
+  - name: snippet-bot-gcp
+    schedule: 0 3 * * *
+    description: daily scheduler job for snippet-bot
+    params:
+      installation:
+        id: 9602930
+      cron_org: GoogleCloudPlatform
+  - name: snippet-bot-googleapis
+    description: daily scheduler job for snippet-bot
+    schedule: 0 3 * * *
+    params:
+      installation:
+        id: 11299897
+      cron_org: googleapis

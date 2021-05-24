@@ -1,0 +1,6 @@
+cron:
+  - name: slo_stat_bot
+    schedule: */5 * * * *
+    params:
+      installation:
+        id: 11112564
