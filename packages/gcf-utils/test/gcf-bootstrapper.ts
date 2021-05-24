@@ -41,6 +41,15 @@ function nockListInstallationRepos() {
   );
 }
 
+function nockListInstallations(fixture = 'app_installations.json') {
+  return (
+    nock('https://api.github.com/')
+      .get('/app/installations')
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      .reply(200, require(`../../test/fixtures/${fixture}`))
+  );
+}
+
 describe('GCFBootstrapper', () => {
   describe('gcf', () => {
     let handler: (
@@ -163,7 +172,7 @@ describe('GCFBootstrapper', () => {
     it('returns 500 on errors', async () => {
       await mockBootstrapper();
       req.body = {
-        installtion: {id: 1},
+        installation: {id: 1},
       };
       req.headers = {};
       req.headers['x-github-event'] = 'err';
@@ -270,26 +279,111 @@ describe('GCFBootstrapper', () => {
       downloaded.done();
     });
 
-    it('ensures that task is enqueued when called by scheduler for many repos', async () => {
-      await mockBootstrapper();
-      req.body = {
-        installation: {id: 1},
-      };
-      req.headers = {};
-      req.headers['x-github-event'] = 'schedule.repository';
-      req.headers['x-github-delivery'] = '123';
-      req.headers['x-cloudtasks-taskname'] = '';
-      nockListInstallationRepos();
+    describe('per-repository cron', () => {
+      it('ensures that task is enqueued when called by scheduler for many repos', async () => {
+        await mockBootstrapper();
+        req.body = {
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.repository';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = '';
+        nockListInstallationRepos();
 
-      await handler(req, response);
+        await handler(req, response);
 
-      sinon.assert.calledTwice(enqueueTask);
+        sinon.assert.calledTwice(enqueueTask);
+      });
+
+      it('ensures that task is enqueued when called by scheduler for many installations', async () => {
+        await mockBootstrapper();
+        req.body = {};
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.repository';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = '';
+        nockListInstallations();
+        nockListInstallationRepos();
+
+        await handler(req, response);
+
+        sinon.assert.calledTwice(enqueueTask);
+      });
+    });
+
+    describe('per-installation cron', () => {
+      it('ensures that task is enqueued when called by scheduler', async () => {
+        await mockBootstrapper();
+        req.body = {
+          cron_type: 'installation',
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.repository';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = '';
+        nockListInstallations('app_installations.json');
+        nockListInstallationRepos();
+
+        await handler(req, response);
+
+        sinon.assert.calledOnce(enqueueTask);
+      });
+      it('ensures that task is enqueued when called by scheduler for many installations', async () => {
+        await mockBootstrapper();
+        req.body = {
+          cron_type: 'installation',
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.repository';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = '';
+        nockListInstallations('app_installations_multiple.json');
+        nockListInstallationRepos();
+
+        await handler(req, response);
+
+        sinon.assert.calledTwice(enqueueTask);
+      });
+      it('ensures that task is enqueued when called by scheduler with an installation id', async () => {
+        await mockBootstrapper();
+        req.body = {
+          cron_type: 'installation',
+          installation: {
+            id: 1,
+          },
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.repository';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = '';
+        nockListInstallationRepos();
+
+        await handler(req, response);
+
+        sinon.assert.calledOnce(enqueueTask);
+      });
+    });
+
+    describe('global cron', () => {
+      it('enqueues a single task for global scheduled task', async () => {
+        await mockBootstrapper();
+        req.body = {
+          cron_type: 'global',
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.repository';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = '';
+        await handler(req, response);
+        sinon.assert.calledOnce(enqueueTask);
+      });
     });
 
     it('ensures that task is enqueued when called by Github', async () => {
       await mockBootstrapper();
       req.body = {
-        installtion: {id: 1},
+        installation: {id: 1},
       };
       req.headers = {};
       req.headers['x-github-event'] = 'another.name';
