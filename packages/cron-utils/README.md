@@ -51,12 +51,3 @@ cron:
   params:
     foo: bar
 ```
-
-### `cron` file (legacy)
-
-You can specify a single cron task via a `cron` config file at the
-root of your bot. The task name will default to the bot name (folder name)
-and will not have a description.
-
-The contents of the `cron` file should be a text representation of the
-crontab schedule.

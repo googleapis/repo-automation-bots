@@ -16,7 +16,6 @@
 import yargs = require('yargs');
 import {
   getServerlessSchedulerProxyUrl,
-  parseLegacyCronFile,
   parseCronEntries,
   createOrUpdateCron,
 } from './cron-utils';
@@ -68,10 +67,7 @@ const deployCommand: yargs.CommandModule<{}, Args> = {
       console.log('error fetching scheduler proxy url');
       return;
     }
-    const cronEntries = parseLegacyCronFile(
-      './cron',
-      argv['function-name']
-    ).concat(parseCronEntries('./cron.yaml'));
+    const cronEntries = parseCronEntries('./cron.yaml');
     console.log(cronEntries);
     await Promise.all(
       cronEntries.map(cronEntry => {
