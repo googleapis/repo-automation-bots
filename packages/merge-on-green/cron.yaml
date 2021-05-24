@@ -7,7 +7,7 @@ cron:
         id: 6648093
       org: googleapis
       cleanUp: false
-      find_hangingprs: false
+      find_hanging_prs: false
   - name: merge-on-green-clean-up
     description: "cleans up MOG datastore table"
     schedule: */30 * * * *
