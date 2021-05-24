@@ -8,7 +8,7 @@ cron:
       cron_org: GoogleCloudPlatform
   - name: snippet-bot-googleapis
     description: daily scheduler job for snippet-bot
-    schedule: 0 3 * * *
+    schedule: 0 4 * * *
     params:
       installation:
         id: 11299897
