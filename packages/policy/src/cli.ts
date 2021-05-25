@@ -43,6 +43,7 @@ const cli = meow(
 
 `,
   {
+    importMeta: import.meta,
     flags: {
       repo: {type: 'string'},
       search: {type: 'string'},
