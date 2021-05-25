@@ -71,7 +71,7 @@ steps:
   - name: 'gcr.io/cloud-builders/git'
     args:
       - commit
-      - -f
+      - -F
       - /workspace/post-processor-changes.txt
     dir: '${_REPOSITORY}'
 
