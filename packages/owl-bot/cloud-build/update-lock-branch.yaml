@@ -60,7 +60,7 @@ steps:
   - name: ${_CONTAINER}
     dir: '${_REPOSITORY}'
     entrypoint: 'sh'
-    args: ['-c', '( ( cat post-processor-changes.txt || printf "chore: new owl bot post processor docker image\n\n" ) && printf "Post-Processor: ${_CONTAINER}" ) > /workspace/post-processor-changes.txt']
+    args: ['-c', '( ( cat post-processor-changes.txt || printf "chore: new owl bot post processor docker image\n\n" ) && printf "Post-Processor: ${_CONTAINER}\n" ) > /workspace/post-processor-changes.txt']
 
   # Commit changes
   - name: 'gcr.io/cloud-builders/git'
