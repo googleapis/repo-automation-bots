@@ -43,7 +43,7 @@
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.6.1",
     "@types/node-fetch": "^2.5.7",
-    "@types/sinon": "^9.0.8",
+    "@types/sinon": "^10.0.0",
     "@types/tar": "^4.0.3",
     "@types/tmp": "^0.2.0",
     "@octokit/webhooks-definitions": "^3.67.3",
