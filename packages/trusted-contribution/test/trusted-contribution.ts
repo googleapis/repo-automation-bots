@@ -655,7 +655,7 @@ describe('TrustedContributionTestRunner', () => {
     getAuthenticatedOctokitStub.calledOnceWith(
       process.env.PROJECT_ID || '',
       utilsModule.SECRET_NAME_FOR_COMMENT_PERMISSION
-    )
+    );
     assert(octokitIssuesSpy.calledOnce);
   });
 
