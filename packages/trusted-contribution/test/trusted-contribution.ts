@@ -27,6 +27,7 @@ import * as botConfigModule from '@google-automations/bot-config-utils';
 
 import {WELL_KNOWN_CONFIGURATION_FILE} from '../src/config';
 import myProbotApp from '../src/trusted-contribution';
+import * as utilsModule from '../src/utils';
 
 nock.disableNetConnect();
 
@@ -612,7 +613,15 @@ describe('TrustedContributionTestRunner', () => {
 
   it('should add a comment if configured with annotations', async () => {
     getConfigStub.resolves(loadConfig('gcbrun.yml'));
-    requests = requests
+    const sandbox = sinon.createSandbox();
+    const getAuthenticatedOctokitStub = sandbox.stub(
+      utilsModule,
+      'getAuthenticatedOctokit'
+    );
+    const testOctokit = new Octokit();
+    const octokitIssuesSpy = sandbox.spy(testOctokit.issues, 'createComment');
+    getAuthenticatedOctokitStub.resolves(testOctokit);
+    requests
       .post(
         '/repos/chingor13/google-auth-library-java/issues/3/comments',
         () => true
@@ -642,6 +651,12 @@ describe('TrustedContributionTestRunner', () => {
       id: 'abc123',
     });
     requests.done();
+    sandbox.restore();
+    getAuthenticatedOctokitStub.calledOnceWith(
+      process.env.PROJECT_ID || '',
+      utilsModule.SECRET_NAME_FOR_COMMENT_PERMISSION
+    );
+    assert(octokitIssuesSpy.calledOnce);
   });
 
   it('should log an error if the config cannot be fetched', async () => {

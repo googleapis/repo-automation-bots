@@ -14,6 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
+import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import {
@@ -22,6 +23,10 @@ import {
   WELL_KNOWN_CONFIGURATION_FILE,
 } from './config';
 import schema from './config-schema.json';
+import {
+  getAuthenticatedOctokit,
+  SECRET_NAME_FOR_COMMENT_PERMISSION,
+} from './utils';
 
 const DEFAULT_TRUSTED_CONTRIBUTORS = [
   'renovate-bot',
@@ -100,6 +105,7 @@ export = (app: Probot) => {
       if (isTrustedContribution(remoteConfiguration, PR_AUTHOR)) {
         const annotations =
           remoteConfiguration.annotations || DEFAULT_ANNOTATIONS;
+        let octokit: Octokit | null = null;
         for (const annotation of annotations) {
           if (annotation.type === 'label') {
             const issuesAddLabelsParams = context.repo({
@@ -111,7 +117,14 @@ export = (app: Probot) => {
               url: context.payload.pull_request.url,
             });
           } else if (annotation.type === 'comment') {
-            await context.octokit.issues.createComment({
+            // Use personal access token from the secret manager.
+            if (octokit === null) {
+              octokit = await getAuthenticatedOctokit(
+                process.env.PROJECT_ID || '',
+                SECRET_NAME_FOR_COMMENT_PERMISSION
+              );
+            }
+            await octokit.issues.createComment({
               issue_number: context.payload.pull_request.number,
               body: annotation.text,
               owner: context.repo().owner,
