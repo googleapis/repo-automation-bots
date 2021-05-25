@@ -54,19 +54,25 @@ steps:
       - --image
       - ${_CONTAINER}
     dir: '${_REPOSITORY}'
-  # And commit it.
+
+  # Dump the change history from the docker image so we can include it
+  # in the pull request description.
+  - name: ${_CONTAINER}
+    dir: '${_REPOSITORY}'
+    entrypoint: 'sh'
+    args: ['-c', '( ( cat post-processor-changes.txt || printf "chore: new owl bot post processor docker image\n\n" ) && printf "Post-Processor: ${_CONTAINER}" ) > /workspace/post-processor-changes.txt']
+
+  # Commit changes
   - name: 'gcr.io/cloud-builders/git'
     args:
       - add
       - ${_LOCK_FILE_PATH}
     dir: '${_REPOSITORY}'
-  # TODO: Dump the change history from the docker image so we can include it
-  #       in the pull request description.
   - name: 'gcr.io/cloud-builders/git'
     args:
       - commit
-      - -m
-      - "chore: new owl bot post processor docker image\n\n${_CONTAINER}"
+      - -f
+      - /workspace/post-processor-changes.txt
     dir: '${_REPOSITORY}'
 
   # Run container listed in OwlBot.yaml.
