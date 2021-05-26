@@ -127,7 +127,10 @@ function aggregateCheckParams(
     if (check.conclusion === 'failure') {
       conclusion = check.conclusion;
       summary = `${title} failure`;
-      text += formatExpandable(check.output!.summary, check.output!.text as string);
+      text += formatExpandable(
+        check.output!.summary,
+        check.output!.text as string
+      );
     }
   }
   if (conclusion === 'success') {
