@@ -743,6 +743,58 @@ describe('snippet-bot', () => {
       );
     });
 
+    it('agggregates 3 checks into one because aggregateChecks is true', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const diffResponse = fs.readFileSync(
+        resolve(fixturesPath, 'diff_without_regiontag_changes.txt')
+      );
+      const payload = require(resolve(fixturesPath, './pr_event'));
+
+      getConfigStub.reset();
+      getConfigStub.resolves({
+        ignoreFiles: ['test.py'],
+        aggregateChecks: true,
+      });
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
+        )
+        .reply(200, [])
+        .post(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      const diffRequests = nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+        .reply(200, diffResponse);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+      diffRequests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
+    });
+
     it('quits early if there is no config file', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './pr_event'));
@@ -804,6 +856,67 @@ describe('snippet-bot', () => {
           snapshot(body);
           return true;
         })
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      const diffRequests = nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+        .reply(200, diffResponse);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(getApiLabelsStub);
+      sinon.assert.calledOnce(getSnippetsStub);
+      requests.done();
+      diffRequests.done();
+      getConfigStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH
+      );
+    });
+
+    it('creates failure check with combined results', async () => {
+      getApiLabelsStub.reset();
+      const products = require(resolve(fixturesPath, './products'));
+      getApiLabelsStub.resolves(products);
+
+      getSnippetsStub.reset();
+      const snippets = require(resolve(fixturesPath, './snippets'));
+      getSnippetsStub.resolves(snippets);
+      getConfigStub.reset();
+      getConfigStub.resolves({aggregateChecks: true});
+
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const diffResponse = fs.readFileSync(resolve(fixturesPath, 'diff.txt'));
+      const payload = require(resolve(fixturesPath, './pr_event'));
+      const blob = require(resolve(fixturesPath, './failure_blob'));
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/test.py?ref=ce03c1b7977aadefb5f6afc09901f106ee6ece6a'
+        )
+        .reply(200, blob)
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
+        )
+        .reply(200, [])
+        .post(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
         .reply(200)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
