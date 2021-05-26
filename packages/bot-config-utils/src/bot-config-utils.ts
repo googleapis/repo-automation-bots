@@ -51,10 +51,10 @@ export interface ValidateConfigOptions {
   additionalSchemas?: Array<object>;
 }
 
-async function validateConfig<T>(
+export function validateConfig<T>(
   configYaml: string,
   options: ValidateConfigOptions
-): Promise<ValidateConfigResult<T>> {
+): ValidateConfigResult<T> {
   const ajv = new Ajv();
   if (options.additionalSchemas) {
     for (const schema of options.additionalSchemas) {
@@ -148,7 +148,7 @@ export class ConfigChecker<T> {
         const fileContents = Buffer.from(blob.data.content, 'base64').toString(
           'utf8'
         );
-        const result = await validateConfig<T>(fileContents, {
+        const result = validateConfig<T>(fileContents, {
           schema: this.schema,
           additionalSchemas: this.additionalSchemas,
         });
@@ -209,7 +209,7 @@ export async function getConfig<T>(
       if (!options.schema) {
         return Object.assign({}, undefined, loaded);
       }
-      const validateResult = await validateConfig<T>(
+      const validateResult = validateConfig<T>(
         Buffer.from(resp.data.content, 'base64').toString('utf-8'),
         {schema: options.schema, additionalSchemas: options.additionalSchemas}
       );
@@ -218,7 +218,7 @@ export async function getConfig<T>(
       } else {
         throw new Error(
           `Failed to validate the config schema at '${path}' ` +
-            `:${validateResult.errorText}`
+          `:${validateResult.errorText}`
         );
       }
     } else {
@@ -248,7 +248,7 @@ export async function getConfig<T>(
         if (!options.schema) {
           return Object.assign({}, undefined, loaded);
         }
-        const validateResult = await validateConfig<T>(
+        const validateResult = validateConfig<T>(
           Buffer.from(resp.data.content, 'base64').toString('utf-8'),
           {schema: options.schema, additionalSchemas: options.additionalSchemas}
         );
@@ -257,7 +257,7 @@ export async function getConfig<T>(
         } else {
           throw new Error(
             `Failed to validate the config schema at '${path}' ` +
-              `:${validateResult.errorText}`
+            `:${validateResult.errorText}`
           );
         }
       } else {
@@ -296,7 +296,7 @@ export async function getConfigWithDefault<T>(
       if (!options.schema) {
         return Object.assign({}, defaultConfig, loaded);
       }
-      const validateResult = await validateConfig<T>(
+      const validateResult = validateConfig<T>(
         Buffer.from(resp.data.content, 'base64').toString('utf-8'),
         {schema: options.schema, additionalSchemas: options.additionalSchemas}
       );
@@ -305,7 +305,7 @@ export async function getConfigWithDefault<T>(
       } else {
         throw new Error(
           `Failed to validate the config schema at '${path}' ` +
-            `:${validateResult.errorText}`
+          `:${validateResult.errorText}`
         );
       }
     } else {
@@ -334,7 +334,7 @@ export async function getConfigWithDefault<T>(
         if (!options.schema) {
           return Object.assign({}, defaultConfig, loaded);
         }
-        const validateResult = await validateConfig<T>(
+        const validateResult = validateConfig<T>(
           Buffer.from(resp.data.content, 'base64').toString('utf-8'),
           {schema: options.schema, additionalSchemas: options.additionalSchemas}
         );
@@ -343,7 +343,7 @@ export async function getConfigWithDefault<T>(
         } else {
           throw new Error(
             `Failed to validate the config schema at '${path}' ` +
-              `:${validateResult.errorText}`
+            `:${validateResult.errorText}`
           );
         }
       } else {
