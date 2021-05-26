@@ -181,3 +181,18 @@ export function checkFilePathsMatch(
   }
   return filesMatch;
 }
+
+/**
+ * Checks whether the attempted merge is happening during the week.
+ *
+ * @returns true if merge is happening on the weekday, false if it's on Friday or the weekend.
+ */
+export function mergesOnWeekday(): boolean {
+  const date = new Date(Date.now());
+  const dayOfWeek = date.getDay();
+  console.log(dayOfWeek);
+  if (dayOfWeek >= 5 || dayOfWeek === 0) {
+    return false;
+  }
+  return true;
+}
