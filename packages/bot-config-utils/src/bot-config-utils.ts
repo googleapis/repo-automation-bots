@@ -32,11 +32,6 @@ export interface OctokitContext {
   octokit: Octokit;
 }
 
-export interface ValidateConfigResult {
-  isValid: boolean;
-  errorText: string | undefined;
-}
-
 interface File {
   content: string | undefined;
 }
@@ -45,16 +40,60 @@ function isFile(file: File | unknown): file is File {
   return (file as File).content !== undefined;
 }
 
+export interface ValidateConfigResult<T> {
+  isValid: boolean;
+  errorText: string | undefined;
+  config?: T;
+}
+
+export interface ValidateConfigOptions {
+  schema: object;
+  additionalSchemas?: Array<object>;
+}
+
+async function validateConfig<T>(
+  configYaml: string,
+  options: ValidateConfigOptions
+): Promise<ValidateConfigResult<T>> {
+  const ajv = new Ajv();
+  if (options.additionalSchemas) {
+    for (const schema of options.additionalSchemas) {
+      ajv.addSchema(schema);
+    }
+  }
+  const validateSchema = ajv.compile(options.schema);
+  let isValid = false;
+  let errorText: string | undefined;
+  let config: T | undefined;
+  try {
+    const candidate = yaml.load(configYaml) as unknown as T;
+    isValid = validateSchema(candidate);
+    if (isValid) {
+      config = candidate;
+    } else {
+      errorText = JSON.stringify(validateSchema.errors, null, 4);
+    }
+  } catch (err) {
+    // failed to load the yaml file
+    errorText = 'the given config is not valid YAML 😱 \n' + err.message;
+  }
+  return {isValid: isValid, errorText: errorText, config: config};
+}
+
 export class ConfigChecker<T> {
-  private ajv: Ajv;
   private schema: object;
+  private additionalSchemas: Array<object>;
   private configPath: string;
   private badConfigPaths: Array<string>;
   private configName: string;
   private config: T | null;
-  constructor(schema: object, configFileName: string) {
+  constructor(
+    schema: object,
+    configFileName: string,
+    additionalSchemas: Array<object> = []
+  ) {
     this.schema = schema;
-    this.ajv = new Ajv();
+    this.additionalSchemas = additionalSchemas;
     this.configPath = `.github/${configFileName}`;
     this.badConfigPaths = new Array<string>();
     this.config = null;
@@ -65,27 +104,6 @@ export class ConfigChecker<T> {
       this.badConfigPaths.push(`${parsed.dir}/${parsed.name}.yml`);
     }
     this.configName = parsed.name;
-  }
-  private async validateConfig(
-    configYaml: string
-  ): Promise<ValidateConfigResult> {
-    const validateSchema = this.ajv.compile(this.schema);
-    let isValid = false;
-    let errorText: string | undefined;
-    try {
-      const config = yaml.load(configYaml) as unknown as T;
-      isValid = validateSchema(config);
-      if (!isValid) {
-        errorText = JSON.stringify(validateSchema.errors, null, 4);
-      } else {
-        this.config = config;
-      }
-    } catch (err) {
-      // failed to load the yaml file
-      errorText =
-        `.github/${this.configPath} is not valid YAML 😱 \n` + err.message;
-    }
-    return {isValid: isValid, errorText: errorText};
   }
 
   public getConfig(): T | null {
@@ -130,8 +148,13 @@ export class ConfigChecker<T> {
         const fileContents = Buffer.from(blob.data.content, 'base64').toString(
           'utf8'
         );
-        const result = await this.validateConfig(fileContents);
-        if (!result.isValid) {
+        const result = await validateConfig<T>(fileContents, {
+          schema: this.schema,
+          additionalSchemas: this.additionalSchemas,
+        });
+        if (result.isValid) {
+          this.config = result.config as T;
+        } else {
           errorText += result.errorText;
         }
       }
@@ -154,12 +177,25 @@ export class ConfigChecker<T> {
   }
 }
 
+export interface getConfigOptions {
+  fallbackToOrgConfig?: boolean;
+  schema?: object;
+  additionalSchemas?: Array<object>;
+}
+
+const DEFAULT_GET_CONFIG_OPTIONS = {
+  fallbackToOrgConfig: true,
+};
+
 export async function getConfig<T>(
   octokit: Octokit,
   owner: string,
   repo: string,
-  fileName: string
+  fileName: string,
+  options?: getConfigOptions
 ): Promise<T | null> {
+  // Fill the option with the default values
+  options = {...DEFAULT_GET_CONFIG_OPTIONS, ...options};
   const path = `.github/${fileName}`;
   try {
     const resp = await octokit.repos.getContent({
@@ -169,42 +205,70 @@ export async function getConfig<T>(
     });
     if (isFile(resp.data)) {
       const loaded =
-        yaml.load(
-          Buffer.from(resp.data.content.toString(), 'base64').toString()
-        ) || {};
-      return Object.assign({}, undefined, loaded);
+        yaml.load(Buffer.from(resp.data.content, 'base64').toString()) || {};
+      if (!options.schema) {
+        return Object.assign({}, undefined, loaded);
+      }
+      const validateResult = await validateConfig<T>(
+        Buffer.from(resp.data.content, 'base64').toString('utf-8'),
+        {schema: options.schema, additionalSchemas: options.additionalSchemas}
+      );
+      if (validateResult.config) {
+        return validateResult.config;
+      } else {
+        throw new Error(
+          `Failed to validate the config schema at '${path}' ` +
+            `:${validateResult.errorText}`
+        );
+      }
     } else {
       // This should not happen.
       throw new Error('could not handle getContent result.');
     }
   } catch (err) {
-    if (err.status === 404 && repo !== '.github') {
-      // Try to get it from the `.github` repo.
-      try {
-        const resp = await octokit.repos.getContent({
-          owner: owner,
-          repo: '.github',
-          path: path,
-        });
-        if (isFile(resp.data)) {
-          const loaded =
-            yaml.load(
-              Buffer.from(resp.data.content.toString(), 'base64').toString()
-            ) || {};
-          return Object.assign({}, undefined, loaded);
-        } else {
-          // This should not happen.
-          throw new Error('could not handle getContent result.');
-        }
-      } catch (err) {
-        if (err.status === 404) {
-          return null;
-        } else {
-          throw err;
-        }
-      }
-    } else {
+    if (err.status !== 404) {
+      // re-throw all the non 404 errors
       throw err;
+    }
+    if (repo === '.github' || !options.fallbackToOrgConfig) {
+      // Already fetched from the '.github' repo, or
+      // fallbackToOrgConfig is false, it returns null.
+      return null;
+    }
+    // Try to get it from the `.github` repo.
+    try {
+      const resp = await octokit.repos.getContent({
+        owner: owner,
+        repo: '.github',
+        path: path,
+      });
+      if (isFile(resp.data)) {
+        const loaded =
+          yaml.load(Buffer.from(resp.data.content, 'base64').toString()) || {};
+        if (!options.schema) {
+          return Object.assign({}, undefined, loaded);
+        }
+        const validateResult = await validateConfig<T>(
+          Buffer.from(resp.data.content, 'base64').toString('utf-8'),
+          {schema: options.schema, additionalSchemas: options.additionalSchemas}
+        );
+        if (validateResult.config) {
+          return validateResult.config;
+        } else {
+          throw new Error(
+            `Failed to validate the config schema at '${path}' ` +
+              `:${validateResult.errorText}`
+          );
+        }
+      } else {
+        // This should not happen.
+        throw new Error('could not handle getContent result.');
+      }
+    } catch (err) {
+      if (err.status !== 404) {
+        throw err;
+      }
+      return null;
     }
   }
 }
@@ -214,8 +278,11 @@ export async function getConfigWithDefault<T>(
   owner: string,
   repo: string,
   fileName: string,
-  defaultConfig: T
+  defaultConfig: T,
+  options?: getConfigOptions
 ): Promise<T> {
+  // Fill the option with the default values
+  options = {...DEFAULT_GET_CONFIG_OPTIONS, ...options};
   const path = `.github/${fileName}`;
   try {
     const resp = await octokit.repos.getContent({
@@ -225,42 +292,69 @@ export async function getConfigWithDefault<T>(
     });
     if (isFile(resp.data)) {
       const loaded =
-        yaml.load(
-          Buffer.from(resp.data.content.toString(), 'base64').toString()
-        ) || {};
-      return Object.assign({}, defaultConfig, loaded);
+        yaml.load(Buffer.from(resp.data.content, 'base64').toString()) || {};
+      if (!options.schema) {
+        return Object.assign({}, defaultConfig, loaded);
+      }
+      const validateResult = await validateConfig<T>(
+        Buffer.from(resp.data.content, 'base64').toString('utf-8'),
+        {schema: options.schema, additionalSchemas: options.additionalSchemas}
+      );
+      if (validateResult.config) {
+        return validateResult.config;
+      } else {
+        throw new Error(
+          `Failed to validate the config schema at '${path}' ` +
+            `:${validateResult.errorText}`
+        );
+      }
     } else {
       // This should not happen.
       throw new Error('could not handle getContent result.');
     }
   } catch (err) {
-    if (err.status === 404 && repo !== '.github') {
-      // Try to get it from the `.github` repo.
-      try {
-        const resp = await octokit.repos.getContent({
-          owner: owner,
-          repo: '.github',
-          path: path,
-        });
-        if (isFile(resp.data)) {
-          const loaded =
-            yaml.load(
-              Buffer.from(resp.data.content.toString(), 'base64').toString()
-            ) || {};
-          return Object.assign({}, defaultConfig, loaded);
-        } else {
-          // This should not happen.
-          throw new Error('could not handle getContent result.');
-        }
-      } catch (err) {
-        if (err.status === 404) {
-          return defaultConfig;
-        } else {
-          throw err;
-        }
-      }
-    } else {
+    if (err.status !== 404) {
       throw err;
+    }
+    if (repo === '.github' || !options.fallbackToOrgConfig) {
+      // Already fetched from the '.github' repo, or
+      // fallbackToOrgConfig is false, it returns the default.
+      return defaultConfig;
+    }
+    // Try to get it from the `.github` repo.
+    try {
+      const resp = await octokit.repos.getContent({
+        owner: owner,
+        repo: '.github',
+        path: path,
+      });
+      if (isFile(resp.data)) {
+        const loaded =
+          yaml.load(Buffer.from(resp.data.content, 'base64').toString()) || {};
+        if (!options.schema) {
+          return Object.assign({}, defaultConfig, loaded);
+        }
+        const validateResult = await validateConfig<T>(
+          Buffer.from(resp.data.content, 'base64').toString('utf-8'),
+          {schema: options.schema, additionalSchemas: options.additionalSchemas}
+        );
+        if (validateResult.config) {
+          return validateResult.config;
+        } else {
+          throw new Error(
+            `Failed to validate the config schema at '${path}' ` +
+              `:${validateResult.errorText}`
+          );
+        }
+      } else {
+        // This should not happen.
+        throw new Error('could not handle getContent result.');
+      }
+    } catch (err) {
+      if (err.status !== 404) {
+        throw err;
+      }
+      return defaultConfig;
     }
   }
 }
