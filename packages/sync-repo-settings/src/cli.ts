@@ -17,41 +17,20 @@
 import yargs = require('yargs');
 import {logger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
-import {SyncRepoSettings} from './sync-repo-settings';
+import {getConfig} from '@google-automations/bot-config-utils';
 import * as yaml from 'js-yaml';
-import {RepoConfig} from './types';
 import {readFileSync} from 'fs';
+
+import {RepoConfig} from './types';
+import {SyncRepoSettings} from './sync-repo-settings';
+import {CONFIG_FILE_NAME} from './config';
+import schema from './schema.json';
 
 interface Args {
   file?: string;
   branch?: string;
   'github-token': string;
   repo: string;
-}
-
-async function getFileContent(
-  octokit: Octokit,
-  owner: string,
-  repo: string,
-  branch: string | undefined,
-  path: string
-): Promise<string> {
-  const args = branch
-    ? {
-        owner,
-        repo,
-        path,
-        ref: branch,
-      }
-    : {
-        owner,
-        repo,
-        path,
-      };
-  const response = (await octokit.repos.getContent(args)).data as {
-    content: string;
-  };
-  return Buffer.from(response.content, 'base64').toString('utf8');
 }
 
 const sync: yargs.CommandModule<{}, Args> = {
@@ -88,26 +67,25 @@ const sync: yargs.CommandModule<{}, Args> = {
       auth: argv['github-token'],
     });
 
-    let config: RepoConfig;
+    let config: RepoConfig | null;
     if (argv.file) {
       // load from local file
       const content = readFileSync(argv.file).toString('utf-8');
       config = yaml.load(content) as RepoConfig;
     } else {
       // load from repo
-      const content = await getFileContent(
+      config = await getConfig<RepoConfig>(
         octokit,
         owner,
         repo,
-        argv.branch,
-        '.github/sync-repo-settings.yaml'
+        CONFIG_FILE_NAME,
+        {fallbackToOrgConfig: false, schema: schema}
       );
-      config = yaml.load(content) as RepoConfig;
     }
 
     await new SyncRepoSettings(octokit, logger).syncRepoSettings({
       repo: argv.repo,
-      config,
+      config: config || undefined,
     });
   },
 };
