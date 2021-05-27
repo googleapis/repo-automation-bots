@@ -29,7 +29,8 @@
             "googleapis-publisher",
             "yoshi-automation",
             "release-please[bot]",
-            "yoshi-code-bot"
+            "yoshi-code-bot",
+            "gcf-owl-bot[bot]"
           ]
         }
       },
@@ -139,6 +140,36 @@
                       "^googleapiclient/discovery_cache/documents/.*\\.json$"
                     ]
                   }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "author": {
+                  "type": "string",
+                  "const": "gcf-owl-bot[bot]"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "const": "^chore"
+                },
+                "changedFiles": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "^\\.OwlBot\\.lock\\.yaml$"
+                    ]
+                  }
+                },
+                "maxFiles": {
+                  "type": "number",
+                  "maximum": 1
                 }
               }
             }

@@ -1,0 +1,6 @@
+trustedContributors:
+  - custom-user
+annotations:
+  - type: comment
+    text: "/gcbrun"
+disabled: true
