@@ -15,6 +15,10 @@
 import {newCmd} from './cmd';
 import {OctokitType} from './octokit-util';
 
+// Limits imposed by Github.
+export const MAX_TITLE_LENGTH = 255;
+export const MAX_BODY_LENGTH = 64 * 1024 - 1;
+
 /***
  * Github will reject the pull request if the title is longer than 255
  * characters.  This function will move characters from the title to the body
@@ -24,9 +28,12 @@ export function resplit(
   title: string,
   body: string
 ): {title: string; body: string} {
-  if (title.length > 255) {
-    const splitIndex = 252; // 255 minus 3 dots
-    body = '...' + title.substring(splitIndex) + '\n\n' + body;
+  if (title.length > MAX_TITLE_LENGTH) {
+    const splitIndex = MAX_TITLE_LENGTH - 3; // 3 dots.
+    body = ('...' + title.substring(splitIndex) + '\n\n' + body).substring(
+      0,
+      MAX_BODY_LENGTH
+    );
     title = title.substring(0, splitIndex) + '...';
   }
   return {title, body};
