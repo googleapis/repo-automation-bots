@@ -11,7 +11,7 @@
     "node": ">=12.10.0"
   },
   "scripts": {
-    "start": "probot run ./build/src/owl-bot-post-processor.js",
+    "start": "probot run ./build/src/run-probot-locally.js",
     "clean": "gts clean",
     "compile": "tsc -p .",
     "fix": "gts fix",
@@ -60,6 +60,7 @@
   "dependencies": {
     "@google-cloud/cloudbuild": "^2.0.6",
     "@octokit/rest": "^18.5.3",
+    "@octokit/webhooks-types": "^3.75.2",
     "ajv": "^8.0.5",
     "code-suggester": "^2.0.0",
     "firebase-admin": "^9.4.2",

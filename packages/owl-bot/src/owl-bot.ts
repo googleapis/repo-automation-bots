@@ -21,6 +21,9 @@ import {logger} from 'gcf-utils';
 import {core} from './core';
 import {Octokit} from '@octokit/rest';
 import {onPostProcessorPublished, scanGithubForConfigs} from './handlers';
+import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
+
+const OWLBOT_RUN_LABEL = 'owlbot:run';
 
 interface PubSubContext {
   github: Octokit;
@@ -33,7 +36,11 @@ interface PubSubContext {
   };
 }
 
-export = (privateKey: string | undefined, app: Probot, db?: Db) => {
+export function OwlBot(
+  privateKey: string | undefined,
+  app: Probot,
+  db?: Db
+): void {
   // Fail fast if the Cloud Function doesn't have its environment configured:
   if (!process.env.APP_ID) {
     throw Error('must set APP_ID');
@@ -63,52 +70,15 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
 
   // We perform post processing on pull requests.  We run the specified docker container
   // on the pending pull request and push any changes back to the pull request.
-  const OWLBOT_RUN_LABEL = 'owlbot:run';
   app.on(['pull_request.labeled'], async context => {
-    const head = context.payload.pull_request.head.repo.full_name;
-    const base = context.payload.pull_request.base.repo.full_name;
-    const [owner, repo] = head.split('/');
-    const installation = context.payload.installation?.id;
-    const prNumber = context.payload.pull_request.number;
-
-    if (!installation) {
-      throw Error(`no installation token found for ${head}`);
-    }
-
-    const hasRunLabel = !!context.payload.pull_request.labels.filter(
-      l => l.name === OWLBOT_RUN_LABEL
-    ).length;
-
-    // Only run post-processor if appropriate label added:
-    if (!hasRunLabel) {
-      logger.info(
-        `skipping labels ${context.payload.pull_request.labels
-          .map(l => l.name)
-          .join(', ')} ${head} for ${base}`
-      );
-      return;
-    }
-
-    await runPostProcessor(
-      {
-        head,
-        base,
-        prNumber,
-        installation,
-        owner,
-        repo,
-        defaultBranch: context.payload?.repository?.default_branch,
-      },
+    await exports.handlePullRequestLabeled(
+      appId,
+      privateKey,
+      project,
+      trigger,
+      context.payload,
       context.octokit
     );
-
-    await context.octokit.issues.removeLabel({
-      name: OWLBOT_RUN_LABEL,
-      issue_number: prNumber,
-      owner,
-      repo,
-    });
-    logger.metric('owlbot.run_post_processor');
   });
 
   app.on(
@@ -136,6 +106,10 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
       }
 
       await runPostProcessor(
+        appId,
+        privateKey,
+        project,
+        trigger,
         {
           head,
           base,
@@ -149,74 +123,6 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
       );
     }
   );
-
-  interface RunPostProcessorOpts {
-    head: string;
-    base: string;
-    prNumber: number;
-    installation: number;
-    owner: string;
-    repo: string;
-    defaultBranch?: string;
-  }
-  const runPostProcessor = async (
-    opts: RunPostProcessorOpts,
-    octokit: Octokit
-  ) => {
-    // Detect looping OwlBot behavior and break the cycle:
-    if (
-      await core.hasOwlBotLoop(opts.owner, opts.repo, opts.prNumber, octokit)
-    ) {
-      throw Error(
-        `too many OwlBot updates created in a row for ${opts.owner}/${opts.repo}`
-      );
-    }
-    // Fetch the .Owlbot.lock.yaml from the head ref:
-    const lock = await core.getOwlBotLock(opts.head, opts.prNumber, octokit);
-    if (!lock) {
-      logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
-      return;
-    }
-    const image = `${lock.docker.image}@${lock.docker.digest}`;
-    // Run time image from .Owlbot.lock.yaml on Cloud Build:
-    const buildStatus = await core.triggerPostProcessBuild(
-      {
-        image,
-        project,
-        privateKey,
-        appId,
-        installation: opts.installation,
-        repo: opts.head,
-        pr: opts.prNumber,
-        trigger,
-        defaultBranch: opts.defaultBranch,
-      },
-      octokit
-    );
-    // Update pull request with status of job:
-    await core.createCheck(
-      {
-        privateKey,
-        appId,
-        installation: opts.installation,
-        pr: opts.prNumber,
-        repo: opts.head,
-        text: buildStatus.text,
-        summary: buildStatus.summary,
-        conclusion: buildStatus.conclusion,
-        title: `🦉 OwlBot - ${buildStatus.summary}`,
-        detailsURL: buildStatus.detailsURL,
-      },
-      octokit
-    );
-
-    await core.updatePullRequestAfterPostProcessor(
-      opts.owner,
-      opts.repo,
-      opts.prNumber,
-      octokit
-    );
-  };
 
   // Configured to run when a new container is published to container registry:
   //
@@ -255,4 +161,132 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
       Number(context.payload.installation.id)
     );
   });
+}
+
+export async function handlePullRequestLabeled(
+  appId: number,
+  privateKey: string,
+  project: string,
+  trigger: string,
+  payload: PullRequestLabeledEvent,
+  octokit: Octokit
+) {
+  const head = payload.pull_request.head.repo.full_name;
+  const base = payload.pull_request.base.repo.full_name;
+  const [owner, repo] = head.split('/');
+  const installation = payload.installation?.id;
+  const prNumber = payload.pull_request.number;
+
+  if (!installation) {
+    throw Error(`no installation token found for ${head}`);
+  }
+
+  const hasRunLabel = !!payload.pull_request.labels.filter(
+    l => l.name === OWLBOT_RUN_LABEL
+  ).length;
+
+  // Only run post-processor if appropriate label added:
+  if (!hasRunLabel) {
+    logger.info(
+      `skipping labels ${payload.pull_request.labels
+        .map(l => l.name)
+        .join(', ')} ${head} for ${base}`
+    );
+    return;
+  }
+
+  await runPostProcessor(
+    appId,
+    privateKey,
+    project,
+    trigger,
+    {
+      head,
+      base,
+      prNumber,
+      installation,
+      owner,
+      repo,
+      defaultBranch: payload?.repository?.default_branch,
+    },
+    octokit
+  );
+
+  await octokit.issues.removeLabel({
+    name: OWLBOT_RUN_LABEL,
+    issue_number: prNumber,
+    owner,
+    repo,
+  });
+  logger.metric('owlbot.run_post_processor');
+}
+
+interface RunPostProcessorOpts {
+  head: string;
+  base: string;
+  prNumber: number;
+  installation: number;
+  owner: string;
+  repo: string;
+  defaultBranch?: string;
+}
+const runPostProcessor = async (
+  appId: number,
+  privateKey: string,
+  project: string,
+  trigger: string,
+  opts: RunPostProcessorOpts,
+  octokit: Octokit
+) => {
+  // Detect looping OwlBot behavior and break the cycle:
+  if (await core.hasOwlBotLoop(opts.owner, opts.repo, opts.prNumber, octokit)) {
+    throw Error(
+      `too many OwlBot updates created in a row for ${opts.owner}/${opts.repo}`
+    );
+  }
+  // Fetch the .Owlbot.lock.yaml from the head ref:
+  const lock = await core.getOwlBotLock(opts.head, opts.prNumber, octokit);
+  if (!lock) {
+    logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
+    return;
+  }
+  const image = `${lock.docker.image}@${lock.docker.digest}`;
+  // Run time image from .Owlbot.lock.yaml on Cloud Build:
+  const buildStatus = await core.triggerPostProcessBuild(
+    {
+      image,
+      project,
+      privateKey,
+      appId,
+      installation: opts.installation,
+      repo: opts.head,
+      pr: opts.prNumber,
+      trigger,
+      defaultBranch: opts.defaultBranch,
+    },
+    octokit
+  );
+  // Update pull request with status of job:
+  await core.createCheck(
+    {
+      privateKey,
+      appId,
+      installation: opts.installation,
+      pr: opts.prNumber,
+      repo: opts.head,
+      text: buildStatus.text,
+      summary: buildStatus.summary,
+      conclusion: buildStatus.conclusion,
+      title: `🦉 OwlBot - ${buildStatus.summary}`,
+      detailsURL: buildStatus.detailsURL,
+    },
+    octokit
+  );
+
+  await core.updatePullRequestAfterPostProcessor(
+    opts.owner,
+    opts.repo,
+    opts.prNumber,
+    octokit
+  );
 };
