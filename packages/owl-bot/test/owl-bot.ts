@@ -17,7 +17,7 @@ import {core} from '../src/core';
 import * as handlers from '../src/handlers';
 import {describe, it, beforeEach} from 'mocha';
 import {logger} from 'gcf-utils';
-import owlBot from '../src/owl-bot';
+import {OwlBot} from '../src/owl-bot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import * as sinon from 'sinon';
@@ -46,7 +46,7 @@ describe('owlBot', () => {
     });
     await probot.load((app: Probot) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      owlBot('abc123', app, sandbox.stub() as any);
+      OwlBot('abc123', app, sandbox.stub() as any);
     });
   });
   afterEach(() => {
@@ -635,7 +635,7 @@ describe('owlBot', () => {
         }, 100);
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      owlBot('abc123', app, sandbox.stub() as any);
+      OwlBot('abc123', app, sandbox.stub() as any);
     });
     const loggerStub = sandbox.stub(logger, 'info');
     await probot.receive({
