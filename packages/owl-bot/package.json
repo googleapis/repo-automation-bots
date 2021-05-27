@@ -11,7 +11,7 @@
     "node": ">=12.10.0"
   },
   "scripts": {
-    "start": "probot run ./build/src/owl-bot-post-processor.js",
+    "start": "probot run ./build/src/run-probot-locally.js",
     "clean": "gts clean",
     "compile": "tsc -p .",
     "fix": "gts fix",
