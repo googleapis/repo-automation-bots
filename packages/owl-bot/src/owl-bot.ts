@@ -252,7 +252,7 @@ const runPostProcessor = async (
       `too many OwlBot updates created in a row for ${opts.owner}/${opts.repo}`
     );
   }
-  // Fetch the .Owlbot.lock.yaml from the head ref:
+  // Fetch the .Owlbot.lock.yaml from head of PR:
   const lock = await core.getOwlBotLock(opts.base, opts.prNumber, octokit);
   if (!lock) {
     logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
