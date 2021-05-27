@@ -47,16 +47,16 @@ function isFile(file: File | unknown): file is File {
 /**
  * The return value of `validateConfig` function.
  *
- * @template T
+ * @template ConfigType
  * @prop {boolean} isValid - The result of the schema validation.
  * @prop {string} errorText - The error message from the validation.
- * @prop {T} config - The loaded config object,only available when the
- *   validation succeeds.
+ * @prop {ConfigType} config - The loaded config object,only available
+ *   when the validation succeeds.
  */
-export interface ValidateConfigResult<T> {
+export interface ValidateConfigResult<ConfigType> {
   isValid: boolean;
   errorText: string | undefined;
-  config?: T;
+  config?: ConfigType;
 }
 
 /**
@@ -73,18 +73,18 @@ export interface ValidateConfigOptions {
 /**
  * It loads the given string as yaml, then validates against the given schema.
  *
- * @template T
+ * @template ConfigType
  * @param {string} configYaml - The string representation of the config.
  * @param {object} schema - The schema definition.
  * @param {ValidateConfigOptions} options - Optional arguments for validation.
  *
- * @return {ValidateConfigResult<T>}
+ * @return {ValidateConfigResult<ConfigType>}
  */
-export function validateConfig<T>(
+export function validateConfig<ConfigType>(
   configYaml: string,
   schema: object,
   options: ValidateConfigOptions
-): ValidateConfigResult<T> {
+): ValidateConfigResult<ConfigType> {
   const ajv = new Ajv();
   if (options.additionalSchemas) {
     for (const schema of options.additionalSchemas) {
@@ -94,9 +94,9 @@ export function validateConfig<T>(
   const validateSchema = ajv.compile(schema);
   let isValid = false;
   let errorText: string | undefined;
-  let config: T | undefined;
+  let config: ConfigType | undefined;
   try {
-    const candidate = yaml.load(configYaml) as unknown as T;
+    const candidate = yaml.load(configYaml) as unknown as ConfigType;
     isValid = validateSchema(candidate);
     if (isValid) {
       config = candidate;
@@ -113,15 +113,15 @@ export function validateConfig<T>(
 /**
  * A class for validating the config changes on pull requests.
  *
- * @template T
+ * @template ConfigType
  */
-export class ConfigChecker<T> {
+export class ConfigChecker<ConfigType> {
   private schema: object;
   private additionalSchemas: Array<object>;
   private configPath: string;
   private badConfigPaths: Array<string>;
   private configName: string;
-  private config: T | null;
+  private config: ConfigType | null;
   constructor(
     schema: object,
     configFileName: string,
@@ -144,9 +144,9 @@ export class ConfigChecker<T> {
   /**
    * A function for getting the config object validated by Ajv.
    *
-   * @return {T | null} When the validation fails, it returns null.
+   * @return {ConfigType | null} When the validation fails, it returns null.
    */
-  public getConfig(): T | null {
+  public getConfig(): ConfigType | null {
     return this.config;
   }
 
@@ -200,11 +200,11 @@ export class ConfigChecker<T> {
         const fileContents = Buffer.from(blob.data.content, 'base64').toString(
           'utf8'
         );
-        const result = validateConfig<T>(fileContents, this.schema, {
+        const result = validateConfig<ConfigType>(fileContents, this.schema, {
           additionalSchemas: this.additionalSchemas,
         });
         if (result.isValid) {
-          this.config = result.config as T;
+          this.config = result.config as ConfigType;
         } else {
           errorText += result.errorText;
         }
@@ -253,22 +253,23 @@ const DEFAULT_GET_CONFIG_OPTIONS = {
  * A function for fetching config file from the repo. It falls back to
  * `.github` repository by default.
  *
- * @template T
+ * @template ConfigType
  * @param {Octokit} octokit - Authenticated octokit object.
  * @param {string} owner - The owner of the repository.
  * @param {string} repo - The name of the repository.
  * @param {string} fileName - The filename of the config file.
  * @param {getConfigOptions} options - Optional arguments.
  *
- * @return {Promise<T | null>} - It returns null when config is not found.
+ * @return {Promise<ConfigType | null>} - It returns null when config is not
+ *   found.
  */
-export async function getConfig<T>(
+export async function getConfig<ConfigType>(
   octokit: Octokit,
   owner: string,
   repo: string,
   fileName: string,
   options?: getConfigOptions
-): Promise<T | null> {
+): Promise<ConfigType | null> {
   // Fill the option with the default values
   options = {...DEFAULT_GET_CONFIG_OPTIONS, ...options};
   const path = `.github/${fileName}`;
@@ -284,7 +285,7 @@ export async function getConfig<T>(
       if (!options.schema) {
         return Object.assign({}, undefined, loaded);
       }
-      const validateResult = validateConfig<T>(
+      const validateResult = validateConfig<ConfigType>(
         Buffer.from(resp.data.content, 'base64').toString('utf-8'),
         options.schema,
         {additionalSchemas: options.additionalSchemas}
@@ -324,7 +325,7 @@ export async function getConfig<T>(
         if (!options.schema) {
           return Object.assign({}, undefined, loaded);
         }
-        const validateResult = validateConfig<T>(
+        const validateResult = validateConfig<ConfigType>(
           Buffer.from(resp.data.content, 'base64').toString('utf-8'),
           options.schema,
           {additionalSchemas: options.additionalSchemas}
@@ -354,26 +355,26 @@ export async function getConfig<T>(
  * A function for fetching config file from the repo. It falls back to
  * `.github` repository by default.
  *
- * @template T
+ * @template ConfigType
  * @param {Octokit} octokit - Authenticated octokit object.
  * @param {string} owner - The owner of the repository.
  * @param {string} repo - The name of the repository.
  * @param {string} fileName - The filename of the config file.
- * @param {T} defaultConfig - This can be used for filling the default value of
- *   the config.
+ * @param {ConfigType} defaultConfig - This can be used for filling the default
+ *   value of the config.
  * @param {getConfigOptions} options - Optional arguments.
  *
- * @return {Promise<T>} - It returns the given defaultConfig when config file is
- *   not found.
+ * @return {Promise<ConfigType>} - It returns the given defaultConfig when
+ *   config file is not found.
  */
-export async function getConfigWithDefault<T>(
+export async function getConfigWithDefault<ConfigType>(
   octokit: Octokit,
   owner: string,
   repo: string,
   fileName: string,
-  defaultConfig: T,
+  defaultConfig: ConfigType,
   options?: getConfigOptions
-): Promise<T> {
+): Promise<ConfigType> {
   // Fill the option with the default values
   options = {...DEFAULT_GET_CONFIG_OPTIONS, ...options};
   const path = `.github/${fileName}`;
@@ -389,7 +390,7 @@ export async function getConfigWithDefault<T>(
       if (!options.schema) {
         return Object.assign({}, defaultConfig, loaded);
       }
-      const validateResult = validateConfig<T>(
+      const validateResult = validateConfig<ConfigType>(
         Buffer.from(resp.data.content, 'base64').toString('utf-8'),
         options.schema,
         {additionalSchemas: options.additionalSchemas}
@@ -428,7 +429,7 @@ export async function getConfigWithDefault<T>(
         if (!options.schema) {
           return Object.assign({}, defaultConfig, loaded);
         }
-        const validateResult = validateConfig<T>(
+        const validateResult = validateConfig<ConfigType>(
           Buffer.from(resp.data.content, 'base64').toString('utf-8'),
           options.schema,
           {additionalSchemas: options.additionalSchemas}
