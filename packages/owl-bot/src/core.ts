@@ -318,9 +318,10 @@ export async function getOwlBotLock(
     repo,
     pull_number: pullNumber,
   });
+  const [prOwner, prRepo] = prData.head.repo.full_name.split('/');
   const configString = await getFileContent(
-    owner,
-    repo,
+    prOwner,
+    prRepo,
     owlBotLockPath,
     prData.head.ref,
     octokit

@@ -708,7 +708,7 @@ describe('owlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/rennie/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
         '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
@@ -717,7 +717,7 @@ describe('owlBot', () => {
         content: Buffer.from(config).toString('base64'),
         encoding: 'base64',
       })
-      .delete('/repos/bcoe/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
       .reply(200);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
