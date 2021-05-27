@@ -117,7 +117,9 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
         repo,
       });
     } catch (err) {
-      logger.error(`${err.message} head = ${head} pr = ${prNumber}`);
+      logger.error(
+        `removeLabel: ${err.message} ${err.code} head = ${head} pr = ${prNumber}`
+      );
     }
     logger.metric('owlbot.run_post_processor');
   });
