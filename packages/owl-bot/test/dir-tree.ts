@@ -49,7 +49,11 @@ export function makeDirTree(rootDir: string, specs: string[]): void {
  */
 export function collectDirTree(dir: string): string[] {
   const tree: string[] = [];
-  for (const apath of glob.sync('**', {cwd: dir})) {
+  for (const apath of glob.sync('**', {
+    cwd: dir,
+    dot: true,
+    ignore: ['.git', '.git/**'],
+  })) {
     const fullPath = path.join(dir, apath);
     if (fs.lstatSync(fullPath).isDirectory()) {
       tree.push(apath);
