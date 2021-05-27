@@ -54,7 +54,7 @@ export const testWebhook: yargs.CommandModule<{}, Args> = {
         demand: true,
       })
       .option('project', {
-        describe: 'project with config database',
+        describe: 'project to execute cloud build against',
         type: 'string',
         demand: true,
       })
@@ -70,7 +70,8 @@ export const testWebhook: yargs.CommandModule<{}, Args> = {
       })
       .option('trigger', {
         describe: 'cloud build trigger to run',
-        default: 'ff6ace31-d5f9-41ff-a92c-459ed1755e35',
+        // OwlBot post processor image:
+        default: '637fc67f-fec0-4b62-a5f1-df81a6808c17',
       });
   },
   async handler(argv) {
