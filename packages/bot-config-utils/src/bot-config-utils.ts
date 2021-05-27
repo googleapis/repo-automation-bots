@@ -28,31 +28,61 @@ type Conclusion =
   | 'action_required'
   | undefined;
 
-export interface OctokitContext {
-  octokit: Octokit;
-}
-
+/**
+ * This interface is used for comforting typescript's type system to
+ * deal with the response from `octokit.repos.getContent`.
+ */
 interface File {
   content: string | undefined;
 }
 
+/**
+ * This function is used for comforting typescript's type system to
+ * deal with the response from `octokit.repos.getContent`.
+ */
 function isFile(file: File | unknown): file is File {
   return (file as File).content !== undefined;
 }
 
+/**
+ * The return value of `validateConfig` function.
+ *
+ * @template T
+ * @prop {boolean} isValid - The result of the schema validation.
+ * @prop {string} errorText - The error message from the validation.
+ * @prop {T} config - The loaded config object,only available when the
+ *   validation succeeds.
+ */
 export interface ValidateConfigResult<T> {
   isValid: boolean;
   errorText: string | undefined;
   config?: T;
 }
 
+/**
+ * The optionnal arguments for `validateConfig`.
+ *
+ * @prop {Array<object>} additionalSchemas - Additional schemas for Ajv schema
+ *   validator. When you have complex schema that used definition in different
+ *   files, you need to give all the schema definitions to Ajv.
+ */
 export interface ValidateConfigOptions {
-  schema: object;
   additionalSchemas?: Array<object>;
 }
 
+/**
+ * It loads the given string as yaml, then validates against the given schema.
+ *
+ * @template T
+ * @param {string} configYaml - The string representation of the config.
+ * @param {object} schema - The schema definition.
+ * @param {ValidateConfigOptions} options - Optional arguments for validation.
+ *
+ * @return {ValidateConfigResult<T>}
+ */
 export function validateConfig<T>(
   configYaml: string,
+  schema: object,
   options: ValidateConfigOptions
 ): ValidateConfigResult<T> {
   const ajv = new Ajv();
@@ -61,7 +91,7 @@ export function validateConfig<T>(
       ajv.addSchema(schema);
     }
   }
-  const validateSchema = ajv.compile(options.schema);
+  const validateSchema = ajv.compile(schema);
   let isValid = false;
   let errorText: string | undefined;
   let config: T | undefined;
@@ -80,6 +110,11 @@ export function validateConfig<T>(
   return {isValid: isValid, errorText: errorText, config: config};
 }
 
+/**
+ * A class for validating the config changes on pull requests.
+ *
+ * @template T
+ */
 export class ConfigChecker<T> {
   private schema: object;
   private additionalSchemas: Array<object>;
@@ -87,6 +122,12 @@ export class ConfigChecker<T> {
   private badConfigPaths: Array<string>;
   private configName: string;
   private config: T | null;
+
+  /**
+   * @param {object} schema
+   * @param {string} configFileName
+   * @param {Array<object>} additionalSchemas
+   */
   constructor(
     schema: object,
     configFileName: string,
@@ -106,10 +147,27 @@ export class ConfigChecker<T> {
     this.configName = parsed.name;
   }
 
+  /**
+   * A function for getting the config object validated by Ajv.
+   *
+   * @return {T | null} When the validation fails, it returns null.
+   */
   public getConfig(): T | null {
     return this.config;
   }
 
+  /**
+   * A function for validate the config file against given schema. It
+   * will create a failing Github Check on the commit when validation fails.
+   *
+   * @param {Octokit} octokit - Authenticated octokit object.
+   * @param {string} owner - The owner of the base repository of the PR.
+   * @param {string} repo - The name of the base repository of the PR.
+   * @param {string} commitSha - The commit hash of the tip of the PR head.
+   * @param {number} prNumber - The number of the PR.
+   *
+   * @return {Promise<void>}
+   */
   public async validateConfigChanges(
     octokit: Octokit,
     owner: string,
@@ -148,8 +206,7 @@ export class ConfigChecker<T> {
         const fileContents = Buffer.from(blob.data.content, 'base64').toString(
           'utf8'
         );
-        const result = validateConfig<T>(fileContents, {
-          schema: this.schema,
+        const result = validateConfig<T>(fileContents, this.schema, {
           additionalSchemas: this.additionalSchemas,
         });
         if (result.isValid) {
@@ -177,16 +234,40 @@ export class ConfigChecker<T> {
   }
 }
 
+/**
+ * Optional arguments to `getConfig` and `getConfigWithDefault`.
+ *
+ * @param {boolean} fallbackToOrgConfig - If set to true, it will try to fetch
+ *   the config from `.github` repo in the same org, defaults to true.
+ * @param {object} schema - The json schema definition.
+ * @param {Array<object>} additionalSchemas - Additional schema definitions.
+ */
 export interface getConfigOptions {
   fallbackToOrgConfig?: boolean;
   schema?: object;
   additionalSchemas?: Array<object>;
 }
 
+/**
+ * The default set of values of `getConfigOptions`.
+ */
 const DEFAULT_GET_CONFIG_OPTIONS = {
   fallbackToOrgConfig: true,
 };
 
+/**
+ * A function for fetching config file from the repo. It falls back to
+ * `.github` repository by default.
+ *
+ * @template T
+ * @param {Octokit} octokit - Authenticated octokit object.
+ * @param {string} owner - The owner of the repository.
+ * @param {string} repo - The name of the repository.
+ * @param {string} fileName - The filename of the config file.
+ * @param {getConfigOptions} options - Optional arguments.
+ *
+ * @return {Promise<T | null>} - It returns null when config is not found.
+ */
 export async function getConfig<T>(
   octokit: Octokit,
   owner: string,
@@ -211,7 +292,8 @@ export async function getConfig<T>(
       }
       const validateResult = validateConfig<T>(
         Buffer.from(resp.data.content, 'base64').toString('utf-8'),
-        {schema: options.schema, additionalSchemas: options.additionalSchemas}
+        options.schema,
+        {additionalSchemas: options.additionalSchemas}
       );
       if (validateResult.config) {
         return validateResult.config;
@@ -250,7 +332,8 @@ export async function getConfig<T>(
         }
         const validateResult = validateConfig<T>(
           Buffer.from(resp.data.content, 'base64').toString('utf-8'),
-          {schema: options.schema, additionalSchemas: options.additionalSchemas}
+          options.schema,
+          {additionalSchemas: options.additionalSchemas}
         );
         if (validateResult.config) {
           return validateResult.config;
@@ -273,6 +356,22 @@ export async function getConfig<T>(
   }
 }
 
+/**
+ * A function for fetching config file from the repo. It falls back to
+ * `.github` repository by default.
+ *
+ * @template T
+ * @param {Octokit} octokit - Authenticated octokit object.
+ * @param {string} owner - The owner of the repository.
+ * @param {string} repo - The name of the repository.
+ * @param {string} fileName - The filename of the config file.
+ * @param {T} defaultConfig - This can be used for filling the default value of
+ *   the config.
+ * @param {getConfigOptions} options - Optional arguments.
+ *
+ * @return {Promise<T>} - It returns the given defaultConfig when config file is
+ *   not found.
+ */
 export async function getConfigWithDefault<T>(
   octokit: Octokit,
   owner: string,
@@ -298,10 +397,11 @@ export async function getConfigWithDefault<T>(
       }
       const validateResult = validateConfig<T>(
         Buffer.from(resp.data.content, 'base64').toString('utf-8'),
-        {schema: options.schema, additionalSchemas: options.additionalSchemas}
+        options.schema,
+        {additionalSchemas: options.additionalSchemas}
       );
       if (validateResult.config) {
-        return validateResult.config;
+        return {...defaultConfig, ...validateResult.config};
       } else {
         throw new Error(
           `Failed to validate the config schema at '${path}' ` +
@@ -336,10 +436,11 @@ export async function getConfigWithDefault<T>(
         }
         const validateResult = validateConfig<T>(
           Buffer.from(resp.data.content, 'base64').toString('utf-8'),
-          {schema: options.schema, additionalSchemas: options.additionalSchemas}
+          options.schema,
+          {additionalSchemas: options.additionalSchemas}
         );
         if (validateResult.config) {
-          return validateResult.config;
+          return {...defaultConfig, ...validateResult.config};
         } else {
           throw new Error(
             `Failed to validate the config schema at '${path}' ` +
