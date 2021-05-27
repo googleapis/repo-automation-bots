@@ -67,7 +67,7 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
   app.on(['pull_request.labeled'], async context => {
     const head = context.payload.pull_request.head.repo.full_name;
     const base = context.payload.pull_request.base.repo.full_name;
-    const [owner, repo] = head.split('/');
+    const [owner, repo] = base.split('/');
     const installation = context.payload.installation?.id;
     const prNumber = context.payload.pull_request.number;
 
@@ -88,7 +88,15 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
       );
       return;
     }
-
+    logger.metric('owlbot.run_label', {
+      head,
+      base,
+      prNumber,
+      installation,
+      owner,
+      repo,
+      defaultBranch: context.payload?.repository?.default_branch,
+    });
     await runPostProcessor(
       {
         head,
@@ -101,16 +109,18 @@ export = (privateKey: string | undefined, app: Probot, db?: Db) => {
       },
       context.octokit
     );
-
-    await context.octokit.issues.removeLabel({
-      name: OWLBOT_RUN_LABEL,
-      issue_number: prNumber,
-      owner,
-      repo,
-    });
+    try {
+      await context.octokit.issues.removeLabel({
+        name: OWLBOT_RUN_LABEL,
+        issue_number: prNumber,
+        owner,
+        repo,
+      });
+    } catch (err) {
+      logger.error(`${err.message} head = ${head} pr = ${prNumber}`);
+    }
     logger.metric('owlbot.run_post_processor');
   });
-
   app.on(
     [
       'pull_request.opened',
