@@ -212,12 +212,20 @@ export async function handlePullRequestLabeled(
     octokit
   );
 
-  await octokit.issues.removeLabel({
-    name: OWLBOT_RUN_LABEL,
-    issue_number: prNumber,
-    owner,
-    repo,
-  });
+  try {
+    await octokit.issues.removeLabel({
+      name: OWLBOT_RUN_LABEL,
+      issue_number: prNumber,
+      owner,
+      repo,
+    });
+  } catch (err) {
+    if (err.status === 404) {
+      logger.warn(`${err.message} head = ${head} pr = ${prNumber}`);
+    } else {
+      throw err;
+    }
+  }
   logger.metric('owlbot.run_post_processor');
 }
 
