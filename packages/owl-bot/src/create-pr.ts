@@ -30,13 +30,10 @@ export function resplit(
 ): {title: string; body: string} {
   if (title.length > MAX_TITLE_LENGTH) {
     const splitIndex = MAX_TITLE_LENGTH - 3; // 3 dots.
-    body = ('...' + title.substring(splitIndex) + '\n\n' + body).substring(
-      0,
-      MAX_BODY_LENGTH
-    );
+    body = '...' + title.substring(splitIndex) + '\n\n' + body;
     title = title.substring(0, splitIndex) + '...';
   }
-  return {title, body};
+  return {title, body: body.substring(0, MAX_BODY_LENGTH)};
 }
 
 export async function createPullRequestFromLastCommit(

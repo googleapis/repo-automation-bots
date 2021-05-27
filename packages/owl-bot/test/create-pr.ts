@@ -37,10 +37,18 @@ describe('resplit', () => {
     });
   });
 
-  it('truncates a long body', () => {
+  it('truncates a long title and a long body', () => {
     const body = loremIpsum.repeat(64 * 4);
     const tb = resplit(loremIpsum, body);
     assert.strictEqual(tb.title.length, MAX_TITLE_LENGTH);
+    assert.strictEqual(tb.body.length, MAX_BODY_LENGTH);
+    assert.ok(tb.body.length < body.length);
+  });
+
+  it('truncates a long body', () => {
+    const body = loremIpsum.repeat(64 * 4);
+    const tb = resplit('title', body);
+    assert.strictEqual(tb.title, 'title');
     assert.strictEqual(tb.body.length, MAX_BODY_LENGTH);
     assert.ok(tb.body.length < body.length);
   });
