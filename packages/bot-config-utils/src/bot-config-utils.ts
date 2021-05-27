@@ -294,7 +294,7 @@ export async function getConfig<T>(
       } else {
         throw new Error(
           `Failed to validate the config schema at '${path}' ` +
-          `:${validateResult.errorText}`
+            `:${validateResult.errorText}`
         );
       }
     } else {
@@ -334,7 +334,7 @@ export async function getConfig<T>(
         } else {
           throw new Error(
             `Failed to validate the config schema at '${path}' ` +
-            `:${validateResult.errorText}`
+              `:${validateResult.errorText}`
           );
         }
       } else {
@@ -399,7 +399,7 @@ export async function getConfigWithDefault<T>(
       } else {
         throw new Error(
           `Failed to validate the config schema at '${path}' ` +
-          `:${validateResult.errorText}`
+            `:${validateResult.errorText}`
         );
       }
     } else {
@@ -438,7 +438,7 @@ export async function getConfigWithDefault<T>(
         } else {
           throw new Error(
             `Failed to validate the config schema at '${path}' ` +
-            `:${validateResult.errorText}`
+              `:${validateResult.errorText}`
           );
         }
       } else {
