@@ -122,12 +122,6 @@ export class ConfigChecker<T> {
   private badConfigPaths: Array<string>;
   private configName: string;
   private config: T | null;
-
-  /**
-   * @param {object} schema
-   * @param {string} configFileName
-   * @param {Array<object>} additionalSchemas
-   */
   constructor(
     schema: object,
     configFileName: string,
@@ -300,7 +294,7 @@ export async function getConfig<T>(
       } else {
         throw new Error(
           `Failed to validate the config schema at '${path}' ` +
-            `:${validateResult.errorText}`
+          `:${validateResult.errorText}`
         );
       }
     } else {
@@ -340,7 +334,7 @@ export async function getConfig<T>(
         } else {
           throw new Error(
             `Failed to validate the config schema at '${path}' ` +
-              `:${validateResult.errorText}`
+            `:${validateResult.errorText}`
           );
         }
       } else {
@@ -405,7 +399,7 @@ export async function getConfigWithDefault<T>(
       } else {
         throw new Error(
           `Failed to validate the config schema at '${path}' ` +
-            `:${validateResult.errorText}`
+          `:${validateResult.errorText}`
         );
       }
     } else {
@@ -444,7 +438,7 @@ export async function getConfigWithDefault<T>(
         } else {
           throw new Error(
             `Failed to validate the config schema at '${path}' ` +
-              `:${validateResult.errorText}`
+            `:${validateResult.errorText}`
           );
         }
       } else {
