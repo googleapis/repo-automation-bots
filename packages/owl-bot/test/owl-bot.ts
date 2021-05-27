@@ -813,6 +813,73 @@ describe('owlBot', () => {
     sandbox.assert.calledOnce(updatePullRequestStub);
     githubMock.done();
   });
+  it('does not crash if "owlbot:run" label has already been deleted', async () => {
+    const payload = {
+      installation: {
+        id: 12345,
+      },
+      pull_request: {
+        number: 33,
+        labels: [
+          {
+            name: 'owlbot:run',
+          },
+        ],
+        head: {
+          repo: {
+            full_name: 'rennie/owl-bot-testing',
+          },
+          ref: 'abc123',
+        },
+        base: {
+          repo: {
+            full_name: 'rennie/owl-bot-testing',
+          },
+        },
+      },
+    };
+    const config = `docker:
+    image: node
+    digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
+    const githubMock = nock('https://api.github.com')
+      .get('/repos/rennie/owl-bot-testing/pulls/33')
+      .reply(200, payload.pull_request)
+      .get(
+        '/repos/rennie/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+      )
+      .reply(200, {
+        content: Buffer.from(config).toString('base64'),
+        encoding: 'base64',
+      })
+      .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .reply(404);
+    const triggerBuildStub = sandbox
+      .stub(core, 'triggerPostProcessBuild')
+      .resolves({
+        text: 'the text for check',
+        summary: 'summary for check',
+        conclusion: 'success',
+        detailsURL: 'https://www.example.com',
+      });
+    const updatePullRequestStub = sandbox.stub(
+      core,
+      'updatePullRequestAfterPostProcessor'
+    );
+    const hasOwlBotLoopStub = sandbox
+      .stub(core, 'hasOwlBotLoop')
+      .resolves(false);
+    const createCheckStub = sandbox.stub(core, 'createCheck');
+    await probot.receive({
+      name: 'pull_request.labeled',
+      payload,
+      id: 'abc123',
+    });
+    sandbox.assert.calledOnce(triggerBuildStub);
+    sandbox.assert.calledOnce(createCheckStub);
+    sandbox.assert.calledOnce(hasOwlBotLoopStub);
+    sandbox.assert.calledOnce(updatePullRequestStub);
+    githubMock.done();
+  });
   it('returns early if PR from fork and label other than owlbot:run added', async () => {
     const payload = {
       installation: {
