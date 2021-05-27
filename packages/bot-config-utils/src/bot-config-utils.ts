@@ -233,11 +233,13 @@ export class ConfigChecker<ConfigType> {
  *
  * @param {boolean} fallbackToOrgConfig - If set to true, it will try to fetch
  *   the config from `.github` repo in the same org, defaults to true.
+ * @param {string} branch - The branch for getting the config.
  * @param {object} schema - The json schema definition.
  * @param {Array<object>} additionalSchemas - Additional schema definitions.
  */
 export interface getConfigOptions {
   fallbackToOrgConfig?: boolean;
+  branch?: string;
   schema?: object;
   additionalSchemas?: Array<object>;
 }
@@ -273,12 +275,20 @@ export async function getConfig<ConfigType>(
   // Fill the option with the default values
   options = {...DEFAULT_GET_CONFIG_OPTIONS, ...options};
   const path = `.github/${fileName}`;
+  const params = options.branch
+    ? {
+        owner: owner,
+        repo: repo,
+        path: path,
+        ref: options.branch,
+      }
+    : {
+        owner: owner,
+        repo: repo,
+        path: path,
+      };
   try {
-    const resp = await octokit.repos.getContent({
-      owner: owner,
-      repo: repo,
-      path: path,
-    });
+    const resp = await octokit.repos.getContent(params);
     if (isFile(resp.data)) {
       const loaded =
         yaml.load(Buffer.from(resp.data.content, 'base64').toString()) || {};
@@ -307,9 +317,9 @@ export async function getConfig<ConfigType>(
       // re-throw all the non 404 errors
       throw err;
     }
-    if (repo === '.github' || !options.fallbackToOrgConfig) {
-      // Already fetched from the '.github' repo, or
-      // fallbackToOrgConfig is false, it returns null.
+    if (repo === '.github' || !options.fallbackToOrgConfig || options.branch) {
+      // Already fetched from the '.github' repo, fallbackToOrgConfig
+      // is false, or branch is specified, it returns null.
       return null;
     }
     // Try to get it from the `.github` repo.
@@ -378,12 +388,20 @@ export async function getConfigWithDefault<ConfigType>(
   // Fill the option with the default values
   options = {...DEFAULT_GET_CONFIG_OPTIONS, ...options};
   const path = `.github/${fileName}`;
+  const params = options.branch
+    ? {
+        owner: owner,
+        repo: repo,
+        path: path,
+        ref: options.branch,
+      }
+    : {
+        owner: owner,
+        repo: repo,
+        path: path,
+      };
   try {
-    const resp = await octokit.repos.getContent({
-      owner: owner,
-      repo: repo,
-      path: path,
-    });
+    const resp = await octokit.repos.getContent(params);
     if (isFile(resp.data)) {
       const loaded =
         yaml.load(Buffer.from(resp.data.content, 'base64').toString()) || {};
@@ -411,9 +429,9 @@ export async function getConfigWithDefault<ConfigType>(
     if (err.status !== 404) {
       throw err;
     }
-    if (repo === '.github' || !options.fallbackToOrgConfig) {
-      // Already fetched from the '.github' repo, or
-      // fallbackToOrgConfig is false, it returns the default.
+    if (repo === '.github' || !options.fallbackToOrgConfig || options.branch) {
+      // Already fetched from the '.github' repo, fallbackToOrgConfig
+      // is false, or branch is specified, it returns the default.
       return defaultConfig;
     }
     // Try to get it from the `.github` repo.

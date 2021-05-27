@@ -21,6 +21,7 @@ import * as chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import {describe, it, beforeEach} from 'mocha';
 import {Probot, ProbotOctokit} from 'probot';
+import {Octokit} from '@octokit/rest';
 
 import {
   getConfig,
@@ -31,7 +32,6 @@ import schema from './test-config-schema.json';
 import listSchema from './test-config-use-external-id.json';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
-nock.disableNetConnect();
 chai.use(chaiAsPromised);
 
 interface TestConfig {
@@ -185,6 +185,9 @@ describe('config test app with config.yml', () => {
     });
     probot.load(app2);
   });
+  beforeEach(() => {
+    nock.disableNetConnect();
+  });
   afterEach(() => {
     nock.cleanAll();
   });
@@ -219,6 +222,7 @@ describe('config test app', () => {
     probot.load(app);
     // It always start from null.
     configFromConfigChecker = null;
+    nock.disableNetConnect();
   });
   afterEach(() => {
     nock.cleanAll();
@@ -304,6 +308,7 @@ describe('config test app with multiple schema files', () => {
     probot.load(app3);
     // It always start from null.
     listConfigFromConfigChecker = null;
+    nock.disableNetConnect();
   });
   afterEach(() => {
     nock.cleanAll();
@@ -353,7 +358,8 @@ function getConfigFile(
   owner: string,
   repo: string,
   status: number,
-  responseFile?: string
+  responseFile?: string,
+  branch?: string
 ) {
   const response = {
     name: '',
@@ -373,6 +379,8 @@ function getConfigFile(
       html: '',
     },
   };
+  const ref = branch ? `?ref=${branch}` : '';
+
   if (status === 200) {
     if (responseFile) {
       const config = fs.readFileSync(resolve(fixturesPath, responseFile));
@@ -382,29 +390,29 @@ function getConfigFile(
       response.content = content;
       response.size = content.length;
       return nock('https://api.github.com')
-        .get(`/repos/${owner}/${repo}/contents/.github%2F${filename}`)
+        .get(`/repos/${owner}/${repo}/contents/.github%2F${filename}${ref}`)
         .reply(200, response);
     } else {
       throw Error('responseFile is needed for status 200');
     }
   } else {
     return nock('https://api.github.com')
-      .get(`/repos/${owner}/${repo}/contents/.github%2F${filename}`)
+      .get(`/repos/${owner}/${repo}/contents/.github%2F${filename}${ref}`)
       .reply(status);
   }
 }
 
 describe('config', () => {
-  const octokit = new ProbotOctokit(
-    ProbotOctokit.defaults({
-      retry: {enabled: false},
-      throttle: {enabled: false},
-    })
-  );
-
-  beforeEach(() => {});
+  const octokit = new Octokit({auth: '123'});
 
   describe('getConfig', () => {
+    beforeEach(() => {
+      nock.disableNetConnect();
+    });
+
+    afterEach(() => {
+      nock.cleanAll();
+    });
     it('fetch the config file from the repo', async () => {
       const owner = 'googleapis';
       const repo = 'repo-automation-bots';
@@ -419,6 +427,28 @@ describe('config', () => {
         owner,
         repo,
         filename
+      );
+      assert.strictEqual(fetchedConfig?.testConfig, 'testValue');
+      for (const scope of scopes) {
+        scope.done();
+      }
+    });
+    it('fetch the config file from a branch', async () => {
+      const owner = 'googleapis';
+      const repo = 'repo-automation-bots';
+      const filename = 'flakybot.yaml';
+      const branch = 'testBranch';
+
+      const scopes = [
+        getConfigFile('flakybot.yaml', owner, repo, 200, 'config.yaml', branch),
+      ];
+
+      const fetchedConfig = await getConfig<TestConfig>(
+        octokit,
+        owner,
+        repo,
+        filename,
+        {branch: branch}
       );
       assert.strictEqual(fetchedConfig?.testConfig, 'testValue');
       for (const scope of scopes) {
@@ -583,6 +613,13 @@ describe('config', () => {
     });
   });
   describe('getConfigWithDefault', () => {
+    beforeEach(() => {
+      nock.disableNetConnect();
+    });
+
+    afterEach(() => {
+      nock.cleanAll();
+    });
     it('fetch the config file from the repo', async () => {
       const owner = 'googleapis';
       const repo = 'repo-automation-bots';
@@ -598,6 +635,29 @@ describe('config', () => {
         repo,
         filename,
         defaultConfig
+      );
+      assert.strictEqual(fetchedConfig?.testConfig, 'testValue');
+      for (const scope of scopes) {
+        scope.done();
+      }
+    });
+    it('fetch the config file from a branch', async () => {
+      const owner = 'googleapis';
+      const repo = 'repo-automation-bots';
+      const filename = 'flakybot.yaml';
+      const branch = 'testBranch';
+
+      const scopes = [
+        getConfigFile('flakybot.yaml', owner, repo, 200, 'config.yaml', branch),
+      ];
+
+      const fetchedConfig = await getConfigWithDefault<TestConfig>(
+        octokit,
+        owner,
+        repo,
+        filename,
+        defaultConfig,
+        {branch: branch}
       );
       assert.strictEqual(fetchedConfig?.testConfig, 'testValue');
       for (const scope of scopes) {
