@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v3.0.0...bot-config-utils-v3.1.0) (2021-05-28)
+
+
+### Features
+
+* add branch option ([e257b1b](https://www.github.com/googleapis/repo-automation-bots/commit/e257b1b3769ef7e541ad79bc93f1f9cc9ec12b37))
+* add schema validation in getConfig and getConfigWithDefault ([e257b1b](https://www.github.com/googleapis/repo-automation-bots/commit/e257b1b3769ef7e541ad79bc93f1f9cc9ec12b37))
+* **bot-config-utils:** add getConfigOptions  ([#1890](https://www.github.com/googleapis/repo-automation-bots/issues/1890)) ([e257b1b](https://www.github.com/googleapis/repo-automation-bots/commit/e257b1b3769ef7e541ad79bc93f1f9cc9ec12b37)), closes [#1889](https://www.github.com/googleapis/repo-automation-bots/issues/1889) [#1894](https://www.github.com/googleapis/repo-automation-bots/issues/1894)
+* skip falling back to `.github` repo ([e257b1b](https://www.github.com/googleapis/repo-automation-bots/commit/e257b1b3769ef7e541ad79bc93f1f9cc9ec12b37))
+* support multiple schema files ([e257b1b](https://www.github.com/googleapis/repo-automation-bots/commit/e257b1b3769ef7e541ad79bc93f1f9cc9ec12b37))
+
 ## [3.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v2.1.0...bot-config-utils-v3.0.0) (2021-05-19)
 
 
