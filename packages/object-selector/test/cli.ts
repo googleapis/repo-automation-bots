@@ -19,9 +19,6 @@ import nock from 'nock';
 import mockedEnv from 'mocked-env';
 import {RestoreFn} from 'mocked-env';
 import fs from 'fs';
-import * as yaml from 'js-yaml';
-import {resolve} from 'path';
-import yargs from 'yargs';
 
 import * as cli from '../src/cli';
 
@@ -59,26 +56,34 @@ describe('cli', () => {
     });
     const scope = nock('https://api.github.com')
       .get('/orgs/googleapis/repos')
-      .reply(200, [{name: "repo1"}])
+      .reply(200, [{name: 'repo1'}])
       .get('/orgs/GoogleCloudPlatform/repos')
-      .reply(200, [{name: "repo2"}]);
+      .reply(200, [{name: 'repo2'}]);
     await cli.parser().exitProcess(false).parse('dump -f test.json');
     // I expected the following to be fail, but it passes.
     writeFileSyncStub.calledOnceWith('test2.json', '[]');
     // So making sure the actual values below.
     assert.strictEqual(writeFileSyncStub.getCall(0).args[0], 'test.json');
-    assert.strictEqual(writeFileSyncStub.getCall(0).args[1], '[{"name":"repo1"},{"name":"repo2"}]');
+    assert.strictEqual(
+      writeFileSyncStub.getCall(0).args[1],
+      '[{"name":"repo1"},{"name":"repo2"}]'
+    );
     scope.done();
   });
   it('should exit normally with the result', async () => {
-    let log: string = '';
-    const logStub = sandbox.replace(console, 'log', (message?: any, ...optionalParams: any[]): void => {
-      log += message;
-    });
+    let log = '';
+    sandbox.replace(
+      console,
+      'log',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+      (message?: any, ...optionalParams: any[]): void => {
+        log += message;
+      }
+    );
     const args = {
       yamlFiles: ['recipes/nodejs.yaml'],
-      file: 'test/fixtures/repos.json'
-    }
+      file: 'test/fixtures/repos.json',
+    };
     await cli.testYamlCommand(args);
     log.includes('Using selector yaml files: recipes/nodejs.yaml');
     log.includes('Using dump file: test/fixtures/repos.json');

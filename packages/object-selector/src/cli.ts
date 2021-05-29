@@ -86,30 +86,34 @@ export async function testYamlCommand(argv: Args) {
 }
 
 export function parser(): yargs.Argv {
-  return yargs.command(
-    'dump',
-    'dump the repositories from our orgs',
-    (y) => {
-      return y
-        .option('file', {
-          describe: 'output repositories json file',
-          type: 'string',
-          alias: 'f',
-          default: DEFAULT_DUMP_FILE,
-        })
-        .option('github-token', {
-          describe: 'GitHub access token. Can also be set via the `GITHUB_TOKEN` environment variable.',
-          type: 'string',
-          coerce: arg => {
-            return arg || process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
-          },
-          required: true,
-        });
-    }, dumpCommand)
+  return yargs
+    .command(
+      'dump',
+      'dump the repositories from our orgs',
+      y => {
+        return y
+          .option('file', {
+            describe: 'output repositories json file',
+            type: 'string',
+            alias: 'f',
+            default: DEFAULT_DUMP_FILE,
+          })
+          .option('github-token', {
+            describe:
+              'GitHub access token. Can also be set via the `GITHUB_TOKEN` environment variable.',
+            type: 'string',
+            coerce: arg => {
+              return arg || process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+            },
+            required: true,
+          });
+      },
+      dumpCommand
+    )
     .command(
       'test-yaml',
       'select repositories with the selectors in the given yaml files',
-      (y) => {
+      y => {
         return y
           .option('file', {
             describe: 'output repositories json file',
@@ -123,7 +127,9 @@ export function parser(): yargs.Argv {
             alias: 'y',
             required: true,
           });
-      }, testYamlCommand)
+      },
+      testYamlCommand
+    )
     .help('h');
 }
 
