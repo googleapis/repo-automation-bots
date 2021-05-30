@@ -16,7 +16,9 @@ its config file. The smallest config element is called `selector`.
 ```typescript
 type SelectorValueType = string | number | boolean | Array<string>;
 
-export type Selector = [string, string, SelectorValueType];
+export type Operator = 'eq' | 'ne' | 'anyof' | 'regex';
+
+export type Selector = [string, Operator, SelectorValueType];
 ```
 
 ```yaml
