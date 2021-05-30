@@ -12,7 +12,6 @@ npm i @google-automations/object-selector
 
 This library allows bot authors to have rules for selecting objects in
 its config file. The smallest config element is called `selector`.
-
 ```typescript
 type SelectorValueType = string | number | boolean | Array<string>;
 
@@ -21,21 +20,21 @@ export type Operator = 'eq' | 'ne' | 'anyof' | 'regex';
 export type Selector = [string, Operator, SelectorValueType];
 ```
 
+In the yaml config file, it looks like:
 ```yaml
 ["name", "regex", "(nodejs|javascript|typescript)"]
 ```
 or
-
 ```yaml
 ["private", "eq", false]
 ```
 
 Then we call a list of selectors `Selectors`.
-
 ```typescript
 export type Selectors = Array<Selector>;
 ```
 
+In the yaml config:
 ```yaml
 - ["private", "eq", false]
 - ["archived", "eq", false]
@@ -45,7 +44,6 @@ export type Selectors = Array<Selector>;
 
 A single `Selectors` represents a condition where all the selectors
 are combined with `AND`.
-
 
 ## Usage
 
@@ -88,7 +86,6 @@ import {
 
 Let's say you want to filter the Github repositories. The code example
 for selecting archived repositories goes like this:
-
 ```typescript
 import {Endpoints} from '@octokit/types';
 
@@ -118,7 +115,6 @@ const selected = selector.select(repos);
 
 The library provides cli, which is a small demo application for
 selecting repositories. You can install the cli by:
-
 ```bash
 $ cd packages/object-selector
 $ npm link .
@@ -126,7 +122,6 @@ $ npm link .
 
 You can try filtering some repositories, for example, you can list
 nodejs repositories form a small data file by:
-
 ```bash
 $ object-selector test-yaml -f test/fixtures/repos.json -y recipes/nodejs.yaml
 ```
@@ -139,7 +134,6 @@ $ object-selector test-yaml -f test/fixtures/repos.json -y recipes/*.yaml
 If the data file `test/fixtures/repos.json` is not enough for you, you
 can dump all the repos with `dump` command. For dumping the real data,
 you have to set GITHUB_TOKEN environment variable:
-
 ```bash
 $ export GITHUB_TOKEN=$(cat your-github-token-file)
 $ object-selector dump
@@ -147,7 +141,6 @@ $ object-selector dump
 
 This will create `repositories-dump.json` for bigger dataset. The
 `test-yaml` command will use this file by default.
-
 ```bash
 $ object-selector test-yaml -y recipes/*.yaml
 ```
