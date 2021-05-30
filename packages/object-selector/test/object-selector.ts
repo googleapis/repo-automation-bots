@@ -104,6 +104,13 @@ describe('object-selector', () => {
       const selected = objSelector.select(objs);
       objectAssert(selected, ['hasagrandchild']);
     });
+    it('returns nothing with empty selectors', () => {
+      // force creating an empty selectors.
+      const selectors: Selectors = [];
+      const objSelector = new ObjectSelector<TestObject>([selectors]);
+      const selected = objSelector.select(objs);
+      assert.strictEqual(selected.length, 0);
+    });
   });
 });
 

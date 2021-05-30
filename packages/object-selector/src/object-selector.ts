@@ -112,6 +112,10 @@ export class ObjectSelector<T> {
   }
 
   private _filter(selectors: Selectors, candidate: T): boolean {
+    // Empty selectors don't match anything.
+    if (selectors.length === 0) {
+      return false;
+    }
     // If any of the selector declines the target, we return false.
     for (const selector of selectors) {
       if (!this._select(selector, candidate)) {
