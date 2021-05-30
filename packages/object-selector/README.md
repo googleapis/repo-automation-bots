@@ -109,6 +109,12 @@ const selector = new ObjectSelector<Repository>(
 )
 const selected = selector.select(repos);
 // Now `selected` contains archived repos.
+// or you can call `match` with an individual object for boolean result.
+for (const repo of repos) {
+  if (selector.match(repo)) {
+    // do something
+  }
+}
 ```
 
 ### CLI and recipes for repositories

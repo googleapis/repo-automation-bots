@@ -72,7 +72,6 @@ export function RepoDescriptorConvertor(input: string): string {
  */
 export class ObjectSelector<T> {
   private listOfSelectors: Array<Selectors>;
-  private selected: Array<T>;
   private descriptorConvertor: (input: string) => string;
   constructor(
     listOfSelectors: Array<Selectors>,
@@ -83,34 +82,35 @@ export class ObjectSelector<T> {
     }
   ) {
     this.listOfSelectors = listOfSelectors;
-    this.selected = [];
     this.descriptorConvertor = descriptorConvertor;
   }
   /**
    * It will apply Selectors to the given Iterable and returns matched objects.
    */
   public select(targets: Iterable<T>): Array<T> {
+    const result: Array<T> = [];
     for (const target of targets) {
-      this._push(target);
+      if (this.match(target)) {
+        result.push(target);
+      }
     }
-    return this._getSelected();
+    return result;
   }
-  private _push(candidate: T) {
-    let selected = false;
+  /**
+   * It will apply Selectors to the given object and return the result.
+   */
+  public match(target: T): boolean {
     // Each `Selectors` represents a list of Selectors combined with AND
     // If any of the `Selectors` accept the target, we'll select it.
     for (const selectors of this.listOfSelectors) {
-      if (this._filter(selectors, candidate)) {
-        selected = true;
+      if (this._filter(selectors, target)) {
+        // no need to evaluate remaining selectors.
+        return true;
       }
     }
-    if (selected) {
-      this.selected.push(candidate);
-    }
+    return false;
   }
-  private _getSelected(): Array<T> {
-    return this.selected;
-  }
+
   private _filter(selectors: Selectors, candidate: T): boolean {
     // If any of the selector declines the target, we return false.
     for (const selector of selectors) {
