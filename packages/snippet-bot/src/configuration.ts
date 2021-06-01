@@ -17,11 +17,13 @@ import * as minimatch from 'minimatch';
 export interface ConfigurationOptions {
   ignoreFiles: string[];
   alwaysCreateStatusCheck: boolean;
+  aggregateChecks: boolean;
 }
 
 export const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   ignoreFiles: [],
   alwaysCreateStatusCheck: false,
+  aggregateChecks: false,
 };
 
 export const CONFIGURATION_FILE_PATH = 'snippet-bot.yml';
@@ -44,5 +46,8 @@ export class Configuration {
   }
   alwaysCreateStatusCheck(): boolean {
     return this.options.alwaysCreateStatusCheck;
+  }
+  aggregateChecks(): boolean {
+    return this.options.aggregateChecks;
   }
 }
