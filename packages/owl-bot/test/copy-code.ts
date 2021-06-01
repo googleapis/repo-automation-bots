@@ -19,9 +19,10 @@ import path from 'path';
 import * as fs from 'fs';
 import tmp from 'tmp';
 import {OwlBotYaml} from '../src/config-files';
-import {collectDirTree, makeDirTree} from './dir-tree';
+import {collectDirTree, collectGlobResult, makeDirTree} from './dir-tree';
 import {makeAbcRepo, makeRepoWithOwlBotYaml} from './make-repos';
 import {newCmd} from '../src/cmd';
+import {glob} from 'glob';
 
 describe('copyDirs', () => {
   /**
@@ -31,6 +32,7 @@ describe('copyDirs', () => {
     makeDirTree(rootDir, [
       'source',
       'source/.dot/.gitignore:*.o',
+      'source/.git/123456:x',
       'source/a',
       'source/b',
       'source/a/x',
@@ -98,11 +100,11 @@ describe('copyDirs', () => {
       ],
     };
     copyDirs(sourceDir, destDir, yaml);
-    assert.deepStrictEqual(collectDirTree(destDir), [
-      'm',
-      'm/n',
-      'm/n/.gitignore:*.o',
-    ]);
+
+    // Confirm .git/ wasn't copied, but .gitignore was copied.
+    const allFiles = glob.sync('**', {cwd: destDir, dot: true});
+    const tree = collectGlobResult(destDir, allFiles);
+    assert.deepStrictEqual(tree, ['m', 'm/n', 'm/n/.gitignore:*.o']);
   });
 
   it('works for real java tree', () => {
