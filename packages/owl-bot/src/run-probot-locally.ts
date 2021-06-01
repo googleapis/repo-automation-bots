@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {OwlBot} from './owl-bot';
+import {readFileSync} from 'fs';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
-import {GCFBootstrapper} from 'gcf-utils';
-import {OwlBot} from './owl-bot';
-const bootstrap = new GCFBootstrapper();
-// Unlike other probot apps, owl-bot-post-processor requires the ability
-// to generate its own auth token for Cloud Build, we use the helper in
-// GCFBootstrapper to load this from Secret Manager:
-module.exports.owl_bot = bootstrap.gcf(async (app: Probot) => {
-  const config = await bootstrap.getProbotConfig(false);
-  OwlBot(config.privateKey, app);
-});
+
+module.exports = (app: Probot) => {
+  console.info('gots here');
+  if (!process.env.PRIVATE_KEY_PATH) {
+    throw Error('must provide path to GitHub app private key');
+  }
+  const privateKey = readFileSync(process.env.PRIVATE_KEY_PATH, 'utf8');
+  OwlBot(privateKey, app);
+};

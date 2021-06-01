@@ -21,6 +21,7 @@ import * as chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import {describe, it, beforeEach} from 'mocha';
 import {Probot, ProbotOctokit} from 'probot';
+import {Octokit} from '@octokit/rest';
 
 import {
   getConfig,
@@ -28,13 +29,17 @@ import {
   ConfigChecker,
 } from '../src/bot-config-utils';
 import schema from './test-config-schema.json';
+import listSchema from './test-config-use-external-id.json';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
-nock.disableNetConnect();
 chai.use(chaiAsPromised);
 
 interface TestConfig {
   testConfig: string;
+}
+
+interface ListConfig {
+  [index: number]: TestConfig;
 }
 const CONFIG_FILENAME = 'test.yaml';
 const CONFIG_FILENAME_YML = 'test.yml';
@@ -42,6 +47,7 @@ const CONFIG_FILENAME_YML = 'test.yml';
 const defaultConfig: TestConfig = {testConfig: 'defaultValue'};
 
 let configFromConfigChecker: TestConfig | null;
+let listConfigFromConfigChecker: ListConfig | null;
 
 // Test app
 const app = (app: Probot) => {
@@ -94,12 +100,32 @@ const app2 = (app: Probot) => {
   );
 };
 
-function fetchFiles(responseFile: string) {
-  const filesResponse = require(resolve(fixturesPath, responseFile));
-  return nock('https://api.github.com')
-    .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
-    .reply(200, filesResponse);
-}
+// Test app with multiple schema files.
+const app3 = (app: Probot) => {
+  app.on(
+    [
+      'pull_request.opened',
+      'pull_request.reopened',
+      'pull_request.edited',
+      'pull_request.synchronize',
+    ],
+    async context => {
+      const configChecker = new ConfigChecker<ListConfig>(
+        listSchema,
+        CONFIG_FILENAME,
+        [schema]
+      );
+      await configChecker.validateConfigChanges(
+        context.octokit,
+        context.payload.pull_request.head.user.login,
+        context.payload.repository.name,
+        context.payload.pull_request.head.sha,
+        context.payload.pull_request.number
+      );
+      listConfigFromConfigChecker = configChecker.getConfig();
+    }
+  );
+};
 
 function createCheck() {
   return nock('https://api.github.com')
@@ -110,13 +136,41 @@ function createCheck() {
     .reply(200);
 }
 
-function fetchFile(responseFile: string) {
-  const configResponse = require(resolve(fixturesPath, responseFile));
+// Emulate getContent and getBlob.
+function createConfigResponse(configFile: string) {
+  const config = fs.readFileSync(resolve(fixturesPath, configFile));
+  const base64Config = config.toString('base64');
+  return {
+    size: base64Config.length,
+    content: base64Config,
+    encoding: 'base64',
+  };
+}
+
+// Emulate fetching the file list.
+function fetchFileList(fileName: string) {
   return nock('https://api.github.com')
-    .get(
-      '/repos/tmatsuo/repo-automation-bots/git/blobs/223828dbd668486411b475665ab60855ba9898f3'
-    )
-    .reply(200, configResponse);
+    .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+    .reply(200, [
+      {
+        filename: `.github/${fileName}`,
+        sha: 'testsha',
+      },
+    ]);
+}
+
+// Emulate the given config file is modified in the PR.
+function fetchFilesInPR(configFile: string, fileName: string) {
+  return nock('https://api.github.com')
+    .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+    .reply(200, [
+      {
+        filename: `.github/${fileName}`,
+        sha: 'testsha',
+      },
+    ])
+    .get('/repos/tmatsuo/repo-automation-bots/git/blobs/testsha')
+    .reply(200, createConfigResponse(configFile));
 }
 
 describe('config test app with config.yml', () => {
@@ -131,6 +185,9 @@ describe('config test app with config.yml', () => {
     });
     probot.load(app2);
   });
+  beforeEach(() => {
+    nock.disableNetConnect();
+  });
   afterEach(() => {
     nock.cleanAll();
   });
@@ -138,7 +195,7 @@ describe('config test app with config.yml', () => {
     it('creates a failing status check for a wrong file name', async () => {
       const payload = require(resolve(fixturesPath, 'pr_event'));
 
-      const scopes = [fetchFiles('wrongFilesResponse2'), createCheck()];
+      const scopes = [fetchFileList(CONFIG_FILENAME), createCheck()];
 
       await probot.receive({
         name: 'pull_request',
@@ -165,6 +222,7 @@ describe('config test app', () => {
     probot.load(app);
     // It always start from null.
     configFromConfigChecker = null;
+    nock.disableNetConnect();
   });
   afterEach(() => {
     nock.cleanAll();
@@ -173,10 +231,7 @@ describe('config test app', () => {
     it('does not creates a failing status check for a correct config', async () => {
       const payload = require(resolve(fixturesPath, 'pr_event'));
 
-      const scopes = [
-        fetchFiles('filesResponse'),
-        fetchFile('correctConfigResponse'),
-      ];
+      const scopes = [fetchFilesInPR('config.yaml', CONFIG_FILENAME)];
 
       await probot.receive({
         name: 'pull_request',
@@ -192,8 +247,7 @@ describe('config test app', () => {
       const payload = require(resolve(fixturesPath, 'pr_event'));
 
       const scopes = [
-        fetchFiles('filesResponse'),
-        fetchFile('wrongConfigResponse'),
+        fetchFilesInPR('wrong.yaml', CONFIG_FILENAME),
         createCheck(),
       ];
 
@@ -210,8 +264,7 @@ describe('config test app', () => {
     it('creates a failing status check for broken yaml file', async () => {
       const payload = require(resolve(fixturesPath, 'pr_event'));
       const scopes = [
-        fetchFiles('filesResponse'),
-        fetchFile('brokenConfigResponse'),
+        fetchFilesInPR('broken.yaml', CONFIG_FILENAME),
         createCheck(),
       ];
       await probot.receive({
@@ -227,7 +280,65 @@ describe('config test app', () => {
     it('creates a failing status check for a wrong file name', async () => {
       const payload = require(resolve(fixturesPath, 'pr_event'));
 
-      const scopes = [fetchFiles('wrongFilesResponse'), createCheck()];
+      const scopes = [fetchFileList(CONFIG_FILENAME_YML), createCheck()];
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+      for (const scope of scopes) {
+        scope.done();
+      }
+      assert.strictEqual(configFromConfigChecker, null);
+    });
+  });
+});
+
+describe('config test app with multiple schema files', () => {
+  let probot: Probot;
+  beforeEach(() => {
+    probot = new Probot({
+      githubToken: 'abc123',
+      Octokit: ProbotOctokit.defaults({
+        retru: {enabled: false},
+        throttle: {enabled: false},
+      }),
+    });
+    probot.load(app3);
+    // It always start from null.
+    listConfigFromConfigChecker = null;
+    nock.disableNetConnect();
+  });
+  afterEach(() => {
+    nock.cleanAll();
+  });
+  describe('responds to PR', () => {
+    it('does not creates a failing status check for a correct config', async () => {
+      const payload = require(resolve(fixturesPath, 'pr_event'));
+
+      const scopes = [fetchFilesInPR('list-config.yaml', CONFIG_FILENAME)];
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+      for (const scope of scopes) {
+        scope.done();
+      }
+      assert.strictEqual(
+        listConfigFromConfigChecker![0].testConfig,
+        'testValue'
+      );
+    });
+    it('creates a failing status check for a wrong config', async () => {
+      const payload = require(resolve(fixturesPath, 'pr_event'));
+
+      const scopes = [
+        fetchFilesInPR('config.yaml', CONFIG_FILENAME),
+        createCheck(),
+      ];
 
       await probot.receive({
         name: 'pull_request',
@@ -247,7 +358,8 @@ function getConfigFile(
   owner: string,
   repo: string,
   status: number,
-  responseFile?: string
+  responseFile?: string,
+  branch?: string
 ) {
   const response = {
     name: '',
@@ -267,6 +379,8 @@ function getConfigFile(
       html: '',
     },
   };
+  const ref = branch ? `?ref=${branch}` : '';
+
   if (status === 200) {
     if (responseFile) {
       const config = fs.readFileSync(resolve(fixturesPath, responseFile));
@@ -276,29 +390,29 @@ function getConfigFile(
       response.content = content;
       response.size = content.length;
       return nock('https://api.github.com')
-        .get(`/repos/${owner}/${repo}/contents/.github%2F${filename}`)
+        .get(`/repos/${owner}/${repo}/contents/.github%2F${filename}${ref}`)
         .reply(200, response);
     } else {
       throw Error('responseFile is needed for status 200');
     }
   } else {
     return nock('https://api.github.com')
-      .get(`/repos/${owner}/${repo}/contents/.github%2F${filename}`)
+      .get(`/repos/${owner}/${repo}/contents/.github%2F${filename}${ref}`)
       .reply(status);
   }
 }
 
 describe('config', () => {
-  const octokit = new ProbotOctokit(
-    ProbotOctokit.defaults({
-      retry: {enabled: false},
-      throttle: {enabled: false},
-    })
-  );
-
-  beforeEach(() => {});
+  const octokit = new Octokit({auth: '123'});
 
   describe('getConfig', () => {
+    beforeEach(() => {
+      nock.disableNetConnect();
+    });
+
+    afterEach(() => {
+      nock.cleanAll();
+    });
     it('fetch the config file from the repo', async () => {
       const owner = 'googleapis';
       const repo = 'repo-automation-bots';
@@ -319,6 +433,70 @@ describe('config', () => {
         scope.done();
       }
     });
+    it('fetch the config file from a branch', async () => {
+      const owner = 'googleapis';
+      const repo = 'repo-automation-bots';
+      const filename = 'flakybot.yaml';
+      const branch = 'testBranch';
+
+      const scopes = [
+        getConfigFile('flakybot.yaml', owner, repo, 200, 'config.yaml', branch),
+      ];
+
+      const fetchedConfig = await getConfig<TestConfig>(
+        octokit,
+        owner,
+        repo,
+        filename,
+        {branch: branch}
+      );
+      assert.strictEqual(fetchedConfig?.testConfig, 'testValue');
+      for (const scope of scopes) {
+        scope.done();
+      }
+    });
+    it('fetch the config file from the repo with a schema', async () => {
+      const owner = 'googleapis';
+      const repo = 'repo-automation-bots';
+      const filename = 'flakybot.yaml';
+
+      const scopes = [
+        getConfigFile('flakybot.yaml', owner, repo, 200, 'config.yaml'),
+      ];
+
+      const fetchedConfig = await getConfig<TestConfig>(
+        octokit,
+        owner,
+        repo,
+        filename,
+        {schema: schema}
+      );
+      assert.strictEqual(fetchedConfig?.testConfig, 'testValue');
+      for (const scope of scopes) {
+        scope.done();
+      }
+    });
+    it('throws an error when the config validation failed', async () => {
+      const owner = 'googleapis';
+      const repo = 'repo-automation-bots';
+      const filename = 'flakybot.yaml';
+
+      const scopes = [
+        getConfigFile('flakybot.yaml', owner, repo, 200, 'wrong.yaml'),
+      ];
+
+      await chai
+        .expect(
+          getConfig<TestConfig>(octokit, owner, repo, filename, {
+            schema: schema,
+          })
+        )
+        .to.be.rejectedWith(Error);
+
+      for (const scope of scopes) {
+        scope.done();
+      }
+    });
     it('throws an error upon non 404 errors', async () => {
       const owner = 'googleapis';
       const repo = 'repo-automation-bots';
@@ -329,6 +507,25 @@ describe('config', () => {
       await chai
         .expect(getConfig<TestConfig>(octokit, owner, repo, filename))
         .to.be.rejectedWith(Error);
+      for (const scope of scopes) {
+        scope.done();
+      }
+    });
+    it('stops after the first 404 with an option', async () => {
+      const owner = 'googleapis';
+      const repo = 'repo-automation-bots';
+      const filename = 'flakybot.yaml';
+
+      const scopes = [getConfigFile('flakybot.yaml', owner, repo, 404)];
+
+      const fetchedConfig = await getConfig<TestConfig>(
+        octokit,
+        owner,
+        repo,
+        filename,
+        {fallbackToOrgConfig: false}
+      );
+      assert.strictEqual(fetchedConfig, null);
       for (const scope of scopes) {
         scope.done();
       }
@@ -350,6 +547,28 @@ describe('config', () => {
         filename
       );
       assert.strictEqual(fetchedConfig?.testConfig, 'testValue');
+      for (const scope of scopes) {
+        scope.done();
+      }
+    });
+    it('throws an error when the config validation failed for org config', async () => {
+      const owner = 'googleapis';
+      const repo = 'repo-automation-bots';
+      const filename = 'flakybot.yaml';
+
+      const scopes = [
+        getConfigFile('flakybot.yaml', owner, repo, 404),
+        getConfigFile('flakybot.yaml', owner, '.github', 200, 'wrong.yaml'),
+      ];
+
+      await chai
+        .expect(
+          getConfig<TestConfig>(octokit, owner, repo, filename, {
+            schema: schema,
+          })
+        )
+        .to.be.rejectedWith(Error);
+
       for (const scope of scopes) {
         scope.done();
       }
@@ -394,6 +613,13 @@ describe('config', () => {
     });
   });
   describe('getConfigWithDefault', () => {
+    beforeEach(() => {
+      nock.disableNetConnect();
+    });
+
+    afterEach(() => {
+      nock.cleanAll();
+    });
     it('fetch the config file from the repo', async () => {
       const owner = 'googleapis';
       const repo = 'repo-automation-bots';
@@ -411,6 +637,77 @@ describe('config', () => {
         defaultConfig
       );
       assert.strictEqual(fetchedConfig?.testConfig, 'testValue');
+      for (const scope of scopes) {
+        scope.done();
+      }
+    });
+    it('fetch the config file from a branch', async () => {
+      const owner = 'googleapis';
+      const repo = 'repo-automation-bots';
+      const filename = 'flakybot.yaml';
+      const branch = 'testBranch';
+
+      const scopes = [
+        getConfigFile('flakybot.yaml', owner, repo, 200, 'config.yaml', branch),
+      ];
+
+      const fetchedConfig = await getConfigWithDefault<TestConfig>(
+        octokit,
+        owner,
+        repo,
+        filename,
+        defaultConfig,
+        {branch: branch}
+      );
+      assert.strictEqual(fetchedConfig?.testConfig, 'testValue');
+      for (const scope of scopes) {
+        scope.done();
+      }
+    });
+    it('fetch the config file from the repo with a schema', async () => {
+      const owner = 'googleapis';
+      const repo = 'repo-automation-bots';
+      const filename = 'flakybot.yaml';
+
+      const scopes = [
+        getConfigFile('flakybot.yaml', owner, repo, 200, 'config.yaml'),
+      ];
+
+      const fetchedConfig = await getConfigWithDefault<TestConfig>(
+        octokit,
+        owner,
+        repo,
+        filename,
+        defaultConfig,
+        {schema: schema}
+      );
+      assert.strictEqual(fetchedConfig?.testConfig, 'testValue');
+      for (const scope of scopes) {
+        scope.done();
+      }
+    });
+    it('throws an error when the config validation failed', async () => {
+      const owner = 'googleapis';
+      const repo = 'repo-automation-bots';
+      const filename = 'flakybot.yaml';
+
+      const scopes = [
+        getConfigFile('flakybot.yaml', owner, repo, 200, 'wrong.yaml'),
+      ];
+
+      await chai
+        .expect(
+          getConfigWithDefault<TestConfig>(
+            octokit,
+            owner,
+            repo,
+            filename,
+            defaultConfig,
+            {schema: schema}
+          )
+        )
+        .to.be.rejectedWith(Error);
+
       for (const scope of scopes) {
         scope.done();
       }
@@ -437,6 +734,26 @@ describe('config', () => {
         scope.done();
       }
     });
+    it('stops after the first 404 with an option', async () => {
+      const owner = 'googleapis';
+      const repo = 'repo-automation-bots';
+      const filename = 'flakybot.yaml';
+
+      const scopes = [getConfigFile('flakybot.yaml', owner, repo, 404)];
+
+      const fetchedConfig = await getConfigWithDefault<TestConfig>(
+        octokit,
+        owner,
+        repo,
+        filename,
+        defaultConfig,
+        {fallbackToOrgConfig: false}
+      );
+      assert.strictEqual(fetchedConfig?.testConfig, 'defaultValue');
+      for (const scope of scopes) {
+        scope.done();
+      }
+    });
     it('fetch the config file from the org .github repo', async () => {
       const owner = 'googleapis';
       const repo = 'repo-automation-bots';
@@ -455,6 +772,33 @@ describe('config', () => {
         defaultConfig
       );
       assert.strictEqual(fetchedConfig?.testConfig, 'testValue');
+      for (const scope of scopes) {
+        scope.done();
+      }
+    });
+    it('throws an error when the config validation failed or org config', async () => {
+      const owner = 'googleapis';
+      const repo = 'repo-automation-bots';
+      const filename = 'flakybot.yaml';
+
+      const scopes = [
+        getConfigFile('flakybot.yaml', owner, repo, 404),
+        getConfigFile('flakybot.yaml', owner, '.github', 200, 'wrong.yaml'),
+      ];
+
+      await chai
+        .expect(
+          getConfigWithDefault<TestConfig>(
+            octokit,
+            owner,
+            repo,
+            filename,
+            defaultConfig,
+            {schema: schema}
+          )
+        )
+        .to.be.rejectedWith(Error);
+
       for (const scope of scopes) {
         scope.done();
       }
