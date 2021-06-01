@@ -162,7 +162,8 @@ export function flakybot(app: Probot) {
       owner,
       repo,
       CONFIG_FILENAME,
-      DEFAULT_CONFIG
+      DEFAULT_CONFIG,
+      {schema: schema}
     );
     logger.debug(`config: ${config}`);
     context.log.info(`[${owner}/${repo}] processing ${buildURL}`);
@@ -363,13 +364,12 @@ flakybot.openIssues = async (
 
         const testCase = flakybot.groupedTestCase(pkg);
         const testString = pkgFailures.length === 1 ? 'test' : 'tests';
-        const body = `${
-          pkgFailures.length
-        } ${testString} failed in this package for commit ${commit} (${buildURL}).\n\n-----\n${flakybot.formatBody(
-          testCase,
-          commit,
-          buildURL
-        )}`;
+        const body = `${pkgFailures.length
+          } ${testString} failed in this package for commit ${commit} (${buildURL}).\n\n-----\n${flakybot.formatBody(
+            testCase,
+            commit,
+            buildURL
+          )}`;
         await context.octokit.issues.createComment({
           owner,
           repo,
