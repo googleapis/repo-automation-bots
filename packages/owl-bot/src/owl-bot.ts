@@ -173,7 +173,7 @@ export async function handlePullRequestLabeled(
 ) {
   const head = payload.pull_request.head.repo.full_name;
   const base = payload.pull_request.base.repo.full_name;
-  const [owner, repo] = head.split('/');
+  const [owner, repo] = base.split('/');
   const installation = payload.installation?.id;
   const prNumber = payload.pull_request.number;
 
@@ -212,12 +212,20 @@ export async function handlePullRequestLabeled(
     octokit
   );
 
-  await octokit.issues.removeLabel({
-    name: OWLBOT_RUN_LABEL,
-    issue_number: prNumber,
-    owner,
-    repo,
-  });
+  try {
+    await octokit.issues.removeLabel({
+      name: OWLBOT_RUN_LABEL,
+      issue_number: prNumber,
+      owner,
+      repo,
+    });
+  } catch (err) {
+    if (err.status === 404) {
+      logger.warn(`${err.message} head = ${head} pr = ${prNumber}`);
+    } else {
+      throw err;
+    }
+  }
   logger.metric('owlbot.run_post_processor');
 }
 
@@ -244,8 +252,8 @@ const runPostProcessor = async (
       `too many OwlBot updates created in a row for ${opts.owner}/${opts.repo}`
     );
   }
-  // Fetch the .Owlbot.lock.yaml from the head ref:
-  const lock = await core.getOwlBotLock(opts.head, opts.prNumber, octokit);
+  // Fetch the .Owlbot.lock.yaml from head of PR:
+  const lock = await core.getOwlBotLock(opts.base, opts.prNumber, octokit);
   if (!lock) {
     logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
     return;
@@ -259,7 +267,7 @@ const runPostProcessor = async (
       privateKey,
       appId,
       installation: opts.installation,
-      repo: opts.head,
+      repo: opts.base,
       pr: opts.prNumber,
       trigger,
       defaultBranch: opts.defaultBranch,
@@ -273,7 +281,7 @@ const runPostProcessor = async (
       appId,
       installation: opts.installation,
       pr: opts.prNumber,
-      repo: opts.head,
+      repo: opts.base,
       text: buildStatus.text,
       summary: buildStatus.summary,
       conclusion: buildStatus.conclusion,

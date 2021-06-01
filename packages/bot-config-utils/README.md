@@ -57,6 +57,53 @@ const config = await getConfigWithDefault<Config>(
 // config is always a Config object.
 ```
 
+## getConfig options
+You can specify optional arguments via the `getConfigOptions` interface to `getConfig` and `getConfigWithDefault`.
+
+```
+{
+  fallbackToOrgConfig: false,
+  branch: 'release-9.x',
+  schema: schema,
+  additionalSchemas: additionalSchema
+}
+```
+- fallbackToOrgConfig
+  If set to true, it will try to fetch the config from `.github` repo in the
+  same org, defaults to true.
+- branch
+  The branch for getting the config.
+- schema
+  The json schema definition. If specified, the loaded config will be validated
+  against the given schema. It will throw an Error when validation fails.
+- additionalSchemas
+  Only required if you need to give additional schema definitions.
+
+Here is a simple example for not falling back to `.github` repo, and
+doing the schema validation.
+
+```
+// json schema definition
+import schema from './config-schema.json';
+import {
+  getConfig,
+} from '@google-automations/bot-config-utils';
+
+interface Config {
+  myConfig: string;
+}
+const CONFIG_FILENAME = 'mybot.yaml';
+const {owner, repo} = context.repo();
+const config = await getConfig<Config>(
+  context.octokit,
+  owner,
+  repo,
+  CONFIG_FILENAME,
+  {fallbackToOrgConfig: false, schema: schema}
+);
+// config can be null.
+```
+
 ## Check config schema on PRs
 
 To use this feature, the bot needs to have some permissions.

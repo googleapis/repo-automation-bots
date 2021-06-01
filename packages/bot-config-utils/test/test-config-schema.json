@@ -1,5 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "#common",
     "type": "object",
     "title": "test app config",
     "description": "Schema for test app configuration",
