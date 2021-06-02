@@ -1,6 +1,30 @@
 # object-selector
 
-This is a small library for selecting objects.
+This is a small library for selecting objects. The main user of this
+library are the bot authors who want to choose objects based on their
+propery values and make it configurable in the bot config files.
+
+1. Bot author define the config file.
+
+  "I want the bot user or org admins can configure some conditions for
+   the target objects."
+
+2. Bot user or org admins create the config file with some selector
+   definitions.
+
+   "I want the bot to skip private repositories"
+   ["private", "eq", "false"]
+
+3. The bot can choose the intended objects.
+
+   "Ok, I skip private repositories"
+
+## Background
+Here is an example attempt to implement something similar:
+https://github.com/googleapis/.github/pull/9/files
+
+The first user of this library will be the sync-repo-settings bot for
+implementing its org level config(#1884).
 
 ## Install
 
