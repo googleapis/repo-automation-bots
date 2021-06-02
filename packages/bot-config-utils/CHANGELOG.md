@@ -1,5 +1,12 @@
 # Changelog
 
+### [3.1.1](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v3.1.0...bot-config-utils-v3.1.1) (2021-06-02)
+
+
+### Bug Fixes
+
+* **bot-config-utils:** handle an empty config file ([#1929](https://www.github.com/googleapis/repo-automation-bots/issues/1929)) ([ad084dc](https://www.github.com/googleapis/repo-automation-bots/commit/ad084dccb4d75f74939b5694dcb0d4d2ed7cb0c7)), closes [#1927](https://www.github.com/googleapis/repo-automation-bots/issues/1927)
+
 ## [3.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v3.0.0...bot-config-utils-v3.1.0) (2021-05-28)
 
 
