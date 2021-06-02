@@ -12,8 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {Octokit} from '@octokit/rest';
+import {Endpoints} from '@octokit/types';
+
 import {RegionTagLocation} from './region-tag-parser';
 import {Violation} from './violations';
+
+type createCheckParams = Endpoints['POST /repos/{owner}/{repo}/check-runs']['parameters'];
+type createCheckResponse = Endpoints['POST /repos/{owner}/{repo}/check-runs']['response'];
+
+export type Conclusion =
+  | 'success'
+  | 'failure'
+  | 'neutral'
+  | 'cancelled'
+  | 'timed_out'
+  | 'action_required'
+  | undefined;
 
 /**
  * Formats the full scan report with the comment mark, so that it can
@@ -99,3 +114,79 @@ export const formatMatchingViolation = (violation: Violation): string => {
   }
   return `${formatRegionTag(violation.location)} ${detail}`;
 };
+
+function aggregateCheckParams(
+  checks: Array<createCheckParams>,
+  title: string
+): createCheckParams {
+  let conclusion: Conclusion = 'success';
+  let summary = `${title} success`;
+  let text = '';
+
+  for (const check of checks) {
+    if (check.conclusion === 'failure') {
+      conclusion = check.conclusion;
+      summary = `${title} failure`;
+      text += formatExpandable(
+        check.output!.summary,
+        check.output!.text as string
+      );
+    }
+  }
+  if (conclusion === 'success') {
+    text = `${title} success`;
+  }
+
+  return {
+    owner: checks[0].owner,
+    repo: checks[0].repo,
+    name: title,
+    conclusion: conclusion,
+    head_sha: checks[0].head_sha,
+    output: {
+      title: title,
+      summary: summary,
+      text: text,
+    },
+  };
+}
+
+/**
+ * Checks aggregator.
+ */
+export class CheckAggregator {
+  private octokit: Octokit;
+  private checkParams: Array<createCheckParams>;
+  private checkTitle: string;
+  private aggregateChecks: boolean;
+  private promises: Array<Promise<createCheckResponse>>;
+  constructor(octokit: Octokit, checkTitle: string, aggregateChecks: boolean) {
+    this.octokit = octokit;
+    this.checkTitle = checkTitle;
+    this.checkParams = new Array<createCheckParams>();
+    this.aggregateChecks = aggregateChecks;
+    this.promises = new Array<Promise<createCheckResponse>>();
+  }
+  public async add(checkParams: createCheckParams): Promise<void> {
+    if (this.aggregateChecks) {
+      this.checkParams.push(checkParams);
+    } else {
+      this.promises.push(this.octokit.checks.create(checkParams));
+    }
+  }
+  public async submit(): Promise<void> {
+    if (this.aggregateChecks) {
+      if (this.checkParams.length === 0) {
+        return;
+      }
+      const checkParams = aggregateCheckParams(
+        this.checkParams,
+        this.checkTitle
+      );
+      await this.octokit.checks.create(checkParams);
+    } else {
+      await Promise.all(this.promises);
+      return;
+    }
+  }
+}
