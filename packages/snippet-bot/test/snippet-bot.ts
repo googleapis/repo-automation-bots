@@ -235,6 +235,76 @@ describe('snippet-bot config validation', () => {
   });
 });
 
+describe('snippet-bot bot-config-utils integration', () => {
+  let probot: Probot;
+
+  const sandbox = sinon.createSandbox();
+
+  let getApiLabelsStub: sinon.SinonStub<[string], Promise<{}>>;
+  let getSnippetsStub: sinon.SinonStub<[string], Promise<Snippets>>;
+  let validateConfigStub: sinon.SinonStub;
+
+  beforeEach(() => {
+    probot = new Probot({
+      githubToken: 'abc123',
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
+    });
+    probot.load(myProbotApp);
+    getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
+    const products = require(resolve(fixturesPath, './products'));
+    getApiLabelsStub.resolves(products);
+    const testSnippets = {};
+    getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
+    getSnippetsStub.resolves(testSnippets);
+    validateConfigStub = sandbox.stub(
+      ConfigChecker.prototype,
+      'validateConfigChanges'
+    );
+    validateConfigStub.resolves(undefined);
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+    sandbox.restore();
+  });
+
+  it('survives config validation with an empty config file', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const payload = require(resolve(fixturesPath, './pr_event'));
+
+    const scopes = [
+      nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
+        )
+        .reply(200, createConfigResponse('empty.yaml')),
+      nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+        .reply(404, {}),
+    ];
+
+    await probot.receive({
+      name: 'pull_request',
+      payload,
+      id: 'abc123',
+    });
+
+    validateConfigStub.calledOnceWith(
+      sinon.match.instanceOf(Octokit),
+      'tmatsuo',
+      'repo-automation-bots',
+      'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
+      14
+    );
+    for (const scope of scopes) {
+      scope.done();
+    }
+  });
+});
+
 describe('snippet-bot', () => {
   let probot: Probot;
 
