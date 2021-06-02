@@ -96,10 +96,15 @@ export function validateConfig<ConfigType>(
   let errorText: string | undefined;
   let config: ConfigType | undefined;
   try {
-    const candidate = yaml.load(configYaml) as unknown as ConfigType;
+    // When the config file is empty, the result of `yaml.load` is
+    // undefined. We use an empty object in that case because bot
+    // config is usually an object.
+    // Note: Bot must use `object` config if it wants to handle an
+    // empty config file.
+    const candidate = yaml.load(configYaml) || {};
     isValid = validateSchema(candidate);
     if (isValid) {
-      config = candidate;
+      config = candidate as unknown as ConfigType;
     } else {
       errorText = JSON.stringify(validateSchema.errors, null, 4);
     }

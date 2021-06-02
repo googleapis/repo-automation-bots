@@ -433,6 +433,26 @@ describe('config', () => {
         scope.done();
       }
     });
+    it('fetch an empty config file from the repo', async () => {
+      const owner = 'googleapis';
+      const repo = 'repo-automation-bots';
+      const filename = 'flakybot.yaml';
+
+      const scopes = [
+        getConfigFile('flakybot.yaml', owner, repo, 200, 'empty.yaml'),
+      ];
+
+      const fetchedConfig = await getConfig<TestConfig>(
+        octokit,
+        owner,
+        repo,
+        filename
+      );
+      assert.strictEqual(fetchedConfig?.testConfig, undefined);
+      for (const scope of scopes) {
+        scope.done();
+      }
+    });
     it('fetch the config file from a branch', async () => {
       const owner = 'googleapis';
       const repo = 'repo-automation-bots';
@@ -637,6 +657,28 @@ describe('config', () => {
         defaultConfig
       );
       assert.strictEqual(fetchedConfig?.testConfig, 'testValue');
+      for (const scope of scopes) {
+        scope.done();
+      }
+    });
+    it('fetch an empty config file from the repo with a schema', async () => {
+      const owner = 'googleapis';
+      const repo = 'repo-automation-bots';
+      const filename = 'flakybot.yaml';
+
+      const scopes = [
+        getConfigFile('flakybot.yaml', owner, repo, 200, 'empty.yaml'),
+      ];
+
+      const fetchedConfig = await getConfigWithDefault<TestConfig>(
+        octokit,
+        owner,
+        repo,
+        filename,
+        defaultConfig,
+        {schema: schema}
+      );
+      assert.strictEqual(fetchedConfig?.testConfig, 'defaultValue');
       for (const scope of scopes) {
         scope.done();
       }
