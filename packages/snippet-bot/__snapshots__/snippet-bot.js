@@ -339,7 +339,7 @@ exports[
     title: 'Config schema error',
     summary: 'An error found in the config file',
     text:
-      'the given config is not valid YAML 😱 \nend of the stream or a document separator is expected (2:13)\n\n 1 | --\n 2 | brokenConfig: true\n-----------------^',
+      '.github/.github/snippet-bot.yml is not valid YAML 😱 \nend of the stream or a document separator is expected (2:13)\n\n 1 | --\n 2 | brokenConfig: true\n-----------------^',
   },
 };
 
