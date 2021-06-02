@@ -13,6 +13,9 @@
     "packages/label-utils": {
       "release-type": "node"
     },
+    "packages/object-selector": {
+      "release-type": "node"
+    },
     "packages/release-brancher": {
       "release-type": "node"
     },
