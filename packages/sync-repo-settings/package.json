@@ -28,7 +28,6 @@
   },
   "dependencies": {
     "@google-automations/bot-config-utils": "^3.1.1",
-    "@octokit/rest": "18.5.3",
     "extend": "^3.0.2",
     "gcf-utils": "^8.0.1",
     "js-yaml": "^4.1.0",
