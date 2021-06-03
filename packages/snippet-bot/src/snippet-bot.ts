@@ -27,6 +27,8 @@ import {
   ParseResult,
 } from './region-tag-parser';
 import {
+  Conclusion,
+  CheckAggregator,
   formatBody,
   formatExpandable,
   formatRegionTag,
@@ -53,15 +55,6 @@ import {promises as pfs} from 'fs';
 import path from 'path';
 
 const streamPipeline = util.promisify(require('stream').pipeline);
-
-type Conclusion =
-  | 'success'
-  | 'failure'
-  | 'neutral'
-  | 'cancelled'
-  | 'timed_out'
-  | 'action_required'
-  | undefined;
 
 // Solely for avoid using `any` type.
 interface Label {
@@ -231,6 +224,12 @@ async function scanPullRequest(
   const owner = context.payload.repository.owner.login;
   const repo = context.payload.repository.name;
 
+  const aggregator = new CheckAggregator(
+    context.octokit,
+    'snippet-bot check',
+    configuration.aggregateChecks()
+  );
+
   // Parse the PR diff and recognize added/deleted region tags.
   const result = await parseRegionTagsInPullRequest(
     pull_request.diff_url,
@@ -324,8 +323,12 @@ async function scanPullRequest(
 
   // post the status of commit linting to the PR, using:
   // https://developer.github.com/v3/checks/
-  if (configuration.alwaysCreateStatusCheck() || tagsFound) {
-    await context.octokit.checks.create(checkParams);
+  if (
+    configuration.alwaysCreateStatusCheck() ||
+    configuration.aggregateChecks() ||
+    tagsFound
+  ) {
+    await aggregator.add(checkParams);
   }
 
   let commentBody = '';
@@ -336,7 +339,11 @@ async function scanPullRequest(
     //
     // Also, the config `alwaysCreateStatusCheck` is true, we need
     // to create successfull status checks, so we don't exit.
-    if (!refreshing && !configuration.alwaysCreateStatusCheck()) {
+    if (
+      !refreshing &&
+      !configuration.alwaysCreateStatusCheck() &&
+      !configuration.aggregateChecks()
+    ) {
       return;
     }
     commentBody += 'No region tags are edited in this PR.\n';
@@ -532,18 +539,21 @@ ${REFRESH_UI}
   // Status checks for missing region tag prefix
   if (
     configuration.alwaysCreateStatusCheck() ||
+    configuration.aggregateChecks() ||
     productPrefixViolations.length > 0
   ) {
-    await context.octokit.checks.create(prefixCheckParams);
+    await aggregator.add(prefixCheckParams);
   }
 
   // Status checks for disruptive region tag removal
   if (
     configuration.alwaysCreateStatusCheck() ||
+    configuration.aggregateChecks() ||
     removeUsedTagViolations.length > 0
   ) {
-    await context.octokit.checks.create(removeUsedTagCheckParams);
+    await aggregator.add(removeUsedTagCheckParams);
   }
+  await aggregator.submit();
   // emit metrics
   logger.metric('snippet-bot-violations', {
     target: pull_request.url,

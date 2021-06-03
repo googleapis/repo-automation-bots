@@ -19,9 +19,10 @@ import path from 'path';
 import * as fs from 'fs';
 import tmp from 'tmp';
 import {OwlBotYaml} from '../src/config-files';
-import {collectDirTree, makeDirTree} from './dir-tree';
+import {collectDirTree, collectGlobResult, makeDirTree} from './dir-tree';
 import {makeAbcRepo, makeRepoWithOwlBotYaml} from './make-repos';
 import {newCmd} from '../src/cmd';
+import {glob} from 'glob';
 
 describe('copyDirs', () => {
   /**
@@ -30,6 +31,8 @@ describe('copyDirs', () => {
   function makeSourceTree(rootDir: string): string {
     makeDirTree(rootDir, [
       'source',
+      'source/.dot/.gitignore:*.o',
+      'source/.git/123456:x',
       'source/a',
       'source/b',
       'source/a/x',
@@ -67,7 +70,7 @@ describe('copyDirs', () => {
     ]);
   });
 
-  it('copies rootdirectory', () => {
+  it('copies root directory', () => {
     const [sourceDir, destDir] = makeSourceAndDestDirs();
     const yaml: OwlBotYaml = {
       'deep-copy-regex': [
@@ -84,6 +87,24 @@ describe('copyDirs', () => {
       'm/n/r.txt:r',
       'm/n/x',
     ]);
+  });
+
+  it('copies dot files', () => {
+    const [sourceDir, destDir] = makeSourceAndDestDirs();
+    const yaml: OwlBotYaml = {
+      'deep-copy-regex': [
+        {
+          source: '/.dot',
+          dest: '/m/n',
+        },
+      ],
+    };
+    copyDirs(sourceDir, destDir, yaml);
+
+    // Confirm .git/ wasn't copied, but .gitignore was copied.
+    const allFiles = glob.sync('**', {cwd: destDir, dot: true});
+    const tree = collectGlobResult(destDir, allFiles);
+    assert.deepStrictEqual(tree, ['m', 'm/n', 'm/n/.gitignore:*.o']);
   });
 
   it('works for real java tree', () => {
@@ -241,6 +262,12 @@ describe('copyCode', function () {
     assert.strictEqual(sourceCommitHash, abcCommits[1]);
     assert.ok(stat(commitMsgPath)!.size > 0);
     assert.deepStrictEqual(collectDirTree(destRepo), [
+      '.github',
+      '.github/.OwlBot.yaml:deep-copy-regex:\n' +
+        '  - source: /(.*)\n' +
+        '    dest: /src/$1\n' +
+        'deep-remove-regex:\n' +
+        '  - /src\n',
       'src',
       'src/a.txt:1',
       'src/b.txt:2',
@@ -260,6 +287,12 @@ describe('copyCode', function () {
     assert.strictEqual(sourceCommitHash, abcCommits[0]);
     assert.ok(stat(commitMsgPath)!.size > 0);
     assert.deepStrictEqual(collectDirTree(destRepo), [
+      '.github',
+      '.github/.OwlBot.yaml:deep-copy-regex:\n' +
+        '  - source: /(.*)\n' +
+        '    dest: /src/$1\n' +
+        'deep-remove-regex:\n' +
+        '  - /src\n',
       'src',
       'src/a.txt:1',
       'src/b.txt:2',

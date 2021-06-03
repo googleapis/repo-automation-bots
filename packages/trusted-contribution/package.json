@@ -27,7 +27,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/bot-config-utils": "^3.0.0",
+    "@google-automations/bot-config-utils": "^3.1.0",
     "@google-cloud/secret-manager": "^3.7.0",
     "@octokit/rest": "^18.5.3",
     "gcf-utils": "^7.2.2"
@@ -43,7 +43,7 @@
     "js-yaml": "^4.1.0",
     "mocha": "^8.0.1",
     "nock": "^13.0.2",
-    "sinon": "^10.0.0",
+    "sinon": "^11.0.0",
     "snap-shot-it": "^7.9.6",
     "typescript": "^4.0.0"
   },

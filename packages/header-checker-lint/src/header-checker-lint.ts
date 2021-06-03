@@ -96,7 +96,8 @@ export = (app: Probot) => {
             context.octokit,
             owner,
             repo,
-            WELL_KNOWN_CONFIGURATION_FILE
+            WELL_KNOWN_CONFIGURATION_FILE,
+            {schema: schema}
           );
         } catch (err) {
           logger.error('Error parsing configuration: ' + err);
