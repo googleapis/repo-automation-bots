@@ -16,6 +16,7 @@
 
 import yargs = require('yargs');
 import {logger} from 'gcf-utils';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {getConfig} from '@google-automations/bot-config-utils';
 import * as yaml from 'js-yaml';
