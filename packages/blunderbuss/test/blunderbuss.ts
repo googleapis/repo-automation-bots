@@ -25,7 +25,6 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Context, Probot, createProbot, ProbotOctokit} from 'probot';
-import {Octokit} from '@octokit/rest';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import yaml from 'js-yaml';
@@ -113,7 +112,7 @@ describe('Blunderbuss', () => {
         },
         id: 'abc123',
       });
-      sinon.assert.calledOnceWithMatch(
+      sinon.assert.calledOnceWithExactly(
         syncLabelsStub,
         sinon.match.instanceOf(ProbotOctokit),
         'googleapis',
@@ -143,11 +142,13 @@ describe('Blunderbuss', () => {
 
       await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
-      getConfigWithDefaultStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigWithDefaultStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'testOwner',
         'testRepo',
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {}
       );
       sinon.assert.notCalled(validateConfigStub);
     });
@@ -432,8 +433,9 @@ describe('Blunderbuss', () => {
         id: 'abc123',
       });
       requests.done();
-      validateConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        validateConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'testOwner',
         'testRepo',
         'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
@@ -712,17 +714,22 @@ describe('Blunderbuss getConfigWithDefault', () => {
 
     scope.done();
 
-    validateConfigStub.calledOnceWith(
-      sinon.match.instanceOf(Octokit),
+    sinon.assert.calledOnceWithExactly(
+      validateConfigStub,
+      sinon.match.instanceOf(ProbotOctokit),
       'testOwner',
       'testRepo',
       'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
       6
     );
-    assignStub.calledOnceWith(sinon.match.instanceOf(Context), sinon.match.any);
-    const config = assignStub.getCall(0).args[1];
-    assert.strictEqual(config.assign_issues[0], 'issues1');
-    assert.strictEqual(config.assign_prs[0], 'prs1');
+    sinon.assert.calledOnceWithExactly(
+      assignStub,
+      sinon.match.instanceOf(Context),
+      {
+        assign_issues: sinon.match.array.deepEquals(['issues1']),
+        assign_prs: sinon.match.array.deepEquals(['prs1']),
+      }
+    );
   });
   it('fetch a real world config(python-docs-samples)', async () => {
     const payload = require(resolve(
@@ -740,14 +747,19 @@ describe('Blunderbuss getConfigWithDefault', () => {
 
     scope.done();
 
-    validateConfigStub.calledOnceWith(
-      sinon.match.instanceOf(Octokit),
+    sinon.assert.calledOnceWithExactly(
+      validateConfigStub,
+      sinon.match.instanceOf(ProbotOctokit),
       'testOwner',
       'testRepo',
       'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
       6
     );
-    assignStub.calledOnceWith(sinon.match.instanceOf(Context), sinon.match.any);
+    sinon.assert.calledOnceWithExactly(
+      assignStub,
+      sinon.match.instanceOf(Context),
+      sinon.match.any
+    );
     const config = assignStub.getCall(0).args[1];
     assert.strictEqual(config.assign_issues_by[0].labels[0], 'api: appengine');
     assert.strictEqual(config.assign_issues_by[0].to[0], 'engelke');
@@ -828,7 +840,11 @@ describe('Blunderbuss validateConfigChanges', () => {
       id: 'abc123',
     });
     scope.done();
-    assignStub.calledOnceWith(sinon.match.instanceOf(Context), sinon.match.any);
+    sinon.assert.calledOnceWithExactly(
+      assignStub,
+      sinon.match.instanceOf(Context),
+      sinon.match.any
+    );
   });
   it('creates a failing status check for a broken config', async () => {
     const payload = require(resolve(
@@ -849,6 +865,10 @@ describe('Blunderbuss validateConfigChanges', () => {
       id: 'abc123',
     });
     scope.done();
-    assignStub.calledOnceWith(sinon.match.instanceOf(Context), sinon.match.any);
+    sinon.assert.calledOnceWithExactly(
+      assignStub,
+      sinon.match.instanceOf(Context),
+      sinon.match.any
+    );
   });
 });
