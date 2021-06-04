@@ -68,7 +68,7 @@ describe('Blunderbuss', () => {
         Octokit: ProbotOctokit.defaults({
           retry: {enabled: false},
           throttle: {enabled: false},
-        }),
+        })
       },
     });
 
@@ -113,18 +113,13 @@ describe('Blunderbuss', () => {
         },
         id: 'abc123',
       });
-      // I think calledOnceWith is broken, demonstrating it's behavior.
-      // Compare them with the strictEqual calls below.
-      // It might only checking type, then it is WAI.
-      syncLabelsStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
-        'it does not matter',
-        'what values I put here',
-        utilsModule.BLUNDERBUSS_LABELS
+      sinon.assert.calledOnceWithMatch(
+        syncLabelsStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'googleapis',
+        'testRepo',
+        sinon.match.array.deepEquals(utilsModule.BLUNDERBUSS_LABELS)
       );
-      assert.strictEqual(syncLabelsStub.getCalls()[0].args[1], 'googleapis');
-      assert.strictEqual(syncLabelsStub.getCalls()[0].args[2], 'testRepo');
-      assert.strictEqual(syncLabelsStub.getCalls()[0].args[3][0].name, 'blunderbuss: assign');
     });
   });
 
