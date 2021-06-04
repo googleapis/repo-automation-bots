@@ -292,7 +292,8 @@ export function handler(app: Probot) {
       owner,
       repo,
       CONFIG_FILE_NAME,
-      DEFAULT_CONFIGS
+      DEFAULT_CONFIGS,
+      {schema: schema}
     );
 
     if (!config?.product || config?.enabled === false) {
@@ -355,7 +356,8 @@ export function handler(app: Probot) {
       owner,
       repo,
       CONFIG_FILE_NAME,
-      DEFAULT_CONFIGS
+      DEFAULT_CONFIGS,
+      {schema: schema}
     );
     const issueNumber = context.payload.issue.number;
 
@@ -403,7 +405,8 @@ export function handler(app: Probot) {
       owner,
       repo,
       CONFIG_FILE_NAME,
-      DEFAULT_CONFIGS
+      DEFAULT_CONFIGS,
+      {schema: schema}
     );
 
     await handler.autoLabelOnPR(context, owner, repo, config);
@@ -423,7 +426,8 @@ export function handler(app: Probot) {
         owner,
         repo,
         CONFIG_FILE_NAME,
-        DEFAULT_CONFIGS
+        DEFAULT_CONFIGS,
+        {schema: schema}
       );
       if (!config?.product) {
         break;
