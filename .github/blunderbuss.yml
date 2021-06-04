@@ -25,7 +25,7 @@ assign_issues_by:
     to:
     - tmatsuo
   - labels:
-    - 'bot: owlbot'
+    - 'bot: owl-bot'
     to:
     - SurferJeffAtGoogle
 
@@ -54,7 +54,7 @@ assign_prs_by:
     to:
     - tmatsuo
   - labels:
-    - 'bot: owlbot'
+    - 'bot: owl-bot'
     to:
     - SurferJeffAtGoogle
 
