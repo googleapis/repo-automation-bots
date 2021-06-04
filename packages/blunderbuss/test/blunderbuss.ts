@@ -19,6 +19,7 @@ import * as utilsModule from '../src/utils';
 import {CONFIGURATION_FILE_PATH} from '../src/config';
 import {DatastoreLock} from '@google-automations/datastore-lock';
 import * as configUtilsModule from '@google-automations/bot-config-utils';
+import * as labelUtilsModule from '@google-automations/label-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import {resolve} from 'path';
@@ -56,6 +57,7 @@ describe('Blunderbuss', () => {
   let sleepStub: sinon.SinonStub;
   let getConfigWithDefaultStub: sinon.SinonStub;
   let validateConfigStub: sinon.SinonStub;
+  let syncLabelsStub: sinon.SinonStub;
 
   const sandbox = sinon.createSandbox();
 
@@ -82,6 +84,7 @@ describe('Blunderbuss', () => {
       ConfigChecker.prototype,
       'validateConfigChanges'
     );
+    syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
     datastoreLockAcquireStub.resolves(true);
     datastoreLockReleaseStub.resolves(true);
     // Sleep does nothing.
@@ -91,6 +94,32 @@ describe('Blunderbuss', () => {
   afterEach(() => {
     sandbox.restore();
     nock.cleanAll();
+  });
+
+  describe('scheduler handler', () => {
+    it('calls syncLabels', async () => {
+      await probot.receive({
+        name: 'schedule.repository' as '*',
+        payload: {
+          repository: {
+            name: 'testRepo',
+            owner: {
+              login: 'testOwner',
+            },
+          },
+          organization: {
+            login: 'googleapis',
+          },
+        },
+        id: 'abc123',
+      });
+      syncLabelsStub.calledOnceWith(
+        sinon.match.instanceOf(Octokit),
+        'testOwner',
+        'testRepo',
+        utilsModule.BLUNDERBUSS_LABELS
+      );
+    });
   });
 
   describe('issue tests', () => {
