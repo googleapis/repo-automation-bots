@@ -1,2 +1,2 @@
 ignoreFiles:
-  - "packages/snippet-bot/**"
+  - "packages/snippet-bot/**/*"
