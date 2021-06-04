@@ -68,7 +68,7 @@ describe('Blunderbuss', () => {
         Octokit: ProbotOctokit.defaults({
           retry: {enabled: false},
           throttle: {enabled: false},
-        })
+        }),
       },
     });
 
