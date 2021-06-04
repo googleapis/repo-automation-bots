@@ -60,12 +60,9 @@ describe('cli', () => {
       .get('/orgs/GoogleCloudPlatform/repos')
       .reply(200, [{name: 'repo2'}]);
     await cli.parser().exitProcess(false).parse('dump -f test.json');
-    // I expected the following to be fail, but it passes.
-    writeFileSyncStub.calledOnceWith('test2.json', '[]');
-    // So making sure the actual values below.
-    assert.strictEqual(writeFileSyncStub.getCall(0).args[0], 'test.json');
-    assert.strictEqual(
-      writeFileSyncStub.getCall(0).args[1],
+    sinon.assert.calledOnceWithExactly(
+      writeFileSyncStub,
+      'test.json',
       '[{"name":"repo1"},{"name":"repo2"}]'
     );
     scope.done();
