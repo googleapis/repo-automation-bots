@@ -33,7 +33,6 @@
     "gcf-utils": "^8.0.1"
   },
   "devDependencies": {
-    "@octokit/rest": "^18.5.3",
     "@octokit/types": "^6.8.2",
     "@types/mocha": "^8.0.4",
     "@types/node": "^14.14.7",
