@@ -292,8 +292,9 @@ describe('snippet-bot bot-config-utils integration', () => {
       id: 'abc123',
     });
 
-    validateConfigStub.calledOnceWith(
-      sinon.match.instanceOf(Octokit),
+    sinon.assert.calledOnceWithExactly(
+      validateConfigStub,
+      sinon.match.instanceOf(ProbotOctokit),
       'tmatsuo',
       'repo-automation-bots',
       'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
