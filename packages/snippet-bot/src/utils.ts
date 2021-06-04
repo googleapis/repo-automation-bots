@@ -21,6 +21,14 @@ import {Violation} from './violations';
 type createCheckParams = Endpoints['POST /repos/{owner}/{repo}/check-runs']['parameters'];
 type createCheckResponse = Endpoints['POST /repos/{owner}/{repo}/check-runs']['response'];
 
+interface File {
+  content: string | undefined;
+}
+
+export function isFile(file: File | unknown): file is File {
+  return (file as File).content !== undefined;
+}
+
 export type Conclusion =
   | 'success'
   | 'failure'
