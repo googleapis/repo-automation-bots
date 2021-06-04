@@ -1,2 +1,2 @@
 ignoreFiles:
-  - packages/snippet-bot/README.md
+  - "packages/snippet-bot/**"
