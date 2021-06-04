@@ -35,7 +35,7 @@ export const BLUNDERBUSS_LABELS = [
   {
     name: ASSIGN_LABEL,
     description: 'Instruct blunderbuss to assign someone',
-  }
+  },
 ];
 
 type getIssueResponse =
