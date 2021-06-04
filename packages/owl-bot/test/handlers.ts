@@ -423,7 +423,7 @@ describe('refreshConfigs', () => {
 
     sandbox.stub(core, 'getFileContent').resolves(universalInvalidContent);
 
-    const a = sandbox.spy(octokitSha123.issues, 'create');
+    const issuesCreateSpy = sandbox.spy(octokitSha123.issues, 'create');
 
     await refreshConfigs(
       configsStore,
@@ -435,7 +435,7 @@ describe('refreshConfigs', () => {
       42
     );
 
-    assert.strictEqual(a.callCount, 2);
+    assert.strictEqual(issuesCreateSpy.callCount, 2);
   });
 });
 
