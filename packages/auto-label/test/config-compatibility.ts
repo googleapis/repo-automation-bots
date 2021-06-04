@@ -14,7 +14,6 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Context, Probot, createProbot, ProbotOctokit} from 'probot';
-import {Octokit} from '@octokit/rest';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import nock from 'nock';
 import * as assert from 'assert';
@@ -103,14 +102,16 @@ describe('getConfigWithDefault', () => {
         id: 'abc123',
       });
       scope.done();
-      validateConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        validateConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'testOwner',
         'testRepo',
         '19f6a66851125917fa07615dcbc0cd13dad56981',
         12
       );
-      autoLabelOnPRStub.calledOnceWith(
+      sinon.assert.calledOnceWithExactly(
+        autoLabelOnPRStub,
         sinon.match.instanceOf(Context),
         'testOwner',
         'testRepo',
@@ -128,14 +129,16 @@ describe('getConfigWithDefault', () => {
         id: 'abc123',
       });
       scope.done();
-      validateConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        validateConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'testOwner',
         'testRepo',
         '19f6a66851125917fa07615dcbc0cd13dad56981',
         12
       );
-      autoLabelOnPRStub.calledOnceWith(
+      sinon.assert.calledOnceWithExactly(
+        autoLabelOnPRStub,
         sinon.match.instanceOf(Context),
         'testOwner',
         'testRepo',
@@ -195,7 +198,8 @@ describe('validateConfigChanges', () => {
         id: 'abc123',
       });
       scope.done();
-      autoLabelOnPRStub.calledOnceWith(
+      sinon.assert.calledOnceWithExactly(
+        autoLabelOnPRStub,
         sinon.match.instanceOf(Context),
         'testOwner',
         'testRepo',
@@ -217,7 +221,8 @@ describe('validateConfigChanges', () => {
         id: 'abc123',
       });
       scope.done();
-      autoLabelOnPRStub.calledOnceWith(
+      sinon.assert.calledOnceWithExactly(
+        autoLabelOnPRStub,
         sinon.match.instanceOf(Context),
         'testOwner',
         'testRepo',
