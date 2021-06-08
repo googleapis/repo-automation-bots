@@ -28,14 +28,13 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/bot-config-utils": "^3.0.0",
-    "gcf-utils": "^7.2.2",
+    "@google-automations/bot-config-utils": "^3.1.1",
+    "gcf-utils": "^8.0.1",
     "js-yaml": "^4.0.0",
     "jsonpath": "^1.0.2",
     "minimatch": "^3.0.4"
   },
   "devDependencies": {
-    "@octokit/rest": "^18.5.3",
     "@types/js-yaml": "^4.0.0",
     "@types/jsonpath": "^0.2.0",
     "@types/minimatch": "^3.0.4",
