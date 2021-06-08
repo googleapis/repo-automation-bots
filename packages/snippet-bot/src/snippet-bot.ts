@@ -766,7 +766,8 @@ export = (app: Probot) => {
         context.octokit,
         owner,
         repo,
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
       if (configOptions === null) {
         logger.info(`snippet-bot is not configured for ${repoUrl}.`);
