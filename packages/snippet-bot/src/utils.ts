@@ -18,8 +18,10 @@ import {Endpoints} from '@octokit/types';
 import {RegionTagLocation} from './region-tag-parser';
 import {Violation} from './violations';
 
-type createCheckParams = Endpoints['POST /repos/{owner}/{repo}/check-runs']['parameters'];
-type createCheckResponse = Endpoints['POST /repos/{owner}/{repo}/check-runs']['response'];
+type createCheckParams =
+  Endpoints['POST /repos/{owner}/{repo}/check-runs']['parameters'];
+type createCheckResponse =
+  Endpoints['POST /repos/{owner}/{repo}/check-runs']['response'];
 
 interface File {
   content: string | undefined;
