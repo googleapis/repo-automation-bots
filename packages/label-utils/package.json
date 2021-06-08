@@ -16,7 +16,7 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
-    "@google-automations/datastore-lock": "^2.0.0",
+    "@google-automations/datastore-lock": "^2.0.1",
     "gcf-utils": "^7.2.2"
   },
   "devDependencies": {
