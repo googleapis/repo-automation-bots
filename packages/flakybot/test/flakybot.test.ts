@@ -16,7 +16,6 @@ import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {DatastoreLock} from '@google-automations/datastore-lock';
 import {Probot, ProbotOctokit} from 'probot';
-import {Octokit} from '@octokit/rest';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
@@ -28,6 +27,7 @@ import * as botConfigUtilsModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import {flakybot, DEFAULT_CONFIG, CONFIG_FILENAME} from '../src/flakybot';
 const {findTestResults, formatTestCase} = flakybot;
+import schema from '../src/config-schema.json';
 
 nock.disableNetConnect();
 
@@ -347,12 +347,14 @@ describe('flakybot', () => {
         id: 'abc123',
       });
       requests.done();
-      getConfigWithDefaultStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigWithDefaultStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'GoogleCloudPlatform',
         'golang-samples',
         CONFIG_FILENAME,
-        DEFAULT_CONFIG
+        DEFAULT_CONFIG,
+        {schema: schema}
       );
     });
 
@@ -380,12 +382,14 @@ describe('flakybot', () => {
         });
 
         scopes.forEach(s => s.done());
-        getConfigWithDefaultStub.calledOnceWith(
-          sinon.match.instanceOf(Octokit),
+        sinon.assert.calledOnceWithExactly(
+          getConfigWithDefaultStub,
+          sinon.match.instanceOf(ProbotOctokit),
           'GoogleCloudPlatform',
           'golang-samples',
           CONFIG_FILENAME,
-          DEFAULT_CONFIG
+          DEFAULT_CONFIG,
+          {schema: schema}
         );
       });
 
@@ -412,12 +416,14 @@ describe('flakybot', () => {
         });
 
         scopes.forEach(s => s.done());
-        getConfigWithDefaultStub.calledOnceWith(
-          sinon.match.instanceOf(Octokit),
+        sinon.assert.calledOnceWithExactly(
+          getConfigWithDefaultStub,
+          sinon.match.instanceOf(ProbotOctokit),
           'GoogleCloudPlatform',
           'golang-samples',
           CONFIG_FILENAME,
-          DEFAULT_CONFIG
+          DEFAULT_CONFIG,
+          {schema: schema}
         );
       });
 

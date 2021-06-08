@@ -162,7 +162,8 @@ export function flakybot(app: Probot) {
       owner,
       repo,
       CONFIG_FILENAME,
-      DEFAULT_CONFIG
+      DEFAULT_CONFIG,
+      {schema: schema}
     );
     logger.debug(`config: ${config}`);
     context.log.info(`[${owner}/${repo}] processing ${buildURL}`);
