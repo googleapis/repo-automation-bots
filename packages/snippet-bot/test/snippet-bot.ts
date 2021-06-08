@@ -562,7 +562,7 @@ describe('snippet-bot', () => {
         payload,
         id: 'abc123',
       });
-      sinon.assert.notCalled(getConfigStub)
+      sinon.assert.notCalled(getConfigStub);
     });
 
     it('responds to refresh checkbox, invalidating the Snippet cache, updating without region tag changes', async () => {
