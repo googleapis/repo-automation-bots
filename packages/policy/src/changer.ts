@@ -18,7 +18,8 @@ import {request} from 'gaxios';
 import {v4 as uuid} from 'uuid';
 import {operations} from '@octokit/openapi-types';
 import {PolicyResult, GitHubRepo} from './policy';
-type PullRequests = operations['pulls/list']['responses']['200']['content']['application/json'];
+type PullRequests =
+  operations['pulls/list']['responses']['200']['content']['application/json'];
 
 export const cocUrl =
   'https://raw.githubusercontent.com/googleapis/.github/master/CODE_OF_CONDUCT.md';

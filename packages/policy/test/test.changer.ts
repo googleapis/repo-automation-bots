@@ -41,10 +41,10 @@ describe('changer', () => {
     timestamp: new Date(),
   };
 
-  const repo = ({
+  const repo = {
     full_name: 'googleapis/nodejs-storage',
     default_branch: 'main',
-  } as unknown) as GitHubRepo;
+  } as unknown as GitHubRepo;
 
   afterEach(() => {
     nock.cleanAll();
