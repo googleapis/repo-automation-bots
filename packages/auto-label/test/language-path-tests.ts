@@ -15,14 +15,13 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, ProbotOctokit} from 'probot';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import nock from 'nock';
 import * as assert from 'assert';
 import {resolve} from 'path';
 import * as sinon from 'sinon';
 import {handler} from '../src/auto-label';
-import {createProbotAuth} from 'octokit-auth-probot';
 import {loadConfig} from './test-helper';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
@@ -30,19 +29,7 @@ import {ConfigChecker} from '@google-automations/bot-config-utils';
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
-const helper = require('../src/helper');
-
-// We provide our own GitHub instance, similar to
-// the one used by gcf-utils, this allows us to turn off
-// methods like retry, and to use @octokit/rest
-// as the base class:
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
-// eslint-disable-next-line node/no-extraneous-import
-import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config).defaults({
-  authStrategy: createProbotAuth,
-});
+import * as helper from '../src/helper';
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 describe('language-and-path-labeling', () => {
@@ -53,8 +40,10 @@ describe('language-and-path-labeling', () => {
   beforeEach(() => {
     probot = new Probot({
       githubToken: 'abc123',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      Octokit: TestingOctokit as any,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
     probot.load(handler);
     getConfigWithDefaultStub = sandbox.stub(
@@ -182,7 +171,8 @@ describe('language-and-path-labeling', () => {
 
   describe('labels languages correctly', () => {
     it('labels the language with most changes in PR', async () => {
-      const config = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const config: any = {
         language: {
           pullrequest: true,
         },
