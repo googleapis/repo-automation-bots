@@ -338,7 +338,8 @@ flakybot.openIssues = async (
           issue_number: groupedIssue.number,
         });
         // Then update the new issue.
-        const groupedIssueToModify = issue.data as IssuesListForRepoResponseItem;
+        const groupedIssueToModify =
+          issue.data as IssuesListForRepoResponseItem;
 
         // If a group issue exists, say stuff failed.
         // Don't comment if it's asked to be quiet.
@@ -454,7 +455,8 @@ flakybot.openIssues = async (
           issue_number: existingIssue.number,
         });
         // Work on the refreshed issue.
-        const existingIssueToModify = issue.data as IssuesListForRepoResponseItem;
+        const existingIssueToModify =
+          issue.data as IssuesListForRepoResponseItem;
         if (existingIssueToModify.state === 'closed') {
           // If there is an existing closed issue, it might be flaky.
 
@@ -992,7 +994,7 @@ function deduplicateTests(tests: TestCase[]): TestCase[] {
 function parseClosedAt(closedAt: string | null): number | undefined {
   // The type of closed_at is null. But, it is actually a string if the
   // issue is closed. Convert to unknown then to string as a workaround.
-  const closedAtString = (closedAt as unknown) as string;
+  const closedAtString = closedAt as unknown as string;
   if (closedAtString) {
     return Date.parse(closedAtString);
   }
