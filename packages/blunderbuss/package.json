@@ -30,6 +30,7 @@
   "dependencies": {
     "@google-automations/bot-config-utils": "^3.1.1",
     "@google-automations/datastore-lock": "^2.0.1",
+    "@google-automations/label-utils": "^1.0.1",
     "gcf-utils": "^8.0.1"
   },
   "devDependencies": {

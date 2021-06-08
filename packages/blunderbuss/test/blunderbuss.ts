@@ -15,6 +15,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import blunderbuss from '../src/blunderbuss';
+import schema from '../src/config-schema.json';
 import * as utilsModule from '../src/utils';
 import {CONFIGURATION_FILE_PATH} from '../src/config';
 import {DatastoreLock} from '@google-automations/datastore-lock';
@@ -148,7 +149,8 @@ describe('Blunderbuss', () => {
         'testOwner',
         'testRepo',
         CONFIGURATION_FILE_PATH,
-        {}
+        {},
+        {schema: schema}
       );
       sinon.assert.notCalled(validateConfigStub);
     });
