@@ -15,7 +15,6 @@
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
-import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import * as fs from 'fs';
 import yaml from 'js-yaml';
@@ -32,6 +31,7 @@ import {
   buildCommentMessage,
   handler,
 } from '../src/generated-files-bot';
+import schema from '../src/config-schema.json';
 import {CONFIGURATION_FILE_PATH, Configuration} from '../src/config';
 
 nock.disableNetConnect();
@@ -303,16 +303,19 @@ describe('generated-files-bot', () => {
           id: 'abc123',
         });
         requests.done();
-        getConfigWithDefaultStub.calledOnceWith(
-          sinon.match.instanceOf(Octokit),
-          'testuser2',
+        sinon.assert.calledOnceWithExactly(
+          getConfigWithDefaultStub,
+          sinon.match.instanceOf(ProbotOctokit),
+          'testOwner',
           'testRepo',
           CONFIGURATION_FILE_PATH,
-          {}
+          {},
+          {schema: schema}
         );
-        validateConfigStub.calledOnceWith(
-          sinon.match.instanceOf(Octokit),
-          'testuser2',
+        sinon.assert.calledOnceWithExactly(
+          validateConfigStub,
+          sinon.match.instanceOf(ProbotOctokit),
+          'testOwner',
           'testRepo',
           'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
           6

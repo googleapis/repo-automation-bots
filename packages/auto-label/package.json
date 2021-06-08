@@ -28,12 +28,11 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/bot-config-utils": "^3.0.0",
+    "@google-automations/bot-config-utils": "^3.1.1",
     "@google-cloud/storage": "^5.5.0",
     "gcf-utils": "^8.0.1"
   },
   "devDependencies": {
-    "@octokit/rest": "^18.5.3",
     "@octokit/types": "^6.8.2",
     "@types/mocha": "^8.0.4",
     "@types/node": "^14.14.7",

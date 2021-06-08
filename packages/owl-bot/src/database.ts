@@ -179,7 +179,15 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
       i++;
       const configs = doc.data() as Configs | undefined;
       match_loop: for (const copy of configs?.yaml?.['deep-copy-regex'] ?? []) {
-        const regExp = toFrontMatchRegExp(copy.source);
+        let regExp;
+        try {
+          regExp = toFrontMatchRegExp(copy.source);
+        } catch (e) {
+          console.error(
+            `${doc.id} contains an invalid regular expression: ${copy.source}.\n${e}`
+          );
+          continue;
+        }
         for (const path of changedFilePaths) {
           if (regExp.test(path)) {
             result.push(githubRepoFromOwnerSlashName(decodeId(doc.id)));
