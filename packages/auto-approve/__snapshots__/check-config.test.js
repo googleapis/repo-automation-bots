@@ -58,6 +58,7 @@ exports[
         'yoshi-automation',
         'release-please[bot]',
         'yoshi-code-bot',
+        'gcf-owl-bot[bot]',
       ],
     },
     message: 'must be equal to one of the allowed values',

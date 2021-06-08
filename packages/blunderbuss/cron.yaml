@@ -1,0 +1,15 @@
+cron:
+  - name: blunderbuss-gcp
+    schedule: 30 3 * * *
+    description: daily scheduler job for blunderbuss
+    params:
+      installation:
+        id: 1633081
+      cron_org: GoogleCloudPlatform
+  - name: blunderbuss-googleapis
+    description: daily scheduler job for blunderbuss
+    schedule: 30 4 * * *
+    params:
+      installation:
+        id: 1663095
+      cron_org: googleapis

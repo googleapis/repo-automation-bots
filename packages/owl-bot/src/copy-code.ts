@@ -263,7 +263,11 @@ export function copyDirs(
   for (const rmDest of yaml['deep-remove-regex'] ?? []) {
     if (rmDest && stat(destDir)) {
       const rmRegExp = toFrontMatchRegExp(rmDest);
-      const allDestPaths = glob.sync('**', {cwd: destDir});
+      const allDestPaths = glob.sync('**', {
+        cwd: destDir,
+        dot: true,
+        ignore: ['.git', '.git/**'],
+      });
       const matchingDestPaths = allDestPaths.filter(path =>
         rmRegExp.test('/' + path)
       );
@@ -296,7 +300,11 @@ export function copyDirs(
   // Copy the files from source to dest.
   for (const deepCopy of yaml['deep-copy-regex'] ?? []) {
     const regExp = toFrontMatchRegExp(deepCopy.source);
-    const allSourcePaths = glob.sync('**', {cwd: sourceDir});
+    const allSourcePaths = glob.sync('**', {
+      cwd: sourceDir,
+      dot: true,
+      ignore: ['.git', '.git/**'],
+    });
     const sourcePathsToCopy = allSourcePaths.filter(path =>
       regExp.test('/' + path)
     );

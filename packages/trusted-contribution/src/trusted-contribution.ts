@@ -14,6 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
@@ -89,7 +90,8 @@ export = (app: Probot) => {
           context.octokit,
           owner,
           repo,
-          WELL_KNOWN_CONFIGURATION_FILE
+          WELL_KNOWN_CONFIGURATION_FILE,
+          {schema: schema}
         );
       } catch (err) {
         err.message = `Error reading configuration: ${err.message}`;
