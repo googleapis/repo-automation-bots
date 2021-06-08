@@ -20,11 +20,17 @@ import {
   ConfigChecker,
   getConfigWithDefault,
 } from '@google-automations/bot-config-utils';
+import {syncLabels} from '@google-automations/label-utils';
 import schema from './config-schema.json';
 import {CONFIGURATION_FILE_PATH, Configuration} from './config';
-import {assign, isIssue} from './utils';
+import {BLUNDERBUSS_LABELS, assign, isIssue} from './utils';
 
 export = (app: Probot) => {
+  app.on('schedule.repository' as '*', async context => {
+    const owner = context.payload.organization.login;
+    const repo = context.payload.repository.name;
+    await syncLabels(context.octokit, owner, repo, BLUNDERBUSS_LABELS);
+  });
   app.on(
     [
       'issues.opened',
