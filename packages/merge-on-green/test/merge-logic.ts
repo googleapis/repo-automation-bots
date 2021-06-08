@@ -28,11 +28,9 @@ import {
 import {logger} from 'gcf-utils';
 // eslint-disable-next-line node/no-extraneous-import
 import {config} from '@probot/octokit-plugin-config';
-import {createProbotAuth} from 'octokit-auth-probot';
 import {resolve} from 'path';
 
 const TestingOctokit = ProbotOctokit.plugin(config).defaults({
-  authStrategy: createProbotAuth,
   retry: {enabled: false},
   throttle: {enabled: false},
 });
@@ -535,7 +533,8 @@ describe('merge-logic', () => {
         ]),
         getCommentsOnPr([
           {
-            body: 'Your PR has conflicts that you need to resolve before merge-on-green can automerge',
+            body:
+              'Your PR has conflicts that you need to resolve before merge-on-green can automerge',
           },
         ]),
         getPR(true, 'dirty', 'open'),
