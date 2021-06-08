@@ -758,7 +758,7 @@ describe('Blunderbuss getConfigWithDefault', () => {
     sinon.assert.calledOnceWithExactly(
       assignStub,
       sinon.match.instanceOf(Context),
-      sinon.match.any
+      sinon.match.object
     );
     const config = assignStub.getCall(0).args[1];
     assert.strictEqual(config.assign_issues_by[0].labels[0], 'api: appengine');
@@ -843,7 +843,7 @@ describe('Blunderbuss validateConfigChanges', () => {
     sinon.assert.calledOnceWithExactly(
       assignStub,
       sinon.match.instanceOf(Context),
-      sinon.match.any
+      sinon.match.object
     );
   });
   it('creates a failing status check for a broken config', async () => {
@@ -868,7 +868,7 @@ describe('Blunderbuss validateConfigChanges', () => {
     sinon.assert.calledOnceWithExactly(
       assignStub,
       sinon.match.instanceOf(Context),
-      sinon.match.any
+      sinon.match.object
     );
   });
 });
