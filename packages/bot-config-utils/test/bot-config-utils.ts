@@ -20,7 +20,9 @@ import * as assert from 'assert';
 import * as chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import {describe, it, beforeEach} from 'mocha';
+/* eslint-disable-next-line node/no-extraneous-import */
 import {Probot, ProbotOctokit} from 'probot';
+/* eslint-disable-next-line node/no-extraneous-import */
 import {Octokit} from '@octokit/rest';
 
 import {
