@@ -16,7 +16,6 @@ import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {DatastoreLock} from '@google-automations/datastore-lock';
 import {Probot, ProbotOctokit} from 'probot';
-import {Octokit} from '@octokit/rest';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
@@ -28,6 +27,7 @@ import * as botConfigUtilsModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import {flakybot, DEFAULT_CONFIG, CONFIG_FILENAME} from '../src/flakybot';
 const {findTestResults, formatTestCase} = flakybot;
+import schema from '../src/config-schema.json';
 
 nock.disableNetConnect();
 
@@ -163,8 +163,7 @@ describe('flakybot', () => {
               'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
             testCase: 'TestSample',
             passed: false,
-            log:
-              '\nsnippet_test.go:242: got output ""; want it to contain "4 Venue 4" snippet_test.go:243: got output ""; want it to contain "19 Venue 19" snippet_test.go:244: got output ""; want it to contain "42 Venue 42"\n',
+            log: '\nsnippet_test.go:242: got output ""; want it to contain "4 Venue 4" snippet_test.go:243: got output ""; want it to contain "19 Venue 19" snippet_test.go:244: got output ""; want it to contain "42 Venue 42"\n',
           },
         ],
         passes: [
@@ -200,16 +199,14 @@ describe('flakybot', () => {
               'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
             testCase: 'TestBucketLock',
             passed: false,
-            log:
-              'main_test.go:234: failed to create bucket ("golang-samples-tests-8-storage-buckets-tests"): Post https://storage.googleapis.com/storage/v1/b?alt=json&prettyPrint=false&project=golang-samples-tests-8: read tcp 10.142.0.112:33618->108.177.12.128:443: read: connection reset by peer',
+            log: 'main_test.go:234: failed to create bucket ("golang-samples-tests-8-storage-buckets-tests"): Post https://storage.googleapis.com/storage/v1/b?alt=json&prettyPrint=false&project=golang-samples-tests-8: read tcp 10.142.0.112:33618->108.177.12.128:443: read: connection reset by peer',
           },
           {
             package:
               'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
             testCase: 'TestUniformBucketLevelAccess',
             passed: false,
-            log:
-              'main_test.go:242: failed to enable uniform bucket-level access ("golang-samples-tests-8-storage-buckets-tests"): googleapi: Error 404: Not Found, notFound',
+            log: 'main_test.go:242: failed to enable uniform bucket-level access ("golang-samples-tests-8-storage-buckets-tests"): googleapi: Error 404: Not Found, notFound',
           },
         ],
         passes: [
@@ -347,12 +344,14 @@ describe('flakybot', () => {
         id: 'abc123',
       });
       requests.done();
-      getConfigWithDefaultStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigWithDefaultStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'GoogleCloudPlatform',
         'golang-samples',
         CONFIG_FILENAME,
-        DEFAULT_CONFIG
+        DEFAULT_CONFIG,
+        {schema: schema}
       );
     });
 
@@ -380,12 +379,14 @@ describe('flakybot', () => {
         });
 
         scopes.forEach(s => s.done());
-        getConfigWithDefaultStub.calledOnceWith(
-          sinon.match.instanceOf(Octokit),
+        sinon.assert.calledOnceWithExactly(
+          getConfigWithDefaultStub,
+          sinon.match.instanceOf(ProbotOctokit),
           'GoogleCloudPlatform',
           'golang-samples',
           CONFIG_FILENAME,
-          DEFAULT_CONFIG
+          DEFAULT_CONFIG,
+          {schema: schema}
         );
       });
 
@@ -412,12 +413,14 @@ describe('flakybot', () => {
         });
 
         scopes.forEach(s => s.done());
-        getConfigWithDefaultStub.calledOnceWith(
-          sinon.match.instanceOf(Octokit),
+        sinon.assert.calledOnceWithExactly(
+          getConfigWithDefaultStub,
+          sinon.match.instanceOf(ProbotOctokit),
           'GoogleCloudPlatform',
           'golang-samples',
           CONFIG_FILENAME,
-          DEFAULT_CONFIG
+          DEFAULT_CONFIG,
+          {schema: schema}
         );
       });
 
@@ -469,6 +472,7 @@ describe('flakybot', () => {
             number: 16,
             body: 'Failure!',
             state: 'open',
+            url: 'url',
           },
         ];
         const scopes = [
@@ -636,6 +640,7 @@ describe('flakybot', () => {
             number: 15,
             body: 'Failure!',
             state: 'closed',
+            url: 'url',
           },
           {
             title: formatTestCase({
@@ -647,6 +652,7 @@ describe('flakybot', () => {
             number: 16,
             body: 'Failure!',
             state: 'open',
+            url: 'url',
           },
         ];
         const scopes = [
@@ -683,6 +689,7 @@ describe('flakybot', () => {
             body: 'Failure!',
             labels: [{name: 'flakybot: flaky'}],
             state: 'open',
+            url: 'url',
           },
           {
             title: formatTestCase({
@@ -694,6 +701,7 @@ describe('flakybot', () => {
             number: 17,
             body: 'Failure!',
             state: 'open',
+            url: 'url',
           },
         ];
         const scopes = [
@@ -732,6 +740,7 @@ describe('flakybot', () => {
             body: 'Failure!',
             labels: [{name: 'flakybot: quiet'}],
             state: 'open',
+            url: 'url',
           },
           {
             title: formatTestCase({
@@ -743,6 +752,7 @@ describe('flakybot', () => {
             number: 17,
             body: 'Failure!',
             state: 'open',
+            url: 'url',
           },
         ];
 
@@ -805,6 +815,7 @@ describe('flakybot', () => {
             ],
             state: 'closed',
             closed_at: closedAt.toISOString(),
+            url: 'url',
           },
         ];
         const scopes = [
@@ -835,6 +846,7 @@ describe('flakybot', () => {
             }),
             number: 16,
             body: 'Failure!',
+            url: 'url',
           },
         ];
 
@@ -869,6 +881,7 @@ describe('flakybot', () => {
             }),
             number: 16,
             body: 'Failure!',
+            url: 'url',
           },
         ];
 
@@ -900,6 +913,7 @@ describe('flakybot', () => {
             }),
             number: 16,
             body: 'Failure!',
+            url: 'url',
           },
         ];
 
@@ -932,6 +946,7 @@ describe('flakybot', () => {
             }),
             number: 16,
             body: 'Failure!',
+            url: 'url',
           },
         ];
 
@@ -958,6 +973,7 @@ describe('flakybot', () => {
             }),
             number: 16,
             body: 'Failure!',
+            url: 'url',
           },
         ];
 
@@ -967,8 +983,7 @@ describe('flakybot', () => {
             .get('/repos/GoogleCloudPlatform/golang-samples/issues/16/comments')
             .reply(200, [
               {
-                body:
-                  'status: failed\ncommit: 123\nbuildURL: [Build Status](example.com/failure)',
+                body: 'status: failed\ncommit: 123\nbuildURL: [Build Status](example.com/failure)',
               },
             ]),
           nockIssueComment('golang-samples', 16),
@@ -996,8 +1011,8 @@ describe('flakybot', () => {
               passed: false,
             }),
             number: 16,
-            body:
-              'status: failed\ncommit: 123\nbuildURL: [Build Status](example.com/failure)',
+            body: 'status: failed\ncommit: 123\nbuildURL: [Build Status](example.com/failure)',
+            url: 'url',
           },
         ];
 
@@ -1029,6 +1044,7 @@ describe('flakybot', () => {
             }),
             number: 16,
             body: 'Failure!',
+            url: 'url',
           },
         ];
 
@@ -1067,6 +1083,7 @@ describe('flakybot', () => {
             number: 16,
             body: 'Failure!',
             labels: [{name: 'flakybot: flaky'}],
+            url: 'url',
           },
         ];
 
@@ -1098,6 +1115,7 @@ describe('flakybot', () => {
             number: 16,
             body: 'Failure!',
             state: 'closed',
+            url: 'url',
           },
         ];
 
@@ -1191,6 +1209,7 @@ describe('flakybot', () => {
             number: 18,
             body: 'Failure!',
             state: 'closed',
+            url: 'url',
           },
           {
             title,
@@ -1198,6 +1217,7 @@ describe('flakybot', () => {
             body: 'Failure!',
             labels: [{name: 'flakybot: flaky'}],
             state: 'closed',
+            url: 'url',
           },
         ];
 
@@ -1240,6 +1260,7 @@ describe('flakybot', () => {
             body: 'Failure!',
             state: 'closed',
             closed_at: sixDaysAgo.toISOString(),
+            url: 'url',
           },
           {
             title,
@@ -1247,6 +1268,7 @@ describe('flakybot', () => {
             body: 'Failure!',
             state: 'closed',
             closed_at: fiveDaysAgo.toISOString(),
+            url: 'url',
           },
         ];
 
@@ -1299,6 +1321,7 @@ describe('flakybot', () => {
             body: 'Failure!',
             state: 'closed',
             locked: true,
+            url: 'url',
           },
         ];
 
@@ -1336,6 +1359,7 @@ describe('flakybot', () => {
             body: 'Failure!',
             state: 'closed',
             closed_at: closedAt.toISOString(),
+            url: 'url',
           },
         ];
         const scopes = [
@@ -1359,6 +1383,7 @@ describe('flakybot', () => {
           number: 10,
           body: 'Group failure!',
           state: 'open',
+          url: 'url',
         };
 
         it('opens a single issue for many tests in the same package', async () => {
@@ -1407,6 +1432,7 @@ describe('flakybot', () => {
                 number: 9,
                 body: 'Failed',
                 state: 'open,',
+                url: 'url',
               },
               groupedIssue,
             ]),
@@ -1466,6 +1492,7 @@ describe('flakybot', () => {
                 number: 9,
                 body: 'Failed',
                 state: 'open,',
+                url: 'url',
               },
               groupedIssue,
             ]),

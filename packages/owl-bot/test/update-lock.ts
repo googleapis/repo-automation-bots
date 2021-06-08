@@ -55,7 +55,7 @@ describe('maybeCreatePullRequestForLockUpdate', () => {
     const factory: OctokitFactory = {
       getGitHubShortLivedAccessToken: () => Promise.resolve('b4'),
       getShortLivedOctokit: () =>
-        Promise.resolve(({fake: true} as unknown) as OctokitType),
+        Promise.resolve({fake: true} as unknown as OctokitType),
     };
 
     await maybeCreatePullRequestForLockUpdate(

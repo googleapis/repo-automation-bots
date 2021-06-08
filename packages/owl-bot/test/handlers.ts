@@ -100,26 +100,22 @@ describe('handlers', () => {
       // Mock the method from code-suggester that opens the upstream
       // PR on GitHub:
       const calls: any[][] = [];
-      sandbox.replace(
-        core,
-        'getCloudBuildInstance',
-        (): CloudBuildClient => {
-          return ({
-            runBuildTrigger: (...args: any[]) => {
-              calls.push(args);
-              return [
-                {
-                  metadata: {
-                    build: {
-                      id: '73',
-                    },
+      sandbox.replace(core, 'getCloudBuildInstance', (): CloudBuildClient => {
+        return {
+          runBuildTrigger: (...args: any[]) => {
+            calls.push(args);
+            return [
+              {
+                metadata: {
+                  build: {
+                    id: '73',
                   },
                 },
-              ];
-            },
-          } as unknown) as CloudBuildClient;
-        }
-      );
+              },
+            ];
+          },
+        } as unknown as CloudBuildClient;
+      });
 
       const expectedBuildId = await triggerOneBuildForUpdatingLock(
         fakeConfigStore,
@@ -221,7 +217,7 @@ describe('refreshConfigs', () => {
     sandbox.restore();
   });
 
-  const octokitSha123 = ({
+  const octokitSha123 = {
     repos: {
       getBranch() {
         return {
@@ -234,7 +230,7 @@ describe('refreshConfigs', () => {
       },
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any) as InstanceType<typeof Octokit>;
+  } as any as InstanceType<typeof Octokit>;
 
   it('stores a good yaml', async () => {
     const configsStore = new FakeConfigsStore();
@@ -411,7 +407,7 @@ describe('scanGithubForConfigs', () => {
     sandbox.restore();
   });
 
-  const octokitWithRepos = ({
+  const octokitWithRepos = {
     repos: {
       getBranch() {
         return {
@@ -450,9 +446,9 @@ describe('scanGithubForConfigs', () => {
       },
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any) as InstanceType<typeof Octokit>;
+  } as any as InstanceType<typeof Octokit>;
 
-  const octokitWith404OnBranch = ({
+  const octokitWith404OnBranch = {
     repos: {
       getBranch() {
         throw Object.assign(Error('Not Found'), {status: 404});
@@ -478,7 +474,7 @@ describe('scanGithubForConfigs', () => {
       },
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any) as InstanceType<typeof Octokit>;
+  } as any as InstanceType<typeof Octokit>;
 
   it('works with an installationId', async () => {
     const configsStore = new FakeConfigsStore();

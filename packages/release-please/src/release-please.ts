@@ -126,7 +126,7 @@ async function createGitHubRelease(
     packageName,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      octokit: (github as {}) as OctokitType,
+      octokit: github as {} as OctokitType,
       graphql: github.graphql,
       request: github.request,
     },
@@ -165,7 +165,7 @@ async function createReleasePR(
     repoUrl,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      octokit: (github as {}) as OctokitType,
+      octokit: github as {} as OctokitType,
       graphql: github.graphql,
       request: github.request,
     },
@@ -205,7 +205,8 @@ export = (app: Probot) => {
       context.octokit,
       owner,
       repo,
-      WELL_KNOWN_CONFIGURATION_FILE
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
     );
 
     // If no configuration is specified,
@@ -262,7 +263,8 @@ export = (app: Probot) => {
       context.octokit,
       owner,
       repoName,
-      WELL_KNOWN_CONFIGURATION_FILE
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
     );
 
     // If no configuration is specified,
@@ -358,7 +360,8 @@ export = (app: Probot) => {
       context.octokit,
       owner,
       repo,
-      WELL_KNOWN_CONFIGURATION_FILE
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
     );
 
     // If no configuration is specified,
@@ -396,7 +399,8 @@ export = (app: Probot) => {
       context.octokit,
       owner,
       repo,
-      WELL_KNOWN_CONFIGURATION_FILE
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
     );
 
     // If no configuration is specified,
