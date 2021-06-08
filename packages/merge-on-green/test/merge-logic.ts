@@ -533,8 +533,7 @@ describe('merge-logic', () => {
         ]),
         getCommentsOnPr([
           {
-            body:
-              'Your PR has conflicts that you need to resolve before merge-on-green can automerge',
+            body: 'Your PR has conflicts that you need to resolve before merge-on-green can automerge',
           },
         ]),
         getPR(true, 'dirty', 'open'),
