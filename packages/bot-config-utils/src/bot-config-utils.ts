@@ -16,6 +16,7 @@ import Ajv from 'ajv';
 import yaml from 'js-yaml';
 import path from 'path';
 
+/* eslint-disable-next-line node/no-extraneous-import */
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
 
