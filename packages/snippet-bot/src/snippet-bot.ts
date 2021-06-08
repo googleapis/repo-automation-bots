@@ -34,6 +34,7 @@ import {
   formatRegionTag,
   formatViolations,
   formatMatchingViolation,
+  isFile,
 } from './utils';
 import {invalidateCache} from './snippets';
 import {
@@ -59,14 +60,6 @@ const streamPipeline = util.promisify(require('stream').pipeline);
 // Solely for avoid using `any` type.
 interface Label {
   name: string;
-}
-
-interface File {
-  content: string | undefined;
-}
-
-function isFile(file: File | unknown): file is File {
-  return (file as File).content !== undefined;
 }
 
 const FULL_SCAN_ISSUE_TITLE = 'snippet-bot full scan';
@@ -232,6 +225,7 @@ async function scanPullRequest(
 
   // Parse the PR diff and recognize added/deleted region tags.
   const result = await parseRegionTagsInPullRequest(
+    context.octokit,
     pull_request.diff_url,
     pull_request.base.repo.owner.login,
     pull_request.base.repo.name,
@@ -588,7 +582,8 @@ export = (app: Probot) => {
       context.octokit,
       owner,
       repo,
-      CONFIGURATION_FILE_PATH
+      CONFIGURATION_FILE_PATH,
+      {schema: schema}
     );
     if (configOptions === null) {
       logger.info(`snippet-bot is not configured for ${owner}/${repo}.`);
@@ -614,7 +609,8 @@ export = (app: Probot) => {
       context.octokit,
       owner,
       repo,
-      CONFIGURATION_FILE_PATH
+      CONFIGURATION_FILE_PATH,
+      {schema: schema}
     );
 
     if (configOptions === null) {
@@ -651,7 +647,8 @@ export = (app: Probot) => {
       context.octokit,
       owner,
       repo,
-      CONFIGURATION_FILE_PATH
+      CONFIGURATION_FILE_PATH,
+      {schema: schema}
     );
 
     if (configOptions === null) {
@@ -673,7 +670,8 @@ export = (app: Probot) => {
       context.octokit,
       owner,
       repo,
-      CONFIGURATION_FILE_PATH
+      CONFIGURATION_FILE_PATH,
+      {schema: schema}
     );
 
     if (configOptions === null) {

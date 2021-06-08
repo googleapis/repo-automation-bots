@@ -26,8 +26,7 @@ exports[
   output: {
     title: 'Auto-approve.yml check',
     summary: 'auto-approve.yml config check failed',
-    text:
-      'See the following errors in your auto-approve.yml config:\n\n\nSchema is invalid\n[{"wrongProperty":"wrongProperty","message":"message"}]\n',
+    text: 'See the following errors in your auto-approve.yml config:\n\n\nSchema is invalid\n[{"wrongProperty":"wrongProperty","message":"message"}]\n',
   },
 };
 
@@ -79,8 +78,7 @@ exports[
   output: {
     title: 'Auto-approve.yml check',
     summary: 'auto-approve.yml config check failed',
-    text:
-      'See the following errors in your auto-approve.yml config:\nYou must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/auto-approve.yml  @googleapis/github-automation/\nFile is not properly configured YAML\nSchema is invalid\n[{"wrongProperty":"wrongProperty","message":"message"}]\n',
+    text: 'See the following errors in your auto-approve.yml config:\nYou must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/auto-approve.yml  @googleapis/github-automation/\nFile is not properly configured YAML\nSchema is invalid\n[{"wrongProperty":"wrongProperty","message":"message"}]\n',
   },
 };
 

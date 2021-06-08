@@ -19,7 +19,8 @@ import {operations} from '@octokit/openapi-types';
 import {SyncRepoSettings} from './sync-repo-settings';
 import {getConfig, validateConfig} from './config';
 
-type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['content']['application/json'];
+type PullsListFilesResponseData =
+  operations['pulls/list-files']['responses']['200']['content']['application/json'];
 export const configFileName = 'sync-repo-settings.yaml';
 
 type Conclusion =

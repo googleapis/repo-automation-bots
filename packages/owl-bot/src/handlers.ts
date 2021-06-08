@@ -49,10 +49,8 @@ export async function onPostProcessorPublished(
 ): Promise<void> {
   // Examine all the repos that use the specified docker image for post
   // processing.
-  const repos: [
-    string,
-    Configs
-  ][] = await configsStore.findReposWithPostProcessor(dockerImageName);
+  const repos: [string, Configs][] =
+    await configsStore.findReposWithPostProcessor(dockerImageName);
   for (const [repo, configs] of repos) {
     let stale = true;
     // The lock file may be missing, for example when a new repo is created.

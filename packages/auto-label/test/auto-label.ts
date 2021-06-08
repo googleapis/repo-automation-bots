@@ -15,7 +15,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, ProbotOctokit} from 'probot';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import nock from 'nock';
 import * as assert from 'assert';
@@ -32,23 +32,10 @@ import {
 } from '../src/helper';
 import {loadConfig} from './test-helper';
 import {logger} from 'gcf-utils';
-import {createProbotAuth} from 'octokit-auth-probot';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
-
-// We provide our own GitHub instance, similar to
-// the one used by gcf-utils, this allows us to turn off
-// methods like retry, and to use @octokit/rest
-// as the base class:
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
-// eslint-disable-next-line node/no-extraneous-import
-import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config).defaults({
-  authStrategy: createProbotAuth,
-});
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 const driftRepos = JSON.parse(
@@ -74,8 +61,10 @@ describe('auto-label', () => {
   beforeEach(() => {
     probot = new Probot({
       githubToken: 'abc123',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      Octokit: TestingOctokit as any,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
 
     probot.load(handler);
@@ -366,8 +355,9 @@ describe('auto-label', () => {
         id: 'abc123',
       });
       ghRequests.done();
-      validateConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        validateConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'testOwner',
         'notThere',
         '19f6a66851125917fa07615dcbc0cd13dad56981',

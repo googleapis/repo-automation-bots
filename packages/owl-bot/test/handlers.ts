@@ -443,7 +443,6 @@ describe('scanGithubForConfigs', () => {
   afterEach(() => {
     sandbox.restore();
   });
-
   const fakeOctokit = newFakeOctokit();
 
   const octokitWithRepos = ({
