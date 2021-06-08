@@ -3,7 +3,7 @@
   "packages/cron-utils": "2.0.0",
   "packages/datastore-lock": "2.0.1",
   "packages/gcf-utils": "8.0.1",
-  "packages/label-utils": "1.0.0",
+  "packages/label-utils": "1.0.1",
   "packages/mono-repo-publish": "1.1.2",
   "packages/object-selector": "0.1.0",
   "packages/release-brancher": "1.1.2"
