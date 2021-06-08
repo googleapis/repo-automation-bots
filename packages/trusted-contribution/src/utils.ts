@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 
 export const SECRET_NAME_FOR_COMMENT_PERMISSION = 'dpebot-public-repo';

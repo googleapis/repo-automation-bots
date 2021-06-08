@@ -13,6 +13,7 @@
 // limitations under the License.
 //
 
+import crypto from 'crypto';
 import {v4 as uuidv4} from 'uuid';
 import {Datastore, Key} from '@google-cloud/datastore';
 import {logger} from 'gcf-utils';
@@ -61,7 +62,9 @@ export class DatastoreLock {
     this.datastore = new Datastore();
     this.kind = `ds-lock-${lockId}`;
     this.target = target;
-    this.key = this.datastore.key([this.kind, this.target]);
+    const hash = crypto.createHash('sha1');
+    hash.update(this.target);
+    this.key = this.datastore.key([this.kind, hash.digest('hex')]);
     this.uniqueId = uuidv4();
     this.lockExpiry = lockExpiry;
     this.lockAcquireTimeout = lockAcquireTimeout;
@@ -128,7 +131,7 @@ export class DatastoreLock {
         return AcquireResult.LockActive;
       }
     } catch (err) {
-      err.message = `Error acquiring a lock: ${err.message}`;
+      err.message = `Error acquiring a lock for ${this.target}: ${err.message}`;
       logger.error(err);
       await transaction.rollback();
       return AcquireResult.Failure;
@@ -162,7 +165,7 @@ export class DatastoreLock {
       if (err.name === DATASTORE_LOCK_ERROR_NAME) {
         throw err;
       }
-      err.message = `Error releasing a lock: ${err.message}`;
+      err.message = `Error releasing a lock for ${this.target}: ${err.message}`;
       logger.error(err);
       await transaction.rollback();
       return false;
