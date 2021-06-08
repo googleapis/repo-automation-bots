@@ -293,16 +293,16 @@ export async function getConfig<ConfigType>(
   const path = `.github/${fileName}`;
   const params = options.branch
     ? {
-      owner: owner,
-      repo: repo,
-      path: path,
-      ref: options.branch,
-    }
+        owner: owner,
+        repo: repo,
+        path: path,
+        ref: options.branch,
+      }
     : {
-      owner: owner,
-      repo: repo,
-      path: path,
-    };
+        owner: owner,
+        repo: repo,
+        path: path,
+      };
   try {
     const resp = await octokit.repos.getContent(params);
     if (isFile(resp.data)) {
@@ -321,7 +321,7 @@ export async function getConfig<ConfigType>(
       } else {
         throw new Error(
           `Failed to validate the config schema at '${path}' ` +
-          `:${validateResult.errorText}`
+            `:${validateResult.errorText}`
         );
       }
     } else {
@@ -361,7 +361,7 @@ export async function getConfig<ConfigType>(
         } else {
           throw new Error(
             `Failed to validate the config schema at '${path}' ` +
-            `:${validateResult.errorText}`
+              `:${validateResult.errorText}`
           );
         }
       } else {
@@ -406,16 +406,16 @@ export async function getConfigWithDefault<ConfigType>(
   const path = `.github/${fileName}`;
   const params = options.branch
     ? {
-      owner: owner,
-      repo: repo,
-      path: path,
-      ref: options.branch,
-    }
+        owner: owner,
+        repo: repo,
+        path: path,
+        ref: options.branch,
+      }
     : {
-      owner: owner,
-      repo: repo,
-      path: path,
-    };
+        owner: owner,
+        repo: repo,
+        path: path,
+      };
   try {
     const resp = await octokit.repos.getContent(params);
     if (isFile(resp.data)) {
@@ -434,7 +434,7 @@ export async function getConfigWithDefault<ConfigType>(
       } else {
         throw new Error(
           `Failed to validate the config schema at '${path}' ` +
-          `:${validateResult.errorText}`
+            `:${validateResult.errorText}`
         );
       }
     } else {
@@ -473,7 +473,7 @@ export async function getConfigWithDefault<ConfigType>(
         } else {
           throw new Error(
             `Failed to validate the config schema at '${path}' ` +
-            `:${validateResult.errorText}`
+              `:${validateResult.errorText}`
           );
         }
       } else {
