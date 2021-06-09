@@ -45,7 +45,8 @@ fi
 function log_impl() {
     local color="$1"
     shift
-    local timestamp="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"
+    local timestamp
+    timestamp="$(date -u "+%Y-%m-%dT%H:%M:%SZ")"
     echo "================================================================"
     echo "${color}${timestamp}:" "$@" "${IO_COLOR_RESET}"
     echo "================================================================"
@@ -84,9 +85,9 @@ trap notify EXIT
 
 # Iterate the subdirectories under packages directory.
 readonly scriptdir=$(dirname "$0")
-readonly rootdir=$(cd ${scriptdir}; cd ..; pwd)
+readonly rootdir=$(cd "${scriptdir}"; cd ..; pwd)
 
-cd ${rootdir}
+cd "${rootdir}"
 
 readonly summarylog="${tmpdir}/summary.txt"
 readonly failurelog="${tmpdir}/failure.txt"
@@ -97,7 +98,7 @@ for subdir in packages/*/
 do
     subdir="${subdir%*/}"
     package="${subdir##*/}"
-    pushd ${subdir}
+    pushd "${subdir}"
 
     # Skip if there's no package-lock.json
     if [ ! -f "package-lock.json" ]; then
@@ -111,10 +112,9 @@ do
 
     log_yellow "Running 'npm i' in ${package}"
     logfile="${tmpdir}/${package}-npm-i.log"
-    npm i --no-color > ${logfile}
-    if [ $? -ne 0 ]; then
+    if ! npm i --no-color > "${logfile}"; then
 	# Failed, add it to summary and continue.
-	echo "- [ ] ${package}: 'npm i' failed" >> ${failurelog}
+	echo "- [ ] ${package}: 'npm i' failed" >> "${failurelog}"
 	git restore .
 	popd
 	continue
@@ -122,10 +122,9 @@ do
 
     log_yellow "Running 'npm fix' in ${package}"
     logfile="${tmpdir}/${package}-npm-fix.log"
-    npm run fix --no-color > ${logfile}
-    if [ $? -ne 0 ]; then
+    if ! npm run fix --no-color > "${logfile}"; then
 	# Failed, add it to summary and continue.
-	echo "- [ ] ${package}: 'npm fix' failed" >> ${failurelog}
+	echo "- [ ] ${package}: 'npm fix' failed" >> "${failurelog}"
 	git restore .
 	popd
 	continue
@@ -133,10 +132,9 @@ do
 
     log_yellow "Running 'npm run test' in ${package}"
     logfile="${tmpdir}/${package}-npm-run-test.log"
-    npm run test --no-color > ${logfile}
-    if [ $? -ne 0 ]; then
+    if ! npm run test --no-color > "${logfile}"; then
 	# Failed, add it to summary and continue.
-	echo "- [ ] ${package}: 'npm run test' failed" >> ${failurelog}
+	echo "- [ ] ${package}: 'npm run test' failed" >> "${failurelog}"
 	git restore .
 	popd
 	continue
@@ -144,22 +142,22 @@ do
 
     if [ -z "$(git status --porcelain .)" ]; then
 	# Working directory clean
-	echo "${package}: Nothing to commit" >> ${summarylog}
+	echo "${package}: Nothing to commit" >> "${summarylog}"
     else
 	# There are uncommitted changes
-	echo "${package}: Updated files" >> ${summarylog}
+	echo "${package}: Updated files" >> "${summarylog}"
     fi
     popd
 done
 
 set -e
 
-if [ -f ${summarylog} ]; then
+if [ -f "${summarylog}" ]; then
     log_yellow "Showing the summary"
     cat "${summarylog}"
 fi
 
-if [ -f ${failurelog} ]; then
+if [ -f "${failurelog}" ]; then
     log_red "Showing the failures"
     cat "${failurelog}"
 fi
