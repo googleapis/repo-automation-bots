@@ -20,7 +20,7 @@
 # temp directory, and revert the changes in the sub directory.
 
 # When the test passes, it keeps the changes so that you can create a
-# PR.
+# PR, or multiple PRs.
 
 set -euo pipefail
 
@@ -74,6 +74,8 @@ function log_red() {
 
 readonly tmpdir=$(mktemp -d -t update-package-locks-XXXXX)
 
+log_yellow "Using ${tmpdir} as the log directory"
+
 function notify() {
     echo "${IO_COLOR_YELLOW}============================================="
     echo "To delete the temp files, run the following command:"
@@ -122,6 +124,22 @@ do
 
     log_yellow "Update package-lock.json in ${package}"
     rm package-lock.json
+
+    log_yellow "Running 'npm update' in ${package}"
+    logfile="${tmpdir}/${package}-npm-update.log"
+    if ! npm update --no-color > "${logfile}"; then
+	# Failed, add it to summary and continue.
+	echo "- [ ] ${package}: 'npm update' failed" >> "${failure_summary}"
+
+	# For copy paste into the issue.
+	dump_details "${package}" "${logfile}"
+
+	# display failure
+	log_red "${package}: 'npm update' failed"
+	git restore .
+	popd
+	continue
+    fi
 
     log_yellow "Running 'npm i' in ${package}"
     logfile="${tmpdir}/${package}-npm-i.log"
@@ -176,9 +194,11 @@ do
     if [ -z "$(git status --porcelain .)" ]; then
 	# Working directory clean
 	echo "${package}: Nothing to commit" >> "${summarylog}"
+	log_yellow "${package}: Nothing to commit"
     else
 	# There are uncommitted changes
 	echo "${package}: Updated files" >> "${summarylog}"
+	log_green "${package}: Updated files"
     fi
     popd
 done
