@@ -368,19 +368,31 @@ export class GCFBootstrapper {
           },
         }
       );
+      const promises: Array<Promise<void>> = new Array<Promise<void>>();
+      const batchNum = 30;
       for await (const response of installationsPaginated) {
+
         for (const repo of response.data) {
           if (repo.archived === true || repo.disabled === true) {
             continue;
           }
-          await this.scheduledToTask(
+          promises.push(this.scheduledToTask(
             repo.full_name,
             id,
             body,
             eventName,
             signature
-          );
+          ));
+          if (promises.length >= batchNum) {
+            await Promise.all(promises);
+            promises.splice(0, promises.length);
+          }
         }
+      }
+      // Wait for the rest.
+      if (promises.length > 0) {
+        await Promise.all(promises);
+        promises.splice(0, promises.length);
       }
     }
   }
