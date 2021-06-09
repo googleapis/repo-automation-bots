@@ -90,7 +90,8 @@ readonly rootdir=$(cd "${scriptdir}"; cd ..; pwd)
 cd "${rootdir}"
 
 readonly summarylog="${tmpdir}/summary.txt"
-readonly failurelog="${tmpdir}/failure.txt"
+readonly failure_summary="${tmpdir}/failure-summary.txt"
+readonly failure_details="${tmpdir}/failure-details.txt"
 
 set +e
 
@@ -114,7 +115,17 @@ do
     logfile="${tmpdir}/${package}-npm-i.log"
     if ! npm i --no-color > "${logfile}"; then
 	# Failed, add it to summary and continue.
-	echo "- [ ] ${package}: 'npm i' failed" >> "${failurelog}"
+	echo "- [ ] ${package}: 'npm i' failed" >> "${failure_summary}"
+
+	# For copy paste into the issue.
+	echo "${package} log" >> "${failure_details}"
+	echo "" >> "${failure_details}"
+	echo '```' >> "${failure_details}"
+	cat "${logfile}" >> "${failure_details}"
+	echo '```' >> "${failure_details}"
+
+	# display failure
+	log_red "${package}: 'npm i' failed"
 	git restore .
 	popd
 	continue
@@ -124,7 +135,18 @@ do
     logfile="${tmpdir}/${package}-npm-fix.log"
     if ! npm run fix --no-color > "${logfile}"; then
 	# Failed, add it to summary and continue.
-	echo "- [ ] ${package}: 'npm fix' failed" >> "${failurelog}"
+	echo "- [ ] ${package}: 'npm fix' failed" >> "${failure_summary}"
+
+	# For copy paste into the issue.
+	echo "${package} log" >> "${failure_details}"
+	echo "" >> "${failure_details}"
+	echo '```' >> "${failure_details}"
+	cat "${logfile}" >> "${failure_details}"
+	echo '```' >> "${failure_details}"
+
+	# display failure
+	log_red "${package}: 'npm fix' failed"
+
 	git restore .
 	popd
 	continue
@@ -134,7 +156,18 @@ do
     logfile="${tmpdir}/${package}-npm-run-test.log"
     if ! npm run test --no-color > "${logfile}"; then
 	# Failed, add it to summary and continue.
-	echo "- [ ] ${package}: 'npm run test' failed" >> "${failurelog}"
+	echo "- [ ] ${package}: 'npm run test' failed" >> "${failure_summary}"
+
+	# For copy paste into the issue.
+	echo "${package} log" >> "${failure_details}"
+	echo "" >> "${failure_details}"
+	echo '```' >> "${failure_details}"
+	cat "${logfile}" >> "${failure_details}"
+	echo '```' >> "${failure_details}"
+
+	# display failure
+	log_red "${package}: 'npm run test' failed"
+
 	git restore .
 	popd
 	continue
@@ -157,9 +190,10 @@ if [ -f "${summarylog}" ]; then
     cat "${summarylog}"
 fi
 
-if [ -f "${failurelog}" ]; then
+if [ -f "${failure_summary}" ]; then
     log_red "Showing the failures"
-    cat "${failurelog}"
+    cat "${failure_summary}"
+    echo "Consider using ${failure_details} for filing the issue."
 fi
 
 log_yellow "All the logs are stored in ${tmpdir}"
