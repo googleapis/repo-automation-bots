@@ -95,6 +95,18 @@ readonly failure_details="${tmpdir}/failure-details.txt"
 
 set +e
 
+dump_details() {
+    local package="${1}"
+    local logfile="${2}"
+    {
+	echo "${package} log";
+	echo "";
+	echo '```';
+	cat "${logfile}";
+	echo '```'
+    } >> "${failure_details}"
+}
+
 for subdir in packages/*/
 do
     subdir="${subdir%*/}"
@@ -118,11 +130,7 @@ do
 	echo "- [ ] ${package}: 'npm i' failed" >> "${failure_summary}"
 
 	# For copy paste into the issue.
-	echo "${package} log" >> "${failure_details}"
-	echo "" >> "${failure_details}"
-	echo '```' >> "${failure_details}"
-	cat "${logfile}" >> "${failure_details}"
-	echo '```' >> "${failure_details}"
+	dump_details "${package}" "${logfile}"
 
 	# display failure
 	log_red "${package}: 'npm i' failed"
@@ -138,11 +146,7 @@ do
 	echo "- [ ] ${package}: 'npm fix' failed" >> "${failure_summary}"
 
 	# For copy paste into the issue.
-	echo "${package} log" >> "${failure_details}"
-	echo "" >> "${failure_details}"
-	echo '```' >> "${failure_details}"
-	cat "${logfile}" >> "${failure_details}"
-	echo '```' >> "${failure_details}"
+	dump_details "${package}" "${logfile}"
 
 	# display failure
 	log_red "${package}: 'npm fix' failed"
@@ -159,11 +163,7 @@ do
 	echo "- [ ] ${package}: 'npm run test' failed" >> "${failure_summary}"
 
 	# For copy paste into the issue.
-	echo "${package} log" >> "${failure_details}"
-	echo "" >> "${failure_details}"
-	echo '```' >> "${failure_details}"
-	cat "${logfile}" >> "${failure_details}"
-	echo '```' >> "${failure_details}"
+	dump_details "${package}" "${logfile}"
 
 	# display failure
 	log_red "${package}: 'npm run test' failed"
