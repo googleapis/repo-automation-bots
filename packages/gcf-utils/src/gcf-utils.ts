@@ -209,9 +209,12 @@ export class GCFBootstrapper {
    * Parse the event name, delivery id, signature and task id from the request headers
    * @param request incoming trigger request
    */
-  private static parseRequestHeaders(
-    request: express.Request
-  ): {name: string; id: string; signature: string; taskId: string} {
+  private static parseRequestHeaders(request: express.Request): {
+    name: string;
+    id: string;
+    signature: string;
+    taskId: string;
+  } {
     const name =
       request.get('x-github-event') || request.get('X-GitHub-Event') || '';
     const id =
@@ -259,9 +262,8 @@ export class GCFBootstrapper {
       this.probot =
         this.probot || (await this.loadProbot(appFn, wrapOptions?.logging));
 
-      const {name, id, signature, taskId} = GCFBootstrapper.parseRequestHeaders(
-        request
-      );
+      const {name, id, signature, taskId} =
+        GCFBootstrapper.parseRequestHeaders(request);
 
       const triggerType: TriggerType = GCFBootstrapper.parseTriggerType(
         name,
@@ -451,9 +453,11 @@ export class GCFBootstrapper {
   }
 
   private parseRequestBody(req: express.Request): Scheduled {
-    let body = (Buffer.isBuffer(req.body)
-      ? JSON.parse(req.body.toString('utf8'))
-      : req.body) as Scheduled;
+    let body = (
+      Buffer.isBuffer(req.body)
+        ? JSON.parse(req.body.toString('utf8'))
+        : req.body
+    ) as Scheduled;
     // PubSub messages have their payload encoded in body.message.data
     // as a base64 blob.
     if (body.message && body.message.data) {
