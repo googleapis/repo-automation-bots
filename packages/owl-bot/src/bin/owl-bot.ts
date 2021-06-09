@@ -25,6 +25,7 @@ import {copyCodeAndCreatePullRequestCommand} from './commands/copy-code-and-crea
 import {scanGoogleapisGenAndCreatePullRequestsCommand} from './commands/scan-googleapis-gen-and-create-pull-requests';
 import {writeLock} from './commands/write-lock';
 import {maybeCreatePullRequestForLockUpdateCommand} from './commands/maybe-create-pull-request-for-lock-update';
+import {testWebhook} from './commands/test-webhook';
 
 yargs(process.argv.slice(2))
   .command(triggerBuildCommand)
@@ -38,6 +39,7 @@ yargs(process.argv.slice(2))
   .command(copyCodeAndCreatePullRequestCommand)
   .command(writeLock)
   .command(maybeCreatePullRequestForLockUpdateCommand)
+  .command(testWebhook)
   .demandCommand(1)
   .strictCommands()
   .parse();

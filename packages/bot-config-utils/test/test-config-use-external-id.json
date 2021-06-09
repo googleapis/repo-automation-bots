@@ -1,0 +1,7 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "array",
+    "title": "test app config",
+    "description": "Schema for test app configuration",
+    "items": { "$ref": "#common" }
+}

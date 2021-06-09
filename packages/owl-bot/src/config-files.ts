@@ -82,12 +82,18 @@ export function owlBotYamlFromText(yamlText: string): OwlBotYaml {
     for (const deepCopy of yaml['deep-copy-regex'] ?? []) {
       validatePath(deepCopy.dest, 'dest');
       validatePath(deepCopy.source, 'source');
+      // Confirm it's a valid regular expression.
+      toFrontMatchRegExp(deepCopy.source);
     }
     for (const removePath of yaml['deep-remove-regex'] ?? []) {
       validatePath(removePath, 'deep-remove-regex');
+      // Confirm it's a valid regular expression.
+      toFrontMatchRegExp(removePath);
     }
     for (const excludePath of yaml['deep-preserve-regex'] ?? []) {
       validatePath(excludePath, 'deep-preserve-regex');
+      // Confirm it's a valid regular expression.
+      toFrontMatchRegExp(excludePath);
     }
     return yaml;
   } else {

@@ -1,0 +1,16 @@
+diff --git a/storage/s3-sdk/src/main/java/ListGcsBuckets.java b/storage/s3-sdk/src/main/java/storage/s3sdk/ListGcsBuckets.java
+similarity index 98%
+rename from storage/s3-sdk/src/main/java/ListGcsBuckets.java
+rename to storage/s3-sdk/src/main/java/storage/s3sdk/ListGcsBuckets.java
+index 14c0cff8f3a..4ba2d0d168f 100644
+--- a/storage/s3-sdk/src/main/java/ListGcsBuckets.java
++++ b/storage/s3-sdk/src/main/java/storage/s3sdk/ListGcsBuckets.java
+@@ -14,6 +14,8 @@
+  * limitations under the License.
+  */
+
++package storage.s3sdk;
++
+ // [START storage_s3_sdk_list_buckets]
+ import com.amazonaws.auth.AWSStaticCredentialsProvider;
+ import com.amazonaws.auth.BasicAWSCredentials;

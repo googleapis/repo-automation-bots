@@ -2,6 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Sync Repo Settings Config",
   "description": "Schema for defining the sync repo settings config",
+  "type": "object",
   "additionalProperties": false,
   "properties": {
     "squashMergeAllowed": {
