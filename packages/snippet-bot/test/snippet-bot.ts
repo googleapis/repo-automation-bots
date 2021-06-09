@@ -29,7 +29,6 @@ import * as labelUtilsModule from '@google-automations/label-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import {resolve} from 'path';
 import {Probot, ProbotOctokit} from 'probot';
-import {Octokit} from '@octokit/rest';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
@@ -900,8 +899,9 @@ describe('snippet-bot', () => {
       });
       // Make sure we check the config schema when
       // adding the config file for the first time.
-      validateConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        validateConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
         'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
@@ -1188,11 +1188,13 @@ describe('snippet-bot', () => {
         payload,
         id: 'abc123',
       });
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
-        'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        'python-docs-samples',
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
 
