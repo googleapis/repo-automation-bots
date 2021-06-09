@@ -45,12 +45,31 @@ export function makeDirTree(rootDir: string, specs: string[]): void {
  *      "/x/y/hello.txt:Hello World"
  *   directories lack a colon:
  *      "/empty/dir"
-
  */
 export function collectDirTree(dir: string): string[] {
+  return collectGlobResult(
+    dir,
+    glob.sync('**', {
+      cwd: dir,
+      dot: true,
+      ignore: ['.git', '.git/**'],
+    })
+  );
+}
+
+/**
+ * Collects the entire source tree content into a list that can
+ * be easily compared equal in a test.
+ * @returns Sorted list in the following format.
+ *   files are specified by <path>:<content>  For example:
+ *      "/x/y/hello.txt:Hello World"
+ *   directories lack a colon:
+ *      "/empty/dir"
+ */
+export function collectGlobResult(rootDir: string, paths: string[]): string[] {
   const tree: string[] = [];
-  for (const apath of glob.sync('**', {cwd: dir})) {
-    const fullPath = path.join(dir, apath);
+  for (const apath of paths) {
+    const fullPath = path.join(rootDir, apath);
     if (fs.lstatSync(fullPath).isDirectory()) {
       tree.push(apath);
     } else {
