@@ -71,9 +71,12 @@ describe('GCFBootstrapper', () => {
       req = express.request;
 
       bootstrapper = new GCFBootstrapper();
-      configStub = sinon
-        .stub(bootstrapper, 'getProbotConfig')
-        .resolves({appId: 1234, secret: 'foo', webhookPath: 'bar'});
+      configStub = sinon.stub(bootstrapper, 'getProbotConfig').resolves({
+        appId: 1234,
+        secret: 'foo',
+        webhookPath: 'bar',
+        privateKey: 'cert',
+      });
       // This replaces the authClient with an auth client that uses an
       // API Key, this ensures that we will not attempt to lookup application
       // default credentials:
@@ -348,9 +351,12 @@ describe('GCFBootstrapper', () => {
 
     beforeEach(() => {
       bootstrapper = new GCFBootstrapper();
-      configStub = sinon
-        .stub(bootstrapper, 'getProbotConfig')
-        .resolves({appId: 1234, secret: 'foo', webhookPath: 'bar'});
+      configStub = sinon.stub(bootstrapper, 'getProbotConfig').resolves({
+        appId: 1234,
+        secret: 'foo',
+        webhookPath: 'bar',
+        privateKey: 'cert',
+      });
     });
 
     afterEach(() => {
