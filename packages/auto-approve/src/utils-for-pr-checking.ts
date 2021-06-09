@@ -194,7 +194,6 @@ export function checkFilePathsMatch(
 export function mergesOnWeekday(): boolean {
   const date = dayjs.tz(Date.now(), 'America/Los_Angeles');
   const dayOfWeek = date.day();
-  console.log(dayOfWeek);
   if (dayOfWeek >= 5 || dayOfWeek === 0) {
     return false;
   }
