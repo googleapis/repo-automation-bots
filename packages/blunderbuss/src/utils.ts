@@ -38,8 +38,7 @@ export const BLUNDERBUSS_LABELS = [
   },
 ];
 
-type getIssueResponse =
-  Endpoints['GET /repos/{owner}/{repo}/issues/{issue_number}']['response'];
+type getIssueResponse = Endpoints['GET /repos/{owner}/{repo}/issues/{issue_number}']['response'];
 
 // Randomly returns an item from an array, while ignoring the provided value.
 // Returns undefined if no options remain.

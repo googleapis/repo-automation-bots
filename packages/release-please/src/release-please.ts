@@ -126,7 +126,7 @@ async function createGitHubRelease(
     packageName,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      octokit: github as {} as OctokitType,
+      octokit: (github as {}) as OctokitType,
       graphql: github.graphql,
       request: github.request,
     },
@@ -165,7 +165,7 @@ async function createReleasePR(
     repoUrl,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      octokit: github as {} as OctokitType,
+      octokit: (github as {}) as OctokitType,
       graphql: github.graphql,
       request: github.request,
     },
