@@ -16,6 +16,7 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 import nock from 'nock';
 import * as sinon from 'sinon';
 import {SyncRepoSettings} from '../src/sync-repo-settings';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
 import {RepoConfig} from '../src/types';
