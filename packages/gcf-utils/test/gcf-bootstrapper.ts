@@ -53,10 +53,8 @@ describe('GCFBootstrapper', () => {
       response,
       'send'
     );
-    const sendStatusStub: sinon.SinonStub<
-      [number],
-      express.Response
-    > = sinon.stub(response, 'sendStatus');
+    const sendStatusStub: sinon.SinonStub<[number], express.Response> =
+      sinon.stub(response, 'sendStatus');
 
     let req: express.Request;
 
