@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [8.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v8.0.1...gcf-utils-v8.0.2) (2021-06-09)
+
+
+### Bug Fixes
+
+* **gcf-utils:** create tasks in parallel ([#1986](https://www.github.com/googleapis/repo-automation-bots/issues/1986)) ([89d5326](https://www.github.com/googleapis/repo-automation-bots/commit/89d53263653429fb637c02213918b73f1f493a91))
+
 ### [8.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v8.0.0...gcf-utils-v8.0.1) (2021-05-24)
 
 
