@@ -20,6 +20,7 @@ import myProbotApp from '../src/snippet-bot';
 import {SNIPPET_BOT_LABELS} from '../src/labels';
 import * as apiLabelsModule from '../src/api-labels';
 import * as snippetsModule from '../src/snippets';
+import schema from '../src/config-schema.json';
 import {CONFIGURATION_FILE_PATH} from '../src/configuration';
 import {Snippets} from '../src/snippets';
 
@@ -28,7 +29,6 @@ import * as labelUtilsModule from '@google-automations/label-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import {resolve} from 'path';
 import {Probot, ProbotOctokit} from 'probot';
-import {Octokit} from '@octokit/rest';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
@@ -93,11 +93,13 @@ describe('snippet-bot scheduler handler', () => {
       },
       id: 'abc123',
     });
-    getConfigStub.calledOnceWith(
-      sinon.match.instanceOf(Octokit),
-      'testOwner',
+    sinon.assert.calledOnceWithExactly(
+      getConfigStub,
+      sinon.match.instanceOf(ProbotOctokit),
+      'googleapis',
       'testRepo',
-      CONFIGURATION_FILE_PATH
+      CONFIGURATION_FILE_PATH,
+      {schema: schema}
     );
     sinon.assert.notCalled(syncLabelsStub);
   });
@@ -121,15 +123,18 @@ describe('snippet-bot scheduler handler', () => {
       },
       id: 'abc123',
     });
-    getConfigStub.calledOnceWith(
-      sinon.match.instanceOf(Octokit),
-      'testOwner',
+    sinon.assert.calledOnceWithExactly(
+      getConfigStub,
+      sinon.match.instanceOf(ProbotOctokit),
+      'googleapis',
       'testRepo',
-      CONFIGURATION_FILE_PATH
+      CONFIGURATION_FILE_PATH,
+      {schema: schema}
     );
-    syncLabelsStub.calledOnceWith(
-      sinon.match.instanceOf(Octokit),
-      'testOwner',
+    sinon.assert.calledOnceWithExactly(
+      syncLabelsStub,
+      sinon.match.instanceOf(ProbotOctokit),
+      'googleapis',
       'testRepo',
       SNIPPET_BOT_LABELS
     );
@@ -366,14 +371,17 @@ describe('snippet-bot', () => {
       });
 
       diffRequests.done();
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
-      validateConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        validateConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
         'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
@@ -449,11 +457,13 @@ describe('snippet-bot', () => {
 
       requests.done();
       diffRequests.done();
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
 
@@ -468,11 +478,13 @@ describe('snippet-bot', () => {
         payload,
         id: 'abc123',
       });
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
 
@@ -529,11 +541,13 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnce(invalidateCacheStub);
       requests.done();
       diffRequests.done();
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
 
@@ -547,12 +561,7 @@ describe('snippet-bot', () => {
         payload,
         id: 'abc123',
       });
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
-        'tmatsuo',
-        'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
-      );
+      sinon.assert.notCalled(getConfigStub);
     });
 
     it('responds to refresh checkbox, invalidating the Snippet cache, updating without region tag changes', async () => {
@@ -594,11 +603,13 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnce(invalidateCacheStub);
       requests.done();
       diffRequests.done();
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
 
@@ -653,11 +664,13 @@ describe('snippet-bot', () => {
 
       requests.done();
       diffRequests.done();
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
 
@@ -702,11 +715,13 @@ describe('snippet-bot', () => {
 
       requests.done();
       diffRequests.done();
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
 
@@ -744,11 +759,13 @@ describe('snippet-bot', () => {
 
       requests.done();
       diffRequests.done();
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
 
@@ -806,11 +823,13 @@ describe('snippet-bot', () => {
 
       requests.done();
       diffRequests.done();
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
 
@@ -858,11 +877,13 @@ describe('snippet-bot', () => {
 
       requests.done();
       diffRequests.done();
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
 
@@ -878,8 +899,9 @@ describe('snippet-bot', () => {
       });
       // Make sure we check the config schema when
       // adding the config file for the first time.
-      validateConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        validateConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
         'ce03c1b7977aadefb5f6afc09901f106ee6ece6a',
@@ -948,11 +970,13 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnce(getSnippetsStub);
       requests.done();
       diffRequests.done();
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
 
@@ -1009,11 +1033,13 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnce(getSnippetsStub);
       requests.done();
       diffRequests.done();
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
 
@@ -1070,11 +1096,13 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnce(getSnippetsStub);
       requests.done();
       diffRequests.done();
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
 
@@ -1139,11 +1167,13 @@ describe('snippet-bot', () => {
       sinon.assert.calledOnce(getSnippetsStub);
       requests.done();
       diffRequests.done();
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
         'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
   });
@@ -1158,11 +1188,13 @@ describe('snippet-bot', () => {
         payload,
         id: 'abc123',
       });
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
-        'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        'python-docs-samples',
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
 
@@ -1188,11 +1220,13 @@ describe('snippet-bot', () => {
 
       requests.done();
       tarBallRequests.done();
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
-        'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        'python-docs-samples',
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
     it('reports the scan result', async () => {
@@ -1220,11 +1254,13 @@ describe('snippet-bot', () => {
 
       requests.done();
       tarBallRequests.done();
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'tmatsuo',
-        'repo-automation-bots',
-        CONFIGURATION_FILE_PATH
+        'python-docs-samples',
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
       );
     });
   });
