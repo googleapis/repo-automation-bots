@@ -15,6 +15,7 @@
 import {createHash} from 'crypto';
 import {logger} from 'gcf-utils';
 import {DatastoreLock} from '@google-automations/datastore-lock';
+/* eslint-disable-next-line node/no-extraneous-import */
 import {Octokit} from '@octokit/rest';
 
 // We don't allow users to specify colors.

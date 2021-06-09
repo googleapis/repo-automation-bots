@@ -16,6 +16,7 @@ import Ajv from 'ajv';
 import yaml from 'js-yaml';
 import path from 'path';
 
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
 
@@ -174,60 +175,70 @@ export class ConfigChecker<ConfigType> {
     commitSha: string,
     prNumber: number
   ): Promise<void> {
-    const listFilesParams = {
-      owner: owner,
-      repo: repo,
-      pull_number: prNumber,
-      per_page: 100,
-    };
-    let errorText = '';
-    const files = await octokit.paginate(
-      octokit.pulls.listFiles,
-      listFilesParams
-    );
-    for (const file of files) {
-      if (file.status === 'removed') {
-        continue;
-      }
-      logger.debug(`file: ${file.filename}`);
-      if (this.badConfigPaths.indexOf(file.filename) > -1) {
-        // Trying to add a config file with a wrong file extension.
-        errorText +=
-          `You tried to add ${file.filename}, ` +
-          `but the config file must be ${this.configPath}\n`;
-      }
-      if (file.filename === this.configPath) {
-        const blob = await octokit.git.getBlob({
-          owner: owner,
-          repo: repo,
-          file_sha: file.sha,
-        });
-        const fileContents = Buffer.from(blob.data.content, 'base64').toString(
-          'utf8'
-        );
-        const result = validateConfig<ConfigType>(fileContents, this.schema, {
-          additionalSchemas: this.additionalSchemas,
-        });
-        if (result.isValid) {
-          this.config = result.config as ConfigType;
-        } else {
-          errorText += result.errorText;
+    // Sometimes the head branch is gone.
+    // In that case, the requests for fetching files might fail with 404.
+    // We can just ignore those cases.
+    try {
+      const listFilesParams = {
+        owner: owner,
+        repo: repo,
+        pull_number: prNumber,
+        per_page: 100,
+      };
+      let errorText = '';
+      const files = await octokit.paginate(
+        octokit.pulls.listFiles,
+        listFilesParams
+      );
+      for (const file of files) {
+        if (file.status === 'removed') {
+          continue;
+        }
+        logger.debug(`file: ${file.filename}`);
+        if (this.badConfigPaths.indexOf(file.filename) > -1) {
+          // Trying to add a config file with a wrong file extension.
+          errorText +=
+            `You tried to add ${file.filename}, ` +
+            `but the config file must be ${this.configPath}\n`;
+        }
+        if (file.filename === this.configPath) {
+          const blob = await octokit.git.getBlob({
+            owner: owner,
+            repo: repo,
+            file_sha: file.sha,
+          });
+          const fileContents = Buffer.from(
+            blob.data.content,
+            'base64'
+          ).toString('utf8');
+          const result = validateConfig<ConfigType>(fileContents, this.schema, {
+            additionalSchemas: this.additionalSchemas,
+          });
+          if (result.isValid) {
+            this.config = result.config as ConfigType;
+          } else {
+            errorText += result.errorText;
+          }
+        }
+        if (errorText !== '') {
+          const checkParams = {
+            owner: owner,
+            repo: repo,
+            name: `${this.configName} config schema`,
+            conclusion: 'failure' as Conclusion,
+            head_sha: commitSha,
+            output: {
+              title: 'Config schema error',
+              summary: 'An error found in the config file',
+              text: errorText,
+            },
+          };
+          await octokit.checks.create(checkParams);
         }
       }
-      if (errorText !== '') {
-        const checkParams = {
-          owner: owner,
-          repo: repo,
-          name: `${this.configName} config schema`,
-          conclusion: 'failure' as Conclusion,
-          head_sha: commitSha,
-          output: {
-            title: 'Config schema error',
-            summary: 'An error found in the config file',
-            text: errorText,
-          },
-        };
-        await octokit.checks.create(checkParams);
+    } catch (err) {
+      if (err.status !== 404) {
+        throw err;
       }
     }
   }

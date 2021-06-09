@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/label-utils",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Utilities for github labels",
   "scripts": {
     "compile": "tsc -p .",
@@ -16,11 +16,10 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "dependencies": {
-    "@google-automations/datastore-lock": "^2.0.0",
-    "gcf-utils": "^7.2.2"
+    "@google-automations/datastore-lock": "^2.0.1",
+    "gcf-utils": "^8.0.1"
   },
   "devDependencies": {
-    "@octokit/rest": "^18.5.3",
     "@types/mocha": "^8.2.2",
     "@types/node": "^15.0.3",
     "@types/sinon": "^10.0.0",
