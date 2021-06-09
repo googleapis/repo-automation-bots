@@ -87,6 +87,17 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [9.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v8.0.2...gcf-utils-v9.0.0) (2021-06-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **gcf-utils:** lock file maintenance (#2001)
+
+### Miscellaneous Chores
+
+* **gcf-utils:** lock file maintenance ([#2001](https://www.github.com/googleapis/repo-automation-bots/issues/2001)) ([395a87a](https://www.github.com/googleapis/repo-automation-bots/commit/395a87a337ae96c27171beb0ad6b69a798037476))
+
 ### [8.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v8.0.1...gcf-utils-v8.0.2) (2021-06-09)
 
 
