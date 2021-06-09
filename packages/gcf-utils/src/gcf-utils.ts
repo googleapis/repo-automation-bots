@@ -371,18 +371,13 @@ export class GCFBootstrapper {
       const promises: Array<Promise<void>> = new Array<Promise<void>>();
       const batchNum = 30;
       for await (const response of installationsPaginated) {
-
         for (const repo of response.data) {
           if (repo.archived === true || repo.disabled === true) {
             continue;
           }
-          promises.push(this.scheduledToTask(
-            repo.full_name,
-            id,
-            body,
-            eventName,
-            signature
-          ));
+          promises.push(
+            this.scheduledToTask(repo.full_name, id, body, eventName, signature)
+          );
           if (promises.length >= batchNum) {
             await Promise.all(promises);
             promises.splice(0, promises.length);
