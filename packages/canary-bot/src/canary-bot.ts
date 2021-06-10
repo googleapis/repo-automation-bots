@@ -14,27 +14,90 @@
 
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Probot} from 'probot';
+/* eslint-disable-next-line node/no-extraneous-import */
+import {components} from '@octokit/openapi-types';
 import * as fs from 'fs';
 import {resolve} from 'path';
-import {logger} from 'gcf-utils';
+import {logger, addOrUpdateIssueComment} from 'gcf-utils';
+
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+type IssuesListForRepoResponseItem = components['schemas']['issue-simple'];
+type IssuesListForRepoResponseData = IssuesListForRepoResponseItem[];
 
 const packageJsonFile = fs.readFileSync(
   resolve(__dirname, '../../package.json'),
   'utf-8'
 );
 const packageJson = JSON.parse(packageJsonFile);
+const versionDetails = `${JSON.stringify(packageJson.dependencies)}`;
+
+const cronIssueTitle = 'A canary is chirping';
+const myRepositoryName = 'repo-automation-bots';
+const myOrganizationName = 'googleapis';
+
+function getIssueBody(): string {
+  const date = dayjs
+    .tz(new Date(), 'America/Los_Angeles')
+    .format('YYYY MM-DD HH:mm:ss');
+  return (
+    `The dependencies and their versions are: ${versionDetails}\n` +
+    `at ${date}`
+  );
+}
 
 export = (app: Probot) => {
-  app.on(['issues.opened'], async context => {
-    if (context.payload.issue.title.includes('canary-bot test')) {
-      await context.octokit.issues.createComment({
-        owner: context.payload.issue.user.login,
-        repo: context.payload.repository.name,
-        issue_number: context.payload.issue.number,
-        body: `The dependencies and their versions are: ${JSON.stringify(
-          packageJson.dependencies
-        )}`,
+  app.on('schedule.repository' as '*', async context => {
+    const owner = context.payload.organization.login;
+    const repo = context.payload.repository.name;
+    if (repo !== myRepositoryName || owner !== myOrganizationName) {
+      return;
+    }
+    const body = getIssueBody();
+    const options = context.octokit.issues.listForRepo.endpoint.merge({
+      owner,
+      repo,
+      per_page: 100,
+      state: 'all', // Include open and closed issues.
+      title: cronIssueTitle,
+    });
+    const issues = (await context.octokit.paginate(
+      options
+    )) as IssuesListForRepoResponseData;
+
+    // Issue found
+    if (issues.length > 0 && issues[0].title === cronIssueTitle) {
+      const issue = issues[0];
+      await context.octokit.issues.update({
+        owner: owner,
+        repo: repo,
+        issue_number: issue.number,
+        body: body,
       });
+    } else {
+      await context.octokit.issues.create({
+        owner: owner,
+        repo: repo,
+        title: cronIssueTitle,
+        body: body,
+      });
+    }
+  });
+  app.on(['issues.opened', 'issues.reopened'], async context => {
+    if (context.payload.issue.title.includes('canary-bot test')) {
+      const {owner, repo} = context.repo();
+      await addOrUpdateIssueComment(
+        context.octokit,
+        owner,
+        repo,
+        context.payload.issue.number,
+        context.payload.installation!.id,
+        getIssueBody()
+      );
     } else {
       logger.info(
         'The bot is skipping this issue because the title does not include canary-bot test'
