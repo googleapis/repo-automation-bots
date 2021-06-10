@@ -1,2 +1,4 @@
+aggregateChecks: false
+alwaysCreateStatusCheck: false
 ignoreFiles:
   - "packages/snippet-bot/**/*"
