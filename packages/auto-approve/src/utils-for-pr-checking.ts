@@ -149,6 +149,14 @@ export function getVersions(
   };
 }
 
+/**
+ * This function checks whether the dependency stated in a given title was the one that was changed
+ *
+ * @param versions the Versions object that contains the old dependency name and new dependency name and versions
+ * @param dependencyRegex the regular exp to find the dependency within the title of the PR
+ * @param title the title of the PR
+ * @returns whether the old dependency, new dependency, and dependency in the title all match
+ */
 export function doesDependencyMatchTarget(
   versions: Versions,
   dependencyRegex: string,

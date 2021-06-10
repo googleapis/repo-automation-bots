@@ -66,6 +66,7 @@ export async function checkPRAgainstConfig(
     let filePathsMatch = true;
     let fileCountMatch = true;
     let addtlRules = true;
+    const releasePRFiles: File[] = [];
 
     // Since there's only one allowed title per author right now, we don't need to
     // add complicated logic to see which title should match the incoming PR; but,
@@ -92,7 +93,11 @@ export async function checkPRAgainstConfig(
     );
 
     // If we've found the file in this ruleset, let's run the additional checks
+    // We're running each file through the check so that we can make customized checks
+    // for each file. This way, we can be as specific as possible as to how the file
+    // needs to be checked.
     while (fileAndFileRule) {
+      // First, get the versions we're checking for the file
       const versions = getVersions(
         fileAndFileRule.file,
         fileAndFileRule.fileRule.oldVersion!,
@@ -101,6 +106,8 @@ export async function checkPRAgainstConfig(
 
       // Have to enter different processes for different checks
       if (versions && fileAndFileRule.fileRule.process === 'release') {
+        // If it's a release process, just make sure that the versions are minor
+        // bumps and are increasing, and are only changing one at a time
         addtlRules =
           runVersioningValidation(versions) &&
           isOneDependencyChanged(fileAndFileRule.file);
@@ -108,6 +115,14 @@ export async function checkPRAgainstConfig(
         versions &&
         fileAndFileRule.fileRule.process === 'dependency'
       ) {
+        // If it's a dependency update process, make sure that the versions are minor
+        // bumps and are increasing, are only changing one at a time, and are changing
+        // the dependency they say they are supposed to change
+
+        // At the end of the loop, we want to make sure that all of the changed files
+        // in a renovate bot pr conform to one of the language versioning rules
+        releasePRFiles.push(fileAndFileRule.file);
+
         addtlRules =
           doesDependencyMatchTarget(
             versions,
@@ -129,6 +144,19 @@ export async function checkPRAgainstConfig(
         languageVersioningRules,
         fileAndFileRule.ithElement
       );
+    }
+
+    // This additional check confirms that there were no files changed in the PR
+    // that weren't checked by the additional files rule if it's from renovate-bot
+    if (prAuthor === 'renovate-bot') {
+      for (let i = 0; i < changedFiles.length; i++) {
+        if (changedFiles[i] !== releasePRFiles[i]) {
+          logger.info(
+            `Info for ${repoOwner}/${repo}/${prNumber} A file that should have been checked with additional guidelines was not checked`
+          );
+          return false;
+        }
+      }
     }
 
     //check if changed file paths match

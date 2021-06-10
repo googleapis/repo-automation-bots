@@ -194,9 +194,9 @@
                   "type": "array",
                   "items": {
                     "enum": [
-                      "package\\.json$",
-                      "pom\\.xml$",
-                      "requirements\\.txt"
+                      "/package\\.json$",
+                      "/pom\\.xml$",
+                      "/requirements\\.txt"
                     ]
                   }
                 },
