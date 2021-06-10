@@ -18,6 +18,7 @@ import {
   isMajorVersionChanging,
   isMinorVersionUpgraded,
   isOneDependencyChanged,
+  doesDependencyMatchTarget,
 } from '../src/utils-for-pr-checking';
 import {describe, it} from 'mocha';
 import assert from 'assert';
@@ -44,20 +45,48 @@ describe('run additional versioning checks', () => {
           deletions: 1,
           patch: 'patch',
         },
-        fileRule: {
-          prAuthor: 'release-please[bot]',
-          targetFile: 'package.json',
-          oldRegexVersion:
-            '-[\\s]*"version":[\\s]"([0-9]*)*\\.([0-9]*\\.[0-9]*)",',
-          newRegexVersion:
-            '\\+[\\s]*"version":[\\s]"([0-9]*)*\\.([0-9]*\\.[0-9]*)",',
-        },
+        fileRule: languageVersioningRules[0],
+        ithElement: 1,
       };
 
       const fileAndFileRule = getTargetFile(
         prFiles,
         'release-please[bot]',
-        languageVersioningRules
+        languageVersioningRules,
+        0
+      );
+
+      assert.deepStrictEqual(fileAndFileRule, fileAndFileRuleExpectation);
+    });
+
+    it('should correctly identify the target file if it exists in the PR but is later in the file structure', async () => {
+      const prFiles = [
+        {filename: 'filename2', sha: '5678'},
+        {
+          filename: 'package.json',
+          sha: '1234',
+          additions: 1,
+          deletions: 1,
+          patch: 'patch',
+        },
+      ];
+      const fileAndFileRuleExpectation = {
+        file: {
+          filename: 'package.json',
+          sha: '1234',
+          additions: 1,
+          deletions: 1,
+          patch: 'patch',
+        },
+        fileRule: languageVersioningRules[0],
+        ithElement: 2,
+      };
+
+      const fileAndFileRule = getTargetFile(
+        prFiles,
+        'release-please[bot]',
+        languageVersioningRules,
+        0
       );
 
       assert.deepStrictEqual(fileAndFileRule, fileAndFileRuleExpectation);
@@ -78,7 +107,8 @@ describe('run additional versioning checks', () => {
       const fileAndFileRule = getTargetFile(
         prFiles,
         'release-please[bot]',
-        languageVersioningRules
+        languageVersioningRules,
+        0
       );
 
       assert.deepStrictEqual(fileAndFileRule, undefined);
@@ -99,7 +129,8 @@ describe('run additional versioning checks', () => {
       const fileAndFileRule = getTargetFile(
         prFiles,
         'not-release-please-bot',
-        languageVersioningRules
+        languageVersioningRules,
+        0
       );
 
       assert.deepStrictEqual(fileAndFileRule, undefined);
@@ -127,16 +158,11 @@ describe('run additional versioning checks', () => {
           '   "engines": {',
       };
 
-      const fileRule = {
-        prAuthor: 'release-please[bot]',
-        targetFile: 'package.json',
-        oldRegexVersion:
-          '-[\\s]*"version":[\\s]"([0-9]*)*\\.([0-9]*\\.[0-9]*)",',
-        newRegexVersion:
-          '\\+[\\s]*"version":[\\s]"([0-9]*)*\\.([0-9]*\\.[0-9]*)",',
-      };
+      const fileRule = languageVersioningRules[0];
 
       const getVersionsExpectation = {
+        oldDependencyName: 'version',
+        newDependencyName: 'version',
         oldMajorVersion: '2',
         oldMinorVersion: '3.0',
         newMajorVersion: '2',
@@ -144,14 +170,14 @@ describe('run additional versioning checks', () => {
       };
       const versions = getVersions(
         PRFile,
-        fileRule.oldRegexVersion,
-        fileRule.newRegexVersion
+        fileRule.oldVersion,
+        fileRule.newVersion
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
     });
 
-    it('should throw an error if it cannot find the proper versions', () => {
+    it('should return the correct versions and dependency from a package.json file', () => {
       const PRFile = {
         sha: 'c9fadc5c8972d1c034a050eb6b1a6b79fcd67785',
         filename: 'package.json',
@@ -164,43 +190,64 @@ describe('run additional versioning checks', () => {
           ' {\n' +
           '   "name": "@google-cloud/kms",\n' +
           '   "description": "Google Cloud Key Management Service (KMS) API client for Node.js",\n' +
-          '-  "NOT-THE-RIGHT-VERSION": "2.3.0",\n' +
-          '+  "NOT-THE-RIGHT-VERSION": "2.3.1",\n' +
+          '-  "@google-cloud/nodejs-asset": "2.3.0",\n' +
+          '+  "@google-cloud/nodejs-asset": "2.3.1",\n' +
           '   "license": "Apache-2.0",\n' +
           '   "author": "Google LLC",\n' +
           '   "engines": {',
       };
 
-      const fileRule = {
-        prAuthor: 'release-please[bot]',
-        targetFile: 'package.json',
-        oldRegexVersion:
-          '-[\\s]*"version":[\\s]"([0-9]*)*\\.([0-9]*\\.[0-9]*)",',
-        newRegexVersion:
-          '\\+[\\s]*"version":[\\s]"([0-9]*)*\\.([0-9]*\\.[0-9]*)",',
+      const fileRule = languageVersioningRules[0];
+
+      const getVersionsExpectation = {
+        oldDependencyName: '@google-cloud/nodejs-asset',
+        newDependencyName: '@google-cloud/nodejs-asset',
+        oldMajorVersion: '2',
+        oldMinorVersion: '3.0',
+        newMajorVersion: '2',
+        newMinorVersion: '3.1',
+      };
+      const versions = getVersions(
+        PRFile,
+        fileRule.oldVersion,
+        fileRule.newVersion
+      );
+
+      assert.deepStrictEqual(versions, getVersionsExpectation);
+    });
+
+    it('should throw an error if it cannot find any changed versions', () => {
+      const PRFile = {
+        sha: 'c9fadc5c8972d1c034a050eb6b1a6b79fcd67785',
+        filename: 'package.json',
+        status: 'modified',
+        additions: 1,
+        deletions: 1,
+        changes: 2,
+        patch:
+          '@@ -1,7 +1,7 @@\n' +
+          ' {\n' +
+          '   "name": "@google-cloud/kms",\n' +
+          '   "description": "Google Cloud Key Management Service (KMS) API client for Node.js",\n' +
+          '-  : "2.3.0",\n' +
+          '+  : "2.3.1",\n' +
+          '   "license": "Apache-2.0",\n' +
+          '   "author": "Google LLC",\n' +
+          '   "engines": {',
       };
 
+      const fileRule = languageVersioningRules[0];
+
       assert.throws(() => {
-        getVersions(PRFile, fileRule.oldRegexVersion, fileRule.newRegexVersion);
+        getVersions(PRFile, fileRule.oldVersion, fileRule.newVersion);
       }, /Could not find versions in package.json\/c9fadc5c8972d1c034a050eb6b1a6b79fcd67785/);
     });
 
     it('should return undefined if the target file does not exist', () => {
-      const fileRule = {
-        prAuthor: 'release-please[bot]',
-        targetFile: 'package.json',
-        oldRegexVersion:
-          '-[\\s]*"version":[\\s]"([0-9]*)*\\.([0-9]*\\.[0-9]*)",',
-        newRegexVersion:
-          '\\+[\\s]*"version":[\\s]"([0-9]*)*\\.([0-9]*\\.[0-9]*)",',
-      };
+      const fileRule = languageVersioningRules[0];
 
       assert.strictEqual(
-        getVersions(
-          undefined,
-          fileRule.oldRegexVersion,
-          fileRule.newRegexVersion
-        ),
+        getVersions(undefined, fileRule.oldVersion, fileRule.newVersion),
         undefined
       );
     });
@@ -209,6 +256,8 @@ describe('run additional versioning checks', () => {
   describe('decide whether major is bumped', () => {
     it('should return true if major version is changed', () => {
       const versions = {
+        oldDependencyName: 'version',
+        newDependencyName: 'version',
         oldMajorVersion: '3',
         oldMinorVersion: '2.0',
         newMajorVersion: '4',
@@ -220,6 +269,8 @@ describe('run additional versioning checks', () => {
 
     it('should return false if major version was not changed', () => {
       const versions = {
+        oldDependencyName: 'version',
+        newDependencyName: 'version',
         oldMajorVersion: '3',
         oldMinorVersion: '2.0',
         newMajorVersion: '3',
@@ -233,6 +284,8 @@ describe('run additional versioning checks', () => {
   describe('decide whether minor is bumped', () => {
     it('should return true if minor version is upgraded', () => {
       const versions = {
+        oldDependencyName: 'version',
+        newDependencyName: 'version',
         oldMajorVersion: '3',
         oldMinorVersion: '2.0',
         newMajorVersion: '4',
@@ -244,6 +297,8 @@ describe('run additional versioning checks', () => {
 
     it('should return false if minor version was not upgraded', () => {
       const versions = {
+        oldDependencyName: 'version',
+        newDependencyName: 'version',
         oldMajorVersion: '3',
         oldMinorVersion: '2.0',
         newMajorVersion: '3',
@@ -255,6 +310,8 @@ describe('run additional versioning checks', () => {
 
     it('should return false if minor version was downgraded', () => {
       const versions = {
+        oldDependencyName: 'version',
+        newDependencyName: 'version',
         oldMajorVersion: '3',
         oldMinorVersion: '2.0',
         newMajorVersion: '3',
@@ -333,6 +390,74 @@ describe('run additional versioning checks', () => {
       };
 
       assert.strictEqual(isOneDependencyChanged(PRFile), false);
+    });
+  });
+
+  describe('whether the dependency names match', () => {
+    it('should return false if the title does not match the dependency changed', () => {
+      const versions = {
+        oldDependencyName: 'version',
+        newDependencyName: 'version',
+        oldMajorVersion: '3',
+        oldMinorVersion: '2.0',
+        newMajorVersion: '3',
+        newMinorVersion: '1.0',
+      };
+
+      const title =
+        'chore(deps): update dependency google-cloud-secret-manager to v2.5.0';
+
+      const doesDependencyMatch = doesDependencyMatchTarget(
+        versions,
+        languageVersioningRules[1].dependency!,
+        title
+      );
+
+      assert.strictEqual(doesDependencyMatch, false);
+    });
+
+    it('should return true if the title matches the dependency changed', () => {
+      const versions = {
+        oldDependencyName: 'google-cloud-secret-manager',
+        newDependencyName: 'google-cloud-secret-manager',
+        oldMajorVersion: '3',
+        oldMinorVersion: '2.0',
+        newMajorVersion: '3',
+        newMinorVersion: '1.0',
+      };
+
+      const title =
+        'chore(deps): update dependency google-cloud-secret-manager to v2.5.0';
+
+      const doesDependencyMatch = doesDependencyMatchTarget(
+        versions,
+        languageVersioningRules[1].dependency!,
+        title
+      );
+
+      assert.ok(doesDependencyMatch);
+    });
+
+    it('should return false if title does not adhere to regex pattern', () => {
+      const versions = {
+        oldDependencyName: 'google-cloud-secret-manager',
+        newDependencyName: 'google-cloud-secret-manager',
+        oldMajorVersion: '3',
+        oldMinorVersion: '2.0',
+        newMajorVersion: '3',
+        newMinorVersion: '1.0',
+      };
+
+      const title =
+        'chore: update dependency google-cloud-secret-manager to v2.5.0';
+
+      const doesDependencyMatch = doesDependencyMatchTarget(
+        versions,
+        languageVersioningRules[1].dependency!,
+        title
+      );
+
+      assert.strictEqual(doesDependencyMatch, false);
     });
   });
 });

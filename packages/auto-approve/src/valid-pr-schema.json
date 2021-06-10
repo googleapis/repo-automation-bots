@@ -30,7 +30,8 @@
             "yoshi-automation",
             "release-please[bot]",
             "yoshi-code-bot",
-            "gcf-owl-bot[bot]"
+            "gcf-owl-bot[bot]",
+            "renovate-bot"
           ]
         }
       },
@@ -170,6 +171,38 @@
                 "maxFiles": {
                   "type": "number",
                   "maximum": 1
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "author": {
+                  "type": "string",
+                  "const": "renovate-bot"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "const": "^(fix\\(deps\\)|chore\\(deps\\)):"
+                },
+                "changedFiles": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "package\\.json$",
+                      "pom\\.xml$",
+                      "requirements\\.txt"
+                    ]
+                  }
+                },
+                "maxFiles": {
+                  "type": "number",
+                  "maximum": 2
                 }
               }
             }

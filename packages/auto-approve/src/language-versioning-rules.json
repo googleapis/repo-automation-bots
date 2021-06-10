@@ -1,8 +1,25 @@
 [
     {
     "prAuthor": "release-please[bot]",
+    "process":"release",
     "targetFile": "package.json",
-    "oldRegexVersion": "-[\\s]*\"version\":[\\s]\"([0-9]*)*\\.([0-9]*\\.[0-9]*)\",",
-    "newRegexVersion": "\\+[\\s]*\"version\":[\\s]\"([0-9]*)*\\.([0-9]*\\.[0-9]*)\","
-    }
+    "oldVersion": "-[\\s]*\"(@?\\S*)\":[\\s]\"([0-9]*)*\\.([0-9]*\\.[0-9]*)\",",
+    "newVersion": "\\+[\\s]*\"(@?\\S*)\":[\\s]\"([0-9]*)*\\.([0-9]*\\.[0-9]*)\","
+    },
+    {
+    "prAuthor": "renovate-bot",
+    "process":"dependency",
+    "targetFile": "package.json",
+    "dependency": "^(fix\\(deps\\)|chore\\(deps\\)): update dependency (@?\\S*) to v(\\S*)$",
+    "oldVersion": "-[\\s]*\"(@?\\S*)\":[\\s]\"([\\^0-9]*)*\\.([0-9]*\\.[0-9]*)\",",
+    "newVersion": "\\+[\\s]*\"(@?\\S*)\":[\\s]\"([\\^0-9]*)*\\.([0-9]*\\.[0-9]*)\","
+    },
+    {
+        "prAuthor": "renovate-bot",
+        "process":"dependency",
+        "targetFile": "samples/package.json",
+        "dependency": "^(fix\\(deps\\)|chore\\(deps\\)): update dependency (@?\\S*) to v(\\S*)$",
+        "oldVersion": "-[\\s]*\"(@?\\S*)\":[\\s]\"([\\^0-9]*)*\\.([0-9]*\\.[0-9]*)\",",
+        "newVersion": "\\+[\\s]*\"(@?\\S*)\":[\\s]\"([\\^0-9]*)*\\.([0-9]*\\.[0-9]*)\","
+        }
 ]

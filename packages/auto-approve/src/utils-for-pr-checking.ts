@@ -17,12 +17,16 @@ import {ValidPr} from './check-pr';
 
 export interface FileSpecificRule {
   prAuthor: string;
+  process: string;
   targetFile: string;
-  oldRegexVersion: string;
-  newRegexVersion: string;
+  dependency?: string;
+  oldVersion?: string;
+  newVersion?: string;
 }
 
 export interface Versions {
+  oldDependencyName: string;
+  newDependencyName: string;
   oldMajorVersion: string;
   oldMinorVersion: string;
   newMajorVersion: string;
@@ -44,19 +48,24 @@ export interface Versions {
 export function getTargetFile(
   changedFiles: File[],
   author: string,
-  languageRules: FileSpecificRule[]
-): {file: File; fileRule: FileSpecificRule} | undefined {
+  languageRules: FileSpecificRule[],
+  searchAfter: number
+): {file: File; fileRule: FileSpecificRule; ithElement: number} | undefined {
   let file;
   let fileRule;
+  let ithElement = 0;
+  let keepSearching = true;
 
-  for (const i in changedFiles) {
+  for (let i = searchAfter; i < changedFiles.length && keepSearching; i++) {
     for (const j in languageRules) {
       if (
         languageRules[j].prAuthor === author &&
         languageRules[j].targetFile === changedFiles[i].filename
       ) {
         file = changedFiles[i];
+        ithElement = i + 1;
         fileRule = languageRules[j];
+        keepSearching = false;
         break;
       }
     }
@@ -67,7 +76,7 @@ export function getTargetFile(
   if (!(file && fileRule)) {
     return undefined;
   } else {
-    return {file, fileRule};
+    return {file, fileRule, ithElement};
   }
 }
 
@@ -90,6 +99,8 @@ export function getVersions(
     return undefined;
   }
 
+  let oldDependencyName;
+  let newDependencyName;
   let oldMajorVersion;
   let oldMinorVersion;
   let newMajorVersion;
@@ -99,13 +110,15 @@ export function getVersions(
   const newVersions = versionFile.patch?.match(new RegExp(newVersionRegex));
 
   if (oldVersions) {
-    oldMajorVersion = oldVersions[1];
-    oldMinorVersion = oldVersions[2];
+    oldDependencyName = oldVersions[1];
+    oldMajorVersion = oldVersions[2];
+    oldMinorVersion = oldVersions[3];
   }
 
   if (newVersions) {
-    newMajorVersion = newVersions[1];
-    newMinorVersion = newVersions[2];
+    newDependencyName = newVersions[1];
+    newMajorVersion = newVersions[2];
+    newMinorVersion = newVersions[3];
   }
 
   // If there is a change with a file that requires special validation checks,
@@ -113,13 +126,45 @@ export function getVersions(
   // perform any other checks, since that would open us up to potentially merging a
   // sensitive file without having proper checks.
   if (
-    !(oldMajorVersion && oldMinorVersion && newMajorVersion && newMinorVersion)
+    !(
+      oldDependencyName &&
+      newDependencyName &&
+      oldMajorVersion &&
+      oldMinorVersion &&
+      newMajorVersion &&
+      newMinorVersion
+    )
   ) {
     throw Error(
       `Could not find versions in ${versionFile.filename}/${versionFile.sha}`
     );
   }
-  return {oldMajorVersion, oldMinorVersion, newMajorVersion, newMinorVersion};
+  return {
+    oldDependencyName,
+    newDependencyName,
+    oldMajorVersion,
+    oldMinorVersion,
+    newMajorVersion,
+    newMinorVersion,
+  };
+}
+
+export function doesDependencyMatchTarget(
+  versions: Versions,
+  dependencyRegex: string,
+  title: string
+): boolean {
+  let dependencyName;
+  const titleRegex = title.match(new RegExp(dependencyRegex));
+  if (titleRegex) {
+    dependencyName = titleRegex[2];
+    return (
+      versions.newDependencyName === versions.oldDependencyName &&
+      dependencyName === versions.newDependencyName
+    );
+  }
+
+  return false;
 }
 
 /**

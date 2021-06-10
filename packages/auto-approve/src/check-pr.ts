@@ -18,13 +18,14 @@ import {PullRequestEvent} from '@octokit/webhooks-definitions/schema';
 import {getChangedFiles, File} from './get-pr-info';
 import {logger} from 'gcf-utils';
 import {
-  FileSpecificRule,
   getTargetFile,
   getVersions,
   isMajorVersionChanging,
   isMinorVersionUpgraded,
   isOneDependencyChanged,
   checkFilePathsMatch,
+  doesDependencyMatchTarget,
+  Versions,
 } from './utils-for-pr-checking';
 import languageVersioningRules from './language-versioning-rules.json';
 // type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
@@ -64,7 +65,7 @@ export async function checkPRAgainstConfig(
     // changedFiles and maxFiles are not set in the JSON schema
     let filePathsMatch = true;
     let fileCountMatch = true;
-    const versionChecks = true;
+    let addtlRules = true;
 
     // Since there's only one allowed title per author right now, we don't need to
     // add complicated logic to see which title should match the incoming PR; but,
@@ -83,20 +84,54 @@ export async function checkPRAgainstConfig(
 
     // This function checks to see if the PR is a 'special' PR,
     // i.e., if its authorship qualifies it for further checks
-    const fileAndFileRule = getTargetFile(
+    let fileAndFileRule = getTargetFile(
       changedFiles,
       rulesToValidateAgainst.author,
-      languageVersioningRules
+      languageVersioningRules,
+      0
     );
 
     // If we've found the file in this ruleset, let's run the additional checks
-    if (fileAndFileRule) {
-      // TODO: make the checks conditional based on the different kinds of conditions
-      // to be checked, i.e., runDependencyUpgradeValidation, etc.
-      if (!runVersioningValidation(fileAndFileRule)) return false;
+    while (fileAndFileRule) {
+      const versions = getVersions(
+        fileAndFileRule.file,
+        fileAndFileRule.fileRule.oldVersion!,
+        fileAndFileRule.fileRule.newVersion!
+      );
+
+      // Have to enter different processes for different checks
+      if (versions && fileAndFileRule.fileRule.process === 'release') {
+        addtlRules =
+          runVersioningValidation(versions) &&
+          isOneDependencyChanged(fileAndFileRule.file);
+      } else if (
+        versions &&
+        fileAndFileRule.fileRule.process === 'dependency'
+      ) {
+        addtlRules =
+          doesDependencyMatchTarget(
+            versions,
+            // We can assert dependency will exist, since the process is type 'dependency'
+            fileAndFileRule.fileRule.dependency!,
+            title
+          ) &&
+          runVersioningValidation(versions) &&
+          isOneDependencyChanged(fileAndFileRule.file);
+      }
+
+      if (addtlRules === false) {
+        return false;
+      }
+
+      fileAndFileRule = getTargetFile(
+        changedFiles,
+        rulesToValidateAgainst.author,
+        languageVersioningRules,
+        fileAndFileRule.ithElement
+      );
     }
 
-    //check if changed file paths match1
+    //check if changed file paths match
     if (rulesToValidateAgainst.changedFiles) {
       filePathsMatch = checkFilePathsMatch(
         changedFiles.map(x => x.filename),
@@ -119,10 +154,10 @@ export async function checkPRAgainstConfig(
       `Info for ${repoOwner}/${repo}/${prNumber} File Count Matches? ${fileCountMatch}`
     );
     logger.info(
-      `Info for ${repoOwner}/${repo}/${prNumber} Versions are correct? ${versionChecks}`
+      `Info for ${repoOwner}/${repo}/${prNumber} Additional rules are correct? ${addtlRules}`
     );
 
-    return filePathsMatch && fileCountMatch && versionChecks;
+    return filePathsMatch && fileCountMatch && addtlRules;
   } else {
     logger.info(`${repoOwner}/${repo}/${prNumber} does not match config`);
     return false;
@@ -132,38 +167,21 @@ export async function checkPRAgainstConfig(
 /**
  * Runs additional validation checks when a version is upgraded to ensure that the
  * version is only upgraded, not downgraded, and that the major version is not bumped.
- * Also ensures that only one package is changed at a time.
  *
  * @param file The incoming target file that has a matching ruleset in language-versioning-rules
  * @param pr The matching ruleset of the file above from language-versioning-rules
  * @returns true if the package was upgraded appropriately, and had only one thing changed
  */
-function runVersioningValidation(addtlValidationFile?: {
-  file: File;
-  fileRule: FileSpecificRule;
-}): boolean {
+function runVersioningValidation(versions: Versions): boolean {
   let majorBump = true;
   let minorBump = false;
-  let oneDependencyChanged = false;
-  // If there's no additional validation file, then it will
-  // be trivially true
-  if (!addtlValidationFile) {
-    return true;
-  }
-
-  // We can assert addtlValidationFile exists since we exit if it doesn't
-  // before we enter these checks
-  const versions = getVersions(
-    addtlValidationFile.file,
-    addtlValidationFile.fileRule.oldRegexVersion,
-    addtlValidationFile.fileRule.newRegexVersion
-  );
+  //let oneDependencyChanged = false;
 
   if (versions) {
     majorBump = isMajorVersionChanging(versions);
     minorBump = isMinorVersionUpgraded(versions);
-    oneDependencyChanged = isOneDependencyChanged(addtlValidationFile.file!);
+    //oneDependencyChanged = isOneDependencyChanged(addtlValidationFile.file!);
   }
 
-  return !majorBump && minorBump && oneDependencyChanged;
+  return !majorBump && minorBump;
 }
