@@ -34,6 +34,7 @@ import {core} from '../src/core';
 import {FakeConfigsStore} from './fake-configs-store';
 import {GithubRepo} from '../src/github-repo';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
+import {newFakeOctokit} from './fake-octokit';
 const sandbox = sinon.createSandbox();
 
 describe('handlers', () => {
@@ -213,11 +214,11 @@ describe('handlers', () => {
 });
 
 describe('refreshConfigs', () => {
-  afterEach(() => {
-    sandbox.restore();
-  });
+  let fakeOctokit = newFakeOctokit();
 
   const octokitSha123 = {
+    issues: fakeOctokit.issues,
+    pulls: fakeOctokit.pulls,
     repos: {
       getBranch() {
         return {
@@ -231,6 +232,17 @@ describe('refreshConfigs', () => {
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any as InstanceType<typeof Octokit>;
+
+  beforeEach(() => {
+    fakeOctokit = newFakeOctokit();
+
+    octokitSha123.issues = fakeOctokit.issues;
+    octokitSha123.pulls = fakeOctokit.pulls;
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
 
   it('stores a good yaml', async () => {
     const configsStore = new FakeConfigsStore();
@@ -400,14 +412,38 @@ describe('refreshConfigs', () => {
 
     assert.deepStrictEqual(configsStore.configs, new Map());
   });
+
+  it('creates issues when configs cannot be loaded', async () => {
+    const configsStore = new FakeConfigsStore();
+    const universalInvalidContent = 'deep-copy-regex\n - invalid_prop: 1';
+
+    sandbox.stub(core, 'getFileContent').resolves(universalInvalidContent);
+
+    const issuesCreateSpy = sandbox.spy(octokitSha123.issues, 'create');
+
+    await refreshConfigs(
+      configsStore,
+      undefined,
+      octokitSha123,
+      'googleapis',
+      'nodejs-vision',
+      'main',
+      42
+    );
+
+    assert.strictEqual(issuesCreateSpy.callCount, 2);
+  });
 });
 
 describe('scanGithubForConfigs', () => {
   afterEach(() => {
     sandbox.restore();
   });
+  const fakeOctokit = newFakeOctokit();
 
   const octokitWithRepos = {
+    issues: fakeOctokit.issues,
+    pulls: fakeOctokit.pulls,
     repos: {
       getBranch() {
         return {
