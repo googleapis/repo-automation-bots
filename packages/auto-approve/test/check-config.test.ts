@@ -168,7 +168,7 @@ describe('check for config', () => {
       scopes.done();
       assert.strictEqual(
         response,
-        `You must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
+        `You must add this line to the CODEOWNERS file for auto-approve.yml to merge pull requests on this repo: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
       );
     });
 
@@ -187,7 +187,7 @@ describe('check for config', () => {
       scopes.done();
       assert.strictEqual(
         response,
-        `You must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
+        `You must add this line to the CODEOWNERS file for auto-approve.yml to merge pull requests on this repo: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
       );
     });
 
@@ -244,7 +244,7 @@ describe('check for config', () => {
       );
       assert.deepStrictEqual(
         response,
-        `You must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
+        `You must add this line to the CODEOWNERS file for auto-approve.yml to merge pull requests on this repo: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
       );
     });
   });
