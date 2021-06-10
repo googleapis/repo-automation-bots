@@ -23,7 +23,7 @@ export interface ConfigurationOptions {
 export const DEFAULT_CONFIGURATION: ConfigurationOptions = {
   ignoreFiles: [],
   alwaysCreateStatusCheck: false,
-  aggregateChecks: false,
+  aggregateChecks: true,
 };
 
 export const CONFIGURATION_FILE_PATH = 'snippet-bot.yml';

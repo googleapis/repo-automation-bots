@@ -165,7 +165,10 @@ describe('snippet-bot config validation', () => {
     getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
     getSnippetsStub.resolves(testSnippets);
     getConfigStub = sandbox.stub(configUtilsModule, 'getConfig');
-    getConfigStub.resolves({ignoreFiles: ['ignore.py']});
+    getConfigStub.resolves({
+      ignoreFiles: ['ignore.py'],
+      aggregateChecks: false,
+    });
   });
 
   afterEach(() => {
@@ -285,7 +288,24 @@ describe('snippet-bot bot-config-utils integration', () => {
         .get(
           '/repos/tmatsuo/repo-automation-bots/contents/.github%2Fsnippet-bot.yml'
         )
-        .reply(200, createConfigResponse('empty.yaml')),
+        .reply(200, createConfigResponse('empty.yaml'))
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
+        )
+        .reply(200, [])
+        .post(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200),
       nock('https://github.com')
         .get('/tmatsuo/repo-automation-bots/pull/14.diff')
         .reply(404, {}),
@@ -342,7 +362,10 @@ describe('snippet-bot', () => {
     getSnippetsStub = sandbox.stub(snippetsModule, 'getSnippets');
     getSnippetsStub.resolves(testSnippets);
     getConfigStub = sandbox.stub(configUtilsModule, 'getConfig');
-    getConfigStub.resolves({ignoreFiles: ['ignore.py']});
+    getConfigStub.resolves({
+      ignoreFiles: ['ignore.py'],
+      aggregateChecks: false,
+    });
     validateConfigStub = sandbox.stub(
       ConfigChecker.prototype,
       'validateConfigChanges'
@@ -731,7 +754,10 @@ describe('snippet-bot', () => {
       const payload = require(resolve(fixturesPath, './pr_event'));
 
       getConfigStub.reset();
-      getConfigStub.resolves({ignoreFiles: ['test.py']});
+      getConfigStub.resolves({
+        ignoreFiles: ['test.py'],
+        aggregateChecks: false,
+      });
 
       const requests = nock('https://api.github.com')
         .get(
@@ -780,6 +806,7 @@ describe('snippet-bot', () => {
       getConfigStub.resolves({
         ignoreFiles: ['test.py'],
         alwaysCreateStatusCheck: true,
+        aggregateChecks: false,
       });
 
       const requests = nock('https://api.github.com')
