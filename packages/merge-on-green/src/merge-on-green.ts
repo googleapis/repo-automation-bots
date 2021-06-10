@@ -13,12 +13,12 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, Context, ProbotOctokit} from 'probot';
+import {Probot, Context} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import {Datastore} from '@google-cloud/datastore';
 import {mergeOnGreen} from './merge-logic';
 import {logger} from 'gcf-utils';
-
-type GitHubType = InstanceType<typeof ProbotOctokit>;
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
@@ -148,7 +148,7 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
   prNumber: number,
   label: string,
   reactionId: number,
-  github: GitHubType
+  github: Octokit
 ) {
   try {
     await github.issues.removeLabel({
@@ -187,7 +187,7 @@ handler.checkIfPRIsInvalid = async function checkIfPRIsInvalid(
   label: string,
   reactionId: number,
   url: string,
-  github: GitHubType
+  github: Octokit
 ) {
   let pr;
   let labels;
@@ -247,7 +247,7 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
   repo: string,
   prNumber: number,
   baseBranch: string | undefined,
-  github: GitHubType
+  github: Octokit
 ): Promise<string[] | undefined> {
   let branchProtection: string[] | undefined;
   // Check to see if branch protection exists
@@ -289,7 +289,7 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
 handler.addPR = async function addPR(
   incomingPR: IncomingPR,
   url: string,
-  github: GitHubType
+  github: Octokit
 ) {
   let branchProtection: string[] | undefined;
   try {
@@ -439,7 +439,7 @@ handler.checkPRMergeability = async function checkPRMergeability(
  * @returns void
  */
 handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
-  github: GitHubType,
+  github: Octokit,
   org: string
 ) {
   // Github does not support searching the labels with 'OR'.
