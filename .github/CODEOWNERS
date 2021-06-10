@@ -25,4 +25,4 @@ packages/sync-repo-settings/*         @googleapis/github-automation @JustinBeckw
 packages/trusted-contribution/*       @googleapis/github-automation @crwilcox
 
 # The github automation team is the default owner for the auto-approve file.
-.github/auto-approve.yml @googleapis/github-automation
+.github/auto-approve.yml @googleapis/github-automation/
