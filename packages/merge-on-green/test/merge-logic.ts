@@ -27,16 +27,9 @@ import {
 } from '../src/merge-logic';
 import {logger} from 'gcf-utils';
 // eslint-disable-next-line node/no-extraneous-import
-import {config} from '@probot/octokit-plugin-config';
-import {resolve} from 'path';
-
-const TestingOctokit = ProbotOctokit.plugin(config).defaults({
-  retry: {enabled: false},
-  throttle: {enabled: false},
-});
+import {Octokit} from '@octokit/rest';
 
 const sandbox = sinon.createSandbox();
-const fixturesPath = resolve(__dirname, '../../test/Fixtures');
 
 interface HeadSha {
   sha: string;
@@ -174,7 +167,10 @@ describe('merge-logic', () => {
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
-        Octokit: TestingOctokit,
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
       },
     });
 
@@ -837,7 +833,7 @@ describe('merge-logic', () => {
         'testOwner',
         'testRepo',
         1,
-        new TestingOctokit({auth: 'abc123'})
+        new Octokit({auth: 'abc123'})
       );
       lastCommitRequest.done();
       assert.match(lastCommit, /lastcommit/);
