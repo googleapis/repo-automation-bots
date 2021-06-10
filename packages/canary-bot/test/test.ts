@@ -28,7 +28,9 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 function listIssues(owner: string, repo: string, issues: object[]) {
   return nock('https://api.github.com')
-    .get(`/repos/${owner}/${repo}/issues?per_page=100&state=all&title=A%20canary%20is%20chirping`)
+    .get(
+      `/repos/${owner}/${repo}/issues?per_page=100&state=all&title=A%20canary%20is%20chirping`
+    )
     .reply(200, issues);
 }
 
@@ -49,7 +51,9 @@ describe('canary-bot', () => {
     });
     await probot.load(myProbotApp);
     addOrUpdateIssueCommentStub = sandbox.stub(
-      gcfUtilsModule, 'addOrUpdateIssueComment');
+      gcfUtilsModule,
+      'addOrUpdateIssueComment'
+    );
   });
 
   afterEach(async () => {
@@ -76,17 +80,14 @@ describe('canary-bot', () => {
     });
     it('creates an issue', async () => {
       const scopes = [
-        listIssues('googleapis', 'repo-automation-bots', [
-          {}
-        ]),
+        listIssues('googleapis', 'repo-automation-bots', [{}]),
         nock('https://api.github.com')
           .post('/repos/googleapis/repo-automation-bots/issues', body => {
-            assert.strictEqual(body.title, 'A canary is chirping')
+            assert.strictEqual(body.title, 'A canary is chirping');
             return true;
           })
-          .reply(200)
-
-      ]
+          .reply(200),
+      ];
       await probot.receive({
         name: 'schedule.repository' as '*',
         payload: {
@@ -110,16 +111,17 @@ describe('canary-bot', () => {
     it('updates an issue', async () => {
       const scopes = [
         listIssues('googleapis', 'repo-automation-bots', [
-          {title: 'A canary is chirping', number: 5}
+          {title: 'A canary is chirping', number: 5},
         ]),
         nock('https://api.github.com')
           .patch('/repos/googleapis/repo-automation-bots/issues/5', body => {
-            assert(body.body.includes('The dependencies and their versions are'))
+            assert(
+              body.body.includes('The dependencies and their versions are')
+            );
             return true;
           })
-          .reply(200)
-
-      ]
+          .reply(200),
+      ];
       await probot.receive({
         name: 'schedule.repository' as '*',
         payload: {
