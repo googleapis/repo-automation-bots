@@ -18,16 +18,14 @@ import {describe, it, beforeEach, afterEach} from 'mocha';
 import path from 'path';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, Context, createProbot} from 'probot';
+import {Probot, Context, createProbot, ProbotOctokit} from 'probot';
 import * as sinon from 'sinon';
 import * as labelSync from '../src/label-sync';
 import * as assert from 'assert';
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
 import {config} from '@probot/octokit-plugin-config';
-import {createProbotAuth} from 'octokit-auth-probot';
-const TestingOctokit = Octokit.plugin(config).defaults({
-  authStrategy: createProbotAuth,
+const TestingOctokit = ProbotOctokit.plugin(config).defaults({
+  retry: {enabled: false},
+  throttle: {enabled: false},
 });
 
 nock.disableNetConnect();
@@ -87,7 +85,7 @@ describe('Label Sync', () => {
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
-        Octokit: TestingOctokit as any,
+        Octokit: TestingOctokit,
       },
     });
 

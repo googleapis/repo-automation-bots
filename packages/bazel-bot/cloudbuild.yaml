@@ -23,6 +23,11 @@ steps:
     - 'GITHUB_APP_INSTALLATION_ID=14395202'
     - 'GITHUB_APP_ID=97063'
     - 'GITHUB_APP_SECRET=/workspace/bazel-bot-github-key.pem'
+    # If as $sha is contained in a list of bad SHAs (SHAs that
+    # will cause bazel to fail) skip the sha. The variable $BROKEN_SHAS
+    # is defined in the Cloud Build UI, with the intention that it is only
+    # used for exceptional circumstances.
+    - "BROKEN_SHAS=$_BROKEN_SHAS"
 
 timeout: '7200s'
 

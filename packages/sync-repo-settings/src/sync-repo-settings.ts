@@ -19,6 +19,7 @@ import {
   BranchProtectionRule,
   PermissionRule,
 } from './types';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import checks from './required-checks.json';
 

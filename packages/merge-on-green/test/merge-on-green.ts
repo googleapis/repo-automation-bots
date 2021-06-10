@@ -24,10 +24,7 @@ import assert from 'assert';
 // eslint-disable-next-line node/no-extraneous-import
 import {config} from '@probot/octokit-plugin-config';
 
-import {createProbotAuth} from 'octokit-auth-probot';
-
 const TestingOctokit = ProbotOctokit.plugin(config).defaults({
-  authStrategy: createProbotAuth,
   retry: {enabled: false},
   throttle: {enabled: false},
 });
