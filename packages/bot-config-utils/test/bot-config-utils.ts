@@ -20,9 +20,9 @@ import * as assert from 'assert';
 import * as chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import {describe, it, beforeEach} from 'mocha';
-/* eslint-disable-next-line node/no-extraneous-import */
+// eslint-disable-next-line node/no-extraneous-import
 import {Probot, ProbotOctokit} from 'probot';
-/* eslint-disable-next-line node/no-extraneous-import */
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 
 import {
@@ -230,6 +230,20 @@ describe('config test app', () => {
     nock.cleanAll();
   });
   describe('responds to PR', () => {
+    it('does not die upon 404 github api responses', async () => {
+      const payload = require(resolve(fixturesPath, 'pr_event'));
+
+      const scope = nock('https://api.github.com')
+        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+        .reply(404);
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+      scope.done();
+      assert.strictEqual(configFromConfigChecker, null);
+    });
     it('does not creates a failing status check for a correct config', async () => {
       const payload = require(resolve(fixturesPath, 'pr_event'));
 

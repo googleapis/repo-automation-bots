@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
 import {Endpoints} from '@octokit/types';
 
 import {RegionTagLocation} from './region-tag-parser';
