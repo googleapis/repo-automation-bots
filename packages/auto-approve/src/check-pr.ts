@@ -26,6 +26,7 @@ import {
   checkFilePathsMatch,
   doesDependencyMatchTarget,
   Versions,
+  mergesOnWeekday,
 } from './utils-for-pr-checking';
 import languageVersioningRules from './language-versioning-rules.json';
 // type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
@@ -110,7 +111,8 @@ export async function checkPRAgainstConfig(
         // bumps and are increasing, and are only changing one at a time
         addtlRules =
           runVersioningValidation(versions) &&
-          isOneDependencyChanged(fileAndFileRule.file);
+          isOneDependencyChanged(fileAndFileRule.file) &&
+          mergesOnWeekday();
       } else if (
         versions &&
         fileAndFileRule.fileRule.process === 'dependency'

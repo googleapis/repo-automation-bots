@@ -94,7 +94,7 @@ export async function checkCodeOwners(
   let codeOwnersFile;
   let message = '';
   const createCodeownersMessage = `You must create a CODEOWNERS file for the configuration file for auto-approve.yml that lives in .github/CODEWONERS in your repository, and contains this line: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/; please make sure it is accessible publicly.`;
-  const addToExistingCodeownersMessage = `You must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`;
+  const addToExistingCodeownersMessage = `You must add this line to the CODEOWNERS file for auto-approve.yml to merge pull requests on this repo: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`;
 
   // If the CODEOWNERS file is being changed, make sure it includes the following regex. Otherwise, see if the
   // existing CODEOWNERS file has that regex. If the CODEOWNERS file is being changed and the blob does not

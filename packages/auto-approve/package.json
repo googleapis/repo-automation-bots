@@ -22,12 +22,14 @@
     "start": "probot run ./build/src/auto-approve",
     "pretest": "npm run compile",
     "test": "cross-env c8 mocha --exit build/test",
+    "test:snap": "SNAPSHOT_UPDATE=1 npm test",
     "fix": "gts fix",
     "lint": "gts check"
   },
   "dependencies": {
     "@google-cloud/secret-manager": "^3.6.0",
     "ajv": "^8.0.5",
+    "dayjs": "^1.10.5",
     "gcf-utils": "^7.1.3"
   },
   "devDependencies": {
@@ -36,7 +38,7 @@
     "@octokit/webhooks-definitions": "^3.62.6",
     "@probot/octokit-plugin-config": "^1.0.3",
     "@types/mocha": "^8.0.0",
-    "@types/node": "^12.6.1",
+    "@types/node": "^14.0.0",
     "@types/sinon": "^10.0.0",
     "c8": "^7.3.5",
     "cross-env": "^7.0.0",
