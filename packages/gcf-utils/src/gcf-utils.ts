@@ -92,14 +92,14 @@ export const getCommentMark = (installationId: number): string => {
  * It creates a comment, or if the bot already created a comment, it
  * updates the same comment.
  *
- * @param {Octokit} github - The Octokit instance.
+ * @param {Octokit} octokit - The Octokit instance.
  * @param {string} owner - The owner of the issue.
  * @param {string} repo - The name of the repository.
  * @param {number} issueNumber - The number of the issue.
  * @param {number} installationId - A unique number for identifying the issue
- *   comment
+ *   comment.
  * @param {string} commentBody - The body of the comment.
- * @param {boolean} onlyUpdate - If set to true, it will only update the
+ * @param {boolean} onlyUpdate - If set to true, it will only update an
  *   existing issue comment.
  */
 export const addOrUpdateIssueComment = async (
