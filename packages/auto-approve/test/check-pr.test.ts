@@ -21,6 +21,7 @@ import {checkFilePathsMatch} from '../src/utils-for-pr-checking';
 import nock from 'nock';
 import {resolve} from 'path';
 import yaml from 'js-yaml';
+import sinon from 'sinon';
 
 const {Octokit} = require('@octokit/rest');
 
@@ -36,6 +37,14 @@ function listChangedFilesPR(status: number, response: File[]) {
 }
 
 describe('check pr against config', async () => {
+  beforeEach(() => {
+    sinon.stub(Date, 'now').returns(1623280558000);
+  });
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
   describe('checks that files match at least one of the patterns', () => {
     it('should return true if the file list is empty', () => {
       const prFiles = [

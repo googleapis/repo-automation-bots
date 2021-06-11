@@ -73,6 +73,9 @@ export async function checkPRAgainstConfig(
     // add complicated logic to see which title should match the incoming PR; but,
     // this could be logic we work into the future.
     if (!title.match(rulesToValidateAgainst.title)) {
+      logger.info(
+        `Info for ${repoOwner}/${repo}/${prNumber} title does not match what is allowed`
+      );
       return false;
     }
 
@@ -205,12 +208,10 @@ export async function checkPRAgainstConfig(
 function runVersioningValidation(versions: Versions): boolean {
   let majorBump = true;
   let minorBump = false;
-  //let oneDependencyChanged = false;
 
   if (versions) {
     majorBump = isMajorVersionChanging(versions);
     minorBump = isMinorVersionUpgraded(versions);
-    //oneDependencyChanged = isOneDependencyChanged(addtlValidationFile.file!);
   }
 
   return !majorBump && minorBump;
