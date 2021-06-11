@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {createProbot, Probot, ProbotOctokit, Options} from 'probot';
+import {createProbot, Probot, Options} from 'probot';
 import {ApplicationFunction} from 'probot/lib/types';
 import {createProbotAuth} from 'octokit-auth-probot';
 
@@ -32,8 +32,6 @@ import {v4} from 'uuid';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
-
-type ProbotOctokitType = InstanceType<typeof ProbotOctokit>;
 
 interface Scheduled {
   repo?: string;
@@ -90,16 +88,31 @@ export const getCommentMark = (installationId: number): string => {
   return `<!-- probot comment [${installationId}]-->`;
 };
 
+/**
+ * It creates a comment, or if the bot already created a comment, it
+ * updates the same comment.
+ *
+ * @param {Octokit} github - The Octokit instance.
+ * @param {string} owner - The owner of the issue.
+ * @param {string} repo - The name of the repository.
+ * @param {number} issueNumber - The number of the issue.
+ * @param {number} installationId - A unique number for identifying the issue
+ *   comment
+ * @param {string} commentBody - The body of the comment.
+ * @param {boolean} onlyUpdate - If set to true, it will only update the
+ *   existing issue comment.
+ */
 export const addOrUpdateIssueComment = async (
-  github: ProbotOctokitType,
+  octokit: Octokit,
   owner: string,
   repo: string,
   issueNumber: number,
   installationId: number,
-  commentBody: string
+  commentBody: string,
+  onlyUpdate = false
 ) => {
   const commentMark = getCommentMark(installationId);
-  const listCommentsResponse = await github.issues.listComments({
+  const listCommentsResponse = await octokit.issues.listComments({
     owner: owner,
     repo: repo,
     per_page: 50, // I think 50 is enough, but I may be wrong.
@@ -109,7 +122,7 @@ export const addOrUpdateIssueComment = async (
   for (const comment of listCommentsResponse.data) {
     if (comment.body?.includes(commentMark)) {
       // We found the existing comment, so updating it
-      await github.issues.updateComment({
+      await octokit.issues.updateComment({
         owner: owner,
         repo: repo,
         comment_id: comment.id,
@@ -118,8 +131,8 @@ export const addOrUpdateIssueComment = async (
       found = true;
     }
   }
-  if (!found) {
-    await github.issues.createComment({
+  if (!found && !onlyUpdate) {
+    await octokit.issues.createComment({
       owner: owner,
       repo: repo,
       issue_number: issueNumber,
