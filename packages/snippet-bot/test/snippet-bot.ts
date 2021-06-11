@@ -293,14 +293,6 @@ describe('snippet-bot bot-config-utils integration', () => {
           '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
-        .post(
-          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
-          body => {
-            snapshot(body);
-            return true;
-          }
-        )
-        .reply(200)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
@@ -603,15 +595,7 @@ describe('snippet-bot', () => {
         .get(
           '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
-        .reply(200, [])
-        .post(
-          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
-          body => {
-            snapshot(body);
-            return true;
-          }
-        )
-        .reply(200);
+        .reply(200, []);
 
       const diffRequests = nock('https://github.com')
         .get('/tmatsuo/repo-automation-bots/pull/14.diff')
@@ -819,14 +803,6 @@ describe('snippet-bot', () => {
           '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
-        .post(
-          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
-          body => {
-            snapshot(body);
-            return true;
-          }
-        )
-        .reply(200)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
@@ -878,14 +854,6 @@ describe('snippet-bot', () => {
           '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
         )
         .reply(200, [])
-        .post(
-          '/repos/tmatsuo/repo-automation-bots/issues/14/comments',
-          body => {
-            snapshot(body);
-            return true;
-          }
-        )
-        .reply(200)
         .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
           snapshot(body);
           return true;
