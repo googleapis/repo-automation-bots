@@ -460,6 +460,9 @@ describe('run additional versioning checks', () => {
       );
 
       assert.strictEqual(doesDependencyMatch, false);
+    });
+  });
+
   describe('merging outside of working hours', () => {
     it('should return true if the date is within working hours', () => {
       // Faking a Wednesday
