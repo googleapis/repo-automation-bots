@@ -69,6 +69,8 @@ export function RepoDescriptorConvertor(input: string): string {
 /**
  * This class accepts a list of `Selectors` (note: `Selectors` is a
  * list of `Selector`). Each `Selectors` are combined with OR.
+ *
+ * @template T
  */
 export class ObjectSelector<T> {
   private listOfSelectors: Array<Selectors>;
@@ -86,6 +88,10 @@ export class ObjectSelector<T> {
   }
   /**
    * It will apply Selectors to the given Iterable and returns matched objects.
+   *
+   * @template T
+   * @param {Iterable<T>} targets - An iterable of target objects.
+   * @returns {Array<T>}
    */
   public select(targets: Iterable<T>): Array<T> {
     const result: Array<T> = [];
@@ -98,6 +104,11 @@ export class ObjectSelector<T> {
   }
   /**
    * It will apply Selectors to the given object and return the result.
+   *
+   * @template T
+   * @param {T} target - The target object.
+   * @returns {boolean} - If the selectors match the object, returns true,
+   *   otherwise false.
    */
   public match(target: T): boolean {
     // Each `Selectors` represents a list of Selectors combined with AND
