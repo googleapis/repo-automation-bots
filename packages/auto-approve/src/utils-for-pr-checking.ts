@@ -14,7 +14,11 @@
 
 import {File} from './get-pr-info';
 import {ValidPr} from './check-pr';
-
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(utc);
+dayjs.extend(timezone);
 export interface FileSpecificRule {
   prAuthor: string;
   targetFile: string;
@@ -180,4 +184,18 @@ export function checkFilePathsMatch(
     }
   }
   return filesMatch;
+}
+
+/**
+ * Checks whether the attempted merge is happening during the week.
+ *
+ * @returns true if merge is happening on the weekday, false if it's on Friday or the weekend.
+ */
+export function mergesOnWeekday(): boolean {
+  const date = dayjs.tz(Date.now(), 'America/Los_Angeles');
+  const dayOfWeek = date.day();
+  if (dayOfWeek >= 5 || dayOfWeek === 0) {
+    return false;
+  }
+  return true;
 }
