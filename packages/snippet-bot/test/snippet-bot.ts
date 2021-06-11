@@ -882,6 +882,111 @@ describe('snippet-bot', () => {
       );
     });
 
+    it('does not create a comment because no region tag is edited in the PR', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const diffResponse = fs.readFileSync(
+        resolve(fixturesPath, 'diff_without_regiontag_changes.txt')
+      );
+      const payload = require(resolve(fixturesPath, './pr_event'));
+
+      getConfigStub.reset();
+      getConfigStub.resolves({
+        ignoreFiles: ['test.py'],
+        aggregateChecks: true,
+      });
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
+        )
+        .reply(200, [])
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      const diffRequests = nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+        .reply(200, diffResponse);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+      diffRequests.done();
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
+      );
+    });
+
+    it('update the past comment even if no region tag is edited in the PR', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const diffResponse = fs.readFileSync(
+        resolve(fixturesPath, 'diff_without_regiontag_changes.txt')
+      );
+      const payload = require(resolve(fixturesPath, './pr_event'));
+
+      getConfigStub.reset();
+      getConfigStub.resolves({
+        ignoreFiles: ['test.py'],
+        aggregateChecks: true,
+      });
+
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/repo-automation-bots/issues/14/comments?per_page=50'
+        )
+        .reply(200, [
+          {
+            body: '<!-- probot comment [11237253]-->',
+            id: 42,
+          },
+        ])
+        .patch(
+          '/repos/tmatsuo/repo-automation-bots/issues/comments/42',
+          body => {
+            snapshot(body);
+            return true;
+          }
+        )
+        .reply(200)
+        .post('/repos/tmatsuo/repo-automation-bots/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+
+      const diffRequests = nock('https://github.com')
+        .get('/tmatsuo/repo-automation-bots/pull/14.diff')
+        .reply(200, diffResponse);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+
+      requests.done();
+      diffRequests.done();
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'tmatsuo',
+        'repo-automation-bots',
+        CONFIGURATION_FILE_PATH,
+        {schema: schema}
+      );
+    });
+
     it('quits early if there is no config file', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const payload = require(resolve(fixturesPath, './pr_event'));
