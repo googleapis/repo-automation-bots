@@ -22,6 +22,16 @@
 # When the test passes, it keeps the changes so that you can create a
 # PR, or multiple PRs.
 
+# The only option is `--ncu`
+# To use this option, you need to install npm-check-updates
+# npm i -g npm-check-updates
+
+# With `--ncu` option, this script will first try to update
+# package.json with major bumps with npm-check-updates, then
+# it continues to update package-lock.json and run tests.
+# When this first trial fails, it reset the subdirectory and
+# start from `npm i`.
+
 set -euo pipefail
 
 if command -v tput >/dev/null && [[ -n "${TERM:-}" ]]; then
@@ -109,6 +119,93 @@ dump_details() {
     } >> "${failure_details}"
 }
 
+try_update() {
+    local with_ncu=""
+    if [ "$#" == 1 ]; then
+	with_ncu="${1}"
+    fi
+    log_yellow "Running 'npm update' ${with_ncu} in ${package}"
+    if [ -z "${with_ncu}" ]; then
+	logfile="${tmpdir}/${package}-npm-update.log"
+    else
+	logfile="${tmpdir}/${package}-npm-update-with-ncu.log"
+    fi
+    if ! npm update --no-color > "${logfile}"; then
+	# Failed, add it to summary and continue.
+	echo "- [ ] ${package}: 'npm update' ${with_ncu} failed" >> "${failure_summary}"
+
+	# For copy paste into the issue.
+	dump_details "${package}" "${logfile}"
+
+	# display failure
+	log_red "${package}: 'npm update' ${with_ncu} failed"
+	git restore .
+	return 1
+    fi
+
+    log_yellow "Running 'npm i' ${with_ncu} in ${package}"
+    if [ -z "${with_ncu}" ]; then
+	logfile="${tmpdir}/${package}-npm-i.log"
+    else
+	logfile="${tmpdir}/${package}-npm-i-with-ncu.log"
+    fi
+    if ! npm i --no-color > "${logfile}"; then
+	# Failed, add it to summary and continue.
+	echo "- [ ] ${package}: 'npm i' ${with_ncu} failed" >> "${failure_summary}"
+
+	# For copy paste into the issue.
+	dump_details "${package}" "${logfile}"
+
+	# display failure
+	log_red "${package}: 'npm i' ${with_ncu} failed"
+	git restore .
+	return 1
+    fi
+
+    log_yellow "Running 'npm fix' ${with_ncu} in ${package}"
+    if [ -z "${with_ncu}" ]; then
+	logfile="${tmpdir}/${package}-npm-fix.log"
+    else
+	logfile="${tmpdir}/${package}-npm-fix-with-ncu.log"
+    fi
+    if ! npm run fix --no-color > "${logfile}"; then
+	# Failed, add it to summary and continue.
+	echo "- [ ] ${package}: 'npm fix' ${with_ncu} failed" >> "${failure_summary}"
+
+	# For copy paste into the issue.
+	dump_details "${package}" "${logfile}"
+
+	# display failure
+	log_red "${package}: 'npm fix' ${with_ncu} failed"
+
+	git restore .
+	return 1
+    fi
+
+    log_yellow "Running 'npm run test' ${with_ncu} in ${package}"
+    if [ -z "${with_ncu}" ]; then
+	logfile="${tmpdir}/${package}-npm-run-test.log"
+    else
+	logfile="${tmpdir}/${package}-npm-run-test-with-ncu.log"
+    fi
+    if ! npm run test --no-color > "${logfile}"; then
+	# Failed, add it to summary and continue.
+	echo "- [ ] ${package}: 'npm run test' ${with_ncu} failed" >> "${failure_summary}"
+
+	# For copy paste into the issue.
+	dump_details "${package}" "${logfile}"
+
+	# display failure
+	log_red "${package}: 'npm run test' ${with_ncu} failed"
+
+	git restore .
+	return 1
+    fi
+
+    log_green "${package}: successfully updated package-lock.json ${with_ncu}"
+    return 0
+}
+
 for subdir in packages/*/
 do
     subdir="${subdir%*/}"
@@ -122,73 +219,30 @@ do
 	continue
     fi
 
-    log_yellow "Update package-lock.json in ${package}"
-    rm package-lock.json
+    log_yellow "Updating package-lock.json in ${package}"
 
-    log_yellow "Running 'npm update' in ${package}"
-    logfile="${tmpdir}/${package}-npm-update.log"
-    if ! npm update --no-color > "${logfile}"; then
-	# Failed, add it to summary and continue.
-	echo "- [ ] ${package}: 'npm update' failed" >> "${failure_summary}"
+    if [ "${1}" == "--ncu" ]; then
+	rm package-lock.json
+	log_yellow "Running 'ncu -u' in ${package}"
+	logfile="${tmpdir}/${package}-ncu.log"
+	if ! ncu -u > "${logfile}"; then
+	    # Failed, add it to summary and continue.
+	    echo "- [ ] ${package}: 'ncu -u' failed" >> "${failure_summary}"
 
-	# For copy paste into the issue.
-	dump_details "${package}" "${logfile}"
+	    # For copy paste into the issue.
+	    dump_details "${package}" "${logfile}"
 
-	# display failure
-	log_red "${package}: 'npm update' failed"
-	git restore .
-	popd
-	continue
-    fi
-
-    log_yellow "Running 'npm i' in ${package}"
-    logfile="${tmpdir}/${package}-npm-i.log"
-    if ! npm i --no-color > "${logfile}"; then
-	# Failed, add it to summary and continue.
-	echo "- [ ] ${package}: 'npm i' failed" >> "${failure_summary}"
-
-	# For copy paste into the issue.
-	dump_details "${package}" "${logfile}"
-
-	# display failure
-	log_red "${package}: 'npm i' failed"
-	git restore .
-	popd
-	continue
-    fi
-
-    log_yellow "Running 'npm fix' in ${package}"
-    logfile="${tmpdir}/${package}-npm-fix.log"
-    if ! npm run fix --no-color > "${logfile}"; then
-	# Failed, add it to summary and continue.
-	echo "- [ ] ${package}: 'npm fix' failed" >> "${failure_summary}"
-
-	# For copy paste into the issue.
-	dump_details "${package}" "${logfile}"
-
-	# display failure
-	log_red "${package}: 'npm fix' failed"
-
-	git restore .
-	popd
-	continue
-    fi
-
-    log_yellow "Running 'npm run test' in ${package}"
-    logfile="${tmpdir}/${package}-npm-run-test.log"
-    if ! npm run test --no-color > "${logfile}"; then
-	# Failed, add it to summary and continue.
-	echo "- [ ] ${package}: 'npm run test' failed" >> "${failure_summary}"
-
-	# For copy paste into the issue.
-	dump_details "${package}" "${logfile}"
-
-	# display failure
-	log_red "${package}: 'npm run test' failed"
-
-	git restore .
-	popd
-	continue
+	    # display failure
+	    log_red "${package}: 'ncu -u' failed"
+	    git restore .
+	else
+	    # Succeeded, let's try updating package-lock.json too.
+	    if ! try_update "with ncu"; then
+		# Failed with ncu, try update it without ncu
+		rm package-lock.json
+		try_update
+	    fi
+	fi
     fi
 
     if [ -z "$(git status --porcelain .)" ]; then
