@@ -646,6 +646,73 @@ describe('owlBot', () => {
     });
     sandbox.assert.calledOnce(loggerStub);
   });
+
+  describe('pull request merged', () => {
+    let loggerWarnStub: sinon.SinonStub;
+    let scanGithubForConfigsStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      loggerWarnStub = sandbox.stub(logger, 'warn');
+      scanGithubForConfigsStub = sandbox
+        .stub(handlers, 'scanGithubForConfigs')
+        .resolves();
+    });
+
+    it('invokes scanGithubForConfigs', async () => {
+      const payload = {
+        organization: {
+          login: 'googleapis',
+        },
+        installation: {
+          id: 12345,
+        },
+      };
+
+      await probot.receive({
+        name: 'pull_request.merged',
+        payload,
+        id: 'abc123',
+      });
+
+      assert.strictEqual(loggerWarnStub.called, false);
+      assert.strictEqual(scanGithubForConfigsStub.callCount, 1);
+    });
+
+    it('should warn if `payload.installation.id` is not available', async () => {
+      const payload = {
+        organization: {
+          login: 'googleapis',
+        },
+      };
+
+      await probot.receive({
+        name: 'pull_request.merged',
+        payload,
+        id: 'abc123',
+      });
+
+      assert.strictEqual(loggerWarnStub.called, true);
+      assert.strictEqual(scanGithubForConfigsStub.callCount, 0);
+    });
+
+    it('should warn if `payload.organization.login` is not available', async () => {
+      const payload = {
+        installation: {
+          id: 12345,
+        },
+      };
+
+      await probot.receive({
+        name: 'pull_request.merged',
+        payload,
+        id: 'abc123',
+      });
+
+      assert.strictEqual(loggerWarnStub.called, true);
+      assert.strictEqual(scanGithubForConfigsStub.callCount, 0);
+    });
+  });
+
   describe('scan configs cron', () => {
     it('invokes scanGithubForConfigs', async () => {
       const payload = {

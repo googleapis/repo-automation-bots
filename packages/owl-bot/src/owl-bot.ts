@@ -147,13 +147,34 @@ export function OwlBot(
     }
   });
 
+  // Ensure up-to-date configuration is stored on merge
+  app.on('pull_request.merged', async context => {
+    const configStore = new FirestoreConfigsStore(db!);
+    const installationId = context.payload.installation?.id;
+    const org = context.payload.organization?.login;
+
+    logger.info('Scanning GitHub for configs (via `pull_request.merged`)');
+
+    if (!installationId || !org) {
+      logger.warn(`Missing install id (${installationId}) or org (${org})`);
+      return;
+    }
+
+    await scanGithubForConfigs(
+      configStore,
+      context.octokit,
+      org,
+      installationId
+    );
+  });
+
   // Run periodically, to ensure that up-to-date configuration is stored
   // for repositories:
   app.on('schedule.repository' as '*', async context => {
     const configStore = new FirestoreConfigsStore(db!);
-    logger.info(
-      `scan ${context.payload.org} istallation = ${context.payload.installation.id}`
-    );
+
+    logger.info('Scanning GitHub for configs (via `schedule.repository`)');
+
     await scanGithubForConfigs(
       configStore,
       context.octokit,
