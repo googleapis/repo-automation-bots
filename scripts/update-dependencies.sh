@@ -14,23 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Update the package-lock.json files and run tests.
+# To use this script, you need to install npm-check-updates
+# npm i -g npm-check-updates
+
+# This script will first try to update package.json with major bumps
+# with npm-check-updates, then run the following:
+# - npm i
+# - npm run fix
+# - npm run test
 
 # When the test fails, it stores the test log and the summary in the
-# temp directory, and revert the changes in the sub directory.
+# temp directory, and revert the changes in the sub directory. The
+# script then try to do the same thing without the major bumps.
 
 # When the test passes, it keeps the changes so that you can create a
 # PR, or multiple PRs.
 
-# The only option is `--ncu`
-# To use this option, you need to install npm-check-updates
-# npm i -g npm-check-updates
+# By default it iterates all the packages in `packages` directory.
+# You can pass individual directories as arguments.
 
-# With `--ncu` option, this script will first try to update
-# package.json with major bumps with npm-check-updates, then
-# it continues to update package-lock.json and run tests.
-# When this first trial fails, it reset the subdirectory and
-# start from `npm i`.
+# e.g.
+# scripts/update-dependencies.sh packages/snippet-bot packages/bot-config-utils
 
 set -euo pipefail
 
@@ -86,6 +90,7 @@ readonly tmpdir=$(mktemp -d -t update-package-locks-XXXXX)
 
 log_yellow "Using ${tmpdir} as the log directory"
 
+# It always notify the tmp log file directory.
 function notify() {
     echo "${IO_COLOR_YELLOW}============================================="
     echo "To delete the temp files, run the following command:"
@@ -95,7 +100,7 @@ function notify() {
 
 trap notify EXIT
 
-# Iterate the subdirectories under packages directory.
+# cd to the root directory
 readonly scriptdir=$(dirname "$0")
 readonly rootdir=$(cd "${scriptdir}"; cd ..; pwd)
 
@@ -107,6 +112,8 @@ readonly failure_details="${tmpdir}/failure-details.txt"
 
 set +e
 
+# This function format the failure log for copy paste into a
+# markdown file.
 dump_details() {
     local package="${1}"
     local logfile="${2}"
@@ -119,6 +126,15 @@ dump_details() {
     } >> "${failure_details}"
 }
 
+# This function runs the following commands in the current directory.
+# - npm update
+# - npm i
+# - npm run fix
+# - npm run test
+#
+# The logs are stored in the tmp log directory with a corresponding name.
+# When any of above fails, it will restore the current directory and return
+# 1 (non success value).
 try_update() {
     local with_ncu=""
     if [ "$#" == 1 ]; then
@@ -206,7 +222,20 @@ try_update() {
     return 0
 }
 
-for subdir in packages/*/
+# When any arguments are give, it only runs for the given directory.
+if [ "${#}"  -ge 1 ]; then
+    target_dirs=("${@}")
+else
+    # By default it iterates all the packages in `packages` directory.
+    target_dirs=()
+    for subdir in packages/*/
+    do
+	subdir="${subdir%*/}"
+	target_dirs+=("${subdir}")
+    done
+fi
+
+for subdir in "${target_dirs[@]}"
 do
     subdir="${subdir%*/}"
     package="${subdir##*/}"
@@ -221,27 +250,25 @@ do
 
     log_yellow "Updating package-lock.json in ${package}"
 
-    if [ "${1}" == "--ncu" ]; then
-	rm package-lock.json
-	log_yellow "Running 'ncu -u' in ${package}"
-	logfile="${tmpdir}/${package}-ncu.log"
-	if ! ncu -u > "${logfile}"; then
-	    # Failed, add it to summary and continue.
-	    echo "- [ ] ${package}: 'ncu -u' failed" >> "${failure_summary}"
+    rm package-lock.json
+    log_yellow "Running 'ncu -u' in ${package}"
+    logfile="${tmpdir}/${package}-ncu.log"
+    if ! ncu -u > "${logfile}"; then
+	# Failed, add it to summary and continue.
+	echo "- [ ] ${package}: 'ncu -u' failed" >> "${failure_summary}"
 
-	    # For copy paste into the issue.
-	    dump_details "${package}" "${logfile}"
+	# For copy paste into the issue.
+	dump_details "${package}" "${logfile}"
 
-	    # display failure
-	    log_red "${package}: 'ncu -u' failed"
-	    git restore .
-	else
-	    # Succeeded, let's try updating package-lock.json too.
-	    if ! try_update "with ncu"; then
-		# Failed with ncu, try update it without ncu
-		rm package-lock.json
-		try_update
-	    fi
+	# display failure
+	log_red "${package}: 'ncu -u' failed"
+	git restore .
+    else
+	# Succeeded, let's try updating package-lock.json too.
+	if ! try_update "with ncu"; then
+	    # Failed with ncu, try update it without ncu
+	    rm package-lock.json
+	    try_update
 	fi
     fi
 
