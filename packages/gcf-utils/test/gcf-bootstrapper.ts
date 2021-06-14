@@ -293,10 +293,9 @@ describe('GCFBootstrapper', () => {
       delete process.env.WEBHOOK_TMP;
       sinon.assert.calledOnce(configStub);
       sinon.assert.notCalled(sendStatusStub);
-      sinon.assert.calledOnce(sendStub);
+      sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
       sinon.assert.notCalled(spy);
       downloaded.done();
-      assert.strictEqual(response.statusCode, 200);
     });
 
     it('retries the task, if tmpUrl in payload cannot be fetched for other reason', async () => {
@@ -322,10 +321,9 @@ describe('GCFBootstrapper', () => {
       delete process.env.WEBHOOK_TMP;
       sinon.assert.calledOnce(configStub);
       sinon.assert.notCalled(sendStatusStub);
-      sinon.assert.calledOnce(sendStub);
+      sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 500});
       sinon.assert.notCalled(spy);
       downloaded.done();
-      assert.strictEqual(response.statusCode, 500);
     });
 
     it('ensures that task is enqueued when called by scheduler for many repos', async () => {

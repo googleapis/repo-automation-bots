@@ -588,13 +588,14 @@ export class GCFBootstrapper {
       });
       try {
         const content = await getStream(readable);
-        console.info(`downloaded payload from ${payload.tmpUrl}`);
+        logger.info(`downloaded payload from ${payload.tmpUrl}`);
         return JSON.parse(content);
       } catch (e) {
         if (e.code === 404) {
-          console.error(`failed to download from ${payload.tmpUrl}`, e);
+          logger.info(`payload not found ${payload.tmpUrl}`);
           return null;
         }
+        logger.error(`failed to download from ${payload.tmpUrl}`, e);
         throw e;
       }
     } else {
