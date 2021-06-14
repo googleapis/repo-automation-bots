@@ -270,6 +270,74 @@ describe('GCFBootstrapper', () => {
       downloaded.done();
     });
 
+    it('does not retry the task, if tmpUrl in payload cannot be found (expired)', async () => {
+      await mockBootstrapper();
+      process.env.WEBHOOK_TMP = '/tmp/foo';
+      req.body = {
+        tmpUrl: '/bucket/foo',
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      // populated once this job has been executed by cloud tasks:
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+      // Fake download from Cloud Storage, again with the goal of ensuring
+      // we're using the streams API appropriately:
+      const downloaded = nock('https://storage.googleapis.com')
+        .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
+        .reply(404);
+      nock('https://oauth2.googleapis.com')
+        .post('/token')
+        .reply(200, {access_token: "abc123"});
+        
+
+      await handler(req, response);
+
+      console.log(response);
+
+      delete process.env.WEBHOOK_TMP;
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.calledOnce(sendStub);
+      sinon.assert.notCalled(spy);
+      sinon.assert.notCalled(enqueueTask);
+      downloaded.done();
+      assert.strictEqual(response.statusCode, 200);
+    });
+
+    it('retries the task, if tmpUrl in payload cannot be fetched for other reason', async () => {
+      await mockBootstrapper();
+      process.env.WEBHOOK_TMP = '/tmp/foo';
+      req.body = {
+        tmpUrl: '/bucket/foo',
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      // populated once this job has been executed by cloud tasks:
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+      // Fake download from Cloud Storage, again with the goal of ensuring
+      // we're using the streams API appropriately:
+      const downloaded = nock('https://storage.googleapis.com')
+        .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
+        .reply(500);        
+
+      await handler(req, response);
+
+      console.log(response);
+
+      delete process.env.WEBHOOK_TMP;
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.calledOnce(sendStub);
+      sinon.assert.notCalled(spy);
+      sinon.assert.calledOnce(enqueueTask);
+      downloaded.done();
+      assert.strictEqual(response.statusCode, 200);
+    });
+
     it('ensures that task is enqueued when called by scheduler for many repos', async () => {
       await mockBootstrapper();
       req.body = {
@@ -289,7 +357,7 @@ describe('GCFBootstrapper', () => {
     it('ensures that task is enqueued when called by Github', async () => {
       await mockBootstrapper();
       req.body = {
-        installtion: {id: 1},
+        installation: {id: 1},
       };
       req.headers = {};
       req.headers['x-github-event'] = 'another.name';
