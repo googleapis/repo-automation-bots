@@ -576,7 +576,7 @@ export class GCFBootstrapper {
    */
   private async maybeDownloadOriginalBody(payload: {
     [key: string]: string;
-  }): Promise<object|null> {
+  }): Promise<object | null> {
     if (payload.tmpUrl) {
       if (!process.env.WEBHOOK_TMP) {
         throw Error('no tmp directory configured');
