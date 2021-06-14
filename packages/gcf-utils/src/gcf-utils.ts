@@ -32,6 +32,7 @@ import {v4} from 'uuid';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
+const RUNNING_IN_TEST = process.env.NODE_ENV === 'test';
 
 type ProbotOctokitType = InstanceType<typeof ProbotOctokit>;
 
@@ -139,7 +140,7 @@ export class GCFBootstrapper {
     this.secretsClient =
       secretsClient || new SecretManagerV1.SecretManagerServiceClient();
     this.cloudTasksClient = new CloudTasksV2.CloudTasksClient();
-    this.storage = new Storage({autoRetry: false});
+    this.storage = new Storage({autoRetry: !RUNNING_IN_TEST});
   }
 
   async loadProbot(
@@ -552,7 +553,7 @@ export class GCFBootstrapper {
       const tmp = `${Date.now()}-${v4()}.txt`;
       const bucket = this.storage.bucket(process.env.WEBHOOK_TMP);
       const writeable = bucket.file(tmp).createWriteStream({
-        validation: process.env.NODE_ENV !== 'test',
+        validation: !RUNNING_IN_TEST,
       });
       logger.info(`uploading payload to ${tmp}`);
       intoStream(body).pipe(writeable);
