@@ -290,11 +290,8 @@ describe('GCFBootstrapper', () => {
       nock('https://oauth2.googleapis.com')
         .post('/token')
         .reply(200, {access_token: "abc123"});
-        
 
       await handler(req, response);
-
-      console.log(response);
 
       delete process.env.WEBHOOK_TMP;
       sinon.assert.calledOnce(configStub);
@@ -322,20 +319,22 @@ describe('GCFBootstrapper', () => {
       // we're using the streams API appropriately:
       const downloaded = nock('https://storage.googleapis.com')
         .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
-        .reply(500);        
+        .times(10)
+        .reply(500);
+      nock('https://oauth2.googleapis.com')
+        .post('/token')
+        .reply(200, {access_token: "abc123"});
 
       await handler(req, response);
-
-      console.log(response);
 
       delete process.env.WEBHOOK_TMP;
       sinon.assert.calledOnce(configStub);
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.calledOnce(sendStub);
       sinon.assert.notCalled(spy);
-      sinon.assert.calledOnce(enqueueTask);
+      sinon.assert.notCalled(enqueueTask);
       downloaded.done();
-      assert.strictEqual(response.statusCode, 200);
+      assert.strictEqual(response.statusCode, 500);
     });
 
     it('ensures that task is enqueued when called by scheduler for many repos', async () => {

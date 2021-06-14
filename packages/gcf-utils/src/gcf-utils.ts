@@ -303,6 +303,17 @@ export class GCFBootstrapper {
           // payload has been written to Cloud Storage; download it.
           const body = await this.maybeDownloadOriginalBody(payload);
 
+          // The payload does not exist, stop retrying on this task by letting
+          // this request "succeed".
+          if (!body) {
+            logger.metric('payload-expired');
+            response.send({
+              statusCode: 200,
+              body: JSON.stringify({message: 'Payload expired'}),
+            });
+            return;
+          }
+
           // TODO: find out the best way to get this type, and whether we can
           // keep using a custom event name.
           await this.probot.receive({
@@ -565,7 +576,7 @@ export class GCFBootstrapper {
    */
   private async maybeDownloadOriginalBody(payload: {
     [key: string]: string;
-  }): Promise<object> {
+  }): Promise<object|null> {
     if (payload.tmpUrl) {
       if (!process.env.WEBHOOK_TMP) {
         throw Error('no tmp directory configured');
@@ -575,9 +586,17 @@ export class GCFBootstrapper {
       const readable = file.createReadStream({
         validation: process.env.NODE_ENV !== 'test',
       });
-      const content = await getStream(readable);
-      console.info(`downloaded payload from ${payload.tmpUrl}`);
-      return JSON.parse(content);
+      try {
+        const content = await getStream(readable);
+        console.info(`downloaded payload from ${payload.tmpUrl}`);
+        return JSON.parse(content);
+      } catch (e) {
+        if (e.code === 404) {
+          console.error(`failed to download from ${payload.tmpUrl}`, e);
+          return null;
+        }
+        throw e;
+      }
     } else {
       return payload;
     }
