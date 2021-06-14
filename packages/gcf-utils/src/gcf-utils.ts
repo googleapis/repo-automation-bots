@@ -32,6 +32,7 @@ import {v4} from 'uuid';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
+const RUNNING_IN_TEST = process.env.NODE_ENV === 'test';
 
 interface Scheduled {
   repo?: string;
@@ -152,7 +153,7 @@ export class GCFBootstrapper {
     this.secretsClient =
       secretsClient || new SecretManagerV1.SecretManagerServiceClient();
     this.cloudTasksClient = new CloudTasksV2.CloudTasksClient();
-    this.storage = new Storage();
+    this.storage = new Storage({autoRetry: !RUNNING_IN_TEST});
   }
 
   async loadProbot(
@@ -317,6 +318,17 @@ export class GCFBootstrapper {
           // If the payload contains `tmpUrl` this indicates that the original
           // payload has been written to Cloud Storage; download it.
           const body = await this.maybeDownloadOriginalBody(payload);
+
+          // The payload does not exist, stop retrying on this task by letting
+          // this request "succeed".
+          if (!body) {
+            logger.metric('payload-expired');
+            response.send({
+              statusCode: 200,
+              body: JSON.stringify({message: 'Payload expired'}),
+            });
+            return;
+          }
 
           // TODO: find out the best way to get this type, and whether we can
           // keep using a custom event name.
@@ -565,7 +577,7 @@ export class GCFBootstrapper {
       const tmp = `${Date.now()}-${v4()}.txt`;
       const bucket = this.storage.bucket(process.env.WEBHOOK_TMP);
       const writeable = bucket.file(tmp).createWriteStream({
-        validation: process.env.NODE_ENV !== 'test',
+        validation: !RUNNING_IN_TEST,
       });
       logger.info(`uploading payload to ${tmp}`);
       intoStream(body).pipe(writeable);
@@ -589,7 +601,7 @@ export class GCFBootstrapper {
    */
   private async maybeDownloadOriginalBody(payload: {
     [key: string]: string;
-  }): Promise<object> {
+  }): Promise<object | null> {
     if (payload.tmpUrl) {
       if (!process.env.WEBHOOK_TMP) {
         throw Error('no tmp directory configured');
@@ -599,9 +611,18 @@ export class GCFBootstrapper {
       const readable = file.createReadStream({
         validation: process.env.NODE_ENV !== 'test',
       });
-      const content = await getStream(readable);
-      console.info(`downloaded payload from ${payload.tmpUrl}`);
-      return JSON.parse(content);
+      try {
+        const content = await getStream(readable);
+        logger.info(`downloaded payload from ${payload.tmpUrl}`);
+        return JSON.parse(content);
+      } catch (e) {
+        if (e.code === 404) {
+          logger.info(`payload not found ${payload.tmpUrl}`);
+          return null;
+        }
+        logger.error(`failed to download from ${payload.tmpUrl}`, e);
+        throw e;
+      }
     } else {
       return payload;
     }
