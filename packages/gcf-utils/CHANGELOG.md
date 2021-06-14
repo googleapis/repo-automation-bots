@@ -87,6 +87,35 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [10.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v9.0.0...gcf-utils-v10.0.0) (2021-06-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* **gcf-utils:** add onlyUpdate option to addOrUpdateIssueComment (#2024)
+
+### Features
+
+* **gcf-utils:** add onlyUpdate option to addOrUpdateIssueComment ([#2024](https://www.github.com/googleapis/repo-automation-bots/issues/2024)) ([ea93fe2](https://www.github.com/googleapis/repo-automation-bots/commit/ea93fe27d5401e9ca32e08f50914a03a8712a08b))
+
+## [9.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v8.0.2...gcf-utils-v9.0.0) (2021-06-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **gcf-utils:** lock file maintenance (#2001)
+
+### Miscellaneous Chores
+
+* **gcf-utils:** lock file maintenance ([#2001](https://www.github.com/googleapis/repo-automation-bots/issues/2001)) ([395a87a](https://www.github.com/googleapis/repo-automation-bots/commit/395a87a337ae96c27171beb0ad6b69a798037476))
+
+### [8.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v8.0.1...gcf-utils-v8.0.2) (2021-06-09)
+
+
+### Bug Fixes
+
+* **gcf-utils:** create tasks in parallel ([#1986](https://www.github.com/googleapis/repo-automation-bots/issues/1986)) ([89d5326](https://www.github.com/googleapis/repo-automation-bots/commit/89d53263653429fb637c02213918b73f1f493a91))
+
 ### [8.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v8.0.0...gcf-utils-v8.0.1) (2021-05-24)
 
 

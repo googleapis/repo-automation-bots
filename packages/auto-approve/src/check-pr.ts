@@ -25,6 +25,7 @@ import {
   isMinorVersionUpgraded,
   isOneDependencyChanged,
   checkFilePathsMatch,
+  mergesOnWeekday,
 } from './utils-for-pr-checking';
 import languageVersioningRules from './language-versioning-rules.json';
 // type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
@@ -145,6 +146,7 @@ function runVersioningValidation(addtlValidationFile?: {
   let majorBump = true;
   let minorBump = false;
   let oneDependencyChanged = false;
+  let weekdayMerge = false;
   // If there's no additional validation file, then it will
   // be trivially true
   if (!addtlValidationFile) {
@@ -163,7 +165,8 @@ function runVersioningValidation(addtlValidationFile?: {
     majorBump = isMajorVersionChanging(versions);
     minorBump = isMinorVersionUpgraded(versions);
     oneDependencyChanged = isOneDependencyChanged(addtlValidationFile.file!);
+    weekdayMerge = mergesOnWeekday();
   }
 
-  return !majorBump && minorBump && oneDependencyChanged;
+  return !majorBump && minorBump && oneDependencyChanged && weekdayMerge;
 }

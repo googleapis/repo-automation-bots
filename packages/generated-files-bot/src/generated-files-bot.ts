@@ -281,7 +281,8 @@ export function handler(app: Probot) {
         owner,
         repo,
         CONFIGURATION_FILE_PATH,
-        {}
+        {},
+        {schema: schema}
       );
     } catch (err) {
       err.message = `Error reading configuration: ${err.message}`;

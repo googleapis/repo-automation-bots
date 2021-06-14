@@ -99,6 +99,19 @@ Issues or feature requests? Please
         \[Markdown\](links) are accepted.
 1. Trigger a build and check the logs to make sure everything is working.
 
+### Configuration
+
+By default, flakybot will create issues with `priority: p1` label. You
+can configure the priority in the configuration file at
+`.github/flakybot.yaml`.
+
+Here is an exmaple of changing the label to `priority: p2`.
+
+```yaml
+issuePriority: p2
+```
+
+
 ## Contributing
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.

@@ -19,3 +19,8 @@ rules:
   - "^docs/dyn/index.md$"
   - "^docs/dyn/.*\\.html$"
   - "^googleapiclient/discovery_cache/documents/.*\\.json$"
+- author: "gcf-owl-bot[bot]"
+  title: "^chore"
+  changedFiles:
+  - "^\\.OwlBot\\.lock\\.yaml$"
+  maxFiles: 1

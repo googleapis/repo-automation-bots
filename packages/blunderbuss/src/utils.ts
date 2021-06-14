@@ -31,6 +31,13 @@ export const sleep = (ms: number) => {
 
 const ASSIGN_LABEL = 'blunderbuss: assign';
 
+export const BLUNDERBUSS_LABELS = [
+  {
+    name: ASSIGN_LABEL,
+    description: 'Instruct blunderbuss to assign someone',
+  },
+];
+
 type getIssueResponse =
   Endpoints['GET /repos/{owner}/{repo}/issues/{issue_number}']['response'];
 

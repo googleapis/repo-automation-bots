@@ -62,7 +62,7 @@ export function newFakeOctokit(
   issues?: FakeIssues,
   default_branch = 'main'
 ): OctokitType {
-  return ({
+  return {
     pulls: pulls ?? new FakePulls(),
     issues: issues ?? new FakeIssues(),
     repos: {
@@ -74,7 +74,7 @@ export function newFakeOctokit(
         };
       },
     },
-  } as unknown) as OctokitType;
+  } as unknown as OctokitType;
 }
 
 export function newFakeOctokitFactory(

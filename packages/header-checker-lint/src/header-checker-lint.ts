@@ -89,14 +89,16 @@ export = (app: Probot) => {
         context.payload.pull_request.head.sha,
         context.payload.pull_request.number
       );
-      let remoteConfiguration: ConfigurationOptions | null = configChecker.getConfig();
+      let remoteConfiguration: ConfigurationOptions | null =
+        configChecker.getConfig();
       if (remoteConfiguration === null) {
         try {
           remoteConfiguration = await getConfig<ConfigurationOptions>(
             context.octokit,
             owner,
             repo,
-            WELL_KNOWN_CONFIGURATION_FILE
+            WELL_KNOWN_CONFIGURATION_FILE,
+            {schema: schema}
           );
         } catch (err) {
           logger.error('Error parsing configuration: ' + err);

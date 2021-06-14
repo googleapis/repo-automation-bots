@@ -104,7 +104,9 @@ module.exports = (
     logGithubAction(octoLogger, actionDetails);
   });
 
-  (octokit as Octokit & {
-    loggingOctokitPluginVersion: string;
-  }).loggingOctokitPluginVersion = VERSION;
+  (
+    octokit as Octokit & {
+      loggingOctokitPluginVersion: string;
+    }
+  ).loggingOctokitPluginVersion = VERSION;
 };

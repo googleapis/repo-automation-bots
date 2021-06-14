@@ -14,19 +14,21 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
+import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
+import {
+  Annotation,
+  ConfigurationOptions,
+  WELL_KNOWN_CONFIGURATION_FILE,
+} from './config';
+import schema from './config-schema.json';
+import {
+  getAuthenticatedOctokit,
+  SECRET_NAME_FOR_COMMENT_PERMISSION,
+} from './utils';
 
-interface Annotation {
-  type: 'comment' | 'label';
-  text: string;
-}
-
-interface ConfigurationOptions {
-  trustedContributors?: string[];
-  annotations?: Annotation[];
-}
-
-const WELL_KNOWN_CONFIGURATION_FILE = 'trusted-contribution.yml';
 const DEFAULT_TRUSTED_CONTRIBUTORS = [
   'renovate-bot',
   'dependabot[bot]',
@@ -66,21 +68,46 @@ export = (app: Probot) => {
       'pull_request.synchronize',
     ],
     async context => {
+      const {owner, repo} = context.repo();
+      const configChecker = new ConfigChecker<ConfigurationOptions>(
+        schema,
+        WELL_KNOWN_CONFIGURATION_FILE
+      );
+      await configChecker.validateConfigChanges(
+        context.octokit,
+        owner,
+        repo,
+        context.payload.pull_request.head.sha,
+        context.payload.pull_request.number
+      );
+
       const PR_AUTHOR = context.payload.pull_request.user.login;
       let remoteConfiguration: ConfigurationOptions | null;
+      // Since we added a capability of opting out, we quit upon
+      // errors when fetching the config.
       try {
-        remoteConfiguration = await context.config<ConfigurationOptions>(
-          WELL_KNOWN_CONFIGURATION_FILE
+        remoteConfiguration = await getConfig<ConfigurationOptions>(
+          context.octokit,
+          owner,
+          repo,
+          WELL_KNOWN_CONFIGURATION_FILE,
+          {schema: schema}
         );
       } catch (err) {
         err.message = `Error reading configuration: ${err.message}`;
         logger.error(err);
+        return;
       }
-      remoteConfiguration = remoteConfiguration! || {};
-      // TODO: add additional verification that only dependency version changes occurred.
+      remoteConfiguration = remoteConfiguration || {};
+
+      // quit if disabled.
+      if (remoteConfiguration.disabled) {
+        return;
+      }
       if (isTrustedContribution(remoteConfiguration, PR_AUTHOR)) {
         const annotations =
           remoteConfiguration.annotations || DEFAULT_ANNOTATIONS;
+        let octokit: Octokit | null = null;
         for (const annotation of annotations) {
           if (annotation.type === 'label') {
             const issuesAddLabelsParams = context.repo({
@@ -92,7 +119,14 @@ export = (app: Probot) => {
               url: context.payload.pull_request.url,
             });
           } else if (annotation.type === 'comment') {
-            await context.octokit.issues.createComment({
+            // Use personal access token from the secret manager.
+            if (octokit === null) {
+              octokit = await getAuthenticatedOctokit(
+                process.env.PROJECT_ID || '',
+                SECRET_NAME_FOR_COMMENT_PERMISSION
+              );
+            }
+            await octokit.issues.createComment({
               issue_number: context.payload.pull_request.number,
               body: annotation.text,
               owner: context.repo().owner,
