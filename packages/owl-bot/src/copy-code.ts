@@ -280,9 +280,10 @@ export function copyDirs(
   // Remove files first.
   for (let deadPath of deadPaths) {
     deadPath = path.join(destDir, deadPath);
-    if (stat(deadPath)?.isDirectory()) {
+    const deadStat = stat(deadPath);
+    if (deadStat?.isDirectory()) {
       deadDirs.push(deadPath);
-    } else {
+    } else if (deadStat) {
       logger.info(`rm  ${deadPath}`);
       fs.rmSync(deadPath);
     }
