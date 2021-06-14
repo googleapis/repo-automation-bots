@@ -38,8 +38,8 @@ fi
 if [ $# -ge 8 ]; then
     timeout=$8
 else
-    # default to the max timeout (10 minutes)
-    timeout=600
+    # default to the max timeout (9 minutes)
+    timeout=540s
 fi
 
 botName=$(echo "${directoryName}" | rev | cut -d/ -f1 | rev)
