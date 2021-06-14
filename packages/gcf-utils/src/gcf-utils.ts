@@ -139,7 +139,7 @@ export class GCFBootstrapper {
     this.secretsClient =
       secretsClient || new SecretManagerV1.SecretManagerServiceClient();
     this.cloudTasksClient = new CloudTasksV2.CloudTasksClient();
-    this.storage = new Storage();
+    this.storage = new Storage({autoRetry: false});
   }
 
   async loadProbot(

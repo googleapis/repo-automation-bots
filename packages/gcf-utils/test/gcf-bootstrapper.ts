@@ -287,9 +287,6 @@ describe('GCFBootstrapper', () => {
       const downloaded = nock('https://storage.googleapis.com')
         .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
         .reply(404);
-      nock('https://oauth2.googleapis.com')
-        .post('/token')
-        .reply(200, {access_token: "abc123"});
 
       await handler(req, response);
 
@@ -298,7 +295,6 @@ describe('GCFBootstrapper', () => {
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.calledOnce(sendStub);
       sinon.assert.notCalled(spy);
-      sinon.assert.notCalled(enqueueTask);
       downloaded.done();
       assert.strictEqual(response.statusCode, 200);
     });
@@ -319,11 +315,7 @@ describe('GCFBootstrapper', () => {
       // we're using the streams API appropriately:
       const downloaded = nock('https://storage.googleapis.com')
         .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
-        .times(10)
         .reply(500);
-      nock('https://oauth2.googleapis.com')
-        .post('/token')
-        .reply(200, {access_token: "abc123"});
 
       await handler(req, response);
 
@@ -332,7 +324,6 @@ describe('GCFBootstrapper', () => {
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.calledOnce(sendStub);
       sinon.assert.notCalled(spy);
-      sinon.assert.notCalled(enqueueTask);
       downloaded.done();
       assert.strictEqual(response.statusCode, 500);
     });
