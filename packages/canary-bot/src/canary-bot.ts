@@ -34,7 +34,7 @@ const packageJsonFile = fs.readFileSync(
   'utf-8'
 );
 const packageJson = JSON.parse(packageJsonFile);
-const versionDetails = `${JSON.stringify(packageJson.dependencies)}`;
+const versionDetails = `${JSON.stringify(packageJson.dependencies, null, 2)}`;
 
 const cronIssueTitle = 'A canary is chirping';
 const myRepositoryName = 'repo-automation-bots';
@@ -45,8 +45,8 @@ function getIssueBody(): string {
     .tz(new Date(), 'America/Los_Angeles')
     .format('YYYY MM-DD HH:mm:ss');
   return (
-    `The dependencies and their versions are: ${versionDetails}\n` +
-    `at ${date}`
+    `The dependencies and their versions are: \n${versionDetails}\n` +
+    `at ${date}\n🐦`
   );
 }
 
@@ -63,15 +63,15 @@ export = (app: Probot) => {
       repo,
       per_page: 100,
       state: 'all', // Include open and closed issues.
-      title: cronIssueTitle,
     });
     const issues = (await context.octokit.paginate(
       options
     )) as IssuesListForRepoResponseData;
 
+    const issue = issues.find(issue => issue.title === cronIssueTitle);
+
     // Issue found
-    if (issues.length > 0 && issues[0].title === cronIssueTitle) {
-      const issue = issues[0];
+    if (issue) {
       await context.octokit.issues.update({
         owner: owner,
         repo: repo,

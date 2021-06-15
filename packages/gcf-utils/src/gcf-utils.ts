@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {createProbot, Probot, ProbotOctokit, Options} from 'probot';
+import {Probot, Options} from 'probot';
 import {ApplicationFunction} from 'probot/lib/types';
 import {createProbotAuth} from 'octokit-auth-probot';
 
@@ -32,8 +32,7 @@ import {v4} from 'uuid';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
-
-type ProbotOctokitType = InstanceType<typeof ProbotOctokit>;
+const RUNNING_IN_TEST = process.env.NODE_ENV === 'test';
 
 interface Scheduled {
   repo?: string;
@@ -90,16 +89,31 @@ export const getCommentMark = (installationId: number): string => {
   return `<!-- probot comment [${installationId}]-->`;
 };
 
+/**
+ * It creates a comment, or if the bot already created a comment, it
+ * updates the same comment.
+ *
+ * @param {Octokit} octokit - The Octokit instance.
+ * @param {string} owner - The owner of the issue.
+ * @param {string} repo - The name of the repository.
+ * @param {number} issueNumber - The number of the issue.
+ * @param {number} installationId - A unique number for identifying the issue
+ *   comment.
+ * @param {string} commentBody - The body of the comment.
+ * @param {boolean} onlyUpdate - If set to true, it will only update an
+ *   existing issue comment.
+ */
 export const addOrUpdateIssueComment = async (
-  github: ProbotOctokitType,
+  octokit: Octokit,
   owner: string,
   repo: string,
   issueNumber: number,
   installationId: number,
-  commentBody: string
+  commentBody: string,
+  onlyUpdate = false
 ) => {
   const commentMark = getCommentMark(installationId);
-  const listCommentsResponse = await github.issues.listComments({
+  const listCommentsResponse = await octokit.issues.listComments({
     owner: owner,
     repo: repo,
     per_page: 50, // I think 50 is enough, but I may be wrong.
@@ -109,7 +123,7 @@ export const addOrUpdateIssueComment = async (
   for (const comment of listCommentsResponse.data) {
     if (comment.body?.includes(commentMark)) {
       // We found the existing comment, so updating it
-      await github.issues.updateComment({
+      await octokit.issues.updateComment({
         owner: owner,
         repo: repo,
         comment_id: comment.id,
@@ -118,8 +132,8 @@ export const addOrUpdateIssueComment = async (
       found = true;
     }
   }
-  if (!found) {
-    await github.issues.createComment({
+  if (!found && !onlyUpdate) {
+    await octokit.issues.createComment({
       owner: owner,
       repo: repo,
       issue_number: issueNumber,
@@ -139,7 +153,7 @@ export class GCFBootstrapper {
     this.secretsClient =
       secretsClient || new SecretManagerV1.SecretManagerServiceClient();
     this.cloudTasksClient = new CloudTasksV2.CloudTasksClient();
-    this.storage = new Storage();
+    this.storage = new Storage({autoRetry: !RUNNING_IN_TEST});
   }
 
   async loadProbot(
@@ -148,7 +162,7 @@ export class GCFBootstrapper {
   ): Promise<Probot> {
     if (!this.probot) {
       const cfg = await this.getProbotConfig(logging);
-      this.probot = createProbot({overrides: cfg});
+      this.probot = new Probot(cfg);
     }
 
     await this.probot.load(appFn);
@@ -304,6 +318,17 @@ export class GCFBootstrapper {
           // If the payload contains `tmpUrl` this indicates that the original
           // payload has been written to Cloud Storage; download it.
           const body = await this.maybeDownloadOriginalBody(payload);
+
+          // The payload does not exist, stop retrying on this task by letting
+          // this request "succeed".
+          if (!body) {
+            logger.metric('payload-expired');
+            response.send({
+              statusCode: 200,
+              body: JSON.stringify({message: 'Payload expired'}),
+            });
+            return;
+          }
 
           // TODO: find out the best way to get this type, and whether we can
           // keep using a custom event name.
@@ -552,7 +577,7 @@ export class GCFBootstrapper {
       const tmp = `${Date.now()}-${v4()}.txt`;
       const bucket = this.storage.bucket(process.env.WEBHOOK_TMP);
       const writeable = bucket.file(tmp).createWriteStream({
-        validation: process.env.NODE_ENV !== 'test',
+        validation: !RUNNING_IN_TEST,
       });
       logger.info(`uploading payload to ${tmp}`);
       intoStream(body).pipe(writeable);
@@ -576,7 +601,7 @@ export class GCFBootstrapper {
    */
   private async maybeDownloadOriginalBody(payload: {
     [key: string]: string;
-  }): Promise<object> {
+  }): Promise<object | null> {
     if (payload.tmpUrl) {
       if (!process.env.WEBHOOK_TMP) {
         throw Error('no tmp directory configured');
@@ -586,9 +611,18 @@ export class GCFBootstrapper {
       const readable = file.createReadStream({
         validation: process.env.NODE_ENV !== 'test',
       });
-      const content = await getStream(readable);
-      console.info(`downloaded payload from ${payload.tmpUrl}`);
-      return JSON.parse(content);
+      try {
+        const content = await getStream(readable);
+        logger.info(`downloaded payload from ${payload.tmpUrl}`);
+        return JSON.parse(content);
+      } catch (e) {
+        if (e.code === 404) {
+          logger.info(`payload not found ${payload.tmpUrl}`);
+          return null;
+        }
+        logger.error(`failed to download from ${payload.tmpUrl}`, e);
+        throw e;
+      }
     } else {
       return payload;
     }
