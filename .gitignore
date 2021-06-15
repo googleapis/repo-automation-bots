@@ -8,3 +8,12 @@ __pycache__/*
 lerna-debug.log
 *.pem
 .vscode
+
+# Keep package-lock.json files for deployed bots,
+# but do not check them in for libraries
+packages/bot-config-utils/package-lock.json
+packages/cron-utils/package-lock.json
+packages/datastore-lock/package-lock.json
+packages/gcf-utils/package-lock.json
+packages/label-utils/package-lock.json
+packages/release-brancher/package-lock.json
