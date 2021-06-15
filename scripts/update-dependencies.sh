@@ -241,6 +241,10 @@ for subdir in "${target_dirs[@]}"
 do
     subdir="${subdir%*/}"
     package="${subdir##*/}"
+    if [ "${package}" == "bazel-bot" ]; then
+	log_yellow "Skipping bazel-bot"
+	continue
+    fi
     pushd "${subdir}"
 
     # Skip if there's no package.json
