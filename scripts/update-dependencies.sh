@@ -20,6 +20,7 @@
 # This script will first try to update package.json with major bumps
 # with npm-check-updates, then run the following:
 # - npm i
+# - npm audit fix
 # - npm run fix
 # - npm run test
 
@@ -140,24 +141,6 @@ try_update() {
     if [ "$#" == 1 ]; then
 	with_ncu="${1}"
     fi
-    log_yellow "Running 'npm update' ${with_ncu} in ${package}"
-    if [ -z "${with_ncu}" ]; then
-	logfile="${tmpdir}/${package}-npm-update.log"
-    else
-	logfile="${tmpdir}/${package}-npm-update-with-ncu.log"
-    fi
-    if ! npm update --no-color > "${logfile}"; then
-	# Failed, add it to summary and continue.
-	echo "- [ ] ${package}: 'npm update' ${with_ncu} failed" >> "${failure_summary}"
-
-	# For copy paste into the issue.
-	dump_details "${package}" "${logfile}"
-
-	# display failure
-	log_red "${package}: 'npm update' ${with_ncu} failed"
-	git restore .
-	return 1
-    fi
 
     log_yellow "Running 'npm i' ${with_ncu} in ${package}"
     if [ -z "${with_ncu}" ]; then
@@ -174,6 +157,25 @@ try_update() {
 
 	# display failure
 	log_red "${package}: 'npm i' ${with_ncu} failed"
+	git restore .
+	return 1
+    fi
+
+    log_yellow "Running 'npm audit fix' ${with_ncu} in ${package}"
+    if [ -z "${with_ncu}" ]; then
+	logfile="${tmpdir}/${package}-npm-audit-fix.log"
+    else
+	logfile="${tmpdir}/${package}-npm-audit-fix-with-ncu.log"
+    fi
+    if ! npm audit fix --no-color > "${logfile}"; then
+	# Failed, add it to summary and continue.
+	echo "- [ ] ${package}: 'npm audit fix' ${with_ncu} failed" >> "${failure_summary}"
+
+	# For copy paste into the issue.
+	dump_details "${package}" "${logfile}"
+
+	# display failure
+	log_red "${package}: 'npm audit fix' ${with_ncu} failed"
 	git restore .
 	return 1
     fi
