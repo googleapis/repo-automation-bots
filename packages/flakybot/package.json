@@ -29,10 +29,11 @@
   "dependencies": {
     "@google-automations/bot-config-utils": "^3.1.2",
     "@google-automations/datastore-lock": "^2.0.1",
+    "@google-automations/label-utils": "^1.0.1",
     "@octokit/openapi-types": "^7.3.2",
     "@octokit/types": "^6.16.4",
-    "probot": "^11.4.1",
     "gcf-utils": "^10.0.0",
+    "probot": "^11.4.1",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
