@@ -87,6 +87,14 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [10.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v10.0.0...gcf-utils-v10.0.1) (2021-06-14)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @octokit/plugin-enterprise-compatibility to v1.3.0 ([#2043](https://www.github.com/googleapis/repo-automation-bots/issues/2043)) ([a7c91ed](https://www.github.com/googleapis/repo-automation-bots/commit/a7c91ed062922affb2d68a019dea1c82b14a132a))
+* skip task queue retries if payload expired ([#2052](https://www.github.com/googleapis/repo-automation-bots/issues/2052)) ([c54f50b](https://www.github.com/googleapis/repo-automation-bots/commit/c54f50b3e1d9c8123d46fef526ef4bb961a547d0)), closes [#2049](https://www.github.com/googleapis/repo-automation-bots/issues/2049)
+
 ## [10.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v9.0.0...gcf-utils-v10.0.0) (2021-06-11)
 
 
