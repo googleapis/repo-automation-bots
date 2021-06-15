@@ -243,8 +243,8 @@ do
     package="${subdir##*/}"
     pushd "${subdir}"
 
-    # Skip if there's no package-lock.json
-    if [ ! -f "package-lock.json" ]; then
+    # Skip if there's no package.json
+    if [ ! -f "package.json" ]; then
 	log_red "skipping ${package}"
 	popd
 	continue
@@ -252,7 +252,7 @@ do
 
     log_yellow "Updating package-lock.json in ${package}"
 
-    rm package-lock.json
+    rm -f package-lock.json
     log_yellow "Running 'ncu -u' in ${package}"
     logfile="${tmpdir}/${package}-ncu.log"
     if ! ncu -u > "${logfile}"; then
@@ -269,7 +269,7 @@ do
 	# Succeeded, let's try updating package-lock.json too.
 	if ! try_update "with ncu"; then
 	    # Failed with ncu, try update it without ncu
-	    rm package-lock.json
+	    rm -f package-lock.json
 	    try_update
 	fi
     fi
