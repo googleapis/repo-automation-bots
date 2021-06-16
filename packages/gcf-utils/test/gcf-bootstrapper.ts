@@ -196,7 +196,6 @@ describe('GCFBootstrapper', () => {
     });
 
     it('ensures that task is enqueued when called by scheduler for a bot opt out from background execution', async () => {
-      // TODO
       await mockBootstrapper({
         background: false,
         logging: true,

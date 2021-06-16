@@ -312,10 +312,6 @@ export class GCFBootstrapper {
           }
           let payload = request.body;
           if (triggerType === TriggerType.PUBSUB) {
-            // TODO(sofisl): investigate why TriggerType.SCHEDULER sometimes has a Buffer
-            // for its payload, and other times has an already parsed object.
-            //
-            // TODO: add unit tests for both forms of payload.
             payload = this.parsePubSubPayload(request);
           }
           // If the payload contains `tmpUrl` this indicates that the original
