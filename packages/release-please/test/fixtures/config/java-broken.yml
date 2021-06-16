@@ -1,0 +1,8 @@
+bumpMinorPreMajor: true
+handleGHRelease: true
+releaseType: java-yoshi
+branches:
+  branch: diregapic
+  bumpMinorPreMajor: true
+  handleGHRelease: true
+  releaseType: java-yoshi

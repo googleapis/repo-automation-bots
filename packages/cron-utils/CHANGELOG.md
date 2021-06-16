@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/cron-utils-v1.0.2...cron-utils-v2.0.0) (2021-05-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* createOrUpdate can update all fields (#1872)
+* stop parsing legacy cron format (#1870)
+
+### Bug Fixes
+
+* createOrUpdate can update all fields ([#1872](https://www.github.com/googleapis/repo-automation-bots/issues/1872)) ([6312570](https://www.github.com/googleapis/repo-automation-bots/commit/6312570a7a13fe8a05be6db26288548de7b09dd6))
+* stop parsing legacy cron format ([#1870](https://www.github.com/googleapis/repo-automation-bots/issues/1870)) ([6f8ef9f](https://www.github.com/googleapis/repo-automation-bots/commit/6f8ef9fbd9b2e57ca5e54a5ea2c16e84e1f8ad11))
+
 ### [1.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/cron-utils-v1.0.1...cron-utils-v1.0.2) (2021-05-21)
 
 

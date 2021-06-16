@@ -18,10 +18,12 @@ import {
   isMajorVersionChanging,
   isMinorVersionUpgraded,
   isOneDependencyChanged,
+  mergesOnWeekday,
 } from '../src/utils-for-pr-checking';
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import languageVersioningRules from '../src/language-versioning-rules.json';
+import sinon from 'sinon';
 
 describe('run additional versioning checks', () => {
   describe('get target file tests', () => {
@@ -333,6 +335,22 @@ describe('run additional versioning checks', () => {
       };
 
       assert.strictEqual(isOneDependencyChanged(PRFile), false);
+    });
+  });
+
+  describe('merging outside of working hours', () => {
+    it('should return true if the date is within working hours', () => {
+      // Faking a Wednesday
+      sinon.stub(Date, 'now').returns(1623280558000);
+      assert.strictEqual(mergesOnWeekday(), true);
+      sinon.restore();
+    });
+
+    it('should return false if the date is outside working hours', () => {
+      // Faking a Friday
+      sinon.stub(Date, 'now').returns(1623430800000);
+      assert.strictEqual(mergesOnWeekday(), false);
+      sinon.restore();
     });
   });
 });

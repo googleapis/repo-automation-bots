@@ -63,3 +63,14 @@ exports['Blunderbuss pr tests assigns pr by label 1'] = {
     "java-samples-reviewers"
   ]
 }
+
+exports['Blunderbuss validateConfigChanges creates a failing status check for a broken config 1'] = {
+  "name": "blunderbuss config schema",
+  "conclusion": "failure",
+  "head_sha": "c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a",
+  "output": {
+    "title": "Config schema error",
+    "summary": "An error found in the config file",
+    "text": "[\n    {\n        \"instancePath\": \"/assign_issues_by/0/to\",\n        \"schemaPath\": \"#/definitions/ByConfig/properties/to/type\",\n        \"keyword\": \"type\",\n        \"params\": {\n            \"type\": \"array\"\n        },\n        \"message\": \"must be array\"\n    }\n]"
+  }
+}

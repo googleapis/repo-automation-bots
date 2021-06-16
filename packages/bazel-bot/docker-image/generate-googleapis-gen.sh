@@ -58,7 +58,15 @@ for sha in $shas; do
         # Found a sha we already generated.
         break
     else
-        ungenerated_shas+=($sha)
+        # If as $sha is contained in a list of bad SHAs (SHAs that
+        # will cause bazel to fail) skip the sha. The variable $BROKEN_SHAS
+        # is defined in the Cloud Build UI, with the intention that it is only
+        # used for exceptional circumstances.
+        if echo $BROKEN_SHAS | grep $sha; then
+            echo "skipping $sha"
+        else
+            ungenerated_shas+=($sha)
+        fi
     fi
 done
 

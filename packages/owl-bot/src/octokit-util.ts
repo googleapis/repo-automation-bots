@@ -19,6 +19,7 @@ import {ProbotOctokit} from 'probot';
 import {promisify} from 'util';
 import {readFile} from 'fs';
 import {core} from './core';
+import {GCFLogger} from 'gcf-utils/build/src/logging/gcf-logger';
 
 const readFileAsync = promisify(readFile);
 
@@ -74,4 +75,45 @@ export function octokitFactoryFrom(params: OctokitParams): OctokitFactory {
       return await core.getAuthenticatedOctokit(atoken, false);
     },
   };
+}
+
+/**
+ * Creates an issue if the given title doesn't exist.
+ * Returns `true` if an issue has been created, `false` otherwise.
+ *
+ * @returns Promise<boolean>
+ */
+export async function createIssueIfTitleDoesntExist(
+  octokit: OctokitType,
+  owner: string,
+  repo: string,
+  title: string,
+  body: string,
+  logger: Console | GCFLogger = console
+): Promise<boolean> {
+  // check if issue exists
+  const issues = await octokit.issues.listForRepo({
+    owner,
+    repo,
+    per_page: 100,
+    state: 'open',
+  });
+
+  for (const issue of issues.data) {
+    if (issue.title === title) {
+      logger.info(`Issue '${title}' exists (${issue.html_url}). Skipping...`);
+      return false;
+    }
+  }
+
+  const createdIssue = await octokit.issues.create({
+    owner,
+    repo,
+    title,
+    body,
+  });
+
+  logger.info(`Created '${title}' (${createdIssue.data.html_url}).`);
+
+  return true;
 }

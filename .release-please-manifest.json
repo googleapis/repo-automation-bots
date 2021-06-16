@@ -1,9 +1,10 @@
 {
-  "packages/bot-config-utils": "3.0.0",
-  "packages/cron-utils": "1.0.2",
-  "packages/datastore-lock": "2.0.0",
-  "packages/gcf-utils": "8.0.1",
-  "packages/label-utils": "1.0.0",
+  "packages/bot-config-utils": "3.1.2",
+  "packages/cron-utils": "2.0.0",
+  "packages/datastore-lock": "2.0.1",
+  "packages/gcf-utils": "10.0.1",
+  "packages/label-utils": "1.0.1",
   "packages/mono-repo-publish": "1.1.2",
+  "packages/object-selector": "1.0.0",
   "packages/release-brancher": "1.1.2"
 }

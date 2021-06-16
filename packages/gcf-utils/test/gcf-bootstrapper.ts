@@ -62,10 +62,8 @@ describe('GCFBootstrapper', () => {
       response,
       'send'
     );
-    const sendStatusStub: sinon.SinonStub<
-      [number],
-      express.Response
-    > = sinon.stub(response, 'sendStatus');
+    const sendStatusStub: sinon.SinonStub<[number], express.Response> =
+      sinon.stub(response, 'sendStatus');
 
     let req: express.Request;
 
@@ -80,9 +78,12 @@ describe('GCFBootstrapper', () => {
       req = express.request;
 
       bootstrapper = new GCFBootstrapper();
-      configStub = sinon
-        .stub(bootstrapper, 'getProbotConfig')
-        .resolves({appId: 1234, secret: 'foo', webhookPath: 'bar'});
+      configStub = sinon.stub(bootstrapper, 'getProbotConfig').resolves({
+        appId: 1234,
+        secret: 'foo',
+        webhookPath: 'bar',
+        privateKey: 'cert',
+      });
       // This replaces the authClient with an auth client that uses an
       // API Key, this ensures that we will not attempt to lookup application
       // default credentials:
@@ -203,6 +204,25 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(enqueueTask);
     });
 
+    it('ensures that task is enqueued when called by scheduler for a bot opt out from background execution', async () => {
+      await mockBootstrapper({
+        background: false,
+        logging: true,
+      });
+      req.body = {
+        installation: {id: 1},
+        repo: 'firstRepo',
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'schedule.repository';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = '';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(enqueueTask);
+    });
+
     it('stores task payload in Cloud Storage if WEBHOOK_TMP set', async () => {
       await mockBootstrapper();
       process.env.WEBHOOK_TMP = '/tmp/foo';
@@ -277,6 +297,74 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(sendStub);
       sinon.assert.calledOnce(spy);
       downloaded.done();
+    });
+
+    it('does not retry the task, if tmpUrl in payload cannot be found (expired)', async () => {
+      await mockBootstrapper();
+      process.env.WEBHOOK_TMP = '/tmp/foo';
+      req.body = {
+        tmpUrl: '/bucket/foo',
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      // populated once this job has been executed by cloud tasks:
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+      // Fake download from Cloud Storage, again with the goal of ensuring
+      // we're using the streams API appropriately:
+      const downloaded = nock('https://storage.googleapis.com')
+        .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
+        .reply(404);
+
+      await handler(req, response);
+
+      delete process.env.WEBHOOK_TMP;
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+      sinon.assert.notCalled(spy);
+      downloaded.done();
+    });
+
+    it('retries the task, if tmpUrl in payload cannot be fetched for other reason', async () => {
+      await mockBootstrapper();
+      process.env.WEBHOOK_TMP = '/tmp/foo';
+      req.body = {
+        tmpUrl: '/bucket/foo',
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'issues';
+      req.headers['x-github-delivery'] = '123';
+      // populated once this job has been executed by cloud tasks:
+      req.headers['x-cloudtasks-taskname'] = 'my-task';
+      // Fake download from Cloud Storage, again with the goal of ensuring
+      // we're using the streams API appropriately:
+      const downloaded = nock('https://storage.googleapis.com')
+        .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
+        .reply(500);
+
+      await handler(req, response);
+
+      delete process.env.WEBHOOK_TMP;
+      sinon.assert.calledOnce(configStub);
+      sinon.assert.notCalled(sendStatusStub);
+      sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 500});
+      sinon.assert.notCalled(spy);
+      downloaded.done();
+    });
+
+    it('ensures that task is enqueued when called by scheduler for many repos', async () => {
+      await mockBootstrapper();
+      req.body = {
+        installation: {id: 1},
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'schedule.repository';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = '';
+      nockListInstallationRepos();
     });
 
     describe('per-repository cron', () => {
@@ -442,9 +530,12 @@ describe('GCFBootstrapper', () => {
 
     beforeEach(() => {
       bootstrapper = new GCFBootstrapper();
-      configStub = sinon
-        .stub(bootstrapper, 'getProbotConfig')
-        .resolves({appId: 1234, secret: 'foo', webhookPath: 'bar'});
+      configStub = sinon.stub(bootstrapper, 'getProbotConfig').resolves({
+        appId: 1234,
+        secret: 'foo',
+        webhookPath: 'bar',
+        privateKey: 'cert',
+      });
     });
 
     afterEach(() => {

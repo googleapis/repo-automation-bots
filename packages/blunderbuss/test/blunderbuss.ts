@@ -14,18 +14,26 @@
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-import * as blunderbuss from '../src/blunderbuss';
+import blunderbuss from '../src/blunderbuss';
+import schema from '../src/config-schema.json';
+import * as utilsModule from '../src/utils';
+import {CONFIGURATION_FILE_PATH} from '../src/config';
 import {DatastoreLock} from '@google-automations/datastore-lock';
-import {describe, it, beforeEach, afterEach, after} from 'mocha';
+import * as configUtilsModule from '@google-automations/bot-config-utils';
+import * as labelUtilsModule from '@google-automations/label-utils';
+import {ConfigChecker} from '@google-automations/bot-config-utils';
+import {describe, it, beforeEach, afterEach} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, createProbot, ProbotOctokit} from 'probot';
+import {Context, Probot, createProbot, ProbotOctokit} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
+import yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as sinon from 'sinon';
 import * as chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import assert from 'assert';
 
 nock.disableNetConnect();
 chai.use(chaiAsPromised);
@@ -36,19 +44,23 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 // https://github.com/probot/probot/pull/926
 global.console.warn = () => {};
 
+function loadConfig(configFile: string) {
+  return yaml.load(
+    fs.readFileSync(resolve(fixturesPath, 'config', configFile), 'utf-8')
+  );
+}
+
 describe('Blunderbuss', () => {
   let probot: Probot;
+  let datastoreLockAcquireStub: sinon.SinonStub;
+  let datastoreLockReleaseStub: sinon.SinonStub;
+  let sleepStub: sinon.SinonStub;
+  let getConfigWithDefaultStub: sinon.SinonStub;
+  let validateConfigStub: sinon.SinonStub;
+  let syncLabelsStub: sinon.SinonStub;
+
   const sandbox = sinon.createSandbox();
 
-  const datastoreLockAcquireStub = sandbox.stub(
-    DatastoreLock.prototype,
-    'acquire'
-  );
-  const datastoreLockReleaseStub = sandbox.stub(
-    DatastoreLock.prototype,
-    'release'
-  );
-  const sleepStub = sandbox.stub(blunderbuss, 'sleep');
   beforeEach(() => {
     probot = createProbot({
       overrides: {
@@ -60,8 +72,19 @@ describe('Blunderbuss', () => {
       },
     });
 
-    probot.load(blunderbuss.blunderbuss);
-    // By default, DatastoreLock stubs just suceeds.
+    probot.load(blunderbuss);
+    datastoreLockAcquireStub = sandbox.stub(DatastoreLock.prototype, 'acquire');
+    datastoreLockReleaseStub = sandbox.stub(DatastoreLock.prototype, 'release');
+    sleepStub = sandbox.stub(utilsModule, 'sleep');
+    getConfigWithDefaultStub = sandbox.stub(
+      configUtilsModule,
+      'getConfigWithDefault'
+    );
+    validateConfigStub = sandbox.stub(
+      ConfigChecker.prototype,
+      'validateConfigChanges'
+    );
+    syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
     datastoreLockAcquireStub.resolves(true);
     datastoreLockReleaseStub.resolves(true);
     // Sleep does nothing.
@@ -69,17 +92,37 @@ describe('Blunderbuss', () => {
   });
 
   afterEach(() => {
-    sandbox.reset();
-    nock.cleanAll();
-  });
-
-  after(() => {
     sandbox.restore();
     nock.cleanAll();
   });
 
-  //FYI: Probot upgrades usually break the config reply. Check there when updating
-  //Probot.
+  describe('scheduler handler', () => {
+    it('calls syncLabels', async () => {
+      await probot.receive({
+        name: 'schedule.repository' as '*',
+        payload: {
+          repository: {
+            name: 'testRepo',
+            owner: {
+              login: 'testOwner',
+            },
+          },
+          organization: {
+            login: 'googleapis',
+          },
+        },
+        id: 'abc123',
+      });
+      sinon.assert.calledOnceWithExactly(
+        syncLabelsStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'googleapis',
+        'testRepo',
+        sinon.match.array.deepEquals(utilsModule.BLUNDERBUSS_LABELS)
+      );
+    });
+  });
+
   describe('issue tests', () => {
     it('assigns opened issues with no assignees', async () => {
       const payload = require(resolve(
@@ -87,12 +130,9 @@ describe('Blunderbuss', () => {
         './events/issue_opened_no_assignees'
       ));
       const issue = require(resolve(fixturesPath, './issues/no_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('valid.yml'));
+
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/5')
         .reply(200, issue)
         .post('/repos/testOwner/testRepo/issues/5/assignees', body => {
@@ -103,6 +143,16 @@ describe('Blunderbuss', () => {
 
       await probot.receive({name: 'issues', payload, id: 'abc123'});
       requests.done();
+      sinon.assert.calledOnceWithExactly(
+        getConfigWithDefaultStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'testOwner',
+        'testRepo',
+        CONFIGURATION_FILE_PATH,
+        {},
+        {schema: schema}
+      );
+      sinon.assert.notCalled(validateConfigStub);
     });
 
     it('ignores opened issues when with assignee(s)', async () => {
@@ -112,13 +162,9 @@ describe('Blunderbuss', () => {
         'issue_opened_with_assignees'
       ));
       const issue = require(resolve(fixturesPath, './issues/with_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('valid.yml'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/5')
         .reply(200, issue);
 
@@ -133,13 +179,9 @@ describe('Blunderbuss', () => {
         'issue_opened_no_assignees'
       ));
       const issue = require(resolve(fixturesPath, './issues/with_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('valid.yml'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/5')
         .reply(200, issue);
 
@@ -154,16 +196,9 @@ describe('Blunderbuss', () => {
         'issue_opened_no_assignees'
       ));
 
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'no_issues.yml')
-      );
-
-      const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config);
+      getConfigWithDefaultStub.resolves(loadConfig('no_issues.yml'));
 
       await probot.receive({name: 'issues', payload, id: 'abc123'});
-      requests.done();
     });
 
     it('assigns issue when correct label', async () => {
@@ -173,13 +208,9 @@ describe('Blunderbuss', () => {
         'issue_correct_label'
       ));
       const issue = require(resolve(fixturesPath, './issues/with_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('valid.yml'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/4')
         .reply(200, issue)
         .delete(
@@ -207,13 +238,9 @@ describe('Blunderbuss', () => {
         'issue_wrong_label'
       ));
       const issue = require(resolve(fixturesPath, './issues/no_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('valid.yml'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/4')
         .reply(200, issue);
 
@@ -227,16 +254,9 @@ describe('Blunderbuss', () => {
         'events',
         'issue_opened_no_assignees'
       ));
-
-      const requests = nock('https://api.github.com')
-        // This second stub is required as octokit does a second attempt on a different endpoint
-        .get('/repos/testOwner/.github/contents/.github%2Fblunderbuss.yml')
-        .reply(404, {})
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(404, {});
+      getConfigWithDefaultStub.resolves({});
 
       await probot.receive({name: 'issues', payload, id: 'abc123'});
-      requests.done();
     });
 
     it('throws an error when failed to acquire the lock', async () => {
@@ -247,18 +267,11 @@ describe('Blunderbuss', () => {
         'events',
         'issue_correct_label'
       ));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'on_label.yml')
-      );
-
-      const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config);
+      getConfigWithDefaultStub.resolves(loadConfig('valid.yml'));
 
       await chai
         .expect(probot.receive({name: 'issues', payload, id: 'abc123'}))
         .to.be.rejectedWith(Error);
-      requests.done();
     });
 
     it('assigns blunderbuss labeled issue by label', async () => {
@@ -268,13 +281,9 @@ describe('Blunderbuss', () => {
         'issue_correct_label'
       ));
       const issue = require(resolve(fixturesPath, './issues/no_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'on_label.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('on_label.yml'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/4')
         .reply(200, issue)
         .delete(
@@ -298,12 +307,9 @@ describe('Blunderbuss', () => {
       ));
       const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       payload.issue.labels = [{name: 'api: foo'}];
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'on_label.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('on_label.yml'));
+
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/5')
         .reply(200, issue)
         .post('/repos/testOwner/testRepo/issues/5/assignees', body => {
@@ -321,13 +327,9 @@ describe('Blunderbuss', () => {
     it('assigns labeled issue by label', async () => {
       const payload = require(resolve(fixturesPath, 'events', 'issue_labeled'));
       const issue = require(resolve(fixturesPath, './issues/no_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'on_label.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('on_label.yml'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/4')
         .reply(200, issue)
         .post('/repos/testOwner/testRepo/issues/4/assignees', body => {
@@ -347,13 +349,9 @@ describe('Blunderbuss', () => {
         'issue_labeled_with_assignees'
       ));
       const issue = require(resolve(fixturesPath, './issues/with_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'on_label.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('on_label.yml'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/4')
         .reply(200, issue);
 
@@ -368,14 +366,10 @@ describe('Blunderbuss', () => {
         'issue_labeled_for_team'
       ));
       const issue = require(resolve(fixturesPath, './issues/no_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'on_label.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('on_label.yml'));
 
       const scopes = [
         nock('https://api.github.com')
-          .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-          .reply(200, config)
           .get('/repos/testOwner/testRepo/issues/4')
           .reply(200, issue),
         nock('https://api.github.com')
@@ -400,14 +394,10 @@ describe('Blunderbuss', () => {
         'issue_opened_no_assignees'
       ));
       const issue = require(resolve(fixturesPath, './issues/no_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'assign_by.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('assign_by.yml'));
 
       const scopes = [
         nock('https://api.github.com')
-          .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-          .reply(200, config)
           .get('/repos/testOwner/testRepo/issues/5')
           .reply(200, issue),
         nock('https://api.github.com')
@@ -428,13 +418,9 @@ describe('Blunderbuss', () => {
         'pull_request_opened_no_assignees'
       ));
       const issue = require(resolve(fixturesPath, './issues/no_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('valid.yml'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/6')
         .reply(200, issue)
         .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
@@ -449,6 +435,14 @@ describe('Blunderbuss', () => {
         id: 'abc123',
       });
       requests.done();
+      sinon.assert.calledOnceWithExactly(
+        validateConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'testOwner',
+        'testRepo',
+        'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
+        6
+      );
     });
 
     it('expands teams for a PR', async () => {
@@ -458,13 +452,9 @@ describe('Blunderbuss', () => {
         'pull_request_opened_no_assignees'
       ));
       const issue = require(resolve(fixturesPath, './issues/no_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'pr_with_team.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('pr_with_team.yml'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/6')
         .reply(200, issue)
         .get('/orgs/googleapis/teams/team-awesome/members')
@@ -491,13 +481,9 @@ describe('Blunderbuss', () => {
       ));
       const issue = require(resolve(fixturesPath, './issues/no_assignees'));
       payload.pull_request.labels = [{name: 'api: foo'}];
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'on_label.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('on_label.yml'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/6')
         .reply(200, issue)
         .post('/repos/testOwner/testRepo/issues/6/assignees', body => {
@@ -521,13 +507,9 @@ describe('Blunderbuss', () => {
         'pull_request_opened_with_assignees'
       ));
       const issue = require(resolve(fixturesPath, './issues/with_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('valid.yml'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/6')
         .reply(200, issue);
 
@@ -545,18 +527,12 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_draft'
       ));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid.yml')
-      );
-      const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config);
+      getConfigWithDefaultStub.resolves(loadConfig('valid.yml'));
       await probot.receive({
         name: 'pull_request',
         payload,
         id: 'abc123',
       });
-      requests.done();
     });
 
     it('ignores PR when PR opened but assign_issues not in config', async () => {
@@ -565,20 +541,12 @@ describe('Blunderbuss', () => {
         'events',
         'pull_request_opened_no_assignees'
       ));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'no_prs.yml')
-      );
-
-      const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config);
-
+      getConfigWithDefaultStub.resolves(loadConfig('no_prs.yml'));
       await probot.receive({
         name: 'pull_request',
         payload,
         id: 'abc123',
       });
-      requests.done();
     });
 
     it('assigns issue when correct label', async () => {
@@ -588,13 +556,9 @@ describe('Blunderbuss', () => {
         'pull_request_correct_label'
       ));
       const issue = require(resolve(fixturesPath, './issues/no_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('valid.yml'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/6')
         .reply(200, issue)
         .delete(
@@ -618,13 +582,9 @@ describe('Blunderbuss', () => {
         'pull_request_wrong_label'
       ));
       const issue = require(resolve(fixturesPath, './issues/no_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'valid.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('valid.yml'));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/6')
         .reply(200, issue);
 
@@ -642,19 +602,13 @@ describe('Blunderbuss', () => {
         'events',
         'issue_opened_no_assignees'
       ));
-
-      const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(404, {})
-        .get('/repos/testOwner/.github/contents/.github%2Fblunderbuss.yml')
-        .reply(404, {});
+      getConfigWithDefaultStub.resolves({});
 
       await probot.receive({
         name: 'pull_request',
         payload,
         id: 'abc123',
       });
-      requests.done();
     });
 
     it('assigns pr by label', async () => {
@@ -664,12 +618,8 @@ describe('Blunderbuss', () => {
         'pull_request_opened_no_assignees'
       ));
       const issue = require(resolve(fixturesPath, './issues/no_assignees'));
-      const config = fs.readFileSync(
-        resolve(fixturesPath, 'config', 'pr_on_label.yml')
-      );
+      getConfigWithDefaultStub.resolves(loadConfig('pr_on_label.yml'));
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
-        .reply(200, config)
         .get('/repos/testOwner/testRepo/issues/6')
         .reply(200, issue)
         .get('/repos/testOwner/testRepo/issues/6/labels')
@@ -687,5 +637,240 @@ describe('Blunderbuss', () => {
       });
       requests.done();
     });
+  });
+});
+
+// Emulate getContent and getBlob.
+function createConfigResponse(configFile: string) {
+  const config = fs.readFileSync(resolve(fixturesPath, 'config', configFile));
+  const base64Config = config.toString('base64');
+  return {
+    size: base64Config.length,
+    content: base64Config,
+    encoding: 'base64',
+  };
+}
+
+function fetchConfig(configFile: string) {
+  return nock('https://api.github.com')
+    .get('/repos/testOwner/testRepo/contents/.github%2Fblunderbuss.yml')
+    .reply(200, createConfigResponse(configFile));
+}
+
+// Because we change how to fetch the config, test it with the
+// real config file.
+describe('Blunderbuss getConfigWithDefault', () => {
+  let probot: Probot;
+  let datastoreLockAcquireStub: sinon.SinonStub;
+  let datastoreLockReleaseStub: sinon.SinonStub;
+  let sleepStub: sinon.SinonStub;
+  let assignStub: sinon.SinonStub;
+  let validateConfigStub: sinon.SinonStub;
+
+  const sandbox = sinon.createSandbox();
+
+  beforeEach(() => {
+    probot = createProbot({
+      overrides: {
+        githubToken: 'abc123',
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
+      },
+    });
+
+    probot.load(blunderbuss);
+    datastoreLockAcquireStub = sandbox.stub(DatastoreLock.prototype, 'acquire');
+    datastoreLockReleaseStub = sandbox.stub(DatastoreLock.prototype, 'release');
+    sleepStub = sandbox.stub(utilsModule, 'sleep');
+    assignStub = sandbox.stub(utilsModule, 'assign');
+    validateConfigStub = sandbox.stub(
+      ConfigChecker.prototype,
+      'validateConfigChanges'
+    );
+    datastoreLockAcquireStub.resolves(true);
+    datastoreLockReleaseStub.resolves(true);
+    // Sleep does nothing.
+    sleepStub.resolves();
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+    nock.cleanAll();
+  });
+
+  it('fetch a simple config', async () => {
+    const payload = require(resolve(
+      fixturesPath,
+      'events',
+      'pull_request_opened_no_assignees'
+    ));
+    const scope = fetchConfig('valid.yml');
+
+    await probot.receive({
+      name: 'pull_request',
+      payload,
+      id: 'abc123',
+    });
+
+    scope.done();
+
+    sinon.assert.calledOnceWithExactly(
+      validateConfigStub,
+      sinon.match.instanceOf(ProbotOctokit),
+      'testOwner',
+      'testRepo',
+      'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
+      6
+    );
+    sinon.assert.calledOnceWithExactly(
+      assignStub,
+      sinon.match.instanceOf(Context),
+      {
+        assign_issues: sinon.match.array.deepEquals(['issues1']),
+        assign_prs: sinon.match.array.deepEquals(['prs1']),
+      }
+    );
+  });
+  it('fetch a real world config(python-docs-samples)', async () => {
+    const payload = require(resolve(
+      fixturesPath,
+      'events',
+      'pull_request_opened_no_assignees'
+    ));
+    const scope = fetchConfig('python-docs-samples.yml');
+
+    await probot.receive({
+      name: 'pull_request',
+      payload,
+      id: 'abc123',
+    });
+
+    scope.done();
+
+    sinon.assert.calledOnceWithExactly(
+      validateConfigStub,
+      sinon.match.instanceOf(ProbotOctokit),
+      'testOwner',
+      'testRepo',
+      'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
+      6
+    );
+    sinon.assert.calledOnceWithExactly(
+      assignStub,
+      sinon.match.instanceOf(Context),
+      sinon.match.object
+    );
+    const config = assignStub.getCall(0).args[1];
+    assert.strictEqual(config.assign_issues_by[0].labels[0], 'api: appengine');
+    assert.strictEqual(config.assign_issues_by[0].to[0], 'engelke');
+  });
+});
+
+function fetchFilesInPR(configFile: string) {
+  return nock('https://api.github.com')
+    .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
+    .reply(200, [
+      {
+        filename: `.github/${CONFIGURATION_FILE_PATH}`,
+        sha: '8a533f7e4e551f2b8da1c31b02225cd98c01cb51',
+      },
+    ])
+    .get(
+      '/repos/testOwner/testRepo/git/blobs/8a533f7e4e551f2b8da1c31b02225cd98c01cb51'
+    )
+    .reply(200, createConfigResponse(configFile));
+}
+
+// Because we start creating failing checks on PRs
+// for config schema validation, we test it with
+// real config file.
+describe('Blunderbuss validateConfigChanges', () => {
+  let probot: Probot;
+  let datastoreLockAcquireStub: sinon.SinonStub;
+  let datastoreLockReleaseStub: sinon.SinonStub;
+  let sleepStub: sinon.SinonStub;
+  let assignStub: sinon.SinonStub;
+  let getConfigWithDefaultStub: sinon.SinonStub;
+
+  const sandbox = sinon.createSandbox();
+
+  beforeEach(() => {
+    probot = createProbot({
+      overrides: {
+        githubToken: 'abc123',
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
+      },
+    });
+
+    probot.load(blunderbuss);
+    datastoreLockAcquireStub = sandbox.stub(DatastoreLock.prototype, 'acquire');
+    datastoreLockReleaseStub = sandbox.stub(DatastoreLock.prototype, 'release');
+    sleepStub = sandbox.stub(utilsModule, 'sleep');
+    assignStub = sandbox.stub(utilsModule, 'assign');
+    getConfigWithDefaultStub = sandbox.stub(
+      configUtilsModule,
+      'getConfigWithDefault'
+    );
+    datastoreLockAcquireStub.resolves(true);
+    datastoreLockReleaseStub.resolves(true);
+    getConfigWithDefaultStub.resolves({});
+    assignStub.resolves();
+    // Sleep does nothing.
+    sleepStub.resolves();
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+    nock.cleanAll();
+  });
+
+  it('does not create a failing status check for a correct config', async () => {
+    const payload = require(resolve(
+      fixturesPath,
+      'events',
+      'pull_request_opened_no_assignees'
+    ));
+    const scope = fetchFilesInPR('python-docs-samples.yml');
+    await probot.receive({
+      name: 'pull_request',
+      payload,
+      id: 'abc123',
+    });
+    scope.done();
+    sinon.assert.calledOnceWithExactly(
+      assignStub,
+      sinon.match.instanceOf(Context),
+      sinon.match.object
+    );
+  });
+  it('creates a failing status check for a broken config', async () => {
+    const payload = require(resolve(
+      fixturesPath,
+      'events',
+      'pull_request_opened_no_assignees'
+    ));
+    const scope = fetchFilesInPR('python-docs-samples-broken.yml');
+    scope
+      .post('/repos/testOwner/testRepo/check-runs', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200);
+    await probot.receive({
+      name: 'pull_request',
+      payload,
+      id: 'abc123',
+    });
+    scope.done();
+    sinon.assert.calledOnceWithExactly(
+      assignStub,
+      sinon.match.instanceOf(Context),
+      sinon.match.object
+    );
   });
 });

@@ -4,33 +4,13 @@ assign_issues_by:
   - labels:
     - 'bot: auto-label'
     to:
-    - nicoleczhu
     - sofisl
-  - labels:
-    - 'bot: blunderbuss'
-    to:
-    - kvg
-  - labels:
-    - 'bot: flakybot'
-    - 'bot: do-not-merge'
-    to:
-    - tbp
-  - labels:
-    - 'bot: conventional-commit-lint'
-    - 'bot: failurechecker'
-    to:
-    - bcoe
   - labels:
     - 'bot: generated-files-bot'
     - 'bot: header-checker-lint'
     - 'bot: monitoring-system'
     to:
     - chingor13
-  - labels:
-    - 'bot: label-sync'
-    - 'bot: sync-repo-settings'
-    to:
-    - JustinBeckwith
   - labels:
     - 'bot: merge-on-green'
     to:
@@ -41,49 +21,25 @@ assign_issues_by:
     - bcoe
     - chingor13
   - labels:
-    - 'bot: slo-stat-bot'
-    to:
-    - orthros
-  - labels:
     - 'bot: snippet-bot'
     to:
     - tmatsuo
   - labels:
-    - 'bot: trusted-contribution'
+    - 'bot: owl-bot'
     to:
-    - crwilcox
+    - SurferJeffAtGoogle
 
 assign_prs_by:
   - labels:
     - 'bot: auto-label'
     to:
-    - nicoleczhu
     - sofisl
-  - labels:
-    - 'bot: blunderbuss'
-    to:
-    - kvg
-  - labels:
-    - 'bot: flakybot'
-    - 'bot: do-not-merge'
-    to:
-    - tbp
-  - labels:
-    - 'bot: conventional-commit-lint'
-    - 'bot: failurechecker'
-    to:
-    - bcoe
   - labels:
     - 'bot: generated-files-bot'
     - 'bot: header-checker-lint'
     - 'bot: monitoring-system'
     to:
     - chingor13
-  - labels:
-    - 'bot: label-sync'
-    - 'bot: sync-repo-settings'
-    to:
-    - JustinBeckwith
   - labels:
     - 'bot: merge-on-green'
     to:
@@ -94,14 +50,15 @@ assign_prs_by:
     - bcoe
     - chingor13
   - labels:
-    - 'bot: slo-stat-bot'
-    to:
-    - orthros
-  - labels:
     - 'bot: snippet-bot'
     to:
     - tmatsuo
   - labels:
-    - 'bot: trusted-contribution'
+    - 'bot: owl-bot'
     to:
-    - crwilcox
+    - SurferJeffAtGoogle
+
+assign_prs:
+  - tmatsuo
+  - chingor13
+  - sofisl

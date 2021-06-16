@@ -22,17 +22,9 @@ import handler from '../src/merge-on-green';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
 // eslint-disable-next-line node/no-extraneous-import
-import {config} from '@probot/octokit-plugin-config';
+import {Octokit} from '@octokit/rest';
 
-import {createProbotAuth} from 'octokit-auth-probot';
-
-const TestingOctokit = ProbotOctokit.plugin(config).defaults({
-  authStrategy: createProbotAuth,
-  retry: {enabled: false},
-  throttle: {enabled: false},
-});
-
-const testingOctokitInstance = new TestingOctokit({auth: 'abc123'});
+const testingOctokitInstance = new Octokit({auth: 'abc123'});
 const sandbox = sinon.createSandbox();
 
 interface PR {
@@ -124,7 +116,10 @@ describe('merge-on-green wrapper logic', () => {
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
-        Octokit: TestingOctokit,
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
       },
     });
 

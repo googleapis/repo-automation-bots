@@ -1,0 +1,67 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "auto-label config",
+    "description": "Schema for defining the auto-label config",
+    "additionalProperties": false,
+    "type": "object",
+    "definitions": {
+	"path": {
+	    "type": "object",
+	    "additionalProperties": false,
+	    "patternProperties": {
+		"^.*$": {
+		    "anyOf": [
+			{ "type": "string" },
+			{"$ref": "#/definitions/path"}
+		    ]
+		}
+	    }
+	}
+    },
+    "properties": {
+	"enabled": {
+	    "type": "boolean"
+	},
+	"product": {
+	    "type": "boolean"
+	},
+	"path": {
+	    "type": "object",
+	    "additionalProperties": false,
+	    "properties": {
+		"pullrequest": {
+		    "type": "boolean"
+		},
+		"labelprefix": {
+		    "type": "string"
+		},
+		"paths": {"$ref": "#/definitions/path"}
+	    }
+	},
+	"language": {
+	    "type": "object",
+	    "additionalProperties": false,
+	    "properties": {
+		"pullrequest": {
+		    "type": "boolean"
+		},
+		"labelprefix": {
+		    "type": "string"
+		},
+		"extensions": {
+		    "type": "object",
+		    "patternProperties": {
+			"^.*$": {
+			    "type": "array",
+			    "items": {
+				"type": "string"
+			    }
+			}
+
+		    }
+		},
+		"paths": {"$ref": "#/definitions/path"}
+	    }
+	}
+    }
+}

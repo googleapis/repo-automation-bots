@@ -33,14 +33,14 @@
     "@octokit/rest": "^18.3.5",
     "code-suggester": "^2.0.0",
     "gaxios": "^4.2.0",
-    "gcf-utils": "^7.0.0",
+    "gcf-utils": "^10.0.0",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@octokit/openapi-types": "^7.0.0",
     "@types/mocha": "^8.0.0",
-    "@types/node": "^12.6.1",
-    "@types/sinon": "^9.0.11",
+    "@types/node": "^14.0.0",
+    "@types/sinon": "^10.0.0",
     "@types/uuid": "^8.3.0",
     "c8": "^7.3.5",
     "cross-env": "^7.0.0",
@@ -48,9 +48,9 @@
     "meow": "^9.0.0",
     "mocha": "^8.0.0",
     "nock": "^13.0.0",
-    "sinon": "^10.0.0",
+    "sinon": "^11.0.0",
     "smee-client": "^1.1.0",
-    "typescript": "~4.2.0"
+    "typescript": "~4.3.0"
   },
   "engines": {
     "node": ">= 12.18.2"

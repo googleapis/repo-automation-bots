@@ -47,14 +47,14 @@ describe('core', () => {
       permissions: {},
       repository_selection: 'included',
     });
-    sandbox.stub(core, 'getAuthenticatedOctokit').resolves(({
+    sandbox.stub(core, 'getAuthenticatedOctokit').resolves({
       pulls: {
         get() {
           return prData;
         },
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any) as InstanceType<typeof Octokit>);
+    } as any as InstanceType<typeof Octokit>);
   });
   afterEach(() => {
     sandbox.restore();
@@ -82,7 +82,7 @@ describe('core', () => {
       let triggerRequest:
         | protos.google.devtools.cloudbuild.v1.IRunBuildTriggerRequest
         | undefined = undefined;
-      sandbox.stub(core, 'getCloudBuildInstance').returns(({
+      sandbox.stub(core, 'getCloudBuildInstance').returns({
         runBuildTrigger(
           request: protos.google.devtools.cloudbuild.v1.IRunBuildTriggerRequest
         ) {
@@ -101,7 +101,7 @@ describe('core', () => {
           return [successfulBuild];
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any) as CloudBuildClient);
+      } as any as CloudBuildClient);
       const build = await core.triggerPostProcessBuild({
         image: 'node@abc123',
         appId: 12345,
@@ -129,7 +129,7 @@ describe('core', () => {
       let triggerRequest:
         | protos.google.devtools.cloudbuild.v1.IRunBuildTriggerRequest
         | undefined = undefined;
-      sandbox.stub(core, 'getCloudBuildInstance').returns(({
+      sandbox.stub(core, 'getCloudBuildInstance').returns({
         runBuildTrigger(
           request: protos.google.devtools.cloudbuild.v1.IRunBuildTriggerRequest
         ) {
@@ -148,7 +148,7 @@ describe('core', () => {
           return [successfulBuild];
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any) as CloudBuildClient);
+      } as any as CloudBuildClient);
       const build = await core.triggerPostProcessBuild({
         image: 'node@abc123',
         appId: 12345,
@@ -185,7 +185,7 @@ describe('core', () => {
           encoding: 'base64',
         },
       };
-      const octokit = ({
+      const octokit = {
         pulls: {
           get() {
             return prData;
@@ -197,7 +197,7 @@ describe('core', () => {
           },
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any) as InstanceType<typeof Octokit>;
+      } as any as InstanceType<typeof Octokit>;
       const lock = await core.getOwlBotLock('bcoe/test', 22, octokit);
       assert.strictEqual(lock!.docker.image, 'node');
       assert.strictEqual(
@@ -225,7 +225,7 @@ describe('core', () => {
           encoding: 'base64',
         },
       };
-      const octokit = ({
+      const octokit = {
         pulls: {
           get() {
             return prData;
@@ -237,7 +237,7 @@ describe('core', () => {
           },
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any) as InstanceType<typeof Octokit>;
+      } as any as InstanceType<typeof Octokit>;
       assert.rejects(core.getOwlBotLock('bcoe/test', 22, octokit));
     });
     it('returns "undefined" if config not found', async () => {
@@ -251,7 +251,7 @@ describe('core', () => {
           },
         },
       };
-      const octokit = ({
+      const octokit = {
         pulls: {
           get() {
             return prData;
@@ -263,7 +263,7 @@ describe('core', () => {
           },
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any) as InstanceType<typeof Octokit>;
+      } as any as InstanceType<typeof Octokit>;
       const config = await core.getOwlBotLock('bcoe/test', 22, octokit);
       assert.strictEqual(config, undefined);
     });

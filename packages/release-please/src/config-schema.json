@@ -1,0 +1,126 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "release-please config",
+    "description": "Schema for defining the release-please config",
+    "additionalProperties": false,
+    "type": "object",
+    "definitions": {
+        "BranchOptions": {
+            "type": "object",
+            "properties": {
+                "releaseLabels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "monorepoTags": {
+                    "type": "boolean"
+                },
+                "releaseType": {
+                    "enum": [
+                        "go",
+                        "go-yoshi",
+                        "java-bom",
+                        "java-lts",
+                        "java-yoshi",
+                        "node",
+                        "ocaml",
+                        "php-yoshi",
+                        "python",
+                        "ruby",
+                        "ruby-yoshi",
+                        "rust",
+                        "simple",
+                        "terraform-module",
+                        "helm"
+                    ]
+                },
+                "packageName": {
+                    "type": "string"
+                },
+                "handleGHRelease": {
+                    "type": "boolean"
+                },
+                "bumpMinorPreMajor": {
+                    "type": "boolean"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "changelogPath": {
+                    "type": "string"
+                },
+                "manifest": {
+                    "type": "boolean"
+                },
+                "extraFiles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "releaseLabel": {
+                    "type": "string"
+                }
+            }
+        },
+    },
+    "properties": {
+        "primaryBranch": true,
+	"branches": true,
+        "releaseLabels": true,
+        "monorepoTags": true,
+        "releaseType": true,
+        "packageName": true,
+        "handleGHRelease": true,
+        "bumpMinorPreMajor": true,
+        "path": true,
+        "changelogPath": true,
+        "manifest": true,
+        "extraFiles": true,
+        "releaseLabel": true
+    },
+    "allOf": [
+        { "$ref": "#/definitions/BranchOptions"},
+        {
+            "properties": {
+                "primaryBranch": {
+                    "type": "string",
+                },
+                "branches": {
+                    "type": "array",
+                    "items": {
+                        "additionalProperties": false,
+                        "required": ["branch"],
+                        "properties": {
+                            "branch": true,
+                            "releaseLabels": true,
+                            "monorepoTags": true,
+                            "releaseType": true,
+                            "packageName": true,
+                            "handleGHRelease": true,
+                            "bumpMinorPreMajor": true,
+                            "path": true,
+                            "changelogPath": true,
+                            "manifest": true,
+                            "extraFiles": true,
+                            "releaseLabel": true
+                        },
+                        "allOf": [
+                            { "$ref": "#/definitions/BranchOptions"},
+                            {
+                                "properties": {
+                                    "branch": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        ],
+
+                    }
+                }
+            }
+        }
+    ]
+}

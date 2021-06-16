@@ -65,32 +65,6 @@ export async function getServerlessSchedulerProxyUrl(
 }
 
 /**
- * Parses the legacy `cron` file and coerces into a CronEntry. The cron file
- * is a simple text file that contains a crontab-like entry.
- * @param path {string} Path to the `cron` file.
- * @param name {string} Name of the cron entry.
- * @param description {string} Description of the cron entry.
- * @returns {CronEntry[]} The parsed cron entry as a list (or empty)
- */
-export function parseLegacyCronFile(
-  path: string,
-  name: string,
-  description?: string
-): CronEntry[] {
-  if (!existsSync(path)) {
-    return [];
-  }
-  const schedule = readFileSync(path).toString('utf-8').trim();
-  return [
-    {
-      name,
-      description,
-      schedule,
-    },
-  ];
-}
-
-/**
  * Parse multiple cron entries from a `cron.yaml` file. The cron file
  * is a YAML file with a root `cron` field that contains a list of
  * CronEntry data structures.
@@ -122,6 +96,7 @@ export async function createOrUpdateCron(
   projectId: string,
   schedulerRegion: string,
   functionRegion: string,
+  functionName: string,
   baseTargetUrl: string,
   serviceAccountEmail: string
 ): Promise<string | null> {
@@ -130,6 +105,31 @@ export async function createOrUpdateCron(
   const parent = client.locationPath(projectId, schedulerRegion);
   const jobName = client.jobPath(projectId, schedulerRegion, cronEntry.name);
   const targetUrl = `${baseTargetUrl}/v0`;
+
+  const extraParams = cronEntry.params ?? {};
+  const bodyContent = {
+    ...extraParams,
+    Name: functionName,
+    Type: 'function',
+    Location: functionRegion,
+  };
+  const jobParams = {
+    schedule: cronEntry.schedule,
+    description: cronEntry.description,
+    httpTarget: {
+      uri: targetUrl,
+      httpMethod: protos.google.cloud.scheduler.v1.HttpMethod.POST,
+      oidcToken: {
+        serviceAccountEmail,
+        audience: baseTargetUrl,
+      },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: Buffer.from(JSON.stringify(bodyContent), 'utf-8'),
+    },
+    timeZone: 'America/Los_Angeles',
+  };
 
   let foundJob;
   try {
@@ -143,39 +143,16 @@ export async function createOrUpdateCron(
   if (foundJob) {
     const updatedJob = {
       ...foundJob,
-      schedule: cronEntry.schedule,
-      description: cronEntry.description,
-      uri: targetUrl,
+      ...jobParams,
     };
     const [job] = await client.updateJob({job: updatedJob});
     return job?.name ?? null;
   } else {
-    const extraParams = cronEntry.params ?? {};
-    const bodyContent = {
-      ...extraParams,
-      Name: cronEntry.name,
-      Type: 'function',
-      Location: functionRegion,
-    };
     const [job] = await client.createJob({
       parent,
       job: {
         name: jobName,
-        schedule: cronEntry.schedule,
-        description: cronEntry.description,
-        httpTarget: {
-          uri: targetUrl,
-          httpMethod: protos.google.cloud.scheduler.v1.HttpMethod.POST,
-          oidcToken: {
-            serviceAccountEmail,
-            audience: baseTargetUrl,
-          },
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: Buffer.from(JSON.stringify(bodyContent), 'utf-8'),
-        },
-        timeZone: 'America/Los_Angeles',
+        ...jobParams,
       },
     });
     return job?.name ?? null;

@@ -26,7 +26,7 @@ import yaml from 'js-yaml';
 // Conflicting linters think the next line is extraneous or necessary.
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints} from '@octokit/types';
-import {OctokitType} from './octokit-util';
+import {OctokitType, createIssueIfTitleDoesntExist} from './octokit-util';
 import {githubRepoFromOwnerSlashName} from './github-repo';
 
 type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
@@ -49,10 +49,8 @@ export async function onPostProcessorPublished(
 ): Promise<void> {
   // Examine all the repos that use the specified docker image for post
   // processing.
-  const repos: [
-    string,
-    Configs
-  ][] = await configsStore.findReposWithPostProcessor(dockerImageName);
+  const repos: [string, Configs][] =
+    await configsStore.findReposWithPostProcessor(dockerImageName);
   for (const [repo, configs] of repos) {
     let stale = true;
     // The lock file may be missing, for example when a new repo is created.
@@ -271,6 +269,20 @@ export async function refreshConfigs(
       logger.error(
         `${repoFull} has an invalid ${owlBotLockPath} file: ${e.message}`
       );
+
+      const title = `Invalid ${owlBotLockPath}`;
+      const body = `\`owl-bot\` will not be able to update this repo until '${owlBotLockPath}' is fixed.
+
+Please fix this as soon as possible so that your repository will not go stale.`;
+
+      await createIssueIfTitleDoesntExist(
+        octokit,
+        githubOrg,
+        repoName,
+        title,
+        body,
+        logger
+      );
     }
   }
 
@@ -287,6 +299,20 @@ export async function refreshConfigs(
       newConfigs.yaml = owlBotYamlFromText(yamlContent);
     } catch (e) {
       logger.error(`${repoFull} has an invalid ${owlBotYamlPath} file: ${e}`);
+
+      const title = `Invalid ${owlBotYamlPath}`;
+      const body = `\`owl-bot\` will not be able to update this repo until '${owlBotYamlPath}' is fixed.
+
+Please fix this as soon as possible so that your repository will not go stale.`;
+
+      await createIssueIfTitleDoesntExist(
+        octokit,
+        githubOrg,
+        repoName,
+        title,
+        body,
+        logger
+      );
     }
   }
   // Store the new configs back into the database.
