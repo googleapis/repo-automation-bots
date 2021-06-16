@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "@google-automations/selectors/v1",
+  "title": "list of selector",
+  "description": "Schema for defining a list of selectors",
+  "type": "array",
+  "items": {
+    "$id": "@google-automations/selector/v1",
+    "type": "array",
+    "items": [
+      {"type": "string"},
+      {"enum": ["eq", "ne", "anyof", "regex"]},
+      {"anyOf": [
+        {"type": "string"},
+        {"type": "number"},
+        {"type": "boolean"},
+        {"type": "array", "items": { "type": "string" }}]
+      }
+    ],
+    "minItems": 3,
+    "additionalItems": false,
+  },
+}
