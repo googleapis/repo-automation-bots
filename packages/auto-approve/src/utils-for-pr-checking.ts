@@ -19,6 +19,12 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
+/**
+ * Interface for rules in `./language-versioning-rules.json`. These
+ * are rules for files that match an author and filename, and then provide
+ * regex for the versions for those particular formats.
+ */
 export interface FileSpecificRule {
   prAuthor: string;
   process: string;
@@ -28,6 +34,12 @@ export interface FileSpecificRule {
   newVersion?: string;
 }
 
+/**
+ * Interface for the versions found in the selected files. These versions are
+ * picked out based on the regex listed in `./language-versioning-rules.json` for
+ * that particular file. From there, you will get the previous dependency, new
+ * dependency, and previous version number and changed version number.
+ */
 export interface Versions {
   oldDependencyName: string;
   newDependencyName: string;
@@ -54,23 +66,21 @@ export function getTargetFile(
   author: string,
   languageRules: FileSpecificRule[],
   searchAfter: number
-): {file: File; fileRule: FileSpecificRule; ithElement: number} | undefined {
+): {file: File; fileRule: FileSpecificRule; index: number} | undefined {
   let file;
   let fileRule;
-  let ithElement = 0;
-  let keepSearching = true;
+  let index = 0;
 
-  for (let i = searchAfter; i < changedFiles.length && keepSearching; i++) {
-    for (const j in languageRules) {
+  loop1: for (let i = searchAfter; i < changedFiles.length; i++) {
+    for (let j = 0; j < languageRules.length; j++) {
       if (
         languageRules[j].prAuthor === author &&
         languageRules[j].targetFile === changedFiles[i].filename
       ) {
         file = changedFiles[i];
-        ithElement = i + 1;
+        index = i + 1;
         fileRule = languageRules[j];
-        keepSearching = false;
-        break;
+        break loop1;
       }
     }
   }
@@ -80,7 +90,7 @@ export function getTargetFile(
   if (!(file && fileRule)) {
     return undefined;
   } else {
-    return {file, fileRule, ithElement};
+    return {file, fileRule, index};
   }
 }
 
@@ -161,7 +171,7 @@ export function getVersions(
  * @param title the title of the PR
  * @returns whether the old dependency, new dependency, and dependency in the title all match
  */
-export function doesDependencyMatchTarget(
+export function doesDependencyChangeMatchPRTitle(
   versions: Versions,
   dependencyRegex: string,
   title: string

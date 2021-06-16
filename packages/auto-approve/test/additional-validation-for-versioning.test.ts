@@ -18,7 +18,7 @@ import {
   isMajorVersionChanging,
   isMinorVersionUpgraded,
   isOneDependencyChanged,
-  doesDependencyMatchTarget,
+  doesDependencyChangeMatchPRTitle,
   mergesOnWeekday,
 } from '../src/utils-for-pr-checking';
 import {describe, it} from 'mocha';
@@ -48,7 +48,7 @@ describe('run additional versioning checks', () => {
           patch: 'patch',
         },
         fileRule: languageVersioningRules[0],
-        ithElement: 1,
+        index: 1,
       };
 
       const fileAndFileRule = getTargetFile(
@@ -81,7 +81,7 @@ describe('run additional versioning checks', () => {
           patch: 'patch',
         },
         fileRule: languageVersioningRules[0],
-        ithElement: 2,
+        index: 2,
       };
 
       const fileAndFileRule = getTargetFile(
@@ -409,7 +409,7 @@ describe('run additional versioning checks', () => {
       const title =
         'chore(deps): update dependency google-cloud-secret-manager to v2.5.0';
 
-      const doesDependencyMatch = doesDependencyMatchTarget(
+      const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
         versions,
         languageVersioningRules[1].dependency!,
         title
@@ -431,7 +431,7 @@ describe('run additional versioning checks', () => {
       const title =
         'chore(deps): update dependency google-cloud-secret-manager to v2.5.0';
 
-      const doesDependencyMatch = doesDependencyMatchTarget(
+      const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
         versions,
         languageVersioningRules[1].dependency!,
         title
@@ -453,7 +453,7 @@ describe('run additional versioning checks', () => {
       const title =
         'chore: update dependency google-cloud-secret-manager to v2.5.0';
 
-      const doesDependencyMatch = doesDependencyMatchTarget(
+      const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
         versions,
         languageVersioningRules[1].dependency!,
         title

@@ -24,7 +24,7 @@ import {
   isMinorVersionUpgraded,
   isOneDependencyChanged,
   checkFilePathsMatch,
-  doesDependencyMatchTarget,
+  doesDependencyChangeMatchPRTitle,
   Versions,
   mergesOnWeekday,
 } from './utils-for-pr-checking';
@@ -53,9 +53,9 @@ export async function checkPRAgainstConfig(
   pr: PullRequestEvent,
   octokit: InstanceType<typeof ProbotOctokit>
 ): Promise<Boolean> {
-  const repoOwner = pr.pull_request.head.repo.owner.login;
+  const repoOwner = pr.repository.owner.login;
   const prAuthor = pr.pull_request.user.login;
-  const repo = pr.pull_request.head.repo.name;
+  const repo = pr.repository.name;
   const prNumber = pr.number;
   const title = pr.pull_request.title;
 
@@ -66,7 +66,7 @@ export async function checkPRAgainstConfig(
     // changedFiles and maxFiles are not set in the JSON schema
     let filePathsMatch = true;
     let fileCountMatch = true;
-    let addtlRules = true;
+    let additionalRules = true;
     const releasePRFiles: File[] = [];
 
     // Since there's only one allowed title per author right now, we don't need to
@@ -112,7 +112,7 @@ export async function checkPRAgainstConfig(
       if (versions && fileAndFileRule.fileRule.process === 'release') {
         // If it's a release process, just make sure that the versions are minor
         // bumps and are increasing, and are only changing one at a time
-        addtlRules =
+        additionalRules =
           runVersioningValidation(versions) &&
           isOneDependencyChanged(fileAndFileRule.file) &&
           mergesOnWeekday();
@@ -128,8 +128,8 @@ export async function checkPRAgainstConfig(
         // in a renovate bot pr conform to one of the language versioning rules
         releasePRFiles.push(fileAndFileRule.file);
 
-        addtlRules =
-          doesDependencyMatchTarget(
+        additionalRules =
+          doesDependencyChangeMatchPRTitle(
             versions,
             // We can assert dependency will exist, since the process is type 'dependency'
             fileAndFileRule.fileRule.dependency!,
@@ -139,7 +139,7 @@ export async function checkPRAgainstConfig(
           isOneDependencyChanged(fileAndFileRule.file);
       }
 
-      if (addtlRules === false) {
+      if (additionalRules === false) {
         return false;
       }
 
@@ -147,7 +147,7 @@ export async function checkPRAgainstConfig(
         changedFiles,
         rulesToValidateAgainst.author,
         languageVersioningRules,
-        fileAndFileRule.ithElement
+        fileAndFileRule.index
       );
     }
 
@@ -187,10 +187,10 @@ export async function checkPRAgainstConfig(
       `Info for ${repoOwner}/${repo}/${prNumber} File Count Matches? ${fileCountMatch}`
     );
     logger.info(
-      `Info for ${repoOwner}/${repo}/${prNumber} Additional rules are correct? ${addtlRules}`
+      `Info for ${repoOwner}/${repo}/${prNumber} Additional rules are correct? ${additionalRules}`
     );
 
-    return filePathsMatch && fileCountMatch && addtlRules;
+    return filePathsMatch && fileCountMatch && additionalRules;
   } else {
     logger.info(`${repoOwner}/${repo}/${prNumber} does not match config`);
     return false;

@@ -42,13 +42,11 @@ export async function getChangedFiles(
   prNumber: number
 ): Promise<File[]> {
   try {
-    return (
-      await octokit.pulls.listFiles({
-        owner,
-        repo,
-        pull_number: prNumber,
-      })
-    ).data;
+    return await octokit.paginate(octokit.pulls.listFiles, {
+      owner,
+      repo,
+      pull_number: prNumber,
+    });
   } catch (err) {
     // These errors happen frequently, so adding cleaner logging; will still throw error
     if (err === 404) {
