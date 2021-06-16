@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@google-automations/bot-config-utils": "^3.1.2",
+    "@google-automations/label-utils": "^1.0.1",
     "@octokit/webhooks": "^9.7.0",
     "gcf-utils": "^10.0.0",
     "release-please": "^11.13.0"
