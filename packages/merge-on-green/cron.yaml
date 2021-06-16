@@ -1,11 +1,20 @@
 cron:
   - name: merge-on-green
     schedule: "*/2 * * * *"
-    description: merge on green for googleapis
+    description: "merge on green for googleapis"
     params:
       installation:
         id: 6648093
       org: googleapis
+      cleanUp: false
+      find_hanging_prs: false
+  - name: merge-on-green-gcp
+    schedule: "*/2 * * * *"
+    description: "merge on green for GCP"
+    params:
+      installation:
+        id: 6882761
+      org: GoogleCloudPlatform
       cleanUp: false
       find_hanging_prs: false
   - name: merge-on-green-clean-up
