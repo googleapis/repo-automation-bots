@@ -195,6 +195,26 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(enqueueTask);
     });
 
+    it('ensures that task is enqueued when called by scheduler for a bot opt out from background execution', async () => {
+      // TODO
+      await mockBootstrapper({
+        background: false,
+        logging: true,
+      });
+      req.body = {
+        installation: {id: 1},
+        repo: 'firstRepo',
+      };
+      req.headers = {};
+      req.headers['x-github-event'] = 'schedule.repository';
+      req.headers['x-github-delivery'] = '123';
+      req.headers['x-cloudtasks-taskname'] = '';
+
+      await handler(req, response);
+
+      sinon.assert.calledOnce(enqueueTask);
+    });
+
     it('stores task payload in Cloud Storage if WEBHOOK_TMP set', async () => {
       await mockBootstrapper();
       process.env.WEBHOOK_TMP = '/tmp/foo';
