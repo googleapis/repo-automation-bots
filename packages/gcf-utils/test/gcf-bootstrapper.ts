@@ -67,7 +67,10 @@ describe('GCFBootstrapper', () => {
 
     let req: express.Request;
 
-    const spy: sinon.SinonStub = sinon.stub();
+    const issueSpy: sinon.SinonStub = sinon.stub();
+    const repositoryCronSpy: sinon.SinonStub = sinon.stub();
+    const installationCronSpy: sinon.SinonStub = sinon.stub();
+    const globalCronSpy: sinon.SinonStub = sinon.stub();
     let configStub: sinon.SinonStub<[boolean?], Promise<Options>>;
 
     let bootstrapper: GCFBootstrapper;
@@ -100,9 +103,13 @@ describe('GCFBootstrapper', () => {
         .stub(bootstrapper, 'getAuthenticatedOctokit')
         .resolves(new Octokit());
       handler = bootstrapper.gcf(async app => {
-        app.on('issues', spy);
+        app.on('issues', issueSpy);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        app.on('schedule.repository' as any, spy);
+        app.on('schedule.repository' as any, repositoryCronSpy);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        app.on('schedule.installation' as any, installationCronSpy);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        app.on('schedule.global' as any, globalCronSpy);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         app.on('err' as any, sinon.stub().throws());
       }, wrapOpts);
@@ -111,7 +118,10 @@ describe('GCFBootstrapper', () => {
     afterEach(() => {
       sendStub.reset();
       sendStatusStub.reset();
-      spy.reset();
+      issueSpy.reset();
+      repositoryCronSpy.reset();
+      installationCronSpy.reset();
+      globalCronSpy.reset();
       configStub.reset();
       enqueueTask.reset();
     });
@@ -132,7 +142,7 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(configStub);
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.calledOnce(sendStub);
-      sinon.assert.calledOnce(spy);
+      sinon.assert.calledOnce(issueSpy);
     });
 
     it('does not schedule task if background option is "false"', async () => {
@@ -152,7 +162,7 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(configStub);
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.calledOnce(sendStub);
-      sinon.assert.calledOnce(spy);
+      sinon.assert.calledOnce(issueSpy);
     });
 
     it('does nothing if there are missing headers', async () => {
@@ -165,8 +175,10 @@ describe('GCFBootstrapper', () => {
       await handler(req, response);
 
       sinon.assert.calledOnce(configStub);
-      sinon.assert.notCalled(spy);
-      sinon.assert.notCalled(sendStub);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
       sinon.assert.calledWith(sendStatusStub, 400);
     });
 
@@ -183,7 +195,10 @@ describe('GCFBootstrapper', () => {
       await handler(req, response);
 
       sinon.assert.calledOnce(configStub);
-      sinon.assert.notCalled(spy);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.called(sendStub);
     });
@@ -202,6 +217,10 @@ describe('GCFBootstrapper', () => {
       await handler(req, response);
 
       sinon.assert.calledOnce(enqueueTask);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
     });
 
     it('ensures that task is enqueued when called by scheduler for a bot opt out from background execution', async () => {
@@ -221,6 +240,10 @@ describe('GCFBootstrapper', () => {
       await handler(req, response);
 
       sinon.assert.calledOnce(enqueueTask);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
     });
 
     it('stores task payload in Cloud Storage if WEBHOOK_TMP set', async () => {
@@ -261,6 +284,10 @@ describe('GCFBootstrapper', () => {
       // We should be attempting to write req.body to Cloud Storage:
       assert.strictEqual(uploaded?.installation?.id, 1);
       sinon.assert.calledOnce(enqueueTask);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
       upload.done();
     });
 
@@ -295,7 +322,10 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(configStub);
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.calledOnce(sendStub);
-      sinon.assert.calledOnce(spy);
+      sinon.assert.calledOnce(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
       downloaded.done();
     });
 
@@ -323,7 +353,10 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(configStub);
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
-      sinon.assert.notCalled(spy);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
       downloaded.done();
     });
 
@@ -351,20 +384,11 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(configStub);
       sinon.assert.notCalled(sendStatusStub);
       sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 500});
-      sinon.assert.notCalled(spy);
+      sinon.assert.notCalled(issueSpy);
+      sinon.assert.notCalled(repositoryCronSpy);
+      sinon.assert.notCalled(installationCronSpy);
+      sinon.assert.notCalled(globalCronSpy);
       downloaded.done();
-    });
-
-    it('ensures that task is enqueued when called by scheduler for many repos', async () => {
-      await mockBootstrapper();
-      req.body = {
-        installation: {id: 1},
-      };
-      req.headers = {};
-      req.headers['x-github-event'] = 'schedule.repository';
-      req.headers['x-github-delivery'] = '123';
-      req.headers['x-cloudtasks-taskname'] = '';
-      nockListInstallationRepos();
     });
 
     describe('per-repository cron', () => {
@@ -382,6 +406,10 @@ describe('GCFBootstrapper', () => {
         await handler(req, response);
 
         sinon.assert.calledTwice(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
       });
 
       it('ensures that task is enqueued when called by scheduler for many installations', async () => {
@@ -397,6 +425,32 @@ describe('GCFBootstrapper', () => {
         await handler(req, response);
 
         sinon.assert.calledTwice(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+      });
+
+      it('handles the schedule.repository task', async () => {
+        await mockBootstrapper();
+        req.body = {
+          repo: 'test-owner/test-repo',
+          installation: {id: 1},
+          cron_type: 'repository',
+          cron_org: 'some-cron-org',
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.repository';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = 'test-function';
+
+        await handler(req, response);
+
+        sinon.assert.notCalled(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.calledOnce(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
       });
     });
 
@@ -416,7 +470,12 @@ describe('GCFBootstrapper', () => {
         await handler(req, response);
 
         sinon.assert.calledOnce(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
       });
+
       it('ensures that task is enqueued when called by scheduler for many installations', async () => {
         await mockBootstrapper();
         req.body = {
@@ -432,7 +491,12 @@ describe('GCFBootstrapper', () => {
         await handler(req, response);
 
         sinon.assert.calledTwice(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
       });
+
       it('ensures that task is enqueued when called by scheduler with an installation id', async () => {
         await mockBootstrapper();
         req.body = {
@@ -450,6 +514,32 @@ describe('GCFBootstrapper', () => {
         await handler(req, response);
 
         sinon.assert.calledOnce(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+      });
+
+      it('handles the schedule.installation task', async () => {
+        await mockBootstrapper();
+        req.body = {
+          installation: {id: 1},
+          cron_type: 'installation',
+          cron_org: 'some-cron-org',
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.installation';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = 'test-function';
+        nockListInstallationRepos();
+
+        await handler(req, response);
+
+        sinon.assert.notCalled(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.calledOnce(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
       });
     });
 
@@ -465,6 +555,30 @@ describe('GCFBootstrapper', () => {
         req.headers['x-cloudtasks-taskname'] = '';
         await handler(req, response);
         sinon.assert.calledOnce(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+      });
+
+      it('handles the schedule.global task', async () => {
+        await mockBootstrapper();
+        req.body = {
+          cron_type: 'global',
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.global';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = 'test-function';
+        nockListInstallationRepos();
+
+        await handler(req, response);
+
+        sinon.assert.notCalled(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.calledOnce(globalCronSpy);
       });
     });
 
