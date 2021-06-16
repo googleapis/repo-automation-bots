@@ -29,7 +29,7 @@
   "dependencies": {
     "@google-automations/label-utils": "^1.0.1",
     "@google-cloud/datastore": "^6.4.1",
-    "gcf-utils": "^10.0.2"
+    "gcf-utils": "10.0.1"
   },
   "devDependencies": {
     "@types/mocha": "^8.2.2",
