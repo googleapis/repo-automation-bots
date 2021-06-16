@@ -33,7 +33,6 @@ import {v4} from 'uuid';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
 
-type ProbotOctokitType = InstanceType<typeof ProbotOctokit>;
 type CronType = 'repository' | 'installation' | 'global';
 const DEFAULT_CRON_TYPE: CronType = 'repository';
 const SCHEDULER_GLOBAL_EVENT_NAME = 'schedule.global';
@@ -589,18 +588,22 @@ export class GCFBootstrapper {
           ...body,
           ...extraParams,
         };
-        for await (const response of installationsPaginated) {
-          for (const repo of response.data) {
-            if (repo.archived === true || repo.disabled === true) {
-              continue;
-            }
-            promises.push(
-              this.scheduledToTask(repo.full_name, id, payload, SCHEDULER_REPOSITORY_EVENT_NAME, signature)
-            );
-            if (promises.length >= batchNum) {
-              await Promise.all(promises);
-              promises.splice(0, promises.length);
-            }
+        for await (const repo of generator) {
+          if (repo.archived === true || repo.disabled === true) {
+            continue;
+          }
+          promises.push(
+            this.scheduledToTask(
+              repo.full_name,
+              id,
+              payload,
+              SCHEDULER_REPOSITORY_EVENT_NAME,
+              signature
+            )
+          );
+          if (promises.length >= batchNum) {
+            await Promise.all(promises);
+            promises.splice(0, promises.length);
           }
         }
         // Wait for the rest.
