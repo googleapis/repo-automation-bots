@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [10.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v10.0.1...gcf-utils-v10.0.2) (2021-06-16)
+
+
+### Bug Fixes
+
+* **gcf-utils:** correctly handle scheduler task for non-background apps ([#2069](https://www.github.com/googleapis/repo-automation-bots/issues/2069)) ([b8bd543](https://www.github.com/googleapis/repo-automation-bots/commit/b8bd543db45f452e0eaef24284e3c9d7f2797b49))
+
 ### [10.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v10.0.0...gcf-utils-v10.0.1) (2021-06-14)
 
 
