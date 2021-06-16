@@ -308,10 +308,7 @@ export class GCFBootstrapper {
           response.sendStatus(400);
           return;
         } else if (triggerType === TriggerType.SCHEDULER) {
-          // TODO: currently we assume that scheduled events walk all repos
-          // managed by the client libraries team, it would be good to get more
-          // clever and instead pull up a list of repos we're installed on by
-          // installation ID:
+          // Cloud scheduler tasks (cron)
           await this.handleScheduled(id, request, signature, wrapOptions);
         } else if (
           triggerType === TriggerType.TASK ||

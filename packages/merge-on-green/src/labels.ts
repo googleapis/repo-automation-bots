@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     https://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,11 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './canary-bot';
+export const MERGE_ON_GREEN_LABEL = 'automerge';
+export const MERGE_ON_GREEN_LABEL_SECURE = 'automerge: exact';
 
-const bootstrap = new GCFBootstrapper();
-module.exports['canary_bot'] = bootstrap.gcf(appFn, {
-  background: false,
-  logging: true,
-});
+export const MERGE_ON_GREEN_LABELS = [
+  {
+    name: MERGE_ON_GREEN_LABEL,
+    description: 'Summon MOG for automerging',
+  },
+  {
+    name: MERGE_ON_GREEN_LABEL_SECURE,
+    description:
+      'Summon MOG for automerging, but approvals need to be against the latest commit',
+  },
+];
