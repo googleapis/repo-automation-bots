@@ -294,6 +294,12 @@ export class GCFBootstrapper {
         if (triggerType === TriggerType.UNKNOWN) {
           response.sendStatus(400);
           return;
+        } else if (triggerType === TriggerType.SCHEDULER) {
+          // TODO: currently we assume that scheduled events walk all repos
+          // managed by the client libraries team, it would be good to get more
+          // clever and instead pull up a list of repos we're installed on by
+          // installation ID:
+          await this.handleScheduled(id, request, name, signature, wrapOptions);
         } else if (
           triggerType === TriggerType.TASK ||
           triggerType === TriggerType.PUBSUB ||
@@ -305,14 +311,7 @@ export class GCFBootstrapper {
             logger.info(`${id}: skipping Cloud Tasks`);
           }
           let payload = request.body;
-          if (
-            triggerType === TriggerType.PUBSUB ||
-            triggerType === TriggerType.SCHEDULER
-          ) {
-            // TODO(sofisl): investigate why TriggerType.SCHEDULER sometimes has a Buffer
-            // for its payload, and other times has an already parsed object.
-            //
-            // TODO: add unit tests for both forms of payload.
+          if (triggerType === TriggerType.PUBSUB) {
             payload = this.parsePubSubPayload(request);
           }
           // If the payload contains `tmpUrl` this indicates that the original
@@ -338,12 +337,6 @@ export class GCFBootstrapper {
             id,
             payload: body,
           });
-        } else if (triggerType === TriggerType.SCHEDULER) {
-          // TODO: currently we assume that scheduled events walk all repos
-          // managed by the client libraries team, it would be good to get more
-          // clever and instead pull up a list of repos we're installed on by
-          // installation ID:
-          await this.handleScheduled(id, request, name, signature, wrapOptions);
         } else if (triggerType === TriggerType.GITHUB) {
           await this.enqueueTask({
             id,
