@@ -424,6 +424,12 @@ export class GCFBootstrapper {
     });
   }
 
+  /**
+   * Async iterator over each installation for an app.
+   *
+   * See https://docs.github.com/en/rest/reference/apps#list-installations-for-the-authenticated-app
+   * @param wrapOptions {WrapOptions}
+   */
   private async *eachInstallation(wrapOptions: WrapOptions) {
     const octokit = await this.getAuthenticatedOctokit(undefined, wrapOptions);
     const installationsPaginated = octokit.paginate.iterator(
@@ -436,6 +442,12 @@ export class GCFBootstrapper {
     }
   }
 
+  /**
+   * Async iterator over each repository for an app installation.
+   *
+   * See https://docs.github.com/en/rest/reference/apps#list-repositories-accessible-to-the-app-installation
+   * @param wrapOptions {WrapOptions}
+   */
   private async *eachInstalledRepository(
     installationId: number,
     wrapOptions: WrapOptions
@@ -444,7 +456,6 @@ export class GCFBootstrapper {
       installationId,
       wrapOptions
     );
-    // Installations API documented here: https://developer.github.com/v3/apps/installations/
     const installationRepositoriesPaginated = octokit.paginate.iterator(
       octokit.apps.listReposAccessibleToInstallation,
       {
