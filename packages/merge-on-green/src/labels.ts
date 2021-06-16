@@ -22,6 +22,7 @@ export const MERGE_ON_GREEN_LABELS = [
   },
   {
     name: MERGE_ON_GREEN_LABEL_SECURE,
-    description: 'Summon MOG for automerging, but approvals need to be against the latest commit',
+    description:
+      'Summon MOG for automerging, but approvals need to be against the latest commit',
   },
 ];

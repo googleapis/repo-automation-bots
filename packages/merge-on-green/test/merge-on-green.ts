@@ -687,6 +687,51 @@ describe('merge-on-green wrapper logic', () => {
         getPRStub.restore();
       });
 
+      it('does not add a PR if label is in Datastore already', async () => {
+        const getPRStub = sandbox.stub(handler, 'getPR').resolves({
+          number: 1,
+          repo: 'testRepo',
+          owner: 'testOwner',
+          state: 'continue',
+          branchProtextion: ['Special Check'],
+          label: 'automerge',
+          author: 'testOwner',
+          url: 'https://github.com/testOwner/testRepo/pull/6',
+          reactionId: 1,
+        });
+
+        const scopes = [
+          searchForPRs(
+            [
+              {
+                number: 1,
+                owner: 'testOwner',
+                repo: 'testRepo',
+                state: 'continue',
+                repository_url:
+                  'https://api.github.com/repos/testOwner/testRepo',
+                html_url: 'https://github.com/testOwner/testRepo/pull/6',
+                user: {
+                  login: 'testOwner',
+                },
+              },
+            ],
+            'automerge'
+          ),
+          searchForPRs([], 'automerge%3A%20exact'),
+        ];
+        await probot.receive({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'schedule.repository' as any,
+          payload: {org: 'googleapis', findHangingPRs: true},
+          id: 'abc123',
+        });
+        scopes.forEach(s => s.done());
+        assert(getPRStub.called);
+        assert(!addPRStub.called);
+        getPRStub.restore();
+      });
+
       it('syncs its own labels', async () => {
         const sandbox = sinon.createSandbox();
         const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
