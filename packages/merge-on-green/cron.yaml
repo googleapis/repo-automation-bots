@@ -1,13 +1,18 @@
 cron:
   - name: merge-on-green
     schedule: "*/2 * * * *"
-    description: merge on green for googleapis
+    description: "merge on green for googleapis"
     params:
       installation:
         id: 6648093
       org: googleapis
-      cleanUp: false
-      find_hanging_prs: false
+  - name: merge-on-green-gcp
+    schedule: "*/2 * * * *"
+    description: "merge on green for GCP"
+    params:
+      installation:
+        id: 6882761
+      org: GoogleCloudPlatform
   - name: merge-on-green-clean-up
     description: "cleans up MOG datastore table"
     schedule: "*/30 * * * *"
@@ -16,7 +21,6 @@ cron:
         id: 6648093
       org: googleapis
       cleanUp: true
-      find_hanging_prs: false
   - name: merge-on-green-hanging-prs
     description: "picks up hanging PRs if the webhook was missed"
     schedule: "0 * * * *"
@@ -24,7 +28,6 @@ cron:
       installation:
         id: 6648093
       org: googleapis
-      cleanUp: false
       findHangingPRs: true
   - name: merge-on-green-hanging-prs-gcp
     description: "picks up hanging PRs if the webhook was missed (GoogleCloudPlatform)"
@@ -33,21 +36,4 @@ cron:
       installation:
         id: 6882761
       org: GoogleCloudPlatform
-      cleanUp: false
       findHangingPRs: true
-  - name: merge-on-green-sync-labels
-    description: "sync labels"
-    schedule: "40 3 * * *"
-    params:
-      installation:
-        id: 6648093
-      org: googleapis
-      syncLabels: true
-  - name: merge-on-green-sync-labels-gcp
-    description: "sync labels(GoogleCloudPlatform)"
-    schedule: "40 4 * * *"
-    params:
-      installation:
-        id: 6882761
-      org: GoogleCloudPlatform
-      syncLabels: true
