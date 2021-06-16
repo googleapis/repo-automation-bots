@@ -5,6 +5,6 @@
   "packages/gcf-utils": "10.0.1",
   "packages/label-utils": "1.0.1",
   "packages/mono-repo-publish": "1.1.2",
-  "packages/object-selector": "0.1.0",
+  "packages/object-selector": "1.0.0",
   "packages/release-brancher": "1.1.2"
 }
