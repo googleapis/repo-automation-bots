@@ -25,7 +25,7 @@ cron:
         id: 6648093
       org: googleapis
       cleanUp: false
-      find_hanging_prs: true
+      findHangingPRs: true
   - name: merge-on-green-hanging-prs-gcp
     description: "picks up hanging PRs if the webhook was missed (GoogleCloudPlatform)"
     schedule: "0 * * * *"
@@ -34,4 +34,20 @@ cron:
         id: 6882761
       org: GoogleCloudPlatform
       cleanUp: false
-      find_hanging_prs: true
+      findHangingPRs: true
+  - name: merge-on-green-sync-labels
+    description: "sync labels"
+    schedule: "40 3 * * *"
+    params:
+      installation:
+        id: 6648093
+      org: googleapis
+      syncLabels: true
+  - name: merge-on-green-sync-labels-gcp
+    description: "sync labels(GoogleCloudPlatform)"
+    schedule: "40 4 * * *"
+    params:
+      installation:
+        id: 6882761
+      org: GoogleCloudPlatform
+      syncLabels: true
