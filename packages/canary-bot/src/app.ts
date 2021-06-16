@@ -16,4 +16,7 @@ import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './canary-bot';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['canary_bot'] = bootstrap.gcf(appFn);
+module.exports['canary_bot'] = bootstrap.gcf(appFn, {
+  background: false,
+  logging: true,
+});
