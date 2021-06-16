@@ -14,6 +14,10 @@
 //
 
 import {logger} from 'gcf-utils';
+import {DriftApi, DriftRepo, getDriftApis, getDriftRepo} from './drift';
+
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 
 // *** Helper functions for all types fo labels ***
 
@@ -74,15 +78,6 @@ export interface Label {
   name: string;
 }
 
-export interface DriftApi {
-  github_label: string;
-}
-
-export interface DriftRepo {
-  github_label: string;
-  repo: string;
-}
-
 /**
  * autoDetectLabel tries to detect the right api: label based on the issue
  * title. For example, an issue titled `spanner/transactions: TestSample failed`
@@ -90,7 +85,7 @@ export interface DriftRepo {
  * @param apis
  * @param title
  */
-export function autoDetectLabel(
+export function autoDetectApiLabel(
   apis: DriftApi[] | null,
   title: string
 ): string | undefined {
@@ -255,4 +250,149 @@ export function getLabel(
   });
   logger.info('Detected labels based on files extensions are: ' + label);
   return label[0];
+}
+
+async function detectApiLabels(
+  owner: string,
+  repo: string,
+  issueTitle: string,
+  driftRepo: DriftRepo | undefined
+): Promise<string[]> {
+  const labelsToApply: string[] = [];
+  let apiLabelToApply: string | undefined = driftRepo?.github_label;
+  if (!apiLabelToApply) {
+    logger.info(
+      `There was no configured match for the repo ${owner}/${repo}, trying to auto-detect the right label`
+    );
+    const apis = await getDriftApis();
+    apiLabelToApply = autoDetectApiLabel(apis, issueTitle);
+  }
+
+  if (apiLabelToApply) {
+    labelsToApply.push(apiLabelToApply);
+  }
+
+  if (repo.includes('samples') || issueTitle?.includes('sample')) {
+    labelsToApply.push('samples');
+  }
+
+  return labelsToApply;
+}
+
+async function addLabelsToIssue(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  issueNumber: number,
+  labelsToApply: string[]
+) {
+  try {
+    await octokit.issues.addLabels({
+      owner,
+      repo,
+      issue_number: issueNumber,
+      labels: labelsToApply,
+    });
+    logger.info(
+      `Label added to ${owner}/${repo} for issue ${issueNumber}: ${labelsToApply}`
+    );
+    return true;
+  } catch (e) {
+    logger.error('error adding label(s) to issue', e);
+  }
+  return false;
+}
+
+export async function autoLabelOnIssue(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  issueNumber: number,
+  issueTitle: string,
+  config: Config,
+  driftRepo: DriftRepo | undefined
+): Promise<boolean> {
+  if (config?.enabled === false) {
+    logger.info(`Skipping for ${owner}/${repo}`);
+    return false;
+  }
+
+  if (!config?.product) {
+    logger.info('Skipping product labels');
+    return false;
+  }
+  const labelsToApply = await detectApiLabels(
+    owner,
+    repo,
+    issueTitle,
+    driftRepo
+  );
+  return await addLabelsToIssue(
+    octokit,
+    owner,
+    repo,
+    issueNumber,
+    labelsToApply
+  );
+}
+
+// Main job for PRs.
+export async function autoLabelOnPR(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  prNumber: number,
+  prTitle: string,
+  config: Config
+): Promise<boolean> {
+  if (config?.enabled === false) {
+    logger.info(`Skipping for ${owner}/${repo}`);
+    return false;
+  }
+
+  const labelsToApply: string[] = [];
+
+  if (config?.product) {
+    const driftRepo = await getDriftRepo(owner, repo);
+    labelsToApply.concat(
+      await detectApiLabels(owner, repo, prTitle, driftRepo)
+    );
+  }
+
+  // Only need to fetch PR contents if config.path or config.language are configured.
+  if (config?.path?.pullrequest || config?.language?.pullrequest) {
+    const filesChanged = await octokit.pulls.listFiles({
+      owner,
+      repo,
+      pull_number: prNumber,
+    });
+
+    // If user has turned on path labels by configuring {path: {pullrequest: false, }}
+    // By default, this feature is turned off
+    if (config.path?.pullrequest) {
+      logger.info(`Labeling path in PR #${prNumber} in ${owner}/${repo}...`);
+      const pathLabel = getLabel(filesChanged.data, config.path, 'path');
+      if (pathLabel) {
+        labelsToApply.push(pathLabel);
+      }
+    }
+
+    // If user has turned on language labels by configuring {language: {pullrequest: false,}}
+    // By default, this feature is turned off
+    if (config.language?.pullrequest) {
+      logger.info(
+        `Labeling language in PR #${prNumber} in ${owner}/${repo}...`
+      );
+      const languageLabel = getLabel(
+        filesChanged.data,
+        config.language,
+        'language'
+      );
+      if (languageLabel) {
+        labelsToApply.push(languageLabel);
+      }
+    }
+  }
+
+  return await addLabelsToIssue(octokit, owner, repo, prNumber, labelsToApply);
 }

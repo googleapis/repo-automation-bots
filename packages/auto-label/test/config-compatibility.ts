@@ -21,7 +21,7 @@ import {resolve} from 'path';
 import fs from 'fs';
 import * as sinon from 'sinon';
 import snapshot from 'snap-shot-it';
-import {handler} from '../src/auto-label';
+import handler from '../src/auto-label';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import * as helper from '../src/helper';
@@ -84,7 +84,7 @@ describe('getConfigWithDefault', () => {
       'validateConfigChanges'
     );
     validateConfigStub.resolves();
-    autoLabelOnPRStub = sandbox.stub(handler, 'autoLabelOnPR');
+    autoLabelOnPRStub = sandbox.stub(helper, 'autoLabelOnPR');
   });
 
   afterEach(() => {
@@ -180,7 +180,7 @@ describe('validateConfigChanges', () => {
       'getConfigWithDefault'
     );
     getConfigWithDefaultStub.resolves(helper.DEFAULT_CONFIGS);
-    autoLabelOnPRStub = sandbox.stub(handler, 'autoLabelOnPR');
+    autoLabelOnPRStub = sandbox.stub(helper, 'autoLabelOnPR');
   });
 
   afterEach(() => {

@@ -21,7 +21,7 @@ import nock from 'nock';
 import * as assert from 'assert';
 import {resolve} from 'path';
 import * as sinon from 'sinon';
-import {handler} from '../src/auto-label';
+import handler from '../src/auto-label';
 import {loadConfig} from './test-helper';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';

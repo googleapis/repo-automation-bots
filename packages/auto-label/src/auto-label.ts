@@ -12,18 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Storage} from '@google-cloud/storage';
 /* eslint-disable-next-line node/no-extraneous-import */
-import {Probot, Context} from 'probot';
+import {Probot} from 'probot';
 import {logger} from 'gcf-utils';
-import * as helper from './helper';
+import {autoLabelOnIssue, autoLabelOnPR} from './helper';
 import {
   CONFIG_FILE_NAME,
   DEFAULT_CONFIGS,
   LABEL_PRODUCT_BY_DEFAULT,
-  DriftRepo,
-  DriftApi,
-  Label,
   Config,
 } from './helper';
 import schema from './config-schema.json';
@@ -35,253 +31,12 @@ import {
 
 type IssueResponse = Endpoints['GET /repos/{owner}/{repo}/issues']['response'];
 
-import colorsData from './colors.json';
-
-const storage = new Storage();
-
-handler.getDriftFile = async (file: string) => {
-  const bucket = 'devrel-prod-settings';
-  const [contents] = await storage.bucket(bucket).file(file).download();
-  return contents.toString();
-};
-
-handler.getDriftRepos = async () => {
-  const jsonData = await handler.getDriftFile('public_repos.json');
-  if (!jsonData) {
-    logger.error(
-      new Error('public_repos.json downloaded from Cloud Storage was empty')
-    );
-    return null;
-  }
-  return JSON.parse(jsonData).repos as DriftRepo[];
-};
-
-handler.getDriftApis = async () => {
-  const jsonData = await handler.getDriftFile('apis.json');
-  if (!jsonData) {
-    logger.error(
-      new Error('apis.json downloaded from Cloud Storage was empty')
-    );
-    return null;
-  }
-  return JSON.parse(jsonData).apis as DriftApi[];
-};
-
-handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
-  owner: string,
-  repo: string,
-  issueNumber: number,
-  issueTitle: string,
-  driftRepos: DriftRepo[],
-  context: Context
-) {
-  const driftRepo = driftRepos.find(x => x.repo === `${owner}/${repo}`);
-  const res = await context.octokit.issues
-    .listLabelsOnIssue({
-      owner,
-      repo,
-      issue_number: issueNumber,
-    })
-    .catch(logger.error);
-  const labelsOnIssue = res ? res.data : undefined;
-  let wasNotAdded = true;
-  let autoDetectedLabel: string | undefined;
-
-  if (!driftRepo?.github_label) {
-    logger.info(
-      `There was no configured match for the repo ${repo}, trying to auto-detect the right label`
-    );
-    const apis = await handler.getDriftApis();
-    autoDetectedLabel = helper.autoDetectLabel(apis, issueTitle);
-  }
-  const index = driftRepos?.findIndex(r => driftRepo === r) % colorsData.length;
-  const colorNumber = index >= 0 ? index : 0;
-  const githubLabel = driftRepo?.github_label || autoDetectedLabel;
-
-  if (githubLabel) {
-    try {
-      await context.octokit.issues.createLabel({
-        owner,
-        repo,
-        name: githubLabel,
-        color: colorsData[colorNumber].color,
-      });
-      logger.info(`Label added to ${owner}/${repo} is ${githubLabel}`);
-    } catch (e) {
-      // HTTP 422 means the label already exists on the repo
-      if (e.status !== 422) {
-        e.message = `Error creating label: ${e.message}`;
-        logger.error(e);
-      }
-    }
-    if (labelsOnIssue) {
-      const foundAPIName = helper.labelExists(labelsOnIssue, githubLabel);
-
-      const cleanUpOtherLabels = labelsOnIssue.filter(
-        (element: Label) =>
-          element.name.startsWith('api') &&
-          element.name !== foundAPIName?.name &&
-          element.name !== autoDetectedLabel
-      );
-      if (!foundAPIName) {
-        await context.octokit.issues
-          .addLabels({
-            owner,
-            repo,
-            issue_number: issueNumber,
-            labels: [githubLabel],
-          })
-          .catch(logger.error);
-        logger.info(
-          `Label added to ${owner}/${repo} for issue ${issueNumber} is ${githubLabel}`
-        );
-        wasNotAdded = false;
-      }
-      for (const dirtyLabel of cleanUpOtherLabels) {
-        await context.octokit.issues
-          .removeLabel({
-            owner,
-            repo,
-            issue_number: issueNumber,
-            name: dirtyLabel.name,
-          })
-          .catch(logger.error);
-      }
-    } else {
-      await context.octokit.issues
-        .addLabels({
-          owner,
-          repo,
-          issue_number: issueNumber,
-          labels: [githubLabel],
-        })
-        .catch(logger.error);
-      logger.info(
-        `Label added to ${owner}/${repo} for issue ${issueNumber} is ${githubLabel}`
-      );
-      wasNotAdded = false;
-    }
-  }
-
-  let foundSamplesTag: Label | undefined;
-  if (labelsOnIssue) {
-    foundSamplesTag = labelsOnIssue.find(e => e.name === 'samples');
-  }
-  const isSampleIssue =
-    repo.includes('samples') || issueTitle?.includes('sample');
-  if (!foundSamplesTag && isSampleIssue) {
-    await context.octokit.issues
-      .createLabel({
-        owner,
-        repo,
-        name: 'samples',
-        color: colorsData[colorNumber].color,
-      })
-      .catch(logger.error);
-    await context.octokit.issues
-      .addLabels({
-        owner,
-        repo,
-        issue_number: issueNumber,
-        labels: ['samples'],
-      })
-      .catch(logger.error);
-    logger.info(
-      `Issue ${issueNumber} is in a samples repo but does not have a sample tag, adding it to the repo and issue`
-    );
-    wasNotAdded = false;
-  }
-
-  return wasNotAdded;
-};
-
-// Main job for PRs.
-handler.autoLabelOnPR = async function autoLabelOnPR(
-  context: Context,
-  owner: string,
-  repo: string,
-  config: Config
-) {
-  if (config?.enabled === false) {
-    logger.info(`Skipping for ${owner}/${repo}`);
-    return;
-  }
-  const pull_number = context.payload.pull_request.number;
-
-  if (config?.product) {
-    const driftRepos = await handler.getDriftRepos();
-    if (!driftRepos) {
-      return;
-    }
-    await handler.addLabeltoRepoAndIssue(
-      owner,
-      repo,
-      pull_number,
-      context.payload.pull_request.title,
-      driftRepos,
-      context
-    );
-  }
-
-  // Only need to fetch PR contents if config.path or config.language are configured.
-  if (!config?.path?.pullrequest && !config?.language?.pullrequest) {
-    return;
-  }
-
-  const filesChanged = await context.octokit.pulls.listFiles({
-    owner,
-    repo,
-    pull_number,
-  });
-  const labels = context.payload.pull_request.labels;
-
-  // If user has turned on path labels by configuring {path: {pullrequest: false, }}
-  // By default, this feature is turned off
-  if (config.path?.pullrequest) {
-    logger.info(`Labeling path in PR #${pull_number} in ${owner}/${repo}...`);
-    const path_label = helper.getLabel(filesChanged.data, config.path, 'path');
-    if (path_label && !helper.labelExists(labels, path_label)) {
-      logger.info(
-        `Path label added to PR #${pull_number} in ${owner}/${repo} is ${path_label}`
-      );
-      await context.octokit.issues.addLabels({
-        owner,
-        repo,
-        issue_number: pull_number,
-        labels: [path_label],
-      });
-    }
-  }
-
-  // If user has turned on language labels by configuring {language: {pullrequest: false,}}
-  // By default, this feature is turned off
-  if (config.language?.pullrequest) {
-    logger.info(
-      `Labeling language in PR #${pull_number} in ${owner}/${repo}...`
-    );
-    const language_label = helper.getLabel(
-      filesChanged.data,
-      config.language,
-      'language'
-    );
-    if (language_label && !helper.labelExists(labels, language_label)) {
-      logger.info(
-        `Language label added to PR #${pull_number} in ${owner}/${repo} is ${language_label}`
-      );
-      await context.octokit.issues.addLabels({
-        owner,
-        repo,
-        issue_number: pull_number,
-        labels: [language_label],
-      });
-    }
-  }
-};
+import {getDriftRepo} from './drift';
 
 /**
  * Main function, responds to label being added
  */
-export function handler(app: Probot) {
+export = (app: Probot) => {
   // Nightly cron that backfills and corrects api labels
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as '*', async context => {
@@ -306,11 +61,10 @@ export function handler(app: Probot) {
       logger.info(`skipping run for ${context.payload.cron_org}`);
       return;
     }
-    const driftRepos = await handler.getDriftRepos();
-    if (!driftRepos) {
-      return;
-    }
-    //all the issues in the repository
+
+    const driftRepo = await getDriftRepo(owner, repo);
+
+    // all the issues in the repository
     const issues = context.octokit.issues.listForRepo.endpoint.merge({
       owner,
       repo,
@@ -320,13 +74,14 @@ export function handler(app: Probot) {
     for await (const response of context.octokit.paginate.iterator(issues)) {
       const issues = response.data as IssueResponse['data'];
       for (const issue of issues) {
-        const wasNotAdded = await handler.addLabeltoRepoAndIssue(
+        const wasNotAdded = await autoLabelOnIssue(
+          context.octokit,
           owner,
           repo,
           issue.number,
           issue.title,
-          driftRepos,
-          context
+          config,
+          driftRepo
         );
         if (wasNotAdded) {
           logger.info(
@@ -360,23 +115,17 @@ export function handler(app: Probot) {
       {schema: schema}
     );
     const issueNumber = context.payload.issue.number;
+    const issueTitle = context.payload.issue.title;
+    const driftRepo = await getDriftRepo(owner, repo);
 
-    if (!config?.product || config?.enabled === false) {
-      logger.info(`Skipping for ${owner}/${repo}`);
-      return;
-    }
-
-    const driftRepos = await handler.getDriftRepos();
-    if (!driftRepos) {
-      return;
-    }
-    await handler.addLabeltoRepoAndIssue(
+    await autoLabelOnIssue(
+      context.octokit,
       owner,
       repo,
       issueNumber,
-      context.payload.issue.title,
-      driftRepos,
-      context
+      issueTitle,
+      config,
+      driftRepo
     );
   });
 
@@ -408,15 +157,22 @@ export function handler(app: Probot) {
       DEFAULT_CONFIGS,
       {schema: schema}
     );
+    const prNumber = context.payload.pull_request.number;
+    const prTitle = context.payload.pull_request.title;
 
-    await handler.autoLabelOnPR(context, owner, repo, config);
+    await autoLabelOnPR(
+      context.octokit,
+      owner,
+      repo,
+      prNumber,
+      prTitle,
+      config
+    );
   });
 
   app.on(['installation.created'], async context => {
     const repositories = context.payload.repositories;
-    const driftRepos = await handler.getDriftRepos();
     if (!LABEL_PRODUCT_BY_DEFAULT) return;
-    if (!driftRepos) return;
 
     for await (const repository of repositories) {
       const [owner, repo] = repository.full_name.split('/');
@@ -433,6 +189,8 @@ export function handler(app: Probot) {
         break;
       }
 
+      const driftRepo = await getDriftRepo(owner, repo);
+
       // goes through issues in repository, adds labels as necessary
       for await (const response of context.octokit.paginate.iterator(
         context.octokit.issues.listForRepo,
@@ -444,16 +202,17 @@ export function handler(app: Probot) {
         const issues = response.data;
         // goes through each issue in each page
         for (const issue of issues) {
-          await handler.addLabeltoRepoAndIssue(
+          await autoLabelOnIssue(
+            context.octokit,
             owner,
             repo,
             issue.number,
             issue.title,
-            driftRepos,
-            context
+            config,
+            driftRepo
           );
         }
       }
     }
   });
-}
+};

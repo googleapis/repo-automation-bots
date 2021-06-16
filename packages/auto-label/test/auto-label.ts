@@ -23,17 +23,14 @@ import {resolve} from 'path';
 import fs from 'fs';
 import snapshot from 'snap-shot-it';
 import * as sinon from 'sinon';
-import {handler} from '../src/auto-label';
-import {
-  DEFAULT_CONFIGS,
-  autoDetectLabel,
-  DriftRepo,
-  DriftApi,
-} from '../src/helper';
+import handler from '../src/auto-label';
+import {DEFAULT_CONFIGS, autoDetectApiLabel} from '../src/helper';
 import {loadConfig} from './test-helper';
 import {logger} from 'gcf-utils';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
+import {DriftRepo, DriftApi} from '../src/drift';
+import * as drift from '../src/drift';
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
@@ -71,7 +68,7 @@ describe('auto-label', () => {
 
     // throw and fail the test if we're writing
     errorStub = sandbox.stub(logger, 'error').throwsArg(0);
-    repoStub = sandbox.stub(handler, 'getDriftRepos').resolves(driftRepos);
+    repoStub = sandbox.stub(drift, 'getDriftRepos').resolves(driftRepos);
     getConfigWithDefaultStub = sandbox.stub(
       botConfigModule,
       'getConfigWithDefault'
@@ -82,7 +79,7 @@ describe('auto-label', () => {
     );
     // We test the config schema compatibility in config-compatibility.ts
     validateConfigStub.resolves();
-    sandbox.stub(handler, 'getDriftApis').resolves(driftApis);
+    sandbox.stub(drift, 'getDriftApis').resolves(driftApis);
   });
 
   afterEach(() => {
@@ -186,7 +183,7 @@ describe('auto-label', () => {
       repoStub.restore();
       const config = loadConfig('valid-config.yml');
       getConfigWithDefaultStub.resolves(config);
-      const fileStub = sandbox.stub(handler, 'getDriftFile').resolves('');
+      const fileStub = sandbox.stub(drift, 'getDriftFile').resolves('');
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
       await probot.receive({
         name: 'issues',
@@ -800,7 +797,10 @@ describe('auto-label', () => {
       for (const test of tests) {
         // driftRepos has the same format as apis.json. No need for a different
         // test file.
-        assert.strictEqual(autoDetectLabel(driftRepos, test.title), test.want);
+        assert.strictEqual(
+          autoDetectApiLabel(driftRepos, test.title),
+          test.want
+        );
       }
     });
   });
