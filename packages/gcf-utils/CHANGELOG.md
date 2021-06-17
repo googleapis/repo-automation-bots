@@ -87,6 +87,17 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [11.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v10.1.0...gcf-utils-v11.0.0) (2021-06-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* verify payload signatures (#2093)
+
+### Bug Fixes
+
+* verify payload signatures ([#2093](https://www.github.com/googleapis/repo-automation-bots/issues/2093)) ([a51f489](https://www.github.com/googleapis/repo-automation-bots/commit/a51f489c7d9d6b7bfad53317ac095235158eacbd))
+
 ## [10.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v10.0.2...gcf-utils-v10.1.0) (2021-06-17)
 
 
