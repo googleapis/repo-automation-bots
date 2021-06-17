@@ -38,6 +38,7 @@ export const languageVersioningRules = [
     process: 'dependency',
     targetFile: 'samples/package.json',
     dependency:
+      // This would match: fix(deps): update dependency @octokit to v1
       '^(fix\\(deps\\)|chore\\(deps\\)): update dependency (@?\\S*) to v(\\S*)$',
     // This would match: -  "version": "^2.3.0"
     oldVersion: '-[\\s]*"(@?\\S*)":[\\s]"([\\^0-9]*)*\\.([0-9]*\\.[0-9]*)",',

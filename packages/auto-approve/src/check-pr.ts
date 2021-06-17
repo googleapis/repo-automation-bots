@@ -99,49 +99,47 @@ export async function checkPRAgainstConfig(
     // We're running each file through the check so that we can make customized checks
     // for each file. This way, we can be as specific as possible as to how the file
     // needs to be checked.
-    if (fileAndFileRules.length !== 0) {
-      for (const fileAndFileRule of fileAndFileRules) {
-        // First, get the versions we're checking for the file
-        const versions = getVersions(
-          fileAndFileRule.file,
-          fileAndFileRule.fileRule.oldVersion!,
-          fileAndFileRule.fileRule.newVersion!
-        );
+    for (const fileAndFileRule of fileAndFileRules) {
+      // First, get the versions we're checking for the file
+      const versions = getVersions(
+        fileAndFileRule.file,
+        fileAndFileRule.fileRule.oldVersion!,
+        fileAndFileRule.fileRule.newVersion!
+      );
 
-        // Have to enter different processes for different checks
-        if (versions && fileAndFileRule.fileRule.process === 'release') {
-          // If it's a release process, just make sure that the versions are minor
-          // bumps and are increasing, and are only changing one at a time
-          additionalRules =
-            runVersioningValidation(versions) &&
-            isOneDependencyChanged(fileAndFileRule.file) &&
-            mergesOnWeekday();
-        } else if (
-          versions &&
-          fileAndFileRule.fileRule.process === 'dependency'
-        ) {
-          // If it's a dependency update process, make sure that the versions are minor
-          // bumps and are increasing, are only changing one at a time, and are changing
-          // the dependency they say they are supposed to change
+      // Have to enter different processes for different checks
+      if (versions && fileAndFileRule.fileRule.process === 'release') {
+        // If it's a release process, just make sure that the versions are minor
+        // bumps and are increasing, and are only changing one at a time
+        additionalRules =
+          runVersioningValidation(versions) &&
+          isOneDependencyChanged(fileAndFileRule.file) &&
+          mergesOnWeekday();
+      } else if (
+        versions &&
+        fileAndFileRule.fileRule.process === 'dependency'
+      ) {
+        // If it's a dependency update process, make sure that the versions are minor
+        // bumps and are increasing, are only changing one at a time, and are changing
+        // the dependency they say they are supposed to change
 
-          // At the end of the loop, we want to make sure that all of the changed files
-          // in a renovate bot pr conform to one of the language versioning rules
-          releasePRFiles.push(fileAndFileRule.file);
+        // At the end of the loop, we want to make sure that all of the changed files
+        // in a renovate bot pr conform to one of the language versioning rules
+        releasePRFiles.push(fileAndFileRule.file);
 
-          additionalRules =
-            doesDependencyChangeMatchPRTitle(
-              versions,
-              // We can assert dependency will exist, since the process is type 'dependency'
-              fileAndFileRule.fileRule.dependency!,
-              title
-            ) &&
-            runVersioningValidation(versions) &&
-            isOneDependencyChanged(fileAndFileRule.file);
-        }
+        additionalRules =
+          doesDependencyChangeMatchPRTitle(
+            versions,
+            // We can assert dependency will exist, since the process is type 'dependency'
+            fileAndFileRule.fileRule.dependency!,
+            title
+          ) &&
+          runVersioningValidation(versions) &&
+          isOneDependencyChanged(fileAndFileRule.file);
+      }
 
-        if (additionalRules === false) {
-          return false;
-        }
+      if (additionalRules === false) {
+        return false;
       }
     }
 

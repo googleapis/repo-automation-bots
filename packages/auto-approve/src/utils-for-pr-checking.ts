@@ -20,6 +20,11 @@ import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+/**
+ * Interface for return type from getTargetFiles. It is the amalgamation
+ * of the file that was changed in the PR, plus the file rule that applies
+ * to that given file.
+ */
 export interface fileAndMetadata {
   file: File;
   fileRule: FileSpecificRule;
