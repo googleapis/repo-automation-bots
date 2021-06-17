@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import {Probot, Options} from 'probot';
+import {createProbot, Probot, Options} from 'probot';
 import {ApplicationFunction} from 'probot/lib/types';
 import {createProbotAuth} from 'octokit-auth-probot';
 
@@ -183,7 +183,7 @@ export class GCFBootstrapper {
   ): Promise<Probot> {
     if (!this.probot) {
       const cfg = await this.getProbotConfig(logging);
-      this.probot = new Probot(cfg);
+      this.probot = createProbot({overrides: cfg});
     }
 
     await this.probot.load(appFn);
