@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import myProbotApp from '../src/release-please';
+import {RELEASE_PLEASE_LABELS} from '../src/labels';
 import {Runner} from '../src/runner';
 import {describe, it, beforeEach} from 'mocha';
 import {resolve} from 'path';
@@ -24,6 +25,7 @@ import * as sinon from 'sinon';
 import assert from 'assert';
 import {GitHubRelease, ReleasePR, factory} from 'release-please';
 import * as botConfigModule from '@google-automations/bot-config-utils';
+import * as labelUtilsModule from '@google-automations/label-utils';
 import nock from 'nock';
 
 const sandbox = sinon.createSandbox();
@@ -288,6 +290,7 @@ describe('ReleasePleaseBot', () => {
   describe('nightly event', () => {
     it('should try to create a snapshot', async () => {
       let executed = false;
+      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
       const payload = {
         repository: {
           name: 'Hello-World',
@@ -319,9 +322,61 @@ describe('ReleasePleaseBot', () => {
       });
       requests.done();
       assert(executed, 'should have executed the runner');
+      sinon.assert.calledOnceWithExactly(
+        syncLabelsStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'Codertocat',
+        'Hello-World',
+        sinon.match.array.deepEquals(RELEASE_PLEASE_LABELS)
+      );
+    });
+
+    it('should try to create a snapshot even when syncLabels fails', async () => {
+      let executed = false;
+      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
+      syncLabelsStub.rejects(new Error('Testing failure case'));
+      const payload = {
+        repository: {
+          name: 'Hello-World',
+          full_name: 'Codertocat/Hello-World',
+          owner: {
+            login: 'Codertocat',
+          },
+        },
+        organization: {
+          login: 'Codertocat',
+        },
+        cron_org: 'Codertocat',
+      };
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
+        assertReleaserType('JavaYoshi', pr);
+        executed = true;
+      });
+      getConfigStub.resolves(loadConfig('valid.yml'));
+      const repository = require(resolve(fixturesPath, './repository'));
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World')
+        .reply(200, repository);
+
+      await probot.receive({
+        // See: https://github.com/octokit/webhooks.js/issues/277
+        name: 'schedule.repository' as '*',
+        payload,
+        id: 'abc123',
+      });
+      requests.done();
+      assert(executed, 'should have executed the runner');
+      sinon.assert.calledOnceWithExactly(
+        syncLabelsStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'Codertocat',
+        'Hello-World',
+        sinon.match.array.deepEquals(RELEASE_PLEASE_LABELS)
+      );
     });
 
     it('should try to create a snapshot on multiple branches', async () => {
+      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
       const executedBranches: Map<string, string> = new Map();
       const payload = {
         repository: {
@@ -354,6 +409,13 @@ describe('ReleasePleaseBot', () => {
       requests.done();
       assert(executedBranches.get('master') === 'JavaBom');
       assert(executedBranches.get('feature-branch') === 'JavaYoshi');
+      sinon.assert.calledOnceWithExactly(
+        syncLabelsStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'Codertocat',
+        'Hello-World',
+        sinon.match.array.deepEquals(RELEASE_PLEASE_LABELS)
+      );
     });
   });
 

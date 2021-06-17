@@ -17,14 +17,18 @@ import {Probot, Context} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {Datastore} from '@google-cloud/datastore';
+import {syncLabels} from '@google-automations/label-utils';
 import {mergeOnGreen} from './merge-logic';
 import {logger} from 'gcf-utils';
+import {
+  MERGE_ON_GREEN_LABEL,
+  MERGE_ON_GREEN_LABEL_SECURE,
+  MERGE_ON_GREEN_LABELS,
+} from './labels';
 
 const TABLE = 'mog-prs';
 const datastore = new Datastore();
 const MAX_TEST_TIME = 1000 * 60 * 60 * 6; // 6 hr.
-const MERGE_ON_GREEN_LABEL = 'automerge';
-const MERGE_ON_GREEN_LABEL_SECURE = 'automerge: exact';
 const WORKER_SIZE = 4;
 
 handler.allowlist = [
@@ -510,6 +514,12 @@ function handler(app: Probot) {
   //meta-note about the schedule.repository as any; currently GH does not support this type, see
   //open issue for a fix: https://github.com/octokit/webhooks.js/issues/277
   app.on('schedule.repository' as '*', async context => {
+    if (context.payload.syncLabels === true) {
+      const owner = context.payload.organization.login;
+      const repo = context.payload.repository.name;
+      await syncLabels(context.octokit, owner, repo, MERGE_ON_GREEN_LABELS);
+      return;
+    }
     const watchedPRs = await handler.listPRs();
     if (context.payload.cleanUp === true) {
       logger.info('Entering clean up cron job');
@@ -517,7 +527,7 @@ function handler(app: Probot) {
       return;
     }
 
-    if (context.payload.find_hanging_prs === true) {
+    if (context.payload.findHangingPRs === true) {
       logger.info('Entering job to pick up any hanging PRs');
       // we cannot search in an org without the bot installation ID, so we need
       // to divide up the cron jobs based on org
