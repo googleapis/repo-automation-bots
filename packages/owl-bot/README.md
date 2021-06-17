@@ -1,6 +1,6 @@
 ## Owl Bot Post Processor
 
-Runs a docker container, defined in `OwlBot.yaml', container as a postprocessing
+Runs a docker container, defined in `OwlBot.yaml`, container as a postprocessing
 step when a pull request is opened.
 
 ## Why?
@@ -61,4 +61,3 @@ To do the same, from `packages/owl-bot-post-processor` run:
 npm link .
 owl-bot-post-processor trigger-build --help
 ```
-
