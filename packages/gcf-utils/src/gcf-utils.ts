@@ -57,7 +57,6 @@ interface Scheduled {
 
 interface EnqueueTaskParams {
   body: string;
-  signature: string;
   id: string;
   name: string;
 }
@@ -65,6 +64,7 @@ interface EnqueueTaskParams {
 export interface WrapOptions {
   background: boolean;
   logging: boolean;
+  skipVerification?: boolean;
 }
 
 export const logger = new GCFLogger();
@@ -286,8 +286,14 @@ export class GCFBootstrapper {
     return async (request: express.Request, response: express.Response) => {
       wrapOptions = wrapOptions ?? {background: true, logging: false};
 
+      // default skip verification for testing
+      // to test signatures, explicitly set skipVerification to false
+      if (wrapOptions.skipVerification === undefined) {
+        wrapOptions.skipVerification = RUNNING_IN_TEST;
+      }
+
       this.probot =
-        this.probot || (await this.loadProbot(appFn, wrapOptions?.logging));
+        this.probot || (await this.loadProbot(appFn, wrapOptions.logging));
 
       const {name, id, signature, taskId} =
         GCFBootstrapper.parseRequestHeaders(request);
@@ -296,6 +302,18 @@ export class GCFBootstrapper {
         name,
         taskId
       );
+
+      // validate the signature
+      if (
+        !wrapOptions.skipVerification &&
+        !this.probot.webhooks.verify(request.body, signature)
+      ) {
+        response.send({
+          statusCode: 400,
+          body: JSON.stringify({message: 'Invalid signature'}),
+        });
+        return;
+      }
 
       /**
        * Note: any logs written before resetting bindings may contain
@@ -309,7 +327,7 @@ export class GCFBootstrapper {
           return;
         } else if (triggerType === TriggerType.SCHEDULER) {
           // Cloud scheduler tasks (cron)
-          await this.handleScheduled(id, request, signature, wrapOptions);
+          await this.handleScheduled(id, request, wrapOptions);
         } else if (
           triggerType === TriggerType.TASK ||
           triggerType === TriggerType.PUBSUB ||
@@ -351,7 +369,6 @@ export class GCFBootstrapper {
           await this.enqueueTask({
             id,
             name,
-            signature,
             body: JSON.stringify(request.body),
           });
         }
@@ -385,17 +402,16 @@ export class GCFBootstrapper {
   private async handleScheduled(
     id: string,
     req: express.Request,
-    signature: string,
     wrapOptions: WrapOptions
   ) {
     const body: Scheduled = this.parseRequestBody(req);
     const cronType = body.cron_type ?? DEFAULT_CRON_TYPE;
     if (cronType === 'global') {
-      await this.handleScheduledGlobal(id, body, signature);
+      await this.handleScheduledGlobal(id, body);
     } else if (cronType === 'installation') {
-      await this.handleScheduledInstallation(id, body, signature, wrapOptions);
+      await this.handleScheduledInstallation(id, body, wrapOptions);
     } else {
-      await this.handleScheduledRepository(id, body, signature, wrapOptions);
+      await this.handleScheduledRepository(id, body, wrapOptions);
     }
   }
 
@@ -408,15 +424,10 @@ export class GCFBootstrapper {
    *   parameters besides the ones defined by the Scheduled type.
    * @param signature
    */
-  private async handleScheduledGlobal(
-    id: string,
-    body: Scheduled,
-    signature: string
-  ) {
+  private async handleScheduledGlobal(id: string, body: Scheduled) {
     await this.enqueueTask({
       id,
       name: SCHEDULER_GLOBAL_EVENT_NAME,
-      signature,
       body: JSON.stringify(body),
     });
   }
@@ -479,20 +490,17 @@ export class GCFBootstrapper {
    * @param id {string} GitHub delivery GUID
    * @param body {Scheduled} Scheduler params. May contain additional request
    *   parameters besides the ones defined by the Scheduled type.
-   * @param signature
    * @param wrapOptions
    */
   private async handleScheduledInstallation(
     id: string,
     body: Scheduled,
-    signature: string,
     wrapOptions: WrapOptions
   ) {
     if (body.installation) {
       await this.enqueueTask({
         id,
         name: SCHEDULER_INSTALLATION_EVENT_NAME,
-        signature,
         body: JSON.stringify(body),
       });
     } else {
@@ -516,7 +524,6 @@ export class GCFBootstrapper {
         await this.enqueueTask({
           id,
           name: SCHEDULER_INSTALLATION_EVENT_NAME,
-          signature,
           body: JSON.stringify(payload),
         });
       }
@@ -542,7 +549,6 @@ export class GCFBootstrapper {
   private async handleScheduledRepository(
     id: string,
     body: Scheduled,
-    signature: string,
     wrapOptions: WrapOptions
   ) {
     if (body.repo) {
@@ -551,8 +557,7 @@ export class GCFBootstrapper {
         body.repo,
         id,
         body,
-        SCHEDULER_REPOSITORY_EVENT_NAME,
-        signature
+        SCHEDULER_REPOSITORY_EVENT_NAME
       );
     } else if (body.installation) {
       const generator = this.eachInstalledRepository(
@@ -567,8 +572,7 @@ export class GCFBootstrapper {
           repo.full_name,
           id,
           body,
-          SCHEDULER_REPOSITORY_EVENT_NAME,
-          signature
+          SCHEDULER_REPOSITORY_EVENT_NAME
         );
       }
     } else {
@@ -605,8 +609,7 @@ export class GCFBootstrapper {
               repo.full_name,
               id,
               payload,
-              SCHEDULER_REPOSITORY_EVENT_NAME,
-              signature
+              SCHEDULER_REPOSITORY_EVENT_NAME
             )
           );
           if (promises.length >= batchNum) {
@@ -658,8 +661,7 @@ export class GCFBootstrapper {
     repoFullName: string,
     id: string,
     body: object,
-    eventName: string,
-    signature: string
+    eventName: string
   ) {
     // The payload from the scheduler is updated with additional information
     // providing context about the organization/repo that the event is
@@ -672,7 +674,6 @@ export class GCFBootstrapper {
       await this.enqueueTask({
         id,
         name: eventName,
-        signature,
         body: JSON.stringify(payload),
       });
     } catch (err) {
@@ -745,6 +746,7 @@ export class GCFBootstrapper {
       // Payload conists of either the original params.body or, if Cloud
       // Storage has been configured, a tmp file in a bucket:
       const payload = await this.maybeWriteBodyToTmp(params.body);
+      const signature = this.probot?.webhooks.sign(payload) || '';
       await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {
@@ -753,7 +755,7 @@ export class GCFBootstrapper {
             headers: {
               'X-GitHub-Event': params.name || '',
               'X-GitHub-Delivery': params.id || '',
-              'X-Hub-Signature': params.signature || '',
+              'X-Hub-Signature': signature,
               'Content-Type': 'application/json',
             },
             url,
@@ -762,6 +764,7 @@ export class GCFBootstrapper {
         },
       });
     } else {
+      const signature = this.probot?.webhooks.sign('') || '';
       await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {
@@ -770,7 +773,7 @@ export class GCFBootstrapper {
             headers: {
               'X-GitHub-Event': params.name || '',
               'X-GitHub-Delivery': params.id || '',
-              'X-Hub-Signature': params.signature || '',
+              'X-Hub-Signature': signature,
               'Content-Type': 'application/json',
             },
             url,
