@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [10.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v10.0.2...gcf-utils-v10.1.0) (2021-06-17)
+
+
+### Features
+
+* **cron:** add new schedule.global and schedule.installation cron handlers ([#1868](https://www.github.com/googleapis/repo-automation-bots/issues/1868)) ([42e9ffc](https://www.github.com/googleapis/repo-automation-bots/commit/42e9ffc19ef8f0349b243969a7306129a27b4fa2))
+
 ### [10.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v10.0.1...gcf-utils-v10.0.2) (2021-06-16)
 
 
