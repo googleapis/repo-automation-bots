@@ -13,6 +13,16 @@
 # limitations under the License.
 
 steps:
+  # Populate credentials for cloning from private repo
+  - name: 'bash'
+    args:
+      - '-eEuo'
+      - 'pipefail'
+      - '-c'
+      - |-
+        echo https://x-access-token:$$GITHUB_TOKEN@github.com >> $${HOME}/.git-credentials
+    env:
+      - 'GITHUB_TOKEN=$_GITHUB_TOKEN'
   # Clone user/branch that created PR:
   - name: 'gcr.io/cloud-builders/git'
     args:
