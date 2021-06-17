@@ -150,7 +150,7 @@ func rewriteBotURL(c botConfig, parser func([]byte) (string, string), req *http.
 	signer := hmac.New(sha1.New, key)
 	signer.Write(bodyBytes)
 
-	req.Header.Add("x-hub-signature", base64.StdEncoding.EncodeToString(signer.Sum(nil)))
+	req.Header.Add("x-hub-signature", "sha1=" + base64.StdEncoding.EncodeToString(signer.Sum(nil)))
 	req.Header.Add("x-github-delivery", uuid.New().String())
 
 	log.Printf("rewrote url: %s into %s", u, req.URL)
