@@ -598,7 +598,6 @@ describe('GCFBootstrapper', () => {
       await handler(req, response);
 
       sinon.assert.calledOnce(enqueueTask);
-      console.log(enqueueTask.getCall(0));
     });
 
     it('binds the trigger information to the logger', async () => {
@@ -706,6 +705,7 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'issues';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = 'my-task';
+        // echo -n '{"installation":{"id":1}}' | openssl dgst -sha1 -hmac "foo"
         req.headers['x-hub-signature'] =
           'sha1=c012c260559a04cf285e05d67e1ecedcad71b931';
 
@@ -735,6 +735,7 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'issues';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = 'my-task';
+        // echo -n '{"installation":{"id":1}}' | openssl dgst -sha1 -hmac "foo"
         req.headers['x-hub-signature'] =
           'c012c260559a04cf285e05d67e1ecedcad71b931';
 
