@@ -32,6 +32,17 @@ import {v4} from 'uuid';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
+
+type CronType = 'repository' | 'installation' | 'global';
+const DEFAULT_CRON_TYPE: CronType = 'repository';
+const SCHEDULER_GLOBAL_EVENT_NAME = 'schedule.global';
+const SCHEDULER_INSTALLATION_EVENT_NAME = 'schedule.installation';
+const SCHEDULER_REPOSITORY_EVENT_NAME = 'schedule.repository';
+const SCHEDULER_EVENT_NAMES = [
+  SCHEDULER_GLOBAL_EVENT_NAME,
+  SCHEDULER_INSTALLATION_EVENT_NAME,
+  SCHEDULER_REPOSITORY_EVENT_NAME,
+];
 const RUNNING_IN_TEST = process.env.NODE_ENV === 'test';
 
 interface Scheduled {
@@ -40,6 +51,8 @@ interface Scheduled {
     id: number;
   };
   message?: {[key: string]: string};
+  cron_type?: CronType;
+  cron_org?: string;
 }
 
 interface EnqueueTaskParams {
@@ -254,7 +267,7 @@ export class GCFBootstrapper {
    * @param taskId task id from header
    */
   private static parseTriggerType(name: string, taskId: string): TriggerType {
-    if (!taskId && name === 'schedule.repository') {
+    if (!taskId && SCHEDULER_EVENT_NAMES.includes(name)) {
       return TriggerType.SCHEDULER;
     } else if (!taskId && name === 'pubsub.message') {
       return TriggerType.PUBSUB;
@@ -296,7 +309,7 @@ export class GCFBootstrapper {
           return;
         } else if (triggerType === TriggerType.SCHEDULER) {
           // Cloud scheduler tasks (cron)
-          await this.handleScheduled(id, request, name, signature, wrapOptions);
+          await this.handleScheduled(id, request, signature, wrapOptions);
         } else if (
           triggerType === TriggerType.TASK ||
           triggerType === TriggerType.PUBSUB ||
@@ -360,58 +373,266 @@ export class GCFBootstrapper {
     };
   }
 
+  /**
+   * Entrypoint for handling all scheduled tasks.
+   *
+   * @param id {string} GitHub delivery GUID
+   * @param body {Scheduled} Scheduler params. May contain additional request
+   *   parameters besides the ones defined by the Scheduled type.
+   * @param signature
+   * @param wrapOptions
+   */
   private async handleScheduled(
     id: string,
     req: express.Request,
-    eventName: string,
     signature: string,
-    wrapOptions: WrapOptions | undefined
+    wrapOptions: WrapOptions
   ) {
     const body: Scheduled = this.parseRequestBody(req);
+    const cronType = body.cron_type ?? DEFAULT_CRON_TYPE;
+    if (cronType === 'global') {
+      await this.handleScheduledGlobal(id, body, signature);
+    } else if (cronType === 'installation') {
+      await this.handleScheduledInstallation(id, body, signature, wrapOptions);
+    } else {
+      await this.handleScheduledRepository(id, body, signature, wrapOptions);
+    }
+  }
+
+  /**
+   * Handle a scheduled tasks that should run once. Queues up a Cloud Task
+   * for the `schedule.global` event.
+   *
+   * @param id {string} GitHub delivery GUID
+   * @param body {Scheduled} Scheduler params. May contain additional request
+   *   parameters besides the ones defined by the Scheduled type.
+   * @param signature
+   */
+  private async handleScheduledGlobal(
+    id: string,
+    body: Scheduled,
+    signature: string
+  ) {
+    await this.enqueueTask({
+      id,
+      name: SCHEDULER_GLOBAL_EVENT_NAME,
+      signature,
+      body: JSON.stringify(body),
+    });
+  }
+
+  /**
+   * Async iterator over each installation for an app.
+   *
+   * See https://docs.github.com/en/rest/reference/apps#list-installations-for-the-authenticated-app
+   * @param wrapOptions {WrapOptions}
+   */
+  private async *eachInstallation(wrapOptions: WrapOptions) {
+    const octokit = await this.getAuthenticatedOctokit(undefined, wrapOptions);
+    const installationsPaginated = octokit.paginate.iterator(
+      octokit.apps.listInstallations
+    );
+    for await (const response of installationsPaginated) {
+      for (const installation of response.data) {
+        yield installation;
+      }
+    }
+  }
+
+  /**
+   * Async iterator over each repository for an app installation.
+   *
+   * See https://docs.github.com/en/rest/reference/apps#list-repositories-accessible-to-the-app-installation
+   * @param wrapOptions {WrapOptions}
+   */
+  private async *eachInstalledRepository(
+    installationId: number,
+    wrapOptions: WrapOptions
+  ) {
+    const octokit = await this.getAuthenticatedOctokit(
+      installationId,
+      wrapOptions
+    );
+    const installationRepositoriesPaginated = octokit.paginate.iterator(
+      octokit.apps.listReposAccessibleToInstallation,
+      {
+        mediaType: {
+          previews: ['machine-man'],
+        },
+      }
+    );
+    for await (const response of installationRepositoriesPaginated) {
+      for (const repo of response.data) {
+        yield repo;
+      }
+    }
+  }
+
+  /**
+   * Handle a scheduled tasks that should run per-installation.
+   *
+   * If an installation is specified (via installation.id in the payload),
+   * queue up a Cloud Task (`schedule.installation`) for that installation
+   * only. Otherwise, list all installations of the app and queue up a
+   * Cloud Task for each installation.
+   *
+   * @param id {string} GitHub delivery GUID
+   * @param body {Scheduled} Scheduler params. May contain additional request
+   *   parameters besides the ones defined by the Scheduled type.
+   * @param signature
+   * @param wrapOptions
+   */
+  private async handleScheduledInstallation(
+    id: string,
+    body: Scheduled,
+    signature: string,
+    wrapOptions: WrapOptions
+  ) {
+    if (body.installation) {
+      await this.enqueueTask({
+        id,
+        name: SCHEDULER_INSTALLATION_EVENT_NAME,
+        signature,
+        body: JSON.stringify(body),
+      });
+    } else {
+      const generator = this.eachInstallation(wrapOptions);
+      for await (const installation of generator) {
+        const extraParams: Scheduled = {
+          installation: {
+            id: installation.id,
+          },
+        };
+        if (
+          installation.target_type === 'Organization' &&
+          installation?.account?.login
+        ) {
+          extraParams.cron_org = installation.account.login;
+        }
+        const payload = {
+          ...body,
+          ...extraParams,
+        };
+        await this.enqueueTask({
+          id,
+          name: SCHEDULER_INSTALLATION_EVENT_NAME,
+          signature,
+          body: JSON.stringify(payload),
+        });
+      }
+    }
+  }
+
+  /**
+   * Handle a scheduled tasks that should run per-repository.
+   *
+   * If a repository is specified (via repo in the payload), queue up a
+   * Cloud Task for that repository only. If an installation is specified
+   * (via installation.id in the payload), list all repositories associated
+   * with that installation and queue up a Cloud Task for each repository.
+   * If neither is specified, list all installations and all repositories
+   * for each installation, then queue up a Cloud Task for each repository.
+   *
+   * @param id {string} GitHub delivery GUID
+   * @param body {Scheduled} Scheduler params. May contain additional request
+   *   parameters besides the ones defined by the Scheduled type.
+   * @param signature
+   * @param wrapOptions
+   */
+  private async handleScheduledRepository(
+    id: string,
+    body: Scheduled,
+    signature: string,
+    wrapOptions: WrapOptions
+  ) {
     if (body.repo) {
       // Job was scheduled for a single repository:
-      await this.scheduledToTask(body.repo, id, body, eventName, signature);
-    } else {
-      const octokit = await this.getAuthenticatedOctokit(
+      await this.scheduledToTask(
+        body.repo,
+        id,
+        body,
+        SCHEDULER_REPOSITORY_EVENT_NAME,
+        signature
+      );
+    } else if (body.installation) {
+      const generator = this.eachInstalledRepository(
         body.installation.id,
         wrapOptions
       );
-      // Installations API documented here: https://developer.github.com/v3/apps/installations/
-      const installationsPaginated = octokit.paginate.iterator(
-        octokit.apps.listReposAccessibleToInstallation,
-        {
-          mediaType: {
-            previews: ['machine-man'],
-          },
+      for await (const repo of generator) {
+        if (repo.archived === true || repo.disabled === true) {
+          continue;
         }
-      );
+        await this.scheduledToTask(
+          repo.full_name,
+          id,
+          body,
+          SCHEDULER_REPOSITORY_EVENT_NAME,
+          signature
+        );
+      }
+    } else {
+      const installationGenerator = this.eachInstallation(wrapOptions);
       const promises: Array<Promise<void>> = new Array<Promise<void>>();
       const batchNum = 30;
-      for await (const response of installationsPaginated) {
-        for (const repo of response.data) {
+      for await (const installation of installationGenerator) {
+        const generator = this.eachInstalledRepository(
+          installation.id,
+          wrapOptions
+        );
+        const extraParams: Scheduled = {
+          installation: {
+            id: installation.id,
+          },
+        };
+        if (
+          installation.target_type === 'Organization' &&
+          installation?.account?.login
+        ) {
+          extraParams.cron_org = installation.account.login;
+        }
+
+        const payload = {
+          ...body,
+          ...extraParams,
+        };
+        for await (const repo of generator) {
           if (repo.archived === true || repo.disabled === true) {
             continue;
           }
           promises.push(
-            this.scheduledToTask(repo.full_name, id, body, eventName, signature)
+            this.scheduledToTask(
+              repo.full_name,
+              id,
+              payload,
+              SCHEDULER_REPOSITORY_EVENT_NAME,
+              signature
+            )
           );
           if (promises.length >= batchNum) {
             await Promise.all(promises);
             promises.splice(0, promises.length);
           }
         }
-      }
-      // Wait for the rest.
-      if (promises.length > 0) {
-        await Promise.all(promises);
-        promises.splice(0, promises.length);
+        // Wait for the rest.
+        if (promises.length > 0) {
+          await Promise.all(promises);
+          promises.splice(0, promises.length);
+        }
       }
     }
   }
 
-  // TODO: How do we still get access to this installation token?
+  /**
+   * Build an app-based authenticated Octokit instance.
+   *
+   * @param installationId {number|undefined} The installation id to
+   *   authenticate as. Required if you are trying to take action
+   *   on an installed repository.
+   * @param wrapOptions
+   */
   async getAuthenticatedOctokit(
-    installationId: number,
+    installationId?: number,
     wrapOptions?: WrapOptions
   ): Promise<Octokit> {
     const cfg = await this.getProbotConfig(wrapOptions?.logging);
@@ -498,6 +719,10 @@ export class GCFBootstrapper {
     };
   }
 
+  /**
+   * Schedule a event trigger as a Cloud Task.
+   * @param params {EnqueueTaskParams} Task parameters.
+   */
   async enqueueTask(params: EnqueueTaskParams) {
     logger.info('scheduling cloud task');
     // Make a task here and return 200 as this is coming from GitHub
@@ -556,7 +781,7 @@ export class GCFBootstrapper {
   }
 
   /*
-   * Setting the process.env.WEBHOOK_TMP environemtn variable indicates
+   * Setting the process.env.WEBHOOK_TMP environment variable indicates
    * that the webhook payload should be written to a tmp file in Cloud
    * Storage. This allows us to circumvent the 100kb limit on Cloud Tasks.
    *
