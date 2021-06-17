@@ -594,11 +594,11 @@ describe('GCFBootstrapper', () => {
       req.headers = {};
       req.headers['x-github-event'] = 'another.name';
       req.headers['x-github-delivery'] = '123';
-      req.headers['x-cloudtasks-taskname'] = '';
 
       await handler(req, response);
 
       sinon.assert.calledOnce(enqueueTask);
+      console.log(enqueueTask.getCall(0));
     });
 
     it('binds the trigger information to the logger', async () => {

@@ -62,8 +62,16 @@ interface EnqueueTaskParams {
 }
 
 export interface WrapOptions {
+  // Whether or not to enqueue direct GitHub webhooks in a Cloud Task
+  // queue which provides a retry mechanism. Defaults to `true`.
   background: boolean;
+
+  // Whether or not to automatically log Octokit requests. Defaults to
+  // `false`.
   logging: boolean;
+
+  // Whether or not to skip verification of request payloads. Defaults
+  // to `true` in test mode, otherwise `false`.
   skipVerification?: boolean;
 }
 
@@ -232,6 +240,14 @@ export class GCFBootstrapper {
     }
   }
 
+  /**
+   * Parse the signature from the request headers.
+   *
+   * If the expected header is not set, returns `unset` because the verification
+   * function throws an exception on empty string when we would rather
+   * treat the error as an invalid signature.
+   * @param request incoming trigger request
+   */
   private static parseSignatureHeader(request: express.Request): string {
     const sha1Signature =
       request.get('x-hub-signature') || request.get('X-Hub-Signature');
