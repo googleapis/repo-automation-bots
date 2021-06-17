@@ -24,8 +24,10 @@ import {describe, it, beforeEach} from 'mocha';
 import * as sinon from 'sinon';
 
 import * as botConfigUtilsModule from '@google-automations/bot-config-utils';
+import * as labelUtilsModule from '@google-automations/label-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 import {flakybot, DEFAULT_CONFIG, CONFIG_FILENAME} from '../src/flakybot';
+import {FLAKYBOT_LABELS} from '../src/labels';
 const {findTestResults, formatTestCase} = flakybot;
 import schema from '../src/config-schema.json';
 
@@ -120,6 +122,10 @@ describe('flakybot', () => {
     probot.load(flakybot);
   });
 
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   describe('pullRequestHandler', () => {
     it('calls ConfigChecker', async () => {
       const payload = require(resolve(fixturesPath, './pr_event'));
@@ -133,6 +139,44 @@ describe('flakybot', () => {
       });
       // Only checks if it' called with a pull request event.
       sinon.assert.calledOnce(checkerStub);
+    });
+  });
+
+  describe('scheduler handler', () => {
+    it('calls syncLabels', async () => {
+      datastoreLockAcquireStub = sandbox.stub(
+        DatastoreLock.prototype,
+        'acquire'
+      );
+      datastoreLockReleaseStub = sandbox.stub(
+        DatastoreLock.prototype,
+        'release'
+      );
+      datastoreLockAcquireStub.resolves(true);
+      datastoreLockReleaseStub.resolves(true);
+      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
+      await probot.receive({
+        name: 'schedule.repository' as '*',
+        payload: {
+          repository: {
+            name: 'testRepo',
+            owner: {
+              login: 'testOwner',
+            },
+          },
+          organization: {
+            login: 'googleapis',
+          },
+        },
+        id: 'abc123',
+      });
+      sinon.assert.calledOnceWithExactly(
+        syncLabelsStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'googleapis',
+        'testRepo',
+        sinon.match.array.deepEquals(FLAKYBOT_LABELS)
+      );
     });
   });
 

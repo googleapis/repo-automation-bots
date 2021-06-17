@@ -1,0 +1,48 @@
+[
+    {
+	"name": "test",
+	"id": 1,
+	"evil": false
+    },
+    {
+	"name": "name2",
+	"id": 2,
+	"evil": true
+    },
+    {
+	"name": "evil",
+	"id": 3,
+	"evil": true
+    },
+    {
+	"name": "hasachild",
+	"id": 4,
+	"evil": false,
+	"children": [
+	    {
+		"name": "child1",
+		"id": 5,
+		"evil": false
+	    }
+	]
+    },
+    {
+	"name": "hasagrandchild",
+	"id": 6,
+	"evil": false,
+	"children": [
+	    {
+		"name": "child2",
+		"id": 7,
+		"evil": false,
+		"children": [
+		    {
+			"name": "grandchild1",
+			"id": 8,
+			"evil": false
+		    }
+		]
+	    }
+	]
+    }
+]
