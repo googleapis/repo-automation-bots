@@ -232,6 +232,18 @@ export class GCFBootstrapper {
     }
   }
 
+  private static parseSignatureHeader(request: express.Request): string {
+    const sha1Signature =
+      request.get('x-hub-signature') || request.get('X-Hub-Signature');
+    if (sha1Signature) {
+      // See https://github.com/googleapis/repo-automation-bots/issues/2092
+      return sha1Signature.startsWith('sha1=')
+        ? sha1Signature
+        : `sha1=${sha1Signature}`;
+    }
+    return 'unset';
+  }
+
   /**
    * Parse the event name, delivery id, signature and task id from the request headers
    * @param request incoming trigger request
@@ -248,12 +260,7 @@ export class GCFBootstrapper {
       request.get('x-github-delivery') ||
       request.get('X-GitHub-Delivery') ||
       '';
-    // TODO: add test to validate this signature is used on the initial
-    // webhook from GitHub:
-    const signature =
-      request.get('x-github-delivery') ||
-      request.get('X-GitHub-Delivery') ||
-      '';
+    const signature = this.parseSignatureHeader(request);
     const taskId =
       request.get('X-CloudTasks-TaskName') ||
       request.get('x-cloudtasks-taskname') ||

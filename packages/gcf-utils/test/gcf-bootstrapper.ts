@@ -640,6 +640,115 @@ describe('GCFBootstrapper', () => {
       await handler(req, response);
       assert.deepEqual(logger.getBindings(), expectedBindings);
     });
+
+    describe('verification', () => {
+      it('rejects unsigned task requests', async () => {
+        await mockBootstrapper({
+          logging: false,
+          background: true,
+          skipVerification: false,
+        });
+        req.body = {
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'another.name';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = 'my-task';
+
+        await handler(req, response);
+
+        sinon.assert.calledOnce(configStub);
+        sinon.assert.notCalled(sendStatusStub);
+        sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 400});
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+      });
+
+      it('rejects invalid task request signatures', async () => {
+        await mockBootstrapper({
+          logging: false,
+          background: true,
+          skipVerification: false,
+        });
+        req.body = {
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'another.name';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = 'my-task';
+        req.headers['x-hub-signature'] = 'invalidsignature';
+
+        await handler(req, response);
+
+        sinon.assert.calledOnce(configStub);
+        sinon.assert.notCalled(sendStatusStub);
+        sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 400});
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+      });
+
+      it('handles valid task request signatures', async () => {
+        await mockBootstrapper({
+          logging: false,
+          background: true,
+          skipVerification: false,
+        });
+        req.body = {
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = 'my-task';
+        req.headers['x-hub-signature'] =
+          'sha1=c012c260559a04cf285e05d67e1ecedcad71b931';
+
+        await handler(req, response);
+
+        sinon.assert.calledOnce(configStub);
+        sinon.assert.notCalled(sendStatusStub);
+        sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+        sinon.assert.calledOnce(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+      });
+
+      // Remove this test after https://github.com/googleapis/repo-automation-bots/issues/2092
+      // is fixed.
+      it('handles valid task request signatures without leading sha1', async () => {
+        await mockBootstrapper({
+          logging: false,
+          background: true,
+          skipVerification: false,
+        });
+        req.body = {
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = 'my-task';
+        req.headers['x-hub-signature'] =
+          'c012c260559a04cf285e05d67e1ecedcad71b931';
+
+        await handler(req, response);
+
+        sinon.assert.calledOnce(configStub);
+        sinon.assert.notCalled(sendStatusStub);
+        sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+        sinon.assert.calledOnce(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+      });
+    });
   });
 
   describe('loadProbot', () => {
