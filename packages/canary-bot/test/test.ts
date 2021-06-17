@@ -28,9 +28,7 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 function listIssues(owner: string, repo: string, issues: object[]) {
   return nock('https://api.github.com')
-    .get(
-      `/repos/${owner}/${repo}/issues?per_page=100&state=all&title=A%20canary%20is%20chirping`
-    )
+    .get(`/repos/${owner}/${repo}/issues?per_page=100&state=all`)
     .reply(200, issues);
 }
 
@@ -108,9 +106,10 @@ describe('canary-bot', () => {
         scope.done();
       }
     });
-    it('updates an issue', async () => {
+    it('updates a correct issue', async () => {
       const scopes = [
         listIssues('googleapis', 'repo-automation-bots', [
+          {title: 'A canary is not chirping', number: 6},
           {title: 'A canary is chirping', number: 5},
         ]),
         nock('https://api.github.com')

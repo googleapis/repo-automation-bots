@@ -521,13 +521,17 @@ To update this comment, add \`${REFRESH_LABEL}\` label or use the checkbox below
 ${REFRESH_UI}
 `;
 
+  // The bot should not add a new comment when there's no region tag
+  // changes, so we pass `onlyUpdate` flag.
+  const onlyUpdate = result.changes.length === 0;
   await addOrUpdateIssueComment(
     context.octokit,
     owner,
     repo,
     prNumber,
     installationId,
-    commentBody
+    commentBody,
+    onlyUpdate
   );
 
   // Status checks for missing region tag prefix
