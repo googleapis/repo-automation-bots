@@ -20,6 +20,10 @@ import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+export interface fileAndMetadata {
+  file: File;
+  fileRule: FileSpecificRule;
+}
 /**
  * Interface for rules in `./language-versioning-rules.json`. These
  * are rules for files that match an author and filename, and then provide
@@ -61,37 +65,29 @@ export interface Versions {
  * @returns an object containing the specific file to be scrutinized and the rules to scrutinize it by,
  * or undefined if not found.
  */
-export function getTargetFile(
+export function getTargetFiles(
   changedFiles: File[],
   author: string,
-  languageRules: FileSpecificRule[],
-  searchAfter: number
-): {file: File; fileRule: FileSpecificRule; index: number} | undefined {
-  let file;
-  let fileRule;
-  let index = 0;
+  languageRules: FileSpecificRule[]
+): fileAndMetadata[] {
+  const targetFiles = [];
 
-  loop1: for (let i = searchAfter; i < changedFiles.length; i++) {
-    for (let j = 0; j < languageRules.length; j++) {
+  for (const changedFile of changedFiles) {
+    for (const rule of languageRules) {
       if (
-        languageRules[j].prAuthor === author &&
-        languageRules[j].targetFile === changedFiles[i].filename
+        rule.prAuthor === author &&
+        rule.targetFile === changedFile.filename
       ) {
-        file = changedFiles[i];
-        index = i + 1;
-        fileRule = languageRules[j];
-        break loop1;
+        console.log({file: changedFile, fileRule: rule});
+        targetFiles.push({file: changedFile, fileRule: rule});
       }
     }
   }
 
   // If we didn't find a match, return undefined, but this shouldn't
   // stop execution of the rest of the tests
-  if (!(file && fileRule)) {
-    return undefined;
-  } else {
-    return {file, fileRule, index};
-  }
+  console.log(targetFiles);
+  return targetFiles;
 }
 
 /**

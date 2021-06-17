@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {
-  getTargetFile,
+  getTargetFiles,
   getVersions,
   isMajorVersionChanging,
   isMinorVersionUpgraded,
@@ -23,7 +23,7 @@ import {
 } from '../src/utils-for-pr-checking';
 import {describe, it} from 'mocha';
 import assert from 'assert';
-import languageVersioningRules from '../src/language-versioning-rules.json';
+import {languageVersioningRules} from '../src/language-versioning-rules';
 import sinon from 'sinon';
 
 describe('run additional versioning checks', () => {
@@ -39,23 +39,23 @@ describe('run additional versioning checks', () => {
         },
         {filename: 'filename2', sha: '5678'},
       ];
-      const fileAndFileRuleExpectation = {
-        file: {
-          filename: 'package.json',
-          sha: '1234',
-          additions: 1,
-          deletions: 1,
-          patch: 'patch',
+      const fileAndFileRuleExpectation = [
+        {
+          file: {
+            filename: 'package.json',
+            sha: '1234',
+            additions: 1,
+            deletions: 1,
+            patch: 'patch',
+          },
+          fileRule: languageVersioningRules[0],
         },
-        fileRule: languageVersioningRules[0],
-        index: 1,
-      };
+      ];
 
-      const fileAndFileRule = getTargetFile(
+      const fileAndFileRule = getTargetFiles(
         prFiles,
         'release-please[bot]',
-        languageVersioningRules,
-        0
+        languageVersioningRules
       );
 
       assert.deepStrictEqual(fileAndFileRule, fileAndFileRuleExpectation);
@@ -72,29 +72,29 @@ describe('run additional versioning checks', () => {
           patch: 'patch',
         },
       ];
-      const fileAndFileRuleExpectation = {
-        file: {
-          filename: 'package.json',
-          sha: '1234',
-          additions: 1,
-          deletions: 1,
-          patch: 'patch',
+      const fileAndFileRuleExpectation = [
+        {
+          file: {
+            filename: 'package.json',
+            sha: '1234',
+            additions: 1,
+            deletions: 1,
+            patch: 'patch',
+          },
+          fileRule: languageVersioningRules[0],
         },
-        fileRule: languageVersioningRules[0],
-        index: 2,
-      };
+      ];
 
-      const fileAndFileRule = getTargetFile(
+      const fileAndFileRule = getTargetFiles(
         prFiles,
         'release-please[bot]',
-        languageVersioningRules,
-        0
+        languageVersioningRules
       );
 
       assert.deepStrictEqual(fileAndFileRule, fileAndFileRuleExpectation);
     });
 
-    it('should return undefined if the file does not match any special rules', async () => {
+    it('should return an empty array if the file does not match any special rules', async () => {
       const prFiles = [
         {
           filename: 'packagy.json',
@@ -106,17 +106,16 @@ describe('run additional versioning checks', () => {
         {filename: 'filename2', sha: '5678'},
       ];
 
-      const fileAndFileRule = getTargetFile(
+      const fileAndFileRule = getTargetFiles(
         prFiles,
         'release-please[bot]',
-        languageVersioningRules,
-        0
+        languageVersioningRules
       );
 
-      assert.deepStrictEqual(fileAndFileRule, undefined);
+      assert.deepStrictEqual(fileAndFileRule, []);
     });
 
-    it('should return undefined if no match with PR author', async () => {
+    it('should return an empty array if no match with PR author', async () => {
       const prFiles = [
         {
           filename: 'package.json',
@@ -128,14 +127,13 @@ describe('run additional versioning checks', () => {
         {filename: 'filename2', sha: '5678'},
       ];
 
-      const fileAndFileRule = getTargetFile(
+      const fileAndFileRule = getTargetFiles(
         prFiles,
         'not-release-please-bot',
-        languageVersioningRules,
-        0
+        languageVersioningRules
       );
 
-      assert.deepStrictEqual(fileAndFileRule, undefined);
+      assert.deepStrictEqual(fileAndFileRule, []);
     });
   });
 

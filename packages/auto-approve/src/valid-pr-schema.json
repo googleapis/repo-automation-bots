@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/schema#",
-  "$id": "v1",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "@google-automations/auto-approve/v1",
   "description": "A PR safe to merge",
   "type": "object",
   "additionalProperties": false,
@@ -9,7 +9,6 @@
       "type": "array",
       "uniqueItems": true,
       "minItems": 1,
-      "additionalProperties": false,
       "items": {
         "$ref": "#/definitions/aPR"
       }
@@ -18,6 +17,7 @@
   "definitions": {
     "aPR": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "author",
         "title"
@@ -33,7 +33,10 @@
             "gcf-owl-bot[bot]",
             "renovate-bot"
           ]
-        }
+        },
+        "title": {"type": "string"},
+        "changedFiles": {"type": "array"},
+        "maxFiles": {"type": "number"}
       },
       "allOf": [
         {

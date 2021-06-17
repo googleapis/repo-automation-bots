@@ -13,12 +13,11 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {ProbotOctokit} from 'probot';
 import {PullRequestEvent} from '@octokit/webhooks-definitions/schema';
 import {getChangedFiles, File} from './get-pr-info';
 import {logger} from 'gcf-utils';
 import {
-  getTargetFile,
+  getTargetFiles,
   getVersions,
   isMajorVersionChanging,
   isMinorVersionUpgraded,
@@ -28,7 +27,8 @@ import {
   Versions,
   mergesOnWeekday,
 } from './utils-for-pr-checking';
-import languageVersioningRules from './language-versioning-rules.json';
+import {Octokit} from '@octokit/rest';
+import {languageVersioningRules} from './language-versioning-rules';
 // type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
 
 // This file manages the logic to check whether a given PR matches the config in the repository
@@ -51,7 +51,7 @@ export interface ValidPr {
 export async function checkPRAgainstConfig(
   config: {rules: ValidPr[]},
   pr: PullRequestEvent,
-  octokit: InstanceType<typeof ProbotOctokit>
+  octokit: Octokit
 ): Promise<Boolean> {
   const repoOwner = pr.repository.owner.login;
   const prAuthor = pr.pull_request.user.login;
@@ -89,66 +89,60 @@ export async function checkPRAgainstConfig(
 
     // This function checks to see if the PR is a 'special' PR,
     // i.e., if its authorship qualifies it for further checks
-    let fileAndFileRule = getTargetFile(
+    const fileAndFileRules = getTargetFiles(
       changedFiles,
       rulesToValidateAgainst.author,
-      languageVersioningRules,
-      0
+      languageVersioningRules
     );
 
     // If we've found the file in this ruleset, let's run the additional checks
     // We're running each file through the check so that we can make customized checks
     // for each file. This way, we can be as specific as possible as to how the file
     // needs to be checked.
-    while (fileAndFileRule) {
-      // First, get the versions we're checking for the file
-      const versions = getVersions(
-        fileAndFileRule.file,
-        fileAndFileRule.fileRule.oldVersion!,
-        fileAndFileRule.fileRule.newVersion!
-      );
+    if (fileAndFileRules.length !== 0) {
+      for (const fileAndFileRule of fileAndFileRules) {
+        // First, get the versions we're checking for the file
+        const versions = getVersions(
+          fileAndFileRule.file,
+          fileAndFileRule.fileRule.oldVersion!,
+          fileAndFileRule.fileRule.newVersion!
+        );
 
-      // Have to enter different processes for different checks
-      if (versions && fileAndFileRule.fileRule.process === 'release') {
-        // If it's a release process, just make sure that the versions are minor
-        // bumps and are increasing, and are only changing one at a time
-        additionalRules =
-          runVersioningValidation(versions) &&
-          isOneDependencyChanged(fileAndFileRule.file) &&
-          mergesOnWeekday();
-      } else if (
-        versions &&
-        fileAndFileRule.fileRule.process === 'dependency'
-      ) {
-        // If it's a dependency update process, make sure that the versions are minor
-        // bumps and are increasing, are only changing one at a time, and are changing
-        // the dependency they say they are supposed to change
+        // Have to enter different processes for different checks
+        if (versions && fileAndFileRule.fileRule.process === 'release') {
+          // If it's a release process, just make sure that the versions are minor
+          // bumps and are increasing, and are only changing one at a time
+          additionalRules =
+            runVersioningValidation(versions) &&
+            isOneDependencyChanged(fileAndFileRule.file) &&
+            mergesOnWeekday();
+        } else if (
+          versions &&
+          fileAndFileRule.fileRule.process === 'dependency'
+        ) {
+          // If it's a dependency update process, make sure that the versions are minor
+          // bumps and are increasing, are only changing one at a time, and are changing
+          // the dependency they say they are supposed to change
 
-        // At the end of the loop, we want to make sure that all of the changed files
-        // in a renovate bot pr conform to one of the language versioning rules
-        releasePRFiles.push(fileAndFileRule.file);
+          // At the end of the loop, we want to make sure that all of the changed files
+          // in a renovate bot pr conform to one of the language versioning rules
+          releasePRFiles.push(fileAndFileRule.file);
 
-        additionalRules =
-          doesDependencyChangeMatchPRTitle(
-            versions,
-            // We can assert dependency will exist, since the process is type 'dependency'
-            fileAndFileRule.fileRule.dependency!,
-            title
-          ) &&
-          runVersioningValidation(versions) &&
-          isOneDependencyChanged(fileAndFileRule.file);
+          additionalRules =
+            doesDependencyChangeMatchPRTitle(
+              versions,
+              // We can assert dependency will exist, since the process is type 'dependency'
+              fileAndFileRule.fileRule.dependency!,
+              title
+            ) &&
+            runVersioningValidation(versions) &&
+            isOneDependencyChanged(fileAndFileRule.file);
+        }
+
+        if (additionalRules === false) {
+          return false;
+        }
       }
-
-      if (additionalRules === false) {
-        return false;
-      }
-
-      fileAndFileRule = getTargetFile(
-        changedFiles,
-        rulesToValidateAgainst.author,
-        languageVersioningRules,
-        fileAndFileRule.index
-      );
     }
 
     // This additional check confirms that there were no files changed in the PR
