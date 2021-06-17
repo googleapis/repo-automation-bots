@@ -1,0 +1,15 @@
+cron:
+  - name: flakybot-gcp
+    schedule: 30 3 * * *
+    description: daily scheduler job for flakybot
+    params:
+      installation:
+        id: 5943459
+      cron_org: GoogleCloudPlatform
+  - name: flakybot-googleapis
+    description: daily scheduler job for flakybot
+    schedule: 30 4 * * *
+    params:
+      installation:
+        id: 6370238
+      cron_org: googleapis
