@@ -401,7 +401,7 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'schedule.repository';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = '';
-        nockListInstallationRepos();
+        const listInstallationRepoRequests = nockListInstallationRepos();
 
         await handler(req, response);
 
@@ -410,6 +410,7 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
+        listInstallationRepoRequests.done();
       });
 
       it('ensures that task is enqueued when called by scheduler for many installations', async () => {
@@ -419,8 +420,8 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'schedule.repository';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = '';
-        nockListInstallations();
-        nockListInstallationRepos();
+        const listInstallationRequests = nockListInstallations();
+        const listInstallationRepoRequests = nockListInstallationRepos();
 
         await handler(req, response);
 
@@ -429,6 +430,8 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
+        listInstallationRequests.done();
+        listInstallationRepoRequests.done();
       });
 
       it('handles the schedule.repository task', async () => {
@@ -464,8 +467,9 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'schedule.repository';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = '';
-        nockListInstallations('app_installations.json');
-        nockListInstallationRepos();
+        const listInstallationRequests = nockListInstallations(
+          'app_installations.json'
+        );
 
         await handler(req, response);
 
@@ -474,6 +478,7 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
+        listInstallationRequests.done();
       });
 
       it('ensures that task is enqueued when called by scheduler for many installations', async () => {
@@ -485,8 +490,9 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'schedule.repository';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = '';
-        nockListInstallations('app_installations_multiple.json');
-        nockListInstallationRepos();
+        const listInstallationRequests = nockListInstallations(
+          'app_installations_multiple.json'
+        );
 
         await handler(req, response);
 
@@ -495,6 +501,7 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
+        listInstallationRequests.done();
       });
 
       it('ensures that task is enqueued when called by scheduler with an installation id', async () => {
@@ -509,7 +516,6 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'schedule.repository';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = '';
-        nockListInstallationRepos();
 
         await handler(req, response);
 
@@ -531,7 +537,6 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'schedule.installation';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = 'test-function';
-        nockListInstallationRepos();
 
         await handler(req, response);
 
@@ -570,7 +575,6 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-event'] = 'schedule.global';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = 'test-function';
-        nockListInstallationRepos();
 
         await handler(req, response);
 
