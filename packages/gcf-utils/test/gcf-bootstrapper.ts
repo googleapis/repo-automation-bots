@@ -71,6 +71,7 @@ describe('GCFBootstrapper', () => {
     const repositoryCronSpy: sinon.SinonStub = sinon.stub();
     const installationCronSpy: sinon.SinonStub = sinon.stub();
     const globalCronSpy: sinon.SinonStub = sinon.stub();
+    const pubsubSpy: sinon.SinonStub = sinon.stub();
     let configStub: sinon.SinonStub<[boolean?], Promise<Options>>;
 
     let bootstrapper: GCFBootstrapper;
@@ -111,6 +112,8 @@ describe('GCFBootstrapper', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         app.on('schedule.global' as any, globalCronSpy);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        app.on('pubsub.message' as any, pubsubSpy);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         app.on('err' as any, sinon.stub().throws());
       }, wrapOpts);
     }
@@ -122,6 +125,7 @@ describe('GCFBootstrapper', () => {
       repositoryCronSpy.reset();
       installationCronSpy.reset();
       globalCronSpy.reset();
+      pubsubSpy.reset();
       configStub.reset();
       enqueueTask.reset();
     });
@@ -145,24 +149,188 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(issueSpy);
     });
 
-    it('does not schedule task if background option is "false"', async () => {
-      await mockBootstrapper({
-        background: false,
-        logging: true,
+    describe('task retries', () => {
+      describe('default wrap options', () => {
+        beforeEach(async () => {
+          await mockBootstrapper();
+          req.body = {
+            installation: {id: 1},
+          };
+          req.headers = {};
+          req.headers['x-github-delivery'] = '123';
+          req.headers['x-cloudtasks-taskname'] = 'test-bot';
+          req.headers['x-cloudtasks-taskretrycount'] = '1';
+        });
+
+        it('accepts a retry task', async () => {
+          req.headers['x-github-event'] = 'issues';
+
+          await handler(req, response);
+
+          sinon.assert.calledOnce(configStub);
+          sinon.assert.notCalled(sendStatusStub);
+          sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+          sinon.assert.calledOnce(issueSpy);
+        });
+
+        it('does not retry cron task', async () => {
+          req.headers['x-github-event'] = 'schedule.repository';
+
+          await handler(req, response);
+
+          sinon.assert.calledOnce(configStub);
+          sinon.assert.notCalled(sendStatusStub);
+          sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+          sinon.assert.notCalled(repositoryCronSpy);
+        });
+
+        it('does not retry pubsub', async () => {
+          req.headers['x-github-event'] = 'pubsub.message';
+
+          await handler(req, response);
+
+          sinon.assert.calledOnce(configStub);
+          sinon.assert.notCalled(sendStatusStub);
+          sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+          sinon.assert.notCalled(pubsubSpy);
+        });
       });
-      req.body = {
-        installation: {id: 1},
-      };
-      req.headers = {};
-      req.headers['x-github-event'] = 'issues';
-      req.headers['x-github-delivery'] = '123';
 
-      await handler(req, response);
+      describe('background "false"', () => {
+        beforeEach(async () => {
+          await mockBootstrapper({
+            background: false,
+          });
+          req.body = {
+            installation: {id: 1},
+          };
+          req.headers = {};
+          req.headers['x-github-delivery'] = '123';
+          req.headers['x-cloudtasks-taskname'] = 'test-bot';
+          req.headers['x-cloudtasks-taskretrycount'] = '1';
+        });
 
-      sinon.assert.calledOnce(configStub);
-      sinon.assert.notCalled(sendStatusStub);
-      sinon.assert.calledOnce(sendStub);
-      sinon.assert.calledOnce(issueSpy);
+        it('does not retry task', async () => {
+          req.headers['x-github-event'] = 'issues';
+
+          await handler(req, response);
+
+          sinon.assert.calledOnce(configStub);
+          sinon.assert.notCalled(sendStatusStub);
+          sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+          sinon.assert.notCalled(issueSpy);
+        });
+
+        it('does not retry cron task', async () => {
+          req.headers['x-github-event'] = 'schedule.repository';
+
+          await handler(req, response);
+
+          sinon.assert.calledOnce(configStub);
+          sinon.assert.notCalled(sendStatusStub);
+          sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+          sinon.assert.notCalled(repositoryCronSpy);
+        });
+
+        it('does not retry pubsub', async () => {
+          req.headers['x-github-event'] = 'pubsub.message';
+
+          await handler(req, response);
+
+          sinon.assert.calledOnce(configStub);
+          sinon.assert.notCalled(sendStatusStub);
+          sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+          sinon.assert.notCalled(pubsubSpy);
+        });
+      });
+
+      describe('custom retry settings', () => {
+        beforeEach(async () => {
+          await mockBootstrapper({
+            maxCronRetries: 2,
+            maxPubSubRetries: 4,
+            maxRetries: 10,
+          });
+          req.body = {
+            installation: {id: 1},
+          };
+          req.headers = {};
+          req.headers['x-github-delivery'] = '123';
+          req.headers['x-cloudtasks-taskname'] = 'test-bot';
+        });
+
+        it('accepts a retry task below the limit', async () => {
+          req.headers['x-github-event'] = 'issues';
+          req.headers['x-cloudtasks-taskretrycount'] = '8';
+
+          await handler(req, response);
+
+          sinon.assert.calledOnce(configStub);
+          sinon.assert.notCalled(sendStatusStub);
+          sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+          sinon.assert.calledOnce(issueSpy);
+        });
+
+        it('rejects a retry task above the limit', async () => {
+          req.headers['x-github-event'] = 'issues';
+          req.headers['x-cloudtasks-taskretrycount'] = '11';
+
+          await handler(req, response);
+
+          sinon.assert.calledOnce(configStub);
+          sinon.assert.notCalled(sendStatusStub);
+          sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+          sinon.assert.notCalled(issueSpy);
+        });
+
+        it('accepts a retry task cron task below the limit', async () => {
+          req.headers['x-github-event'] = 'schedule.repository';
+          req.headers['x-cloudtasks-taskretrycount'] = '2';
+
+          await handler(req, response);
+
+          sinon.assert.calledOnce(configStub);
+          sinon.assert.notCalled(sendStatusStub);
+          sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+          sinon.assert.calledOnce(repositoryCronSpy);
+        });
+
+        it('rejects a retry task cron task above the limit', async () => {
+          req.headers['x-github-event'] = 'schedule.repository';
+          req.headers['x-cloudtasks-taskretrycount'] = '3';
+
+          await handler(req, response);
+
+          sinon.assert.calledOnce(configStub);
+          sinon.assert.notCalled(sendStatusStub);
+          sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+          sinon.assert.notCalled(repositoryCronSpy);
+        });
+
+        it('accepts a retry task pubsub task below the limit', async () => {
+          req.headers['x-github-event'] = 'pubsub.message';
+          req.headers['x-cloudtasks-taskretrycount'] = '3';
+
+          await handler(req, response);
+
+          sinon.assert.calledOnce(configStub);
+          sinon.assert.notCalled(sendStatusStub);
+          sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+          sinon.assert.calledOnce(pubsubSpy);
+        });
+
+        it('rejects a retry task pubsub task above the limit', async () => {
+          req.headers['x-github-event'] = 'pubsub.message';
+          req.headers['x-cloudtasks-taskretrycount'] = '5';
+
+          await handler(req, response);
+
+          sinon.assert.calledOnce(configStub);
+          sinon.assert.notCalled(sendStatusStub);
+          sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+          sinon.assert.notCalled(pubsubSpy);
+        });
+      });
     });
 
     it('does nothing if there are missing headers', async () => {
