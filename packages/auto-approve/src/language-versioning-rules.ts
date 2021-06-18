@@ -32,11 +32,11 @@ export const languageVersioningRules = [
     targetFile: 'package.json',
     dependency:
       /^(fix\(deps\)|chore\(deps\)): update dependency (@?\S*) to v(\S*)$/,
-    // This would match: -  "version": "^2.3.0"
+    // This would match: -  "version": "^2.3.0" or -  "version": "~2.3.0"
     oldVersion: new RegExp(
       /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)",/
     ),
-    // This would match: +  "version": "^2.3.0"
+    // This would match: +  "version": "^2.3.0" or +  "version": "~2.3.0"
     newVersion: new RegExp(
       /\+[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/
     ),
@@ -53,7 +53,7 @@ export const languageVersioningRules = [
     oldVersion: new RegExp(
       /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)",/
     ),
-    // This would match: +  "version": "^2.3.0"
+    // This would match: +  "version": "^2.3.0" or +  "version": "~2.3.0"
     newVersion: new RegExp(
       /\+[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/
     ),
