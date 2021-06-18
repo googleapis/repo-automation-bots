@@ -649,21 +649,34 @@ export class GCFBootstrapper {
         body.installation.id,
         wrapConfig
       );
+      const promises: Array<Promise<void>> = new Array<Promise<void>>();
+      const batchSize = 30;
       for await (const repo of generator) {
         if (repo.archived === true || repo.disabled === true) {
           continue;
         }
-        await this.scheduledToTask(
-          repo.full_name,
-          id,
-          body,
-          SCHEDULER_REPOSITORY_EVENT_NAME
+        promises.push(
+          this.scheduledToTask(
+            repo.full_name,
+            id,
+            body,
+            SCHEDULER_REPOSITORY_EVENT_NAME
+          )
         );
+        if (promises.length >= batchSize) {
+          await Promise.all(promises);
+          promises.splice(0, promises.length);
+        }
+      }
+      // Wait for the rest.
+      if (promises.length > 0) {
+        await Promise.all(promises);
+        promises.splice(0, promises.length);
       }
     } else {
       const installationGenerator = this.eachInstallation(wrapConfig);
       const promises: Array<Promise<void>> = new Array<Promise<void>>();
-      const batchNum = 30;
+      const batchSize = 30;
       for await (const installation of installationGenerator) {
         const generator = this.eachInstalledRepository(
           installation.id,
@@ -697,7 +710,7 @@ export class GCFBootstrapper {
               SCHEDULER_REPOSITORY_EVENT_NAME
             )
           );
-          if (promises.length >= batchNum) {
+          if (promises.length >= batchSize) {
             await Promise.all(promises);
             promises.splice(0, promises.length);
           }
