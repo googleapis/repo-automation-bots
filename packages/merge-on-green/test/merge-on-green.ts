@@ -260,8 +260,8 @@ describe('merge-on-green wrapper logic', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as '*',
-          payload: {org: 'testOwner', cleanUp: true},
+          name: 'schedule.global' as '*',
+          payload: {cron_type: 'global', cleanUp: true},
           id: 'abc123',
         });
 
@@ -278,8 +278,8 @@ describe('merge-on-green wrapper logic', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as '*',
-          payload: {org: 'testOwner', cleanUp: true},
+          name: 'schedule.global' as '*',
+          payload: {cron_type: 'global', cleanUp: true},
           id: 'abc123',
         });
 
@@ -296,8 +296,8 @@ describe('merge-on-green wrapper logic', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as '*',
-          payload: {org: 'testOwner', cleanUp: true},
+          name: 'schedule.global' as '*',
+          payload: {cron_type: 'global', cleanUp: true},
           id: 'abc123',
         });
 
@@ -309,8 +309,8 @@ describe('merge-on-green wrapper logic', () => {
         const scopes = [getPRCleanUp('open', false), getLabels('automerge')];
 
         await probot.receive({
-          name: 'schedule.repository' as '*',
-          payload: {org: 'testOwner', cleanUp: true},
+          name: 'schedule.global' as '*',
+          payload: {cron_type: 'global', cleanUp: true},
           id: 'abc123',
         });
 
@@ -327,8 +327,8 @@ describe('merge-on-green wrapper logic', () => {
 
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          name: 'schedule.repository' as any,
-          payload: {org: 'googleapis', findHangingPRs: true},
+          name: 'schedule.installation' as any,
+          payload: {cron_type: 'installation', cron_org: 'googleapis', findHangingPRs: true, installation: {id: 1234}},
           id: 'abc123',
         });
 
@@ -640,8 +640,8 @@ describe('merge-on-green wrapper logic', () => {
 
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          name: 'schedule.repository' as any,
-          payload: {org: 'googleapis', findHangingPRs: true},
+          name: 'schedule.installation' as any,
+          payload: {cron_type: 'installation', cron_org: 'googleapis', findHangingPRs: true, installation: {id: 1234}},
           id: 'abc123',
         });
 
@@ -676,8 +676,8 @@ describe('merge-on-green wrapper logic', () => {
 
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          name: 'schedule.repository' as any,
-          payload: {org: 'googleapis', findHangingPRs: true},
+          name: 'schedule.installation' as any,
+          payload: {cron_type: 'installation', cron_org: 'googleapis', findHangingPRs: true, installation: {id: 1234}},
           id: 'abc123',
         });
 
@@ -722,8 +722,8 @@ describe('merge-on-green wrapper logic', () => {
         ];
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          name: 'schedule.repository' as any,
-          payload: {org: 'googleapis', findHangingPRs: true},
+          name: 'schedule.installation' as any,
+          payload: {cron_type: 'installation', cron_org: 'googleapis', findHangingPRs: true, installation: {id: 1234}},
           id: 'abc123',
         });
         scopes.forEach(s => s.done());
