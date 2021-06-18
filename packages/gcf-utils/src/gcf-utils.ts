@@ -662,11 +662,16 @@ export class GCFBootstrapper {
     wrapOptions?: WrapOptions
   ): Promise<Octokit> {
     const cfg = await this.getProbotConfig(wrapOptions?.logging);
-    const opts = {
+    let opts = {
       appId: cfg.appId,
       privateKey: cfg.privateKey,
-      installationId,
     };
+    if (installationId) {
+      opts = {
+        ...opts,
+        ...{installationId},
+      };
+    }
     if (wrapOptions?.logging) {
       const LoggingOctokit = Octokit.plugin(LoggingOctokitPlugin)
         .plugin(ConfigPlugin)
