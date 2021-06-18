@@ -984,7 +984,10 @@ describe('owlBot', () => {
       payload,
       id: 'abc123',
     });
-    sandbox.assert.calledOnce(createCheckStub);
+    sandbox.assert.calledWith(
+      createCheckStub,
+      sinon.match.has('conclusion', 'success')
+    );
     githubMock.done();
   });
 });
