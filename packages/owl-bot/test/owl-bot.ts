@@ -699,6 +699,9 @@ describe('owlBot', () => {
       installation: {
         id: 12345,
       },
+      sender: {
+        login: 'bcoe',
+      },
       pull_request: {
         number: 33,
         labels: [
@@ -765,6 +768,9 @@ describe('owlBot', () => {
     const payload = {
       installation: {
         id: 12345,
+      },
+      sender: {
+        login: 'bcoe',
       },
       pull_request: {
         number: 33,
@@ -833,6 +839,9 @@ describe('owlBot', () => {
       installation: {
         id: 12345,
       },
+      sender: {
+        login: 'bcoe',
+      },
       pull_request: {
         number: 33,
         labels: [
@@ -900,6 +909,9 @@ describe('owlBot', () => {
       installation: {
         id: 12345,
       },
+      sender: {
+        login: 'bcoe',
+      },
       pull_request: {
         labels: [{name: 'cla:yes'}],
         head: {
@@ -928,6 +940,9 @@ describe('owlBot', () => {
       installation: {
         id: 12345,
       },
+      sender: {
+        login: 'bcoe',
+      },
       pull_request: {
         labels: [{name: 'cla:yes'}],
         head: {
@@ -949,6 +964,48 @@ describe('owlBot', () => {
       id: 'abc123',
     });
     sandbox.assert.calledWith(loggerStub, sandbox.match(/.*skipping labels.*/));
+  });
+  it('returns early when "owlbot:run" label added by bot, and last commit was from OwlBot', async () => {
+    const payload = {
+      installation: {
+        id: 12345,
+      },
+      sender: {
+        login: 'tmatsuo[bot]',
+      },
+      pull_request: {
+        number: 33,
+        labels: [
+          {
+            name: 'owlbot:run',
+          },
+        ],
+        head: {
+          repo: {
+            full_name: 'rennie/owl-bot-testing',
+          },
+          ref: 'abc123',
+        },
+        base: {
+          repo: {
+            full_name: 'rennie/owl-bot-testing',
+          },
+        },
+      },
+    };
+    const githubMock = nock('https://api.github.com')
+      .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .reply(200);
+    const lastCommitFromOwlBotStub = sandbox
+      .stub(core, 'lastCommitFromOwlBot')
+      .resolves(true);
+    await probot.receive({
+      name: 'pull_request.labeled',
+      payload,
+      id: 'abc123',
+    });
+    sandbox.assert.calledOnce(lastCommitFromOwlBotStub);
+    githubMock.done();
   });
   it('returns early and adds success status if no lock file found', async () => {
     const payload = {

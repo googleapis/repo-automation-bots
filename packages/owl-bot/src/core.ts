@@ -474,6 +474,32 @@ async function hasOwlBotLoop(
   return false;
 }
 
+/*
+ * Return whether or not the last commit was from OwlBot.
+ *
+ * @param owner owner of repo.
+ * @param repo short repo name.
+ * @param prNumber PR to check for commit.
+ * @param octokit authenticated instance of octokit.
+ * @returns Promise was the last commit from OwlBot?
+ */
+async function lastCommitFromOwlBot(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  octokit: Octokit
+): Promise<boolean> {
+  const commits = (
+    await octokit.pulls.listCommits({
+      pull_number: prNumber,
+      owner,
+      repo,
+    })
+  ).data;
+  const commit = commits[commits.length - 1];
+  return commit?.author?.login === OWLBOT_USER;
+}
+
 /**
  * After the post processor runs, we may want to close the pull request or
  * promote it to "ready for review."
@@ -560,6 +586,7 @@ export const core = {
   getGitHubShortLivedAccessToken,
   getOwlBotLock,
   hasOwlBotLoop,
+  lastCommitFromOwlBot,
   owlBotLockPath,
   triggerPostProcessBuild,
   updatePullRequestAfterPostProcessor,
