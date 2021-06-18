@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/datastore-lock-v2.0.1...datastore-lock-v2.0.2) (2021-06-18)
+
+
+### Bug Fixes
+
+* update libraries to gcf-utils 11 ([#2117](https://www.github.com/googleapis/repo-automation-bots/issues/2117)) ([5afebc3](https://www.github.com/googleapis/repo-automation-bots/commit/5afebc3781cd511a5fc6cd4485c2b002fcacacb4))
+
 ### [2.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/datastore-lock-v2.0.0...datastore-lock-v2.0.1) (2021-06-06)
 
 
