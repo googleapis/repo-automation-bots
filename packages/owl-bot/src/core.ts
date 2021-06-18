@@ -458,11 +458,13 @@ async function hasOwlBotLoop(
   // It's also okay to run the post-processor many more than circuitBreaker
   // times on a long lived PR, with human edits being made.
   const circuitBreaker = 3;
+  // TODO(bcoe): we should move to an async iterator for listCommits:
   const commits = (
     await octokit.pulls.listCommits({
       pull_number: prNumber,
       owner,
       repo,
+      per_page: 100,
     })
   ).data;
   let count = 0;
@@ -472,6 +474,35 @@ async function hasOwlBotLoop(
     if (count >= circuitBreaker) return true;
   }
   return false;
+}
+
+/*
+ * Return whether or not the last commit was from OwlBot.
+ *
+ * @param owner owner of repo.
+ * @param repo short repo name.
+ * @param prNumber PR to check for commit.
+ * @param octokit authenticated instance of octokit.
+ * @returns Promise was the last commit from OwlBot?
+ */
+async function lastCommitFromOwlBot(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  octokit: Octokit
+): Promise<boolean> {
+  // TODO(bcoe): we should move to an async iterator for listCommits in the
+  // future, so that we can handle more than 100:
+  const commits = (
+    await octokit.pulls.listCommits({
+      pull_number: prNumber,
+      owner,
+      repo,
+      per_page: 100,
+    })
+  ).data;
+  const commit = commits[commits.length - 1];
+  return commit?.author?.login === OWLBOT_USER;
 }
 
 /**
@@ -560,6 +591,7 @@ export const core = {
   getGitHubShortLivedAccessToken,
   getOwlBotLock,
   hasOwlBotLoop,
+  lastCommitFromOwlBot,
   owlBotLockPath,
   triggerPostProcessBuild,
   updatePullRequestAfterPostProcessor,
