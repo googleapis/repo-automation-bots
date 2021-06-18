@@ -328,7 +328,12 @@ describe('merge-on-green wrapper logic', () => {
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           name: 'schedule.installation' as any,
-          payload: {cron_type: 'installation', cron_org: 'googleapis', findHangingPRs: true, installation: {id: 1234}},
+          payload: {
+            cron_type: 'installation',
+            cron_org: 'googleapis',
+            findHangingPRs: true,
+            installation: {id: 1234},
+          },
           id: 'abc123',
         });
 
@@ -641,7 +646,12 @@ describe('merge-on-green wrapper logic', () => {
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           name: 'schedule.installation' as any,
-          payload: {cron_type: 'installation', cron_org: 'googleapis', findHangingPRs: true, installation: {id: 1234}},
+          payload: {
+            cron_type: 'installation',
+            cron_org: 'googleapis',
+            findHangingPRs: true,
+            installation: {id: 1234},
+          },
           id: 'abc123',
         });
 
@@ -677,7 +687,12 @@ describe('merge-on-green wrapper logic', () => {
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           name: 'schedule.installation' as any,
-          payload: {cron_type: 'installation', cron_org: 'googleapis', findHangingPRs: true, installation: {id: 1234}},
+          payload: {
+            cron_type: 'installation',
+            cron_org: 'googleapis',
+            findHangingPRs: true,
+            installation: {id: 1234},
+          },
           id: 'abc123',
         });
 
@@ -723,7 +738,12 @@ describe('merge-on-green wrapper logic', () => {
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           name: 'schedule.installation' as any,
-          payload: {cron_type: 'installation', cron_org: 'googleapis', findHangingPRs: true, installation: {id: 1234}},
+          payload: {
+            cron_type: 'installation',
+            cron_org: 'googleapis',
+            findHangingPRs: true,
+            installation: {id: 1234},
+          },
           id: 'abc123',
         });
         scopes.forEach(s => s.done());
