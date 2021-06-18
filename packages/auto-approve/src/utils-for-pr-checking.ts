@@ -87,9 +87,6 @@ export function getTargetFiles(
     }
   }
 
-  // If we didn't find a match, return undefined, but this shouldn't
-  // stop execution of the rest of the tests
-  console.log(targetFiles);
   return targetFiles;
 }
 
