@@ -182,7 +182,7 @@ func botContainerProxy(cfg botConfig) http.HandlerFunc {
 }
 
 type SecretConfig struct {
-	PrivateKey string `json:"privateKey`
+	PrivateKey string `json:"privateKey"`
 	AppId      int    `json:"appId"`
 	Secret     string `json:"secret"`
 }
