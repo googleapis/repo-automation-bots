@@ -246,17 +246,35 @@ const runPostProcessor = async (
   opts: RunPostProcessorOpts,
   octokit: Octokit
 ) => {
+  // Fetch the .Owlbot.lock.yaml from head of PR:
+  const lock = await core.getOwlBotLock(opts.base, opts.prNumber, octokit);
+  if (!lock) {
+    logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
+    // If OwlBot is not configured on repo, indicate success. This makes
+    // it easier to enable OwlBot as a required check during migration:
+    await core.createCheck(
+      {
+        privateKey,
+        appId,
+        installation: opts.installation,
+        pr: opts.prNumber,
+        repo: opts.base,
+        text: 'OwlBot is not yet enabled on this repository',
+        summary: 'OwlBot is not yet enabled on this repository',
+        conclusion: 'success',
+        title: '🦉 OwlBot - success',
+        detailsURL:
+          'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
+      },
+      octokit
+    );
+    return;
+  }
   // Detect looping OwlBot behavior and break the cycle:
   if (await core.hasOwlBotLoop(opts.owner, opts.repo, opts.prNumber, octokit)) {
     throw Error(
       `too many OwlBot updates created in a row for ${opts.owner}/${opts.repo}`
     );
-  }
-  // Fetch the .Owlbot.lock.yaml from head of PR:
-  const lock = await core.getOwlBotLock(opts.base, opts.prNumber, octokit);
-  if (!lock) {
-    logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
-    return;
   }
   const image = `${lock.docker.image}@${lock.docker.digest}`;
   // Run time image from .Owlbot.lock.yaml on Cloud Build:
