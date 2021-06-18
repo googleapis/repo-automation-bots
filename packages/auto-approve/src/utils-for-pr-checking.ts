@@ -38,9 +38,9 @@ export interface FileSpecificRule {
   prAuthor: string;
   process: string;
   targetFile: string;
-  dependency?: string;
-  oldVersion?: string;
-  newVersion?: string;
+  dependency?: RegExp;
+  oldVersion?: RegExp;
+  newVersion?: RegExp;
 }
 
 /**
@@ -83,7 +83,6 @@ export function getTargetFiles(
         rule.prAuthor === author &&
         rule.targetFile === changedFile.filename
       ) {
-        console.log({file: changedFile, fileRule: rule});
         targetFiles.push({file: changedFile, fileRule: rule});
       }
     }
@@ -107,8 +106,8 @@ export function getTargetFiles(
  */
 export function getVersions(
   versionFile: File | undefined,
-  oldVersionRegex: string,
-  newVersionRegex: string
+  oldVersionRegex: RegExp,
+  newVersionRegex: RegExp
 ): Versions | undefined {
   if (!versionFile) {
     return undefined;
@@ -121,8 +120,8 @@ export function getVersions(
   let newMajorVersion;
   let newMinorVersion;
 
-  const oldVersions = versionFile.patch?.match(new RegExp(oldVersionRegex));
-  const newVersions = versionFile.patch?.match(new RegExp(newVersionRegex));
+  const oldVersions = versionFile.patch?.match(oldVersionRegex);
+  const newVersions = versionFile.patch?.match(newVersionRegex);
 
   if (oldVersions) {
     oldDependencyName = oldVersions[1];
@@ -174,11 +173,11 @@ export function getVersions(
  */
 export function doesDependencyChangeMatchPRTitle(
   versions: Versions,
-  dependencyRegex: string,
+  dependencyRegex: RegExp,
   title: string
 ): boolean {
   let dependencyName;
-  const titleRegex = title.match(new RegExp(dependencyRegex));
+  const titleRegex = title.match(dependencyRegex);
   if (titleRegex) {
     dependencyName = titleRegex[2];
     return (
