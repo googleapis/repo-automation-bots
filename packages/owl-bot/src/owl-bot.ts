@@ -195,6 +195,20 @@ export async function handlePullRequestLabeled(
     return;
   }
 
+  // If the last commit made to the PR was already from OwlBot, and the label
+  // has been added by a bot account (most likely trusted contributor bot)
+  // do not run the post processor:
+  if (
+    isBotAccount(payload.sender.login) &&
+    (await core.lastCommitFromOwlBot(owner, repo, prNumber, octokit))
+  ) {
+    await removeOwlBotRunLabel(owner, repo, prNumber, octokit);
+    logger.info(
+      `skipping post-processor run for ${owner}/${repo} pr = ${prNumber}`
+    );
+    return;
+  }
+
   await runPostProcessor(
     appId,
     privateKey,
@@ -211,7 +225,23 @@ export async function handlePullRequestLabeled(
     },
     octokit
   );
+  await removeOwlBotRunLabel(owner, repo, prNumber, octokit);
+  logger.metric('owlbot.run_post_processor');
+}
 
+/*
+ * Remove owl:bot label, ignoring errors caused by label already being removed.
+ *
+ * @param {string} owner - org of PR.
+ * @param {string} repo - repo of PR.
+ * @param {number} repo - PR number.
+ */
+async function removeOwlBotRunLabel(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  octokit: Octokit
+) {
   try {
     await octokit.issues.removeLabel({
       name: OWLBOT_RUN_LABEL,
@@ -221,12 +251,24 @@ export async function handlePullRequestLabeled(
     });
   } catch (err) {
     if (err.status === 404) {
-      logger.warn(`${err.message} head = ${head} pr = ${prNumber}`);
+      logger.warn(`${err.message} head = ${owner}/${repo} pr = ${prNumber}`);
     } else {
       throw err;
     }
   }
-  logger.metric('owlbot.run_post_processor');
+}
+
+/*
+ * Return whether or not the sender that triggered this event
+ * is a bot account.
+ *
+ * @param {string} sender - user that triggered event.
+ * @returns boolean whether or not sender was bot.
+ */
+function isBotAccount(sender: string): boolean {
+  // GitHub apps have a [bot] suffix on their sender name, e.g.,
+  // google-cla[bot].
+  return /.*\[bot]$/.test(sender);
 }
 
 interface RunPostProcessorOpts {
