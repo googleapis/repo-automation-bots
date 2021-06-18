@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [11.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.0.1...gcf-utils-v11.0.2) (2021-06-18)
+
+
+### Bug Fixes
+
+* queue in repository tasks in parallel ([#2121](https://www.github.com/googleapis/repo-automation-bots/issues/2121)) ([e6cb65b](https://www.github.com/googleapis/repo-automation-bots/commit/e6cb65bde901f8f3c04fa2c992e096339ce7d066))
+
 ### [11.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.0.0...gcf-utils-v11.0.1) (2021-06-18)
 
 
