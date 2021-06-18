@@ -458,11 +458,13 @@ async function hasOwlBotLoop(
   // It's also okay to run the post-processor many more than circuitBreaker
   // times on a long lived PR, with human edits being made.
   const circuitBreaker = 3;
+  // TODO(bcoe): we should move to an async iterator for listCommits:
   const commits = (
     await octokit.pulls.listCommits({
       pull_number: prNumber,
       owner,
       repo,
+      per_page: 100,
     })
   ).data;
   let count = 0;
@@ -489,11 +491,14 @@ async function lastCommitFromOwlBot(
   prNumber: number,
   octokit: Octokit
 ): Promise<boolean> {
+  // TODO(bcoe): we should move to an async iterator for listCommits in the
+  // future, so that we can handle more than 100:
   const commits = (
     await octokit.pulls.listCommits({
       pull_number: prNumber,
       owner,
       repo,
+      per_page: 100,
     })
   ).data;
   const commit = commits[commits.length - 1];
