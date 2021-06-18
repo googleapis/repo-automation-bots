@@ -67,8 +67,7 @@ export interface Versions {
  * @param changedFiles an array of changed files from a PR
  * @param author the author of the PR
  * @param languageRules the json representation of additional rules for each kind of file
- * @returns an object containing the specific file to be scrutinized and the rules to scrutinize it by,
- * or undefined if not found.
+ * @returns an array of objects containing the specific files to be scrutinized.
  */
 export function getTargetFiles(
   changedFiles: File[],
