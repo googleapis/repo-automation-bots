@@ -81,7 +81,7 @@ export interface WrapOptions {
   // Maximum number of attempts for cron handlers. Defaults to `0`.
   maxCronRetries?: number;
 
-  // Maximum number of attempts for cron handlers. Defaults to `0`.
+  // Maximum number of attempts for pubsub handlers. Defaults to `0`.
   maxPubSubRetries?: number;
 }
 
