@@ -44,6 +44,7 @@ describe('check pr against config', async () => {
   afterEach(() => {
     sinon.restore();
   });
+
   describe('checks that files match at least one of the patterns', () => {
     it('should return true if the file list is empty', () => {
       const prFiles = [
@@ -231,7 +232,7 @@ describe('check pr against config', async () => {
   });
 
   describe('additional validation checks', async () => {
-    it('should correctly identify and pass a PR that requires additional validation', async () => {
+    it('should correctly identify and pass a PR that requires additional validation with a release process', async () => {
       const validPR = yaml.load(
         fs.readFileSync(
           resolve(fixturesPath, 'config', 'valid-schemas', 'valid-schema4.yml'),
@@ -275,6 +276,224 @@ describe('check pr against config', async () => {
 
       scopes.done();
       assert.ok(prMatchesConfig);
+    });
+
+    it('should correctly identify and pass a PR that requires additional validation with a dependency process', async () => {
+      const validPR = yaml.load(
+        fs.readFileSync(
+          resolve(fixturesPath, 'config', 'valid-schemas', 'valid-schema5.yml'),
+          'utf8'
+        )
+      ) as {rules: checkPR.ValidPr[]};
+
+      const pr = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_special_validation_dependency_update'
+      ));
+
+      const scopes = listChangedFilesPR(200, [
+        {
+          filename: 'package.json',
+          sha: '1234',
+          patch:
+            '@@ -1,7 +1,7 @@\n' +
+            ' {\n' +
+            '   "name": "@google-cloud/kms",\n' +
+            '   "description": "Google Cloud Key Management Service (KMS) API client for Node.js",\n' +
+            '-  "@octokit/auth-app": "2.3.0",\n' +
+            '+  "@octokit/auth-app": "2.3.1",\n' +
+            '   "license": "Apache-2.0",\n' +
+            '   "author": "Google LLC",\n' +
+            '   "engines": {',
+          changes: 2,
+          additions: 1,
+          deletions: 1,
+        },
+      ]);
+
+      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+        validPR,
+        pr,
+        octokit
+      );
+
+      scopes.done();
+      assert.ok(prMatchesConfig);
+    });
+
+    it('should correctly identify and pass a PR that requires additional validation with a dependency process for multiple files', async () => {
+      const validPR = yaml.load(
+        fs.readFileSync(
+          resolve(fixturesPath, 'config', 'valid-schemas', 'valid-schema5.yml'),
+          'utf8'
+        )
+      ) as {rules: checkPR.ValidPr[]};
+
+      const pr = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_special_validation_dependency_update'
+      ));
+
+      const scopes = listChangedFilesPR(200, [
+        {
+          filename: 'package.json',
+          sha: '1234',
+          patch:
+            '@@ -1,7 +1,7 @@\n' +
+            ' {\n' +
+            '   "name": "@google-cloud/kms",\n' +
+            '   "description": "Google Cloud Key Management Service (KMS) API client for Node.js",\n' +
+            '-  "@octokit/auth-app": "2.3.0",\n' +
+            '+  "@octokit/auth-app": "2.3.1",\n' +
+            '   "license": "Apache-2.0",\n' +
+            '   "author": "Google LLC",\n' +
+            '   "engines": {',
+          changes: 2,
+          additions: 1,
+          deletions: 1,
+        },
+        {
+          filename: 'samples/package.json',
+          sha: '1234',
+          patch:
+            '@@ -1,7 +1,7 @@\n' +
+            ' {\n' +
+            '   "name": "@google-cloud/kms",\n' +
+            '   "description": "Google Cloud Key Management Service (KMS) API client for Node.js",\n' +
+            '-  "@octokit/auth-app": "2.3.0",\n' +
+            '+  "@octokit/auth-app": "2.3.1",\n' +
+            '   "license": "Apache-2.0",\n' +
+            '   "author": "Google LLC",\n' +
+            '   "engines": {',
+          changes: 2,
+          additions: 1,
+          deletions: 1,
+        },
+      ]);
+
+      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+        validPR,
+        pr,
+        octokit
+      );
+
+      scopes.done();
+      assert.ok(prMatchesConfig);
+    });
+
+    it('should fail a PR that requires additional validation with a dependency process for multiple files that do not all conform to the rules', async () => {
+      const validPR = yaml.load(
+        fs.readFileSync(
+          resolve(fixturesPath, 'config', 'valid-schemas', 'valid-schema5.yml'),
+          'utf8'
+        )
+      ) as {rules: checkPR.ValidPr[]};
+
+      const pr = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_special_validation_dependency_update'
+      ));
+
+      const scopes = listChangedFilesPR(200, [
+        {
+          filename: 'package.json',
+          sha: '1234',
+          patch:
+            '@@ -1,7 +1,7 @@\n' +
+            ' {\n' +
+            '   "name": "@google-cloud/kms",\n' +
+            '   "description": "Google Cloud Key Management Service (KMS) API client for Node.js",\n' +
+            '-  "@the-wrong-dependency!": "2.3.0",\n' +
+            '+  "@the-wrong-dependency!": "2.3.1",\n' +
+            '   "license": "Apache-2.0",\n' +
+            '   "author": "Google LLC",\n' +
+            '   "engines": {',
+          changes: 2,
+          additions: 1,
+          deletions: 1,
+        },
+        {
+          filename: 'samples/package.json',
+          sha: '1234',
+          patch:
+            '@@ -1,7 +1,7 @@\n' +
+            ' {\n' +
+            '   "name": "@google-cloud/kms",\n' +
+            '   "description": "Google Cloud Key Management Service (KMS) API client for Node.js",\n' +
+            '-  "@octokit/auth-app": "2.3.0",\n' +
+            '+  "@octokit/auth-app": "2.3.1",\n' +
+            '   "license": "Apache-2.0",\n' +
+            '   "author": "Google LLC",\n' +
+            '   "engines": {',
+          changes: 2,
+          additions: 1,
+          deletions: 1,
+        },
+      ]);
+
+      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+        validPR,
+        pr,
+        octokit
+      );
+
+      scopes.done();
+      assert.strictEqual(prMatchesConfig, false);
+    });
+
+    it('should fail a renovate-bot PR that requires additional validation rules without having all files conform to rules', async () => {
+      const validPR = yaml.load(
+        fs.readFileSync(
+          resolve(fixturesPath, 'config', 'valid-schemas', 'valid-schema5.yml'),
+          'utf8'
+        )
+      ) as {rules: checkPR.ValidPr[]};
+
+      const pr = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_special_validation_dependency_update'
+      ));
+
+      const scopes = listChangedFilesPR(200, [
+        {
+          filename: 'package.json',
+          sha: '1234',
+          patch:
+            '@@ -1,7 +1,7 @@\n' +
+            ' {\n' +
+            '   "name": "@google-cloud/kms",\n' +
+            '   "description": "Google Cloud Key Management Service (KMS) API client for Node.js",\n' +
+            '-  "@octokit/auth-app": "2.3.0",\n' +
+            '+  "@octokit/auth-app": "2.3.1",\n' +
+            '   "license": "Apache-2.0",\n' +
+            '   "author": "Google LLC",\n' +
+            '   "engines": {',
+          changes: 2,
+          additions: 1,
+          deletions: 1,
+        },
+        {
+          filename: 'repo/MaliciousFolder/package.json',
+          sha: '1234',
+          patch: 'malicious code',
+          changes: 2,
+          additions: 1,
+          deletions: 1,
+        },
+      ]);
+
+      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+        validPR,
+        pr,
+        octokit
+      );
+
+      scopes.done();
+      assert.strictEqual(prMatchesConfig, false);
     });
   });
 });
