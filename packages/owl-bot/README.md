@@ -55,9 +55,9 @@ injecting the following substitutions:
 During development, I have been running the OwlBot Post Processor as a command
 line application.
 
-To do the same, from `packages/owl-bot-post-processor` run:
+To do the same, from `packages/owl-bot` run:
 
 ```
 npm link .
-owl-bot-post-processor trigger-build --help
+owl-bot trigger-build --help
 ```

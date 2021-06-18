@@ -916,4 +916,32 @@ describe('GCFBootstrapper', () => {
       assert.strictEqual(latest, 'projects/foo/secrets/bar');
     });
   });
+
+  describe('getAuthenticatedOctokit', () => {
+    it('can return an Octokit instance given an installation id', async () => {
+      const bootstrapper = new GCFBootstrapper();
+      const configStub = sinon.stub(bootstrapper, 'getProbotConfig').resolves({
+        appId: 1234,
+        secret: 'foo',
+        webhookPath: 'bar',
+        privateKey: 'cert',
+      });
+      const octokit = await bootstrapper.getAuthenticatedOctokit(1234);
+      assert.ok(octokit);
+      sinon.assert.calledOnce(configStub);
+    });
+
+    it('can return an Octokit instance without an installation id', async () => {
+      const bootstrapper = new GCFBootstrapper();
+      const configStub = sinon.stub(bootstrapper, 'getProbotConfig').resolves({
+        appId: 1234,
+        secret: 'foo',
+        webhookPath: 'bar',
+        privateKey: 'cert',
+      });
+      const octokit = await bootstrapper.getAuthenticatedOctokit(undefined);
+      assert.ok(octokit);
+      sinon.assert.calledOnce(configStub);
+    });
+  });
 });
