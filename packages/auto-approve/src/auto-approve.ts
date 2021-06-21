@@ -15,7 +15,7 @@
 // This file handles the logic to manage incoming pull-requests
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, Context, ProbotOctokit} from 'probot';
+import {Probot, Context} from 'probot';
 import {logger} from 'gcf-utils';
 import {ValidPr, checkPRAgainstConfig} from './check-pr';
 import {getChangedFiles, getBlobFromPRFiles} from './get-pr-info';
@@ -63,7 +63,7 @@ async function evaluateAndSubmitCheckForConfig(
   repo: string,
   config: string | Configuration,
   codeOwnersFile: string | undefined,
-  octokit: InstanceType<typeof ProbotOctokit>,
+  octokit: Octokit,
   headSha: string
 ): Promise<Boolean> {
   // Check if the YAML is formatted correctly if it's in a PR

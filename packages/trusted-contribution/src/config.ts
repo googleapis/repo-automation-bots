@@ -14,7 +14,7 @@
 
 export interface Annotation {
   type: 'comment' | 'label';
-  text: string;
+  text: string | Array<string>;
 }
 
 export interface ConfigurationOptions {

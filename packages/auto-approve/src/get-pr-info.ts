@@ -13,8 +13,8 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {ProbotOctokit} from 'probot';
 import {logger} from 'gcf-utils';
+import {Octokit} from '@octokit/rest';
 
 // This file gets information about the incoming pull request, such as what files were changed, etc.
 
@@ -36,19 +36,17 @@ export interface File {
  * @returns an array of File objects that were changed in a pull request
  */
 export async function getChangedFiles(
-  octokit: InstanceType<typeof ProbotOctokit>,
+  octokit: Octokit,
   owner: string,
   repo: string,
   prNumber: number
 ): Promise<File[]> {
   try {
-    return (
-      await octokit.pulls.listFiles({
-        owner,
-        repo,
-        pull_number: prNumber,
-      })
-    ).data;
+    return await octokit.paginate(octokit.pulls.listFiles, {
+      owner,
+      repo,
+      pull_number: prNumber,
+    });
   } catch (err) {
     // These errors happen frequently, so adding cleaner logging; will still throw error
     if (err === 404) {
@@ -70,7 +68,7 @@ export async function getChangedFiles(
  * @returns the contents of the changed File in a string
  */
 export async function getBlobFromPRFiles(
-  octokit: InstanceType<typeof ProbotOctokit>,
+  octokit: Octokit,
   owner: string,
   repo: string,
   changedFiles: File[],

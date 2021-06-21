@@ -423,7 +423,7 @@ describe('core', () => {
         },
       ];
       const githubMock = nock('https://api.github.com')
-        .get('/repos/bcoe/foo/pulls/22/commits')
+        .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
         .reply(200, commits);
       const loop = await core.hasOwlBotLoop('bcoe', 'foo', 22, new Octokit());
       assert.strictEqual(loop, false);
@@ -454,7 +454,7 @@ describe('core', () => {
         },
       ];
       const githubMock = nock('https://api.github.com')
-        .get('/repos/bcoe/foo/pulls/22/commits')
+        .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
         .reply(200, commits);
       const loop = await core.hasOwlBotLoop('bcoe', 'foo', 22, new Octokit());
       assert.strictEqual(loop, true);
