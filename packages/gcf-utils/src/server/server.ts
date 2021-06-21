@@ -32,7 +32,17 @@ export function getServer(handler: HandlerFunction): http.Server {
   app.disable('x-powered-by');
 
   // Route all requests to the handler
-  app.all('*', handler);
+  app.all('*', (req, res) => {
+    // our handler is async, but express expects a synchronous function
+    handler(req, res)
+      .then(() => {
+        res.end();
+      })
+      .catch(e => {
+        console.log(e);
+        res.end();
+      });
+  });
 
   return http.createServer(app);
 }
