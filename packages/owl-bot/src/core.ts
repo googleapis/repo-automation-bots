@@ -75,7 +75,7 @@ interface Token {
 
 export const OWL_BOT_LOCK_UPDATE = 'owl-bot-update-lock';
 export const OWL_BOT_COPY = 'owl-bot-copy';
-export const OWL_BOT_IGNORE = 'owl-bot:ignore';
+export const OWL_BOT_IGNORE = 'owlbot:ignore';
 
 export async function triggerPostProcessBuild(
   args: BuildArgs,
