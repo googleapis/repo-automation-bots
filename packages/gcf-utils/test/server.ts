@@ -27,14 +27,10 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 const TEST_SERVER_PORT = 8000;
 
 nock.disableNetConnect();
-nock.enableNetConnect(host => {
-  return host.startsWith('localhost:');
-});
-
-const sandbox = sinon.createSandbox();
 
 describe('GCFBootstrapper', () => {
   describe('server', () => {
+    const sandbox = sinon.createSandbox();
     let server: http.Server;
     const bootstrapper = new GCFBootstrapper();
     const issueSpy = sandbox.stub();
@@ -44,6 +40,10 @@ describe('GCFBootstrapper', () => {
     const pubsubSpy = sandbox.stub();
     let enqueueTask: sinon.SinonStub = sandbox.stub();
     before(done => {
+      nock.enableNetConnect(host => {
+        return host.startsWith('localhost:');
+      });
+
       sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
         appId: 1234,
         secret: 'foo',
@@ -83,7 +83,6 @@ describe('GCFBootstrapper', () => {
           app.on('err' as any, sinon.stub().throws());
         })
         .on('listening', () => {
-          console.log('listening');
           done();
         })
         .listen(TEST_SERVER_PORT);
