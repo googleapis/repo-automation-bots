@@ -34,7 +34,7 @@ contact yoshi team via the Google chat room **GitHub Automation**.
 Non-Googlers can open an issue on this repository.
 
 There are a few [exceptional cases](https://github.com/googleapis/synthtool/issues/1121) where the Owl Bot post processor is misbehaving
-and must be silenced.  In such cases, add the label `owl-bot:ignore` and
+and must be silenced.  In such cases, add the label `owlbot:ignore` and
 Owl Bot will stop touching the pull request.
 
 ## For Yoshi Team Members
