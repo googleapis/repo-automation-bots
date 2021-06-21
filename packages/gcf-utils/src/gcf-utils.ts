@@ -18,6 +18,7 @@ import {createProbotAuth} from 'octokit-auth-probot';
 
 import getStream from 'get-stream';
 import intoStream from 'into-stream';
+import * as http from 'http';
 
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {v2 as CloudTasksV2} from '@google-cloud/tasks';
@@ -29,9 +30,15 @@ import {config as ConfigPlugin} from '@probot/octokit-plugin-config';
 import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger} from './logging/gcf-logger';
 import {v4} from 'uuid';
+import {getServer} from './server/server';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
+
+export type HandlerFunction = (
+  request: express.Request,
+  response: express.Response
+) => Promise<void>;
 
 type CronType = 'repository' | 'installation' | 'global';
 const DEFAULT_CRON_TYPE: CronType = 'repository';
@@ -363,10 +370,23 @@ export class GCFBootstrapper {
     return wrapConfig.maxRetries;
   }
 
-  gcf(
-    appFn: ApplicationFunction,
-    wrapOptions?: WrapOptions
-  ): (request: express.Request, response: express.Response) => Promise<void> {
+  /**
+   * Wrap an ApplicationFunction in a http.Server that can be started
+   * directly.
+   * @param appFn {ApplicationFunction} The probot handler function
+   * @param wrapOptions {WrapOptions} Bot handler options
+   */
+  server(appFn: ApplicationFunction, wrapOptions?: WrapOptions): http.Server {
+    return getServer(this.gcf(appFn, wrapOptions));
+  }
+
+  /**
+   * Wrap an ApplicationFunction in so it can be started in a Google
+   * Cloud Function.
+   * @param appFn {ApplicationFunction} The probot handler function
+   * @param wrapOptions {WrapOptions} Bot handler options
+   */
+  gcf(appFn: ApplicationFunction, wrapOptions?: WrapOptions): HandlerFunction {
     return async (request: express.Request, response: express.Response) => {
       const wrapConfig = this.parseWrapConfig(wrapOptions);
 
