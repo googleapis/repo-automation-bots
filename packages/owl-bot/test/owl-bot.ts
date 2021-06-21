@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import {core} from '../src/core';
+import {core, OWL_BOT_IGNORE} from '../src/core';
 import * as handlers from '../src/handlers';
 import {describe, it, beforeEach} from 'mocha';
 import {logger} from 'gcf-utils';
@@ -241,7 +241,7 @@ describe('owlBot', () => {
     sandbox.assert.calledOnce(hasOwlBotLoopStub);
     githubMock.done();
   });
-  it('leaves pull request open because it has owl-bot-ignore label', async () => {
+  it(`leaves pull request open because it has ${OWL_BOT_IGNORE} label`, async () => {
     const payload = {
       installation: {
         id: 12345,
@@ -264,7 +264,7 @@ describe('owlBot', () => {
             name: 'owl-bot-copy',
           },
           {
-            name: 'owl-bot-ignore',
+            name: OWL_BOT_IGNORE,
           },
         ],
       },

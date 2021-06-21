@@ -17,7 +17,7 @@ import * as assert from 'assert';
 import {execSync} from 'child_process';
 import * as path from 'path';
 import rimraf from 'rimraf';
-import {core} from '../src/core';
+import {core, OWL_BOT_IGNORE} from '../src/core';
 import nock from 'nock';
 import * as sinon from 'sinon';
 import {mkdirSync, writeFileSync} from 'fs';
@@ -130,20 +130,23 @@ describe('core', () => {
       assert.strictEqual(build!.summary, 'successfully ran 1 steps 🎉!');
     });
 
-    it("doesn't trigger build when labled with owl-bot-ignore", async () => {
-      initSandbox(newPrData(['owl-bot-ignore']));
-      const build = await core.triggerPostProcessBuild({
-        image: 'node@abc123',
-        appId: 12345,
-        privateKey: 'abc123',
-        installation: 12345,
-        repo: 'bcoe/example',
-        pr: 99,
-        project: 'fake-project',
-        trigger: 'abc123',
-      });
-      assert.strictEqual(build, null);
-    });
+    it(
+      "doesn't trigger build when labeled with " + OWL_BOT_IGNORE,
+      async () => {
+        initSandbox(newPrData([OWL_BOT_IGNORE]));
+        const build = await core.triggerPostProcessBuild({
+          image: 'node@abc123',
+          appId: 12345,
+          privateKey: 'abc123',
+          installation: 12345,
+          repo: 'bcoe/example',
+          pr: 99,
+          project: 'fake-project',
+          trigger: 'abc123',
+        });
+        assert.strictEqual(build, null);
+      }
+    );
 
     it('returns with failure if build fails', async () => {
       initSandbox(newPrData());

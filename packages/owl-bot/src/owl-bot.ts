@@ -18,7 +18,7 @@ import {FirestoreConfigsStore, Db} from './database';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
 import {logger} from 'gcf-utils';
-import {core} from './core';
+import {core, OWL_BOT_IGNORE} from './core';
 import {Octokit} from '@octokit/rest';
 import {onPostProcessorPublished, scanGithubForConfigs} from './handlers';
 import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
@@ -284,8 +284,8 @@ const runPostProcessor = async (
         installation: opts.installation,
         pr: opts.prNumber,
         repo: opts.base,
-        text: 'Ignored by Owl Bot because of owl-bot-ignore label',
-        summary: 'Ignored by Owl Bot because of owl-bot-ignore label',
+        text: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
+        summary: `Ignored by Owl Bot because ${OWL_BOT_IGNORE}  label`,
         conclusion: 'success',
         title: '🦉 OwlBot - ignored',
         detailsURL:
