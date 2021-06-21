@@ -19,8 +19,8 @@
   ],
   "scripts": {
     "compile": "tsc -p .",
-    "start": "probot run ./build/src/canary-bot.js",
-    "start:local": "node ./build/src/local.js",
+    "start": "node ./build/src/server.js",
+    "start:local": "probot run ./build/src/canary-bot.js",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
     "fix": "gts fix",
@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "dayjs": "^1.10.5",
-    "gcf-utils": "^11.1.0"
+    "gcf-utils": "^11.2.0"
   },
   "devDependencies": {
     "@types/mocha": "^8.2.2",
