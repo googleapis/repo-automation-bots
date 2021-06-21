@@ -433,7 +433,10 @@ describe('owlBot', () => {
       id: 'abc123',
     });
     sandbox.assert.calledOnce(triggerBuildStub);
-    sandbox.assert.calledOnce(createCheckStub);
+    sandbox.assert.calledWith(
+      createCheckStub,
+      sinon.match.has('conclusion', 'success')
+    );
     sandbox.assert.calledOnce(hasOwlBotLoopStub);
     githubMock.done();
   });
