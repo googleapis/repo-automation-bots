@@ -285,7 +285,7 @@ const runPostProcessor = async (
         pr: opts.prNumber,
         repo: opts.base,
         text: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
-        summary: `Ignored by Owl Bot because ${OWL_BOT_IGNORE}  label`,
+        summary: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
         conclusion: 'success',
         title: '🦉 OwlBot - ignored',
         detailsURL:

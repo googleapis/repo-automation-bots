@@ -364,6 +364,64 @@ describe('owlBot', () => {
     sandbox.assert.calledOnce(hasOwlBotLoopStub);
     githubMock.done();
   });
+  it(`doesn't run check because labeled with ${OWL_BOT_IGNORE}`, async () => {
+    const payload = {
+      installation: {
+        id: 12345,
+      },
+      pull_request: {
+        number: 33,
+        head: {
+          repo: {
+            full_name: 'bcoe/owl-bot-testing',
+          },
+          ref: 'abc123',
+        },
+        base: {
+          repo: {
+            full_name: 'bcoe/owl-bot-testing',
+          },
+        },
+        labels: [
+          {
+            name: 'owl-bot-copy',
+          },
+          {
+            name: OWL_BOT_IGNORE,
+          },
+        ],
+      },
+    };
+    const config = `docker:
+    image: node
+    digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
+    const githubMock = nock('https://api.github.com')
+      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .reply(200, payload.pull_request)
+      .get(
+        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+      )
+      .reply(200, {
+        content: Buffer.from(config).toString('base64'),
+        encoding: 'base64',
+      });
+    const triggerBuildStub = sandbox
+      .stub(core, 'triggerPostProcessBuild')
+      .resolves(null);
+    const hasOwlBotLoopStub = sandbox
+      .stub(core, 'hasOwlBotLoop')
+      .resolves(false);
+    const createCheckStub = sandbox.stub(core, 'createCheck');
+    await probot.receive({
+      name: 'pull_request.synchronize',
+      payload,
+      id: 'abc123',
+    });
+    sandbox.assert.calledOnce(triggerBuildStub);
+    sandbox.assert.calledOnce(createCheckStub);
+    sandbox.assert.calledOnce(hasOwlBotLoopStub);
+    githubMock.done();
+  });
   it('closes pull request if only lock file changed', async () => {
     const payload = {
       installation: {
