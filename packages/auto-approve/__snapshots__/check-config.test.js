@@ -46,7 +46,8 @@ exports['check for config whether YAML file has valid schema should fail if auth
         'yoshi-automation',
         'release-please[bot]',
         'yoshi-code-bot',
-        'gcf-owl-bot[bot]'
+        'gcf-owl-bot[bot]',
+        'renovate-bot'
       ]
     },
     'message': 'must be equal to one of the allowed values'

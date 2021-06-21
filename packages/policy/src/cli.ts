@@ -15,6 +15,7 @@
 // limitations under the License.
 
 import meow from 'meow';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {exportToBigQuery} from './export';
 import {getPolicy, GitHubRepo} from './policy';

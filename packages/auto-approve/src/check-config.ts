@@ -15,9 +15,10 @@
 // This file manages the logic to check whether a given config file is valid
 
 // eslint-disable-next-line node/no-extraneous-import
-import {ProbotOctokit} from 'probot';
 import yaml from 'js-yaml';
 import Ajv from 'ajv';
+import {Octokit} from '@octokit/rest';
+
 const ajv = new Ajv();
 
 const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
@@ -86,7 +87,7 @@ export async function validateSchema(
  * @returns undefined if the yaml is valid, otherwise an error message.
  */
 export async function checkCodeOwners(
-  octokit: InstanceType<typeof ProbotOctokit>,
+  octokit: Octokit,
   owner: string,
   repo: string,
   codeOwnersPRFile: string | undefined

@@ -256,7 +256,12 @@ describe('TrustedContributionTestRunner', () => {
         requests = requests
           .post(
             '/repos/chingor13/google-auth-library-java/issues/3/labels',
-            () => true
+            (body: object) => {
+              assert.deepStrictEqual(body, {
+                labels: ['kokoro:force-run', 'owlbot:run'],
+              });
+              return true;
+            }
           )
           .reply(200);
 
