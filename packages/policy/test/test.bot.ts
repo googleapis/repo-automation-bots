@@ -15,6 +15,7 @@
 /* eslint-disable node/no-extraneous-import */
 
 import {Probot, createProbot, ProbotOctokit} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import sinon from 'sinon';
