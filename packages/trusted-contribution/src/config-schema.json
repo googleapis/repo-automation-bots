@@ -13,8 +13,16 @@
 		"type": {
 		    "enum": ["comment", "label"]
 		},
-		"text": {
-		    "type": "string"
+		"text":{
+			"oneOf": [
+				{"type": "string"},
+				{
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				}
+			]
 		}
 	    }
 	}

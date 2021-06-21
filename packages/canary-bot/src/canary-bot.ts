@@ -87,6 +87,17 @@ export = (app: Probot) => {
       });
     }
   });
+
+  app.on('schedule.installation' as '*', async context => {
+    logger.info(
+      `executed scheduled task for installation: ${context.payload.installation.id}`
+    );
+  });
+
+  app.on('schedule.global' as '*', async () => {
+    logger.info('executed global scheduled task');
+  });
+
   app.on(['issues.opened', 'issues.reopened'], async context => {
     if (context.payload.issue.title.includes('canary-bot test')) {
       const {owner, repo} = context.repo();
