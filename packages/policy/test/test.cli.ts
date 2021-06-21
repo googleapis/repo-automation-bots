@@ -16,6 +16,7 @@ import nock from 'nock';
 import {describe, it, afterEach} from 'mocha';
 import assert from 'assert';
 import sinon from 'sinon';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import meow from 'meow';
 import * as policy from '../src/policy';
