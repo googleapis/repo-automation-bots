@@ -274,6 +274,28 @@ const runPostProcessor = async (
     },
     octokit
   );
+
+  if (null === buildStatus) {
+    // Update pull request with status of job:
+    await core.createCheck(
+      {
+        privateKey,
+        appId,
+        installation: opts.installation,
+        pr: opts.prNumber,
+        repo: opts.base,
+        text: 'Ignored by Owl Bot because of owl-bot-ignore label',
+        summary: 'Ignored by Owl Bot because of owl-bot-ignore label',
+        conclusion: 'success',
+        title: '🦉 OwlBot - ignored',
+        detailsURL:
+          'https://github.com/googleapis/repo-automation-bots/blob/master/packages/owl-bot/README.md',
+      },
+      octokit
+    );
+    return;
+  }
+
   // Update pull request with status of job:
   await core.createCheck(
     {

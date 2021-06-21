@@ -29,33 +29,45 @@ import {Octokit} from '@octokit/rest';
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
-describe('core', () => {
-  beforeEach(() => {
-    const prData = {
-      data: {
-        head: {
-          ref: 'my-feature-branch',
-          repo: {
-            full_name: 'bcoe/example',
-          },
-        },
-      },
-    };
-    sandbox.stub(core, 'getGitHubShortLivedAccessToken').resolves({
-      token: 'abc123',
-      expires_at: '2021-01-13T23:37:43.707Z',
-      permissions: {},
-      repository_selection: 'included',
-    });
-    sandbox.stub(core, 'getAuthenticatedOctokit').resolves({
-      pulls: {
-        get() {
-          return prData;
-        },
-      },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any as InstanceType<typeof Octokit>);
+/**
+ * Stubs out core.getGitHubShortLivedAccessToken and
+ * core.getAuthenticatedOctokit with test values.
+ */
+function initSandbox(prData: unknown) {
+  sandbox.stub(core, 'getGitHubShortLivedAccessToken').resolves({
+    token: 'abc123',
+    expires_at: '2021-01-13T23:37:43.707Z',
+    permissions: {},
+    repository_selection: 'included',
   });
+  sandbox.stub(core, 'getAuthenticatedOctokit').resolves({
+    pulls: {
+      get() {
+        return prData;
+      },
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any as InstanceType<typeof Octokit>);
+}
+
+function newPrData(labels: string[] = []): unknown {
+  const prData = {
+    data: {
+      head: {
+        ref: 'my-feature-branch',
+        repo: {
+          full_name: 'bcoe/example',
+        },
+      },
+      labels: labels.map(name => {
+        return {name};
+      }),
+    },
+  };
+  return prData;
+}
+
+describe('core', () => {
   afterEach(() => {
     sandbox.restore();
   });
@@ -70,6 +82,7 @@ describe('core', () => {
   });
   describe('triggerBuild', () => {
     it('returns with success if build succeeds', async () => {
+      initSandbox(newPrData());
       const successfulBuild = {
         status: 'SUCCESS',
         steps: [
@@ -113,10 +126,27 @@ describe('core', () => {
         trigger: 'abc123',
       });
       assert.ok(triggerRequest);
-      assert.strictEqual(build.conclusion, 'success');
-      assert.strictEqual(build.summary, 'successfully ran 1 steps 🎉!');
+      assert.strictEqual(build!.conclusion, 'success');
+      assert.strictEqual(build!.summary, 'successfully ran 1 steps 🎉!');
     });
+
+    it("doesn't trigger build when labled with owl-bot-ignore", async () => {
+      initSandbox(newPrData(['owl-bot-ignore']));
+      const build = await core.triggerPostProcessBuild({
+        image: 'node@abc123',
+        appId: 12345,
+        privateKey: 'abc123',
+        installation: 12345,
+        repo: 'bcoe/example',
+        pr: 99,
+        project: 'fake-project',
+        trigger: 'abc123',
+      });
+      assert.strictEqual(build, null);
+    });
+
     it('returns with failure if build fails', async () => {
+      initSandbox(newPrData());
       const successfulBuild = {
         status: 'FAILURE',
         steps: [
@@ -160,8 +190,8 @@ describe('core', () => {
         trigger: 'abc123',
       });
       assert.ok(triggerRequest);
-      assert.strictEqual(build.conclusion, 'failure');
-      assert.strictEqual(build.summary, '1 steps failed 🙁');
+      assert.strictEqual(build!.conclusion, 'failure');
+      assert.strictEqual(build!.summary, '1 steps failed 🙁');
     });
   });
   describe('getOwlBotLock', () => {
