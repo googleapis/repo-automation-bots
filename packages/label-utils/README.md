@@ -16,7 +16,7 @@ npm i @google-automations/label-utils
 color is determined by its name and should be consistent among
 repositories.
 
-Here is a simple example:
+Here is a simple example with cron:
 ```typescript
 import {syncLabels} from '@google-automations/label-utils';
 const myLabels = [
@@ -25,7 +25,23 @@ const myLabels = [
     description: 'label description'
   },
 ];
-await syncLabels(context.octokit, owner, repo, myLabels);
+
+  app.on('schedule.repository' as '*', async context => {
+    const owner = context.payload.organization.login;
+    const repo = context.payload.repository.name;
+    await syncLabels(context.octokit, owner, repo, myLabels);
+  });
+
+```
+
+The cron.yaml:
+```yaml
+cron:
+  - name: my-bot-sync-label
+    schedule: 0 3 * * *
+    description: my-bot syncing labels
+    params:
+      cron_type: "repository"
 ```
 
 Here is another example for syncing the label in

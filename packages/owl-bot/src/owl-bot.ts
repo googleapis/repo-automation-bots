@@ -18,7 +18,7 @@ import {FirestoreConfigsStore, Db} from './database';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
 import {logger} from 'gcf-utils';
-import {core} from './core';
+import {core, OWL_BOT_IGNORE} from './core';
 import {Octokit} from '@octokit/rest';
 import {onPostProcessorPublished, scanGithubForConfigs} from './handlers';
 import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
@@ -195,6 +195,20 @@ export async function handlePullRequestLabeled(
     return;
   }
 
+  // If the last commit made to the PR was already from OwlBot, and the label
+  // has been added by a bot account (most likely trusted contributor bot)
+  // do not run the post processor:
+  if (
+    isBotAccount(payload.sender.login) &&
+    (await core.lastCommitFromOwlBot(owner, repo, prNumber, octokit))
+  ) {
+    await removeOwlBotRunLabel(owner, repo, prNumber, octokit);
+    logger.info(
+      `skipping post-processor run for ${owner}/${repo} pr = ${prNumber}`
+    );
+    return;
+  }
+
   await runPostProcessor(
     appId,
     privateKey,
@@ -211,7 +225,23 @@ export async function handlePullRequestLabeled(
     },
     octokit
   );
+  await removeOwlBotRunLabel(owner, repo, prNumber, octokit);
+  logger.metric('owlbot.run_post_processor');
+}
 
+/*
+ * Remove owl:bot label, ignoring errors caused by label already being removed.
+ *
+ * @param {string} owner - org of PR.
+ * @param {string} repo - repo of PR.
+ * @param {number} repo - PR number.
+ */
+async function removeOwlBotRunLabel(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  octokit: Octokit
+) {
   try {
     await octokit.issues.removeLabel({
       name: OWLBOT_RUN_LABEL,
@@ -221,12 +251,24 @@ export async function handlePullRequestLabeled(
     });
   } catch (err) {
     if (err.status === 404) {
-      logger.warn(`${err.message} head = ${head} pr = ${prNumber}`);
+      logger.warn(`${err.message} head = ${owner}/${repo} pr = ${prNumber}`);
     } else {
       throw err;
     }
   }
-  logger.metric('owlbot.run_post_processor');
+}
+
+/*
+ * Return whether or not the sender that triggered this event
+ * is a bot account.
+ *
+ * @param {string} sender - user that triggered event.
+ * @returns boolean whether or not sender was bot.
+ */
+function isBotAccount(sender: string): boolean {
+  // GitHub apps have a [bot] suffix on their sender name, e.g.,
+  // google-cla[bot].
+  return /.*\[bot]$/.test(sender);
 }
 
 interface RunPostProcessorOpts {
@@ -246,17 +288,35 @@ const runPostProcessor = async (
   opts: RunPostProcessorOpts,
   octokit: Octokit
 ) => {
+  // Fetch the .Owlbot.lock.yaml from head of PR:
+  const lock = await core.getOwlBotLock(opts.base, opts.prNumber, octokit);
+  if (!lock) {
+    logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
+    // If OwlBot is not configured on repo, indicate success. This makes
+    // it easier to enable OwlBot as a required check during migration:
+    await core.createCheck(
+      {
+        privateKey,
+        appId,
+        installation: opts.installation,
+        pr: opts.prNumber,
+        repo: opts.base,
+        text: 'OwlBot is not yet enabled on this repository',
+        summary: 'OwlBot is not yet enabled on this repository',
+        conclusion: 'success',
+        title: '🦉 OwlBot - success',
+        detailsURL:
+          'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
+      },
+      octokit
+    );
+    return;
+  }
   // Detect looping OwlBot behavior and break the cycle:
   if (await core.hasOwlBotLoop(opts.owner, opts.repo, opts.prNumber, octokit)) {
     throw Error(
       `too many OwlBot updates created in a row for ${opts.owner}/${opts.repo}`
     );
-  }
-  // Fetch the .Owlbot.lock.yaml from head of PR:
-  const lock = await core.getOwlBotLock(opts.base, opts.prNumber, octokit);
-  if (!lock) {
-    logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
-    return;
   }
   const image = `${lock.docker.image}@${lock.docker.digest}`;
   // Run time image from .Owlbot.lock.yaml on Cloud Build:
@@ -274,6 +334,28 @@ const runPostProcessor = async (
     },
     octokit
   );
+
+  if (null === buildStatus) {
+    // Update pull request with status of job:
+    await core.createCheck(
+      {
+        privateKey,
+        appId,
+        installation: opts.installation,
+        pr: opts.prNumber,
+        repo: opts.base,
+        text: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
+        summary: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
+        conclusion: 'success',
+        title: '🦉 OwlBot - ignored',
+        detailsURL:
+          'https://github.com/googleapis/repo-automation-bots/blob/master/packages/owl-bot/README.md',
+      },
+      octokit
+    );
+    return;
+  }
+
   // Update pull request with status of job:
   await core.createCheck(
     {

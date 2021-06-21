@@ -13,21 +13,22 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {ProbotOctokit} from 'probot';
 import {PullRequestEvent} from '@octokit/webhooks-definitions/schema';
 import {getChangedFiles, File} from './get-pr-info';
 import {logger} from 'gcf-utils';
 import {
-  FileSpecificRule,
-  getTargetFile,
+  getTargetFiles,
   getVersions,
   isMajorVersionChanging,
   isMinorVersionUpgraded,
   isOneDependencyChanged,
   checkFilePathsMatch,
+  doesDependencyChangeMatchPRTitle,
+  Versions,
   mergesOnWeekday,
 } from './utils-for-pr-checking';
-import languageVersioningRules from './language-versioning-rules.json';
+import {Octokit} from '@octokit/rest';
+import {languageVersioningRules} from './language-versioning-rules';
 // type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
 
 // This file manages the logic to check whether a given PR matches the config in the repository
@@ -50,11 +51,11 @@ export interface ValidPr {
 export async function checkPRAgainstConfig(
   config: {rules: ValidPr[]},
   pr: PullRequestEvent,
-  octokit: InstanceType<typeof ProbotOctokit>
+  octokit: Octokit
 ): Promise<Boolean> {
-  const repoOwner = pr.pull_request.head.repo.owner.login;
+  const repoOwner = pr.repository.owner.login;
   const prAuthor = pr.pull_request.user.login;
-  const repo = pr.pull_request.head.repo.name;
+  const repo = pr.repository.name;
   const prNumber = pr.number;
   const title = pr.pull_request.title;
 
@@ -65,12 +66,16 @@ export async function checkPRAgainstConfig(
     // changedFiles and maxFiles are not set in the JSON schema
     let filePathsMatch = true;
     let fileCountMatch = true;
-    const versionChecks = true;
+    let additionalRules = true;
+    const releasePRFiles: File[] = [];
 
     // Since there's only one allowed title per author right now, we don't need to
     // add complicated logic to see which title should match the incoming PR; but,
     // this could be logic we work into the future.
     if (!title.match(rulesToValidateAgainst.title)) {
+      logger.info(
+        `Info for ${repoOwner}/${repo}/${prNumber} title does not match what is allowed`
+      );
       return false;
     }
 
@@ -84,20 +89,74 @@ export async function checkPRAgainstConfig(
 
     // This function checks to see if the PR is a 'special' PR,
     // i.e., if its authorship qualifies it for further checks
-    const fileAndFileRule = getTargetFile(
+    const fileAndFileRules = getTargetFiles(
       changedFiles,
       rulesToValidateAgainst.author,
       languageVersioningRules
     );
 
     // If we've found the file in this ruleset, let's run the additional checks
-    if (fileAndFileRule) {
-      // TODO: make the checks conditional based on the different kinds of conditions
-      // to be checked, i.e., runDependencyUpgradeValidation, etc.
-      if (!runVersioningValidation(fileAndFileRule)) return false;
+    // We're running each file through the check so that we can make customized checks
+    // for each file. This way, we can be as specific as possible as to how the file
+    // needs to be checked.
+    for (const fileAndFileRule of fileAndFileRules) {
+      // First, get the versions we're checking for the file
+      const versions = getVersions(
+        fileAndFileRule.file,
+        fileAndFileRule.fileRule.oldVersion!,
+        fileAndFileRule.fileRule.newVersion!
+      );
+
+      // Have to enter different processes for different checks
+      if (versions && fileAndFileRule.fileRule.process === 'release') {
+        // If it's a release process, just make sure that the versions are minor
+        // bumps and are increasing, and are only changing one at a time
+        additionalRules =
+          runVersioningValidation(versions) &&
+          isOneDependencyChanged(fileAndFileRule.file) &&
+          mergesOnWeekday();
+      } else if (
+        versions &&
+        fileAndFileRule.fileRule.process === 'dependency'
+      ) {
+        // If it's a dependency update process, make sure that the versions are minor
+        // bumps and are increasing, are only changing one at a time, and are changing
+        // the dependency they say they are supposed to change
+
+        // At the end of the loop, we want to make sure that all of the changed files
+        // in a renovate bot pr conform to one of the language versioning rules
+        releasePRFiles.push(fileAndFileRule.file);
+
+        additionalRules =
+          doesDependencyChangeMatchPRTitle(
+            versions,
+            // We can assert dependency will exist, since the process is type 'dependency'
+            fileAndFileRule.fileRule.dependency!,
+            title
+          ) &&
+          runVersioningValidation(versions) &&
+          isOneDependencyChanged(fileAndFileRule.file);
+      }
+
+      if (additionalRules === false) {
+        return false;
+      }
     }
 
-    //check if changed file paths match1
+    // This additional check confirms that there were no files changed in the PR
+    // that weren't checked by the additional files rule if it's from renovate-bot
+    if (prAuthor === 'renovate-bot') {
+      for (let i = 0; i < changedFiles.length; i++) {
+        if (changedFiles[i] !== releasePRFiles[i]) {
+          logger.info(
+            `Info for ${repoOwner}/${repo}/${prNumber} A file that should have been checked with additional guidelines was not checked`
+          );
+          return false;
+        }
+      }
+    }
+
+    //check if changed file paths match
     if (rulesToValidateAgainst.changedFiles) {
       filePathsMatch = checkFilePathsMatch(
         changedFiles.map(x => x.filename),
@@ -120,10 +179,10 @@ export async function checkPRAgainstConfig(
       `Info for ${repoOwner}/${repo}/${prNumber} File Count Matches? ${fileCountMatch}`
     );
     logger.info(
-      `Info for ${repoOwner}/${repo}/${prNumber} Versions are correct? ${versionChecks}`
+      `Info for ${repoOwner}/${repo}/${prNumber} Additional rules are correct? ${additionalRules}`
     );
 
-    return filePathsMatch && fileCountMatch && versionChecks;
+    return filePathsMatch && fileCountMatch && additionalRules;
   } else {
     logger.info(`${repoOwner}/${repo}/${prNumber} does not match config`);
     return false;
@@ -133,40 +192,19 @@ export async function checkPRAgainstConfig(
 /**
  * Runs additional validation checks when a version is upgraded to ensure that the
  * version is only upgraded, not downgraded, and that the major version is not bumped.
- * Also ensures that only one package is changed at a time.
  *
  * @param file The incoming target file that has a matching ruleset in language-versioning-rules
  * @param pr The matching ruleset of the file above from language-versioning-rules
  * @returns true if the package was upgraded appropriately, and had only one thing changed
  */
-function runVersioningValidation(addtlValidationFile?: {
-  file: File;
-  fileRule: FileSpecificRule;
-}): boolean {
+function runVersioningValidation(versions: Versions): boolean {
   let majorBump = true;
   let minorBump = false;
-  let oneDependencyChanged = false;
-  let weekdayMerge = false;
-  // If there's no additional validation file, then it will
-  // be trivially true
-  if (!addtlValidationFile) {
-    return true;
-  }
-
-  // We can assert addtlValidationFile exists since we exit if it doesn't
-  // before we enter these checks
-  const versions = getVersions(
-    addtlValidationFile.file,
-    addtlValidationFile.fileRule.oldRegexVersion,
-    addtlValidationFile.fileRule.newRegexVersion
-  );
 
   if (versions) {
     majorBump = isMajorVersionChanging(versions);
     minorBump = isMinorVersionUpgraded(versions);
-    oneDependencyChanged = isOneDependencyChanged(addtlValidationFile.file!);
-    weekdayMerge = mergesOnWeekday();
   }
 
-  return !majorBump && minorBump && oneDependencyChanged && weekdayMerge;
+  return !majorBump && minorBump;
 }
