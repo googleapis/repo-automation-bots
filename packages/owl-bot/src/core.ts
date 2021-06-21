@@ -75,12 +75,12 @@ interface Token {
 
 export const OWL_BOT_LOCK_UPDATE = 'owl-bot-update-lock';
 export const OWL_BOT_COPY = 'owl-bot-copy';
-export const OWL_BOT_IGNORE = 'owl-bot-ignore';
+export const OWL_BOT_IGNORE = 'owl-bot:ignore';
 
 export async function triggerPostProcessBuild(
   args: BuildArgs,
   octokit?: OctokitType
-): Promise<BuildResponse> {
+): Promise<BuildResponse | null> {
   const token = await core.getGitHubShortLivedAccessToken(
     args.privateKey,
     args.appId,
@@ -90,7 +90,6 @@ export async function triggerPostProcessBuild(
   if (!project) {
     throw Error('gcloud project must be provided');
   }
-  const cb = core.getCloudBuildInstance();
   const [owner, repo] = args.repo.split('/');
   if (!octokit) {
     octokit = await core.getAuthenticatedOctokit(token.token);
@@ -100,7 +99,17 @@ export async function triggerPostProcessBuild(
     repo,
     pull_number: args.pr,
   });
+
+  // See if someone asked owl bot to ignore this PR.
+  if (prData.labels.find(label => label.name === OWL_BOT_IGNORE)) {
+    logger.info(
+      `Ignoring ${owner}/${repo} #${args.pr} because it's labeled with ${OWL_BOT_IGNORE}.`
+    );
+    return null;
+  }
+
   const [prOwner, prRepo] = prData.head.repo.full_name.split('/');
+  const cb = core.getCloudBuildInstance();
   const [resp] = await cb.runBuildTrigger({
     projectId: project,
     triggerId: args.trigger,
