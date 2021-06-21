@@ -18,12 +18,12 @@ import {FirestoreConfigsStore, Db} from './database';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
 import {logger} from 'gcf-utils';
-import {core, OWL_BOT_IGNORE} from './core';
+import {syncLabels} from '@google-automations/label-utils';
+import {core} from './core';
 import {Octokit} from '@octokit/rest';
 import {onPostProcessorPublished, scanGithubForConfigs} from './handlers';
 import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
-
-const OWLBOT_RUN_LABEL = 'owlbot:run';
+import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from './labels';
 
 interface PubSubContext {
   github: Octokit;
@@ -150,6 +150,13 @@ export function OwlBot(
   // Run periodically, to ensure that up-to-date configuration is stored
   // for repositories:
   app.on('schedule.repository' as '*', async context => {
+    if (context.payload.syncLabels === true) {
+      // Sync labels.
+      const owner = context.payload.organization.login;
+      const repo = context.payload.repository.name;
+      await syncLabels(context.octokit, owner, repo, OWL_BOT_LABELS);
+      return;
+    }
     const configStore = new FirestoreConfigsStore(db!);
     logger.info(
       `scan ${context.payload.org} istallation = ${context.payload.installation.id}`

@@ -1,0 +1,7 @@
+cron:
+  - name: owl-bot-sync-label
+    schedule: 10 3 * * *
+    description: owl-bot syncing labels
+    params:
+      cron_type: "repository"
+      syncLabels: true
