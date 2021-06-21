@@ -60,7 +60,7 @@
   "dependencies": {
     "@google-cloud/cloudbuild": "^2.0.6",
     "@octokit/rest": "^18.5.3",
-    "@octokit/webhooks-types": "^3.75.2",
+    "@octokit/webhooks-types": "^4.0.0",
     "ajv": "^8.0.5",
     "code-suggester": "^2.0.0",
     "firebase-admin": "^9.4.2",
