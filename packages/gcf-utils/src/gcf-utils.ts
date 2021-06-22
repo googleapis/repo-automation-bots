@@ -196,7 +196,7 @@ export const addOrUpdateIssueComment = async (
   }
 };
 
-interface BootStrapperOptions {
+interface BootstrapperOptions {
   secretsClient?: SecretManagerV1.SecretManagerServiceClient;
   tasksClient?: CloudTasksV2.CloudTasksClient;
   projectId?: string;
@@ -216,7 +216,7 @@ export class GCFBootstrapper {
   location: string;
   payloadBucket: string | undefined;
 
-  constructor(options?: BootStrapperOptions) {
+  constructor(options?: BootstrapperOptions) {
     options = {
       ...{
         projectId: process.env.PROJECT_ID,
