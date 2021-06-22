@@ -1,4 +1,13 @@
 cron:
+  - name: owl-bot-scan-googleapis
+    schedule: 0 0 * * *
+    description: Scan googleapis repositories and ensure config is up to date
+    params:
+      cron_type: "repository"
+      installation:
+        id: 14695777
+      repo: "googleapis/repo-automation-bots"
+      org: "googleapis"
   - name: owl-bot-sync-label
     schedule: 10 3 * * *
     description: owl-bot syncing labels
