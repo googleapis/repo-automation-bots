@@ -359,8 +359,8 @@ export class GCFBootstrapper {
       '';
     const taskRetries = parseInt(
       request.get('X-CloudTasks-TaskRetryCount') ||
-        request.get('x-cloudtasks-taskretrycount') ||
-        '0'
+      request.get('x-cloudtasks-taskretrycount') ||
+      '0'
     );
     return {name, id, signature, taskId, taskRetries};
   }
@@ -740,6 +740,11 @@ export class GCFBootstrapper {
       const promises: Array<Promise<void>> = new Array<Promise<void>>();
       const batchSize = 30;
       for await (const installation of installationGenerator) {
+        if (installation.suspended_at !== null) {
+          // Assume the installation is suspended.
+          logger.info(`skipping installations for ${installation.id} because it is suspended`);
+          continue;
+        }
         const generator = this.eachInstalledRepository(
           installation.id,
           wrapConfig
