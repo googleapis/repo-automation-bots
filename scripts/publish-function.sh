@@ -59,7 +59,7 @@ gcloud functions deploy "${functionName}" \
   --timeout "${timeout}"
 
 echo "Adding ability for allUsers to execute the Function"
-gcloud alpha functions add-iam-policy-binding "${functionName}" \
+gcloud functions add-iam-policy-binding "${functionName}" \
   --region="${functionRegion}" \
   --member=allUsers \
   --role=roles/cloudfunctions.invoker

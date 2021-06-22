@@ -50,6 +50,11 @@ gcloud run deploy \
   --quiet \
   "${serviceName}"
 
+echo "Adding ability for allUsers to execute the Function"
+gcloud run services add-iam-policy-binding "${serviceName}" \
+  --member="allUsers" \
+  --role="roles/run.invoker"
+
 echo "Deploying Queue ${queueName}"
 
 verb="create"
