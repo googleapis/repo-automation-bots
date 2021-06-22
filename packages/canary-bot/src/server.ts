@@ -17,7 +17,7 @@ import appFn from './canary-bot';
 
 const bootstrap = new GCFBootstrapper();
 const server = bootstrap.server(appFn);
-const port = 8080;
+const port = process.env.PORT ?? 8080;
 
 server
   .listen(port, () => {

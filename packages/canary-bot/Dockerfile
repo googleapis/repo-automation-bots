@@ -27,7 +27,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install build dependencies.
-RUN npm install
+RUN npm ci
 
 # Now copy all the code so we can compile
 COPY . ./
@@ -41,9 +41,9 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 COPY --from=BUILD /usr/src/app/build build
-RUN npm install --only=production
+RUN npm ci --only=production
 
 ENV NODE_ENV "production"
 
 # Run the web service on container startup.
-CMD [ "npm", "run", "start" ]
+CMD [ "npm", "--no-update-notifier", "run", "start" ]
