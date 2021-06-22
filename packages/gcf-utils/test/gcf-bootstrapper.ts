@@ -25,6 +25,8 @@ import * as express from 'express';
 import sinon from 'sinon';
 import nock from 'nock';
 import assert from 'assert';
+import {RestoreFn} from 'mocked-env';
+import mockedEnv from 'mocked-env';
 
 import {v1} from '@google-cloud/secret-manager';
 import {GoogleAuth} from 'google-auth-library';
@@ -53,10 +55,13 @@ const sandbox = sinon.createSandbox();
 
 describe('GCFBootstrapper', () => {
   // Save original env varas and restore after each test
-  const storedEnv = {...process.env};
+  let restoreEnv: RestoreFn | null;
   afterEach(() => {
     sandbox.restore();
-    process.env = {...storedEnv};
+    if (restoreEnv) {
+      restoreEnv();
+      restoreEnv = null;
+    }
   });
 
   describe('configuration', () => {
@@ -110,9 +115,11 @@ describe('GCFBootstrapper', () => {
       assert.strictEqual(bootstrapper.location, 'my-location');
     });
     it('can be configured via environment variables', () => {
-      process.env.GCF_SHORT_FUNCTION_NAME = 'fake-function';
-      process.env.GCF_LOCATION = 'canada1-fake';
-      process.env.PROJECT_ID = 'fake-project';
+      restoreEnv = mockedEnv({
+        GCF_SHORT_FUNCTION_NAME: 'fake-function',
+        GCF_LOCATION: 'canada1-fake',
+        PROJECT_ID: 'fake-project',
+      });
       const bootstrapper = new GCFBootstrapper();
       assert.strictEqual(bootstrapper.projectId, 'fake-project');
       assert.strictEqual(bootstrapper.functionName, 'fake-function');
@@ -138,9 +145,11 @@ describe('GCFBootstrapper', () => {
     beforeEach(() => {
       // Resource path helper used by tasks requires that the following
       // environment variables exist in the environment:
-      process.env.GCF_SHORT_FUNCTION_NAME = 'fake-function';
-      process.env.GCF_LOCATION = 'canada1-fake';
-      process.env.PROJECT_ID = 'fake-project';
+      restoreEnv = mockedEnv({
+        GCF_SHORT_FUNCTION_NAME: 'fake-function',
+        GCF_LOCATION: 'canada1-fake',
+        PROJECT_ID: 'fake-project',
+      });
 
       // Dup express's global request/response variables to avoid test
       // interaction
@@ -488,7 +497,12 @@ describe('GCFBootstrapper', () => {
 
     describe('with WEBHOOK_TMP set', () => {
       beforeEach(() => {
-        process.env.WEBHOOK_TMP = '/tmp/foo';
+        restoreEnv = mockedEnv({
+          GCF_SHORT_FUNCTION_NAME: 'fake-function',
+          GCF_LOCATION: 'canada1-fake',
+          PROJECT_ID: 'fake-project',
+          WEBHOOK_TMP: '/tmp/foo',
+        });
         nock('https://oauth2.googleapis.com')
           .post('/token')
           .reply(200, {access_token: 'abc123'});
@@ -1142,9 +1156,11 @@ describe('GCFBootstrapper', () => {
 
   describe('getSecretName', () => {
     it('formats from env', async () => {
-      process.env.PROJECT_ID = 'foo';
-      process.env.GCF_SHORT_FUNCTION_NAME = 'bar';
-      process.env.GCF_LOCATION = 'somewhere';
+      restoreEnv = mockedEnv({
+        GCF_SHORT_FUNCTION_NAME: 'bar',
+        GCF_LOCATION: 'somewhere',
+        PROJECT_ID: 'foo',
+      });
       const bootstrapper = new GCFBootstrapper();
       const latest = bootstrapper.getSecretName();
       assert.strictEqual(latest, 'projects/foo/secrets/bar');
@@ -1165,9 +1181,11 @@ describe('GCFBootstrapper', () => {
     beforeEach(() => {
       // Resource path helper used by tasks requires that the following
       // environment variables exist in the environment:
-      process.env.GCF_SHORT_FUNCTION_NAME = 'fake-function';
-      process.env.GCF_LOCATION = 'canada1-fake';
-      process.env.PROJECT_ID = 'fake-project';
+      restoreEnv = mockedEnv({
+        GCF_SHORT_FUNCTION_NAME: 'fake-function',
+        GCF_LOCATION: 'canada1-fake',
+        PROJECT_ID: 'fake-project',
+      });
     });
     it('can return an Octokit instance given an installation id', async () => {
       const bootstrapper = new GCFBootstrapper();
