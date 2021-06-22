@@ -197,18 +197,12 @@ export const addOrUpdateIssueComment = async (
 };
 
 interface BootStrapperOptions {
-  secretsClient?: SecretManagerV1.SecretManagerServiceClient,
-  tasksClient?: CloudTasksV2.CloudTasksClient,
+  secretsClient?: SecretManagerV1.SecretManagerServiceClient;
+  tasksClient?: CloudTasksV2.CloudTasksClient;
   projectId?: string;
   functionName?: string;
   location?: string;
   payloadBucket?: string;
-}
-const DEFAULT_BOOTSTRAPPER_OPTIONS = {
-  projectId: process.env.PROJECT_ID,
-  functionName: process.env.GCF_SHORT_FUNCTION_NAME,
-  location: process.env.GCF_LOCATION,
-  payloadBucket: process.env.WEBHOOK_TMP,
 }
 
 export class GCFBootstrapper {
@@ -224,11 +218,20 @@ export class GCFBootstrapper {
 
   constructor(options?: BootStrapperOptions) {
     options = {
-      ...DEFAULT_BOOTSTRAPPER_OPTIONS,
-      ...options
+      ...{
+        projectId: process.env.PROJECT_ID,
+        functionName: process.env.GCF_SHORT_FUNCTION_NAME,
+        location: process.env.GCF_LOCATION,
+        payloadBucket: process.env.WEBHOOK_TMP,
+      },
+      ...options,
     };
-    this.secretsClient = options?.secretsClient || new SecretManagerV1.SecretManagerServiceClient();
-    this.cloudTasksClient = options?.tasksClient || new CloudTasksV2.CloudTasksClient();
+
+    this.secretsClient =
+      options?.secretsClient ||
+      new SecretManagerV1.SecretManagerServiceClient();
+    this.cloudTasksClient =
+      options?.tasksClient || new CloudTasksV2.CloudTasksClient();
     this.storage = new Storage({autoRetry: !RUNNING_IN_TEST});
     if (!options.projectId) {
       throw new Error('Missing required `projectId`');
@@ -237,10 +240,10 @@ export class GCFBootstrapper {
     if (!options.functionName) {
       throw new Error('Missing required `functionName`');
     }
-    this.functionName = options.functionName
+    this.functionName = options.functionName;
     if (!options.location) {
       throw new Error('Missing required `location`');
-    };
+    }
     this.location = options.location;
     this.payloadBucket = options.payloadBucket;
   }
@@ -884,10 +887,7 @@ export class GCFBootstrapper {
     logger.info('scheduling cloud task');
     // Make a task here and return 200 as this is coming from GitHub
     // queue name can contain only letters ([A-Za-z]), numbers ([0-9]), or hyphens (-):
-    const queueName = this.functionName.replace(
-      /_/g,
-      '-'
-    );
+    const queueName = this.functionName.replace(/_/g, '-');
     const queuePath = this.cloudTasksClient.queuePath(
       this.projectId,
       this.location,

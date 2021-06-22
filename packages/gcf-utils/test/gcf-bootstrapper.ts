@@ -29,12 +29,6 @@ import assert from 'assert';
 import {v1} from '@google-cloud/secret-manager';
 import {GoogleAuth} from 'google-auth-library';
 
-// Resource path helper used by tasks requires that the following
-// environment variables exist in the environment:
-process.env.GCF_SHORT_FUNCTION_NAME = 'fake-function';
-process.env.GCF_LOCATION = 'canada1-fake';
-process.env.PROJECT_ID = 'fake-projet';
-
 nock.disableNetConnect();
 
 function nockListInstallationRepos() {
@@ -58,8 +52,11 @@ function nockListInstallations(fixture = 'app_installations.json') {
 const sandbox = sinon.createSandbox();
 
 describe('GCFBootstrapper', () => {
+  // Save original env varas and restore after each test
+  const storedEnv = {...process.env};
   afterEach(() => {
     sandbox.restore();
+    process.env = {...storedEnv};
   });
 
   describe('gcf', () => {
@@ -78,6 +75,14 @@ describe('GCFBootstrapper', () => {
     let enqueueTask: sinon.SinonStub;
 
     beforeEach(() => {
+      // Resource path helper used by tasks requires that the following
+      // environment variables exist in the environment:
+      process.env.GCF_SHORT_FUNCTION_NAME = 'fake-function';
+      process.env.GCF_LOCATION = 'canada1-fake';
+      process.env.PROJECT_ID = 'fake-project';
+
+      // Dup express's global request/response variables to avoid test
+      // interaction
       req = Object.create(
         Object.getPrototypeOf(express.request),
         Object.getOwnPropertyDescriptors(express.request)
@@ -421,13 +426,8 @@ describe('GCFBootstrapper', () => {
     });
 
     describe('with WEBHOOK_TMP set', () => {
-      before(() => {
-        process.env.WEBHOOK_TMP = '/tmp/foo';
-      });
-      after(() => {
-        delete process.env.WEBHOOK_TMP;
-      });
       beforeEach(() => {
+        process.env.WEBHOOK_TMP = '/tmp/foo';
         nock('https://oauth2.googleapis.com')
           .post('/token')
           .reply(200, {access_token: 'abc123'});
@@ -937,7 +937,11 @@ describe('GCFBootstrapper', () => {
     let configStub: sinon.SinonStub<[boolean?], Promise<Options>>;
 
     beforeEach(() => {
-      bootstrapper = new GCFBootstrapper();
+      bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my-function',
+        location: 'my-location',
+      });
       configStub = sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
         appId: 1234,
         secret: 'foo',
@@ -973,7 +977,12 @@ describe('GCFBootstrapper', () => {
 
     beforeEach(() => {
       secretClientStub = new v1.SecretManagerServiceClient();
-      bootstrapper = new GCFBootstrapper({secretsClient: secretClientStub});
+      bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my-function',
+        location: 'my-location',
+        secretsClient: secretClientStub,
+      });
 
       secretVersionNameStub = sandbox
         .stub(bootstrapper, 'getLatestSecretVersionName')
@@ -1047,7 +1056,11 @@ describe('GCFBootstrapper', () => {
     let secretVersionNameStub: sinon.SinonStub;
 
     beforeEach(() => {
-      bootstrapper = new GCFBootstrapper();
+      bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my-function',
+        location: 'my-location',
+      });
       secretVersionNameStub = sandbox
         .stub(bootstrapper, 'getSecretName')
         .callsFake(() => {
@@ -1067,30 +1080,34 @@ describe('GCFBootstrapper', () => {
   });
 
   describe('getSecretName', () => {
-    const storedEnv = process.env;
-
-    afterEach(() => {
-      process.env = storedEnv;
-    });
-
-    it('formats from env even with nothing', async () => {
-      delete process.env.PROJECT_ID;
-      delete process.env.GCF_SHORT_FUNCTION_NAME;
-      const bootstrapper = new GCFBootstrapper();
-      const latest = bootstrapper.getSecretName();
-      assert.strictEqual(latest, 'projects//secrets/');
-    });
-
     it('formats from env', async () => {
       process.env.PROJECT_ID = 'foo';
       process.env.GCF_SHORT_FUNCTION_NAME = 'bar';
+      process.env.GCF_LOCATION = 'somewhere';
       const bootstrapper = new GCFBootstrapper();
       const latest = bootstrapper.getSecretName();
       assert.strictEqual(latest, 'projects/foo/secrets/bar');
     });
+
+    it('formats from constructor', async () => {
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my-function',
+        location: 'my-location',
+      });
+      const latest = bootstrapper.getSecretName();
+      assert.strictEqual(latest, 'projects/my-project/secrets/my-function');
+    });
   });
 
   describe('getAuthenticatedOctokit', () => {
+    beforeEach(() => {
+      // Resource path helper used by tasks requires that the following
+      // environment variables exist in the environment:
+      process.env.GCF_SHORT_FUNCTION_NAME = 'fake-function';
+      process.env.GCF_LOCATION = 'canada1-fake';
+      process.env.PROJECT_ID = 'fake-project';
+    });
     it('can return an Octokit instance given an installation id', async () => {
       const bootstrapper = new GCFBootstrapper();
       const configStub = sandbox
