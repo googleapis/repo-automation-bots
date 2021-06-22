@@ -32,6 +32,7 @@ workdir=$(pwd)
 
 pushd "${directoryName}"
 serviceName=${botName//_/-}
+functionName=${botName//-/_}
 queueName=${botName//_/-}
 
 echo "About to cloud run app ${serviceName}"
@@ -40,7 +41,7 @@ gcloud run deploy \
   --set-env-vars "DRIFT_PRO_BUCKET=${bucket}" \
   --set-env-vars "KEY_LOCATION=${keyLocation}" \
   --set-env-vars "KEY_RING=${keyRing}" \
-  --set-env-vars "GCF_SHORT_FUNCTION_NAME=${serviceName}" \
+  --set-env-vars "GCF_SHORT_FUNCTION_NAME=${functionName}" \
   --set-env-vars "PROJECT_ID=${project}" \
   --set-env-vars "GCF_LOCATION=${functionRegion}" \
   --set-env-vars "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1'" \
@@ -53,6 +54,7 @@ gcloud run deploy \
 echo "Adding ability for allUsers to execute the Function"
 gcloud run services add-iam-policy-binding "${serviceName}" \
   --member="allUsers" \
+  --region "${region}" \
   --role="roles/run.invoker"
 
 echo "Deploying Queue ${queueName}"
