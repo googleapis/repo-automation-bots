@@ -59,6 +59,67 @@ describe('GCFBootstrapper', () => {
     process.env = {...storedEnv};
   });
 
+  describe('configuration', () => {
+    it('requires a projectId to be set', () => {
+      assert.throws(
+        () => {
+          new GCFBootstrapper({
+            functionName: 'my-function',
+            location: 'my-location',
+          });
+        },
+        {
+          message: /Missing required `projectId`/,
+        }
+      );
+    });
+    it('requires a functionName to be set', () => {
+      assert.throws(
+        () => {
+          new GCFBootstrapper({
+            projectId: 'my-project',
+            location: 'my-location',
+          });
+        },
+        {
+          message: /Missing required `functionName`/,
+        }
+      );
+    });
+    it('requires a location to be set', () => {
+      assert.throws(
+        () => {
+          new GCFBootstrapper({
+            projectId: 'my-project',
+            functionName: 'my-function',
+          });
+        },
+        {
+          message: /Missing required `location`/,
+        }
+      );
+    });
+    it('can be configured via constructor args', () => {
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my-function',
+        location: 'my-location',
+      });
+      assert.strictEqual(bootstrapper.projectId, 'my-project');
+      assert.strictEqual(bootstrapper.functionName, 'my-function');
+      assert.strictEqual(bootstrapper.location, 'my-location');
+    });
+    it('can be configured via environment variables', () => {
+      process.env.GCF_SHORT_FUNCTION_NAME = 'fake-function';
+      process.env.GCF_LOCATION = 'canada1-fake';
+      process.env.PROJECT_ID = 'fake-project';
+      const bootstrapper = new GCFBootstrapper();
+      assert.strictEqual(bootstrapper.projectId, 'fake-project');
+      assert.strictEqual(bootstrapper.functionName, 'fake-function');
+      assert.strictEqual(bootstrapper.location, 'canada1-fake');
+    });
+  });
+
   describe('gcf', () => {
     let handler: HandlerFunction;
     let response: express.Response;

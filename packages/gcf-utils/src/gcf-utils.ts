@@ -234,15 +234,21 @@ export class GCFBootstrapper {
       options?.tasksClient || new CloudTasksV2.CloudTasksClient();
     this.storage = new Storage({autoRetry: !RUNNING_IN_TEST});
     if (!options.projectId) {
-      throw new Error('Missing required `projectId`');
+      throw new Error(
+        'Missing required `projectId`. Please provide as a constructor argument or set the PROJECT_ID env variable.'
+      );
     }
     this.projectId = options.projectId;
     if (!options.functionName) {
-      throw new Error('Missing required `functionName`');
+      throw new Error(
+        'Missing required `functionName`. Please provide as a constructor argument or set the GCF_SHORT_FUNCTION_NAME env variable.'
+      );
     }
     this.functionName = options.functionName;
     if (!options.location) {
-      throw new Error('Missing required `location`');
+      throw new Error(
+        'Missing required `location`. Please provide as a constructor argument or set the GCF_LOCATION env variable.'
+      );
     }
     this.location = options.location;
     this.payloadBucket = options.payloadBucket;
