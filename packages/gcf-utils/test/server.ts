@@ -32,7 +32,11 @@ describe('GCFBootstrapper', () => {
   describe('server', () => {
     const sandbox = sinon.createSandbox();
     let server: http.Server;
-    const bootstrapper = new GCFBootstrapper();
+    const bootstrapper = new GCFBootstrapper({
+      projectId: 'test-project',
+      functionName: 'test-bot',
+      location: 'some-location',
+    });
     const issueSpy = sandbox.stub();
     const repositoryCronSpy = sandbox.stub();
     const installationCronSpy = sandbox.stub();

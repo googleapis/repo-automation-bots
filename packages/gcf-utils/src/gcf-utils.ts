@@ -198,20 +198,65 @@ export const addOrUpdateIssueComment = async (
   }
 };
 
+interface BootstrapperOptions {
+  secretsClient?: SecretManagerV1.SecretManagerServiceClient;
+  tasksClient?: CloudTasksV2.CloudTasksClient;
+  projectId?: string;
+  functionName?: string;
+  location?: string;
+  payloadBucket?: string;
+  taskTargetEnvironment?: BotEnvironment;
+}
+
 export class GCFBootstrapper {
   probot?: Probot;
 
   secretsClient: SecretManagerV1.SecretManagerServiceClient;
   cloudTasksClient: CloudTasksV2.CloudTasksClient;
   storage: Storage;
+  projectId: string;
+  functionName: string;
+  location: string;
+  payloadBucket: string | undefined;
   taskTargetEnvironment: BotEnvironment;
 
-  constructor(secretsClient?: SecretManagerV1.SecretManagerServiceClient, taskTargetEnvironment?: BotEnvironment) {
+  constructor(options?: BootstrapperOptions) {
+    options = {
+      ...{
+        projectId: process.env.PROJECT_ID,
+        functionName: process.env.GCF_SHORT_FUNCTION_NAME,
+        location: process.env.GCF_LOCATION,
+        payloadBucket: process.env.WEBHOOK_TMP,
+      },
+      ...options,
+    };
+
     this.secretsClient =
-      secretsClient || new SecretManagerV1.SecretManagerServiceClient();
-    this.cloudTasksClient = new CloudTasksV2.CloudTasksClient();
+      options?.secretsClient ||
+      new SecretManagerV1.SecretManagerServiceClient();
+    this.cloudTasksClient =
+      options?.tasksClient || new CloudTasksV2.CloudTasksClient();
     this.storage = new Storage({autoRetry: !RUNNING_IN_TEST});
-    this.taskTargetEnvironment = taskTargetEnvironment ||  'functions';
+    this.taskTargetEnvironment = options.taskTargetEnvironment ||  'functions';
+    if (!options.projectId) {
+      throw new Error(
+        'Missing required `projectId`. Please provide as a constructor argument or set the PROJECT_ID env variable.'
+      );
+    }
+    this.projectId = options.projectId;
+    if (!options.functionName) {
+      throw new Error(
+        'Missing required `functionName`. Please provide as a constructor argument or set the GCF_SHORT_FUNCTION_NAME env variable.'
+      );
+    }
+    this.functionName = options.functionName;
+    if (!options.location) {
+      throw new Error(
+        'Missing required `location`. Please provide as a constructor argument or set the GCF_LOCATION env variable.'
+      );
+    }
+    this.location = options.location;
+    this.payloadBucket = options.payloadBucket;
   }
 
   async loadProbot(
@@ -229,9 +274,7 @@ export class GCFBootstrapper {
   }
 
   getSecretName(): string {
-    const projectId = process.env.PROJECT_ID || '';
-    const functionName = process.env.GCF_SHORT_FUNCTION_NAME || '';
-    return `projects/${projectId}/secrets/${functionName}`;
+    return `projects/${this.projectId}/secrets/${this.functionName}`;
   }
 
   getLatestSecretVersionName(): string {
@@ -865,19 +908,14 @@ export class GCFBootstrapper {
   async enqueueTask(params: EnqueueTaskParams) {
     logger.info(`scheduling cloud task targetting: ${this.taskTargetEnvironment}`);
     // Make a task here and return 200 as this is coming from GitHub
-    const projectId = process.env.PROJECT_ID || '';
-    const location = process.env.GCF_LOCATION || '';
     // queue name can contain only letters ([A-Za-z]), numbers ([0-9]), or hyphens (-):
-    const queueName = (process.env.GCF_SHORT_FUNCTION_NAME || '').replace(
-      /_/g,
-      '-'
-    );
+    const queueName = this.functionName.replace(/_/g, '-');
     const queuePath = this.cloudTasksClient.queuePath(
-      projectId,
-      location,
+      this.projectId,
+      this.location,
       queueName
     );
-    const url = this.getTaskTarget(projectId, location, process.env.GCF_SHORT_FUNCTION_NAME || '');
+    const url = this.getTaskTarget(this.projectId, this.location, this.functionName);
     logger.info(`scheduling task in queue ${queueName}`);
     if (params.body) {
       // Payload conists of either the original params.body or, if Cloud
@@ -928,9 +966,9 @@ export class GCFBootstrapper {
    * @param body
    */
   private async maybeWriteBodyToTmp(body: string): Promise<string> {
-    if (process.env.WEBHOOK_TMP) {
+    if (this.payloadBucket) {
       const tmp = `${Date.now()}-${v4()}.txt`;
-      const bucket = this.storage.bucket(process.env.WEBHOOK_TMP);
+      const bucket = this.storage.bucket(this.payloadBucket);
       const writeable = bucket.file(tmp).createWriteStream({
         validation: !RUNNING_IN_TEST,
       });
@@ -958,13 +996,13 @@ export class GCFBootstrapper {
     [key: string]: string;
   }): Promise<object | null> {
     if (payload.tmpUrl) {
-      if (!process.env.WEBHOOK_TMP) {
+      if (!this.payloadBucket) {
         throw Error('no tmp directory configured');
       }
-      const bucket = this.storage.bucket(process.env.WEBHOOK_TMP);
+      const bucket = this.storage.bucket(this.payloadBucket);
       const file = bucket.file(payload.tmpUrl);
       const readable = file.createReadStream({
-        validation: process.env.NODE_ENV !== 'test',
+        validation: !RUNNING_IN_TEST,
       });
       try {
         const content = await getStream(readable);

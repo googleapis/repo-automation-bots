@@ -74,8 +74,11 @@ interface Label {
  * Retrieves Query response from Datastore
  * @returns a Promise that can have any data type as it is the result of the Query, plus some standard types like the query key
  */
-handler.getDatastore = async function getDatastore() {
-  const query = datastore.createQuery(TABLE).order('created');
+handler.getDatastore = async function getDatastore(installationId?: number) {
+  let query = datastore.createQuery(TABLE).order('created');
+  if (installationId) {
+    query = query.filter('installationId', installationId);
+  }
   const [prs] = await datastore.runQuery(query);
   return [prs];
 };
@@ -85,8 +88,10 @@ handler.getDatastore = async function getDatastore() {
  * @returns an array of PRs that merge-on-green will then read, which includes the PR's
  * number, state, repo, owner and url (distinct identifier)
  */
-handler.listPRs = async function listPRs(): Promise<DatastorePR[]> {
-  const [prs] = await handler.getDatastore();
+handler.listPRs = async function listPRs(
+  installationId?: number
+): Promise<DatastorePR[]> {
+  const [prs] = await handler.getDatastore(installationId);
   const result: DatastorePR[] = [];
   for (const pr of prs) {
     const created = new Date(pr.created).getTime();
@@ -388,17 +393,13 @@ handler.cleanDatastoreTable = async function cleanDatastoreTable(
  */
 handler.checkPRMergeability = async function checkPRMergeability(
   watchedPRs: DatastorePR[],
-  app: Probot,
-  context: Context
+  octokit: Octokit
 ) {
   while (watchedPRs.length) {
     const work = watchedPRs.splice(0, WORKER_SIZE);
     await Promise.all(
       work.map(async wp => {
         logger.info(`checking ${wp.url}, ${wp.installationId}`);
-        const github = wp.installationId
-          ? await app.auth(wp.installationId)
-          : context.octokit;
         try {
           const remove = await mergeOnGreen(
             wp.owner,
@@ -409,7 +410,7 @@ handler.checkPRMergeability = async function checkPRMergeability(
             wp.branchProtection!,
             wp.label,
             wp.author,
-            github
+            octokit
           );
           if (remove || wp.state === 'stop') {
             await handler.removePR(wp.url);
@@ -420,7 +421,7 @@ handler.checkPRMergeability = async function checkPRMergeability(
                 wp.number,
                 wp.label,
                 wp.reactionId,
-                github
+                octokit
               );
             } catch (err) {
               logger.warn(
@@ -511,36 +512,73 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
  * @returns void
  */
 function handler(app: Probot) {
-  //meta-note about the schedule.repository as any; currently GH does not support this type, see
-  //open issue for a fix: https://github.com/octokit/webhooks.js/issues/277
-  app.on('schedule.repository' as '*', async context => {
-    if (context.payload.syncLabels === true) {
-      const owner = context.payload.organization.login;
-      const repo = context.payload.repository.name;
-      await syncLabels(context.octokit, owner, repo, MERGE_ON_GREEN_LABELS);
-      return;
-    }
-    const watchedPRs = await handler.listPRs();
-    if (context.payload.cleanUp === true) {
-      logger.info('Entering clean up cron job');
-      await handler.cleanDatastoreTable(watchedPRs, app, context);
+  // This scheduled job iterates through the PR database and removes PRs
+  // That are closed or do not have an applicable label anymore.
+  app.on('schedule.global' as '*', async context => {
+    if (context.payload.cleanUp !== true) {
       return;
     }
 
-    if (context.payload.findHangingPRs === true) {
-      logger.info('Entering job to pick up any hanging PRs');
-      // we cannot search in an org without the bot installation ID, so we need
-      // to divide up the cron jobs based on org
-      await handler.scanForMissingPullRequests(
-        context.octokit,
-        context.payload.org
-      );
+    logger.info('Starting clean up job');
+    const watchedPRs = await handler.listPRs();
+    await handler.cleanDatastoreTable(watchedPRs, app, context);
+  });
+
+  // This scheduled job looks for PRs that have an applicable label
+  // but are not in the database for whatever reason (missed webhook).
+  app.on('schedule.installation' as '*', async context => {
+    if (context.payload.findHangingPRs !== true) {
       return;
     }
+
+    if (!context.payload.cron_org) {
+      logger.warn('Cannot look for hanging PRs for non-org installations');
+      return;
+    }
+
+    const installationId = context.payload.installation.id;
+    logger.info(`Looking for hanging PRs for installation: ${installationId}`);
+    // we cannot search in an org without the bot installation ID, so we need
+    // to divide up the cron jobs based on org
+    await handler.scanForMissingPullRequests(
+      context.octokit,
+      context.payload.cron_org
+    );
+    return;
+  });
+
+  // This scheduled job is the main recurring job that attempts to merge
+  // mergeable PRs.
+  app.on('schedule.installation' as '*', async context => {
+    if (context.payload.performMerge !== true) {
+      return;
+    }
+
+    const installationId = context.payload.installation.id;
+    if (!installationId) {
+      logger.warn('no installation id');
+      return;
+    }
+
+    logger.info(`Starting merge checks for installation: ${installationId}`);
+    const watchedPRs = await handler.listPRs(installationId);
     const start = Date.now();
-    await handler.checkPRMergeability(watchedPRs, app, context);
+    await handler.checkPRMergeability(watchedPRs, context.octokit);
     logger.info(`mergeOnGreen check took ${Date.now() - start}ms`);
   });
+
+  // This scheduled job ensures that every installed repository has the
+  // merge-on-green labels created and available.
+  app.on('schedule.repository' as '*', async context => {
+    if (context.payload.syncLabels !== true) {
+      return;
+    }
+    const owner = context.payload.organization.login;
+    const repo = context.payload.repository.name;
+    logger.info(`Starting label sync for ${owner}/${repo}`);
+    await syncLabels(context.octokit, owner, repo, MERGE_ON_GREEN_LABELS);
+  });
+
   app.on('pull_request.labeled', async context => {
     const prNumber = context.payload.pull_request.number;
     const author = context.payload.pull_request.user.login;
@@ -548,12 +586,7 @@ function handler(app: Probot) {
     const repo = context.payload.repository.name;
     const installationId = context.payload.installation?.id;
 
-    const label = context.payload.pull_request.labels.find(
-      (label: Label) =>
-        label.name === MERGE_ON_GREEN_LABEL ||
-        label.name === MERGE_ON_GREEN_LABEL_SECURE
-    );
-
+    // Limit functionality to an allowlist
     if (
       !handler.allowlist.find(
         element => element.toLowerCase() === owner.toLowerCase()
@@ -562,6 +595,12 @@ function handler(app: Probot) {
       logger.info(`skipped ${owner}/${repo} because not a part of allowlist`);
       return;
     }
+
+    const label = context.payload.pull_request.labels.find(
+      (label: Label) =>
+        label.name === MERGE_ON_GREEN_LABEL ||
+        label.name === MERGE_ON_GREEN_LABEL_SECURE
+    );
     // if missing the label, skip
     if (!label) {
       logger.info('ignoring non-MOG label');
