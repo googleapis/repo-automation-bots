@@ -973,7 +973,7 @@ describe('GCFBootstrapper', () => {
 
     beforeEach(() => {
       secretClientStub = new v1.SecretManagerServiceClient();
-      bootstrapper = new GCFBootstrapper(secretClientStub);
+      bootstrapper = new GCFBootstrapper({secretsClient: secretClientStub});
 
       secretVersionNameStub = sandbox
         .stub(bootstrapper, 'getLatestSecretVersionName')
@@ -1067,12 +1067,7 @@ describe('GCFBootstrapper', () => {
   });
 
   describe('getSecretName', () => {
-    let bootstrapper: GCFBootstrapper;
     const storedEnv = process.env;
-
-    beforeEach(() => {
-      bootstrapper = new GCFBootstrapper();
-    });
 
     afterEach(() => {
       process.env = storedEnv;
@@ -1081,6 +1076,7 @@ describe('GCFBootstrapper', () => {
     it('formats from env even with nothing', async () => {
       delete process.env.PROJECT_ID;
       delete process.env.GCF_SHORT_FUNCTION_NAME;
+      const bootstrapper = new GCFBootstrapper();
       const latest = bootstrapper.getSecretName();
       assert.strictEqual(latest, 'projects//secrets/');
     });
@@ -1088,6 +1084,7 @@ describe('GCFBootstrapper', () => {
     it('formats from env', async () => {
       process.env.PROJECT_ID = 'foo';
       process.env.GCF_SHORT_FUNCTION_NAME = 'bar';
+      const bootstrapper = new GCFBootstrapper();
       const latest = bootstrapper.getSecretName();
       assert.strictEqual(latest, 'projects/foo/secrets/bar');
     });
