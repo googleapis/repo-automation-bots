@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [11.2.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.1.0...gcf-utils-v11.2.0) (2021-06-21)
+
+
+### Features
+
+* add helper to build a http.Server instance from a bot function ([#2128](https://www.github.com/googleapis/repo-automation-bots/issues/2128)) ([90430f3](https://www.github.com/googleapis/repo-automation-bots/commit/90430f3024cfd4c502f3001ab90ea585f8b8a85b)), closes [#1817](https://www.github.com/googleapis/repo-automation-bots/issues/1817)
+
 ## [11.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.0.2...gcf-utils-v11.1.0) (2021-06-18)
 
 

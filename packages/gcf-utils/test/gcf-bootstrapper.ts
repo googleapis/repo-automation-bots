@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {GCFBootstrapper, WrapOptions, logger} from '../src/gcf-utils';
+import {
+  GCFBootstrapper,
+  WrapOptions,
+  logger,
+  HandlerFunction,
+} from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
 import {Options} from 'probot';
@@ -50,39 +55,49 @@ function nockListInstallations(fixture = 'app_installations.json') {
   );
 }
 
+const sandbox = sinon.createSandbox();
+
 describe('GCFBootstrapper', () => {
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   describe('gcf', () => {
-    let handler: (
-      request: express.Request,
-      response: express.Response
-    ) => Promise<void>;
-
-    const response: express.Response = express.response;
-    const sendStub: sinon.SinonStub<[object?], express.Response> = sinon.stub(
-      response,
-      'send'
-    );
-    const sendStatusStub: sinon.SinonStub<[number], express.Response> =
-      sinon.stub(response, 'sendStatus');
-
+    let handler: HandlerFunction;
+    let response: express.Response;
     let req: express.Request;
-
-    const issueSpy: sinon.SinonStub = sinon.stub();
-    const repositoryCronSpy: sinon.SinonStub = sinon.stub();
-    const installationCronSpy: sinon.SinonStub = sinon.stub();
-    const globalCronSpy: sinon.SinonStub = sinon.stub();
-    const pubsubSpy: sinon.SinonStub = sinon.stub();
+    let sendStub: sinon.SinonStub;
+    let sendStatusStub: sinon.SinonStub;
+    let issueSpy: sinon.SinonStub;
+    let repositoryCronSpy: sinon.SinonStub;
+    let installationCronSpy: sinon.SinonStub;
+    let globalCronSpy: sinon.SinonStub;
+    let pubsubSpy: sinon.SinonStub;
     let configStub: sinon.SinonStub<[boolean?], Promise<Options>>;
-
     let bootstrapper: GCFBootstrapper;
-
     let enqueueTask: sinon.SinonStub;
 
-    async function mockBootstrapper(wrapOpts?: WrapOptions) {
-      req = express.request;
+    beforeEach(() => {
+      req = Object.create(
+        Object.getPrototypeOf(express.request),
+        Object.getOwnPropertyDescriptors(express.request)
+      );
+      response = Object.create(
+        Object.getPrototypeOf(express.response),
+        Object.getOwnPropertyDescriptors(express.response)
+      );
+      sendStub = sandbox.stub(response, 'send');
+      sendStatusStub = sandbox.stub(response, 'sendStatus');
+      issueSpy = sandbox.stub();
+      repositoryCronSpy = sandbox.stub();
+      installationCronSpy = sandbox.stub();
+      globalCronSpy = sandbox.stub();
+      pubsubSpy = sandbox.stub();
+    });
 
+    async function mockBootstrapper(wrapOpts?: WrapOptions) {
       bootstrapper = new GCFBootstrapper();
-      configStub = sinon.stub(bootstrapper, 'getProbotConfig').resolves({
+      configStub = sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
         appId: 1234,
         secret: 'foo',
         webhookPath: 'bar',
@@ -91,16 +106,19 @@ describe('GCFBootstrapper', () => {
       // This replaces the authClient with an auth client that uses an
       // API Key, this ensures that we will not attempt to lookup application
       // default credentials:
-      bootstrapper.storage.authClient.request = async (opts: object) => {
-        const auth = new GoogleAuth();
-        const client = await auth.fromAPIKey('abc123');
-        return client.request(opts);
-      };
+      sandbox.replace(
+        bootstrapper.storage.authClient,
+        'request',
+        async (opts: object) => {
+          const auth = new GoogleAuth();
+          const client = await auth.fromAPIKey('abc123');
+          return client.request(opts);
+        }
+      );
 
-      enqueueTask = sinon.stub();
-      bootstrapper.cloudTasksClient.createTask = enqueueTask;
+      enqueueTask = sandbox.stub(bootstrapper.cloudTasksClient, 'createTask');
 
-      sinon
+      sandbox
         .stub(bootstrapper, 'getAuthenticatedOctokit')
         .resolves(new Octokit());
       handler = bootstrapper.gcf(async app => {
@@ -114,21 +132,9 @@ describe('GCFBootstrapper', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         app.on('pubsub.message' as any, pubsubSpy);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        app.on('err' as any, sinon.stub().throws());
+        app.on('err' as any, sandbox.stub().throws());
       }, wrapOpts);
     }
-
-    afterEach(() => {
-      sendStub.reset();
-      sendStatusStub.reset();
-      issueSpy.reset();
-      repositoryCronSpy.reset();
-      installationCronSpy.reset();
-      globalCronSpy.reset();
-      pubsubSpy.reset();
-      configStub.reset();
-      enqueueTask.reset();
-    });
 
     it('calls the event handler', async () => {
       await mockBootstrapper();
@@ -414,149 +420,155 @@ describe('GCFBootstrapper', () => {
       sinon.assert.notCalled(globalCronSpy);
     });
 
-    it('stores task payload in Cloud Storage if WEBHOOK_TMP set', async () => {
-      await mockBootstrapper();
-      process.env.WEBHOOK_TMP = '/tmp/foo';
-      let uploaded: {[key: string]: {[key: string]: number}} | undefined;
-      // Fake an upload to Cloud Storage. It seemed worthwhile mocking this
-      // entire flow, to ensure that we're using the streaming API
-      // appropriately.
-      const upload = nock('https://storage.googleapis.com')
-        // Create a resumble upload URL:
-        .defaultReplyHeaders({
-          Location: 'https://storage.googleapis.com/bucket/foo',
-        })
-        .post(/.*/)
-        .reply(200)
-        // Upload the contents:
-        .put(
-          '/bucket/foo',
-          (body: {[key: string]: {[key: string]: number}} | undefined) => {
-            uploaded = body;
-            return true;
-          }
-        )
-        .reply(200, {});
-      req.body = {
-        installation: {id: 1},
-        repo: 'firstRepo',
-      };
-      req.headers = {};
-      req.headers['x-github-event'] = 'schedule.repository';
-      req.headers['x-github-delivery'] = '123';
-      req.headers['x-cloudtasks-taskname'] = '';
+    describe('with WEBHOOK_TMP set', () => {
+      before(() => {
+        process.env.WEBHOOK_TMP = '/tmp/foo';
+      });
+      after(() => {
+        delete process.env.WEBHOOK_TMP;
+      });
+      beforeEach(() => {
+        nock('https://oauth2.googleapis.com')
+          .post('/token')
+          .reply(200, {access_token: 'abc123'});
+      });
 
-      await handler(req, response);
-
-      delete process.env.WEBHOOK_TMP;
-      // We should be attempting to write req.body to Cloud Storage:
-      assert.strictEqual(uploaded?.installation?.id, 1);
-      sinon.assert.calledOnce(enqueueTask);
-      sinon.assert.notCalled(issueSpy);
-      sinon.assert.notCalled(repositoryCronSpy);
-      sinon.assert.notCalled(installationCronSpy);
-      sinon.assert.notCalled(globalCronSpy);
-      upload.done();
-    });
-
-    it('fetches payload from Cloud Storage, if tmpUrl in payload', async () => {
-      await mockBootstrapper();
-      process.env.WEBHOOK_TMP = '/tmp/foo';
-      req.body = {
-        tmpUrl: '/bucket/foo',
-        installation: {id: 1},
-      };
-      req.headers = {};
-      req.headers['x-github-event'] = 'issues';
-      req.headers['x-github-delivery'] = '123';
-      // populated once this job has been executed by cloud tasks:
-      req.headers['x-cloudtasks-taskname'] = 'my-task';
-      // Fake download from Cloud Storage, again with the goal of ensuring
-      // we're using the streams API appropriately:
-      const downloaded = nock('https://storage.googleapis.com')
-        .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
-        .reply(
-          200,
-          JSON.stringify({
-            installation: {
-              id: 1,
-            },
+      it('stores task payload in Cloud Storage if WEBHOOK_TMP set', async () => {
+        await mockBootstrapper();
+        let uploaded: {[key: string]: {[key: string]: number}} | undefined;
+        // Fake an upload to Cloud Storage. It seemed worthwhile mocking this
+        // entire flow, to ensure that we're using the streaming API
+        // appropriately.
+        const upload = nock('https://storage.googleapis.com')
+          // Create a resumble upload URL:
+          .defaultReplyHeaders({
+            Location: 'https://storage.googleapis.com/bucket/foo',
           })
-        );
+          .post(/.*/)
+          .reply(200)
+          // Upload the contents:
+          .put(
+            '/bucket/foo',
+            (body: {[key: string]: {[key: string]: number}} | undefined) => {
+              uploaded = body;
+              return true;
+            }
+          )
+          .reply(200, {});
+        req.body = {
+          installation: {id: 1},
+          repo: 'firstRepo',
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.repository';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = '';
 
-      await handler(req, response);
+        await handler(req, response);
 
-      delete process.env.WEBHOOK_TMP;
-      sinon.assert.calledOnce(configStub);
-      sinon.assert.notCalled(sendStatusStub);
-      sinon.assert.calledOnce(sendStub);
-      sinon.assert.calledOnce(issueSpy);
-      sinon.assert.notCalled(repositoryCronSpy);
-      sinon.assert.notCalled(installationCronSpy);
-      sinon.assert.notCalled(globalCronSpy);
-      downloaded.done();
-    });
+        // We should be attempting to write req.body to Cloud Storage:
+        assert.strictEqual(uploaded?.installation?.id, 1);
+        sinon.assert.calledOnce(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+        upload.done();
+      });
 
-    it('does not retry the task, if tmpUrl in payload cannot be found (expired)', async () => {
-      await mockBootstrapper();
-      process.env.WEBHOOK_TMP = '/tmp/foo';
-      req.body = {
-        tmpUrl: '/bucket/foo',
-        installation: {id: 1},
-      };
-      req.headers = {};
-      req.headers['x-github-event'] = 'issues';
-      req.headers['x-github-delivery'] = '123';
-      // populated once this job has been executed by cloud tasks:
-      req.headers['x-cloudtasks-taskname'] = 'my-task';
-      // Fake download from Cloud Storage, again with the goal of ensuring
-      // we're using the streams API appropriately:
-      const downloaded = nock('https://storage.googleapis.com')
-        .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
-        .reply(404);
+      it('fetches payload from Cloud Storage, if tmpUrl in payload', async () => {
+        await mockBootstrapper();
+        req.body = {
+          tmpUrl: '/bucket/foo',
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+        // populated once this job has been executed by cloud tasks:
+        req.headers['x-cloudtasks-taskname'] = 'my-task';
+        // Fake download from Cloud Storage, again with the goal of ensuring
+        // we're using the streams API appropriately:
+        const downloaded = nock('https://storage.googleapis.com')
+          .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
+          .reply(
+            200,
+            JSON.stringify({
+              installation: {
+                id: 1,
+              },
+            })
+          );
 
-      await handler(req, response);
+        await handler(req, response);
 
-      delete process.env.WEBHOOK_TMP;
-      sinon.assert.calledOnce(configStub);
-      sinon.assert.notCalled(sendStatusStub);
-      sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
-      sinon.assert.notCalled(issueSpy);
-      sinon.assert.notCalled(repositoryCronSpy);
-      sinon.assert.notCalled(installationCronSpy);
-      sinon.assert.notCalled(globalCronSpy);
-      downloaded.done();
-    });
+        sinon.assert.calledOnce(configStub);
+        sinon.assert.notCalled(sendStatusStub);
+        sinon.assert.calledOnce(sendStub);
+        sinon.assert.calledOnce(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+        downloaded.done();
+      });
 
-    it('retries the task, if tmpUrl in payload cannot be fetched for other reason', async () => {
-      await mockBootstrapper();
-      process.env.WEBHOOK_TMP = '/tmp/foo';
-      req.body = {
-        tmpUrl: '/bucket/foo',
-        installation: {id: 1},
-      };
-      req.headers = {};
-      req.headers['x-github-event'] = 'issues';
-      req.headers['x-github-delivery'] = '123';
-      // populated once this job has been executed by cloud tasks:
-      req.headers['x-cloudtasks-taskname'] = 'my-task';
-      // Fake download from Cloud Storage, again with the goal of ensuring
-      // we're using the streams API appropriately:
-      const downloaded = nock('https://storage.googleapis.com')
-        .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
-        .reply(500);
+      it('does not retry the task, if tmpUrl in payload cannot be found (expired)', async () => {
+        await mockBootstrapper();
+        req.body = {
+          tmpUrl: '/bucket/foo',
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+        // populated once this job has been executed by cloud tasks:
+        req.headers['x-cloudtasks-taskname'] = 'my-task';
+        // Fake download from Cloud Storage, again with the goal of ensuring
+        // we're using the streams API appropriately:
+        const downloaded = nock('https://storage.googleapis.com')
+          .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
+          .reply(404);
 
-      await handler(req, response);
+        await handler(req, response);
 
-      delete process.env.WEBHOOK_TMP;
-      sinon.assert.calledOnce(configStub);
-      sinon.assert.notCalled(sendStatusStub);
-      sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 500});
-      sinon.assert.notCalled(issueSpy);
-      sinon.assert.notCalled(repositoryCronSpy);
-      sinon.assert.notCalled(installationCronSpy);
-      sinon.assert.notCalled(globalCronSpy);
-      downloaded.done();
+        sinon.assert.calledOnce(configStub);
+        sinon.assert.notCalled(sendStatusStub);
+        sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+        downloaded.done();
+      });
+
+      it('retries the task, if tmpUrl in payload cannot be fetched for other reason', async () => {
+        await mockBootstrapper();
+        req.body = {
+          tmpUrl: '/bucket/foo',
+          installation: {id: 1},
+        };
+        req.headers = {};
+        req.headers['x-github-event'] = 'issues';
+        req.headers['x-github-delivery'] = '123';
+        // populated once this job has been executed by cloud tasks:
+        req.headers['x-cloudtasks-taskname'] = 'my-task';
+        // Fake download from Cloud Storage, again with the goal of ensuring
+        // we're using the streams API appropriately:
+        const downloaded = nock('https://storage.googleapis.com')
+          .get('/storage/v1/b/tmp/foo/o/%2Fbucket%2Ffoo?alt=media')
+          .reply(500);
+
+        await handler(req, response);
+
+        sinon.assert.calledOnce(configStub);
+        sinon.assert.notCalled(sendStatusStub);
+        sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 500});
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+        downloaded.done();
+      });
     });
 
     describe('per-repository cron', () => {
@@ -926,16 +938,12 @@ describe('GCFBootstrapper', () => {
 
     beforeEach(() => {
       bootstrapper = new GCFBootstrapper();
-      configStub = sinon.stub(bootstrapper, 'getProbotConfig').resolves({
+      configStub = sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
         appId: 1234,
         secret: 'foo',
         webhookPath: 'bar',
         privateKey: 'cert',
       });
-    });
-
-    afterEach(() => {
-      configStub.reset();
     });
 
     it('gets the config', async () => {
@@ -967,7 +975,7 @@ describe('GCFBootstrapper', () => {
       secretClientStub = new v1.SecretManagerServiceClient();
       bootstrapper = new GCFBootstrapper(secretClientStub);
 
-      secretVersionNameStub = sinon
+      secretVersionNameStub = sandbox
         .stub(bootstrapper, 'getLatestSecretVersionName')
         .callsFake(() => {
           return 'foobar';
@@ -980,7 +988,7 @@ describe('GCFBootstrapper', () => {
     });
 
     it('gets the config', async () => {
-      secretsStub = sinon
+      secretsStub = sandbox
         .stub(secretClientStub, 'accessSecretVersion')
         .resolves([
           {
@@ -1000,7 +1008,7 @@ describe('GCFBootstrapper', () => {
     });
 
     it('throws on empty data', async () => {
-      secretsStub = sinon
+      secretsStub = sandbox
         .stub(secretClientStub, 'accessSecretVersion')
         .resolves([
           {
@@ -1014,7 +1022,7 @@ describe('GCFBootstrapper', () => {
     });
 
     it('throws on empty payload', async () => {
-      secretsStub = sinon
+      secretsStub = sandbox
         .stub(secretClientStub, 'accessSecretVersion')
         .resolves([
           {
@@ -1026,7 +1034,7 @@ describe('GCFBootstrapper', () => {
     });
 
     it('throws on empty response', async () => {
-      secretsStub = sinon
+      secretsStub = sandbox
         .stub(secretClientStub, 'accessSecretVersion')
         .resolves([{}]);
 
@@ -1040,7 +1048,7 @@ describe('GCFBootstrapper', () => {
 
     beforeEach(() => {
       bootstrapper = new GCFBootstrapper();
-      secretVersionNameStub = sinon
+      secretVersionNameStub = sandbox
         .stub(bootstrapper, 'getSecretName')
         .callsFake(() => {
           return 'foobar';
@@ -1088,12 +1096,14 @@ describe('GCFBootstrapper', () => {
   describe('getAuthenticatedOctokit', () => {
     it('can return an Octokit instance given an installation id', async () => {
       const bootstrapper = new GCFBootstrapper();
-      const configStub = sinon.stub(bootstrapper, 'getProbotConfig').resolves({
-        appId: 1234,
-        secret: 'foo',
-        webhookPath: 'bar',
-        privateKey: 'cert',
-      });
+      const configStub = sandbox
+        .stub(bootstrapper, 'getProbotConfig')
+        .resolves({
+          appId: 1234,
+          secret: 'foo',
+          webhookPath: 'bar',
+          privateKey: 'cert',
+        });
       const octokit = await bootstrapper.getAuthenticatedOctokit(1234);
       assert.ok(octokit);
       sinon.assert.calledOnce(configStub);
@@ -1101,12 +1111,14 @@ describe('GCFBootstrapper', () => {
 
     it('can return an Octokit instance without an installation id', async () => {
       const bootstrapper = new GCFBootstrapper();
-      const configStub = sinon.stub(bootstrapper, 'getProbotConfig').resolves({
-        appId: 1234,
-        secret: 'foo',
-        webhookPath: 'bar',
-        privateKey: 'cert',
-      });
+      const configStub = sandbox
+        .stub(bootstrapper, 'getProbotConfig')
+        .resolves({
+          appId: 1234,
+          secret: 'foo',
+          webhookPath: 'bar',
+          privateKey: 'cert',
+        });
       const octokit = await bootstrapper.getAuthenticatedOctokit(undefined);
       assert.ok(octokit);
       sinon.assert.calledOnce(configStub);

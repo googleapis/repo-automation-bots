@@ -101,20 +101,22 @@ export const triggerBuildCommand: yargs.CommandModule<{}, Args> = {
       },
       octokit
     );
-    await createCheck(
-      {
-        privateKey,
-        appId: argv['app-id'],
-        installation: argv.installation,
-        pr: argv.pr,
-        repo: argv.repo,
-        text: buildStatus.text,
-        summary: buildStatus.summary,
-        conclusion: buildStatus.conclusion,
-        detailsURL: buildStatus.detailsURL,
-        title: `🦉 OwlBot - ${buildStatus.summary}`,
-      },
-      octokit
-    );
+    if (buildStatus) {
+      await createCheck(
+        {
+          privateKey,
+          appId: argv['app-id'],
+          installation: argv.installation,
+          pr: argv.pr,
+          repo: argv.repo,
+          text: buildStatus.text,
+          summary: buildStatus.summary,
+          conclusion: buildStatus.conclusion,
+          detailsURL: buildStatus.detailsURL,
+          title: `🦉 OwlBot - ${buildStatus.summary}`,
+        },
+        octokit
+      );
+    }
   },
 };

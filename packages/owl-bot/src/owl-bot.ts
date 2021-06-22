@@ -18,7 +18,7 @@ import {FirestoreConfigsStore, Db} from './database';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
 import {logger} from 'gcf-utils';
-import {core} from './core';
+import {core, OWL_BOT_IGNORE} from './core';
 import {Octokit} from '@octokit/rest';
 import {onPostProcessorPublished, scanGithubForConfigs} from './handlers';
 import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
@@ -334,6 +334,28 @@ const runPostProcessor = async (
     },
     octokit
   );
+
+  if (null === buildStatus) {
+    // Update pull request with status of job:
+    await core.createCheck(
+      {
+        privateKey,
+        appId,
+        installation: opts.installation,
+        pr: opts.prNumber,
+        repo: opts.base,
+        text: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
+        summary: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
+        conclusion: 'success',
+        title: '🦉 OwlBot - ignored',
+        detailsURL:
+          'https://github.com/googleapis/repo-automation-bots/blob/master/packages/owl-bot/README.md',
+      },
+      octokit
+    );
+    return;
+  }
+
   // Update pull request with status of job:
   await core.createCheck(
     {
