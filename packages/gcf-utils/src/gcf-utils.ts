@@ -52,6 +52,8 @@ const SCHEDULER_EVENT_NAMES = [
 ];
 const RUNNING_IN_TEST = process.env.NODE_ENV === 'test';
 
+type BotEnvironment = 'functions' | 'run';
+
 interface Scheduled {
   repo?: string;
   installation: {
@@ -202,12 +204,14 @@ export class GCFBootstrapper {
   secretsClient: SecretManagerV1.SecretManagerServiceClient;
   cloudTasksClient: CloudTasksV2.CloudTasksClient;
   storage: Storage;
+  taskTargetEnvironment: BotEnvironment;
 
-  constructor(secretsClient?: SecretManagerV1.SecretManagerServiceClient) {
+  constructor(secretsClient?: SecretManagerV1.SecretManagerServiceClient, taskTargetEnvironment?: BotEnvironment) {
     this.secretsClient =
       secretsClient || new SecretManagerV1.SecretManagerServiceClient();
     this.cloudTasksClient = new CloudTasksV2.CloudTasksClient();
     this.storage = new Storage({autoRetry: !RUNNING_IN_TEST});
+    this.taskTargetEnvironment = taskTargetEnvironment ||  'functions';
   }
 
   async loadProbot(
@@ -843,12 +847,23 @@ export class GCFBootstrapper {
     };
   }
 
+  private getTaskTarget(projectId: string, location: string, botName: string): string {
+    if (this.taskTargetEnvironment === 'functions') {
+      // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green
+      return `https://${location}-${projectId}.cloudfunctions.net/${botName}`;
+    } else if (this.taskTargetEnvironment === 'run') {
+      return 'FIXME';
+    }
+    // Shouldn't get here
+    throw new Error(`Unknown task target: ${this.taskTargetEnvironment}`);
+  }
+
   /**
    * Schedule a event trigger as a Cloud Task.
    * @param params {EnqueueTaskParams} Task parameters.
    */
   async enqueueTask(params: EnqueueTaskParams) {
-    logger.info('scheduling cloud task');
+    logger.info(`scheduling cloud task targetting: ${this.taskTargetEnvironment}`);
     // Make a task here and return 200 as this is coming from GitHub
     const projectId = process.env.PROJECT_ID || '';
     const location = process.env.GCF_LOCATION || '';
@@ -862,8 +877,7 @@ export class GCFBootstrapper {
       location,
       queueName
     );
-    // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green:
-    const url = `https://${location}-${projectId}.cloudfunctions.net/${process.env.GCF_SHORT_FUNCTION_NAME}`;
+    const url = this.getTaskTarget(projectId, location, process.env.GCF_SHORT_FUNCTION_NAME || '');
     logger.info(`scheduling task in queue ${queueName}`);
     if (params.body) {
       // Payload conists of either the original params.body or, if Cloud
