@@ -28,7 +28,6 @@ keyRing=$5
 region=$6
 
 botName=$(echo "${directoryName}" | rev | cut -d/ -f1 | rev)
-workdir=$(pwd)
 
 pushd "${directoryName}"
 serviceName=${botName//_/-}
@@ -43,7 +42,7 @@ gcloud run deploy \
   --set-env-vars "KEY_RING=${keyRing}" \
   --set-env-vars "GCF_SHORT_FUNCTION_NAME=${functionName}" \
   --set-env-vars "PROJECT_ID=${project}" \
-  --set-env-vars "GCF_LOCATION=${functionRegion}" \
+  --set-env-vars "GCF_LOCATION=${region}" \
   --set-env-vars "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1'" \
   --set-env-vars "WEBHOOK_TMP=tmp-webhook-payloads" \
   --platform managed \
