@@ -8,6 +8,7 @@ cron:
         id: 14695777
       repo: "googleapis/repo-automation-bots"
       org: "googleapis"
+      scanGithubForConfigs: true
   - name: owl-bot-sync-label
     schedule: 10 3 * * *
     description: owl-bot syncing labels

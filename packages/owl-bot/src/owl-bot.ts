@@ -147,26 +147,34 @@ export function OwlBot(
     }
   });
 
-  // Run periodically, to ensure that up-to-date configuration is stored
-  // for repositories:
+  // Repository cron handler.
+  // We share this handler between two cron jobs.
+  // Both cron job has its own parameter.
+  // See cron.yaml
   app.on('schedule.repository' as '*', async context => {
     if (context.payload.syncLabels === true) {
-      // Sync labels.
+      // owl-bot-sync-label cron entry
+      // syncing labels
       const owner = context.payload.organization.login;
       const repo = context.payload.repository.name;
       await syncLabels(context.octokit, owner, repo, OWL_BOT_LABELS);
       return;
     }
-    const configStore = new FirestoreConfigsStore(db!);
-    logger.info(
-      `scan ${context.payload.org} istallation = ${context.payload.installation.id}`
-    );
-    await scanGithubForConfigs(
-      configStore,
-      context.octokit,
-      context.payload.org,
-      Number(context.payload.installation.id)
-    );
+    if (context.payload.scanGithubForConfigs === true) {
+      // owl-bot-scan-googleapis cron entry
+      // Scan googleapis repositories and ensure config is up to date
+      const configStore = new FirestoreConfigsStore(db!);
+      logger.info(
+        `scan ${context.payload.org} istallation = ${context.payload.installation.id}`
+      );
+      await scanGithubForConfigs(
+        configStore,
+        context.octokit,
+        context.payload.org,
+        Number(context.payload.installation.id)
+      );
+      return;
+    }
   });
 }
 
