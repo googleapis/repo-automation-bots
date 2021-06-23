@@ -650,12 +650,12 @@ describe('owlBot', () => {
   });
 
   describe('pull request merged', () => {
-    let loggerWarnStub: sinon.SinonStub;
+    let loggerErrorStub: sinon.SinonStub;
     let getConfigsStub: sinon.SinonStub;
     let refreshConfigsStub: sinon.SinonStub;
 
     beforeEach(() => {
-      loggerWarnStub = sandbox.stub(logger, 'warn');
+      loggerErrorStub = sandbox.stub(logger, 'error');
       getConfigsStub = sandbox.stub(
         FirestoreConfigsStore.prototype,
         'getConfigs'
@@ -694,8 +694,8 @@ describe('owlBot', () => {
         id: 'abc123',
       });
 
-      // We shouldn't expect any warnings
-      assert.strictEqual(loggerWarnStub.called, false);
+      // We shouldn't expect any errors
+      assert.strictEqual(loggerErrorStub.called, false);
 
       // Ensure `getConfigs` was called correctly
       assert.ok(
@@ -728,7 +728,7 @@ describe('owlBot', () => {
         id: 'abc123',
       });
 
-      assert.strictEqual(loggerWarnStub.called, true);
+      assert.strictEqual(loggerErrorStub.called, true);
       assert.strictEqual(getConfigsStub.called, false);
       assert.strictEqual(refreshConfigsStub.called, false);
     });
@@ -746,7 +746,7 @@ describe('owlBot', () => {
         id: 'abc123',
       });
 
-      assert.strictEqual(loggerWarnStub.called, true);
+      assert.strictEqual(loggerErrorStub.called, true);
       assert.strictEqual(getConfigsStub.called, false);
       assert.strictEqual(refreshConfigsStub.called, false);
     });

@@ -160,7 +160,7 @@ export function OwlBot(
     logger.info("Updating repo's configs via `pull_request.merged`");
 
     if (!installationId || !org) {
-      logger.warn(`Missing install id (${installationId}) or org (${org})`);
+      logger.error(`Missing install id (${installationId}) or org (${org})`);
       return;
     }
 
