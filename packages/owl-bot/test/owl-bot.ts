@@ -791,7 +791,7 @@ describe('owlBot', () => {
       assert.strictEqual(callArgs[6], payload.installation.id);
     });
 
-    it('should warn if `payload.installation.id` is not available', async () => {
+    it('should log an error if `payload.installation.id` is not available', async () => {
       const payload = {
         organization: {
           login: 'googleapis',
@@ -809,7 +809,7 @@ describe('owlBot', () => {
       assert.strictEqual(refreshConfigsStub.called, false);
     });
 
-    it('should warn if `payload.organization.login` is not available', async () => {
+    it('should log an error if `payload.organization.login` is not available', async () => {
       const payload = {
         installation: {
           id: 12345,
