@@ -20,7 +20,11 @@ import {Probot, Logger} from 'probot';
 import {logger} from 'gcf-utils';
 import {core} from './core';
 import {Octokit} from '@octokit/rest';
-import {onPostProcessorPublished, scanGithubForConfigs} from './handlers';
+import {
+  onPostProcessorPublished,
+  refreshConfigs,
+  scanGithubForConfigs,
+} from './handlers';
 import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
 
 const OWLBOT_RUN_LABEL = 'owlbot:run';
@@ -153,17 +157,24 @@ export function OwlBot(
     const installationId = context.payload.installation?.id;
     const org = context.payload.organization?.login;
 
-    logger.info('Scanning GitHub for configs (via `pull_request.merged`)');
+    logger.info("Updating repo's configs via `pull_request.merged`");
 
     if (!installationId || !org) {
       logger.warn(`Missing install id (${installationId}) or org (${org})`);
       return;
     }
 
-    await scanGithubForConfigs(
+    const configs = await configStore.getConfigs(
+      context.payload.repository.full_name
+    );
+
+    await refreshConfigs(
       configStore,
+      configs,
       context.octokit,
       org,
+      context.payload.repository.name,
+      context.payload.repository.default_branch ?? 'master',
       installationId
     );
   });
@@ -173,7 +184,7 @@ export function OwlBot(
   app.on('schedule.repository' as '*', async context => {
     const configStore = new FirestoreConfigsStore(db!);
 
-    logger.info('Scanning GitHub for configs (via `schedule.repository`)');
+    logger.info('Scanning GitHub for configs via `schedule.repository`');
 
     await scanGithubForConfigs(
       configStore,

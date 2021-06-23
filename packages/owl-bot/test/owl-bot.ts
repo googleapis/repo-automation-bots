@@ -22,7 +22,9 @@ import {OwlBot} from '../src/owl-bot';
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import * as sinon from 'sinon';
 import nock from 'nock';
+import {Configs} from '../src/configs-store';
 import {owlBotLockPath} from '../src/config-files';
+import {FirestoreConfigsStore} from '../src/database';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -649,16 +651,19 @@ describe('owlBot', () => {
 
   describe('pull request merged', () => {
     let loggerWarnStub: sinon.SinonStub;
-    let scanGithubForConfigsStub: sinon.SinonStub;
+    let getConfigsStub: sinon.SinonStub;
+    let refreshConfigsStub: sinon.SinonStub;
 
     beforeEach(() => {
       loggerWarnStub = sandbox.stub(logger, 'warn');
-      scanGithubForConfigsStub = sandbox
-        .stub(handlers, 'scanGithubForConfigs')
-        .resolves();
+      getConfigsStub = sandbox.stub(
+        FirestoreConfigsStore.prototype,
+        'getConfigs'
+      );
+      refreshConfigsStub = sandbox.stub(handlers, 'refreshConfigs').resolves();
     });
 
-    it('invokes scanGithubForConfigs', async () => {
+    it('invokes `refreshConfigs`', async () => {
       const payload = {
         organization: {
           login: 'googleapis',
@@ -666,7 +671,22 @@ describe('owlBot', () => {
         installation: {
           id: 12345,
         },
+        repository: {
+          default_branch: 'default_branch',
+          full_name: 'full_name',
+          name: 'name',
+        },
       };
+
+      const customConfig: Configs = {
+        commitHash: 'my-commit-hash',
+        // The branch name from which the config files were retrieved.
+        branchName: payload.repository.default_branch,
+        // The installation id for our github app and this repo.
+        installationId: payload.installation.id,
+      };
+
+      getConfigsStub.resolves(customConfig);
 
       await probot.receive({
         name: 'pull_request.merged',
@@ -674,8 +694,25 @@ describe('owlBot', () => {
         id: 'abc123',
       });
 
+      // We shouldn't expect any warnings
       assert.strictEqual(loggerWarnStub.called, false);
-      assert.strictEqual(scanGithubForConfigsStub.callCount, 1);
+
+      // Ensure `getConfigs` was called correctly
+      assert.ok(
+        getConfigsStub.calledOnceWithExactly(payload.repository.full_name)
+      );
+
+      // Ensure `refreshConfigs` was called correctly
+      assert.strictEqual(refreshConfigsStub.callCount, 1);
+      const [{args: callArgs}] = refreshConfigsStub.getCalls();
+
+      assert.ok(callArgs[0] instanceof FirestoreConfigsStore);
+      assert.strictEqual(callArgs[1], customConfig);
+      assert.ok(callArgs[2] instanceof ProbotOctokit);
+      assert.strictEqual(callArgs[3], payload.organization.login);
+      assert.strictEqual(callArgs[4], payload.repository.name);
+      assert.strictEqual(callArgs[5], payload.repository.default_branch);
+      assert.strictEqual(callArgs[6], payload.installation.id);
     });
 
     it('should warn if `payload.installation.id` is not available', async () => {
@@ -692,7 +729,8 @@ describe('owlBot', () => {
       });
 
       assert.strictEqual(loggerWarnStub.called, true);
-      assert.strictEqual(scanGithubForConfigsStub.callCount, 0);
+      assert.strictEqual(getConfigsStub.called, false);
+      assert.strictEqual(refreshConfigsStub.called, false);
     });
 
     it('should warn if `payload.organization.login` is not available', async () => {
@@ -709,7 +747,8 @@ describe('owlBot', () => {
       });
 
       assert.strictEqual(loggerWarnStub.called, true);
-      assert.strictEqual(scanGithubForConfigsStub.callCount, 0);
+      assert.strictEqual(getConfigsStub.called, false);
+      assert.strictEqual(refreshConfigsStub.called, false);
     });
   });
 
