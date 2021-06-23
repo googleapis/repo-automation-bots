@@ -689,6 +689,27 @@ describe('GCFBootstrapper', () => {
         listInstallationRepoRequests.done();
       });
 
+      it('skipps suspended installations', async () => {
+        await mockBootstrapper();
+        req.body = {};
+        req.headers = {};
+        req.headers['x-github-event'] = 'schedule.repository';
+        req.headers['x-github-delivery'] = '123';
+        req.headers['x-cloudtasks-taskname'] = '';
+        const listInstallationRequests = nockListInstallations(
+          'suspended_installations.json'
+        );
+
+        await handler(req, response);
+
+        sinon.assert.notCalled(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+        listInstallationRequests.done();
+      });
+
       it('handles the schedule.repository task', async () => {
         await mockBootstrapper();
         req.body = {

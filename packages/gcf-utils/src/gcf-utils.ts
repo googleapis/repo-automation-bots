@@ -592,6 +592,13 @@ export class GCFBootstrapper {
     );
     for await (const response of installationsPaginated) {
       for (const installation of response.data) {
+        if (installation.suspended_at !== null) {
+          // Assume the installation is suspended.
+          logger.info(
+            `skipping installations for ${installation.id} because it is suspended`
+          );
+          continue;
+        }
         yield installation;
       }
     }
