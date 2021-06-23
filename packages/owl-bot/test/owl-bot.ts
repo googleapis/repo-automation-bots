@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import {core, OWL_BOT_IGNORE} from '../src/core';
+import {core} from '../src/core';
+import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from '../src/labels';
 import * as handlers from '../src/handlers';
 import {describe, it, beforeEach} from 'mocha';
 import {logger} from 'gcf-utils';
@@ -24,7 +25,7 @@ import * as sinon from 'sinon';
 import nock from 'nock';
 import {Configs} from '../src/configs-store';
 import {owlBotLockPath} from '../src/config-files';
-import {FirestoreConfigsStore} from '../src/database';
+import * as labelUtilsModule from '@google-automations/label-utils';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -53,6 +54,34 @@ describe('owlBot', () => {
   });
   afterEach(() => {
     sandbox.restore();
+  });
+  describe('Cron for syncing labels ', () => {
+    it('calls syncLabels for schedule.repository cron job with syncLabels: true', async () => {
+      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
+      await probot.receive({
+        name: 'schedule.repository' as '*',
+        payload: {
+          repository: {
+            name: 'testRepo',
+            owner: {
+              login: 'testOwner',
+            },
+          },
+          organization: {
+            login: 'googleapis',
+          },
+          syncLabels: true,
+        },
+        id: 'abc123',
+      });
+      sinon.assert.calledOnceWithExactly(
+        syncLabelsStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'googleapis',
+        'testRepo',
+        OWL_BOT_LABELS
+      );
+    });
   });
   describe('post processing pull request', () => {
     it('returns early and logs if pull request opened from fork', async () => {
@@ -830,11 +859,13 @@ describe('owlBot', () => {
 
   describe('scan configs cron', () => {
     it('invokes scanGithubForConfigs', async () => {
+      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
       const payload = {
         org: 'googleapis',
         installation: {
           id: 12345,
         },
+        scanGithubForConfigs: true,
       };
       let org: string | undefined = undefined;
       let installation: number | undefined = undefined;
@@ -859,6 +890,7 @@ describe('owlBot', () => {
       });
       assert.strictEqual(org, 'googleapis');
       assert.strictEqual(installation, 12345);
+      sinon.assert.notCalled(syncLabelsStub);
     });
   });
   it('triggers build when "owlbot:run" label is added to fork', async () => {
@@ -873,7 +905,7 @@ describe('owlBot', () => {
         number: 33,
         labels: [
           {
-            name: 'owlbot:run',
+            name: OWLBOT_RUN_LABEL,
           },
         ],
         head: {
@@ -943,7 +975,7 @@ describe('owlBot', () => {
         number: 33,
         labels: [
           {
-            name: 'owlbot:run',
+            name: OWLBOT_RUN_LABEL,
           },
         ],
         head: {
@@ -1013,7 +1045,7 @@ describe('owlBot', () => {
         number: 33,
         labels: [
           {
-            name: 'owlbot:run',
+            name: OWLBOT_RUN_LABEL,
           },
         ],
         head: {
@@ -1144,7 +1176,7 @@ describe('owlBot', () => {
         number: 33,
         labels: [
           {
-            name: 'owlbot:run',
+            name: OWLBOT_RUN_LABEL,
           },
         ],
         head: {
