@@ -25,8 +25,10 @@ type PullsListCommitsResponseData = components['schemas']['commit'][];
 // modify rules slightly:
 // see: https://github.com/conventional-changelog/commitlint/blob/master/%40commitlint/config-conventional/index.js
 delete rules['type-enum'];
+delete rules['subject-full-stop'];
 rules['header-max-length'] = [2, 'always', 256];
 rules['body-max-line-length'] = [2, 'always', 256];
+rules['footer-max-line-length'] = [2, 'always', 256];
 
 type Label = {
   name: string;
