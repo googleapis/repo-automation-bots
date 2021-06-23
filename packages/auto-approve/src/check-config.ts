@@ -15,9 +15,10 @@
 // This file manages the logic to check whether a given config file is valid
 
 // eslint-disable-next-line node/no-extraneous-import
-import {ProbotOctokit} from 'probot';
 import yaml from 'js-yaml';
 import Ajv from 'ajv';
+import {Octokit} from '@octokit/rest';
+
 const ajv = new Ajv();
 
 const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
@@ -86,7 +87,7 @@ export async function validateSchema(
  * @returns undefined if the yaml is valid, otherwise an error message.
  */
 export async function checkCodeOwners(
-  octokit: InstanceType<typeof ProbotOctokit>,
+  octokit: Octokit,
   owner: string,
   repo: string,
   codeOwnersPRFile: string | undefined
@@ -94,7 +95,7 @@ export async function checkCodeOwners(
   let codeOwnersFile;
   let message = '';
   const createCodeownersMessage = `You must create a CODEOWNERS file for the configuration file for auto-approve.yml that lives in .github/CODEWONERS in your repository, and contains this line: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/; please make sure it is accessible publicly.`;
-  const addToExistingCodeownersMessage = `You must add this line to to the CODEOWNERS file for auto-approve.yml to your current pull request: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`;
+  const addToExistingCodeownersMessage = `You must add this line to the CODEOWNERS file for auto-approve.yml to merge pull requests on this repo: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`;
 
   // If the CODEOWNERS file is being changed, make sure it includes the following regex. Otherwise, see if the
   // existing CODEOWNERS file has that regex. If the CODEOWNERS file is being changed and the blob does not

@@ -136,6 +136,11 @@
       "color": "C1FFB2"
     },
     {
+      "name": "owlbot:run",
+      "description": "Add this label to trigger the Owlbot post processor.",
+      "color": "84D2D4"
+    },
+    {
       "name": "cla: yes",
       "description": "This human has signed the Contributor License Agreement.",
       "color": "0B7601"
@@ -174,6 +179,11 @@
       "name": "flakybot: quiet",
       "description": "Tells the Flaky Bot to comment less.",
       "color": "86d9d7"
+    },
+    {
+      "name": "next major: breaking change",
+      "description": "this is a change that we should wait to bundle into the next major version",
+      "color": "b5e67b"
     },
     {
       "name": "samples",

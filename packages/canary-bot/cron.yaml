@@ -1,0 +1,20 @@
+cron:
+  - name: canary-bot-googleapis
+    description: daily scheduler job for canary-bot
+    schedule: 0 2 * * *
+    params:
+      installation:
+        id: 14397196
+      cron_org: googleapis
+
+  - name: canary-bot-installation
+    description: daily schedule job for testing installation crons
+    schedule: 0 3 * * *
+    params:
+      cron_type: installation
+
+  - name: canary-bot-global
+    description: daily schedule job for testing global crons
+    schedule: 0 4 * * *
+    params:
+      cron_type: global

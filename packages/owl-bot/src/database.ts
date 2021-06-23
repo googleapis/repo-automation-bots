@@ -19,8 +19,21 @@ import {CopyTasksStore} from './copy-tasks-store';
 import {GithubRepo, githubRepoFromOwnerSlashName} from './github-repo';
 
 export type Db = admin.firestore.Firestore;
-interface UpdatePr {
-  pullRequestId: string;
+
+/**
+ * A google cloud build that updates ta repo.
+ */
+interface UpdateBuild {
+  // The id provided build google cloud build.
+  buildId: string;
+  // Gets marked true after a cron job confirms the the google cloud build
+  // job completed.
+  buildCompletionObserved: boolean;
+  // Set when completion observed.
+  buildSucceeded?: boolean;
+  // Maybe a link to a github issue or pull request.  Mainly for debugging
+  // purposes.
+  buildResult?: string;
 }
 
 interface CopyTask {
@@ -54,7 +67,7 @@ function makeUpdateFilesKey(
 export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
   private db: Db;
   readonly yamls: string;
-  readonly lockUpdatePrs: string;
+  readonly lockUpdateBuilds: string;
   readonly copyTasks: string;
 
   /**
@@ -63,7 +76,7 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
   constructor(db: Db, collectionsPrefix = 'owl-bot-') {
     this.db = db;
     this.yamls = collectionsPrefix + 'yamls';
-    this.lockUpdatePrs = collectionsPrefix + 'lock-update-prs';
+    this.lockUpdateBuilds = collectionsPrefix + 'lock-update-builds';
     this.copyTasks = collectionsPrefix + 'copy-tasks';
   }
 
@@ -110,43 +123,43 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
     return got.docs.map(doc => [decodeId(doc.id), doc.data() as Configs]);
   }
 
-  async findPullRequestForUpdatingLock(
+  async findBuildIdForUpdatingLock(
     repo: string,
     lock: OwlBotLock
   ): Promise<string | undefined> {
     const docRef = this.db
-      .collection(this.lockUpdatePrs)
+      .collection(this.lockUpdateBuilds)
       .doc(makeUpdateLockKey(repo, lock));
     const got = await docRef.get();
-    return got.exists ? (got.data() as UpdatePr).pullRequestId : undefined;
+    return got.exists ? (got.data() as UpdateBuild).buildId : undefined;
   }
 
-  async recordPullRequestForUpdatingLock(
+  async recordBuildIdForUpdatingLock(
     repo: string,
     lock: OwlBotLock,
-    pullRequestId: string
+    buildId: string
   ): Promise<string> {
     const docRef = this.db
-      .collection(this.lockUpdatePrs)
+      .collection(this.lockUpdateBuilds)
       .doc(makeUpdateLockKey(repo, lock));
-    const data: UpdatePr = {pullRequestId: pullRequestId};
+    const data: UpdateBuild = {buildId, buildCompletionObserved: false};
     await this.db.runTransaction(async t => {
       const got = await t.get(docRef);
       if (got.exists) {
-        pullRequestId = (got.data() as UpdatePr).pullRequestId;
+        buildId = (got.data() as UpdateBuild).buildId;
       } else {
         t.set(docRef, data);
       }
     });
-    return pullRequestId;
+    return buildId;
   }
 
-  async clearPullRequestForUpdatingLock(
+  async clearBuildForUpdatingLock(
     repo: string,
     lock: OwlBotLock
   ): Promise<void> {
     const docRef = this.db
-      .collection(this.lockUpdatePrs)
+      .collection(this.lockUpdateBuilds)
       .doc(makeUpdateLockKey(repo, lock));
     await docRef.delete();
   }
@@ -166,7 +179,15 @@ export class FirestoreConfigsStore implements ConfigsStore, CopyTasksStore {
       i++;
       const configs = doc.data() as Configs | undefined;
       match_loop: for (const copy of configs?.yaml?.['deep-copy-regex'] ?? []) {
-        const regExp = toFrontMatchRegExp(copy.source);
+        let regExp;
+        try {
+          regExp = toFrontMatchRegExp(copy.source);
+        } catch (e) {
+          console.error(
+            `${doc.id} contains an invalid regular expression: ${copy.source}.\n${e}`
+          );
+          continue;
+        }
         for (const path of changedFilePaths) {
           if (regExp.test(path)) {
             result.push(githubRepoFromOwnerSlashName(decodeId(doc.id)));

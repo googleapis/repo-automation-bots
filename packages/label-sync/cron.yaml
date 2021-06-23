@@ -1,0 +1,15 @@
+cron:
+  - name: label_sync
+    schedule: 0 1 * * *
+    description: label_sync
+    params:
+      installation:
+        id: 5813839
+      cron_org: googleapis
+  - name: label_sync_gcp
+    description: label_sync cron for GCP
+    schedule: 0 4 * * *
+    params:
+      installation:
+        id: 6147160
+      cron_org: GoogleCloudPlatform

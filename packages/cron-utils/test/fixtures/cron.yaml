@@ -1,0 +1,4 @@
+cron:
+- name: some-name
+  description: some-description
+  schedule: 0 2 * * *

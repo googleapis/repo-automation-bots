@@ -1,5 +1,5 @@
 {
-  "action": "synchronized",
+  "action": "synchronize",
   "number": 3,
   "pull_request": {
     "url": "https://api.github.com/repos/chingor13/google-auth-library-java/pulls/3",

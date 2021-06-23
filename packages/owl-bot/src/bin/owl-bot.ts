@@ -23,6 +23,9 @@ import {copyExists} from './commands/copy-exists';
 import {copyCodeCommand} from './commands/copy-code';
 import {copyCodeAndCreatePullRequestCommand} from './commands/copy-code-and-create-pull-request';
 import {scanGoogleapisGenAndCreatePullRequestsCommand} from './commands/scan-googleapis-gen-and-create-pull-requests';
+import {writeLock} from './commands/write-lock';
+import {maybeCreatePullRequestForLockUpdateCommand} from './commands/maybe-create-pull-request-for-lock-update';
+import {testWebhook} from './commands/test-webhook';
 
 yargs(process.argv.slice(2))
   .command(triggerBuildCommand)
@@ -34,6 +37,9 @@ yargs(process.argv.slice(2))
   .command(copyCodeCommand)
   .command(scanGoogleapisGenAndCreatePullRequestsCommand)
   .command(copyCodeAndCreatePullRequestCommand)
+  .command(writeLock)
+  .command(maybeCreatePullRequestForLockUpdateCommand)
+  .command(testWebhook)
   .demandCommand(1)
   .strictCommands()
   .parse();

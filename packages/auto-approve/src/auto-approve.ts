@@ -15,16 +15,36 @@
 // This file handles the logic to manage incoming pull-requests
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, Context, ProbotOctokit} from 'probot';
+import {Probot, Context} from 'probot';
 import {logger} from 'gcf-utils';
 import {ValidPr, checkPRAgainstConfig} from './check-pr';
-import {getChangedFiles, getBlobFromPRFiles} from './get-PR-info';
+import {getChangedFiles, getBlobFromPRFiles} from './get-pr-info';
 import {validateYaml, validateSchema, checkCodeOwners} from './check-config.js';
+import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
+import {Octokit} from '@octokit/rest';
 
 export interface Configuration {
   rules: ValidPr[];
 }
 const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
+
+export async function authenticateWithSecret(
+  projectId: String,
+  secretName: String
+): Promise<Octokit> {
+  const secretsClient = new SecretManagerV1.SecretManagerServiceClient();
+  const name = `projects/${projectId}/secrets/${secretName}/versions/latest`;
+  const [version] = await secretsClient.accessSecretVersion({
+    name,
+  });
+
+  const payload = version?.payload?.data?.toString() || '';
+  if (payload === '') {
+    throw Error('did not retrieve a payload from SecretManager.');
+  }
+
+  return new Octokit({auth: payload});
+}
 
 /**
  * Takes in the auto-approve.yml file and (if it exists) the CODEOWNERS file
@@ -38,12 +58,12 @@ const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
  * @param headSha the sha upon which to check whether the config and the CODEOWNERS file are configured correctly
  * @returns true if the status check passed, false otherwise
  */
-export async function evaluateAndSubmitCheckForConfig(
+async function evaluateAndSubmitCheckForConfig(
   owner: string,
   repo: string,
   config: string | Configuration,
   codeOwnersFile: string | undefined,
-  octokit: InstanceType<typeof ProbotOctokit>,
+  octokit: Octokit,
   headSha: string
 ): Promise<Boolean> {
   // Check if the YAML is formatted correctly if it's in a PR
@@ -172,6 +192,11 @@ export function handler(app: Probot) {
           context.octokit,
           context.payload.pull_request.head.sha
         );
+
+        logger.metric('auto_approve.status_check', {
+          repo: `${owner}/${repo}`,
+          pr: pr,
+        });
       } else {
         let config: Configuration | null;
         // Get auto-approve.yml file if it exists
@@ -211,17 +236,28 @@ export function handler(app: Probot) {
 
           // If both PR and config are valid, pull in approving-mechanism to tag and approve PR
           if (isPRValid === true && isConfigValid === true) {
-            await context.octokit.pulls.createReview({
+            // The value for the secret name is currently hard-coded since we only have one account that
+            // has user-based permissions. We should think about operationalizing this
+            // in the future (perhaps as an env var in our publish scripts).
+            const octokit = await exports.authenticateWithSecret(
+              process.env.PROJECT_ID || '',
+              'yoshi-approver'
+            );
+            await octokit.pulls.createReview({
               owner,
               repo,
               pull_number: prNumber,
               event: 'APPROVE',
             });
-            await context.octokit.issues.addLabels({
+            await octokit.issues.addLabels({
               owner,
               repo,
               issue_number: prNumber,
               labels: ['automerge: exact'],
+            });
+            logger.metric('auto_approve.approved_tagged', {
+              repo: `${owner}/${repo}`,
+              pr: pr,
             });
             logger.info(
               `Auto-approved and tagged ${owner}/${repo}/${prNumber}`

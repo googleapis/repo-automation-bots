@@ -1,0 +1,54 @@
+{
+  "name": "@google-automations/bot-config-utils",
+  "version": "3.1.3",
+  "description": "Utilities for github bot config",
+  "scripts": {
+    "compile": "tsc -p .",
+    "pretest": "npm run compile",
+    "prepare": "npm run compile",
+    "test": "cross-env NODE_ENV=test LOG_LEVEL=fatal c8 mocha ./build/test",
+    "test:snap": "SNAPSHOT_UPDATE=1 npm test",
+    "system-test": "npm run pretest && cross-env LOG_LEVEL=fatal mocha ./build/test/integration",
+    "fix": "gts fix",
+    "lint": "gts check"
+  },
+  "main": "./build/src/bot-config-utils.js",
+  "repository": "https://github.com/googleapis/repo-automation-bots.git",
+  "homepage": "https://github.com/googleapis/repo-automation-bots",
+  "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
+  "dependencies": {
+    "ajv": "^8.6.0",
+    "js-yaml": "^4.1.0",
+    "gcf-utils": "^11.0.1"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.18",
+    "@types/chai-as-promised": "^7.1.4",
+    "@types/mocha": "^8.2.2",
+    "@types/node": "^15.12.4",
+    "@types/sinon": "^10.0.2",
+    "c8": "^7.7.3",
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
+    "cross-env": "^7.0.3",
+    "dotenv": "^10.0.0",
+    "gts": "^3.1.0",
+    "mocha": "^9.0.1",
+    "nock": "^13.1.0",
+    "sinon": "^11.1.1",
+    "snap-shot-it": "^7.9.6",
+    "typescript": "^4.3.4"
+  },
+  "engines": {
+    "node": ">= 12.18.2"
+  },
+  "keywords": [
+    "Bot config",
+    "Probot"
+  ],
+  "author": "Takashi Matsuo <tmatsuo@google.com>",
+  "license": "Apache-2.0",
+  "files": [
+    "build/src"
+  ]
+}

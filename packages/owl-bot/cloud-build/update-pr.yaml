@@ -1,9 +1,22 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 steps:
-  # Clone user/branch that created PR:
+  # Check git version
   - name: 'gcr.io/cloud-builders/git'
     args:
-      - clone
-      - https://github.com/${_PR_OWNER}/${_REPOSITORY}.git
+      - --version
   # Populate global username, email for git:
   - name: 'gcr.io/cloud-builders/git'
     args:
@@ -11,44 +24,50 @@ steps:
       - --global
       - user.email
       - 'gcf-owl-bot[bot]@users.noreply.github.com'
+    env:
+      - 'HOME=/workspace'
   - name: 'gcr.io/cloud-builders/git'
     args:
       - config
       - --global
       - user.name
       - 'Owl Bot'
-  - name: 'gcr.io/cloud-builders/git'
-    args:
-      - checkout
-      - -b
-      - ${_PR_BRANCH}
-    dir: '${_REPOSITORY}'
-  - name: 'gcr.io/cloud-builders/git'
-    args:
-      - pull
-      - origin
-      - ${_PR_BRANCH}
-    dir: '${_REPOSITORY}'
-  # Run container listed in OwlBot.yaml:
-  - name: ${_CONTAINER}
-    dir: '${_REPOSITORY}'
-  # Populate credentials for push to GitHub:
+    env:
+      - 'HOME=/workspace'
+  # Populate credentials for cloning:
   - name: 'bash'
     args:
       - '-eEuo'
       - 'pipefail'
       - '-c'
       - |-
-        echo https://x-access-token:$$GITHUB_TOKEN@github.com >> ./.git/.git-credentials
+        echo https://x-access-token:$$GITHUB_TOKEN@github.com >> /workspace/.git-credentials
     env:
       - 'GITHUB_TOKEN=$_GITHUB_TOKEN'
-    dir: ${_REPOSITORY}
+      - 'HOME=/workspace'
   - name: 'gcr.io/cloud-builders/git'
     args:
       - config
       - --global
       - credential.helper
-      - 'store --file ./.git/.git-credentials'
+      - 'store --file /workspace/.git-credentials'
+    env:
+      - 'GITHUB_TOKEN=$_GITHUB_TOKEN'
+      - 'HOME=/workspace'
+  # Clone user/branch that created PR:
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - clone
+      - -b
+      - ${_PR_BRANCH}
+      - https://github.com/${_PR_OWNER}/${_REPOSITORY}.git
+    env:
+      - 'HOME=/workspace'
+  # Run container listed in OwlBot.yaml:
+  - name: ${_CONTAINER}
+    dir: '${_REPOSITORY}'
+    env:
+      - 'DEFAULT_BRANCH=$_DEFAULT_BRANCH'
   # Commit any changes to working directory:
   - name: 'gcr.io/cloud-builders/git'
     args:
@@ -56,17 +75,26 @@ steps:
       - -A
       - .
     dir: ${_REPOSITORY}
+    env:
+      - 'HOME=/workspace'
   - name: 'gcr.io/cloud-builders/git'
     entrypoint: bash
     args: [
       '-l',
       '-c',
-      'git commit -m "🦉 Updates from OwlBot"; exit 0'
+      "git commit -m $'🦉 Updates from OwlBot\n\nSee https://github.com/googleapis/repo-automation-bots/blob/master/packages/owl-bot/README.md'; exit 0"
     ]
     dir: ${_REPOSITORY}
+    env:
+      - 'HOME=/workspace'
   - name: 'gcr.io/cloud-builders/git'
     args:
       - push
       - origin
       - ${_PR_BRANCH}
     dir: ${_REPOSITORY}
+    env:
+      - 'HOME=/workspace'
+
+# allow 20 minutes for the post-processor image to run
+timeout: '1200s'

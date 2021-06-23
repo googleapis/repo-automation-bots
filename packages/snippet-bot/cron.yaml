@@ -1,0 +1,6 @@
+cron:
+  - name: snippet-bot-sync-label
+    schedule: 0 3 * * *
+    description: snippet-bot syncing labels
+    params:
+      cron_type: "repository"

@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/schema#",
-  "$id": "v1",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "@google-automations/auto-approve/v1",
   "description": "A PR safe to merge",
   "type": "object",
   "additionalProperties": false,
@@ -9,7 +9,6 @@
       "type": "array",
       "uniqueItems": true,
       "minItems": 1,
-      "additionalProperties": false,
       "items": {
         "$ref": "#/definitions/aPR"
       }
@@ -18,6 +17,7 @@
   "definitions": {
     "aPR": {
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "author",
         "title"
@@ -28,9 +28,15 @@
           "enum": [
             "googleapis-publisher",
             "yoshi-automation",
-            "release-please[bot]"
+            "release-please[bot]",
+            "yoshi-code-bot",
+            "gcf-owl-bot[bot]",
+            "renovate-bot"
           ]
-        }
+        },
+        "title": {"type": "string"},
+        "changedFiles": {"type": "array"},
+        "maxFiles": {"type": "number"}
       },
       "allOf": [
         {
@@ -113,7 +119,97 @@
               }
             }
           }
-        }
+        },
+        {
+            "if": {
+              "properties": {
+                "author": {
+                  "type": "string",
+                  "const": "yoshi-code-bot"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "const": "^chore: Update discovery artifacts"
+                },
+                "changedFiles": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "^docs/dyn/index.md$",
+                      "^docs/dyn/.*\\.html$",
+                      "^googleapiclient/discovery_cache/documents/.*\\.json$"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "author": {
+                  "type": "string",
+                  "const": "gcf-owl-bot[bot]"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "const": "^chore"
+                },
+                "changedFiles": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "^\\.OwlBot\\.lock\\.yaml$"
+                    ]
+                  }
+                },
+                "maxFiles": {
+                  "type": "number",
+                  "maximum": 1
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "author": {
+                  "type": "string",
+                  "const": "renovate-bot"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "const": "^(fix\\(deps\\)|chore\\(deps\\)):"
+                },
+                "changedFiles": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "/package\\.json$",
+                      "/pom\\.xml$",
+                      "/requirements\\.txt"
+                    ]
+                  }
+                },
+                "maxFiles": {
+                  "type": "number",
+                  "maximum": 2
+                }
+              }
+            }
+          }
       ]
     }
   }

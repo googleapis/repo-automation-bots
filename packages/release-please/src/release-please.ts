@@ -19,6 +19,7 @@ import {
   GitHubReleaseFactoryOptions,
   ReleasePR,
   factory,
+  setLogger,
 } from 'release-please';
 import {Runner} from './runner';
 // eslint-disable-next-line node/no-extraneous-import
@@ -32,7 +33,17 @@ import {
   ReleaseType,
   getReleaserNames,
 } from 'release-please/build/src/releasers';
+import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
+import {syncLabels} from '@google-automations/label-utils';
 import {Manifest} from 'release-please/build/src/manifest';
+import schema from './config-schema.json';
+import {
+  BranchConfiguration,
+  ConfigurationOptions,
+  WELL_KNOWN_CONFIGURATION_FILE,
+  DEFAULT_CONFIGURATION,
+} from './config-constants';
+import {FORCE_RUN_LABEL, RELEASE_PLEASE_LABELS} from './labels';
 type RequestBuilderType = typeof request;
 type DefaultFunctionType = RequestBuilderType['defaults'];
 type RequestFunctionType = ReturnType<DefaultFunctionType>;
@@ -44,36 +55,7 @@ interface GitHubAPI {
   request: RequestFunctionType;
 }
 
-interface BranchOptions {
-  releaseLabels?: string[];
-  monorepoTags?: boolean;
-  releaseType?: ReleaseType;
-  packageName?: string;
-  handleGHRelease?: boolean;
-  bumpMinorPreMajor?: boolean;
-  path?: string;
-  changelogPath?: string;
-  manifest?: boolean;
-  extraFiles?: string[];
-}
-
-interface BranchConfiguration extends BranchOptions {
-  branch: string;
-}
-
-interface ConfigurationOptions extends BranchOptions {
-  primaryBranch: string;
-  branches?: BranchConfiguration[];
-}
-
 const DEFAULT_API_URL = 'https://api.github.com';
-const WELL_KNOWN_CONFIGURATION_FILE = 'release-please.yml';
-const DEFAULT_CONFIGURATION: ConfigurationOptions = {
-  primaryBranch: 'master',
-  branches: [],
-  manifest: false,
-};
-const FORCE_RUN_LABEL = 'release-please:force-run';
 
 function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
   if (language === null) {
@@ -116,13 +98,19 @@ function findBranchConfiguration(
     return null;
   }
 
-  const found = config.branches.find(branchConfig => {
-    return branch === branchConfig.branch;
-  });
-  if (found) {
-    return found;
+  try {
+    const found = config.branches.find(branchConfig => {
+      return branch === branchConfig.branch;
+    });
+    if (found) {
+      return found;
+    }
+  } catch (err) {
+    err.message =
+      `got an error finding the branch config: ${err.message},` +
+      `config: ${JSON.stringify(config)}`;
+    logger.error(err);
   }
-
   return null;
 }
 
@@ -139,7 +127,7 @@ async function createGitHubRelease(
     packageName,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      octokit: (github as {}) as OctokitType,
+      octokit: github as {} as OctokitType,
       graphql: github.graphql,
       request: github.request,
     },
@@ -148,6 +136,7 @@ async function createGitHubRelease(
     monorepoTags: configuration.monorepoTags,
     releaseType: configuration.releaseType,
     extraFiles: configuration.extraFiles,
+    releaseLabel: configuration.releaseLabel,
   };
   if (configuration.manifest) {
     const manifest = factory.manifest(releaseOptions);
@@ -177,7 +166,7 @@ async function createReleasePR(
     repoUrl,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      octokit: (github as {}) as OctokitType,
+      octokit: github as {} as OctokitType,
       graphql: github.graphql,
       request: github.request,
     },
@@ -211,10 +200,15 @@ export = (app: Probot) => {
     const branch = context.payload.ref.replace('refs/heads/', '');
     const repoName = context.payload.repository.name;
     const repoLanguage = context.payload.repository.language;
+    const {owner, repo} = context.repo();
 
-    const remoteConfiguration: ConfigurationOptions | null = (await context.config(
-      WELL_KNOWN_CONFIGURATION_FILE
-    )) as ConfigurationOptions | null;
+    const remoteConfiguration = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repo,
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
+    );
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
@@ -232,6 +226,9 @@ export = (app: Probot) => {
       logger.info(`Did not find configuration for branch: ${branch}`);
       return;
     }
+
+    // use gcf-logger as logger for release-please
+    setLogger(logger);
 
     logger.info(`push (${repoUrl})`);
     await createReleasePR(
@@ -260,11 +257,16 @@ export = (app: Probot) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
     const repoUrl = context.payload.repository.full_name;
+    const owner = context.payload.organization.login;
     const repoName = context.payload.repository.name;
 
-    const remoteConfiguration = (await context.config(
-      WELL_KNOWN_CONFIGURATION_FILE
-    )) as ConfigurationOptions | null;
+    const remoteConfiguration = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repoName,
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
+    );
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
@@ -272,10 +274,23 @@ export = (app: Probot) => {
       return;
     }
 
+    // syncLabels is just a nice to have feature, so we ignore all the
+    // errors and continue. If this strategy becomes problematic, we
+    // can create another scheduler job.
+    try {
+      await syncLabels(context.octokit, owner, repoName, RELEASE_PLEASE_LABELS);
+    } catch (err) {
+      err.message = `Failed to sync the labels: ${err.message}`;
+      logger.error(err);
+    }
+
     const configuration = {
       ...DEFAULT_CONFIGURATION,
       ...remoteConfiguration,
     };
+
+    // use gcf-logger as logger for release-please
+    setLogger(logger);
 
     logger.info(
       `schedule.repository (${repoUrl}, ${configuration.primaryBranch})`
@@ -352,9 +367,13 @@ export = (app: Probot) => {
     });
 
     // check release please config
-    const remoteConfiguration = (await context.config(
-      WELL_KNOWN_CONFIGURATION_FILE
-    )) as ConfigurationOptions | null;
+    const remoteConfiguration = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repo,
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
+    );
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
@@ -386,9 +405,14 @@ export = (app: Probot) => {
 
   app.on('release.created', async context => {
     const repoUrl = context.payload.repository.full_name;
-    const remoteConfiguration = (await context.config(
-      WELL_KNOWN_CONFIGURATION_FILE
-    )) as ConfigurationOptions | null;
+    const {owner, repo} = context.repo();
+    const remoteConfiguration = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repo,
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
+    );
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
@@ -401,5 +425,20 @@ export = (app: Probot) => {
     logger.metric('release_please.release_created', {
       url: context.payload.repository.releases_url,
     });
+  });
+  // Check the config schema on PRs.
+  app.on(['pull_request.opened', 'pull_request.synchronize'], async context => {
+    const configChecker = new ConfigChecker<ConfigurationOptions>(
+      schema,
+      WELL_KNOWN_CONFIGURATION_FILE
+    );
+    const {owner, repo} = context.repo();
+    await configChecker.validateConfigChanges(
+      context.octokit,
+      owner,
+      repo,
+      context.payload.pull_request.head.sha,
+      context.payload.pull_request.number
+    );
   });
 };

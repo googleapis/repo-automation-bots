@@ -44,9 +44,10 @@ describe('database', () => {
 
   it('stores and retrieves configs', async () => {
     const db = admin.firestore();
-    const store = new FirestoreConfigsStore(db, 'test-');
+    const store = new FirestoreConfigsStore(db, 'test-' + uuidv4() + '-');
     const repoA = 'googleapis/' + uuidv4();
     const repoB = 'googleapis/' + uuidv4();
+    const repoBad = 'googleapis/' + uuidv4();
     const dockerImageA = uuidv4();
     const dockerImageB = uuidv4();
 
@@ -93,6 +94,20 @@ describe('database', () => {
       branchName: 'master',
       installationId: 53,
     };
+    const configsBad: Configs = {
+      yaml: {
+        'deep-copy-regex': [
+          {
+            source: '/gamma/**', // Invalid regex.
+            dest: '/omega',
+          },
+        ],
+      },
+      commitHash: 'def',
+      branchName: 'master',
+      installationId: 53,
+    };
+
     assert.ok(await store.storeConfigs(repoB, configsB, null));
     try {
       // We should find the repo when we search for its docker image.
@@ -120,13 +135,17 @@ describe('database', () => {
       assert.deepStrictEqual(repos, []);
 
       // Test findReposAffectedByFileChanges().
+      assert.ok(await store.storeConfigs(repoBad, configsBad, null));
       const reposAffected = await store.findReposAffectedByFileChanges([
         '/alpha/source.js',
       ]);
+
       const repoNamesAffected = reposAffected.map(x => `${x.owner}/${x.repo}`);
       assert.deepStrictEqual(repoNamesAffected, [repoA]);
     } finally {
       await store.clearConfigs(repoA);
+      await store.clearConfigs(repoB);
+      await store.clearConfigs(repoBad);
     }
   });
 
@@ -160,34 +179,30 @@ describe('database', () => {
 
     // Test pull requests.
     assert.strictEqual(
-      await store.findPullRequestForUpdatingLock(repoA, configsA.lock!),
+      await store.findBuildIdForUpdatingLock(repoA, configsA.lock!),
       undefined
     );
 
     // First one gets recorded.
-    const pullRequestId = store.recordPullRequestForUpdatingLock(
+    const BuildId = store.recordBuildIdForUpdatingLock(
       repoA,
       configsA.lock!,
       '10'
     );
     try {
-      assert.strictEqual(await pullRequestId, '10');
+      assert.strictEqual(await BuildId, '10');
       assert.strictEqual(
-        await store.findPullRequestForUpdatingLock(repoA, configsA.lock!),
+        await store.findBuildIdForUpdatingLock(repoA, configsA.lock!),
         '10'
       );
 
       // Second one does not.
       assert.strictEqual(
-        await store.recordPullRequestForUpdatingLock(
-          repoA,
-          configsA.lock!,
-          '11'
-        ),
+        await store.recordBuildIdForUpdatingLock(repoA, configsA.lock!, '11'),
         '10'
       );
     } finally {
-      await store.clearPullRequestForUpdatingLock(repoA, configsA.lock!);
+      await store.clearBuildForUpdatingLock(repoA, configsA.lock!);
     }
   });
 
@@ -216,13 +231,13 @@ describe('database', () => {
     );
 
     // First one gets recorded.
-    const pullRequestId = store.recordPubsubMessageIdForCopyTask(
+    const BuildId = store.recordPubsubMessageIdForCopyTask(
       repoA,
       googleapisGenCommitHash,
       '10'
     );
     try {
-      assert.strictEqual(await pullRequestId, '10');
+      assert.strictEqual(await BuildId, '10');
       assert.strictEqual(
         await store.findPubsubMessageIdForCopyTask(
           repoA,

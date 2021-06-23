@@ -1,0 +1,11 @@
+diff --git a/test.py b/test.py
+index 198d0257595..6048151ca9f 100644
+--- a/test.py
++++ b/test.py
+@@ -21,28 +21,28 @@
+
+
+ def incomplete_key(client):
+-    print('Hello World')
++    print('I only have few hours to fix this bug 😱')
+     key = client.key('Task')

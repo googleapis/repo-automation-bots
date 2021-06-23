@@ -17,17 +17,22 @@ import {resolve} from 'path';
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
+import yaml from 'js-yaml';
 import snapshot from 'snap-shot-it';
 import * as assert from 'assert';
+import * as sinon from 'sinon';
 import {describe, it, beforeEach} from 'mocha';
+import * as botConfigModule from '@google-automations/bot-config-utils';
+import {ConfigChecker} from '@google-automations/bot-config-utils';
 import {
   parseManifest,
   getFileList,
-  Configuration,
   getPullRequestFiles,
   buildCommentMessage,
   handler,
 } from '../src/generated-files-bot';
+import schema from '../src/config-schema.json';
+import {CONFIGURATION_FILE_PATH, Configuration} from '../src/config';
 
 nock.disableNetConnect();
 
@@ -38,6 +43,12 @@ const jsonManifest = fs
 const yamlManifest = fs
   .readFileSync(resolve(fixturesPath, 'manifests', 'simple.yaml'))
   .toString();
+
+function loadConfig(configFile: string) {
+  return yaml.load(
+    fs.readFileSync(resolve(fixturesPath, 'config', configFile), 'utf-8')
+  );
+}
 
 describe('generated-files-bot', () => {
   let requests: nock.Scope;
@@ -245,6 +256,9 @@ describe('generated-files-bot', () => {
 
   describe('handler', () => {
     let probot: Probot;
+    let getConfigWithDefaultStub: sinon.SinonStub;
+    let validateConfigStub: sinon.SinonStub;
+    const sandbox = sinon.createSandbox();
 
     beforeEach(() => {
       probot = createProbot({
@@ -256,8 +270,20 @@ describe('generated-files-bot', () => {
           }),
         },
       });
-
       probot.load(handler);
+      getConfigWithDefaultStub = sandbox.stub(
+        botConfigModule,
+        'getConfigWithDefault'
+      );
+      validateConfigStub = sandbox.stub(
+        ConfigChecker.prototype,
+        'validateConfigChanges'
+      );
+      validateConfigStub.resolves();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
     });
 
     describe('opened pull request', () => {
@@ -270,32 +296,35 @@ describe('generated-files-bot', () => {
       );
 
       it('ignores repo without configuration', async () => {
-        requests = requests
-          .get(
-            '/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml'
-          )
-          .reply(404)
-          .get(
-            '/repos/testOwner/.github/contents/.github%2Fgenerated-files-bot.yml'
-          )
-          .reply(404);
+        getConfigWithDefaultStub.resolves({});
         await probot.receive({
           name: 'pull_request',
           payload: payload,
           id: 'abc123',
         });
         requests.done();
+        sinon.assert.calledOnceWithExactly(
+          getConfigWithDefaultStub,
+          sinon.match.instanceOf(ProbotOctokit),
+          'testOwner',
+          'testRepo',
+          CONFIGURATION_FILE_PATH,
+          {},
+          {schema: schema}
+        );
+        sinon.assert.calledOnceWithExactly(
+          validateConfigStub,
+          sinon.match.instanceOf(ProbotOctokit),
+          'testOwner',
+          'testRepo',
+          'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
+          6
+        );
       });
 
       it('ignores pull request that does not touch templated files', async () => {
-        const validConfig = fs.readFileSync(
-          resolve(fixturesPath, 'config', 'valid-config.yml')
-        );
+        getConfigWithDefaultStub.resolves(loadConfig('valid-config.yml'));
         requests = requests
-          .get(
-            '/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml'
-          )
-          .reply(200, validConfig)
           .get('/repos/testOwner/testRepo/contents/manifest.json')
           .reply(200, {
             content: Buffer.from(jsonManifest, 'utf8').toString('base64'),
@@ -315,14 +344,8 @@ describe('generated-files-bot', () => {
       });
 
       it('comments on pull request that touches templated files', async () => {
-        const validConfig = fs.readFileSync(
-          resolve(fixturesPath, 'config', 'valid-config.yml')
-        );
+        getConfigWithDefaultStub.resolves(loadConfig('valid-config.yml'));
         requests = requests
-          .get(
-            '/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml'
-          )
-          .reply(200, validConfig)
           .get('/repos/testOwner/testRepo/contents/manifest.json')
           .reply(200, {
             content: Buffer.from(jsonManifest, 'utf8').toString('base64'),
@@ -359,14 +382,8 @@ describe('generated-files-bot', () => {
       });
 
       it('ignores missing manifests', async () => {
-        const validConfig = fs.readFileSync(
-          resolve(fixturesPath, 'config', 'valid-config.yml')
-        );
+        getConfigWithDefaultStub.resolves(loadConfig('valid-config.yml'));
         requests = requests
-          .get(
-            '/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml'
-          )
-          .reply(200, validConfig)
           .get('/repos/testOwner/testRepo/contents/manifest.json')
           .reply(404)
           .get('/repos/testOwner/testRepo/contents/manifest.yaml')
@@ -396,14 +413,8 @@ describe('generated-files-bot', () => {
       });
 
       it('updates existing comment', async () => {
-        const validConfig = fs.readFileSync(
-          resolve(fixturesPath, 'config', 'valid-config.yml')
-        );
+        getConfigWithDefaultStub.resolves(loadConfig('valid-config.yml'));
         requests = requests
-          .get(
-            '/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml'
-          )
-          .reply(200, validConfig)
           .get('/repos/testOwner/testRepo/contents/manifest.json')
           .reply(200, {
             content: Buffer.from(jsonManifest, 'utf8').toString('base64'),
@@ -437,21 +448,115 @@ describe('generated-files-bot', () => {
       });
 
       it('ignores PRs from configured authors', async () => {
-        const validConfig = fs.readFileSync(
-          resolve(fixturesPath, 'config', 'ignore-authors.yml')
-        );
-        requests = requests
-          .get(
-            '/repos/testOwner/testRepo/contents/.github%2Fgenerated-files-bot.yml'
-          )
-          .reply(200, validConfig);
+        getConfigWithDefaultStub.resolves(loadConfig('ignore-authors.yml'));
         await probot.receive({
           name: 'pull_request',
           payload: payload,
           id: 'abc123',
         });
-        requests.done();
       });
+    });
+  });
+});
+
+// Emulate getContent and getBlob.
+function createConfigResponse(configFile: string) {
+  const config = fs.readFileSync(resolve(fixturesPath, 'config', configFile));
+  const base64Config = config.toString('base64');
+  return {
+    size: base64Config.length,
+    content: base64Config,
+    encoding: 'base64',
+  };
+}
+
+// Emulate the given config file is modified in the PR.
+function fetchFilesInPR(configFile: string) {
+  return nock('https://api.github.com')
+    .get('/repos/testOwner/testRepo/pulls/6/files?per_page=100')
+    .reply(200, [
+      {
+        filename: `.github/${CONFIGURATION_FILE_PATH}`,
+        sha: 'testsha',
+      },
+    ])
+    .get('/repos/testOwner/testRepo/git/blobs/testsha')
+    .reply(200, createConfigResponse(configFile));
+}
+
+describe('validateConfigChanges', () => {
+  let probot: Probot;
+  let getConfigWithDefaultStub: sinon.SinonStub;
+  const sandbox = sinon.createSandbox();
+
+  beforeEach(() => {
+    probot = createProbot({
+      overrides: {
+        githubToken: 'abc123',
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
+      },
+    });
+    probot.load(handler);
+    getConfigWithDefaultStub = sandbox.stub(
+      botConfigModule,
+      'getConfigWithDefault'
+    );
+    getConfigWithDefaultStub.resolves({});
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+    sandbox.restore();
+  });
+
+  describe('compatibility tests', () => {
+    it('does not create a failing status check for a correct config (nodejs)', async () => {
+      const scope = fetchFilesInPR('nodejs.yml');
+      const payload = require(resolve(
+        fixturesPath,
+        './events/pull_request_opened'
+      ));
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+      scope.done();
+    });
+    it('does not create a failing status check for a correct config (java)', async () => {
+      const scope = fetchFilesInPR('java.yml');
+      const payload = require(resolve(
+        fixturesPath,
+        './events/pull_request_opened'
+      ));
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+      scope.done();
+    });
+    it('creates a failing status check for broken config', async () => {
+      const scope = fetchFilesInPR('broken.yml');
+      const payload = require(resolve(
+        fixturesPath,
+        './events/pull_request_opened'
+      ));
+      scope
+        .post('/repos/testOwner/testRepo/check-runs', body => {
+          snapshot(body);
+          return true;
+        })
+        .reply(200);
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+      scope.done();
     });
   });
 });

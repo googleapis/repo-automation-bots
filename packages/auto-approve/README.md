@@ -62,6 +62,23 @@ rules:
 
 # (Optional) The max amount of files changed in a PR. 
   maxFiles: 3
+
+# Option 4: incoming PRs from yoshi-code-bot
+- author: "yoshi-code-bot"
+
+# Title for PRs from yoshi-code-bot MUST start with `chore: Update discovery artifacts`.
+# Title must be regex.
+  title: "^chore: Update discovery artifacts"
+
+# (Optional) The only changed file paths in an incoming PR MUST be exactly
+# `"^docs/dyn/index.md$"` or follow either one of these patterns `"docs/dyn/*.html"`
+# or `"googleapiclient/discovery_cache/documents/*.json"` . These are
+# listed in regex. If this property is omitted, auto-approve bot will allow PRs
+# that match the author and title to merge, without checking the file paths.
+  changedFiles:
+  - "^docs/dyn/index.md$"
+  - "^docs/dyn/.*\\.html$"
+  - "^googleapiclient/discovery_cache/documents/.*\\.json$"
 ```
 Next, create a CODEWONERS file, under `.github/CODEOWNERS` in your repository. You must add a line that adds the Github Automation team as a codeowner for the `auto-approve.yml` file you have created, and they will be alerted anytime there is a change to the file. See the example below.
 

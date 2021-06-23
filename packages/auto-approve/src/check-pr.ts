@@ -13,10 +13,22 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {ProbotOctokit} from 'probot';
 import {PullRequestEvent} from '@octokit/webhooks-definitions/schema';
-import {getChangedFiles} from './get-PR-info';
+import {getChangedFiles, File} from './get-pr-info';
 import {logger} from 'gcf-utils';
+import {
+  getTargetFiles,
+  getVersions,
+  isMajorVersionChanging,
+  isMinorVersionUpgraded,
+  isOneDependencyChanged,
+  checkFilePathsMatch,
+  doesDependencyChangeMatchPRTitle,
+  Versions,
+  mergesOnWeekday,
+} from './utils-for-pr-checking';
+import {Octokit} from '@octokit/rest';
+import {languageVersioningRules} from './language-versioning-rules';
 // type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
 
 // This file manages the logic to check whether a given PR matches the config in the repository
@@ -28,7 +40,6 @@ export interface ValidPr {
   maxFiles?: number;
 }
 
-//TODO: fix pr any type to correct type
 /**
  * Checks that a given PR matches the rules in the auto-approve.yml file in the repository
  *
@@ -40,11 +51,11 @@ export interface ValidPr {
 export async function checkPRAgainstConfig(
   config: {rules: ValidPr[]},
   pr: PullRequestEvent,
-  octokit: InstanceType<typeof ProbotOctokit>
+  octokit: Octokit
 ): Promise<Boolean> {
-  const repoOwner = pr.pull_request.head.repo.owner.login;
+  const repoOwner = pr.repository.owner.login;
   const prAuthor = pr.pull_request.user.login;
-  const repo = pr.pull_request.head.repo.name;
+  const repo = pr.repository.name;
   const prNumber = pr.number;
   const title = pr.pull_request.title;
 
@@ -55,25 +66,98 @@ export async function checkPRAgainstConfig(
     // changedFiles and maxFiles are not set in the JSON schema
     let filePathsMatch = true;
     let fileCountMatch = true;
-
-    // This variable defaults to false, as the title of the PR MUST match the title
-    // on the config (as title is not optional, vs. the other config settings)
-    let titlesMatch = false;
+    let additionalRules = true;
+    const releasePRFiles: File[] = [];
 
     // Since there's only one allowed title per author right now, we don't need to
     // add complicated logic to see which title should match the incoming PR; but,
     // this could be logic we work into the future.
-    if (title.match(rulesToValidateAgainst.title)) {
-      titlesMatch = true;
+    if (!title.match(rulesToValidateAgainst.title)) {
+      logger.info(
+        `Info for ${repoOwner}/${repo}/${prNumber} title does not match what is allowed`
+      );
+      return false;
     }
+
+    // Get changed files fromPR
+    const changedFiles = await getChangedFiles(
+      octokit,
+      repoOwner,
+      repo,
+      prNumber
+    );
+
+    // This function checks to see if the PR is a 'special' PR,
+    // i.e., if its authorship qualifies it for further checks
+    const fileAndFileRules = getTargetFiles(
+      changedFiles,
+      rulesToValidateAgainst.author,
+      languageVersioningRules
+    );
+
+    // If we've found the file in this ruleset, let's run the additional checks
+    // We're running each file through the check so that we can make customized checks
+    // for each file. This way, we can be as specific as possible as to how the file
+    // needs to be checked.
+    for (const fileAndFileRule of fileAndFileRules) {
+      // First, get the versions we're checking for the file
+      const versions = getVersions(
+        fileAndFileRule.file,
+        fileAndFileRule.fileRule.oldVersion!,
+        fileAndFileRule.fileRule.newVersion!
+      );
+
+      // Have to enter different processes for different checks
+      if (versions && fileAndFileRule.fileRule.process === 'release') {
+        // If it's a release process, just make sure that the versions are minor
+        // bumps and are increasing, and are only changing one at a time
+        additionalRules =
+          runVersioningValidation(versions) &&
+          isOneDependencyChanged(fileAndFileRule.file) &&
+          mergesOnWeekday();
+      } else if (
+        versions &&
+        fileAndFileRule.fileRule.process === 'dependency'
+      ) {
+        // If it's a dependency update process, make sure that the versions are minor
+        // bumps and are increasing, are only changing one at a time, and are changing
+        // the dependency they say they are supposed to change
+
+        // At the end of the loop, we want to make sure that all of the changed files
+        // in a renovate bot pr conform to one of the language versioning rules
+        releasePRFiles.push(fileAndFileRule.file);
+
+        additionalRules =
+          doesDependencyChangeMatchPRTitle(
+            versions,
+            // We can assert dependency will exist, since the process is type 'dependency'
+            fileAndFileRule.fileRule.dependency!,
+            title
+          ) &&
+          runVersioningValidation(versions) &&
+          isOneDependencyChanged(fileAndFileRule.file);
+      }
+
+      if (additionalRules === false) {
+        return false;
+      }
+    }
+
+    // This additional check confirms that there were no files changed in the PR
+    // that weren't checked by the additional files rule if it's from renovate-bot
+    if (prAuthor === 'renovate-bot') {
+      for (let i = 0; i < changedFiles.length; i++) {
+        if (changedFiles[i] !== releasePRFiles[i]) {
+          logger.info(
+            `Info for ${repoOwner}/${repo}/${prNumber} A file that should have been checked with additional guidelines was not checked`
+          );
+          return false;
+        }
+      }
+    }
+
     //check if changed file paths match
     if (rulesToValidateAgainst.changedFiles) {
-      const changedFiles = await getChangedFiles(
-        octokit,
-        repoOwner,
-        repo,
-        prNumber
-      );
       filePathsMatch = checkFilePathsMatch(
         changedFiles.map(x => x.filename),
         rulesToValidateAgainst
@@ -86,10 +170,19 @@ export async function checkPRAgainstConfig(
         pr.pull_request.changed_files <= rulesToValidateAgainst.maxFiles;
     }
     logger.info(
-      `Info for ${repoOwner}/${repo}/${prNumber}\nAuthor: ${rulesToValidateAgainst.author}\nTitles Match? ${titlesMatch}\nFile Paths Match? ${filePathsMatch}\nFile Count Matches? ${fileCountMatch}`
+      `Info for ${repoOwner}/${repo}/${prNumber} Author: ${rulesToValidateAgainst.author}`
+    );
+    logger.info(
+      `Info for ${repoOwner}/${repo}/${prNumber} File Paths Match? ${filePathsMatch}`
+    );
+    logger.info(
+      `Info for ${repoOwner}/${repo}/${prNumber} File Count Matches? ${fileCountMatch}`
+    );
+    logger.info(
+      `Info for ${repoOwner}/${repo}/${prNumber} Additional rules are correct? ${additionalRules}`
     );
 
-    return titlesMatch && filePathsMatch && fileCountMatch;
+    return filePathsMatch && fileCountMatch && additionalRules;
   } else {
     logger.info(`${repoOwner}/${repo}/${prNumber} does not match config`);
     return false;
@@ -97,27 +190,21 @@ export async function checkPRAgainstConfig(
 }
 
 /**
- * Returns true if all changes to the prFiles are permitted by the PR type.
+ * Runs additional validation checks when a version is upgraded to ensure that the
+ * version is only upgraded, not downgraded, and that the major version is not bumped.
  *
- * @param prFiles list of file paths printed by 'git log --name-only'
- * @param validTypeOfPR a valid pull request
- * @returns true if the file paths match the file paths allowed by the configuration, false if not
+ * @param file The incoming target file that has a matching ruleset in language-versioning-rules
+ * @param pr The matching ruleset of the file above from language-versioning-rules
+ * @returns true if the package was upgraded appropriately, and had only one thing changed
  */
-export function checkFilePathsMatch(
-  prFiles: string[],
-  validTypeOfPR: ValidPr
-): boolean {
-  if (!validTypeOfPR.changedFiles) {
-    return true;
-  }
-  let filesMatch = true;
+function runVersioningValidation(versions: Versions): boolean {
+  let majorBump = true;
+  let minorBump = false;
 
-  // Each file in a given PR should match at least one of the configuration rules
-  // in auto-appprove.yml; should set filesMatch to false if at least one does not
-  for (const file of prFiles) {
-    if (!validTypeOfPR.changedFiles.some(x => file.match(x))) {
-      filesMatch = false;
-    }
+  if (versions) {
+    majorBump = isMajorVersionChanging(versions);
+    minorBump = isMinorVersionUpgraded(versions);
   }
-  return filesMatch;
+
+  return !majorBump && minorBump;
 }

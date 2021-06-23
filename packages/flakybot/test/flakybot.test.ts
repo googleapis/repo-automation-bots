@@ -14,15 +14,22 @@
 
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
+import {DatastoreLock} from '@google-automations/datastore-lock';
 import {Probot, ProbotOctokit} from 'probot';
 import snapshot from 'snap-shot-it';
 import nock from 'nock';
 import * as fs from 'fs';
 import * as assert from 'assert';
 import {describe, it, beforeEach} from 'mocha';
+import * as sinon from 'sinon';
 
-import {flakybot} from '../src/flakybot';
+import * as botConfigUtilsModule from '@google-automations/bot-config-utils';
+import * as labelUtilsModule from '@google-automations/label-utils';
+import {ConfigChecker} from '@google-automations/bot-config-utils';
+import {flakybot, DEFAULT_CONFIG, CONFIG_FILENAME} from '../src/flakybot';
+import {FLAKYBOT_LABELS} from '../src/labels';
 const {findTestResults, formatTestCase} = flakybot;
+import schema from '../src/config-schema.json';
 
 nock.disableNetConnect();
 
@@ -50,6 +57,12 @@ function nockIssues(repo: string, issues: Array<{}> = []) {
       `/repos/GoogleCloudPlatform/${repo}/issues?per_page=100&labels=flakybot%3A%20issue&state=all`
     )
     .reply(200, issues);
+}
+
+function nockGetIssue(repo: string, issueNumber: number, issue: {}) {
+  return nock('https://api.github.com')
+    .get(`/repos/GoogleCloudPlatform/${repo}/issues/${issueNumber}`)
+    .reply(200, issue);
 }
 
 function nockNewIssue(repo: string) {
@@ -94,7 +107,10 @@ function nockIssuePatch(repo: string, issueNumber: number) {
 
 describe('flakybot', () => {
   let probot: Probot;
-
+  const sandbox = sinon.createSandbox();
+  let datastoreLockAcquireStub: sinon.SinonStub;
+  let datastoreLockReleaseStub: sinon.SinonStub;
+  let getConfigWithDefaultStub: sinon.SinonStub;
   beforeEach(() => {
     probot = new Probot({
       githubToken: 'abc123',
@@ -104,6 +120,64 @@ describe('flakybot', () => {
       }),
     });
     probot.load(flakybot);
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  describe('pullRequestHandler', () => {
+    it('calls ConfigChecker', async () => {
+      const payload = require(resolve(fixturesPath, './pr_event'));
+      const checkerStub = sinon
+        .stub(ConfigChecker.prototype, 'validateConfigChanges')
+        .resolves(undefined);
+      await probot.receive({
+        name: 'pull_request',
+        payload,
+        id: 'abc123',
+      });
+      // Only checks if it' called with a pull request event.
+      sinon.assert.calledOnce(checkerStub);
+    });
+  });
+
+  describe('scheduler handler', () => {
+    it('calls syncLabels', async () => {
+      datastoreLockAcquireStub = sandbox.stub(
+        DatastoreLock.prototype,
+        'acquire'
+      );
+      datastoreLockReleaseStub = sandbox.stub(
+        DatastoreLock.prototype,
+        'release'
+      );
+      datastoreLockAcquireStub.resolves(true);
+      datastoreLockReleaseStub.resolves(true);
+      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
+      await probot.receive({
+        name: 'schedule.repository' as '*',
+        payload: {
+          repository: {
+            name: 'testRepo',
+            owner: {
+              login: 'testOwner',
+            },
+          },
+          organization: {
+            login: 'googleapis',
+          },
+        },
+        id: 'abc123',
+      });
+      sinon.assert.calledOnceWithExactly(
+        syncLabelsStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'googleapis',
+        'testRepo',
+        sinon.match.array.deepEquals(FLAKYBOT_LABELS)
+      );
+    });
   });
 
   describe('extractBuildURL', () => {
@@ -133,8 +207,7 @@ describe('flakybot', () => {
               'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
             testCase: 'TestSample',
             passed: false,
-            log:
-              '\nsnippet_test.go:242: got output ""; want it to contain "4 Venue 4" snippet_test.go:243: got output ""; want it to contain "19 Venue 19" snippet_test.go:244: got output ""; want it to contain "42 Venue 42"\n',
+            log: '\nsnippet_test.go:242: got output ""; want it to contain "4 Venue 4" snippet_test.go:243: got output ""; want it to contain "19 Venue 19" snippet_test.go:244: got output ""; want it to contain "42 Venue 42"\n',
           },
         ],
         passes: [
@@ -170,16 +243,14 @@ describe('flakybot', () => {
               'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
             testCase: 'TestBucketLock',
             passed: false,
-            log:
-              'main_test.go:234: failed to create bucket ("golang-samples-tests-8-storage-buckets-tests"): Post https://storage.googleapis.com/storage/v1/b?alt=json&prettyPrint=false&project=golang-samples-tests-8: read tcp 10.142.0.112:33618->108.177.12.128:443: read: connection reset by peer',
+            log: 'main_test.go:234: failed to create bucket ("golang-samples-tests-8-storage-buckets-tests"): Post https://storage.googleapis.com/storage/v1/b?alt=json&prettyPrint=false&project=golang-samples-tests-8: read tcp 10.142.0.112:33618->108.177.12.128:443: read: connection reset by peer',
           },
           {
             package:
               'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
             testCase: 'TestUniformBucketLevelAccess',
             passed: false,
-            log:
-              'main_test.go:242: failed to enable uniform bucket-level access ("golang-samples-tests-8-storage-buckets-tests"): googleapi: Error 404: Not Found, notFound',
+            log: 'main_test.go:242: failed to enable uniform bucket-level access ("golang-samples-tests-8-storage-buckets-tests"): googleapi: Error 404: Not Found, notFound',
           },
         ],
         passes: [
@@ -280,7 +351,28 @@ describe('flakybot', () => {
   });
 
   describe('app', () => {
+    beforeEach(() => {
+      // DatastoreLock just succeeds.
+      datastoreLockAcquireStub = sandbox.stub(
+        DatastoreLock.prototype,
+        'acquire'
+      );
+      datastoreLockReleaseStub = sandbox.stub(
+        DatastoreLock.prototype,
+        'release'
+      );
+      datastoreLockAcquireStub.resolves(true);
+      datastoreLockReleaseStub.resolves(true);
+      getConfigWithDefaultStub = sandbox.stub(
+        botConfigUtilsModule,
+        'getConfigWithDefault'
+      );
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
     it('skips when there is no XML and no testsFailed', async () => {
+      getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
       const payload = {
         repo: 'GoogleCloudPlatform/golang-samples',
         organization: {login: 'GoogleCloudPlatform'},
@@ -296,10 +388,20 @@ describe('flakybot', () => {
         id: 'abc123',
       });
       requests.done();
+      sinon.assert.calledOnceWithExactly(
+        getConfigWithDefaultStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'GoogleCloudPlatform',
+        'golang-samples',
+        CONFIG_FILENAME,
+        DEFAULT_CONFIG,
+        {schema: schema}
+      );
     });
 
     describe('testsFailed', () => {
       it('opens an issue when testsFailed', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = {
           repo: 'GoogleCloudPlatform/golang-samples',
           organization: {login: 'GoogleCloudPlatform'},
@@ -321,9 +423,53 @@ describe('flakybot', () => {
         });
 
         scopes.forEach(s => s.done());
+        sinon.assert.calledOnceWithExactly(
+          getConfigWithDefaultStub,
+          sinon.match.instanceOf(ProbotOctokit),
+          'GoogleCloudPlatform',
+          'golang-samples',
+          CONFIG_FILENAME,
+          DEFAULT_CONFIG,
+          {schema: schema}
+        );
+      });
+
+      it('opens an issue with priority p2', async () => {
+        getConfigWithDefaultStub.resolves({issuePriority: 'p2'});
+        const payload = {
+          repo: 'GoogleCloudPlatform/golang-samples',
+          organization: {login: 'GoogleCloudPlatform'},
+          repository: {name: 'golang-samples'},
+          commit: '123',
+          buildURL: 'http://example.com',
+          testsFailed: true,
+        };
+
+        const scopes = [
+          nockIssues('golang-samples'),
+          nockNewIssue('golang-samples'),
+        ];
+
+        await probot.receive({
+          name: 'pubsub.message' as '*',
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(s => s.done());
+        sinon.assert.calledOnceWithExactly(
+          getConfigWithDefaultStub,
+          sinon.match.instanceOf(ProbotOctokit),
+          'GoogleCloudPlatform',
+          'golang-samples',
+          CONFIG_FILENAME,
+          DEFAULT_CONFIG,
+          {schema: schema}
+        );
       });
 
       it('opens a new issue when testsFailed and there is a previous one closed', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = {
           repo: 'GoogleCloudPlatform/golang-samples',
           organization: {login: 'GoogleCloudPlatform'},
@@ -355,6 +501,7 @@ describe('flakybot', () => {
       });
 
       it('comments on an existing open issue when testsFailed', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = {
           repo: 'GoogleCloudPlatform/golang-samples',
           organization: {login: 'GoogleCloudPlatform'},
@@ -363,16 +510,18 @@ describe('flakybot', () => {
           buildURL: 'http://example.com',
           testsFailed: true,
         };
-
+        const issues = [
+          {
+            title: formatTestCase({passed: false}),
+            number: 16,
+            body: 'Failure!',
+            state: 'open',
+            url: 'url',
+          },
+        ];
         const scopes = [
-          nockIssues('golang-samples', [
-            {
-              title: formatTestCase({passed: false}),
-              number: 16,
-              body: 'Failure!',
-              state: 'open',
-            },
-          ]),
+          nockIssues('golang-samples', issues),
+          nockGetIssue('golang-samples', 16, issues[0]),
           nockGetIssueComments('golang-samples', 16),
           nockIssueComment('golang-samples', 16),
         ];
@@ -389,6 +538,7 @@ describe('flakybot', () => {
 
     describe('xunitXML', () => {
       it('opens an issue [Go]', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
 
         const scopes = [
@@ -406,6 +556,7 @@ describe('flakybot', () => {
       });
 
       it('opens an issue [Python]', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload(
           'python_one_failed.xml',
           'python-docs-samples'
@@ -426,6 +577,7 @@ describe('flakybot', () => {
       });
 
       it('opens an issue [Python error]', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload(
           'python_one_error.xml',
           'python-docs-samples'
@@ -446,6 +598,7 @@ describe('flakybot', () => {
       });
 
       it('opens an issue [Java]', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('java_one_failed.xml', 'java-vision');
 
         const scopes = [nockIssues('java-vision'), nockNewIssue('java-vision')];
@@ -460,6 +613,7 @@ describe('flakybot', () => {
       });
 
       it('opens an issue 2 [Java]', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('java_one_error.xml', 'java-datastore');
 
         const scopes = [
@@ -477,6 +631,7 @@ describe('flakybot', () => {
       });
 
       it('opens an issue [Node.js]', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('node_one_failed.xml', 'nodejs-spanner');
 
         const scopes = [
@@ -494,6 +649,7 @@ describe('flakybot', () => {
       });
 
       it('opens an issue [Ruby]', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload(
           'ruby_one_failed.xml',
           'ruby-docs-samples'
@@ -514,34 +670,38 @@ describe('flakybot', () => {
       });
 
       it('comments on existing issue', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
-
+        const issues = [
+          // Duplicate issue that's closed. The open one should be updated.
+          {
+            title: formatTestCase({
+              package:
+                'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+              testCase: 'TestSample',
+              passed: false,
+            }),
+            number: 15,
+            body: 'Failure!',
+            state: 'closed',
+            url: 'url',
+          },
+          {
+            title: formatTestCase({
+              package:
+                'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+              testCase: 'TestSample',
+              passed: false,
+            }),
+            number: 16,
+            body: 'Failure!',
+            state: 'open',
+            url: 'url',
+          },
+        ];
         const scopes = [
-          nockIssues('golang-samples', [
-            // Duplicate issue that's closed. The open one should be updated.
-            {
-              title: formatTestCase({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
-                testCase: 'TestSample',
-                passed: false,
-              }),
-              number: 15,
-              body: 'Failure!',
-              state: 'closed',
-            },
-            {
-              title: formatTestCase({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
-                testCase: 'TestSample',
-                passed: false,
-              }),
-              number: 16,
-              body: 'Failure!',
-              state: 'open',
-            },
-          ]),
+          nockIssues('golang-samples', issues),
+          nockGetIssue('golang-samples', 16, issues[1]),
           nockGetIssueComments('golang-samples', 16),
           nockIssueComment('golang-samples', 16),
         ];
@@ -556,37 +716,42 @@ describe('flakybot', () => {
       });
 
       it('does not comment about failure on existing flaky issue', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload(
           'many_failed_same_pkg.xml',
           'golang-samples'
         );
-
+        const issues = [
+          {
+            title: formatTestCase({
+              package:
+                'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
+              testCase: 'TestBucketLock',
+              passed: false,
+            }),
+            number: 16,
+            body: 'Failure!',
+            labels: [{name: 'flakybot: flaky'}],
+            state: 'open',
+            url: 'url',
+          },
+          {
+            title: formatTestCase({
+              package:
+                'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
+              testCase: 'TestUniformBucketLevelAccess',
+              passed: false,
+            }),
+            number: 17,
+            body: 'Failure!',
+            state: 'open',
+            url: 'url',
+          },
+        ];
         const scopes = [
-          nockIssues('golang-samples', [
-            {
-              title: formatTestCase({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
-                testCase: 'TestBucketLock',
-                passed: false,
-              }),
-              number: 16,
-              body: 'Failure!',
-              labels: [{name: 'flakybot: flaky'}],
-              state: 'open',
-            },
-            {
-              title: formatTestCase({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
-                testCase: 'TestUniformBucketLevelAccess',
-                passed: false,
-              }),
-              number: 17,
-              body: 'Failure!',
-              state: 'open',
-            },
-          ]),
+          nockIssues('golang-samples', issues),
+          nockGetIssue('golang-samples', 16, issues[0]),
+          nockGetIssue('golang-samples', 17, issues[1]),
           nockGetIssueComments('golang-samples', 17),
           nockIssueComment('golang-samples', 17),
         ];
@@ -601,37 +766,44 @@ describe('flakybot', () => {
       });
 
       it('does not comment about failure on existing issue labeled quiet', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload(
           'many_failed_same_pkg.xml',
           'golang-samples'
         );
 
+        const issues = [
+          {
+            title: formatTestCase({
+              package:
+                'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
+              testCase: 'TestBucketLock',
+              passed: false,
+            }),
+            number: 16,
+            body: 'Failure!',
+            labels: [{name: 'flakybot: quiet'}],
+            state: 'open',
+            url: 'url',
+          },
+          {
+            title: formatTestCase({
+              package:
+                'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
+              testCase: 'TestUniformBucketLevelAccess',
+              passed: false,
+            }),
+            number: 17,
+            body: 'Failure!',
+            state: 'open',
+            url: 'url',
+          },
+        ];
+
         const scopes = [
-          nockIssues('golang-samples', [
-            {
-              title: formatTestCase({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
-                testCase: 'TestBucketLock',
-                passed: false,
-              }),
-              number: 16,
-              body: 'Failure!',
-              labels: [{name: 'flakybot: quiet'}],
-              state: 'open',
-            },
-            {
-              title: formatTestCase({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/storage/buckets',
-                testCase: 'TestUniformBucketLevelAccess',
-                passed: false,
-              }),
-              number: 17,
-              body: 'Failure!',
-              state: 'open',
-            },
-          ]),
+          nockIssues('golang-samples', issues),
+          nockGetIssue('golang-samples', 16, issues[0]),
+          nockGetIssue('golang-samples', 17, issues[1]),
           nockGetIssueComments('golang-samples', 17),
           nockIssueComment('golang-samples', 17),
         ];
@@ -646,6 +818,7 @@ describe('flakybot', () => {
       });
 
       it('handles a testsuite with no test cases', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('no_tests.xml', 'golang-samples');
 
         const scopes = [nockIssues('golang-samples')];
@@ -660,35 +833,38 @@ describe('flakybot', () => {
       });
 
       it('reopens issue with correct labels for failing test', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
 
         // Closed yesterday. So, it should be reopened.
         const closedAt = new Date();
         closedAt.setDate(closedAt.getDate() - 1);
-
+        const issues = [
+          {
+            title: formatTestCase({
+              package:
+                'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+              testCase: 'TestSample',
+              passed: false,
+            }),
+            number: 16,
+            body: 'Failure!',
+            // All of these labels should be kept. New priority and type
+            // labels should not be added.
+            labels: [
+              {name: 'flakybot: flaky'},
+              {name: 'api: spanner'},
+              {name: 'priority: p2'},
+              {name: 'type: cleanup'},
+            ],
+            state: 'closed',
+            closed_at: closedAt.toISOString(),
+            url: 'url',
+          },
+        ];
         const scopes = [
-          nockIssues('golang-samples', [
-            {
-              title: formatTestCase({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
-                testCase: 'TestSample',
-                passed: false,
-              }),
-              number: 16,
-              body: 'Failure!',
-              // All of these labels should be kept. New priority and type
-              // labels should not be added.
-              labels: [
-                {name: 'flakybot: flaky'},
-                {name: 'api: spanner'},
-                {name: 'priority: p2'},
-                {name: 'type: cleanup'},
-              ],
-              state: 'closed',
-              closed_at: closedAt.toISOString(),
-            },
-          ]),
+          nockIssues('golang-samples', issues),
+          nockGetIssue('golang-samples', 16, issues[0]),
           nockIssueComment('golang-samples', 16),
           nockIssuePatch('golang-samples', 16),
         ];
@@ -703,20 +879,23 @@ describe('flakybot', () => {
       });
 
       it('closes an issue for a passing test [Go]', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('passed.xml', 'golang-samples');
+        const issues = [
+          {
+            title: formatTestCase({
+              package: 'github.com/GoogleCloudPlatform/golang-samples',
+              testCase: 'TestBadFiles',
+              passed: false,
+            }),
+            number: 16,
+            body: 'Failure!',
+            url: 'url',
+          },
+        ];
 
         const scopes = [
-          nockIssues('golang-samples', [
-            {
-              title: formatTestCase({
-                package: 'github.com/GoogleCloudPlatform/golang-samples',
-                testCase: 'TestBadFiles',
-                passed: false,
-              }),
-              number: 16,
-              body: 'Failure!',
-            },
-          ]),
+          nockIssues('golang-samples', issues),
           nockIssueComment('golang-samples', 16),
           nockGetIssueComments('golang-samples', 16),
           nockIssuePatch('golang-samples', 16),
@@ -732,23 +911,26 @@ describe('flakybot', () => {
       });
 
       it('closes an issue for a passing test [Python]', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload(
           'python_one_passed.xml',
           'python-docs-samples'
         );
+        const issues = [
+          {
+            title: formatTestCase({
+              package: 'appengine.standard.app_identity.asserting.main_test',
+              testCase: 'test_app',
+              passed: false,
+            }),
+            number: 16,
+            body: 'Failure!',
+            url: 'url',
+          },
+        ];
 
         const scopes = [
-          nockIssues('python-docs-samples', [
-            {
-              title: formatTestCase({
-                package: 'appengine.standard.app_identity.asserting.main_test',
-                testCase: 'test_app',
-                passed: false,
-              }),
-              number: 16,
-              body: 'Failure!',
-            },
-          ]),
+          nockIssues('python-docs-samples', issues),
           nockIssueComment('python-docs-samples', 16),
           nockGetIssueComments('python-docs-samples', 16),
           nockIssuePatch('python-docs-samples', 16),
@@ -764,20 +946,23 @@ describe('flakybot', () => {
       });
 
       it('closes an issue for a passing test [Java]', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('java_one_passed.xml', 'java-vision');
+        const issues = [
+          {
+            title: formatTestCase({
+              package: 'com.google.cloud.vision.it.ITSystemTest(sponge_log)',
+              testCase: 'detectLocalizedObjectsTest',
+              passed: false,
+            }),
+            number: 16,
+            body: 'Failure!',
+            url: 'url',
+          },
+        ];
 
         const scopes = [
-          nockIssues('java-vision', [
-            {
-              title: formatTestCase({
-                package: 'com.google.cloud.vision.it.ITSystemTest(sponge_log)',
-                testCase: 'detectLocalizedObjectsTest',
-                passed: false,
-              }),
-              number: 16,
-              body: 'Failure!',
-            },
-          ]),
+          nockIssues('java-vision', issues),
           nockIssueComment('java-vision', 16),
           nockGetIssueComments('java-vision', 16),
           nockIssuePatch('java-vision', 16),
@@ -793,22 +978,23 @@ describe('flakybot', () => {
       });
 
       it('does not close an issue that did not explicitly pass', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('passed.xml', 'golang-samples');
-
-        const scopes = [
-          nockIssues('golang-samples', [
-            {
-              title: formatTestCase({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/fake/test',
-                testCase: 'TestFake',
-                passed: false,
-              }),
-              number: 16,
-              body: 'Failure!',
-            },
-          ]),
+        const issues = [
+          {
+            title: formatTestCase({
+              package:
+                'github.com/GoogleCloudPlatform/golang-samples/fake/test',
+              testCase: 'TestFake',
+              passed: false,
+            }),
+            number: 16,
+            body: 'Failure!',
+            url: 'url',
+          },
         ];
+
+        const scopes = [nockIssues('golang-samples', issues)];
 
         await probot.receive({
           name: 'pubsub.message' as '*',
@@ -820,26 +1006,28 @@ describe('flakybot', () => {
       });
 
       it('keeps an issue open for a passing test that failed in the same build (comment)', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('passed.xml', 'golang-samples');
+        const issues = [
+          {
+            title: formatTestCase({
+              package: 'github.com/GoogleCloudPlatform/golang-samples',
+              testCase: 'TestBadFiles',
+              passed: false,
+            }),
+            number: 16,
+            body: 'Failure!',
+            url: 'url',
+          },
+        ];
 
         const scopes = [
-          nockIssues('golang-samples', [
-            {
-              title: formatTestCase({
-                package: 'github.com/GoogleCloudPlatform/golang-samples',
-                testCase: 'TestBadFiles',
-                passed: false,
-              }),
-              number: 16,
-              body: 'Failure!',
-            },
-          ]),
+          nockIssues('golang-samples', issues),
           nock('https://api.github.com')
             .get('/repos/GoogleCloudPlatform/golang-samples/issues/16/comments')
             .reply(200, [
               {
-                body:
-                  'status: failed\ncommit: 123\nbuildURL: [Build Status](example.com/failure)',
+                body: 'status: failed\ncommit: 123\nbuildURL: [Build Status](example.com/failure)',
               },
             ]),
           nockIssueComment('golang-samples', 16),
@@ -856,22 +1044,24 @@ describe('flakybot', () => {
       });
 
       it('keeps an issue open for a passing test that failed in the same build (issue body)', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('passed.xml', 'golang-samples');
+        const issues = [
+          {
+            title: formatTestCase({
+              package:
+                'github.com/GoogleCloudPlatform/golang-samples/appengine/go11x/helloworld',
+              testCase: 'TestIndexHandler',
+              passed: false,
+            }),
+            number: 16,
+            body: 'status: failed\ncommit: 123\nbuildURL: [Build Status](example.com/failure)',
+            url: 'url',
+          },
+        ];
 
         const scopes = [
-          nockIssues('golang-samples', [
-            {
-              title: formatTestCase({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/appengine/go11x/helloworld',
-                testCase: 'TestIndexHandler',
-                passed: false,
-              }),
-              number: 16,
-              body:
-                'status: failed\ncommit: 123\nbuildURL: [Build Status](example.com/failure)',
-            },
-          ]),
+          nockIssues('golang-samples', issues),
           nockIssueComment('golang-samples', 16),
           nockIssuePatch('golang-samples', 16),
         ];
@@ -886,21 +1076,25 @@ describe('flakybot', () => {
       });
 
       it('does not comment for failure in the same build [Go]', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
+        const issues = [
+          {
+            title: formatTestCase({
+              package:
+                'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+              testCase: 'TestSample',
+              passed: false,
+            }),
+            number: 16,
+            body: 'Failure!',
+            url: 'url',
+          },
+        ];
 
         const scopes = [
-          nockIssues('golang-samples', [
-            {
-              title: formatTestCase({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
-                testCase: 'TestSample',
-                passed: false,
-              }),
-              number: 16,
-              body: 'Failure!',
-            },
-          ]),
+          nockIssues('golang-samples', issues),
+          nockGetIssue('golang-samples', 16, issues[0]),
           nock('https://api.github.com')
             .get('/repos/GoogleCloudPlatform/golang-samples/issues/16/comments')
             .reply(200, [
@@ -920,23 +1114,24 @@ describe('flakybot', () => {
       });
 
       it('keeps an issue open for a passing flaky test', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('passed.xml', 'golang-samples');
-
-        const scopes = [
-          nockIssues('golang-samples', [
-            {
-              title: formatTestCase({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
-                testCase: 'TestSample',
-                passed: false,
-              }),
-              number: 16,
-              body: 'Failure!',
-              labels: [{name: 'flakybot: flaky'}],
-            },
-          ]),
+        const issues = [
+          {
+            title: formatTestCase({
+              package:
+                'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+              testCase: 'TestSample',
+              passed: false,
+            }),
+            number: 16,
+            body: 'Failure!',
+            labels: [{name: 'flakybot: flaky'}],
+            url: 'url',
+          },
         ];
+
+        const scopes = [nockIssues('golang-samples', issues)];
 
         await probot.receive({
           name: 'pubsub.message' as '*',
@@ -948,25 +1143,28 @@ describe('flakybot', () => {
       });
 
       it('opens multiple issues for multiple failures', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload(
           'many_failed_same_pkg.xml',
           'golang-samples'
         );
+        const issues = [
+          {
+            title: formatTestCase({
+              package:
+                'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+              testCase: 'TestSample',
+              passed: false,
+            }),
+            number: 16,
+            body: 'Failure!',
+            state: 'closed',
+            url: 'url',
+          },
+        ];
 
         const scopes = [
-          nockIssues('golang-samples', [
-            {
-              title: formatTestCase({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
-                testCase: 'TestSample',
-                passed: false,
-              }),
-              number: 16,
-              body: 'Failure!',
-              state: 'closed',
-            },
-          ]),
+          nockIssues('golang-samples', issues),
           nockNewIssue('golang-samples'),
           nockNewIssue('golang-samples'),
         ];
@@ -981,6 +1179,7 @@ describe('flakybot', () => {
       });
 
       it('closes a duplicate issue', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('passed.xml', 'golang-samples');
 
         const title = formatTestCase({
@@ -1039,6 +1238,7 @@ describe('flakybot', () => {
       });
 
       it('reopens the original flaky issue when there is a duplicate', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
 
         const title = formatTestCase({
@@ -1047,23 +1247,27 @@ describe('flakybot', () => {
           testCase: 'TestSample',
           passed: false,
         });
+        const issues = [
+          {
+            title,
+            number: 18,
+            body: 'Failure!',
+            state: 'closed',
+            url: 'url',
+          },
+          {
+            title,
+            number: 19,
+            body: 'Failure!',
+            labels: [{name: 'flakybot: flaky'}],
+            state: 'closed',
+            url: 'url',
+          },
+        ];
 
         const scopes = [
-          nockIssues('golang-samples', [
-            {
-              title,
-              number: 18,
-              body: 'Failure!',
-              state: 'closed',
-            },
-            {
-              title,
-              number: 19,
-              body: 'Failure!',
-              labels: [{name: 'flakybot: flaky'}],
-              state: 'closed',
-            },
-          ]),
+          nockIssues('golang-samples', issues),
+          nockGetIssue('golang-samples', 19, issues[1]),
           nockIssueComment('golang-samples', 19),
           nockIssuePatch('golang-samples', 19),
         ];
@@ -1078,6 +1282,7 @@ describe('flakybot', () => {
       });
 
       it('reopens the more recently closed issue when there is a duplicate', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
 
         const title = formatTestCase({
@@ -1092,23 +1297,28 @@ describe('flakybot', () => {
         const fiveDaysAgo = new Date();
         fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
 
+        const issues = [
+          {
+            title,
+            number: 18,
+            body: 'Failure!',
+            state: 'closed',
+            closed_at: sixDaysAgo.toISOString(),
+            url: 'url',
+          },
+          {
+            title,
+            number: 19, // Newer issue closed more recently.
+            body: 'Failure!',
+            state: 'closed',
+            closed_at: fiveDaysAgo.toISOString(),
+            url: 'url',
+          },
+        ];
+
         const scopes = [
-          nockIssues('golang-samples', [
-            {
-              title,
-              number: 18,
-              body: 'Failure!',
-              state: 'closed',
-              closed_at: sixDaysAgo.toISOString(),
-            },
-            {
-              title,
-              number: 19, // Newer issue closed more recently.
-              body: 'Failure!',
-              state: 'closed',
-              closed_at: fiveDaysAgo.toISOString(),
-            },
-          ]),
+          nockIssues('golang-samples', issues),
+          nockGetIssue('golang-samples', 19, issues[1]),
           nockIssueComment('golang-samples', 19),
           nockIssuePatch('golang-samples', 19),
         ];
@@ -1123,6 +1333,7 @@ describe('flakybot', () => {
       });
 
       it('only opens one issue for a group of failures [Go]', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('go_failure_group.xml', 'golang-samples');
 
         const scopes = [
@@ -1140,23 +1351,27 @@ describe('flakybot', () => {
       });
 
       it('opens a new issue when the original is locked [Go]', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
+        const issues = [
+          {
+            title: formatTestCase({
+              package:
+                'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+              testCase: 'TestSample',
+              passed: false,
+            }),
+            number: 16,
+            body: 'Failure!',
+            state: 'closed',
+            locked: true,
+            url: 'url',
+          },
+        ];
 
         const scopes = [
-          nockIssues('golang-samples', [
-            {
-              title: formatTestCase({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
-                testCase: 'TestSample',
-                passed: false,
-              }),
-              number: 16,
-              body: 'Failure!',
-              state: 'closed',
-              locked: true,
-            },
-          ]),
+          nockIssues('golang-samples', issues),
+          nockGetIssue('golang-samples', 16, issues[0]),
           nockNewIssue('golang-samples'),
         ];
 
@@ -1170,25 +1385,30 @@ describe('flakybot', () => {
       });
 
       it('opens a new issue when the original was closed a long time ago [Go]', async () => {
+        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
 
         const closedAt = new Date();
         closedAt.setDate(closedAt.getDate() - 20);
+
+        const issues = [
+          {
+            title: formatTestCase({
+              package:
+                'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
+              testCase: 'TestSample',
+              passed: false,
+            }),
+            number: 16,
+            body: 'Failure!',
+            state: 'closed',
+            closed_at: closedAt.toISOString(),
+            url: 'url',
+          },
+        ];
         const scopes = [
-          nockIssues('golang-samples', [
-            {
-              title: formatTestCase({
-                package:
-                  'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
-                testCase: 'TestSample',
-                passed: false,
-              }),
-              number: 16,
-              body: 'Failure!',
-              state: 'closed',
-              closed_at: closedAt.toISOString(),
-            },
-          ]),
+          nockIssues('golang-samples', issues),
+          nockGetIssue('golang-samples', 16, issues[0]),
           nockNewIssue('golang-samples'),
         ];
 
@@ -1202,7 +1422,16 @@ describe('flakybot', () => {
       });
 
       describe('Grouped issues', () => {
+        const groupedIssue = {
+          title: flakybot.formatGroupedTitle('Spanner'),
+          number: 10,
+          body: 'Group failure!',
+          state: 'open',
+          url: 'url',
+        };
+
         it('opens a single issue for many tests in the same package', async () => {
+          getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
           const payload = buildPayload('node_group.xml', 'nodejs-spanner');
 
           const scopes = [
@@ -1233,6 +1462,7 @@ describe('flakybot', () => {
         });
 
         it('closes an individual issue and keeps grouped issue open', async () => {
+          getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
           const payload = buildPayload('node_group.xml', 'nodejs-spanner');
 
           const scopes = [
@@ -1246,14 +1476,11 @@ describe('flakybot', () => {
                 number: 9,
                 body: 'Failed',
                 state: 'open,',
+                url: 'url',
               },
-              {
-                title: flakybot.formatGroupedTitle('Spanner'),
-                number: 10,
-                body: 'Group failure!',
-                state: 'open',
-              },
+              groupedIssue,
             ]),
+            nockGetIssue('nodejs-spanner', 10, groupedIssue),
             nockGetIssueComments('nodejs-spanner', 10),
             nockIssueComment('nodejs-spanner', 10),
             nockGetIssueComments('nodejs-spanner', 9),
@@ -1271,18 +1498,13 @@ describe('flakybot', () => {
         });
 
         it('does not duplicate comment on grouped issue', async () => {
+          getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
           const payload = buildPayload('node_group.xml', 'nodejs-spanner');
 
           const testCase = flakybot.groupedTestCase('Spanner');
           const scopes = [
-            nockIssues('nodejs-spanner', [
-              {
-                title: flakybot.formatGroupedTitle('Spanner'),
-                number: 10,
-                body: 'Group failure!',
-                state: 'open',
-              },
-            ]),
+            nockIssues('nodejs-spanner', [groupedIssue]),
+            nockGetIssue('nodejs-spanner', 10, groupedIssue),
             nockGetIssueComments('nodejs-spanner', 10, [
               {
                 body: flakybot.formatBody(testCase, '123', 'build.url'),
@@ -1300,6 +1522,7 @@ describe('flakybot', () => {
         });
 
         it('closes group issues when all tests pass', async () => {
+          getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
           const payload = buildPayload('node_group_pass.xml', 'nodejs-spanner');
 
           const scopes = [
@@ -1313,13 +1536,9 @@ describe('flakybot', () => {
                 number: 9,
                 body: 'Failed',
                 state: 'open,',
+                url: 'url',
               },
-              {
-                title: flakybot.formatGroupedTitle('Spanner'),
-                number: 10,
-                body: 'Group failure!',
-                state: 'open',
-              },
+              groupedIssue,
             ]),
             nockIssueComment('nodejs-spanner', 9),
             nockGetIssueComments('nodejs-spanner', 9),

@@ -19,6 +19,7 @@ import {
   BranchProtectionRule,
   PermissionRule,
 } from './types';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import checks from './required-checks.json';
 
@@ -117,6 +118,7 @@ export class SyncRepoSettings {
     }
 
     const jobs: Promise<void>[] = [];
+    logger.info('updating settings');
     jobs.push(this.updateRepoTeams(repo, config?.permissionRules || []));
     if (config) {
       jobs.push(this.updateRepoOptions(repo, config));

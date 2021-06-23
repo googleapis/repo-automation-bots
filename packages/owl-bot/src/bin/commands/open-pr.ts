@@ -16,39 +16,24 @@
 // node ./build/src/bin/owl-bot.js list-repos --docker-image foo
 
 import {ConfigsStore} from '../../configs-store';
-import {createOnePullRequestForUpdatingLock} from '../../handlers';
 import yargs = require('yargs');
-import {octokitFrom} from '../../octokit-util';
+import {triggerOneBuildForUpdatingLock} from '../../handlers';
 
 interface Args {
-  'pem-path': string;
-  'app-id': number;
-  installation: number;
   'docker-image': string;
   'docker-digest': string;
   repo: string;
+  project: string | undefined;
+  'owl-bot-cli': string | undefined;
+  trigger: string;
 }
 
 export const openPR: yargs.CommandModule<{}, Args> = {
   command: 'open-pr',
-  describe: 'Open a pull request with an updated .OwlBot.lock.yaml',
+  describe:
+    'Triggers a cloud build with the new .OwlBot.lock.yaml.  Opens a new pull request if the generated code changed.',
   builder(yargs) {
     return yargs
-      .option('pem-path', {
-        describe: 'provide path to private key for requesting JWT',
-        type: 'string',
-        demand: true,
-      })
-      .option('app-id', {
-        describe: 'GitHub AppID',
-        type: 'number',
-        demand: true,
-      })
-      .option('installation', {
-        describe: 'installation ID for GitHub app',
-        type: 'number',
-        demand: true,
-      })
       .option('docker-image', {
         describe:
           'The full path of the docker image that changed.  ex: gcr.io/repo-automation-bots/nodejs-post-processor',
@@ -56,7 +41,8 @@ export const openPR: yargs.CommandModule<{}, Args> = {
         demand: true,
       })
       .option('docker-digest', {
-        describe: 'the docker digest sha',
+        describe:
+          'the docker digest sha.  ex: sha256:bef6add3ddeb96210db83d07560a13b735c532d6f3adaf76dec3d725f6b76f05',
         type: 'string',
         demand: true,
       })
@@ -64,24 +50,47 @@ export const openPR: yargs.CommandModule<{}, Args> = {
         describe: 'repository to run against, e.g., googleapis/foo',
         type: 'string',
         demand: true,
+      })
+      .option('trigger', {
+        describe: 'cloud build trigger id to invoke',
+        type: 'string',
+        demand: true,
+      })
+      .option('project', {
+        describe: 'google cloud project id in which to create the cloud build',
+        type: 'string',
+        demand: false,
+      })
+      .option('owl-bot-cli', {
+        describe: 'docker image for the owl-bot cli',
+        type: 'string',
+        demand: false,
       });
   },
   async handler(argv) {
-    const fakeConfigStore = ({
-      findPullRequestForUpdatingLock: () => undefined,
-      recordPullRequestForUpdatingLock: () => {},
-    } as unknown) as ConfigsStore;
-    const octokit = await octokitFrom(argv);
-    await createOnePullRequestForUpdatingLock(
+    const fakeConfigStore = {
+      findBuildIdForUpdatingLock: () => undefined,
+      recordBuildIdForUpdatingLock: () => {},
+    } as unknown as ConfigsStore;
+    const project = argv.project || process.env.PROJECT_ID;
+    if (!project) {
+      throw Error(
+        'gcloud project id must be provided via project arg or environment variable PROJECT_ID'
+      );
+    }
+    await triggerOneBuildForUpdatingLock(
       fakeConfigStore,
-      octokit,
       argv.repo,
       {
         docker: {
           image: argv['docker-image'],
           digest: argv['docker-digest'],
         },
-      }
+      },
+      project,
+      argv.trigger,
+      undefined,
+      argv['owl-bot-cli']
     );
   },
 };

@@ -16,7 +16,7 @@
 set -eo pipefail
 
 if [ $# -lt 6 ]; then
-  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <functionRegion> [functionRuntime]"
+  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <functionRegion> [functionRuntime] [timeout]"
   exit 1
 fi
 
@@ -29,10 +29,17 @@ functionRegion=$6
 
 # To use a different runtime for a bot, give 7th parameter in bot's
 # cloudbuild.yaml.
-if [ $# -eq 7 ]; then
+if [ $# -ge 7 ]; then
     functionRuntime=$7
 else
     functionRuntime=nodejs10
+fi
+
+if [ $# -ge 8 ]; then
+    timeout=$8
+else
+    # default to the max timeout (9 minutes)
+    timeout=540s
 fi
 
 botName=$(echo "${directoryName}" | rev | cut -d/ -f1 | rev)
@@ -48,7 +55,8 @@ gcloud functions deploy "${functionName}" \
   --trigger-http \
   --runtime "${functionRuntime}" \
   --region "${functionRegion}" \
-  --update-env-vars DRIFT_PRO_BUCKET="${bucket}",KEY_LOCATION="${keyLocation}",KEY_RING="${keyRing}",GCF_SHORT_FUNCTION_NAME="${functionName}",PROJECT_ID="${project}",GCF_LOCATION="${functionRegion}",PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1',WEBHOOK_TMP=tmp-webhook-payloads
+  --update-env-vars DRIFT_PRO_BUCKET="${bucket}",KEY_LOCATION="${keyLocation}",KEY_RING="${keyRing}",GCF_SHORT_FUNCTION_NAME="${functionName}",PROJECT_ID="${project}",GCF_LOCATION="${functionRegion}",PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1',WEBHOOK_TMP=tmp-webhook-payloads \
+  --timeout "${timeout}"
 
 echo "Adding ability for allUsers to execute the Function"
 gcloud alpha functions add-iam-policy-binding "${functionName}" \

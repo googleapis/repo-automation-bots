@@ -26,7 +26,9 @@ import {VERSION as OCTOKIT_LOGGING_PLUGIN_VERSION} from '../../src/logging/loggi
  *
  * 1. Create a GitHub personal access token:
  *    https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token
- * 2. Create a test GitHub App and give it the necessary permissions
+ * 2. Create a test GitHub App and give it the necessary permissions,
+ *    then note the installation id.
+ *
  * 3. Navigate to https://github.com/settings/apps/{your-app} to find
  *    the necessary information for step 4
  * 4. Enable secret manager on your GCP project and create a new secret
@@ -40,10 +42,33 @@ import {VERSION as OCTOKIT_LOGGING_PLUGIN_VERSION} from '../../src/logging/loggi
  * 5. Create a file in gcf-utils root directory called ".env" with the following:
  *    PROJECT_ID=<your GCP project id>
  *    GCF_SHORT_FUNCTION_NAME=<the name of your secret>
+ *    INSTALLATION_ID=<installation id of your bot>
+ *
  * 6. Run these tests by calling 'npm run system-test'
  */
 
 describe('GCFBootstrapper Integration', () => {
+  describe('getAuthenticatedOctokit', () => {
+    let bootstrapper: GCFBootstrapper;
+
+    beforeEach(async () => {
+      bootstrapper = new GCFBootstrapper();
+      config({path: resolve(__dirname, '../../../.env')});
+    });
+
+    afterEach(() => {});
+
+    it('creates authenticated Octokit', async () => {
+      const installationId = process.env.INSTALLATION_ID || '';
+      const octokit = await bootstrapper.getAuthenticatedOctokit(
+        Number(installationId)
+      );
+      await octokit.apps.listReposAccessibleToInstallation({
+        per_page: 1,
+        page: 1,
+      });
+    });
+  });
   describe('getProbotConfig', () => {
     let bootstrapper: GCFBootstrapper;
 
@@ -93,9 +118,11 @@ describe('GCFBootstrapper Integration', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         app.on('foo' as any, async context => {
           assert(
-            (context.octokit as GitHubAPI & {
-              loggingOctokitPluginVersion: string;
-            }).loggingOctokitPluginVersion === OCTOKIT_LOGGING_PLUGIN_VERSION
+            (
+              context.octokit as GitHubAPI & {
+                loggingOctokitPluginVersion: string;
+              }
+            ).loggingOctokitPluginVersion === OCTOKIT_LOGGING_PLUGIN_VERSION
           );
           called = true;
         });

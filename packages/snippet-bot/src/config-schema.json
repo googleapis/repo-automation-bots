@@ -1,0 +1,24 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "snippet-bot config",
+    "description": "Schema for defining the snippet-bot config",
+    "additionalProperties": false,
+    "type": "object",
+    "properties": {
+	"ignoreFiles": {
+	    "description": "A list of file patterns for ignoring",
+	    "type": "array",
+	    "items": {
+		"type": "string"
+	    }
+	},
+	"alwaysCreateStatusCheck": {
+	    "description": "Indicates whether the bot always create status checks",
+	    "type": "boolean",
+	},
+	"aggregateChecks": {
+	    "description": "Indicates whether the bot aggregate status checks",
+	    "type": "boolean",
+	}
+    }
+}
