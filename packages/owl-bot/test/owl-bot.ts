@@ -26,6 +26,7 @@ import nock from 'nock';
 import {Configs} from '../src/configs-store';
 import {owlBotLockPath} from '../src/config-files';
 import * as labelUtilsModule from '@google-automations/label-utils';
+import {FirestoreConfigsStore} from '../src/database';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
