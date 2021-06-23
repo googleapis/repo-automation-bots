@@ -21,7 +21,11 @@ import {logger} from 'gcf-utils';
 import {syncLabels} from '@google-automations/label-utils';
 import {core} from './core';
 import {Octokit} from '@octokit/rest';
-import {onPostProcessorPublished, scanGithubForConfigs} from './handlers';
+import {
+  onPostProcessorPublished,
+  refreshConfigs,
+  scanGithubForConfigs,
+} from './handlers';
 import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
 import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from './labels';
 
@@ -147,6 +151,34 @@ export function OwlBot(
     }
   });
 
+  // Ensure up-to-date configuration is stored on merge
+  app.on('pull_request.merged', async context => {
+    const configStore = new FirestoreConfigsStore(db!);
+    const installationId = context.payload.installation?.id;
+    const org = context.payload.organization?.login;
+
+    logger.info("Updating repo's configs via `pull_request.merged`");
+
+    if (!installationId || !org) {
+      logger.error(`Missing install id (${installationId}) or org (${org})`);
+      return;
+    }
+
+    const configs = await configStore.getConfigs(
+      context.payload.repository.full_name
+    );
+
+    await refreshConfigs(
+      configStore,
+      configs,
+      context.octokit,
+      org,
+      context.payload.repository.name,
+      context.payload.repository.default_branch ?? 'master',
+      installationId
+    );
+  });
+
   // Repository cron handler.
   // We share this handler between two cron jobs.
   // Both cron job has its own parameter.
@@ -167,6 +199,8 @@ export function OwlBot(
       logger.info(
         `scan ${context.payload.org} istallation = ${context.payload.installation.id}`
       );
+      logger.info('Scanning GitHub for configs via `schedule.repository`');
+
       await scanGithubForConfigs(
         configStore,
         context.octokit,
