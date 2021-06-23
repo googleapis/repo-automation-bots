@@ -25,6 +25,7 @@
 
 import {request} from 'gaxios';
 import {operations} from '@octokit/openapi-types';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 
 export type GitHubRepo =

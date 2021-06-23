@@ -19,10 +19,12 @@ import nock from 'nock';
 import sinon, {SinonStub} from 'sinon';
 import {describe, it, beforeEach, afterEach, suite} from 'mocha';
 import handler from '../src/merge-on-green';
+import {MERGE_ON_GREEN_LABELS} from '../src/labels';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
+import * as labelUtilsModule from '@google-automations/label-utils';
 
 const testingOctokitInstance = new Octokit({auth: 'abc123'});
 const sandbox = sinon.createSandbox();
@@ -258,8 +260,8 @@ describe('merge-on-green wrapper logic', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as '*',
-          payload: {org: 'testOwner', cleanUp: true},
+          name: 'schedule.global' as '*',
+          payload: {cron_type: 'global', cleanUp: true},
           id: 'abc123',
         });
 
@@ -276,8 +278,8 @@ describe('merge-on-green wrapper logic', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as '*',
-          payload: {org: 'testOwner', cleanUp: true},
+          name: 'schedule.global' as '*',
+          payload: {cron_type: 'global', cleanUp: true},
           id: 'abc123',
         });
 
@@ -294,8 +296,8 @@ describe('merge-on-green wrapper logic', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.repository' as '*',
-          payload: {org: 'testOwner', cleanUp: true},
+          name: 'schedule.global' as '*',
+          payload: {cron_type: 'global', cleanUp: true},
           id: 'abc123',
         });
 
@@ -307,8 +309,8 @@ describe('merge-on-green wrapper logic', () => {
         const scopes = [getPRCleanUp('open', false), getLabels('automerge')];
 
         await probot.receive({
-          name: 'schedule.repository' as '*',
-          payload: {org: 'testOwner', cleanUp: true},
+          name: 'schedule.global' as '*',
+          payload: {cron_type: 'global', cleanUp: true},
           id: 'abc123',
         });
 
@@ -325,8 +327,13 @@ describe('merge-on-green wrapper logic', () => {
 
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          name: 'schedule.repository' as any,
-          payload: {org: 'googleapis', find_hanging_prs: true},
+          name: 'schedule.installation' as any,
+          payload: {
+            cron_type: 'installation',
+            cron_org: 'googleapis',
+            findHangingPRs: true,
+            installation: {id: 1234},
+          },
           id: 'abc123',
         });
 
@@ -638,8 +645,13 @@ describe('merge-on-green wrapper logic', () => {
 
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          name: 'schedule.repository' as any,
-          payload: {org: 'googleapis', find_hanging_prs: true},
+          name: 'schedule.installation' as any,
+          payload: {
+            cron_type: 'installation',
+            cron_org: 'googleapis',
+            findHangingPRs: true,
+            installation: {id: 1234},
+          },
           id: 'abc123',
         });
 
@@ -674,8 +686,13 @@ describe('merge-on-green wrapper logic', () => {
 
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          name: 'schedule.repository' as any,
-          payload: {org: 'googleapis', find_hanging_prs: true},
+          name: 'schedule.installation' as any,
+          payload: {
+            cron_type: 'installation',
+            cron_org: 'googleapis',
+            findHangingPRs: true,
+            installation: {id: 1234},
+          },
           id: 'abc123',
         });
 
@@ -718,18 +735,54 @@ describe('merge-on-green wrapper logic', () => {
           ),
           searchForPRs([], 'automerge%3A%20exact'),
         ];
-
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          name: 'schedule.repository' as any,
-          payload: {org: 'googleapis', find_hanging_prs: true},
+          name: 'schedule.installation' as any,
+          payload: {
+            cron_type: 'installation',
+            cron_org: 'googleapis',
+            findHangingPRs: true,
+            installation: {id: 1234},
+          },
           id: 'abc123',
         });
-
         scopes.forEach(s => s.done());
         assert(getPRStub.called);
         assert(!addPRStub.called);
         getPRStub.restore();
+      });
+
+      it('syncs its own labels', async () => {
+        const sandbox = sinon.createSandbox();
+        const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
+        const payload = {
+          repository: {
+            name: 'Hello-World',
+            full_name: 'Codertocat/Hello-World',
+            owner: {
+              login: 'Codertocat',
+            },
+          },
+          organization: {
+            login: 'Codertocat',
+          },
+          cron_org: 'Codertocat',
+          syncLabels: true,
+        };
+        await probot.receive({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'schedule.repository' as any,
+          payload: payload,
+          id: 'abc123',
+        });
+        sinon.assert.calledOnceWithExactly(
+          syncLabelsStub,
+          sinon.match.instanceOf(ProbotOctokit),
+          'Codertocat',
+          'Hello-World',
+          sinon.match.array.deepEquals(MERGE_ON_GREEN_LABELS)
+        );
+        sandbox.restore();
       });
     }
   );
