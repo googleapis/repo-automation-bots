@@ -75,12 +75,12 @@ interface Token {
 
 export const OWL_BOT_LOCK_UPDATE = 'owl-bot-update-lock';
 export const OWL_BOT_COPY = 'owl-bot-copy';
-export const OWL_BOT_IGNORE = 'owl-bot-ignore';
+export const OWL_BOT_IGNORE = 'owlbot:ignore';
 
 export async function triggerPostProcessBuild(
   args: BuildArgs,
   octokit?: OctokitType
-): Promise<BuildResponse> {
+): Promise<BuildResponse | null> {
   const token = await core.getGitHubShortLivedAccessToken(
     args.privateKey,
     args.appId,
@@ -90,7 +90,6 @@ export async function triggerPostProcessBuild(
   if (!project) {
     throw Error('gcloud project must be provided');
   }
-  const cb = core.getCloudBuildInstance();
   const [owner, repo] = args.repo.split('/');
   if (!octokit) {
     octokit = await core.getAuthenticatedOctokit(token.token);
@@ -100,13 +99,23 @@ export async function triggerPostProcessBuild(
     repo,
     pull_number: args.pr,
   });
+
+  // See if someone asked owl bot to ignore this PR.
+  if (prData.labels.find(label => label.name === OWL_BOT_IGNORE)) {
+    logger.info(
+      `Ignoring ${owner}/${repo} #${args.pr} because it's labeled with ${OWL_BOT_IGNORE}.`
+    );
+    return null;
+  }
+
   const [prOwner, prRepo] = prData.head.repo.full_name.split('/');
+  const cb = core.getCloudBuildInstance();
   const [resp] = await cb.runBuildTrigger({
     projectId: project,
     triggerId: args.trigger,
     source: {
       projectId: project,
-      branchName: 'master',
+      branchName: 'master', // TODO: It might fail if we change the default branch.
       substitutions: {
         _GITHUB_TOKEN: token.token,
         _PR: args.pr.toString(),
@@ -458,11 +467,13 @@ async function hasOwlBotLoop(
   // It's also okay to run the post-processor many more than circuitBreaker
   // times on a long lived PR, with human edits being made.
   const circuitBreaker = 3;
+  // TODO(bcoe): we should move to an async iterator for listCommits:
   const commits = (
     await octokit.pulls.listCommits({
       pull_number: prNumber,
       owner,
       repo,
+      per_page: 100,
     })
   ).data;
   let count = 0;
@@ -472,6 +483,35 @@ async function hasOwlBotLoop(
     if (count >= circuitBreaker) return true;
   }
   return false;
+}
+
+/*
+ * Return whether or not the last commit was from OwlBot.
+ *
+ * @param owner owner of repo.
+ * @param repo short repo name.
+ * @param prNumber PR to check for commit.
+ * @param octokit authenticated instance of octokit.
+ * @returns Promise was the last commit from OwlBot?
+ */
+async function lastCommitFromOwlBot(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  octokit: Octokit
+): Promise<boolean> {
+  // TODO(bcoe): we should move to an async iterator for listCommits in the
+  // future, so that we can handle more than 100:
+  const commits = (
+    await octokit.pulls.listCommits({
+      pull_number: prNumber,
+      owner,
+      repo,
+      per_page: 100,
+    })
+  ).data;
+  const commit = commits[commits.length - 1];
+  return commit?.author?.login === OWLBOT_USER;
 }
 
 /**
@@ -560,6 +600,7 @@ export const core = {
   getGitHubShortLivedAccessToken,
   getOwlBotLock,
   hasOwlBotLoop,
+  lastCommitFromOwlBot,
   owlBotLockPath,
   triggerPostProcessBuild,
   updatePullRequestAfterPostProcessor,

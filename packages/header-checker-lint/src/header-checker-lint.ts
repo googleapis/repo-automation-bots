@@ -89,8 +89,7 @@ export = (app: Probot) => {
         context.payload.pull_request.head.sha,
         context.payload.pull_request.number
       );
-      let remoteConfiguration: ConfigurationOptions | null =
-        configChecker.getConfig();
+      let remoteConfiguration: ConfigurationOptions | null = configChecker.getConfig();
       if (remoteConfiguration === null) {
         try {
           remoteConfiguration = await getConfig<ConfigurationOptions>(
