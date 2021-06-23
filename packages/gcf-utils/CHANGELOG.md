@@ -87,6 +87,18 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [11.3.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.2.0...gcf-utils-v11.3.0) (2021-06-23)
+
+
+### Features
+
+* allow configuration of GCFBootstrapper via constructor arguments ([#2150](https://www.github.com/googleapis/repo-automation-bots/issues/2150)) ([534e26b](https://www.github.com/googleapis/repo-automation-bots/commit/534e26bce3efb81556c7ce49bb84f2082deb1121)), closes [#2139](https://www.github.com/googleapis/repo-automation-bots/issues/2139)
+
+
+### Bug Fixes
+
+* **gcf-utils:** skip suspended installations ([#2158](https://www.github.com/googleapis/repo-automation-bots/issues/2158)) ([b1b5617](https://www.github.com/googleapis/repo-automation-bots/commit/b1b5617918e2516467977f41e15f05edb872c66e))
+
 ## [11.2.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.1.0...gcf-utils-v11.2.0) (2021-06-21)
 
 
