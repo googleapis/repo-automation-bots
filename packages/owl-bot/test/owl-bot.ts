@@ -760,6 +760,7 @@ describe('owlBot', () => {
         installation: {
           id: 12345,
         },
+        scanGithubForConfigs: true
       };
       let org: string | undefined = undefined;
       let installation: number | undefined = undefined;
