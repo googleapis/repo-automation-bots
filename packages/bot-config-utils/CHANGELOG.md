@@ -1,5 +1,12 @@
 # Changelog
 
+### [3.1.3](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v3.1.2...bot-config-utils-v3.1.3) (2021-06-18)
+
+
+### Bug Fixes
+
+* update libraries to gcf-utils 11 ([#2117](https://www.github.com/googleapis/repo-automation-bots/issues/2117)) ([5afebc3](https://www.github.com/googleapis/repo-automation-bots/commit/5afebc3781cd511a5fc6cd4485c2b002fcacacb4))
+
 ### [3.1.2](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v3.1.1...bot-config-utils-v3.1.2) (2021-06-09)
 
 

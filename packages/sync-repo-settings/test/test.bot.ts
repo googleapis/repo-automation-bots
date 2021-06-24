@@ -176,6 +176,7 @@ describe('Sync repo settings', () => {
           'test (15)',
           'cla/google',
           'windows',
+          'OwlBot Post Processor',
         ],
         true,
         true

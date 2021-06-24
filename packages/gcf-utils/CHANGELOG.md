@@ -87,6 +87,46 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [11.3.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.2.0...gcf-utils-v11.3.0) (2021-06-23)
+
+
+### Features
+
+* allow configuration of GCFBootstrapper via constructor arguments ([#2150](https://www.github.com/googleapis/repo-automation-bots/issues/2150)) ([534e26b](https://www.github.com/googleapis/repo-automation-bots/commit/534e26bce3efb81556c7ce49bb84f2082deb1121)), closes [#2139](https://www.github.com/googleapis/repo-automation-bots/issues/2139)
+
+
+### Bug Fixes
+
+* **gcf-utils:** skip suspended installations ([#2158](https://www.github.com/googleapis/repo-automation-bots/issues/2158)) ([b1b5617](https://www.github.com/googleapis/repo-automation-bots/commit/b1b5617918e2516467977f41e15f05edb872c66e))
+
+## [11.2.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.1.0...gcf-utils-v11.2.0) (2021-06-21)
+
+
+### Features
+
+* add helper to build a http.Server instance from a bot function ([#2128](https://www.github.com/googleapis/repo-automation-bots/issues/2128)) ([90430f3](https://www.github.com/googleapis/repo-automation-bots/commit/90430f3024cfd4c502f3001ab90ea585f8b8a85b)), closes [#1817](https://www.github.com/googleapis/repo-automation-bots/issues/1817)
+
+## [11.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.0.2...gcf-utils-v11.1.0) (2021-06-18)
+
+
+### Features
+
+* add max retries config options ([#2116](https://www.github.com/googleapis/repo-automation-bots/issues/2116)) ([4cb9d40](https://www.github.com/googleapis/repo-automation-bots/commit/4cb9d40c715a9a795e54711811e509df85174e60))
+
+### [11.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.0.1...gcf-utils-v11.0.2) (2021-06-18)
+
+
+### Bug Fixes
+
+* queue in repository tasks in parallel ([#2121](https://www.github.com/googleapis/repo-automation-bots/issues/2121)) ([e6cb65b](https://www.github.com/googleapis/repo-automation-bots/commit/e6cb65bde901f8f3c04fa2c992e096339ce7d066))
+
+### [11.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.0.0...gcf-utils-v11.0.1) (2021-06-18)
+
+
+### Bug Fixes
+
+* only provide the installationId if set ([#2108](https://www.github.com/googleapis/repo-automation-bots/issues/2108)) ([3d8950b](https://www.github.com/googleapis/repo-automation-bots/commit/3d8950b7fa3350200842da18ad8f2ae52f54cecf)), closes [#2107](https://www.github.com/googleapis/repo-automation-bots/issues/2107)
+
 ## [11.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v10.1.0...gcf-utils-v11.0.0) (2021-06-17)
 
 

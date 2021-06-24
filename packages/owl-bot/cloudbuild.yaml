@@ -36,7 +36,19 @@ steps:
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
       - "nodejs12"
-  
+
+  - name: gcr.io/cloud-builders/npm
+    id: "cron-deploy"
+    waitFor: ["-"]
+    entrypoint: bash
+    args:
+      - "-e"
+      - "./scripts/cron-deploy.sh"
+      - "$_SCHEDULER_SERVICE_ACCOUNT_EMAIL"
+      - "$_FUNCTION_REGION"
+      - "$_REGION"
+      - "$_DIRECTORY"
+
   # Build the CLI container whenever we merge changes to the owl-bot folder.
   # this container is used to run helpers from OwlBot in a Cloud Build
   # environment:

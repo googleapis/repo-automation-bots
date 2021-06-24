@@ -32,6 +32,11 @@ Owl Bot is an automaton enforcing the will of the
 If you absolutely cannot live with the changes made by Owl Bot,
 contact yoshi team via the Google chat room **GitHub Automation**.
 Non-Googlers can open an issue on this repository.
+
+There are a few [exceptional cases](https://github.com/googleapis/synthtool/issues/1121) where the Owl Bot post processor is misbehaving
+and must be silenced.  In such cases, add the label `owlbot:ignore` and
+Owl Bot will stop touching the pull request.
+
 ## For Yoshi Team Members
 
 The following sections are internal details for Yosh Team members.
@@ -55,9 +60,9 @@ injecting the following substitutions:
 During development, I have been running the OwlBot Post Processor as a command
 line application.
 
-To do the same, from `packages/owl-bot-post-processor` run:
+To do the same, from `packages/owl-bot` run:
 
 ```
 npm link .
-owl-bot-post-processor trigger-build --help
+owl-bot trigger-build --help
 ```

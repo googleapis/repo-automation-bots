@@ -17,6 +17,7 @@ import {describe, it, afterEach} from 'mocha';
 import {getPolicy, GitHubRepo, githubRawBase} from '../src/policy';
 import assert from 'assert';
 import sinon from 'sinon';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 
 nock.disableNetConnect();

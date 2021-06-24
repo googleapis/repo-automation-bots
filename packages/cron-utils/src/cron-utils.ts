@@ -127,6 +127,7 @@ export async function createOrUpdateCron(
         'Content-Type': 'application/json',
       },
       body: Buffer.from(JSON.stringify(bodyContent), 'utf-8'),
+      attemptDeadline: '540s', // The max request time for the Cloud Function.
     },
     timeZone: 'America/Los_Angeles',
   };
