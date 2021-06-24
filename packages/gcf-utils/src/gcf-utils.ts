@@ -443,6 +443,8 @@ export class GCFBootstrapper {
         taskId
       );
 
+      logger.info(`signature = ${signature}`);
+
       // validate the signature
       if (
         !wrapConfig.skipVerification &&
