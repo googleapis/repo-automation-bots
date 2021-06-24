@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.0.3](https://www.github.com/googleapis/repo-automation-bots/compare/cron-utils-v2.0.2...cron-utils-v2.0.3) (2021-06-24)
+
+
+### Bug Fixes
+
+* **cron-utils:** correctly set attemptDeadline at top level ([#2168](https://www.github.com/googleapis/repo-automation-bots/issues/2168)) ([d48541d](https://www.github.com/googleapis/repo-automation-bots/commit/d48541de989e17fbda2530712b5472a1b617d16d))
+
 ### [2.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/cron-utils-v2.0.1...cron-utils-v2.0.2) (2021-06-23)
 
 
