@@ -116,6 +116,7 @@ export async function createOrUpdateCron(
   const jobParams = {
     schedule: cronEntry.schedule,
     description: cronEntry.description,
+    attemptDeadline: {seconds: '540'}, // The max request time for the Cloud Function.
     httpTarget: {
       uri: targetUrl,
       httpMethod: protos.google.cloud.scheduler.v1.HttpMethod.POST,
@@ -127,7 +128,6 @@ export async function createOrUpdateCron(
         'Content-Type': 'application/json',
       },
       body: Buffer.from(JSON.stringify(bodyContent), 'utf-8'),
-      attemptDeadline: '540s', // The max request time for the Cloud Function.
     },
     timeZone: 'America/Los_Angeles',
   };
