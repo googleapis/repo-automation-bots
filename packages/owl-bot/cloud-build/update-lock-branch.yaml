@@ -25,6 +25,17 @@ steps:
     args:
       - clone
       - https://github.com/${_PR_OWNER}/${_REPOSITORY}.git
+
+  # Observe the default branch name and save it for later.
+  - name: 'gcr.io/cloud-builders/git'
+    entrypoint: bash
+    args: [
+      '-l',
+      '-c',
+      "git branch --show-current > /workspace/default-branch.txt"
+    ]
+    dir: ${_REPOSITORY}
+
   # Populate global username, email for git:
   - name: 'gcr.io/cloud-builders/git'
     args:
@@ -78,6 +89,8 @@ steps:
   # Run container listed in OwlBot.yaml.
   - name: ${_CONTAINER}
     dir: '${_REPOSITORY}'
+    env:
+      - 'DEFAULT_BRANCH_PATH=/workspace/default-branch.txt'
 
   # Fetch our github credentials because we may need to push to github.
   - name: 'gcr.io/cloud-builders/gcloud'
