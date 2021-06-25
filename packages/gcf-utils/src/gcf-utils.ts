@@ -32,7 +32,7 @@ import {GCFLogger} from './logging/gcf-logger';
 import {v4} from 'uuid';
 import {getServer} from './server/server';
 
-// On Cloud Functions, rawBody is automatially added.
+// On Cloud Functions, rawBody is automatically added.
 // It's not guaranteed on other platform.
 export interface RequestWithRawBody extends express.Request {
   rawBody?: Buffer;
@@ -365,8 +365,8 @@ export class GCFBootstrapper {
       '';
     const taskRetries = parseInt(
       request.get('X-CloudTasks-TaskRetryCount') ||
-        request.get('x-cloudtasks-taskretrycount') ||
-        '0'
+      request.get('x-cloudtasks-taskretrycount') ||
+      '0'
     );
     return {name, id, signature, taskId, taskRetries};
   }
