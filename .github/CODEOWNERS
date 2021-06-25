@@ -7,7 +7,7 @@
 
 *     @googleapis/github-automation
 
-packages/auto-label/*                 @googleapis/github-automation @nicoleczhu @sofisl
+packages/auto-label/*                 @googleapis/github-automation @sofisl
 packages/blunderbuss/*                @googleapis/github-automation @kurtisvg
 packages/flakybot/*                   @googleapis/github-automation @tbp
 packages/conventional-commit-lint/*   @googleapis/github-automation @bcoe
