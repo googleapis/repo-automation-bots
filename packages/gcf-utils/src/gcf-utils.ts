@@ -32,11 +32,17 @@ import {GCFLogger} from './logging/gcf-logger';
 import {v4} from 'uuid';
 import {getServer} from './server/server';
 
+// On Cloud Functions, rawBody is automatially added.
+// It's not guaranteed on other platform.
+export interface RequestWithRawBody extends express.Request {
+  rawBody?: Buffer;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LoggingOctokitPlugin = require('../src/logging/logging-octokit-plugin.js');
 
 export type HandlerFunction = (
-  request: express.Request,
+  request: RequestWithRawBody,
   response: express.Response
 ) => Promise<void>;
 
@@ -429,7 +435,7 @@ export class GCFBootstrapper {
    * @param wrapOptions {WrapOptions} Bot handler options
    */
   gcf(appFn: ApplicationFunction, wrapOptions?: WrapOptions): HandlerFunction {
-    return async (request: express.Request, response: express.Response) => {
+    return async (request: RequestWithRawBody, response: express.Response) => {
       const wrapConfig = this.parseWrapConfig(wrapOptions);
 
       this.probot =
@@ -448,7 +454,10 @@ export class GCFBootstrapper {
       // validate the signature
       if (
         !wrapConfig.skipVerification &&
-        !this.probot.webhooks.verify(request.body, signature)
+        !this.probot.webhooks.verify(
+          request.rawBody ? request.rawBody.toString() : request.body,
+          signature
+        )
       ) {
         response.send({
           statusCode: 400,
