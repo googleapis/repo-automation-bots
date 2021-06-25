@@ -1007,39 +1007,6 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
       });
-
-      // Remove this test after https://github.com/googleapis/repo-automation-bots/issues/2092
-      // is fixed.
-      it('handles valid task request signatures without leading sha1', async () => {
-        await mockBootstrapper({
-          logging: false,
-          background: true,
-          skipVerification: false,
-        });
-        // req.body is a parsed json object.
-        req.body = {
-          installation: {id: 1},
-        };
-        // while req.rawBody is a raw buffer
-        req.rawBody = fs.readFileSync('test/fixtures/payload.json');
-        req.headers = {};
-        req.headers['x-github-event'] = 'issues';
-        req.headers['x-github-delivery'] = '123';
-        req.headers['x-cloudtasks-taskname'] = 'my-task';
-        // cat fixtures/payload.json | openssl dgst -sha1 -hmac "foo"
-        req.headers['x-hub-signature'] =
-          'fd28a625d68ef18fe9b532fd972514774fed9653';
-
-        await handler(req, response);
-
-        sinon.assert.calledOnce(configStub);
-        sinon.assert.notCalled(sendStatusStub);
-        sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
-        sinon.assert.calledOnce(issueSpy);
-        sinon.assert.notCalled(repositoryCronSpy);
-        sinon.assert.notCalled(installationCronSpy);
-        sinon.assert.notCalled(globalCronSpy);
-      });
     });
   });
 

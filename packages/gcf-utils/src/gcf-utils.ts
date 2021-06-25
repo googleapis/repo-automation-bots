@@ -333,10 +333,7 @@ export class GCFBootstrapper {
     const sha1Signature =
       request.get('x-hub-signature') || request.get('X-Hub-Signature');
     if (sha1Signature) {
-      // See https://github.com/googleapis/repo-automation-bots/issues/2092
-      return sha1Signature.startsWith('sha1=')
-        ? sha1Signature
-        : `sha1=${sha1Signature}`;
+      return sha1Signature;
     }
     return 'unset';
   }
