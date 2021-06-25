@@ -365,8 +365,8 @@ export class GCFBootstrapper {
       '';
     const taskRetries = parseInt(
       request.get('X-CloudTasks-TaskRetryCount') ||
-      request.get('x-cloudtasks-taskretrycount') ||
-      '0'
+        request.get('x-cloudtasks-taskretrycount') ||
+        '0'
     );
     return {name, id, signature, taskId, taskRetries};
   }
