@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [11.3.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.3.0...gcf-utils-v11.3.1) (2021-06-25)
+
+
+### Bug Fixes
+
+* **gcf-utils:** use raw body for signature verification ([#2176](https://www.github.com/googleapis/repo-automation-bots/issues/2176)) ([1c68cf1](https://www.github.com/googleapis/repo-automation-bots/commit/1c68cf14e5b7671b6b05d75f419c637456d1bf73)), closes [#2092](https://www.github.com/googleapis/repo-automation-bots/issues/2092)
+
 ## [11.3.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.2.0...gcf-utils-v11.3.0) (2021-06-23)
 
 

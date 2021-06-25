@@ -165,6 +165,12 @@ export async function scanGithubForConfigs(
   orgInstallationId: number
 ): Promise<void> {
   let count = 0; // Count of repos scanned for debugging purposes.
+  logger.info(`scan ${githubOrg} installation = ${orgInstallationId}`);
+  logger.metric('owlbot.scan_github_for_configs', {
+    org: githubOrg,
+    installationId: orgInstallationId,
+  });
+
   for await (const response of octokit.paginate.iterator(
     octokit.repos.listForOrg,
     {
