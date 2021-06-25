@@ -25,5 +25,5 @@ module.exports.owl_bot = bootstrap.gcf(
     const config = await bootstrap.getProbotConfig(false);
     OwlBot(config.privateKey, app);
   },
-  {skipVerification: true}
+  {maxPubSubRetries: 3}
 );

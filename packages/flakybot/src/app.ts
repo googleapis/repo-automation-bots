@@ -17,7 +17,6 @@ import {flakybot} from './flakybot';
 
 const bootstrap = new GCFBootstrapper();
 module.exports.flakybot = bootstrap.gcf(flakybot, {
-  skipVerification: true,
-  background: false,
+  maxPubSubRetries: 3,
   logging: true,
 });
