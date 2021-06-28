@@ -1,0 +1,7 @@
+# to update, run:
+# gcloud --project=repo-automation-bots datastore indexes create index.yaml --quiet
+indexes:
+- kind: mog-prs
+  properties:
+    - name: installationId
+    - name: created

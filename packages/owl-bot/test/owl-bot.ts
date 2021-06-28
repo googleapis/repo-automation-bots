@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import * as assert from 'assert';
-import {core, OWL_BOT_IGNORE} from '../src/core';
+import {core} from '../src/core';
+import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from '../src/labels';
 import * as handlers from '../src/handlers';
 import {describe, it, beforeEach} from 'mocha';
 import {logger} from 'gcf-utils';
@@ -22,7 +23,10 @@ import {OwlBot} from '../src/owl-bot';
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import * as sinon from 'sinon';
 import nock from 'nock';
+import {Configs} from '../src/configs-store';
 import {owlBotLockPath} from '../src/config-files';
+import * as labelUtilsModule from '@google-automations/label-utils';
+import {FirestoreConfigsStore} from '../src/database';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -51,6 +55,34 @@ describe('owlBot', () => {
   });
   afterEach(() => {
     sandbox.restore();
+  });
+  describe('Cron for syncing labels ', () => {
+    it('calls syncLabels for schedule.repository cron job with syncLabels: true', async () => {
+      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
+      await probot.receive({
+        name: 'schedule.repository' as '*',
+        payload: {
+          repository: {
+            name: 'testRepo',
+            owner: {
+              login: 'testOwner',
+            },
+          },
+          organization: {
+            login: 'googleapis',
+          },
+          syncLabels: true,
+        },
+        id: 'abc123',
+      });
+      sinon.assert.calledOnceWithExactly(
+        syncLabelsStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'googleapis',
+        'testRepo',
+        OWL_BOT_LABELS
+      );
+    });
   });
   describe('post processing pull request', () => {
     it('returns early and logs if pull request opened from fork', async () => {
@@ -722,13 +754,119 @@ describe('owlBot', () => {
     });
     sandbox.assert.calledOnce(loggerStub);
   });
+
+  describe('pull request merged', () => {
+    let loggerErrorStub: sinon.SinonStub;
+    let getConfigsStub: sinon.SinonStub;
+    let refreshConfigsStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      loggerErrorStub = sandbox.stub(logger, 'error');
+      getConfigsStub = sandbox.stub(
+        FirestoreConfigsStore.prototype,
+        'getConfigs'
+      );
+      refreshConfigsStub = sandbox.stub(handlers, 'refreshConfigs').resolves();
+    });
+
+    it('invokes `refreshConfigs`', async () => {
+      const payload = {
+        organization: {
+          login: 'googleapis',
+        },
+        installation: {
+          id: 12345,
+        },
+        repository: {
+          default_branch: 'default_branch',
+          full_name: 'full_name',
+          name: 'name',
+        },
+      };
+
+      const customConfig: Configs = {
+        commitHash: 'my-commit-hash',
+        // The branch name from which the config files were retrieved.
+        branchName: payload.repository.default_branch,
+        // The installation id for our github app and this repo.
+        installationId: payload.installation.id,
+      };
+
+      getConfigsStub.resolves(customConfig);
+
+      await probot.receive({
+        name: 'pull_request.merged',
+        payload,
+        id: 'abc123',
+      });
+
+      // We shouldn't expect any errors
+      assert.strictEqual(loggerErrorStub.called, false);
+
+      // Ensure `getConfigs` was called correctly
+      assert.ok(
+        getConfigsStub.calledOnceWithExactly(payload.repository.full_name)
+      );
+
+      // Ensure `refreshConfigs` was called correctly
+      assert.strictEqual(refreshConfigsStub.callCount, 1);
+      const [{args: callArgs}] = refreshConfigsStub.getCalls();
+
+      assert.ok(callArgs[0] instanceof FirestoreConfigsStore);
+      assert.strictEqual(callArgs[1], customConfig);
+      assert.ok(callArgs[2] instanceof ProbotOctokit);
+      assert.strictEqual(callArgs[3], payload.organization.login);
+      assert.strictEqual(callArgs[4], payload.repository.name);
+      assert.strictEqual(callArgs[5], payload.repository.default_branch);
+      assert.strictEqual(callArgs[6], payload.installation.id);
+    });
+
+    it('should log an error if `payload.installation.id` is not available', async () => {
+      const payload = {
+        organization: {
+          login: 'googleapis',
+        },
+      };
+
+      await probot.receive({
+        name: 'pull_request.merged',
+        payload,
+        id: 'abc123',
+      });
+
+      assert.strictEqual(loggerErrorStub.called, true);
+      assert.strictEqual(getConfigsStub.called, false);
+      assert.strictEqual(refreshConfigsStub.called, false);
+    });
+
+    it('should log an error if `payload.organization.login` is not available', async () => {
+      const payload = {
+        installation: {
+          id: 12345,
+        },
+      };
+
+      await probot.receive({
+        name: 'pull_request.merged',
+        payload,
+        id: 'abc123',
+      });
+
+      assert.strictEqual(loggerErrorStub.called, true);
+      assert.strictEqual(getConfigsStub.called, false);
+      assert.strictEqual(refreshConfigsStub.called, false);
+    });
+  });
+
   describe('scan configs cron', () => {
     it('invokes scanGithubForConfigs', async () => {
+      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
       const payload = {
         org: 'googleapis',
         installation: {
           id: 12345,
         },
+        scanGithubForConfigs: true,
       };
       let org: string | undefined = undefined;
       let installation: number | undefined = undefined;
@@ -753,6 +891,7 @@ describe('owlBot', () => {
       });
       assert.strictEqual(org, 'googleapis');
       assert.strictEqual(installation, 12345);
+      sinon.assert.notCalled(syncLabelsStub);
     });
   });
   it('triggers build when "owlbot:run" label is added to fork', async () => {
@@ -767,7 +906,7 @@ describe('owlBot', () => {
         number: 33,
         labels: [
           {
-            name: 'owlbot:run',
+            name: OWLBOT_RUN_LABEL,
           },
         ],
         head: {
@@ -837,7 +976,7 @@ describe('owlBot', () => {
         number: 33,
         labels: [
           {
-            name: 'owlbot:run',
+            name: OWLBOT_RUN_LABEL,
           },
         ],
         head: {
@@ -907,7 +1046,7 @@ describe('owlBot', () => {
         number: 33,
         labels: [
           {
-            name: 'owlbot:run',
+            name: OWLBOT_RUN_LABEL,
           },
         ],
         head: {
@@ -1038,7 +1177,7 @@ describe('owlBot', () => {
         number: 33,
         labels: [
           {
-            name: 'owlbot:run',
+            name: OWLBOT_RUN_LABEL,
           },
         ],
         head: {

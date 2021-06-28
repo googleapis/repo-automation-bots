@@ -23,6 +23,7 @@ import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {OwlBotLock, owlBotLockPath, owlBotLockFrom} from './config-files';
 import {OctokitType} from './octokit-util';
+import {OWL_BOT_IGNORE} from './labels';
 
 interface BuildArgs {
   image: string;
@@ -75,7 +76,6 @@ interface Token {
 
 export const OWL_BOT_LOCK_UPDATE = 'owl-bot-update-lock';
 export const OWL_BOT_COPY = 'owl-bot-copy';
-export const OWL_BOT_IGNORE = 'owl-bot:ignore';
 
 export async function triggerPostProcessBuild(
   args: BuildArgs,

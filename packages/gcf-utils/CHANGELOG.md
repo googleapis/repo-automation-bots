@@ -87,6 +87,32 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [11.3.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.3.0...gcf-utils-v11.3.1) (2021-06-25)
+
+
+### Bug Fixes
+
+* **gcf-utils:** use raw body for signature verification ([#2176](https://www.github.com/googleapis/repo-automation-bots/issues/2176)) ([1c68cf1](https://www.github.com/googleapis/repo-automation-bots/commit/1c68cf14e5b7671b6b05d75f419c637456d1bf73)), closes [#2092](https://www.github.com/googleapis/repo-automation-bots/issues/2092)
+
+## [11.3.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.2.0...gcf-utils-v11.3.0) (2021-06-23)
+
+
+### Features
+
+* allow configuration of GCFBootstrapper via constructor arguments ([#2150](https://www.github.com/googleapis/repo-automation-bots/issues/2150)) ([534e26b](https://www.github.com/googleapis/repo-automation-bots/commit/534e26bce3efb81556c7ce49bb84f2082deb1121)), closes [#2139](https://www.github.com/googleapis/repo-automation-bots/issues/2139)
+
+
+### Bug Fixes
+
+* **gcf-utils:** skip suspended installations ([#2158](https://www.github.com/googleapis/repo-automation-bots/issues/2158)) ([b1b5617](https://www.github.com/googleapis/repo-automation-bots/commit/b1b5617918e2516467977f41e15f05edb872c66e))
+
+## [11.2.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.1.0...gcf-utils-v11.2.0) (2021-06-21)
+
+
+### Features
+
+* add helper to build a http.Server instance from a bot function ([#2128](https://www.github.com/googleapis/repo-automation-bots/issues/2128)) ([90430f3](https://www.github.com/googleapis/repo-automation-bots/commit/90430f3024cfd4c502f3001ab90ea585f8b8a85b)), closes [#1817](https://www.github.com/googleapis/repo-automation-bots/issues/1817)
+
 ## [11.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.0.2...gcf-utils-v11.1.0) (2021-06-18)
 
 
