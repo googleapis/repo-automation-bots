@@ -116,6 +116,7 @@ export async function createOrUpdateCron(
   const jobParams = {
     schedule: cronEntry.schedule,
     description: cronEntry.description,
+    attemptDeadline: {seconds: '540'}, // The max request time for the Cloud Function.
     httpTarget: {
       uri: targetUrl,
       httpMethod: protos.google.cloud.scheduler.v1.HttpMethod.POST,

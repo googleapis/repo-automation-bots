@@ -18,12 +18,16 @@ import {FirestoreConfigsStore, Db} from './database';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Logger} from 'probot';
 import {logger} from 'gcf-utils';
-import {core, OWL_BOT_IGNORE} from './core';
+import {syncLabels} from '@google-automations/label-utils';
+import {core} from './core';
 import {Octokit} from '@octokit/rest';
-import {onPostProcessorPublished, scanGithubForConfigs} from './handlers';
+import {
+  onPostProcessorPublished,
+  refreshConfigs,
+  scanGithubForConfigs,
+} from './handlers';
 import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
-
-const OWLBOT_RUN_LABEL = 'owlbot:run';
+import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from './labels';
 
 interface PubSubContext {
   github: Octokit;
@@ -147,19 +151,64 @@ export function OwlBot(
     }
   });
 
-  // Run periodically, to ensure that up-to-date configuration is stored
-  // for repositories:
-  app.on('schedule.repository' as '*', async context => {
+  // Ensure up-to-date configuration is stored on merge
+  app.on('pull_request.merged', async context => {
     const configStore = new FirestoreConfigsStore(db!);
-    logger.info(
-      `scan ${context.payload.org} istallation = ${context.payload.installation.id}`
+    const installationId = context.payload.installation?.id;
+    const org = context.payload.organization?.login;
+
+    logger.info("Updating repo's configs via `pull_request.merged`");
+
+    if (!installationId || !org) {
+      logger.error(`Missing install id (${installationId}) or org (${org})`);
+      return;
+    }
+
+    const configs = await configStore.getConfigs(
+      context.payload.repository.full_name
     );
-    await scanGithubForConfigs(
+
+    await refreshConfigs(
       configStore,
+      configs,
       context.octokit,
-      context.payload.org,
-      Number(context.payload.installation.id)
+      org,
+      context.payload.repository.name,
+      context.payload.repository.default_branch ?? 'master',
+      installationId
     );
+  });
+
+  // Repository cron handler.
+  // We share this handler between two cron jobs.
+  // Both cron job has its own parameter.
+  // See cron.yaml
+  app.on('schedule.repository' as '*', async context => {
+    if (context.payload.syncLabels === true) {
+      // owl-bot-sync-label cron entry
+      // syncing labels
+      const owner = context.payload.organization.login;
+      const repo = context.payload.repository.name;
+      await syncLabels(context.octokit, owner, repo, OWL_BOT_LABELS);
+      return;
+    }
+    if (context.payload.scanGithubForConfigs === true) {
+      // owl-bot-scan-googleapis cron entry
+      // Scan googleapis repositories and ensure config is up to date
+      const configStore = new FirestoreConfigsStore(db!);
+      logger.info(
+        `scan ${context.payload.org} istallation = ${context.payload.installation.id}`
+      );
+      logger.info('Scanning GitHub for configs via `schedule.repository`');
+
+      await scanGithubForConfigs(
+        configStore,
+        context.octokit,
+        context.payload.org,
+        Number(context.payload.installation.id)
+      );
+      return;
+    }
   });
 }
 
