@@ -79,6 +79,23 @@ rules:
   - "^docs/dyn/index.md$"
   - "^docs/dyn/.*\\.html$"
   - "^googleapiclient/discovery_cache/documents/.*\\.json$"
+
+# Option 5: incoming PRs from renovate-bot
+- author: "renovate-bot"
+
+# Title for PRs from renovate-bot MUST start with `fix(deps):` or `chore(deps)"`.
+  title: "^(fix\\(deps\\)|chore\\(deps\\)):"
+
+# (Optional) The only changed file paths in an incoming PR MUST end with `package.json`. These are listed in regex. If this property 
+# is omitted, auto-approve bot will allow PRs that match the author and title to merge, without
+# checking the file paths. 
+  changedFiles:
+  - "/package\\.json$"
+  - "/pom\\.xml$"
+  - "/requirements\\.txt"
+
+# (Optional) The max amount of files changed in a PR. 
+  maxFiles: 2
 ```
 Next, create a CODEWONERS file, under `.github/CODEOWNERS` in your repository. You must add a line that adds the Github Automation team as a codeowner for the `auto-approve.yml` file you have created, and they will be alerted anytime there is a change to the file. See the example below.
 
