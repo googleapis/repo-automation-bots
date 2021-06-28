@@ -15,12 +15,18 @@
 import sinon from 'sinon';
 import nock from 'nock';
 import * as http from 'http';
-import {GCFBootstrapper} from '../src/gcf-utils';
+import * as express from 'express';
+import {
+  GCFBootstrapper,
+  RequestWithRawBody,
+  HandlerFunction,
+} from '../src/gcf-utils';
 import {GoogleAuth} from 'google-auth-library';
 import {Octokit} from '@octokit/rest';
 import * as gaxios from 'gaxios';
 import assert from 'assert';
 import {resolve} from 'path';
+import {getServer} from '../src/server/server';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
@@ -28,9 +34,10 @@ const TEST_SERVER_PORT = 8000;
 
 nock.disableNetConnect();
 
+const sandbox = sinon.createSandbox();
+
 describe('GCFBootstrapper', () => {
   describe('server', () => {
-    const sandbox = sinon.createSandbox();
     let server: http.Server;
     const bootstrapper = new GCFBootstrapper({
       projectId: 'test-project',
@@ -166,5 +173,61 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(enqueueTask);
       sinon.assert.notCalled(issueSpy);
     });
+  });
+});
+
+describe('getServer', () => {
+  let server: http.Server;
+  let handlerFunction: HandlerFunction;
+  before(done => {
+    nock.enableNetConnect(host => {
+      return host.startsWith('localhost:');
+    });
+    handlerFunction = async (
+      request: RequestWithRawBody,
+      response: express.Response
+    ) => {
+      if (request.rawBody) {
+        response.send({
+          status: 200,
+          body: request.rawBody.toString('utf-8'),
+        });
+      } else {
+        response.sendStatus(400);
+      }
+    };
+    server = getServer(handlerFunction)
+      .on('listening', () => {
+        done();
+      })
+      .listen(TEST_SERVER_PORT);
+  });
+  after(done => {
+    server.on('close', () => {
+      done();
+    });
+    server.close();
+  });
+
+  interface TestResponse {
+    body: string;
+    status: number;
+  }
+
+  it('should inject rawBody into the request', async () => {
+    const payload = '{  "foo": "bar"  }';
+    const response = await gaxios.request<TestResponse>({
+      url: `http://localhost:${TEST_SERVER_PORT}/`,
+      headers: {
+        'x-github-delivery': '123',
+        'x-cloudtasks-taskname': 'test-bot',
+        'x-github-event': 'issues',
+        'content-type': 'application/json',
+      },
+      method: 'POST',
+      body: payload,
+    });
+    assert.deepStrictEqual(response.status, 200);
+    assert.strictEqual(response.data.body, payload);
   });
 });
