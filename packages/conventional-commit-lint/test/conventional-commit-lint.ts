@@ -178,13 +178,57 @@ describe('ConventionalCommitLint', () => {
     });
   });
 
-  it('sets a "success" context on PR, if body is less that 256 in length', async () => {
+  it('sets a "success" context on PR, if the body is less than 256 in length', async () => {
     const payload = require(resolve(
       fixturesPath,
       './pull_request_synchronize'
     ));
     const validCommits = [
       ...require(resolve(fixturesPath, './commit_with_long_body_line_length')),
+    ];
+
+    const requests = nock('https://api.github.com')
+      .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
+      .reply(200, validCommits)
+      .post('/repos/bcoe/test-release-please/check-runs', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200);
+
+    await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+    requests.done();
+  });
+
+  it('sets a "success" context on PR, if the footer is less than 256 in length', async () => {
+    const payload = require(resolve(
+      fixturesPath,
+      './pull_request_synchronize'
+    ));
+    const validCommits = [
+      ...require(resolve(fixturesPath, './commit_with_long_footer_length')),
+    ];
+
+    const requests = nock('https://api.github.com')
+      .get('/repos/bcoe/test-release-please/pulls/11/commits?per_page=100')
+      .reply(200, validCommits)
+      .post('/repos/bcoe/test-release-please/check-runs', body => {
+        snapshot(body);
+        return true;
+      })
+      .reply(200);
+
+    await probot.receive({name: 'pull_request', payload, id: 'abc123'});
+    requests.done();
+  });
+
+  it('sets a "success" context on PR, if subject contains a full stop', async () => {
+    const payload = require(resolve(
+      fixturesPath,
+      './pull_request_synchronize'
+    ));
+    const validCommits = [
+      ...require(resolve(fixturesPath, './commit_with_full_stop_in_subject')),
     ];
 
     const requests = nock('https://api.github.com')

@@ -17,6 +17,6 @@ import appFn from './snippet-bot';
 
 const bootstrap = new GCFBootstrapper();
 module.exports['snippet_bot'] = bootstrap.gcf(appFn, {
-  background: true,
+  maxCronRetries: 3,
   logging: true,
 });

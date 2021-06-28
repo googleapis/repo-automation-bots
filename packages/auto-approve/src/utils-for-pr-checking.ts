@@ -19,14 +19,39 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
+/**
+ * Interface for return type of array from getTargetFiles. It is the amalgamation
+ * of the file that was changed in the PR, plus the file rule that applies
+ * to that given file.
+ */
+export interface fileAndMetadata {
+  file: File;
+  fileRule: FileSpecificRule;
+}
+/**
+ * Interface for rules in `./language-versioning-rules.json`. These
+ * are rules for files that match an author and filename, and then provide
+ * regex for the versions for those particular formats.
+ */
 export interface FileSpecificRule {
   prAuthor: string;
+  process: string;
   targetFile: string;
-  oldRegexVersion: string;
-  newRegexVersion: string;
+  dependency?: RegExp;
+  oldVersion?: RegExp;
+  newVersion?: RegExp;
 }
 
+/**
+ * Interface for the versions found in the selected files. These versions are
+ * picked out based on the regex listed in `./language-versioning-rules.json` for
+ * that particular file. From there, you will get the previous dependency, new
+ * dependency, and previous version number and changed version number.
+ */
 export interface Versions {
+  oldDependencyName: string;
+  newDependencyName: string;
   oldMajorVersion: string;
   oldMinorVersion: string;
   newMajorVersion: string;
@@ -42,37 +67,27 @@ export interface Versions {
  * @param changedFiles an array of changed files from a PR
  * @param author the author of the PR
  * @param languageRules the json representation of additional rules for each kind of file
- * @returns an object containing the specific file to be scrutinized and the rules to scrutinize it by,
- * or undefined if not found.
+ * @returns an array of objects containing the specific files to be scrutinized.
  */
-export function getTargetFile(
+export function getTargetFiles(
   changedFiles: File[],
   author: string,
   languageRules: FileSpecificRule[]
-): {file: File; fileRule: FileSpecificRule} | undefined {
-  let file;
-  let fileRule;
+): fileAndMetadata[] {
+  const targetFiles = [];
 
-  for (const i in changedFiles) {
-    for (const j in languageRules) {
+  for (const changedFile of changedFiles) {
+    for (const rule of languageRules) {
       if (
-        languageRules[j].prAuthor === author &&
-        languageRules[j].targetFile === changedFiles[i].filename
+        rule.prAuthor === author &&
+        rule.targetFile === changedFile.filename
       ) {
-        file = changedFiles[i];
-        fileRule = languageRules[j];
-        break;
+        targetFiles.push({file: changedFile, fileRule: rule});
       }
     }
   }
 
-  // If we didn't find a match, return undefined, but this shouldn't
-  // stop execution of the rest of the tests
-  if (!(file && fileRule)) {
-    return undefined;
-  } else {
-    return {file, fileRule};
-  }
+  return targetFiles;
 }
 
 /**
@@ -87,29 +102,33 @@ export function getTargetFile(
  */
 export function getVersions(
   versionFile: File | undefined,
-  oldVersionRegex: string,
-  newVersionRegex: string
+  oldVersionRegex: RegExp,
+  newVersionRegex: RegExp
 ): Versions | undefined {
   if (!versionFile) {
     return undefined;
   }
 
+  let oldDependencyName;
+  let newDependencyName;
   let oldMajorVersion;
   let oldMinorVersion;
   let newMajorVersion;
   let newMinorVersion;
 
-  const oldVersions = versionFile.patch?.match(new RegExp(oldVersionRegex));
-  const newVersions = versionFile.patch?.match(new RegExp(newVersionRegex));
+  const oldVersions = versionFile.patch?.match(oldVersionRegex);
+  const newVersions = versionFile.patch?.match(newVersionRegex);
 
   if (oldVersions) {
-    oldMajorVersion = oldVersions[1];
-    oldMinorVersion = oldVersions[2];
+    oldDependencyName = oldVersions[1];
+    oldMajorVersion = oldVersions[2];
+    oldMinorVersion = oldVersions[3];
   }
 
   if (newVersions) {
-    newMajorVersion = newVersions[1];
-    newMinorVersion = newVersions[2];
+    newDependencyName = newVersions[1];
+    newMajorVersion = newVersions[2];
+    newMinorVersion = newVersions[3];
   }
 
   // If there is a change with a file that requires special validation checks,
@@ -117,13 +136,53 @@ export function getVersions(
   // perform any other checks, since that would open us up to potentially merging a
   // sensitive file without having proper checks.
   if (
-    !(oldMajorVersion && oldMinorVersion && newMajorVersion && newMinorVersion)
+    !(
+      oldDependencyName &&
+      newDependencyName &&
+      oldMajorVersion &&
+      oldMinorVersion &&
+      newMajorVersion &&
+      newMinorVersion
+    )
   ) {
     throw Error(
       `Could not find versions in ${versionFile.filename}/${versionFile.sha}`
     );
   }
-  return {oldMajorVersion, oldMinorVersion, newMajorVersion, newMinorVersion};
+  return {
+    oldDependencyName,
+    newDependencyName,
+    oldMajorVersion,
+    oldMinorVersion,
+    newMajorVersion,
+    newMinorVersion,
+  };
+}
+
+/**
+ * This function checks whether the dependency stated in a given title was the one that was changed
+ *
+ * @param versions the Versions object that contains the old dependency name and new dependency name and versions
+ * @param dependencyRegex the regular exp to find the dependency within the title of the PR
+ * @param title the title of the PR
+ * @returns whether the old dependency, new dependency, and dependency in the title all match
+ */
+export function doesDependencyChangeMatchPRTitle(
+  versions: Versions,
+  dependencyRegex: RegExp,
+  title: string
+): boolean {
+  let dependencyName;
+  const titleRegex = title.match(dependencyRegex);
+  if (titleRegex) {
+    dependencyName = titleRegex[2];
+    return (
+      versions.newDependencyName === versions.oldDependencyName &&
+      dependencyName === versions.newDependencyName
+    );
+  }
+
+  return false;
 }
 
 /**
