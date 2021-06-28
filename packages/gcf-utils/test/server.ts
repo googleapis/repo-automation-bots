@@ -188,7 +188,10 @@ describe('getServer', () => {
       response: express.Response
     ) => {
       if (request.rawBody) {
-        response.sendStatus(200);
+        response.send({
+          status: 200,
+          body: request.rawBody.toString('utf-8'),
+        });
       } else {
         response.sendStatus(400);
       }
@@ -206,9 +209,14 @@ describe('getServer', () => {
     server.close();
   });
 
+  interface TestResponse {
+    body: string;
+    status: number;
+  }
+
   it('should inject rawBody into the request', async () => {
-    const payload = require(resolve(fixturesPath, './issue_event'));
-    const response = await gaxios.request({
+    const payload = '{  "foo": "bar"  }';
+    const response = await gaxios.request<TestResponse>({
       url: `http://localhost:${TEST_SERVER_PORT}/`,
       headers: {
         'x-github-delivery': '123',
@@ -217,8 +225,9 @@ describe('getServer', () => {
         'content-type': 'application/json',
       },
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     });
     assert.deepStrictEqual(response.status, 200);
+    assert.strictEqual(response.data.body, payload);
   });
 });
