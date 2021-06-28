@@ -1219,6 +1219,11 @@ describe('GCFBootstrapper', () => {
   });
 
   describe('enqueueTask', () => {
+    beforeEach(() => {
+      nock('https://oauth2.googleapis.com')
+        .post('/token')
+        .reply(200, {access_token: 'abc123'});
+    });
     it('queues a GCF URL', async () => {
       const bootstrapper = new GCFBootstrapper({
         projectId: 'my-project',
@@ -1293,9 +1298,9 @@ describe('GCFBootstrapper', () => {
       const createTask = sandbox
         .stub(bootstrapper.cloudTasksClient, 'createTask')
         .resolves();
-      const adcStub = sandbox
-        .stub(GoogleAuth.prototype, 'getClient')
-        .resolves();
+      // const adcStub = sandbox
+      //   .stub(GoogleAuth.prototype, 'getClient')
+      //   .resolves();
       const runScope = nock('https://run.googleapis.com')
         .get(
           '/v1/projects/my-project/locations/my-location/services/my-function'
@@ -1329,7 +1334,7 @@ describe('GCFBootstrapper', () => {
         },
       });
       runScope.done();
-      sinon.assert.calledOnce(adcStub);
+      // sinon.assert.calledOnce(adcStub);
     });
 
     it('queues a Cloud Run URL with underscored bot name', async () => {
@@ -1342,9 +1347,9 @@ describe('GCFBootstrapper', () => {
       const createTask = sandbox
         .stub(bootstrapper.cloudTasksClient, 'createTask')
         .resolves();
-      const adcStub = sandbox
-        .stub(GoogleAuth.prototype, 'getClient')
-        .resolves();
+      // const adcStub = sandbox
+      //   .stub(GoogleAuth.prototype, 'getClient')
+      //   .resolves();
       const runScope = nock('https://run.googleapis.com')
         .get(
           '/v1/projects/my-project/locations/my-location/services/my-function'
@@ -1378,7 +1383,7 @@ describe('GCFBootstrapper', () => {
         },
       });
       runScope.done();
-      sinon.assert.calledOnce(adcStub);
+      // sinon.assert.calledOnce(adcStub);
     });
   });
 });

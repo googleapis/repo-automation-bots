@@ -892,6 +892,13 @@ export class GCFBootstrapper {
     };
   }
 
+  /**
+   * Return the URL to reach a specified Cloud Run instance.
+   * @param {string} projectId The project id running the Cloud Run instance
+   * @param {string} location The location of the Cloud Run instance
+   * @param {string} botName The name of the target bot
+   * @returns {string} The URL of the Cloud Run instance
+   */
   private async getCloudRunUrl(
     projectId: string,
     location: string,
@@ -902,10 +909,9 @@ export class GCFBootstrapper {
     const auth = new GoogleAuth({
       scopes: ['https://www.googleapis.com/auth/cloud-platform'],
     });
-    const authClient = await auth.getClient();
     const client = await run({
       version: 'v1',
-      auth: authClient,
+      auth,
     });
     const name = `projects/${projectId}/locations/${location}/services/${serviceName}`;
     const res = await client.projects.locations.services.get({
