@@ -31,6 +31,8 @@ import {buildTriggerInfo} from './logging/trigger-info-builder';
 import {GCFLogger} from './logging/gcf-logger';
 import {v4} from 'uuid';
 import {getServer} from './server/server';
+import {run} from '@googleapis/run';
+import {GoogleAuth} from 'google-auth-library';
 
 // On Cloud Functions, rawBody is automatically added.
 // It's not guaranteed on other platform.
@@ -57,6 +59,8 @@ const SCHEDULER_EVENT_NAMES = [
   SCHEDULER_REPOSITORY_EVENT_NAME,
 ];
 const RUNNING_IN_TEST = process.env.NODE_ENV === 'test';
+
+type BotEnvironment = 'functions' | 'run';
 
 interface Scheduled {
   repo?: string;
@@ -209,6 +213,7 @@ interface BootstrapperOptions {
   functionName?: string;
   location?: string;
   payloadBucket?: string;
+  taskTargetEnvironment?: BotEnvironment;
 }
 
 export class GCFBootstrapper {
@@ -221,6 +226,7 @@ export class GCFBootstrapper {
   functionName: string;
   location: string;
   payloadBucket: string | undefined;
+  taskTargetEnvironment: BotEnvironment;
 
   constructor(options?: BootstrapperOptions) {
     options = {
@@ -239,6 +245,7 @@ export class GCFBootstrapper {
     this.cloudTasksClient =
       options?.tasksClient || new CloudTasksV2.CloudTasksClient();
     this.storage = new Storage({autoRetry: !RUNNING_IN_TEST});
+    this.taskTargetEnvironment = options.taskTargetEnvironment || 'functions';
     if (!options.projectId) {
       throw new Error(
         'Missing required `projectId`. Please provide as a constructor argument or set the PROJECT_ID env variable.'
@@ -901,11 +908,65 @@ export class GCFBootstrapper {
   }
 
   /**
+   * Return the URL to reach a specified Cloud Run instance.
+   * @param {string} projectId The project id running the Cloud Run instance
+   * @param {string} location The location of the Cloud Run instance
+   * @param {string} botName The name of the target bot
+   * @returns {string} The URL of the Cloud Run instance
+   */
+  private async getCloudRunUrl(
+    projectId: string,
+    location: string,
+    botName: string
+  ): Promise<string | null> {
+    // Cloud Run service names can only use dashes
+    const serviceName = botName.replace('_', '-');
+    const auth = new GoogleAuth({
+      scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+    const authClient = await auth.getClient();
+    const client = await run({
+      version: 'v1',
+      auth: authClient,
+    });
+    const name = `projects/${projectId}/locations/${location}/services/${serviceName}`;
+    const res = await client.projects.locations.services.get({
+      name,
+    });
+
+    if (res.data.status?.address?.url) {
+      return res.data.status.address.url;
+    }
+    return null;
+  }
+
+  private async getTaskTarget(
+    projectId: string,
+    location: string,
+    botName: string
+  ): Promise<string> {
+    if (this.taskTargetEnvironment === 'functions') {
+      // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green
+      return `https://${location}-${projectId}.cloudfunctions.net/${botName}`;
+    } else if (this.taskTargetEnvironment === 'run') {
+      const url = await this.getCloudRunUrl(projectId, location, botName);
+      if (url) {
+        return url;
+      }
+      throw new Error(`Unable to find url for Cloud Run service: ${botName}`);
+    }
+    // Shouldn't get here
+    throw new Error(`Unknown task target: ${this.taskTargetEnvironment}`);
+  }
+
+  /**
    * Schedule a event trigger as a Cloud Task.
    * @param params {EnqueueTaskParams} Task parameters.
    */
   async enqueueTask(params: EnqueueTaskParams) {
-    logger.info('scheduling cloud task');
+    logger.info(
+      `scheduling cloud task targetting: ${this.taskTargetEnvironment}`
+    );
     // Make a task here and return 200 as this is coming from GitHub
     // queue name can contain only letters ([A-Za-z]), numbers ([0-9]), or hyphens (-):
     const queueName = this.functionName.replace(/_/g, '-');
@@ -914,8 +975,11 @@ export class GCFBootstrapper {
       this.location,
       queueName
     );
-    // https://us-central1-repo-automation-bots.cloudfunctions.net/merge_on_green:
-    const url = `https://${this.location}-${this.projectId}.cloudfunctions.net/${this.functionName}`;
+    const url = await this.getTaskTarget(
+      this.projectId,
+      this.location,
+      this.functionName
+    );
     logger.info(`scheduling task in queue ${queueName}`);
     if (params.body) {
       // Payload conists of either the original params.body or, if Cloud
