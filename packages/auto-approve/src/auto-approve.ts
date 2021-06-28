@@ -142,7 +142,7 @@ export function handler(app: Probot) {
     ],
     async (context: Context) => {
       const pr = context.payload;
-      const owner = pr.pull_request.head.repo.owner.login;
+      const owner = pr.repository.owner.login;
       const repo = pr.pull_request.head.repo.name;
       const prNumber = pr.number;
 
