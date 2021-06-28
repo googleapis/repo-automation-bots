@@ -16,7 +16,7 @@
 set -eo pipefail
 
 if [ $# -lt 6 ]; then
-  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <region>"
+  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <region> [botName]"
   exit 1
 fi
 
@@ -28,6 +28,9 @@ keyRing=$5
 region=$6
 
 botName=$(echo "${directoryName}" | rev | cut -d/ -f1 | rev)
+if [ $# -ge 7 ]; then
+  botName=$7
+fi
 
 pushd "${directoryName}"
 serviceName=${botName//_/-}
