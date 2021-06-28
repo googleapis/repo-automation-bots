@@ -909,9 +909,10 @@ export class GCFBootstrapper {
     const auth = new GoogleAuth({
       scopes: ['https://www.googleapis.com/auth/cloud-platform'],
     });
+    const authClient = await auth.getClient();
     const client = await run({
       version: 'v1',
-      auth,
+      auth: authClient,
     });
     const name = `projects/${projectId}/locations/${location}/services/${serviceName}`;
     const res = await client.projects.locations.services.get({

@@ -1238,9 +1238,9 @@ describe('GCFBootstrapper', () => {
         id: 'some-request-id',
         name: 'event.name',
       });
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore - https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
-      sinon.assert.calledOnceWithMatch(createTask, {
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
         parent: 'projects/my-project/locations/my-location/queues/my-function',
         task: {
           httpRequest: {
@@ -1270,9 +1270,9 @@ describe('GCFBootstrapper', () => {
         id: 'some-request-id',
         name: 'event.name',
       });
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore - https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
-      sinon.assert.calledOnceWithMatch(createTask, {
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
         parent: 'projects/my-project/locations/my-location/queues/my-function',
         task: {
           httpRequest: {
@@ -1298,9 +1298,9 @@ describe('GCFBootstrapper', () => {
       const createTask = sandbox
         .stub(bootstrapper.cloudTasksClient, 'createTask')
         .resolves();
-      // const adcStub = sandbox
-      //   .stub(GoogleAuth.prototype, 'getClient')
-      //   .resolves();
+      const adcStub = sandbox
+        .stub(GoogleAuth.prototype, 'getClient')
+        .resolves();
       const runScope = nock('https://run.googleapis.com')
         .get(
           '/v1/projects/my-project/locations/my-location/services/my-function'
@@ -1317,9 +1317,9 @@ describe('GCFBootstrapper', () => {
         id: 'some-request-id',
         name: 'event.name',
       });
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore - https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
-      sinon.assert.calledOnceWithMatch(createTask, {
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
         parent: 'projects/my-project/locations/my-location/queues/my-function',
         task: {
           httpRequest: {
@@ -1334,7 +1334,7 @@ describe('GCFBootstrapper', () => {
         },
       });
       runScope.done();
-      // sinon.assert.calledOnce(adcStub);
+      sinon.assert.calledOnce(adcStub);
     });
 
     it('queues a Cloud Run URL with underscored bot name', async () => {
@@ -1347,9 +1347,9 @@ describe('GCFBootstrapper', () => {
       const createTask = sandbox
         .stub(bootstrapper.cloudTasksClient, 'createTask')
         .resolves();
-      // const adcStub = sandbox
-      //   .stub(GoogleAuth.prototype, 'getClient')
-      //   .resolves();
+      const adcStub = sandbox
+        .stub(GoogleAuth.prototype, 'getClient')
+        .resolves();
       const runScope = nock('https://run.googleapis.com')
         .get(
           '/v1/projects/my-project/locations/my-location/services/my-function'
@@ -1366,9 +1366,9 @@ describe('GCFBootstrapper', () => {
         id: 'some-request-id',
         name: 'event.name',
       });
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore - https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
-      sinon.assert.calledOnceWithMatch(createTask, {
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
         parent: 'projects/my-project/locations/my-location/queues/my-function',
         task: {
           httpRequest: {
@@ -1383,7 +1383,7 @@ describe('GCFBootstrapper', () => {
         },
       });
       runScope.done();
-      // sinon.assert.calledOnce(adcStub);
+      sinon.assert.calledOnce(adcStub);
     });
   });
 });
