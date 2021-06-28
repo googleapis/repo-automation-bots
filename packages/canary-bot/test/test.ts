@@ -98,6 +98,9 @@ describe('canary-bot', () => {
           organization: {
             login: 'googleapis',
           },
+          installation: {
+            id: 234,
+          },
         },
         id: 'abc123',
       });
@@ -105,21 +108,15 @@ describe('canary-bot', () => {
       for (const scope of scopes) {
         scope.done();
       }
+      sinon.assert.notCalled(addOrUpdateIssueCommentStub);
     });
-    it('updates a correct issue', async () => {
+
+    it('comments on a correct issue', async () => {
       const scopes = [
         listIssues('googleapis', 'repo-automation-bots', [
           {title: 'A canary is not chirping', number: 6},
           {title: 'A canary is chirping', number: 5},
         ]),
-        nock('https://api.github.com')
-          .patch('/repos/googleapis/repo-automation-bots/issues/5', body => {
-            assert(
-              body.body.includes('The dependencies and their versions are')
-            );
-            return true;
-          })
-          .reply(200),
       ];
       await probot.receive({
         name: 'schedule.repository' as '*',
@@ -133,6 +130,9 @@ describe('canary-bot', () => {
           organization: {
             login: 'googleapis',
           },
+          installation: {
+            id: 234,
+          },
         },
         id: 'abc123',
       });
@@ -140,6 +140,15 @@ describe('canary-bot', () => {
       for (const scope of scopes) {
         scope.done();
       }
+      sinon.assert.calledOnceWithMatch(
+        addOrUpdateIssueCommentStub,
+        sinon.match.object,
+        'googleapis',
+        'repo-automation-bots',
+        5,
+        234,
+        sinon.match.string
+      );
     });
   });
 
