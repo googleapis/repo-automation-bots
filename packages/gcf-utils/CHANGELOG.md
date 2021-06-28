@@ -87,6 +87,18 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [11.4.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.3.1...gcf-utils-v11.4.0) (2021-06-28)
+
+
+### Features
+
+* allow queuing Cloud Tasks to hit Cloud Run service ([#2159](https://www.github.com/googleapis/repo-automation-bots/issues/2159)) ([a99805c](https://www.github.com/googleapis/repo-automation-bots/commit/a99805cacd2c534164c90c90072a1ab72fdccc58))
+
+
+### Bug Fixes
+
+* express server should save rawBody ([#2195](https://www.github.com/googleapis/repo-automation-bots/issues/2195)) ([48a6406](https://www.github.com/googleapis/repo-automation-bots/commit/48a64060163d773b4503416ccc7157499206ce22)), closes [#2183](https://www.github.com/googleapis/repo-automation-bots/issues/2183)
+
 ### [11.3.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.3.0...gcf-utils-v11.3.1) (2021-06-25)
 
 
