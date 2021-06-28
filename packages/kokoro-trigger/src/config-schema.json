@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "kokoro-trigger config",
+    "description": "Schema for defining the kokoro-trigger config",
+    "additionalProperties": false,
+    "type": "object",
+    "properties": {
+        "jobName": {
+            "type": "string"
+        }
+    }
+}
