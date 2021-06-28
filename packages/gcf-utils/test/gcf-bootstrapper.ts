@@ -1220,4 +1220,173 @@ describe('GCFBootstrapper', () => {
       sinon.assert.calledOnce(configStub);
     });
   });
+
+  describe('enqueueTask', () => {
+    beforeEach(() => {
+      nock('https://oauth2.googleapis.com')
+        .post('/token')
+        .reply(200, {access_token: 'abc123'});
+    });
+    it('queues a GCF URL', async () => {
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my-function',
+        location: 'my-location',
+      });
+      const createTask = sandbox
+        .stub(bootstrapper.cloudTasksClient, 'createTask')
+        .resolves();
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
+        parent: 'projects/my-project/locations/my-location/queues/my-function',
+        task: {
+          httpRequest: {
+            httpMethod: 'POST',
+            headers: sinon.match({
+              'X-GitHub-Event': 'event.name',
+              'X-GitHub-Delivery': 'some-request-id',
+              'Content-Type': 'application/json',
+            }),
+            url: 'https://my-location-my-project.cloudfunctions.net/my-function',
+          },
+        },
+      });
+    });
+
+    it('queues a GCF URL with underscored bot name', async () => {
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my_function',
+        location: 'my-location',
+      });
+      const createTask = sandbox
+        .stub(bootstrapper.cloudTasksClient, 'createTask')
+        .resolves();
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
+        parent: 'projects/my-project/locations/my-location/queues/my-function',
+        task: {
+          httpRequest: {
+            httpMethod: 'POST',
+            headers: sinon.match({
+              'X-GitHub-Event': 'event.name',
+              'X-GitHub-Delivery': 'some-request-id',
+              'Content-Type': 'application/json',
+            }),
+            url: 'https://my-location-my-project.cloudfunctions.net/my_function',
+          },
+        },
+      });
+    });
+
+    it('queues a Cloud Run URL', async () => {
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my-function',
+        location: 'my-location',
+        taskTargetEnvironment: 'run',
+      });
+      const createTask = sandbox
+        .stub(bootstrapper.cloudTasksClient, 'createTask')
+        .resolves();
+      const adcStub = sandbox
+        .stub(GoogleAuth.prototype, 'getClient')
+        .resolves();
+      const runScope = nock('https://run.googleapis.com')
+        .get(
+          '/v1/projects/my-project/locations/my-location/services/my-function'
+        )
+        .reply(200, {
+          status: {
+            address: {
+              url: 'http://some.domain/path',
+            },
+          },
+        });
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
+        parent: 'projects/my-project/locations/my-location/queues/my-function',
+        task: {
+          httpRequest: {
+            httpMethod: 'POST',
+            headers: sinon.match({
+              'X-GitHub-Event': 'event.name',
+              'X-GitHub-Delivery': 'some-request-id',
+              'Content-Type': 'application/json',
+            }),
+            url: 'http://some.domain/path',
+          },
+        },
+      });
+      runScope.done();
+      sinon.assert.calledOnce(adcStub);
+    });
+
+    it('queues a Cloud Run URL with underscored bot name', async () => {
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my_function',
+        location: 'my-location',
+        taskTargetEnvironment: 'run',
+      });
+      const createTask = sandbox
+        .stub(bootstrapper.cloudTasksClient, 'createTask')
+        .resolves();
+      const adcStub = sandbox
+        .stub(GoogleAuth.prototype, 'getClient')
+        .resolves();
+      const runScope = nock('https://run.googleapis.com')
+        .get(
+          '/v1/projects/my-project/locations/my-location/services/my-function'
+        )
+        .reply(200, {
+          status: {
+            address: {
+              url: 'http://some.domain/path',
+            },
+          },
+        });
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
+        parent: 'projects/my-project/locations/my-location/queues/my-function',
+        task: {
+          httpRequest: {
+            httpMethod: 'POST',
+            headers: sinon.match({
+              'X-GitHub-Event': 'event.name',
+              'X-GitHub-Delivery': 'some-request-id',
+              'Content-Type': 'application/json',
+            }),
+            url: 'http://some.domain/path',
+          },
+        },
+      });
+      runScope.done();
+      sinon.assert.calledOnce(adcStub);
+    });
+  });
 });
