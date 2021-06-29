@@ -14,12 +14,11 @@
 
 # Use a multi-stage docker build to limit production dependencies.
 
-# Use the official lightweight Node.js 14 image.
-# https://hub.docker.com/_/node
-FROM node:14-slim AS BUILD
+# Use the Yoshi Node.js 14 image - it has python3 installed
+# https://github.com/googleapis/testing-infra-docker/tree/master/node/14-user
+FROM gcr.io/cloud-devrel-kokoro-resources/node:14-user AS BUILD
 
-# Create and change to the app directory.
-WORKDIR /usr/src/app
+WORKDIR /home/node
 
 # Copy application dependency manifests to the container image.
 # A wildcard is used to ensure copying both package.json AND package-lock.json (when available).
@@ -34,13 +33,12 @@ COPY . ./
 
 RUN npm run compile
 
-FROM node:14-slim
+FROM gcr.io/cloud-devrel-kokoro-resources/node:14-user
 
-# Create and change to the app directory.
-WORKDIR /usr/src/app
+WORKDIR /home/node
 
 COPY package*.json ./
-COPY --from=BUILD /usr/src/app/build build
+COPY --from=BUILD /home/node/build build
 RUN npm ci --only=production
 
 ENV NODE_ENV "production"
