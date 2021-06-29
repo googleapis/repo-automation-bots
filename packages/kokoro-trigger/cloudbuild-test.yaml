@@ -25,5 +25,5 @@ steps:
 
   - name: gcr.io/gcp-runtimes/structure_test
     args:
-      ["-i", "gcr.io/$PROJECT_ID/kokoro-trigger", "--config", "packages/kokoro-trigger/container-test.yaml", "-v"]
+      ["-i", "gcr.io/$PROJECT_ID/kokoro-trigger", "--config", "/workspace/packages/kokoro-trigger/container-test.yaml", "-v"]
     waitFor: ["build-docker"]
