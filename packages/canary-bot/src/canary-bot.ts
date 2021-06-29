@@ -72,12 +72,14 @@ export = (app: Probot) => {
 
     // Issue found
     if (issue) {
-      await context.octokit.issues.update({
-        owner: owner,
-        repo: repo,
-        issue_number: issue.number,
-        body: body,
-      });
+      await addOrUpdateIssueComment(
+        context.octokit,
+        owner,
+        repo,
+        issue.number,
+        context.payload.installation!.id,
+        body
+      );
     } else {
       await context.octokit.issues.create({
         owner: owner,
