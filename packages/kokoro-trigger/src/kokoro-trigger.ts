@@ -23,6 +23,10 @@ import {
   ConfigurationOptions,
   WELL_KNOWN_CONFIGURATION_FILE,
 } from './config-constants';
+import {promisify} from 'util';
+import * as child_process from 'child_process';
+
+const exec = promisify(child_process.exec);
 
 const PENDING_LABEL = 'autorelease: pending';
 const TRIGGERED_LABEL = 'autorelease: triggered';
@@ -78,11 +82,12 @@ function isReleasePullRequest(pullRequest: PullRequest): boolean {
   );
 }
 
-async function findReleasePullRequests(
+async function findPendingReleasePullRequests(
   octokit: Octokit,
   repository: Repository,
   maxNumber = 5
 ): Promise<PullRequest[]> {
+  // TODO: switch to graphql
   const listGenerator = octokit.paginate.iterator(octokit.pulls.list, {
     owner: repository.owner.login,
     repo: repository.name,
@@ -105,9 +110,25 @@ async function findReleasePullRequests(
   return found;
 }
 
-async function triggerKokoroJob(jobName: string, pullRequest: PullRequest) {
+async function triggerKokoroJob(
+  jobName: string,
+  pullRequest: PullRequest
+): Promise<{stdout: string; stderr: string}> {
   logger.info(`triggering job: ${jobName} for ${pullRequest.number}`);
-  // FIXME
+
+  const command = `python3 -m autorelease.trigger --pr=${pullRequest.html_url}`;
+  logger.debug(`command: ${command}`);
+  try {
+    const {stdout, stderr} = await exec(command);
+    logger.info(stdout);
+    if (stderr) {
+      logger.warn(stderr);
+    }
+    return {stdout, stderr};
+  } catch (e) {
+    logger.error(`error executing command: ${command}`, e);
+    throw e;
+  }
 }
 
 async function markTriggered(octokit: Octokit, pullRequest: PullRequest) {
@@ -146,7 +167,7 @@ async function doTrigger(octokit: Octokit, repository: Repository) {
     return;
   }
 
-  const releasePullRequests = await findReleasePullRequests(
+  const releasePullRequests = await findPendingReleasePullRequests(
     octokit,
     repository
   );
