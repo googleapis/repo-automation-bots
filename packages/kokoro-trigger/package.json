@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@google-automations/bot-config-utils": "^3.1.3",
-    "gcf-utils": "^11.0.0"
+    "gcf-utils": "^11.4.0"
   },
   "devDependencies": {
     "@types/mocha": "^8.0.0",
