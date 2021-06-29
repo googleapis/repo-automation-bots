@@ -19,7 +19,7 @@
   ],
   "scripts": {
     "compile": "tsc -p .",
-    "start": "probot run ./build/src/kokoro-trigger.js",
+    "start": "node ./build/src/server.js",
     "start:local": "node ./build/src/local.js",
     "pretest": "npm run compile",
     "test": "cross-env LOG_LEVEL=fatal c8 mocha --exit build/test",
