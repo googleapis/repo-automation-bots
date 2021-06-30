@@ -1230,7 +1230,7 @@ describe('GCFBootstrapper', () => {
     it('queues a GCF URL', async () => {
       const bootstrapper = new GCFBootstrapper({
         projectId: 'my-project',
-        functionName: 'my-function',
+        functionName: 'my-function-name',
         location: 'my-location',
       });
       const createTask = sandbox
@@ -1244,7 +1244,8 @@ describe('GCFBootstrapper', () => {
       // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       sinon.assert.calledOnceWithMatch(createTask as any, {
-        parent: 'projects/my-project/locations/my-location/queues/my-function',
+        parent:
+          'projects/my-project/locations/my-location/queues/my-function-name',
         task: {
           httpRequest: {
             httpMethod: 'POST',
@@ -1253,7 +1254,7 @@ describe('GCFBootstrapper', () => {
               'X-GitHub-Delivery': 'some-request-id',
               'Content-Type': 'application/json',
             }),
-            url: 'https://my-location-my-project.cloudfunctions.net/my-function',
+            url: 'https://my-location-my-project.cloudfunctions.net/my-function-name',
           },
         },
       });
@@ -1262,7 +1263,7 @@ describe('GCFBootstrapper', () => {
     it('queues a GCF URL with underscored bot name', async () => {
       const bootstrapper = new GCFBootstrapper({
         projectId: 'my-project',
-        functionName: 'my_function',
+        functionName: 'my_function_name',
         location: 'my-location',
       });
       const createTask = sandbox
@@ -1276,7 +1277,8 @@ describe('GCFBootstrapper', () => {
       // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       sinon.assert.calledOnceWithMatch(createTask as any, {
-        parent: 'projects/my-project/locations/my-location/queues/my-function',
+        parent:
+          'projects/my-project/locations/my-location/queues/my-function-name',
         task: {
           httpRequest: {
             httpMethod: 'POST',
@@ -1285,7 +1287,7 @@ describe('GCFBootstrapper', () => {
               'X-GitHub-Delivery': 'some-request-id',
               'Content-Type': 'application/json',
             }),
-            url: 'https://my-location-my-project.cloudfunctions.net/my_function',
+            url: 'https://my-location-my-project.cloudfunctions.net/my_function_name',
           },
         },
       });
@@ -1294,7 +1296,7 @@ describe('GCFBootstrapper', () => {
     it('queues a Cloud Run URL', async () => {
       const bootstrapper = new GCFBootstrapper({
         projectId: 'my-project',
-        functionName: 'my-function',
+        functionName: 'my-function-name',
         location: 'my-location',
         taskTargetEnvironment: 'run',
       });
@@ -1306,7 +1308,7 @@ describe('GCFBootstrapper', () => {
         .resolves();
       const runScope = nock('https://run.googleapis.com')
         .get(
-          '/v1/projects/my-project/locations/my-location/services/my-function'
+          '/v1/projects/my-project/locations/my-location/services/my-function-name'
         )
         .reply(200, {
           status: {
@@ -1323,7 +1325,8 @@ describe('GCFBootstrapper', () => {
       // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       sinon.assert.calledOnceWithMatch(createTask as any, {
-        parent: 'projects/my-project/locations/my-location/queues/my-function',
+        parent:
+          'projects/my-project/locations/my-location/queues/my-function-name',
         task: {
           httpRequest: {
             httpMethod: 'POST',
@@ -1343,7 +1346,7 @@ describe('GCFBootstrapper', () => {
     it('queues a Cloud Run URL with underscored bot name', async () => {
       const bootstrapper = new GCFBootstrapper({
         projectId: 'my-project',
-        functionName: 'my_function',
+        functionName: 'my_function_name',
         location: 'my-location',
         taskTargetEnvironment: 'run',
       });
@@ -1355,7 +1358,7 @@ describe('GCFBootstrapper', () => {
         .resolves();
       const runScope = nock('https://run.googleapis.com')
         .get(
-          '/v1/projects/my-project/locations/my-location/services/my-function'
+          '/v1/projects/my-project/locations/my-location/services/my-function-name'
         )
         .reply(200, {
           status: {
@@ -1372,7 +1375,8 @@ describe('GCFBootstrapper', () => {
       // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       sinon.assert.calledOnceWithMatch(createTask as any, {
-        parent: 'projects/my-project/locations/my-location/queues/my-function',
+        parent:
+          'projects/my-project/locations/my-location/queues/my-function-name',
         task: {
           httpRequest: {
             httpMethod: 'POST',
