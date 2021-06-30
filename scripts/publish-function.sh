@@ -65,7 +65,8 @@ if [ -n "${SERVICE_ACCOUNT}" ]; then
   deployArgs+=( "--service-account" "${SERVICE_ACCOUNT}" )
 fi
 echo "About to publish function ${functionName}"
-gcloud functions deploy "${functionName}" "${deployArgs[@]}"
+echo gcloud functions deploy "${functionName}" ${deployArgs[@]}
+gcloud functions deploy "${functionName}" ${deployArgs[@]}
 
 echo "Adding ability for allUsers to execute the Function"
 gcloud functions add-iam-policy-binding "${functionName}" \
