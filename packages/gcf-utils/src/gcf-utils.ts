@@ -920,7 +920,7 @@ export class GCFBootstrapper {
     botName: string
   ): Promise<string | null> {
     // Cloud Run service names can only use dashes
-    const serviceName = botName.replace('_', '-');
+    const serviceName = botName.replace(/_/g, '-');
     const auth = new GoogleAuth({
       scopes: ['https://www.googleapis.com/auth/cloud-platform'],
     });
