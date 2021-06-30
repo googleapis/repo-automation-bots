@@ -99,21 +99,6 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   const githubLabel = driftRepo?.github_label || autoDetectedLabel;
 
   if (githubLabel) {
-    try {
-      await context.octokit.issues.createLabel({
-        owner,
-        repo,
-        name: githubLabel,
-        color: colorsData[colorNumber].color,
-      });
-      logger.info(`Label added to ${owner}/${repo} is ${githubLabel}`);
-    } catch (e) {
-      // HTTP 422 means the label already exists on the repo
-      if (e.status !== 422) {
-        e.message = `Error creating label: ${e.message}`;
-        logger.error(e);
-      }
-    }
     if (labelsOnIssue) {
       const foundAPIName = helper.labelExists(labelsOnIssue, githubLabel);
 
@@ -170,14 +155,6 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   const isSampleIssue =
     repo.includes('samples') || issueTitle?.includes('sample');
   if (!foundSamplesTag && isSampleIssue) {
-    await context.octokit.issues
-      .createLabel({
-        owner,
-        repo,
-        name: 'samples',
-        color: colorsData[colorNumber].color,
-      })
-      .catch(logger.error);
     await context.octokit.issues
       .addLabels({
         owner,
