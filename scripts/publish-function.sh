@@ -61,7 +61,7 @@ deployArgs=(
   "--timeout"
   "${timeout}"
 )
-if [ ! -z "${SERVICE_ACCOUNT}" ]; then
+if [ -n "${SERVICE_ACCOUNT}" ]; then
   deployArgs+=( "--service-account" "${SERVICE_ACCOUNT}" )
 fi
 echo "About to publish function ${functionName}"
