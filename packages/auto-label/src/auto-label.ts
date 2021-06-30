@@ -35,8 +35,6 @@ import {
 
 type IssueResponse = Endpoints['GET /repos/{owner}/{repo}/issues']['response'];
 
-import colorsData from './colors.json';
-
 const storage = new Storage();
 
 handler.getDriftFile = async (file: string) => {
@@ -94,8 +92,6 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     const apis = await handler.getDriftApis();
     autoDetectedLabel = helper.autoDetectLabel(apis, issueTitle);
   }
-  const index = driftRepos?.findIndex(r => driftRepo === r) % colorsData.length;
-  const colorNumber = index >= 0 ? index : 0;
   const githubLabel = driftRepo?.github_label || autoDetectedLabel;
 
   if (githubLabel) {
