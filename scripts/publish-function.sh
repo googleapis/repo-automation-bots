@@ -57,7 +57,7 @@ deployArgs=(
   "--region"
   "${functionRegion}"
   "--update-env-vars"
-  "DRIFT_PRO_BUCKET='${bucket}',KEY_LOCATION='${keyLocation}',KEY_RING='${keyRing}',GCF_SHORT_FUNCTION_NAME='${functionName}',PROJECT_ID='${project}',GCF_LOCATION='${functionRegion}',PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1',WEBHOOK_TMP='tmp-webhook-payloads'"
+  "DRIFT_PRO_BUCKET=${bucket},KEY_LOCATION=${keyLocation},KEY_RING=${keyRing},GCF_SHORT_FUNCTION_NAME=${functionName},PROJECT_ID=${project},GCF_LOCATION=${functionRegion},PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1',WEBHOOK_TMP=tmp-webhook-payloads"
   "--timeout"
   "${timeout}"
 )
