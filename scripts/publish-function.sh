@@ -68,7 +68,7 @@ echo "About to publish function ${functionName}"
 gcloud functions deploy "${functionName}" "${deployArgs[@]}"
 
 echo "Adding ability for allUsers to execute the Function"
-gcloud alpha functions add-iam-policy-binding "${functionName}" \
+gcloud functions add-iam-policy-binding "${functionName}" \
   --region="${functionRegion}" \
   --member=allUsers \
   --role=roles/cloudfunctions.invoker
