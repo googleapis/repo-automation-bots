@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [11.4.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.4.0...gcf-utils-v11.4.1) (2021-06-30)
+
+
+### Bug Fixes
+
+* correctly dasherize service name for Cloud Run ([#2216](https://www.github.com/googleapis/repo-automation-bots/issues/2216)) ([9fbf01a](https://www.github.com/googleapis/repo-automation-bots/commit/9fbf01aa59293356bbd8a7e92ec4201de35ec225))
+
 ## [11.4.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.3.1...gcf-utils-v11.4.0) (2021-06-28)
 
 
