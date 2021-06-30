@@ -15,7 +15,9 @@
 import {GCFBootstrapper} from 'gcf-utils';
 import appFn from './canary-bot';
 
-const bootstrap = new GCFBootstrapper();
+const bootstrap = new GCFBootstrapper({
+  taskTargetEnvironment: 'run',
+});
 const server = bootstrap.server(appFn);
 const port = process.env.PORT ?? 8080;
 
