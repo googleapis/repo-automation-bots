@@ -36,6 +36,7 @@ handler.allowlist = [
   'yargs',
   'googlecloudplatform',
   'google',
+  'google-github-actions',
   'bcoe',
   'sofisl',
   'firebase',
