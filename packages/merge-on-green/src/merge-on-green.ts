@@ -594,7 +594,7 @@ function handler(app: Probot) {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const installationId = context.payload.installation?.id;
-    console.log(handler.allowlist);
+
     // Limit functionality to an allowlist
     if (
       !handler.allowlist.find(
