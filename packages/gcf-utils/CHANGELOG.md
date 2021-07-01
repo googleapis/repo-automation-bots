@@ -87,6 +87,32 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [11.4.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.4.0...gcf-utils-v11.4.1) (2021-06-30)
+
+
+### Bug Fixes
+
+* correctly dasherize service name for Cloud Run ([#2216](https://www.github.com/googleapis/repo-automation-bots/issues/2216)) ([9fbf01a](https://www.github.com/googleapis/repo-automation-bots/commit/9fbf01aa59293356bbd8a7e92ec4201de35ec225))
+
+## [11.4.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.3.1...gcf-utils-v11.4.0) (2021-06-28)
+
+
+### Features
+
+* allow queuing Cloud Tasks to hit Cloud Run service ([#2159](https://www.github.com/googleapis/repo-automation-bots/issues/2159)) ([a99805c](https://www.github.com/googleapis/repo-automation-bots/commit/a99805cacd2c534164c90c90072a1ab72fdccc58))
+
+
+### Bug Fixes
+
+* express server should save rawBody ([#2195](https://www.github.com/googleapis/repo-automation-bots/issues/2195)) ([48a6406](https://www.github.com/googleapis/repo-automation-bots/commit/48a64060163d773b4503416ccc7157499206ce22)), closes [#2183](https://www.github.com/googleapis/repo-automation-bots/issues/2183)
+
+### [11.3.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.3.0...gcf-utils-v11.3.1) (2021-06-25)
+
+
+### Bug Fixes
+
+* **gcf-utils:** use raw body for signature verification ([#2176](https://www.github.com/googleapis/repo-automation-bots/issues/2176)) ([1c68cf1](https://www.github.com/googleapis/repo-automation-bots/commit/1c68cf14e5b7671b6b05d75f419c637456d1bf73)), closes [#2092](https://www.github.com/googleapis/repo-automation-bots/issues/2092)
+
 ## [11.3.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.2.0...gcf-utils-v11.3.0) (2021-06-23)
 
 

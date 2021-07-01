@@ -13,9 +13,16 @@
 // limitations under the License.
 
 import {GCFBootstrapper} from 'gcf-utils';
-import {handler} from './auto-approve';
+import appFn from './canary-bot';
 
-const bootstrap = new GCFBootstrapper();
-module.exports['auto_approve'] = bootstrap.gcf(handler, {
-  logging: true,
+const bootstrap = new GCFBootstrapper({
+  taskTargetEnvironment: 'run',
 });
+const server = bootstrap.server(appFn);
+const port = process.env.PORT ?? 8080;
+
+server
+  .listen(port, () => {
+    console.log(`Listening on port ${port}`);
+  })
+  .setTimeout(0); // Disable automatic timeout on incoming connections.

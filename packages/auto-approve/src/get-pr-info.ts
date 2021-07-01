@@ -54,7 +54,9 @@ export async function getChangedFiles(
         `Not found error, ${err.code}, ${err.message} for ${owner}/${repo}/${prNumber}`
       );
     }
-    throw err;
+    throw new Error(
+      `${err.code}, ${err.message} for ${owner}/${repo}/${prNumber}`
+    );
   }
 }
 /**

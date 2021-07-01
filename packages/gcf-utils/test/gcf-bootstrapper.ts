@@ -17,11 +17,13 @@ import {
   WrapOptions,
   logger,
   HandlerFunction,
+  RequestWithRawBody,
 } from '../src/gcf-utils';
 import {describe, beforeEach, afterEach, it} from 'mocha';
 import {Octokit} from '@octokit/rest';
 import {Options} from 'probot';
 import * as express from 'express';
+import fs from 'fs';
 import sinon from 'sinon';
 import nock from 'nock';
 import assert from 'assert';
@@ -130,7 +132,7 @@ describe('GCFBootstrapper', () => {
   describe('gcf', () => {
     let handler: HandlerFunction;
     let response: express.Response;
-    let req: express.Request;
+    let req: RequestWithRawBody;
     let sendStub: sinon.SinonStub;
     let sendStatusStub: sinon.SinonStub;
     let issueSpy: sinon.SinonStub;
@@ -157,6 +159,7 @@ describe('GCFBootstrapper', () => {
         Object.getPrototypeOf(express.request),
         Object.getOwnPropertyDescriptors(express.request)
       );
+      req.rawBody = Buffer.from('');
       response = Object.create(
         Object.getPrototypeOf(express.response),
         Object.getOwnPropertyDescriptors(express.response)
@@ -923,9 +926,12 @@ describe('GCFBootstrapper', () => {
           background: true,
           skipVerification: false,
         });
+        // req.body is a parsed json object.
         req.body = {
           installation: {id: 1},
         };
+        // while req.rawBody is a raw buffer
+        req.rawBody = fs.readFileSync('test/fixtures/payload.json');
         req.headers = {};
         req.headers['x-github-event'] = 'another.name';
         req.headers['x-github-delivery'] = '123';
@@ -948,9 +954,12 @@ describe('GCFBootstrapper', () => {
           background: true,
           skipVerification: false,
         });
+        // req.body is a parsed json object.
         req.body = {
           installation: {id: 1},
         };
+        // while req.rawBody is a raw buffer
+        req.rawBody = fs.readFileSync('test/fixtures/payload.json');
         req.headers = {};
         req.headers['x-github-event'] = 'another.name';
         req.headers['x-github-delivery'] = '123';
@@ -974,46 +983,19 @@ describe('GCFBootstrapper', () => {
           background: true,
           skipVerification: false,
         });
+        // req.body is a parsed json object.
         req.body = {
           installation: {id: 1},
         };
+        // while req.rawBody is a raw buffer
+        req.rawBody = fs.readFileSync('test/fixtures/payload.json');
         req.headers = {};
         req.headers['x-github-event'] = 'issues';
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = 'my-task';
-        // echo -n '{"installation":{"id":1}}' | openssl dgst -sha1 -hmac "foo"
+        // cat fixtures/payload.json | openssl dgst -sha1 -hmac "foo"
         req.headers['x-hub-signature'] =
-          'sha1=c012c260559a04cf285e05d67e1ecedcad71b931';
-
-        await handler(req, response);
-
-        sinon.assert.calledOnce(configStub);
-        sinon.assert.notCalled(sendStatusStub);
-        sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
-        sinon.assert.calledOnce(issueSpy);
-        sinon.assert.notCalled(repositoryCronSpy);
-        sinon.assert.notCalled(installationCronSpy);
-        sinon.assert.notCalled(globalCronSpy);
-      });
-
-      // Remove this test after https://github.com/googleapis/repo-automation-bots/issues/2092
-      // is fixed.
-      it('handles valid task request signatures without leading sha1', async () => {
-        await mockBootstrapper({
-          logging: false,
-          background: true,
-          skipVerification: false,
-        });
-        req.body = {
-          installation: {id: 1},
-        };
-        req.headers = {};
-        req.headers['x-github-event'] = 'issues';
-        req.headers['x-github-delivery'] = '123';
-        req.headers['x-cloudtasks-taskname'] = 'my-task';
-        // echo -n '{"installation":{"id":1}}' | openssl dgst -sha1 -hmac "foo"
-        req.headers['x-hub-signature'] =
-          'c012c260559a04cf285e05d67e1ecedcad71b931';
+          'sha1=fd28a625d68ef18fe9b532fd972514774fed9653';
 
         await handler(req, response);
 
@@ -1236,6 +1218,179 @@ describe('GCFBootstrapper', () => {
       const octokit = await bootstrapper.getAuthenticatedOctokit(undefined);
       assert.ok(octokit);
       sinon.assert.calledOnce(configStub);
+    });
+  });
+
+  describe('enqueueTask', () => {
+    beforeEach(() => {
+      nock('https://oauth2.googleapis.com')
+        .post('/token')
+        .reply(200, {access_token: 'abc123'});
+    });
+    it('queues a GCF URL', async () => {
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my-function-name',
+        location: 'my-location',
+      });
+      const createTask = sandbox
+        .stub(bootstrapper.cloudTasksClient, 'createTask')
+        .resolves();
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
+        parent:
+          'projects/my-project/locations/my-location/queues/my-function-name',
+        task: {
+          httpRequest: {
+            httpMethod: 'POST',
+            headers: sinon.match({
+              'X-GitHub-Event': 'event.name',
+              'X-GitHub-Delivery': 'some-request-id',
+              'Content-Type': 'application/json',
+            }),
+            url: 'https://my-location-my-project.cloudfunctions.net/my-function-name',
+          },
+        },
+      });
+    });
+
+    it('queues a GCF URL with underscored bot name', async () => {
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my_function_name',
+        location: 'my-location',
+      });
+      const createTask = sandbox
+        .stub(bootstrapper.cloudTasksClient, 'createTask')
+        .resolves();
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
+        parent:
+          'projects/my-project/locations/my-location/queues/my-function-name',
+        task: {
+          httpRequest: {
+            httpMethod: 'POST',
+            headers: sinon.match({
+              'X-GitHub-Event': 'event.name',
+              'X-GitHub-Delivery': 'some-request-id',
+              'Content-Type': 'application/json',
+            }),
+            url: 'https://my-location-my-project.cloudfunctions.net/my_function_name',
+          },
+        },
+      });
+    });
+
+    it('queues a Cloud Run URL', async () => {
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my-function-name',
+        location: 'my-location',
+        taskTargetEnvironment: 'run',
+      });
+      const createTask = sandbox
+        .stub(bootstrapper.cloudTasksClient, 'createTask')
+        .resolves();
+      const adcStub = sandbox
+        .stub(GoogleAuth.prototype, 'getClient')
+        .resolves();
+      const runScope = nock('https://run.googleapis.com')
+        .get(
+          '/v1/projects/my-project/locations/my-location/services/my-function-name'
+        )
+        .reply(200, {
+          status: {
+            address: {
+              url: 'http://some.domain/path',
+            },
+          },
+        });
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
+        parent:
+          'projects/my-project/locations/my-location/queues/my-function-name',
+        task: {
+          httpRequest: {
+            httpMethod: 'POST',
+            headers: sinon.match({
+              'X-GitHub-Event': 'event.name',
+              'X-GitHub-Delivery': 'some-request-id',
+              'Content-Type': 'application/json',
+            }),
+            url: 'http://some.domain/path',
+          },
+        },
+      });
+      runScope.done();
+      sinon.assert.calledOnce(adcStub);
+    });
+
+    it('queues a Cloud Run URL with underscored bot name', async () => {
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my_function_name',
+        location: 'my-location',
+        taskTargetEnvironment: 'run',
+      });
+      const createTask = sandbox
+        .stub(bootstrapper.cloudTasksClient, 'createTask')
+        .resolves();
+      const adcStub = sandbox
+        .stub(GoogleAuth.prototype, 'getClient')
+        .resolves();
+      const runScope = nock('https://run.googleapis.com')
+        .get(
+          '/v1/projects/my-project/locations/my-location/services/my-function-name'
+        )
+        .reply(200, {
+          status: {
+            address: {
+              url: 'http://some.domain/path',
+            },
+          },
+        });
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
+        parent:
+          'projects/my-project/locations/my-location/queues/my-function-name',
+        task: {
+          httpRequest: {
+            httpMethod: 'POST',
+            headers: sinon.match({
+              'X-GitHub-Event': 'event.name',
+              'X-GitHub-Delivery': 'some-request-id',
+              'Content-Type': 'application/json',
+            }),
+            url: 'http://some.domain/path',
+          },
+        },
+      });
+      runScope.done();
+      sinon.assert.calledOnce(adcStub);
     });
   });
 });
