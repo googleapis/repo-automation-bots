@@ -106,15 +106,8 @@ describe('merge-on-green wrapper logic', () => {
   let probot: Probot;
   let loggerStub: SinonStub;
 
-  before(() => {
-    loggerStub = sandbox.stub(logger, 'error').throwsArg(0);
-  });
-
-  after(() => {
-    loggerStub.restore();
-  });
-
   beforeEach(() => {
+    loggerStub = sandbox.stub(logger, 'error').throwsArg(0);
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
@@ -130,24 +123,15 @@ describe('merge-on-green wrapper logic', () => {
 
   afterEach(() => {
     nock.cleanAll();
+    sandbox.restore();
   });
 
   describe('adding-a-PR-to-Datastore (addPR) method', async () => {
-    let removePRStub: SinonStub;
-    let getPRStub: SinonStub;
-
     beforeEach(() => {
-      removePRStub = sandbox.stub(handler, 'removePR');
-      getPRStub = sandbox.stub(handler, 'getPR');
+      sandbox.replace(handler, 'allowlist', ['testOwner']);
     });
 
-    afterEach(() => {
-      removePRStub.restore();
-      getPRStub.restore();
-    });
     it('does not add a PR if no branch protection', async () => {
-      loggerStub.restore();
-
       const scopes = [
         // we're purposefully calling an error here
         getBranchProtection('main', 400, []),
@@ -227,11 +211,6 @@ describe('merge-on-green wrapper logic', () => {
       getPRStub = sandbox.stub(handler, 'getPR');
     });
 
-    afterEach(() => {
-      addPRStub.restore();
-      removePRStub.restore();
-      getPRStub.restore();
-    });
     describe('cleaning up PRs', () => {
       it('deletes a PR if PR is closed when cleaning up repository', async () => {
         handler.getDatastore = async () => {
@@ -340,10 +319,48 @@ describe('merge-on-green wrapper logic', () => {
         scopes.forEach(s => s.done());
         assert(!addPRStub.called);
       });
+
+      it('does not run for non-org installations', async () => {
+        const stub = sandbox.stub(handler, 'scanForMissingPullRequests');
+
+        await probot.receive({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'schedule.installation' as any,
+          payload: {
+            cron_type: 'installation',
+            findHangingPRs: true,
+            installation: {id: 1234},
+          },
+          id: 'abc123',
+        });
+
+        sinon.assert.notCalled(stub);
+      });
+
+      it('does not run for non-allowed org installations', async () => {
+        const stub = sandbox.stub(handler, 'scanForMissingPullRequests');
+
+        await probot.receive({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'schedule.installation' as any,
+          payload: {
+            cron_type: 'installation',
+            cron_org: 'external-organization',
+            findHangingPRs: true,
+            installation: {id: 1234},
+          },
+          id: 'abc123',
+        });
+
+        sinon.assert.notCalled(stub);
+      });
     });
 
     describe('PRs when labeled', () => {
-      handler.allowlist = ['testOwner'];
+      beforeEach(() => {
+        sandbox.replace(handler, 'allowlist', ['testOwner']);
+      });
+      // handler.allowlist = ['testOwner'];
       it('adds a PR when label is added correctly', async () => {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const payload = require(resolve(
