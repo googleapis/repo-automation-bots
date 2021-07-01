@@ -538,7 +538,6 @@ function handler(app: Probot) {
     }
 
     if (!handler.allowlist.includes(context.payload.cron_org)) {
-      logger.info(handler.allowlist);
       logger.info(
         `skipped ${context.payload.cron_org} because not a part of allowlist`
       );
