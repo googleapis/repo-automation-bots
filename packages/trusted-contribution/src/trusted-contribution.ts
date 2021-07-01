@@ -14,6 +14,7 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
@@ -40,7 +41,7 @@ const DEFAULT_TRUSTED_CONTRIBUTORS = [
 const DEFAULT_ANNOTATIONS: Annotation[] = [
   {
     type: 'label',
-    text: 'kokoro:force-run',
+    text: ['kokoro:force-run', 'owlbot:run'],
   },
 ];
 
@@ -111,7 +112,9 @@ export = (app: Probot) => {
           if (annotation.type === 'label') {
             const issuesAddLabelsParams = context.repo({
               issue_number: context.payload.pull_request.number,
-              labels: [annotation.text],
+              labels: Array.isArray(annotation.text)
+                ? annotation.text
+                : [annotation.text],
             });
             await context.octokit.issues.addLabels(issuesAddLabelsParams);
             logger.metric('trusted_contribution.labeled', {
@@ -127,7 +130,7 @@ export = (app: Probot) => {
             }
             await octokit.issues.createComment({
               issue_number: context.payload.pull_request.number,
-              body: annotation.text,
+              body: String(annotation.text),
               owner: context.repo().owner,
               repo: context.repo().repo,
             });

@@ -18,6 +18,7 @@ import * as sinon from 'sinon';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 
 import {DatastoreLock} from '@google-automations/datastore-lock';
+/* eslint-disable-next-line node/no-extraneous-import */
 import {Octokit} from '@octokit/rest';
 import {syncLabels, getLabelColor} from '../src/label-utils';
 

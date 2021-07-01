@@ -34,7 +34,9 @@ import {
   getConfigWithDefault,
   ConfigChecker,
 } from '@google-automations/bot-config-utils';
+import {syncLabels} from '@google-automations/label-utils';
 import schema from './config-schema.json';
+import {ISSUE_LABEL, FLAKY_LABEL, QUIET_LABEL, FLAKYBOT_LABELS} from './labels';
 
 export interface Config {
   issuePriority: string;
@@ -45,10 +47,6 @@ export const CONFIG_FILENAME = 'flakybot.yaml';
 type IssuesListForRepoResponseItem = components['schemas']['issue-simple'];
 type IssuesListCommentsResponseData = components['schemas']['issue-comment'][];
 type IssuesListForRepoResponseData = IssuesListForRepoResponseItem[];
-
-const ISSUE_LABEL = 'flakybot: issue';
-const FLAKY_LABEL = 'flakybot: flaky';
-const QUIET_LABEL = 'flakybot: quiet';
 
 function getLabelsForFlakyIssue(config: Config): string[] {
   return [
@@ -130,6 +128,11 @@ interface PubSubContext {
 }
 
 export function flakybot(app: Probot) {
+  app.on('schedule.repository' as '*', async context => {
+    const owner = context.payload.organization.login;
+    const repo = context.payload.repository.name;
+    await syncLabels(context.octokit, owner, repo, FLAKYBOT_LABELS);
+  });
   app.on(
     [
       'pull_request.opened',
@@ -162,7 +165,8 @@ export function flakybot(app: Probot) {
       owner,
       repo,
       CONFIG_FILENAME,
-      DEFAULT_CONFIG
+      DEFAULT_CONFIG,
+      {schema: schema}
     );
     logger.debug(`config: ${config}`);
     context.log.info(`[${owner}/${repo}] processing ${buildURL}`);
@@ -337,7 +341,8 @@ flakybot.openIssues = async (
           issue_number: groupedIssue.number,
         });
         // Then update the new issue.
-        const groupedIssueToModify = issue.data as IssuesListForRepoResponseItem;
+        const groupedIssueToModify =
+          issue.data as IssuesListForRepoResponseItem;
 
         // If a group issue exists, say stuff failed.
         // Don't comment if it's asked to be quiet.
@@ -453,7 +458,8 @@ flakybot.openIssues = async (
           issue_number: existingIssue.number,
         });
         // Work on the refreshed issue.
-        const existingIssueToModify = issue.data as IssuesListForRepoResponseItem;
+        const existingIssueToModify =
+          issue.data as IssuesListForRepoResponseItem;
         if (existingIssueToModify.state === 'closed') {
           // If there is an existing closed issue, it might be flaky.
 
@@ -991,7 +997,7 @@ function deduplicateTests(tests: TestCase[]): TestCase[] {
 function parseClosedAt(closedAt: string | null): number | undefined {
   // The type of closed_at is null. But, it is actually a string if the
   // issue is closed. Convert to unknown then to string as a workaround.
-  const closedAtString = (closedAt as unknown) as string;
+  const closedAtString = closedAt as unknown as string;
   if (closedAtString) {
     return Date.parse(closedAtString);
   }

@@ -33,12 +33,10 @@ let bashPaths = new Set();
 for (const change of changes) {
   if (change.startsWith('packages/')) {
     if (change.startsWith('packages/monitoring-system')) {
-      // projects under packages/monitoring-system are nested, but ensure
-      // the files are in the nested directory
-      const parts = change.split('/');
-      if (parts.length > 3) {
-        nodePaths.add(`monitoring-system/${parts[2]}`);
-      }
+      // Currently our test pipeline does not allow us to delete an
+      // existing package. We may want to handle it better in the
+      // future.
+      continue;
     } else {
       nodePaths.add(change.split('/')[1]);
     }

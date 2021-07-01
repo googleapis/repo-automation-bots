@@ -38,7 +38,19 @@ exports['ConventionalCommitLint PR With Multiple Commits has a valid title, inva
   "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
 }
 
-exports['ConventionalCommitLint sets a "success" context on PR, if body is less that 256 in length 1'] = {
+exports['ConventionalCommitLint sets a "success" context on PR, if the body is less than 256 in length 1'] = {
+  "name": "conventionalcommits.org",
+  "conclusion": "success",
+  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
+}
+
+exports['ConventionalCommitLint sets a "success" context on PR, if the footer is less than 256 in length 1'] = {
+  "name": "conventionalcommits.org",
+  "conclusion": "success",
+  "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"
+}
+
+exports['ConventionalCommitLint sets a "success" context on PR, if subject contains a full stop 1'] = {
   "name": "conventionalcommits.org",
   "conclusion": "success",
   "head_sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e"

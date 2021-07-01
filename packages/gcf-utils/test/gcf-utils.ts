@@ -35,7 +35,8 @@ const app = (app: Probot) => {
       context.payload.repository.name,
       context.payload.issue.number,
       context.payload.installation!.id,
-      'test comment'
+      'test comment',
+      context.payload.issue.title === 'onlyUpdate'
     );
   });
 };
@@ -71,6 +72,24 @@ describe('gcf-utils', () => {
           return true;
         })
         .reply(200);
+
+      await probot.receive({
+        name: 'issues.opened',
+        payload,
+        id: 'test',
+      });
+      requests.done();
+    });
+    it('does not create a comment', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './issue_only_update_event'
+      ));
+      const requests = nock('https://api.github.com')
+        .get(
+          '/repos/tmatsuo/python-docs-samples/issues/10/comments?per_page=50'
+        )
+        .reply(200, []);
 
       await probot.receive({
         name: 'issues.opened',
