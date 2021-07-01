@@ -537,6 +537,13 @@ function handler(app: Probot) {
       return;
     }
 
+    if (!handler.allowlist.includes(context.payload.cron_org)) {
+      logger.info(
+        `skipped ${context.payload.cron_org} because not a part of allowlist`
+      );
+      return;
+    }
+
     const installationId = context.payload.installation.id;
     logger.info(`Looking for hanging PRs for installation: ${installationId}`);
     // we cannot search in an org without the bot installation ID, so we need
