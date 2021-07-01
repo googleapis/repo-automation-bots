@@ -132,6 +132,8 @@ describe('merge-on-green wrapper logic', () => {
     });
 
     it('does not add a PR if no branch protection', async () => {
+      loggerStub.restore();
+
       const scopes = [
         // we're purposefully calling an error here
         getBranchProtection('main', 400, []),
