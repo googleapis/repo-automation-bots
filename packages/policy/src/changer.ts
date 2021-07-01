@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {createPullRequest, Changes} from 'code-suggester';
 import {request} from 'gaxios';
 import {v4 as uuid} from 'uuid';
 import {operations} from '@octokit/openapi-types';
 import {PolicyResult, GitHubRepo} from './policy';
-type PullRequests = operations['pulls/list']['responses']['200']['content']['application/json'];
+type PullRequests =
+  operations['pulls/list']['responses']['200']['content']['application/json'];
 
 export const cocUrl =
   'https://raw.githubusercontent.com/googleapis/.github/master/CODE_OF_CONDUCT.md';

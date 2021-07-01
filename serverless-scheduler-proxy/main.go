@@ -18,7 +18,7 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha1"
-	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -146,11 +146,17 @@ func rewriteBotURL(c botConfig, parser func([]byte) (string, string), req *http.
 		log.Printf("error getting bot secret: %v", err)
 	}
 
-	// Make a hmac sig
-	signer := hmac.New(sha1.New, key)
-	signer.Write(bodyBytes)
+	var secrets SecretConfig
+	if err := json.Unmarshal(key, &secrets); err != nil {
+		log.Printf("error occurred parsing container secret contents: %v\n", err)
+	}
 
-	req.Header.Add("x-hub-signature", base64.StdEncoding.EncodeToString(signer.Sum(nil)))
+	// Make a hmac sig, convert to hex
+	signer := hmac.New(sha1.New, []byte(secrets.Secret))
+	signer.Write(bodyBytes)
+	signature := hex.EncodeToString(signer.Sum(nil))
+
+	req.Header.Add("x-hub-signature", "sha1="+signature)
 	req.Header.Add("x-github-delivery", uuid.New().String())
 
 	log.Printf("rewrote url: %s into %s", u, req.URL)
@@ -173,6 +179,12 @@ func botContainerProxy(cfg botConfig) http.HandlerFunc {
 	return (&httputil.ReverseProxy{
 		Director: rewriteBotContainerURL(cfg),
 	}).ServeHTTP
+}
+
+type SecretConfig struct {
+	PrivateKey string `json:"privateKey"`
+	AppId      int    `json:"appId"`
+	Secret     string `json:"secret"`
 }
 
 type reqPayload struct {

@@ -7,7 +7,7 @@
 
 *     @googleapis/github-automation
 
-packages/auto-label/*                 @googleapis/github-automation @nicoleczhu @sofisl
+packages/auto-label/*                 @googleapis/github-automation @sofisl
 packages/blunderbuss/*                @googleapis/github-automation @kurtisvg
 packages/flakybot/*                   @googleapis/github-automation @tbp
 packages/conventional-commit-lint/*   @googleapis/github-automation @bcoe
@@ -23,3 +23,6 @@ packages/slo-stat-bot/*               @googleapis/github-automation @orthros
 packages/snippet-bot/*                @googleapis/github-automation @tmatsuo
 packages/sync-repo-settings/*         @googleapis/github-automation @JustinBeckwith
 packages/trusted-contribution/*       @googleapis/github-automation @crwilcox
+
+# The github automation team is the default owner for the auto-approve file.
+.github/auto-approve.yml @googleapis/github-automation/

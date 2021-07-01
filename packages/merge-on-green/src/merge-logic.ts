@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// eslint-disable-next-line node/no-extraneous-import
-import {ProbotOctokit} from 'probot';
 import {logger} from 'gcf-utils';
 
-type OctokitType = InstanceType<typeof ProbotOctokit>;
+// eslint-disable-next-line node/no-extraneous-import
+import {Octokit} from '@octokit/rest';
 
 export interface Label {
   name: string;
@@ -75,7 +74,7 @@ export async function getLatestCommit(
   owner: string,
   repo: string,
   pr: number,
-  github: OctokitType
+  github: Octokit
 ): Promise<string> {
   try {
     const commits = await github.paginate(github.pulls.listCommits, {
@@ -101,7 +100,7 @@ async function getPR(
   owner: string,
   repo: string,
   pr: number,
-  github: OctokitType
+  github: Octokit
 ): Promise<PullRequest> {
   try {
     const data = await github.pulls.get({
@@ -137,7 +136,7 @@ async function getCommentsOnPR(
   owner: string,
   repo: string,
   issue_number: number,
-  github: OctokitType
+  github: Octokit
 ): Promise<Comment[] | null> {
   try {
     const data = await github.issues.listComments({
@@ -163,7 +162,7 @@ async function getCommentsOnPR(
 async function getStatuses(
   owner: string,
   repo: string,
-  github: OctokitType,
+  github: Octokit,
   headSha: string
 ): Promise<CheckStatus[]> {
   const start = Date.now();
@@ -199,7 +198,7 @@ async function getStatuses(
 async function getCheckRuns(
   owner: string,
   repo: string,
-  github: OctokitType,
+  github: Octokit,
   headSha: string
 ): Promise<CheckRun[]> {
   const start = Date.now();
@@ -256,7 +255,7 @@ async function statusesForRef(
   pr: number,
   requiredChecks: string[],
   headSha: string,
-  github: OctokitType
+  github: Octokit
 ): Promise<boolean> {
   const start = Date.now();
   const checkStatus = await getStatuses(owner, repo, github, headSha);
@@ -319,7 +318,7 @@ async function getReviewsCompleted(
   owner: string,
   repo: string,
   pr: number,
-  github: OctokitType
+  github: Octokit
 ): Promise<Reviews[]> {
   try {
     const reviewsCompleted = await github.pulls.listReviews({
@@ -372,7 +371,7 @@ async function checkReviews(
   label: string,
   secureLabel: string,
   headSha: string,
-  github: OctokitType
+  github: Octokit
 ): Promise<boolean> {
   const start = Date.now();
   logger.info(`=== checking required reviews ${owner}/${repo}/${pr} ===`);
@@ -443,7 +442,7 @@ async function merge(
   repo: string,
   pr: number,
   prInfo: PullRequest,
-  github: OctokitType
+  github: Octokit
 ): Promise<Merge> {
   const merge = (
     await github.pulls.merge({
@@ -470,7 +469,7 @@ async function updateBranch(
   owner: string,
   repo: string,
   pr: number,
-  github: OctokitType
+  github: Octokit
 ) {
   try {
     await github.pulls.updateBranch({
@@ -498,7 +497,7 @@ async function commentOnPR(
   repo: string,
   pr: number,
   body: string,
-  github: OctokitType
+  github: Octokit
 ): Promise<{} | null> {
   try {
     const data = await github.issues.createComment({
@@ -523,7 +522,7 @@ async function maybeLogMergeability(
   owner: string,
   repo: string,
   pr: number,
-  github: OctokitType,
+  github: Octokit,
   checkReviews: boolean,
   checkStatus: boolean
 ) {
@@ -560,7 +559,7 @@ export async function mergeOnGreen(
   requiredChecks: string[],
   mogLabel: string,
   author: string,
-  github: OctokitType
+  github: Octokit
 ): Promise<boolean | undefined> {
   const rateLimit = (await github.rateLimit.get()).data.resources.core
     .remaining;

@@ -118,9 +118,11 @@ describe('GCFBootstrapper Integration', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         app.on('foo' as any, async context => {
           assert(
-            (context.octokit as GitHubAPI & {
-              loggingOctokitPluginVersion: string;
-            }).loggingOctokitPluginVersion === OCTOKIT_LOGGING_PLUGIN_VERSION
+            (
+              context.octokit as GitHubAPI & {
+                loggingOctokitPluginVersion: string;
+              }
+            ).loggingOctokitPluginVersion === OCTOKIT_LOGGING_PLUGIN_VERSION
           );
           called = true;
         });

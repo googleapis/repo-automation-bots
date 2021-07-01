@@ -68,10 +68,10 @@ export const openPR: yargs.CommandModule<{}, Args> = {
       });
   },
   async handler(argv) {
-    const fakeConfigStore = ({
+    const fakeConfigStore = {
       findBuildIdForUpdatingLock: () => undefined,
       recordBuildIdForUpdatingLock: () => {},
-    } as unknown) as ConfigsStore;
+    } as unknown as ConfigsStore;
     const project = argv.project || process.env.PROJECT_ID;
     if (!project) {
       throw Error(

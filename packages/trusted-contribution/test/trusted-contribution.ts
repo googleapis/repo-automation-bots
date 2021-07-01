@@ -17,6 +17,7 @@ import assert from 'assert';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import sinon from 'sinon';
@@ -28,6 +29,7 @@ import * as botConfigModule from '@google-automations/bot-config-utils';
 import {WELL_KNOWN_CONFIGURATION_FILE} from '../src/config';
 import myProbotApp from '../src/trusted-contribution';
 import * as utilsModule from '../src/utils';
+import schema from '../src/config-schema.json';
 
 nock.disableNetConnect();
 
@@ -104,14 +106,17 @@ describe('TrustedContributionTestRunner', () => {
           id: 'abc123',
         });
         requests.done();
-        getConfigStub.calledOnceWith(
-          sinon.match.instanceOf(Octokit),
+        sinon.assert.calledOnceWithExactly(
+          getConfigStub,
+          sinon.match.instanceOf(ProbotOctokit),
           'chingor13',
           'google-auth-library-java',
-          WELL_KNOWN_CONFIGURATION_FILE
+          WELL_KNOWN_CONFIGURATION_FILE,
+          {schema: schema}
         );
-        validateConfigStub.calledOnceWith(
-          sinon.match.instanceOf(Octokit),
+        sinon.assert.calledOnceWithExactly(
+          validateConfigStub,
+          sinon.match.instanceOf(ProbotOctokit),
           'chingor13',
           'google-auth-library-java',
           'testsha',
@@ -251,7 +256,12 @@ describe('TrustedContributionTestRunner', () => {
         requests = requests
           .post(
             '/repos/chingor13/google-auth-library-java/issues/3/labels',
-            () => true
+            (body: object) => {
+              assert.deepStrictEqual(body, {
+                labels: ['kokoro:force-run', 'owlbot:run'],
+              });
+              return true;
+            }
           )
           .reply(200);
 
@@ -652,7 +662,8 @@ describe('TrustedContributionTestRunner', () => {
     });
     requests.done();
     sandbox.restore();
-    getAuthenticatedOctokitStub.calledOnceWith(
+    sinon.assert.calledOnceWithExactly(
+      getAuthenticatedOctokitStub,
       process.env.PROJECT_ID || '',
       utilsModule.SECRET_NAME_FOR_COMMENT_PERMISSION
     );

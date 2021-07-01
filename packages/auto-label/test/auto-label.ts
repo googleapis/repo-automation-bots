@@ -15,7 +15,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
+import {Probot, ProbotOctokit} from 'probot';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import nock from 'nock';
 import * as assert from 'assert';
@@ -32,23 +32,10 @@ import {
 } from '../src/helper';
 import {loadConfig} from './test-helper';
 import {logger} from 'gcf-utils';
-import {createProbotAuth} from 'octokit-auth-probot';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import {ConfigChecker} from '@google-automations/bot-config-utils';
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
-
-// We provide our own GitHub instance, similar to
-// the one used by gcf-utils, this allows us to turn off
-// methods like retry, and to use @octokit/rest
-// as the base class:
-// eslint-disable-next-line node/no-extraneous-import
-import {Octokit} from '@octokit/rest';
-// eslint-disable-next-line node/no-extraneous-import
-import {config} from '@probot/octokit-plugin-config';
-const TestingOctokit = Octokit.plugin(config).defaults({
-  authStrategy: createProbotAuth,
-});
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 const driftRepos = JSON.parse(
@@ -74,8 +61,10 @@ describe('auto-label', () => {
   beforeEach(() => {
     probot = new Probot({
       githubToken: 'abc123',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      Octokit: TestingOctokit as any,
+      Octokit: ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      }),
     });
 
     probot.load(handler);
@@ -108,72 +97,6 @@ describe('auto-label', () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
 
       const ghRequests = nock('https://api.github.com')
-        .post('/repos/testOwner/testRepo/labels')
-        .reply(200, [
-          {
-            name: 'myGitHubLabel',
-            color: 'C9FFE5',
-          },
-        ])
-        .get('/repos/testOwner/testRepo/issues/5/labels')
-        .reply(200)
-        .post('/repos/testOwner/testRepo/issues/5/labels')
-        .reply(200, [
-          {
-            name: 'myGitHubLabel',
-            color: 'C9FFE5',
-          },
-        ]);
-      await probot.receive({
-        name: 'issues',
-        payload,
-        id: 'abc123',
-      });
-      ghRequests.done();
-    });
-
-    //should get a 422 error when creating the label on the repo, we're mocking it already exists
-    it('responds to issues and does not create labels if they are not needed', async () => {
-      const config = loadConfig('valid-config.yml');
-      getConfigWithDefaultStub.resolves(config);
-      const payload = require(resolve(fixturesPath, './events/issue_opened'));
-      const ghRequests = nock('https://api.github.com')
-        .post('/repos/testOwner/testRepo/labels')
-        .reply(422, [
-          {
-            name: 'myGitHubLabel',
-            color: 'C9FFE5',
-          },
-        ])
-        .get('/repos/testOwner/testRepo/issues/5/labels')
-        .reply(200, [
-          {
-            name: 'myGitHubLabel',
-            color: 'C9FFE5',
-          },
-        ]);
-      await probot.receive({
-        name: 'issues',
-        payload,
-        id: 'abc123',
-      });
-      ghRequests.done();
-    });
-
-    //should get a 422 error when creating the label on the repo, we're mocking it already exists
-    it('responds to issues and adds a label to an issue, even if the label already exists on the repo', async () => {
-      const config = loadConfig('valid-config.yml');
-      getConfigWithDefaultStub.resolves(config);
-      const payload = require(resolve(fixturesPath, './events/issue_opened'));
-
-      const ghRequests = nock('https://api.github.com')
-        .post('/repos/testOwner/testRepo/labels')
-        .reply(422, [
-          {
-            name: 'myGitHubLabel',
-            color: 'C9FFE5',
-          },
-        ])
         .get('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200)
         .post('/repos/testOwner/testRepo/issues/5/labels')
@@ -256,12 +179,6 @@ describe('auto-label', () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
         .reply(200)
-        .post('/repos/GoogleCloudPlatform/golang-samples/labels')
-        .reply(200, [
-          {
-            name: 'api: spanner',
-          },
-        ])
         .post(
           '/repos/GoogleCloudPlatform/golang-samples/issues/5/labels',
           body => {
@@ -270,12 +187,6 @@ describe('auto-label', () => {
           }
         )
         .reply(200)
-        .post('/repos/GoogleCloudPlatform/golang-samples/labels')
-        .reply(200, [
-          {
-            name: 'sample',
-          },
-        ])
         .post('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
         .reply(200, [
           {
@@ -303,12 +214,6 @@ describe('auto-label', () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
         .reply(200)
-        .post('/repos/GoogleCloudPlatform/golang-samples/labels')
-        .reply(200, [
-          {
-            name: 'api: spanner',
-          },
-        ])
         .post(
           '/repos/GoogleCloudPlatform/golang-samples/issues/5/labels',
           body => {
@@ -317,12 +222,6 @@ describe('auto-label', () => {
           }
         )
         .reply(200)
-        .post('/repos/GoogleCloudPlatform/golang-samples/labels')
-        .reply(200, [
-          {
-            name: 'sample',
-          },
-        ])
         .post('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
         .reply(200, [
           {
@@ -349,12 +248,6 @@ describe('auto-label', () => {
       const ghRequests = nock('https://api.github.com')
         .get('/repos/testOwner/notThere/issues/12/labels')
         .reply(200)
-        .post('/repos/testOwner/notThere/labels')
-        .reply(200, [
-          {
-            name: 'api: spanner',
-          },
-        ])
         .post('/repos/testOwner/notThere/issues/12/labels', body => {
           snapshot(body);
           return true;
@@ -366,8 +259,9 @@ describe('auto-label', () => {
         id: 'abc123',
       });
       ghRequests.done();
-      validateConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        validateConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'testOwner',
         'notThere',
         '19f6a66851125917fa07615dcbc0cd13dad56981',
@@ -389,18 +283,6 @@ describe('auto-label', () => {
         .reply(200, [
           {
             name: 'api: spanner',
-          },
-        ])
-        .post('/repos/GoogleCloudPlatform/golang-samples/labels')
-        .reply(200, [
-          {
-            name: 'api: spanner',
-          },
-        ])
-        .post('/repos/GoogleCloudPlatform/golang-samples/labels')
-        .reply(200, [
-          {
-            name: 'sample',
           },
         ])
         .post('/repos/GoogleCloudPlatform/golang-samples/issues/5/labels')
@@ -472,16 +354,6 @@ describe('auto-label', () => {
         ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200)
-        .post('/repos/testOwner/testRepo/labels', {
-          name: 'myGitHubLabel',
-          color: 'FEFEFA',
-        })
-        .reply(201, [
-          {
-            name: 'myGitHubLabel',
-            color: 'C9FFE5',
-          },
-        ])
         .post('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200, [
           {
@@ -514,16 +386,6 @@ describe('auto-label', () => {
         ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200, [{name: 'api:theWrongLabel'}])
-        .post('/repos/testOwner/testRepo/labels', {
-          name: 'myGitHubLabel',
-          color: 'FEFEFA',
-        })
-        .reply(201, [
-          {
-            name: 'myGitHubLabel',
-            color: 'C9FFE5',
-          },
-        ])
         .post('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200, [
           {
@@ -568,9 +430,7 @@ describe('auto-label', () => {
             name: 'myGitHubLabel',
             color: 'C9FFE5',
           },
-        ])
-        .post('/repos/testOwner/testRepo/labels')
-        .reply(422);
+        ]);
 
       await probot.receive({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -596,13 +456,6 @@ describe('auto-label', () => {
             title: 'spanner: ignored',
           },
         ])
-        .post('/repos/testOwner/testRepo-samples/labels')
-        .reply(201, [
-          {
-            name: 'api: spanner',
-            color: 'C9FFE5',
-          },
-        ])
         .get('/repos/testOwner/testRepo-samples/issues/1/labels')
         .reply(200)
         .post('/repos/testOwner/testRepo-samples/issues/1/labels')
@@ -610,12 +463,6 @@ describe('auto-label', () => {
           {
             name: 'api: spanner',
             color: 'C9FFE5',
-          },
-        ])
-        .post('/repos/testOwner/testRepo-samples/labels')
-        .reply(201, [
-          {
-            name: 'sample',
           },
         ])
         .post('/repos/testOwner/testRepo-samples/issues/1/labels')
@@ -648,13 +495,6 @@ describe('auto-label', () => {
             title: 'samples.spanner: ignored',
           },
         ])
-        .post('/repos/testOwner/testRepo/labels')
-        .reply(201, [
-          {
-            name: 'api: spanner',
-            color: 'C9FFE5',
-          },
-        ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200)
         .post('/repos/testOwner/testRepo/issues/1/labels')
@@ -662,12 +502,6 @@ describe('auto-label', () => {
           {
             name: 'api: spanner',
             color: 'C9FFE5',
-          },
-        ])
-        .post('/repos/testOwner/testRepo/labels')
-        .reply(201, [
-          {
-            name: 'samples',
           },
         ])
         .post('/repos/testOwner/testRepo/issues/1/labels')
@@ -700,13 +534,6 @@ describe('auto-label', () => {
             title: 'samples.spanner: ignored',
           },
         ])
-        .post('/repos/testOwner/testRepo/labels')
-        .reply(201, [
-          {
-            name: 'api: spanner',
-            color: 'C9FFE5',
-          },
-        ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200)
         .post('/repos/testOwner/testRepo/issues/1/labels')
@@ -714,12 +541,6 @@ describe('auto-label', () => {
           {
             name: 'api: spanner',
             color: 'C9FFE5',
-          },
-        ])
-        .post('/repos/testOwner/testRepo/labels')
-        .reply(201, [
-          {
-            name: 'samples',
           },
         ])
         .post('/repos/testOwner/testRepo/issues/1/labels')
@@ -755,16 +576,6 @@ describe('auto-label', () => {
         ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200)
-        .post('/repos/testOwner/testRepo/labels', {
-          name: 'myGitHubLabel',
-          color: 'FEFEFA',
-        })
-        .reply(201, [
-          {
-            name: 'myGitHubLabel',
-            color: 'C9FFE5',
-          },
-        ])
         .post('/repos/testOwner/testRepo/issues/1/labels')
         .reply(200, [
           {
