@@ -16,6 +16,7 @@ import nock from 'nock';
 import {describe, it, afterEach} from 'mocha';
 import assert from 'assert';
 import sinon from 'sinon';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import meow from 'meow';
 import * as policy from '../src/policy';
@@ -39,10 +40,10 @@ describe('cli', () => {
   it('should show help if no flags are passed', async () => {
     process.env.GH_TOKEN = 'token';
     const showHelp = sinon.stub();
-    const m = ({
+    const m = {
       showHelp,
       flags: {},
-    } as unknown) as meow.Result<{}>;
+    } as unknown as meow.Result<{}>;
     await cli.main(m);
     assert.ok(showHelp.calledOnce);
   });
@@ -57,11 +58,11 @@ describe('cli', () => {
       .stub(p, 'checkRepoPolicy')
       .resolves(policyMetadata);
     const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
-    const m = ({
+    const m = {
       flags: {
         repo: 'googleapis/nodejs-storage',
       },
-    } as unknown) as meow.Result<{}>;
+    } as unknown as meow.Result<{}>;
     await cli.main(m);
     assert.ok(getRepoStub.calledOnce);
     assert.ok(getPolicyStub.calledOnce);
@@ -81,12 +82,12 @@ describe('cli', () => {
     sinon.stub(policy, 'getPolicy').returns(p);
     sinon.stub(changer, 'getChanger').returns(c);
     const fixStub = sinon.stub(c, 'submitFixes').resolves();
-    const m = ({
+    const m = {
       flags: {
         repo: 'googleapis/nodejs-storage',
         autofix: true,
       },
-    } as unknown) as meow.Result<{}>;
+    } as unknown as meow.Result<{}>;
     await cli.main(m);
     assert.ok(fixStub.calledOnce);
   });
@@ -102,12 +103,12 @@ describe('cli', () => {
     sinon.stub(p, 'checkRepoPolicy').resolves(policyMetadata);
     sinon.stub(policy, 'getPolicy').returns(p);
     const exportStub = sinon.stub(bq, 'exportToBigQuery').resolves();
-    const m = ({
+    const m = {
       flags: {
         repo: 'googleapis/nodejs-storage',
         export: true,
       },
-    } as unknown) as meow.Result<{}>;
+    } as unknown as meow.Result<{}>;
     await cli.main(m);
     assert.ok(exportStub.calledOnce);
   });

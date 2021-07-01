@@ -14,15 +14,19 @@
 
 import * as assert from 'assert';
 import {core} from '../src/core';
+import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from '../src/labels';
 import * as handlers from '../src/handlers';
 import {describe, it, beforeEach} from 'mocha';
 import {logger} from 'gcf-utils';
-import owlBot from '../src/owl-bot';
+import {OwlBot} from '../src/owl-bot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import * as sinon from 'sinon';
 import nock from 'nock';
+import {Configs} from '../src/configs-store';
 import {owlBotLockPath} from '../src/config-files';
+import * as labelUtilsModule from '@google-automations/label-utils';
+import {FirestoreConfigsStore} from '../src/database';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -46,11 +50,39 @@ describe('owlBot', () => {
     });
     await probot.load((app: Probot) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      owlBot('abc123', app, sandbox.stub() as any);
+      OwlBot('abc123', app, sandbox.stub() as any);
     });
   });
   afterEach(() => {
     sandbox.restore();
+  });
+  describe('Cron for syncing labels ', () => {
+    it('calls syncLabels for schedule.repository cron job with syncLabels: true', async () => {
+      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
+      await probot.receive({
+        name: 'schedule.repository' as '*',
+        payload: {
+          repository: {
+            name: 'testRepo',
+            owner: {
+              login: 'testOwner',
+            },
+          },
+          organization: {
+            login: 'googleapis',
+          },
+          syncLabels: true,
+        },
+        id: 'abc123',
+      });
+      sinon.assert.calledOnceWithExactly(
+        syncLabelsStub,
+        sinon.match.instanceOf(ProbotOctokit),
+        'googleapis',
+        'testRepo',
+        OWL_BOT_LABELS
+      );
+    });
   });
   describe('post processing pull request', () => {
     it('returns early and logs if pull request opened from fork', async () => {
@@ -140,12 +172,13 @@ describe('owlBot', () => {
       sandbox.assert.calledOnce(hasOwlBotLoopStub);
       githubMock.done();
     });
-    it('returns early and throws if postprocessor appears to be looping', async () => {
+    it('returns early and throws if post-processor appears to be looping', async () => {
       const payload = {
         installation: {
           id: 12345,
         },
         pull_request: {
+          number: 33,
           head: {
             repo: {
               full_name: 'bcoe/owl-bot-testing',
@@ -159,6 +192,19 @@ describe('owlBot', () => {
           },
         },
       };
+      const config = `docker:
+      image: node
+      digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
+      const githubMock = nock('https://api.github.com')
+        .get('/repos/bcoe/owl-bot-testing/pulls/33')
+        .reply(200, payload.pull_request)
+        .get(
+          '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        )
+        .reply(200, {
+          content: Buffer.from(config).toString('base64'),
+          encoding: 'base64',
+        });
       const hasOwlBotLoopStub = sandbox
         .stub(core, 'hasOwlBotLoop')
         .resolves(true);
@@ -170,6 +216,7 @@ describe('owlBot', () => {
         }),
         /too many OwlBot updates/
       );
+      githubMock.done();
       sandbox.assert.calledOnce(hasOwlBotLoopStub);
     });
   });
@@ -241,7 +288,7 @@ describe('owlBot', () => {
     sandbox.assert.calledOnce(hasOwlBotLoopStub);
     githubMock.done();
   });
-  it('leaves pull request open because it has owl-bot-ignore label', async () => {
+  it(`leaves pull request open because it has ${OWL_BOT_IGNORE} label`, async () => {
     const payload = {
       installation: {
         id: 12345,
@@ -264,7 +311,7 @@ describe('owlBot', () => {
             name: 'owl-bot-copy',
           },
           {
-            name: 'owl-bot-ignore',
+            name: OWL_BOT_IGNORE,
           },
         ],
       },
@@ -361,6 +408,67 @@ describe('owlBot', () => {
     });
     sandbox.assert.calledOnce(triggerBuildStub);
     sandbox.assert.calledOnce(createCheckStub);
+    sandbox.assert.calledOnce(hasOwlBotLoopStub);
+    githubMock.done();
+  });
+  it(`doesn't run check because labeled with ${OWL_BOT_IGNORE}`, async () => {
+    const payload = {
+      installation: {
+        id: 12345,
+      },
+      pull_request: {
+        number: 33,
+        head: {
+          repo: {
+            full_name: 'bcoe/owl-bot-testing',
+          },
+          ref: 'abc123',
+        },
+        base: {
+          repo: {
+            full_name: 'bcoe/owl-bot-testing',
+          },
+        },
+        labels: [
+          {
+            name: 'owl-bot-copy',
+          },
+          {
+            name: OWL_BOT_IGNORE,
+          },
+        ],
+      },
+    };
+    const config = `docker:
+    image: node
+    digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
+    const githubMock = nock('https://api.github.com')
+      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .reply(200, payload.pull_request)
+      .get(
+        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+      )
+      .reply(200, {
+        content: Buffer.from(config).toString('base64'),
+        encoding: 'base64',
+      });
+    const triggerBuildStub = sandbox
+      .stub(core, 'triggerPostProcessBuild')
+      .resolves(null);
+    const hasOwlBotLoopStub = sandbox
+      .stub(core, 'hasOwlBotLoop')
+      .resolves(false);
+    const createCheckStub = sandbox.stub(core, 'createCheck');
+    await probot.receive({
+      name: 'pull_request.synchronize',
+      payload,
+      id: 'abc123',
+    });
+    sandbox.assert.calledOnce(triggerBuildStub);
+    sandbox.assert.calledWith(
+      createCheckStub,
+      sinon.match.has('conclusion', 'success')
+    );
     sandbox.assert.calledOnce(hasOwlBotLoopStub);
     githubMock.done();
   });
@@ -635,7 +743,7 @@ describe('owlBot', () => {
         }, 100);
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      owlBot('abc123', app, sandbox.stub() as any);
+      OwlBot('abc123', app, sandbox.stub() as any);
     });
     const loggerStub = sandbox.stub(logger, 'info');
     await probot.receive({
@@ -646,13 +754,119 @@ describe('owlBot', () => {
     });
     sandbox.assert.calledOnce(loggerStub);
   });
+
+  describe('pull request merged', () => {
+    let loggerErrorStub: sinon.SinonStub;
+    let getConfigsStub: sinon.SinonStub;
+    let refreshConfigsStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      loggerErrorStub = sandbox.stub(logger, 'error');
+      getConfigsStub = sandbox.stub(
+        FirestoreConfigsStore.prototype,
+        'getConfigs'
+      );
+      refreshConfigsStub = sandbox.stub(handlers, 'refreshConfigs').resolves();
+    });
+
+    it('invokes `refreshConfigs`', async () => {
+      const payload = {
+        organization: {
+          login: 'googleapis',
+        },
+        installation: {
+          id: 12345,
+        },
+        repository: {
+          default_branch: 'default_branch',
+          full_name: 'full_name',
+          name: 'name',
+        },
+      };
+
+      const customConfig: Configs = {
+        commitHash: 'my-commit-hash',
+        // The branch name from which the config files were retrieved.
+        branchName: payload.repository.default_branch,
+        // The installation id for our github app and this repo.
+        installationId: payload.installation.id,
+      };
+
+      getConfigsStub.resolves(customConfig);
+
+      await probot.receive({
+        name: 'pull_request.merged',
+        payload,
+        id: 'abc123',
+      });
+
+      // We shouldn't expect any errors
+      assert.strictEqual(loggerErrorStub.called, false);
+
+      // Ensure `getConfigs` was called correctly
+      assert.ok(
+        getConfigsStub.calledOnceWithExactly(payload.repository.full_name)
+      );
+
+      // Ensure `refreshConfigs` was called correctly
+      assert.strictEqual(refreshConfigsStub.callCount, 1);
+      const [{args: callArgs}] = refreshConfigsStub.getCalls();
+
+      assert.ok(callArgs[0] instanceof FirestoreConfigsStore);
+      assert.strictEqual(callArgs[1], customConfig);
+      assert.ok(callArgs[2] instanceof ProbotOctokit);
+      assert.strictEqual(callArgs[3], payload.organization.login);
+      assert.strictEqual(callArgs[4], payload.repository.name);
+      assert.strictEqual(callArgs[5], payload.repository.default_branch);
+      assert.strictEqual(callArgs[6], payload.installation.id);
+    });
+
+    it('should log an error if `payload.installation.id` is not available', async () => {
+      const payload = {
+        organization: {
+          login: 'googleapis',
+        },
+      };
+
+      await probot.receive({
+        name: 'pull_request.merged',
+        payload,
+        id: 'abc123',
+      });
+
+      assert.strictEqual(loggerErrorStub.called, true);
+      assert.strictEqual(getConfigsStub.called, false);
+      assert.strictEqual(refreshConfigsStub.called, false);
+    });
+
+    it('should log an error if `payload.organization.login` is not available', async () => {
+      const payload = {
+        installation: {
+          id: 12345,
+        },
+      };
+
+      await probot.receive({
+        name: 'pull_request.merged',
+        payload,
+        id: 'abc123',
+      });
+
+      assert.strictEqual(loggerErrorStub.called, true);
+      assert.strictEqual(getConfigsStub.called, false);
+      assert.strictEqual(refreshConfigsStub.called, false);
+    });
+  });
+
   describe('scan configs cron', () => {
     it('invokes scanGithubForConfigs', async () => {
+      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
       const payload = {
         org: 'googleapis',
         installation: {
           id: 12345,
         },
+        scanGithubForConfigs: true,
       };
       let org: string | undefined = undefined;
       let installation: number | undefined = undefined;
@@ -677,6 +891,7 @@ describe('owlBot', () => {
       });
       assert.strictEqual(org, 'googleapis');
       assert.strictEqual(installation, 12345);
+      sinon.assert.notCalled(syncLabelsStub);
     });
   });
   it('triggers build when "owlbot:run" label is added to fork', async () => {
@@ -684,11 +899,14 @@ describe('owlBot', () => {
       installation: {
         id: 12345,
       },
+      sender: {
+        login: 'bcoe',
+      },
       pull_request: {
         number: 33,
         labels: [
           {
-            name: 'owlbot:run',
+            name: OWLBOT_RUN_LABEL,
           },
         ],
         head: {
@@ -708,7 +926,7 @@ describe('owlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/rennie/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
         '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
@@ -717,7 +935,7 @@ describe('owlBot', () => {
         content: Buffer.from(config).toString('base64'),
         encoding: 'base64',
       })
-      .delete('/repos/bcoe/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
       .reply(200);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
@@ -751,11 +969,14 @@ describe('owlBot', () => {
       installation: {
         id: 12345,
       },
+      sender: {
+        login: 'bcoe',
+      },
       pull_request: {
         number: 33,
         labels: [
           {
-            name: 'owlbot:run',
+            name: OWLBOT_RUN_LABEL,
           },
         ],
         head: {
@@ -813,10 +1034,83 @@ describe('owlBot', () => {
     sandbox.assert.calledOnce(updatePullRequestStub);
     githubMock.done();
   });
+  it('does not crash if "owlbot:run" label has already been deleted', async () => {
+    const payload = {
+      installation: {
+        id: 12345,
+      },
+      sender: {
+        login: 'bcoe',
+      },
+      pull_request: {
+        number: 33,
+        labels: [
+          {
+            name: OWLBOT_RUN_LABEL,
+          },
+        ],
+        head: {
+          repo: {
+            full_name: 'rennie/owl-bot-testing',
+          },
+          ref: 'abc123',
+        },
+        base: {
+          repo: {
+            full_name: 'rennie/owl-bot-testing',
+          },
+        },
+      },
+    };
+    const config = `docker:
+    image: node
+    digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
+    const githubMock = nock('https://api.github.com')
+      .get('/repos/rennie/owl-bot-testing/pulls/33')
+      .reply(200, payload.pull_request)
+      .get(
+        '/repos/rennie/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+      )
+      .reply(200, {
+        content: Buffer.from(config).toString('base64'),
+        encoding: 'base64',
+      })
+      .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .reply(404);
+    const triggerBuildStub = sandbox
+      .stub(core, 'triggerPostProcessBuild')
+      .resolves({
+        text: 'the text for check',
+        summary: 'summary for check',
+        conclusion: 'success',
+        detailsURL: 'https://www.example.com',
+      });
+    const updatePullRequestStub = sandbox.stub(
+      core,
+      'updatePullRequestAfterPostProcessor'
+    );
+    const hasOwlBotLoopStub = sandbox
+      .stub(core, 'hasOwlBotLoop')
+      .resolves(false);
+    const createCheckStub = sandbox.stub(core, 'createCheck');
+    await probot.receive({
+      name: 'pull_request.labeled',
+      payload,
+      id: 'abc123',
+    });
+    sandbox.assert.calledOnce(triggerBuildStub);
+    sandbox.assert.calledOnce(createCheckStub);
+    sandbox.assert.calledOnce(hasOwlBotLoopStub);
+    sandbox.assert.calledOnce(updatePullRequestStub);
+    githubMock.done();
+  });
   it('returns early if PR from fork and label other than owlbot:run added', async () => {
     const payload = {
       installation: {
         id: 12345,
+      },
+      sender: {
+        login: 'bcoe',
       },
       pull_request: {
         labels: [{name: 'cla:yes'}],
@@ -846,6 +1140,9 @@ describe('owlBot', () => {
       installation: {
         id: 12345,
       },
+      sender: {
+        login: 'bcoe',
+      },
       pull_request: {
         labels: [{name: 'cla:yes'}],
         head: {
@@ -867,5 +1164,87 @@ describe('owlBot', () => {
       id: 'abc123',
     });
     sandbox.assert.calledWith(loggerStub, sandbox.match(/.*skipping labels.*/));
+  });
+  it('returns early when "owlbot:run" label added by bot, and last commit was from OwlBot', async () => {
+    const payload = {
+      installation: {
+        id: 12345,
+      },
+      sender: {
+        login: 'tmatsuo[bot]',
+      },
+      pull_request: {
+        number: 33,
+        labels: [
+          {
+            name: OWLBOT_RUN_LABEL,
+          },
+        ],
+        head: {
+          repo: {
+            full_name: 'rennie/owl-bot-testing',
+          },
+          ref: 'abc123',
+        },
+        base: {
+          repo: {
+            full_name: 'rennie/owl-bot-testing',
+          },
+        },
+      },
+    };
+    const githubMock = nock('https://api.github.com')
+      .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .reply(200);
+    const lastCommitFromOwlBotStub = sandbox
+      .stub(core, 'lastCommitFromOwlBot')
+      .resolves(true);
+    await probot.receive({
+      name: 'pull_request.labeled',
+      payload,
+      id: 'abc123',
+    });
+    sandbox.assert.calledOnce(lastCommitFromOwlBotStub);
+    githubMock.done();
+  });
+  it('returns early and adds success status if no lock file found', async () => {
+    const payload = {
+      installation: {
+        id: 12345,
+      },
+      pull_request: {
+        labels: [],
+        number: 33,
+        head: {
+          repo: {
+            full_name: 'bcoe/owl-bot-testing',
+          },
+          ref: 'abc123',
+        },
+        base: {
+          repo: {
+            full_name: 'bcoe/owl-bot-testing',
+          },
+        },
+      },
+    };
+    const githubMock = nock('https://api.github.com')
+      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .reply(200, payload.pull_request)
+      .get(
+        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+      )
+      .reply(404);
+    const createCheckStub = sandbox.stub(core, 'createCheck');
+    await probot.receive({
+      name: 'pull_request.synchronize',
+      payload,
+      id: 'abc123',
+    });
+    sandbox.assert.calledWith(
+      createCheckStub,
+      sinon.match.has('conclusion', 'success')
+    );
+    githubMock.done();
   });
 });

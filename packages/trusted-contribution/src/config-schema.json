@@ -1,0 +1,47 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "trusted-contribution config",
+    "description": "Schema for defining the trusted-contribution config",
+    "additionalProperties": false,
+    "type": "object",
+    "definitions": {
+	"Annotation": {
+	    "additionalProperties": false,
+	    "required": ["type", "text"],
+	    "type": "object",
+	    "properties": {
+		"type": {
+		    "enum": ["comment", "label"]
+		},
+		"text":{
+			"oneOf": [
+				{"type": "string"},
+				{
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				}
+			]
+		}
+	    }
+	}
+    },
+    "properties": {
+	"trustedContributors": {
+	    "type": "array",
+	    "items": {
+		"type": "string"
+	    }
+	},
+	"annotations": {
+	    "type": "array",
+	    "items": {
+		"$ref": "#/definitions/Annotation"
+	    }
+	},
+	"disabled": {
+	    "type": "boolean"
+	}
+    }
+}

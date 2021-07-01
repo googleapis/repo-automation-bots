@@ -1,0 +1,4 @@
+
+ // [START storage_s3_sdk_list_buckets]
+ import com.amazonaws.auth.AWSStaticCredentialsProvider;
+ import com.amazonaws.auth.BasicAWSCredentials;

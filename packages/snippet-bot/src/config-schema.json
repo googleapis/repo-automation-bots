@@ -15,6 +15,10 @@
 	"alwaysCreateStatusCheck": {
 	    "description": "Indicates whether the bot always create status checks",
 	    "type": "boolean",
+	},
+	"aggregateChecks": {
+	    "description": "Indicates whether the bot aggregate status checks",
+	    "type": "boolean",
 	}
     }
 }

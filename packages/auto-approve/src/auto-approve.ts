@@ -15,7 +15,7 @@
 // This file handles the logic to manage incoming pull-requests
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, Context, ProbotOctokit} from 'probot';
+import {Probot, Context} from 'probot';
 import {logger} from 'gcf-utils';
 import {ValidPr, checkPRAgainstConfig} from './check-pr';
 import {getChangedFiles, getBlobFromPRFiles} from './get-pr-info';
@@ -63,7 +63,7 @@ async function evaluateAndSubmitCheckForConfig(
   repo: string,
   config: string | Configuration,
   codeOwnersFile: string | undefined,
-  octokit: InstanceType<typeof ProbotOctokit>,
+  octokit: Octokit,
   headSha: string
 ): Promise<Boolean> {
   // Check if the YAML is formatted correctly if it's in a PR
@@ -142,7 +142,7 @@ export function handler(app: Probot) {
     ],
     async (context: Context) => {
       const pr = context.payload;
-      const owner = pr.pull_request.head.repo.owner.login;
+      const owner = pr.repository.owner.login;
       const repo = pr.pull_request.head.repo.name;
       const prNumber = pr.number;
 
@@ -195,7 +195,7 @@ export function handler(app: Probot) {
 
         logger.metric('auto_approve.status_check', {
           repo: `${owner}/${repo}`,
-          pr: pr,
+          pr: prNumber,
         });
       } else {
         let config: Configuration | null;
@@ -257,7 +257,7 @@ export function handler(app: Probot) {
             });
             logger.metric('auto_approve.approved_tagged', {
               repo: `${owner}/${repo}`,
-              pr: pr,
+              pr: prNumber,
             });
             logger.info(
               `Auto-approved and tagged ${owner}/${repo}/${prNumber}`

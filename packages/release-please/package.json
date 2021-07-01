@@ -28,26 +28,27 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/bot-config-utils": "^3.0.0",
-    "@octokit/webhooks": "^9.0.0",
-    "gcf-utils": "^8.0.0",
-    "release-please": "^11.12.1"
+    "@google-automations/bot-config-utils": "^3.1.3",
+    "@google-automations/label-utils": "^1.0.2",
+    "@octokit/webhooks": "^9.8.2",
+    "gcf-utils": "^11.1.0",
+    "release-please": "^11.13.1"
   },
   "devDependencies": {
-    "@octokit/rest": "^18.5.3",
-    "@types/mocha": "^8.0.0",
-    "@types/node": "^12.6.1",
-    "@types/semver": "^7.0.0",
-    "@types/sinon": "^9.0.5",
-    "c8": "^7.1.0",
-    "cross-env": "^7.0.0",
-    "gts": "^3.0.0",
+    "@octokit/rest": "^18.6.0",
+    "@types/mocha": "^8.2.2",
+    "@types/node": "^15.12.4",
+    "@types/semver": "^7.3.6",
+    "@types/sinon": "^10.0.2",
+    "c8": "^7.7.3",
+    "cross-env": "^7.0.3",
+    "gts": "^3.1.0",
     "js-yaml": "^4.1.0",
-    "mocha": "^8.0.0",
-    "nock": "^13.0.0",
-    "sinon": "^9.0.3",
+    "mocha": "^9.0.1",
+    "nock": "^13.1.0",
+    "sinon": "^11.1.1",
     "snap-shot-it": "^7.9.6",
-    "typescript": "~4.2.0"
+    "typescript": "~4.3.4"
   },
   "engines": {
     "node": ">= 12.18.2"

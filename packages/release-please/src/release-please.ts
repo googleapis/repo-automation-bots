@@ -34,6 +34,7 @@ import {
   getReleaserNames,
 } from 'release-please/build/src/releasers';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
+import {syncLabels} from '@google-automations/label-utils';
 import {Manifest} from 'release-please/build/src/manifest';
 import schema from './config-schema.json';
 import {
@@ -42,6 +43,7 @@ import {
   WELL_KNOWN_CONFIGURATION_FILE,
   DEFAULT_CONFIGURATION,
 } from './config-constants';
+import {FORCE_RUN_LABEL, RELEASE_PLEASE_LABELS} from './labels';
 type RequestBuilderType = typeof request;
 type DefaultFunctionType = RequestBuilderType['defaults'];
 type RequestFunctionType = ReturnType<DefaultFunctionType>;
@@ -54,7 +56,6 @@ interface GitHubAPI {
 }
 
 const DEFAULT_API_URL = 'https://api.github.com';
-const FORCE_RUN_LABEL = 'release-please:force-run';
 
 function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
   if (language === null) {
@@ -126,7 +127,7 @@ async function createGitHubRelease(
     packageName,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      octokit: (github as {}) as OctokitType,
+      octokit: github as {} as OctokitType,
       graphql: github.graphql,
       request: github.request,
     },
@@ -165,7 +166,7 @@ async function createReleasePR(
     repoUrl,
     apiUrl: DEFAULT_API_URL,
     octokitAPIs: {
-      octokit: (github as {}) as OctokitType,
+      octokit: github as {} as OctokitType,
       graphql: github.graphql,
       request: github.request,
     },
@@ -205,7 +206,8 @@ export = (app: Probot) => {
       context.octokit,
       owner,
       repo,
-      WELL_KNOWN_CONFIGURATION_FILE
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
     );
 
     // If no configuration is specified,
@@ -262,13 +264,24 @@ export = (app: Probot) => {
       context.octokit,
       owner,
       repoName,
-      WELL_KNOWN_CONFIGURATION_FILE
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
     );
 
     // If no configuration is specified,
     if (!remoteConfiguration) {
       logger.info(`release-please not configured for (${repoUrl})`);
       return;
+    }
+
+    // syncLabels is just a nice to have feature, so we ignore all the
+    // errors and continue. If this strategy becomes problematic, we
+    // can create another scheduler job.
+    try {
+      await syncLabels(context.octokit, owner, repoName, RELEASE_PLEASE_LABELS);
+    } catch (err) {
+      err.message = `Failed to sync the labels: ${err.message}`;
+      logger.error(err);
     }
 
     const configuration = {
@@ -358,7 +371,8 @@ export = (app: Probot) => {
       context.octokit,
       owner,
       repo,
-      WELL_KNOWN_CONFIGURATION_FILE
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
     );
 
     // If no configuration is specified,
@@ -396,7 +410,8 @@ export = (app: Probot) => {
       context.octokit,
       owner,
       repo,
-      WELL_KNOWN_CONFIGURATION_FILE
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
     );
 
     // If no configuration is specified,

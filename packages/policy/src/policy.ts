@@ -25,9 +25,11 @@
 
 import {request} from 'gaxios';
 import {operations} from '@octokit/openapi-types';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 
-export type GitHubRepo = operations['repos/get']['responses']['200']['content']['application/json'];
+export type GitHubRepo =
+  operations['repos/get']['responses']['200']['content']['application/json'];
 export const githubRawBase = 'https://raw.githubusercontent.com';
 
 export interface PolicyResult {
@@ -135,7 +137,7 @@ export class Policy {
       if (res.data.incomplete_results) {
         this.logger.warn(`Incomplete results from repo query: ${search}`);
       }
-      repos.push(...((res.data.items as {}[]) as GitHubRepo[]));
+      repos.push(...(res.data.items as {}[] as GitHubRepo[]));
       if (res.data.items.length < 100) {
         break;
       }
@@ -194,7 +196,8 @@ export class Policy {
    */
   async hasBranchProtection(repo: GitHubRepo) {
     const [owner, name] = repo.full_name.split('/');
-    type GetBranchProtectionResult = operations['repos/get-branch-protection']['responses']['200']['content']['application/json'];
+    type GetBranchProtectionResult =
+      operations['repos/get-branch-protection']['responses']['200']['content']['application/json'];
     let data: GetBranchProtectionResult;
     try {
       const res = await this.octokit.repos.getBranchProtection({

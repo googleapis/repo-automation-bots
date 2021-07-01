@@ -27,18 +27,9 @@ import {
 } from '../src/merge-logic';
 import {logger} from 'gcf-utils';
 // eslint-disable-next-line node/no-extraneous-import
-import {config} from '@probot/octokit-plugin-config';
-import {createProbotAuth} from 'octokit-auth-probot';
-import {resolve} from 'path';
-
-const TestingOctokit = ProbotOctokit.plugin(config).defaults({
-  authStrategy: createProbotAuth,
-  retry: {enabled: false},
-  throttle: {enabled: false},
-});
+import {Octokit} from '@octokit/rest';
 
 const sandbox = sinon.createSandbox();
-const fixturesPath = resolve(__dirname, '../../test/Fixtures');
 
 interface HeadSha {
   sha: string;
@@ -176,7 +167,10 @@ describe('merge-logic', () => {
     probot = createProbot({
       overrides: {
         githubToken: 'abc123',
-        Octokit: TestingOctokit,
+        Octokit: ProbotOctokit.defaults({
+          retry: {enabled: false},
+          throttle: {enabled: false},
+        }),
       },
     });
 
@@ -240,8 +234,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -273,8 +272,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -300,8 +304,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -329,8 +338,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -356,8 +370,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -389,8 +408,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -419,8 +443,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -441,8 +470,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -474,8 +508,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -507,8 +546,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -535,8 +579,7 @@ describe('merge-logic', () => {
         ]),
         getCommentsOnPr([
           {
-            body:
-              'Your PR has conflicts that you need to resolve before merge-on-green can automerge',
+            body: 'Your PR has conflicts that you need to resolve before merge-on-green can automerge',
           },
         ]),
         getPR(true, 'dirty', 'open'),
@@ -544,8 +587,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -558,8 +606,13 @@ describe('merge-logic', () => {
       const scopes = [getRateLimit(0)];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -608,8 +661,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -660,8 +718,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -712,8 +775,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -761,8 +829,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -814,8 +887,13 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload: {org: 'testOwner'},
+        name: 'schedule.installation' as '*',
+        payload: {
+          cron_type: 'installation',
+          cron_org: 'testOwner',
+          performMerge: true,
+          installation: {id: 1234},
+        },
         id: 'abc123',
       });
 
@@ -840,7 +918,7 @@ describe('merge-logic', () => {
         'testOwner',
         'testRepo',
         1,
-        new TestingOctokit({auth: 'abc123'})
+        new Octokit({auth: 'abc123'})
       );
       lastCommitRequest.done();
       assert.match(lastCommit, /lastcommit/);

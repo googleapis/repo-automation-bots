@@ -1,0 +1,5 @@
+.env
+build
+node_modules
+coverage
+repositories-dump.json

@@ -26,9 +26,6 @@ bucket=$3
 keyLocation=$4
 keyRing=$5
 functionRegion=$6
-# Optional parameter. If not specified, this flag won't be set when
-# deploying the bot.
-timeout=$8
 
 # To use a different runtime for a bot, give 7th parameter in bot's
 # cloudbuild.yaml.
@@ -36,6 +33,13 @@ if [ $# -ge 7 ]; then
     functionRuntime=$7
 else
     functionRuntime=nodejs10
+fi
+
+if [ $# -ge 8 ]; then
+    timeout=$8
+else
+    # default to the max timeout (9 minutes)
+    timeout=540s
 fi
 
 botName=$(echo "${directoryName}" | rev | cut -d/ -f1 | rev)
@@ -46,16 +50,26 @@ pushd "${targetDir}"
 functionName=${botName//-/_}
 queueName=${botName//_/-}
 
+deployArgs=(
+  "--trigger-http"
+  "--runtime"
+  "${functionRuntime}"
+  "--region"
+  "${functionRegion}"
+  "--update-env-vars"
+  "DRIFT_PRO_BUCKET=${bucket},KEY_LOCATION=${keyLocation},KEY_RING=${keyRing},GCF_SHORT_FUNCTION_NAME=${functionName},PROJECT_ID=${project},GCF_LOCATION=${functionRegion},PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1',WEBHOOK_TMP=tmp-webhook-payloads"
+  "--timeout"
+  "${timeout}"
+)
+if [ -n "${SERVICE_ACCOUNT}" ]; then
+  deployArgs+=( "--service-account" "${SERVICE_ACCOUNT}" )
+fi
 echo "About to publish function ${functionName}"
-gcloud functions deploy "${functionName}" \
-  --trigger-http \
-  --runtime "${functionRuntime}" \
-  --region "${functionRegion}" \
-  --update-env-vars DRIFT_PRO_BUCKET="${bucket}",KEY_LOCATION="${keyLocation}",KEY_RING="${keyRing}",GCF_SHORT_FUNCTION_NAME="${functionName}",PROJECT_ID="${project}",GCF_LOCATION="${functionRegion}",PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1',WEBHOOK_TMP=tmp-webhook-payloads \
-  ${timeout:+--timeout "${timeout}"}
+echo gcloud functions deploy "${functionName}" "${deployArgs[@]}"
+gcloud functions deploy "${functionName}" "${deployArgs[@]}"
 
 echo "Adding ability for allUsers to execute the Function"
-gcloud alpha functions add-iam-policy-binding "${functionName}" \
+gcloud functions add-iam-policy-binding "${functionName}" \
   --region="${functionRegion}" \
   --member=allUsers \
   --role=roles/cloudfunctions.invoker

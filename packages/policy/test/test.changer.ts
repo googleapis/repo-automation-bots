@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import nock from 'nock';
 import sinon from 'sinon';
@@ -41,10 +42,10 @@ describe('changer', () => {
     timestamp: new Date(),
   };
 
-  const repo = ({
+  const repo = {
     full_name: 'googleapis/nodejs-storage',
     default_branch: 'main',
-  } as unknown) as GitHubRepo;
+  } as unknown as GitHubRepo;
 
   afterEach(() => {
     nock.cleanAll();

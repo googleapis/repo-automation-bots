@@ -17,6 +17,5 @@ import {handler} from './auto-approve';
 
 const bootstrap = new GCFBootstrapper();
 module.exports['auto_approve'] = bootstrap.gcf(handler, {
-  background: false,
   logging: true,
 });

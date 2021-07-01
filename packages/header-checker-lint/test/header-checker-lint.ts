@@ -15,7 +15,6 @@
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
-import {Octokit} from '@octokit/rest';
 import snapshot from 'snap-shot-it';
 // eslint-disable-next-line node/no-extraneous-import
 import {EventPayloads} from '@octokit/webhooks';
@@ -27,6 +26,7 @@ import {ConfigChecker} from '@google-automations/bot-config-utils';
 
 import {WELL_KNOWN_CONFIGURATION_FILE} from '../src/config';
 import myProbotApp from '../src/header-checker-lint';
+import schema from '../src/config-schema.json';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 nock.disableNetConnect();
@@ -95,14 +95,17 @@ describe('HeaderCheckerLint', () => {
       await probot.receive({name: 'pull_request', payload, id: 'abc123'});
       requests.done();
       // These asserts are just enough for once.
-      getConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        getConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'chingor13',
         'google-auth-library-java',
-        WELL_KNOWN_CONFIGURATION_FILE
+        WELL_KNOWN_CONFIGURATION_FILE,
+        {schema: schema}
       );
-      validateConfigStub.calledOnceWith(
-        sinon.match.instanceOf(Octokit),
+      sinon.assert.calledOnceWithExactly(
+        validateConfigStub,
+        sinon.match.instanceOf(ProbotOctokit),
         'chingor13',
         'google-auth-library-java',
         '87139750cdcf551e8fe8d90c129527a4f358321c',
@@ -299,7 +302,7 @@ describe('HeaderCheckerLint', () => {
         })
         .reply(200);
       await probot.receive({name: 'pull_request', payload, id: 'abc123'});
-      checkerGetConfigStub.calledOnceWith();
+      sinon.assert.calledOnceWithExactly(checkerGetConfigStub);
       requests.done();
     });
 
