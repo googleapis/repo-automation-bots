@@ -16,7 +16,7 @@
 set -eo pipefail
 
 if [ $# -lt 6 ]; then
-  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <region> [botName]"
+  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <region> [botName] [timeout] [min-instance]"
   exit 1
 fi
 
@@ -30,6 +30,18 @@ region=$6
 botName=$(echo "${directoryName}" | rev | cut -d/ -f1 | rev)
 if [ $# -ge 7 ]; then
   botName=$7
+fi
+
+if [ $# -ge 8 ]; then
+  timeout=$8
+else
+  timeout="3600"
+fi
+
+if [ $# -ge 9 ]; then
+  minInstances=$9
+else
+  minInstances="0"
 fi
 
 pushd "${directoryName}"
@@ -50,6 +62,8 @@ gcloud run deploy \
   --set-env-vars "WEBHOOK_TMP=tmp-webhook-payloads" \
   --platform managed \
   --region "${region}" \
+  --timeout "${timeout}" \
+  --min-instances "${minInstances}" \
   --quiet \
   "${serviceName}"
 

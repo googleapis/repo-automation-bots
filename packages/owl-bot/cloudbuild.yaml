@@ -79,6 +79,9 @@ steps:
       - "$_KEY_LOCATION"
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
+      - "owl-bot"
+      - "3600"
+      - "1"
 
   # Build the CLI container whenever we merge changes to the owl-bot folder.
   # this container is used to run helpers from OwlBot in a Cloud Build
