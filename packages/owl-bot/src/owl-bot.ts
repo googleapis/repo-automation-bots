@@ -28,6 +28,7 @@ import {
 } from './handlers';
 import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
 import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from './labels';
+import {OwlBotLock} from './config-files';
 
 interface PubSubContext {
   github: Octokit;
@@ -338,7 +339,31 @@ const runPostProcessor = async (
   octokit: Octokit
 ) => {
   // Fetch the .Owlbot.lock.yaml from head of PR:
-  const lock = await core.getOwlBotLock(opts.base, opts.prNumber, octokit);
+  let lock: OwlBotLock | undefined = undefined;
+  // Attempt to load the OwlBot lock file for a repository, if the lock
+  // file is corrupt an error will be thrown and we should show a failing
+  // status:
+  try {
+    lock = await core.getOwlBotLock(opts.base, opts.prNumber, octokit);
+  } catch (err) {
+    await core.createCheck(
+      {
+        privateKey,
+        appId,
+        installation: opts.installation,
+        pr: opts.prNumber,
+        repo: opts.base,
+        text: err.message,
+        summary: 'The OwlBot lock file on this repository is corrupt',
+        conclusion: 'failure',
+        title: '🦉 OwlBot - failure',
+        detailsURL:
+          'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
+      },
+      octokit
+    );
+    return;
+  }
   if (!lock) {
     logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
     // If OwlBot is not configured on repo, indicate success. This makes
