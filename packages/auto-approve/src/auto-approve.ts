@@ -259,6 +259,14 @@ export function handler(app: Probot) {
               repo: `${owner}/${repo}`,
               pr: prNumber,
             });
+            if (pr.pull_request.user.login === 'renovate-bot') {
+              logger.metric('auto_approve.approved_tagged', {
+                repo: `${owner}/${repo}`,
+                pr: prNumber,
+                renovate_bot: true,
+              });
+            }
+
             logger.info(
               `Auto-approved and tagged ${owner}/${repo}/${prNumber}`
             );
