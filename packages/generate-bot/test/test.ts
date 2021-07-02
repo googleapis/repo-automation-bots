@@ -16,6 +16,7 @@ import * as GenerateBot from '../src/main';
 import fs from 'fs';
 import recursive from 'recursive-readdir';
 import rimraf from 'rimraf';
+import os from 'os';
 import path from 'path';
 import {describe, it, afterEach} from 'mocha';
 import * as assert from 'assert';
@@ -152,7 +153,7 @@ describe('user input', () => {
 
 describe('end to end', () => {
   const programName = 'testy';
-  const tempPath = path.join(__dirname, '..', '..', '..', programName);
+  const tempPath = path.join(os.tmpdir(), programName);
   it('should generate a working package', async () => {
     await GenerateBot.creatingBotFiles({
       programName,
