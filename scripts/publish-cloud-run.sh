@@ -16,7 +16,7 @@
 set -eo pipefail
 
 if [ $# -lt 6 ]; then
-  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <region> [botName]"
+  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <region> [botName] [timeout] [min-instance]"
   exit 1
 fi
 
@@ -32,13 +32,25 @@ if [ $# -ge 7 ]; then
   botName=$7
 fi
 
+if [ $# -ge 8 ]; then
+  timeout=$8
+else
+  timeout="3600"
+fi
+
+if [ $# -ge 9 ]; then
+  minInstances=$9
+else
+  minInstances="0"
+fi
+
 pushd "${directoryName}"
 serviceName=${botName//_/-}
 functionName=${botName//-/_}
 queueName=${botName//_/-}
 
 echo "About to cloud run app ${serviceName}"
-gcloud run deploy \
+gcloud beta run deploy \
   --image "gcr.io/${project}/${botName}" \
   --set-env-vars "DRIFT_PRO_BUCKET=${bucket}" \
   --set-env-vars "KEY_LOCATION=${keyLocation}" \
@@ -50,6 +62,8 @@ gcloud run deploy \
   --set-env-vars "WEBHOOK_TMP=tmp-webhook-payloads" \
   --platform managed \
   --region "${region}" \
+  --timeout "${timeout}" \
+  --min-instances "${minInstances}" \
   --quiet \
   "${serviceName}"
 
