@@ -260,7 +260,6 @@ export function handler(app: Probot) {
               pr: prNumber,
               prAuthor: pr.pull_request.user.login,
             });
-
             logger.info(
               `Auto-approved and tagged ${owner}/${repo}/${prNumber}`
             );
