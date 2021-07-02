@@ -258,6 +258,7 @@ export function handler(app: Probot) {
             logger.metric('auto_approve.approved_tagged', {
               repo: `${owner}/${repo}`,
               pr: prNumber,
+              prAuthor: pr.pull_request.user.login,
             });
             logger.info(
               `Auto-approved and tagged ${owner}/${repo}/${prNumber}`
