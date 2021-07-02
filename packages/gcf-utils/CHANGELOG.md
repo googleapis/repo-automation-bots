@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [11.4.2](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.4.1...gcf-utils-v11.4.2) (2021-07-02)
+
+
+### Bug Fixes
+
+* detect default task target runtime from environment ([#2233](https://www.github.com/googleapis/repo-automation-bots/issues/2233)) ([7f262e8](https://www.github.com/googleapis/repo-automation-bots/commit/7f262e8f3208a7f5247284fb2880da0e8ebeb359)), closes [#2194](https://www.github.com/googleapis/repo-automation-bots/issues/2194)
+
 ### [11.4.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.4.0...gcf-utils-v11.4.1) (2021-06-30)
 
 
