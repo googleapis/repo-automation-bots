@@ -25,5 +25,10 @@ module.exports.owl_bot = bootstrap.gcf(
     const config = await bootstrap.getProbotConfig(false);
     OwlBot(config.privateKey, app);
   },
-  {maxPubSubRetries: 3}
+  // owl-bot typically waits for a Cloud Build build to finish.
+  // Cloud Build has a limit for number of concurrent builds, so
+  // owl-bot tends to hit the 540s (9 mins) timeout.
+  // We bump the maxRetries to 30 so that the bot will likely finish
+  // the jobs even there are bunch of Cloud Build builds.
+  {maxRetries: 30, maxPubSubRetries: 3}
 );

@@ -60,6 +60,7 @@ gcloud beta run deploy \
   --set-env-vars "GCF_LOCATION=${region}" \
   --set-env-vars "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1'" \
   --set-env-vars "WEBHOOK_TMP=tmp-webhook-payloads" \
+  --set-env-vars "BOT_RUNTIME=run" \
   --platform managed \
   --region "${region}" \
   --timeout "${timeout}" \

@@ -216,6 +216,10 @@ interface BootstrapperOptions {
   taskTargetEnvironment?: BotEnvironment;
 }
 
+function defaultTaskEnvironment(): BotEnvironment {
+  return process.env.BOT_RUNTIME === 'run' ? 'run' : 'functions';
+}
+
 export class GCFBootstrapper {
   probot?: Probot;
 
@@ -245,7 +249,8 @@ export class GCFBootstrapper {
     this.cloudTasksClient =
       options?.tasksClient || new CloudTasksV2.CloudTasksClient();
     this.storage = new Storage({autoRetry: !RUNNING_IN_TEST});
-    this.taskTargetEnvironment = options.taskTargetEnvironment || 'functions';
+    this.taskTargetEnvironment =
+      options.taskTargetEnvironment || defaultTaskEnvironment();
     if (!options.projectId) {
       throw new Error(
         'Missing required `projectId`. Please provide as a constructor argument or set the PROJECT_ID env variable.'
