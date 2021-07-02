@@ -1,1 +1,7 @@
+build/
+coverage/
 node_modules/
+.env
+*.pem
+Dockerfile
+.dockerignore

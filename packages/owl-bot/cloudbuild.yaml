@@ -49,11 +49,42 @@ steps:
       - "$_REGION"
       - "$_DIRECTORY"
 
+  - name: gcr.io/cloud-builders/docker
+    id: "build-docker"
+    waitFor: ["-"]
+    dir: packages/owl-bot
+    args:
+      - "build"
+      - "-f"
+      - "Dockerfile.frontend"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/owl-bot"
+      - "."
+
+  - name: gcr.io/cloud-builders/docker
+    id: "push-docker"
+    waitFor: ["build-docker"]
+    args: ["push", "gcr.io/$PROJECT_ID/owl-bot"]
+
+  - name: gcr.io/cloud-builders/gcloud
+    id: "deploy-cloud-run"
+    waitFor: ["push-docker"]
+    entrypoint: bash
+    args:
+      - "-e"
+      - "./scripts/publish-cloud-run.sh"
+      - "$_DIRECTORY"
+      - "$PROJECT_ID"
+      - "$_BUCKET"
+      - "$_KEY_LOCATION"
+      - "$_KEY_RING"
+      - "$_FUNCTION_REGION"
+
   # Build the CLI container whenever we merge changes to the owl-bot folder.
   # this container is used to run helpers from OwlBot in a Cloud Build
   # environment:
   - name: 'gcr.io/cloud-builders/gcloud'
-    id: "build-docker"
+    id: "build-cli-docker"
     entrypoint: gcloud
     args: ['builds', 'submit', '--tag', 'gcr.io/repo-automation-bots/owlbot-cli']
     dir: 'packages/owl-bot'

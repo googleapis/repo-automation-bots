@@ -1247,4 +1247,51 @@ describe('owlBot', () => {
     );
     githubMock.done();
   });
+  it('returns early and adds failure status if lock file is invalid', async () => {
+    const payload = {
+      installation: {
+        id: 12345,
+      },
+      pull_request: {
+        labels: [],
+        number: 33,
+        head: {
+          repo: {
+            full_name: 'bcoe/owl-bot-testing',
+          },
+          ref: 'abc123',
+        },
+        base: {
+          repo: {
+            full_name: 'bcoe/owl-bot-testing',
+          },
+        },
+      },
+    };
+    const githubMock = nock('https://api.github.com')
+      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .reply(200, payload.pull_request)
+      .get(
+        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+      )
+      .reply(200, {
+        content: Buffer.from('bad-config: 99').toString('base64'),
+        encoding: 'base64',
+      });
+    const createCheckStub = sandbox.stub(core, 'createCheck');
+    await probot.receive({
+      name: 'pull_request.synchronize',
+      payload,
+      id: 'abc123',
+    });
+    sandbox.assert.calledWith(
+      createCheckStub,
+      sinon.match.has('conclusion', 'failure')
+    );
+    sandbox.assert.calledWith(
+      createCheckStub,
+      sinon.match.has('text', 'lock file did not contain "docker" key')
+    );
+    githubMock.done();
+  });
 });
