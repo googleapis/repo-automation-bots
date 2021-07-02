@@ -42,6 +42,15 @@ else
     timeout=540s
 fi
 
+if [ "${PROJECT_ID}" == "repo-automation-bots" ]; then
+    webhookTmpBucket=tmp-webhook-payloads
+elif [ "${PROJECT_ID}" == "repo-automation-bots-staging" ]; then
+    webhookTmpBucket=tmp-webhook-payloads-staging
+else
+    echo "deploying to '${PROJECT_ID}' is not supported"
+    exit 1
+fi
+
 botName=$(echo "${directoryName}" | rev | cut -d/ -f1 | rev)
 workdir=$(pwd)
 targetDir="${workdir}/targets/${botName}"
@@ -57,7 +66,7 @@ deployArgs=(
   "--region"
   "${functionRegion}"
   "--update-env-vars"
-  "BOT_RUNTIME=functions,DRIFT_PRO_BUCKET=${bucket},KEY_LOCATION=${keyLocation},KEY_RING=${keyRing},GCF_SHORT_FUNCTION_NAME=${functionName},PROJECT_ID=${project},GCF_LOCATION=${functionRegion},PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1',WEBHOOK_TMP=tmp-webhook-payloads"
+  "BOT_RUNTIME=functions,DRIFT_PRO_BUCKET=${bucket},KEY_LOCATION=${keyLocation},KEY_RING=${keyRing},GCF_SHORT_FUNCTION_NAME=${functionName},PROJECT_ID=${project},GCF_LOCATION=${functionRegion},PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1',WEBHOOK_TMP=${webhookTmpBucket}"
   "--timeout"
   "${timeout}"
 )

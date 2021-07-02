@@ -44,6 +44,15 @@ else
   minInstances="0"
 fi
 
+if [ "${PROJECT_ID}" == "repo-automation-bots" ]; then
+    webhookTmpBucket=tmp-webhook-payloads
+elif [ "${PROJECT_ID}" == "repo-automation-bots-staging" ]; then
+    webhookTmpBucket=tmp-webhook-payloads-staging
+else
+    echo "deploying to '${PROJECT_ID}' is not supported"
+    exit 1
+fi
+
 pushd "${directoryName}"
 serviceName=${botName//_/-}
 functionName=${botName//-/_}
@@ -67,7 +76,7 @@ deployArgs=(
   "--set-env-vars"
   "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1'"
   "--set-env-vars"
-  "WEBHOOK_TMP=tmp-webhook-payloads"
+  "WEBHOOK_TMP=${webhookTmpBucket}"
   "--set-env-vars"
   "BOT_RUNTIME=run"
   "--platform"
@@ -99,7 +108,7 @@ if gcloud tasks queues describe "${queueName}"  &>/dev/null; then
   verb="update"
 fi
 
-gcloud tasks queues ${verb} "${queueName}" \
+gcloud --quiet tasks queues ${verb} "${queueName}" \
   --max-concurrent-dispatches="2048" \
   --max-attempts="100" \
   --max-retry-duration="43200s" \
