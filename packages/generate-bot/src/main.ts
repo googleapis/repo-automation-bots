@@ -88,7 +88,7 @@ export async function collectUserInput(): Promise<ProgramOptions> {
  */
 export function creatingBotFiles(options: ProgramOptions) {
   console.log(`Creating new folder ${options.fileLocation}`);
-  fs.mkdirSync(options.fileLocation);
+  fs.mkdirSync(options.fileLocation, {recursive: true});
   const mkDir = options.fileLocation;
   const readAllFiles = function (dirNameRead: string, dirNameWrite: string) {
     console.log(`copying from ${dirNameRead} to ${dirNameWrite}...`);
