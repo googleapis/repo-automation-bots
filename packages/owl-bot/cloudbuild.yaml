@@ -81,7 +81,7 @@ steps:
       - "$_FUNCTION_REGION"
       - "owl-bot"
       - "3600"
-      - "1"
+      - "1" # We want to serve Github webhook quickly.
 
   # Build the CLI container whenever we merge changes to the owl-bot folder.
   # this container is used to run helpers from OwlBot in a Cloud Build

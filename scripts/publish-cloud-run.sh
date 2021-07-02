@@ -50,7 +50,7 @@ functionName=${botName//-/_}
 queueName=${botName//_/-}
 
 echo "About to cloud run app ${serviceName}"
-gcloud run deploy \
+gcloud beta run deploy \
   --image "gcr.io/${project}/${botName}" \
   --set-env-vars "DRIFT_PRO_BUCKET=${bucket}" \
   --set-env-vars "KEY_LOCATION=${keyLocation}" \
