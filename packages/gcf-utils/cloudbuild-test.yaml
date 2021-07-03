@@ -1,0 +1,3 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [ 'build', '--network=cloudbuild', '-t', 'test-result', '-f', 'packages/gcf-utils/Dockerfile', '.']
