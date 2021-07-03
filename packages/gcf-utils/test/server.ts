@@ -38,140 +38,258 @@ const sandbox = sinon.createSandbox();
 
 describe('GCFBootstrapper', () => {
   describe('server', () => {
-    let server: http.Server;
-    const bootstrapper = new GCFBootstrapper({
-      projectId: 'test-project',
-      functionName: 'test-bot',
-      location: 'some-location',
-    });
-    const issueSpy = sandbox.stub();
-    const repositoryCronSpy = sandbox.stub();
-    const installationCronSpy = sandbox.stub();
-    const globalCronSpy = sandbox.stub();
-    const pubsubSpy = sandbox.stub();
-    let enqueueTask: sinon.SinonStub = sandbox.stub();
-    before(done => {
-      nock.enableNetConnect(host => {
-        return host.startsWith('localhost:');
+    describe('without verification', () => {
+      let server: http.Server;
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'test-project',
+        functionName: 'test-bot',
+        location: 'some-location',
       });
+      const issueSpy = sandbox.stub();
+      const repositoryCronSpy = sandbox.stub();
+      const installationCronSpy = sandbox.stub();
+      const globalCronSpy = sandbox.stub();
+      const pubsubSpy = sandbox.stub();
+      let enqueueTask: sinon.SinonStub = sandbox.stub();
+      before(done => {
+        nock.enableNetConnect(host => {
+          return host.startsWith('localhost:');
+        });
 
-      sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
-        appId: 1234,
-        secret: 'foo',
-        webhookPath: 'bar',
-        privateKey: 'cert',
-      });
+        sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
+          appId: 1234,
+          secret: 'foo',
+          webhookPath: 'bar',
+          privateKey: 'cert',
+        });
 
-      // This replaces the authClient with an auth client that uses an
-      // API Key, this ensures that we will not attempt to lookup application
-      // default credentials:
-      sandbox.replace(
-        bootstrapper.storage.authClient,
-        'request',
-        async (opts: object) => {
-          const auth = new GoogleAuth();
-          const client = await auth.fromAPIKey('abc123');
-          return client.request(opts);
-        }
-      );
-      enqueueTask = sandbox.stub(bootstrapper.cloudTasksClient, 'createTask');
-      sandbox
-        .stub(bootstrapper, 'getAuthenticatedOctokit')
-        .resolves(new Octokit());
+        // This replaces the authClient with an auth client that uses an
+        // API Key, this ensures that we will not attempt to lookup application
+        // default credentials:
+        sandbox.replace(
+          bootstrapper.storage.authClient,
+          'request',
+          async (opts: object) => {
+            const auth = new GoogleAuth();
+            const client = await auth.fromAPIKey('abc123');
+            return client.request(opts);
+          }
+        );
+        enqueueTask = sandbox.stub(bootstrapper.cloudTasksClient, 'createTask');
+        sandbox
+          .stub(bootstrapper, 'getAuthenticatedOctokit')
+          .resolves(new Octokit());
 
-      server = bootstrapper
-        .server(async app => {
-          app.on('issues', issueSpy);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          app.on('schedule.repository' as any, repositoryCronSpy);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          app.on('schedule.installation' as any, installationCronSpy);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          app.on('schedule.global' as any, globalCronSpy);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          app.on('pubsub.message' as any, pubsubSpy);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          app.on('err' as any, sinon.stub().throws());
-        })
-        .on('listening', () => {
-          done();
-        })
-        .listen(TEST_SERVER_PORT);
-    });
-
-    afterEach(() => {
-      issueSpy.reset();
-      repositoryCronSpy.reset();
-      installationCronSpy.reset();
-      globalCronSpy.reset();
-      pubsubSpy.reset();
-    });
-
-    after(done => {
-      server.on('close', () => {
-        done();
-      });
-      server.close();
-    });
-
-    it('should handle requests', async () => {
-      const response = await gaxios.request({
-        url: `http://localhost:${TEST_SERVER_PORT}/`,
-        headers: {
-          'x-github-delivery': '123',
-          'x-cloudtasks-taskname': 'test-bot',
-          'x-github-event': 'issues',
-        },
-      });
-      assert.deepStrictEqual(response.status, 200);
-      sinon.assert.notCalled(enqueueTask);
-      sinon.assert.calledOnce(issueSpy);
-    });
-
-    it('should handle payloads', async () => {
-      const payload = require(resolve(fixturesPath, './issue_event'));
-      const response = await gaxios.request({
-        url: `http://localhost:${TEST_SERVER_PORT}/`,
-        headers: {
-          'x-github-delivery': '123',
-          'x-cloudtasks-taskname': 'test-bot',
-          'x-github-event': 'issues',
-          'content-type': 'application/json',
-        },
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-      assert.deepStrictEqual(response.status, 200);
-      sinon.assert.notCalled(enqueueTask);
-      sinon.assert.calledOnceWithMatch(
-        issueSpy,
-        sinon.match.has(
-          'payload',
-          sinon.match({
-            action: 'opened',
-            issue: {
-              number: 10,
-            },
+        server = bootstrapper
+          .server(async app => {
+            app.on('issues', issueSpy);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            app.on('schedule.repository' as any, repositoryCronSpy);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            app.on('schedule.installation' as any, installationCronSpy);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            app.on('schedule.global' as any, globalCronSpy);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            app.on('pubsub.message' as any, pubsubSpy);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            app.on('err' as any, sinon.stub().throws());
           })
-        )
-      );
+          .on('listening', () => {
+            done();
+          })
+          .listen(TEST_SERVER_PORT);
+      });
+
+      afterEach(() => {
+        issueSpy.reset();
+        repositoryCronSpy.reset();
+        installationCronSpy.reset();
+        globalCronSpy.reset();
+        pubsubSpy.reset();
+      });
+
+      after(done => {
+        server.on('close', () => {
+          done();
+        });
+        server.close();
+      });
+
+      it('should handle requests', async () => {
+        const response = await gaxios.request({
+          url: `http://localhost:${TEST_SERVER_PORT}/`,
+          headers: {
+            'x-github-delivery': '123',
+            'x-cloudtasks-taskname': 'test-bot',
+            'x-github-event': 'issues',
+          },
+        });
+        assert.deepStrictEqual(response.status, 200);
+        sinon.assert.notCalled(enqueueTask);
+        sinon.assert.calledOnce(issueSpy);
+      });
+
+      it('should handle payloads', async () => {
+        const payload = require(resolve(fixturesPath, './issue_event'));
+        const response = await gaxios.request({
+          url: `http://localhost:${TEST_SERVER_PORT}/`,
+          headers: {
+            'x-github-delivery': '123',
+            'x-cloudtasks-taskname': 'test-bot',
+            'x-github-event': 'issues',
+            'content-type': 'application/json',
+          },
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+        assert.deepStrictEqual(response.status, 200);
+        sinon.assert.notCalled(enqueueTask);
+        sinon.assert.calledOnceWithMatch(
+          issueSpy,
+          sinon.match.has(
+            'payload',
+            sinon.match({
+              action: 'opened',
+              issue: {
+                number: 10,
+              },
+            })
+          )
+        );
+      });
+
+      it('should queue requests', async () => {
+        const payload = require(resolve(fixturesPath, './issue_event'));
+        const response = await gaxios.request({
+          url: `http://localhost:${TEST_SERVER_PORT}/`,
+          headers: {
+            'x-github-delivery': '123',
+            'x-github-event': 'issues',
+            'content-type': 'application/json',
+          },
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+        assert.deepStrictEqual(response.status, 200);
+        sinon.assert.calledOnce(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+      });
     });
 
-    it('should queue requests', async () => {
-      const payload = require(resolve(fixturesPath, './issue_event'));
-      const response = await gaxios.request({
-        url: `http://localhost:${TEST_SERVER_PORT}/`,
-        headers: {
-          'x-github-delivery': '123',
-          'x-github-event': 'issues',
-          'content-type': 'application/json',
-        },
-        method: 'POST',
-        body: JSON.stringify(payload),
+    describe('with verification', () => {
+      let server: http.Server;
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'test-project',
+        functionName: 'test-bot',
+        location: 'some-location',
       });
-      assert.deepStrictEqual(response.status, 200);
-      sinon.assert.calledOnce(enqueueTask);
-      sinon.assert.notCalled(issueSpy);
+      const issueSpy = sandbox.stub();
+      const repositoryCronSpy = sandbox.stub();
+      const installationCronSpy = sandbox.stub();
+      const globalCronSpy = sandbox.stub();
+      const pubsubSpy = sandbox.stub();
+      let enqueueTask: sinon.SinonStub = sandbox.stub();
+      before(done => {
+        nock.enableNetConnect(host => {
+          return host.startsWith('localhost:');
+        });
+
+        sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
+          appId: 1234,
+          secret: 'foo',
+          webhookPath: 'bar',
+          privateKey: 'cert',
+        });
+
+        // This replaces the authClient with an auth client that uses an
+        // API Key, this ensures that we will not attempt to lookup application
+        // default credentials:
+        sandbox.replace(
+          bootstrapper.storage.authClient,
+          'request',
+          async (opts: object) => {
+            const auth = new GoogleAuth();
+            const client = await auth.fromAPIKey('abc123');
+            return client.request(opts);
+          }
+        );
+        enqueueTask = sandbox.stub(bootstrapper.cloudTasksClient, 'createTask');
+        sandbox
+          .stub(bootstrapper, 'getAuthenticatedOctokit')
+          .resolves(new Octokit());
+
+        server = bootstrapper
+          .server(
+            async app => {
+              app.on('issues', issueSpy);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              app.on('schedule.repository' as any, repositoryCronSpy);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              app.on('schedule.installation' as any, installationCronSpy);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              app.on('schedule.global' as any, globalCronSpy);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              app.on('pubsub.message' as any, pubsubSpy);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              app.on('err' as any, sinon.stub().throws());
+            },
+            {
+              skipVerification: false,
+            }
+          )
+          .on('listening', () => {
+            done();
+          })
+          .listen(TEST_SERVER_PORT);
+      });
+
+      afterEach(() => {
+        issueSpy.reset();
+        repositoryCronSpy.reset();
+        installationCronSpy.reset();
+        globalCronSpy.reset();
+        pubsubSpy.reset();
+      });
+
+      after(done => {
+        server.on('close', () => {
+          done();
+        });
+        server.close();
+      });
+
+      it('should reject bad signatures with 400 on webhooks', async () => {
+        const response = await gaxios.request({
+          url: `http://localhost:${TEST_SERVER_PORT}/`,
+          headers: {
+            'x-github-delivery': '123',
+            'x-github-event': 'issues',
+            'x-hub-signature': 'bad-signature',
+          },
+          // don't throw on non-success error codes
+          validateStatus: () => {
+            return true;
+          },
+        });
+        assert.deepStrictEqual(response.status, 400);
+        sinon.assert.notCalled(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+      });
+
+      it('should reject bad signatures with 200 on tasks', async () => {
+        const response = await gaxios.request({
+          url: `http://localhost:${TEST_SERVER_PORT}/`,
+          headers: {
+            'x-github-delivery': '123',
+            'x-cloudtasks-taskname': 'test-bot',
+            'x-github-event': 'issues',
+            'x-hub-signature': 'bad-signature',
+          },
+        });
+        assert.deepStrictEqual(response.status, 200);
+        sinon.assert.notCalled(enqueueTask);
+        sinon.assert.notCalled(issueSpy);
+      });
     });
   });
 });

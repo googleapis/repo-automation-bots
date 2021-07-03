@@ -920,7 +920,7 @@ describe('GCFBootstrapper', () => {
     });
 
     describe('verification', () => {
-      it('rejects unsigned task requests', async () => {
+      it('rejects unsigned task requests with 200', async () => {
         await mockBootstrapper({
           logging: false,
           background: true,
@@ -941,14 +941,14 @@ describe('GCFBootstrapper', () => {
 
         sinon.assert.calledOnce(configStub);
         sinon.assert.notCalled(sendStatusStub);
-        sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 400});
+        sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
         sinon.assert.notCalled(issueSpy);
         sinon.assert.notCalled(repositoryCronSpy);
         sinon.assert.notCalled(installationCronSpy);
         sinon.assert.notCalled(globalCronSpy);
       });
 
-      it('rejects invalid task request signatures', async () => {
+      it('rejects invalid task request signatures with 200', async () => {
         await mockBootstrapper({
           logging: false,
           background: true,
@@ -965,6 +965,33 @@ describe('GCFBootstrapper', () => {
         req.headers['x-github-delivery'] = '123';
         req.headers['x-cloudtasks-taskname'] = 'my-task';
         req.headers['x-hub-signature'] = 'invalidsignature';
+
+        await handler(req, response);
+
+        sinon.assert.calledOnce(configStub);
+        sinon.assert.notCalled(sendStatusStub);
+        sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 200});
+        sinon.assert.notCalled(issueSpy);
+        sinon.assert.notCalled(repositoryCronSpy);
+        sinon.assert.notCalled(installationCronSpy);
+        sinon.assert.notCalled(globalCronSpy);
+      });
+
+      it('rejects unsigned non-task requests with 400', async () => {
+        await mockBootstrapper({
+          logging: false,
+          background: true,
+          skipVerification: false,
+        });
+        // req.body is a parsed json object.
+        req.body = {
+          installation: {id: 1},
+        };
+        // while req.rawBody is a raw buffer
+        req.rawBody = fs.readFileSync('test/fixtures/payload.json');
+        req.headers = {};
+        req.headers['x-github-event'] = 'another.name';
+        req.headers['x-github-delivery'] = '123';
 
         await handler(req, response);
 
