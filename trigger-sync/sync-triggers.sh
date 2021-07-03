@@ -94,3 +94,35 @@ do
     --project="${PROJECT_ID}" \
     --branch="${BRANCH_NAME}"
 done
+
+# find all non-root cloudbuild-test.yaml configs
+for config in $(find -- */ -name 'cloudbuild-test.yaml' | sort -u)
+do
+  directory=$(dirname "${config}")
+  triggerShortName=$(dirname "${config}" | rev | cut -d/ -f1 | rev)
+  triggerName=$(dirname "${config}" | sed 's/\//-/g')
+  triggerName="${triggerName}-test"
+
+  echo "Checking for ${triggerName}"
+
+  # test to see if the deployment trigger already exists
+  if gcloud beta builds triggers describe "${triggerName}" --project="${PROJECT_ID}" &>/dev/null
+  then
+    echo "${triggerName} already exists, skipping"
+    continue
+  fi
+
+  echo "Syncing test trigger for ${triggerShortName}"
+
+  # create the trigger
+  gcloud beta builds triggers create github \
+    --project="${PROJECT_ID}" \
+    --repo-name="${REPO_NAME}" \
+    --repo-owner="${REPO_OWNER}" \
+    --description="${triggerShortName} presubmit" \
+    --included-files="${directory}/**" \
+    --name="${triggerName}" \
+    --pull-request-pattern="^${BRANCH_NAME}$" \
+    --build-config="${config}" \
+    --comment-control=COMMENTS_ENABLED_FOR_EXTERNAL_CONTRIBUTORS_ONLY
+done
