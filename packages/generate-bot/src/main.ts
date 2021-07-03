@@ -18,11 +18,17 @@ import fs from 'fs';
 import path from 'path';
 import process from 'process';
 
+export enum Platform {
+  CLOUD_FUNCTIONS = 'Cloud Functions',
+  CLOUD_RUN = 'Cloud Run',
+}
+
 export interface ProgramOptions {
   programName: string;
   exportName?: string;
   description: string;
   fileLocation: string;
+  platform: Platform;
 }
 
 export function checkValidity(opts: ProgramOptions) {
@@ -74,6 +80,12 @@ export async function collectUserInput(): Promise<ProgramOptions> {
         type: 'input',
         name: 'fileLocation',
         message: `This package will be saved in /packages/yourProgramName unless you specify another location and directory name here relative to ${process.cwd()} : `,
+      },
+      {
+        type: 'select',
+        name: 'platform',
+        message: 'Select a platform',
+        choices: Object.values(Platform),
       },
     ]);
     isValid = checkValidity(input);

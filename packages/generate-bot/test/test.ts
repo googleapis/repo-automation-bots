@@ -13,12 +13,13 @@
 // limitations under the License.
 
 import * as GenerateBot from '../src/main';
+import crypto from 'crypto';
 import fs from 'fs';
 import recursive from 'recursive-readdir';
 import rimraf from 'rimraf';
 import os from 'os';
 import path from 'path';
-import {describe, it, afterEach} from 'mocha';
+import {describe, it} from 'mocha';
 import * as assert from 'assert';
 import {execSync, ExecSyncOptions} from 'child_process';
 
@@ -41,73 +42,129 @@ const readAllFiles = function (
   return contentString as string;
 };
 
+let tempTestDirectory: string;
+let fileLocation: string;
+let defaultProgramOptions: GenerateBot.ProgramOptions;
+
+before(() => {
+  tempTestDirectory = fs.mkdtempSync(`${os.tmpdir()}${path.sep}`);
+});
+
+beforeEach(() => {
+  const suffix = crypto.randomBytes(16).toString('hex');
+
+  fileLocation = path.join(tempTestDirectory, suffix);
+  defaultProgramOptions = {
+    programName: '{{programName}}',
+    exportName: '{{exportName}}',
+    description: '{{description}}',
+    fileLocation,
+    platform: GenerateBot.Platform.CLOUD_FUNCTIONS,
+  };
+});
+
+after(() => {
+  // cleanup temp directory
+  rimraf.sync(tempTestDirectory);
+});
+
 describe('file structure', () => {
   it('checks that file structure carries over', async () => {
     const originalStack = await recursive('./templates');
     GenerateBot.creatingBotFiles({
-      programName: '{{programName}}',
-      exportName: '{{exportName}}',
-      description: 'description',
-      fileLocation: './tmp',
+      ...defaultProgramOptions,
     });
-    let createdStack = await recursive('./tmp');
-    createdStack = createdStack.map(contents => {
-      return contents.replace(/tmp/, 'templates');
-    });
+
+    const createdStack = (await recursive(fileLocation)).map(contents =>
+      contents.replace(fileLocation, 'templates')
+    );
+
     for (const key of createdStack) {
       assert.ok(originalStack.includes(key));
     }
   });
 
-  afterEach(done => {
-    rimraf('./tmp', done);
+  it('should create identical files for each platform', async () => {
+    let lastStack: string[] = [];
+
+    for (const platform of Object.values(GenerateBot.Platform)) {
+      const platformFileLocation = path.join(fileLocation, platform);
+
+      GenerateBot.creatingBotFiles({
+        ...defaultProgramOptions,
+        platform,
+        fileLocation: platformFileLocation,
+      });
+
+      const createdStack = (await recursive(platformFileLocation))
+        .map(contents => contents.replace(platformFileLocation, ''))
+        .sort();
+
+      if (lastStack.length) {
+        assert.deepStrictEqual(lastStack, createdStack);
+      }
+
+      lastStack = createdStack;
+    }
   });
 
   it('checks that the file content carries over', async () => {
     GenerateBot.creatingBotFiles({
+      ...defaultProgramOptions,
       programName: 'helloWorld',
       description: 'says hi',
-      fileLocation: './helloWorld',
     });
-    const content = readAllFiles('./helloWorld', '').replace(/\r/g, '');
+    const content = readAllFiles(fileLocation, '').replace(/\r/g, '');
     assert.ok(content);
   });
 
-  afterEach(() => {
-    rimraf.sync('./helloWorld');
+  it('should create nested folders if they do not yet exist', async () => {
+    GenerateBot.creatingBotFiles({
+      ...defaultProgramOptions,
+      programName: 'helloWorld',
+      description: 'says hi',
+      fileLocation: path.join(
+        defaultProgramOptions.fileLocation,
+        'nested',
+        'directory'
+      ),
+    });
+    const content = readAllFiles(fileLocation, '').replace(/\r/g, '');
+    assert.ok(content);
   });
 });
 
 describe('user input', () => {
   it('checks that integers and other characters are not passed', () => {
     const integerTest = GenerateBot.checkValidity({
+      ...defaultProgramOptions,
       programName: 'does,notpass',
       description: '5oesN0tP4SS',
-      fileLocation: 'pass',
     });
     assert.strictEqual(integerTest, false);
   });
 
   it('checks that only valid characters are passed', () => {
     const validCharTest = GenerateBot.checkValidity({
+      ...defaultProgramOptions,
       programName: 'pas-s',
       description: 'pas_s',
-      fileLocation: 'pass',
     });
     assert.strictEqual(validCharTest, true);
   });
 
   it('checks that nulls are not passed', () => {
     const nullTest = GenerateBot.checkValidity({
+      ...defaultProgramOptions,
       programName: '',
       description: 'pass',
-      fileLocation: '../pass',
     });
     assert.strictEqual(nullTest, false);
   });
 
   it('checks that files are not overwritten', () => {
     const overWritingTest = GenerateBot.checkValidity({
+      ...defaultProgramOptions,
       programName: 'templates',
       description: 'pass',
       fileLocation: './templates',
@@ -117,16 +174,17 @@ describe('user input', () => {
 
   it('checks that the program name is not upper-cased', () => {
     const programNameToLower = {
+      ...defaultProgramOptions,
       programName: 'PassButMakeLowerCase',
       description: 'pass',
-      fileLocation: 'pass',
     };
-    GenerateBot.checkValidity(programNameToLower);
+    assert.ok(GenerateBot.checkValidity(programNameToLower));
     assert.strictEqual(programNameToLower.programName, 'passbutmakelowercase');
   });
 
   it('checks that the program has a default location', () => {
     const fileLocationDefault = {
+      ...defaultProgramOptions,
       programName: 'pass',
       description: 'pass',
       fileLocation: '',
@@ -142,34 +200,36 @@ describe('user input', () => {
 
   it('checks that the export name uses underscores', () => {
     const programNameWithDash: GenerateBot.ProgramOptions = {
+      ...defaultProgramOptions,
       programName: 'with-dash',
       description: 'pass',
-      fileLocation: 'pass',
     };
-    GenerateBot.checkValidity(programNameWithDash);
+    assert.ok(GenerateBot.checkValidity(programNameWithDash));
     assert.strictEqual(programNameWithDash.exportName, 'with_dash');
   });
 });
 
 describe('end to end', () => {
   const programName = 'testy';
-  const tempPath = path.join(os.tmpdir(), programName);
-  it('should generate a working package', async () => {
-    await GenerateBot.creatingBotFiles({
-      programName,
-      description: programName,
-      fileLocation: tempPath,
-    });
-    const execOptions: ExecSyncOptions = {
-      cwd: tempPath,
-      stdio: 'inherit',
-      encoding: 'utf8',
-    };
-    execSync('npm install', execOptions);
-    execSync('npm test', execOptions);
-  });
 
-  after(done => {
-    rimraf(tempPath, done);
-  });
+  for (const platform of Object.values(GenerateBot.Platform)) {
+    describe(platform, () => {
+      it('should generate a working package', async () => {
+        await GenerateBot.creatingBotFiles({
+          ...defaultProgramOptions,
+          programName,
+          description: programName,
+          platform,
+        });
+
+        const execOptions: ExecSyncOptions = {
+          cwd: fileLocation,
+          stdio: 'inherit',
+          encoding: 'utf8',
+        };
+        execSync('npm install', execOptions);
+        execSync('npm test', execOptions);
+      });
+    });
+  }
 });
