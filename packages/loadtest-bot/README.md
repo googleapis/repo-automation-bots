@@ -1,14 +1,21 @@
 # loadtest-bot
 
-This bot does nothing. It only exists for performing load test
-in the staging environment.
+This bot does nothing. It only exists for performing load test.
 
 ## Deployment
+
+To deploy to our staging environment, set the `project` config for gcloud.
+
+```bash
+$ gcloud config set project repo-automation-bots-staging
+```
+
+From the project top level directory, submit a Cloud Build job.
 
 ```bash
 $ gcloud builds submit . \
   --config packages/loadtest-bot/cloudbuild.yaml \
-  --substitutions="_FUNCTION_REGION=us-central1,_DIRECTORY=packages/loadtest-bot,_BUCKET=repo-bots-tokens,_KEY_RING=probot-keys,_KEY_LOCATION=us-central1,_WEBHOOK_TMP=tmp-webhook-payloads-staging"
+  --substitutions="_FUNCTION_REGION=us-central1,_DIRECTORY=packages/loadtest-bot,_BUCKET=repo-bots-tokens,_KEY_RING=probot-keys,_KEY_LOCATION=us-central1"
 ```
 
 ## Loadtest
