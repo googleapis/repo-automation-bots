@@ -468,7 +468,7 @@ export class GCFBootstrapper {
           signature
         )
       ) {
-        response.send({
+        response.status(400).send({
           statusCode: 400,
           body: JSON.stringify({message: 'Invalid signature'}),
         });
@@ -502,6 +502,7 @@ export class GCFBootstrapper {
           if (taskRetries > maxRetries) {
             logger.metric('too-many-retries');
             logger.info(`Too many retries: ${taskRetries} > ${maxRetries}`);
+            // return 200 so we don't retry the task again
             response.send({
               statusCode: 200,
               body: JSON.stringify({message: 'Too many retries'}),
