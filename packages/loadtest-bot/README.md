@@ -14,7 +14,7 @@ From the project top level directory, submit a Cloud Build job.
 
 ```bash
 $ gcloud builds submit . \
-  --config packages/loadtest-bot/cloudbuild.yaml \
+  --config packages/loadtest-bot/cloudbuild-staging.yaml \
   --substitutions="_FUNCTION_REGION=us-central1,_DIRECTORY=packages/loadtest-bot,_BUCKET=repo-bots-tokens,_KEY_RING=probot-keys,_KEY_LOCATION=us-central1"
 ```
 
