@@ -49,24 +49,42 @@ serviceName=${botName//_/-}
 functionName=${botName//-/_}
 queueName=${botName//_/-}
 
+deployArgs=(
+  "--image"
+  "gcr.io/${project}/${botName}"
+  "--set-env-vars"
+  "DRIFT_PRO_BUCKET=${bucket}"
+  "--set-env-vars"
+  "KEY_LOCATION=${keyLocation}"
+  "--set-env-vars"
+  "KEY_RING=${keyRing}"
+  "--set-env-vars"
+  "GCF_SHORT_FUNCTION_NAME=${functionName}"
+  "--set-env-vars"
+  "PROJECT_ID=${project}"
+  "--set-env-vars"
+  "GCF_LOCATION=${region}"
+  "--set-env-vars"
+  "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1'"
+  "--set-env-vars"
+  "WEBHOOK_TMP=tmp-webhook-payloads"
+  "--set-env-vars"
+  "BOT_RUNTIME=run"
+  "--platform"
+  "managed"
+  "--region"
+  "${region}"
+  "--timeout"
+  "${timeout}"
+  "--min-instances"
+  "${minInstances}"
+  "--quiet"
+)
+if [ -n "${SERVICE_ACCOUNT}" ]; then
+  deployArgs+=( "--service-account" "${SERVICE_ACCOUNT}" )
+fi
 echo "About to cloud run app ${serviceName}"
-gcloud beta run deploy \
-  --image "gcr.io/${project}/${botName}" \
-  --set-env-vars "DRIFT_PRO_BUCKET=${bucket}" \
-  --set-env-vars "KEY_LOCATION=${keyLocation}" \
-  --set-env-vars "KEY_RING=${keyRing}" \
-  --set-env-vars "GCF_SHORT_FUNCTION_NAME=${functionName}" \
-  --set-env-vars "PROJECT_ID=${project}" \
-  --set-env-vars "GCF_LOCATION=${region}" \
-  --set-env-vars "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1'" \
-  --set-env-vars "WEBHOOK_TMP=tmp-webhook-payloads" \
-  --set-env-vars "BOT_RUNTIME=run" \
-  --platform managed \
-  --region "${region}" \
-  --timeout "${timeout}" \
-  --min-instances "${minInstances}" \
-  --quiet \
-  "${serviceName}"
+gcloud beta run deploy "${serviceName}" "${deployArgs[@]}"
 
 echo "Adding ability for allUsers to execute the Function"
 gcloud run services add-iam-policy-binding "${serviceName}" \
