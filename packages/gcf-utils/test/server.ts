@@ -275,21 +275,6 @@ describe('GCFBootstrapper', () => {
         sinon.assert.notCalled(enqueueTask);
         sinon.assert.notCalled(issueSpy);
       });
-
-      it('should reject bad signatures with 200 on tasks', async () => {
-        const response = await gaxios.request({
-          url: `http://localhost:${TEST_SERVER_PORT}/`,
-          headers: {
-            'x-github-delivery': '123',
-            'x-cloudtasks-taskname': 'test-bot',
-            'x-github-event': 'issues',
-            'x-hub-signature': 'bad-signature',
-          },
-        });
-        assert.deepStrictEqual(response.status, 200);
-        sinon.assert.notCalled(enqueueTask);
-        sinon.assert.notCalled(issueSpy);
-      });
     });
   });
 });

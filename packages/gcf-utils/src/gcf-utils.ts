@@ -468,10 +468,8 @@ export class GCFBootstrapper {
           signature
         )
       ) {
-        // Return a 200 on tasks, so we don't retry.
-        const status = triggerType === TriggerType.TASK ? 200 : 400;
-        response.status(status).send({
-          statusCode: status,
+        response.status(400).send({
+          statusCode: 400,
           body: JSON.stringify({message: 'Invalid signature'}),
         });
         return;
