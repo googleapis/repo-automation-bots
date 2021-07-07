@@ -155,7 +155,7 @@ describe('region-tag-parser', () => {
           .get(
             '/repos/headOwner/headRepo/contents/storage%2Fs3-sdk%2Fsrc%2Fmain%2Fjava%2Fstorage%2Fs3sdk%2FListGcsBuckets.java?ref=headSha'
           )
-          .reply(400, "File too big"),
+          .reply(400, 'File too big'),
       ];
 
       const result = await parseRegionTagsInPullRequest(
