@@ -472,7 +472,7 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
           state: 'continue',
           url: issue.html_url,
           label: MERGE_ON_GREEN_LABEL,
-          author: issue.user.login,
+          author: issue.user?.login || '',
         },
         issue.html_url,
         github
@@ -494,7 +494,7 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
           state: 'continue',
           url: issue.html_url,
           label: MERGE_ON_GREEN_LABEL_SECURE,
-          author: issue.user.login,
+          author: issue.user?.login || '',
         },
         issue.html_url,
         github

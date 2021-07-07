@@ -121,7 +121,7 @@ async function findCheck(
   owner: string,
   repo: string,
   sha: string
-): Promise<{id: number; conclusion: string} | undefined> {
+): Promise<{id: number; conclusion: string | null} | undefined> {
   const checks = (
     await context.octokit.checks.listForRef({
       owner,
