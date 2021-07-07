@@ -344,9 +344,11 @@ export = (app: Probot) => {
       )
     ) {
       logger.info(
-        `ignoring non-force label action (${context.payload.pull_request.labels.join(
-          ', '
-        )})`
+        `ignoring non-force label action (${context.payload.pull_request.labels
+          .map(label => {
+            return label.name;
+          })
+          .join(', ')})`
       );
       return;
     }
