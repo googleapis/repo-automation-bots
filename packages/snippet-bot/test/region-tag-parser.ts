@@ -139,5 +139,61 @@ describe('region-tag-parser', () => {
         'storage/s3-sdk/src/main/java/storage/s3sdk/ListGcsBuckets.java'
       );
     });
+
+    it('survives when it failed to fetch renamed files', async () => {
+      const diff = fs.readFileSync(
+        resolve(fixturesPath, 'diff-rename.txt'),
+        'utf8'
+      );
+      const scopes = [
+        nock('https://example.com').get('/diff.txt').reply(200, diff),
+        nock('https://api.github.com')
+          .get(
+            '/repos/owner/repo/contents/storage%2Fs3-sdk%2Fsrc%2Fmain%2Fjava%2FListGcsBuckets.java?ref=sha'
+          )
+          .reply(200, createFileResponse('beforeFile.txt'))
+          .get(
+            '/repos/headOwner/headRepo/contents/storage%2Fs3-sdk%2Fsrc%2Fmain%2Fjava%2Fstorage%2Fs3sdk%2FListGcsBuckets.java?ref=headSha'
+          )
+          .reply(400, "File too big"),
+      ];
+
+      const result = await parseRegionTagsInPullRequest(
+        octokit,
+        'https://example.com/diff.txt',
+        'owner',
+        'repo',
+        'sha',
+        'headOwner',
+        'headRepo',
+        'headSha'
+      );
+      for (const scope of scopes) {
+        scope.done();
+      }
+      // Also report the removals.
+      assert.strictEqual(result.changes.length, 2);
+      assert.strictEqual(result.changes[0].type, 'del');
+      assert.strictEqual(
+        result.changes[0].regionTag,
+        'storage_s3_sdk_list_buckets'
+      );
+      assert.strictEqual(result.changes[0].owner, 'owner');
+      assert.strictEqual(result.changes[0].repo, 'repo');
+      assert.strictEqual(
+        result.changes[0].file,
+        'storage/s3-sdk/src/main/java/ListGcsBuckets.java'
+      );
+      assert.strictEqual(result.changes[0].sha, 'sha');
+      assert.strictEqual(result.changes[0].line, 2);
+      assert.strictEqual(result.changes[1].regionTag, 'region_tag_2');
+      assert.strictEqual(result.changes[1].line, 6);
+      assert.strictEqual(result.deleted, 2);
+      assert.strictEqual(result.files.length, 1);
+      assert.strictEqual(
+        result.files[0],
+        'storage/s3-sdk/src/main/java/storage/s3sdk/ListGcsBuckets.java'
+      );
+    });
   });
 });
