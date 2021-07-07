@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [11.4.3](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.4.2...gcf-utils-v11.4.3) (2021-07-07)
+
+
+### Bug Fixes
+
+* return a 400 on requests with missing or bad signatures ([#2240](https://www.github.com/googleapis/repo-automation-bots/issues/2240)) ([6cf6964](https://www.github.com/googleapis/repo-automation-bots/commit/6cf696442cd69030d5b5bda7ddce3dee846e5fef))
+
 ### [11.4.2](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.4.1...gcf-utils-v11.4.2) (2021-07-02)
 
 
