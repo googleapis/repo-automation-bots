@@ -44,12 +44,12 @@ else
   minInstances="0"
 fi
 
-if [ "${PROJECT_ID}" == "repo-automation-bots" ]; then
+if [ "${project}" == "repo-automation-bots" ]; then
     webhookTmpBucket=tmp-webhook-payloads
-elif [ "${PROJECT_ID}" == "repo-automation-bots-staging" ]; then
+elif [ "${project}" == "repo-automation-bots-staging" ]; then
     webhookTmpBucket=tmp-webhook-payloads-staging
 else
-    echo "deploying to '${PROJECT_ID}' is not supported"
+    echo "deploying to '${project}' is not supported"
     exit 1
 fi
 

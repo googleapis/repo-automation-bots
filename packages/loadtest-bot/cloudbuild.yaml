@@ -37,7 +37,6 @@ steps:
       - "$_FUNCTION_REGION"
       - "nodejs12"
       - "540s"
-      - "$_WEBHOOK_TMP"
 
   - name: gcr.io/cloud-builders/docker
     id: "build-docker"
@@ -68,4 +67,5 @@ steps:
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
       - "loadtest-bot"
-      - "$_WEBHOOK_TMP"
+      - "3600"
+      - "1"
