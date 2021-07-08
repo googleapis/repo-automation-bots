@@ -15,7 +15,6 @@
 import {createProbot, Probot, Options} from 'probot';
 import {ApplicationFunction} from 'probot/lib/types';
 import {createProbotAuth} from 'octokit-auth-probot';
-import {WebhookEvent} from '@octokit/webhooks-types';
 
 import getStream from 'get-stream';
 import intoStream from 'into-stream';
@@ -1067,7 +1066,7 @@ export class GCFBootstrapper {
    */
   private async maybeDownloadOriginalBody(payload: {
     [key: string]: string;
-  }): Promise<WebhookEvent | null> {
+  }): Promise<Object | null> {
     if (payload.tmpUrl) {
       if (!this.payloadBucket) {
         throw Error('no tmp directory configured');
@@ -1080,7 +1079,7 @@ export class GCFBootstrapper {
       try {
         const content = await getStream(readable);
         logger.info(`downloaded payload from ${payload.tmpUrl}`);
-        return JSON.parse(content) as WebhookEvent;
+        return JSON.parse(content);
       } catch (e) {
         if (e.code === 404) {
           logger.info(`payload not found ${payload.tmpUrl}`);
@@ -1090,7 +1089,7 @@ export class GCFBootstrapper {
         throw e;
       }
     } else {
-      return payload as unknown as WebhookEvent;
+      return payload;
     }
   }
 }
