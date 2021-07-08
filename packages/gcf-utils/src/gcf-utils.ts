@@ -1066,7 +1066,7 @@ export class GCFBootstrapper {
    */
   private async maybeDownloadOriginalBody(payload: {
     [key: string]: string;
-  }): Promise<Object | null> {
+  }): Promise<object | null> {
     if (payload.tmpUrl) {
       if (!this.payloadBucket) {
         throw Error('no tmp directory configured');
