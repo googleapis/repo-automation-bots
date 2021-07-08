@@ -28,7 +28,7 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 // Test app
 const app = (app: Probot) => {
-  app.on('issues.opened', async context => {
+  app.on('issues', async context => {
     await addOrUpdateIssueComment(
       context.octokit,
       context.payload.repository.owner.login,
@@ -74,7 +74,7 @@ describe('gcf-utils', () => {
         .reply(200);
 
       await probot.receive({
-        name: 'issues.opened',
+        name: 'issues',
         payload,
         id: 'test',
       });
@@ -92,7 +92,7 @@ describe('gcf-utils', () => {
         .reply(200, []);
 
       await probot.receive({
-        name: 'issues.opened',
+        name: 'issues',
         payload,
         id: 'test',
       });
@@ -116,7 +116,7 @@ describe('gcf-utils', () => {
         .reply(200);
 
       await probot.receive({
-        name: 'issues.opened',
+        name: 'issues',
         payload,
         id: 'test',
       });

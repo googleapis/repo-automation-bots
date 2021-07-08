@@ -59,7 +59,6 @@ describe('GCFBootstrapper', () => {
         sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
           appId: 1234,
           secret: 'foo',
-          webhookPath: 'bar',
           privateKey: 'cert',
         });
 
@@ -197,7 +196,6 @@ describe('GCFBootstrapper', () => {
         sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
           appId: 1234,
           secret: 'foo',
-          webhookPath: 'bar',
           privateKey: 'cert',
         });
 

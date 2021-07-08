@@ -15,6 +15,7 @@
 import {createProbot, Probot, Options} from 'probot';
 import {ApplicationFunction} from 'probot/lib/types';
 import {createProbotAuth} from 'octokit-auth-probot';
+import {WebhookEvent} from '@octokit/webhooks-types';
 
 import getStream from 'get-stream';
 import intoStream from 'into-stream';
@@ -463,10 +464,10 @@ export class GCFBootstrapper {
       // validate the signature
       if (
         !wrapConfig.skipVerification &&
-        !this.probot.webhooks.verify(
+        !(await this.probot.webhooks.verify(
           request.rawBody ? request.rawBody.toString() : request.body,
           signature
-        )
+        ))
       ) {
         response.status(400).send({
           statusCode: 400,
@@ -530,8 +531,10 @@ export class GCFBootstrapper {
           await this.probot.receive({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             name: name as any,
-            id,
-            payload,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            id: id as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            payload: payload as any,
           });
         } else if (triggerType === TriggerType.GITHUB) {
           await this.enqueueTask({
@@ -991,7 +994,7 @@ export class GCFBootstrapper {
       // Payload conists of either the original params.body or, if Cloud
       // Storage has been configured, a tmp file in a bucket:
       const payload = await this.maybeWriteBodyToTmp(params.body);
-      const signature = this.probot?.webhooks.sign(payload) || '';
+      const signature = (await this.probot?.webhooks.sign(payload)) || '';
       await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {
@@ -1009,7 +1012,7 @@ export class GCFBootstrapper {
         },
       });
     } else {
-      const signature = this.probot?.webhooks.sign('') || '';
+      const signature = (await this.probot?.webhooks.sign('')) || '';
       await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {
@@ -1064,7 +1067,7 @@ export class GCFBootstrapper {
    */
   private async maybeDownloadOriginalBody(payload: {
     [key: string]: string;
-  }): Promise<object | null> {
+  }): Promise<WebhookEvent | null> {
     if (payload.tmpUrl) {
       if (!this.payloadBucket) {
         throw Error('no tmp directory configured');
@@ -1077,7 +1080,7 @@ export class GCFBootstrapper {
       try {
         const content = await getStream(readable);
         logger.info(`downloaded payload from ${payload.tmpUrl}`);
-        return JSON.parse(content);
+        return JSON.parse(content) as WebhookEvent;
       } catch (e) {
         if (e.code === 404) {
           logger.info(`payload not found ${payload.tmpUrl}`);
@@ -1087,7 +1090,7 @@ export class GCFBootstrapper {
         throw e;
       }
     } else {
-      return payload;
+      return payload as unknown as WebhookEvent;
     }
   }
 }
