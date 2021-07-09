@@ -126,7 +126,7 @@ export class GCFLogger {
       payload = {...payload, ...addMsg};
       addMsg = undefined;
     }
-    this.log('metric', {...payload, type: 'metric'}, addMsg, ...args);
+    this.log('metric', {...payload, type: 'metric'}, addMsg as string, ...args);
   }
 
   private log(
