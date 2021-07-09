@@ -47,6 +47,9 @@ import {VERSION as OCTOKIT_LOGGING_PLUGIN_VERSION} from '../../src/logging/loggi
  * 6. Run these tests by calling 'npm run system-test'
  */
 
+const fixturesPath = resolve(__dirname, '../../../test/fixtures');
+const payload = require(resolve(fixturesPath, './issue_event'));
+
 describe('GCFBootstrapper Integration', () => {
   describe('getAuthenticatedOctokit', () => {
     let bootstrapper: GCFBootstrapper;
@@ -106,7 +109,7 @@ describe('GCFBootstrapper Integration', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'foo' as any,
         id: 'bar',
-        payload: 'baz',
+        payload: payload,
       });
 
       assert(called);
@@ -119,7 +122,7 @@ describe('GCFBootstrapper Integration', () => {
         app.on('foo' as any, async context => {
           assert(
             (
-              context.octokit as GitHubAPI & {
+              context.octokit as unknown as GitHubAPI & {
                 loggingOctokitPluginVersion: string;
               }
             ).loggingOctokitPluginVersion === OCTOKIT_LOGGING_PLUGIN_VERSION
@@ -132,7 +135,7 @@ describe('GCFBootstrapper Integration', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'foo' as any,
         id: 'bar',
-        payload: 'baz',
+        payload: payload,
       });
 
       assert(called);
