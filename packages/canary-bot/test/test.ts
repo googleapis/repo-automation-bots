@@ -176,4 +176,18 @@ describe('canary-bot', () => {
       sinon.assert.notCalled(addOrUpdateIssueCommentStub);
     });
   });
+  describe('responds to pubsub events', () => {
+    it('responds to pubsub events', async () => {
+      const infoStub = sandbox.stub(gcfUtilsModule.logger, 'info');
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'pubsub.message' as any,
+        payload: {message: 'test message'},
+        id: 'abc123',
+      });
+      sinon.assert.calledOnce(infoStub);
+      const logMessage = infoStub.getCall(0).args[0] as unknown as string;
+      assert(logMessage.includes('test message'));
+    });
+  });
 });
