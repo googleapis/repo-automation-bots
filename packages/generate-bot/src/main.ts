@@ -101,14 +101,26 @@ export async function collectUserInput(): Promise<ProgramOptions> {
 export function creatingBotFiles(options: ProgramOptions) {
   console.log(`Creating new folder ${options.fileLocation}`);
   fs.mkdirSync(options.fileLocation, {recursive: true});
+
   const mkDir = options.fileLocation;
+  const handlebarsFileRegex = /.hbs$/;
+
   const readAllFiles = function (dirNameRead: string, dirNameWrite: string) {
     console.log(`copying from ${dirNameRead} to ${dirNameWrite}...`);
     const files = fs.readdirSync(dirNameRead);
     files.forEach(file => {
       const fileName = file.toString();
-      const fileNameTemplate = Handlebars.compile(fileName);
-      const fileNameResult = fileNameTemplate(options);
+      const isHandlebarsFile = handlebarsFileRegex.test(fileName);
+      let fileNameResult = fileName;
+
+      if (isHandlebarsFile) {
+        const fileNameTemplate = Handlebars.compile(fileName);
+        fileNameResult = fileNameTemplate(options).replace(
+          handlebarsFileRegex,
+          ''
+        );
+      }
+
       const readName = path.join(dirNameRead, file);
       const writeName = path.join(dirNameWrite, fileNameResult);
       if (fs.statSync(readName).isDirectory()) {
@@ -116,11 +128,15 @@ export function creatingBotFiles(options: ProgramOptions) {
         console.log(writeName + ' generated');
         readAllFiles(readName, writeName);
       } else {
-        const fileContents = fs.readFileSync(readName);
-        const template = Handlebars.compile(fileContents.toString());
-        const result = template(options);
+        if (isHandlebarsFile) {
+          const fileContents = fs.readFileSync(readName);
+          const template = Handlebars.compile(fileContents.toString());
+          fs.writeFileSync(writeName, template(options));
+        } else {
+          fs.copyFileSync(readName, writeName);
+        }
+
         console.log(writeName + ' generated');
-        fs.writeFileSync(writeName, result);
       }
     });
   };

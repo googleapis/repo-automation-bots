@@ -19,10 +19,12 @@ import recursive from 'recursive-readdir';
 import rimraf from 'rimraf';
 import os from 'os';
 import path from 'path';
+import Handlebars from 'handlebars';
 import {describe, it} from 'mocha';
 import * as assert from 'assert';
 import {execSync, ExecSyncOptions} from 'child_process';
 
+const handlebarsFileRegex = /.hbs$/;
 const readAllFiles = function (
   dirNameRead: string,
   contentString: string | string[]
@@ -69,18 +71,39 @@ after(() => {
 });
 
 describe('file structure', () => {
-  it('checks that file structure carries over', async () => {
+  it('should compile handlebars files while preserving non-hbs files', async () => {
     const originalStack = await recursive('./templates');
+    const options = {
+      programName: 'testProgramName',
+      exportName: 'testExportName',
+      description: 'testDescription',
+    };
+
     GenerateBot.creatingBotFiles({
       ...defaultProgramOptions,
+      ...options,
     });
 
-    const createdStack = (await recursive(fileLocation)).map(contents =>
-      contents.replace(fileLocation, 'templates')
-    );
+    for (const fileName of originalStack) {
+      const generatedFileNameBeforeCompile = fileName
+        .replace(handlebarsFileRegex, '')
+        .replace(/^templates/, fileLocation);
+      const generatedfileName = Handlebars.compile(
+        generatedFileNameBeforeCompile
+      )(options);
 
-    for (const key of createdStack) {
-      assert.ok(originalStack.includes(key));
+      const templateContent = fs.readFileSync(fileName, 'utf8');
+      const generatedContent = fs.readFileSync(generatedfileName, 'utf8');
+
+      if (handlebarsFileRegex.test(fileName)) {
+        // content should be the different for hbs files
+        const message = `Expected '${fileName}', a handlebars file, to be generated to '${generatedfileName}' with different content`;
+        assert.notStrictEqual(templateContent, generatedContent, message);
+      } else {
+        // content should be the same for non-hbs files
+        const message = `Expected '${fileName}' to be copied as-is`;
+        assert.strictEqual(templateContent, generatedContent, message);
+      }
     }
   });
 
@@ -106,16 +129,6 @@ describe('file structure', () => {
 
       lastStack = createdStack;
     }
-  });
-
-  it('checks that the file content carries over', async () => {
-    GenerateBot.creatingBotFiles({
-      ...defaultProgramOptions,
-      programName: 'helloWorld',
-      description: 'says hi',
-    });
-    const content = readAllFiles(fileLocation, '').replace(/\r/g, '');
-    assert.ok(content);
   });
 
   it('should create nested folders if they do not yet exist', async () => {
