@@ -61,7 +61,8 @@ describe('canary-bot', () => {
   describe('canary-bot scheduler handler', () => {
     it('quits early', async () => {
       await probot.receive({
-        name: 'schedule.repository' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
         payload: {
           repository: {
             name: 'testRepo',
@@ -74,7 +75,8 @@ describe('canary-bot', () => {
           },
         },
         id: 'abc123',
-      });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
     });
     it('creates an issue', async () => {
       const scopes = [
@@ -87,7 +89,8 @@ describe('canary-bot', () => {
           .reply(200),
       ];
       await probot.receive({
-        name: 'schedule.repository' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
         payload: {
           repository: {
             name: 'repo-automation-bots',
@@ -103,7 +106,8 @@ describe('canary-bot', () => {
           },
         },
         id: 'abc123',
-      });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
 
       for (const scope of scopes) {
         scope.done();
@@ -119,7 +123,8 @@ describe('canary-bot', () => {
         ]),
       ];
       await probot.receive({
-        name: 'schedule.repository' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
         payload: {
           repository: {
             name: 'repo-automation-bots',
@@ -135,7 +140,8 @@ describe('canary-bot', () => {
           },
         },
         id: 'abc123',
-      });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
 
       for (const scope of scopes) {
         scope.done();
@@ -155,7 +161,7 @@ describe('canary-bot', () => {
   describe('responds to events', () => {
     it('responds to issues', async () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
       sinon.assert.calledOnceWithExactly(
         addOrUpdateIssueCommentStub,
         sinon.match.instanceOf(ProbotOctokit),
@@ -172,7 +178,7 @@ describe('canary-bot', () => {
         fixturesPath,
         './events/issue_opened_wrong_title'
       ));
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
       sinon.assert.notCalled(addOrUpdateIssueCommentStub);
     });
   });
@@ -184,7 +190,8 @@ describe('canary-bot', () => {
         name: 'pubsub.message' as any,
         payload: {message: 'test message'},
         id: 'abc123',
-      });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
       sinon.assert.calledOnce(infoStub);
       const logMessage = infoStub.getCall(0).args[0] as unknown as string;
       assert(logMessage.includes('test message'));
