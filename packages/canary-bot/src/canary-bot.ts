@@ -42,12 +42,12 @@ const cronIssueTitle = 'A canary is chirping';
 const myRepositoryName = 'repo-automation-bots';
 const myOrganizationName = 'googleapis';
 
-interface PubSubContext {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface PubSubContext<T = any> {
   github: Octokit;
   readonly event: string;
   log: Logger;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payload: any;
+  payload: T;
 }
 
 function getIssueBody(): string {
