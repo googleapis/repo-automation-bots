@@ -132,10 +132,11 @@ export = (app: Probot) => {
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  app.on('pubsub.message' as any, async (context) => {
+  app.on('pubsub.message' as any, async context => {
+    const pubsubContext = context as unknown as PubSubContext;
     logger.info(
       'executed pubsub handler with the payload: ' +
-      `${JSON.stringify(context.payload)}`
+        `${JSON.stringify(pubsubContext.payload)}`
     );
   });
 };
