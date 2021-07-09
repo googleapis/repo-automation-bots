@@ -105,6 +105,12 @@ export function creatingBotFiles(options: ProgramOptions) {
   const mkDir = options.fileLocation;
   const handlebarsFileRegex = /.hbs$/;
 
+  // enables easier/convenient platform checking within hbs files
+  const [platformKey] = Object.entries(Platform).find(
+    ([, value]) => value === options.platform
+  )!;
+  const handlebarsOptions = {...options, platform: {[platformKey]: true}};
+
   const readAllFiles = function (dirNameRead: string, dirNameWrite: string) {
     console.log(`copying from ${dirNameRead} to ${dirNameWrite}...`);
     const files = fs.readdirSync(dirNameRead);
@@ -115,7 +121,7 @@ export function creatingBotFiles(options: ProgramOptions) {
 
       if (isHandlebarsFile) {
         const fileNameTemplate = Handlebars.compile(fileName);
-        fileNameResult = fileNameTemplate(options).replace(
+        fileNameResult = fileNameTemplate(handlebarsOptions).replace(
           handlebarsFileRegex,
           ''
         );
@@ -131,7 +137,7 @@ export function creatingBotFiles(options: ProgramOptions) {
         if (isHandlebarsFile) {
           const fileContents = fs.readFileSync(readName);
           const template = Handlebars.compile(fileContents.toString());
-          fs.writeFileSync(writeName, template(options));
+          fs.writeFileSync(writeName, template(handlebarsOptions));
         } else {
           fs.copyFileSync(readName, writeName);
         }

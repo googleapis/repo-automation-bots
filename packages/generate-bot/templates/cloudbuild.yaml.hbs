@@ -13,18 +13,32 @@
 # limitations under the License.
 
 steps:
+{{#if platform.CLOUD_FUNCTIONS }}
   - name: gcr.io/cloud-builders/npm
-    id: 'cron-deploy'
-    waitFor: ['-']
+    id: "build"
+    waitFor: ["-"]
     entrypoint: bash
     args:
-      - '-e'
-      - './scripts/cron-deploy.sh'
-      - '$_SCHEDULER_SERVICE_ACCOUNT_EMAIL'
-      - '$_FUNCTION_REGION'
-      - '$_REGION'
-      - '$_DIRECTORY'
+      - "-e"
+      - "./scripts/build-function.sh"
+      - "$_DIRECTORY"
 
+  - name: gcr.io/cloud-builders/gcloud
+    id: "publish-function"
+    waitFor: ["build"]
+    entrypoint: bash
+    args:
+      - "-e"
+      - "./scripts/publish-function.sh"
+      - "$_DIRECTORY"
+      - "$PROJECT_ID"
+      - "$_BUCKET"
+      - "$_KEY_LOCATION"
+      - "$_KEY_RING"
+      - "$_FUNCTION_REGION"
+      - "nodejs12"
+{{/if}}
+{{#if platform.CLOUD_RUN }}
   - name: gcr.io/cloud-builders/docker
     id: 'build-docker'
     waitFor: ['-']
@@ -53,3 +67,4 @@ steps:
       - '$_KEY_LOCATION'
       - '$_KEY_RING'
       - '$_FUNCTION_REGION'
+{{/if}}
