@@ -16,7 +16,7 @@
 set -eo pipefail
 
 if [ $# -lt 6 ]; then
-  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <region> [botName]"
+  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <region> [botName] [timeout] [min-instance]"
   exit 1
 fi
 
@@ -32,26 +32,68 @@ if [ $# -ge 7 ]; then
   botName=$7
 fi
 
+if [ $# -ge 8 ]; then
+  timeout=$8
+else
+  timeout="3600"
+fi
+
+if [ $# -ge 9 ]; then
+  minInstances=$9
+else
+  minInstances="0"
+fi
+
+if [ "${project}" == "repo-automation-bots" ]; then
+    webhookTmpBucket=tmp-webhook-payloads
+elif [ "${project}" == "repo-automation-bots-staging" ]; then
+    webhookTmpBucket=tmp-webhook-payloads-staging
+else
+    echo "deploying to '${project}' is not supported"
+    exit 1
+fi
+
 pushd "${directoryName}"
 serviceName=${botName//_/-}
 functionName=${botName//-/_}
 queueName=${botName//_/-}
 
+deployArgs=(
+  "--image"
+  "gcr.io/${project}/${botName}"
+  "--set-env-vars"
+  "DRIFT_PRO_BUCKET=${bucket}"
+  "--set-env-vars"
+  "KEY_LOCATION=${keyLocation}"
+  "--set-env-vars"
+  "KEY_RING=${keyRing}"
+  "--set-env-vars"
+  "GCF_SHORT_FUNCTION_NAME=${functionName}"
+  "--set-env-vars"
+  "PROJECT_ID=${project}"
+  "--set-env-vars"
+  "GCF_LOCATION=${region}"
+  "--set-env-vars"
+  "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1'"
+  "--set-env-vars"
+  "WEBHOOK_TMP=${webhookTmpBucket}"
+  "--set-env-vars"
+  "BOT_RUNTIME=run"
+  "--platform"
+  "managed"
+  "--region"
+  "${region}"
+  "--timeout"
+  "${timeout}"
+  "--min-instances"
+  "${minInstances}"
+  "--quiet"
+)
+if [ -n "${SERVICE_ACCOUNT}" ]; then
+  deployArgs+=( "--service-account" "${SERVICE_ACCOUNT}" )
+fi
 echo "About to cloud run app ${serviceName}"
-gcloud run deploy \
-  --image "gcr.io/${project}/${botName}" \
-  --set-env-vars "DRIFT_PRO_BUCKET=${bucket}" \
-  --set-env-vars "KEY_LOCATION=${keyLocation}" \
-  --set-env-vars "KEY_RING=${keyRing}" \
-  --set-env-vars "GCF_SHORT_FUNCTION_NAME=${functionName}" \
-  --set-env-vars "PROJECT_ID=${project}" \
-  --set-env-vars "GCF_LOCATION=${region}" \
-  --set-env-vars "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1'" \
-  --set-env-vars "WEBHOOK_TMP=tmp-webhook-payloads" \
-  --platform managed \
-  --region "${region}" \
-  --quiet \
-  "${serviceName}"
+gcloud beta run deploy "${serviceName}" "${deployArgs[@]}"
 
 echo "Adding ability for allUsers to execute the Function"
 gcloud run services add-iam-policy-binding "${serviceName}" \
@@ -66,7 +108,7 @@ if gcloud tasks queues describe "${queueName}"  &>/dev/null; then
   verb="update"
 fi
 
-gcloud tasks queues ${verb} "${queueName}" \
+gcloud --quiet tasks queues ${verb} "${queueName}" \
   --max-concurrent-dispatches="2048" \
   --max-attempts="100" \
   --max-retry-duration="43200s" \

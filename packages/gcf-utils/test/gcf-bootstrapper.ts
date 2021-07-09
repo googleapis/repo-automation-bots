@@ -178,7 +178,6 @@ describe('GCFBootstrapper', () => {
       configStub = sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
         appId: 1234,
         secret: 'foo',
-        webhookPath: 'bar',
         privateKey: 'cert',
       });
       // This replaces the authClient with an auth client that uses an
@@ -920,7 +919,7 @@ describe('GCFBootstrapper', () => {
     });
 
     describe('verification', () => {
-      it('rejects unsigned task requests', async () => {
+      it('rejects unsigned non-task requests with 400', async () => {
         await mockBootstrapper({
           logging: false,
           background: true,
@@ -933,38 +932,8 @@ describe('GCFBootstrapper', () => {
         // while req.rawBody is a raw buffer
         req.rawBody = fs.readFileSync('test/fixtures/payload.json');
         req.headers = {};
-        req.headers['x-github-event'] = 'another.name';
+        req.headers['x-github-event'] = 'issues';
         req.headers['x-github-delivery'] = '123';
-        req.headers['x-cloudtasks-taskname'] = 'my-task';
-
-        await handler(req, response);
-
-        sinon.assert.calledOnce(configStub);
-        sinon.assert.notCalled(sendStatusStub);
-        sinon.assert.calledOnceWithMatch(sendStub, {statusCode: 400});
-        sinon.assert.notCalled(issueSpy);
-        sinon.assert.notCalled(repositoryCronSpy);
-        sinon.assert.notCalled(installationCronSpy);
-        sinon.assert.notCalled(globalCronSpy);
-      });
-
-      it('rejects invalid task request signatures', async () => {
-        await mockBootstrapper({
-          logging: false,
-          background: true,
-          skipVerification: false,
-        });
-        // req.body is a parsed json object.
-        req.body = {
-          installation: {id: 1},
-        };
-        // while req.rawBody is a raw buffer
-        req.rawBody = fs.readFileSync('test/fixtures/payload.json');
-        req.headers = {};
-        req.headers['x-github-event'] = 'another.name';
-        req.headers['x-github-delivery'] = '123';
-        req.headers['x-cloudtasks-taskname'] = 'my-task';
-        req.headers['x-hub-signature'] = 'invalidsignature';
 
         await handler(req, response);
 
@@ -1023,7 +992,6 @@ describe('GCFBootstrapper', () => {
       configStub = sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
         appId: 1234,
         secret: 'foo',
-        webhookPath: 'bar',
         privateKey: 'cert',
       });
     });
@@ -1083,7 +1051,6 @@ describe('GCFBootstrapper', () => {
               data: JSON.stringify({
                 id: 1234,
                 secret: 'foo',
-                webhookPath: 'bar',
               }),
             },
           },
@@ -1197,7 +1164,6 @@ describe('GCFBootstrapper', () => {
         .resolves({
           appId: 1234,
           secret: 'foo',
-          webhookPath: 'bar',
           privateKey: 'cert',
         });
       const octokit = await bootstrapper.getAuthenticatedOctokit(1234);
@@ -1212,7 +1178,6 @@ describe('GCFBootstrapper', () => {
         .resolves({
           appId: 1234,
           secret: 'foo',
-          webhookPath: 'bar',
           privateKey: 'cert',
         });
       const octokit = await bootstrapper.getAuthenticatedOctokit(undefined);
@@ -1227,7 +1192,44 @@ describe('GCFBootstrapper', () => {
         .post('/token')
         .reply(200, {access_token: 'abc123'});
     });
+
     it('queues a GCF URL', async () => {
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my-function-name',
+        location: 'my-location',
+      });
+      const createTask = sandbox
+        .stub(bootstrapper.cloudTasksClient, 'createTask')
+        .resolves();
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
+        parent:
+          'projects/my-project/locations/my-location/queues/my-function-name',
+        task: {
+          httpRequest: {
+            httpMethod: 'POST',
+            headers: sinon.match({
+              'X-GitHub-Event': 'event.name',
+              'X-GitHub-Delivery': 'some-request-id',
+              'Content-Type': 'application/json',
+            }),
+            url: 'https://my-location-my-project.cloudfunctions.net/my-function-name',
+          },
+        },
+      });
+    });
+
+    it('queues a GCF URL detected from environment', async () => {
+      restoreEnv = mockedEnv({
+        BOT_RUNTIME: 'functions',
+      });
       const bootstrapper = new GCFBootstrapper({
         projectId: 'my-project',
         functionName: 'my-function-name',
@@ -1349,6 +1351,58 @@ describe('GCFBootstrapper', () => {
         functionName: 'my_function_name',
         location: 'my-location',
         taskTargetEnvironment: 'run',
+      });
+      const createTask = sandbox
+        .stub(bootstrapper.cloudTasksClient, 'createTask')
+        .resolves();
+      const adcStub = sandbox
+        .stub(GoogleAuth.prototype, 'getClient')
+        .resolves();
+      const runScope = nock('https://run.googleapis.com')
+        .get(
+          '/v1/projects/my-project/locations/my-location/services/my-function-name'
+        )
+        .reply(200, {
+          status: {
+            address: {
+              url: 'http://some.domain/path',
+            },
+          },
+        });
+      await bootstrapper.enqueueTask({
+        body: JSON.stringify({installation: {id: 1}}),
+        id: 'some-request-id',
+        name: 'event.name',
+      });
+      // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/36436
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sinon.assert.calledOnceWithMatch(createTask as any, {
+        parent:
+          'projects/my-project/locations/my-location/queues/my-function-name',
+        task: {
+          httpRequest: {
+            httpMethod: 'POST',
+            headers: sinon.match({
+              'X-GitHub-Event': 'event.name',
+              'X-GitHub-Delivery': 'some-request-id',
+              'Content-Type': 'application/json',
+            }),
+            url: 'http://some.domain/path',
+          },
+        },
+      });
+      runScope.done();
+      sinon.assert.calledOnce(adcStub);
+    });
+
+    it('queues a Cloud Run URL detected from environment', async () => {
+      restoreEnv = mockedEnv({
+        BOT_RUNTIME: 'run',
+      });
+      const bootstrapper = new GCFBootstrapper({
+        projectId: 'my-project',
+        functionName: 'my-function-name',
+        location: 'my-location',
       });
       const createTask = sandbox
         .stub(bootstrapper.cloudTasksClient, 'createTask')

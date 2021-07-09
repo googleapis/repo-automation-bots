@@ -216,6 +216,10 @@ interface BootstrapperOptions {
   taskTargetEnvironment?: BotEnvironment;
 }
 
+function defaultTaskEnvironment(): BotEnvironment {
+  return process.env.BOT_RUNTIME === 'run' ? 'run' : 'functions';
+}
+
 export class GCFBootstrapper {
   probot?: Probot;
 
@@ -245,7 +249,8 @@ export class GCFBootstrapper {
     this.cloudTasksClient =
       options?.tasksClient || new CloudTasksV2.CloudTasksClient();
     this.storage = new Storage({autoRetry: !RUNNING_IN_TEST});
-    this.taskTargetEnvironment = options.taskTargetEnvironment || 'functions';
+    this.taskTargetEnvironment =
+      options.taskTargetEnvironment || defaultTaskEnvironment();
     if (!options.projectId) {
       throw new Error(
         'Missing required `projectId`. Please provide as a constructor argument or set the PROJECT_ID env variable.'
@@ -458,12 +463,12 @@ export class GCFBootstrapper {
       // validate the signature
       if (
         !wrapConfig.skipVerification &&
-        !this.probot.webhooks.verify(
+        !(await this.probot.webhooks.verify(
           request.rawBody ? request.rawBody.toString() : request.body,
           signature
-        )
+        ))
       ) {
-        response.send({
+        response.status(400).send({
           statusCode: 400,
           body: JSON.stringify({message: 'Invalid signature'}),
         });
@@ -497,6 +502,7 @@ export class GCFBootstrapper {
           if (taskRetries > maxRetries) {
             logger.metric('too-many-retries');
             logger.info(`Too many retries: ${taskRetries} > ${maxRetries}`);
+            // return 200 so we don't retry the task again
             response.send({
               statusCode: 200,
               body: JSON.stringify({message: 'Too many retries'}),
@@ -524,8 +530,10 @@ export class GCFBootstrapper {
           await this.probot.receive({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             name: name as any,
-            id,
-            payload,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            id: id as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            payload: payload as any,
           });
         } else if (triggerType === TriggerType.GITHUB) {
           await this.enqueueTask({
@@ -985,7 +993,7 @@ export class GCFBootstrapper {
       // Payload conists of either the original params.body or, if Cloud
       // Storage has been configured, a tmp file in a bucket:
       const payload = await this.maybeWriteBodyToTmp(params.body);
-      const signature = this.probot?.webhooks.sign(payload) || '';
+      const signature = (await this.probot?.webhooks.sign(payload)) || '';
       await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {
@@ -1003,7 +1011,7 @@ export class GCFBootstrapper {
         },
       });
     } else {
-      const signature = this.probot?.webhooks.sign('') || '';
+      const signature = (await this.probot?.webhooks.sign('')) || '';
       await this.cloudTasksClient.createTask({
         parent: queuePath,
         task: {

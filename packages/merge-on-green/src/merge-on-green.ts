@@ -472,7 +472,7 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
           state: 'continue',
           url: issue.html_url,
           label: MERGE_ON_GREEN_LABEL,
-          author: issue.user.login,
+          author: issue.user?.login || '',
         },
         issue.html_url,
         github
@@ -494,7 +494,7 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
           state: 'continue',
           url: issue.html_url,
           label: MERGE_ON_GREEN_LABEL_SECURE,
-          author: issue.user.login,
+          author: issue.user?.login || '',
         },
         issue.html_url,
         github
@@ -534,6 +534,13 @@ function handler(app: Probot) {
 
     if (!context.payload.cron_org) {
       logger.warn('Cannot look for hanging PRs for non-org installations');
+      return;
+    }
+
+    if (!handler.allowlist.includes(context.payload.cron_org)) {
+      logger.info(
+        `skipped ${context.payload.cron_org} because not a part of allowlist`
+      );
       return;
     }
 

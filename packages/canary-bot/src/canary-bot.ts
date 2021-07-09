@@ -13,9 +13,11 @@
 // limitations under the License.
 
 /* eslint-disable-next-line node/no-extraneous-import */
-import {Probot} from 'probot';
+import {Probot, Logger} from 'probot';
 /* eslint-disable-next-line node/no-extraneous-import */
 import {components} from '@octokit/openapi-types';
+/* eslint-disable-next-line node/no-extraneous-import */
+import {Octokit} from '@octokit/rest';
 import * as fs from 'fs';
 import {resolve} from 'path';
 import {logger, addOrUpdateIssueComment} from 'gcf-utils';
@@ -39,6 +41,14 @@ const versionDetails = `${JSON.stringify(packageJson.dependencies, null, 2)}`;
 const cronIssueTitle = 'A canary is chirping';
 const myRepositoryName = 'repo-automation-bots';
 const myOrganizationName = 'googleapis';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface PubSubContext<T = any> {
+  github: Octokit;
+  readonly event: string;
+  log: Logger;
+  payload: T;
+}
 
 function getIssueBody(): string {
   const date = dayjs
@@ -116,5 +126,13 @@ export = (app: Probot) => {
         'The bot is skipping this issue because the title does not include canary-bot test'
       );
     }
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('pubsub.message' as any, async (context: PubSubContext) => {
+    logger.info(
+      'executed pubsub handler with the payload: ' +
+        `${JSON.stringify(context.payload)}`
+    );
   });
 };
