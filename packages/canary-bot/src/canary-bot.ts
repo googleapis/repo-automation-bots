@@ -61,7 +61,8 @@ function getIssueBody(): string {
 }
 
 export = (app: Probot) => {
-  app.on('schedule.repository' as '*', async context => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.repository' as any, async context => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
     if (repo !== myRepositoryName || owner !== myOrganizationName) {
@@ -100,13 +101,15 @@ export = (app: Probot) => {
     }
   });
 
-  app.on('schedule.installation' as '*', async context => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.installation' as any, async context => {
     logger.info(
       `executed scheduled task for installation: ${context.payload.installation.id}`
     );
   });
 
-  app.on('schedule.global' as '*', async () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.global' as any, async () => {
     logger.info('executed global scheduled task');
   });
 
@@ -129,10 +132,10 @@ export = (app: Probot) => {
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  app.on('pubsub.message' as any, async (context: PubSubContext) => {
+  app.on('pubsub.message' as any, async (context) => {
     logger.info(
       'executed pubsub handler with the payload: ' +
-        `${JSON.stringify(context.payload)}`
+      `${JSON.stringify(context.payload)}`
     );
   });
 };
