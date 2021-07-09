@@ -54,6 +54,7 @@ func main() {
 	mux.Handle("/v0/cron", botCronProxy(cfg))
 	mux.Handle("/v0/pubsub", botPubSubProxy(cfg))
 	mux.Handle("/v0/container", botContainerProxy(cfg))
+	mux.Handle("/v0/canary", botCanaryProxy(cfg))
 
 	addr := ":" + port
 	log.Printf("starting to listen on %s", addr)
@@ -112,6 +113,23 @@ func rewriteBotContainerURL(c botConfig) func(*http.Request) {
 			// TODO: pull bot name and location into configuration, once
 			// we validate this approach:
 			return "owl_bot", "us-central1"
+		}
+		rewriteBotURL(c, parser, req)
+	}
+}
+
+func rewriteBotCanaryURL(c botConfig) func(*http.Request) {
+	return func(req *http.Request) {
+		req.Header.Add("x-github-event", "pubsub.message")
+		parser := func(bodyBytes []byte) (string, string) {
+			var pay PubSubMessage
+			if err := json.Unmarshal(bodyBytes, &pay); err != nil {
+				log.Printf("error occurred parsing container pubsub message: %v\n", err)
+			}
+			log.Printf("handling container pubsub message for subscription: %v\n", pay.Subscription)
+			// TODO: pull bot name and location into configuration, once
+			// we validate this approach:
+			return "canary_bot", "us-central1"
 		}
 		rewriteBotURL(c, parser, req)
 	}
@@ -178,6 +196,12 @@ func botPubSubProxy(cfg botConfig) http.HandlerFunc {
 func botContainerProxy(cfg botConfig) http.HandlerFunc {
 	return (&httputil.ReverseProxy{
 		Director: rewriteBotContainerURL(cfg),
+	}).ServeHTTP
+}
+
+func botCanaryProxy(cfg botConfig) http.HandlerFunc {
+	return (&httputil.ReverseProxy{
+		Director: rewriteBotCanaryURL(cfg),
 	}).ServeHTTP
 }
 
