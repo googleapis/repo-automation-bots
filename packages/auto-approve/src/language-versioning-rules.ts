@@ -71,4 +71,37 @@ export const languageVersioningRules = [
     // This would match: +  google-cloud-storage==1.40.0
     newVersion: new RegExp(/\+[\s]?(@?[^=]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
   },
+  {
+    prAuthor: 'renovate-bot',
+    process: 'dependency',
+    targetFile: 'samples/snippets/requirements.txt',
+    // This would match: fix(deps): update dependency @octokit to v1
+    dependency: new RegExp(
+      /^(fix\(deps\)|chore\(deps\)): update dependency (@?\S*) to v(\S*)$/
+    ),
+    // This would match: -  google-cloud-storage==1.39.0
+    oldVersion: new RegExp(/-[\s]?(@?[^=]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
+    // This would match: +  google-cloud-storage==1.40.0
+    newVersion: new RegExp(/\+[\s]?(@?[^=]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
+  },
+  {
+    prAuthor: 'renovate-bot',
+    process: 'java-dependency',
+    targetFile: 'pom.xml',
+    // This would match: fix(deps): update dependency @octokit to v1
+    dependency: new RegExp(
+      /^(fix\(deps\)|chore\(deps\)): update dependency (@?\S*) to v(\S*)$/
+    ),
+    // This would match: -  google-cloud-storage==1.39.0
+    oldVersion: new RegExp(
+      /<groupId>([^<]*)<\/groupId>\\n'[\s]\+[\s]*'[\s]*<artifactId>[^<]*<\/artifactId>\\n'[\s]\+[\s]*'[\s]*-[\s]*<version>(?:v[0-9]-rev[0-9]*-([0-9]*)\.([0-9]*\.[0-9])|([0-9]*)\.([0-9]*\.[0-9]*))/
+    ),
+    // This would match: +  google-cloud-storage==1.40.0
+    newVersion: new RegExp(
+      /<groupId>([^<]*)<\/groupId>\\n'[\s]\+[\s]*'[\s]*<scope>[^<]*<\/scope>\\n'[\s]\+[\s]*'[\s]*-[\s]*<version>[0-9]*\.[0-9]*\.[0-9]*<\/version>\\n'[\s]\+[\s]*'\+[\s]*<version>([0-9])*\.([0-9]*\.[0-9]*)<\/version>/
+    ),
+    /*
+    <groupId>([^<]*)<\/groupId>\\n'[\s]\+[\s]*'[\s]*<artifactId>([^<]*)<\/artifactId>\\n'[\s]\+[\s]*'[\s]*-[\s]*<version>(v[0-9]-rev[0-9]*-([0-9]*)\.([0-9]*\.[0-9])|([0-9]*)\.([0-9]*\.[0-9]*))<\/version>\\n'[\s]\+[\s]*'\+[\s]*<version>(v[0-9]-rev[0-9]*-([0-9]*)\.([0-9]*\.[0-9])|([0-9]*)\.([0-9]*\.[0-9]*))<\/version>
+    /*
+  },
 ];

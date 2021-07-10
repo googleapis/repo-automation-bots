@@ -80,7 +80,7 @@ export function getTargetFiles(
     for (const rule of languageRules) {
       if (
         rule.prAuthor === author &&
-        rule.targetFile === changedFile.filename
+        changedFile.filename.endsWith(rule.targetFile)
       ) {
         targetFiles.push({file: changedFile, fileRule: rule});
       }
