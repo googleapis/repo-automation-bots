@@ -26,6 +26,8 @@ export const cocUrl =
   'https://raw.githubusercontent.com/googleapis/.github/master/CODE_OF_CONDUCT.md';
 export const securityUrl =
   'https://raw.githubusercontent.com/googleapis/.github/master/SECURITY.md';
+export const contributingUrl =
+  'https://raw.githubusercontent.com/googleapis/.github/master/CONTRIBUTING.md';
 
 const fileCache = new Map<string, string>();
 
@@ -138,6 +140,10 @@ export class Changer {
     if (!result.hasSecurityPolicy) {
       const title = 'chore: add SECURITY.md';
       await this.addFile(title, securityUrl, 'SECURITY.md');
+    }
+    if (!result.hasContributing) {
+      const title = 'chore: add CONTRIBUTING.md';
+      await this.addFile(title, contributingUrl, 'CONTRIBUTING.md');
     }
   }
 }
