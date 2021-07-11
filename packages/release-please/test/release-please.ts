@@ -23,10 +23,12 @@ import * as fs from 'fs';
 import yaml from 'js-yaml';
 import * as sinon from 'sinon';
 import assert from 'assert';
-import {GitHubRelease, ReleasePR, factory} from 'release-please';
+import {GitHubRelease, ReleasePR, factory, Errors} from 'release-please';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import * as labelUtilsModule from '@google-automations/label-utils';
 import nock from 'nock';
+// eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/request-error';
 
 const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
@@ -104,6 +106,42 @@ describe('ReleasePleaseBot', () => {
       sandbox.replace(Runner, 'releaser', async (pr: GitHubRelease) => {
         assert(pr instanceof GitHubRelease);
         releaserExecuted = true;
+      });
+      const releaseSpy = sandbox.spy(factory, 'githubRelease');
+      getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));
+      await probot.receive({name: 'push', payload, id: 'abc123'});
+      assert(runnerExecuted, 'should have executed the runner');
+      assert(releaserExecuted, 'GitHub release should have run');
+      assert(releaseSpy.calledWith(sinon.match.has('releaseLabel', undefined)));
+    });
+
+    it('should ignore duplicated GitHub releases', async () => {
+      let runnerExecuted = false;
+      let releaserExecuted = false;
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
+        assertReleaserType('JavaYoshi', pr);
+        runnerExecuted = true;
+      });
+      sandbox.replace(Runner, 'releaser', async (pr: GitHubRelease) => {
+        assert(pr instanceof GitHubRelease);
+        releaserExecuted = true;
+
+        throw new Errors.DuplicateReleaseError(
+          new RequestError('foo', 400, {
+            response: {
+              data: 'something',
+              status: 400,
+              url: 'https://foo.bar',
+              headers: {},
+            },
+            request: {
+              method: 'POST',
+              url: 'https://foo.bar',
+              headers: {},
+            },
+          }),
+          'abc'
+        );
       });
       const releaseSpy = sandbox.spy(factory, 'githubRelease');
       getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));

@@ -20,6 +20,7 @@ import {
   ReleasePR,
   factory,
   setLogger,
+  Errors,
 } from 'release-please';
 import {Runner} from './runner';
 // eslint-disable-next-line node/no-extraneous-import
@@ -244,12 +245,22 @@ export = (app: Probot) => {
     // this for our repos that have autorelease enabled.
     if (branchConfiguration.handleGHRelease) {
       logger.info(`handling GitHub release for (${repoUrl})`);
-      await createGitHubRelease(
-        branchConfiguration.packageName ?? repoName,
-        repoUrl,
-        branchConfiguration,
-        context.octokit as GitHubAPI
-      );
+      try {
+        await createGitHubRelease(
+          branchConfiguration.packageName ?? repoName,
+          repoUrl,
+          branchConfiguration,
+          context.octokit as GitHubAPI
+        );
+      } catch (e) {
+        if (e instanceof Errors.DuplicateReleaseError) {
+          // In the future, this could raise an issue against the
+          // installed repository
+          logger.warn('Release tag already exists, skipping...', e);
+        } else {
+          throw e;
+        }
+      }
     }
   });
 
@@ -344,9 +355,11 @@ export = (app: Probot) => {
       )
     ) {
       logger.info(
-        `ignoring non-force label action (${context.payload.pull_request.labels.join(
-          ', '
-        )})`
+        `ignoring non-force label action (${context.payload.pull_request.labels
+          .map(label => {
+            return label.name;
+          })
+          .join(', ')})`
       );
       return;
     }
