@@ -68,7 +68,7 @@ GitHub application using the probot server:
 
 ### Install the bot on a repo
 
-1. While on https://github.com/settings/apps/{YOUR_APP} navigate to 'Install App',
+1. Follow the link to install the app and navigate to 'Install App',
    if installed on the organization you desire (likely yourself for testing),
 click the gear.
 1. Under permissions ensure that there aren't pending requests to be approved
@@ -80,7 +80,7 @@ click the gear.
 
 Once you've created your application, _and installed it on some of your repos_,
 start probot again, setting the following environment variables. Most can be found
-at https://github.com/settings/apps/{YOUR_APP}:
+at github.com/settings/apps/{YOUR_APP}:
 
 * `APP_ID`: the ID, listed near the top, `App ID: 12345`
 * `PRIVATE_KEY_PATH`: path to App's private key, you can request a new one be
