@@ -241,8 +241,10 @@ describe('merge-on-green wrapper logic', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.global' as '*',
-          payload: {cron_type: 'global', cleanUp: true},
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'schedule.global' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: {cron_type: 'global', cleanUp: true} as any,
           id: 'abc123',
         });
 
@@ -259,8 +261,10 @@ describe('merge-on-green wrapper logic', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.global' as '*',
-          payload: {cron_type: 'global', cleanUp: true},
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'schedule.global' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: {cron_type: 'global', cleanUp: true} as any,
           id: 'abc123',
         });
 
@@ -277,8 +281,10 @@ describe('merge-on-green wrapper logic', () => {
         ];
 
         await probot.receive({
-          name: 'schedule.global' as '*',
-          payload: {cron_type: 'global', cleanUp: true},
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'schedule.global' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: {cron_type: 'global', cleanUp: true} as any,
           id: 'abc123',
         });
 
@@ -290,8 +296,10 @@ describe('merge-on-green wrapper logic', () => {
         const scopes = [getPRCleanUp('open', false), getLabels('automerge')];
 
         await probot.receive({
-          name: 'schedule.global' as '*',
-          payload: {cron_type: 'global', cleanUp: true},
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'schedule.global' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: {cron_type: 'global', cleanUp: true} as any,
           id: 'abc123',
         });
 
@@ -314,7 +322,8 @@ describe('merge-on-green wrapper logic', () => {
             cron_org: 'googleapis',
             findHangingPRs: true,
             installation: {id: 1234},
-          },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
           id: 'abc123',
         });
 
@@ -332,7 +341,8 @@ describe('merge-on-green wrapper logic', () => {
             cron_type: 'installation',
             findHangingPRs: true,
             installation: {id: 1234},
-          },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
           id: 'abc123',
         });
 
@@ -350,7 +360,8 @@ describe('merge-on-green wrapper logic', () => {
             cron_org: 'external-organization',
             findHangingPRs: true,
             installation: {id: 1234},
-          },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
           id: 'abc123',
         });
 
@@ -406,7 +417,8 @@ describe('merge-on-green wrapper logic', () => {
             installation: {
               id: 'abc123',
             },
-          },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
           id: 'abc123',
         });
 
@@ -438,7 +450,8 @@ describe('merge-on-green wrapper logic', () => {
                 },
               ],
             },
-          },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
           id: 'abc123',
         });
 
@@ -475,7 +488,8 @@ describe('merge-on-green wrapper logic', () => {
             installation: {
               id: 'abc123',
             },
-          },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
           id: 'abc123',
         });
 
@@ -538,7 +552,8 @@ describe('merge-on-green wrapper logic', () => {
                 },
               ],
             },
-          },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
           id: 'abc123',
         });
 
@@ -589,7 +604,8 @@ describe('merge-on-green wrapper logic', () => {
                 },
               ],
             },
-          },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
           id: 'abc123',
         });
 
@@ -608,7 +624,8 @@ describe('merge-on-green wrapper logic', () => {
         await probot.receive({
           name: 'pull_request',
           payload: {
-            action: 'merged',
+            action: 'closed',
+            merged: 'true',
             repository: {
               name: 'notherightrepo',
               owner: {
@@ -627,7 +644,8 @@ describe('merge-on-green wrapper logic', () => {
                 },
               ],
             },
-          },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
           id: 'abc123',
         });
 
@@ -670,7 +688,8 @@ describe('merge-on-green wrapper logic', () => {
             cron_org: 'googleapis',
             findHangingPRs: true,
             installation: {id: 1234},
-          },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
           id: 'abc123',
         });
 
@@ -711,7 +730,8 @@ describe('merge-on-green wrapper logic', () => {
             cron_org: 'googleapis',
             findHangingPRs: true,
             installation: {id: 1234},
-          },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
           id: 'abc123',
         });
 
@@ -762,7 +782,8 @@ describe('merge-on-green wrapper logic', () => {
             cron_org: 'googleapis',
             findHangingPRs: true,
             installation: {id: 1234},
-          },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
           id: 'abc123',
         });
         scopes.forEach(s => s.done());
@@ -791,7 +812,8 @@ describe('merge-on-green wrapper logic', () => {
         await probot.receive({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           name: 'schedule.repository' as any,
-          payload: payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
         sinon.assert.calledOnceWithExactly(

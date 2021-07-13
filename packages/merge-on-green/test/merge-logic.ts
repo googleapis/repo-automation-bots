@@ -234,13 +234,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -272,13 +274,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -304,13 +308,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -338,13 +344,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -370,13 +378,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -408,13 +418,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -443,13 +455,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -470,13 +484,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -508,13 +524,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -546,13 +564,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -587,13 +607,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -606,13 +628,15 @@ describe('merge-logic', () => {
       const scopes = [getRateLimit(0)];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -661,13 +685,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -718,13 +744,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -775,13 +803,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -829,13 +859,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 
@@ -887,13 +919,15 @@ describe('merge-logic', () => {
       ];
 
       await probot.receive({
-        name: 'schedule.installation' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.installation' as any,
         payload: {
           cron_type: 'installation',
           cron_org: 'testOwner',
           performMerge: true,
           installation: {id: 1234},
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
 

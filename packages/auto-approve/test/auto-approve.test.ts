@@ -138,7 +138,7 @@ describe('auto-approve', () => {
         ];
 
         await probot.receive({
-          name: 'pull_request.opened',
+          name: 'pull_request',
           payload,
           id: 'abc123',
         });
@@ -166,7 +166,7 @@ describe('auto-approve', () => {
         const scopes = [getConfigFile('fake-config', 200), createCheck(200)];
 
         await probot.receive({
-          name: 'pull_request.opened',
+          name: 'pull_request',
           payload,
           id: 'abc123',
         });
@@ -189,7 +189,7 @@ describe('auto-approve', () => {
         const scopes = [getConfigFile('fake-config', 200), createCheck(200)];
 
         await probot.receive({
-          name: 'pull_request.opened',
+          name: 'pull_request',
           payload,
           id: 'abc123',
         });
@@ -212,7 +212,7 @@ describe('auto-approve', () => {
         const scope = createCheck(200);
 
         await probot.receive({
-          name: 'pull_request.opened',
+          name: 'pull_request',
           payload,
           id: 'abc123',
         });
@@ -234,7 +234,7 @@ describe('auto-approve', () => {
         const scopes = [getConfigFile(undefined, 404)];
 
         await probot.receive({
-          name: 'pull_request.opened',
+          name: 'pull_request',
           payload,
           id: 'abc123',
         });
@@ -257,7 +257,7 @@ describe('auto-approve', () => {
         const scopes = [createCheck(200)];
 
         await probot.receive({
-          name: 'pull_request.opened',
+          name: 'pull_request',
           payload,
           id: 'abc123',
         });
@@ -288,7 +288,7 @@ describe('auto-approve', () => {
         const scopes = [createCheck(200)];
 
         await probot.receive({
-          name: 'pull_request.opened',
+          name: 'pull_request',
           payload,
           id: 'abc123',
         });
@@ -329,7 +329,7 @@ describe('auto-approve', () => {
       ];
 
       await probot.receive({
-        name: 'pull_request.opened',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });
