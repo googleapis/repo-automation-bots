@@ -515,7 +515,8 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
 function handler(app: Probot) {
   // This scheduled job iterates through the PR database and removes PRs
   // That are closed or do not have an applicable label anymore.
-  app.on('schedule.global' as '*', async context => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.global' as any, async context => {
     if (context.payload.cleanUp !== true) {
       return;
     }
@@ -527,7 +528,8 @@ function handler(app: Probot) {
 
   // This scheduled job looks for PRs that have an applicable label
   // but are not in the database for whatever reason (missed webhook).
-  app.on('schedule.installation' as '*', async context => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.installation' as any, async context => {
     if (context.payload.findHangingPRs !== true) {
       return;
     }
@@ -557,7 +559,8 @@ function handler(app: Probot) {
 
   // This scheduled job is the main recurring job that attempts to merge
   // mergeable PRs.
-  app.on('schedule.installation' as '*', async context => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.installation' as any, async context => {
     if (context.payload.performMerge !== true) {
       return;
     }
@@ -577,7 +580,8 @@ function handler(app: Probot) {
 
   // This scheduled job ensures that every installed repository has the
   // merge-on-green labels created and available.
-  app.on('schedule.repository' as '*', async context => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.repository' as any, async context => {
     if (context.payload.syncLabels !== true) {
       return;
     }
@@ -676,7 +680,7 @@ function handler(app: Probot) {
     }
   });
 
-  app.on(['pull_request.closed', 'pull_request.merged'], async context => {
+  app.on(['pull_request.closed'], async (context: Context<'pull_request'>) => {
     const prNumber = context.payload.pull_request.number;
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
