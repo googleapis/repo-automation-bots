@@ -78,6 +78,7 @@ function nockUpdateBranchProtection(
         strict: requireUpToDateBranch,
       },
       enforce_admins: true,
+      required_linear_history: true,
       restrictions: null,
     })
     .reply(200);
