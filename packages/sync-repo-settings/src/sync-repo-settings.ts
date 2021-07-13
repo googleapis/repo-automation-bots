@@ -63,6 +63,7 @@ const branchProtectionDefaults = deepFreeze({
   requiresStrictStatusChecks: false,
   restrictsPushes: false,
   restrictsReviewDismissals: false,
+  requiresLinearHistory: true,
   requiredStatusCheckContexts: [],
 });
 
@@ -167,6 +168,7 @@ export class SyncRepoSettings {
           strict: rule.requiresStrictStatusChecks!,
         },
         enforce_admins: rule.isAdminEnforced!,
+        required_linear_history: rule.requiresLinearHistory,
         restrictions: null!,
         headers: {
           accept: 'application/vnd.github.luke-cage-preview+json',
