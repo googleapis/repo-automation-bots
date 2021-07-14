@@ -39,6 +39,7 @@ const START_HOUR_UTC = 17;
 const WELL_KNOWN_CONFIGURATION_FILE = 'release-please.yml';
 interface ConfigurationOptions {
   releaseType?: string;
+  disableFailureChecker?: boolean;
 }
 
 // exported for testing purposes
@@ -67,7 +68,8 @@ export function failureChecker(app: Probot) {
       )) as ConfigurationOptions | null) || {};
     const labels = [...RELEASE_LABELS];
     if (
-      RELEASE_TYPE_NO_PUBLISH.indexOf('' + configuration.releaseType) === -1
+      RELEASE_TYPE_NO_PUBLISH.indexOf('' + configuration.releaseType) === -1 &&
+      !configuration.disableFailureChecker
     ) {
       labels.push('autorelease: tagged');
     }
