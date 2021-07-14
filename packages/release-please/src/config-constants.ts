@@ -26,6 +26,7 @@ export interface BranchOptions {
   manifest?: boolean;
   extraFiles?: string[];
   releaseLabel?: string;
+  disableFailureChecker?: boolean;
 }
 
 export interface BranchConfiguration extends BranchOptions {
