@@ -57,6 +57,7 @@ interface GitHubAPI {
 }
 
 const DEFAULT_API_URL = 'https://api.github.com';
+const DELAY_TIME = process.env.NODE_ENV === 'test' ? 500 : 5000;
 
 function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
   if (language === null) {
@@ -195,6 +196,10 @@ async function createReleasePR(
   }
 }
 
+function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export = (app: Probot) => {
   app.on('push', async context => {
     const repoUrl = context.payload.repository.full_name;
@@ -232,6 +237,10 @@ export = (app: Probot) => {
     setLogger(logger);
 
     logger.info(`push (${repoUrl})`);
+
+    // wait 5 seconds for potential GitHub indexing race conditions
+    await delay(DELAY_TIME);
+
     await createReleasePR(
       repoName,
       repoUrl,
