@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* eslint-disable @typescript-eslint/no-var-requires */
-
 import blunderbuss from '../src/blunderbuss';
 import schema from '../src/config-schema.json';
 import * as utilsModule from '../src/utils';
@@ -31,12 +29,9 @@ import nock from 'nock';
 import yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as sinon from 'sinon';
-import * as chai from 'chai';
-import chaiAsPromised from 'chai-as-promised';
-import assert from 'assert';
+import * as assert from 'assert';
 
 nock.disableNetConnect();
-chai.use(chaiAsPromised);
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
@@ -268,10 +263,10 @@ describe('Blunderbuss', () => {
         'issue_correct_label'
       ));
       getConfigWithDefaultStub.resolves(loadConfig('valid.yml'));
-
-      await chai
-        .expect(probot.receive({name: 'issues', payload, id: 'abc123'}))
-        .to.be.rejectedWith(Error);
+      await assert.rejects(
+        probot.receive({name: 'issues', payload, id: 'abc123'}),
+        Error
+      );
     });
 
     it('assigns blunderbuss labeled issue by label', async () => {
