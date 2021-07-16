@@ -26,7 +26,6 @@ export interface BranchOptions {
   manifest?: boolean;
   extraFiles?: string[];
   releaseLabel?: string;
-  disableFailureChecker?: boolean;
 }
 
 export interface BranchConfiguration extends BranchOptions {
@@ -36,6 +35,7 @@ export interface BranchConfiguration extends BranchOptions {
 export interface ConfigurationOptions extends BranchOptions {
   primaryBranch: string;
   branches?: BranchConfiguration[];
+  disableFailureChecker?: boolean;
 }
 
 export const WELL_KNOWN_CONFIGURATION_FILE = 'release-please.yml';

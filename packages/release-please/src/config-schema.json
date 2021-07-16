@@ -62,9 +62,6 @@
                 },
                 "releaseLabel": {
                     "type": "string"
-                },
-                "disableFailureChecker": {
-                    "type": "boolean"
                 }
             }
         }
@@ -91,6 +88,9 @@
             "properties": {
                 "primaryBranch": {
                     "type": "string"
+                },
+                "disableFailureChecker": {
+                    "type": "boolean"
                 },
                 "branches": {
                     "type": "array",
