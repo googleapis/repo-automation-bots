@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {PullRequestEvent} from '@octokit/webhooks-definitions/schema';
+import {PullRequestEvent} from '@octokit/webhooks-types/schema';
 import {getChangedFiles, File} from './get-pr-info';
 import {logger} from 'gcf-utils';
 import {
