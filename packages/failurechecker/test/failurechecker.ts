@@ -92,7 +92,8 @@ describe('failurechecker', () => {
       .reply(200);
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -103,7 +104,8 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     requests.done();
@@ -156,7 +158,8 @@ describe('failurechecker', () => {
       .reply(200);
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -167,7 +170,8 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     requests.done();
@@ -200,7 +204,8 @@ describe('failurechecker', () => {
       .reply(200, []);
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -211,7 +216,8 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     requests.done();
@@ -245,7 +251,8 @@ describe('failurechecker', () => {
       .reply(200, []);
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -256,7 +263,8 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     requests.done();
@@ -299,7 +307,8 @@ describe('failurechecker', () => {
       .reply(200, []);
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -310,7 +319,8 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     requests.done();
@@ -352,7 +362,8 @@ describe('failurechecker', () => {
       .reply(200, []);
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -363,7 +374,8 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     requests.done();
@@ -417,7 +429,8 @@ describe('failurechecker', () => {
       .reply(200, {});
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -428,7 +441,8 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     requests.done();
@@ -440,7 +454,8 @@ describe('failurechecker', () => {
     sinon.stub(TimeMethods, 'Date').returns(new Date(Date.UTC(2020, 1, 1, 5)));
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -448,7 +463,8 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
   });
@@ -508,7 +524,8 @@ describe('failurechecker', () => {
       .reply(200, []);
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -519,7 +536,8 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     requests.done();
@@ -570,7 +588,8 @@ describe('failurechecker', () => {
       .reply(200, {});
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -581,7 +600,8 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     requests.done();
@@ -650,7 +670,8 @@ describe('failurechecker', () => {
       .reply(200, []);
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -661,7 +682,8 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     requests.done();
@@ -724,7 +746,8 @@ describe('failurechecker', () => {
       .reply(200, []);
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -735,7 +758,8 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     requests.done();
@@ -782,7 +806,8 @@ describe('failurechecker', () => {
       });
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: 'nodejs-foo',
@@ -793,7 +818,8 @@ describe('failurechecker', () => {
         organization: {
           login: 'googleapis',
         },
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     requests.done();

@@ -156,7 +156,8 @@ describe('flakybot', () => {
       datastoreLockReleaseStub.resolves(true);
       const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
       await probot.receive({
-        name: 'schedule.repository' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
         payload: {
           repository: {
             name: 'testRepo',
@@ -167,7 +168,8 @@ describe('flakybot', () => {
           organization: {
             login: 'googleapis',
           },
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
       sinon.assert.calledOnceWithExactly(
@@ -383,8 +385,10 @@ describe('flakybot', () => {
 
       const requests = nock('https://api.github.com');
       await probot.receive({
-        name: 'pubsub.message' as '*',
-        payload,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'pubsub.message' as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: payload as any,
         id: 'abc123',
       });
       requests.done();
@@ -417,8 +421,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -451,8 +457,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -492,8 +500,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -527,8 +537,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -547,8 +559,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -568,8 +582,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -589,8 +605,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -604,8 +622,10 @@ describe('flakybot', () => {
         const scopes = [nockIssues('java-vision'), nockNewIssue('java-vision')];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -622,8 +642,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -640,8 +662,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -661,8 +685,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -707,8 +733,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -757,8 +785,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -809,8 +839,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -824,8 +856,10 @@ describe('flakybot', () => {
         const scopes = [nockIssues('golang-samples')];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -870,8 +904,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -902,8 +938,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -937,8 +975,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -969,8 +1009,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -997,8 +1039,10 @@ describe('flakybot', () => {
         const scopes = [nockIssues('golang-samples', issues)];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -1035,8 +1079,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -1067,8 +1113,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -1105,8 +1153,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -1134,8 +1184,10 @@ describe('flakybot', () => {
         const scopes = [nockIssues('golang-samples', issues)];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -1170,8 +1222,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -1229,8 +1283,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -1273,8 +1329,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -1324,8 +1382,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -1342,8 +1402,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -1376,8 +1438,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -1413,8 +1477,10 @@ describe('flakybot', () => {
         ];
 
         await probot.receive({
-          name: 'pubsub.message' as '*',
-          payload,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          name: 'pubsub.message' as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          payload: payload as any,
           id: 'abc123',
         });
 
@@ -1453,8 +1519,10 @@ describe('flakybot', () => {
           ];
 
           await probot.receive({
-            name: 'pubsub.message' as '*',
-            payload,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            name: 'pubsub.message' as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            payload: payload as any,
             id: 'abc123',
           });
 
@@ -1489,8 +1557,10 @@ describe('flakybot', () => {
           ];
 
           await probot.receive({
-            name: 'pubsub.message' as '*',
-            payload,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            name: 'pubsub.message' as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            payload: payload as any,
             id: 'abc123',
           });
 
@@ -1513,8 +1583,10 @@ describe('flakybot', () => {
           ];
 
           await probot.receive({
-            name: 'pubsub.message' as '*',
-            payload,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            name: 'pubsub.message' as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            payload: payload as any,
             id: 'abc123',
           });
 
@@ -1549,8 +1621,10 @@ describe('flakybot', () => {
           ];
 
           await probot.receive({
-            name: 'pubsub.message' as '*',
-            payload,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            name: 'pubsub.message' as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            payload: payload as any,
             id: 'abc123',
           });
 
