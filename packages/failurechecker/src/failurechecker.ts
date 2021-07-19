@@ -50,7 +50,8 @@ export const TimeMethods = {
 };
 
 export function failureChecker(app: Probot) {
-  app.on('schedule.repository' as '*', async context => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.repository' as any, async context => {
     const utcHour = TimeMethods.Date().getUTCHours();
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
