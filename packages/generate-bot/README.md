@@ -1,6 +1,6 @@
 # generate-bot
 
-> A command-line script that generates the scaffolding for a Github Probot application. 
+> A command-line script that generates the scaffolding for a Github Probot application.
 > The script will generate a working probot application that listens to Issues and PRs.
 
 ## Generate a bot
@@ -13,11 +13,12 @@ $ npm run generate-bot
 
 ## Setup
 
-The bot will ask you three questions: 
+The bot will ask you four questions:
 
-### What is the name of the program?
-### What is the description of the program?
-### This package will be saved in /packages/yourProgramName unless you specify another location and directory name here relative to ${pwd} :
+- **What is the name of the program?**
+- **What is the description of the program?**
+- **This package will be saved in /packages/yourProgramName unless you specify another location and directory name here relative to ${pwd} :**
+- **Select a platform**
 
 You may only use alphabetical letters, hyphens, underscores, and spaces in your answers; otherwise, the bot will ask you to attempt to answer again. You must name your bot in order to continue successfully.
 
