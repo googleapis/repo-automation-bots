@@ -232,14 +232,26 @@ export = (app: Probot) => {
     setLogger(logger);
 
     logger.info(`push (${repoUrl})`);
-    await createReleasePR(
-      repoName,
-      repoUrl,
-      repoLanguage,
-      branchConfiguration,
-      context.octokit as GitHubAPI,
-      undefined
-    );
+    try {
+      await createReleasePR(
+        repoName,
+        repoUrl,
+        repoLanguage,
+        branchConfiguration,
+        context.octokit as GitHubAPI,
+        undefined
+      );
+    } catch (e) {
+      if (e instanceof Errors.ConfigurationError) {
+        // In the future, this could raise an issue against the
+        // installed repository
+        logger.warn(e);
+        return;
+      } else {
+        // re-raise
+        throw e;
+      }
+    }
 
     // release-please can handle creating a release on GitHub, we opt not to do
     // this for our repos that have autorelease enabled.
