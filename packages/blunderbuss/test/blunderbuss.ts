@@ -94,7 +94,8 @@ describe('Blunderbuss', () => {
   describe('scheduler handler', () => {
     it('calls syncLabels', async () => {
       await probot.receive({
-        name: 'schedule.repository' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
         payload: {
           repository: {
             name: 'testRepo',
@@ -105,7 +106,8 @@ describe('Blunderbuss', () => {
           organization: {
             login: 'googleapis',
           },
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
       sinon.assert.calledOnceWithExactly(
