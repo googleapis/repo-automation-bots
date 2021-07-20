@@ -143,7 +143,8 @@ export function handler(app: Probot) {
     async (context: Context<'pull_request'>) => {
       const pr = context.payload;
       const owner = pr.repository.owner.login;
-      const repo = pr.pull_request.head.repo.name;
+      const repoHead = pr.pull_request.head.repo.name;
+      const repo = pr.pull_request.base.repo.name;
       const prNumber = pr.number;
 
       const PRFiles = await getChangedFiles(
@@ -162,7 +163,7 @@ export function handler(app: Probot) {
       const prConfig = await getBlobFromPRFiles(
         context.octokit,
         owner,
-        repo,
+        repoHead,
         PRFiles,
         `.github/${CONFIGURATION_FILE_PATH}`
       );
@@ -172,7 +173,7 @@ export function handler(app: Probot) {
         const codeOwnersFile = await getBlobFromPRFiles(
           context.octokit,
           owner,
-          repo,
+          repoHead,
           PRFiles,
           '.github/CODEOWNERS'
         );
