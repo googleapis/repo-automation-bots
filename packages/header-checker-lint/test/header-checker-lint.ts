@@ -17,7 +17,10 @@ import {resolve} from 'path';
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import snapshot from 'snap-shot-it';
 // eslint-disable-next-line node/no-extraneous-import
-import {EventPayloads} from '@octokit/webhooks';
+import {
+  PullRequestOpenedEvent,
+  PullRequestSynchronizeEvent,
+} from '@octokit/webhooks-types';
 import nock from 'nock';
 import {describe, it, beforeEach, before} from 'mocha';
 import * as sinon from 'sinon';
@@ -47,7 +50,7 @@ describe('HeaderCheckerLint', () => {
   });
 
   describe('opened pull request', () => {
-    let payload: EventPayloads.WebhookPayloadPullRequest;
+    let payload: PullRequestOpenedEvent;
     const sandbox = sinon.createSandbox();
     let getConfigStub: sinon.SinonStub;
     let validateConfigStub: sinon.SinonStub;
@@ -359,7 +362,7 @@ describe('HeaderCheckerLint', () => {
   });
 
   describe('updated pull request', () => {
-    let payload: EventPayloads.WebhookPayloadPullRequest;
+    let payload: PullRequestSynchronizeEvent;
     const sandbox = sinon.createSandbox();
     let getConfigStub: sinon.SinonStub;
     let validateConfigStub: sinon.SinonStub;

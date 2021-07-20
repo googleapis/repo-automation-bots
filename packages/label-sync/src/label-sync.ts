@@ -121,6 +121,7 @@ export function handler(app: Probot) {
     }
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async c => {
     const owner = c.payload.organization.login;
     const repo = c.payload.repository.name;

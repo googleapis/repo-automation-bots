@@ -22,8 +22,8 @@ export interface Label {
 }
 
 interface CheckRun {
-  name: string;
-  conclusion: string;
+  name: string | null;
+  conclusion: string | null;
 }
 
 export interface CheckStatus {
@@ -226,7 +226,7 @@ async function getCheckRuns(
 function checkForRequiredSC(checkRuns: CheckRun[], check: string) {
   if (checkRuns.length !== 0) {
     const checkRunCompleted = checkRuns.find(element =>
-      element.name.startsWith(check)
+      element.name?.startsWith(check)
     );
     if (
       checkRunCompleted !== undefined &&

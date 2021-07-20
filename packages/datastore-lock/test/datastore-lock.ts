@@ -13,15 +13,11 @@
 // limitations under the License.
 
 import assert from 'assert';
-import * as chai from 'chai';
-import chaiAsPromised from 'chai-as-promised';
 import {describe, it, before, after} from 'mocha';
 import nock from 'nock';
 
 import DataStoreEmulator from 'google-datastore-emulator';
 import {DatastoreLock} from '../src/datastore-lock';
-
-chai.use(chaiAsPromised);
 
 describe('datastore-lock', () => {
   let emulator: DataStoreEmulator;
@@ -51,8 +47,8 @@ describe('datastore-lock', () => {
       assert(await l.acquire());
       assert(await l2.acquire());
       assert(await l3.acquire());
-      await chai.expect(l.release()).to.be.rejectedWith(Error);
-      await chai.expect(l2.release()).to.be.rejectedWith(Error);
+      await assert.rejects(l.release(), Error);
+      await assert.rejects(l2.release(), Error);
       assert(await l3.release());
     });
     it('fails for acquiring and releasing the lock', async () => {

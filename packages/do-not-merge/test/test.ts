@@ -56,7 +56,7 @@ describe('do-not-merge', () => {
         .reply(200);
 
       await probot.receive({
-        name: 'pull_request.labeled',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });
@@ -74,7 +74,7 @@ describe('do-not-merge', () => {
       const requests = nock('https://api.github.com');
 
       await probot.receive({
-        name: 'pull_request.labeled',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });
@@ -101,7 +101,7 @@ describe('do-not-merge', () => {
         .reply(200);
 
       await probot.receive({
-        name: 'pull_request.labeled',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });
@@ -129,7 +129,7 @@ describe('do-not-merge', () => {
         .reply(200);
 
       await probot.receive({
-        name: 'pull_request.labeled',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });
@@ -160,7 +160,7 @@ describe('do-not-merge', () => {
         .reply(200);
 
       await probot.receive({
-        name: 'pull_request.labeled',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });
@@ -191,7 +191,7 @@ describe('do-not-merge', () => {
         .reply(200);
 
       await probot.receive({
-        name: 'pull_request.labeled',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });

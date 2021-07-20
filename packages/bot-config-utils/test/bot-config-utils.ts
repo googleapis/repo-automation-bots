@@ -17,8 +17,6 @@ import nock from 'nock';
 import * as fs from 'fs';
 import snapshot from 'snap-shot-it';
 import * as assert from 'assert';
-import * as chai from 'chai';
-import chaiAsPromised from 'chai-as-promised';
 import {describe, it, beforeEach} from 'mocha';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, ProbotOctokit} from 'probot';
@@ -34,7 +32,6 @@ import schema from './test-config-schema.json';
 import listSchema from './test-config-use-external-id.json';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
-chai.use(chaiAsPromised);
 
 interface TestConfig {
   testConfig: string;
@@ -521,13 +518,12 @@ describe('config', () => {
         getConfigFile('flakybot.yaml', owner, repo, 200, 'wrong.yaml'),
       ];
 
-      await chai
-        .expect(
-          getConfig<TestConfig>(octokit, owner, repo, filename, {
-            schema: schema,
-          })
-        )
-        .to.be.rejectedWith(Error);
+      await assert.rejects(
+        getConfig<TestConfig>(octokit, owner, repo, filename, {
+          schema: schema,
+        }),
+        Error
+      );
 
       for (const scope of scopes) {
         scope.done();
@@ -540,9 +536,10 @@ describe('config', () => {
 
       const scopes = [getConfigFile('flakybot.yaml', owner, repo, 403)];
 
-      await chai
-        .expect(getConfig<TestConfig>(octokit, owner, repo, filename))
-        .to.be.rejectedWith(Error);
+      await assert.rejects(
+        getConfig<TestConfig>(octokit, owner, repo, filename),
+        Error
+      );
       for (const scope of scopes) {
         scope.done();
       }
@@ -597,14 +594,12 @@ describe('config', () => {
         getConfigFile('flakybot.yaml', owner, '.github', 200, 'wrong.yaml'),
       ];
 
-      await chai
-        .expect(
-          getConfig<TestConfig>(octokit, owner, repo, filename, {
-            schema: schema,
-          })
-        )
-        .to.be.rejectedWith(Error);
-
+      await assert.rejects(
+        getConfig<TestConfig>(octokit, owner, repo, filename, {
+          schema: schema,
+        }),
+        Error
+      );
       for (const scope of scopes) {
         scope.done();
       }
@@ -640,9 +635,10 @@ describe('config', () => {
         getConfigFile('flakybot.yaml', owner, '.github', 403),
       ];
 
-      await chai
-        .expect(getConfig<TestConfig>(octokit, owner, repo, filename))
-        .to.be.rejectedWith(Error);
+      await assert.rejects(
+        getConfig<TestConfig>(octokit, owner, repo, filename),
+        Error
+      );
       for (const scope of scopes) {
         scope.done();
       }
@@ -753,18 +749,17 @@ describe('config', () => {
         getConfigFile('flakybot.yaml', owner, repo, 200, 'wrong.yaml'),
       ];
 
-      await chai
-        .expect(
-          getConfigWithDefault<TestConfig>(
-            octokit,
-            owner,
-            repo,
-            filename,
-            defaultConfig,
-            {schema: schema}
-          )
-        )
-        .to.be.rejectedWith(Error);
+      await assert.rejects(
+        getConfigWithDefault<TestConfig>(
+          octokit,
+          owner,
+          repo,
+          filename,
+          defaultConfig,
+          {schema: schema}
+        ),
+        Error
+      );
 
       for (const scope of scopes) {
         scope.done();
@@ -777,17 +772,16 @@ describe('config', () => {
 
       const scopes = [getConfigFile('flakybot.yaml', owner, repo, 403)];
 
-      await chai
-        .expect(
-          getConfigWithDefault<TestConfig>(
-            octokit,
-            owner,
-            repo,
-            filename,
-            defaultConfig
-          )
-        )
-        .to.be.rejectedWith(Error);
+      await assert.rejects(
+        getConfigWithDefault<TestConfig>(
+          octokit,
+          owner,
+          repo,
+          filename,
+          defaultConfig
+        ),
+        Error
+      );
       for (const scope of scopes) {
         scope.done();
       }
@@ -844,18 +838,17 @@ describe('config', () => {
         getConfigFile('flakybot.yaml', owner, '.github', 200, 'wrong.yaml'),
       ];
 
-      await chai
-        .expect(
-          getConfigWithDefault<TestConfig>(
-            octokit,
-            owner,
-            repo,
-            filename,
-            defaultConfig,
-            {schema: schema}
-          )
-        )
-        .to.be.rejectedWith(Error);
+      await assert.rejects(
+        getConfigWithDefault<TestConfig>(
+          octokit,
+          owner,
+          repo,
+          filename,
+          defaultConfig,
+          {schema: schema}
+        ),
+        Error
+      );
 
       for (const scope of scopes) {
         scope.done();
@@ -893,17 +886,16 @@ describe('config', () => {
         getConfigFile('flakybot.yaml', owner, '.github', 403),
       ];
 
-      await chai
-        .expect(
-          getConfigWithDefault<TestConfig>(
-            octokit,
-            owner,
-            repo,
-            filename,
-            defaultConfig
-          )
-        )
-        .to.be.rejectedWith(Error);
+      await assert.rejects(
+        getConfigWithDefault<TestConfig>(
+          octokit,
+          owner,
+          repo,
+          filename,
+          defaultConfig
+        ),
+        Error
+      );
       for (const scope of scopes) {
         scope.done();
       }

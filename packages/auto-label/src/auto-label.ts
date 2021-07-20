@@ -71,7 +71,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
   issueNumber: number,
   issueTitle: string,
   driftRepos: DriftRepo[],
-  context: Context
+  context: Context<'pull_request'> | Context<'issues'> | Context<'installation'>
 ) {
   const driftRepo = driftRepos.find(x => x.repo === `${owner}/${repo}`);
   const res = await context.octokit.issues
@@ -170,7 +170,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
 
 // Main job for PRs.
 handler.autoLabelOnPR = async function autoLabelOnPR(
-  context: Context,
+  context: Context<'pull_request'>,
   owner: string,
   repo: string,
   config: Config
@@ -257,7 +257,7 @@ handler.autoLabelOnPR = async function autoLabelOnPR(
 export function handler(app: Probot) {
   // Nightly cron that backfills and corrects api labels
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  app.on('schedule.repository' as '*', async context => {
+  app.on('schedule.repository' as any, async context => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
     const config = await getConfigWithDefault<Config>(
@@ -390,6 +390,11 @@ export function handler(app: Probot) {
     const driftRepos = await handler.getDriftRepos();
     if (!LABEL_PRODUCT_BY_DEFAULT) return;
     if (!driftRepos) return;
+
+    if (!repositories) {
+      logger.info('repositories is undefined, exiting');
+      return;
+    }
 
     for await (const repository of repositories) {
       const [owner, repo] = repository.full_name.split('/');

@@ -87,6 +87,17 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [12.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.4.3...gcf-utils-v12.0.0) (2021-07-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **gcf-utils:** upgrade to probot 12 (#2253)
+
+### Bug Fixes
+
+* **gcf-utils:** upgrade to probot 12 ([#2253](https://www.github.com/googleapis/repo-automation-bots/issues/2253)) ([57bc7cf](https://www.github.com/googleapis/repo-automation-bots/commit/57bc7cfde2f3d23cb1bd263310b5c131e6c04269))
+
 ### [11.4.3](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.4.2...gcf-utils-v11.4.3) (2021-07-07)
 
 

@@ -26,7 +26,8 @@ import {CONFIGURATION_FILE_PATH, Configuration} from './config';
 import {BLUNDERBUSS_LABELS, assign, isIssue} from './utils';
 
 export = (app: Probot) => {
-  app.on('schedule.repository' as '*', async context => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.repository' as any, async context => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
     await syncLabels(context.octokit, owner, repo, BLUNDERBUSS_LABELS);
@@ -42,31 +43,33 @@ export = (app: Probot) => {
       'pull_request.labeled',
       'pull_request.synchronize',
     ],
-    async (context: Context) => {
+    async (context: Context<'issues'> | Context<'pull_request'>) => {
       const {owner, repo} = context.repo();
       // First check the config schema for pull requests.
-      if (
-        context.payload.pull_request &&
-        (context.payload.action === 'opened' ||
-          context.payload.action === 'reopened' ||
-          context.payload.action === 'synchronize')
-      ) {
-        const configChecker = new ConfigChecker<Configuration>(
-          schema,
-          CONFIGURATION_FILE_PATH
-        );
-        const {owner, repo} = context.repo();
-        await configChecker.validateConfigChanges(
-          context.octokit,
-          owner,
-          repo,
-          context.payload.pull_request.head.sha,
-          context.payload.pull_request.number
-        );
-      }
-      // For the blunderbuss main logic, synchronize event is irrelevant.
-      if (context.payload.action === 'synchronize') {
-        return;
+      if (!isIssue(context.payload)) {
+        if (
+          context.payload.pull_request &&
+          (context.payload.action === 'opened' ||
+            context.payload.action === 'reopened' ||
+            context.payload.action === 'synchronize')
+        ) {
+          const configChecker = new ConfigChecker<Configuration>(
+            schema,
+            CONFIGURATION_FILE_PATH
+          );
+          const {owner, repo} = context.repo();
+          await configChecker.validateConfigChanges(
+            context.octokit,
+            owner,
+            repo,
+            context.payload.pull_request.head.sha,
+            context.payload.pull_request.number
+          );
+        }
+        // For the blunderbuss main logic, synchronize event is irrelevant.
+        if (context.payload.action === 'synchronize') {
+          return;
+        }
       }
       let config: Configuration = {};
       try {

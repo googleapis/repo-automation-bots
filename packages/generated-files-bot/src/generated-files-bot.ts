@@ -180,7 +180,7 @@ export function buildCommentMessage(touchedTemplates: GeneratedFile[]): string {
 }
 
 async function mainLogic(
-  context: Context,
+  context: Context<'pull_request'>,
   config: Configuration,
   owner: string,
   repo: string

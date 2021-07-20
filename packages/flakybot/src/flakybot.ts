@@ -128,7 +128,8 @@ interface PubSubContext {
 }
 
 export function flakybot(app: Probot) {
-  app.on('schedule.repository' as '*', async context => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.repository' as any, async context => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
     await syncLabels(context.octokit, owner, repo, FLAKYBOT_LABELS);
@@ -154,14 +155,15 @@ export function flakybot(app: Probot) {
   );
   // meta comment about the 'any' here: https://github.com/octokit/webhooks.js/issues/277
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  app.on('pubsub.message' as any, async (context: PubSubContext) => {
-    const owner = context.payload.organization?.login;
-    const repo = context.payload.repository?.name;
-    const commit = context.payload.commit || '[TODO: set commit]';
-    const buildURL = context.payload.buildURL || '[TODO: set buildURL]';
+  app.on('pubsub.message' as any, async context => {
+    const typedContext = context as unknown as PubSubContext;
+    const owner = typedContext.payload.organization?.login;
+    const repo = typedContext.payload.repository?.name;
+    const commit = typedContext.payload.commit || '[TODO: set commit]';
+    const buildURL = typedContext.payload.buildURL || '[TODO: set buildURL]';
 
     const config = await getConfigWithDefault<Config>(
-      context.octokit,
+      typedContext.octokit,
       owner,
       repo,
       CONFIG_FILENAME,
@@ -169,55 +171,64 @@ export function flakybot(app: Probot) {
       {schema: schema}
     );
     logger.debug(`config: ${config}`);
-    context.log.info(`[${owner}/${repo}] processing ${buildURL}`);
+    typedContext.log.info(`[${owner}/${repo}] processing ${buildURL}`);
 
     let results: TestResults;
-    if (context.payload.xunitXML) {
-      const xml = Buffer.from(context.payload.xunitXML, 'base64').toString();
+    if (typedContext.payload.xunitXML) {
+      const xml = Buffer.from(
+        typedContext.payload.xunitXML,
+        'base64'
+      ).toString();
       results = flakybot.findTestResults(xml);
     } else {
-      if (context.payload.testsFailed === undefined) {
-        context.log.info(
+      if (typedContext.payload.testsFailed === undefined) {
+        typedContext.log.info(
           `[${owner}/${repo}] No xunitXML and no testsFailed! Skipping.`
         );
         return;
       }
-      if (context.payload.testsFailed) {
+      if (typedContext.payload.testsFailed) {
         results = {passes: [], failures: [{passed: false}]}; // A single failure is used to indicate the whole build failed.
       } else {
         results = {passes: [], failures: []}; // Tests passed.
       }
     }
 
-    context.log.info(
+    typedContext.log.info(
       `[${owner}/${repo}] Found ${results.passes.length} passed tests and ${results.failures.length} failed tests in this result of ${buildURL}`
     );
     if (results.passes.length > 0) {
-      context.log.info(
+      typedContext.log.info(
         `[${owner}/${repo}] example pass: ${results.passes[0].package}: ${results.passes[0].testCase}`
       );
     }
     if (results.failures.length > 0) {
-      context.log.info(
+      typedContext.log.info(
         `[${owner}/${repo}] example failure: ${results.failures[0].package}: ${results.failures[0].testCase}`
       );
     }
 
     // Get the list of issues once, before opening/closing any of them.
-    const options = context.octokit.issues.listForRepo.endpoint.merge({
+    const options = typedContext.octokit.issues.listForRepo.endpoint.merge({
       owner,
       repo,
       per_page: 100,
       labels: ISSUE_LABEL,
       state: 'all', // Include open and closed issues.
     });
-    let issues = (await context.octokit.paginate(
+    let issues = (await typedContext.octokit.paginate(
       options
     )) as IssuesListForRepoResponseData;
 
     // If we deduplicate any issues, re-download the issues.
     if (
-      await flakybot.deduplicateIssues(results, issues, context, owner, repo)
+      await flakybot.deduplicateIssues(
+        results,
+        issues,
+        typedContext,
+        owner,
+        repo
+      )
     ) {
       issues = await context.octokit.paginate(options);
     }
@@ -226,7 +237,7 @@ export function flakybot(app: Probot) {
     await flakybot.openIssues(
       results.failures,
       issues,
-      context,
+      typedContext,
       config,
       owner,
       repo,
@@ -237,7 +248,7 @@ export function flakybot(app: Probot) {
     await flakybot.closeIssues(
       results,
       issues,
-      context,
+      typedContext,
       config,
       owner,
       repo,

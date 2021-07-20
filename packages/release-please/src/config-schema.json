@@ -64,11 +64,11 @@
                     "type": "string"
                 }
             }
-        },
+        }
     },
     "properties": {
         "primaryBranch": true,
-	"branches": true,
+        "branches": true,
         "releaseLabels": true,
         "monorepoTags": true,
         "releaseType": true,
@@ -79,14 +79,18 @@
         "changelogPath": true,
         "manifest": true,
         "extraFiles": true,
-        "releaseLabel": true
+        "releaseLabel": true,
+        "disableFailureChecker": true
     },
     "allOf": [
         { "$ref": "#/definitions/BranchOptions"},
         {
             "properties": {
                 "primaryBranch": {
-                    "type": "string",
+                    "type": "string"
+                },
+                "disableFailureChecker": {
+                    "type": "boolean"
                 },
                 "branches": {
                     "type": "array",
@@ -105,7 +109,8 @@
                             "changelogPath": true,
                             "manifest": true,
                             "extraFiles": true,
-                            "releaseLabel": true
+                            "releaseLabel": true,
+                            "disableFailureChecker": true
                         },
                         "allOf": [
                             { "$ref": "#/definitions/BranchOptions"},
@@ -116,7 +121,7 @@
                                     }
                                 }
                             }
-                        ],
+                        ]
 
                     }
                 }

@@ -8,7 +8,7 @@ by Google on GitHub.
 
 | Name | Description | Install |
 | ---- | ----------- | ------- |
-| [auto-approve] | Automatically approves and merges PRs matching user-specified configs | [install][auto-approve] |
+| [auto-approve] | Automatically approves and merges PRs matching user-specified configs | [install][auto-approve-app] |
 | [auto-label] | Automatically labels issues and PRs with product, language, or directory based labels | [install][auto-label-app] |
 | [blunderbuss] | Assigns issues and PRs randomly to a specific list of users | [install][blunderbuss-app] |
 | [flakybot] | Listen on PubSub queue for broken builds, and open corresponding issues | [install][flakybot-app] |
@@ -19,6 +19,7 @@ by Google on GitHub.
 | [license-header-lint] | PR checker that ensures that source files contain valid license headers | [install][license-header-lint-app] |
 | [label-sync] | Synchronize labels across organizations | [install][label-sync-app] |
 | [merge-on-green] | Merge a pull-request when all required checks have passed | [install][merge-on-green-app] |
+| [policy] | Check repo configuration against known rules | [install][policy-app] |
 | [release-please] | Proposes releases based on semantic version commits | [install][release-please-app] |
 | [snippet-bot] | Check for mismatched region tags in PRs | [install][snippet-bot-app] |
 | [sync-repo-settings] | Synchronize repository settings from a centralized config | [install][sync-repo-settings-app] |
@@ -68,7 +69,7 @@ GitHub application using the probot server:
 
 ### Install the bot on a repo
 
-1. While on https://github.com/settings/apps/{YOUR_APP} navigate to 'Install App',
+1. Follow the link to install the app and navigate to 'Install App',
    if installed on the organization you desire (likely yourself for testing),
 click the gear.
 1. Under permissions ensure that there aren't pending requests to be approved
@@ -80,7 +81,7 @@ click the gear.
 
 Once you've created your application, _and installed it on some of your repos_,
 start probot again, setting the following environment variables. Most can be found
-at https://github.com/settings/apps/{YOUR_APP}:
+at github.com/settings/apps/{YOUR_APP}:
 
 * `APP_ID`: the ID, listed near the top, `App ID: 12345`
 * `PRIVATE_KEY_PATH`: path to App's private key, you can request a new one be
@@ -111,7 +112,8 @@ at the specified schedule.
 
 ![High Level Architecture](./architecture.png)
 
-[auto-approve]: https://github.com/apps/auto-approve-bot
+[auto-approve]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/auto-approve
+[auto-approve-app]: https://github.com/apps/auto-approve-bot
 [auto-label]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/auto-label
 [auto-label-app]: https://github.com/apps/product-auto-label
 [blunderbuss]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/blunderbuss
@@ -124,6 +126,8 @@ at the specified schedule.
 [generated-files-bot-app]: https://github.com/apps/generated-files-bot
 [license-header-lint]:  https://github.com/googleapis/repo-automation-bots/tree/master/packages/header-checker-lint
 [license-header-lint-app]: https://github.com/apps/license-header-lint-gcf
+[policy]:  https://github.com/googleapis/repo-automation-bots/tree/master/packages/policy
+[policy-app]: https://github.com/apps/google-cloud-policy-bot
 [release-please]:  https://github.com/googleapis/repo-automation-bots/tree/master/packages/release-please
 [release-please-app]: https://github.com/apps/release-please
 [trusted-contribution]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/trusted-contribution
