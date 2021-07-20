@@ -143,13 +143,14 @@ export function handler(app: Probot) {
     async (context: Context) => {
       const pr = context.payload;
       const owner = pr.repository.owner.login;
-      const repo = pr.pull_request.head.repo.name;
+      const repoBase = pr.pull_request.base.repo.name;
+      console.log(`REPO BASE: ${repoBase}`);
       const prNumber = pr.number;
 
       const PRFiles = await getChangedFiles(
         context.octokit,
         owner,
-        repo,
+        repoBase,
         prNumber
       );
 
@@ -162,7 +163,7 @@ export function handler(app: Probot) {
       const prConfig = await getBlobFromPRFiles(
         context.octokit,
         owner,
-        repo,
+        repoBase,
         PRFiles,
         `.github/${CONFIGURATION_FILE_PATH}`
       );
@@ -172,7 +173,7 @@ export function handler(app: Probot) {
         const codeOwnersFile = await getBlobFromPRFiles(
           context.octokit,
           owner,
-          repo,
+          repoBase,
           PRFiles,
           '.github/CODEOWNERS'
         );
@@ -186,7 +187,7 @@ export function handler(app: Probot) {
         // that config.
         await evaluateAndSubmitCheckForConfig(
           owner,
-          repo,
+          repoBase,
           prConfig,
           codeOwnersFile,
           context.octokit,
@@ -194,7 +195,7 @@ export function handler(app: Probot) {
         );
 
         logger.metric('auto_approve.status_check', {
-          repo: `${owner}/${repo}`,
+          repo: `${owner}/${repoBase}`,
           pr: prNumber,
         });
       } else {
@@ -215,7 +216,7 @@ export function handler(app: Probot) {
           // If config is not valid, this function will submit a failing check, and will not merge the PR
           const isConfigValid = await evaluateAndSubmitCheckForConfig(
             owner,
-            repo,
+            repoBase,
             config,
             undefined,
             context.octokit,
@@ -243,35 +244,36 @@ export function handler(app: Probot) {
               process.env.PROJECT_ID || '',
               'yoshi-approver'
             );
+            console.log(`SECOND REPO BASE: ${repoBase}`);
             await octokit.pulls.createReview({
               owner,
-              repo,
+              repo: repoBase,
               pull_number: prNumber,
               event: 'APPROVE',
             });
             await octokit.issues.addLabels({
               owner,
-              repo,
+              repo: repoBase,
               issue_number: prNumber,
               labels: ['automerge: exact'],
             });
             logger.metric('auto_approve.approved_tagged', {
-              repo: `${owner}/${repo}`,
+              repo: `${owner}/${repoBase}`,
               pr: prNumber,
               prAuthor: pr.pull_request.user.login,
             });
             logger.info(
-              `Auto-approved and tagged ${owner}/${repo}/${prNumber}`
+              `Auto-approved and tagged ${owner}/${repoBase}/${prNumber}`
             );
           } else if (isConfigValid && !isPRValid) {
             // If config is valid but PR isn't, log that it is not valid, but don't comment on PR since that would be noisy
             logger.info(
-              `PR does not match criteria for auto-approving, not merging for ${owner}/${repo}/${prNumber}`
+              `PR does not match criteria for auto-approving, not merging for ${owner}/${repoBase}/${prNumber}`
             );
           }
         } else {
           logger.info(
-            `Config does not exist in PR or repo, skipping execution for ${owner}/${repo}/${prNumber}`
+            `Config does not exist in PR or repo, skipping execution for ${owner}/${repoBase}/${prNumber}`
           );
         }
       }

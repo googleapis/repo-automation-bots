@@ -80,7 +80,13 @@ export function getTargetFiles(
     for (const rule of languageRules) {
       if (
         rule.prAuthor === author &&
-        changedFile.filename.endsWith(rule.targetFile)
+        changedFile.filename === rule.targetFile
+      ) {
+        targetFiles.push({file: changedFile, fileRule: rule});
+      } else if (
+        rule.prAuthor === author &&
+        changedFile.filename.endsWith(rule.targetFile) &&
+        rule.process === 'java-dependency'
       ) {
         targetFiles.push({file: changedFile, fileRule: rule});
       }
@@ -103,7 +109,8 @@ export function getTargetFiles(
 export function getVersions(
   versionFile: File | undefined,
   oldVersionRegex: RegExp,
-  newVersionRegex: RegExp
+  newVersionRegex: RegExp,
+  process: string
 ): Versions | undefined {
   if (!versionFile) {
     return undefined;
@@ -118,17 +125,31 @@ export function getVersions(
 
   const oldVersions = versionFile.patch?.match(oldVersionRegex);
   const newVersions = versionFile.patch?.match(newVersionRegex);
-
   if (oldVersions) {
-    oldDependencyName = oldVersions[1];
-    oldMajorVersion = oldVersions[2];
-    oldMinorVersion = oldVersions[3];
+    if (process === 'java-dependency') {
+      oldDependencyName = `${oldVersions[1]}:${oldVersions[2]}`;
+      oldMajorVersion = oldVersions[4] || oldVersions[6];
+      oldMinorVersion = oldVersions[5] || oldVersions[7];
+    } else {
+      oldDependencyName = oldVersions[1];
+      oldMajorVersion = oldVersions[2];
+      oldMinorVersion = oldVersions[3];
+    }
   }
 
   if (newVersions) {
-    newDependencyName = newVersions[1];
-    newMajorVersion = newVersions[2];
-    newMinorVersion = newVersions[3];
+    if (process === 'java-dependency') {
+      newDependencyName = `${newVersions[1]}:${newVersions[2]}`;
+      newMajorVersion = newVersions[5] || newVersions[7];
+      newMinorVersion = newVersions[6] || newVersions[8];
+      console.log(newDependencyName);
+      console.log(newMajorVersion);
+      console.log(newMinorVersion);
+    } else {
+      newDependencyName = newVersions[1];
+      newMajorVersion = newVersions[2];
+      newMinorVersion = newVersions[3];
+    }
   }
 
   // If there is a change with a file that requires special validation checks,
@@ -170,12 +191,20 @@ export function getVersions(
 export function doesDependencyChangeMatchPRTitle(
   versions: Versions,
   dependencyRegex: RegExp,
-  title: string
+  title: string,
+  process: string
 ): boolean {
   let dependencyName;
   const titleRegex = title.match(dependencyRegex);
+
   if (titleRegex) {
     dependencyName = titleRegex[2];
+
+    if (process === 'java-dependency') {
+      if (!dependencyName.includes('com.google.')) {
+        return false;
+      }
+    }
     return (
       versions.newDependencyName === versions.oldDependencyName &&
       dependencyName === versions.newDependencyName

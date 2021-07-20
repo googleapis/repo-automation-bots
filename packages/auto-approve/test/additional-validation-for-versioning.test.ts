@@ -135,10 +135,43 @@ describe('run additional versioning checks', () => {
 
       assert.deepStrictEqual(fileAndFileRule, []);
     });
+
+    it('should correctly identify PRs with a Java dependency', async () => {
+      const prFiles = [
+        {
+          filename: 'iam/api-client/pom.xml',
+          sha: '1234',
+          additions: 1,
+          deletions: 1,
+          patch: 'patch',
+        },
+      ];
+
+      const fileAndFileRuleExpectation = [
+        {
+          file: {
+            filename: 'iam/api-client/pom.xml',
+            sha: '1234',
+            additions: 1,
+            deletions: 1,
+            patch: 'patch',
+          },
+          fileRule: languageVersioningRules[4],
+        },
+      ];
+
+      const fileAndFileRule = getTargetFiles(
+        prFiles,
+        'renovate-bot',
+        languageVersioningRules
+      );
+
+      assert.deepStrictEqual(fileAndFileRule, fileAndFileRuleExpectation);
+    });
   });
 
   describe('get versions from patch file', () => {
-    it('should return the correct versions from a package.json file', () => {
+    it('should return the correct versions from a package.json file when the version is changed', () => {
       const PRFile = {
         sha: 'c9fadc5c8972d1c034a050eb6b1a6b79fcd67785',
         filename: 'package.json',
@@ -171,13 +204,14 @@ describe('run additional versioning checks', () => {
       const versions = getVersions(
         PRFile,
         fileRule.oldVersion,
-        fileRule.newVersion
+        fileRule.newVersion,
+        fileRule.process
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
     });
 
-    it('should return the correct versions and dependency from a package.json file', () => {
+    it('should return the correct versions and dependency from a package.json file when a dependency is changed', () => {
       const PRFile = {
         sha: 'c9fadc5c8972d1c034a050eb6b1a6b79fcd67785',
         filename: 'package.json',
@@ -210,7 +244,8 @@ describe('run additional versioning checks', () => {
       const versions = getVersions(
         PRFile,
         fileRule.oldVersion,
-        fileRule.newVersion
+        fileRule.newVersion,
+        fileRule.process
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
@@ -239,7 +274,12 @@ describe('run additional versioning checks', () => {
       const fileRule = languageVersioningRules[0];
 
       assert.throws(() => {
-        getVersions(PRFile, fileRule.oldVersion, fileRule.newVersion);
+        getVersions(
+          PRFile,
+          fileRule.oldVersion,
+          fileRule.newVersion,
+          fileRule.process
+        );
       }, /Could not find versions in package.json\/c9fadc5c8972d1c034a050eb6b1a6b79fcd67785/);
     });
 
@@ -247,9 +287,92 @@ describe('run additional versioning checks', () => {
       const fileRule = languageVersioningRules[0];
 
       assert.strictEqual(
-        getVersions(undefined, fileRule.oldVersion, fileRule.newVersion),
+        getVersions(
+          undefined,
+          fileRule.oldVersion,
+          fileRule.newVersion,
+          fileRule.process
+        ),
         undefined
       );
+    });
+
+    it('should get the correct versions from Java files with rev', () => {
+      const PRFile = {
+        sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
+        filename: 'iam/api-client/pom.xml',
+        additions: 1,
+        deletions: 1,
+        changes: 2,
+        patch:
+          '@@ -71,7 +71,7 @@\n' +
+          '     <dependency>\n' +
+          '       <groupId>com.google.cloud</groupId>\n' +
+          '       <artifactId>google-cloud-datacatalog</artifactId>\n' +
+          '-      <version>v1-rev20210319-1.31.5</version>\n' +
+          '+      <version>v1-rev20210319-1.32.1</version>\n' +
+          '     </dependency>\n' +
+          ' <!-- [END troubleshooter_java_dependency]-->\n' +
+          '     <dependency>',
+      };
+
+      const fileRule = languageVersioningRules[4];
+
+      const getVersionsExpectation = {
+        oldDependencyName: 'com.google.cloud:google-cloud-datacatalog',
+        newDependencyName: 'com.google.cloud:google-cloud-datacatalog',
+        oldMajorVersion: '1',
+        oldMinorVersion: '31.5',
+        newMajorVersion: '1',
+        newMinorVersion: '32.1',
+      };
+      const versions = getVersions(
+        PRFile,
+        fileRule.oldVersion,
+        fileRule.newVersion,
+        fileRule.process
+      );
+
+      assert.deepStrictEqual(versions, getVersionsExpectation);
+    });
+
+    it('should get the correct versions from Java files without rev', () => {
+      const PRFile = {
+        sha: '21605df5d70e3a374e168e31a0d8c96902e3d039',
+        filename: 'datacatalog/quickstart/pom.xml',
+        additions: 1,
+        deletions: 1,
+        changes: 2,
+        patch:
+          '@@ -39,7 +39,7 @@\n' +
+          '         <dependency>\n' +
+          '             <groupId>com.google.cloud</groupId>\n' +
+          '             <artifactId>google-cloud-datacatalog</artifactId>\n' +
+          '-            <version>1.4.1</version>\n' +
+          '+            <version>1.4.2</version>\n' +
+          '         </dependency>\n' +
+          ' \n' +
+          '         <!-- Test dependencies -->',
+      };
+
+      const fileRule = languageVersioningRules[4];
+
+      const getVersionsExpectation = {
+        oldDependencyName: 'com.google.cloud:google-cloud-datacatalog',
+        newDependencyName: 'com.google.cloud:google-cloud-datacatalog',
+        oldMajorVersion: '1',
+        oldMinorVersion: '4.1',
+        newMajorVersion: '1',
+        newMinorVersion: '4.2',
+      };
+      const versions = getVersions(
+        PRFile,
+        fileRule.oldVersion,
+        fileRule.newVersion,
+        fileRule.process
+      );
+
+      assert.deepStrictEqual(versions, getVersionsExpectation);
     });
   });
 
@@ -410,7 +533,8 @@ describe('run additional versioning checks', () => {
       const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
         versions,
         languageVersioningRules[1].dependency!,
-        title
+        title,
+        languageVersioningRules[1].process
       );
 
       assert.strictEqual(doesDependencyMatch, false);
@@ -432,7 +556,8 @@ describe('run additional versioning checks', () => {
       const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
         versions,
         languageVersioningRules[1].dependency!,
-        title
+        title,
+        languageVersioningRules[1].process
       );
 
       assert.ok(doesDependencyMatch);
@@ -454,10 +579,57 @@ describe('run additional versioning checks', () => {
       const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
         versions,
         languageVersioningRules[1].dependency!,
-        title
+        title,
+        languageVersioningRules[1].process
       );
 
       assert.strictEqual(doesDependencyMatch, false);
+    });
+
+    it('should return false if the dependency changed for Java does not include `.google.`', () => {
+      const versions = {
+        oldDependencyName: 'google-cloud-secret-manager',
+        newDependencyName: 'google-cloud-secret-manager',
+        oldMajorVersion: '3',
+        oldMinorVersion: '2.0',
+        newMajorVersion: '3',
+        newMinorVersion: '1.0',
+      };
+
+      const title =
+        'chore(deps): update dependency google-cloud-secret-manager to v2.5.0';
+
+      const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
+        versions,
+        languageVersioningRules[4].dependency!,
+        title,
+        languageVersioningRules[4].process
+      );
+
+      assert.strictEqual(doesDependencyMatch, false);
+    });
+
+    it('should return true if the dependency changed for Java does include `.google.`', () => {
+      const versions = {
+        oldDependencyName: 'com.google.cloud:google-cloud-datacatalog',
+        newDependencyName: 'com.google.cloud:google-cloud-datacatalog',
+        oldMajorVersion: '3',
+        oldMinorVersion: '2.0',
+        newMajorVersion: '3',
+        newMinorVersion: '1.0',
+      };
+
+      const title =
+        'chore(deps): update dependency com.google.cloud:google-cloud-datacatalog to v2.5.0';
+
+      const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
+        versions,
+        languageVersioningRules[4].dependency!,
+        title,
+        languageVersioningRules[4].process
+      );
+
+      assert.ok(doesDependencyMatch);
     });
   });
 

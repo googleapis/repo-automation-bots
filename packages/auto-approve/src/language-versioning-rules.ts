@@ -73,35 +73,37 @@ export const languageVersioningRules = [
   },
   {
     prAuthor: 'renovate-bot',
-    process: 'dependency',
-    targetFile: 'samples/snippets/requirements.txt',
-    // This would match: fix(deps): update dependency @octokit to v1
-    dependency: new RegExp(
-      /^(fix\(deps\)|chore\(deps\)): update dependency (@?\S*) to v(\S*)$/
-    ),
-    // This would match: -  google-cloud-storage==1.39.0
-    oldVersion: new RegExp(/-[\s]?(@?[^=]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
-    // This would match: +  google-cloud-storage==1.40.0
-    newVersion: new RegExp(/\+[\s]?(@?[^=]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
-  },
-  {
-    prAuthor: 'renovate-bot',
     process: 'java-dependency',
     targetFile: 'pom.xml',
-    // This would match: fix(deps): update dependency @octokit to v1
+    // This would match: chore(deps): update dependency com.google.cloud:google-cloud-datacatalog to v1.4.2 or chore(deps): update dependency com.google.apis:google-api-services-policytroubleshooter to v1-rev20210319-1.32.1
     dependency: new RegExp(
       /^(fix\(deps\)|chore\(deps\)): update dependency (@?\S*) to v(\S*)$/
     ),
-    // This would match: -  google-cloud-storage==1.39.0
+    /* This would match:
+      <groupId>com.google.apis</groupId>
+      <artifactId>google-api-services-policytroubleshooter</artifactId>
+      -      <version>v1-rev20210319-1.31.5</version>
+      or
+      <groupId>com.google.apis</groupId>
+      <artifactId>google-api-services-policytroubleshooter</artifactId>
+-     <version>v1-rev20210319-1.31.5</version>
+    */
     oldVersion: new RegExp(
-      /<groupId>([^<]*)<\/groupId>\\n'[\s]\+[\s]*'[\s]*<artifactId>[^<]*<\/artifactId>\\n'[\s]\+[\s]*'[\s]*-[\s]*<version>(?:v[0-9]-rev[0-9]*-([0-9]*)\.([0-9]*\.[0-9])|([0-9]*)\.([0-9]*\.[0-9]*))/
+      /<groupId>([^<]*)<\/groupId>[\s]*<artifactId>([^<]*)<\/artifactId>[\s]*-[\s]*<version>(v[0-9]-rev[0-9]*-([0-9]*)\.([0-9]*\.[0-9])|([0-9]*)\.([0-9]*\.[0-9]*))<\/version>[\s]*/
     ),
-    // This would match: +  google-cloud-storage==1.40.0
+    /* This would match:
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-datacatalog</artifactId>
+-     <version>1.4.1</version>
++     <version>1.4.2</version>
+      or
+       <groupId>com.google.apis</groupId>
+       <artifactId>google-api-services-policytroubleshooter</artifactId>
+-      <version>v1-rev20210319-1.31.5</version>
++      <version>v1-rev20210319-1.32.1</version>
+    */
     newVersion: new RegExp(
-      /<groupId>([^<]*)<\/groupId>\\n'[\s]\+[\s]*'[\s]*<scope>[^<]*<\/scope>\\n'[\s]\+[\s]*'[\s]*-[\s]*<version>[0-9]*\.[0-9]*\.[0-9]*<\/version>\\n'[\s]\+[\s]*'\+[\s]*<version>([0-9])*\.([0-9]*\.[0-9]*)<\/version>/
+      /<groupId>([^<]*)<\/groupId>[\s]*<artifactId>([^<]*)<\/artifactId>[\s]*-[\s]*<version>(v[0-9]-rev[0-9]*-[0-9]*\.[0-9]*\.[0-9]|[[0-9]*\.[0-9]*\.[0-9]*)<\/version>[\s]*\+[\s]*<version>(v[0-9]-rev[0-9]*-([0-9]*)\.([0-9]*\.[0-9])|([0-9]*)\.([0-9]*\.[0-9]*))<\/version>/
     ),
-    /*
-    <groupId>([^<]*)<\/groupId>\\n'[\s]\+[\s]*'[\s]*<artifactId>([^<]*)<\/artifactId>\\n'[\s]\+[\s]*'[\s]*-[\s]*<version>(v[0-9]-rev[0-9]*-([0-9]*)\.([0-9]*\.[0-9])|([0-9]*)\.([0-9]*\.[0-9]*))<\/version>\\n'[\s]\+[\s]*'\+[\s]*<version>(v[0-9]-rev[0-9]*-([0-9]*)\.([0-9]*\.[0-9])|([0-9]*)\.([0-9]*\.[0-9]*))<\/version>
-    /*
   },
 ];
