@@ -134,13 +134,14 @@ export function OwlBot(
   // Probot no longer allows custom `.on` in types, so we cast to
   // any to circumvent this issue:
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  app.on('pubsub.message' as any, async (context: PubSubContext) => {
+  app.on('pubsub.message' as any, async context => {
+    const typedContext = context as unknown as PubSubContext;
     // TODO: flesh out tests for pubsub.message handler:
-    logger.info(JSON.stringify(context.payload));
-    if (context.payload.action === 'INSERT') {
+    logger.info(JSON.stringify(typedContext.payload));
+    if (typedContext.payload.action === 'INSERT') {
       const configStore = new FirestoreConfigsStore(db!);
-      const dockerImageDigest = context.payload.digest.split('@')[1];
-      const dockerImageName = context.payload.tag;
+      const dockerImageDigest = typedContext.payload.digest.split('@')[1];
+      const dockerImageName = typedContext.payload.tag;
       logger.info({dockerImageDigest, dockerImageName});
       await onPostProcessorPublished(
         configStore,
@@ -153,12 +154,12 @@ export function OwlBot(
   });
 
   // Ensure up-to-date configuration is stored on merge
-  app.on('pull_request.merged', async context => {
+  app.on('pull_request.closed', async context => {
     const configStore = new FirestoreConfigsStore(db!);
     const installationId = context.payload.installation?.id;
     const org = context.payload.organization?.login;
 
-    logger.info("Updating repo's configs via `pull_request.merged`");
+    logger.info("Updating repo's configs via `pull_request.closed`");
 
     if (!installationId || !org) {
       logger.error(`Missing install id (${installationId}) or org (${org})`);
@@ -184,7 +185,8 @@ export function OwlBot(
   // We share this handler between two cron jobs.
   // Both cron job has its own parameter.
   // See cron.yaml
-  app.on('schedule.repository' as '*', async context => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.repository' as any, async context => {
     if (context.payload.syncLabels === true) {
       // owl-bot-sync-label cron entry
       // syncing labels

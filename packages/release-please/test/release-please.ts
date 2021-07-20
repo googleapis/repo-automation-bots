@@ -19,6 +19,7 @@ import {describe, it, beforeEach} from 'mocha';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
+import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
 import * as fs from 'fs';
 import yaml from 'js-yaml';
 import * as sinon from 'sinon';
@@ -92,7 +93,10 @@ describe('ReleasePleaseBot', () => {
       });
       getConfigStub.resolves(loadConfig('valid.yml'));
 
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
       assert(executed, 'should have executed the runner');
     });
 
@@ -109,7 +113,10 @@ describe('ReleasePleaseBot', () => {
       });
       const releaseSpy = sandbox.spy(factory, 'githubRelease');
       getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
       assert(runnerExecuted, 'should have executed the runner');
       assert(releaserExecuted, 'GitHub release should have run');
       assert(releaseSpy.calledWith(sinon.match.has('releaseLabel', undefined)));
@@ -145,7 +152,10 @@ describe('ReleasePleaseBot', () => {
       });
       const releaseSpy = sandbox.spy(factory, 'githubRelease');
       getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
       assert(runnerExecuted, 'should have executed the runner');
       assert(releaserExecuted, 'GitHub release should have run');
       assert(releaseSpy.calledWith(sinon.match.has('releaseLabel', undefined)));
@@ -154,7 +164,10 @@ describe('ReleasePleaseBot', () => {
     it('should ignore if the branch is the configured primary branch', async () => {
       sandbox.stub(Runner, 'runner').rejects('should not be running a release');
       getConfigStub.resolves(loadConfig('feature_branch_as_primary.yml'));
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
     });
 
     it('should allow overriding the release strategy from configuration', async () => {
@@ -164,7 +177,10 @@ describe('ReleasePleaseBot', () => {
         executed = true;
       });
       getConfigStub.resolves(loadConfig('ruby_release.yml'));
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
       assert(executed, 'should have executed the runner');
     });
 
@@ -175,7 +191,10 @@ describe('ReleasePleaseBot', () => {
         executed = true;
       });
       getConfigStub.resolves(loadConfig('ruby_release_alternate_pkg_name.yml'));
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
       assert(executed, 'should have executed the runner');
     });
 
@@ -186,7 +205,10 @@ describe('ReleasePleaseBot', () => {
         executed = true;
       });
       getConfigStub.resolves(loadConfig('valid.yml'));
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
       assert(executed, 'should have executed the runner');
     });
 
@@ -204,7 +226,10 @@ describe('ReleasePleaseBot', () => {
       });
       const releaseSpy = sandbox.spy(factory, 'githubRelease');
       getConfigStub.resolves(loadConfig('override_release_tag.yml'));
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
       assert(runnerExecuted, 'should have executed the runner');
       assert(releaserExecuted, 'GitHub release should have run');
       assert(
@@ -217,7 +242,10 @@ describe('ReleasePleaseBot', () => {
     it('should ignore webhook if not configured', async () => {
       sandbox.stub(Runner, 'runner').rejects('should not be running a release');
       getConfigStub.resolves(null);
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
     });
 
     it('should allow an empty config file with the defaults', async () => {
@@ -227,7 +255,10 @@ describe('ReleasePleaseBot', () => {
         executed = true;
       });
       getConfigStub.resolves({});
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
       assert(executed, 'should have executed the runner');
     });
 
@@ -239,7 +270,10 @@ describe('ReleasePleaseBot', () => {
         executed = true;
       });
       getConfigStub.resolves(loadConfig('minor_pre_major.yml'));
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
       assert(executed, 'should have executed the runner');
     });
 
@@ -251,7 +285,10 @@ describe('ReleasePleaseBot', () => {
         executed = true;
       });
       getConfigStub.resolves(loadConfig('release_type_no_primary_branch.yml'));
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
       assert(executed, 'should have executed the runner');
     });
 
@@ -259,7 +296,10 @@ describe('ReleasePleaseBot', () => {
       it('should build a release PR', async () => {
         const manifest = sandbox.stub(Runner, 'manifest').resolves();
         getConfigStub.resolves(loadConfig('manifest.yml'));
-        await probot.receive({name: 'push', payload, id: 'abc123'});
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
         assert(manifest.called, 'should have executed the runner');
       });
 
@@ -269,7 +309,10 @@ describe('ReleasePleaseBot', () => {
           .stub(Runner, 'manifestRelease')
           .resolves();
         getConfigStub.resolves(loadConfig('manifest_handle_gh_release.yml'));
-        await probot.receive({name: 'push', payload, id: 'abc123'});
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
         assert(manifest.called, 'should have executed the runner');
         assert(manifestRelease.called, 'GitHub release should have run');
       });
@@ -284,7 +327,10 @@ describe('ReleasePleaseBot', () => {
         executed = true;
       });
       getConfigStub.resolves(loadConfig('extra_files.yml'));
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
       assert(executed, 'should have executed the runner');
     });
   });
@@ -299,7 +345,10 @@ describe('ReleasePleaseBot', () => {
     it('should ignore the webhook', async () => {
       sandbox.stub(Runner, 'runner').rejects('should not be running a release');
       getConfigStub.resolves(loadConfig('valid.yml'));
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
     });
 
     it('should create the PR if the branch is the configured primary branch', async () => {
@@ -309,7 +358,10 @@ describe('ReleasePleaseBot', () => {
         executed = true;
       });
       getConfigStub.resolves(loadConfig('feature_branch_as_primary.yml'));
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
       assert(executed, 'should have executed the runner');
     });
 
@@ -320,7 +372,10 @@ describe('ReleasePleaseBot', () => {
         executed = true;
       });
       getConfigStub.resolves(loadConfig('multi_branch.yml'));
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
       assert(executed, 'should have executed the runner');
     });
   });
@@ -354,8 +409,10 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         // See: https://github.com/octokit/webhooks.js/issues/277
-        name: 'schedule.repository' as '*',
-        payload,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: payload as any,
         id: 'abc123',
       });
       requests.done();
@@ -398,8 +455,10 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         // See: https://github.com/octokit/webhooks.js/issues/277
-        name: 'schedule.repository' as '*',
-        payload,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: payload as any,
         id: 'abc123',
       });
       requests.done();
@@ -440,8 +499,10 @@ describe('ReleasePleaseBot', () => {
 
       await probot.receive({
         // See: https://github.com/octokit/webhooks.js/issues/277
-        name: 'schedule.repository' as '*',
-        payload,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: payload as any,
         id: 'abc123',
       });
       requests.done();
@@ -475,8 +536,8 @@ describe('ReleasePleaseBot', () => {
         .reply(200);
 
       await probot.receive({
-        name: 'pull_request.labeled',
-        payload,
+        name: 'pull_request',
+        payload: payload as PullRequestLabeledEvent,
         id: 'abc123',
       });
       requests.done();
@@ -501,8 +562,8 @@ describe('ReleasePleaseBot', () => {
         .reply(200);
 
       await probot.receive({
-        name: 'pull_request.labeled',
-        payload,
+        name: 'pull_request',
+        payload: payload as PullRequestLabeledEvent,
         id: 'abc123',
       });
       requests.done();
@@ -514,8 +575,8 @@ describe('ReleasePleaseBot', () => {
       sandbox.stub(Runner, 'runner').rejects('should not be running a release');
 
       await probot.receive({
-        name: 'pull_request.labeled',
-        payload,
+        name: 'pull_request',
+        payload: payload as PullRequestLabeledEvent,
         id: 'abc123',
       });
     });

@@ -320,7 +320,7 @@ export = (app: Probot) => {
       repoUrl,
       repoLanguage,
       defaultBranchConfiguration,
-      context.octokit,
+      context.octokit as GitHubAPI,
       true
     );
 
@@ -338,7 +338,7 @@ export = (app: Probot) => {
           repoUrl,
           repoLanguage,
           branchConfiguration,
-          context.octokit,
+          context.octokit as GitHubAPI,
           true
         );
       })
