@@ -55,7 +55,7 @@ export async function checkPRAgainstConfig(
 ): Promise<Boolean> {
   const repoOwner = pr.repository.owner.login;
   const prAuthor = pr.pull_request.user.login;
-  const repoBase = pr.pull_request.base.repo.name;
+  const repo = pr.repository.name;
   const prNumber = pr.number;
   const title = pr.pull_request.title;
 
@@ -77,7 +77,7 @@ export async function checkPRAgainstConfig(
     // this could be logic we work into the future.
     if (!title.match(rulesToValidateAgainst.title)) {
       logger.info(
-        `Info for ${repoOwner}/${repoBase}/${prNumber} title does not match what is allowed`
+        `Info for ${repoOwner}/${repo}/${prNumber} title does not match what is allowed`
       );
       return false;
     }
@@ -86,7 +86,7 @@ export async function checkPRAgainstConfig(
     const changedFiles = await getChangedFiles(
       octokit,
       repoOwner,
-      repoBase,
+      repo,
       prNumber
     );
 
@@ -148,7 +148,7 @@ export async function checkPRAgainstConfig(
       if (additionalRules === false) {
         // Adding in logging statement and additional vars for debugging
         logger.info(
-          `File ${fileAndFileRule.file.filename} failed additional validation check for ${repoOwner}/${repoBase}/${prNumber}: Does dependency match? ${doesDependencyMatch}, are the versions minor bumps? ${isVersionValid}, is only one dependency changed? ${oneDependencyChanged}`
+          `File ${fileAndFileRule.file.filename} failed additional validation check for ${repoOwner}/${repo}/${prNumber}: Does dependency match? ${doesDependencyMatch}, are the versions minor bumps? ${isVersionValid}, is only one dependency changed? ${oneDependencyChanged}`
         );
         return false;
       }
@@ -160,7 +160,7 @@ export async function checkPRAgainstConfig(
       for (let i = 0; i < changedFiles.length; i++) {
         if (changedFiles[i] !== releasePRFiles[i]) {
           logger.info(
-            `Info for ${repoOwner}/${repoBase}/${prNumber}: A file that should have been checked with additional guidelines was not checked`
+            `Info for ${repoOwner}/${repo}/${prNumber}: A file that should have been checked with additional guidelines was not checked`
           );
           return false;
         }
@@ -181,21 +181,21 @@ export async function checkPRAgainstConfig(
         pr.pull_request.changed_files <= rulesToValidateAgainst.maxFiles;
     }
     logger.info(
-      `Info for ${repoOwner}/${repoBase}/${prNumber} Author: ${rulesToValidateAgainst.author}`
+      `Info for ${repoOwner}/${repo}/${prNumber} Author: ${rulesToValidateAgainst.author}`
     );
     logger.info(
-      `Info for ${repoOwner}/${repoBase}/${prNumber} File Paths Match? ${filePathsMatch}`
+      `Info for ${repoOwner}/${repo}/${prNumber} File Paths Match? ${filePathsMatch}`
     );
     logger.info(
-      `Info for ${repoOwner}/${repoBase}/${prNumber} File Count Matches? ${fileCountMatch}`
+      `Info for ${repoOwner}/${repo}/${prNumber} File Count Matches? ${fileCountMatch}`
     );
     logger.info(
-      `Info for ${repoOwner}/${repoBase}/${prNumber} Additional rules are correct? ${additionalRules}`
+      `Info for ${repoOwner}/${repo}/${prNumber} Additional rules are correct? ${additionalRules}`
     );
 
     return filePathsMatch && fileCountMatch && additionalRules;
   } else {
-    logger.info(`${repoOwner}/${repoBase}/${prNumber} does not match config`);
+    logger.info(`${repoOwner}/${repo}/${prNumber} does not match config`);
     return false;
   }
 }
