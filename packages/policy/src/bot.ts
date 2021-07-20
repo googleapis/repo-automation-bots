@@ -27,11 +27,8 @@ export function policyBot(app: Probot) {
     const name: string = context.payload.repository.name;
     const repo = `${owner}/${name}`;
 
-    if (
-      context.payload.cron_org !== owner ||
-      !allowedOrgs.includes(owner.toLowerCase())
-    ) {
-      logger.info(`skipping run for ${context.payload.cron_org}`);
+    if (!allowedOrgs.includes(owner.toLowerCase())) {
+      logger.info(`skipping run for ${repo}`);
       return;
     }
 
