@@ -178,7 +178,10 @@ describe('ReleasePleaseBot', () => {
         fail('should not get here');
       });
       getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));
-      await probot.receive({name: 'push', payload, id: 'abc123'});
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
       assert(runnerExecuted, 'should have executed the runner');
       assert(!releaserExecuted, 'GitHub release should not have run');
     });
