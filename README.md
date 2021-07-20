@@ -19,6 +19,7 @@ by Google on GitHub.
 | [license-header-lint] | PR checker that ensures that source files contain valid license headers | [install][license-header-lint-app] |
 | [label-sync] | Synchronize labels across organizations | [install][label-sync-app] |
 | [merge-on-green] | Merge a pull-request when all required checks have passed | [install][merge-on-green-app] |
+| [policy] | Check repo configuration against known rules | [install][policy-app] |
 | [release-please] | Proposes releases based on semantic version commits | [install][release-please-app] |
 | [snippet-bot] | Check for mismatched region tags in PRs | [install][snippet-bot-app] |
 | [sync-repo-settings] | Synchronize repository settings from a centralized config | [install][sync-repo-settings-app] |
@@ -124,6 +125,8 @@ at the specified schedule.
 [generated-files-bot-app]: https://github.com/apps/generated-files-bot
 [license-header-lint]:  https://github.com/googleapis/repo-automation-bots/tree/master/packages/header-checker-lint
 [license-header-lint-app]: https://github.com/apps/license-header-lint-gcf
+[policy]:  https://github.com/googleapis/repo-automation-bots/tree/master/packages/policy
+[policy-app]: https://github.com/apps/google-cloud-policy-bot
 [release-please]:  https://github.com/googleapis/repo-automation-bots/tree/master/packages/release-please
 [release-please-app]: https://github.com/apps/release-please
 [trusted-contribution]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/trusted-contribution
