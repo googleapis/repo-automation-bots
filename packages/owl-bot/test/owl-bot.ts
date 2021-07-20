@@ -21,6 +21,7 @@ import {logger} from 'gcf-utils';
 import {OwlBot} from '../src/owl-bot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
+import {PullRequestOpenedEvent} from '@octokit/webhooks-types';
 import * as sinon from 'sinon';
 import nock from 'nock';
 import {Configs} from '../src/configs-store';
@@ -60,7 +61,8 @@ describe('owlBot', () => {
     it('calls syncLabels for schedule.repository cron job with syncLabels: true', async () => {
       const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
       await probot.receive({
-        name: 'schedule.repository' as '*',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
         payload: {
           repository: {
             name: 'testRepo',
@@ -72,7 +74,8 @@ describe('owlBot', () => {
             login: 'googleapis',
           },
           syncLabels: true,
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
       sinon.assert.calledOnceWithExactly(
@@ -87,6 +90,7 @@ describe('owlBot', () => {
   describe('post processing pull request', () => {
     it('returns early and logs if pull request opened from fork', async () => {
       const payload = {
+        action: 'opened',
         installation: {
           id: 12345,
         },
@@ -105,8 +109,9 @@ describe('owlBot', () => {
       };
       const loggerStub = sandbox.stub(logger, 'info');
       await probot.receive({
-        name: 'pull_request.opened',
-        payload,
+        name: 'pull_request',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: payload as any,
         id: 'abc123',
       });
       sandbox.assert.calledWith(
@@ -116,6 +121,7 @@ describe('owlBot', () => {
     });
     it('triggers build if pull request not from fork', async () => {
       const payload = {
+        action: 'opened',
         installation: {
           id: 12345,
         },
@@ -163,8 +169,9 @@ describe('owlBot', () => {
         .resolves(false);
       const createCheckStub = sandbox.stub(core, 'createCheck');
       await probot.receive({
-        name: 'pull_request.synchronize',
-        payload,
+        name: 'pull_request',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: payload as any,
         id: 'abc123',
       });
       sandbox.assert.calledOnce(triggerBuildStub);
@@ -174,6 +181,7 @@ describe('owlBot', () => {
     });
     it('returns early and throws if post-processor appears to be looping', async () => {
       const payload = {
+        action: 'opened',
         installation: {
           id: 12345,
         },
@@ -210,8 +218,8 @@ describe('owlBot', () => {
         .resolves(true);
       await assert.rejects(
         probot.receive({
-          name: 'pull_request.synchronize',
-          payload,
+          name: 'pull_request',
+          payload: payload as PullRequestOpenedEvent,
           id: 'abc123',
         }),
         /too many OwlBot updates/
@@ -222,6 +230,7 @@ describe('owlBot', () => {
   });
   it('closes pull request if it has 0 files changed', async () => {
     const payload = {
+      action: 'opened',
       installation: {
         id: 12345,
       },
@@ -279,8 +288,9 @@ describe('owlBot', () => {
       .resolves(false);
     const createCheckStub = sandbox.stub(core, 'createCheck');
     await probot.receive({
-      name: 'pull_request.synchronize',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledOnce(triggerBuildStub);
@@ -290,6 +300,7 @@ describe('owlBot', () => {
   });
   it(`leaves pull request open because it has ${OWL_BOT_IGNORE} label`, async () => {
     const payload = {
+      action: 'opened',
       installation: {
         id: 12345,
       },
@@ -344,8 +355,9 @@ describe('owlBot', () => {
       .resolves(false);
     const createCheckStub = sandbox.stub(core, 'createCheck');
     await probot.receive({
-      name: 'pull_request.synchronize',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledOnce(triggerBuildStub);
@@ -355,6 +367,7 @@ describe('owlBot', () => {
   });
   it('leaves pull request open because it lacks owl-bot label', async () => {
     const payload = {
+      action: 'opened',
       installation: {
         id: 12345,
       },
@@ -402,8 +415,9 @@ describe('owlBot', () => {
       .resolves(false);
     const createCheckStub = sandbox.stub(core, 'createCheck');
     await probot.receive({
-      name: 'pull_request.synchronize',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledOnce(triggerBuildStub);
@@ -413,6 +427,7 @@ describe('owlBot', () => {
   });
   it(`doesn't run check because labeled with ${OWL_BOT_IGNORE}`, async () => {
     const payload = {
+      action: 'opened',
       installation: {
         id: 12345,
       },
@@ -460,8 +475,9 @@ describe('owlBot', () => {
       .resolves(false);
     const createCheckStub = sandbox.stub(core, 'createCheck');
     await probot.receive({
-      name: 'pull_request.synchronize',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledOnce(triggerBuildStub);
@@ -474,6 +490,7 @@ describe('owlBot', () => {
   });
   it('closes pull request if only lock file changed', async () => {
     const payload = {
+      action: 'opened',
       installation: {
         id: 12345,
       },
@@ -528,8 +545,9 @@ describe('owlBot', () => {
       .resolves(false);
     const createCheckStub = sandbox.stub(core, 'createCheck');
     await probot.receive({
-      name: 'pull_request.synchronize',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledOnce(triggerBuildStub);
@@ -539,6 +557,7 @@ describe('owlBot', () => {
   });
   it('promotes owl-bot pull request if multiple files changed', async () => {
     const payload = {
+      action: 'opened',
       installation: {
         id: 12345,
       },
@@ -593,8 +612,9 @@ describe('owlBot', () => {
       .resolves(false);
     const createCheckStub = sandbox.stub(core, 'createCheck');
     await probot.receive({
-      name: 'pull_request.synchronize',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledOnce(triggerBuildStub);
@@ -604,6 +624,7 @@ describe('owlBot', () => {
   });
   it("leaves PR open because it doesn't have owl-bot label", async () => {
     const payload = {
+      action: 'opened',
       installation: {
         id: 12345,
       },
@@ -655,8 +676,9 @@ describe('owlBot', () => {
       .resolves(false);
     const createCheckStub = sandbox.stub(core, 'createCheck');
     await probot.receive({
-      name: 'pull_request.synchronize',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledOnce(triggerBuildStub);
@@ -666,6 +688,7 @@ describe('owlBot', () => {
   });
   it("leaves PR open because it's not a draft", async () => {
     const payload = {
+      action: 'opened',
       installation: {
         id: 12345,
       },
@@ -717,8 +740,9 @@ describe('owlBot', () => {
       .resolves(false);
     const createCheckStub = sandbox.stub(core, 'createCheck');
     await probot.receive({
-      name: 'pull_request.synchronize',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledOnce(triggerBuildStub);
@@ -749,7 +773,8 @@ describe('owlBot', () => {
     await probot.receive({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       name: 'pubsub.message' as any,
-      payload: {},
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: {} as any,
       id: 'abc123',
     });
     sandbox.assert.calledOnce(loggerStub);
@@ -771,6 +796,8 @@ describe('owlBot', () => {
 
     it('invokes `refreshConfigs`', async () => {
       const payload = {
+        action: 'closed',
+        merged: true,
         organization: {
           login: 'googleapis',
         },
@@ -795,8 +822,9 @@ describe('owlBot', () => {
       getConfigsStub.resolves(customConfig);
 
       await probot.receive({
-        name: 'pull_request.merged',
-        payload,
+        name: 'pull_request',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: payload as any,
         id: 'abc123',
       });
 
@@ -823,14 +851,16 @@ describe('owlBot', () => {
 
     it('should log an error if `payload.installation.id` is not available', async () => {
       const payload = {
+        action: 'closed',
         organization: {
           login: 'googleapis',
         },
       };
 
       await probot.receive({
-        name: 'pull_request.merged',
-        payload,
+        name: 'pull_request',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: payload as any,
         id: 'abc123',
       });
 
@@ -841,14 +871,16 @@ describe('owlBot', () => {
 
     it('should log an error if `payload.organization.login` is not available', async () => {
       const payload = {
+        action: 'closed',
         installation: {
           id: 12345,
         },
       };
 
       await probot.receive({
-        name: 'pull_request.merged',
-        payload,
+        name: 'pull_request',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: payload as any,
         id: 'abc123',
       });
 
@@ -885,8 +917,10 @@ describe('owlBot', () => {
         }
       );
       await probot.receive({
-        name: 'schedule.repository' as '*',
-        payload,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: payload as any,
         id: 'abc123',
       });
       assert.strictEqual(org, 'googleapis');
@@ -896,6 +930,7 @@ describe('owlBot', () => {
   });
   it('triggers build when "owlbot:run" label is added to fork', async () => {
     const payload = {
+      action: 'labeled',
       installation: {
         id: 12345,
       },
@@ -954,8 +989,9 @@ describe('owlBot', () => {
       .resolves(false);
     const createCheckStub = sandbox.stub(core, 'createCheck');
     await probot.receive({
-      name: 'pull_request.labeled',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledOnce(triggerBuildStub);
@@ -966,6 +1002,7 @@ describe('owlBot', () => {
   });
   it('triggers build when "owlbot:run" label is added to PR from same repo', async () => {
     const payload = {
+      action: 'labeled',
       installation: {
         id: 12345,
       },
@@ -1024,8 +1061,9 @@ describe('owlBot', () => {
       .resolves(false);
     const createCheckStub = sandbox.stub(core, 'createCheck');
     await probot.receive({
-      name: 'pull_request.labeled',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledOnce(triggerBuildStub);
@@ -1036,6 +1074,7 @@ describe('owlBot', () => {
   });
   it('does not crash if "owlbot:run" label has already been deleted', async () => {
     const payload = {
+      action: 'labeled',
       installation: {
         id: 12345,
       },
@@ -1094,8 +1133,9 @@ describe('owlBot', () => {
       .resolves(false);
     const createCheckStub = sandbox.stub(core, 'createCheck');
     await probot.receive({
-      name: 'pull_request.labeled',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledOnce(triggerBuildStub);
@@ -1106,6 +1146,7 @@ describe('owlBot', () => {
   });
   it('returns early if PR from fork and label other than owlbot:run added', async () => {
     const payload = {
+      action: 'labeled',
       installation: {
         id: 12345,
       },
@@ -1128,8 +1169,9 @@ describe('owlBot', () => {
     };
     const loggerStub = sandbox.stub(logger, 'info');
     await probot.receive({
-      name: 'pull_request.labeled',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledWith(loggerStub, sandbox.match(/.*skipping labels.*/));
@@ -1159,14 +1201,16 @@ describe('owlBot', () => {
     };
     const loggerStub = sandbox.stub(logger, 'info');
     await probot.receive({
-      name: 'pull_request.labeled',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledWith(loggerStub, sandbox.match(/.*skipping labels.*/));
   });
   it('returns early when "owlbot:run" label added by bot, and last commit was from OwlBot', async () => {
     const payload = {
+      action: 'labeled',
       installation: {
         id: 12345,
       },
@@ -1200,8 +1244,9 @@ describe('owlBot', () => {
       .stub(core, 'lastCommitFromOwlBot')
       .resolves(true);
     await probot.receive({
-      name: 'pull_request.labeled',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledOnce(lastCommitFromOwlBotStub);
@@ -1209,6 +1254,7 @@ describe('owlBot', () => {
   });
   it('returns early and adds success status if no lock file found', async () => {
     const payload = {
+      action: 'synchronize',
       installation: {
         id: 12345,
       },
@@ -1237,8 +1283,9 @@ describe('owlBot', () => {
       .reply(404);
     const createCheckStub = sandbox.stub(core, 'createCheck');
     await probot.receive({
-      name: 'pull_request.synchronize',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledWith(
@@ -1249,6 +1296,7 @@ describe('owlBot', () => {
   });
   it('returns early and adds failure status if lock file is invalid', async () => {
     const payload = {
+      action: 'synchronize',
       installation: {
         id: 12345,
       },
@@ -1280,8 +1328,9 @@ describe('owlBot', () => {
       });
     const createCheckStub = sandbox.stub(core, 'createCheck');
     await probot.receive({
-      name: 'pull_request.synchronize',
-      payload,
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
       id: 'abc123',
     });
     sandbox.assert.calledWith(

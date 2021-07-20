@@ -50,7 +50,7 @@ describe('loadtest', () => {
       ));
 
       await probot.receive({
-        name: 'pull_request.opened',
+        name: 'pull_request',
         payload,
         id: 'abc123',
       });
@@ -60,7 +60,7 @@ describe('loadtest', () => {
 
     it('responds to issues', async () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
+      await probot.receive({name: 'issues', payload, id: 'abc123'});
     });
   });
 });

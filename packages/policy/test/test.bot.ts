@@ -54,7 +54,8 @@ describe('bot', () => {
     const repo = 'nodejs-storage';
     const org = 'not-an-approved-org';
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: repo,
@@ -66,7 +67,8 @@ describe('bot', () => {
           login: org,
         },
         cron_org: org,
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     // we are relying on the lack of nocks or stubs to signal that this exited
@@ -92,7 +94,8 @@ describe('bot', () => {
     const submitFixesStub = sinon.stub(c, 'submitFixes').resolves();
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: repo,
@@ -104,7 +107,8 @@ describe('bot', () => {
           login: org,
         },
         cron_org: org,
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     assert.ok(getPolicyStub.calledOnce);
@@ -135,7 +139,8 @@ describe('bot', () => {
     const submitFixesStub = sinon.stub(c, 'submitFixes').resolves();
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: repo,
@@ -147,7 +152,8 @@ describe('bot', () => {
           login: org,
         },
         cron_org: org,
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     assert.ok(getChangerStub.calledOnce);
@@ -166,7 +172,8 @@ describe('bot', () => {
     const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
     const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: repo,
@@ -178,7 +185,8 @@ describe('bot', () => {
           login: org,
         },
         cron_org: org,
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     assert.ok(getRepoStub.calledOnce);
@@ -193,7 +201,8 @@ describe('bot', () => {
     const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
     const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: repo,
@@ -205,7 +214,8 @@ describe('bot', () => {
           login: org,
         },
         cron_org: org,
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     assert.ok(getRepoStub.calledOnce);
@@ -220,7 +230,8 @@ describe('bot', () => {
     const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
     const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: repo,
@@ -232,7 +243,8 @@ describe('bot', () => {
           login: org,
         },
         cron_org: org,
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     assert.ok(getRepoStub.calledOnce);
@@ -259,7 +271,8 @@ describe('bot', () => {
     const errStub = sinon.stub(logger, 'error');
 
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: repo,
@@ -271,7 +284,8 @@ describe('bot', () => {
           login: org,
         },
         cron_org: org,
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     assert.ok(getChangerStub.calledOnce);
