@@ -571,7 +571,7 @@ describe('check pr against config', async () => {
             '       <artifactId>google-cloud-datacatalog</artifactId>\n' +
             '-      <version>v1-rev20210319-1.31.5</version>\n' +
             '+      <version>v1-rev20210319-1.32.1</version>\n' +
-            '     </dependency>\n' +
+            '     </dependency>\n',
         },
       ]);
 
