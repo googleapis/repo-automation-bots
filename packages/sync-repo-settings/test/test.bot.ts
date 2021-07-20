@@ -17,6 +17,7 @@ import {resolve} from 'path';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
+import {PullRequestOpenedEvent} from '@octokit/webhooks-types';
 import {promises as fs} from 'fs';
 import yaml from 'js-yaml';
 import * as botConfigModule from '@google-automations/bot-config-utils';
@@ -86,7 +87,8 @@ function nockUpdateBranchProtection(
 
 async function receive(org: string, repo: string, cronOrg?: string) {
   await probot.receive({
-    name: 'schedule.repository' as '*',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    name: 'schedule.repository' as any,
     payload: {
       repository: {
         name: repo,
@@ -98,7 +100,8 @@ async function receive(org: string, repo: string, cronOrg?: string) {
         login: org,
       },
       cron_org: cronOrg || org,
-    },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any,
     id: 'abc123',
   });
 }
@@ -272,7 +275,7 @@ describe('Sync repo settings', () => {
             sha: headSha,
           },
         },
-      },
+      } as PullRequestOpenedEvent,
       id: 'abc123',
     });
     scopes.forEach(x => x.done());
@@ -327,7 +330,7 @@ describe('Sync repo settings', () => {
             sha: headSha,
           },
         },
-      },
+      } as PullRequestOpenedEvent,
       id: 'abc123',
     });
     scopes.forEach(x => x.done());
@@ -381,7 +384,7 @@ describe('Sync repo settings', () => {
             sha: headSha,
           },
         },
-      },
+      } as PullRequestOpenedEvent,
       id: 'abc123',
     });
     scopes.forEach(x => x.done());
@@ -405,7 +408,8 @@ describe('Sync repo settings', () => {
           login: org,
         },
         commits: [],
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
   });
@@ -428,7 +432,8 @@ describe('Sync repo settings', () => {
           login: org,
         },
         commits: [],
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
   });
@@ -461,7 +466,8 @@ describe('Sync repo settings', () => {
             added: [`.github/${CONFIG_FILE_NAME}`],
           },
         ],
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     scopes.forEach(s => s.done());
