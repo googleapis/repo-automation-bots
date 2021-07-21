@@ -33,7 +33,7 @@ export function handler(app: Probot) {
       'pull_request.reopened',
       'pull_request.synchronize',
     ],
-    async (context: Context) => {
+    async (context: Context<'pull_request'>) => {
       const configChecker = new ConfigChecker<RepoConfig>(
         schema,
         CONFIG_FILE_NAME
@@ -64,14 +64,14 @@ export function handler(app: Probot) {
     // Look at all commits, and all files changed during those commits.
     // If they contain a `sync-repo-settings.yaml`, re-sync the repo.
     function includesConfig() {
-      const fileChangedLists = ['added', 'modified', 'removed'];
       for (const commit of context.payload.commits) {
-        for (const list of fileChangedLists) {
-          if (commit[list]) {
-            for (const file of commit[list]) {
-              if (file?.includes(CONFIG_FILE_NAME)) {
-                return true;
-              }
+        for (const files of [commit.added, commit.modified, commit.removed]) {
+          if (files === undefined) {
+            continue;
+          }
+          for (const file of files) {
+            if (file?.includes(CONFIG_FILE_NAME)) {
+              return true;
             }
           }
         }
@@ -99,8 +99,8 @@ export function handler(app: Probot) {
     });
   });
 
-  // meta comment about the '*' here: https://github.com/octokit/webhooks.js/issues/277
-  app.on(['schedule.repository' as '*'], async (context: Context) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on(['schedule.repository' as any], async context => {
     logger.info(`running for org ${context.payload.cron_org}`);
     const {owner, repo} = context.repo();
     if (context.payload.cron_org !== owner) {
