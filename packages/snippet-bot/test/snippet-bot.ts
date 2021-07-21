@@ -79,7 +79,8 @@ describe('snippet-bot scheduler handler', () => {
   it('does not call syncLabels for repos without the config', async () => {
     getConfigStub.resolves(null);
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: 'testRepo',
@@ -90,7 +91,8 @@ describe('snippet-bot scheduler handler', () => {
         organization: {
           login: 'googleapis',
         },
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     sinon.assert.calledOnceWithExactly(
@@ -109,7 +111,8 @@ describe('snippet-bot scheduler handler', () => {
       ignoreFiles: [],
     });
     await probot.receive({
-      name: 'schedule.repository' as '*',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
       payload: {
         repository: {
           name: 'testRepo',
@@ -120,7 +123,8 @@ describe('snippet-bot scheduler handler', () => {
         organization: {
           login: 'googleapis',
         },
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
     sinon.assert.calledOnceWithExactly(
@@ -572,7 +576,7 @@ describe('snippet-bot', () => {
         './pr_event_comment_edited_irelevant'
       ));
       await probot.receive({
-        name: 'issue_comment.edited',
+        name: 'issue_comment',
         payload,
         id: 'abc123',
       });
@@ -602,7 +606,7 @@ describe('snippet-bot', () => {
         .reply(200, '');
 
       await probot.receive({
-        name: 'issue_comment.edited',
+        name: 'issue_comment',
         payload,
         id: 'abc123',
       });
