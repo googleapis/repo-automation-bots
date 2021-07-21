@@ -30,8 +30,7 @@ export const languageVersioningRules = [
     prAuthor: 'renovate-bot',
     process: 'dependency',
     targetFile: 'package.json',
-    dependency:
-      /^((fix)|(chore))\(deps\): update dependency (@?\S*) to v(\S*)$/,
+    dependency: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
     // This would match: -  "version": "^2.3.0" or -  "version": "~2.3.0"
     oldVersion: new RegExp(
       /-[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)",/
@@ -47,7 +46,7 @@ export const languageVersioningRules = [
     targetFile: 'samples/package.json',
     // This would match: fix(deps): update dependency @octokit to v1
     dependency: new RegExp(
-      /^((fix)|(chore))\(deps\): update dependency (@?\S*) to v(\S*)$/
+      /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
     ),
     // This would match: -  "version": "^2.3.0" or -  "version": "~2.3.0"
     oldVersion: new RegExp(
@@ -64,7 +63,7 @@ export const languageVersioningRules = [
     targetFile: 'samples/snippets/requirements.txt',
     // This would match: fix(deps): update dependency @octokit to v1
     dependency: new RegExp(
-      /^((fix)|(chore))\(deps\): update dependency (@?\S*) to v(\S*)$/
+      /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
     ),
     // This would match: -  google-cloud-storage==1.39.0
     oldVersion: new RegExp(/-[\s]?(@?[^=]*)==([0-9])*\.([0-9]*\.[0-9]*)/),
@@ -77,7 +76,7 @@ export const languageVersioningRules = [
     targetFile: 'pom.xml',
     // This would match: chore(deps): update dependency com.google.cloud:google-cloud-datacatalog to v1.4.2 or chore(deps): update dependency com.google.apis:google-api-services-policytroubleshooter to v1-rev20210319-1.32.1
     dependency: new RegExp(
-      /^((fix)|(chore))\(deps\): update dependency (@?\S*) to v(\S*)$/
+      /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
     ),
     /* This would match:
       <groupId>com.google.apis</groupId>
