@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot, Context} from 'probot';
+import {Probot} from 'probot';
 import {logger} from 'gcf-utils';
 import {getPolicy} from './policy';
 import {exportToBigQuery} from './export';
@@ -22,16 +22,14 @@ import {getChanger} from './changer';
 export const allowedOrgs = ['googleapis', 'googlecloudplatform'];
 
 export function policyBot(app: Probot) {
-  app.on(['schedule.repository' as '*'], async (context: Context) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on(['schedule.repository' as any], async context => {
     const owner: string = context.payload.organization.login;
     const name: string = context.payload.repository.name;
     const repo = `${owner}/${name}`;
 
-    if (
-      context.payload.cron_org !== owner ||
-      !allowedOrgs.includes(owner.toLowerCase())
-    ) {
-      logger.info(`skipping run for ${context.payload.cron_org}`);
+    if (!allowedOrgs.includes(owner.toLowerCase())) {
+      logger.info(`skipping run for ${repo}`);
       return;
     }
 

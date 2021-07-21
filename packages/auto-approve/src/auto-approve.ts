@@ -140,7 +140,7 @@ export function handler(app: Probot) {
       'pull_request.reopened',
       'pull_request.synchronize',
     ],
-    async (context: Context) => {
+    async (context: Context<'pull_request'>) => {
       const pr = context.payload;
       const owner = pr.repository.owner.login;
       const repo = pr.pull_request.head.repo.name;

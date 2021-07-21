@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/object-selector-v1.0.1...object-selector-v1.1.0) (2021-07-13)
+
+
+### Features
+
+* upgrade to gcf-utils@12 ([#2262](https://www.github.com/googleapis/repo-automation-bots/issues/2262)) ([bd04376](https://www.github.com/googleapis/repo-automation-bots/commit/bd043767ae59a4eed450f1d18741111dc4c3f8e8))
+
 ### [1.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/object-selector-v1.0.0...object-selector-v1.0.1) (2021-06-18)
 
 

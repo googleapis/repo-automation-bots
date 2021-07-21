@@ -115,7 +115,7 @@ describe('Label Sync', () => {
       nockLabelCreate(newLabels.labels.length + 1),
     ];
     await probot.receive({
-      name: 'repository.created' as any,
+      name: 'repository',
       payload,
       id: 'abc123',
     });
@@ -149,7 +149,7 @@ describe('Label Sync', () => {
       nockLabelDelete(labelName),
     ];
     await probot.receive({
-      name: 'repository.created' as any,
+      name: 'repository',
       payload,
       id: 'abc123',
     });
@@ -167,7 +167,7 @@ describe('Label Sync', () => {
       nockLabelCreate(1),
       nockLabelUpdate(labelName),
     ];
-    await probot.receive({name: 'label.deleted' as any, payload, id: 'abc123'});
+    await probot.receive({name: 'label', payload, id: 'abc123'});
     scopes.forEach(s => s.done());
   });
 
@@ -193,7 +193,7 @@ describe('Label Sync', () => {
       nockLabelCreate(newLabels.labels.length),
     ];
     await probot.receive({
-      name: 'repository.created' as any,
+      name: 'repository',
       payload,
       id: 'abc123',
     });
@@ -208,12 +208,14 @@ describe('Label Sync', () => {
     ];
 
     await probot.receive({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       name: 'schedule.repository' as any,
       payload: {
         cron_org: 'Codertocat',
         organization: {login: 'Codertocat'},
         repository: {name: 'Hello-World'},
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       id: 'abc123',
     });
 
@@ -231,7 +233,7 @@ describe('Label Sync', () => {
       nockLabelCreate(newLabels.labels.length + 1),
     ];
     await probot.receive({
-      name: 'repository.created' as any,
+      name: 'repository',
       payload,
       id: 'abc123',
     });
@@ -249,7 +251,7 @@ describe('Label Sync', () => {
       './repository_created.json'
     ));
     await probot.receive({
-      name: 'repository.created' as any,
+      name: 'repository',
       payload,
       id: 'abc123',
     });

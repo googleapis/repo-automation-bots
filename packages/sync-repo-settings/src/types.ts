@@ -97,6 +97,16 @@ export interface BranchProtectionRule {
    * Is dismissal of pull request reviews restricted.
    */
   restrictsReviewDismissals?: boolean;
+
+  /**
+   * Enforces a linear commit Git history, which prevents anyone from pushing
+   * merge commits to a branch. Set to true to enforce a linear commit history.
+   * Set to false to disable a linear commit Git history. Your repository must
+   * allow squash merging or rebase merging before you can enable a linear
+   * commit history. Default: true. For more information, see "Requiring a
+   * linear commit history" in the GitHub Help documentation.
+   */
+  requiresLinearHistory?: boolean;
 }
 
 /**

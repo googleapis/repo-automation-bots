@@ -74,6 +74,10 @@
           "restrictsReviewDismissals": {
             "description": "Is dismissal of pull request reviews restricted.",
             "type": "boolean"
+          },
+          "requiresLinearHistory": {
+            "description": "Is linear history required for this branch.",
+            "type": "boolean"
           }
         }
       }

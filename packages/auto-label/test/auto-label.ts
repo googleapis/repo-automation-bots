@@ -368,7 +368,8 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
       ghRequests.done();
@@ -408,7 +409,8 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
       ghRequests.done();
@@ -439,7 +441,8 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
       ghRequests.done();
@@ -478,7 +481,8 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo-samples', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
       ghRequests.done();
@@ -517,7 +521,8 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
       ghRequests.done();
@@ -556,7 +561,8 @@ describe('auto-label', () => {
           organization: {login: 'testOwner'},
           repository: {name: 'testRepo', owner: {login: 'testOwner'}},
           cron_org: 'testOwner',
-        },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         id: 'abc123',
       });
       ghRequests.done();

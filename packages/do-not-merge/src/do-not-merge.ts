@@ -15,7 +15,6 @@
 /* eslint-disable node/no-extraneous-import */
 
 import {Probot, Context} from 'probot';
-import Webhooks from '@octokit/webhooks';
 import {logger} from 'gcf-utils';
 
 const DO_NOT_MERGE = 'do not merge';
@@ -39,9 +38,7 @@ export = (app: Probot) => {
       'pull_request.unlabeled',
       'pull_request.synchronize', // To run the check on every commit.
     ],
-    async (
-      context: Context<Webhooks.EventPayloads.WebhookPayloadPullRequest>
-    ) => {
+    async (context: Context<'pull_request'>) => {
       if (context.payload.pull_request.state === 'closed') {
         logger.info(
           `The pull request ${context.payload.pull_request.url} is closed, exiting.`
@@ -117,11 +114,11 @@ export = (app: Probot) => {
 };
 
 async function findCheck(
-  context: Context<Webhooks.EventPayloads.WebhookPayloadPullRequest>,
+  context: Context<'pull_request'>,
   owner: string,
   repo: string,
   sha: string
-): Promise<{id: number; conclusion: string} | undefined> {
+): Promise<{id: number; conclusion: string | null} | undefined> {
   const checks = (
     await context.octokit.checks.listForRef({
       owner,

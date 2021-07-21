@@ -178,7 +178,6 @@ describe('GCFBootstrapper', () => {
       configStub = sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
         appId: 1234,
         secret: 'foo',
-        webhookPath: 'bar',
         privateKey: 'cert',
       });
       // This replaces the authClient with an auth client that uses an
@@ -933,7 +932,7 @@ describe('GCFBootstrapper', () => {
         // while req.rawBody is a raw buffer
         req.rawBody = fs.readFileSync('test/fixtures/payload.json');
         req.headers = {};
-        req.headers['x-github-event'] = 'another.name';
+        req.headers['x-github-event'] = 'issues';
         req.headers['x-github-delivery'] = '123';
 
         await handler(req, response);
@@ -993,7 +992,6 @@ describe('GCFBootstrapper', () => {
       configStub = sandbox.stub(bootstrapper, 'getProbotConfig').resolves({
         appId: 1234,
         secret: 'foo',
-        webhookPath: 'bar',
         privateKey: 'cert',
       });
     });
@@ -1053,7 +1051,6 @@ describe('GCFBootstrapper', () => {
               data: JSON.stringify({
                 id: 1234,
                 secret: 'foo',
-                webhookPath: 'bar',
               }),
             },
           },
@@ -1167,7 +1164,6 @@ describe('GCFBootstrapper', () => {
         .resolves({
           appId: 1234,
           secret: 'foo',
-          webhookPath: 'bar',
           privateKey: 'cert',
         });
       const octokit = await bootstrapper.getAuthenticatedOctokit(1234);
@@ -1182,7 +1178,6 @@ describe('GCFBootstrapper', () => {
         .resolves({
           appId: 1234,
           secret: 'foo',
-          webhookPath: 'bar',
           privateKey: 'cert',
         });
       const octokit = await bootstrapper.getAuthenticatedOctokit(undefined);

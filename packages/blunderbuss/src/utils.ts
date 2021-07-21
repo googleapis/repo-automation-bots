@@ -19,14 +19,15 @@ import {logger} from 'gcf-utils';
 import {
   PullRequestEvent,
   IssuesEvent,
+  IssuesLabeledEvent,
   Issue,
   PullRequest,
-} from '@octokit/webhooks-definitions/schema';
+} from '@octokit/webhooks-types/schema';
 import {Endpoints} from '@octokit/types';
 import {ByConfig, Configuration} from './config';
 
 export const sleep = (ms: number) => {
-  return new Promise(r => setTimeout(r, ms));
+  return new Promise(r => setTimeout(r, ms, null));
 };
 
 const ASSIGN_LABEL = 'blunderbuss: assign';
@@ -59,7 +60,10 @@ export function isIssue(
   return (issue as IssuesEvent).issue !== undefined;
 }
 
-export async function assign(context: Context, config: Configuration) {
+export async function assign(
+  context: Context<'issues'> | Context<'pull_request'>,
+  config: Configuration
+) {
   let issue: Issue | undefined;
   let pullRequest: PullRequest | undefined;
   if (isIssue(context.payload)) {
@@ -129,15 +133,16 @@ export async function assign(context: Context, config: Configuration) {
   if (isLabeled) {
     // Only assign an issue that already has an assignee if labeled with
     // ASSIGN_LABEL.
+    const payload = context.payload as IssuesLabeledEvent;
     if (
-      context.payload.label?.name !== ASSIGN_LABEL &&
+      payload.label?.name !== ASSIGN_LABEL &&
       refreshedIssueResponse!.data.assignees?.length
     ) {
       context.log.info(
         '[%s] #%s ignored: incorrect label ("%s") because it is already assigned',
         repoName,
         issueOrPRNumber,
-        context.payload.label?.name
+        payload.label?.name
       );
       return;
     }
@@ -145,25 +150,23 @@ export async function assign(context: Context, config: Configuration) {
     // Don't check all labels to avoid updating an old issue when someone
     // changes a random label.
     let assigneesForNewLabel: string[] | undefined;
-    if (context.payload.label?.name) {
-      assigneesForNewLabel = findAssignees(byConfig, [
-        context.payload.label.name,
-      ]);
+    if (payload.label?.name) {
+      assigneesForNewLabel = findAssignees(byConfig, [payload.label.name]);
     }
 
     if (
       assigneesForNewLabel?.length === 0 &&
-      context.payload.label?.name !== ASSIGN_LABEL
+      payload.label?.name !== ASSIGN_LABEL
     ) {
       context.log.info(
         '[%s] #%s ignored: incorrect label ("%s")',
         repoName,
         issueOrPRNumber,
-        context.payload.label?.name
+        payload.label?.name
       );
       return;
     }
-    if (context.payload.label?.name === ASSIGN_LABEL) {
+    if (payload.label?.name === ASSIGN_LABEL) {
       // Remove the label so the user knows the event was processed (even if not successfully).
       await context.octokit.issues.removeLabel(
         context.issue({name: ASSIGN_LABEL})
@@ -262,7 +265,7 @@ function findAssignees(
 
 async function expandTeams(
   usernames: string[],
-  context: Context
+  context: Context<'issues'> | Context<'pull_request'>
 ): Promise<string[]> {
   const result: string[] = [];
   for (const user of usernames) {

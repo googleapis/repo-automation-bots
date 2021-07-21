@@ -93,8 +93,11 @@ async function getFiles(dir: string, allFiles: string[]) {
   return allFiles;
 }
 
-async function fullScan(context: Context, configuration: Configuration) {
-  const installationId = context.payload.installation.id;
+async function fullScan(
+  context: Context<'issues'>,
+  configuration: Configuration
+) {
+  const installationId = context.payload.installation?.id;
   const commentMark = `<!-- probot comment [${installationId}]-->`;
   const owner = context.payload.repository.owner.login;
   const repo = context.payload.repository.name;
@@ -180,7 +183,7 @@ async function fullScan(context: Context, configuration: Configuration) {
       repo: repo,
       issue_number: issueNumber,
       body: formatBody(
-        context.payload.issue.body,
+        context.payload.issue.body as string,
         commentMark,
         `## snippet-bot scan result
 Life is too short to manually check unmatched region tags.
@@ -196,7 +199,7 @@ ${bodyDetail}`
       repo: repo,
       issue_number: issueNumber,
       body: formatBody(
-        context.payload.issue.body,
+        context.payload.issue.body as string,
         commentMark,
         `## snippet-bot scan result\nFailed running the full scan: ${err}.`
       ),
@@ -208,12 +211,12 @@ ${bodyDetail}`
 }
 
 async function scanPullRequest(
-  context: Context,
+  context: Context<'pull_request'> | Context<'issue_comment'>,
   pull_request: PullRequest,
   configuration: Configuration,
   refreshing = false
 ) {
-  const installationId = context.payload.installation.id;
+  const installationId = context.payload.installation?.id;
   const owner = context.payload.repository.owner.login;
   const repo = context.payload.repository.name;
 
@@ -529,7 +532,7 @@ ${REFRESH_UI}
     owner,
     repo,
     prNumber,
-    installationId,
+    installationId as number,
     commentBody,
     onlyUpdate
   );
@@ -579,7 +582,8 @@ function getCommentMark(installationId: number | undefined): string {
 }
 
 export = (app: Probot) => {
-  app.on('schedule.repository' as '*', async context => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.on('schedule.repository' as any, async context => {
     const owner = context.payload.organization.login;
     const repo = context.payload.repository.name;
     const configOptions = await getConfig<ConfigurationOptions>(
