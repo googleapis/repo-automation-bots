@@ -45,7 +45,7 @@ else
 fi
 
 if [ $# -ge 10 ]; then
-  concurrency=$10
+  concurrency=${10}
 else
   concurrency="80"
 fi
