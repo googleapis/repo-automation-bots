@@ -79,9 +79,15 @@ steps:
       - "$_KEY_LOCATION"
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
+      # botName
       - "owl-bot"
+      # timeout
       - "3600"
-      - "1" # We want to serve Github webhook quickly.
+      # minInstances: We want to serve Github webhook quickly.
+      - "3"
+      # concurrency: We saw some errors in gRPC stack (#2265) with the default
+      # 80 concurrency.
+      - "40"
 
   # Build the CLI container whenever we merge changes to the owl-bot folder.
   # this container is used to run helpers from OwlBot in a Cloud Build
