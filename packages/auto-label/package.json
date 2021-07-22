@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@octokit/types": "^6.19.0",
-    "@types/mocha": "^8.2.3",
+    "@types/mocha": "^9.0.0",
     "@types/node": "^16.3.3",
     "@types/sinon": "^10.0.2",
     "c8": "^7.7.3",
