@@ -142,9 +142,6 @@ export function getVersions(
       newDependencyName = `${newVersions[1]}:${newVersions[2]}`;
       newMajorVersion = newVersions[5] || newVersions[7];
       newMinorVersion = newVersions[6] || newVersions[8];
-      console.log(newDependencyName);
-      console.log(newMajorVersion);
-      console.log(newMinorVersion);
     } else {
       newDependencyName = newVersions[1];
       newMajorVersion = newVersions[2];
