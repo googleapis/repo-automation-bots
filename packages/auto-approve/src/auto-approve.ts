@@ -144,6 +144,7 @@ export function handler(app: Probot) {
       const pr = context.payload;
       const owner = pr.repository.owner.login;
       const repoHead = pr.pull_request.head.repo.name;
+      const repoHeadOwner = pr.pull_request.head.repo.owner.login;
       const repo = pr.pull_request.base.repo.name;
       const prNumber = pr.number;
 
@@ -172,7 +173,7 @@ export function handler(app: Probot) {
         // Attempt to get the CODEOWNERS file if it exists
         const codeOwnersFile = await getBlobFromPRFiles(
           context.octokit,
-          owner,
+          repoHeadOwner,
           repoHead,
           PRFiles,
           '.github/CODEOWNERS'
