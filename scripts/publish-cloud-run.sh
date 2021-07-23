@@ -16,7 +16,7 @@
 set -eo pipefail
 
 if [ $# -lt 6 ]; then
-  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <region> [botName] [timeout] [min-instance]"
+  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <region> [botName] [timeout] [min-instance] [concurrency]"
   exit 1
 fi
 
@@ -42,6 +42,12 @@ if [ $# -ge 9 ]; then
   minInstances=$9
 else
   minInstances="0"
+fi
+
+if [ $# -ge 10 ]; then
+  concurrency=${10}
+else
+  concurrency="80"
 fi
 
 if [ "${project}" == "repo-automation-bots" ]; then
@@ -87,6 +93,8 @@ deployArgs=(
   "${timeout}"
   "--min-instances"
   "${minInstances}"
+  "--concurrency"
+  "${concurrency}"
   "--quiet"
 )
 if [ -n "${SERVICE_ACCOUNT}" ]; then
