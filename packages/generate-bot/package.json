@@ -30,7 +30,7 @@
     "handlebars": "^4.7.7"
   },
   "devDependencies": {
-    "@types/mocha": "^8.2.2",
+    "@types/mocha": "^9.0.0",
     "@types/recursive-readdir": "^2.2.0",
     "@types/rimraf": "^3.0.0",
     "c8": "^7.7.3",
