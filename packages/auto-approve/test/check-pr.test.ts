@@ -15,13 +15,13 @@
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import * as fs from 'fs';
-import {File} from '../src/get-pr-info';
+import * as getPRInfo from '../src/get-pr-info';
 import * as checkPR from '../src/check-pr';
 import {checkFilePathsMatch} from '../src/utils-for-pr-checking';
 import nock from 'nock';
 import {resolve} from 'path';
 import yaml from 'js-yaml';
-import sinon from 'sinon';
+import sinon, {SinonStub} from 'sinon';
 
 const {Octokit} = require('@octokit/rest');
 
@@ -30,7 +30,7 @@ const octokit = new Octokit({
 });
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-function listChangedFilesPR(status: number, response: File[]) {
+function listChangedFilesPR(status: number, response: getPRInfo.File[]) {
   return nock('https://api.github.com')
     .get('/repos/testOwner/testRepo/pulls/1/files')
     .reply(status, response);
@@ -104,6 +104,29 @@ describe('check pr against config', async () => {
         'utf8'
       )
     ) as {rules: checkPR.ValidPr[]};
+
+    it('should get the base repo info to do its checking, not the head repo', async () => {
+      const validPR = yaml.load(
+        fs.readFileSync(
+          resolve(fixturesPath, 'config', 'valid-schemas', 'valid-schema5.yml'),
+          'utf8'
+        )
+      ) as {rules: checkPR.ValidPr[]};
+
+      const fileRequest = nock('https://api.github.com')
+        .get('/repos/GoogleCloudPlatform/python-docs-samples/pulls/1/files')
+        .reply(200, [{filename: 'requirements.txt', sha: '1234'}]);
+
+      const pr = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_fork'
+      ));
+
+      await checkPR.checkPRAgainstConfig(validPR, pr, octokit);
+
+      fileRequest.done();
+    });
 
     it('should return false if PR does not match author in validPRConfig', async () => {
       const pr = require(resolve(
