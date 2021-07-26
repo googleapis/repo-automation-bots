@@ -28,6 +28,7 @@ import * as child_process from 'child_process';
 
 const exec = promisify(child_process.exec);
 
+const FAILED_LABEL = 'autorelease: failed';
 const PENDING_LABEL = 'autorelease: pending';
 const TRIGGERED_LABEL = 'autorelease: triggered';
 interface Repository {
@@ -133,6 +134,21 @@ async function markTriggered(octokit: Octokit, pullRequest: PullRequest) {
   });
 }
 
+async function markFailed(octokit: Octokit, pullRequest: PullRequest) {
+  const owner = pullRequest.base.repo.owner?.login;
+  if (!owner) {
+    logger.error(`no owner for ${pullRequest.number}`);
+    return;
+  }
+  logger.info('adding `autorelease: failed` label');
+  await octokit.issues.addLabels({
+    owner,
+    repo: pullRequest.base.repo.name,
+    issue_number: pullRequest.number,
+    labels: [FAILED_LABEL],
+  });
+}
+
 async function doTrigger(octokit: Octokit, repository: Repository) {
   const repoUrl = repository.full_name;
   const owner = repository.owner.login;
@@ -153,14 +169,14 @@ async function doTrigger(octokit: Octokit, repository: Repository) {
     octokit,
     repository
   );
-  await Promise.all(
-    releasePullRequests.map(pullRequest => {
-      return Promise.all([
-        triggerKokoroJob(pullRequest),
-        markTriggered(octokit, pullRequest),
-      ]);
-    })
-  );
+  for (let pullRequest of releasePullRequests) {
+    try {
+      await triggerKokoroJob(pullRequest);
+      await markTriggered(octokit, pullRequest);
+    } catch (e) {
+      await markFailed(octokit, pullRequest);
+    }    
+  }
 }
 
 export = (app: Probot) => {
