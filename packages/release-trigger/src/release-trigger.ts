@@ -59,18 +59,6 @@ interface PullRequest {
   };
 }
 
-function getJobName(
-  config: ConfigurationOptions,
-  repository: Repository
-): string | undefined {
-  if (config.jobName) {
-    return config.jobName;
-  }
-
-  // run releasetool get job name
-  return 'FIXME';
-}
-
 function isReleasePullRequest(pullRequest: PullRequest): boolean {
   return (
     pullRequest.labels.some(label => {
@@ -111,12 +99,11 @@ async function findPendingReleasePullRequests(
 }
 
 async function triggerKokoroJob(
-  jobName: string,
   pullRequest: PullRequest
 ): Promise<{stdout: string; stderr: string}> {
-  logger.info(`triggering job: ${jobName} for ${pullRequest.number}`);
+  logger.info(`triggering job for ${pullRequest.number}`);
 
-  const command = `python3 -m autorelease.trigger --pr=${pullRequest.html_url}`;
+  const command = `python3 -m autorelease trigger-single --pull=${pullRequest.html_url}`;
   logger.debug(`command: ${command}`);
   try {
     const {stdout, stderr} = await exec(command);
@@ -161,11 +148,6 @@ async function doTrigger(octokit: Octokit, repository: Repository) {
     logger.info(`release-trigger not configured for ${repoUrl}`);
     return;
   }
-  const jobName = getJobName(remoteConfiguration, repository);
-  if (!jobName) {
-    logger.warn(`could not determine job name for ${repoUrl}`);
-    return;
-  }
 
   const releasePullRequests = await findPendingReleasePullRequests(
     octokit,
@@ -174,7 +156,7 @@ async function doTrigger(octokit: Octokit, repository: Repository) {
   await Promise.all(
     releasePullRequests.map(pullRequest => {
       return Promise.all([
-        triggerKokoroJob(jobName, pullRequest),
+        triggerKokoroJob(pullRequest),
         markTriggered(octokit, pullRequest),
       ]);
     })
