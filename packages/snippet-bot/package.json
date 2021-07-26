@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@types/minimatch": "^3.0.5",
-    "@types/mocha": "^8.2.3",
+    "@types/mocha": "^9.0.0",
     "@types/node": "^16.3.3",
     "@types/node-fetch": "^2.5.11",
     "@types/sinon": "^10.0.2",

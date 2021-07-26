@@ -42,7 +42,7 @@
     "@types/js-yaml": "^4.0.2",
     "@types/jsonwebtoken": "^8.5.4",
     "@types/minimatch": "^3.0.5",
-    "@types/mocha": "^8.2.3",
+    "@types/mocha": "^9.0.0",
     "@types/node": "^16.3.3",
     "@types/rimraf": "^3.0.1",
     "@types/sinon": "^10.0.2",

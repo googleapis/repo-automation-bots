@@ -36,7 +36,7 @@
   "devDependencies": {
     "@types/extend": "^3.0.1",
     "@types/js-yaml": "^4.0.2",
-    "@types/mocha": "^8.2.3",
+    "@types/mocha": "^9.0.0",
     "@types/node": "^16.4.0",
     "@types/sinon": "^10.0.2",
     "@types/yargs": "^17.0.2",
