@@ -158,7 +158,7 @@ async function doTrigger(octokit: Octokit, repository: Repository) {
     {schema: schema}
   );
   if (!remoteConfiguration) {
-    logger.info(`kokoro-trigger not configured for ${repoUrl}`);
+    logger.info(`release-trigger not configured for ${repoUrl}`);
     return;
   }
   const jobName = getJobName(remoteConfiguration, repository);

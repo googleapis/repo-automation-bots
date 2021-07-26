@@ -16,5 +16,5 @@ export interface ConfigurationOptions {
   jobName?: string;
 }
 
-export const WELL_KNOWN_CONFIGURATION_FILE = 'kokoro-trigger.yml';
+export const WELL_KNOWN_CONFIGURATION_FILE = 'release-trigger.yml';
 export const DEFAULT_CONFIGURATION: ConfigurationOptions = {};

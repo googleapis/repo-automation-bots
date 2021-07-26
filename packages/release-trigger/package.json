@@ -1,7 +1,7 @@
 {
-  "name": "kokoro-trigger",
+  "name": "release-trigger",
   "version": "1.0.0",
-  "description": "Trigger kokoro jobs",
+  "description": "Trigger kokoro release jobs",
   "private": true,
   "author": "Google LLC.",
   "license": "Apache-2.0",

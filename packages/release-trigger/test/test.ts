@@ -14,7 +14,7 @@
 
 /* eslint-disable node/no-extraneous-import */
 
-import myProbotApp from '../src/kokoro-trigger';
+import myProbotApp from '../src/release-trigger';
 import {resolve} from 'path';
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import nock from 'nock';
@@ -26,7 +26,7 @@ nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-describe('kokoro-trigger', () => {
+describe('release-trigger', () => {
   let probot: Probot;
 
   const config = fs.readFileSync(
@@ -55,7 +55,7 @@ describe('kokoro-trigger', () => {
       ));
 
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fkokoro-trigger.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Frelease-trigger.yml')
         .reply(200, config);
 
       await probot.receive({
@@ -71,7 +71,7 @@ describe('kokoro-trigger', () => {
     it('responds to issues', async () => {
       const payload = require(resolve(fixturesPath, './events/issue_opened'));
       const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Fkokoro-trigger.yml')
+        .get('/repos/testOwner/testRepo/contents/.github%2Frelease-trigger.yml')
         .reply(200, config);
       await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
       requests.done();

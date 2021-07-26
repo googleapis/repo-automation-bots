@@ -1,4 +1,4 @@
-# kokoro-trigger
+# release-trigger
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
 
@@ -10,7 +10,7 @@ This bot uses nock for mocking requests to GitHub, and snap-shot-it for capturin
 
 ## Contributing
 
-If you have suggestions for how kokoro-trigger could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
+If you have suggestions for how release-trigger could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
 
 For more, check out the Contributing Guide.
 

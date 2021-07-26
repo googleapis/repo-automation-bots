@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './kokoro-trigger';
+import appFn from './release-trigger';
 
 const bootstrap = new GCFBootstrapper();
 module.exports['kokoro_trigger'] = bootstrap.gcf(appFn);

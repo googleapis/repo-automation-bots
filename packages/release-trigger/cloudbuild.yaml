@@ -16,17 +16,17 @@ steps:
 - name: gcr.io/cloud-builders/docker
     id: "build-docker"
     waitFor: ["-"]
-    dir: packages/kokoro-trigger
+    dir: packages/release-trigger
     args:
       - "build"
       - "-t"
-      - "gcr.io/$PROJECT_ID/kokoro-trigger"
+      - "gcr.io/$PROJECT_ID/release-trigger"
       - "."
 
   - name: gcr.io/cloud-builders/docker
     id: "push-docker"
     waitFor: ["build-docker"]
-    args: ["push", "gcr.io/$PROJECT_ID/kokoro-trigger"]
+    args: ["push", "gcr.io/$PROJECT_ID/release-trigger"]
 
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-cloud-run"
