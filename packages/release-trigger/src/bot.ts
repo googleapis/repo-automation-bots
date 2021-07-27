@@ -34,54 +34,84 @@ import {
   markTriggered,
   markFailed,
   TRIGGERED_LABEL,
+  PullRequest,
 } from './release-trigger';
 
-async function doTrigger(octokit: Octokit, repository: Repository) {
-  const repoUrl = repository.full_name;
-  const owner = repository.owner.login;
-  const repo = repository.name;
-  const remoteConfiguration = await getConfigWithDefault<ConfigurationOptions>(
-    octokit,
-    owner,
-    repo,
-    WELL_KNOWN_CONFIGURATION_FILE,
-    DEFAULT_CONFIGURATION,
-    {schema: schema}
-  );
-  if (!remoteConfiguration) {
-    logger.info(`release-trigger not configured for ${repoUrl}`);
-    return;
-  }
-
-  const releasePullRequests = await findPendingReleasePullRequests(
-    octokit,
-    repository
-  );
-  for (const pullRequest of releasePullRequests) {
-    try {
-      await triggerKokoroJob(pullRequest);
-      await markTriggered(octokit, pullRequest);
-    } catch (e) {
-      await markFailed(octokit, pullRequest);
-    }
+async function doTrigger(octokit: Octokit, pullRequest: PullRequest) {
+  try {
+    await triggerKokoroJob(pullRequest.html_url);
+    await markTriggered(octokit, pullRequest);
+  } catch (e) {
+    await markFailed(octokit, pullRequest);
   }
 }
 
 export = (app: Probot) => {
   // When a release is published, try to trigger the release
   app.on('release.published', async context => {
-    await doTrigger(context.octokit, context.payload.repository);
+    const repository = context.payload.repository;
+    const repoUrl = repository.full_name;
+    const owner = repository.owner.login;
+    const repo = repository.name;
+    const remoteConfiguration =
+      await getConfigWithDefault<ConfigurationOptions>(
+        context.octokit,
+        owner,
+        repo,
+        WELL_KNOWN_CONFIGURATION_FILE,
+        DEFAULT_CONFIGURATION,
+        {schema: schema}
+      );
+    if (!remoteConfiguration) {
+      logger.info(`release-trigger not configured for ${repoUrl}`);
+      return;
+    }
+    if (!remoteConfiguration.enabled) {
+      logger.info(`release-trigger not enabled for ${repoUrl}`);
+      return;
+    }
+
+    const releasePullRequests = await findPendingReleasePullRequests(
+      context.octokit,
+      repository
+    );
+    for (const pullRequest of releasePullRequests) {
+      await doTrigger(context.octokit, pullRequest);
+    }
   });
 
   // Try to trigger the job on removing the `autorelease: triggered` label.
   // This functionality is to retry a failed release.
   app.on('pull_request.unlabeled', async context => {
+    const repository = context.payload.repository;
+    const repoUrl = repository.full_name;
+    const owner = repository.owner.login;
+    const repo = repository.name;
+    const remoteConfiguration =
+      await getConfigWithDefault<ConfigurationOptions>(
+        context.octokit,
+        owner,
+        repo,
+        WELL_KNOWN_CONFIGURATION_FILE,
+        DEFAULT_CONFIGURATION,
+        {schema: schema}
+      );
+    if (!remoteConfiguration) {
+      logger.info(`release-trigger not configured for ${repoUrl}`);
+      return;
+    }
+    if (!remoteConfiguration.enabled) {
+      logger.info(`release-trigger not enabled for ${repoUrl}`);
+      return;
+    }
+
     const label = context.payload.label?.name;
     if (label !== TRIGGERED_LABEL) {
       logger.info(`ignoring non-autorelease label: ${label}`);
       return;
     }
-    await doTrigger(context.octokit, context.payload.repository);
+
+    await doTrigger(context.octokit, context.payload.pull_request);
   });
 
   // Check the config schema on PRs.

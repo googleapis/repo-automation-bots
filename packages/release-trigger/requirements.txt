@@ -1,2 +1,2 @@
-gcp-releasetool==1.6.1
+git+git://github.com/chingor13/releasetool@fix-template#egg=releasetool
 keyrings.alt

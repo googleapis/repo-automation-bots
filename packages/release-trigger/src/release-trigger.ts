@@ -32,7 +32,7 @@ export interface Repository {
   name: string;
 }
 
-interface PullRequest {
+export interface PullRequest {
   html_url: string;
   number: number;
   state: string;
@@ -93,11 +93,11 @@ export async function findPendingReleasePullRequests(
 }
 
 export async function triggerKokoroJob(
-  pullRequest: PullRequest
+  pullRequestUrl: string
 ): Promise<{stdout: string; stderr: string}> {
-  logger.info(`triggering job for ${pullRequest.number}`);
+  logger.info(`triggering job for ${pullRequestUrl}`);
 
-  const command = `python3 -m autorelease trigger-single --pull=${pullRequest.html_url}`;
+  const command = `python3 -m autorelease trigger-single --pull=${pullRequestUrl}`;
   logger.debug(`command: ${command}`);
   try {
     const {stdout, stderr} = await exec(command);
