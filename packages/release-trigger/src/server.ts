@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './release-trigger';
+import appFn from './bot';
 
 const bootstrap = new GCFBootstrapper({
   taskTargetEnvironment: 'run',

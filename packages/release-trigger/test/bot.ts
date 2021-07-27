@@ -30,7 +30,7 @@ nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-describe('release-trigger', () => {
+describe('bot', () => {
   let probot: Probot;
   let getConfigStub: sinon.SinonStub;
 
@@ -47,6 +47,10 @@ describe('release-trigger', () => {
     probot.load(myProbotApp);
     getConfigStub = sandbox.stub(botConfigModule, 'getConfigWithDefault');
   });
+
+  afterEach(() => {
+    sandbox.restore();
+  })
 
   describe('on release publish', () => {
     it('should trigger a kokoro job via releasetool', async () => {

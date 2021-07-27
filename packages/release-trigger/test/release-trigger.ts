@@ -16,38 +16,40 @@
 
 import {describe, it, beforeEach} from 'mocha';
 
-describe('findPendingReleasePullRequests', () => {
-  it('should paginate through pull requests', async () => {
+describe('release-trigger', () => {
+  describe('findPendingReleasePullRequests', () => {
+    it('should paginate through pull requests', async () => {
 
+    });
+
+    it('should ignore pull requests already triggered', async () => {
+
+    });
+
+    it('should ignore closed, unmerged pull requests', async () => {
+
+    });
   });
 
-  it('should ignore pull requests already triggered', async () => {
+  describe('triggerKokoroJob', () => {
+    it('should execute autorelease trigger-single command', async () => {
 
+    });
+
+    it('should catch and log an exception', async () => {
+
+    });
   });
 
-  it('should ignore closed, unmerged pull requests', async () => {
+  describe('markTriggered', () => {
+    it('should add a label to a pull request', async () => {
 
-  });
-});
-
-describe('triggerKokoroJob', () => {
-  it('should execute autorelease trigger-single command', async () => {
-
+    });
   });
 
-  it('should catch and log an exception', async () => {
+  describe('markFailed', () => {
+    it('should add a label to a pull request', async () => {
 
-  });
-});
-
-describe('markTriggered', () => {
-  it('should add a label to a pull request', async () => {
-
-  });
-});
-
-describe('markFailed', () => {
-  it('should add a label to a pull request', async () => {
-
+    });
   });
 });
