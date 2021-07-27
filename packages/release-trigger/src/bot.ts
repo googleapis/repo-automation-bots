@@ -73,7 +73,7 @@ export = (app: Probot) => {
 
     const releasePullRequests = await findPendingReleasePullRequests(
       context.octokit,
-      repository
+      {owner: repository.owner.login, repo: repository.name}
     );
     for (const pullRequest of releasePullRequests) {
       await doTrigger(context.octokit, pullRequest);

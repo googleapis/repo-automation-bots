@@ -22,14 +22,11 @@ import * as child_process from 'child_process';
 const exec = promisify(child_process.exec);
 
 export const FAILED_LABEL = 'autorelease: failed';
-export const PENDING_LABEL = 'autorelease: pending';
+export const TAGGED_LABEL = 'autorelease: tagged';
 export const TRIGGERED_LABEL = 'autorelease: triggered';
 export interface Repository {
-  full_name: string;
-  owner: {
-    login: string;
-  };
-  name: string;
+  owner: string;
+  repo: string;
 }
 
 export interface PullRequest {
@@ -55,8 +52,10 @@ export interface PullRequest {
 
 function isReleasePullRequest(pullRequest: PullRequest): boolean {
   return (
+    pullRequest.state === 'closed' &&
+    !!pullRequest.merge_commit_sha &&
     pullRequest.labels.some(label => {
-      return label.name === PENDING_LABEL;
+      return label.name === TAGGED_LABEL;
     }) &&
     !pullRequest.labels.some(label => {
       return label.name === TRIGGERED_LABEL;
@@ -70,13 +69,16 @@ export async function findPendingReleasePullRequests(
   maxNumber = 5
 ): Promise<PullRequest[]> {
   // TODO: switch to graphql
-  const listGenerator = octokit.paginate.iterator(octokit.pulls.list, {
-    owner: repository.owner.login,
-    repo: repository.name,
-    state: 'closed',
-    sort: 'updated',
-    direction: 'desc',
-  });
+  const listGenerator = octokit.paginate.iterator(
+    'GET /repos/{owner}/{repo}/pulls',
+    {
+      owner: repository.owner,
+      repo: repository.repo,
+      state: 'closed',
+      sort: 'updated',
+      direction: 'desc',
+    }
+  );
 
   const found: PullRequest[] = [];
   for await (const listResponse of listGenerator) {

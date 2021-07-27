@@ -13,15 +13,11 @@
 // limitations under the License.
 
 /* eslint-disable node/no-extraneous-import */
-import {Octokit} from '@octokit/rest';
 import myProbotApp from '../src/bot';
 import {resolve} from 'path';
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import nock from 'nock';
-import * as fs from 'fs';
-import yaml from 'js-yaml';
 import {describe, it, beforeEach} from 'mocha';
-import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import * as releaseTriggerModule from '../src/release-trigger';
