@@ -14,7 +14,10 @@
 
 export interface ConfigurationOptions {
   jobName?: string;
+  enabled?: boolean;
 }
 
 export const WELL_KNOWN_CONFIGURATION_FILE = 'release-trigger.yml';
-export const DEFAULT_CONFIGURATION: ConfigurationOptions = {};
+export const DEFAULT_CONFIGURATION: ConfigurationOptions = {
+  enabled: true,
+};

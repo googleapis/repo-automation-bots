@@ -14,24 +14,25 @@
 
 /* eslint-disable node/no-extraneous-import */
 
-import myProbotApp from '../src/release-trigger';
+import myProbotApp from '../src/bot';
 import {resolve} from 'path';
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import nock from 'nock';
 import * as fs from 'fs';
+import yaml from 'js-yaml';
 import {describe, it, beforeEach} from 'mocha';
 import * as assert from 'assert';
+import * as sinon from 'sinon';
+import * as botConfigModule from '@google-automations/bot-config-utils';
 
+const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 describe('release-trigger', () => {
   let probot: Probot;
-
-  const config = fs.readFileSync(
-    resolve(fixturesPath, 'config', 'valid-config.yml')
-  );
+  let getConfigStub: sinon.SinonStub;
 
   beforeEach(() => {
     probot = createProbot({
@@ -44,37 +45,40 @@ describe('release-trigger', () => {
       },
     });
     probot.load(myProbotApp);
+    getConfigStub = sandbox.stub(botConfigModule, 'getConfigWithDefault');
   });
 
-  describe('responds to events', () => {
-    it('responds to a PR', async () => {
+  describe('on release publish', () => {
+    it('should trigger a kokoro job via releasetool', async () => {
       const payload = require(resolve(
         fixturesPath,
-        'events',
-        'pull_request_opened'
+        './events/release_published'
       ));
+      getConfigStub.resolves({enabled: true});
 
-      const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Frelease-trigger.yml')
-        .reply(200, config);
+      const scopes = nock('https://api.github.com')
+        .get(
+          '/repos/Codertocat/Hello-World/pulls?state=closed&sort=updated&direction=desc'
+        )
+        .reply(200, []);
 
       await probot.receive({
-        name: 'pull_request.opened',
-        payload,
+        name: 'release.published',
+        payload: payload,
         id: 'abc123',
       });
 
-      requests.done();
-      assert.ok(true);
+      scopes.done();
+    });
+  });
+
+  describe('on pull request unlabelled', () => {
+    it('should trigger a kokoro job if the label removed was autorelease: triggered', async () => {
+
     });
 
-    it('responds to issues', async () => {
-      const payload = require(resolve(fixturesPath, './events/issue_opened'));
-      const requests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/contents/.github%2Frelease-trigger.yml')
-        .reply(200, config);
-      await probot.receive({name: 'issues.opened', payload, id: 'abc123'});
-      requests.done();
+    it('should ignore other labels', async () => {
+
     });
   });
 });

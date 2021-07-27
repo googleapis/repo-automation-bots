@@ -13,25 +13,18 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
-import {Probot} from 'probot';
-// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
-import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
-import schema from './config-schema.json';
-import {
-  ConfigurationOptions,
-  WELL_KNOWN_CONFIGURATION_FILE,
-} from './config-constants';
+
 import {promisify} from 'util';
 import * as child_process from 'child_process';
 
 const exec = promisify(child_process.exec);
 
-const FAILED_LABEL = 'autorelease: failed';
-const PENDING_LABEL = 'autorelease: pending';
-const TRIGGERED_LABEL = 'autorelease: triggered';
-interface Repository {
+export const FAILED_LABEL = 'autorelease: failed';
+export const PENDING_LABEL = 'autorelease: pending';
+export const TRIGGERED_LABEL = 'autorelease: triggered';
+export interface Repository {
   full_name: string;
   owner: {
     login: string;
@@ -71,7 +64,7 @@ function isReleasePullRequest(pullRequest: PullRequest): boolean {
   );
 }
 
-async function findPendingReleasePullRequests(
+export async function findPendingReleasePullRequests(
   octokit: Octokit,
   repository: Repository,
   maxNumber = 5
@@ -99,7 +92,7 @@ async function findPendingReleasePullRequests(
   return found;
 }
 
-async function triggerKokoroJob(
+export async function triggerKokoroJob(
   pullRequest: PullRequest
 ): Promise<{stdout: string; stderr: string}> {
   logger.info(`triggering job for ${pullRequest.number}`);
@@ -119,7 +112,10 @@ async function triggerKokoroJob(
   }
 }
 
-async function markTriggered(octokit: Octokit, pullRequest: PullRequest) {
+export async function markTriggered(
+  octokit: Octokit,
+  pullRequest: PullRequest
+) {
   const owner = pullRequest.base.repo.owner?.login;
   if (!owner) {
     logger.error(`no owner for ${pullRequest.number}`);
@@ -134,7 +130,7 @@ async function markTriggered(octokit: Octokit, pullRequest: PullRequest) {
   });
 }
 
-async function markFailed(octokit: Octokit, pullRequest: PullRequest) {
+export async function markFailed(octokit: Octokit, pullRequest: PullRequest) {
   const owner = pullRequest.base.repo.owner?.login;
   if (!owner) {
     logger.error(`no owner for ${pullRequest.number}`);
@@ -148,67 +144,3 @@ async function markFailed(octokit: Octokit, pullRequest: PullRequest) {
     labels: [FAILED_LABEL],
   });
 }
-
-async function doTrigger(octokit: Octokit, repository: Repository) {
-  const repoUrl = repository.full_name;
-  const owner = repository.owner.login;
-  const repo = repository.name;
-  const remoteConfiguration = await getConfig<ConfigurationOptions>(
-    octokit,
-    owner,
-    repo,
-    WELL_KNOWN_CONFIGURATION_FILE,
-    {schema: schema}
-  );
-  if (!remoteConfiguration) {
-    logger.info(`release-trigger not configured for ${repoUrl}`);
-    return;
-  }
-
-  const releasePullRequests = await findPendingReleasePullRequests(
-    octokit,
-    repository
-  );
-  for (let pullRequest of releasePullRequests) {
-    try {
-      await triggerKokoroJob(pullRequest);
-      await markTriggered(octokit, pullRequest);
-    } catch (e) {
-      await markFailed(octokit, pullRequest);
-    }    
-  }
-}
-
-export = (app: Probot) => {
-  // When a release is published, try to trigger the release
-  app.on('release.published', async context => {
-    await doTrigger(context.octokit, context.payload.repository);
-  });
-
-  // Try to trigger the job on removing the `autorelease: triggered` label.
-  // This functionality is to retry a failed release.
-  app.on('pull_request.unlabeled', async context => {
-    const label = context.payload.label?.name;
-    if (label !== TRIGGERED_LABEL) {
-      logger.info(`ignoring non-autorelease label: ${label}`);
-      return;
-    }
-    await doTrigger(context.octokit, context.payload.repository);
-  });
-
-  // Check the config schema on PRs.
-  app.on(['pull_request.opened', 'pull_request.synchronize'], async context => {
-    const configChecker = new ConfigChecker<ConfigurationOptions>(
-      schema,
-      WELL_KNOWN_CONFIGURATION_FILE
-    );
-    const {owner, repo} = context.repo();
-    await configChecker.validateConfigChanges(
-      context.octokit,
-      owner,
-      repo,
-      context.payload.pull_request.head.sha,
-      context.payload.pull_request.number
-    );
-  });
-};
