@@ -1,2 +1,2 @@
-git+git://github.com/chingor13/releasetool@fix-template#egg=releasetool
+git+git://github.com/chingor13/releasetool@single-trigger#egg=releasetool
 keyrings.alt
