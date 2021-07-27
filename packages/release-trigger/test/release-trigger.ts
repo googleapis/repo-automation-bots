@@ -14,15 +14,21 @@
 
 /* eslint-disable node/no-extraneous-import */
 
-import {describe, it, beforeEach} from 'mocha';
+import {describe, it, afterEach} from 'mocha';
+import * as sinon from 'sinon';
 import nock from 'nock';
 import {
   findPendingReleasePullRequests,
   PullRequest,
+  triggerKokoroJob,
+  markTriggered,
 } from '../src/release-trigger';
+import * as releaseTriggerModule from '../src/release-trigger';
 import {Octokit} from '@octokit/rest';
 import * as assert from 'assert';
+import {logger} from 'gcf-utils';
 
+const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
 
 const octokit = new Octokit({
@@ -162,16 +168,78 @@ describe('release-trigger', () => {
   });
 
   describe('triggerKokoroJob', () => {
-    it('should execute autorelease trigger-single command', async () => {});
+    afterEach(() => {
+      sandbox.restore();
+    });
+    it('should execute autorelease trigger-single command', async () => {
+      const execStub = sandbox
+        .stub(releaseTriggerModule, 'exec')
+        .resolves({stdout: 'some output', stderr: 'some error output'});
+      const infoStub = sandbox.stub(logger, 'info');
+      const warnStub = sandbox.stub(logger, 'warn');
+      const {stdout, stderr} = await triggerKokoroJob(
+        'https://github.com/testOwner/testRepo/pull/1234'
+      );
+      assert.strictEqual(stdout, 'some output');
+      assert.strictEqual(stderr, 'some error output');
+      sinon.assert.calledOnce(execStub);
+      sinon.assert.calledWithMatch(infoStub, sinon.match('some output'));
+      sinon.assert.calledWithMatch(warnStub, sinon.match('some error output'));
+    });
 
-    it('should catch and log an exception', async () => {});
+    it('should catch and log an exception', async () => {
+      const execStub = sandbox
+        .stub(releaseTriggerModule, 'exec')
+        .rejects(new Error('Command failed: /bin/false'));
+      const errorStub = sandbox.stub(logger, 'error');
+      await assert.rejects(
+        triggerKokoroJob('https://github.com/testOwner/testRepo/pull/1234'),
+        err => {
+          if (err instanceof Error) {
+            return err.message.startsWith('Command failed: /bin/false');
+          }
+          return false;
+        }
+      );
+      sinon.assert.calledOnce(execStub);
+      sinon.assert.calledWithMatch(
+        errorStub,
+        sinon.match('error executing command')
+      );
+    });
   });
 
   describe('markTriggered', () => {
-    it('should add a label to a pull request', async () => {});
+    it('should add a label to a pull request', async () => {
+      const scope = nock('https://api.github.com/')
+        .post('/repos/testOwner/testRepo/issues/1234/labels', body => {
+          console.log(body);
+          return body;
+        })
+        .reply(201);
+      await markTriggered(octokit, {
+        owner: 'testOwner',
+        repo: 'testRepo',
+        number: 1234,
+      });
+      scope.done();
+    });
   });
 
   describe('markFailed', () => {
-    it('should add a label to a pull request', async () => {});
+    it('should add a label to a pull request', async () => {
+      const scope = nock('https://api.github.com/')
+        .post('/repos/testOwner/testRepo/issues/1234/labels', body => {
+          console.log(body);
+          return body;
+        })
+        .reply(201);
+      await markTriggered(octokit, {
+        owner: 'testOwner',
+        repo: 'testRepo',
+        number: 1234,
+      });
+      scope.done();
+    });
   });
 });

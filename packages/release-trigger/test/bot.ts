@@ -110,18 +110,12 @@ describe('bot', () => {
       sinon.assert.calledWith(
         markTriggeredStub,
         sinon.match.any,
-        sinon.match.has(
-          'html_url',
-          'https://github.com/Codertocat/Hello-World/pull/1234'
-        )
+        sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 1234})
       );
       sinon.assert.calledWith(
         markTriggeredStub,
         sinon.match.any,
-        sinon.match.has(
-          'html_url',
-          'https://github.com/Codertocat/Hello-World/pull/1235'
-        )
+        sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 1235})
       );
     });
   });
@@ -154,10 +148,7 @@ describe('bot', () => {
       sinon.assert.calledWith(
         markTriggeredStub,
         sinon.match.any,
-        sinon.match.has(
-          'html_url',
-          'https://github.com/Codertocat/Hello-World/pull/2'
-        )
+        sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 2})
       );
     });
 

@@ -19,7 +19,7 @@ import {logger} from 'gcf-utils';
 import {promisify} from 'util';
 import * as child_process from 'child_process';
 
-const exec = promisify(child_process.exec);
+export const exec = promisify(child_process.exec);
 
 export const FAILED_LABEL = 'autorelease: failed';
 export const TAGGED_LABEL = 'autorelease: tagged';
@@ -27,6 +27,12 @@ export const TRIGGERED_LABEL = 'autorelease: triggered';
 export interface Repository {
   owner: string;
   repo: string;
+}
+
+interface BasicPullRequest {
+  owner: string;
+  repo: string;
+  number: number;
 }
 
 export interface PullRequest {
@@ -116,32 +122,25 @@ export async function triggerKokoroJob(
 
 export async function markTriggered(
   octokit: Octokit,
-  pullRequest: PullRequest
+  pullRequest: BasicPullRequest
 ) {
-  const owner = pullRequest.base.repo.owner?.login;
-  if (!owner) {
-    logger.error(`no owner for ${pullRequest.number}`);
-    return;
-  }
   logger.info('adding `autorelease: triggered` label');
   await octokit.issues.addLabels({
-    owner,
-    repo: pullRequest.base.repo.name,
+    owner: pullRequest.owner,
+    repo: pullRequest.repo,
     issue_number: pullRequest.number,
     labels: [TRIGGERED_LABEL],
   });
 }
 
-export async function markFailed(octokit: Octokit, pullRequest: PullRequest) {
-  const owner = pullRequest.base.repo.owner?.login;
-  if (!owner) {
-    logger.error(`no owner for ${pullRequest.number}`);
-    return;
-  }
+export async function markFailed(
+  octokit: Octokit,
+  pullRequest: BasicPullRequest
+) {
   logger.info('adding `autorelease: failed` label');
   await octokit.issues.addLabels({
-    owner,
-    repo: pullRequest.base.repo.name,
+    owner: pullRequest.owner,
+    repo: pullRequest.repo,
     issue_number: pullRequest.number,
     labels: [FAILED_LABEL],
   });

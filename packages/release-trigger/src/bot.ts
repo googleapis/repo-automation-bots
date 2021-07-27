@@ -28,7 +28,6 @@ import {
   DEFAULT_CONFIGURATION,
 } from './config-constants';
 import {
-  Repository,
   findPendingReleasePullRequests,
   triggerKokoroJob,
   markTriggered,
@@ -38,11 +37,24 @@ import {
 } from './release-trigger';
 
 async function doTrigger(octokit: Octokit, pullRequest: PullRequest) {
+  const owner = pullRequest.base.repo.owner?.login;
+  if (!owner) {
+    logger.error(`no owner for ${pullRequest.number}`);
+    return;
+  }
   try {
     await triggerKokoroJob(pullRequest.html_url);
-    await markTriggered(octokit, pullRequest);
+    await markTriggered(octokit, {
+      owner,
+      repo: pullRequest.base.repo.name,
+      number: pullRequest.number,
+    });
   } catch (e) {
-    await markFailed(octokit, pullRequest);
+    await markFailed(octokit, {
+      owner,
+      repo: pullRequest.base.repo.name,
+      number: pullRequest.number,
+    });
   }
 }
 
