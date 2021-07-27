@@ -191,15 +191,15 @@
               "properties": {
                 "title": {
                   "type": "string",
-                  "const": "^(fix\\(deps\\)|chore\\(deps\\)):"
+                  "const": "^(fix|chore)\\(deps\\):"
                 },
                 "changedFiles": {
                   "type": "array",
                   "items": {
                     "enum": [
-                      "/package\\.json$",
-                      "/pom\\.xml$",
-                      "/requirements\\.txt$"
+                      "package\\.json$",
+                      "pom\\.xml$",
+                      "requirements\\.txt$"
                     ]
                   }
                 },
