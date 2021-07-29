@@ -20,7 +20,7 @@ import {v4 as uuidv4} from 'uuid';
 import * as assert from 'assert';
 
 describe('database', () => {
-  before(async function() {
+  before(async function () {
     // When checks run on github, the call to db.collection().doc().get()
     // doesn't return an error; it never completes.  So, we need a timeout
     // to handle that case too.

@@ -235,12 +235,11 @@ function zipWithBrokenLockFile(): AdmZip {
   return zip;
 }
 
-
 describe('refreshConfigs', () => {
-  let fakeOctokit = newFakeOctokit();
+  const fakeOctokit = newFakeOctokit();
 
   const octokitSha123 = (zip?: AdmZip): InstanceType<typeof Octokit> => {
-    return ({
+    return {
       issues: fakeOctokit.issues,
       pulls: fakeOctokit.pulls,
       repos: {
@@ -266,7 +265,7 @@ describe('refreshConfigs', () => {
         },
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any) as InstanceType<typeof Octokit>
+    } as any as InstanceType<typeof Octokit>;
   };
 
   afterEach(() => {

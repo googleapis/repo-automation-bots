@@ -14,9 +14,8 @@
 
 import {logger} from 'gcf-utils';
 import {OwlBotLock, owlBotLockPath} from './config-files';
-import {Configs, ConfigsStore, OwlBotYamlAndPath} from './configs-store';
+import {Configs, ConfigsStore} from './configs-store';
 import {core} from './core';
-import yaml from 'js-yaml';
 // Conflicting linters think the next line is extraneous or necessary.
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints} from '@octokit/types';
@@ -269,7 +268,7 @@ export async function refreshConfigs(
       `${repoFull} has an invalid ${owlBotLockPath} file or invalid '.OwlBot.yaml' file : ${e.message}`
     );
 
-    const title = `Invalid owl-bot configuration files`;
+    const title = 'Invalid owl-bot configuration files';
     const body = `\`owl-bot\` will not be able to update this repo until '${owlBotLockPath}' or '.OwlBot.yaml' file is fixed.
 
 Please fix this as soon as possible so that your repository will not go stale. Here is the error message:

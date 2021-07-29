@@ -58,7 +58,7 @@ Copy-Tag: ${copyTag}
     };
     assert.strictEqual(
       true,
-      await copyExists((octokit as unknown) as OctokitType, destRepo, 'abc123')
+      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
     );
   });
 
@@ -77,7 +77,7 @@ Copy-Tag: ${copyTag}
     };
     assert.strictEqual(
       true,
-      await copyExists((octokit as unknown) as OctokitType, destRepo, 'abc123')
+      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
     );
   });
 
@@ -102,7 +102,7 @@ Copy-Tag: ${copyTag}
     };
     assert.strictEqual(
       false,
-      await copyExists((octokit as unknown) as OctokitType, destRepo, 'abc123')
+      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
     );
   });
 
@@ -127,7 +127,7 @@ Copy-Tag: ${copyTag}
     };
     assert.strictEqual(
       false,
-      await copyExists((octokit as unknown) as OctokitType, destRepo, 'def456')
+      await copyExists(octokit as unknown as OctokitType, destRepo, 'def456')
     );
   });
 
@@ -144,7 +144,7 @@ Source-Link: https://github.com/googleapis/googleapis/abc123
     };
     assert.strictEqual(
       true,
-      await copyExists((octokit as unknown) as OctokitType, destRepo, 'abc123')
+      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
     );
   });
 });
@@ -349,7 +349,7 @@ describe('copyDirs', () => {
   });
 });
 
-describe('copyCode', function() {
+describe('copyCode', function () {
   // These tests use git locally and read and write a lot to the file system,
   // so a slow file system will slow them down.
   this.timeout(60000); // 1 minute.
@@ -389,10 +389,10 @@ describe('copyCode', function() {
     assert.deepStrictEqual(collectDirTree(destRepo), [
       '.github',
       '.github/.OwlBot.yaml:deep-copy-regex:\n' +
-      '  - source: /(.*)\n' +
-      '    dest: /src/$1\n' +
-      'deep-remove-regex:\n' +
-      '  - /src\n',
+        '  - source: /(.*)\n' +
+        '    dest: /src/$1\n' +
+        'deep-remove-regex:\n' +
+        '  - /src\n',
       'src',
       'src/a.txt:1',
       'src/b.txt:2',
@@ -414,10 +414,10 @@ describe('copyCode', function() {
     assert.deepStrictEqual(collectDirTree(destRepo), [
       '.github',
       '.github/.OwlBot.yaml:deep-copy-regex:\n' +
-      '  - source: /(.*)\n' +
-      '    dest: /src/$1\n' +
-      'deep-remove-regex:\n' +
-      '  - /src\n',
+        '  - source: /(.*)\n' +
+        '    dest: /src/$1\n' +
+        'deep-remove-regex:\n' +
+        '  - /src\n',
       'src',
       'src/a.txt:1',
       'src/b.txt:2',
