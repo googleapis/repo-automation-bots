@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Configs, ConfigsStore} from '../src/configs-store';
+import {AffectedRepo, Configs, ConfigsStore} from '../src/configs-store';
 import {OwlBotLock, toFrontMatchRegExp} from '../src/config-files';
-import {GithubRepo, githubRepoFromOwnerSlashName} from '../src/github-repo';
+import {githubRepoFromOwnerSlashName} from '../src/github-repo';
 // There are lots of unused args on fake functions, and that's ok.
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 export class FakeConfigsStore implements ConfigsStore {
   readonly configs: Map<string, Configs>;
-  readonly githubRepos: Map<string, GithubRepo>;
+  readonly githubRepos: Map<string, AffectedRepo>;
 
   constructor(configs?: Map<string, Configs>) {
     this.configs = configs ?? new Map<string, Configs>();
@@ -41,18 +41,20 @@ export class FakeConfigsStore implements ConfigsStore {
   }
   findReposAffectedByFileChanges(
     changedFilePaths: string[]
-  ): Promise<GithubRepo[]> {
-    const result: GithubRepo[] = [];
+  ): Promise<AffectedRepo[]> {
+    const result: AffectedRepo[] = [];
     for (const [repoName, config] of this.configs) {
-      repoLoop: for (const deepCopy of config.yaml?.['deep-copy-regex'] ?? []) {
-        const regexp = toFrontMatchRegExp(deepCopy.source);
-        for (const filePath of changedFilePaths) {
-          if (regexp.test(filePath)) {
-            result.push(
-              this.githubRepos.get(repoName) ??
-                githubRepoFromOwnerSlashName(repoName)
-            );
-            break repoLoop;
+      repoLoop: for (const yaml of config.yamls ?? []) {
+        for (const deepCopy of yaml.yaml['deep-copy-regex'] ?? []) {
+          const regexp = toFrontMatchRegExp(deepCopy.source);
+          for (const filePath of changedFilePaths) {
+            if (regexp.test(filePath)) {
+              const repo =
+                this.githubRepos.get(repoName)?.repo ??
+                githubRepoFromOwnerSlashName(repoName);
+              result.push({repo, yamlPath: yaml.path});
+              break repoLoop;
+            }
           }
         }
       }

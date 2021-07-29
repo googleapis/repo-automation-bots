@@ -13,14 +13,8 @@
 // limitations under the License.
 
 import {logger} from 'gcf-utils';
-import {
-  OwlBotLock,
-  owlBotLockFrom,
-  owlBotLockPath,
-  owlBotYamlFromText,
-  owlBotYamlPath,
-} from './config-files';
-import {Configs, ConfigsStore} from './configs-store';
+import {OwlBotLock, owlBotLockPath} from './config-files';
+import {Configs, ConfigsStore, OwlBotYamlAndPath} from './configs-store';
 import {core} from './core';
 import yaml from 'js-yaml';
 // Conflicting linters think the next line is extraneous or necessary.
@@ -28,6 +22,7 @@ import yaml from 'js-yaml';
 import {Endpoints} from '@octokit/types';
 import {OctokitType, createIssueIfTitleDoesntExist} from './octokit-util';
 import {githubRepoFromOwnerSlashName} from './github-repo';
+import {fetchConfigs} from './fetch-configs';
 
 type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
 
@@ -246,7 +241,7 @@ export async function refreshConfigs(
     configs?.commitHash === commitHash &&
     configs?.branchName === defaultBranch
   ) {
-    logger.info(`Configs for ${repoFull} or up to date.`);
+    logger.info(`Configs for ${repoFull} are up to date.`);
     return; // configsStore is up to date.
   }
 
@@ -257,69 +252,37 @@ export async function refreshConfigs(
     commitHash: commitHash,
   };
 
-  // Query github for the contents of the lock file.
-  const lockContent = await core.getFileContent(
-    githubOrg,
-    repoName,
-    owlBotLockPath,
-    commitHash,
-    octokit
-  );
-  if (lockContent) {
-    try {
-      newConfigs.lock = owlBotLockFrom(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        yaml.load(lockContent) as Record<string, any>
-      );
-    } catch (e) {
-      logger.error(
-        `${repoFull} has an invalid ${owlBotLockPath} file: ${e.message}`
-      );
-
-      const title = `Invalid ${owlBotLockPath}`;
-      const body = `\`owl-bot\` will not be able to update this repo until '${owlBotLockPath}' is fixed.
-
-Please fix this as soon as possible so that your repository will not go stale.`;
-
-      await createIssueIfTitleDoesntExist(
-        octokit,
-        githubOrg,
-        repoName,
-        title,
-        body,
-        logger
-      );
+  try {
+    const [lock, yamls] = await fetchConfigs(octokit, {
+      owner: githubOrg,
+      repo: repoName,
+      ref: commitHash,
+    });
+    if (lock) {
+      newConfigs.lock = lock;
     }
-  }
-
-  // Query github for the contents of the yaml file.
-  const yamlContent = await core.getFileContent(
-    githubOrg,
-    repoName,
-    owlBotYamlPath,
-    commitHash,
-    octokit
-  );
-  if (yamlContent) {
-    try {
-      newConfigs.yaml = owlBotYamlFromText(yamlContent);
-    } catch (e) {
-      logger.error(`${repoFull} has an invalid ${owlBotYamlPath} file: ${e}`);
-
-      const title = `Invalid ${owlBotYamlPath}`;
-      const body = `\`owl-bot\` will not be able to update this repo until '${owlBotYamlPath}' is fixed.
-
-Please fix this as soon as possible so that your repository will not go stale.`;
-
-      await createIssueIfTitleDoesntExist(
-        octokit,
-        githubOrg,
-        repoName,
-        title,
-        body,
-        logger
-      );
+    if (yamls && yamls.length > 0) {
+      newConfigs.yamls = yamls;
     }
+  } catch (e) {
+    logger.error(
+      `${repoFull} has an invalid ${owlBotLockPath} file or invalid '.OwlBot.yaml' file : ${e.message}`
+    );
+
+    const title = `Invalid owl-bot configuration files`;
+    const body = `\`owl-bot\` will not be able to update this repo until '${owlBotLockPath}' or '.OwlBot.yaml' file is fixed.
+
+Please fix this as soon as possible so that your repository will not go stale. Here is the error message:
+${e.message}`;
+
+    await createIssueIfTitleDoesntExist(
+      octokit,
+      githubOrg,
+      repoName,
+      title,
+      body,
+      logger
+    );
   }
   // Store the new configs back into the database.
   const stored = await configsStore.storeConfigs(

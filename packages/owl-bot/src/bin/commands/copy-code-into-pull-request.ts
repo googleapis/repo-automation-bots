@@ -23,6 +23,7 @@ interface Args {
   'source-repo': string;
   'source-repo-commit-hash': string;
   'dest-repo': string;
+  'dest-owlbot-yaml': string;
   'dest-branch': string;
   'github-token': string;
 }
@@ -51,6 +52,13 @@ export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
         type: 'string',
         demand: true,
       })
+      .option('dest-owlbot-yaml', {
+        describe:
+          'Relative directory to the .OwlBot.yaml file specifying which files to copy.  Example: .github/.OwlBot.yaml',
+        type: 'string',
+        default: '.github/.OwlBot.yaml',
+        demand: false,
+      })
       .option('dest-branch', {
         describe: 'Copy the code into this branch.',
         type: 'string',
@@ -66,7 +74,10 @@ export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
     await copyCodeIntoPullRequest(
       argv['source-repo'],
       argv['source-repo-commit-hash'],
-      githubRepoFromOwnerSlashName(argv['dest-repo']),
+      {
+        repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
+        yamlPath: argv['dest-owlbot-yaml'],
+      },
       argv['dest-branch'],
       octokitFactoryFromToken(argv['github-token'])
     );
