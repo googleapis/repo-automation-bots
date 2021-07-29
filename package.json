@@ -11,13 +11,9 @@
     "generate-bot": "node ./packages/generate-bot/run.js"
   },
   "devDependencies": {
-    "@google-cloud/mono-repo-publish": "^1.0.0",
-    "@types/adm-zip": "^0.4.34",
     "c8": "^7.1.0",
     "gaxios": "^4.0.0",
-    "smee-client": "^1.1.0"
-  },
-  "dependencies": {
-    "adm-zip": "^0.5.5"
+    "smee-client": "^1.1.0",
+    "@google-cloud/mono-repo-publish": "^1.0.0"
   }
 }
