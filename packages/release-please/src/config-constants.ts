@@ -39,8 +39,7 @@ export interface ConfigurationOptions extends BranchOptions {
 }
 
 export const WELL_KNOWN_CONFIGURATION_FILE = 'release-please.yml';
-export const DEFAULT_CONFIGURATION: ConfigurationOptions = {
-  primaryBranch: 'master',
+export const DEFAULT_CONFIGURATION: Partial<ConfigurationOptions> = {
   branches: [],
   manifest: false,
 };
