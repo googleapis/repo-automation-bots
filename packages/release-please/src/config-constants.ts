@@ -33,14 +33,13 @@ export interface BranchConfiguration extends BranchOptions {
 }
 
 export interface ConfigurationOptions extends BranchOptions {
-  primaryBranch: string;
+  primaryBranch?: string;
   branches?: BranchConfiguration[];
   disableFailureChecker?: boolean;
 }
 
 export const WELL_KNOWN_CONFIGURATION_FILE = 'release-please.yml';
 export const DEFAULT_CONFIGURATION: ConfigurationOptions = {
-  primaryBranch: 'master',
   branches: [],
   manifest: false,
 };
