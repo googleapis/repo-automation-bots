@@ -13,6 +13,21 @@ exports['auto-approve main auto-approve function config exists on main branch ap
   "event": "APPROVE"
 }
 
+exports['auto-approve main auto-approve function config exists on main branch approves and tags a PR if everything is valid, and it is coming from a fork 1'] = {
+  "head_sha": "65f14b92a8135948008c6e26344167a2dac9f066",
+  "name": "Auto-approve.yml check",
+  "conclusion": "success",
+  "output": {
+    "title": "Auto-approve.yml check",
+    "summary": "Successful auto-approve.yml config check",
+    "text": ""
+  }
+}
+
+exports['auto-approve main auto-approve function config exists on main branch approves and tags a PR if everything is valid, and it is coming from a fork 2'] = {
+  "event": "APPROVE"
+}
+
 exports['auto-approve main auto-approve function config exists on main branch submits a failing check if config exists but is not valid 1'] = {
   "head_sha": "c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a",
   "name": "Auto-approve.yml check",
@@ -80,20 +95,5 @@ exports['auto-approve gets secrets and authenticates separately for approval cre
 }
 
 exports['auto-approve gets secrets and authenticates separately for approval creates a separate octokit instance and authenticates with secret in secret manager 2'] = {
-  "event": "APPROVE"
-}
-
-exports['auto-approve main auto-approve function config exists on main branch approves and tags a PR if everything is valid, and it is coming from a fork 1'] = {
-  "head_sha": "65f14b92a8135948008c6e26344167a2dac9f066",
-  "name": "Auto-approve.yml check",
-  "conclusion": "success",
-  "output": {
-    "title": "Auto-approve.yml check",
-    "summary": "Successful auto-approve.yml config check",
-    "text": ""
-  }
-}
-
-exports['auto-approve main auto-approve function config exists on main branch approves and tags a PR if everything is valid, and it is coming from a fork 2'] = {
   "event": "APPROVE"
 }
