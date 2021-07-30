@@ -361,9 +361,6 @@ const handler = (app: Probot) => {
       ...DEFAULT_CONFIGURATION,
       ...remoteConfiguration,
     };
-    if (!configuration.primaryBranch) {
-      configuration.primaryBranch = 'master';
-    }
 
     // use gcf-logger as logger for release-please
     setLogger(logger);
