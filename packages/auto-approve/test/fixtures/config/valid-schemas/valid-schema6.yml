@@ -1,6 +1,6 @@
 rules:
 - author: "renovate-bot"
-  title: "^(fix\\(deps\\)|chore\\(deps\\)):"
+  title: "^(fix|chore)\\(deps\\):"
   changedFiles: 
-  - "/pom\\.xml$"
+  - "pom\\.xml$"
   maxFiles: 3
