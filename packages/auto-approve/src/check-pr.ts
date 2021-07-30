@@ -55,7 +55,7 @@ export async function checkPRAgainstConfig(
 ): Promise<Boolean> {
   const repoOwner = pr.repository.owner.login;
   const prAuthor = pr.pull_request.user.login;
-  const repo = pr.repository.name;
+  const repo = pr.pull_request.base.repo.name;
   const prNumber = pr.number;
   const title = pr.pull_request.title;
 

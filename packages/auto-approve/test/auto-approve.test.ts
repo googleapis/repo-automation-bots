@@ -37,41 +37,46 @@ const TestingOctokit = ProbotOctokit.defaults({
   throttle: {enabled: false},
 });
 
-function getConfigFile(response: string | undefined, status: number) {
+function getConfigFile(
+  owner: string,
+  repo: string,
+  response: string | undefined,
+  status: number
+) {
   if (status === 404) {
     return (
       nock('https://api.github.com')
         // This second stub is required as octokit does a second attempt on a different endpoint
-        .get('/repos/testOwner/.github/contents/.github%2Fauto-approve.yml')
+        .get(`/repos/${owner}/.github/contents/.github%2Fauto-approve.yml`)
         .reply(404)
-        .get('/repos/testOwner/testRepo/contents/.github%2Fauto-approve.yml')
+        .get(`/repos/${owner}/${repo}/contents/.github%2Fauto-approve.yml`)
         .reply(404)
     );
   } else {
     return nock('https://api.github.com')
-      .get('/repos/testOwner/testRepo/contents/.github%2Fauto-approve.yml')
+      .get(`/repos/${owner}/${repo}/contents/.github%2Fauto-approve.yml`)
       .reply(status, {response});
   }
 }
 
-function submitReview(status: number) {
+function submitReview(owner: string, repo: string, status: number) {
   return nock('https://api.github.com')
-    .post('/repos/testOwner/testRepo/pulls/1/reviews', body => {
+    .post(`/repos/${owner}/${repo}/pulls/1/reviews`, body => {
       snapshot(body);
       return true;
     })
     .reply(status);
 }
 
-function addLabels(status: number) {
+function addLabels(owner: string, repo: string, status: number) {
   return nock('https://api.github.com')
-    .post('/repos/testOwner/testRepo/issues/1/labels')
+    .post(`/repos/${owner}/${repo}/issues/1/labels`)
     .reply(status);
 }
 
-function createCheck(status: number) {
+function createCheck(owner: string, repo: string, status: number) {
   return nock('https://api.github.com')
-    .post('/repos/testOwner/testRepo/check-runs', body => {
+    .post(`/repos/${owner}/${repo}/check-runs`, body => {
       snapshot(body);
       return true;
     })
@@ -131,10 +136,44 @@ describe('auto-approve', () => {
         ));
 
         const scopes = [
-          getConfigFile('fake-config', 200),
-          submitReview(200),
-          addLabels(200),
-          createCheck(200),
+          getConfigFile('testOwner', 'testRepo', 'fake-config', 200),
+          submitReview('testOwner', 'testRepo', 200),
+          addLabels('testOwner', 'testRepo', 200),
+          createCheck('testOwner', 'testRepo', 200),
+        ];
+
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
+      });
+
+      it('approves and tags a PR if everything is valid, and it is coming from a fork', async () => {
+        checkPRAgainstConfigStub.returns(true);
+        validateSchemaStub.returns(undefined);
+        checkCodeOwnersStub.returns('');
+        getSecretStub.returns(new Octokit({auth: '123'}));
+
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened_fork'
+        ));
+
+        const scopes = [
+          getConfigFile(
+            'GoogleCloudPlatform',
+            'python-docs-samples',
+            'fake-config',
+            200
+          ),
+          submitReview('GoogleCloudPlatform', 'python-docs-samples', 200),
+          addLabels('GoogleCloudPlatform', 'python-docs-samples', 200),
+          createCheck('GoogleCloudPlatform', 'python-docs-samples', 200),
         ];
 
         await probot.receive({
@@ -163,7 +202,10 @@ describe('auto-approve', () => {
           'pull_request_opened'
         ));
 
-        const scopes = [getConfigFile('fake-config', 200), createCheck(200)];
+        const scopes = [
+          getConfigFile('testOwner', 'testRepo', 'fake-config', 200),
+          createCheck('testOwner', 'testRepo', 200),
+        ];
 
         await probot.receive({
           name: 'pull_request',
@@ -186,7 +228,10 @@ describe('auto-approve', () => {
           'pull_request_opened'
         ));
 
-        const scopes = [getConfigFile('fake-config', 200), createCheck(200)];
+        const scopes = [
+          getConfigFile('testOwner', 'testRepo', 'fake-config', 200),
+          createCheck('testOwner', 'testRepo', 200),
+        ];
 
         await probot.receive({
           name: 'pull_request',
@@ -209,7 +254,7 @@ describe('auto-approve', () => {
           'pull_request_opened'
         ));
 
-        const scope = createCheck(200);
+        const scope = createCheck('testOwner', 'testRepo', 200);
 
         await probot.receive({
           name: 'pull_request',
@@ -221,6 +266,7 @@ describe('auto-approve', () => {
         getBlobFromPRFilesStub.reset();
       });
     });
+
     describe('config does not exist in PR', () => {
       it('ignores the PR, if config does not exist on repo or PR', async () => {
         getBlobFromPRFilesStub.returns(undefined);
@@ -231,7 +277,7 @@ describe('auto-approve', () => {
           'pull_request_opened'
         ));
 
-        const scopes = [getConfigFile(undefined, 404)];
+        const scopes = [getConfigFile('testOwner', 'testRepo', undefined, 404)];
 
         await probot.receive({
           name: 'pull_request',
@@ -254,7 +300,7 @@ describe('auto-approve', () => {
         validateSchemaStub.returns(undefined);
         checkCodeOwnersStub.returns('');
 
-        const scopes = [createCheck(200)];
+        const scopes = [createCheck('testOwner', 'testRepo', 200)];
 
         await probot.receive({
           name: 'pull_request',
@@ -285,7 +331,7 @@ describe('auto-approve', () => {
           `You must add this line to the CODEOWNERS file for auto-approve.yml to merge pull requests on this repo: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
         );
 
-        const scopes = [createCheck(200)];
+        const scopes = [createCheck('testOwner', 'testRepo', 200)];
 
         await probot.receive({
           name: 'pull_request',
@@ -322,10 +368,10 @@ describe('auto-approve', () => {
       ));
 
       const scopes = [
-        getConfigFile('fake-config', 200),
-        submitReview(200),
-        addLabels(200),
-        createCheck(200),
+        getConfigFile('testOwner', 'testRepo', 'fake-config', 200),
+        submitReview('testOwner', 'testRepo', 200),
+        addLabels('testOwner', 'testRepo', 200),
+        createCheck('testOwner', 'testRepo', 200),
       ];
 
       await probot.receive({
