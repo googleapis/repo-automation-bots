@@ -5,5 +5,5 @@ go 1.16
 require (
 	cloud.google.com/go/pubsub v1.3.1
 	github.com/google/go-cmp v0.5.6
-	google.golang.org/api v0.51.0
+	google.golang.org/api v0.52.0
 )
