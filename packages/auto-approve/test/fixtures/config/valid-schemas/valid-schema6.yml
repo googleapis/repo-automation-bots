@@ -1,0 +1,6 @@
+rules:
+- author: "renovate-bot"
+  title: "^(fix|chore)\\(deps\\):"
+  changedFiles: 
+  - "pom\\.xml$"
+  maxFiles: 3
