@@ -53,7 +53,7 @@ export function checkValidity(opts: ProgramOptions) {
   }
 
   if (fs.existsSync(path.join(opts.fileLocation))) {
-    console.log('Your progam name and location is not unique. Please rename.');
+    console.log('Your program name and location is not unique. Please rename.');
     return false;
   }
   opts.programName = opts.programName.toLowerCase();

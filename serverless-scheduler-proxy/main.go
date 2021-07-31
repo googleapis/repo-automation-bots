@@ -245,7 +245,7 @@ func getBotSecret(ctx context.Context, b botConfig, botName string) ([]byte, err
 }
 
 // RepoAutomationPubSubMessage represents
-// THe data recieved from a PubSubMessage
+// THe data received from a PubSubMessage
 type RepoAutomationPubSubMessage struct {
 	Name     string `json:"Name"`     // Name of Bot
 	Location string `json:"Location"` // Region where bot lives
