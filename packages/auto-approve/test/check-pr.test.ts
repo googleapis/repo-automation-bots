@@ -15,13 +15,13 @@
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import * as fs from 'fs';
-import {File} from '../src/get-pr-info';
+import * as getPRInfo from '../src/get-pr-info';
 import * as checkPR from '../src/check-pr';
 import {checkFilePathsMatch} from '../src/utils-for-pr-checking';
 import nock from 'nock';
 import {resolve} from 'path';
 import yaml from 'js-yaml';
-import sinon from 'sinon';
+import sinon, {SinonStub} from 'sinon';
 
 const {Octokit} = require('@octokit/rest');
 
@@ -30,7 +30,7 @@ const octokit = new Octokit({
 });
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-function listChangedFilesPR(status: number, response: File[]) {
+function listChangedFilesPR(status: number, response: getPRInfo.File[]) {
   return nock('https://api.github.com')
     .get('/repos/testOwner/testRepo/pulls/1/files')
     .reply(status, response);
@@ -57,6 +57,7 @@ describe('check pr against config', async () => {
       };
       assert.ok(checkFilePathsMatch(prFiles, validPr));
     });
+
     it('should return true if each file matches at least one of the patterns', () => {
       const prFiles = [
         'packages/spell-check/package.json',
@@ -104,6 +105,29 @@ describe('check pr against config', async () => {
         'utf8'
       )
     ) as {rules: checkPR.ValidPr[]};
+
+    it('should get the base repo info to do its checking, not the head repo', async () => {
+      const validPR = yaml.load(
+        fs.readFileSync(
+          resolve(fixturesPath, 'config', 'valid-schemas', 'valid-schema5.yml'),
+          'utf8'
+        )
+      ) as {rules: checkPR.ValidPr[]};
+
+      const fileRequest = nock('https://api.github.com')
+        .get('/repos/GoogleCloudPlatform/python-docs-samples/pulls/1/files')
+        .reply(200, [{filename: 'requirements.txt', sha: '1234'}]);
+
+      const pr = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_fork'
+      ));
+
+      await checkPR.checkPRAgainstConfig(validPR, pr, octokit);
+
+      fileRequest.done();
+    });
 
     it('should return false if PR does not match author in validPRConfig', async () => {
       const pr = require(resolve(
@@ -494,6 +518,94 @@ describe('check pr against config', async () => {
 
       scopes.done();
       assert.strictEqual(prMatchesConfig, false);
+    });
+  });
+
+  describe('additional validation checks for Java', async () => {
+    it('should correctly identify and pass a Java PR', async () => {
+      const validPR = yaml.load(
+        fs.readFileSync(
+          resolve(fixturesPath, 'config', 'valid-schemas', 'valid-schema6.yml'),
+          'utf8'
+        )
+      ) as {rules: checkPR.ValidPr[]};
+
+      const pr = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_special_validation_dependency_update_java'
+      ));
+
+      const scopes = listChangedFilesPR(200, [
+        {
+          sha: '21605df5d70e3a374e168e31a0d8c96902e3d039',
+          filename: 'datacatalog/quickstart/pom.xml',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          patch:
+            '@@ -39,7 +39,7 @@\n' +
+            '         <dependency>\n' +
+            '             <groupId>com.google.cloud</groupId>\n' +
+            '             <artifactId>google-cloud-datacatalog</artifactId>\n' +
+            '-            <version>1.4.1</version>\n' +
+            '+            <version>1.4.2</version>\n' +
+            '         </dependency>\n' +
+            ' \n' +
+            '         <!-- Test dependencies -->',
+        },
+      ]);
+
+      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+        validPR,
+        pr,
+        octokit
+      );
+
+      scopes.done();
+      assert.ok(prMatchesConfig);
+    });
+
+    it('should correctly identify and pass a Java PR with rev', async () => {
+      const validPR = yaml.load(
+        fs.readFileSync(
+          resolve(fixturesPath, 'config', 'valid-schemas', 'valid-schema6.yml'),
+          'utf8'
+        )
+      ) as {rules: checkPR.ValidPr[]};
+
+      const pr = require(resolve(
+        fixturesPath,
+        'events',
+        'pull_request_opened_special_validation_dependency_update_java'
+      ));
+
+      const scopes = listChangedFilesPR(200, [
+        {
+          sha: '1349c83bf3c20b102da7ce85ebd384e0822354f3',
+          filename: 'iam/api-client/pom.xml',
+          additions: 1,
+          deletions: 1,
+          changes: 2,
+          patch:
+            '@@ -71,7 +71,7 @@\n' +
+            '     <dependency>\n' +
+            '       <groupId>com.google.cloud</groupId>\n' +
+            '       <artifactId>google-cloud-datacatalog</artifactId>\n' +
+            '-      <version>v1-rev20210319-1.31.5</version>\n' +
+            '+      <version>v1-rev20210319-1.32.1</version>\n' +
+            '     </dependency>\n',
+        },
+      ]);
+
+      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+        validPR,
+        pr,
+        octokit
+      );
+
+      scopes.done();
+      assert.ok(prMatchesConfig);
     });
   });
 });
