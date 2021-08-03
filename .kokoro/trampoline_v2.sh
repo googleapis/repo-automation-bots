@@ -393,7 +393,7 @@ docker_flags=(
     # Use the host network.
     "--network=host"
 
-    # Run in priviledged mode. We are not using docker for sandboxing or
+    # Run in privileged mode. We are not using docker for sandboxing or
     # isolation, just for packaging our dev tools.
     "--privileged"
 

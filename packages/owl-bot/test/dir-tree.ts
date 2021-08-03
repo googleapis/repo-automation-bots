@@ -16,7 +16,7 @@ import path from 'path';
 import * as fs from 'fs';
 
 /**
- * Creates a directory struture with files.
+ * Creates a directory structure with files.
  *
  * @param rootDir the root directory under which to create files and directories.
  * @param specs a list of files and directories in this format:

@@ -105,7 +105,7 @@ By default, flakybot will create issues with `priority: p1` label. You
 can configure the priority in the configuration file at
 `.github/flakybot.yaml`.
 
-Here is an exmaple of changing the label to `priority: p2`.
+Here is an example of changing the label to `priority: p2`.
 
 ```yaml
 issuePriority: p2
