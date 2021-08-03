@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.1.3](https://www.github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.1.2...release-brancher-v1.1.3) (2021-08-03)
+
+
+### Bug Fixes
+
+* typo codespelling grammar ([#2319](https://www.github.com/googleapis/repo-automation-bots/issues/2319)) ([db944e8](https://www.github.com/googleapis/repo-automation-bots/commit/db944e84e008b8a6c7d2ab62b59ee0d5c15e4a40))
+
 ### [1.1.2](https://www.github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.1.1...release-brancher-v1.1.2) (2021-05-13)
 
 
