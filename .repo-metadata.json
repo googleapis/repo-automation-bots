@@ -5,5 +5,6 @@
   "language": "nodejs",
   "repo": "googleapis/repo-automation-bots",
   "distribution_name": "repo-automation-bots",
-  "codeowner_team": "@googleapis/github-automation"
+  "codeowner_team": "@googleapis/github-automation",
+  "client_documentation": "https://cloud.google.com/nodejs/docs/reference/repo-automation-bots/latest"
 }
