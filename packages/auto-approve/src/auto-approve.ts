@@ -28,6 +28,7 @@ import {validateYaml, validateSchema, checkCodeOwners} from './check-config.js';
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {Octokit} from '@octokit/rest';
 
+const APPROVER = 'yoshi-approver';
 export interface Configuration {
   rules: ValidPr[];
 }
@@ -248,7 +249,7 @@ export function handler(app: Probot) {
             // in the future (perhaps as an env var in our publish scripts).
             const octokit = await exports.authenticateWithSecret(
               process.env.PROJECT_ID || '',
-              'yoshi-approver'
+              APPROVER
             );
 
             const reviewsOnPr = cleanReviews(
@@ -256,7 +257,7 @@ export function handler(app: Probot) {
             );
 
             const isApprovalNecessary = reviewsOnPr.find(
-              x => x.user.login === 'yoshi-approver' && x.state === 'APPROVED'
+              x => x.user.login === APPROVER && x.state === 'APPROVED'
             );
 
             if (isApprovalNecessary) {

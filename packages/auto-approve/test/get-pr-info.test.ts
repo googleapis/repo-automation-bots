@@ -94,82 +94,29 @@ describe('get PR info tests', async () => {
           },
         ]);
 
-      const review = await getReviewsCompleted(
-        'testOwner',
-        'testRepo',
-        1,
-        octokit
-      );
-
-      assert.strictEqual(review, [
-        {
-          user: {login: 'octocat'},
-          state: 'APPROVED',
-          commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-          id: 12345,
-        },
-      ]);
-
-      reviewsRequest.done();
-    });
-
-    it('should get all the reviews in a PR', async () => {
-      const reviewsRequest = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/pulls/1/reviews')
-        .reply(200, [
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-        ]);
-
-      const review = await getReviewsCompleted(
-        'testOwner',
-        'testRepo',
-        1,
-        octokit
-      );
-
-      assert.strictEqual(review, [
-        {
-          user: {login: 'octocat'},
-          state: 'APPROVED',
-          commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-          id: 12345,
-        },
-      ]);
-
+      await getReviewsCompleted('testOwner', 'testRepo', 1, octokit);
       reviewsRequest.done();
     });
 
     it('should only return the most recent reviews', async () => {
-      const reviewsRequest = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/pulls/1/reviews')
-        .reply(200, [
-          {
-            user: {login: 'octocat'},
-            state: 'APPROVED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-            id: 12345,
-          },
-          {
-            user: {login: 'octocat'},
-            state: 'COMMENTED',
-            commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5d',
-            id: 12345,
-          },
-        ]);
+      const reviews = [
+        {
+          user: {login: 'octocat'},
+          state: 'COMMENTED',
+          commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5d',
+          id: 12345,
+        },
+        {
+          user: {login: 'octocat'},
+          state: 'APPROVED',
+          commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+          id: 12345,
+        },
+      ];
 
-      const review = await getReviewsCompleted(
-        'testOwner',
-        'testRepo',
-        1,
-        octokit
-      );
+      const review = cleanReviews(reviews);
 
-      assert.strictEqual(review, [
+      assert.deepStrictEqual(review, [
         {
           user: {login: 'octocat'},
           state: 'APPROVED',
@@ -177,8 +124,6 @@ describe('get PR info tests', async () => {
           id: 12345,
         },
       ]);
-
-      reviewsRequest.done();
     });
   });
 });
