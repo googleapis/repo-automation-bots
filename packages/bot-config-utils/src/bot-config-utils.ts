@@ -61,7 +61,7 @@ export interface ValidateConfigResult<ConfigType> {
 }
 
 /**
- * The optionnal arguments for `validateConfig`.
+ * The optional arguments for `validateConfig`.
  *
  * @prop {Array<object>} additionalSchemas - Additional schemas for Ajv schema
  *   validator. When you have complex schema that used definition in different

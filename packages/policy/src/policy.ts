@@ -147,7 +147,7 @@ export class Policy {
 
   /**
    * Given a relative path, search a given GitHub repository for the file.
-   * @param repo Repostiory metadata from GitHub
+   * @param repo Repository metadata from GitHub
    * @param file Relative path to the root of the GitHub repository to find
    * @param checkMagicFolder Also search the `.github` folder for a file
    */

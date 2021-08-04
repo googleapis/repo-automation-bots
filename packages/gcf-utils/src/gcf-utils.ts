@@ -973,7 +973,7 @@ export class GCFBootstrapper {
    */
   async enqueueTask(params: EnqueueTaskParams) {
     logger.info(
-      `scheduling cloud task targetting: ${this.taskTargetEnvironment}`
+      `scheduling cloud task targeting: ${this.taskTargetEnvironment}`
     );
     // Make a task here and return 200 as this is coming from GitHub
     // queue name can contain only letters ([A-Za-z]), numbers ([0-9]), or hyphens (-):

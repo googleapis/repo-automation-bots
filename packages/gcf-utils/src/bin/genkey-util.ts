@@ -24,7 +24,7 @@ export async function gather(
   webhookSecret: string
 ): Promise<Options> {
   let keyContent = '';
-  // Propogate exceptions up
+  // Propagate exceptions up
   keyContent = await fs.readFile(keyfile, 'utf8');
 
   return {

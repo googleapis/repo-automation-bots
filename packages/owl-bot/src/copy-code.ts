@@ -34,7 +34,7 @@ import {createPullRequestFromLastCommit} from './create-pr';
 
 // This code generally uses Sync functions because:
 // 1. None of our current designs including calling this code from a web
-//    server or other multi-processing enviornment.
+//    server or other multi-processing environment.
 // 2. Calling sync functions yields simpler code.
 
 const readFileAsync = promisify(readFile);
