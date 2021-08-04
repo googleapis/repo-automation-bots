@@ -25,6 +25,7 @@ import {
   onPostProcessorPublished,
   refreshConfigs,
   scanGithubForConfigs,
+  handlePullRequestEdited,
 } from './handlers';
 import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
 import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from './labels';
@@ -59,6 +60,11 @@ export function OwlBot(
     throw Error('must set CLOUD_BUILD_TRIGGER');
   }
   const trigger: string = process.env.CLOUD_BUILD_TRIGGER;
+  const trigger_regenerate_pull_request =
+    process.env.CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST ?? '';
+  if (!trigger_regenerate_pull_request) {
+    throw Error('must set CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST');
+  }
   if (!privateKey) {
     throw Error('GitHub app private key must be provided');
   }
@@ -81,6 +87,18 @@ export function OwlBot(
       privateKey,
       project,
       trigger,
+      context.payload,
+      context.octokit
+    );
+  });
+
+  // Did someone click the "Regenerate this pull request" checkbox?
+  app.on(['pull_request.edited'], async context => {
+    await handlePullRequestEdited(
+      appId,
+      privateKey,
+      project,
+      trigger_regenerate_pull_request,
       context.payload,
       context.octokit
     );

@@ -39,6 +39,8 @@ describe('owlBot', () => {
       APP_ID: '1234354',
       PROJECT_ID: 'foo-project',
       CLOUD_BUILD_TRIGGER: 'aef1e540-d401-4b85-8127-b72b5993c20d',
+      CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST:
+        'aef1e540-d401-4b85-8127-b72b5993c20e',
     });
     probot = createProbot({
       overrides: {
