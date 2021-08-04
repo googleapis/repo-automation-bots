@@ -18,7 +18,12 @@
 import {Probot, Context} from 'probot';
 import {logger} from 'gcf-utils';
 import {ValidPr, checkPRAgainstConfig} from './check-pr';
-import {getChangedFiles, getBlobFromPRFiles} from './get-pr-info';
+import {
+  getChangedFiles,
+  getBlobFromPRFiles,
+  getReviewsCompleted,
+  cleanReviews,
+} from './get-pr-info';
 import {validateYaml, validateSchema, checkCodeOwners} from './check-config.js';
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {Octokit} from '@octokit/rest';
@@ -245,6 +250,19 @@ export function handler(app: Probot) {
               process.env.PROJECT_ID || '',
               'yoshi-approver'
             );
+
+            const reviewsOnPr = cleanReviews(
+              await getReviewsCompleted(owner, repo, prNumber, context.octokit)
+            );
+
+            const isApprovalNecessary = reviewsOnPr.find(
+              x => x.user.login === 'yoshi-approver' && x.state === 'APPROVED'
+            );
+
+            if (isApprovalNecessary) {
+              return;
+            }
+
             await octokit.pulls.createReview({
               owner,
               repo,
