@@ -21,7 +21,7 @@ import {checkFilePathsMatch} from '../src/utils-for-pr-checking';
 import nock from 'nock';
 import {resolve} from 'path';
 import yaml from 'js-yaml';
-import sinon, {SinonStub} from 'sinon';
+import sinon from 'sinon';
 
 const {Octokit} = require('@octokit/rest');
 
