@@ -32,7 +32,7 @@
     "@google-automations/label-utils": "^1.1.0",
     "@octokit/webhooks": "^9.11.0",
     "gcf-utils": "^12.0.0",
-    "release-please": "^11.20.1"
+    "release-please": "^11.20.2"
   },
   "devDependencies": {
     "@octokit/rest": "^18.7.2",
