@@ -1,5 +1,13 @@
 # Changelog
 
+### [3.2.1](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v3.2.0...bot-config-utils-v3.2.1) (2021-08-09)
+
+
+### Bug Fixes
+
+* **build:** migrate to using main branch ([#2342](https://www.github.com/googleapis/repo-automation-bots/issues/2342)) ([4319b78](https://www.github.com/googleapis/repo-automation-bots/commit/4319b78b421273e1649d2d799b19fdcbf51adbfd))
+* typo codespelling grammar ([#2319](https://www.github.com/googleapis/repo-automation-bots/issues/2319)) ([db944e8](https://www.github.com/googleapis/repo-automation-bots/commit/db944e84e008b8a6c7d2ab62b59ee0d5c15e4a40))
+
 ## [4.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v3.2.0...bot-config-utils-v4.0.0) (2021-08-09)
 
 
