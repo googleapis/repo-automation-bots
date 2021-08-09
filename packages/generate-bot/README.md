@@ -44,4 +44,4 @@ Apache 2.0 © 2019 Google Inc.
 [probot]: https://github.com/probot/probot
 [github-app-link]: https://github.com/apps/license-header-lint-gcf
 [nock]: https://www.npmjs.com/package/nock
-[contributing-guide]: https://github.com/googleapis/repo-automation-bots/blob/master/CONTRIBUTING.md
+[contributing-guide]: https://github.com/googleapis/repo-automation-bots/blob/main/CONTRIBUTING.md
