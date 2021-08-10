@@ -25,11 +25,20 @@ import {
   onPostProcessorPublished,
   refreshConfigs,
   scanGithubForConfigs,
-  handlePullRequestEdited,
 } from './handlers';
-import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
+import {
+  PullRequestEditedEvent,
+  PullRequestLabeledEvent,
+} from '@octokit/webhooks-types';
 import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from './labels';
 import {OwlBotLock} from './config-files';
+import {OctokitType} from './octokit-util';
+import {
+  findSourceHash,
+  REGENERATE_CHECKBOX_TEXT,
+  sourceLinkFrom,
+  sourceLinkLineFrom,
+} from './copy-code';
 
 interface PubSubContext {
   github: Octokit;
@@ -474,3 +483,95 @@ const runPostProcessor = async (
     octokit
   );
 };
+
+/**
+ * Invoked when someone edits the title of body of a pull request.
+ * We're interested if they checked the box to "regenerate this pull request."
+ */
+export async function handlePullRequestEdited(
+  appId: number,
+  privateKey: string,
+  project: string,
+  trigger: string,
+  payload: PullRequestEditedEvent,
+  octokit: OctokitType,
+  logger = console
+) {
+  const head = payload.pull_request.head.repo.full_name;
+  const base = payload.pull_request.base.repo.full_name;
+  const [owner, repo] = base.split('/');
+  const installation = payload.installation?.id;
+  const prNumber = payload.pull_request.number;
+
+  if (!installation) {
+    throw Error(`no installation token found for ${head}`);
+  }
+
+  const token = await core.getGitHubShortLivedAccessToken(
+    privateKey,
+    appId,
+    installation
+  );
+
+  const oldBody = payload.pull_request.body ?? '';
+  const newBody = payload.changes.body?.from ?? '';
+
+  if (
+    oldBody.includes(REGENERATE_CHECKBOX_TEXT) ||
+    !newBody.includes(REGENERATE_CHECKBOX_TEXT)
+  ) {
+    logger.info(
+      "The user didn't check the regenerate me box for PR #{prNumber}"
+    );
+    return;
+  }
+
+  // No matter what the outcome, we'll create a comment below.
+  const createComment = (body: string): void => {
+    octokit.issues.createComment({
+      owner,
+      repo,
+      issue_number: prNumber,
+      body,
+    });
+  };
+
+  // The user checked the "Regenerate this pull request" box.
+
+  const sourceHash = findSourceHash(newBody);
+  if (!sourceHash) {
+    // But there's no source hash to regenerate from.  Oh no!
+    const sourceLine = sourceLinkLineFrom(sourceLinkFrom('abc123'));
+    createComment(`Owl Bot could not regenerate this pull request because the body is missing a source hash.
+
+A source hash in the source link looks like this:
+${sourceLine}`);
+    return;
+  }
+
+  try {
+    const cb = core.getCloudBuildInstance();
+    await cb.runBuildTrigger({
+      projectId: project,
+      triggerId: trigger,
+      source: {
+        projectId: project,
+        branchName: 'master', // TODO: It might fail if we change the default branch.
+        substitutions: {
+          _GITHUB_TOKEN: token.token,
+          _PR: prNumber.toString(),
+          _PR_BRANCH: payload.pull_request.base.ref,
+          _PR_OWNER: owner,
+          _REPOSITORY: repo,
+          _SOURCE_HASH: sourceHash,
+        },
+      },
+    });
+  } catch (err) {
+    createComment(`Owl Bot failed to regenerate this pull request.
+
+${err}`);
+    return;
+  }
+  createComment('Owl bot is regenerating this pull request...');
+}
