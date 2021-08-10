@@ -21,6 +21,7 @@ import {OctokitFactory, OctokitType} from '../src/octokit-util';
 export class FakeIssues {
   issues: any[] = [];
   updates: any[] = [];
+  comments: any[] = [];
 
   constructor(issues: any[] = []) {
     this.issues = issues;
@@ -38,6 +39,11 @@ export class FakeIssues {
 
   update(issue: any) {
     this.updates.push(issue);
+    return Promise.resolve();
+  }
+
+  createComment(comment: any) {
+    this.comments.push(comment);
     return Promise.resolve();
   }
 }
