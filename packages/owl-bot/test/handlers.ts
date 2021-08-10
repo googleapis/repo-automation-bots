@@ -35,7 +35,7 @@ import {FakeConfigsStore} from './fake-configs-store';
 import {GithubRepo} from '../src/github-repo';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {newFakeOctokit} from './fake-octokit';
-import { newFakeCloudBuildClient } from './fake-cloud-build-client';
+import {newFakeCloudBuildClient} from './fake-cloud-build-client';
 const sandbox = sinon.createSandbox();
 
 describe('handlers', () => {

@@ -12,27 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CloudBuildClient } from "@google-cloud/cloudbuild";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
+import {CloudBuildClient} from '@google-cloud/cloudbuild';
 export interface FakeCloudBuildClient {
-    readonly calls: any[][];
+  readonly calls: any[][];
 }
 
 class FakeClient implements FakeCloudBuildClient {
-    calls: any[][] = [];
+  calls: any[][] = [];
 
-    runBuildTrigger(...args: any[]) {
-        this.calls.push(args);
-        return Promise.resolve([
-            {
-                metadata: {
-                    build: {
-                        id: '73',
-                    },
-                },
-            },
-        ]);
-    }
+  runBuildTrigger(...args: any[]) {
+    this.calls.push(args);
+    return Promise.resolve([
+      {
+        metadata: {
+          build: {
+            id: '73',
+          },
+        },
+      },
+    ]);
+  }
 }
 
 /**
@@ -40,5 +41,5 @@ class FakeClient implements FakeCloudBuildClient {
  * runBuildTrigger().
  */
 export function newFakeCloudBuildClient() {
-    return new FakeClient() as unknown as ( FakeCloudBuildClient & CloudBuildClient );
+  return new FakeClient() as unknown as FakeCloudBuildClient & CloudBuildClient;
 }
