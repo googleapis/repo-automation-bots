@@ -103,14 +103,16 @@ export function OwlBot(
 
   // Did someone click the "Regenerate this pull request" checkbox?
   app.on(['pull_request.edited'], async context => {
-    await handlePullRequestEdited(
-      appId,
-      privateKey,
-      project,
-      trigger_regenerate_pull_request,
-      context.payload,
-      context.octokit
-    );
+    const regenerate = userCheckedRegenerateBox(
+      project, trigger_regenerate_pull_request, context.payload);
+    if (regenerate) {
+      const octokitFactory = octokitFactoryFrom({
+        'app-id': appId,
+        'pem-path': privateKey,
+        installation: context.payload.installation!.id
+      });
+      await core.triggerRegeneratePullRequest(octokitFactory, regenerate);
+    }
   });
 
   app.on(
