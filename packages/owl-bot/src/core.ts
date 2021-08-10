@@ -25,6 +25,7 @@ import {OwlBotLock, owlBotLockPath, owlBotLockFrom} from './config-files';
 import {OctokitFactory, OctokitType} from './octokit-util';
 import {OWL_BOT_IGNORE} from './labels';
 import {findSourceHash, sourceLinkFrom, sourceLinkLineFrom} from './copy-code';
+import {google} from '@google-cloud/cloudbuild/build/protos/protos';
 
 interface BuildArgs {
   image: string;
@@ -57,10 +58,13 @@ interface AuthArgs {
   installation: number;
 }
 
-interface BuildResponse {
+interface BuildSummary {
   conclusion: 'success' | 'failure';
   summary: string;
   text: string;
+}
+
+interface BuildResponse extends BuildSummary {
   detailsURL: string;
 }
 
@@ -133,47 +137,57 @@ export async function triggerPostProcessBuild(
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const buildId: string = (resp as any).metadata.build.id;
+  const detailsURL = detailsUrlFrom(buildId, project);
   try {
     // TODO(bcoe): work with fenster@ to figure out why awaiting a long
     // running operation does not behave as expected:
     // const [build] = await resp.promise();
     const build = await waitForBuild(project, buildId, cb);
-    if (!build.steps) throw Error('trigger contained no steps');
-    const successMessage = `successfully ran ${build.steps.length} steps 🎉!`;
-    let conclusion: 'success' | 'failure' = 'success';
-    let summary = successMessage;
-    let text = '';
-    let failures = 0;
-    for (const step of build.steps) {
-      if (step.status !== 'SUCCESS') {
-        conclusion = 'failure';
-        summary = `${++failures} steps failed 🙁`;
-        text += `❌ step ${step.name} failed with status ${step.status}\n`;
-      }
-    }
-    if (conclusion === 'success') {
-      text = `successfully ran ${build.steps.length} steps 🎉!`;
-    }
-    return {
-      conclusion,
-      summary,
-      text,
-      detailsURL: detailsUrl(buildId, project),
-    };
+    return {detailsURL, ...summarizeBuild(build)};
   } catch (err) {
     logger.error(err);
-    return {
-      conclusion: 'failure',
-      summary: 'unknown build failure',
-      text: 'unknown build failure',
-      detailsURL: detailsUrl(buildId, project),
-    };
+    return buildFailureFrom(detailsURL);
   }
+}
+
+function summarizeBuild(
+  build: google.devtools.cloudbuild.v1.IBuild
+): BuildSummary {
+  if (!build.steps) throw Error('trigger contained no steps');
+  const successMessage = `successfully ran ${build.steps.length} steps 🎉!`;
+  let conclusion: 'success' | 'failure' = 'success';
+  let summary = successMessage;
+  let text = '';
+  let failures = 0;
+  for (const step of build.steps) {
+    if (step.status !== 'SUCCESS') {
+      conclusion = 'failure';
+      summary = `${++failures} steps failed 🙁`;
+      text += `❌ step ${step.name} failed with status ${step.status}\n`;
+    }
+  }
+  if (conclusion === 'success') {
+    text = `successfully ran ${build.steps.length} steps 🎉!`;
+  }
+  return {
+    conclusion,
+    summary,
+    text,
+  };
+}
+
+function buildFailureFrom(detailsUrl: string): BuildResponse {
+  return {
+    conclusion: 'failure',
+    summary: 'unknown build failure',
+    text: 'unknown build failure',
+    detailsURL: detailsUrl,
+  };
 }
 
 // Helper to build a link to the Cloud Build job, which peers in DPE
 // can use to view a given post processor run:
-function detailsUrl(buildID: string, project: string): string {
+function detailsUrlFrom(buildID: string, project: string): string {
   return `https://console.cloud.google.com/cloud-build/builds;region=global/${buildID}?project=${project}`;
 }
 
@@ -181,7 +195,7 @@ async function waitForBuild(
   projectId: string,
   id: string,
   client: CloudBuildClient
-) {
+): Promise<google.devtools.cloudbuild.v1.IBuild> {
   for (let i = 0; i < 60; i++) {
     const [build] = await client.getBuild({projectId, id});
     if (build.status !== 'WORKING' && build.status !== 'QUEUED') {
@@ -631,7 +645,7 @@ ${sourceLine}`);
 
   try {
     const cb = core.getCloudBuildInstance();
-    await cb.runBuildTrigger({
+    const [longRunningOperation] = await cb.runBuildTrigger({
       projectId: args.gcpProjectId,
       triggerId: args.buildTriggerId,
       source: {
