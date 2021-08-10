@@ -57,6 +57,24 @@ describe('triggerPostProcessBuild()', () => {
     assert.match(comment.body, /.*missing.*hash.*/);
   });
 
+  it('creates a comment reporting failure', async () => {
+    const issues = new FakeIssues();
+    const octokit = newFakeOctokit(undefined, issues);
+    sandbox.replace(core, 'getCloudBuildInstance', (): CloudBuildClient => {
+      throw new Error('Out of errors.');
+    });
+    await core.triggerRegeneratePullRequest(
+      newFakeOctokitFactory(octokit),
+      args
+    );
+    assert.strictEqual(issues.comments.length, 1);
+    const comment = issues.comments[0];
+    assert.strictEqual(comment.owner, 'test-owner');
+    assert.strictEqual(comment.repo, 'nodejs-stapler');
+    assert.strictEqual(comment.issue_number, 5);
+    assert.match(comment.body, /.*failed.*/);
+  });
+
   it('triggers a cloud build', async () => {
     const issues = new FakeIssues();
     const octokit = newFakeOctokit(undefined, issues);
@@ -82,22 +100,22 @@ describe('triggerPostProcessBuild()', () => {
     const golden = [
       [
         {
-          "projectId": "test-project",
-          "triggerId": "42",
-          "source": {
-            "projectId": "test-project",
-            "branchName": "master",
-            "substitutions": {
-              "_GITHUB_TOKEN": "b3",
-              "_PR": "5",
-              "_PR_BRANCH": "test-branch",
-              "_PR_OWNER": "test-owner",
-              "_REPOSITORY": "nodejs-stapler",
-              "_SOURCE_HASH": "abc123"
-            }
-          }
-        }
-      ]
+          projectId: 'test-project',
+          triggerId: '42',
+          source: {
+            projectId: 'test-project',
+            branchName: 'master',
+            substitutions: {
+              _GITHUB_TOKEN: 'b3',
+              _PR: '5',
+              _PR_BRANCH: 'test-branch',
+              _PR_OWNER: 'test-owner',
+              _REPOSITORY: 'nodejs-stapler',
+              _SOURCE_HASH: 'abc123',
+            },
+          },
+        },
+      ],
     ];
     assert.deepStrictEqual(calls, golden);
   });
