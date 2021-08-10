@@ -32,13 +32,8 @@ import {
 } from '@octokit/webhooks-types';
 import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from './labels';
 import {OwlBotLock} from './config-files';
-import {OctokitFactory, octokitFactoryFrom, octokitFactoryFromToken, OctokitType} from './octokit-util';
-import {
-  findSourceHash,
-  REGENERATE_CHECKBOX_TEXT,
-  sourceLinkFrom,
-  sourceLinkLineFrom,
-} from './copy-code';
+import {octokitFactoryFrom} from './octokit-util';
+import {REGENERATE_CHECKBOX_TEXT} from './copy-code';
 
 interface PubSubContext {
   github: Octokit;
@@ -104,16 +99,19 @@ export function OwlBot(
   // Did someone click the "Regenerate this pull request" checkbox?
   app.on(['pull_request.edited'], async context => {
     const regenerate = userCheckedRegenerateBox(
-      project, trigger_regenerate_pull_request, context.payload);
+      project,
+      trigger_regenerate_pull_request,
+      context.payload
+    );
     if (regenerate) {
       const installationId = context.payload.installation?.id;
       if (!installationId) {
-        throw new Error("Missing installation id.");
+        throw new Error('Missing installation id.');
       }
       const octokitFactory = octokitFactoryFrom({
         'app-id': appId,
         'pem-path': privateKey,
-        installation: installationId
+        installation: installationId,
       });
       await core.triggerRegeneratePullRequest(octokitFactory, regenerate);
     }
@@ -500,8 +498,7 @@ export function userCheckedRegenerateBox(
   trigger: string,
   payload: PullRequestEditedEvent,
   logger = console
-): RegenerateArgs| null
-{
+): RegenerateArgs | null {
   const base = payload.pull_request.base.repo.full_name;
   const [owner, repo] = base.split('/');
   const prNumber = payload.pull_request.number;
@@ -520,12 +517,12 @@ export function userCheckedRegenerateBox(
   }
 
   return {
-      owner,
-      repo,
-      prNumber,
-      prBody: newBody,
-      gcpProjectId: project,
-      buildTriggerId: trigger,
-      branch: payload.pull_request.base.ref
-    };
+    owner,
+    repo,
+    prNumber,
+    prBody: newBody,
+    gcpProjectId: project,
+    buildTriggerId: trigger,
+    branch: payload.pull_request.base.ref,
+  };
 }

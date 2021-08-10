@@ -11,20 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import {exec} from 'child_process';
+import {promisify} from 'util';
 const execAsync = promisify(exec);
-import { load } from 'js-yaml';
-import { logger } from 'gcf-utils';
-import { sign } from 'jsonwebtoken';
-import { request } from 'gaxios';
-import { CloudBuildClient } from '@google-cloud/cloudbuild';
-import { Octokit } from '@octokit/rest';
+import {load} from 'js-yaml';
+import {logger} from 'gcf-utils';
+import {sign} from 'jsonwebtoken';
+import {request} from 'gaxios';
+import {CloudBuildClient} from '@google-cloud/cloudbuild';
+import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
-import { OwlBotLock, owlBotLockPath, owlBotLockFrom } from './config-files';
-import { OctokitFactory, OctokitType } from './octokit-util';
-import { OWL_BOT_IGNORE } from './labels';
-import { findSourceHash, sourceLinkFrom, sourceLinkLineFrom } from './copy-code';
+import {OwlBotLock, owlBotLockPath, owlBotLockFrom} from './config-files';
+import {OctokitFactory, OctokitType} from './octokit-util';
+import {OWL_BOT_IGNORE} from './labels';
+import {findSourceHash, sourceLinkFrom, sourceLinkLineFrom} from './copy-code';
 
 interface BuildArgs {
   image: string;
@@ -95,7 +95,7 @@ export async function triggerPostProcessBuild(
   if (!octokit) {
     octokit = await core.getAuthenticatedOctokit(token.token);
   }
-  const { data: prData } = await octokit.pulls.get({
+  const {data: prData} = await octokit.pulls.get({
     owner,
     repo,
     pull_number: args.pr,
@@ -183,7 +183,7 @@ async function waitForBuild(
   client: CloudBuildClient
 ) {
   for (let i = 0; i < 60; i++) {
-    const [build] = await client.getBuild({ projectId, id });
+    const [build] = await client.getBuild({projectId, id});
     if (build.status !== 'WORKING' && build.status !== 'QUEUED') {
       return build;
     }
@@ -205,7 +205,7 @@ export async function getHeadCommit(
 ): Promise<Commit | undefined> {
   // If a PR has more than 100 updates to it, we will currently have issues
   // in practice this should be rare:
-  const { data: commits } = await octokit.pulls.listCommits({
+  const {data: commits} = await octokit.pulls.listCommits({
     owner,
     repo,
     pull_number: pr,
@@ -261,7 +261,7 @@ export async function getGitHubShortLivedAccessToken(
     // GitHub App's identifier
     iss: appId,
   };
-  const jwt = sign(payload, privateKey, { algorithm: 'RS256' });
+  const jwt = sign(payload, privateKey, {algorithm: 'RS256'});
   const resp = await request<Token>({
     url: getAccessTokenURL(installation),
     method: 'POST',
@@ -323,7 +323,7 @@ export async function getOwlBotLock(
   octokit: OctokitType
 ): Promise<OwlBotLock | undefined> {
   const [owner, repo] = repoFull.split('/');
-  const { data: prData } = await octokit.pulls.get({
+  const {data: prData} = await octokit.pulls.get({
     owner,
     repo,
     pull_number: pullNumber,
@@ -371,7 +371,7 @@ export async function getFileContent(
         path,
         ref,
       })
-    ).data as { content: string | undefined; encoding: string };
+    ).data as {content: string | undefined; encoding: string};
     if (!data.content) {
       return undefined;
     }
@@ -525,7 +525,7 @@ async function updatePullRequestAfterPostProcessor(
   prNumber: number,
   octokit: Octokit
 ): Promise<void> {
-  const { data: pull } = await octokit.pulls.get({
+  const {data: pull} = await octokit.pulls.get({
     owner,
     repo,
     pull_number: prNumber,
@@ -596,15 +596,14 @@ export interface RegenerateArgs {
   branch: string;
   prNumber: number;
   prBody: string;
-  gcpProjectId: string,
-  buildTriggerId: string,
+  gcpProjectId: string;
+  buildTriggerId: string;
 }
-
 
 export async function triggerRegeneratePullRequest(
   octokitFactory: OctokitFactory,
-  args: RegenerateArgs): Promise<void>
-{
+  args: RegenerateArgs
+): Promise<void> {
   const token = await octokitFactory.getGitHubShortLivedAccessToken();
   const octokit = await octokitFactory.getShortLivedOctokit(token);
   // No matter what the outcome, we'll create a comment below.
@@ -613,7 +612,7 @@ export async function triggerRegeneratePullRequest(
       owner: args.owner,
       repo: args.repo,
       issue_number: args.prNumber,
-      body: args.prBody,
+      body,
     });
   };
 
