@@ -645,7 +645,9 @@ ${sourceLine}`);
 
   try {
     const cb = core.getCloudBuildInstance();
-    const [longRunningOperation] = await cb.runBuildTrigger({
+    // Is there a reason to wait for for the long-running build to complete
+    // here?
+    await cb.runBuildTrigger({
       projectId: args.gcpProjectId,
       triggerId: args.buildTriggerId,
       source: {
