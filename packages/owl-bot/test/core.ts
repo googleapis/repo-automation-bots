@@ -68,7 +68,37 @@ describe('triggerPostProcessBuild()', () => {
       newFakeOctokitFactory(octokit),
       args
     );
+
+    // It should create a comment
     assert.strictEqual(issues.comments.length, 1);
     const comment = issues.comments[0];
+    assert.strictEqual(comment.owner, 'test-owner');
+    assert.strictEqual(comment.repo, 'nodejs-stapler');
+    assert.strictEqual(comment.issue_number, 5);
+    assert.match(comment.body, /.*is regenerating.*/);
+
+    // Convert the protos in the calls into plain old javascript objects.
+    const calls = JSON.parse(JSON.stringify(fakeCloudBuild.calls));
+    const golden = [
+      [
+        {
+          "projectId": "test-project",
+          "triggerId": "42",
+          "source": {
+            "projectId": "test-project",
+            "branchName": "master",
+            "substitutions": {
+              "_GITHUB_TOKEN": "b3",
+              "_PR": "5",
+              "_PR_BRANCH": "test-branch",
+              "_PR_OWNER": "test-owner",
+              "_REPOSITORY": "nodejs-stapler",
+              "_SOURCE_HASH": "abc123"
+            }
+          }
+        }
+      ]
+    ];
+    assert.deepStrictEqual(calls, golden);
   });
 });
