@@ -106,10 +106,14 @@ export function OwlBot(
     const regenerate = userCheckedRegenerateBox(
       project, trigger_regenerate_pull_request, context.payload);
     if (regenerate) {
+      const installationId = context.payload.installation?.id;
+      if (!installationId) {
+        throw new Error("Missing installation id.");
+      }
       const octokitFactory = octokitFactoryFrom({
         'app-id': appId,
         'pem-path': privateKey,
-        installation: context.payload.installation!.id
+        installation: installationId
       });
       await core.triggerRegeneratePullRequest(octokitFactory, regenerate);
     }
