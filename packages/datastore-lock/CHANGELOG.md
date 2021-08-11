@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/datastore-lock-v2.1.0...datastore-lock-v3.0.0) (2021-08-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename organization to google-automations (#1789)
+* **datastore-lock:** factoring out datastore-lock (#1764)
+
+### Features
+
+* **datastore-lock:** factoring out datastore-lock ([#1764](https://www.github.com/googleapis/repo-automation-bots/issues/1764)) ([c7072d0](https://www.github.com/googleapis/repo-automation-bots/commit/c7072d02583176a63c4cb9c2e5583bd6f7ab126d))
+* upgrade to gcf-utils@12 ([#2262](https://www.github.com/googleapis/repo-automation-bots/issues/2262)) ([bd04376](https://www.github.com/googleapis/repo-automation-bots/commit/bd043767ae59a4eed450f1d18741111dc4c3f8e8))
+
+
+### Bug Fixes
+
+* **datastore-lock:** use hashed value for datastore key ([#1944](https://www.github.com/googleapis/repo-automation-bots/issues/1944)) ([7138ccc](https://www.github.com/googleapis/repo-automation-bots/commit/7138ccce5fe93e76cb8519fb4faad8e75d85f99d))
+* rename organization to google-automations ([#1789](https://www.github.com/googleapis/repo-automation-bots/issues/1789)) ([1b8540a](https://www.github.com/googleapis/repo-automation-bots/commit/1b8540a6733ca75efe9e6cea415daa4a627add47))
+* update libraries to gcf-utils 11 ([#2117](https://www.github.com/googleapis/repo-automation-bots/issues/2117)) ([5afebc3](https://www.github.com/googleapis/repo-automation-bots/commit/5afebc3781cd511a5fc6cd4485c2b002fcacacb4))
+
 ## [2.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/datastore-lock-v2.0.2...datastore-lock-v2.1.0) (2021-07-13)
 
 
