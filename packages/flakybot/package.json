@@ -27,9 +27,9 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/bot-config-utils": "^3.2.0",
+    "@google-automations/bot-config-utils": "^4.0.0",
     "@google-automations/datastore-lock": "^2.1.0",
-    "@google-automations/label-utils": "^1.1.0",
+    "@google-automations/label-utils": "^2.0.0",
     "@octokit/openapi-types": "^9.0.0",
     "@octokit/types": "^6.19.0",
     "gcf-utils": "^12.0.0",

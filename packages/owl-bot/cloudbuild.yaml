@@ -36,6 +36,8 @@ steps:
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
       - "nodejs12"
+      - "540s"
+      - "68a5145e-8907-4301-a4b6-b7e37892a510"
 
   - name: gcr.io/cloud-builders/npm
     id: "cron-deploy"

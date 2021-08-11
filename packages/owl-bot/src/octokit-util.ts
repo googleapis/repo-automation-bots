@@ -78,6 +78,20 @@ export function octokitFactoryFrom(params: OctokitParams): OctokitFactory {
 }
 
 /**
+ * Creates an octokit factory a short lived token.
+ */
+export function octokitFactoryFromToken(token: string): OctokitFactory {
+  return {
+    getGitHubShortLivedAccessToken() {
+      return Promise.resolve(token);
+    },
+    async getShortLivedOctokit(atoken?: string) {
+      return await core.getAuthenticatedOctokit(atoken ?? token, false);
+    },
+  };
+}
+
+/**
  * Creates an issue if the given title doesn't exist.
  * Returns `true` if an issue has been created, `false` otherwise.
  *
