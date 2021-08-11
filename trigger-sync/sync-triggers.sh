@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # This script ensures that a Cloud Build trigger exists for each non-root
-# cloudbuild.yaml file. Each is triggered on a push to master for any file
+# cloudbuild.yaml file. Each is triggered on a push to main for any file
 # changed in the directory containing that cloudbuild.yaml file.
 
 set -eo pipefail

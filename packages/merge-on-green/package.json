@@ -27,7 +27,7 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/label-utils": "^1.1.0",
+    "@google-automations/label-utils": "^2.0.0",
     "@google-cloud/datastore": "^6.4.5",
     "gcf-utils": "^12.0.0"
   },

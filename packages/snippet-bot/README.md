@@ -1,6 +1,6 @@
 # snippet-bot
 
-Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
+Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/main/README.md) for deploying and testing your bots.
 
 ## Required permission
 This bot needs read/write permissions on PRs, Issues and Checks. Also make sure that the bot is listening to webhooks for PRs and Issues.

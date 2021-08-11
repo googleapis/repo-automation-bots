@@ -456,7 +456,7 @@ const runPostProcessor = async (
         conclusion: 'success',
         title: '🦉 OwlBot - ignored',
         detailsURL:
-          'https://github.com/googleapis/repo-automation-bots/blob/master/packages/owl-bot/README.md',
+          'https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md',
       },
       octokit
     );
