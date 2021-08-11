@@ -652,12 +652,12 @@ A source hash in the source link looks like this:
 ${sourceLine}`);
     return;
   }
-
+  let buildName = '';
   try {
     const cb = core.getCloudBuildInstance();
     // Is there a reason to wait for for the long-running build to complete
     // here?
-    await cb.runBuildTrigger({
+    const [resp] = await cb.runBuildTrigger({
       projectId: args.gcpProjectId,
       triggerId: args.buildTriggerId,
       source: {
@@ -673,13 +673,15 @@ ${sourceLine}`);
         },
       },
     });
+    buildName = resp?.name ?? '';
   } catch (err) {
     await reportError(`Owl Bot failed to regenerate pull request ${args.prNumber}.
 
 ${err}`);
     return;
   }
-  await reportInfo(`Owl bot is regenerating pull request ${args.prNumber}...`);
+  await reportInfo(`Owl bot is regenerating pull request ${args.prNumber}...
+Build name: ${buildName}`);
 }
 
 export const core = {
