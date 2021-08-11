@@ -96,6 +96,7 @@ export function handler(app: Probot) {
     await repoSettings.syncRepoSettings({
       repo: `${owner}/${repo}`,
       config: config || undefined,
+      defaultBranch: repo.default_branch,
     });
   });
 
