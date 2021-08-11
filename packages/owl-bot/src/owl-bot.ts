@@ -503,15 +503,15 @@ export function userCheckedRegenerateBox(
   const [owner, repo] = base.split('/');
   const prNumber = payload.pull_request.number;
 
-  const oldBody = payload.pull_request.body ?? '';
-  const newBody = payload.changes.body?.from ?? '';
+  const newBody = payload.pull_request.body ?? '';
+  const oldBody = payload.changes.body?.from ?? '';
 
   if (
     oldBody.includes(REGENERATE_CHECKBOX_TEXT) ||
     !newBody.includes(REGENERATE_CHECKBOX_TEXT)
   ) {
     logger.info(
-      "The user didn't check the regenerate me box for PR #{prNumber}"
+      `The user didn't check the regenerate me box for PR #${prNumber}`
     );
     return null;
   }
