@@ -21,14 +21,17 @@ import {logger} from 'gcf-utils';
 import {OwlBot, userCheckedRegenerateBox} from '../src/owl-bot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
-import {PullRequestEditedEvent, PullRequestOpenedEvent} from '@octokit/webhooks-types';
+import {
+  PullRequestEditedEvent,
+  PullRequestOpenedEvent,
+} from '@octokit/webhooks-types';
 import * as sinon from 'sinon';
 import nock from 'nock';
 import {Configs} from '../src/configs-store';
 import {owlBotLockPath} from '../src/config-files';
 import * as labelUtilsModule from '@google-automations/label-utils';
 import {FirestoreConfigsStore} from '../src/database';
-import { REGENERATE_CHECKBOX_TEXT } from '../src/copy-code';
+import {REGENERATE_CHECKBOX_TEXT} from '../src/copy-code';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -1351,28 +1354,31 @@ describe('owlBot', () => {
 /**
  * Create a PullRequestEditedEvent with the given new body and old body.
  */
-function pullRequestEditedEventFrom(newBody?: string, oldBody?: string): PullRequestEditedEvent {
+function pullRequestEditedEventFrom(
+  newBody?: string,
+  oldBody?: string
+): PullRequestEditedEvent {
   const result = {
     pull_request: {
       base: {
         repo: {
-          full_name: 'googleapis/nodejs-dlp'
+          full_name: 'googleapis/nodejs-dlp',
         },
-        ref: 'owl-bot-update-branch'
+        ref: 'owl-bot-update-branch',
       },
       number: 48,
       body: newBody,
     },
     changes: {
       body: {
-        from: oldBody
-      }
-    }
+        from: oldBody,
+      },
+    },
   } as PullRequestEditedEvent;
   return result;
 }
 
-describe('userCheckedRegenerateBox()', function() {
+describe('userCheckedRegenerateBox()', () => {
   it('does nothing with empty bodies', () => {
     const payload = pullRequestEditedEventFrom();
     assert.ok(!userCheckedRegenerateBox('project-1', 'trigger-4', payload));
@@ -1387,7 +1393,7 @@ describe('userCheckedRegenerateBox()', function() {
     const payload = pullRequestEditedEventFrom(
       'new body',
       'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n'
-      );
+    );
     assert.ok(!userCheckedRegenerateBox('project-1', 'trigger-4', payload));
   });
 
@@ -1395,7 +1401,7 @@ describe('userCheckedRegenerateBox()', function() {
     const payload = pullRequestEditedEventFrom(
       'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n',
       'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n'
-      );
+    );
     assert.ok(!userCheckedRegenerateBox('project-1', 'trigger-4', payload));
   });
 
@@ -1403,19 +1409,19 @@ describe('userCheckedRegenerateBox()', function() {
     const payload = pullRequestEditedEventFrom(
       'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n',
       'old body\n'
-      );
+    );
     const args = userCheckedRegenerateBox('project-1', 'trigger-4', payload);
     assert.ok(args);
     assert.deepStrictEqual(args, {
       owner: 'googleapis',
       repo: 'nodejs-dlp',
       prNumber: 48,
-      prBody: 'Added a great feature.\n' +
+      prBody:
+        'Added a great feature.\n' +
         '- [x] To automatically regenerate this PR, check this box.\n',
       gcpProjectId: 'project-1',
       buildTriggerId: 'trigger-4',
-      branch: 'owl-bot-update-branch'
+      branch: 'owl-bot-update-branch',
     });
   });
-
 });

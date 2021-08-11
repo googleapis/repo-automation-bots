@@ -621,7 +621,7 @@ export async function triggerRegeneratePullRequest(
   const token = await octokitFactory.getGitHubShortLivedAccessToken();
   const octokit = await octokitFactory.getShortLivedOctokit(token);
   // No matter what the outcome, we'll create a comment below.
-  const createComment = async (body: string): Promise<void> => {
+  const _createComment = async (body: string): Promise<void> => {
     await octokit.issues.createComment({
       owner: args.owner,
       repo: args.repo,
@@ -630,13 +630,23 @@ export async function triggerRegeneratePullRequest(
     });
   };
 
+  const reportError = (error: string) => {
+    console.error(error);
+    return _createComment(error);
+  };
+
+  const reportInfo = (text: string) => {
+    console.info(text);
+    return _createComment(text);
+  };
+
   // The user checked the "Regenerate this pull request" box.
 
   const sourceHash = findSourceHash(args.prBody);
   if (!sourceHash) {
     // But there's no source hash to regenerate from.  Oh no!
     const sourceLine = sourceLinkLineFrom(sourceLinkFrom('abc123'));
-    await createComment(`Owl Bot could not regenerate this pull request because the body is missing a source hash.
+    await reportError(`Owl Bot could not regenerate pull request ${args.prNumber} because the body is missing a source hash.
 
 A source hash in the source link looks like this:
 ${sourceLine}`);
@@ -664,12 +674,12 @@ ${sourceLine}`);
       },
     });
   } catch (err) {
-    await createComment(`Owl Bot failed to regenerate this pull request.
+    await reportError(`Owl Bot failed to regenerate pull request ${args.prNumber}.
 
 ${err}`);
     return;
   }
-  await createComment('Owl bot is regenerating this pull request...');
+  await reportInfo(`Owl bot is regenerating pull request ${args.prNumber}...`);
 }
 
 export const core = {

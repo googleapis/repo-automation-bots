@@ -516,6 +516,8 @@ export function userCheckedRegenerateBox(
     return null;
   }
 
+  logger.info(`The user checked the regenerate me box for PR #${prNumber}`);
+
   return {
     owner,
     repo,
