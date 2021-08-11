@@ -662,7 +662,7 @@ ${sourceLine}`);
       triggerId: args.buildTriggerId,
       source: {
         projectId: args.gcpProjectId,
-        branchName: 'master', // TODO: It might fail if we change the default branch.
+        branchName: 'main', // TODO: It might fail if we change the default branch.
         substitutions: {
           _GITHUB_TOKEN: token,
           _PR: args.prNumber.toString(),

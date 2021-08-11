@@ -104,7 +104,7 @@ describe('triggerPostProcessBuild()', () => {
           triggerId: '42',
           source: {
             projectId: 'test-project',
-            branchName: 'master',
+            branchName: 'main',
             substitutions: {
               _GITHUB_TOKEN: 'b3',
               _PR: '5',
