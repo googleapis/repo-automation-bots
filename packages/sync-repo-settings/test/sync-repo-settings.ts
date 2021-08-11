@@ -64,6 +64,7 @@ describe('SyncRepoSettings', () => {
     await runner.syncRepoSettings({
       repo: 'test-owner/test-repo',
       config: config,
+      defaultBranch: 'custom-default-branch',
     });
     sinon.assert.calledOnce(updateRepo);
     sinon.assert.calledOnce(updateBranch);
@@ -73,8 +74,37 @@ describe('SyncRepoSettings', () => {
     const branchProtection = updateBranch.args[0][0];
 
     // ensure we set a default value not set in the yaml
-    assert.strictEqual(branchProtection?.branch, 'master');
+    assert.strictEqual(branchProtection?.branch, 'custom-default-branch');
     assert.ok(branchProtection?.enforce_admins);
+  });
+
+  it('should fill in default values from the repo', async () => {
+    const updateRepo = sandbox.stub(octokit.repos, 'update');
+    const updateBranch = sandbox.stub(octokit.repos, 'updateBranchProtection');
+    const updateTeams = sandbox.stub(
+      octokit.teams,
+      'addOrUpdateRepoPermissionsInOrg'
+    );
+    const scope = nock('https://api.github.com')
+      .get('/repos/test-owner/test-repo')
+      .reply(200, {default_branch: 'custom-default-branch'});
+    const config = loadConfig('localConfig.yaml');
+    await runner.syncRepoSettings({
+      repo: 'test-owner/test-repo',
+      config: config,
+    });
+    sinon.assert.calledOnce(updateRepo);
+    sinon.assert.calledOnce(updateBranch);
+    sinon.assert.calledThrice(updateTeams);
+
+    // grab first arg of first call
+    const branchProtection = updateBranch.args[0][0];
+
+    // ensure we set a default value not set in the yaml
+    assert.strictEqual(branchProtection?.branch, 'custom-default-branch');
+    assert.ok(branchProtection?.enforce_admins);
+
+    scope.done();
   });
 
   it('should handle multiple branches', async () => {
@@ -84,6 +114,9 @@ describe('SyncRepoSettings', () => {
       octokit.teams,
       'addOrUpdateRepoPermissionsInOrg'
     );
+    nock('https://api.github.com')
+      .get('/repos/test-owner/test-repo')
+      .reply(200, {default_branch: 'custom-default-branch'});
     const config = loadConfig('multipleBranches.yaml');
     await runner.syncRepoSettings({
       repo: 'test-owner/test-repo',
