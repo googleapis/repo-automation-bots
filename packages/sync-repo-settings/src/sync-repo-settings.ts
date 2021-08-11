@@ -53,7 +53,6 @@ const repoConfigDefaults: RepoConfig = deepFreeze({
 });
 
 const branchProtectionDefaults = deepFreeze({
-  pattern: 'master',
   dismissesStaleReviews: false,
   isAdminEnforced: true,
   requiredApprovingReviewCount: 1,
@@ -70,6 +69,7 @@ const branchProtectionDefaults = deepFreeze({
 export interface SyncRepoSettingsOptions {
   config?: RepoConfig;
   repo: string;
+  defaultBranch?: string;
 }
 
 export class SyncRepoSettings {
@@ -118,6 +118,12 @@ export class SyncRepoSettings {
       }
     }
 
+    const defaultBranch =
+      options.defaultBranch || (await this.getDefaultBranch(repo));
+    const defaultBranchRuleConfig = {
+      pattern: defaultBranch,
+    };
+
     const jobs: Promise<void>[] = [];
     logger.info('updating settings');
     jobs.push(this.updateRepoTeams(repo, config?.permissionRules || []));
@@ -125,7 +131,11 @@ export class SyncRepoSettings {
       jobs.push(this.updateRepoOptions(repo, config));
       if (config.branchProtectionRules) {
         config.branchProtectionRules.forEach(rule => {
-          jobs.push(this.updateBranchProtection(repo, rule));
+          const ruleWithDefaultBranch = {
+            ...defaultBranchRuleConfig,
+            ...rule,
+          };
+          jobs.push(this.updateBranchProtection(repo, ruleWithDefaultBranch));
         });
       }
     }
@@ -281,5 +291,14 @@ export class SyncRepoSettings {
         return;
       }
     }
+  }
+
+  async getDefaultBranch(ownerAndRepo: string): Promise<string> {
+    const [owner, repo] = ownerAndRepo.split('/');
+    const response = await this.octokit.repos.get({
+      owner,
+      repo,
+    });
+    return response.data.default_branch;
   }
 }
