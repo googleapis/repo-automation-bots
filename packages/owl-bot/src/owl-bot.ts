@@ -19,16 +19,21 @@ import {FirestoreConfigsStore, Db} from './database';
 import {Probot, Logger} from 'probot';
 import {logger} from 'gcf-utils';
 import {syncLabels} from '@google-automations/label-utils';
-import {core} from './core';
+import {core, RegenerateArgs} from './core';
 import {Octokit} from '@octokit/rest';
 import {
   onPostProcessorPublished,
   refreshConfigs,
   scanGithubForConfigs,
 } from './handlers';
-import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
+import {
+  PullRequestEditedEvent,
+  PullRequestLabeledEvent,
+} from '@octokit/webhooks-types';
 import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from './labels';
 import {OwlBotLock} from './config-files';
+import {octokitFactoryFrom} from './octokit-util';
+import {REGENERATE_CHECKBOX_TEXT} from './copy-code';
 
 interface PubSubContext {
   github: Octokit;
@@ -59,6 +64,11 @@ export function OwlBot(
     throw Error('must set CLOUD_BUILD_TRIGGER');
   }
   const trigger: string = process.env.CLOUD_BUILD_TRIGGER;
+  const trigger_regenerate_pull_request =
+    process.env.CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST ?? '';
+  if (!trigger_regenerate_pull_request) {
+    throw Error('must set CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST');
+  }
   if (!privateKey) {
     throw Error('GitHub app private key must be provided');
   }
@@ -84,6 +94,27 @@ export function OwlBot(
       context.payload,
       context.octokit
     );
+  });
+
+  // Did someone click the "Regenerate this pull request" checkbox?
+  app.on(['pull_request.edited'], async context => {
+    const regenerate = userCheckedRegenerateBox(
+      project,
+      trigger_regenerate_pull_request,
+      context.payload
+    );
+    if (regenerate) {
+      const installationId = context.payload.installation?.id;
+      if (!installationId) {
+        throw new Error('Missing installation id.');
+      }
+      const octokitFactory = octokitFactoryFrom({
+        'app-id': appId,
+        'pem-path': privateKey,
+        installation: installationId,
+      });
+      await core.triggerRegeneratePullRequest(octokitFactory, regenerate);
+    }
   });
 
   app.on(
@@ -456,3 +487,44 @@ const runPostProcessor = async (
     octokit
   );
 };
+
+/**
+ * Invoked when someone edits the title of body of a pull request.
+ * We're interested if they checked the box to "regenerate this pull request."
+ * Returns null if the box was not checked.
+ */
+export function userCheckedRegenerateBox(
+  project: string,
+  trigger: string,
+  payload: PullRequestEditedEvent,
+  logger = console
+): RegenerateArgs | null {
+  const base = payload.pull_request.base.repo.full_name;
+  const [owner, repo] = base.split('/');
+  const prNumber = payload.pull_request.number;
+
+  const newBody = payload.pull_request.body ?? '';
+  const oldBody = payload.changes.body?.from ?? '';
+
+  if (
+    oldBody.includes(REGENERATE_CHECKBOX_TEXT) ||
+    !newBody.includes(REGENERATE_CHECKBOX_TEXT)
+  ) {
+    logger.info(
+      `The user didn't check the regenerate me box for PR #${prNumber}`
+    );
+    return null;
+  }
+
+  logger.info(`The user checked the regenerate me box for PR #${prNumber}`);
+
+  return {
+    owner,
+    repo,
+    prNumber,
+    prBody: newBody,
+    gcpProjectId: project,
+    buildTriggerId: trigger,
+    branch: payload.pull_request.base.ref,
+  };
+}
