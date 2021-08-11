@@ -109,7 +109,7 @@ function makeDestRepoAndConfigsStore(
   return [destRepo, configsStore];
 }
 
-describe('scanGoogleapisGenAndCreatePullRequests', function() {
+describe('scanGoogleapisGenAndCreatePullRequests', function () {
   // These tests use git locally and read and write a lot to the file system,
   // so a slow file system will slow them down.
   this.timeout(60000); // 1 minute.
@@ -240,7 +240,7 @@ Copy-Tag: ${copyTag}`
   });
 });
 
-describe('copyCodeIntoPullRequest', function() {
+describe('copyCodeIntoPullRequest', function () {
   // These tests use git locally and read and write a lot to the file system,
   // so a slow file system will slow them down.
   this.timeout(60000); // 1 minute.
@@ -268,7 +268,7 @@ describe('copyCodeIntoPullRequest', function() {
       sourceHash,
       {
         repo: destRepo,
-        yamlPath: owlBotYamlPath
+        yamlPath: owlBotYamlPath,
       },
       'test-branch',
       factory
