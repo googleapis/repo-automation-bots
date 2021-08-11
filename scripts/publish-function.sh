@@ -42,6 +42,14 @@ else
     timeout=540s
 fi
 
+# TODO(bcoe): figure out better approach for setting environment variables for
+# cloud functions (this list is getting too long).
+if [ $# -ge 9 ]; then
+    regenerate_trigger=$9
+else
+    regenerate_trigger=none
+fi
+
 if [ "${project}" == "repo-automation-bots" ]; then
     webhookTmpBucket=tmp-webhook-payloads
 elif [ "${project}" == "repo-automation-bots-staging" ]; then
@@ -66,7 +74,7 @@ deployArgs=(
   "--region"
   "${functionRegion}"
   "--update-env-vars"
-  "BOT_RUNTIME=functions,DRIFT_PRO_BUCKET=${bucket},KEY_LOCATION=${keyLocation},KEY_RING=${keyRing},GCF_SHORT_FUNCTION_NAME=${functionName},PROJECT_ID=${project},GCF_LOCATION=${functionRegion},PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1',WEBHOOK_TMP=${webhookTmpBucket}"
+  "BOT_RUNTIME=functions,DRIFT_PRO_BUCKET=${bucket},KEY_LOCATION=${keyLocation},KEY_RING=${keyRing},GCF_SHORT_FUNCTION_NAME=${functionName},PROJECT_ID=${project},GCF_LOCATION=${functionRegion},PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1',WEBHOOK_TMP=${webhookTmpBucket},CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST=${regenerate_trigger}"
   "--timeout"
   "${timeout}"
 )
