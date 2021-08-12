@@ -97,5 +97,5 @@ steps:
   - name: 'gcr.io/cloud-builders/gcloud'
     id: "build-cli-docker"
     entrypoint: gcloud
-    args: ['builds', 'submit', '--tag', 'gcr.io/repo-automation-bots/owlbot-cli']
+    args: ['builds', 'submit', '--tag', "gcr.io/${PROJECT_ID}/owlbot-cli"]
     dir: 'packages/owl-bot'
