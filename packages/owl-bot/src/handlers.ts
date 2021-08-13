@@ -23,7 +23,7 @@ import {OctokitType, createIssueIfTitleDoesntExist} from './octokit-util';
 import {githubRepoFromOwnerSlashName} from './github-repo';
 import {fetchConfigs} from './fetch-configs';
 
-type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
+type ListReposResponse = Endpoints['GET /users/{username}/repos']['response'];
 
 /**
  * Invoked when a new pubsub message arrives because a new post processor
@@ -166,9 +166,9 @@ export async function scanGithubForConfigs(
   });
 
   for await (const response of octokit.paginate.iterator(
-    octokit.repos.listForOrg,
+    octokit.repos.listForUser,
     {
-      org: githubOrg,
+      username: githubOrg,
     }
   )) {
     const repos = response.data as ListReposResponse['data'];
