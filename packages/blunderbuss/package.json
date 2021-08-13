@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@google-automations/bot-config-utils": "^4.0.0",
-    "@google-automations/datastore-lock": "^2.1.0",
+    "@google-automations/datastore-lock": "^3.0.0",
     "@google-automations/label-utils": "^2.0.0",
     "gcf-utils": "^12.0.0"
   },
