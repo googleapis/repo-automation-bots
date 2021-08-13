@@ -110,7 +110,7 @@ export function OwlBot(
       }
       const octokitFactory = octokitFactoryFrom({
         'app-id': appId,
-        'pem-path': privateKey,
+        privateKey,
         installation: installationId,
       });
       await core.triggerRegeneratePullRequest(octokitFactory, regenerate);
