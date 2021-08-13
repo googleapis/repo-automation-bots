@@ -43,6 +43,8 @@ steps:
     id: "cron-deploy"
     waitFor: ["-"]
     entrypoint: bash
+    env:
+      - "PROJECT_ID=${PROJECT_ID}"
     args:
       - "-e"
       - "./scripts/cron-deploy.sh"
