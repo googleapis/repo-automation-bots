@@ -28,7 +28,8 @@ export type OctokitType =
   | InstanceType<typeof ProbotOctokit>;
 
 export interface OctokitParams {
-  'pem-path': string;
+  'pem-path'?: string;
+  privateKey?: string;
   'app-id': number;
   installation: number;
 }
@@ -37,7 +38,12 @@ export interface OctokitParams {
  * Creates an authenticated token for octokit.
  */
 export async function octokitTokenFrom(argv: OctokitParams): Promise<string> {
-  const privateKey = await readFileAsync(argv['pem-path'], 'utf8');
+  let privateKey = '';
+  if (argv['pem-path']) {
+    privateKey = await readFileAsync(argv['pem-path'], 'utf8');
+  } else if (argv.privateKey) {
+    privateKey = argv.privateKey;
+  }
   const token = await core.getGitHubShortLivedAccessToken(
     privateKey,
     argv['app-id'],

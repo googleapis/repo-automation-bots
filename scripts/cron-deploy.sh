@@ -26,6 +26,10 @@ FUNCTION_REGION=$2
 REGION=$3
 DIRECTORY=$4
 
+if [[ -z "${PROJECT_ID}" ]]; then
+    PROJECT_ID=repo-automation-bots
+fi
+
 npm i -g @google-automations/cron-utils
 
 pushd "${DIRECTORY}"
@@ -35,4 +39,5 @@ cron-utils deploy \
   --scheduler-service-account="$SCHEDULER_SERVICE_ACCOUNT_EMAIL" \
   --function-region="$FUNCTION_REGION" \
   --region="${REGION}" \
-  --function-name="${FUNCTION_NAME}"
+  --function-name="${FUNCTION_NAME}" \
+  --project="${PROJECT_ID}"
