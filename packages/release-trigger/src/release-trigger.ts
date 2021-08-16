@@ -21,6 +21,11 @@ import * as child_process from 'child_process';
 
 export const exec = promisify(child_process.exec);
 
+export const ALLOWED_ORGANIZATIONS = [
+  'googleapis',
+  'GoogleCloudPlatform',
+];
+
 export const FAILED_LABEL = 'autorelease: failed';
 export const TAGGED_LABEL = 'autorelease: tagged';
 export const TRIGGERED_LABEL = 'autorelease: triggered';

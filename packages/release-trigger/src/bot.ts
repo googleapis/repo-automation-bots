@@ -33,13 +33,9 @@ import {
   markTriggered,
   markFailed,
   TRIGGERED_LABEL,
+  ALLOWED_ORGANIZATIONS,
   PullRequest,
 } from './release-trigger';
-
-const ALLOWED_ORGANIZATIONS = [
-  'googleapis',
-  'GoogleCloudPlatform',
-];
 
 async function doTrigger(octokit: Octokit, pullRequest: PullRequest) {
   const owner = pullRequest.base.repo.owner?.login;
