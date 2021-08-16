@@ -148,6 +148,60 @@ async function createGitHubRelease(
   }
 }
 
+/**
+ * Returns the repository's default/primary branch.
+ *
+ * @param {string} owner owner portion of GitHub repo URL.
+ * @param {string} repo repo portion of GitHub repo URL.
+ * @param {object} octokit authenticated Octokit instance.
+ * @returns {string}
+ */
+async function getConfigWithDefaultBranch(
+  owner: string,
+  repo: string,
+  octokit: OctokitType
+): Promise<ConfigurationOptions | null> {
+  const config = await getConfig<ConfigurationOptions>(
+    octokit,
+    owner,
+    repo,
+    WELL_KNOWN_CONFIGURATION_FILE,
+    {schema: schema}
+  );
+  if (config && !config.primaryBranch) {
+    config.primaryBranch = await api.getRepositoryDefaultBranch(
+      owner,
+      repo,
+      octokit
+    );
+  }
+  return config;
+}
+
+/**
+ * Returns the repository's default/primary branch.
+ *
+ * @param {string} owner owner portion of GitHub repo URL.
+ * @param {string} repo repo portion of GitHub repo URL.
+ * @param {object} octokit authenticated Octokit instance.
+ * @returns {string}
+ */
+async function getRepositoryDefaultBranch(
+  owner: string,
+  repo: string,
+  octokit: OctokitType
+) {
+  const {data} = await octokit.repos.get({
+    owner,
+    repo,
+  });
+  return (
+    data as {
+      default_branch: string;
+    }
+  ).default_branch;
+}
+
 async function createReleasePR(
   repoName: string,
   repoUrl: string,
@@ -195,7 +249,7 @@ async function createReleasePR(
   }
 }
 
-export = (app: Probot) => {
+const handler = (app: Probot) => {
   app.on('push', async context => {
     const repoUrl = context.payload.repository.full_name;
     const branch = context.payload.ref.replace('refs/heads/', '');
@@ -203,12 +257,10 @@ export = (app: Probot) => {
     const repoLanguage = context.payload.repository.language;
     const {owner, repo} = context.repo();
 
-    const remoteConfiguration = await getConfig<ConfigurationOptions>(
-      context.octokit,
+    const remoteConfiguration = await getConfigWithDefaultBranch(
       owner,
       repo,
-      WELL_KNOWN_CONFIGURATION_FILE,
-      {schema: schema}
+      context.octokit
     );
 
     // If no configuration is specified,
@@ -283,12 +335,10 @@ export = (app: Probot) => {
     const owner = context.payload.organization.login;
     const repoName = context.payload.repository.name;
 
-    const remoteConfiguration = await getConfig<ConfigurationOptions>(
-      context.octokit,
+    const remoteConfiguration = await getConfigWithDefaultBranch(
       owner,
       repoName,
-      WELL_KNOWN_CONFIGURATION_FILE,
-      {schema: schema}
+      context.octokit
     );
 
     // If no configuration is specified,
@@ -392,12 +442,10 @@ export = (app: Probot) => {
     });
 
     // check release please config
-    const remoteConfiguration = await getConfig<ConfigurationOptions>(
-      context.octokit,
+    const remoteConfiguration = await getConfigWithDefaultBranch(
       owner,
-      repo,
-      WELL_KNOWN_CONFIGURATION_FILE,
-      {schema: schema}
+      repoName,
+      context.octokit
     );
 
     // If no configuration is specified,
@@ -466,4 +514,9 @@ export = (app: Probot) => {
       context.payload.pull_request.number
     );
   });
+};
+
+export const api = {
+  handler,
+  getRepositoryDefaultBranch,
 };

@@ -173,7 +173,7 @@ describe('Label Sync', () => {
 
   it('should handle missing properties on data from GCS', async () => {
     // Simulate the results coming back from DRIFT having missing fields.
-    // In this case, the `apishort_name` property is explitly missing.
+    // In this case, the `apishort_name` property is explicitly missing.
     getApiLabelsStub.restore();
     getApiLabelsStub = sandbox.stub(labelSync, 'getApiLabels').resolves({
       apis: [

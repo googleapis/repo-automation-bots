@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import myProbotApp from '../src/release-please';
+import {api} from '../src/release-please';
+const myProbotApp = api.handler;
 import {RELEASE_PLEASE_LABELS} from '../src/labels';
 import {Runner} from '../src/runner';
 import {describe, it, beforeEach} from 'mocha';
 import {resolve} from 'path';
+import {Octokit} from '@octokit/rest';
+type OctokitType = InstanceType<typeof Octokit>;
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
@@ -52,6 +55,23 @@ function assertReleaserType(expectedType: string, pr: ReleasePR) {
 function loadConfig(configFile: string) {
   return yaml.load(
     fs.readFileSync(resolve(fixturesPath, 'config', configFile), 'utf-8')
+  );
+}
+
+function stubDefaultBranchLookup() {
+  sandbox.replace(
+    api,
+    'getRepositoryDefaultBranch',
+    async (
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      owner: string,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      repo: string,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      _octokit: OctokitType
+    ): Promise<string> => {
+      return 'master';
+    }
   );
 }
 
@@ -201,6 +221,7 @@ describe('ReleasePleaseBot', () => {
         assertReleaserType('Ruby', pr);
         executed = true;
       });
+      stubDefaultBranchLookup();
       getConfigStub.resolves(loadConfig('ruby_release.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -215,6 +236,7 @@ describe('ReleasePleaseBot', () => {
         assert.deepStrictEqual(pr.packageName, '@google-cloud/foo');
         executed = true;
       });
+      stubDefaultBranchLookup();
       getConfigStub.resolves(loadConfig('ruby_release_alternate_pkg_name.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -279,6 +301,7 @@ describe('ReleasePleaseBot', () => {
         assertReleaserType('JavaYoshi', pr);
         executed = true;
       });
+      stubDefaultBranchLookup();
       getConfigStub.resolves({});
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -294,6 +317,7 @@ describe('ReleasePleaseBot', () => {
         assert(pr.bumpMinorPreMajor);
         executed = true;
       });
+      stubDefaultBranchLookup();
       getConfigStub.resolves(loadConfig('minor_pre_major.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -309,6 +333,7 @@ describe('ReleasePleaseBot', () => {
         assert('master' === pr.gh.defaultBranch);
         executed = true;
       });
+      stubDefaultBranchLookup();
       getConfigStub.resolves(loadConfig('release_type_no_primary_branch.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -321,6 +346,7 @@ describe('ReleasePleaseBot', () => {
       it('should build a release PR', async () => {
         const manifest = sandbox.stub(Runner, 'manifest').resolves();
         getConfigStub.resolves(loadConfig('manifest.yml'));
+        stubDefaultBranchLookup();
         await probot.receive(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           {name: 'push', payload: payload as any, id: 'abc123'}
@@ -605,5 +631,41 @@ describe('ReleasePleaseBot', () => {
         id: 'abc123',
       });
     });
+  });
+
+  it('should fetch default branch from GitHub if not provided', async () => {
+    const payload = require(resolve(fixturesPath, './push_to_main'));
+    let executed = false;
+    sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
+      assertReleaserType('Ruby', pr);
+      executed = true;
+    });
+    const requests = nock('https://api.github.com')
+      .get('/repos/chingor13/google-auth-library-java')
+      .reply(200, {
+        default_branch: 'main',
+      });
+    getConfigStub.resolves(loadConfig('ruby_release.yml'));
+    await probot.receive(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      {name: 'push', payload: payload as any, id: 'abc123'}
+    );
+    assert(executed, 'should have executed the runner');
+    requests.done();
+  });
+
+  it('should use primaryBranch from config if one is set', async () => {
+    const payload = require(resolve(fixturesPath, './push_to_main'));
+    let executed = false;
+    sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
+      assertReleaserType('JavaYoshi', pr);
+      executed = true;
+    });
+    getConfigStub.resolves(loadConfig('main_branch.yml'));
+    await probot.receive(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      {name: 'push', payload: payload as any, id: 'abc123'}
+    );
+    assert(executed, 'should have executed the runner');
   });
 });

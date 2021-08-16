@@ -59,6 +59,16 @@ function getConfigFile(
   }
 }
 
+function getReviewsCompleted(
+  owner: string,
+  repo: string,
+  response: getPRInfo.Reviews[]
+) {
+  return nock('https://api.github.com')
+    .get(`/repos/${owner}/${repo}/pulls/1/reviews`)
+    .reply(200, response);
+}
+
 function submitReview(owner: string, repo: string, status: number) {
   return nock('https://api.github.com')
     .post(`/repos/${owner}/${repo}/pulls/1/reviews`, body => {
@@ -137,8 +147,44 @@ describe('auto-approve', () => {
 
         const scopes = [
           getConfigFile('testOwner', 'testRepo', 'fake-config', 200),
+          getReviewsCompleted('testOwner', 'testRepo', []),
           submitReview('testOwner', 'testRepo', 200),
           addLabels('testOwner', 'testRepo', 200),
+          createCheck('testOwner', 'testRepo', 200),
+        ];
+
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
+      });
+
+      it('does nothing if there is already an approval', async () => {
+        checkPRAgainstConfigStub.returns(true);
+        validateSchemaStub.returns(undefined);
+        checkCodeOwnersStub.returns('');
+        getSecretStub.returns(new Octokit({auth: '123'}));
+
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened'
+        ));
+
+        const scopes = [
+          getConfigFile('testOwner', 'testRepo', 'fake-config', 200),
+          getReviewsCompleted('testOwner', 'testRepo', [
+            {
+              user: {login: 'yoshi-approver'},
+              state: 'APPROVED',
+              commit_id: '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+              id: 12345,
+            },
+          ]),
           createCheck('testOwner', 'testRepo', 200),
         ];
 
@@ -171,6 +217,7 @@ describe('auto-approve', () => {
             'fake-config',
             200
           ),
+          getReviewsCompleted('GoogleCloudPlatform', 'python-docs-samples', []),
           submitReview('GoogleCloudPlatform', 'python-docs-samples', 200),
           addLabels('GoogleCloudPlatform', 'python-docs-samples', 200),
           createCheck('GoogleCloudPlatform', 'python-docs-samples', 200),
@@ -369,6 +416,7 @@ describe('auto-approve', () => {
 
       const scopes = [
         getConfigFile('testOwner', 'testRepo', 'fake-config', 200),
+        getReviewsCompleted('testOwner', 'testRepo', []),
         submitReview('testOwner', 'testRepo', 200),
         addLabels('testOwner', 'testRepo', 200),
         createCheck('testOwner', 'testRepo', 200),

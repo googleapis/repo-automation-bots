@@ -14,7 +14,13 @@
 
 import {describe, it} from 'mocha';
 import * as assert from 'assert';
-import {copyCode, copyDirs, stat} from '../src/copy-code';
+import {
+  copyCode,
+  copyDirs,
+  findSourceHash,
+  sourceLinkFrom,
+  stat,
+} from '../src/copy-code';
 import path from 'path';
 import * as fs from 'fs';
 import tmp from 'tmp';
@@ -298,5 +304,19 @@ describe('copyCode', function () {
       'src/b.txt:2',
       'src/c.txt:3',
     ]);
+  });
+});
+
+describe('findSourceHash', () => {
+  it('finds a source hash in a pull request body', () => {
+    const sourceLink = sourceLinkFrom('abc123');
+    assert.strictEqual(findSourceHash(sourceLink), 'abc123');
+    const prBody = `This code is fantastic!\nSource-Link: ${sourceLink}]`;
+    assert.strictEqual(findSourceHash(prBody), 'abc123');
+  });
+
+  it('returns empty string when no source link.', () => {
+    const prBody = 'This code is fantastic!';
+    assert.strictEqual(findSourceHash(prBody), '');
   });
 });

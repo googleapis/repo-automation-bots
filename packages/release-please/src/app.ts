@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './release-please';
+import {api} from './release-please';
+const {handler} = api;
 
 const bootstrap = new GCFBootstrapper();
-module.exports.release_please = bootstrap.gcf(appFn);
+module.exports.release_please = bootstrap.gcf(handler);

@@ -28,7 +28,8 @@ import {
   DEFAULT_CONFIGURATION,
   WELL_KNOWN_CONFIGURATION_FILE,
 } from '../src/config-constants';
-import myProbotApp from '../src/release-please';
+import {api} from '../src/release-please';
+const myProbotApp = api.handler;
 
 nock.disableNetConnect();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
@@ -157,7 +158,7 @@ describe('getConfig', () => {
         ...DEFAULT_CONFIGURATION,
         ...config,
       };
-      assert.strictEqual(configuration?.primaryBranch, 'master');
+      assert.strictEqual(configuration?.primaryBranch, undefined);
       scope.done();
     });
     it('should read a real world java config', async () => {
@@ -182,7 +183,7 @@ describe('getConfig', () => {
         ...DEFAULT_CONFIGURATION,
         ...config,
       };
-      assert.strictEqual(configuration?.primaryBranch, 'master');
+      assert.strictEqual(configuration?.primaryBranch, undefined);
       scope.done();
     });
   });

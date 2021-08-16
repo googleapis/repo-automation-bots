@@ -65,7 +65,7 @@ const EVERYTHING_FAILED_TITLE = 'The build failed';
 
 const NEW_ISSUE_MESSAGE = `This test failed!
 
-To configure my behavior, see [the Flaky Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/flakybot).
+To configure my behavior, see [the Flaky Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/main/packages/flakybot).
 
 If I'm commenting on this issue too often, add the \`flakybot: quiet\` label and
 I will stop commenting.

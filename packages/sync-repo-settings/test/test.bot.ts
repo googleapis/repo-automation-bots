@@ -68,7 +68,7 @@ function nockUpdateBranchProtection(
   requireCodeOwners: boolean
 ) {
   return nock('https://api.github.com')
-    .put(`/repos/googleapis/${repo}/branches/master/protection`, {
+    .put(`/repos/googleapis/${repo}/branches/main/protection`, {
       required_pull_request_reviews: {
         required_approving_review_count: 1,
         dismiss_stale_reviews: false,
@@ -83,6 +83,12 @@ function nockUpdateBranchProtection(
       restrictions: null,
     })
     .reply(200);
+}
+
+function nockDefaultBranch(repo: string, branch: string) {
+  return nock('https://api.github.com')
+    .get(`/repos/${repo}`)
+    .reply(200, {default_branch: branch});
 }
 
 async function receive(org: string, repo: string, cronOrg?: string) {
@@ -152,6 +158,7 @@ describe('Sync repo settings', () => {
       nockLanguagesList(org, repo, {kotlin: 1}),
       nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
+      nockDefaultBranch('Codertocat/Hello-World', 'main'),
     ];
     await receive(org, repo);
     scopes.forEach(s => s.done());
@@ -190,6 +197,7 @@ describe('Sync repo settings', () => {
       nockUpdateTeamMembership('yoshi-nodejs', org, repo),
       nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
+      nockDefaultBranch('googleapis/nodejs-dialogflow', 'main'),
     ];
     await receive(org, repo);
     scopes.forEach(s => s.done());
@@ -212,6 +220,7 @@ describe('Sync repo settings', () => {
       nockUpdateTeamMembership('team1', org, repo),
       nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
+      nockDefaultBranch('googleapis/fake', 'main'),
     ];
     await receive(org, repo);
     scopes.forEach(x => x.done());
@@ -228,6 +237,7 @@ describe('Sync repo settings', () => {
       nockUpdateTeamMembership('team1', org, repo),
       nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
+      nockDefaultBranch('googleapis/fake', 'main'),
     ];
     await receive(org, repo);
     scopes.forEach(x => x.done());
@@ -446,6 +456,7 @@ describe('Sync repo settings', () => {
       nockLanguagesList(org, repo, {kotlin: 1}),
       nockUpdateTeamMembership('cloud-dpe', org, repo),
       nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
+      nockDefaultBranch('Codertocat/Hello-World', 'main'),
     ];
     await probot.receive({
       name: 'push',
