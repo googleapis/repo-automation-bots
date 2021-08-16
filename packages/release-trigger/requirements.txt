@@ -1,2 +1,2 @@
-git+git://github.com/chingor13/releasetool@single-trigger#egg=releasetool
+gcp-releasetool==1.7.0
 keyrings.alt
