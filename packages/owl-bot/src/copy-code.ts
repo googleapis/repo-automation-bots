@@ -293,7 +293,7 @@ export function toLocalRepo(
 }
 
 export const REGENERATE_CHECKBOX_TEXT =
-  '- [x] To automatically regenerate this PR, check this box.';
+  '- [x] Regenerate this pull request now.';
 export const EMPTY_REGENERATE_CHECKBOX_TEXT = REGENERATE_CHECKBOX_TEXT.replace(
   '[x]',
   '[ ]'
