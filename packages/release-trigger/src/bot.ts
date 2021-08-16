@@ -36,6 +36,11 @@ import {
   PullRequest,
 } from './release-trigger';
 
+const ALLOWED_ORGANIZATIONS = [
+  'googleapis',
+  'GoogleCloudPlatform',
+];
+
 async function doTrigger(octokit: Octokit, pullRequest: PullRequest) {
   const owner = pullRequest.base.repo.owner?.login;
   if (!owner) {
@@ -65,6 +70,12 @@ export = (app: Probot) => {
     const repoUrl = repository.full_name;
     const owner = repository.owner.login;
     const repo = repository.name;
+
+    if (!ALLOWED_ORGANIZATIONS.includes(owner)) {
+      logger.info(`release-trigger not allowed for owner: ${owner}`);
+      return;
+    }
+
     const remoteConfiguration =
       await getConfigWithDefault<ConfigurationOptions>(
         context.octokit,
@@ -99,6 +110,12 @@ export = (app: Probot) => {
     const repoUrl = repository.full_name;
     const owner = repository.owner.login;
     const repo = repository.name;
+
+    if (!ALLOWED_ORGANIZATIONS.includes(owner)) {
+      logger.info(`release-trigger not allowed for owner: ${owner}`);
+      return;
+    }
+
     const remoteConfiguration =
       await getConfigWithDefault<ConfigurationOptions>(
         context.octokit,
@@ -128,11 +145,17 @@ export = (app: Probot) => {
 
   // Check the config schema on PRs.
   app.on(['pull_request.opened', 'pull_request.synchronize'], async context => {
+    const {owner, repo} = context.repo();
+
+    if (!ALLOWED_ORGANIZATIONS.includes(owner)) {
+      logger.info(`release-trigger not allowed for owner: ${owner}`);
+      return;
+    }
+
     const configChecker = new ConfigChecker<ConfigurationOptions>(
       schema,
       WELL_KNOWN_CONFIGURATION_FILE
     );
-    const {owner, repo} = context.repo();
     await configChecker.validateConfigChanges(
       context.octokit,
       owner,
