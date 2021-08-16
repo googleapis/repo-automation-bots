@@ -30,7 +30,7 @@ import glob from 'glob';
 import {GithubRepo} from './github-repo';
 import {OWL_BOT_COPY} from './core';
 import {newCmd} from './cmd';
-import {createPullRequestFromLastCommit} from './create-pr';
+import {createPullRequestFromLastCommit, getLastCommitBody} from './create-pr';
 
 // This code generally uses Sync functions because:
 // 1. None of our current designs including calling this code from a web
@@ -198,6 +198,11 @@ export async function copyCodeAndCreatePullRequest(
     return; // Mid-air collision!
   }
 
+  const prBody =
+    EMPTY_REGENERATE_CHECKBOX_TEXT +
+    '\n\n' +
+    getLastCommitBody(dest.dir, logger);
+
   await createPullRequestFromLastCommit(
     destRepo.owner,
     destRepo.repo,
@@ -206,6 +211,7 @@ export async function copyCodeAndCreatePullRequest(
     destRepo.getCloneUrl(token),
     [OWL_BOT_COPY],
     octokit,
+    prBody,
     logger
   );
 }

@@ -75,6 +75,7 @@ describe('maybeCreatePullRequestForLockUpdate', () => {
         'https://x-access-token:b4@github.com/googleapis/nodejs-speech.git',
         ['owl-bot-update-lock'],
         {fake: true},
+        '',
         console,
       ],
     ]);
