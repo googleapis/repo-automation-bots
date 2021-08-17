@@ -13,10 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-SELECT
-    COUNT(jsonPayload.count) as FLAKY_TEST_PRS_OPENED,
-    DATE_TRUNC(DATE(timestamp, "America/Los_Angeles"), MONTH) as month
-FROM `repo-automation-bots.automation_metrics.cloudfunctions_googleapis_com_cloud_functions`
-    WHERE resource.labels.function_name = "flakybot"
-    AND jsonPayload.event = "flakybot.open_new_issue"
-GROUP BY month;
+SELECT month_start, prs as SYNTH_FULL
+FROM `repo-automation-bots.automation_metrics.github_label_metrics`
+WHERE type = "synthtool-full-context"
+ORDER BY month_start DESC;
+
+SELECT month_start, SUM(prs) as SYNTH_PARTIAL_NONE
+FROM `repo-automation-bots.automation_metrics.github_label_metrics`
+WHERE type = "synthtool-no-context"
+OR type = "synthtool-partial-context"
+GROUP BY month_start
+ORDER BY month_start DESC;
+
+SELECT month_start, prs as OWLBOT_COPY
+FROM `repo-automation-bots.automation_metrics.github_label_metrics`
+WHERE type = "owl-bot-copy"
+ORDER BY month_start DESC;

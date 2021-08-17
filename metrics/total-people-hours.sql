@@ -34,5 +34,45 @@ UNION ALL
     AND jsonPayload.type = "metric"
     AND jsonPayload.event = "merge_on_green.merged"
     GROUP BY month
+)
+UNION ALL
+(
+    SELECT
+        (SUM(jsonPayload.count * 4)) / 60 as people_hours,
+        DATE_TRUNC(DATE(timestamp, "America/Los_Angeles"), MONTH) as month
+    FROM `repo-automation-bots.automation_metrics.cloudfunctions_googleapis_com_cloud_functions`
+        WHERE resource.labels.function_name = "trusted_contribution"
+        AND jsonPayload.event = "trusted_contribution.labeled"
+    GROUP BY month
+))
+UNION ALL
+(
+    SELECT
+        /* 
+         * Rough guess of people hours saved is same as merge on green
+         * we should come back to this in the future with better estimate.
+         */
+        (SUM(jsonPayload.count * 4.3)) / 60 as people_hours,
+        DATE_TRUNC(DATE(timestamp, "America/Los_Angeles"), MONTH) as month
+    FROM `repo-automation-bots.automation_metrics.cloudfunctions_googleapis_com_cloud_functions`
+        WHERE resource.labels.function_name = "auto_approve"
+        AND jsonPayload.event = "auto_approve.approved_tagged"
+    GROUP BY month
+))
+UNION ALL
+(
+    SELECT
+        /* 
+         * Guessing we save at least 1 minute of someone's time by pointing
+         * them towards an appropriate file to edit. We should get an actual
+         * estimate of this, and reach out to users to see if this has helped
+         * them.
+         */
+        (SUM(jsonPayload.count * 1)) / 60 as people_hours,
+        DATE_TRUNC(DATE(timestamp, "America/Los_Angeles"), MONTH) as month
+    FROM `repo-automation-bots.automation_metrics.cloudfunctions_googleapis_com_cloud_functions`
+        WHERE resource.labels.function_name = "generated_files_bot"
+        AND jsonPayload.event = "generated_files_bot.detected_modified_templated_files"
+    GROUP BY month
 ))
 GROUP BY month;
