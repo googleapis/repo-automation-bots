@@ -13,10 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-SELECT
-    COUNT(jsonPayload.count) as FLAKY_TEST_PRS_OPENED,
-    DATE_TRUNC(DATE(timestamp, "America/Los_Angeles"), MONTH) as month
-FROM `repo-automation-bots.automation_metrics.cloudfunctions_googleapis_com_cloud_functions`
-    WHERE resource.labels.function_name = "flakybot"
-    AND jsonPayload.event = "flakybot.open_new_issue"
+SELECT COUNT(jsonPayload.count) as DETECTED_GENERATED_FILES, DATE_TRUNC(DATE(timestamp, "America/Los_Angeles"), MONTH) as month FROM `repo-automation-bots.automation_metrics.cloudfunctions_googleapis_com_cloud_functions`
+WHERE resource.labels.function_name = "generated_files_bot"
+AND jsonPayload.event = "generated_files_bot.detected_modified_templated_files"
 GROUP BY month;

@@ -15,8 +15,8 @@
  */
 SELECT
     COUNT(jsonPayload.count) as DO_NOT_MERGE_ADDED,
-    DATE_TRUNC(DATE(timestamp, "America/Los_Angeles"), DAY) as day
+    DATE_TRUNC(DATE(timestamp, "America/Los_Angeles"), MONTH) as month
 FROM `repo-automation-bots.automation_metrics.cloudfunctions_googleapis_com_cloud_functions`
     WHERE resource.labels.function_name = "do_not_merge"
     AND jsonPayload.event = "do_not_merge.add_label"
-GROUP BY day;
+GROUP BY month;
