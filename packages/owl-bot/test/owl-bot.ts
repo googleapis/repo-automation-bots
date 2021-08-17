@@ -1364,6 +1364,12 @@ function pullRequestEditedEventFrom(
         repo: {
           full_name: 'googleapis/nodejs-dlp',
         },
+        ref: 'main',
+      },
+      head: {
+        repo: {
+          full_name: 'googleapis/nodejs-dlp',
+        },
         ref: 'owl-bot-update-branch',
       },
       number: 48,
