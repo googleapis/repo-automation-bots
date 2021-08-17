@@ -62,10 +62,14 @@ steps:
   - name: 'gcr.io/repo-automation-bots/owlbot-cli'
     args:
       - copy-code-into-pull-request
-      - --source-repo-commit-hash ${_SOURCE_HASH}
-      - --dest-repo ${_PR_OWNER}/${_REPOSITORY}
-      - --dest-branch ${_PR_BRANCH}
-      - --github-token ${_GITHUB_TOKEN}
+      - --source-repo-commit-hash
+      - ${_SOURCE_HASH}
+      - --dest-repo
+      - ${_PR_OWNER}/${_REPOSITORY}
+      - --dest-branch
+      - ${_PR_BRANCH}
+      - --github-token
+      - ${_GITHUB_TOKEN}
 
 # The github token only lives 10 minutes.
 timeout: '600s'

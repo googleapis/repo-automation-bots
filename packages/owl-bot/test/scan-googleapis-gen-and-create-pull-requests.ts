@@ -147,7 +147,9 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
     assert.strictEqual(pull.base, 'main');
     assert.strictEqual(
       pull.body,
-      `Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}`
+      cc.EMPTY_REGENERATE_CHECKBOX_TEXT +
+        '\n\n' +
+        `Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}`
     );
 
     // Confirm it set the label.

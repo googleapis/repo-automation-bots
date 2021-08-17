@@ -53,6 +53,7 @@ export async function maybeCreatePullRequestForLockUpdate(
       githubRepo.getCloneUrl(token),
       [core.OWL_BOT_LOCK_UPDATE],
       octokit,
+      '',
       logger
     );
   } else {
