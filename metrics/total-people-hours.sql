@@ -44,7 +44,7 @@ UNION ALL
         WHERE resource.labels.function_name = "trusted_contribution"
         AND jsonPayload.event = "trusted_contribution.labeled"
     GROUP BY month
-))
+)
 UNION ALL
 (
     SELECT
@@ -58,7 +58,7 @@ UNION ALL
         WHERE resource.labels.function_name = "auto_approve"
         AND jsonPayload.event = "auto_approve.approved_tagged"
     GROUP BY month
-))
+)
 UNION ALL
 (
     SELECT
@@ -74,5 +74,18 @@ UNION ALL
         WHERE resource.labels.function_name = "generated_files_bot"
         AND jsonPayload.event = "generated_files_bot.detected_modified_templated_files"
     GROUP BY month
+)
+UNION ALL
+(
+    SELECT
+        /*
+         * Based on old estimate of context aware commit time savings.
+         */
+        (SUM(prs) * 3.5) / 60 as people_hours,
+        month_start as month
+    FROM `repo-automation-bots.automation_metrics.github_label_metrics`
+        WHERE type = "owl-bot-copy"
+        OR type = "owl-bot-update-lock"
+    GROUP BY month_start
 ))
 GROUP BY month;

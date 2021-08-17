@@ -114,7 +114,7 @@ ORDER BY month_start DESC)
 
 UNION ALL
 
-SELECT * FROM (SELECT COUNT(id) as prs, month_start, 0 as minutes, 'owlbot-copy' as type FROM (
+SELECT * FROM (SELECT COUNT(id) as prs, month_start, 0 as minutes, 'owl-bot-copy' as type FROM (
   SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id, JSON_EXTRACT(payload, '$.pull_request.merged_at') as merged
   FROM `repo-automation-bots.automation_metrics.filtered_github`
   WHERE
@@ -130,3 +130,20 @@ WHERE merged IS NOT NULL
 GROUP BY month_start
 ORDER BY month_start DESC)
 
+UNION ALL
+
+SELECT * FROM (SELECT COUNT(id) as prs, month_start, 0 as minutes, 'owl-bot-update-lock' as type FROM (
+  SELECT DATE_TRUNC(DATE(created_at), MONTH) as month_start, id, JSON_EXTRACT(payload, '$.pull_request.merged_at') as merged
+  FROM `repo-automation-bots.automation_metrics.filtered_github`
+  WHERE
+  (
+  repo.name LIKE 'googleapis/%' OR
+  repo.name LIKE 'GoogleCloudPlatform/%'
+  ) AND
+  type = 'PullRequestEvent' AND
+  JSON_EXTRACT(payload, '$.action') LIKE '"closed"' AND
+  has_key_value(JSON_EXTRACT(payload, '$.pull_request.labels'), 'name', 'owl-bot-update-lock') = true
+)
+WHERE merged IS NOT NULL
+GROUP BY month_start
+ORDER BY month_start DESC)

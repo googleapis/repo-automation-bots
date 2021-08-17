@@ -25,7 +25,9 @@ OR type = "synthtool-partial-context"
 GROUP BY month_start
 ORDER BY month_start DESC;
 
-SELECT month_start, prs as OWLBOT_COPY
+SELECT month_start, SUM(prs) as OWLBOT_COPY_LOCK_UPDATE
 FROM `repo-automation-bots.automation_metrics.github_label_metrics`
 WHERE type = "owl-bot-copy"
+OR type = "owl-bot-update-lock"
+GROUP BY month_start
 ORDER BY month_start DESC;
