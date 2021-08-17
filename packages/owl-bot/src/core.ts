@@ -681,7 +681,16 @@ ${err}`);
     return;
   }
   await reportInfo(`Owl bot is regenerating pull request ${args.prNumber}...
-Build name: ${buildName}`);
+Build name: ${stripBuildName(buildName)}`);
+}
+
+/**
+ * The build name returned by runBuildTrigger includes a full path with the
+ * project name, and I'd rather not show that to the world.
+ */
+function stripBuildName(buildName: string): string {
+  const chunks = buildName.split(/\//);
+  return chunks.length > 0 ? chunks[chunks.length - 1] : '';
 }
 
 export const core = {

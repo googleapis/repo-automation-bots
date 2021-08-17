@@ -525,6 +525,6 @@ export function userCheckedRegenerateBox(
     prBody: newBody,
     gcpProjectId: project,
     buildTriggerId: trigger,
-    branch: payload.pull_request.base.ref,
+    branch: payload.pull_request.head.ref,
   };
 }
