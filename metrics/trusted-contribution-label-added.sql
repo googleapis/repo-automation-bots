@@ -15,8 +15,8 @@
  */
 SELECT
     COUNT(jsonPayload.count) as FLAKY_TEST_PRS_OPENED,
-    DATE_TRUNC(DATE(timestamp, "America/Los_Angeles"), DAY) as day
+    DATE_TRUNC(DATE(timestamp, "America/Los_Angeles"), MONTH) as month
 FROM `repo-automation-bots.automation_metrics.cloudfunctions_googleapis_com_cloud_functions`
     WHERE resource.labels.function_name = "trusted_contribution"
     AND jsonPayload.event = "trusted_contribution.labeled"
-GROUP BY day;
+GROUP BY month;

@@ -70,6 +70,9 @@ steps:
       - ${_PR_BRANCH}
       - --github-token
       - ${_GITHUB_TOKEN}
+    env:
+      - 'HOME=/workspace'
+
 
 # The github token only lives 10 minutes.
 timeout: '600s'
