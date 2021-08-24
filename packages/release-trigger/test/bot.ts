@@ -203,4 +203,46 @@ describe('bot', () => {
       sinon.assert.notCalled(markTriggeredStub);
     });
   });
+
+  describe('on pull request labeled', () => {
+    it('should remove labels if published', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/pull_request_labeled'
+      ));
+      getConfigStub.resolves({enabled: true});
+      const cleanupStub = sandbox
+        .stub(releaseTriggerModule, 'cleanupPublished')
+        .resolves(true);
+
+      await probot.receive({
+        name: 'pull_request.labeled',
+        payload: payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(getConfigStub);
+      sinon.assert.calledOnce(cleanupStub);
+    });
+
+    it('should ignore other labels', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/pull_request_labeled_other'
+      ));
+      getConfigStub.resolves({enabled: true});
+      const cleanupStub = sandbox
+        .stub(releaseTriggerModule, 'cleanupPublished')
+        .resolves(true);
+
+      await probot.receive({
+        name: 'pull_request.labeled',
+        payload: payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(getConfigStub);
+      sinon.assert.notCalled(cleanupStub);
+    });
+  });
 });

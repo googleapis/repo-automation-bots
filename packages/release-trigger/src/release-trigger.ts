@@ -182,8 +182,9 @@ export async function markFailed(
 export async function cleanupPublished(
   octokit: Octokit,
   pullRequest: BasicPullRequest
-) {
+): Promise<boolean> {
   logger.info('adding `autorelease: failed` label');
+  let success = true;
   for (const name of [TAGGED_LABEL, TRIGGERED_LABEL]) {
     try {
       await octokit.issues.removeLabel({
@@ -194,7 +195,9 @@ export async function cleanupPublished(
       });
     } catch (err) {
       logger.warn(`failed to remove label ${name}`);
+      success = false;
       // ignore error for 404
     }
   }
+  return success;
 }

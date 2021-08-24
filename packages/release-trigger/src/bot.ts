@@ -34,6 +34,7 @@ import {
   ALLOWED_ORGANIZATIONS,
   PullRequest,
   TAGGED_LABEL,
+  cleanupPublished,
 } from './release-trigger';
 
 async function doTrigger(
@@ -155,6 +156,11 @@ export = (app: Probot) => {
       logger.info(`ignoring non-published label: ${label}`);
       return;
     }
+    await cleanupPublished(context.octokit, {
+      owner,
+      repo,
+      number: context.payload.pull_request.number,
+    });
   });
 
   // Try to trigger the job on removing the `autorelease: triggered` label.
