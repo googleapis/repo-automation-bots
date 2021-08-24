@@ -34,7 +34,7 @@ import {
   PullRequest,
 } from './release-trigger';
 
-async function doTrigger(octokit: Octokit, pullRequest: PullRequest) {
+async function doTrigger(octokit: Octokit, pullRequest: PullRequest, token: string) {
   const owner = pullRequest.base.repo.owner?.login;
   if (!owner) {
     logger.error(`no owner for ${pullRequest.number}`);
@@ -42,7 +42,7 @@ async function doTrigger(octokit: Octokit, pullRequest: PullRequest) {
   }
   try {
     await Promise.all([
-      triggerKokoroJob(pullRequest.html_url),
+      triggerKokoroJob(pullRequest.html_url, token),
       markTriggered(octokit, {
         owner,
         repo: pullRequest.base.repo.name,
@@ -95,8 +95,9 @@ export = (app: Probot) => {
       context.octokit,
       {owner: repository.owner.login, repo: repository.name}
     );
+    const {token} = await context.octokit.auth() as {token: string};
     for (const pullRequest of releasePullRequests) {
-      await doTrigger(context.octokit, pullRequest);
+      await doTrigger(context.octokit, pullRequest, token);
     }
   });
 
@@ -139,7 +140,8 @@ export = (app: Probot) => {
       return;
     }
 
-    await doTrigger(context.octokit, context.payload.pull_request);
+    const {token} = await context.octokit.auth() as {token: string};
+    await doTrigger(context.octokit, context.payload.pull_request, token);
   });
 
   // Check the config schema on PRs.

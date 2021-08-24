@@ -19,10 +19,13 @@ import {logger} from 'gcf-utils';
 import * as child_process from 'child_process';
 
 export const exec = function (
-  command: string
+  command: string,
+  token: string,
 ): Promise<{stdout: string; stderr: string}> {
   return new Promise((resolve, reject) => {
-    child_process.exec(command, (error, stdout, stderr) => {
+    child_process.exec(command, {env: {
+      'GITHUB_TOKEN': token,
+    }}, (error, stdout, stderr) => {
       if (stdout) {
         logger.info(stdout);
       }
@@ -120,14 +123,15 @@ export async function findPendingReleasePullRequests(
 }
 
 export async function triggerKokoroJob(
-  pullRequestUrl: string
+  pullRequestUrl: string,
+  token: string,
 ): Promise<{stdout: string; stderr: string}> {
   logger.info(`triggering job for ${pullRequestUrl}`);
 
   const command = `python3 -m autorelease trigger-single --pull=${pullRequestUrl}`;
   logger.debug(`command: ${command}`);
   try {
-    return await exec(command);
+    return await exec(command, token);
   } catch (e) {
     logger.error(`error executing command: ${command}`, e);
     throw e;
