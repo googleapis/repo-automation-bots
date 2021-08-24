@@ -21,6 +21,11 @@ import * as fs from 'fs';
  * Run `Bazel build ...` in googleapis/googleapis to build tar balls of source
  * code.  This function unpacks those tarballs into the same directory structure
  * as googleapis-gen.
+ * @param bazelBinDir path to build output directory; should always end with bazel-bin.
+ * @param outDir directory where tarballs will be unpacked; corresponds to
+ *               googleapis/googleapis-gen.
+ * @param buildTargetStem only unpack tarballs whose paths have a common stem;
+ *                        empty means unpack all the tarballs.
  */
 export function unpackTarBalls(
   bazelBinDir: string,
