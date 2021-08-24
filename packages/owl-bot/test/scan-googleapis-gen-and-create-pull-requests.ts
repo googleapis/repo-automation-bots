@@ -265,7 +265,7 @@ describe('copyCodeIntoPullRequest', function () {
     await cc.copyCodeIntoPullRequest(
       abcRepo,
       sourceHash,
-      destRepo,
+      {repo: destRepo, yamlPath: ".github/.OwlBot.yaml"},
       'test-branch',
       factory
     );
