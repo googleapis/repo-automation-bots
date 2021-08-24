@@ -19,6 +19,8 @@ import {
   copyDirs,
   copyExists,
   copyTagFrom,
+  findSourceHash,
+  sourceLinkFrom,
   stat,
 } from '../src/copy-code';
 import path from 'path';
@@ -32,6 +34,7 @@ import {OctokitType} from '../src/octokit-util';
 import {AffectedRepo} from '../src/configs-store';
 import {githubRepoFromOwnerSlashName} from '../src/github-repo';
 import {FakeIssues, FakePulls} from './fake-octokit';
+import glob from 'glob';
 
 describe('copyExists', () => {
   async function fakeOctokit() {
