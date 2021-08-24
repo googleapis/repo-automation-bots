@@ -27,6 +27,7 @@ export const exec = function (
       command,
       {
         env: {
+          ...process.env,
           GITHUB_TOKEN: token,
         },
       },
