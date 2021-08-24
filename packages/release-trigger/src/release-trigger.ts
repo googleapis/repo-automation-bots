@@ -53,6 +53,7 @@ export const ALLOWED_ORGANIZATIONS = ['googleapis', 'GoogleCloudPlatform'];
 export const FAILED_LABEL = 'autorelease: failed';
 export const TAGGED_LABEL = 'autorelease: tagged';
 export const TRIGGERED_LABEL = 'autorelease: triggered';
+export const PUBLISHED_LABEL = 'autorelease: published';
 export interface Repository {
   owner: string;
   repo: string;
@@ -176,4 +177,24 @@ export async function markFailed(
     issue_number: pullRequest.number,
     labels: [FAILED_LABEL],
   });
+}
+
+export async function cleanupPublished(
+  octokit: Octokit,
+  pullRequest: BasicPullRequest
+) {
+  logger.info('adding `autorelease: failed` label');
+  for (const name of [TAGGED_LABEL, TRIGGERED_LABEL]) {
+    try {
+      await octokit.issues.removeLabel({
+        owner: pullRequest.owner,
+        repo: pullRequest.repo,
+        issue_number: pullRequest.number,
+        name,
+      });
+    } catch (err) {
+      logger.warn(`failed to remove label ${name}`);
+      // ignore error for 404
+    }
+  }
 }
