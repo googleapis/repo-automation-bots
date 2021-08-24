@@ -45,14 +45,12 @@ async function doTrigger(
     return;
   }
   try {
-    await Promise.all([
-      triggerKokoroJob(pullRequest.html_url, token),
-      markTriggered(octokit, {
-        owner,
-        repo: pullRequest.base.repo.name,
-        number: pullRequest.number,
-      }),
-    ]);
+    await triggerKokoroJob(pullRequest.html_url, token);
+    await markTriggered(octokit, {
+      owner,
+      repo: pullRequest.base.repo.name,
+      number: pullRequest.number,
+    });
   } catch (e) {
     await markFailed(octokit, {
       owner,
