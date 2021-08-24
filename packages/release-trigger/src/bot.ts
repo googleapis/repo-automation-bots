@@ -34,7 +34,11 @@ import {
   PullRequest,
 } from './release-trigger';
 
-async function doTrigger(octokit: Octokit, pullRequest: PullRequest, token: string) {
+async function doTrigger(
+  octokit: Octokit,
+  pullRequest: PullRequest,
+  token: string
+) {
   const owner = pullRequest.base.repo.owner?.login;
   if (!owner) {
     logger.error(`no owner for ${pullRequest.number}`);
@@ -95,7 +99,9 @@ export = (app: Probot) => {
       context.octokit,
       {owner: repository.owner.login, repo: repository.name}
     );
-    const {token} = await context.octokit.auth() as {token: string};
+    const {token} = (await context.octokit.auth({type: 'event-octokit'})) as {
+      token: string;
+    };
     for (const pullRequest of releasePullRequests) {
       await doTrigger(context.octokit, pullRequest, token);
     }
@@ -140,7 +146,9 @@ export = (app: Probot) => {
       return;
     }
 
-    const {token} = await context.octokit.auth() as {token: string};
+    const {token} = (await context.octokit.auth({type: 'event-octokit'})) as {
+      token: string;
+    };
     await doTrigger(context.octokit, context.payload.pull_request, token);
   });
 

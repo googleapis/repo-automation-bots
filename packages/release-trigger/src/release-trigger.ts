@@ -20,24 +20,30 @@ import * as child_process from 'child_process';
 
 export const exec = function (
   command: string,
-  token: string,
+  token: string
 ): Promise<{stdout: string; stderr: string}> {
   return new Promise((resolve, reject) => {
-    child_process.exec(command, {env: {
-      'GITHUB_TOKEN': token,
-    }}, (error, stdout, stderr) => {
-      if (stdout) {
-        logger.info(stdout);
+    child_process.exec(
+      command,
+      {
+        env: {
+          GITHUB_TOKEN: token,
+        },
+      },
+      (error, stdout, stderr) => {
+        if (stdout) {
+          logger.info(stdout);
+        }
+        if (stderr) {
+          logger.warn(stderr);
+        }
+        if (error) {
+          reject(error);
+        } else {
+          resolve({stdout, stderr});
+        }
       }
-      if (stderr) {
-        logger.warn(stderr);
-      }
-      if (error) {
-        reject(error);
-      } else {
-        resolve({stdout, stderr});
-      }
-    });
+    );
   });
 };
 
@@ -124,7 +130,7 @@ export async function findPendingReleasePullRequests(
 
 export async function triggerKokoroJob(
   pullRequestUrl: string,
-  token: string,
+  token: string
 ): Promise<{stdout: string; stderr: string}> {
   logger.info(`triggering job for ${pullRequestUrl}`);
 
