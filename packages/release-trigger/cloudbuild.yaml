@@ -32,6 +32,8 @@ steps:
     id: "deploy-cloud-run"
     waitFor: ["push-docker"]
     entrypoint: bash
+    env:
+      - "SERVICE_ACCOUNT=autorelease@repo-automation-bots.iam.gserviceaccount.com"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"
