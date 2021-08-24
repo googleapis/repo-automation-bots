@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/label-utils-v2.0.0...label-utils-v2.0.1) (2021-08-13)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @google-automations/datastore-lock to v3 ([#2348](https://www.github.com/googleapis/repo-automation-bots/issues/2348)) ([47547d2](https://www.github.com/googleapis/repo-automation-bots/commit/47547d26ce28218b079aefe5d5f80fd39d18e7f2))
+
 ## [2.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/label-utils-v1.1.0...label-utils-v2.0.0) (2021-08-09)
 
 
