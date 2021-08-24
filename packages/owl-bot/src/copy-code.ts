@@ -221,7 +221,7 @@ ${copyTagLine}`,
 export async function copyCodeAndCreatePullRequest(
   sourceRepo: string,
   sourceRepoCommitHash: string,
-  destRepo: GithubRepo,
+  destRepo: AffectedRepo,
   octokitFactory: OctokitFactory,
   logger = console
 ): Promise<void> {
@@ -252,8 +252,8 @@ export async function copyCodeAndCreatePullRequest(
     getLastCommitBody(dest.dir, logger);
 
   await createPullRequestFromLastCommit(
-    destRepo.owner,
-    destRepo.repo,
+    destRepo.repo.owner,
+    destRepo.repo.repo,
     dest.dir,
     destBranch,
     destRepo.repo.getCloneUrl(token),
@@ -275,7 +275,7 @@ export async function copyCodeAndCreatePullRequest(
 export async function copyCodeIntoPullRequest(
   sourceRepo: string,
   sourceRepoCommitHash: string,
-  destRepo: GithubRepo,
+  destRepo: AffectedRepo,
   destBranch: string,
   octokitFactory: OctokitFactory,
   logger = console
@@ -296,7 +296,7 @@ export async function copyCodeIntoPullRequest(
   const token = await octokitFactory.getGitHubShortLivedAccessToken();
 
   const cmd = newCmd(logger);
-  const pushUrl = destRepo.getCloneUrl(token);
+  const pushUrl = destRepo.repo.getCloneUrl(token);
   cmd(`git remote set-url origin ${pushUrl}`, {cwd: dest.dir});
   cmd(`git push -f origin ${destBranch}`, {cwd: dest.dir});
 }
