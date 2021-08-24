@@ -33,7 +33,7 @@ steps:
     waitFor: ["push-docker"]
     entrypoint: bash
     env:
-      - "SERVICE_ACCOUNT=autorelease@repo-automation-bots.iam.gserviceaccount.com"
+      - "SERVICE_ACCOUNT=autorelease@cloud-devrel-kokoro-resources.iam.gserviceaccount.com"
     args:
       - "-e"
       - "./scripts/publish-cloud-run.sh"

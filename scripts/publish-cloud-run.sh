@@ -101,7 +101,7 @@ if [ -n "${SERVICE_ACCOUNT}" ]; then
   deployArgs+=( "--service-account" "${SERVICE_ACCOUNT}" )
 fi
 echo "About to cloud run app ${serviceName}"
-gcloud beta run deploy "${serviceName}" "${deployArgs[@]}"
+gcloud run deploy "${serviceName}" "${deployArgs[@]}"
 
 echo "Adding ability for allUsers to execute the Function"
 gcloud run services add-iam-policy-binding "${serviceName}" \
