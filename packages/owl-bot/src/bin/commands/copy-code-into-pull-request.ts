@@ -63,12 +63,12 @@ export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
       });
   },
   async handler(argv) {
-    await copyCodeIntoPullRequest(
-      argv['source-repo'],
-      argv['source-repo-commit-hash'],
-      githubRepoFromOwnerSlashName(argv['dest-repo']),
-      argv['dest-branch'],
-      octokitFactoryFromToken(argv['github-token'])
-    );
+    // await copyCodeIntoPullRequest(
+    //   argv['source-repo'],
+    //   argv['source-repo-commit-hash'],
+    //   githubRepoFromOwnerSlashName(argv['dest-repo']),
+    //   argv['dest-branch'],
+    //   octokitFactoryFromToken(argv['github-token'])
+    // );
   },
 };
