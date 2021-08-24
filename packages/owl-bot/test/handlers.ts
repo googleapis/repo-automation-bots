@@ -460,11 +460,11 @@ describe('refreshConfigs', () => {
 
     const zip = new AdmZip();
     zip.addFile(
-      '.github/.OwlBot.yaml',
+      'repo-abc123/.github/.OwlBot.yaml',
       Buffer.from(universalInvalidContent)
     );
     zip.addFile(
-      '.github/.OwlBot.lock.yaml',
+      'repo-abc123/.github/.OwlBot.lock.yaml',
       Buffer.from(universalInvalidContent)
     );
 

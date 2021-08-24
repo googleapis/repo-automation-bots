@@ -141,6 +141,9 @@ export function collectConfigs(
     const lockText = fs.readFileSync(lockPath, 'utf8');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const lockYaml = load(lockText) as Record<string, any>;
+    /////////////////////////////////////////////////////////////////////////
+    // TODO: Catch exception and return error of some sort.
+    /////////////////////////////////////////////////////////////////////////
     lock = owlBotLockFrom(lockYaml);
   }
   // .OwlBot.yamls may be scattered throughout the directory.  Find them.
