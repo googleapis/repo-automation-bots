@@ -17,10 +17,7 @@ import {Probot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
-import {
-  ConfigChecker,
-  getConfigWithDefault,
-} from '@google-automations/bot-config-utils';
+import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import schema from './config-schema.json';
 import {
   ConfigurationOptions,
@@ -72,20 +69,22 @@ export = (app: Probot) => {
       return;
     }
 
-    const remoteConfiguration =
-      await getConfigWithDefault<ConfigurationOptions>(
-        context.octokit,
-        owner,
-        repo,
-        WELL_KNOWN_CONFIGURATION_FILE,
-        DEFAULT_CONFIGURATION,
-        {schema: schema}
-      );
+    const remoteConfiguration = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repo,
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
+    );
     if (!remoteConfiguration) {
       logger.info(`release-trigger not configured for ${repoUrl}`);
       return;
     }
-    if (!remoteConfiguration.enabled) {
+    const configuration = {
+      ...DEFAULT_CONFIGURATION,
+      ...remoteConfiguration,
+    };
+    if (!configuration.enabled) {
       logger.info(`release-trigger not enabled for ${repoUrl}`);
       return;
     }
@@ -112,20 +111,22 @@ export = (app: Probot) => {
       return;
     }
 
-    const remoteConfiguration =
-      await getConfigWithDefault<ConfigurationOptions>(
-        context.octokit,
-        owner,
-        repo,
-        WELL_KNOWN_CONFIGURATION_FILE,
-        DEFAULT_CONFIGURATION,
-        {schema: schema}
-      );
+    const remoteConfiguration = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repo,
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
+    );
     if (!remoteConfiguration) {
       logger.info(`release-trigger not configured for ${repoUrl}`);
       return;
     }
-    if (!remoteConfiguration.enabled) {
+    const configuration = {
+      ...DEFAULT_CONFIGURATION,
+      ...remoteConfiguration,
+    };
+    if (!configuration.enabled) {
       logger.info(`release-trigger not enabled for ${repoUrl}`);
       return;
     }

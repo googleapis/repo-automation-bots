@@ -64,7 +64,7 @@ describe('bot', () => {
       },
     });
     probot.load(myProbotApp);
-    getConfigStub = sandbox.stub(botConfigModule, 'getConfigWithDefault');
+    getConfigStub = sandbox.stub(botConfigModule, 'getConfig');
     sandbox.replace(releaseTriggerModule, 'ALLOWED_ORGANIZATIONS', [
       'Codertocat',
     ]);
