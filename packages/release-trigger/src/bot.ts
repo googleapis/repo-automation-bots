@@ -46,13 +46,14 @@ async function doTrigger(
   }
   try {
     await triggerKokoroJob(pullRequest.html_url, token);
-    await markTriggered(octokit, {
+  } catch (e) {
+    await markFailed(octokit, {
       owner,
       repo: pullRequest.base.repo.name,
       number: pullRequest.number,
     });
-  } catch (e) {
-    await markFailed(octokit, {
+  } finally {
+    await markTriggered(octokit, {
       owner,
       repo: pullRequest.base.repo.name,
       number: pullRequest.number,
