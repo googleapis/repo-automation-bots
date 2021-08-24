@@ -16,10 +16,37 @@
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
 
-import {promisify} from 'util';
 import * as child_process from 'child_process';
 
-export const exec = promisify(child_process.exec);
+export const exec = function (
+  command: string,
+  token: string
+): Promise<{stdout: string; stderr: string}> {
+  return new Promise((resolve, reject) => {
+    child_process.exec(
+      command,
+      {
+        env: {
+          ...process.env,
+          GITHUB_TOKEN: token,
+        },
+      },
+      (error, stdout, stderr) => {
+        if (stdout) {
+          logger.info(stdout);
+        }
+        if (stderr) {
+          logger.warn(stderr);
+        }
+        if (error) {
+          reject(error);
+        } else {
+          resolve({stdout, stderr});
+        }
+      }
+    );
+  });
+};
 
 export const ALLOWED_ORGANIZATIONS = ['googleapis', 'GoogleCloudPlatform'];
 
@@ -103,15 +130,18 @@ export async function findPendingReleasePullRequests(
 }
 
 export async function triggerKokoroJob(
-  pullRequestUrl: string
+  pullRequestUrl: string,
+  token: string
 ): Promise<{stdout: string; stderr: string}> {
   logger.info(`triggering job for ${pullRequestUrl}`);
 
   const command = `python3 -m autorelease trigger-single --pull=${pullRequestUrl}`;
   logger.debug(`command: ${command}`);
   try {
-    const {stdout, stderr} = await exec(command);
-    logger.info(stdout);
+    const {stdout, stderr} = await exec(command, token);
+    if (stdout) {
+      logger.info(stdout);
+    }
     if (stderr) {
       logger.warn(stderr);
     }

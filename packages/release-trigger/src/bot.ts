@@ -17,10 +17,7 @@ import {Probot} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
-import {
-  ConfigChecker,
-  getConfigWithDefault,
-} from '@google-automations/bot-config-utils';
+import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import schema from './config-schema.json';
 import {
   ConfigurationOptions,
@@ -37,21 +34,26 @@ import {
   PullRequest,
 } from './release-trigger';
 
-async function doTrigger(octokit: Octokit, pullRequest: PullRequest) {
+async function doTrigger(
+  octokit: Octokit,
+  pullRequest: PullRequest,
+  token: string
+) {
   const owner = pullRequest.base.repo.owner?.login;
   if (!owner) {
     logger.error(`no owner for ${pullRequest.number}`);
     return;
   }
   try {
-    await triggerKokoroJob(pullRequest.html_url);
-    await markTriggered(octokit, {
+    await triggerKokoroJob(pullRequest.html_url, token);
+  } catch (e) {
+    await markFailed(octokit, {
       owner,
       repo: pullRequest.base.repo.name,
       number: pullRequest.number,
     });
-  } catch (e) {
-    await markFailed(octokit, {
+  } finally {
+    await markTriggered(octokit, {
       owner,
       repo: pullRequest.base.repo.name,
       number: pullRequest.number,
@@ -72,20 +74,22 @@ export = (app: Probot) => {
       return;
     }
 
-    const remoteConfiguration =
-      await getConfigWithDefault<ConfigurationOptions>(
-        context.octokit,
-        owner,
-        repo,
-        WELL_KNOWN_CONFIGURATION_FILE,
-        DEFAULT_CONFIGURATION,
-        {schema: schema}
-      );
+    const remoteConfiguration = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repo,
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
+    );
     if (!remoteConfiguration) {
       logger.info(`release-trigger not configured for ${repoUrl}`);
       return;
     }
-    if (!remoteConfiguration.enabled) {
+    const configuration = {
+      ...DEFAULT_CONFIGURATION,
+      ...remoteConfiguration,
+    };
+    if (!configuration.enabled) {
       logger.info(`release-trigger not enabled for ${repoUrl}`);
       return;
     }
@@ -94,8 +98,11 @@ export = (app: Probot) => {
       context.octokit,
       {owner: repository.owner.login, repo: repository.name}
     );
+    const {token} = (await context.octokit.auth({type: 'installation'})) as {
+      token: string;
+    };
     for (const pullRequest of releasePullRequests) {
-      await doTrigger(context.octokit, pullRequest);
+      await doTrigger(context.octokit, pullRequest, token);
     }
   });
 
@@ -112,20 +119,22 @@ export = (app: Probot) => {
       return;
     }
 
-    const remoteConfiguration =
-      await getConfigWithDefault<ConfigurationOptions>(
-        context.octokit,
-        owner,
-        repo,
-        WELL_KNOWN_CONFIGURATION_FILE,
-        DEFAULT_CONFIGURATION,
-        {schema: schema}
-      );
+    const remoteConfiguration = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repo,
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
+    );
     if (!remoteConfiguration) {
       logger.info(`release-trigger not configured for ${repoUrl}`);
       return;
     }
-    if (!remoteConfiguration.enabled) {
+    const configuration = {
+      ...DEFAULT_CONFIGURATION,
+      ...remoteConfiguration,
+    };
+    if (!configuration.enabled) {
       logger.info(`release-trigger not enabled for ${repoUrl}`);
       return;
     }
@@ -136,7 +145,10 @@ export = (app: Probot) => {
       return;
     }
 
-    await doTrigger(context.octokit, context.payload.pull_request);
+    const {token} = (await context.octokit.auth({type: 'installation'})) as {
+      token: string;
+    };
+    await doTrigger(context.octokit, context.payload.pull_request, token);
   });
 
   // Check the config schema on PRs.

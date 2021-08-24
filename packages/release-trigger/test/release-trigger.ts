@@ -175,16 +175,13 @@ describe('release-trigger', () => {
       const execStub = sandbox
         .stub(releaseTriggerModule, 'exec')
         .resolves({stdout: 'some output', stderr: 'some error output'});
-      const infoStub = sandbox.stub(logger, 'info');
-      const warnStub = sandbox.stub(logger, 'warn');
       const {stdout, stderr} = await triggerKokoroJob(
-        'https://github.com/testOwner/testRepo/pull/1234'
+        'https://github.com/testOwner/testRepo/pull/1234',
+        'fake-token'
       );
       assert.strictEqual(stdout, 'some output');
       assert.strictEqual(stderr, 'some error output');
       sinon.assert.calledOnce(execStub);
-      sinon.assert.calledWithMatch(infoStub, sinon.match('some output'));
-      sinon.assert.calledWithMatch(warnStub, sinon.match('some error output'));
     });
 
     it('should catch and log an exception', async () => {
@@ -193,7 +190,10 @@ describe('release-trigger', () => {
         .rejects(new Error('Command failed: /bin/false'));
       const errorStub = sandbox.stub(logger, 'error');
       await assert.rejects(
-        triggerKokoroJob('https://github.com/testOwner/testRepo/pull/1234'),
+        triggerKokoroJob(
+          'https://github.com/testOwner/testRepo/pull/1234',
+          'fake-token'
+        ),
         err => {
           if (err instanceof Error) {
             return err.message.startsWith('Command failed: /bin/false');
