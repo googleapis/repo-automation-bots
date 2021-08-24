@@ -30,8 +30,11 @@ import {
   markTriggered,
   markFailed,
   TRIGGERED_LABEL,
+  PUBLISHED_LABEL,
   ALLOWED_ORGANIZATIONS,
   PullRequest,
+  TAGGED_LABEL,
+  cleanupPublished,
 } from './release-trigger';
 
 async function doTrigger(
@@ -102,8 +105,62 @@ export = (app: Probot) => {
       token: string;
     };
     for (const pullRequest of releasePullRequests) {
+      if (
+        !pullRequest.labels.some(label => {
+          return label.name === TAGGED_LABEL;
+        })
+      ) {
+        logger.info('ignore pull non-tagged pull request');
+        continue;
+      }
+
       await doTrigger(context.octokit, pullRequest, token);
     }
+  });
+
+  // When a release PR is labeled with `autorelease: published`, remove
+  // the `autorelease: tagged` and `autorelease: triggered` labels
+  app.on('pull_request.labeled', async context => {
+    const repository = context.payload.repository;
+    const repoUrl = repository.full_name;
+    const owner = repository.owner.login;
+    const repo = repository.name;
+
+    if (!ALLOWED_ORGANIZATIONS.includes(owner)) {
+      logger.info(`release-trigger not allowed for owner: ${owner}`);
+      return;
+    }
+
+    const remoteConfiguration = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repo,
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
+    );
+    if (!remoteConfiguration) {
+      logger.info(`release-trigger not configured for ${repoUrl}`);
+      return;
+    }
+    const configuration = {
+      ...DEFAULT_CONFIGURATION,
+      ...remoteConfiguration,
+    };
+    if (!configuration.enabled) {
+      logger.info(`release-trigger not enabled for ${repoUrl}`);
+      return;
+    }
+
+    const label = context.payload.label?.name;
+    if (label !== PUBLISHED_LABEL) {
+      logger.info(`ignoring non-published label: ${label}`);
+      return;
+    }
+    await cleanupPublished(context.octokit, {
+      owner,
+      repo,
+      number: context.payload.pull_request.number,
+    });
   });
 
   // Try to trigger the job on removing the `autorelease: triggered` label.
@@ -142,6 +199,15 @@ export = (app: Probot) => {
     const label = context.payload.label?.name;
     if (label !== TRIGGERED_LABEL) {
       logger.info(`ignoring non-autorelease label: ${label}`);
+      return;
+    }
+
+    if (
+      !context.payload.pull_request.labels.some(label => {
+        return label.name === TAGGED_LABEL;
+      })
+    ) {
+      logger.info('ignore pull non-tagged pull request');
       return;
     }
 

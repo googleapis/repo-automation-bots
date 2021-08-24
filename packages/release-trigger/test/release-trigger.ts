@@ -22,6 +22,7 @@ import {
   PullRequest,
   triggerKokoroJob,
   markTriggered,
+  cleanupPublished,
 } from '../src/release-trigger';
 import * as releaseTriggerModule from '../src/release-trigger';
 import {Octokit} from '@octokit/rest';
@@ -212,10 +213,7 @@ describe('release-trigger', () => {
   describe('markTriggered', () => {
     it('should add a label to a pull request', async () => {
       const scope = nock('https://api.github.com/')
-        .post('/repos/testOwner/testRepo/issues/1234/labels', body => {
-          console.log(body);
-          return body;
-        })
+        .post('/repos/testOwner/testRepo/issues/1234/labels')
         .reply(201);
       await markTriggered(octokit, {
         owner: 'testOwner',
@@ -229,12 +227,47 @@ describe('release-trigger', () => {
   describe('markFailed', () => {
     it('should add a label to a pull request', async () => {
       const scope = nock('https://api.github.com/')
-        .post('/repos/testOwner/testRepo/issues/1234/labels', body => {
-          console.log(body);
-          return body;
-        })
+        .post('/repos/testOwner/testRepo/issues/1234/labels')
         .reply(201);
       await markTriggered(octokit, {
+        owner: 'testOwner',
+        repo: 'testRepo',
+        number: 1234,
+      });
+      scope.done();
+    });
+  });
+
+  describe('cleanupPublished', () => {
+    it('should remove tagged and triggered labels', async () => {
+      const scope = nock('https://api.github.com/')
+        .delete(
+          '/repos/testOwner/testRepo/issues/1234/labels/autorelease%3A%20tagged'
+        )
+        .reply(200)
+        .delete(
+          '/repos/testOwner/testRepo/issues/1234/labels/autorelease%3A%20triggered'
+        )
+        .reply(200);
+      await cleanupPublished(octokit, {
+        owner: 'testOwner',
+        repo: 'testRepo',
+        number: 1234,
+      });
+      scope.done();
+    });
+
+    it('should not crash if one label does not exit', async () => {
+      const scope = nock('https://api.github.com/')
+        .delete(
+          '/repos/testOwner/testRepo/issues/1234/labels/autorelease%3A%20tagged'
+        )
+        .reply(404)
+        .delete(
+          '/repos/testOwner/testRepo/issues/1234/labels/autorelease%3A%20triggered'
+        )
+        .reply(200);
+      await cleanupPublished(octokit, {
         owner: 'testOwner',
         repo: 'testRepo',
         number: 1234,
