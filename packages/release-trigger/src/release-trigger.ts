@@ -138,7 +138,14 @@ export async function triggerKokoroJob(
   const command = `python3 -m autorelease trigger-single --pull=${pullRequestUrl}`;
   logger.debug(`command: ${command}`);
   try {
-    return await exec(command, token);
+    const {stdout, stderr} = await exec(command, token);
+    if (stdout) {
+      logger.info(stdout);
+    }
+    if (stderr) {
+      logger.warn(stderr);
+    }
+    return {stdout, stderr};
   } catch (e) {
     logger.error(`error executing command: ${command}`, e);
     throw e;
