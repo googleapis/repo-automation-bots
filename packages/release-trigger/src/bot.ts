@@ -99,7 +99,7 @@ export = (app: Probot) => {
       context.octokit,
       {owner: repository.owner.login, repo: repository.name}
     );
-    const {token} = (await context.octokit.auth({type: 'event-octokit'})) as {
+    const {token} = (await context.octokit.auth({type: 'installation'})) as {
       token: string;
     };
     for (const pullRequest of releasePullRequests) {
@@ -146,7 +146,7 @@ export = (app: Probot) => {
       return;
     }
 
-    const {token} = (await context.octokit.auth({type: 'event-octokit'})) as {
+    const {token} = (await context.octokit.auth({type: 'installation'})) as {
       token: string;
     };
     await doTrigger(context.octokit, context.payload.pull_request, token);
