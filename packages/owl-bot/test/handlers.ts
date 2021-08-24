@@ -248,6 +248,9 @@ describe('refreshConfigs', () => {
 
   const octokitSha123 = (zip?: AdmZip): InstanceType<typeof Octokit> => {
     return ({
+      issues: {
+        create: () => {}
+      },
       repos: {
         getBranch() {
           return {
@@ -455,9 +458,17 @@ describe('refreshConfigs', () => {
     const configsStore = new FakeConfigsStore();
     const universalInvalidContent = 'deep-copy-regex\n - invalid_prop: 1';
 
-    sandbox.stub(core, 'getFileContent').resolves(universalInvalidContent);
+    const zip = new AdmZip();
+    zip.addFile(
+      '.github/.OwlBot.yaml',
+      Buffer.from(universalInvalidContent)
+    );
+    zip.addFile(
+      '.github/.OwlBot.lock.yaml',
+      Buffer.from(universalInvalidContent)
+    );
 
-    const octokit = octokitSha123();
+    const octokit = octokitSha123(zip);
     const issuesCreateSpy = sandbox.spy(octokit.issues, 'create');
 
     await refreshConfigs(
