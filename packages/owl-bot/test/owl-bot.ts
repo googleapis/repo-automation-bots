@@ -1364,6 +1364,12 @@ function pullRequestEditedEventFrom(
         repo: {
           full_name: 'googleapis/nodejs-dlp',
         },
+        ref: 'main',
+      },
+      head: {
+        repo: {
+          full_name: 'googleapis/nodejs-dlp',
+        },
         ref: 'owl-bot-update-branch',
       },
       number: 48,
@@ -1405,7 +1411,7 @@ describe('userCheckedRegenerateBox()', () => {
     assert.ok(!userCheckedRegenerateBox('project-1', 'trigger-4', payload));
   });
 
-  it('creates RegenerateArgs when checbox found in new body only.', () => {
+  it('creates RegenerateArgs when checkbox found in new body only.', () => {
     const payload = pullRequestEditedEventFrom(
       'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n',
       'old body\n'
@@ -1416,9 +1422,7 @@ describe('userCheckedRegenerateBox()', () => {
       owner: 'googleapis',
       repo: 'nodejs-dlp',
       prNumber: 48,
-      prBody:
-        'Added a great feature.\n' +
-        '- [x] To automatically regenerate this PR, check this box.\n',
+      prBody: 'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n',
       gcpProjectId: 'project-1',
       buildTriggerId: 'trigger-4',
       branch: 'owl-bot-update-branch',
