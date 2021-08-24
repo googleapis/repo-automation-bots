@@ -15,8 +15,8 @@
  */
 SELECT
     COUNT(jsonPayload.count) as LABELED,
-    DATE_TRUNC(DATE(timestamp, "America/Los_Angeles"), DAY) as day
+    DATE_TRUNC(DATE(timestamp, "America/Los_Angeles"), MONTH) as month
 FROM `repo-automation-bots.automation_metrics.cloudfunctions_googleapis_com_cloud_functions`
     WHERE resource.labels.function_name = "merge_on_green"
     AND jsonPayload.event = "merge_on_green.labeled"
-GROUP BY day;
+GROUP BY month;
