@@ -43,10 +43,15 @@ function buildFakePullRequest(
   options?: {
     labels?: string[];
     mergeCommitSha?: string;
+    closedAt?: string;
   }
 ): PullRequest {
   const optionsWithDefaults = {
-    ...{labels: ['autorelease: tagged'], mergeCommitSha: 'abcd1234'},
+    ...{
+      labels: ['autorelease: tagged'],
+      mergeCommitSha: 'abcd1234',
+      closedAt: '2021-08-15T19:01:12Z',
+    },
     ...options,
   };
   return {
@@ -65,6 +70,7 @@ function buildFakePullRequest(
         name: repo,
       },
     },
+    closed_at: optionsWithDefaults.closedAt,
   };
 }
 
@@ -93,6 +99,38 @@ describe('release-trigger', () => {
       );
       assert.strictEqual(
         pullRequests[1].html_url,
+        'https://github.com/testOwner/testRepo/pull/1235'
+      );
+      scope.done();
+    });
+
+    it('should ignore older pull requests', async () => {
+      const scope = nock('https://api.github.com')
+        .get(
+          '/repos/testOwner/testRepo/pulls?state=closed&sort=updated&direction=desc'
+        )
+        .reply(
+          200,
+          [
+            buildFakePullRequest('testOwner', 'testRepo', 1234, {
+              closedAt: '2020-01-01T12:13:14Z',
+            }),
+          ],
+          {
+            Link: '</repos/testOwner/testRepo/pulls?state=closed&sort=updated&direction=desc&page=2>; rel="next"',
+          }
+        )
+        .get(
+          '/repos/testOwner/testRepo/pulls?state=closed&sort=updated&direction=desc&page=2'
+        )
+        .reply(200, [buildFakePullRequest('testOwner', 'testRepo', 1235)]);
+      const pullRequests = await findPendingReleasePullRequests(octokit, {
+        owner: 'testOwner',
+        repo: 'testRepo',
+      });
+      assert.strictEqual(pullRequests.length, 1);
+      assert.strictEqual(
+        pullRequests[0].html_url,
         'https://github.com/testOwner/testRepo/pull/1235'
       );
       scope.done();
