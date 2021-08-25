@@ -247,9 +247,10 @@ describe('refreshConfigs', () => {
   });
 
   const octokitSha123 = (zip?: AdmZip): InstanceType<typeof Octokit> => {
-    return ({
+    return {
       issues: {
-        create: () => {}
+        create: () => { return {data: {html_url: 'h:/x/y'}}; },
+        listForRepo: () => { return { data: [] } }
       },
       repos: {
         getBranch() {
@@ -274,7 +275,7 @@ describe('refreshConfigs', () => {
         },
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any) as InstanceType<typeof Octokit>;
+    } as any as InstanceType<typeof Octokit>;
   };
 
   it('stores a good yaml', async () => {
@@ -490,7 +491,7 @@ describe('scanGithubForConfigs', () => {
     sandbox.restore();
   });
 
-  const octokitWithRepos = ({
+  const octokitWithRepos = {
     repos: {
       getBranch() {
         return {
@@ -533,9 +534,9 @@ describe('scanGithubForConfigs', () => {
       },
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any) as InstanceType<typeof Octokit>;
+  } as any as InstanceType<typeof Octokit>;
 
-  const octokitWith404OnBranch = ({
+  const octokitWith404OnBranch = {
     repos: {
       getBranch() {
         throw Object.assign(Error('Not Found'), {status: 404});
@@ -561,7 +562,7 @@ describe('scanGithubForConfigs', () => {
       },
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any) as InstanceType<typeof Octokit>;
+  } as any as InstanceType<typeof Octokit>;
 
   it('works with an installationId', async () => {
     const configsStore = new FakeConfigsStore();

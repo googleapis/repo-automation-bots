@@ -108,14 +108,17 @@ interface CreatedGithubIssue {
 export interface CopyTag {
   // Field names are intentionally terse because this gets serialized and
   // base64-encoded to create the string tag.
-  p: string;  // The path to .OwlBot.yaml
-  h: string;  // The source commit hash.
+  p: string; // The path to .OwlBot.yaml
+  h: string; // The source commit hash.
 }
 
-export function copyTagFrom(owlBotYamlPath: string, sourceCommitHash: string): string {
+export function copyTagFrom(
+  owlBotYamlPath: string,
+  sourceCommitHash: string
+): string {
   const tag: CopyTag = {
     p: owlBotYamlPath,
-    h: sourceCommitHash
+    h: sourceCommitHash,
   };
   const text = JSON.stringify(tag);
   return Buffer.from(text).toString('base64');
@@ -124,7 +127,7 @@ export function copyTagFrom(owlBotYamlPath: string, sourceCommitHash: string): s
 export function unpackCopyTag(copyTag: string): CopyTag {
   const json = Buffer.from(copyTag, 'base64').toString();
   const obj = JSON.parse(json);
-  if (typeof(obj.p) == 'string' && typeof(obj.h) == 'string') {
+  if (typeof obj.p === 'string' && typeof obj.h === 'string') {
     return obj as CopyTag;
   } else {
     throw new Error(`malformed Copy Tag: ${obj}`);

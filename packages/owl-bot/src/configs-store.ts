@@ -126,18 +126,16 @@ export interface ConfigsStore {
 }
 
 export interface CollectedConfigs {
-  lock?: OwlBotLock,
-  yamls: OwlBotYamlAndPath[],
-  badConfigs: {path: string, error: any}[]
+  lock?: OwlBotLock;
+  yamls: OwlBotYamlAndPath[];
+  badConfigs: {path: string; error: any}[];
 }
 
 /**
  * Examines the contents of a local repo directory and collects owl bot config
  * files.
  */
-export function collectConfigs(
-  dir: string
-): CollectedConfigs {
+export function collectConfigs(dir: string): CollectedConfigs {
   const configs: CollectedConfigs = {
     yamls: [],
     badConfigs: [],
@@ -151,7 +149,7 @@ export function collectConfigs(
       const lockYaml = load(lockText) as Record<string, any>;
       configs.lock = owlBotLockFrom(lockYaml);
     } catch (e) {
-      configs.badConfigs.push({ path: owlBotLockPath, error: e});
+      configs.badConfigs.push({path: owlBotLockPath, error: e});
     }
   }
   // .OwlBot.yamls may be scattered throughout the directory.  Find them.
@@ -168,7 +166,7 @@ export function collectConfigs(
         yaml: owlBotYamlFromText(yamlText),
       });
     } catch (e) {
-      configs.badConfigs.push({ path: yamlPath, error: e});
+      configs.badConfigs.push({path: yamlPath, error: e});
     }
   }
   return configs;

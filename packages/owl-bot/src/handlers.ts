@@ -251,7 +251,7 @@ export async function refreshConfigs(
     commitHash: commitHash,
   };
 
-  const { lock, yamls, badConfigs } = await fetchConfigs(octokit, {
+  const {lock, yamls, badConfigs} = await fetchConfigs(octokit, {
     owner: githubOrg,
     repo: repoName,
     ref: commitHash,
@@ -272,7 +272,14 @@ export async function refreshConfigs(
   if (stored) {
     logger.info(`Stored new configs for ${repoFull}`);
     for (const badConfig of badConfigs) {
-      // TODO: create an issue on the repo.
+      await createIssueIfTitleDoesntExist(
+        octokit,
+        githubOrg,
+        repoName,
+        badConfig.path + ' is broken.',
+        'This repo will not receive automatic updates until this issue is fixed.\n\n' +
+          String(badConfig.error)
+      );
     }
   } else {
     logger.info(
