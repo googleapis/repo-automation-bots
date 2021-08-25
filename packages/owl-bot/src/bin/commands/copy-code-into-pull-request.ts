@@ -15,7 +15,7 @@
 // To Run: node ./build/src/bin/owl-bot.js copy-code <args>
 
 import yargs = require('yargs');
-import {owlBotYamlPath} from '../../config-files';
+import {DEFAULT_OWL_BOT_YAML_PATH} from '../../config-files';
 import {copyCodeIntoPullRequest} from '../../copy-code';
 import {githubRepoFromOwnerSlashName} from '../../github-repo';
 import {octokitFactoryFromToken} from '../../octokit-util';
@@ -53,7 +53,7 @@ export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
           'The path in the source repo to .OwlBot.yaml in that triggered the pull request.',
         type: 'string',
         demand: false,
-        default: owlBotYamlPath,
+        default: DEFAULT_OWL_BOT_YAML_PATH,
       })
       .option('dest-repo', {
         describe: 'Copy the code into this repo.',

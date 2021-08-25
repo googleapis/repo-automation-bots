@@ -28,7 +28,7 @@ import {
 import * as sinon from 'sinon';
 import nock from 'nock';
 import {Configs} from '../src/configs-store';
-import {owlBotLockPath} from '../src/config-files';
+import {OWL_BOT_LOCK_PATH} from '../src/config-files';
 import * as labelUtilsModule from '@google-automations/label-utils';
 import {FirestoreConfigsStore} from '../src/database';
 import {REGENERATE_CHECKBOX_TEXT} from '../src/copy-code';
@@ -532,7 +532,7 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{filename: owlBotLockPath}])
+      .reply(200, [{filename: OWL_BOT_LOCK_PATH}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       // Update to closed state:
@@ -599,7 +599,7 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{filename: owlBotLockPath}, {filename: 'README.md'}])
+      .reply(200, [{filename: OWL_BOT_LOCK_PATH}, {filename: 'README.md'}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       // Promote to "ready for review."
@@ -666,7 +666,7 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{filename: owlBotLockPath}])
+      .reply(200, [{filename: OWL_BOT_LOCK_PATH}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request);
     const triggerBuildStub = sandbox
@@ -730,7 +730,7 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{filename: owlBotLockPath}])
+      .reply(200, [{filename: OWL_BOT_LOCK_PATH}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request);
     const triggerBuildStub = sandbox

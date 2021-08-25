@@ -108,27 +108,6 @@ describe('handlers', () => {
       sandbox.replace(core, 'getCloudBuildInstance', (): CloudBuildClient => {
         return fakeCloudBuild;
       });
-      // const calls: any[][] = [];
-      // sandbox.replace(
-      //   core,
-      //   'getCloudBuildInstance',
-      //   (): CloudBuildClient => {
-      //     return ({
-      //       runBuildTrigger: (...args: any[]) => {
-      //         calls.push(args);
-      //         return [
-      //           {
-      //             metadata: {
-      //               build: {
-      //                 id: '73',
-      //               },
-      //             },
-      //           },
-      //         ];
-      //       },
-      //     } as unknown) as CloudBuildClient;
-      //   }
-      // );
 
       const expectedBuildId = await triggerOneBuildForUpdatingLock(
         fakeConfigStore,

@@ -112,11 +112,11 @@ export interface CopyTag {
 }
 
 export function copyTagFrom(
-  owlBotYamlPath: string,
+  DEFAULT_OWL_BOT_YAML_PATH: string,
   sourceCommitHash: string
 ): string {
   const tag: CopyTag = {
-    p: owlBotYamlPath,
+    p: DEFAULT_OWL_BOT_YAML_PATH,
     h: sourceCommitHash,
   };
   const text = JSON.stringify(tag);

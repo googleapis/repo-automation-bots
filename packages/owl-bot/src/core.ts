@@ -23,9 +23,9 @@ import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {
   OwlBotLock,
-  owlBotLockPath,
+  OWL_BOT_LOCK_PATH,
   owlBotLockFrom,
-  owlBotYamlPath,
+  DEFAULT_OWL_BOT_YAML_PATH,
 } from './config-files';
 import {OctokitFactory, OctokitType} from './octokit-util';
 import {OWL_BOT_IGNORE} from './labels';
@@ -357,7 +357,7 @@ export async function getOwlBotLock(
   const configString = await getFileContent(
     prOwner,
     prRepo,
-    owlBotLockPath,
+    OWL_BOT_LOCK_PATH,
     prData.head.ref,
     octokit
   );
@@ -592,7 +592,7 @@ async function updatePullRequestAfterPostProcessor(
       pull.draft &&
       pull.labels.find(label => label.name === OWL_BOT_LOCK_UPDATE)
     ) {
-      if (1 === files.length && files[0].filename === owlBotLockPath) {
+      if (1 === files.length && files[0].filename === OWL_BOT_LOCK_PATH) {
         // It only updated the lock file.  No reason to merge this pull request.
         // Close it.
         await octokit.pulls.update({
@@ -652,7 +652,7 @@ export async function triggerRegeneratePullRequest(
   };
 
   let sourceHash = '';
-  let yamlPath = owlBotYamlPath;
+  let yamlPath = DEFAULT_OWL_BOT_YAML_PATH;
 
   // The user checked the "Regenerate this pull request" box.
 
@@ -740,7 +740,7 @@ export const core = {
   getOwlBotLock,
   hasOwlBotLoop,
   lastCommitFromOwlBot,
-  owlBotLockPath,
+  OWL_BOT_LOCK_PATH,
   triggerPostProcessBuild,
   triggerRegeneratePullRequest,
   updatePullRequestAfterPostProcessor,

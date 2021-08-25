@@ -15,7 +15,7 @@
 import {
   OwlBotLock,
   owlBotLockFrom,
-  owlBotLockPath,
+  OWL_BOT_LOCK_PATH,
   OwlBotYaml,
   owlBotYamlFromText,
 } from './config-files';
@@ -142,7 +142,7 @@ export function collectConfigs(dir: string): CollectedConfigs {
     badConfigs: [],
   };
   // .OwlBot.lock.yaml is always in a known location.
-  const lockPath = path.join(dir, owlBotLockPath);
+  const lockPath = path.join(dir, OWL_BOT_LOCK_PATH);
   if (fs.existsSync(lockPath)) {
     try {
       const lockText = fs.readFileSync(lockPath, 'utf8');
@@ -150,7 +150,7 @@ export function collectConfigs(dir: string): CollectedConfigs {
       const lockYaml = load(lockText) as Record<string, any>;
       configs.lock = owlBotLockFrom(lockYaml);
     } catch (e) {
-      configs.badConfigs.push({path: owlBotLockPath, error: e});
+      configs.badConfigs.push({path: OWL_BOT_LOCK_PATH, error: e});
     }
   }
   // .OwlBot.yamls may be scattered throughout the directory.  Find them.

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {logger} from 'gcf-utils';
-import {OwlBotLock, owlBotLockPath} from './config-files';
+import {OwlBotLock, OWL_BOT_LOCK_PATH} from './config-files';
 import {Configs, ConfigsStore} from './configs-store';
 import {core} from './core';
 // Conflicting linters think the next line is extraneous or necessary.
@@ -131,7 +131,7 @@ export async function triggerOneBuildForUpdatingLock(
         _PR_OWNER: repo.owner,
         _REPOSITORY: repo.repo,
         _PR_BRANCH: `owl-bot-update-lock-${digest}`,
-        _LOCK_FILE_PATH: owlBotLockPath,
+        _LOCK_FILE_PATH: OWL_BOT_LOCK_PATH,
         _CONTAINER: `${lock.docker.image}@${lock.docker.digest}`,
         _OWL_BOT_CLI: owlBotCli,
       },
