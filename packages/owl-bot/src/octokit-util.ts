@@ -85,7 +85,8 @@ export function octokitFactoryFrom(params: OctokitParams): OctokitFactory {
       }
       const now = new Date().getTime();
       // Refresh every 5 minutes.  Tokens are good for 10 minutes.
-      if (!lastOctokit || now - lastOctokitTimestamp > 300) {
+      const elapsedMilliseconds = now - lastOctokitTimestamp;
+      if (!lastOctokit || elapsedMilliseconds > 300000) {
         lastOctokitTimestamp = now;
         const atoken = await octokitTokenFrom(params);
         lastOctokit = await core.getAuthenticatedOctokit(atoken, false);
