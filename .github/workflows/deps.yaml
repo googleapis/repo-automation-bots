@@ -39,7 +39,7 @@ jobs:
           command: pr
           upstream_owner: googleapis
           upstream_repo: repo-automation-bots
-          description: ''
+          description: 'ran ./scripts/update-dependencies.sh packages/${{ matrix.package }}'
           title: 'deps: update ${{ matrix.package }} deps'
           message: 'deps: update ${{ matrix.package }} deps'
           branch: update-deps-${{ matrix.package }}
