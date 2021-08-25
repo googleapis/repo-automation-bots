@@ -17,8 +17,6 @@ jobs:
           node-version: 12
       - id: interrogate
         run: node ./.github/workflows/list-node-paths.js
-        env:
-          GITHUB_BASE_REF: ${{github.base_ref}}
   updateDeps:
     runs-on: ubuntu-latest
     needs: findPackages
