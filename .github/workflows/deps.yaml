@@ -1,5 +1,4 @@
 on:
-  pull_request:
   schedule:
     # every Monday morning
     - cron: '0 1 * * 1'
