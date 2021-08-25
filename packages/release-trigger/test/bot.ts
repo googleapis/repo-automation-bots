@@ -46,6 +46,7 @@ function buildFakePullRequest(
         name: repo,
       },
     },
+    closed_at: '2021-08-15T19:01:12Z',
   };
 }
 

@@ -84,8 +84,10 @@ export interface PullRequest {
       name: string;
     };
   };
+  closed_at: string | null;
 }
 
+const LAUNCH_DATE = new Date('2021-08-01');
 function isReleasePullRequest(pullRequest: PullRequest): boolean {
   return (
     pullRequest.state === 'closed' &&
@@ -95,7 +97,9 @@ function isReleasePullRequest(pullRequest: PullRequest): boolean {
     }) &&
     !pullRequest.labels.some(label => {
       return label.name === TRIGGERED_LABEL;
-    })
+    }) &&
+    !!pullRequest.closed_at &&
+    new Date(pullRequest.closed_at) > LAUNCH_DATE
   );
 }
 
