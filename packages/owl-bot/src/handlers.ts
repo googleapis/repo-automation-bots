@@ -144,6 +144,22 @@ export async function triggerOneBuildForUpdatingLock(
   return buildId;
 }
 
+
+async function listReposInOrg(octokit: OctokitType, githubOrg: string): ListReposResponse['data'][] {
+  const result: RepoDetails[] = [];
+  for await (const response of octokit.paginate.iterator(
+    octokit.repos.listForOrg,
+    {
+      org: githubOrg,
+    }
+  )) {
+    const repos = response.data as ListReposResponse['data'];
+
+    for (const repo of repos) {
+      count++;
+
+}
+
 /**
  * Scans a whole github org for config files, and updates stale entries in
  * the config store.
