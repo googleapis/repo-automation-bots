@@ -1,5 +1,5 @@
 {
-  "action": "unlabeled",
+  "action": "labeled",
   "number": 2,
   "pull_request": {
     "url": "https://api.github.com/repos/Codertocat/Hello-World/pulls/2",
@@ -44,7 +44,9 @@
     "requested_reviewers": [],
     "requested_teams": [],
     "labels": [
-      {"name": "autorelease: tagged"}
+      {"name": "autorelease: tagged"},
+      {"name": "autorelease: triggered"},
+      {"name": "autorelease: published"}
     ],
     "milestone": null,
     "commits_url": "https://api.github.com/repos/Codertocat/Hello-World/pulls/2/commits",
@@ -457,6 +459,6 @@
     "color": "red",
     "default": true,
     "description": "Release was triggered",
-    "name": "autorelease: triggered"
+    "name": "autorelease: published"
   }
 }

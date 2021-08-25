@@ -16,16 +16,44 @@
 import {Octokit} from '@octokit/rest';
 import {logger} from 'gcf-utils';
 
-import {promisify} from 'util';
 import * as child_process from 'child_process';
 
-export const exec = promisify(child_process.exec);
+export const exec = function (
+  command: string,
+  token: string
+): Promise<{stdout: string; stderr: string}> {
+  return new Promise((resolve, reject) => {
+    child_process.exec(
+      command,
+      {
+        env: {
+          ...process.env,
+          GITHUB_TOKEN: token,
+        },
+      },
+      (error, stdout, stderr) => {
+        if (stdout) {
+          logger.info(stdout);
+        }
+        if (stderr) {
+          logger.warn(stderr);
+        }
+        if (error) {
+          reject(error);
+        } else {
+          resolve({stdout, stderr});
+        }
+      }
+    );
+  });
+};
 
 export const ALLOWED_ORGANIZATIONS = ['googleapis', 'GoogleCloudPlatform'];
 
 export const FAILED_LABEL = 'autorelease: failed';
 export const TAGGED_LABEL = 'autorelease: tagged';
 export const TRIGGERED_LABEL = 'autorelease: triggered';
+export const PUBLISHED_LABEL = 'autorelease: published';
 export interface Repository {
   owner: string;
   repo: string;
@@ -56,8 +84,10 @@ export interface PullRequest {
       name: string;
     };
   };
+  closed_at: string | null;
 }
 
+const LAUNCH_DATE = new Date('2021-08-01');
 function isReleasePullRequest(pullRequest: PullRequest): boolean {
   return (
     pullRequest.state === 'closed' &&
@@ -67,7 +97,9 @@ function isReleasePullRequest(pullRequest: PullRequest): boolean {
     }) &&
     !pullRequest.labels.some(label => {
       return label.name === TRIGGERED_LABEL;
-    })
+    }) &&
+    !!pullRequest.closed_at &&
+    new Date(pullRequest.closed_at) > LAUNCH_DATE
   );
 }
 
@@ -103,15 +135,18 @@ export async function findPendingReleasePullRequests(
 }
 
 export async function triggerKokoroJob(
-  pullRequestUrl: string
+  pullRequestUrl: string,
+  token: string
 ): Promise<{stdout: string; stderr: string}> {
   logger.info(`triggering job for ${pullRequestUrl}`);
 
   const command = `python3 -m autorelease trigger-single --pull=${pullRequestUrl}`;
   logger.debug(`command: ${command}`);
   try {
-    const {stdout, stderr} = await exec(command);
-    logger.info(stdout);
+    const {stdout, stderr} = await exec(command, token);
+    if (stdout) {
+      logger.info(stdout);
+    }
     if (stderr) {
       logger.warn(stderr);
     }
@@ -146,4 +181,27 @@ export async function markFailed(
     issue_number: pullRequest.number,
     labels: [FAILED_LABEL],
   });
+}
+
+export async function cleanupPublished(
+  octokit: Octokit,
+  pullRequest: BasicPullRequest
+): Promise<boolean> {
+  logger.info('adding `autorelease: failed` label');
+  let success = true;
+  for (const name of [TAGGED_LABEL, TRIGGERED_LABEL]) {
+    try {
+      await octokit.issues.removeLabel({
+        owner: pullRequest.owner,
+        repo: pullRequest.repo,
+        issue_number: pullRequest.number,
+        name,
+      });
+    } catch (err) {
+      logger.warn(`failed to remove label ${name}`);
+      success = false;
+      // ignore error for 404
+    }
+  }
+  return success;
 }

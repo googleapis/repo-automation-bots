@@ -22,6 +22,7 @@ import {
   PullRequest,
   triggerKokoroJob,
   markTriggered,
+  cleanupPublished,
 } from '../src/release-trigger';
 import * as releaseTriggerModule from '../src/release-trigger';
 import {Octokit} from '@octokit/rest';
@@ -42,10 +43,15 @@ function buildFakePullRequest(
   options?: {
     labels?: string[];
     mergeCommitSha?: string;
+    closedAt?: string;
   }
 ): PullRequest {
   const optionsWithDefaults = {
-    ...{labels: ['autorelease: tagged'], mergeCommitSha: 'abcd1234'},
+    ...{
+      labels: ['autorelease: tagged'],
+      mergeCommitSha: 'abcd1234',
+      closedAt: '2021-08-15T19:01:12Z',
+    },
     ...options,
   };
   return {
@@ -64,6 +70,7 @@ function buildFakePullRequest(
         name: repo,
       },
     },
+    closed_at: optionsWithDefaults.closedAt,
   };
 }
 
@@ -92,6 +99,38 @@ describe('release-trigger', () => {
       );
       assert.strictEqual(
         pullRequests[1].html_url,
+        'https://github.com/testOwner/testRepo/pull/1235'
+      );
+      scope.done();
+    });
+
+    it('should ignore older pull requests', async () => {
+      const scope = nock('https://api.github.com')
+        .get(
+          '/repos/testOwner/testRepo/pulls?state=closed&sort=updated&direction=desc'
+        )
+        .reply(
+          200,
+          [
+            buildFakePullRequest('testOwner', 'testRepo', 1234, {
+              closedAt: '2020-01-01T12:13:14Z',
+            }),
+          ],
+          {
+            Link: '</repos/testOwner/testRepo/pulls?state=closed&sort=updated&direction=desc&page=2>; rel="next"',
+          }
+        )
+        .get(
+          '/repos/testOwner/testRepo/pulls?state=closed&sort=updated&direction=desc&page=2'
+        )
+        .reply(200, [buildFakePullRequest('testOwner', 'testRepo', 1235)]);
+      const pullRequests = await findPendingReleasePullRequests(octokit, {
+        owner: 'testOwner',
+        repo: 'testRepo',
+      });
+      assert.strictEqual(pullRequests.length, 1);
+      assert.strictEqual(
+        pullRequests[0].html_url,
         'https://github.com/testOwner/testRepo/pull/1235'
       );
       scope.done();
@@ -175,16 +214,13 @@ describe('release-trigger', () => {
       const execStub = sandbox
         .stub(releaseTriggerModule, 'exec')
         .resolves({stdout: 'some output', stderr: 'some error output'});
-      const infoStub = sandbox.stub(logger, 'info');
-      const warnStub = sandbox.stub(logger, 'warn');
       const {stdout, stderr} = await triggerKokoroJob(
-        'https://github.com/testOwner/testRepo/pull/1234'
+        'https://github.com/testOwner/testRepo/pull/1234',
+        'fake-token'
       );
       assert.strictEqual(stdout, 'some output');
       assert.strictEqual(stderr, 'some error output');
       sinon.assert.calledOnce(execStub);
-      sinon.assert.calledWithMatch(infoStub, sinon.match('some output'));
-      sinon.assert.calledWithMatch(warnStub, sinon.match('some error output'));
     });
 
     it('should catch and log an exception', async () => {
@@ -193,7 +229,10 @@ describe('release-trigger', () => {
         .rejects(new Error('Command failed: /bin/false'));
       const errorStub = sandbox.stub(logger, 'error');
       await assert.rejects(
-        triggerKokoroJob('https://github.com/testOwner/testRepo/pull/1234'),
+        triggerKokoroJob(
+          'https://github.com/testOwner/testRepo/pull/1234',
+          'fake-token'
+        ),
         err => {
           if (err instanceof Error) {
             return err.message.startsWith('Command failed: /bin/false');
@@ -212,10 +251,7 @@ describe('release-trigger', () => {
   describe('markTriggered', () => {
     it('should add a label to a pull request', async () => {
       const scope = nock('https://api.github.com/')
-        .post('/repos/testOwner/testRepo/issues/1234/labels', body => {
-          console.log(body);
-          return body;
-        })
+        .post('/repos/testOwner/testRepo/issues/1234/labels')
         .reply(201);
       await markTriggered(octokit, {
         owner: 'testOwner',
@@ -229,12 +265,47 @@ describe('release-trigger', () => {
   describe('markFailed', () => {
     it('should add a label to a pull request', async () => {
       const scope = nock('https://api.github.com/')
-        .post('/repos/testOwner/testRepo/issues/1234/labels', body => {
-          console.log(body);
-          return body;
-        })
+        .post('/repos/testOwner/testRepo/issues/1234/labels')
         .reply(201);
       await markTriggered(octokit, {
+        owner: 'testOwner',
+        repo: 'testRepo',
+        number: 1234,
+      });
+      scope.done();
+    });
+  });
+
+  describe('cleanupPublished', () => {
+    it('should remove tagged and triggered labels', async () => {
+      const scope = nock('https://api.github.com/')
+        .delete(
+          '/repos/testOwner/testRepo/issues/1234/labels/autorelease%3A%20tagged'
+        )
+        .reply(200)
+        .delete(
+          '/repos/testOwner/testRepo/issues/1234/labels/autorelease%3A%20triggered'
+        )
+        .reply(200);
+      await cleanupPublished(octokit, {
+        owner: 'testOwner',
+        repo: 'testRepo',
+        number: 1234,
+      });
+      scope.done();
+    });
+
+    it('should not crash if one label does not exit', async () => {
+      const scope = nock('https://api.github.com/')
+        .delete(
+          '/repos/testOwner/testRepo/issues/1234/labels/autorelease%3A%20tagged'
+        )
+        .reply(404)
+        .delete(
+          '/repos/testOwner/testRepo/issues/1234/labels/autorelease%3A%20triggered'
+        )
+        .reply(200);
+      await cleanupPublished(octokit, {
         owner: 'testOwner',
         repo: 'testRepo',
         number: 1234,
