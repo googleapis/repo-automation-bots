@@ -21,10 +21,21 @@ import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
-import {OwlBotLock, owlBotLockPath, owlBotLockFrom, owlBotYamlPath} from './config-files';
+import {
+  OwlBotLock,
+  owlBotLockPath,
+  owlBotLockFrom,
+  owlBotYamlPath,
+} from './config-files';
 import {OctokitFactory, OctokitType} from './octokit-util';
 import {OWL_BOT_IGNORE} from './labels';
-import {findCopyTag, findSourceHash, sourceLinkFrom, sourceLinkLineFrom, unpackCopyTag} from './copy-code';
+import {
+  findCopyTag,
+  findSourceHash,
+  sourceLinkFrom,
+  sourceLinkLineFrom,
+  unpackCopyTag,
+} from './copy-code';
 import {google} from '@google-cloud/cloudbuild/build/protos/protos';
 
 interface BuildArgs {
@@ -655,12 +666,14 @@ export async function triggerRegeneratePullRequest(
       yamlPath = copyTag.p;
       console.info(`Found Copy-Tag: ${copyTag}`);
     } catch (e) {
-      await reportError(`Owl Bot could not regenerate pull request ${args.prNumber} because the Copy-Tag is corrupt.\n${e}`);
+      await reportError(
+        `Owl Bot could not regenerate pull request ${args.prNumber} because the Copy-Tag is corrupt.\n${e}`
+      );
       return;
     }
   }
 
-  // Older pull requests won't have a Copy-Tag, so use the commit hash 
+  // Older pull requests won't have a Copy-Tag, so use the commit hash
   if (!sourceHash) {
     sourceHash = findSourceHash(args.prBody);
   }

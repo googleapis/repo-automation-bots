@@ -442,7 +442,6 @@ describe('findSourceHash', () => {
   });
 });
 
-
 describe('findCopyTag', () => {
   it('finds a copy tag in a pull request body', () => {
     const tag = copyTagFrom('.github/.OwlBot.yaml', 'xyz987');
@@ -457,12 +456,14 @@ describe('unpackCopyTag', () => {
     const tag = copyTagFrom('.github/.OwlBot.yaml', 'xyz987');
     assert.deepStrictEqual(unpackCopyTag(tag), {
       p: '.github/.OwlBot.yaml',
-      h: 'xyz987'
+      h: 'xyz987',
     });
   });
 
   it('Throws an exception for an incomplete copy tag.', () => {
     const tag = Buffer.from(JSON.stringify({h: 'abc123'})).toString('base64');
-    assert.throws(() => { unpackCopyTag(tag); });
+    assert.throws(() => {
+      unpackCopyTag(tag);
+    });
   });
 });

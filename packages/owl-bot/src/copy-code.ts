@@ -148,9 +148,9 @@ export function bodyIncludesCopyTagFooter(body: string): boolean {
 export function findCopyTag(body: string): string {
   const match = /.*Copy-Tag:\s*([A-Za-z0-9+/=]+).*/.exec(body);
   if (match) {
-    return match[1]
+    return match[1];
   } else {
-    return "";
+    return '';
   }
 }
 
