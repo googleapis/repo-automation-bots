@@ -22,6 +22,7 @@ jobs:
     needs: findPackages
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
         package: ${{fromJson(needs.findPackages.outputs.nodePaths)}}
     steps:
