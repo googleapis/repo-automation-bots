@@ -14,7 +14,7 @@
 
 const {execSync} = require('child_process');
 
-const output = execSync(`ls packages/*/package.json`);
+const output = execSync(`ls packages/*/package.json`, { encoding: 'utf-8' });
 const packages = output.split('\n');
 const nodePaths = new Set();
 
