@@ -142,7 +142,16 @@ const copyTagFooter = 'Copy-Tag: ';
  * Finds a copy tag footer in the body of a git commit message.
  */
 export function bodyIncludesCopyTagFooter(body: string): boolean {
-  return body.includes('\n' + copyTagFooter);
+  return !!findCopyTag(body);
+}
+
+export function findCopyTag(body: string): string {
+  const match = /.*Copy-Tag:\s*([A-Za-z0-9+/=]+).*/.exec(body);
+  if (match) {
+    return match[1]
+  } else {
+    return "";
+  }
 }
 
 /**

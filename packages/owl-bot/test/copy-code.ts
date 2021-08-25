@@ -19,9 +19,11 @@ import {
   copyDirs,
   copyExists,
   copyTagFrom,
+  findCopyTag,
   findSourceHash,
   sourceLinkFrom,
   stat,
+  unpackCopyTag,
 } from '../src/copy-code';
 import path from 'path';
 import * as fs from 'fs';
@@ -437,5 +439,30 @@ describe('findSourceHash', () => {
   it('returns empty string when no source link.', () => {
     const prBody = 'This code is fantastic!';
     assert.strictEqual(findSourceHash(prBody), '');
+  });
+});
+
+
+describe('findCopyTag', () => {
+  it('finds a copy tag in a pull request body', () => {
+    const tag = copyTagFrom('.github/.OwlBot.yaml', 'xyz987');
+    const prBody = `Great code!\nCopy-Tag: ${tag}\nBye.`;
+    const found = findCopyTag(prBody);
+    assert.strictEqual(found, tag);
+  });
+});
+
+describe('unpackCopyTag', () => {
+  it('Correctly unpacks the copy tag.', () => {
+    const tag = copyTagFrom('.github/.OwlBot.yaml', 'xyz987');
+    assert.deepStrictEqual(unpackCopyTag(tag), {
+      p: '.github/.OwlBot.yaml',
+      h: 'xyz987'
+    });
+  });
+
+  it('Throws an exception for an incomplete copy tag.', () => {
+    const tag = Buffer.from(JSON.stringify({h: 'abc123'})).toString('base64');
+    assert.throws(() => { unpackCopyTag(tag); });
   });
 });
