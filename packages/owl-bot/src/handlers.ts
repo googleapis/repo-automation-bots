@@ -179,7 +179,7 @@ export async function scanGithubForConfigs(
       const repoFull = `${githubOrg}/${repo.name}`;
       const configs = await configsStore.getConfigs(repoFull);
       const defaultBranch = repo.default_branch ?? 'master';
-      logger.info(`refresh config for ${githubOrg}/${repo.name}`);
+      logger.info(`Refreshing configs for ${githubOrg}/${repo.name}`);
       try {
         await refreshConfigs(
           configsStore,
