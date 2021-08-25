@@ -14,7 +14,6 @@
 
 import {promisify} from 'util';
 import {readFile} from 'fs';
-import * as crypto from 'crypto';
 import {
   owlBotYamlFromText,
   OwlBotYaml,

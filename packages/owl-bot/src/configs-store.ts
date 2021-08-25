@@ -128,6 +128,7 @@ export interface ConfigsStore {
 export interface CollectedConfigs {
   lock?: OwlBotLock;
   yamls: OwlBotYamlAndPath[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   badConfigs: {path: string; error: any}[];
 }
 

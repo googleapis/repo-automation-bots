@@ -249,8 +249,12 @@ describe('refreshConfigs', () => {
   const octokitSha123 = (zip?: AdmZip): InstanceType<typeof Octokit> => {
     return {
       issues: {
-        create: () => { return {data: {html_url: 'h:/x/y'}}; },
-        listForRepo: () => { return { data: [] } }
+        create: () => {
+          return {data: {html_url: 'h:/x/y'}};
+        },
+        listForRepo: () => {
+          return {data: []};
+        },
       },
       repos: {
         getBranch() {
