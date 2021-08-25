@@ -21,10 +21,10 @@ import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
-import {OwlBotLock, owlBotLockPath, owlBotLockFrom} from './config-files';
+import {OwlBotLock, owlBotLockPath, owlBotLockFrom, owlBotYamlPath} from './config-files';
 import {OctokitFactory, OctokitType} from './octokit-util';
 import {OWL_BOT_IGNORE} from './labels';
-import {findSourceHash, sourceLinkFrom, sourceLinkLineFrom} from './copy-code';
+import {findCopyTag, findSourceHash, sourceLinkFrom, sourceLinkLineFrom, unpackCopyTag} from './copy-code';
 import {google} from '@google-cloud/cloudbuild/build/protos/protos';
 
 interface BuildArgs {
@@ -640,9 +640,30 @@ export async function triggerRegeneratePullRequest(
     return _createComment(text);
   };
 
+  let sourceHash = '';
+  let yamlPath = owlBotYamlPath;
+
   // The user checked the "Regenerate this pull request" box.
 
-  const sourceHash = findSourceHash(args.prBody);
+  // First try to unpack the source commit hash and .OwlBot.yaml path from
+  // a Copy Tag.
+  const copyTagText = findCopyTag(args.prBody);
+  if (copyTagText) {
+    try {
+      const copyTag = unpackCopyTag(copyTagText);
+      sourceHash = copyTag.h;
+      yamlPath = copyTag.p;
+      console.info(`Found Copy-Tag: ${copyTag}`);
+    } catch (e) {
+      await reportError(`Owl Bot could not regenerate pull request ${args.prNumber} because the Copy-Tag is corrupt.\n${e}`);
+      return;
+    }
+  }
+
+  // Older pull requests won't have a Copy-Tag, so use the commit hash 
+  if (!sourceHash) {
+    sourceHash = findSourceHash(args.prBody);
+  }
   if (!sourceHash) {
     // But there's no source hash to regenerate from.  Oh no!
     const sourceLine = sourceLinkLineFrom(sourceLinkFrom('abc123'));
@@ -670,6 +691,7 @@ ${sourceLine}`);
           _PR_OWNER: args.owner,
           _REPOSITORY: args.repo,
           _SOURCE_HASH: sourceHash,
+          _OWL_BOT_YAML_PATH: yamlPath,
         },
       },
     });
