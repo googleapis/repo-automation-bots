@@ -125,26 +125,34 @@ export interface ConfigsStore {
   ): Promise<AffectedRepo[]>;
 }
 
+export interface CollectedConfigs {
+  lock?: OwlBotLock,
+  yamls: OwlBotYamlAndPath[],
+  badConfigs: {path: string, error: any}[]
+}
+
 /**
  * Examines the contents of a local repo directory and collects owl bot config
  * files.
  */
 export function collectConfigs(
   dir: string
-): [OwlBotLock | undefined, OwlBotYamlAndPath[]] {
-  let lock: OwlBotLock | undefined;
-  const yamls: OwlBotYamlAndPath[] = [];
-
+): CollectedConfigs {
+  const configs: CollectedConfigs = {
+    yamls: [],
+    badConfigs: [],
+  };
   // .OwlBot.lock.yaml is always in a known location.
   const lockPath = path.join(dir, owlBotLockPath);
   if (fs.existsSync(lockPath)) {
-    const lockText = fs.readFileSync(lockPath, 'utf8');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const lockYaml = load(lockText) as Record<string, any>;
-    /////////////////////////////////////////////////////////////////////////
-    // TODO: Catch exception and return error of some sort.
-    /////////////////////////////////////////////////////////////////////////
-    lock = owlBotLockFrom(lockYaml);
+    try {
+      const lockText = fs.readFileSync(lockPath, 'utf8');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const lockYaml = load(lockText) as Record<string, any>;
+      configs.lock = owlBotLockFrom(lockYaml);
+    } catch (e) {
+      configs.badConfigs.push({ path: owlBotLockPath, error: e});
+    }
   }
   // .OwlBot.yamls may be scattered throughout the directory.  Find them.
   const yamlPaths = glob.sync(path.join('**', '.OwlBot.yaml'), {cwd: dir});
@@ -153,11 +161,15 @@ export function collectConfigs(
     ...glob.sync(path.join('.github', '**', '.OwlBot.yaml'), {cwd: dir})
   );
   for (const yamlPath of yamlPaths) {
-    const yamlText = fs.readFileSync(path.join(dir, yamlPath), 'utf8');
-    yamls.push({
-      path: yamlPath,
-      yaml: owlBotYamlFromText(yamlText),
-    });
+    try {
+      const yamlText = fs.readFileSync(path.join(dir, yamlPath), 'utf8');
+      configs.yamls.push({
+        path: yamlPath,
+        yaml: owlBotYamlFromText(yamlText),
+      });
+    } catch (e) {
+      configs.badConfigs.push({ path: yamlPath, error: e});
+    }
   }
-  return [lock, yamls];
+  return configs;
 }

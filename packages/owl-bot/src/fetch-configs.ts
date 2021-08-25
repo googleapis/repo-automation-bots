@@ -15,8 +15,7 @@
 import AdmZip from 'adm-zip';
 import {OctokitType} from './octokit-util';
 import tmp from 'tmp';
-import {OwlBotLock} from './config-files';
-import {collectConfigs, OwlBotYamlAndPath} from './configs-store';
+import {collectConfigs, CollectedConfigs} from './configs-store';
 import * as fs from 'fs';
 import path from 'path';
 
@@ -30,7 +29,7 @@ export async function fetchConfigs(
     repo: string;
     ref: string;
   }
-): Promise<[OwlBotLock | undefined, OwlBotYamlAndPath[]]> {
+): Promise<CollectedConfigs> {
   const response = await octokit.repos.downloadZipballArchive(githubRepo);
 
   const tmpDir = tmp.dirSync().name;

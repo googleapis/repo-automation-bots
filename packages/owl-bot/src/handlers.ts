@@ -251,16 +251,16 @@ export async function refreshConfigs(
     commitHash: commitHash,
   };
 
-  const [lock, yamls] = await fetchConfigs(octokit, {
+  const fetchedConfigs = await fetchConfigs(octokit, {
     owner: githubOrg,
     repo: repoName,
     ref: commitHash,
   });
-  if (lock) {
-    newConfigs.lock = lock;
+  if (fetchedConfigs.lock) {
+    newConfigs.lock = fetchedConfigs.lock;
   }
-  if (yamls && yamls.length > 0) {
-    newConfigs.yamls = yamls;
+  if (fetchedConfigs.yamls.length > 0) {
+    newConfigs.yamls = fetchedConfigs.yamls;
   }
 
   // Store the new configs back into the database.
@@ -271,6 +271,9 @@ export async function refreshConfigs(
   );
   if (stored) {
     logger.info(`Stored new configs for ${repoFull}`);
+    for (const badConfig of fetchedConfigs.badConfigs) {
+      // TODO: create an issue on the repo.
+    }
   } else {
     logger.info(
       `Mid-air collision! ${repoFull}'s configs were already updated.`
