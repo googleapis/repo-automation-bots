@@ -30,6 +30,7 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node }}
+      - run: npm i -g npm-check-updates
       - run: echo ./packages/${{ matrix.package }}
       - run: ./scripts/update-dependencies.sh packages/${{ matrix.package }}
       - uses: googleapis/code-suggester@v1 # takes the changes from git directory
