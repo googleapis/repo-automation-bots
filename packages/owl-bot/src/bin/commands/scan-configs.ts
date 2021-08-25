@@ -16,7 +16,7 @@ import admin from 'firebase-admin';
 import {FirestoreConfigsStore} from '../../database';
 import {scanGithubForConfigs} from '../../handlers';
 import yargs = require('yargs');
-import {octokitFrom} from '../../octokit-util';
+import {octokitFactoryFrom, octokitFrom} from '../../octokit-util';
 
 interface Args {
   'pem-path': string;
@@ -64,11 +64,10 @@ export const scanConfigs: yargs.CommandModule<{}, Args> = {
       projectId: argv.project,
     });
     const db = admin.firestore();
-    const octokit = await octokitFrom(argv);
     const configStore = new FirestoreConfigsStore(db!);
     await scanGithubForConfigs(
       configStore,
-      octokit,
+      octokitFactoryFrom(argv),
       argv.org,
       argv.installation
     );

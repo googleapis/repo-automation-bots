@@ -19,7 +19,7 @@ import {core} from './core';
 // Conflicting linters think the next line is extraneous or necessary.
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints} from '@octokit/types';
-import {OctokitType, createIssueIfTitleDoesntExist} from './octokit-util';
+import {OctokitType, createIssueIfTitleDoesntExist, OctokitFactory} from './octokit-util';
 import {githubRepoFromOwnerSlashName} from './github-repo';
 import {fetchConfigs} from './fetch-configs';
 
@@ -144,9 +144,11 @@ export async function triggerOneBuildForUpdatingLock(
   return buildId;
 }
 
-
-async function listReposInOrg(octokit: OctokitType, githubOrg: string): ListReposResponse['data'][] {
-  const result: RepoDetails[] = [];
+/**
+ * Iterates through all the paginated responses to collect the full list.
+ */
+async function listReposInOrg(octokit: OctokitType, githubOrg: string): Promise<ListReposResponse['data']> {
+  const result: ListReposResponse['data'] = [];
   for await (const response of octokit.paginate.iterator(
     octokit.repos.listForOrg,
     {
@@ -154,10 +156,9 @@ async function listReposInOrg(octokit: OctokitType, githubOrg: string): ListRepo
     }
   )) {
     const repos = response.data as ListReposResponse['data'];
-
-    for (const repo of repos) {
-      count++;
-
+    result.push(...repos);
+  }
+  return result;
 }
 
 /**
@@ -170,49 +171,38 @@ async function listReposInOrg(octokit: OctokitType, githubOrg: string): ListRepo
  */
 export async function scanGithubForConfigs(
   configsStore: ConfigsStore,
-  octokit: OctokitType,
+  octokitFactory: OctokitFactory,
   githubOrg: string,
   orgInstallationId: number
 ): Promise<void> {
-  let count = 0; // Count of repos scanned for debugging purposes.
   logger.info(`scan ${githubOrg} installation = ${orgInstallationId}`);
   logger.metric('owlbot.scan_github_for_configs', {
     org: githubOrg,
     installationId: orgInstallationId,
   });
-
-  for await (const response of octokit.paginate.iterator(
-    octokit.repos.listForOrg,
-    {
-      org: githubOrg,
-    }
-  )) {
-    const repos = response.data as ListReposResponse['data'];
-    logger.info(`count = ${count} page size = ${repos.length}`);
-    for (const repo of repos) {
-      count++;
-      // Load the current configs from the db.
-      const repoFull = `${githubOrg}/${repo.name}`;
-      const configs = await configsStore.getConfigs(repoFull);
-      const defaultBranch = repo.default_branch ?? 'master';
-      logger.info(`Refreshing configs for ${githubOrg}/${repo.name}`);
-      try {
-        await refreshConfigs(
-          configsStore,
-          configs,
-          octokit,
-          githubOrg,
-          repo.name,
-          defaultBranch,
-          orgInstallationId
-        );
-      } catch (err) {
-        if (err.status === 404) {
-          logger.warn(`received 404 refreshing ${githubOrg}/${repo.name}`);
-          continue;
-        } else {
-          throw err;
-        }
+  const repos = await listReposInOrg(await octokitFactory.getShortLivedOctokit(), githubOrg);
+  for (const repo of repos) {
+    // Load the current configs from the db.
+    const repoFull = `${githubOrg}/${repo.name}`;
+    const configs = await configsStore.getConfigs(repoFull);
+    const defaultBranch = repo.default_branch ?? 'master';
+    logger.info(`Refreshing configs for ${githubOrg}/${repo.name}`);
+    try {
+      await refreshConfigs(
+        configsStore,
+        configs,
+        await octokitFactory.getShortLivedOctokit(),
+        githubOrg,
+        repo.name,
+        defaultBranch,
+        orgInstallationId
+      );
+    } catch (err) {
+      if (err.status === 404) {
+        logger.warn(`received 404 refreshing ${githubOrg}/${repo.name}`);
+        continue;
+      } else {
+        throw err;
       }
     }
   }

@@ -34,7 +34,7 @@ import {core} from '../src/core';
 import {FakeConfigsStore} from './fake-configs-store';
 import {GithubRepo} from '../src/github-repo';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
-import {newFakeOctokit} from './fake-octokit';
+import {newFakeOctokit, newFakeOctokitFactory} from './fake-octokit';
 import {newFakeCloudBuildClient} from './fake-cloud-build-client';
 import AdmZip from 'adm-zip';
 
@@ -547,6 +547,9 @@ describe('scanGithubForConfigs', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any as InstanceType<typeof Octokit>;
 
+  const octokitFactoryWith404OnBranch = newFakeOctokitFactory(octokitWith404OnBranch);
+  const octokitFactoryWithRepos = newFakeOctokitFactory(octokitWithRepos);
+
   it('works with an installationId', async () => {
     const configsStore = new FakeConfigsStore();
     sandbox.stub(core, 'getFileContent').resolves(`
@@ -555,7 +558,7 @@ describe('scanGithubForConfigs', () => {
     `);
     await scanGithubForConfigs(
       configsStore,
-      octokitWithRepos,
+      octokitFactoryWithRepos,
       'googleapis',
       45
     );
@@ -632,7 +635,7 @@ describe('scanGithubForConfigs', () => {
     `);
     await scanGithubForConfigs(
       configsStore,
-      octokitWith404OnBranch,
+      octokitFactoryWith404OnBranch,
       'googleapis',
       45
     );

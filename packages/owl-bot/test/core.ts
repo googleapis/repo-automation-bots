@@ -112,6 +112,7 @@ describe('triggerPostProcessBuild()', () => {
               _PR_OWNER: 'test-owner',
               _REPOSITORY: 'nodejs-stapler',
               _SOURCE_HASH: 'abc123',
+              _OWL_BOT_YAML_PATH: ".github/.OwlBot.yaml"
             },
           },
         },

@@ -896,44 +896,6 @@ describe('owlBot', () => {
     });
   });
 
-  describe('scan configs cron', () => {
-    it('invokes scanGithubForConfigs', async () => {
-      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
-      const payload = {
-        org: 'googleapis',
-        installation: {
-          id: 12345,
-        },
-        scanGithubForConfigs: true,
-      };
-      let org: string | undefined = undefined;
-      let installation: number | undefined = undefined;
-      sandbox.replace(
-        handlers,
-        'scanGithubForConfigs',
-        (
-          _configStore,
-          _octokit,
-          _org: string,
-          _installation: number
-        ): Promise<void> => {
-          org = _org;
-          installation = _installation;
-          return Promise.resolve(undefined);
-        }
-      );
-      await probot.receive({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'schedule.repository' as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        payload: payload as any,
-        id: 'abc123',
-      });
-      assert.strictEqual(org, 'googleapis');
-      assert.strictEqual(installation, 12345);
-      sinon.assert.notCalled(syncLabelsStub);
-    });
-  });
   it('triggers build when "owlbot:run" label is added to fork', async () => {
     const payload = {
       action: 'labeled',

@@ -226,23 +226,6 @@ export function OwlBot(
       await syncLabels(context.octokit, owner, repo, OWL_BOT_LABELS);
       return;
     }
-    if (context.payload.scanGithubForConfigs === true) {
-      // owl-bot-scan-googleapis cron entry
-      // Scan googleapis repositories and ensure config is up to date
-      const configStore = new FirestoreConfigsStore(db!);
-      logger.info(
-        `scan ${context.payload.org} istallation = ${context.payload.installation.id}`
-      );
-      logger.info('Scanning GitHub for configs via `schedule.repository`');
-
-      await scanGithubForConfigs(
-        configStore,
-        context.octokit,
-        context.payload.org,
-        Number(context.payload.installation.id)
-      );
-      return;
-    }
   });
 }
 
