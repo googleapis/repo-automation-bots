@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [13.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.0.0...gcf-utils-v13.0.1) (2021-08-25)
+
+
+### Bug Fixes
+
+* stop loggging signature ([#2384](https://www.github.com/googleapis/repo-automation-bots/issues/2384)) ([b6ed87e](https://www.github.com/googleapis/repo-automation-bots/commit/b6ed87e64d6c7599ab463337c3b0990e21ad7a13))
+
 ## [13.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v12.0.0...gcf-utils-v13.0.0) (2021-08-09)
 
 

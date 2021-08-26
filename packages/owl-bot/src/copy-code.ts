@@ -30,7 +30,7 @@ import glob from 'glob';
 import {GithubRepo} from './github-repo';
 import {OWL_BOT_COPY} from './core';
 import {newCmd} from './cmd';
-import {createPullRequestFromLastCommit} from './create-pr';
+import {createPullRequestFromLastCommit, getLastCommitBody} from './create-pr';
 
 // This code generally uses Sync functions because:
 // 1. None of our current designs including calling this code from a web
@@ -198,6 +198,11 @@ export async function copyCodeAndCreatePullRequest(
     return; // Mid-air collision!
   }
 
+  const prBody =
+    EMPTY_REGENERATE_CHECKBOX_TEXT +
+    '\n\n' +
+    getLastCommitBody(dest.dir, logger);
+
   await createPullRequestFromLastCommit(
     destRepo.owner,
     destRepo.repo,
@@ -206,6 +211,7 @@ export async function copyCodeAndCreatePullRequest(
     destRepo.getCloneUrl(token),
     [OWL_BOT_COPY],
     octokit,
+    prBody,
     logger
   );
 }
@@ -287,7 +293,7 @@ export function toLocalRepo(
 }
 
 export const REGENERATE_CHECKBOX_TEXT =
-  '- [x] To automatically regenerate this PR, check this box.';
+  '- [x] Regenerate this pull request now.';
 export const EMPTY_REGENERATE_CHECKBOX_TEXT = REGENERATE_CHECKBOX_TEXT.replace(
   '[x]',
   '[ ]'
@@ -319,9 +325,15 @@ export async function copyCode(
   const cmd = newCmd(logger);
   const sourceDir = toLocalRepo(sourceRepo, workDir, logger);
   // Check out the specific hash we want to copy from.
-  if (sourceCommitHash) {
+  if ('none' === sourceCommitHash) {
+    // User is running copy-code from command line.  The path specified by
+    // sourceRepo is not a repo.  It's a bazel-bin directory, so there's
+    // no corresponding commit hash, and that's ok.
+  } else if (sourceCommitHash) {
+    // User provided us a commithash.  Checkout that version.
     cmd(`git checkout ${sourceCommitHash}`, {cwd: sourceDir});
   } else {
+    // User wants to use the latest commit in the repo.  Get its commit hash.
     sourceCommitHash = cmd('git log -1 --format=%H', {cwd: sourceDir})
       .toString('utf8')
       .trim();
@@ -377,14 +389,14 @@ export function copyDirs(
 
   // Wipe out the existing contents of the dest directory.
   const deadPaths: string[] = [];
+  const allDestPaths = glob.sync('**', {
+    cwd: destDir,
+    dot: true,
+    ignore: ['.git', '.git/**'],
+  });
   for (const rmDest of yaml['deep-remove-regex'] ?? []) {
     if (rmDest && stat(destDir)) {
       const rmRegExp = toFrontMatchRegExp(rmDest);
-      const allDestPaths = glob.sync('**', {
-        cwd: destDir,
-        dot: true,
-        ignore: ['.git', '.git/**'],
-      });
       const matchingDestPaths = allDestPaths.filter(path =>
         rmRegExp.test('/' + path)
       );
@@ -416,13 +428,13 @@ export function copyDirs(
   }
 
   // Copy the files from source to dest.
+  const allSourcePaths = glob.sync('**', {
+    cwd: sourceDir,
+    dot: true,
+    ignore: ['.git', '.git/**'],
+  });
   for (const deepCopy of yaml['deep-copy-regex'] ?? []) {
     const regExp = toFrontMatchRegExp(deepCopy.source);
-    const allSourcePaths = glob.sync('**', {
-      cwd: sourceDir,
-      dot: true,
-      ignore: ['.git', '.git/**'],
-    });
     const sourcePathsToCopy = allSourcePaths.filter(path =>
       regExp.test('/' + path)
     );
