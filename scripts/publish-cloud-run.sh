@@ -100,6 +100,9 @@ deployArgs=(
 if [ -n "${SERVICE_ACCOUNT}" ]; then
   deployArgs+=( "--service-account" "${SERVICE_ACCOUNT}" )
 fi
+if [ -n "${MEMORY}" ]; then
+  deployArgs+=( "--memory" "${MEMORY}" )
+fi
 echo "About to cloud run app ${serviceName}"
 gcloud run deploy "${serviceName}" "${deployArgs[@]}"
 
