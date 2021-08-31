@@ -14,9 +14,11 @@
 # limitations under the License.
 set -e
 
+# TODO: set --ingress=internal after tested and scheduler is set up.
+
 gcloud beta run deploy owlbot-cli-mono-repo-test \
     --project repo-automation-bots \
-    --image=gcr.io/repo-automation-bots/owlbot-cli-mono-repo-test \
+    --image=gcr.io/repo-automation-bots/owlbot-cli-mono-repo-test:v2 \
     --platform=managed \
     --concurrency=1 \
     --memory=4Gi \
