@@ -56,7 +56,8 @@ export const scanConfigs: yargs.CommandModule<{}, Args> = {
         describe: 'project with config database',
         type: 'string',
         demand: true,
-      });
+      })
+      .env('SCAN_CONFIGS');
   },
   async handler(argv) {
     admin.initializeApp({
