@@ -17,6 +17,7 @@ import {FirestoreConfigsStore} from '../../database';
 import {scanGithubForConfigs} from '../../handlers';
 import yargs = require('yargs');
 import {octokitFactoryFrom} from '../../octokit-util';
+import * as http from 'http';
 
 interface Args {
   'pem-path': string;
@@ -24,6 +25,18 @@ interface Args {
   installation: number;
   org: string;
   project: string;
+  port: number;
+}
+
+function serve(port: number) {
+  const server = http.createServer((req, res) => {
+    console.log(req.url);
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/plain');
+    res.end(req.url);
+  });
+  console.log('Listening on port ' + port);
+  server.listen(port);
 }
 
 export const scanConfigs: yargs.CommandModule<{}, Args> = {
@@ -57,6 +70,12 @@ export const scanConfigs: yargs.CommandModule<{}, Args> = {
         type: 'string',
         demand: true,
       })
+      .option('port', {
+        describe: 'Port number to listen to.',
+        type: 'number',
+        demand: false,
+        default: 0,
+      })
       .env('SCAN_CONFIGS');
   },
   async handler(argv) {
@@ -66,11 +85,15 @@ export const scanConfigs: yargs.CommandModule<{}, Args> = {
     });
     const db = admin.firestore();
     const configStore = new FirestoreConfigsStore(db!);
-    await scanGithubForConfigs(
-      configStore,
-      octokitFactoryFrom(argv),
-      argv.org,
-      argv.installation
-    );
+    if (argv.port) {
+      serve(argv.port);
+    } else {
+      await scanGithubForConfigs(
+        configStore,
+        octokitFactoryFrom(argv),
+        argv.org,
+        argv.installation
+      );
+    }
   },
 };
