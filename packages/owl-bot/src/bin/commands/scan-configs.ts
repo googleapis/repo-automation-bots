@@ -28,12 +28,25 @@ interface Args {
   port: number;
 }
 
-function serve(port: number) {
-  const server = http.createServer((req, res) => {
-    console.log(req.url);
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
-    res.end(req.url);
+/**
+ * Runs a webserver that scans the configs whenever the url /scan-configs is requested.
+ */
+function serve(port: number, callback: () => Promise<void>) {
+  const server = http.createServer(async (req, res) => {
+    // Require the url /scan-configs because health checks and the like may
+    // arrive at / or other urls, and we don't want to kick off a 20-minute,
+    // github-quota-consuming scan for every such request.
+    if ('/scan-configs' === req.url) {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'text/plain');
+      res.write('Working...\n');
+      await callback();
+      res.end('Done.');
+    } else {
+      res.statusCode = 404;
+      res.setHeader('Content-Type', 'text/plain');
+      res.end("You're probably looking for /scan-configs.");
+    }
   });
   console.log('Listening on port ' + port);
   server.listen(port);
@@ -71,7 +84,9 @@ export const scanConfigs: yargs.CommandModule<{}, Args> = {
         demand: true,
       })
       .option('port', {
-        describe: 'Port number to listen to.',
+        describe:
+          'run a webserver listening to this port.  Requests to /scan-configs ' +
+          'trigger actually scanning the configs.',
         type: 'number',
         demand: false,
         default: 0,
@@ -85,15 +100,18 @@ export const scanConfigs: yargs.CommandModule<{}, Args> = {
     });
     const db = admin.firestore();
     const configStore = new FirestoreConfigsStore(db!);
-    if (argv.port) {
-      serve(argv.port);
-    } else {
-      await scanGithubForConfigs(
+    const invoke = () => {
+      return scanGithubForConfigs(
         configStore,
         octokitFactoryFrom(argv),
         argv.org,
         argv.installation
       );
+    };
+    if (argv.port) {
+      serve(argv.port, invoke);
+    } else {
+      await invoke();
     }
   },
 };
