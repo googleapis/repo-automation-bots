@@ -40,8 +40,12 @@ function serve(port: number, callback: () => Promise<void>) {
       res.statusCode = 200;
       res.setHeader('Content-Type', 'text/plain');
       res.write('Working...\n');
-      await callback();
-      res.end('Done.');
+      try {
+        await callback();
+        res.end('Done.');
+      } catch {
+        res.end('Error.  See logs.');
+      }
     } else {
       res.statusCode = 404;
       res.setHeader('Content-Type', 'text/plain');
