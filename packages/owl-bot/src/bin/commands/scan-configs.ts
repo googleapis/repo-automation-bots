@@ -43,7 +43,8 @@ function serve(port: number, callback: () => Promise<void>) {
       try {
         await callback();
         res.end('Done.');
-      } catch {
+      } catch (e) {
+        console.error(e);
         res.end('Error.  See logs.');
       }
     } else {
