@@ -18,7 +18,7 @@ set -e
 
 gcloud beta run deploy owlbot-cli-mono-repo-test \
     --project repo-automation-bots \
-    --image=gcr.io/repo-automation-bots/owlbot-cli-mono-repo-test:v2 \
+    --image=gcr.io/repo-automation-bots/owlbot-cli-mono-repo-test:v3 \
     --platform=managed \
     --concurrency=1 \
     --memory=4Gi \
