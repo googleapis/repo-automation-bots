@@ -92,7 +92,7 @@ export function octokitFactoryFrom(params: OctokitParams): OctokitFactory {
         lastOctokit = await core.getAuthenticatedOctokit(atoken, false);
       }
       return lastOctokit;
-    }
+    },
   };
 }
 

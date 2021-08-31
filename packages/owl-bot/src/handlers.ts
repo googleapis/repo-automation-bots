@@ -19,7 +19,11 @@ import {core} from './core';
 // Conflicting linters think the next line is extraneous or necessary.
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints} from '@octokit/types';
-import {OctokitType, createIssueIfTitleDoesntExist, OctokitFactory} from './octokit-util';
+import {
+  OctokitType,
+  createIssueIfTitleDoesntExist,
+  OctokitFactory,
+} from './octokit-util';
 import {githubRepoFromOwnerSlashName} from './github-repo';
 import {fetchConfigs} from './fetch-configs';
 
@@ -147,7 +151,10 @@ export async function triggerOneBuildForUpdatingLock(
 /**
  * Iterates through all the paginated responses to collect the full list.
  */
-async function listReposInOrg(octokit: OctokitType, githubOrg: string): Promise<ListReposResponse['data']> {
+async function listReposInOrg(
+  octokit: OctokitType,
+  githubOrg: string
+): Promise<ListReposResponse['data']> {
   const result: ListReposResponse['data'] = [];
   for await (const response of octokit.paginate.iterator(
     octokit.repos.listForOrg,
@@ -180,7 +187,10 @@ export async function scanGithubForConfigs(
     org: githubOrg,
     installationId: orgInstallationId,
   });
-  const repos = await listReposInOrg(await octokitFactory.getShortLivedOctokit(), githubOrg);
+  const repos = await listReposInOrg(
+    await octokitFactory.getShortLivedOctokit(),
+    githubOrg
+  );
   for (const repo of repos) {
     // Load the current configs from the db.
     const repoFull = `${githubOrg}/${repo.name}`;

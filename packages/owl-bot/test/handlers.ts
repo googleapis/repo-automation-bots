@@ -547,7 +547,9 @@ describe('scanGithubForConfigs', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any as InstanceType<typeof Octokit>;
 
-  const octokitFactoryWith404OnBranch = newFakeOctokitFactory(octokitWith404OnBranch);
+  const octokitFactoryWith404OnBranch = newFakeOctokitFactory(
+    octokitWith404OnBranch
+  );
   const octokitFactoryWithRepos = newFakeOctokitFactory(octokitWithRepos);
 
   it('works with an installationId', async () => {

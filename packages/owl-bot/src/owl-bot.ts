@@ -21,11 +21,7 @@ import {logger} from 'gcf-utils';
 import {syncLabels} from '@google-automations/label-utils';
 import {core, RegenerateArgs} from './core';
 import {Octokit} from '@octokit/rest';
-import {
-  onPostProcessorPublished,
-  refreshConfigs,
-  scanGithubForConfigs,
-} from './handlers';
+import {onPostProcessorPublished, refreshConfigs} from './handlers';
 import {
   PullRequestEditedEvent,
   PullRequestLabeledEvent,

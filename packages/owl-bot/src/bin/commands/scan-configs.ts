@@ -16,7 +16,7 @@ import admin from 'firebase-admin';
 import {FirestoreConfigsStore} from '../../database';
 import {scanGithubForConfigs} from '../../handlers';
 import yargs = require('yargs');
-import {octokitFactoryFrom, octokitFrom} from '../../octokit-util';
+import {octokitFactoryFrom} from '../../octokit-util';
 
 interface Args {
   'pem-path': string;
