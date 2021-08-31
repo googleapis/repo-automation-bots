@@ -34,6 +34,14 @@ steps:
       - 'Owl Bot'
     env:
       - 'HOME=/workspace'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - pull.rebase
+      - 'false'
+    env:
+      - 'HOME=/workspace'
   # Populate credentials for cloning:
   - name: 'bash'
     args:
