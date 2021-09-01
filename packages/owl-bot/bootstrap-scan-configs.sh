@@ -51,6 +51,10 @@ URL=$(gcloud run services list \
     --filter 'owlbot-cli-mono-repo-test')
 
 gcloud scheduler jobs create http invoke-owlbot-cli-mono-repo-test \
-    --schedule="0 */2 * * *" \
+    --project repo-automation-bots \
+    --schedule="02 10 * * *" \
     --uri="${URL}/scan-configs" \
-    --http-method=GET
+    --http-method=GET \
+    --attempt-deadline=30m \
+    --time-zone=America/Los_Angeles
+
