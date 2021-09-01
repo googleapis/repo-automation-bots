@@ -18,7 +18,6 @@
 # values will be updated for production:
 #  1. Change the name of the deployment to owlbot-cli-scan-configs
 #  2. Change to --image=gcr.io/repo-automation-bots/owlbot-cli:latest
-#  4. Change to --schedule="0 */12 * * *"
 
 # I see no need to make updating scan-configs automatically.  It will rarely
 # change, and when that happens, a user can manually re-run this script.
@@ -48,7 +47,7 @@ URL=$(gcloud run services list \
 
 gcloud scheduler jobs update http invoke-owlbot-cli-mono-repo-test \
     --project repo-automation-bots \
-    --schedule="18 11 * * *" \
+    --schedule="5 5 * * *" \
     --uri="${URL}/scan-configs" \
     --http-method=GET \
     --attempt-deadline=30m \
