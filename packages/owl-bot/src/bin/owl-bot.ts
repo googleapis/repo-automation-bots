@@ -27,6 +27,7 @@ import {writeLock} from './commands/write-lock';
 import {maybeCreatePullRequestForLockUpdateCommand} from './commands/maybe-create-pull-request-for-lock-update';
 import {testWebhook} from './commands/test-webhook';
 import {copyCodeIntoPullRequestCommand} from './commands/copy-code-into-pull-request';
+import {copyBazelBin} from './commands/copy-bazel-bin';
 
 yargs(process.argv.slice(2))
   .command(triggerBuildCommand)
@@ -36,6 +37,7 @@ yargs(process.argv.slice(2))
   .command(enqueueCopyTasks)
   .command(copyExists)
   .command(copyCodeCommand)
+  .command(copyBazelBin)
   .command(scanGoogleapisGenAndCreatePullRequestsCommand)
   .command(copyCodeAndCreatePullRequestCommand)
   .command(writeLock)

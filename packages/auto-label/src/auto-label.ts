@@ -143,6 +143,13 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
       wasNotAdded = false;
     }
   }
+  if (!wasNotAdded) {
+    if (driftRepo?.github_label) {
+      logger.metric('auto-label.label-added', {mode: 'repo-config'});
+    } else if (autoDetectedLabel) {
+      logger.metric('auto-label.label-added', {mode: 'autodetect'});
+    }
+  }
 
   let foundSamplesTag: Label | undefined;
   if (labelsOnIssue) {
@@ -162,6 +169,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
     logger.info(
       `Issue ${issueNumber} is in a samples repo but does not have a sample tag, adding it to the repo and issue`
     );
+    logger.metric('auto-label.label-added', {mode: 'samples'});
     wasNotAdded = false;
   }
 

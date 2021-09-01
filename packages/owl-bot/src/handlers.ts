@@ -272,14 +272,18 @@ export async function refreshConfigs(
         yaml.load(lockContent) as Record<string, any>
       );
     } catch (e) {
-      logger.error(
-        `${repoFull} has an invalid ${owlBotLockPath} file: ${e.message}`
-      );
+      logger.error(`${repoFull} has an invalid ${owlBotLockPath} file: ${e}`);
 
       const title = `Invalid ${owlBotLockPath}`;
-      const body = `\`owl-bot\` will not be able to update this repo until '${owlBotLockPath}' is fixed.
+      const body = `'${owlBotLockPath}' does not adhere to the expected schema.
 
-Please fix this as soon as possible so that your repository will not go stale.`;
+\`owl-bot\` will not be able to update this repo until this is fixed. If this issue is closed, it will be recreated if the issue has not been successfully resolved.
+
+Please fix this as soon as possible so that your repository will not go stale:
+
+\`\`\`
+${e.message}
+\`\`\``;
 
       await createIssueIfTitleDoesntExist(
         octokit,
@@ -307,9 +311,15 @@ Please fix this as soon as possible so that your repository will not go stale.`;
       logger.error(`${repoFull} has an invalid ${owlBotYamlPath} file: ${e}`);
 
       const title = `Invalid ${owlBotYamlPath}`;
-      const body = `\`owl-bot\` will not be able to update this repo until '${owlBotYamlPath}' is fixed.
+      const body = `'${owlBotYamlPath}' does not adhere to the expected [schema](https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/src/owl-bot-yaml-schema.json).
 
-Please fix this as soon as possible so that your repository will not go stale.`;
+\`owl-bot\` will not be able to update this repo until this is fixed. If this issue is closed, it will be recreated if the issue has not been successfully resolved.
+
+Please fix this as soon as possible so that your repository will not go stale:
+
+\`\`\`
+${e.message}
+\`\`\``;
 
       await createIssueIfTitleDoesntExist(
         octokit,

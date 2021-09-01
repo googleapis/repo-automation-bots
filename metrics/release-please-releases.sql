@@ -15,8 +15,8 @@
  */
 SELECT
     COUNT(jsonPayload.count) as RELEASE_CREATED,
-    DATE_TRUNC(DATE(timestamp, "America/Los_Angeles"), DAY) as day
+    DATE_TRUNC(DATE(timestamp, "America/Los_Angeles"), MONTH) as month
 FROM `repo-automation-bots.automation_metrics.cloudfunctions_googleapis_com_cloud_functions`
     WHERE resource.labels.function_name = "release_please"
     AND jsonPayload.event = "release_please.release_created"
-GROUP BY day;
+GROUP BY month;
