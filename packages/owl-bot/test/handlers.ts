@@ -562,7 +562,8 @@ describe('scanGithubForConfigs', () => {
       configsStore,
       octokitFactoryWithRepos,
       'googleapis',
-      45
+      45,
+      []
     );
 
     assert.deepStrictEqual(
@@ -639,7 +640,8 @@ describe('scanGithubForConfigs', () => {
       configsStore,
       octokitFactoryWith404OnBranch,
       'googleapis',
-      45
+      45,
+      []
     );
   });
 });

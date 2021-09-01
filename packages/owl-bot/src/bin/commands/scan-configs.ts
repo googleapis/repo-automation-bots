@@ -26,6 +26,7 @@ interface Args {
   org: string;
   project: string;
   port: number;
+  ignore: string[];
 }
 
 /**
@@ -96,7 +97,12 @@ export const scanConfigs: yargs.CommandModule<{}, Args> = {
         demand: false,
         default: 0,
       })
-      .env('SCAN_CONFIGS');
+      .option('ignore', {
+        describe: 'names of repos to ignore',
+        type: 'array',
+        demand: false,
+        default: ['googleapis', 'googleapis-gen'],
+      });
   },
   async handler(argv) {
     admin.initializeApp({
@@ -110,7 +116,8 @@ export const scanConfigs: yargs.CommandModule<{}, Args> = {
         configStore,
         octokitFactoryFrom(argv),
         argv.org,
-        argv.installation
+        argv.installation,
+        argv.ignore
       );
     };
     if (argv.port) {

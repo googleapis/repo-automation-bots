@@ -180,7 +180,8 @@ export async function scanGithubForConfigs(
   configsStore: ConfigsStore,
   octokitFactory: OctokitFactory,
   githubOrg: string,
-  orgInstallationId: number
+  orgInstallationId: number,
+  ignoreRepos: string[]
 ): Promise<void> {
   logger.info(`scan ${githubOrg} installation = ${orgInstallationId}`);
   logger.metric('owlbot.scan_github_for_configs', {
@@ -193,6 +194,10 @@ export async function scanGithubForConfigs(
   );
   for (const repo of repos) {
     // Load the current configs from the db.
+    if (ignoreRepos.includes(repo.name)) {
+      console.info(`Ignoring ${repo.name}`);
+      continue;
+    }
     const repoFull = `${githubOrg}/${repo.name}`;
     const configs = await configsStore.getConfigs(repoFull);
     const defaultBranch = repo.default_branch ?? 'master';
