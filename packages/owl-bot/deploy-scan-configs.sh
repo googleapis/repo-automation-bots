@@ -22,6 +22,7 @@ gcloud beta run deploy owlbot-cli-mono-repo-test \
     --platform=managed \
     --concurrency=1 \
     --memory=8Gi \
+    --cpu=2 \
     --ingress=all \
     --max-instances=1 \
     --min-instances=0 \
