@@ -18,15 +18,12 @@
 # values will be updated for production:
 #  1. Change the name of the deployment to owlbot-cli-scan-configs
 #  2. Change to --image=gcr.io/repo-automation-bots/owlbot-cli:latest
-#  3. Change to --ingress=internal
 #  4. Change to --schedule="0 */12 * * *"
 
 # I see no need to make updating scan-configs automatically.  It will rarely
 # change, and when that happens, a user can manually re-run this script.
 
 set -ex
-
-# TODO: set --ingress=internal after tested and scheduler is set up.
 
 gcloud beta run deploy owlbot-cli-mono-repo-test \
     --project repo-automation-bots \
@@ -41,8 +38,7 @@ gcloud beta run deploy owlbot-cli-mono-repo-test \
     --service-account=owlbot-scan-configs@repo-automation-bots.iam.gserviceaccount.com \
     --timeout=59m \
     --update-secrets=/secrets/github.pem=owlbot_github_key:latest \
-    --args="scan-configs,--pem-path,/secrets/github.pem,--app-id,99011,--installation,14695777,--project,repo-automation-bots-metrics,--org,googleapis,--port,8080" \
-    --allow-unauthenticated
+    --args="scan-configs,--pem-path,/secrets/github.pem,--app-id,99011,--installation,14695777,--project,repo-automation-bots-metrics,--org,googleapis,--port,8080"
 
 URL=$(gcloud run services list \
     --project repo-automation-bots \
@@ -50,11 +46,12 @@ URL=$(gcloud run services list \
     --format 'value(status.url)' \
     --filter 'owlbot-cli-mono-repo-test')
 
-gcloud scheduler jobs create http invoke-owlbot-cli-mono-repo-test \
+gcloud scheduler jobs update http invoke-owlbot-cli-mono-repo-test \
     --project repo-automation-bots \
-    --schedule="02 10 * * *" \
+    --schedule="18 11 * * *" \
     --uri="${URL}/scan-configs" \
     --http-method=GET \
     --attempt-deadline=30m \
-    --time-zone=America/Los_Angeles
+    --time-zone=America/Los_Angeles \
+    --oidc-service-account-email 856896688174-compute@developer.gserviceaccount.com
 
