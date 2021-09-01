@@ -47,7 +47,6 @@ describe('database', () => {
     const store = new FirestoreConfigsStore(db, 'test-' + uuidv4() + '-');
     const repoA = 'googleapis/' + uuidv4();
     const repoB = 'googleapis/' + uuidv4();
-    const repoBad = 'googleapis/' + uuidv4();
     const dockerImageA = uuidv4();
     const dockerImageB = uuidv4();
 
@@ -59,17 +58,22 @@ describe('database', () => {
 
     // Insert some configs.
     const configsA: Configs = {
-      yaml: {
-        docker: {
-          image: dockerImageA,
-        },
-        'deep-copy-regex': [
-          {
-            source: '/alpha/.*',
-            dest: '/beta',
+      yamls: [
+        {
+          yaml: {
+            docker: {
+              image: dockerImageA,
+            },
+            'deep-copy-regex': [
+              {
+                source: '/alpha/.*',
+                dest: '/beta',
+              },
+            ],
           },
-        ],
-      },
+          path: '/q/r/.OwlBot.yaml',
+        },
+      ],
       lock: {
         docker: {
           image: dockerImageA,
@@ -82,32 +86,23 @@ describe('database', () => {
     };
     assert.ok(await store.storeConfigs(repoA, configsA, null));
     const configsB: Configs = {
-      yaml: {
-        'deep-copy-regex': [
-          {
-            source: '/gamma/.*',
-            dest: '/omega',
+      yamls: [
+        {
+          yaml: {
+            'deep-copy-regex': [
+              {
+                source: '/gamma/.*',
+                dest: '/omega',
+              },
+            ],
           },
-        ],
-      },
+          path: 'w/x/.OwlBot.yaml',
+        },
+      ],
       commitHash: 'def',
       branchName: 'master',
       installationId: 53,
     };
-    const configsBad: Configs = {
-      yaml: {
-        'deep-copy-regex': [
-          {
-            source: '/gamma/**', // Invalid regex.
-            dest: '/omega',
-          },
-        ],
-      },
-      commitHash: 'def',
-      branchName: 'master',
-      installationId: 53,
-    };
-
     assert.ok(await store.storeConfigs(repoB, configsB, null));
     try {
       // We should find the repo when we search for its docker image.
@@ -122,7 +117,7 @@ describe('database', () => {
       assert.ok(!(await store.storeConfigs(repoA, configsA, 'xyz')));
 
       // Specify a new docker image and store again.
-      configsA.yaml!.docker!.image = dockerImageB;
+      configsA.yamls![0].yaml.docker!.image = dockerImageB;
       configsA.commitHash = 'def';
       assert.ok(await store.storeConfigs(repoA, configsA, 'abc'));
 
@@ -135,17 +130,15 @@ describe('database', () => {
       assert.deepStrictEqual(repos, []);
 
       // Test findReposAffectedByFileChanges().
-      assert.ok(await store.storeConfigs(repoBad, configsBad, null));
       const reposAffected = await store.findReposAffectedByFileChanges([
         '/alpha/source.js',
       ]);
-
-      const repoNamesAffected = reposAffected.map(x => `${x.owner}/${x.repo}`);
+      const repoNamesAffected = reposAffected.map(
+        x => `${x.repo.owner}/${x.repo.repo}`
+      );
       assert.deepStrictEqual(repoNamesAffected, [repoA]);
     } finally {
       await store.clearConfigs(repoA);
-      await store.clearConfigs(repoB);
-      await store.clearConfigs(repoBad);
     }
   });
 
@@ -155,17 +148,22 @@ describe('database', () => {
     const repoA = 'googleapis/' + uuidv4();
     const dockerImageA = uuidv4();
     const configsA: Configs = {
-      yaml: {
-        docker: {
-          image: dockerImageA,
-        },
-        'deep-copy-regex': [
-          {
-            source: '/alpha',
-            dest: '/beta',
+      yamls: [
+        {
+          path: '.github/.OwlBot.yaml',
+          yaml: {
+            docker: {
+              image: dockerImageA,
+            },
+            'deep-copy-regex': [
+              {
+                source: '/alpha',
+                dest: '/beta',
+              },
+            ],
           },
-        ],
-      },
+        },
+      ],
       lock: {
         docker: {
           image: dockerImageA,
@@ -203,71 +201,6 @@ describe('database', () => {
       );
     } finally {
       await store.clearBuildForUpdatingLock(repoA, configsA.lock!);
-    }
-  });
-
-  it('stores and retrieves pubsub message ids for copy tasks', async () => {
-    const db = admin.firestore();
-    const store = new FirestoreConfigsStore(db, 'test-');
-    const repoA = 'googleapis/' + uuidv4();
-    const repoB = 'googleapis/' + uuidv4();
-    const googleapisGenCommitHash = uuidv4();
-
-    // Test pull requests.
-    assert.strictEqual(
-      await store.findPubsubMessageIdForCopyTask(
-        repoA,
-        googleapisGenCommitHash
-      ),
-      undefined
-    );
-
-    assert.deepStrictEqual(
-      await store.filterMissingCopyTasks(
-        [repoA, repoB],
-        googleapisGenCommitHash
-      ),
-      [repoA, repoB]
-    );
-
-    // First one gets recorded.
-    const BuildId = store.recordPubsubMessageIdForCopyTask(
-      repoA,
-      googleapisGenCommitHash,
-      '10'
-    );
-    try {
-      assert.strictEqual(await BuildId, '10');
-      assert.strictEqual(
-        await store.findPubsubMessageIdForCopyTask(
-          repoA,
-          googleapisGenCommitHash
-        ),
-        '10'
-      );
-
-      // Second one does not.
-      assert.strictEqual(
-        await store.recordPubsubMessageIdForCopyTask(
-          repoA,
-          googleapisGenCommitHash,
-          '11'
-        ),
-        '10'
-      );
-
-      assert.deepStrictEqual(
-        await store.filterMissingCopyTasks(
-          [repoA, repoB],
-          googleapisGenCommitHash
-        ),
-        [repoB]
-      );
-    } finally {
-      await store.clearPubsubMessageIdForCopyTask(
-        repoA,
-        googleapisGenCommitHash
-      );
     }
   });
 });

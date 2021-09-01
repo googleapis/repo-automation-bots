@@ -25,7 +25,7 @@ import {
   refreshConfigs,
   scanGithubForConfigs,
 } from '../src/handlers';
-import {Configs, ConfigsStore} from '../src/configs-store';
+import {AffectedRepo, Configs, ConfigsStore} from '../src/configs-store';
 import {dump} from 'js-yaml';
 import {Octokit} from '@octokit/rest';
 import * as sinon from 'sinon';
@@ -34,8 +34,10 @@ import {core} from '../src/core';
 import {FakeConfigsStore} from './fake-configs-store';
 import {GithubRepo} from '../src/github-repo';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
-import {newFakeOctokit} from './fake-octokit';
+import {newFakeOctokit, newFakeOctokitFactory} from './fake-octokit';
 import {newFakeCloudBuildClient} from './fake-cloud-build-client';
+import AdmZip from 'adm-zip';
+
 const sandbox = sinon.createSandbox();
 
 describe('handlers', () => {
@@ -56,7 +58,7 @@ describe('handlers', () => {
       class FakeConfigStore implements ConfigsStore {
         findReposAffectedByFileChanges(
           changedFilePaths: string[]
-        ): Promise<GithubRepo[]> {
+        ): Promise<AffectedRepo[]> {
           throw new Error('Method not implemented.');
         }
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -147,7 +149,7 @@ describe('handlers', () => {
       class FakeConfigStore implements ConfigsStore {
         findReposAffectedByFileChanges(
           changedFilePaths: string[]
-        ): Promise<GithubRepo[]> {
+        ): Promise<AffectedRepo[]> {
           throw new Error('Method not implemented.');
         }
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -202,48 +204,70 @@ describe('handlers', () => {
   });
 });
 
+function zipWithOwlBotYaml(): AdmZip {
+  const zip = new AdmZip();
+  zip.addZipComment('This is a test.');
+  zip.addFile(
+    'repo-abc123/.github/.OwlBot.yaml',
+    Buffer.from(
+      `
+    docker:
+      image: gcr.io/repo-automation-bots/nodejs-post-processor:latest
+  `,
+      'utf8'
+    )
+  );
+  return zip;
+}
+
 describe('refreshConfigs', () => {
-  let fakeOctokit = newFakeOctokit();
-
-  const octokitSha123 = {
-    issues: fakeOctokit.issues,
-    pulls: fakeOctokit.pulls,
-    repos: {
-      getBranch() {
-        return {
-          data: {
-            commit: {
-              sha: '123',
-            },
-          },
-        };
-      },
-    },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any as InstanceType<typeof Octokit>;
-
-  beforeEach(() => {
-    fakeOctokit = newFakeOctokit();
-
-    octokitSha123.issues = fakeOctokit.issues;
-    octokitSha123.pulls = fakeOctokit.pulls;
-  });
-
   afterEach(() => {
     sandbox.restore();
   });
 
+  const octokitSha123 = (zip?: AdmZip): InstanceType<typeof Octokit> => {
+    return {
+      issues: {
+        create: () => {
+          return {data: {html_url: 'h:/x/y'}};
+        },
+        listForRepo: () => {
+          return {data: []};
+        },
+      },
+      repos: {
+        getBranch() {
+          return {
+            data: {
+              commit: {
+                sha: '123',
+              },
+            },
+          };
+        },
+        downloadZipballArchive() {
+          if (!zip) {
+            zip = new AdmZip();
+            zip.addZipComment('This is a test.');
+            zip.addFile(
+              'repo-123/README.txt',
+              Buffer.from('This is a very useful API.')
+            );
+          }
+          return {data: zip.toBuffer()};
+        },
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any as InstanceType<typeof Octokit>;
+  };
+
   it('stores a good yaml', async () => {
     const configsStore = new FakeConfigsStore();
-    sandbox.stub(core, 'getFileContent').resolves(`
-      docker:
-        image: gcr.io/repo-automation-bots/nodejs-post-processor:latest
-    `);
 
     await refreshConfigs(
       configsStore,
       undefined,
-      octokitSha123,
+      octokitSha123(zipWithOwlBotYaml()),
       'googleapis',
       'nodejs-vision',
       'main',
@@ -259,12 +283,17 @@ describe('refreshConfigs', () => {
             branchName: 'main',
             commitHash: '123',
             installationId: 42,
-            yaml: {
-              docker: {
-                image:
-                  'gcr.io/repo-automation-bots/nodejs-post-processor:latest',
+            yamls: [
+              {
+                path: '.github/.OwlBot.yaml',
+                yaml: {
+                  docker: {
+                    image:
+                      'gcr.io/repo-automation-bots/nodejs-post-processor:latest',
+                  },
+                },
               },
-            },
+            ],
           },
         ],
       ])
@@ -273,16 +302,23 @@ describe('refreshConfigs', () => {
 
   it('stores a good lock.yaml', async () => {
     const configsStore = new FakeConfigsStore();
-    sandbox.stub(core, 'getFileContent').resolves(`
+    const zip = new AdmZip();
+    zip.addFile(
+      'repo-abc123/.github/.OwlBot.lock.yaml',
+      Buffer.from(
+        `
       docker:
         image: gcr.io/repo-automation-bots/nodejs-post-processor:latest
         digest: sha256:abcdef
-    `);
+    `,
+        'utf8'
+      )
+    );
 
     await refreshConfigs(
       configsStore,
       undefined,
-      octokitSha123,
+      octokitSha123(zip),
       'googleapis',
       'nodejs-vision',
       'main',
@@ -318,7 +354,7 @@ describe('refreshConfigs', () => {
     await refreshConfigs(
       configsStore,
       undefined,
-      octokitSha123,
+      octokitSha123(),
       'googleapis',
       'nodejs-vision',
       'main',
@@ -358,7 +394,7 @@ describe('refreshConfigs', () => {
     await refreshConfigs(
       configsStore,
       undefined,
-      octokitSha123,
+      octokitSha123(),
       'googleapis',
       'nodejs-vision',
       'main',
@@ -392,7 +428,7 @@ describe('refreshConfigs', () => {
     await refreshConfigs(
       configsStore,
       configs,
-      octokitSha123,
+      octokitSha123(),
       'googleapis',
       'nodejs-vision',
       'main',
@@ -406,14 +442,23 @@ describe('refreshConfigs', () => {
     const configsStore = new FakeConfigsStore();
     const universalInvalidContent = 'deep-copy-regex\n - invalid_prop: 1';
 
-    sandbox.stub(core, 'getFileContent').resolves(universalInvalidContent);
+    const zip = new AdmZip();
+    zip.addFile(
+      'repo-abc123/.github/.OwlBot.yaml',
+      Buffer.from(universalInvalidContent)
+    );
+    zip.addFile(
+      'repo-abc123/.github/.OwlBot.lock.yaml',
+      Buffer.from(universalInvalidContent)
+    );
 
-    const issuesCreateSpy = sandbox.spy(octokitSha123.issues, 'create');
+    const octokit = octokitSha123(zip);
+    const issuesCreateSpy = sandbox.spy(octokit.issues, 'create');
 
     await refreshConfigs(
       configsStore,
       undefined,
-      octokitSha123,
+      octokit,
       'googleapis',
       'nodejs-vision',
       'main',
@@ -428,11 +473,8 @@ describe('scanGithubForConfigs', () => {
   afterEach(() => {
     sandbox.restore();
   });
-  const fakeOctokit = newFakeOctokit();
 
   const octokitWithRepos = {
-    issues: fakeOctokit.issues,
-    pulls: fakeOctokit.pulls,
     repos: {
       getBranch() {
         return {
@@ -449,6 +491,10 @@ describe('scanGithubForConfigs', () => {
             return 'merge';
           },
         },
+      },
+      downloadZipballArchive() {
+        const zip = zipWithOwlBotYaml();
+        return {data: zip.toBuffer()};
       },
     },
     paginate: {
@@ -501,6 +547,11 @@ describe('scanGithubForConfigs', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any as InstanceType<typeof Octokit>;
 
+  const octokitFactoryWith404OnBranch = newFakeOctokitFactory(
+    octokitWith404OnBranch
+  );
+  const octokitFactoryWithRepos = newFakeOctokitFactory(octokitWithRepos);
+
   it('works with an installationId', async () => {
     const configsStore = new FakeConfigsStore();
     sandbox.stub(core, 'getFileContent').resolves(`
@@ -509,9 +560,10 @@ describe('scanGithubForConfigs', () => {
     `);
     await scanGithubForConfigs(
       configsStore,
-      octokitWithRepos,
+      octokitFactoryWithRepos,
       'googleapis',
-      45
+      45,
+      []
     );
 
     assert.deepStrictEqual(
@@ -523,12 +575,17 @@ describe('scanGithubForConfigs', () => {
             branchName: 'master',
             commitHash: '123',
             installationId: 45,
-            yaml: {
-              docker: {
-                image:
-                  'gcr.io/repo-automation-bots/nodejs-post-processor:latest',
+            yamls: [
+              {
+                path: '.github/.OwlBot.yaml',
+                yaml: {
+                  docker: {
+                    image:
+                      'gcr.io/repo-automation-bots/nodejs-post-processor:latest',
+                  },
+                },
               },
-            },
+            ],
           },
         ],
         [
@@ -537,12 +594,17 @@ describe('scanGithubForConfigs', () => {
             branchName: 'main',
             commitHash: '123',
             installationId: 45,
-            yaml: {
-              docker: {
-                image:
-                  'gcr.io/repo-automation-bots/nodejs-post-processor:latest',
+            yamls: [
+              {
+                path: '.github/.OwlBot.yaml',
+                yaml: {
+                  docker: {
+                    image:
+                      'gcr.io/repo-automation-bots/nodejs-post-processor:latest',
+                  },
+                },
               },
-            },
+            ],
           },
         ],
         [
@@ -551,12 +613,17 @@ describe('scanGithubForConfigs', () => {
             branchName: 'master',
             commitHash: '123',
             installationId: 45,
-            yaml: {
-              docker: {
-                image:
-                  'gcr.io/repo-automation-bots/nodejs-post-processor:latest',
+            yamls: [
+              {
+                path: '.github/.OwlBot.yaml',
+                yaml: {
+                  docker: {
+                    image:
+                      'gcr.io/repo-automation-bots/nodejs-post-processor:latest',
+                  },
+                },
               },
-            },
+            ],
           },
         ],
       ])
@@ -571,9 +638,10 @@ describe('scanGithubForConfigs', () => {
     `);
     await scanGithubForConfigs(
       configsStore,
-      octokitWith404OnBranch,
+      octokitFactoryWith404OnBranch,
       'googleapis',
-      45
+      45,
+      []
     );
   });
 });

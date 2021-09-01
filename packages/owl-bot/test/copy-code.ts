@@ -17,9 +17,13 @@ import * as assert from 'assert';
 import {
   copyCode,
   copyDirs,
+  copyExists,
+  copyTagFrom,
+  findCopyTag,
   findSourceHash,
   sourceLinkFrom,
   stat,
+  unpackCopyTag,
 } from '../src/copy-code';
 import path from 'path';
 import * as fs from 'fs';
@@ -28,7 +32,124 @@ import {OwlBotYaml} from '../src/config-files';
 import {collectDirTree, collectGlobResult, makeDirTree} from './dir-tree';
 import {makeAbcRepo, makeRepoWithOwlBotYaml} from './make-repos';
 import {newCmd} from '../src/cmd';
-import {glob} from 'glob';
+import {OctokitType} from '../src/octokit-util';
+import {AffectedRepo} from '../src/configs-store';
+import {githubRepoFromOwnerSlashName} from '../src/github-repo';
+import {FakeIssues, FakePulls} from './fake-octokit';
+import glob from 'glob';
+
+describe('copyExists', () => {
+  async function fakeOctokit() {
+    const pulls = new FakePulls();
+    const issues = new FakeIssues();
+    return {pulls, issues};
+  }
+
+  it('finds pull request with copy tag', async () => {
+    const octokit = await fakeOctokit();
+    const copyTag = copyTagFrom('some-api/.OwlBot.yaml', 'abc123');
+    await octokit.pulls.create({
+      body: `blah blah blah
+Source-Link: https://github.com/googleapis/googleapis/abc123
+Copy-Tag: ${copyTag}
+`,
+    });
+    const destRepo: AffectedRepo = {
+      yamlPath: 'some-api/.OwlBot.yaml',
+      repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
+    };
+    assert.strictEqual(
+      true,
+      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
+    );
+  });
+
+  it('finds issue with copy tag', async () => {
+    const octokit = await fakeOctokit();
+    const copyTag = copyTagFrom('some-api/.OwlBot.yaml', 'abc123');
+    await octokit.issues.create({
+      body: `blah blah blah
+Source-Link: https://github.com/googleapis/googleapis/abc123
+Copy-Tag: ${copyTag}
+`,
+    });
+    const destRepo: AffectedRepo = {
+      yamlPath: 'some-api/.OwlBot.yaml',
+      repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
+    };
+    assert.strictEqual(
+      true,
+      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
+    );
+  });
+
+  it('finds nothing with mismatched paths to .OwlBot.yaml', async () => {
+    const octokit = await fakeOctokit();
+    const copyTag = copyTagFrom('some-api/.OwlBot.yaml', 'abc123');
+    await octokit.issues.create({
+      body: `blah blah blah
+Source-Link: https://github.com/googleapis/googleapis/abc123
+Copy-Tag: ${copyTag}
+`,
+    });
+    await octokit.pulls.create({
+      body: `blah blah blah
+Source-Link: https://github.com/googleapis/googleapis/abc123
+Copy-Tag: ${copyTag}
+`,
+    });
+    const destRepo: AffectedRepo = {
+      yamlPath: '.github/.OwlBot.yaml',
+      repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
+    };
+    assert.strictEqual(
+      false,
+      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
+    );
+  });
+
+  it('finds nothing with mismatched commit hashes', async () => {
+    const octokit = await fakeOctokit();
+    const copyTag = copyTagFrom('some-api/.OwlBot.yaml', 'abc123');
+    await octokit.issues.create({
+      body: `blah blah blah
+Source-Link: https://github.com/googleapis/googleapis/abc123
+Copy-Tag: ${copyTag}
+`,
+    });
+    await octokit.pulls.create({
+      body: `blah blah blah
+Source-Link: https://github.com/googleapis/googleapis/abc123
+Copy-Tag: ${copyTag}
+`,
+    });
+    const destRepo: AffectedRepo = {
+      yamlPath: 'some-api/.OwlBot.yaml',
+      repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
+    };
+    assert.strictEqual(
+      false,
+      await copyExists(octokit as unknown as OctokitType, destRepo, 'def456')
+    );
+  });
+
+  it('finds old pull request without copy-tag', async () => {
+    const octokit = await fakeOctokit();
+    await octokit.pulls.create({
+      body: `blah blah blah
+Source-Link: https://github.com/googleapis/googleapis/abc123
+`,
+    });
+    const destRepo: AffectedRepo = {
+      yamlPath: '.github/.OwlBot.yaml',
+      repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
+    };
+    assert.strictEqual(
+      true,
+      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
+    );
+  });
+});
 
 describe('copyDirs', () => {
   /**
@@ -318,5 +439,31 @@ describe('findSourceHash', () => {
   it('returns empty string when no source link.', () => {
     const prBody = 'This code is fantastic!';
     assert.strictEqual(findSourceHash(prBody), '');
+  });
+});
+
+describe('findCopyTag', () => {
+  it('finds a copy tag in a pull request body', () => {
+    const tag = copyTagFrom('.github/.OwlBot.yaml', 'xyz987');
+    const prBody = `Great code!\nCopy-Tag: ${tag}\nBye.`;
+    const found = findCopyTag(prBody);
+    assert.strictEqual(found, tag);
+  });
+});
+
+describe('unpackCopyTag', () => {
+  it('Correctly unpacks the copy tag.', () => {
+    const tag = copyTagFrom('.github/.OwlBot.yaml', 'xyz987');
+    assert.deepStrictEqual(unpackCopyTag(tag), {
+      p: '.github/.OwlBot.yaml',
+      h: 'xyz987',
+    });
+  });
+
+  it('Throws an exception for an incomplete copy tag.', () => {
+    const tag = Buffer.from(JSON.stringify({h: 'abc123'})).toString('base64');
+    assert.throws(() => {
+      unpackCopyTag(tag);
+    });
   });
 });
