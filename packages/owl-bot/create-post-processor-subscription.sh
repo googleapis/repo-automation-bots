@@ -23,8 +23,10 @@ set -ex
 gcloud pubsub subscriptions create \
     owl-bot-container-build-cloud-devrel-public-resources \
     --project repo-automation-bots \
-    --topic projects/repo-automation-bots/topics/gcr \
+    --topic projects/cloud-devrel-public-resources/topics/gcr \
     --ack-deadline 300 \
+    --message-retention-duration 22200s \
+    --expiration-period never \
     --push-auth-service-account \
         serverless-proxy-cron@repo-automation-bots.iam.gserviceaccount.com \
     --push-endpoint https://serverless-scheduler-proxy-c7mcaca6sa-uc.a.run.app/v0/container
