@@ -235,9 +235,10 @@ export async function assign(
     );
     return;
   }
+  logger.metric('blunderbuss.assign');
   context.log.info(
     util.format(
-      '[%s] #%s was assigned to %s',
+      '[%s] %s #%s was assigned to %s',
       issueOrPROwner,
       issueOrPRRepo,
       issueOrPRNumber,
