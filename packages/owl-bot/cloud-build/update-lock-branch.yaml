@@ -13,10 +13,10 @@
 # limitations under the License.
 
 # This build gets invoked when a new post processor docker image is released.
-# It 
+# It
 #  1.  Creates a branch and updates .Owlbot.lock.yaml with the new commit hash
 #      for the docker image.
-#  2.  Runs the post-processor. 
+#  2.  Runs the post-processor.
 #  3.  If the post processor triggered changes, it creates a pull request.
 
 steps:
@@ -49,6 +49,12 @@ steps:
       - --global
       - user.name
       - 'Owl Bot'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - pull.rebase
+      - 'false'
   - name: 'gcr.io/cloud-builders/git'
     args:
       - checkout

@@ -33,6 +33,12 @@ steps:
       - --global
       - user.name
       - 'Owl Bot'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - pull.rebase
+      - 'false'
   # main
   - name: 'gcr.io/repo-automation-bots/owlbot-cli'
     args:
