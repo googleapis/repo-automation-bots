@@ -29,7 +29,7 @@
     "@google-cloud/debug-agent": "^5.2.7",
     "@google-cloud/storage": "^5.8.5",
     "gaxios": "^4.3.0",
-    "gcf-utils": "^12.0.0"
+    "gcf-utils": "^13.0.0"
   },
   "devDependencies": {
     "@probot/octokit-plugin-config": "^1.1.1",
