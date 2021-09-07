@@ -47,6 +47,9 @@ export async function onPostProcessorPublished(
 ): Promise<void> {
   // Examine all the repos that use the specified docker image for post
   // processing.
+  console.info(
+    `New docker image published: ${dockerImageName}.  Digest: ${dockerImageDigest}`
+  );
   const repos: [string, Configs][] =
     await configsStore.findReposWithPostProcessor(dockerImageName);
   for (const [repo, configs] of repos) {
