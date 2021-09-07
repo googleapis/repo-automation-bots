@@ -24,9 +24,9 @@
 
 set -ex
 
-gcloud beta run deploy owlbot-cli-mono-repo-test \
+gcloud beta run deploy owlbot-scan-configs \
     --project repo-automation-bots \
-    --image=gcr.io/repo-automation-bots/owlbot-cli-mono-repo-test:v4 \
+    --image=gcr.io/repo-automation-bots/owlbot-cli \
     --platform=managed \
     --concurrency=1 \
     --memory=4Gi \
@@ -43,9 +43,9 @@ URL=$(gcloud run services list \
     --project repo-automation-bots \
     --platform managed \
     --format 'value(status.url)' \
-    --filter 'owlbot-cli-mono-repo-test')
+    --filter 'owlbot-scan-configs')
 
-gcloud scheduler jobs update http invoke-owlbot-cli-mono-repo-test \
+gcloud scheduler jobs create http invoke-owlbot-scan-configs \
     --project repo-automation-bots \
     --schedule="5 5 * * *" \
     --uri="${URL}/scan-configs" \
