@@ -369,7 +369,10 @@ describe('ReleasePleaseBot', () => {
       });
 
       it('should ignore the repo language not being supported', async () => {
-        payload = require(resolve(fixturesPath, './push_to_master_weird_language'));
+        payload = require(resolve(
+          fixturesPath,
+          './push_to_master_weird_language'
+        ));
         const manifest = sandbox.stub(Runner, 'manifest').resolves();
         getConfigStub.resolves(loadConfig('manifest.yml'));
         stubDefaultBranchLookup();
