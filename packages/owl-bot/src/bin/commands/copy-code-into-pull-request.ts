@@ -15,6 +15,7 @@
 // To Run: node ./build/src/bin/owl-bot.js copy-code <args>
 
 import yargs = require('yargs');
+import {DEFAULT_OWL_BOT_YAML_PATH} from '../../config-files';
 import {copyCodeIntoPullRequest} from '../../copy-code';
 import {githubRepoFromOwnerSlashName} from '../../github-repo';
 import {octokitFactoryFromToken} from '../../octokit-util';
@@ -22,6 +23,7 @@ import {octokitFactoryFromToken} from '../../octokit-util';
 interface Args {
   'source-repo': string;
   'source-repo-commit-hash': string;
+  'owl-bot-yaml-path': string;
   'dest-repo': string;
   'dest-branch': string;
   'github-token': string;
@@ -46,6 +48,13 @@ export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
         type: 'string',
         demand: true,
       })
+      .option('owl-bot-yaml-path', {
+        describe:
+          'The path in the source repo to .OwlBot.yaml in that triggered the pull request.',
+        type: 'string',
+        demand: false,
+        default: DEFAULT_OWL_BOT_YAML_PATH,
+      })
       .option('dest-repo', {
         describe: 'Copy the code into this repo.',
         type: 'string',
@@ -66,7 +75,10 @@ export const copyCodeIntoPullRequestCommand: yargs.CommandModule<{}, Args> = {
     await copyCodeIntoPullRequest(
       argv['source-repo'],
       argv['source-repo-commit-hash'],
-      githubRepoFromOwnerSlashName(argv['dest-repo']),
+      {
+        repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
+        yamlPath: argv['owl-bot-yaml-path'],
+      },
       argv['dest-branch'],
       octokitFactoryFromToken(argv['github-token'])
     );

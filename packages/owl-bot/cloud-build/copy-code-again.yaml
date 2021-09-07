@@ -64,6 +64,8 @@ steps:
       - copy-code-into-pull-request
       - --source-repo-commit-hash
       - ${_SOURCE_HASH}
+      - --owl-bot-yaml-path
+      - ${_OWL_BOT_YAML_PATH}
       - --dest-repo
       - ${_PR_OWNER}/${_REPOSITORY}
       - --dest-branch

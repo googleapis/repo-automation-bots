@@ -21,10 +21,21 @@ import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
-import {OwlBotLock, owlBotLockPath, owlBotLockFrom} from './config-files';
+import {
+  OwlBotLock,
+  OWL_BOT_LOCK_PATH,
+  owlBotLockFrom,
+  DEFAULT_OWL_BOT_YAML_PATH,
+} from './config-files';
 import {OctokitFactory, OctokitType} from './octokit-util';
 import {OWL_BOT_IGNORE} from './labels';
-import {findSourceHash, sourceLinkFrom, sourceLinkLineFrom} from './copy-code';
+import {
+  findCopyTag,
+  findSourceHash,
+  sourceLinkFrom,
+  sourceLinkLineFrom,
+  unpackCopyTag,
+} from './copy-code';
 import {google} from '@google-cloud/cloudbuild/build/protos/protos';
 
 interface BuildArgs {
@@ -346,7 +357,7 @@ export async function getOwlBotLock(
   const configString = await getFileContent(
     prOwner,
     prRepo,
-    owlBotLockPath,
+    OWL_BOT_LOCK_PATH,
     prData.head.ref,
     octokit
   );
@@ -581,7 +592,7 @@ async function updatePullRequestAfterPostProcessor(
       pull.draft &&
       pull.labels.find(label => label.name === OWL_BOT_LOCK_UPDATE)
     ) {
-      if (1 === files.length && files[0].filename === owlBotLockPath) {
+      if (1 === files.length && files[0].filename === OWL_BOT_LOCK_PATH) {
         // It only updated the lock file.  No reason to merge this pull request.
         // Close it.
         await octokit.pulls.update({
@@ -640,9 +651,32 @@ export async function triggerRegeneratePullRequest(
     return _createComment(text);
   };
 
+  let sourceHash = '';
+  let yamlPath = DEFAULT_OWL_BOT_YAML_PATH;
+
   // The user checked the "Regenerate this pull request" box.
 
-  const sourceHash = findSourceHash(args.prBody);
+  // First try to unpack the source commit hash and .OwlBot.yaml path from
+  // a Copy Tag.
+  const copyTagText = findCopyTag(args.prBody);
+  if (copyTagText) {
+    try {
+      const copyTag = unpackCopyTag(copyTagText);
+      sourceHash = copyTag.h;
+      yamlPath = copyTag.p;
+      console.info(`Found Copy-Tag: ${copyTag}`);
+    } catch (e) {
+      await reportError(
+        `Owl Bot could not regenerate pull request ${args.prNumber} because the Copy-Tag is corrupt.\n${e}`
+      );
+      return;
+    }
+  }
+
+  // Older pull requests won't have a Copy-Tag, so use the commit hash
+  if (!sourceHash) {
+    sourceHash = findSourceHash(args.prBody);
+  }
   if (!sourceHash) {
     // But there's no source hash to regenerate from.  Oh no!
     const sourceLine = sourceLinkLineFrom(sourceLinkFrom('abc123'));
@@ -670,6 +704,7 @@ ${sourceLine}`);
           _PR_OWNER: args.owner,
           _REPOSITORY: args.repo,
           _SOURCE_HASH: sourceHash,
+          _OWL_BOT_YAML_PATH: yamlPath,
         },
       },
     });
@@ -705,7 +740,7 @@ export const core = {
   getOwlBotLock,
   hasOwlBotLoop,
   lastCommitFromOwlBot,
-  owlBotLockPath,
+  OWL_BOT_LOCK_PATH,
   triggerPostProcessBuild,
   triggerRegeneratePullRequest,
   updatePullRequestAfterPostProcessor,
