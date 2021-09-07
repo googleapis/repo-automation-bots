@@ -43,18 +43,24 @@ steps:
       - --global
       - user.email
       - 'gcf-owl-bot[bot]@users.noreply.github.com'
+    env:
+      - 'HOME=/workspace'
   - name: 'gcr.io/cloud-builders/git'
     args:
       - config
       - --global
       - user.name
       - 'Owl Bot'
+    env:
+      - 'HOME=/workspace'
   - name: 'gcr.io/cloud-builders/git'
     args:
       - config
       - --global
       - pull.rebase
       - 'false'
+    env:
+      - 'HOME=/workspace'
   - name: 'gcr.io/cloud-builders/git'
     args:
       - checkout
