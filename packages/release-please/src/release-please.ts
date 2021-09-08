@@ -212,6 +212,8 @@ async function createReleasePR(
 ): Promise<ReleasePR | Manifest> {
   const releaseType = configuration.releaseType
     ? configuration.releaseType
+    : configuration.manifest
+    ? 'simple'
     : releaseTypeFromRepoLanguage(repoLanguage);
   const packageName = configuration.packageName || repoName;
 
