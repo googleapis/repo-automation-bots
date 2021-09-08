@@ -367,6 +367,21 @@ describe('ReleasePleaseBot', () => {
         assert(manifest.called, 'should have executed the runner');
         assert(manifestRelease.called, 'GitHub release should have run');
       });
+
+      it('should ignore the repo language not being supported', async () => {
+        payload = require(resolve(
+          fixturesPath,
+          './push_to_master_weird_language'
+        ));
+        const manifest = sandbox.stub(Runner, 'manifest').resolves();
+        getConfigStub.resolves(loadConfig('manifest.yml'));
+        stubDefaultBranchLookup();
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+        assert(manifest.called, 'should have executed the runner');
+      });
     });
 
     it('should allow configuring extra files', async () => {
