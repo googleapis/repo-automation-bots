@@ -45,4 +45,5 @@ jobs:
           message: 'deps: update ${{ matrix.package }} deps'
           branch: update-deps-${{ matrix.package }}
           primary: main
+          force: true
           git_dir: '.'
