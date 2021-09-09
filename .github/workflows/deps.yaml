@@ -1,4 +1,5 @@
 on:
+  workflow_dispatch:
   schedule:
     # every Monday morning
     - cron: '0 1 * * 1'
@@ -45,4 +46,5 @@ jobs:
           message: 'deps: update ${{ matrix.package }} deps'
           branch: update-deps-${{ matrix.package }}
           primary: main
+          force: true
           git_dir: '.'

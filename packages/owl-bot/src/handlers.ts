@@ -13,21 +13,19 @@
 // limitations under the License.
 
 import {logger} from 'gcf-utils';
-import {
-  OwlBotLock,
-  owlBotLockFrom,
-  owlBotLockPath,
-  owlBotYamlFromText,
-  owlBotYamlPath,
-} from './config-files';
+import {OwlBotLock, OWL_BOT_LOCK_PATH} from './config-files';
 import {Configs, ConfigsStore} from './configs-store';
 import {core} from './core';
-import yaml from 'js-yaml';
 // Conflicting linters think the next line is extraneous or necessary.
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints} from '@octokit/types';
-import {OctokitType, createIssueIfTitleDoesntExist} from './octokit-util';
+import {
+  OctokitType,
+  createIssueIfTitleDoesntExist,
+  OctokitFactory,
+} from './octokit-util';
 import {githubRepoFromOwnerSlashName} from './github-repo';
+import {fetchConfigs} from './fetch-configs';
 
 type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
 
@@ -140,7 +138,7 @@ export async function triggerOneBuildForUpdatingLock(
         _PR_OWNER: repo.owner,
         _REPOSITORY: repo.repo,
         _PR_BRANCH: `owl-bot-update-lock-${digest}`,
-        _LOCK_FILE_PATH: owlBotLockPath,
+        _LOCK_FILE_PATH: OWL_BOT_LOCK_PATH,
         _CONTAINER: `${lock.docker.image}@${lock.docker.digest}`,
         _OWL_BOT_CLI: owlBotCli,
       },
@@ -154,6 +152,26 @@ export async function triggerOneBuildForUpdatingLock(
 }
 
 /**
+ * Iterates through all the paginated responses to collect the full list.
+ */
+async function listReposInOrg(
+  octokit: OctokitType,
+  githubOrg: string
+): Promise<ListReposResponse['data']> {
+  const result: ListReposResponse['data'] = [];
+  for await (const response of octokit.paginate.iterator(
+    octokit.repos.listForOrg,
+    {
+      org: githubOrg,
+    }
+  )) {
+    const repos = response.data as ListReposResponse['data'];
+    result.push(...repos);
+  }
+  return result;
+}
+
+/**
  * Scans a whole github org for config files, and updates stale entries in
  * the config store.
  * @param configStore where to store config file contents
@@ -163,49 +181,46 @@ export async function triggerOneBuildForUpdatingLock(
  */
 export async function scanGithubForConfigs(
   configsStore: ConfigsStore,
-  octokit: OctokitType,
+  octokitFactory: OctokitFactory,
   githubOrg: string,
-  orgInstallationId: number
+  orgInstallationId: number,
+  ignoreRepos: string[]
 ): Promise<void> {
-  let count = 0; // Count of repos scanned for debugging purposes.
   logger.info(`scan ${githubOrg} installation = ${orgInstallationId}`);
   logger.metric('owlbot.scan_github_for_configs', {
     org: githubOrg,
     installationId: orgInstallationId,
   });
-
-  for await (const response of octokit.paginate.iterator(
-    octokit.repos.listForOrg,
-    {
-      org: githubOrg,
+  const repos = await listReposInOrg(
+    await octokitFactory.getShortLivedOctokit(),
+    githubOrg
+  );
+  for (const repo of repos) {
+    // Load the current configs from the db.
+    if (ignoreRepos.includes(repo.name)) {
+      console.info(`Ignoring ${repo.name}`);
+      continue;
     }
-  )) {
-    const repos = response.data as ListReposResponse['data'];
-    logger.info(`count = ${count} page size = ${repos.length}`);
-    for (const repo of repos) {
-      count++;
-      // Load the current configs from the db.
-      const repoFull = `${githubOrg}/${repo.name}`;
-      const configs = await configsStore.getConfigs(repoFull);
-      const defaultBranch = repo.default_branch ?? 'master';
-      logger.info(`refresh config for ${githubOrg}/${repo.name}`);
-      try {
-        await refreshConfigs(
-          configsStore,
-          configs,
-          octokit,
-          githubOrg,
-          repo.name,
-          defaultBranch,
-          orgInstallationId
-        );
-      } catch (err) {
-        if (err.status === 404) {
-          logger.warn(`received 404 refreshing ${githubOrg}/${repo.name}`);
-          continue;
-        } else {
-          throw err;
-        }
+    const repoFull = `${githubOrg}/${repo.name}`;
+    const configs = await configsStore.getConfigs(repoFull);
+    const defaultBranch = repo.default_branch ?? 'master';
+    logger.info(`Refreshing configs for ${githubOrg}/${repo.name}`);
+    try {
+      await refreshConfigs(
+        configsStore,
+        configs,
+        await octokitFactory.getShortLivedOctokit(),
+        githubOrg,
+        repo.name,
+        defaultBranch,
+        orgInstallationId
+      );
+    } catch (err) {
+      if (err.status === 404) {
+        logger.warn(`received 404 refreshing ${githubOrg}/${repo.name}`);
+        continue;
+      } else {
+        throw err;
       }
     }
   }
@@ -249,7 +264,7 @@ export async function refreshConfigs(
     configs?.commitHash === commitHash &&
     configs?.branchName === defaultBranch
   ) {
-    logger.info(`Configs for ${repoFull} or up to date.`);
+    logger.info(`Configs for ${repoFull} are up to date.`);
     return; // configsStore is up to date.
   }
 
@@ -260,80 +275,18 @@ export async function refreshConfigs(
     commitHash: commitHash,
   };
 
-  // Query github for the contents of the lock file.
-  const lockContent = await core.getFileContent(
-    githubOrg,
-    repoName,
-    owlBotLockPath,
-    commitHash,
-    octokit
-  );
-  if (lockContent) {
-    try {
-      newConfigs.lock = owlBotLockFrom(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        yaml.load(lockContent) as Record<string, any>
-      );
-    } catch (e) {
-      logger.error(`${repoFull} has an invalid ${owlBotLockPath} file: ${e}`);
-
-      const title = `Invalid ${owlBotLockPath}`;
-      const body = `'${owlBotLockPath}' does not adhere to the expected schema.
-
-\`owl-bot\` will not be able to update this repo until this is fixed. If this issue is closed, it will be recreated if the issue has not been successfully resolved.
-
-Please fix this as soon as possible so that your repository will not go stale:
-
-\`\`\`
-${e.message}
-\`\`\``;
-
-      await createIssueIfTitleDoesntExist(
-        octokit,
-        githubOrg,
-        repoName,
-        title,
-        body,
-        logger
-      );
-    }
+  const {lock, yamls, badConfigs} = await fetchConfigs(octokit, {
+    owner: githubOrg,
+    repo: repoName,
+    ref: commitHash,
+  });
+  if (lock) {
+    newConfigs.lock = lock;
+  }
+  if (yamls.length > 0) {
+    newConfigs.yamls = yamls;
   }
 
-  // Query github for the contents of the yaml file.
-  const yamlContent = await core.getFileContent(
-    githubOrg,
-    repoName,
-    owlBotYamlPath,
-    commitHash,
-    octokit
-  );
-  if (yamlContent) {
-    try {
-      newConfigs.yaml = owlBotYamlFromText(yamlContent);
-    } catch (e) {
-      logger.error(`${repoFull} has an invalid ${owlBotYamlPath} file: ${e}`);
-
-      const title = `Invalid ${owlBotYamlPath}`;
-      const body = `'${owlBotYamlPath}' does not adhere to the expected [schema](https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/src/owl-bot-yaml-schema.json).
-
-\`owl-bot\` will not be able to update this repo until this is fixed. If this issue is closed, it will be recreated if the issue has not been successfully resolved.
-
-Please fix this as soon as possible so that your repository will not go stale:
-
-\`\`\`
-${e.message}
-\`\`\``;
-
-      await createIssueIfTitleDoesntExist(
-        octokit,
-        githubOrg,
-        repoName,
-        title,
-        body,
-        logger
-      );
-    }
-  }
   // Store the new configs back into the database.
   const stored = await configsStore.storeConfigs(
     repoFull,
@@ -342,6 +295,16 @@ ${e.message}
   );
   if (stored) {
     logger.info(`Stored new configs for ${repoFull}`);
+    for (const badConfig of badConfigs) {
+      await createIssueIfTitleDoesntExist(
+        octokit,
+        githubOrg,
+        repoName,
+        badConfig.path + ' is broken.',
+        'This repo will not receive automatic updates until this issue is fixed.\n\n' +
+          String(badConfig.error)
+      );
+    }
   } else {
     logger.info(
       `Mid-air collision! ${repoFull}'s configs were already updated.`

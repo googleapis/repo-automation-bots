@@ -28,7 +28,7 @@ import {
 import * as sinon from 'sinon';
 import nock from 'nock';
 import {Configs} from '../src/configs-store';
-import {owlBotLockPath} from '../src/config-files';
+import {OWL_BOT_LOCK_PATH} from '../src/config-files';
 import * as labelUtilsModule from '@google-automations/label-utils';
 import {FirestoreConfigsStore} from '../src/database';
 import {REGENERATE_CHECKBOX_TEXT} from '../src/copy-code';
@@ -532,7 +532,7 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{filename: owlBotLockPath}])
+      .reply(200, [{filename: OWL_BOT_LOCK_PATH}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       // Update to closed state:
@@ -599,7 +599,7 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{filename: owlBotLockPath}, {filename: 'README.md'}])
+      .reply(200, [{filename: OWL_BOT_LOCK_PATH}, {filename: 'README.md'}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       // Promote to "ready for review."
@@ -666,7 +666,7 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{filename: owlBotLockPath}])
+      .reply(200, [{filename: OWL_BOT_LOCK_PATH}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request);
     const triggerBuildStub = sandbox
@@ -730,7 +730,7 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{filename: owlBotLockPath}])
+      .reply(200, [{filename: OWL_BOT_LOCK_PATH}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request);
     const triggerBuildStub = sandbox
@@ -896,44 +896,6 @@ describe('owlBot', () => {
     });
   });
 
-  describe('scan configs cron', () => {
-    it('invokes scanGithubForConfigs', async () => {
-      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
-      const payload = {
-        org: 'googleapis',
-        installation: {
-          id: 12345,
-        },
-        scanGithubForConfigs: true,
-      };
-      let org: string | undefined = undefined;
-      let installation: number | undefined = undefined;
-      sandbox.replace(
-        handlers,
-        'scanGithubForConfigs',
-        (
-          _configStore,
-          _octokit,
-          _org: string,
-          _installation: number
-        ): Promise<void> => {
-          org = _org;
-          installation = _installation;
-          return Promise.resolve(undefined);
-        }
-      );
-      await probot.receive({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'schedule.repository' as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        payload: payload as any,
-        id: 'abc123',
-      });
-      assert.strictEqual(org, 'googleapis');
-      assert.strictEqual(installation, 12345);
-      sinon.assert.notCalled(syncLabelsStub);
-    });
-  });
   it('triggers build when "owlbot:run" label is added to fork', async () => {
     const payload = {
       action: 'labeled',

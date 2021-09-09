@@ -70,15 +70,28 @@ export interface OctokitFactory {
 
 /**
  * Creates an octokit factory from the common params.
+ * The factory will return a new octokit with a new token every 5 minutes.
  */
 export function octokitFactoryFrom(params: OctokitParams): OctokitFactory {
+  let lastOctokitTimestamp = 0;
+  let lastOctokit: OctokitType | null = null;
   return {
     getGitHubShortLivedAccessToken() {
       return octokitTokenFrom(params);
     },
     async getShortLivedOctokit(token?: string) {
-      const atoken = token ?? (await octokitTokenFrom(params));
-      return await core.getAuthenticatedOctokit(atoken, false);
+      if (token) {
+        return core.getAuthenticatedOctokit(token, false);
+      }
+      const now = new Date().getTime();
+      // Refresh every 5 minutes.  Tokens are good for 10 minutes.
+      const elapsedMilliseconds = now - lastOctokitTimestamp;
+      if (!lastOctokit || elapsedMilliseconds > 300000) {
+        lastOctokitTimestamp = now;
+        const atoken = await octokitTokenFrom(params);
+        lastOctokit = await core.getAuthenticatedOctokit(atoken, false);
+      }
+      return lastOctokit;
     },
   };
 }

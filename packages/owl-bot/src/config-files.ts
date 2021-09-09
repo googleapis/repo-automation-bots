@@ -27,7 +27,7 @@ export interface OwlBotLock {
 }
 
 // The default path where .OwlBot.lock.yaml is expected to be found.
-export const owlBotLockPath = '.github/.OwlBot.lock.yaml';
+export const OWL_BOT_LOCK_PATH = '.github/.OwlBot.lock.yaml';
 
 // Throws an exception if the object does not have the necessary structure.
 // Otherwise, returns the same object as an OwlBotLock.
@@ -64,7 +64,7 @@ export interface OwlBotYaml {
 }
 
 // The default path where .OwlBot.yaml is expected to be found.
-export const owlBotYamlPath = '.github/.OwlBot.yaml';
+export const DEFAULT_OWL_BOT_YAML_PATH = '.github/.OwlBot.yaml';
 
 function validatePath(path: string, fieldName: string) {
   if (path && path[0] !== '/') {
