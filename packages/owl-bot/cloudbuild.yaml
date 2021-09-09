@@ -90,12 +90,3 @@ steps:
       # concurrency: We saw some errors in gRPC stack (#2265) with the default
       # 80 concurrency.
       - "40"
-
-  # Build the CLI container whenever we merge changes to the owl-bot folder.
-  # this container is used to run helpers from OwlBot in a Cloud Build
-  # environment:
-  - name: 'gcr.io/cloud-builders/gcloud'
-    id: "build-cli-docker"
-    entrypoint: gcloud
-    args: ['builds', 'submit', '--tag', 'gcr.io/repo-automation-bots/owlbot-cli']
-    dir: 'packages/owl-bot'
