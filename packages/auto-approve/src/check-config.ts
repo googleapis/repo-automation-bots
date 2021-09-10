@@ -87,7 +87,7 @@ export async function validateSchema(
  * @param autoApproveFile if the incoming PR includes an auto-approve file, that file; undefined if not
  * @returns empty string if valid, otherwise an error message.
  */
-export async function checkAutoApprove(
+export async function checkAutoApproveConfig(
   octokit: Octokit,
   owner: string,
   repo: string,
@@ -105,6 +105,7 @@ export async function checkAutoApprove(
           path: `.github/${CONFIGURATION_FILE_PATH}`,
         })
       ).data;
+      console.log(autoApproveFile);
 
       // We have to check that it's a file, not a folder
       if (autoApproveFileFromMain && isFile(autoApproveFileFromMain)) {
@@ -123,13 +124,13 @@ export async function checkAutoApprove(
         message = await validateSchema(autoApproveFile);
       } else {
         // This branch means auto-approve is not on this repo, so we're
-        // returning a failure message (essentially, skipping the check)
-        message = 'Skip';
+        // throwing an error (essentially, skipping the check)
+        throw Error('Auto-Approve config does not exist on repo');
       }
     } catch (err) {
       // This branch means auto-approve is not on this repo, so we're
-      // returning a failure message (essentially, skipping the check)
-      message = 'Skip';
+      // throwing an error (essentially, skipping the check)
+      throw Error('Auto-Approve config does not exist on repo');
     }
   } else {
     // This means auto-approve is on the PR, meaning we still need to confirm validity

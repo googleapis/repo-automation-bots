@@ -24,7 +24,7 @@ import {
   getReviewsCompleted,
   cleanReviews,
 } from './get-pr-info';
-import {checkAutoApprove, checkCodeOwners} from './check-config.js';
+import {checkAutoApproveConfig, checkCodeOwners} from './check-config.js';
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {Octokit} from '@octokit/rest';
 
@@ -73,7 +73,9 @@ async function evaluateAndSubmitCheckForConfig(
   headSha: string
 ): Promise<Boolean> {
   // Check if the YAML is formatted correctly if it's in a PR
-  const isAutoApproveCorrect = await checkAutoApprove(
+  // This will throw an error if auto-approve does not exist, causing the function to stop
+  // executing, and prevent an auto-approve check from appearin
+  const isAutoApproveCorrect = await checkAutoApproveConfig(
     octokit,
     owner,
     repo,
@@ -88,11 +90,6 @@ async function evaluateAndSubmitCheckForConfig(
     codeOwnersFile
   );
 
-  // In the case that auto-approve doesn't exist, we don't want to submit a check at all
-  // We also want to return false so that no further checks are made
-  if (isAutoApproveCorrect === 'Skip') {
-    return false;
-  }
   // If all files are correct, then submit a passing check for the config
   if (isAutoApproveCorrect === '' && isCodeOwnersCorrect === '') {
     await octokit.checks.create({

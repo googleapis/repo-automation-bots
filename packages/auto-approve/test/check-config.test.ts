@@ -16,7 +16,7 @@ import {
   validateYaml,
   validateSchema,
   checkCodeOwners,
-  checkAutoApprove,
+  checkAutoApproveConfig,
 } from '../src/check-config.js';
 import {describe, it} from 'mocha';
 import assert from 'assert';
@@ -266,7 +266,7 @@ describe('check for config', () => {
         'utf8'
       );
       const scopes = getAutoApproveFile(autoapproveFileResponse, 200);
-      const response = await checkAutoApprove(
+      const response = await checkAutoApproveConfig(
         octokit,
         'owner',
         'repo',
@@ -276,16 +276,10 @@ describe('check for config', () => {
       assert.strictEqual(response, '');
     });
 
-    it('should return skip if autoapprove does not exist on PR or repo', async () => {
-      const scopes = getAutoApproveFile(undefined, 404);
-      const response = await checkAutoApprove(
-        octokit,
-        'owner',
-        'repo',
-        undefined
-      );
-      scopes.done();
-      assert.strictEqual(response, 'Skip');
+    it('should throw if autoapprove does not exist on PR or repo', async () => {
+      assert.rejects(async () => {
+        await checkAutoApproveConfig(octokit, 'owner', 'repo', undefined);
+      }, /Auto-Approve config does not exist on repo/);
     });
 
     it('should return empty string if autoapprove is on PR, but has no issues', async () => {
@@ -294,7 +288,7 @@ describe('check for config', () => {
         'utf8'
       );
 
-      const response = await checkAutoApprove(
+      const response = await checkAutoApproveConfig(
         octokit,
         'owner',
         'repo',
@@ -310,7 +304,7 @@ describe('check for config', () => {
         'utf8'
       );
 
-      const response = await checkAutoApprove(
+      const response = await checkAutoApproveConfig(
         octokit,
         'owner',
         'repo',
@@ -327,7 +321,7 @@ describe('check for config', () => {
       );
 
       const scopes = getAutoApproveFile(autoapproveFileResponse, 200);
-      const response = await checkAutoApprove(
+      const response = await checkAutoApproveConfig(
         octokit,
         'owner',
         'repo',

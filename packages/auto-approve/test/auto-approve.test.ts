@@ -114,7 +114,7 @@ describe('auto-approve', () => {
     checkPRAgainstConfigStub = sinon.stub(checkPR, 'checkPRAgainstConfig');
     getChangedFilesStub = sinon.stub(getPRInfo, 'getChangedFiles');
     getBlobFromPRFilesStub = sinon.stub(getPRInfo, 'getBlobFromPRFiles');
-    checkAutoApproveStub = sinon.stub(checkConfig, 'checkAutoApprove');
+    checkAutoApproveStub = sinon.stub(checkConfig, 'checkAutoApproveConfig');
     checkCodeOwnersStub = sinon.stub(checkConfig, 'checkCodeOwners');
     getSecretStub = sinon.stub(autoApprove, 'authenticateWithSecret');
   });
