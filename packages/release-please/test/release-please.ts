@@ -444,6 +444,31 @@ describe('ReleasePleaseBot', () => {
       );
       assert(executed, 'should have executed the runner');
     });
+
+    it('should handle GitHub releases, if configured', async () => {
+      let runnerExecuted = false;
+      let releaserExecuted = false;
+      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
+        assertReleaserType('JavaYoshi', pr);
+        runnerExecuted = true;
+      });
+      sandbox.replace(Runner, 'releaser', async (pr: GitHubRelease) => {
+        assert(pr instanceof GitHubRelease);
+        assert(pr.gh.defaultBranch === 'feature-branch');
+        releaserExecuted = true;
+      });
+      const releaseSpy = sandbox.spy(factory, 'githubRelease');
+      getConfigStub.resolves(
+        loadConfig('valid_handle_gh_release_alternate_branch.yml')
+      );
+      await probot.receive(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {name: 'push', payload: payload as any, id: 'abc123'}
+      );
+      assert(runnerExecuted, 'should have executed the runner');
+      assert(releaserExecuted, 'GitHub release should have run');
+      assert(releaseSpy.calledWith(sinon.match.has('releaseLabel', undefined)));
+    });
   });
 
   describe('nightly event', () => {
