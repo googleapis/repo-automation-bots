@@ -21,6 +21,7 @@ by Google on GitHub.
 | [merge-on-green] | Merge a pull-request when all required checks have passed | [install][merge-on-green-app] |
 | [policy] | Check repo configuration against known rules | [install][policy-app] |
 | [release-please] | Proposes releases based on semantic version commits | [install][release-please-app] |
+| [release-trigger] | Trigger releases jobs | [install][release-trigger-app] |
 | [snippet-bot] | Check for mismatched region tags in PRs | [install][snippet-bot-app] |
 | [sync-repo-settings] | Synchronize repository settings from a centralized config | [install][sync-repo-settings-app] |
 | [trusted-contribution] | Allows Kokoro CI to trigger for trusted contributors | [install][trusted-contribution-app] |
@@ -130,6 +131,8 @@ at the specified schedule.
 [policy-app]: https://github.com/apps/google-cloud-policy-bot
 [release-please]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/release-please
 [release-please-app]: https://github.com/apps/release-please
+[release-please]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/release-trigger
+[release-please-app]: https://github.com/apps/release-trigger
 [trusted-contribution]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/trusted-contribution
 [trusted-contribution-app]: https://github.com/apps/trusted-contributions-gcf
 [failurechecker]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/failurechecker
