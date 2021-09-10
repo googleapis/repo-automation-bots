@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.2.1](https://www.github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.2.0...mono-repo-publish-v1.2.1) (2021-09-10)
+
+
+### Bug Fixes
+
+* **deps:** update mono-repo-publish deps ([#2463](https://www.github.com/googleapis/repo-automation-bots/issues/2463)) ([2321c56](https://www.github.com/googleapis/repo-automation-bots/commit/2321c561d2a17b16aa91bc276ddc530f475324b0))
+
 ## [1.2.0](https://www.github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.1.2...mono-repo-publish-v1.2.0) (2021-08-09)
 
 
