@@ -5,5 +5,5 @@ go 1.12
 require (
 	cloud.google.com/go v0.91.1
 	github.com/google/uuid v1.3.0
-	google.golang.org/genproto v0.0.0-20210816143620-e15ff196659d
+	google.golang.org/genproto v0.0.0-20210909211513-a8c4777a87af
 )
