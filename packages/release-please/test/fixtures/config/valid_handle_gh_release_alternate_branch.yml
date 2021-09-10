@@ -1,0 +1,9 @@
+primaryBranch: master
+releaseLabels:
+  - foo
+  - bar
+handleGHRelease: true
+branches:
+  - branch: feature-branch
+    handleGHRelease: true
+    releaseType: java-yoshi

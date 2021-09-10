@@ -138,6 +138,7 @@ async function createGitHubRelease(
     releaseType: configuration.releaseType,
     extraFiles: configuration.extraFiles,
     releaseLabel: configuration.releaseLabel,
+    defaultBranch: configuration.branch,
   };
   if (configuration.manifest) {
     const manifest = factory.manifest(releaseOptions);
