@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/label-utils-v2.0.1...label-utils-v2.0.2) (2021-09-10)
+
+
+### Bug Fixes
+
+* **deps:** update label-utils deps ([#2464](https://www.github.com/googleapis/repo-automation-bots/issues/2464)) ([22c17c0](https://www.github.com/googleapis/repo-automation-bots/commit/22c17c080235a0c1e93f05fb569004d648115bc0))
+
 ### [2.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/label-utils-v2.0.0...label-utils-v2.0.1) (2021-08-13)
 
 
