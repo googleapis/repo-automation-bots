@@ -16,6 +16,7 @@ import {
   validateYaml,
   validateSchema,
   checkCodeOwners,
+  checkAutoApproveConfig,
 } from '../src/check-config.js';
 import {describe, it} from 'mocha';
 import assert from 'assert';
@@ -34,6 +35,15 @@ nock.disableNetConnect();
 function getCodeOwnersFile(response: string | undefined, status: number) {
   return nock('https://api.github.com')
     .get('/repos/owner/repo/contents/.github%2FCODEOWNERS')
+    .reply(
+      status,
+      response ? {content: Buffer.from(response).toString('base64')} : undefined
+    );
+}
+
+function getAutoApproveFile(response: string | undefined, status: number) {
+  return nock('https://api.github.com')
+    .get('/repos/owner/repo/contents/.github%2Fauto-approve.yml')
     .reply(
       status,
       response ? {content: Buffer.from(response).toString('base64')} : undefined
@@ -121,34 +131,34 @@ describe('check for config', () => {
       snapshot(isSchemaValid ? isSchemaValid : 'undefined');
     });
 
-    it('should return true if YAML has all of the possible valid options', async () => {
+    it('should return empty string if YAML has all of the possible valid options', async () => {
       const isSchemaValid = await validateSchema(
         fs.readFileSync(
           './test/fixtures/config/valid-schemas/valid-schema1.yml',
           'utf8'
         )
       );
-      assert.strictEqual(isSchemaValid, undefined);
+      assert.strictEqual(isSchemaValid, '');
     });
 
-    it('should return true if YAML has any one of the possible valid options', async () => {
+    it('should return empty string if YAML has any one of the possible valid options', async () => {
       const isSchemaValid = await validateSchema(
         fs.readFileSync(
           './test/fixtures/config/valid-schemas/valid-schema2.yml',
           'utf8'
         )
       );
-      assert.strictEqual(isSchemaValid, undefined);
+      assert.strictEqual(isSchemaValid, '');
     });
 
-    it('should return true if YAML has some of the possible valid options', async () => {
+    it('should return empty string if YAML has some of the possible valid options', async () => {
       const isSchemaValid = await validateSchema(
         fs.readFileSync(
           './test/fixtures/config/valid-schemas/valid-schema3.yml',
           'utf8'
         )
       );
-      assert.strictEqual(isSchemaValid, undefined);
+      assert.strictEqual(isSchemaValid, '');
     });
   });
 
@@ -246,6 +256,79 @@ describe('check for config', () => {
         response,
         `You must add this line to the CODEOWNERS file for auto-approve.yml to merge pull requests on this repo: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
       );
+    });
+  });
+
+  describe('auto-approve file behavior', async () => {
+    it('should check if auto-approve is on main if it is undefined on PR', async () => {
+      const autoapproveFileResponse = fs.readFileSync(
+        './test/fixtures/config/valid-schemas/valid-schema1.yml',
+        'utf8'
+      );
+      const scopes = getAutoApproveFile(autoapproveFileResponse, 200);
+      const response = await checkAutoApproveConfig(
+        octokit,
+        'owner',
+        'repo',
+        undefined
+      );
+      scopes.done();
+      assert.strictEqual(response, '');
+    });
+
+    it('should throw if autoapprove does not exist on PR or repo', async () => {
+      assert.rejects(async () => {
+        await checkAutoApproveConfig(octokit, 'owner', 'repo', undefined);
+      }, /Auto-Approve config does not exist on repo/);
+    });
+
+    it('should return empty string if autoapprove is on PR, but has no issues', async () => {
+      const autoapproveFileResponse = fs.readFileSync(
+        './test/fixtures/config/valid-schemas/valid-schema1.yml',
+        'utf8'
+      );
+
+      const response = await checkAutoApproveConfig(
+        octokit,
+        'owner',
+        'repo',
+        autoapproveFileResponse
+      );
+
+      assert.strictEqual(response, '');
+    });
+
+    it('should return error messages if autoapprove is on PR and has issues', async () => {
+      const autoapproveFileResponse = fs.readFileSync(
+        './test/fixtures/config/invalid-schemas/invalid-schema1.yml',
+        'utf8'
+      );
+
+      const response = await checkAutoApproveConfig(
+        octokit,
+        'owner',
+        'repo',
+        autoapproveFileResponse
+      );
+
+      assert.notStrictEqual(response.length, 0);
+    });
+
+    it('should return error messages if autoapprove is on repo and has issues', async () => {
+      const autoapproveFileResponse = fs.readFileSync(
+        './test/fixtures/config/invalid-schemas/invalid-schema1.yml',
+        'utf8'
+      );
+
+      const scopes = getAutoApproveFile(autoapproveFileResponse, 200);
+      const response = await checkAutoApproveConfig(
+        octokit,
+        'owner',
+        'repo',
+        undefined
+      );
+      scopes.done();
+      assert.notStrictEqual(response.length, 0);
     });
   });
 });

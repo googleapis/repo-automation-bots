@@ -98,8 +98,7 @@ describe('auto-approve', () => {
   let checkPRAgainstConfigStub: SinonStub;
   let getChangedFilesStub: SinonStub;
   let getBlobFromPRFilesStub: SinonStub;
-  let validateSchemaStub: SinonStub;
-  let validateYamlStub: SinonStub;
+  let checkAutoApproveStub: SinonStub;
   let checkCodeOwnersStub: SinonStub;
   let getSecretStub: SinonStub;
 
@@ -115,8 +114,7 @@ describe('auto-approve', () => {
     checkPRAgainstConfigStub = sinon.stub(checkPR, 'checkPRAgainstConfig');
     getChangedFilesStub = sinon.stub(getPRInfo, 'getChangedFiles');
     getBlobFromPRFilesStub = sinon.stub(getPRInfo, 'getBlobFromPRFiles');
-    validateSchemaStub = sinon.stub(checkConfig, 'validateSchema');
-    validateYamlStub = sinon.stub(checkConfig, 'validateYaml');
+    checkAutoApproveStub = sinon.stub(checkConfig, 'checkAutoApproveConfig');
     checkCodeOwnersStub = sinon.stub(checkConfig, 'checkCodeOwners');
     getSecretStub = sinon.stub(autoApprove, 'authenticateWithSecret');
   });
@@ -125,8 +123,7 @@ describe('auto-approve', () => {
     checkPRAgainstConfigStub.restore();
     getChangedFilesStub.restore();
     getBlobFromPRFilesStub.restore();
-    validateSchemaStub.restore();
-    validateYamlStub.restore();
+    checkAutoApproveStub.restore();
     checkCodeOwnersStub.restore();
     getSecretStub.restore();
   });
@@ -135,7 +132,7 @@ describe('auto-approve', () => {
     describe('config exists on main branch', () => {
       it('approves and tags a PR if a config exists & is valid & PR is valid', async () => {
         checkPRAgainstConfigStub.returns(true);
-        validateSchemaStub.returns(undefined);
+        checkAutoApproveStub.returns('');
         checkCodeOwnersStub.returns('');
         getSecretStub.returns(new Octokit({auth: '123'}));
 
@@ -165,7 +162,7 @@ describe('auto-approve', () => {
 
       it('does nothing if there is already an approval', async () => {
         checkPRAgainstConfigStub.returns(true);
-        validateSchemaStub.returns(undefined);
+        checkAutoApproveStub.returns('');
         checkCodeOwnersStub.returns('');
         getSecretStub.returns(new Octokit({auth: '123'}));
 
@@ -200,7 +197,7 @@ describe('auto-approve', () => {
 
       it('approves and tags a PR if everything is valid, and it is coming from a fork', async () => {
         checkPRAgainstConfigStub.returns(true);
-        validateSchemaStub.returns(undefined);
+        checkAutoApproveStub.returns('');
         checkCodeOwnersStub.returns('');
         getSecretStub.returns(new Octokit({auth: '123'}));
 
@@ -235,7 +232,7 @@ describe('auto-approve', () => {
 
       it('submits a failing check if config exists but is not valid', async () => {
         checkPRAgainstConfigStub.returns(true);
-        validateSchemaStub.returns([
+        checkAutoApproveStub.returns([
           {
             wrongProperty: 'wrongProperty',
             message: 'message',
@@ -266,7 +263,7 @@ describe('auto-approve', () => {
 
       it('logs to the console if config is valid but PR is not', async () => {
         checkPRAgainstConfigStub.returns(false);
-        validateSchemaStub.returns(undefined);
+        checkAutoApproveStub.returns('');
         checkCodeOwnersStub.returns('');
 
         const payload = require(resolve(
@@ -314,8 +311,9 @@ describe('auto-approve', () => {
       });
     });
 
-    describe('config does not exist in PR', () => {
-      it('ignores the PR, if config does not exist on repo or PR', async () => {
+    describe('config does not exist on main branch', () => {
+      it('ignores the PR, if neither config exists on PR or repo', async () => {
+        getBlobFromPRFilesStub.returns(undefined);
         getBlobFromPRFilesStub.returns(undefined);
 
         const payload = require(resolve(
@@ -333,6 +331,7 @@ describe('auto-approve', () => {
         });
         scopes.forEach(scope => scope.done());
         assert.ok(getChangedFilesStub.calledOnce);
+        assert.ok(getBlobFromPRFilesStub.calledTwice);
       });
 
       it('attempts to get codeowners file and create a passing status check if PR contains correct config', async () => {
@@ -343,8 +342,8 @@ describe('auto-approve', () => {
         ));
 
         getBlobFromPRFilesStub.returns('fake-file');
-        validateYamlStub.returns('');
-        validateSchemaStub.returns(undefined);
+        getBlobFromPRFilesStub.returns('fake-codeowners');
+        checkAutoApproveStub.returns('');
         checkCodeOwnersStub.returns('');
 
         const scopes = [createCheck('testOwner', 'testRepo', 200)];
@@ -367,8 +366,8 @@ describe('auto-approve', () => {
         ));
 
         getBlobFromPRFilesStub.returns('fake-file');
-        validateYamlStub.returns('File is not properly configured YAML');
-        validateSchemaStub.returns([
+        getBlobFromPRFilesStub.returns('fake-codeowners');
+        checkAutoApproveStub.returns([
           {
             wrongProperty: 'wrongProperty',
             message: 'message',
@@ -377,6 +376,30 @@ describe('auto-approve', () => {
         checkCodeOwnersStub.returns(
           `You must add this line to the CODEOWNERS file for auto-approve.yml to merge pull requests on this repo: .github/${CONFIGURATION_FILE_PATH}  @googleapis/github-automation/`
         );
+
+        const scopes = [createCheck('testOwner', 'testRepo', 200)];
+
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+        scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
+        assert.ok(getBlobFromPRFilesStub.calledTwice);
+      });
+
+      it('passes PR if auto-approve is on main, not PR', async () => {
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened'
+        ));
+
+        getBlobFromPRFilesStub.returns(undefined);
+        getBlobFromPRFilesStub.returns('fake-codeowners');
+        checkAutoApproveStub.returns('');
+        checkCodeOwnersStub.returns('');
 
         const scopes = [createCheck('testOwner', 'testRepo', 200)];
 
@@ -400,7 +423,7 @@ describe('auto-approve', () => {
 
     it('creates a separate octokit instance and authenticates with secret in secret manager', async () => {
       checkPRAgainstConfigStub.returns(true);
-      validateSchemaStub.returns(undefined);
+      checkAutoApproveStub.returns('');
       checkCodeOwnersStub.returns('');
 
       const secretOctokit = new Octokit({auth: '123'});

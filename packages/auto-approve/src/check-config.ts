@@ -18,6 +18,7 @@
 import yaml from 'js-yaml';
 import Ajv from 'ajv';
 import {Octokit} from '@octokit/rest';
+import {Configuration} from './auto-approve';
 
 const ajv = new Ajv();
 
@@ -66,7 +67,7 @@ export function validateYaml(configYaml: string): string {
  */
 export async function validateSchema(
   configYaml: string | object
-): Promise<ErrorMessage[] | undefined> {
+): Promise<string> {
   const parsedYaml =
     typeof configYaml === 'string' ? yaml.load(configYaml) : configYaml;
   const validateSchema = await ajv.compile(schema);
@@ -74,7 +75,73 @@ export async function validateSchema(
   const errorText = (await validateSchema).errors?.map(x => {
     return {wrongProperty: x.params, message: x.message};
   });
-  return errorText;
+  return JSON.stringify(errorText) ?? '';
+}
+
+/**
+ * Checks the location of auto-approve, whether it's on the PR or branch, and performs checks if it exists
+ *
+ * @param octokit Octokit instance to make calls to github API
+ * @param owner of the repo of the incoming PR
+ * @param repo of the incoming PR
+ * @param autoApproveFile if the incoming PR includes an auto-approve file, that file; undefined if not
+ * @returns empty string if valid, otherwise an error message.
+ */
+export async function checkAutoApproveConfig(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  autoApproveFile: string | Configuration | undefined
+): Promise<string> {
+  let message = '';
+
+  // If auto-approve is not in the PR, let's try to find it on main branch
+  if (!autoApproveFile) {
+    try {
+      const autoApproveFileFromMain = (
+        await octokit.repos.getContent({
+          owner,
+          repo,
+          path: `.github/${CONFIGURATION_FILE_PATH}`,
+        })
+      ).data;
+
+      // We have to check that it's a file, not a folder
+      if (autoApproveFileFromMain && isFile(autoApproveFileFromMain)) {
+        autoApproveFile = Buffer.from(
+          autoApproveFileFromMain.content,
+          'base64'
+        ).toString('utf8');
+
+        // Check if the YAML is formatted correctly
+        message =
+          typeof autoApproveFile === 'string'
+            ? validateYaml(autoApproveFile)
+            : '';
+
+        // Check if config has correct schema
+        message = await validateSchema(autoApproveFile);
+      } else {
+        // This branch means auto-approve is not on this repo, so we're
+        // throwing an error (essentially, skipping the check)
+        throw Error('Auto-Approve config does not exist on repo');
+      }
+    } catch (err) {
+      // This branch means auto-approve is not on this repo, so we're
+      // throwing an error (essentially, skipping the check)
+      throw Error('Auto-Approve config does not exist on repo');
+    }
+  } else {
+    // This means auto-approve is on the PR, meaning we still need to confirm validity
+    // Check if the YAML is formatted correctly if it's in a PR
+    message =
+      typeof autoApproveFile === 'string' ? validateYaml(autoApproveFile) : '';
+
+    // Check if config has correct schema
+    message = await validateSchema(autoApproveFile);
+  }
+
+  return message;
 }
 
 /**
