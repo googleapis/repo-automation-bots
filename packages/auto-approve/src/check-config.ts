@@ -105,7 +105,6 @@ export async function checkAutoApproveConfig(
           path: `.github/${CONFIGURATION_FILE_PATH}`,
         })
       ).data;
-      console.log(autoApproveFile);
 
       // We have to check that it's a file, not a folder
       if (autoApproveFileFromMain && isFile(autoApproveFileFromMain)) {
