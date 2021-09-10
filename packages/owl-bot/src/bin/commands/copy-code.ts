@@ -23,6 +23,7 @@ interface Args {
   'source-repo': string;
   'source-repo-commit-hash': string;
   dest: string | undefined;
+  'config-file': string;
 }
 
 export const copyCodeCommand: yargs.CommandModule<{}, Args> = {
@@ -48,6 +49,11 @@ export const copyCodeCommand: yargs.CommandModule<{}, Args> = {
           'The directory containing a local repo.  Example: nodejs/vision.',
         type: 'string',
         demand: false,
+      })
+      .option('config-file', {
+        describe: 'Path in the directory to the .OwlBot.yaml config.',
+        type: 'string',
+        default: '.github/.OwlBot.yaml',
       });
   },
   async handler(argv) {
@@ -57,7 +63,7 @@ export const copyCodeCommand: yargs.CommandModule<{}, Args> = {
       argv['source-repo-commit-hash'],
       destDir,
       tmp.dirSync().name,
-      await loadOwlBotYaml(path.join(destDir, '.github', '.OwlBot.yaml'))
+      await loadOwlBotYaml(path.join(destDir, argv['config-file']))
     );
   },
 };
