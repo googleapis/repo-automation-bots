@@ -16,12 +16,14 @@
 
 import yargs = require('yargs');
 import tmp from 'tmp';
+import path = require('path');
 import {copyDirs, loadOwlBotYaml} from '../../copy-code';
 import {getCommonStem, unpackTarBalls} from '../../bazel-bin';
 
 interface Args {
   'source-dir': string;
   dest: string | undefined;
+  'config-file': string;
 }
 
 export const copyBazelBin: yargs.CommandModule<{}, Args> = {
@@ -42,12 +44,17 @@ export const copyBazelBin: yargs.CommandModule<{}, Args> = {
           '  Defaults to the current working directory.',
         type: 'string',
         demand: false,
+      })
+      .option('config-file', {
+        describe: 'Path in the directory to the .OwlBot.yaml config.',
+        type: 'string',
+        default: '.github/.OwlBot.yaml',
       });
   },
   async handler(argv) {
     const destDir = argv.dest ?? process.cwd();
     const tempDir = tmp.dirSync().name;
-    const yaml = await loadOwlBotYaml(destDir);
+    const yaml = await loadOwlBotYaml(path.join(destDir, argv['config-file']));
     const sourceRegexps = (yaml['deep-copy-regex'] ?? []).map(x => x.source);
     const regexpStem = getCommonStem(sourceRegexps);
     unpackTarBalls(argv['source-dir'], tempDir, regexpStem);
