@@ -56,8 +56,9 @@ export = (app: Probot) => {
     let commits: PullsListCommitsResponseData;
     try {
       commits = (await context.octokit.pulls.listCommits(commitParams)).data;
-    } catch (err) {
-      app.log.error(err);
+    } catch (e) {
+      const err = e as Error;
+      logger.error(err);
       return;
     }
     if (commits.length === 0) {
