@@ -83,7 +83,8 @@ export = (app: Probot) => {
           {},
           {schema: schema}
         );
-      } catch (err) {
+      } catch (e) {
+        const err = e as Error;
         err.message = `Error reading configuration: ${err.message}`;
         logger.error(err);
         return;
