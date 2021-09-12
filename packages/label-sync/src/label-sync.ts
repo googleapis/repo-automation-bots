@@ -105,7 +105,8 @@ export function handler(app: Probot) {
       let remoteConfiguration: ConfigurationOptions | null = null;
       try {
         remoteConfiguration = await loadConfig(c);
-      } catch (err) {
+      } catch (e) {
+        const err = e as Error;
         err.message =
           'Error reading configuration for ' +
           `${c.payload.repository.full_name}, skipping: ${err.message}`;
@@ -132,7 +133,8 @@ export function handler(app: Probot) {
     let remoteConfiguration: ConfigurationOptions | null = null;
     try {
       remoteConfiguration = await loadConfig(c);
-    } catch (err) {
+    } catch (e) {
+      const err = e as Error;
       err.message =
         'Error reading configuration for ' +
         `${c.payload.repository.full_name}, skipping: ${err.message}`;

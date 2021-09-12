@@ -42,12 +42,10 @@ describe('cli', () => {
       GITHUB_TOKEN: undefined,
       GH_TOKEN: undefined,
     });
-    try {
-      await cli.parser().exitProcess(false).parse('dump');
-      assert.fail('should not get here');
-    } catch (e) {
-      assert.ok(e.toString().match('Missing required argument: github-token'));
-    }
+    await assert.rejects(
+      async () => cli.parser().exitProcess(false).parse('dump'),
+      /Missing required argument: github-token/
+    );
   });
   it('should save a file if token is provided', async () => {
     const writeFileSyncStub = sandbox.stub(fs, 'writeFileSync');
