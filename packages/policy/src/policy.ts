@@ -207,9 +207,10 @@ export class Policy {
       });
       data = res.data;
     } catch (e) {
+      const err = e as Error;
       console.error(
         `Error checking branch protection for ${repo.full_name}`,
-        e.toString()
+        err.toString()
       );
       // no branch protection at all 😱
       return false;
