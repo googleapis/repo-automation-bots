@@ -70,16 +70,7 @@ export async function createPullRequestFromLastCommit(
   const githubRepo = await octokit.repos.get({owner, repo});
 
   cmd(`git remote set-url origin ${pushUrl}`, {cwd: localRepoDir});
-
-  try {
-    cmd(`git push origin ${branch}`, {cwd: localRepoDir});
-  } catch (e) {
-    logger.info('Falling back to pull, push', e);
-
-    // In case we're missing commits from an existing branch
-    cmd(`git pull origin ${branch}`, {cwd: localRepoDir});
-    cmd(`git push origin ${branch}`, {cwd: localRepoDir});
-  }
+  cmd(`git push origin ${branch}`, {cwd: localRepoDir});
 
   // Use the commit's subject and body as the pull request's title and body.
   const commitSubject: string = cmd('git log -1 --format=%s', {
