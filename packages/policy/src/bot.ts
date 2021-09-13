@@ -60,7 +60,8 @@ export function policyBot(app: Probot) {
       const changer = getChanger(context.octokit, repoMetadata);
       await changer.submitFixes(result);
     } catch (e) {
-      logger.error(e);
+      const err = e as Error;
+      logger.error(err);
     }
   });
 }

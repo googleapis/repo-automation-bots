@@ -21,6 +21,8 @@ import {
 } from './types';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/types';
 import checks from './required-checks.json';
 
 export interface Logger {
@@ -187,7 +189,8 @@ export class SyncRepoSettings {
       logger.info(
         `Success updating branch protection for ${repo}:${rule.pattern}`
       );
-    } catch (err) {
+    } catch (e) {
+      const err = e as RequestError & Error;
       if (err.status === 401) {
         logger.warn(
           `updateBranchProtection: warning received ${err.status} updating ${owner}/${name}`
@@ -234,7 +237,8 @@ export class SyncRepoSettings {
         })
       );
       logger.info(`Success updating repo in org for ${repo}`);
-    } catch (err) {
+    } catch (e) {
+      const err = e as RequestError & Error;
       const knownErrors = [
         401, // bot does not have permission to access this repository.
         404, // team being added does not exist on repo.
@@ -276,7 +280,8 @@ export class SyncRepoSettings {
         delete_branch_on_merge: config.deleteBranchOnMerge,
       });
       logger.info(`Success updating repo options for ${repo}`);
-    } catch (err) {
+    } catch (e) {
+      const err = e as RequestError & Error;
       const knownErrors = [
         401, // bot does not have permission to access this repository.
         403, // thrown if repo is archived.

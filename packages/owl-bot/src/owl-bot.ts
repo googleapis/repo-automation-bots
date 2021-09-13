@@ -21,6 +21,8 @@ import {logger} from 'gcf-utils';
 import {syncLabels} from '@google-automations/label-utils';
 import {core, RegenerateArgs} from './core';
 import {Octokit} from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/types';
 import {onPostProcessorPublished, refreshConfigs} from './handlers';
 import {
   PullRequestEditedEvent,
@@ -311,7 +313,8 @@ async function removeOwlBotRunLabel(
       owner,
       repo,
     });
-  } catch (err) {
+  } catch (e) {
+    const err = e as RequestError & Error;
     if (err.status === 404) {
       logger.warn(`${err.message} head = ${owner}/${repo} pr = ${prNumber}`);
     } else {
@@ -357,7 +360,8 @@ const runPostProcessor = async (
   // status:
   try {
     lock = await core.getOwlBotLock(opts.base, opts.prNumber, octokit);
-  } catch (err) {
+  } catch (e) {
+    const err = e as Error;
     await core.createCheck(
       {
         privateKey,

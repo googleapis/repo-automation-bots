@@ -93,7 +93,8 @@ export = (app: Probot) => {
           WELL_KNOWN_CONFIGURATION_FILE,
           {schema: schema}
         );
-      } catch (err) {
+      } catch (e) {
+        const err = e as Error;
         err.message = `Error reading configuration: ${err.message}`;
         logger.error(err);
         return;

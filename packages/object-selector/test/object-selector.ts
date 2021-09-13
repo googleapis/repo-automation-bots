@@ -40,12 +40,10 @@ describe('object-selector', () => {
   describe('loadSelectors', () => {
     const objs = require(resolve(fixturesPath, './objs'));
     it('throws an error with a wrong format', () => {
-      try {
-        loadSelectors('test/fixtures/wrong.yaml');
-        assert.fail('can not be here');
-      } catch (err) {
-        assert.ok(err.message.includes('must be array'));
-      }
+      assert.throws(
+        () => loadSelectors('test/fixtures/wrong.yaml'),
+        /must be array/
+      );
     });
     it('loads Selectors correctly', () => {
       const selectors = loadSelectors('test/fixtures/correct.yaml');

@@ -159,7 +159,8 @@ export async function parseRegionTagsInPullRequest(
             });
           }
         }
-      } catch (err) {
+      } catch (e) {
+        const err = e as Error;
         // See: https://github.com/googleapis/repo-automation-bots/issues/2246
         // TODO: Migrate to Git Data API.
         err.message =
