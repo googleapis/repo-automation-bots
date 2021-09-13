@@ -15,6 +15,8 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Context} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/types';
+// eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import {Datastore} from '@google-cloud/datastore';
 import {syncLabels} from '@google-automations/label-utils';
@@ -167,7 +169,8 @@ handler.cleanUpPullRequest = async function cleanUpPullRequest(
       issue_number: prNumber,
       name: label,
     });
-  } catch (err) {
+  } catch (e) {
+    const err = e as RequestError;
     // Ignoring 404 errors.
     if (err.status !== 404) {
       throw err;
@@ -277,7 +280,8 @@ handler.checkForBranchProtection = async function checkForBranchProtection(
       `checking branch protection for ${owner}/${repo}: ${branchProtection}`
     );
     // if branch protection doesn't exist, leave a comment on the PR;
-  } catch (err) {
+  } catch (e) {
+    const err = e as Error;
     err.message = `Error in getting branch protection\n\n${err.message}`;
     await github.issues.createComment({
       owner,
@@ -310,9 +314,10 @@ handler.addPR = async function addPR(
       incomingPR.branch,
       github
     );
-  } catch (err) {
+  } catch (e) {
+    const err = e as Error;
     err.message = `Error in getting branch protection\n\n${err.message}`;
-    logger.error(err.message);
+    logger.error(err);
   }
 
   // if the owner has branch protection set up, add this PR to the Datastore table
@@ -430,7 +435,8 @@ handler.checkPRMergeability = async function checkPRMergeability(
               );
             }
           }
-        } catch (err) {
+        } catch (e) {
+          const err = e as Error;
           err.message = `Error in merge-on-green: \n\n${err.message}`;
           logger.error(err);
         }

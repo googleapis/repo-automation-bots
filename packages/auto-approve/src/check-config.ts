@@ -14,11 +14,12 @@
 
 // This file manages the logic to check whether a given config file is valid
 
-// eslint-disable-next-line node/no-extraneous-import
 import yaml from 'js-yaml';
 import Ajv from 'ajv';
 import {Octokit} from '@octokit/rest';
 import {Configuration} from './auto-approve';
+// eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/request-error';
 
 const ajv = new Ajv();
 
@@ -185,7 +186,8 @@ export async function checkCodeOwners(
           path: '.github/CODEOWNERS',
         })
       ).data;
-    } catch (err) {
+    } catch (e) {
+      const err = e as RequestError;
       if (err.status === 403 || err.status === 404) {
         message = createCodeownersMessage;
       } else {

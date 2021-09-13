@@ -130,7 +130,8 @@ export class DatastoreLock {
         await transaction.rollback();
         return AcquireResult.LockActive;
       }
-    } catch (err) {
+    } catch (e) {
+      const err = e as Error;
       err.message = `Error acquiring a lock for ${this.target}: ${err.message}`;
       logger.error(err);
       await transaction.rollback();
@@ -161,7 +162,8 @@ export class DatastoreLock {
       transaction.delete(this.key);
       await transaction.commit();
       return true;
-    } catch (err) {
+    } catch (e) {
+      const err = e as Error;
       if (err.name === DATASTORE_LOCK_ERROR_NAME) {
         throw err;
       }

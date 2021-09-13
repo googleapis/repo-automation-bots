@@ -17,7 +17,7 @@
 
 import {Probot, Context} from 'probot';
 import {PullRequest} from '@octokit/webhooks-definitions/schema';
-
+import {RequestError} from '@octokit/types';
 import {Configuration, ConfigurationOptions} from './configuration';
 import {DEFAULT_CONFIGURATION, CONFIGURATION_FILE_PATH} from './configuration';
 import {REFRESH_LABEL, NO_PREFIX_REQ_LABEL, SNIPPET_BOT_LABELS} from './labels';
@@ -168,7 +168,8 @@ async function fullScan(
             failureMessages.push(`- [ ] ${formatted}`);
           }
         }
-      } catch (err) {
+      } catch (e) {
+        const err = e as Error;
         err.message = `Failed to read the file: ${err.message}`;
         logger.error(err);
         continue;
@@ -191,7 +192,8 @@ Here is the result:
 ${bodyDetail}`
       ),
     });
-  } catch (err) {
+  } catch (e) {
+    const err = e as Error;
     err.message = `Failed to scan files: ${err.message}`;
     logger.error(err);
     await context.octokit.issues.update({
@@ -286,7 +288,8 @@ async function scanPullRequest(
       if (parseResult.tagsFound) {
         tagsFound = true;
       }
-    } catch (err) {
+    } catch (e) {
+      const err = e as RequestError & Error;
       // Ignoring 403/404 errors.
       if (err.status === 403 || err.status === 404) {
         logger.info(
@@ -709,7 +712,8 @@ export = (app: Probot) => {
       await context.octokit.issues.removeLabel(
         context.issue({name: REFRESH_LABEL})
       );
-    } catch (err) {
+    } catch (e) {
+      const err = e as RequestError;
       // Ignoring 404 errors.
       if (err.status !== 404) {
         throw err;

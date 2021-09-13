@@ -15,6 +15,7 @@
 import Ajv from 'ajv';
 import yaml from 'js-yaml';
 import path from 'path';
+import {RequestError} from '@octokit/types';
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
@@ -109,7 +110,8 @@ export function validateConfig<ConfigType>(
     } else {
       errorText = JSON.stringify(validateSchema.errors, null, 4);
     }
-  } catch (err) {
+  } catch (e) {
+    const err = e as Error;
     // failed to load the yaml file
     errorText = 'the given config is not valid YAML 😱 \n' + err.message;
   }
@@ -236,7 +238,8 @@ export class ConfigChecker<ConfigType> {
           await octokit.checks.create(checkParams);
         }
       }
-    } catch (err) {
+    } catch (e) {
+      const err = e as RequestError;
       if (err.status !== 404) {
         throw err;
       }
@@ -328,7 +331,8 @@ export async function getConfig<ConfigType>(
       // This should not happen.
       throw new Error('could not handle getContent result.');
     }
-  } catch (err) {
+  } catch (e) {
+    const err = e as RequestError;
     if (err.status !== 404) {
       // re-throw all the non 404 errors
       throw err;
@@ -368,7 +372,8 @@ export async function getConfig<ConfigType>(
         // This should not happen.
         throw new Error('could not handle getContent result.');
       }
-    } catch (err) {
+    } catch (e) {
+      const err = e as RequestError;
       if (err.status !== 404) {
         throw err;
       }
@@ -441,7 +446,8 @@ export async function getConfigWithDefault<ConfigType>(
       // This should not happen.
       throw new Error('could not handle getContent result.');
     }
-  } catch (err) {
+  } catch (e) {
+    const err = e as RequestError;
     if (err.status !== 404) {
       throw err;
     }
@@ -480,7 +486,8 @@ export async function getConfigWithDefault<ConfigType>(
         // This should not happen.
         throw new Error('could not handle getContent result.');
       }
-    } catch (err) {
+    } catch (e) {
+      const err = e as RequestError;
       if (err.status !== 404) {
         throw err;
       }

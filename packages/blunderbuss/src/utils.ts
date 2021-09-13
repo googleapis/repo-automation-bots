@@ -23,7 +23,7 @@ import {
   Issue,
   PullRequest,
 } from '@octokit/webhooks-types/schema';
-import {Endpoints} from '@octokit/types';
+import {Endpoints, RequestError} from '@octokit/types';
 import {ByConfig, Configuration} from './config';
 
 export const sleep = (ms: number) => {
@@ -116,7 +116,8 @@ export async function assign(
     refreshedIssueResponse = await context.octokit.issues.get(
       context.repo({issue_number: issueOrPRNumber as number})
     );
-  } catch (err) {
+  } catch (e) {
+    const err = e as RequestError;
     if (err.status === 404) {
       context.log.info(
         '[%s] #%s ignored: got 404 on refreshing the issue',

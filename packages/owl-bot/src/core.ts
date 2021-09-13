@@ -21,6 +21,8 @@ import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/types';
+// eslint-disable-next-line node/no-extraneous-import
 import {
   OwlBotLock,
   OWL_BOT_LOCK_PATH,
@@ -155,7 +157,8 @@ export async function triggerPostProcessBuild(
     // const [build] = await resp.promise();
     const build = await waitForBuild(project, buildId, cb);
     return {detailsURL, ...summarizeBuild(build)};
-  } catch (err) {
+  } catch (e) {
+    const err = e as Error;
     logger.error(err);
     return buildFailureFrom(detailsURL);
   }
@@ -405,7 +408,8 @@ export async function getFileContent(
     }
     const text = Buffer.from(data.content, 'base64').toString('utf8');
     return text;
-  } catch (err) {
+  } catch (e) {
+    const err = e as RequestError;
     if (err.status === 404) return undefined;
     else throw err;
   }

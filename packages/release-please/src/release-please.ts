@@ -106,7 +106,8 @@ function findBranchConfiguration(
     if (found) {
       return found;
     }
-  } catch (err) {
+  } catch (e) {
+    const err = e as Error;
     err.message =
       `got an error finding the branch config: ${err.message},` +
       `config: ${JSON.stringify(config)}`;
@@ -355,7 +356,8 @@ const handler = (app: Probot) => {
     // can create another scheduler job.
     try {
       await syncLabels(context.octokit, owner, repoName, RELEASE_PLEASE_LABELS);
-    } catch (err) {
+    } catch (e) {
+      const err = e as Error;
       err.message = `Failed to sync the labels: ${err.message}`;
       logger.error(err);
     }
