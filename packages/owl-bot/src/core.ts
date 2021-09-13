@@ -518,6 +518,9 @@ async function hasOwlBotLoop(
     })
     .slice(0, circuitBreaker);
 
+  // not enough commits to trigger a circuit breaker
+  if (lastFewCommits.length < circuitBreaker) return false;
+
   for (const commit of lastFewCommits) {
     if (commit?.author?.login !== OWLBOT_USER) return false;
   }
