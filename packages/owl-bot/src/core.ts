@@ -506,13 +506,24 @@ async function hasOwlBotLoop(
       per_page: 100,
     })
   ).data;
-  let count = 0;
-  for (const commit of commits) {
-    if (commit?.author?.login === OWLBOT_USER) count++;
-    else count = 0;
-    if (count >= circuitBreaker) return true;
+
+  // get the most recent commits (limit by circuit breaker)
+  const lastFewCommits = commits
+    .sort((a, b) => {
+      const aDate = new Date(a.commit.author?.date || 0);
+      const bDate = new Date(b.commit.author?.date || 0);
+
+      // sort desc
+      return bDate.valueOf() - aDate.valueOf();
+    })
+    .slice(0, circuitBreaker);
+
+  for (const commit of lastFewCommits) {
+    if (commit?.author?.login !== OWLBOT_USER) return false;
   }
-  return false;
+
+  // all of the recent commits were from owl-bot
+  return true;
 }
 
 /*
