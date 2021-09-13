@@ -406,40 +406,20 @@ describe('core', () => {
           author: {
             login: 'gcf-owl-bot[bot]',
           },
-          commit: {
-            author: {
-              date: new Date(0).toISOString(),
-            },
-          },
         },
         {
           author: {
             login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(1).toISOString(),
-            },
           },
         },
         {
           author: {
             login: 'bcoe',
           },
-          commit: {
-            author: {
-              date: new Date(2).toISOString(),
-            },
-          },
         },
         {
           author: {
             login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(3).toISOString(),
-            },
           },
         },
       ];
@@ -450,48 +430,27 @@ describe('core', () => {
       assert.strictEqual(loop, false);
       githubMock.done();
     });
-
     it('returns true if post processor looping', async () => {
       const commits = [
         // Three commits from OwlBot in a row should not happen:
         {
           author: {
+            login: 'gcf-owl-bot[bot]',
+          },
+        },
+        {
+          author: {
+            login: 'gcf-owl-bot[bot]',
+          },
+        },
+        {
+          author: {
+            login: 'gcf-owl-bot[bot]',
+          },
+        },
+        {
+          author: {
             login: 'bcoe',
-          },
-          commit: {
-            author: {
-              date: new Date(0).toISOString(),
-            },
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(1).toISOString(),
-            },
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(2).toISOString(),
-            },
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(3).toISOString(),
-            },
           },
         },
       ];
@@ -500,58 +459,6 @@ describe('core', () => {
         .reply(200, commits);
       const loop = await core.hasOwlBotLoop('bcoe', 'foo', 22, new Octokit());
       assert.strictEqual(loop, true);
-      githubMock.done();
-    });
-
-    it('returns false if there was a loop in the past, but not within the last few commits', async () => {
-      const commits = [
-        // Three commits from OwlBot in a row should not happen:
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(0).toISOString(),
-            },
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(1).toISOString(),
-            },
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(2).toISOString(),
-            },
-          },
-        },
-        {
-          author: {
-            login: 'bcoe',
-          },
-          commit: {
-            author: {
-              date: new Date(3).toISOString(),
-            },
-          },
-        },
-      ];
-      const githubMock = nock('https://api.github.com')
-        .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
-        .reply(200, commits);
-      const loop = await core.hasOwlBotLoop('bcoe', 'foo', 22, new Octokit());
-      assert.strictEqual(loop, false);
       githubMock.done();
     });
   });
