@@ -18,7 +18,7 @@ import {Configs, ConfigsStore} from './configs-store';
 import {core} from './core';
 // Conflicting linters think the next line is extraneous or necessary.
 // eslint-disable-next-line node/no-extraneous-import
-import {Endpoints} from '@octokit/types';
+import {Endpoints, RequestError} from '@octokit/types';
 import {
   OctokitType,
   createIssueIfTitleDoesntExist,
@@ -215,7 +215,8 @@ export async function scanGithubForConfigs(
         defaultBranch,
         orgInstallationId
       );
-    } catch (err) {
+    } catch (e) {
+      const err = e as RequestError;
       if (err.status === 404) {
         logger.warn(`received 404 refreshing ${githubOrg}/${repo.name}`);
         continue;

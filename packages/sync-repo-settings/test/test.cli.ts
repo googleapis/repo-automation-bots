@@ -43,12 +43,11 @@ describe('cli', () => {
       GITHUB_TOKEN: undefined,
       GH_TOKEN: undefined,
     });
-    try {
-      await cli.parser().exitProcess(false).parse('--repo=testOwner/testRepo');
-      assert.fail('should not get here');
-    } catch (e) {
-      assert.ok(e.toString().match('Missing required argument: github-token'));
-    }
+    await assert.rejects(
+      async () =>
+        cli.parser().exitProcess(false).parse('--repo=testOwner/testRepo'),
+      /Missing required argument: github-token/
+    );
   });
 
   it('loads github-token from environment', async () => {

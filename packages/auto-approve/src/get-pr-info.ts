@@ -13,6 +13,7 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/request-error';
 import {logger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
 
@@ -56,15 +57,16 @@ export async function getChangedFiles(
       repo,
       pull_number: prNumber,
     });
-  } catch (err) {
+  } catch (e) {
+    const err = e as RequestError;
     // These errors happen frequently, so adding cleaner logging; will still throw error
-    if (err === 404) {
+    if (err.status === 404) {
       logger.error(
-        `Not found error, ${err.code}, ${err.message} for ${owner}/${repo}/${prNumber}`
+        `Not found error, ${err.status}, ${err.message} for ${owner}/${repo}/${prNumber}`
       );
     }
     throw new Error(
-      `${err.code}, ${err.message} for ${owner}/${repo}/${prNumber}`
+      `${err.status}, ${err.message} for ${owner}/${repo}/${prNumber}`
     );
   }
 }

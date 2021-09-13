@@ -18,6 +18,9 @@ import {GoogleAuth} from 'google-auth-library';
 import {readFileSync, existsSync} from 'fs';
 import * as yaml from 'js-yaml';
 
+// eslint-disable-next-line node/no-extraneous-import
+import {GoogleError} from 'google-gax';
+
 export interface CronEntry {
   name: string;
   schedule: string;
@@ -136,8 +139,9 @@ export async function createOrUpdateCron(
   try {
     [foundJob] = await client.getJob({name: jobName});
   } catch (e) {
+    const err = e as GoogleError;
     // error 5 is NOT_FOUND
-    if (e.code !== 5) {
+    if (err.code !== 5) {
       throw e;
     }
   }

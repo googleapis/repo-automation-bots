@@ -207,7 +207,8 @@ export function handler(app: Probot) {
         // always available for private repositories.
         try {
           config = await context.config<Configuration>(CONFIGURATION_FILE_PATH);
-        } catch (err) {
+        } catch (e) {
+          const err = e as Error;
           err.message = `Error reading configuration: ${err.message}`;
           logger.error(err);
           config = null;
