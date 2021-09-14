@@ -222,16 +222,22 @@ describe('owlBot', () => {
       const hasOwlBotLoopStub = sandbox
         .stub(core, 'hasOwlBotLoop')
         .resolves(true);
-      await assert.rejects(
-        probot.receive({
-          name: 'pull_request',
-          payload: payload as PullRequestOpenedEvent,
-          id: 'abc123',
-        }),
-        /too many OwlBot updates/
-      );
+      const createCheckStub = sandbox.stub(core, 'createCheck');
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: payload as PullRequestOpenedEvent,
+        id: 'abc123',
+      });
+
       githubMock.done();
       sandbox.assert.calledOnce(hasOwlBotLoopStub);
+      sandbox.assert.calledOnce(createCheckStub);
+
+      assert.strictEqual(
+        createCheckStub.lastCall.args[0].conclusion,
+        'failure'
+      );
     });
   });
   it('closes pull request if it has 0 files changed', async () => {
