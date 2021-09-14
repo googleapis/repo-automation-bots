@@ -404,9 +404,26 @@ const runPostProcessor = async (
   }
   // Detect looping OwlBot behavior and break the cycle:
   if (await core.hasOwlBotLoop(opts.owner, opts.repo, opts.prNumber, octokit)) {
-    throw Error(
-      `too many OwlBot updates created in a row for ${opts.owner}/${opts.repo}`
+    const message = `Too many OwlBot updates created in a row for ${opts.owner}/${opts.repo}`;
+    logger.warn(message);
+
+    await core.createCheck(
+      {
+        privateKey,
+        appId,
+        installation: opts.installation,
+        pr: opts.prNumber,
+        repo: opts.base,
+        text: message,
+        summary: message,
+        conclusion: 'failure',
+        title: '🦉 OwlBot - failure',
+        detailsURL:
+          'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
+      },
+      octokit
     );
+    return;
   }
   const image = `${lock.docker.image}@${lock.docker.digest}`;
   // Run time image from .Owlbot.lock.yaml on Cloud Build:
