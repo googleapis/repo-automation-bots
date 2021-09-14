@@ -259,6 +259,9 @@ export async function handlePullRequestLabeled(
     return;
   }
 
+  // Remove run label before continuing
+  await removeOwlBotRunLabel(owner, repo, prNumber, octokit);
+
   // If the last commit made to the PR was already from OwlBot, and the label
   // has been added by a bot account (most likely trusted contributor bot)
   // do not run the post processor:
@@ -266,7 +269,6 @@ export async function handlePullRequestLabeled(
     isBotAccount(payload.sender.login) &&
     (await core.lastCommitFromOwlBot(owner, repo, prNumber, octokit))
   ) {
-    await removeOwlBotRunLabel(owner, repo, prNumber, octokit);
     logger.info(
       `skipping post-processor run for ${owner}/${repo} pr = ${prNumber}`
     );
@@ -289,7 +291,6 @@ export async function handlePullRequestLabeled(
     },
     octokit
   );
-  await removeOwlBotRunLabel(owner, repo, prNumber, octokit);
   logger.metric('owlbot.run_post_processor');
 }
 

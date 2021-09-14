@@ -1118,6 +1118,87 @@ describe('owlBot', () => {
     sandbox.assert.calledOnce(updatePullRequestStub);
     githubMock.done();
   });
+
+  it('should remove "owlbot:run" label before running post-processor', async () => {
+    const payload = {
+      action: 'labeled',
+      installation: {
+        id: 12345,
+      },
+      sender: {
+        login: 'bcoe',
+      },
+      pull_request: {
+        number: 33,
+        labels: [
+          {
+            name: OWLBOT_RUN_LABEL,
+          },
+        ],
+        head: {
+          repo: {
+            full_name: 'rennie/owl-bot-testing',
+          },
+          ref: 'abc123',
+        },
+        base: {
+          repo: {
+            full_name: 'rennie/owl-bot-testing',
+          },
+        },
+      },
+    };
+    const config = `docker:
+    image: node
+    digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
+
+    let deleteLabelCalledFirst: boolean | void = undefined;
+    const githubMock = nock('https://api.github.com')
+      .get('/repos/rennie/owl-bot-testing/pulls/33')
+      .reply(200, () => {
+        deleteLabelCalledFirst ??= false;
+
+        return payload.pull_request;
+      })
+      .get(
+        '/repos/rennie/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+      )
+      .reply(200, () => {
+        deleteLabelCalledFirst ??= false;
+
+        return {
+          content: Buffer.from(config).toString('base64'),
+          encoding: 'base64',
+        };
+      })
+      .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .reply(200, () => {
+        deleteLabelCalledFirst ??= true;
+
+        return {};
+      });
+
+    sandbox.stub(core, 'triggerPostProcessBuild').resolves({
+      text: 'the text for check',
+      summary: 'summary for check',
+      conclusion: 'success',
+      detailsURL: 'https://www.example.com',
+    });
+    sandbox.stub(core, 'updatePullRequestAfterPostProcessor');
+    sandbox.stub(core, 'hasOwlBotLoop').resolves(false);
+    sandbox.stub(core, 'createCheck');
+    await probot.receive({
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
+      id: 'abc123',
+    });
+
+    assert.ok(deleteLabelCalledFirst);
+
+    githubMock.done();
+  });
+
   it('returns early if PR from fork and label other than owlbot:run added', async () => {
     const payload = {
       action: 'labeled',
