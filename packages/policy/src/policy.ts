@@ -24,12 +24,14 @@
  */
 
 import {request} from 'gaxios';
-import {operations} from '@octokit/openapi-types';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
+import {Endpoints} from '@octokit/types';
 
 export type GitHubRepo =
-  operations['repos/get']['responses']['200']['content']['application/json'];
+  Endpoints['GET /repos/{owner}/{repo}']['response']['data'];
+
 export const githubRawBase = 'https://raw.githubusercontent.com';
 
 export interface PolicyResult {
@@ -197,7 +199,7 @@ export class Policy {
   async hasBranchProtection(repo: GitHubRepo) {
     const [owner, name] = repo.full_name.split('/');
     type GetBranchProtectionResult =
-      operations['repos/get-branch-protection']['responses']['200']['content']['application/json'];
+      Endpoints['GET /repos/{owner}/{repo}/branches/{branch}/protection']['response']['data'];
     let data: GetBranchProtectionResult;
     try {
       const res = await this.octokit.repos.getBranchProtection({

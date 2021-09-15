@@ -31,7 +31,7 @@
   "dependencies": {
     "@commitlint/config-conventional": "^13.1.0",
     "@commitlint/lint": "^13.1.0",
-    "@octokit/openapi-types": "^9.7.0",
+    "@octokit/openapi-types": "^10.0.0",
     "gcf-utils": "^13.0.0"
   },
   "devDependencies": {
