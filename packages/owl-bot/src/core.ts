@@ -11,26 +11,28 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import {exec} from 'child_process';
-import {promisify} from 'util';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 const execAsync = promisify(exec);
-import {load} from 'js-yaml';
-import {logger} from 'gcf-utils';
-import {sign} from 'jsonwebtoken';
-import {request} from 'gaxios';
-import {CloudBuildClient} from '@google-cloud/cloudbuild';
-import {Octokit} from '@octokit/rest';
+import { load } from 'js-yaml';
+import { logger } from 'gcf-utils';
+import { sign } from 'jsonwebtoken';
+import { request } from 'gaxios';
+import { CloudBuildClient } from '@google-cloud/cloudbuild';
+import { Octokit } from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
-import {RequestError} from '@octokit/types';
+import { RequestError } from '@octokit/types';
 // eslint-disable-next-line node/no-extraneous-import
 import {
   OwlBotLock,
   OWL_BOT_LOCK_PATH,
   owlBotLockFrom,
   DEFAULT_OWL_BOT_YAML_PATH,
+  OwlBotYaml,
+  owlBotYamlFrom,
 } from './config-files';
-import {OctokitFactory, OctokitType} from './octokit-util';
-import {OWL_BOT_IGNORE} from './labels';
+import { OctokitFactory, OctokitType } from './octokit-util';
+import { OWL_BOT_IGNORE } from './labels';
 import {
   findCopyTag,
   findSourceHash,
@@ -38,9 +40,9 @@ import {
   sourceLinkLineFrom,
   unpackCopyTag,
 } from './copy-code';
-import {google} from '@google-cloud/cloudbuild/build/protos/protos';
+import { google } from '@google-cloud/cloudbuild/build/protos/protos';
 
-interface BuildArgs {
+export interface BuildArgs {
   image: string;
   privateKey: string;
   appId: number;
@@ -50,6 +52,8 @@ interface BuildArgs {
   project?: string;
   trigger: string;
   defaultBranch?: string;
+  // The cmd to pass along to the post processor docker image.
+  cmd?: string;
 }
 
 export interface CheckArgs {
@@ -112,7 +116,7 @@ export async function triggerPostProcessBuild(
   if (!octokit) {
     octokit = await core.getAuthenticatedOctokit(token.token);
   }
-  const {data: prData} = await octokit.pulls.get({
+  const { data: prData } = await octokit.pulls.get({
     owner,
     repo,
     pull_number: args.pr,
@@ -128,7 +132,7 @@ export async function triggerPostProcessBuild(
 
   const [prOwner, prRepo] = prData.head.repo.full_name.split('/');
   const cb = core.getCloudBuildInstance();
-  const [resp] = await cb.runBuildTrigger({
+  const request: google.devtools.cloudbuild.v1.IRunBuildTriggerRequest = {
     projectId: project,
     triggerId: args.trigger,
     source: {
@@ -147,7 +151,11 @@ export async function triggerPostProcessBuild(
         _DEFAULT_BRANCH: args.defaultBranch ?? 'master',
       },
     },
-  });
+  };
+  if (args.cmd) {
+    request.source!.substitutions!._CONTAINER_CMD = args.cmd;
+  }
+  const [resp] = await cb.runBuildTrigger(request);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const buildId: string = (resp as any).metadata.build.id;
   const detailsURL = detailsUrlFrom(buildId, project);
@@ -156,7 +164,7 @@ export async function triggerPostProcessBuild(
     // running operation does not behave as expected:
     // const [build] = await resp.promise();
     const build = await waitForBuild(project, buildId, cb);
-    return {detailsURL, ...summarizeBuild(build)};
+    return { detailsURL, ...summarizeBuild(build) };
   } catch (e) {
     const err = e as Error;
     logger.error(err);
@@ -211,7 +219,7 @@ async function waitForBuild(
   client: CloudBuildClient
 ): Promise<google.devtools.cloudbuild.v1.IBuild> {
   for (let i = 0; i < 60; i++) {
-    const [build] = await client.getBuild({projectId, id});
+    const [build] = await client.getBuild({ projectId, id });
     if (build.status !== 'WORKING' && build.status !== 'QUEUED') {
       return build;
     }
@@ -233,7 +241,7 @@ export async function getHeadCommit(
 ): Promise<Commit | undefined> {
   // If a PR has more than 100 updates to it, we will currently have issues
   // in practice this should be rare:
-  const {data: commits} = await octokit.pulls.listCommits({
+  const { data: commits } = await octokit.pulls.listCommits({
     owner,
     repo,
     pull_number: pr,
@@ -289,7 +297,7 @@ export async function getGitHubShortLivedAccessToken(
     // GitHub App's identifier
     iss: appId,
   };
-  const jwt = sign(payload, privateKey, {algorithm: 'RS256'});
+  const jwt = sign(payload, privateKey, { algorithm: 'RS256' });
   const resp = await request<Token>({
     url: getAccessTokenURL(installation),
     method: 'POST',
@@ -339,7 +347,6 @@ function getCloudBuildInstance() {
 
 /*
  * Load OwlBot lock file from .github/.OwlBot.lock.yaml.
- * TODO(bcoe): abstract into common helper that supports .yml.
  *
  * @param {string} repoFull - repo in org/repo format.
  * @param {number} pullNumber - pull request to base branch on.
@@ -350,8 +357,27 @@ export async function getOwlBotLock(
   pullNumber: number,
   octokit: OctokitType
 ): Promise<OwlBotLock | undefined> {
+  const obj = await getConfigFileContent(repoFull, pullNumber, OWL_BOT_LOCK_PATH, octokit);
+  return obj ? owlBotLockFrom(obj) : undefined;
+}
+
+export async function getOwlBotYaml(
+  repoFull: string,
+  pullNumber: number,
+  octokit: OctokitType
+): Promise<OwlBotYaml | undefined> {
+  const obj = await getConfigFileContent(repoFull, pullNumber, DEFAULT_OWL_BOT_YAML_PATH, octokit);
+  return obj ? owlBotYamlFrom(obj) : undefined;
+}
+
+async function getConfigFileContent(
+  repoFull: string,
+  pullNumber: number,
+  filePath: string,
+  octokit: OctokitType
+): Promise<object | undefined> {
   const [owner, repo] = repoFull.split('/');
-  const {data: prData} = await octokit.pulls.get({
+  const { data: prData } = await octokit.pulls.get({
     owner,
     repo,
     pull_number: pullNumber,
@@ -360,7 +386,7 @@ export async function getOwlBotLock(
   const configString = await getFileContent(
     prOwner,
     prRepo,
-    OWL_BOT_LOCK_PATH,
+    filePath,
     prData.head.ref,
     octokit
   );
@@ -372,7 +398,11 @@ export async function getOwlBotLock(
   if (maybeOwlBotLock === null || typeof maybeOwlBotLock !== 'object') {
     throw Error('lock file did not parse as object');
   }
-  return owlBotLockFrom(maybeOwlBotLock);
+  if (configString === undefined) {
+    logger.warn(`no ${filePath} in ${repoFull}`);
+    return undefined;
+  }
+  return maybeOwlBotLock;
 }
 
 /**
@@ -399,7 +429,7 @@ export async function getFileContent(
         path,
         ref,
       })
-    ).data as {content: string | undefined; encoding: string};
+    ).data as { content: string | undefined; encoding: string };
     if (!data.content) {
       return undefined;
     }
@@ -568,7 +598,7 @@ async function updatePullRequestAfterPostProcessor(
   prNumber: number,
   octokit: Octokit
 ): Promise<void> {
-  const {data: pull} = await octokit.pulls.get({
+  const { data: pull } = await octokit.pulls.get({
     owner,
     repo,
     pull_number: prNumber,

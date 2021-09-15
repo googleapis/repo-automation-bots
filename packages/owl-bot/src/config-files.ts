@@ -77,6 +77,10 @@ function validatePath(path: string, fieldName: string) {
 // Otherwise, returns the same object as an OwlBotYaml.
 export function owlBotYamlFromText(yamlText: string): OwlBotYaml {
   const o = yaml.load(yamlText) ?? {};
+  return owlBotYamlFrom(o as object);
+}
+
+export function owlBotYamlFrom(o: Record<string,any>): OwlBotYaml {
   const validate = new Ajv().compile(owlBotYamlSchema);
   if (validate(o)) {
     const yaml = o as OwlBotYaml;

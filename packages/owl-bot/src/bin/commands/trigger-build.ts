@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import {
+  BuildArgs,
   createCheck,
   getAuthenticatedOctokit,
   getGitHubShortLivedAccessToken,
   getOwlBotLock,
+  getOwlBotYaml,
   triggerPostProcessBuild,
 } from '../../core';
 import {promisify} from 'util';
@@ -87,18 +89,31 @@ export const triggerBuildCommand: yargs.CommandModule<{}, Args> = {
       console.info('no .OwlBot.lock.yaml found');
       return;
     }
+    const yaml = await getOwlBotYaml(argv.repo, Number(argv.pr), octokit);
+    if (!yaml) {
+      console.info('no .OwlBot.yaml found');
+      return;
+    }
+
     const image = `${lock.docker.image}@${lock.docker.digest}`;
+    const buildArgs: BuildArgs = {
+      image,
+      project: argv.project,
+      privateKey,
+      appId: argv['app-id'],
+      installation: argv.installation,
+      repo: argv.repo,
+      pr: Number(argv.pr),
+      trigger: argv.trigger,
+    };
+    const cmd = yaml.docker?.cmd;
+    if (cmd) {
+      buildArgs.cmd = cmd;
+      // TODO(rennie): use a different build trigger id.
+    }
+
     const buildStatus = await triggerPostProcessBuild(
-      {
-        image,
-        project: argv.project,
-        privateKey,
-        appId: argv['app-id'],
-        installation: argv.installation,
-        repo: argv.repo,
-        pr: Number(argv.pr),
-        trigger: argv.trigger,
-      },
+      buildArgs,
       octokit
     );
     if (buildStatus) {
