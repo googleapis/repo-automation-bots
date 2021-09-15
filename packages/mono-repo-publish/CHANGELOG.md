@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.2.2](https://www.github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.2.1...mono-repo-publish-v1.2.2) (2021-09-15)
+
+
+### Bug Fixes
+
+* **mono-repo-publish:** root node_modules folder broke typescript compilation ([#2516](https://www.github.com/googleapis/repo-automation-bots/issues/2516)) ([8324600](https://www.github.com/googleapis/repo-automation-bots/commit/8324600bbb527fd6265d1bd8cfe694011f59b046))
+
 ### [1.2.1](https://www.github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.2.0...mono-repo-publish-v1.2.1) (2021-09-10)
 
 
