@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This cloud build gets invoked every time a new pull request is created or
+# a new commit is added to a pull request that's being watched by Owl Bot.
+# It's triggered programmatically by event handlers in Owl Bot.
+# It runs the post processor specified in the environment variable 
+
 steps:
   # Check git version
   - name: 'gcr.io/cloud-builders/git'
