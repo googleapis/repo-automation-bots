@@ -131,8 +131,8 @@ at the specified schedule.
 [policy-app]: https://github.com/apps/google-cloud-policy-bot
 [release-please]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/release-please
 [release-please-app]: https://github.com/apps/release-please
-[release-please]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/release-trigger
-[release-please-app]: https://github.com/apps/release-trigger
+[release-trigger]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/release-trigger
+[release-trigger-app]: https://github.com/apps/release-trigger
 [trusted-contribution]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/trusted-contribution
 [trusted-contribution-app]: https://github.com/apps/trusted-contributions-gcf
 [failurechecker]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/failurechecker
