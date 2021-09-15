@@ -22,7 +22,11 @@ import {Octokit} from '@octokit/rest';
 type OctokitType = InstanceType<typeof Octokit>;
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
-import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
+import {
+  PullRequestLabeledEvent,
+  PullRequestClosedEvent,
+  PullRequestReopenedEvent,
+} from '@octokit/webhooks-types';
 import * as fs from 'fs';
 import yaml from 'js-yaml';
 import * as sinon from 'sinon';
@@ -668,6 +672,87 @@ describe('ReleasePleaseBot', () => {
       await probot.receive({
         name: 'pull_request',
         payload: payload as PullRequestLabeledEvent,
+        id: 'abc123',
+      });
+    });
+  });
+
+  describe('pull request closed', () => {
+    let payload: {};
+
+    it('should try to mark closed', async () => {
+      payload = require(resolve(fixturesPath, './pr_closed'));
+      getConfigStub.resolves(loadConfig('valid.yml'));
+      const requests = nock('https://api.github.com')
+        .delete(
+          '/repos/testOwner/testRepo/issues/12/labels/autorelease%3A%20pending'
+        )
+        .reply(200)
+        .post('/repos/testOwner/testRepo/issues/12/labels')
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: payload as PullRequestClosedEvent,
+        id: 'abc123',
+      });
+
+      requests.done();
+    });
+
+    it('should ignore non-release pull requests', async () => {
+      payload = require(resolve(fixturesPath, './pr_closed_non_release'));
+      getConfigStub.resolves(loadConfig('valid.yml'));
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: payload as PullRequestClosedEvent,
+        id: 'abc123',
+      });
+    });
+
+    it('should ignore merged pull requests', async () => {
+      payload = require(resolve(fixturesPath, './pr_merged'));
+      getConfigStub.resolves(loadConfig('valid.yml'));
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: payload as PullRequestClosedEvent,
+        id: 'abc123',
+      });
+    });
+  });
+
+  describe('pull request reopened', () => {
+    let payload: {};
+
+    it('should try to mark pending', async () => {
+      payload = require(resolve(fixturesPath, './pr_reopened'));
+      getConfigStub.resolves(loadConfig('valid.yml'));
+      const requests = nock('https://api.github.com')
+        .delete(
+          '/repos/testOwner/testRepo/issues/12/labels/autorelease%3A%20closed'
+        )
+        .reply(200)
+        .post('/repos/testOwner/testRepo/issues/12/labels')
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: payload as PullRequestReopenedEvent,
+        id: 'abc123',
+      });
+
+      requests.done();
+    });
+
+    it('should ignore non-release pull requests', async () => {
+      payload = require(resolve(fixturesPath, './pr_reopened_non_release'));
+      getConfigStub.resolves(loadConfig('valid.yml'));
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: payload as PullRequestReopenedEvent,
         id: 'abc123',
       });
     });
