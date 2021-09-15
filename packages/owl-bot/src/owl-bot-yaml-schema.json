@@ -2,6 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": ".OwlBot.yaml Settings Config",
   "description": "Schema for defining the .OwlBot.yaml config",
+  "type": "object",
   "additionalProperties": false,
   "properties": {
     "begin-after-commit-hash": {
@@ -18,9 +19,8 @@
           "type": "string"
         },
         "cmd": {
-          "description": "The CMD arguments to pass to the docker image.",
-          "type": "array",
-          "items" : { "type": "string" }
+          "description": "The CMD argument to pass to the docker image.",
+          "type": "string"
         }
       }
     },

@@ -19,7 +19,7 @@
 
 ##############################################################################
 # If you make changes to this file, you mast make the same changes to
-# update-pr-cmd.yaml.
+# update-pr.yaml.
 ##############################################################################
 
 steps:
@@ -86,6 +86,7 @@ steps:
     dir: '${_REPOSITORY}'
     env:
       - 'DEFAULT_BRANCH=$_DEFAULT_BRANCH'
+    args: [$_CONTAINER_CMD]
   # Commit any changes to working directory:
   - name: 'gcr.io/cloud-builders/git'
     args:

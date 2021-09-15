@@ -33,7 +33,7 @@ begin-after-commit-hash: abc123
 
 docker:
   image: gcr.io/cloud-devrel-resources/synthtool-nodejs:prod
-  cmd: ['/bin/bash', '-c', 'hello', 'world']
+  cmd: 'echo "hello world"'
 `;
     const config = owlBotYamlFromText(text);
     assert.deepStrictEqual(config, {
@@ -43,7 +43,7 @@ docker:
       'begin-after-commit-hash': 'abc123',
       docker: {
         image: 'gcr.io/cloud-devrel-resources/synthtool-nodejs:prod',
-        cmd: ['/bin/bash', '-c', 'hello', 'world']
+        cmd: 'echo "hello world"'
       },
     });
   });

@@ -56,7 +56,7 @@ export interface DeepCopyRegex {
 export interface OwlBotYaml {
   docker?: {
     image: string;
-    cmd?: string[];
+    cmd?: string;
   };
   'deep-copy-regex'?: DeepCopyRegex[];
   'deep-remove-regex'?: string[];
