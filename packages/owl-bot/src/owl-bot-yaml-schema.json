@@ -16,6 +16,11 @@
         "image": {
           "description": "Name of the docker image to run to post-process this repo, with tag.",
           "type": "string"
+        },
+        "cmd": {
+          "description": "The CMD arguments to pass to the docker image.",
+          "type": "array",
+          "items" : { "type": "string" }
         }
       }
     },
