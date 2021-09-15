@@ -75,4 +75,23 @@ describe('mono-repo publish', () => {
     sandbox.assert.calledWith(execSync.firstCall, 'npm i');
     sandbox.assert.calledWith(execSync.secondCall, 'npm publish --access=public --dry-run');
   });
+
+  // A node_modules folder existing in the root directory was preventing
+  // google-api-nodejs-client from publishing.
+  it('it removes node_modules after publish', () => {
+    const execSync = sandbox.spy();
+    const rmdirSync = sandbox.spy();
+    const errors = core.publishSubmodules(['foo'], true, execSync, rmdirSync);
+    sandbox.assert.calledWith(execSync.firstCall, 'npm i');
+    sandbox.assert.calledWith(execSync.secondCall, 'npm publish --access=public --dry-run');
+    sandbox.assert.calledWith(rmdirSync, 'foo/node_modules', { force: true, recursive: true });
+    assert.strictEqual(errors.length, 0);
+  });
+
+  it('returns array of errors after attempting all publications', () => {
+    const execSync = sandbox.mock().throws(Error('publish fail'));
+    const errors = core.publishSubmodules(['foo'], true, execSync);
+    sandbox.assert.calledWith(execSync.firstCall, 'npm i');
+    assert.strictEqual(errors.length, 1);
+  });
 });
