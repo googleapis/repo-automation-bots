@@ -379,12 +379,13 @@ flakybot.openIssues = async (
 
         const testCase = flakybot.groupedTestCase(pkg);
         const testString = pkgFailures.length === 1 ? 'test' : 'tests';
-        const body = `${pkgFailures.length
-          } ${testString} failed in this package for commit ${commit} (${buildURL}).\n\n-----\n${flakybot.formatBody(
-            testCase,
-            commit,
-            buildURL
-          )}`;
+        const body = `${
+          pkgFailures.length
+        } ${testString} failed in this package for commit ${commit} (${buildURL}).\n\n-----\n${flakybot.formatBody(
+          testCase,
+          commit,
+          buildURL
+        )}`;
         await context.octokit.issues.createComment({
           owner,
           repo,
