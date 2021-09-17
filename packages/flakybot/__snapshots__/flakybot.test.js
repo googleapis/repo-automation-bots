@@ -201,20 +201,6 @@ exports['flakybot app xunitXML closes a duplicate issue 2'] = {
   "state": "closed"
 }
 
-exports['flakybot app xunitXML reopens the original flaky issue when there is a duplicate 1'] = {
-  "labels": [
-    "type: bug",
-    "priority: p1",
-    "flakybot: issue",
-    "flakybot: flaky"
-  ],
-  "state": "open"
-}
-
-exports['flakybot app xunitXML reopens the original flaky issue when there is a duplicate 2'] = {
-  "body": "Oops! Looks like this issue is still flaky. It failed again. :grimacing:\n\nI reopened the issue, but a human will need to close it again.\n\n---\n\ncommit: 123\nbuildURL: http://example.com\nstatus: failed\n<details><summary>Test output</summary><br><pre>\nsnippet_test.go:242: got output \"\"; want it to contain \"4 Venue 4\" snippet_test.go:243: got output \"\"; want it to contain \"19 Venue 19\" snippet_test.go:244: got output \"\"; want it to contain \"42 Venue 42\"\n</pre></details>"
-}
-
 exports['flakybot app xunitXML reopens the more recently closed issue when there is a duplicate 1'] = {
   "labels": [
     "type: bug",

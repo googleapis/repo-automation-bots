@@ -398,51 +398,47 @@ describe('core', () => {
     });
   });
   describe('hasOwlBotLoop', () => {
+    /** A helper function for simulating a date-ordered list of commits */
+    function generateCommitList(commitOrderByAuthor: string[]) {
+      const commits: {
+        author: {
+          login: string;
+        };
+        commit: {
+          author: {
+            date: string;
+          };
+        };
+      }[] = [];
+
+      for (let i = 0; i < commitOrderByAuthor.length; i++) {
+        commits.push({
+          author: {
+            login: commitOrderByAuthor[i],
+          },
+          commit: {
+            author: {
+              date: new Date(i).toISOString(),
+            },
+          },
+        });
+      }
+
+      return commits;
+    }
+
     it('returns false if post processor not looping', async () => {
-      const commits = [
-        // Two PRs from gcf-owl-bot[bot] are expected: a PR to
-        // submit files, followed by a commit from the post processor:
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(0).toISOString(),
-            },
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(1).toISOString(),
-            },
-          },
-        },
-        {
-          author: {
-            login: 'bcoe',
-          },
-          commit: {
-            author: {
-              date: new Date(2).toISOString(),
-            },
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(3).toISOString(),
-            },
-          },
-        },
-      ];
+      // Two PRs from gcf-owl-bot[bot] are expected: a PR to
+      // submit files, followed by a commit from the post processor:
+      const commits = generateCommitList([
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'bcoe',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+      ]);
+
       const githubMock = nock('https://api.github.com')
         .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
         .reply(200, commits);
@@ -452,49 +448,17 @@ describe('core', () => {
     });
 
     it('returns true if post processor looping', async () => {
-      const commits = [
-        // Three commits from OwlBot in a row should not happen:
-        {
-          author: {
-            login: 'bcoe',
-          },
-          commit: {
-            author: {
-              date: new Date(0).toISOString(),
-            },
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(1).toISOString(),
-            },
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(2).toISOString(),
-            },
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(3).toISOString(),
-            },
-          },
-        },
-      ];
+      const commits = generateCommitList([
+        'bcoe',
+        'gcf-owl-bot[bot]',
+        'bcoe',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]', // this commit should trigger the breaker
+      ]);
+
       const githubMock = nock('https://api.github.com')
         .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
         .reply(200, commits);
@@ -504,49 +468,18 @@ describe('core', () => {
     });
 
     it('returns false if there was a loop in the past, but not within the last few commits', async () => {
-      const commits = [
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(0).toISOString(),
-            },
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(1).toISOString(),
-            },
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(2).toISOString(),
-            },
-          },
-        },
-        // this commit should break the loop
-        {
-          author: {
-            login: 'bcoe',
-          },
-          commit: {
-            author: {
-              date: new Date(3).toISOString(),
-            },
-          },
-        },
-      ];
+      const commits = generateCommitList([
+        'bcoe',
+        'gcf-owl-bot[bot]',
+        'bcoe',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'bcoe', // this commit should break the loop
+      ]);
+
       const githubMock = nock('https://api.github.com')
         .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
         .reply(200, commits);
@@ -556,18 +489,8 @@ describe('core', () => {
     });
 
     it('returns false if there were less than the number of commits from the circuit breaker', async () => {
-      const commits = [
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-          commit: {
-            author: {
-              date: new Date(0).toISOString(),
-            },
-          },
-        },
-      ];
+      const commits = generateCommitList(['gcf-owl-bot[bot]']);
+
       const githubMock = nock('https://api.github.com')
         .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
         .reply(200, commits);

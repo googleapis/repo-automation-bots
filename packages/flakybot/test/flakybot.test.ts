@@ -1293,52 +1293,6 @@ describe('flakybot', () => {
         scopes.forEach(s => s.done());
       });
 
-      it('reopens the original flaky issue when there is a duplicate', async () => {
-        getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
-        const payload = buildPayload('one_failed.xml', 'golang-samples');
-
-        const title = formatTestCase({
-          package:
-            'github.com/GoogleCloudPlatform/golang-samples/spanner/spanner_snippets',
-          testCase: 'TestSample',
-          passed: false,
-        });
-        const issues = [
-          {
-            title,
-            number: 18,
-            body: 'Failure!',
-            state: 'closed',
-            url: 'url',
-          },
-          {
-            title,
-            number: 19,
-            body: 'Failure!',
-            labels: [{name: 'flakybot: flaky'}],
-            state: 'closed',
-            url: 'url',
-          },
-        ];
-
-        const scopes = [
-          nockIssues('golang-samples', issues),
-          nockGetIssue('golang-samples', 19, issues[1]),
-          nockIssueComment('golang-samples', 19),
-          nockIssuePatch('golang-samples', 19),
-        ];
-
-        await probot.receive({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          name: 'pubsub.message' as any,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          payload: payload as any,
-          id: 'abc123',
-        });
-
-        scopes.forEach(s => s.done());
-      });
-
       it('reopens the more recently closed issue when there is a duplicate', async () => {
         getConfigWithDefaultStub.resolves(DEFAULT_CONFIG);
         const payload = buildPayload('one_failed.xml', 'golang-samples');
