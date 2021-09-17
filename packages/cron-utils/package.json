@@ -1,6 +1,6 @@
 {
   "name": "@google-automations/cron-utils",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Utilities for setting up bot crons",
   "scripts": {
     "compile": "tsc -p .",
