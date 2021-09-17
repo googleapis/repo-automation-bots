@@ -491,12 +491,12 @@ async function hasOwlBotLoop(
   // by the post-processor one after another, this indicates that we're
   // potentially looping, e.g., flip flopping a date between 2020 and 2021.
   //
-  // It's okay to have 2 commits from Owl-Bot in a row, e.g., a commit for
+  // It's okay to have 4 commits from Owl-Bot in a row, e.g., a commit for
   // a code update plus the post processor.
   //
   // It's also okay to run the post-processor many more than circuitBreaker
   // times on a long lived PR, with human edits being made.
-  const circuitBreaker = 3;
+  const circuitBreaker = 5;
   // TODO(bcoe): we should move to an async iterator for listCommits:
   const commits = (
     await octokit.pulls.listCommits({
