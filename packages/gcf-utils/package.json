@@ -23,7 +23,7 @@
     "@google-cloud/secret-manager": "^3.7.3",
     "@google-cloud/storage": "^5.8.5",
     "@google-cloud/tasks": "^2.3.4",
-    "@googleapis/run": "^2.0.0",
+    "@googleapis/run": "^5.0.0",
     "@octokit/plugin-enterprise-compatibility": "1.3.0",
     "@octokit/rest": "^18.5.2",
     "@probot/octokit-plugin-config": "^1.0.0",
