@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [13.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.0.1...gcf-utils-v13.0.2) (2021-09-17)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @googleapis/run to v5 ([#2527](https://www.github.com/googleapis/repo-automation-bots/issues/2527)) ([439484f](https://www.github.com/googleapis/repo-automation-bots/commit/439484fbf9fdb2545581472e5e88aa7c5bc8f0d9))
+
 ### [13.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.0.0...gcf-utils-v13.0.1) (2021-08-25)
 
 
