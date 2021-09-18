@@ -179,7 +179,8 @@ async function getStatuses(
       `called getStatuses in ${Date.now() - start}ms ${owner}/${repo}`
     );
     return responses;
-  } catch (err) {
+  } catch (e) {
+    const err = e as Error;
     err.message = `Error in getting statuses\n\n${err.message}`;
     logger.error(err);
     return [];
@@ -327,7 +328,8 @@ async function getReviewsCompleted(
       pull_number: pr,
     });
     return reviewsCompleted.data as Reviews[];
-  } catch (err) {
+  } catch (e) {
+    const err = e as Error;
     err.message = `Error getting reviews completed\n\n${err.message}`;
     logger.error(err);
     return [];
@@ -477,7 +479,8 @@ async function updateBranch(
       repo,
       pull_number: pr,
     });
-  } catch (err) {
+  } catch (e) {
+    const err = e as Error;
     err.message = `Error in updating branch: \n\n${err.message}`;
     logger.error(err);
   }
@@ -507,7 +510,8 @@ async function commentOnPR(
       body,
     });
     return data;
-  } catch (err) {
+  } catch (e) {
+    const err = e as Error;
     err.message = `There was an issue commenting on ${owner}/${repo} PR ${pr} \n\n${err.message}`;
     logger.error(err);
     return null;
@@ -629,7 +633,8 @@ export async function mergeOnGreen(
         mergeable: prInfo.mergeable,
         mergeable_state: prInfo.mergeable_state,
       });
-    } catch (err) {
+    } catch (e) {
+      const err = e as Error;
       logger.metric('merge_on_green.failed_to_merge', {
         repo: `${owner}/${repo}`,
         number: pr,
@@ -655,7 +660,8 @@ export async function mergeOnGreen(
         logger.info(`Attempting to update branch ${owner}/${repo}/${pr}`);
         try {
           await updateBranch(owner, repo, pr, github);
-        } catch (err) {
+        } catch (e) {
+          const err = e as Error;
           err.message = `failed to update branch ${owner}/${repo}/${pr}\n\n${err.message}`;
           logger.error(err);
         }

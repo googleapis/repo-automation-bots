@@ -87,6 +87,70 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+### [13.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.0.1...gcf-utils-v13.0.2) (2021-09-17)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @googleapis/run to v5 ([#2527](https://www.github.com/googleapis/repo-automation-bots/issues/2527)) ([439484f](https://www.github.com/googleapis/repo-automation-bots/commit/439484fbf9fdb2545581472e5e88aa7c5bc8f0d9))
+
+### [13.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.0.0...gcf-utils-v13.0.1) (2021-08-25)
+
+
+### Bug Fixes
+
+* stop loggging signature ([#2384](https://www.github.com/googleapis/repo-automation-bots/issues/2384)) ([b6ed87e](https://www.github.com/googleapis/repo-automation-bots/commit/b6ed87e64d6c7599ab463337c3b0990e21ad7a13))
+
+## [13.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v12.0.0...gcf-utils-v13.0.0) (2021-08-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **gcf-utils:** upgrade to probot 12 (#2253)
+* verify payload signatures (#2093)
+* **gcf-utils:** add onlyUpdate option to addOrUpdateIssueComment (#2024)
+* **gcf-utils:** lock file maintenance (#2001)
+* **gcf-utils:** fix getAuthenticatedOctokit (#1826)
+
+### Features
+
+* add helper to build a http.Server instance from a bot function ([#2128](https://www.github.com/googleapis/repo-automation-bots/issues/2128)) ([90430f3](https://www.github.com/googleapis/repo-automation-bots/commit/90430f3024cfd4c502f3001ab90ea585f8b8a85b)), closes [#1817](https://www.github.com/googleapis/repo-automation-bots/issues/1817)
+* add max retries config options ([#2116](https://www.github.com/googleapis/repo-automation-bots/issues/2116)) ([4cb9d40](https://www.github.com/googleapis/repo-automation-bots/commit/4cb9d40c715a9a795e54711811e509df85174e60))
+* allow configuration of GCFBootstrapper via constructor arguments ([#2150](https://www.github.com/googleapis/repo-automation-bots/issues/2150)) ([534e26b](https://www.github.com/googleapis/repo-automation-bots/commit/534e26bce3efb81556c7ce49bb84f2082deb1121)), closes [#2139](https://www.github.com/googleapis/repo-automation-bots/issues/2139)
+* allow queuing Cloud Tasks to hit Cloud Run service ([#2159](https://www.github.com/googleapis/repo-automation-bots/issues/2159)) ([a99805c](https://www.github.com/googleapis/repo-automation-bots/commit/a99805cacd2c534164c90c90072a1ab72fdccc58))
+* **cron:** add new schedule.global and schedule.installation cron handlers ([#1868](https://www.github.com/googleapis/repo-automation-bots/issues/1868)) ([42e9ffc](https://www.github.com/googleapis/repo-automation-bots/commit/42e9ffc19ef8f0349b243969a7306129a27b4fa2))
+* **gcf-utils:** add onlyUpdate option to addOrUpdateIssueComment ([#2024](https://www.github.com/googleapis/repo-automation-bots/issues/2024)) ([ea93fe2](https://www.github.com/googleapis/repo-automation-bots/commit/ea93fe27d5401e9ca32e08f50914a03a8712a08b))
+* **gcf-utils:** extend logger to populate count/event/type ([#1655](https://www.github.com/googleapis/repo-automation-bots/issues/1655)) ([c3f8f11](https://www.github.com/googleapis/repo-automation-bots/commit/c3f8f11d253401a93d9a89d778a39577c50be03a))
+
+
+### Bug Fixes
+
+* correctly dasherize service name for Cloud Run ([#2216](https://www.github.com/googleapis/repo-automation-bots/issues/2216)) ([9fbf01a](https://www.github.com/googleapis/repo-automation-bots/commit/9fbf01aa59293356bbd8a7e92ec4201de35ec225))
+* **deps:** update dependency @octokit/plugin-enterprise-compatibility to v1.2.10 ([#1518](https://www.github.com/googleapis/repo-automation-bots/issues/1518)) ([6e6d40b](https://www.github.com/googleapis/repo-automation-bots/commit/6e6d40b2eed46ee13e9272654a3097f81a83ee8f))
+* **deps:** update dependency @octokit/plugin-enterprise-compatibility to v1.2.11 ([#1667](https://www.github.com/googleapis/repo-automation-bots/issues/1667)) ([f2ee62a](https://www.github.com/googleapis/repo-automation-bots/commit/f2ee62ac69397bdbaf69ba2c2136b6d782aa4185))
+* **deps:** update dependency @octokit/plugin-enterprise-compatibility to v1.3.0 ([#2043](https://www.github.com/googleapis/repo-automation-bots/issues/2043)) ([a7c91ed](https://www.github.com/googleapis/repo-automation-bots/commit/a7c91ed062922affb2d68a019dea1c82b14a132a))
+* detect default task target runtime from environment ([#2233](https://www.github.com/googleapis/repo-automation-bots/issues/2233)) ([7f262e8](https://www.github.com/googleapis/repo-automation-bots/commit/7f262e8f3208a7f5247284fb2880da0e8ebeb359)), closes [#2194](https://www.github.com/googleapis/repo-automation-bots/issues/2194)
+* express server should save rawBody ([#2195](https://www.github.com/googleapis/repo-automation-bots/issues/2195)) ([48a6406](https://www.github.com/googleapis/repo-automation-bots/commit/48a64060163d773b4503416ccc7157499206ce22)), closes [#2183](https://www.github.com/googleapis/repo-automation-bots/issues/2183)
+* **gcf-utils:** address octokit type regressions ([#1660](https://www.github.com/googleapis/repo-automation-bots/issues/1660)) ([79f7c3f](https://www.github.com/googleapis/repo-automation-bots/commit/79f7c3f0a875b187e170a4bf50f0235d02a02230))
+* **gcf-utils:** correctly handle scheduler task for non-background apps ([#2069](https://www.github.com/googleapis/repo-automation-bots/issues/2069)) ([b8bd543](https://www.github.com/googleapis/repo-automation-bots/commit/b8bd543db45f452e0eaef24284e3c9d7f2797b49))
+* **gcf-utils:** create tasks in parallel ([#1986](https://www.github.com/googleapis/repo-automation-bots/issues/1986)) ([89d5326](https://www.github.com/googleapis/repo-automation-bots/commit/89d53263653429fb637c02213918b73f1f493a91))
+* **gcf-utils:** fix getAuthenticatedOctokit ([#1826](https://www.github.com/googleapis/repo-automation-bots/issues/1826)) ([c602f0f](https://www.github.com/googleapis/repo-automation-bots/commit/c602f0f8de126173c6a0e13fb3b7942cc732df84))
+* **gcf-utils:** skip archived repository for scheduler task ([#1853](https://www.github.com/googleapis/repo-automation-bots/issues/1853)) ([706c502](https://www.github.com/googleapis/repo-automation-bots/commit/706c50267690924298a565a46ad62c290bf2f655))
+* **gcf-utils:** skip suspended installations ([#2158](https://www.github.com/googleapis/repo-automation-bots/issues/2158)) ([b1b5617](https://www.github.com/googleapis/repo-automation-bots/commit/b1b5617918e2516467977f41e15f05edb872c66e))
+* **gcf-utils:** upgrade to probot 12 ([#2253](https://www.github.com/googleapis/repo-automation-bots/issues/2253)) ([57bc7cf](https://www.github.com/googleapis/repo-automation-bots/commit/57bc7cfde2f3d23cb1bd263310b5c131e6c04269))
+* **gcf-utils:** use raw body for signature verification ([#2176](https://www.github.com/googleapis/repo-automation-bots/issues/2176)) ([1c68cf1](https://www.github.com/googleapis/repo-automation-bots/commit/1c68cf14e5b7671b6b05d75f419c637456d1bf73)), closes [#2092](https://www.github.com/googleapis/repo-automation-bots/issues/2092)
+* only provide the installationId if set ([#2108](https://www.github.com/googleapis/repo-automation-bots/issues/2108)) ([3d8950b](https://www.github.com/googleapis/repo-automation-bots/commit/3d8950b7fa3350200842da18ad8f2ae52f54cecf)), closes [#2107](https://www.github.com/googleapis/repo-automation-bots/issues/2107)
+* queue in repository tasks in parallel ([#2121](https://www.github.com/googleapis/repo-automation-bots/issues/2121)) ([e6cb65b](https://www.github.com/googleapis/repo-automation-bots/commit/e6cb65bde901f8f3c04fa2c992e096339ce7d066))
+* return a 400 on requests with missing or bad signatures ([#2240](https://www.github.com/googleapis/repo-automation-bots/issues/2240)) ([6cf6964](https://www.github.com/googleapis/repo-automation-bots/commit/6cf696442cd69030d5b5bda7ddce3dee846e5fef))
+* skip task queue retries if payload expired ([#2052](https://www.github.com/googleapis/repo-automation-bots/issues/2052)) ([c54f50b](https://www.github.com/googleapis/repo-automation-bots/commit/c54f50b3e1d9c8123d46fef526ef4bb961a547d0)), closes [#2049](https://www.github.com/googleapis/repo-automation-bots/issues/2049)
+* typo codespelling grammar ([#2319](https://www.github.com/googleapis/repo-automation-bots/issues/2319)) ([db944e8](https://www.github.com/googleapis/repo-automation-bots/commit/db944e84e008b8a6c7d2ab62b59ee0d5c15e4a40))
+* verify payload signatures ([#2093](https://www.github.com/googleapis/repo-automation-bots/issues/2093)) ([a51f489](https://www.github.com/googleapis/repo-automation-bots/commit/a51f489c7d9d6b7bfad53317ac095235158eacbd))
+
+
+### Miscellaneous Chores
+
+* **gcf-utils:** lock file maintenance ([#2001](https://www.github.com/googleapis/repo-automation-bots/issues/2001)) ([395a87a](https://www.github.com/googleapis/repo-automation-bots/commit/395a87a337ae96c27171beb0ad6b69a798037476))
+
 ## [12.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v11.4.3...gcf-utils-v12.0.0) (2021-07-09)
 
 

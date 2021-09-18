@@ -25,7 +25,12 @@ import {FakeConfigsStore} from './fake-configs-store';
 import {ConfigsStore} from '../src/configs-store';
 import {makeAbcRepo, makeRepoWithOwlBotYaml} from './make-repos';
 import {newCmd} from '../src/cmd';
-import {FakeIssues, FakePulls, newFakeOctokit} from './fake-octokit';
+import {
+  FakeIssues,
+  FakePulls,
+  newFakeOctokit,
+  newFakeOctokitFactory,
+} from './fake-octokit';
 
 // Use anys to mock parts of the octokit API.
 // We'll still see compile time errors if in the src/ code if there's a type error
@@ -86,12 +91,20 @@ function makeDestRepoAndConfigsStore(
           branchName: 'main',
           commitHash: '456',
           installationId: 42,
-          yaml: yaml,
+          yamls: [
+            {
+              yaml: yaml,
+              path: '.github/.OwlBot.yaml',
+            },
+          ],
         },
       ],
     ])
   );
-  configsStore.githubRepos.set(destRepo.toString(), destRepo);
+  configsStore.githubRepos.set(destRepo.toString(), {
+    repo: destRepo,
+    yamlPath: '.github/.OwlBot.yaml',
+  });
   return [destRepo, configsStore];
 }
 
@@ -140,10 +153,17 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
     assert.strictEqual(pull.repo, 'nodejs-spell-check');
     assert.strictEqual(pull.title, 'b');
     assert.strictEqual(pull.base, 'main');
+    const copyTag = cc.copyTagFrom('.github/.OwlBot.yaml', abcCommits[1]);
     assert.strictEqual(
       pull.body,
-      `Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}`
+      `- [ ] Regenerate this pull request now.
+
+Source-Link: https://github.com/googleapis/googleapis-gen/commit/${abcCommits[1]}
+Copy-Tag: ${copyTag}`
     );
+
+    // Confirm the pull request body contains a properly formatted Copy-Tag footer.
+    assert.strictEqual(true, cc.bodyIncludesCopyTagFooter(pull.body));
 
     // Confirm it set the label.
     assert.deepStrictEqual(issues.updates[0].labels, ['owl-bot-copy']);
@@ -218,5 +238,47 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
 
     // Confirm it created one pull request.
     assert.strictEqual(pulls.pulls.length, 1);
+  });
+});
+
+describe('copyCodeIntoPullRequest', function () {
+  // These tests use git locally and read and write a lot to the file system,
+  // so a slow file system will slow them down.
+  this.timeout(60000); // 1 minute.
+  const abcRepo = makeAbcRepo();
+  const abcCommits = cmd('git log --format=%H', {cwd: abcRepo})
+    .toString('utf8')
+    .split(/\r?\n/)
+    .map(s => s.trim())
+    .filter(s => s);
+
+  beforeEach(() => {
+    cmd('git checkout main', {cwd: abcRepo});
+  });
+
+  it('copies files into a pull request', async () => {
+    const destRepo = makeDestRepo(bYaml);
+    const pulls = new FakePulls();
+    const issues = new FakeIssues();
+    const octokit = newFakeOctokit(pulls, issues);
+    const factory = newFakeOctokitFactory(octokit, 'test-token');
+    const sourceHash = abcCommits[1];
+
+    await cc.copyCodeIntoPullRequest(
+      abcRepo,
+      sourceHash,
+      {repo: destRepo, yamlPath: '.github/.OwlBot.yaml'},
+      'test-branch',
+      factory
+    );
+    // Confirm new pull request was pushed to test-branch.
+    const destDir = destRepo.getCloneUrl();
+    const gitLog = cmd('git log test-branch', {cwd: destDir}).toString('utf-8');
+    assert.match(
+      gitLog,
+      RegExp(
+        `.*Source-Link: https://github.com/googleapis/googleapis-gen/commit/${sourceHash}.*`
+      )
+    );
   });
 });

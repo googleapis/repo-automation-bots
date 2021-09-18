@@ -17,10 +17,11 @@ import {Octokit} from '@octokit/rest';
 import {createPullRequest, Changes} from 'code-suggester';
 import {request} from 'gaxios';
 import {v4 as uuid} from 'uuid';
-import {operations} from '@octokit/openapi-types';
 import {PolicyResult, GitHubRepo} from './policy';
+// eslint-disable-next-line node/no-extraneous-import
+import {Endpoints} from '@octokit/types';
 type PullRequests =
-  operations['pulls/list']['responses']['200']['content']['application/json'];
+  Endpoints['GET /repos/{owner}/{repo}/pulls']['response']['data'];
 
 export const cocUrl =
   'https://raw.githubusercontent.com/googleapis/.github/master/CODE_OF_CONDUCT.md';

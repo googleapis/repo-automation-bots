@@ -21,6 +21,8 @@ import {
 } from './types';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/types';
 import checks from './required-checks.json';
 
 export interface Logger {
@@ -53,7 +55,6 @@ const repoConfigDefaults: RepoConfig = deepFreeze({
 });
 
 const branchProtectionDefaults = deepFreeze({
-  pattern: 'master',
   dismissesStaleReviews: false,
   isAdminEnforced: true,
   requiredApprovingReviewCount: 1,
@@ -70,6 +71,7 @@ const branchProtectionDefaults = deepFreeze({
 export interface SyncRepoSettingsOptions {
   config?: RepoConfig;
   repo: string;
+  defaultBranch?: string;
 }
 
 export class SyncRepoSettings {
@@ -118,6 +120,12 @@ export class SyncRepoSettings {
       }
     }
 
+    const defaultBranch =
+      options.defaultBranch || (await this.getDefaultBranch(repo));
+    const defaultBranchRuleConfig = {
+      pattern: defaultBranch,
+    };
+
     const jobs: Promise<void>[] = [];
     logger.info('updating settings');
     jobs.push(this.updateRepoTeams(repo, config?.permissionRules || []));
@@ -125,7 +133,11 @@ export class SyncRepoSettings {
       jobs.push(this.updateRepoOptions(repo, config));
       if (config.branchProtectionRules) {
         config.branchProtectionRules.forEach(rule => {
-          jobs.push(this.updateBranchProtection(repo, rule));
+          const ruleWithDefaultBranch = {
+            ...defaultBranchRuleConfig,
+            ...rule,
+          };
+          jobs.push(this.updateBranchProtection(repo, ruleWithDefaultBranch));
         });
       }
     }
@@ -177,7 +189,8 @@ export class SyncRepoSettings {
       logger.info(
         `Success updating branch protection for ${repo}:${rule.pattern}`
       );
-    } catch (err) {
+    } catch (e) {
+      const err = e as RequestError & Error;
       if (err.status === 401) {
         logger.warn(
           `updateBranchProtection: warning received ${err.status} updating ${owner}/${name}`
@@ -224,7 +237,8 @@ export class SyncRepoSettings {
         })
       );
       logger.info(`Success updating repo in org for ${repo}`);
-    } catch (err) {
+    } catch (e) {
+      const err = e as RequestError & Error;
       const knownErrors = [
         401, // bot does not have permission to access this repository.
         404, // team being added does not exist on repo.
@@ -266,7 +280,8 @@ export class SyncRepoSettings {
         delete_branch_on_merge: config.deleteBranchOnMerge,
       });
       logger.info(`Success updating repo options for ${repo}`);
-    } catch (err) {
+    } catch (e) {
+      const err = e as RequestError & Error;
       const knownErrors = [
         401, // bot does not have permission to access this repository.
         403, // thrown if repo is archived.
@@ -281,5 +296,14 @@ export class SyncRepoSettings {
         return;
       }
     }
+  }
+
+  async getDefaultBranch(ownerAndRepo: string): Promise<string> {
+    const [owner, repo] = ownerAndRepo.split('/');
+    const response = await this.octokit.repos.get({
+      owner,
+      repo,
+    });
+    return response.data.default_branch;
   }
 }

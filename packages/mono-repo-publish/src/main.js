@@ -14,8 +14,9 @@
 
 const { Octokit } = require('@octokit/rest');
 const { createAppAuth } = require('@octokit/auth-app');
-const { readFileSync } = require('fs');
-const { dirname } = require('path');
+const fs = require('fs');
+const { readFileSync } = fs;
+const { dirname, join } = require('path');
 const childProcess = require('child_process');
 
 // TODO: this is a URL; split into owner, repo, and PR
@@ -68,17 +69,22 @@ function listChangedSubmodules (prFiles) {
   return directories;
 }
 
-function publishSubmodules (directories, dryRun, execSyncOverride) {
+function publishSubmodules (directories, dryRun, execSyncOverride, rmdirSyncOverride) {
   console.log(`Directories to publish: ${directories}`);
   const execSync = execSyncOverride || childProcess.execSync;
+  const rmdirSync = rmdirSyncOverride || fs.rmdirSync;
+  const errors = [];
   for (const directory of directories) {
     try {
       execSync('npm i', { cwd: directory, stdio: 'inherit' });
       execSync(`npm publish --access=public${dryRun ? ' --dry-run' : ''}`, { cwd: directory, stdio: 'inherit' });
+      rmdirSync(join(directory, 'node_modules'), { recursive: true, force: true });
     } catch (err) {
       console.log(err);
+      errors.push(err);
     }
   }
+  return errors;
 }
 
 module.exports = { parseURL, getOctokitInstance, getsPRFiles, listChangedSubmodules, publishSubmodules };

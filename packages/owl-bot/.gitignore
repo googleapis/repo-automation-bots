@@ -8,3 +8,4 @@ __pycache__/*
 lerna-debug.log
 payload.json
 *.pem
+env.ps1

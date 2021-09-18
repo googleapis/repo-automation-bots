@@ -1,0 +1,80 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This cloud build job is invoked when the user checks the box
+# "to automatically regenerate this PR."
+
+steps:
+  # Check git version
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - --version
+  # Populate global username, email for git:
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - user.email
+      - 'gcf-owl-bot[bot]@users.noreply.github.com'
+    env:
+      - 'HOME=/workspace'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - user.name
+      - 'Owl Bot'
+    env:
+      - 'HOME=/workspace'
+  # Populate credentials for cloning:
+  - name: 'bash'
+    args:
+      - '-eEuo'
+      - 'pipefail'
+      - '-c'
+      - |-
+        echo https://x-access-token:$$GITHUB_TOKEN@github.com >> /workspace/.git-credentials
+    env:
+      - 'GITHUB_TOKEN=$_GITHUB_TOKEN'
+      - 'HOME=/workspace'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - credential.helper
+      - 'store --file /workspace/.git-credentials'
+    env:
+      - 'GITHUB_TOKEN=$_GITHUB_TOKEN'
+      - 'HOME=/workspace'
+
+  # Run Owl Bot to copy the code again from googleapis/googleapis-gen.
+  - name: 'gcr.io/repo-automation-bots/owlbot-cli'
+    args:
+      - copy-code-into-pull-request
+      - --source-repo-commit-hash
+      - ${_SOURCE_HASH}
+      - --owl-bot-yaml-path
+      - ${_OWL_BOT_YAML_PATH}
+      - --dest-repo
+      - ${_PR_OWNER}/${_REPOSITORY}
+      - --dest-branch
+      - ${_PR_BRANCH}
+      - --github-token
+      - ${_GITHUB_TOKEN}
+    env:
+      - 'HOME=/workspace'
+
+
+# The github token only lives 10 minutes.
+timeout: '600s'

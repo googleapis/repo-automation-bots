@@ -18,11 +18,17 @@
 import {Probot, Context} from 'probot';
 import {logger} from 'gcf-utils';
 import {ValidPr, checkPRAgainstConfig} from './check-pr';
-import {getChangedFiles, getBlobFromPRFiles} from './get-pr-info';
-import {validateYaml, validateSchema, checkCodeOwners} from './check-config.js';
+import {
+  getChangedFiles,
+  getBlobFromPRFiles,
+  getReviewsCompleted,
+  cleanReviews,
+} from './get-pr-info';
+import {checkAutoApproveConfig, checkCodeOwners} from './check-config.js';
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {Octokit} from '@octokit/rest';
 
+const APPROVER = 'yoshi-approver';
 export interface Configuration {
   rules: ValidPr[];
 }
@@ -61,16 +67,20 @@ export async function authenticateWithSecret(
 async function evaluateAndSubmitCheckForConfig(
   owner: string,
   repo: string,
-  config: string | Configuration,
+  config: string | Configuration | undefined,
   codeOwnersFile: string | undefined,
   octokit: Octokit,
   headSha: string
 ): Promise<Boolean> {
   // Check if the YAML is formatted correctly if it's in a PR
-  const isYamlValid = typeof config === 'string' ? validateYaml(config) : '';
-
-  // Check if config has correct schema
-  const isSchemaValid = await validateSchema(config);
+  // This will throw an error if auto-approve does not exist, causing the function to stop
+  // executing, and prevent an auto-approve check from appearin
+  const isAutoApproveCorrect = await checkAutoApproveConfig(
+    octokit,
+    owner,
+    repo,
+    config
+  );
 
   // Check if codeowners includes @github-automation for auto-approve.yml file
   const isCodeOwnersCorrect = await checkCodeOwners(
@@ -81,11 +91,7 @@ async function evaluateAndSubmitCheckForConfig(
   );
 
   // If all files are correct, then submit a passing check for the config
-  if (
-    isYamlValid === '' &&
-    isSchemaValid === undefined &&
-    isCodeOwnersCorrect === ''
-  ) {
+  if (isAutoApproveCorrect === '' && isCodeOwnersCorrect === '') {
     await octokit.checks.create({
       owner,
       repo,
@@ -106,12 +112,7 @@ async function evaluateAndSubmitCheckForConfig(
     const errorMessage =
       'See the following errors in your auto-approve.yml config:\n' +
       `${isCodeOwnersCorrect ? isCodeOwnersCorrect : ''}\n` +
-      `${isYamlValid ? isYamlValid : ''}\n` +
-      `${
-        isSchemaValid
-          ? 'Schema is invalid\n' + JSON.stringify(isSchemaValid)
-          : ''
-      }\n`;
+      `${isAutoApproveCorrect ? isAutoApproveCorrect : ''}\n`;
 
     await octokit.checks.create({
       owner,
@@ -163,22 +164,22 @@ export function handler(app: Probot) {
       // decide whether we can automerge
       const prConfig = await getBlobFromPRFiles(
         context.octokit,
-        owner,
+        repoHeadOwner,
         repoHead,
         PRFiles,
         `.github/${CONFIGURATION_FILE_PATH}`
       );
 
-      if (prConfig) {
-        // Attempt to get the CODEOWNERS file if it exists
-        const codeOwnersFile = await getBlobFromPRFiles(
-          context.octokit,
-          repoHeadOwner,
-          repoHead,
-          PRFiles,
-          '.github/CODEOWNERS'
-        );
+      const codeOwnersFile = await getBlobFromPRFiles(
+        context.octokit,
+        repoHeadOwner,
+        repoHead,
+        PRFiles,
+        '.github/CODEOWNERS'
+      );
+      const isConfigGettingModified = prConfig || codeOwnersFile;
 
+      if (isConfigGettingModified) {
         // Decide whether to add a passing or failing status checks
         // We do not need to save the return value for this function,
         // since we are not going to do anything else with the PR if
@@ -206,7 +207,8 @@ export function handler(app: Probot) {
         // always available for private repositories.
         try {
           config = await context.config<Configuration>(CONFIGURATION_FILE_PATH);
-        } catch (err) {
+        } catch (e) {
+          const err = e as Error;
           err.message = `Error reading configuration: ${err.message}`;
           logger.error(err);
           config = null;
@@ -243,8 +245,21 @@ export function handler(app: Probot) {
             // in the future (perhaps as an env var in our publish scripts).
             const octokit = await exports.authenticateWithSecret(
               process.env.PROJECT_ID || '',
-              'yoshi-approver'
+              APPROVER
             );
+
+            const reviewsOnPr = cleanReviews(
+              await getReviewsCompleted(owner, repo, prNumber, context.octokit)
+            );
+
+            const isApprovalNecessary = reviewsOnPr.find(
+              x => x.user.login === APPROVER && x.state === 'APPROVED'
+            );
+
+            if (isApprovalNecessary) {
+              return;
+            }
+
             await octokit.pulls.createReview({
               owner,
               repo,

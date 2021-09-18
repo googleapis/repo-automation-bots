@@ -19,16 +19,19 @@ import {FirestoreConfigsStore, Db} from './database';
 import {Probot, Logger} from 'probot';
 import {logger} from 'gcf-utils';
 import {syncLabels} from '@google-automations/label-utils';
-import {core} from './core';
+import {core, RegenerateArgs} from './core';
 import {Octokit} from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/types';
+import {onPostProcessorPublished, refreshConfigs} from './handlers';
 import {
-  onPostProcessorPublished,
-  refreshConfigs,
-  scanGithubForConfigs,
-} from './handlers';
-import {PullRequestLabeledEvent} from '@octokit/webhooks-types';
+  PullRequestEditedEvent,
+  PullRequestLabeledEvent,
+} from '@octokit/webhooks-types';
 import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from './labels';
 import {OwlBotLock} from './config-files';
+import {octokitFactoryFrom} from './octokit-util';
+import {REGENERATE_CHECKBOX_TEXT} from './copy-code';
 
 interface PubSubContext {
   github: Octokit;
@@ -59,6 +62,11 @@ export function OwlBot(
     throw Error('must set CLOUD_BUILD_TRIGGER');
   }
   const trigger: string = process.env.CLOUD_BUILD_TRIGGER;
+  const trigger_regenerate_pull_request =
+    process.env.CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST ?? '';
+  if (!trigger_regenerate_pull_request) {
+    throw Error('must set CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST');
+  }
   if (!privateKey) {
     throw Error('GitHub app private key must be provided');
   }
@@ -84,6 +92,27 @@ export function OwlBot(
       context.payload,
       context.octokit
     );
+  });
+
+  // Did someone click the "Regenerate this pull request" checkbox?
+  app.on(['pull_request.edited'], async context => {
+    const regenerate = userCheckedRegenerateBox(
+      project,
+      trigger_regenerate_pull_request,
+      context.payload
+    );
+    if (regenerate) {
+      const installationId = context.payload.installation?.id;
+      if (!installationId) {
+        throw new Error('Missing installation id.');
+      }
+      const octokitFactory = octokitFactoryFrom({
+        'app-id': appId,
+        privateKey,
+        installation: installationId,
+      });
+      await core.triggerRegeneratePullRequest(octokitFactory, regenerate);
+    }
   });
 
   app.on(
@@ -195,23 +224,6 @@ export function OwlBot(
       await syncLabels(context.octokit, owner, repo, OWL_BOT_LABELS);
       return;
     }
-    if (context.payload.scanGithubForConfigs === true) {
-      // owl-bot-scan-googleapis cron entry
-      // Scan googleapis repositories and ensure config is up to date
-      const configStore = new FirestoreConfigsStore(db!);
-      logger.info(
-        `scan ${context.payload.org} istallation = ${context.payload.installation.id}`
-      );
-      logger.info('Scanning GitHub for configs via `schedule.repository`');
-
-      await scanGithubForConfigs(
-        configStore,
-        context.octokit,
-        context.payload.org,
-        Number(context.payload.installation.id)
-      );
-      return;
-    }
   });
 }
 
@@ -247,6 +259,9 @@ export async function handlePullRequestLabeled(
     return;
   }
 
+  // Remove run label before continuing
+  await removeOwlBotRunLabel(owner, repo, prNumber, octokit);
+
   // If the last commit made to the PR was already from OwlBot, and the label
   // has been added by a bot account (most likely trusted contributor bot)
   // do not run the post processor:
@@ -254,7 +269,6 @@ export async function handlePullRequestLabeled(
     isBotAccount(payload.sender.login) &&
     (await core.lastCommitFromOwlBot(owner, repo, prNumber, octokit))
   ) {
-    await removeOwlBotRunLabel(owner, repo, prNumber, octokit);
     logger.info(
       `skipping post-processor run for ${owner}/${repo} pr = ${prNumber}`
     );
@@ -277,7 +291,6 @@ export async function handlePullRequestLabeled(
     },
     octokit
   );
-  await removeOwlBotRunLabel(owner, repo, prNumber, octokit);
   logger.metric('owlbot.run_post_processor');
 }
 
@@ -301,7 +314,8 @@ async function removeOwlBotRunLabel(
       owner,
       repo,
     });
-  } catch (err) {
+  } catch (e) {
+    const err = e as RequestError & Error;
     if (err.status === 404) {
       logger.warn(`${err.message} head = ${owner}/${repo} pr = ${prNumber}`);
     } else {
@@ -347,7 +361,8 @@ const runPostProcessor = async (
   // status:
   try {
     lock = await core.getOwlBotLock(opts.base, opts.prNumber, octokit);
-  } catch (err) {
+  } catch (e) {
+    const err = e as Error;
     await core.createCheck(
       {
         privateKey,
@@ -390,9 +405,26 @@ const runPostProcessor = async (
   }
   // Detect looping OwlBot behavior and break the cycle:
   if (await core.hasOwlBotLoop(opts.owner, opts.repo, opts.prNumber, octokit)) {
-    throw Error(
-      `too many OwlBot updates created in a row for ${opts.owner}/${opts.repo}`
+    const message = `Too many OwlBot updates created in a row for ${opts.owner}/${opts.repo}`;
+    logger.warn(message);
+
+    await core.createCheck(
+      {
+        privateKey,
+        appId,
+        installation: opts.installation,
+        pr: opts.prNumber,
+        repo: opts.base,
+        text: message,
+        summary: message,
+        conclusion: 'failure',
+        title: '🦉 OwlBot - failure',
+        detailsURL:
+          'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
+      },
+      octokit
     );
+    return;
   }
   const image = `${lock.docker.image}@${lock.docker.digest}`;
   // Run time image from .Owlbot.lock.yaml on Cloud Build:
@@ -425,7 +457,7 @@ const runPostProcessor = async (
         conclusion: 'success',
         title: '🦉 OwlBot - ignored',
         detailsURL:
-          'https://github.com/googleapis/repo-automation-bots/blob/master/packages/owl-bot/README.md',
+          'https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md',
       },
       octokit
     );
@@ -456,3 +488,44 @@ const runPostProcessor = async (
     octokit
   );
 };
+
+/**
+ * Invoked when someone edits the title of body of a pull request.
+ * We're interested if they checked the box to "regenerate this pull request."
+ * Returns null if the box was not checked.
+ */
+export function userCheckedRegenerateBox(
+  project: string,
+  trigger: string,
+  payload: PullRequestEditedEvent,
+  logger = console
+): RegenerateArgs | null {
+  const base = payload.pull_request.base.repo.full_name;
+  const [owner, repo] = base.split('/');
+  const prNumber = payload.pull_request.number;
+
+  const newBody = payload.pull_request.body ?? '';
+  const oldBody = payload.changes.body?.from ?? '';
+
+  if (
+    oldBody.includes(REGENERATE_CHECKBOX_TEXT) ||
+    !newBody.includes(REGENERATE_CHECKBOX_TEXT)
+  ) {
+    logger.info(
+      `The user didn't check the regenerate me box for PR #${prNumber}`
+    );
+    return null;
+  }
+
+  logger.info(`The user checked the regenerate me box for PR #${prNumber}`);
+
+  return {
+    owner,
+    repo,
+    prNumber,
+    prBody: newBody,
+    gcpProjectId: project,
+    buildTriggerId: trigger,
+    branch: payload.pull_request.head.ref,
+  };
+}

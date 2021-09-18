@@ -1,6 +1,6 @@
 {
   "name": "@google-cloud/release-brancher",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Cut release branches",
   "bin": "./build/src/bin/release-brancher.js",
   "author": "Google LLC.",
@@ -45,7 +45,7 @@
     "nock": "^13.1.0",
     "sinon": "^11.1.1",
     "snap-shot-it": "^7.9.6",
-    "typescript": "~4.3.2"
+    "typescript": "~4.4.3"
   },
   "config": {
     "snap-shot-it": {

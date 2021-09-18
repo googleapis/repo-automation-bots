@@ -36,6 +36,25 @@ export function resplit(
   return {title, body: body.substring(0, MAX_BODY_LENGTH)};
 }
 
+/**
+ * Returns the body of the most recent commit message in a git directory.
+ */
+export function getLastCommitBody(
+  localRepoDir: string,
+  logger = console
+): string {
+  const cmd = newCmd(logger);
+  return cmd('git log -1 --format=%b', {
+    cwd: localRepoDir,
+  })
+    .toString('utf8')
+    .trim();
+}
+
+/**
+ * Creates a pull request using the title and commit message from the most
+ * recent commit.
+ */
 export async function createPullRequestFromLastCommit(
   owner: string,
   repo: string,
@@ -44,6 +63,7 @@ export async function createPullRequestFromLastCommit(
   pushUrl: string,
   labels: string[],
   octokit: OctokitType,
+  prBody = '',
   logger = console
 ): Promise<void> {
   const cmd = newCmd(logger);
@@ -58,11 +78,7 @@ export async function createPullRequestFromLastCommit(
   })
     .toString('utf8')
     .trim();
-  const commitBody: string = cmd('git log -1 --format=%b', {
-    cwd: localRepoDir,
-  })
-    .toString('utf8')
-    .trim();
+  const commitBody = prBody ?? getLastCommitBody(localRepoDir, logger);
 
   const {title, body} = resplit(commitSubject, commitBody);
 

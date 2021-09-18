@@ -13,10 +13,20 @@
 // limitations under the License.
 
 // eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/request-error';
 import {logger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
 
 // This file gets information about the incoming pull request, such as what files were changed, etc.
+
+export interface Reviews {
+  user: {
+    login: string;
+  };
+  state: string;
+  commit_id: string;
+  id: number;
+}
 
 export interface File {
   sha: string;
@@ -47,15 +57,16 @@ export async function getChangedFiles(
       repo,
       pull_number: prNumber,
     });
-  } catch (err) {
+  } catch (e) {
+    const err = e as RequestError;
     // These errors happen frequently, so adding cleaner logging; will still throw error
-    if (err === 404) {
+    if (err.status === 404) {
       logger.error(
-        `Not found error, ${err.code}, ${err.message} for ${owner}/${repo}/${prNumber}`
+        `Not found error, ${err.status}, ${err.message} for ${owner}/${repo}/${prNumber}`
       );
     }
     throw new Error(
-      `${err.code}, ${err.message} for ${owner}/${repo}/${prNumber}`
+      `${err.status}, ${err.message} for ${owner}/${repo}/${prNumber}`
     );
   }
 }
@@ -91,4 +102,47 @@ export async function getBlobFromPRFiles(
   } else {
     return undefined;
   }
+}
+
+/**
+ * This function cleans the reviews, since the listReviews method github provides returns a complete
+ * history of all comments added and we just want the most recent for each reviewer
+ * @param Reviews is an array of completed reviews from getReviewsCompleted()
+ * @returns an array of only the most recent reviews for each reviewer
+ */
+export function cleanReviews(reviewsCompleted: Reviews[]): Reviews[] {
+  const cleanReviews = [];
+  const distinctReviewers: string[] = [];
+  if (reviewsCompleted.length !== 0) {
+    for (let x = reviewsCompleted.length - 1; x >= 0; x--) {
+      const reviewsCompletedUser = reviewsCompleted[x].user.login;
+      if (!distinctReviewers.includes(reviewsCompletedUser)) {
+        cleanReviews.push(reviewsCompleted[x]);
+        distinctReviewers.push(reviewsCompletedUser);
+      }
+    }
+  }
+  return cleanReviews;
+}
+
+/**
+ * Function grabs completed reviews on a given pr
+ * @param owner of pr (from Watch PR)
+ * @param repo of pr (from Watch PR)
+ * @param pr pr number
+ * @param github unique installation id for each function
+ * @returns an array of Review types
+ */
+export async function getReviewsCompleted(
+  owner: string,
+  repo: string,
+  pr: number,
+  octokit: Octokit
+): Promise<Reviews[]> {
+  const reviewsCompleted = await octokit.pulls.listReviews({
+    owner,
+    repo,
+    pull_number: pr,
+  });
+  return reviewsCompleted.data as Reviews[];
 }

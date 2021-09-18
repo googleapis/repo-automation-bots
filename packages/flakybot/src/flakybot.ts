@@ -65,7 +65,7 @@ const EVERYTHING_FAILED_TITLE = 'The build failed';
 
 const NEW_ISSUE_MESSAGE = `This test failed!
 
-To configure my behavior, see [the Flaky Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/master/packages/flakybot).
+To configure my behavior, see [the Flaky Bot documentation](https://github.com/googleapis/repo-automation-bots/tree/main/packages/flakybot).
 
 If I'm commenting on this issue too often, add the \`flakybot: quiet\` label and
 I will stop commenting.
@@ -588,7 +588,7 @@ flakybot.findExistingIssue = (
     !existingIssue &&
     flakybot.formatTestCase(failure) !== EVERYTHING_FAILED_TITLE
   ) {
-    matchingIssues.sort(flakybot.issueComparator);
+    matchingIssues.sort(flakybot.issueComparatorForFindingExistingIssue);
     existingIssue = matchingIssues[0];
   }
   return existingIssue;
@@ -747,6 +747,26 @@ flakybot.issueComparator = (
     return -1;
   }
   if (!flakybot.isFlaky(a) && flakybot.isFlaky(b)) {
+    return 1;
+  }
+  const aClose = parseClosedAt(a.closed_at);
+  const bClose = parseClosedAt(b.closed_at);
+  if (aClose && bClose) {
+    return bClose - aClose; // Later close time first.
+  }
+  return a.number - b.number; // Earlier issue number first.
+};
+
+// Add another comparator for handling edge cases described in #2105.
+// Only difference is that this doesn't use `isFlaky` for sorting.
+flakybot.issueComparatorForFindingExistingIssue = (
+  a: IssuesListForRepoResponseItem,
+  b: IssuesListForRepoResponseItem
+) => {
+  if (a.state === 'open' && b.state !== 'open') {
+    return -1;
+  }
+  if (a.state !== 'open' && b.state === 'open') {
     return 1;
   }
   const aClose = parseClosedAt(a.closed_at);

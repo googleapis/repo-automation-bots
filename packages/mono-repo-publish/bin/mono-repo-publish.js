@@ -23,7 +23,10 @@ yargs.usage('$0', 'publish packages affected by a pull request', () => {}, async
   const octokit = core.getOctokitInstance();
   const files = await core.getsPRFiles(pr, octokit);
   const submodules = core.listChangedSubmodules(files);
-  core.publishSubmodules(submodules, argv.dryRun);
+  const errors = core.publishSubmodules(submodules, argv.dryRun);
+  if (errors.length) {
+    throw Error('some publications failed, see logs');
+  }
 })
   .option('pr-url', { description: 'the URL of the GH PR for submodules you wish to publish, e.g., https://github.com/googleapis/release-please/pull/707', type: 'string', demand: true })
   .option('dry-run', { description: 'whether or not to publish in dry run', type: 'boolean', default: false })

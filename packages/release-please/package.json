@@ -28,11 +28,11 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@google-automations/bot-config-utils": "^3.2.0",
-    "@google-automations/label-utils": "^1.1.0",
+    "@google-automations/bot-config-utils": "^4.0.0",
+    "@google-automations/label-utils": "^2.0.0",
     "@octokit/webhooks": "^9.11.0",
     "gcf-utils": "^12.0.0",
-    "release-please": "^11.20.1"
+    "release-please": "^12.0.0"
   },
   "devDependencies": {
     "@octokit/rest": "^18.7.2",
@@ -48,7 +48,7 @@
     "nock": "^13.1.1",
     "sinon": "^11.1.2",
     "snap-shot-it": "^7.9.6",
-    "typescript": "~4.3.5"
+    "typescript": "~4.4.3"
   },
   "engines": {
     "node": ">= 12.18.2"

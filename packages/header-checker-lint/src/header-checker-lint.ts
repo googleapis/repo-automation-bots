@@ -222,7 +222,8 @@ export = (app: Probot) => {
         // post the status of commit linting to the PR, using:
         // https://developer.github.com/v3/checks/
         await context.octokit.checks.create(checkParams);
-      } catch (err) {
+      } catch (e) {
+        const err = e as Error;
         logger.error(err);
         return;
       }

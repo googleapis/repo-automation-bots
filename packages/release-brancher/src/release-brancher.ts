@@ -13,6 +13,8 @@
 // limitations under the License.
 
 import {Octokit} from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/types';
 import {createPullRequest, Changes} from 'code-suggester';
 import * as yaml from 'js-yaml';
 
@@ -89,7 +91,8 @@ export class Runner {
       });
       return existing.data.ref;
     } catch (e) {
-      if (e.status === 404) {
+      const err = e as RequestError;
+      if (err.status === 404) {
         return undefined;
       }
       throw e;
@@ -143,7 +146,8 @@ export class Runner {
       })) as {data: {content: string}};
       return Buffer.from(response.data.content, 'base64').toString('utf8');
     } catch (e) {
-      if (e.status === 404) {
+      const err = e as RequestError;
+      if (err.status === 404) {
         return undefined;
       }
       throw e;

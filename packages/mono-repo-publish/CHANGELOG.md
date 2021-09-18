@@ -1,5 +1,32 @@
 # Changelog
 
+### [1.2.2](https://www.github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.2.1...mono-repo-publish-v1.2.2) (2021-09-15)
+
+
+### Bug Fixes
+
+* **mono-repo-publish:** root node_modules folder broke typescript compilation ([#2516](https://www.github.com/googleapis/repo-automation-bots/issues/2516)) ([8324600](https://www.github.com/googleapis/repo-automation-bots/commit/8324600bbb527fd6265d1bd8cfe694011f59b046))
+
+### [1.2.1](https://www.github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.2.0...mono-repo-publish-v1.2.1) (2021-09-10)
+
+
+### Bug Fixes
+
+* **deps:** update mono-repo-publish deps ([#2463](https://www.github.com/googleapis/repo-automation-bots/issues/2463)) ([2321c56](https://www.github.com/googleapis/repo-automation-bots/commit/2321c561d2a17b16aa91bc276ddc530f475324b0))
+
+## [1.2.0](https://www.github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.1.2...mono-repo-publish-v1.2.0) (2021-08-09)
+
+
+### Features
+
+* **mono-repo-publish:** migrate to repo-automation-bots ([#1593](https://www.github.com/googleapis/repo-automation-bots/issues/1593)) ([debbfda](https://www.github.com/googleapis/repo-automation-bots/commit/debbfda8d897800142fb178c5f2f11b3d7f395a3))
+
+
+### Bug Fixes
+
+* **deps:** update dependency @octokit/auth-app to v3 ([#1603](https://www.github.com/googleapis/repo-automation-bots/issues/1603)) ([06480d6](https://www.github.com/googleapis/repo-automation-bots/commit/06480d6e7340d3332566d1619dff1a0710a93617))
+* **mono-repo-publish:** links should point to repo-automation-bots ([#1597](https://www.github.com/googleapis/repo-automation-bots/issues/1597)) ([90e94a0](https://www.github.com/googleapis/repo-automation-bots/commit/90e94a000e61de4026fff18e40f315ba5f1ef002))
+
 ### [1.1.2](https://www.github.com/googleapis/repo-automation-bots/compare/mono-repo-publish-v1.1.1...mono-repo-publish-v1.1.2) (2021-04-06)
 
 

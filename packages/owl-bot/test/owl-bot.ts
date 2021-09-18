@@ -18,16 +18,20 @@ import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from '../src/labels';
 import * as handlers from '../src/handlers';
 import {describe, it, beforeEach} from 'mocha';
 import {logger} from 'gcf-utils';
-import {OwlBot} from '../src/owl-bot';
+import {OwlBot, userCheckedRegenerateBox} from '../src/owl-bot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
-import {PullRequestOpenedEvent} from '@octokit/webhooks-types';
+import {
+  PullRequestEditedEvent,
+  PullRequestOpenedEvent,
+} from '@octokit/webhooks-types';
 import * as sinon from 'sinon';
 import nock from 'nock';
 import {Configs} from '../src/configs-store';
-import {owlBotLockPath} from '../src/config-files';
+import {OWL_BOT_LOCK_PATH} from '../src/config-files';
 import * as labelUtilsModule from '@google-automations/label-utils';
 import {FirestoreConfigsStore} from '../src/database';
+import {REGENERATE_CHECKBOX_TEXT} from '../src/copy-code';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -39,6 +43,8 @@ describe('owlBot', () => {
       APP_ID: '1234354',
       PROJECT_ID: 'foo-project',
       CLOUD_BUILD_TRIGGER: 'aef1e540-d401-4b85-8127-b72b5993c20d',
+      CLOUD_BUILD_TRIGGER_REGENERATE_PULL_REQUEST:
+        'aef1e540-d401-4b85-8127-b72b5993c20e',
     });
     probot = createProbot({
       overrides: {
@@ -216,16 +222,22 @@ describe('owlBot', () => {
       const hasOwlBotLoopStub = sandbox
         .stub(core, 'hasOwlBotLoop')
         .resolves(true);
-      await assert.rejects(
-        probot.receive({
-          name: 'pull_request',
-          payload: payload as PullRequestOpenedEvent,
-          id: 'abc123',
-        }),
-        /too many OwlBot updates/
-      );
+      const createCheckStub = sandbox.stub(core, 'createCheck');
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: payload as PullRequestOpenedEvent,
+        id: 'abc123',
+      });
+
       githubMock.done();
       sandbox.assert.calledOnce(hasOwlBotLoopStub);
+      sandbox.assert.calledOnce(createCheckStub);
+
+      assert.strictEqual(
+        createCheckStub.lastCall.args[0].conclusion,
+        'failure'
+      );
     });
   });
   it('closes pull request if it has 0 files changed', async () => {
@@ -526,7 +538,7 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{filename: owlBotLockPath}])
+      .reply(200, [{filename: OWL_BOT_LOCK_PATH}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       // Update to closed state:
@@ -593,7 +605,7 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{filename: owlBotLockPath}, {filename: 'README.md'}])
+      .reply(200, [{filename: OWL_BOT_LOCK_PATH}, {filename: 'README.md'}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       // Promote to "ready for review."
@@ -660,7 +672,7 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{filename: owlBotLockPath}])
+      .reply(200, [{filename: OWL_BOT_LOCK_PATH}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request);
     const triggerBuildStub = sandbox
@@ -724,7 +736,7 @@ describe('owlBot', () => {
       })
       .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
-      .reply(200, [{filename: owlBotLockPath}])
+      .reply(200, [{filename: OWL_BOT_LOCK_PATH}])
       .get('/repos/bcoe/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request);
     const triggerBuildStub = sandbox
@@ -890,44 +902,6 @@ describe('owlBot', () => {
     });
   });
 
-  describe('scan configs cron', () => {
-    it('invokes scanGithubForConfigs', async () => {
-      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
-      const payload = {
-        org: 'googleapis',
-        installation: {
-          id: 12345,
-        },
-        scanGithubForConfigs: true,
-      };
-      let org: string | undefined = undefined;
-      let installation: number | undefined = undefined;
-      sandbox.replace(
-        handlers,
-        'scanGithubForConfigs',
-        (
-          _configStore,
-          _octokit,
-          _org: string,
-          _installation: number
-        ): Promise<void> => {
-          org = _org;
-          installation = _installation;
-          return Promise.resolve(undefined);
-        }
-      );
-      await probot.receive({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        name: 'schedule.repository' as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        payload: payload as any,
-        id: 'abc123',
-      });
-      assert.strictEqual(org, 'googleapis');
-      assert.strictEqual(installation, 12345);
-      sinon.assert.notCalled(syncLabelsStub);
-    });
-  });
   it('triggers build when "owlbot:run" label is added to fork', async () => {
     const payload = {
       action: 'labeled',
@@ -1144,6 +1118,87 @@ describe('owlBot', () => {
     sandbox.assert.calledOnce(updatePullRequestStub);
     githubMock.done();
   });
+
+  it('should remove "owlbot:run" label before running post-processor', async () => {
+    const payload = {
+      action: 'labeled',
+      installation: {
+        id: 12345,
+      },
+      sender: {
+        login: 'bcoe',
+      },
+      pull_request: {
+        number: 33,
+        labels: [
+          {
+            name: OWLBOT_RUN_LABEL,
+          },
+        ],
+        head: {
+          repo: {
+            full_name: 'rennie/owl-bot-testing',
+          },
+          ref: 'abc123',
+        },
+        base: {
+          repo: {
+            full_name: 'rennie/owl-bot-testing',
+          },
+        },
+      },
+    };
+    const config = `docker:
+    image: node
+    digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
+
+    let deleteLabelCalledFirst: boolean | void = undefined;
+    const githubMock = nock('https://api.github.com')
+      .get('/repos/rennie/owl-bot-testing/pulls/33')
+      .reply(200, () => {
+        deleteLabelCalledFirst ??= false;
+
+        return payload.pull_request;
+      })
+      .get(
+        '/repos/rennie/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+      )
+      .reply(200, () => {
+        deleteLabelCalledFirst ??= false;
+
+        return {
+          content: Buffer.from(config).toString('base64'),
+          encoding: 'base64',
+        };
+      })
+      .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .reply(200, () => {
+        deleteLabelCalledFirst ??= true;
+
+        return {};
+      });
+
+    sandbox.stub(core, 'triggerPostProcessBuild').resolves({
+      text: 'the text for check',
+      summary: 'summary for check',
+      conclusion: 'success',
+      detailsURL: 'https://www.example.com',
+    });
+    sandbox.stub(core, 'updatePullRequestAfterPostProcessor');
+    sandbox.stub(core, 'hasOwlBotLoop').resolves(false);
+    sandbox.stub(core, 'createCheck');
+    await probot.receive({
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
+      id: 'abc123',
+    });
+
+    assert.ok(deleteLabelCalledFirst);
+
+    githubMock.done();
+  });
+
   it('returns early if PR from fork and label other than owlbot:run added', async () => {
     const payload = {
       action: 'labeled',
@@ -1342,5 +1397,84 @@ describe('owlBot', () => {
       sinon.match.has('text', 'lock file did not contain "docker" key')
     );
     githubMock.done();
+  });
+});
+
+/**
+ * Create a PullRequestEditedEvent with the given new body and old body.
+ */
+function pullRequestEditedEventFrom(
+  newBody?: string,
+  oldBody?: string
+): PullRequestEditedEvent {
+  const result = {
+    pull_request: {
+      base: {
+        repo: {
+          full_name: 'googleapis/nodejs-dlp',
+        },
+        ref: 'main',
+      },
+      head: {
+        repo: {
+          full_name: 'googleapis/nodejs-dlp',
+        },
+        ref: 'owl-bot-update-branch',
+      },
+      number: 48,
+      body: newBody,
+    },
+    changes: {
+      body: {
+        from: oldBody,
+      },
+    },
+  } as PullRequestEditedEvent;
+  return result;
+}
+
+describe('userCheckedRegenerateBox()', () => {
+  it('does nothing with empty bodies', () => {
+    const payload = pullRequestEditedEventFrom();
+    assert.ok(!userCheckedRegenerateBox('project-1', 'trigger-4', payload));
+  });
+
+  it('does nothing with bodies without check boxes', () => {
+    const payload = pullRequestEditedEventFrom('foo', 'bar');
+    assert.ok(!userCheckedRegenerateBox('project-1', 'trigger-4', payload));
+  });
+
+  it('does nothing when checkbox found in old but not the new', () => {
+    const payload = pullRequestEditedEventFrom(
+      'new body',
+      'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n'
+    );
+    assert.ok(!userCheckedRegenerateBox('project-1', 'trigger-4', payload));
+  });
+
+  it('does nothing when checkbox found in old and new', () => {
+    const payload = pullRequestEditedEventFrom(
+      'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n',
+      'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n'
+    );
+    assert.ok(!userCheckedRegenerateBox('project-1', 'trigger-4', payload));
+  });
+
+  it('creates RegenerateArgs when checkbox found in new body only.', () => {
+    const payload = pullRequestEditedEventFrom(
+      'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n',
+      'old body\n'
+    );
+    const args = userCheckedRegenerateBox('project-1', 'trigger-4', payload);
+    assert.ok(args);
+    assert.deepStrictEqual(args, {
+      owner: 'googleapis',
+      repo: 'nodejs-dlp',
+      prNumber: 48,
+      prBody: 'Added a great feature.\n' + REGENERATE_CHECKBOX_TEXT + '\n',
+      gcpProjectId: 'project-1',
+      buildTriggerId: 'trigger-4',
+      branch: 'owl-bot-update-branch',
+    });
   });
 });

@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// define types for a few modules used by probot that do not have their
-// own definitions published. Before taking this step, folks should first
-// check whether type bindings are already published.
-declare module 'promise-events' {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  class EventEmitter {}
+export interface ConfigurationOptions {
+  jobName?: string;
+  enabled?: boolean;
 }
+
+export const WELL_KNOWN_CONFIGURATION_FILE = 'release-trigger.yml';
+export const DEFAULT_CONFIGURATION: ConfigurationOptions = {
+  enabled: true,
+};
