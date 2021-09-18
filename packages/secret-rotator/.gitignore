@@ -1,0 +1,10 @@
+.DS_Store
+build
+node_modules
+coverage
+tmp
+.env
+__pycache__/*
+lerna-debug.log
+payload.json
+*.pem
