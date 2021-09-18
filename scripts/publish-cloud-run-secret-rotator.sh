@@ -15,8 +15,8 @@
 
 set -eo pipefail
 
-if [ $# -lt 6 ]; then
-  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <region> [botName] [service-account] [service-account] [timeout] [min-instance] [concurrency]"
+if [ $# -lt 8 ]; then
+  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <region> <botName> <service-account> [service-account] [timeout] [min-instance] [concurrency]"
   exit 1
 fi
 
@@ -54,8 +54,6 @@ fi
 
 pushd "${directoryName}"
 serviceName=${botName//_/-}
-functionName=${botName//-/_}
-queueName=${botName//_/-}
 
 deployArgs=(
   "--image"
@@ -66,8 +64,6 @@ deployArgs=(
   "KEY_LOCATION=${keyLocation}"
   "--set-env-vars"
   "KEY_RING=${keyRing}"
-  "--set-env-vars"
-  "GCF_SHORT_FUNCTION_NAME=${functionName}"
   "--set-env-vars"
   "PROJECT_ID=${project}"
   "--set-env-vars"
