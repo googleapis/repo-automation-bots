@@ -67,7 +67,7 @@ func main() {
 	}
 
 	log.Println("Sending logs to Flaky Bot...")
-	log.Println("See https://github.com/googleapis/repo-automation-bots/tree/master/packages/flakybot.")
+	log.Println("See https://github.com/googleapis/repo-automation-bots/tree/main/packages/flakybot.")
 
 	if ok := publish(cfg); !ok {
 		os.Exit(1)

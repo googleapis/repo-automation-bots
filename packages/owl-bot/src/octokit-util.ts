@@ -28,7 +28,8 @@ export type OctokitType =
   | InstanceType<typeof ProbotOctokit>;
 
 export interface OctokitParams {
-  'pem-path': string;
+  'pem-path'?: string;
+  privateKey?: string;
   'app-id': number;
   installation: number;
 }
@@ -37,7 +38,12 @@ export interface OctokitParams {
  * Creates an authenticated token for octokit.
  */
 export async function octokitTokenFrom(argv: OctokitParams): Promise<string> {
-  const privateKey = await readFileAsync(argv['pem-path'], 'utf8');
+  let privateKey = '';
+  if (argv['pem-path']) {
+    privateKey = await readFileAsync(argv['pem-path'], 'utf8');
+  } else if (argv.privateKey) {
+    privateKey = argv.privateKey;
+  }
   const token = await core.getGitHubShortLivedAccessToken(
     privateKey,
     argv['app-id'],
@@ -64,15 +70,42 @@ export interface OctokitFactory {
 
 /**
  * Creates an octokit factory from the common params.
+ * The factory will return a new octokit with a new token every 5 minutes.
  */
 export function octokitFactoryFrom(params: OctokitParams): OctokitFactory {
+  let lastOctokitTimestamp = 0;
+  let lastOctokit: OctokitType | null = null;
   return {
     getGitHubShortLivedAccessToken() {
       return octokitTokenFrom(params);
     },
     async getShortLivedOctokit(token?: string) {
-      const atoken = token ?? (await octokitTokenFrom(params));
-      return await core.getAuthenticatedOctokit(atoken, false);
+      if (token) {
+        return core.getAuthenticatedOctokit(token, false);
+      }
+      const now = new Date().getTime();
+      // Refresh every 5 minutes.  Tokens are good for 10 minutes.
+      const elapsedMilliseconds = now - lastOctokitTimestamp;
+      if (!lastOctokit || elapsedMilliseconds > 300000) {
+        lastOctokitTimestamp = now;
+        const atoken = await octokitTokenFrom(params);
+        lastOctokit = await core.getAuthenticatedOctokit(atoken, false);
+      }
+      return lastOctokit;
+    },
+  };
+}
+
+/**
+ * Creates an octokit factory a short lived token.
+ */
+export function octokitFactoryFromToken(token: string): OctokitFactory {
+  return {
+    getGitHubShortLivedAccessToken() {
+      return Promise.resolve(token);
+    },
+    async getShortLivedOctokit(atoken?: string) {
+      return await core.getAuthenticatedOctokit(atoken ?? token, false);
     },
   };
 }

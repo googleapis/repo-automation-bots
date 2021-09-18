@@ -172,7 +172,7 @@ schema you provided. It will submit a failing status check if:
 
 ## Fetch config from the PR head
 Probot's implementation of config always fetches the config from the
-master branch. This is a reasonable security meassure for a generic
+main branch. This is a reasonable security meassure for a generic
 library.
 
 It is very dangerous to fetch the config from PR head expecially if

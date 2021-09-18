@@ -21,6 +21,7 @@ by Google on GitHub.
 | [merge-on-green] | Merge a pull-request when all required checks have passed | [install][merge-on-green-app] |
 | [policy] | Check repo configuration against known rules | [install][policy-app] |
 | [release-please] | Proposes releases based on semantic version commits | [install][release-please-app] |
+| [release-trigger] | Trigger releases jobs | [install][release-trigger-app] |
 | [snippet-bot] | Check for mismatched region tags in PRs | [install][snippet-bot-app] |
 | [sync-repo-settings] | Synchronize repository settings from a centralized config | [install][sync-repo-settings-app] |
 | [trusted-contribution] | Allows Kokoro CI to trigger for trusted contributors | [install][trusted-contribution-app] |
@@ -112,36 +113,38 @@ at the specified schedule.
 
 ![High Level Architecture](./architecture.png)
 
-[auto-approve]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/auto-approve
+[auto-approve]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/auto-approve
 [auto-approve-app]: https://github.com/apps/auto-approve-bot
-[auto-label]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/auto-label
+[auto-label]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/auto-label
 [auto-label-app]: https://github.com/apps/product-auto-label
-[blunderbuss]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/blunderbuss
+[blunderbuss]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/blunderbuss
 [blunderbuss-app]: https://github.com/apps/blunderbuss-gcf
-[conventional-commit-lint]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/conventional-commit-lint
+[conventional-commit-lint]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/conventional-commit-lint
 [conventional-commit-lint-app]: https://github.com/apps/conventional-commit-lint-gcf
-[do-not-merge]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/do-not-merge
+[do-not-merge]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/do-not-merge
 [do-not-merge-app]: https://github.com/apps/do-not-merge-gcf
-[generated-files-bot]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/generated-files-bot
+[generated-files-bot]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/generated-files-bot
 [generated-files-bot-app]: https://github.com/apps/generated-files-bot
-[license-header-lint]:  https://github.com/googleapis/repo-automation-bots/tree/master/packages/header-checker-lint
+[license-header-lint]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/header-checker-lint
 [license-header-lint-app]: https://github.com/apps/license-header-lint-gcf
-[policy]:  https://github.com/googleapis/repo-automation-bots/tree/master/packages/policy
+[policy]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/policy
 [policy-app]: https://github.com/apps/google-cloud-policy-bot
-[release-please]:  https://github.com/googleapis/repo-automation-bots/tree/master/packages/release-please
+[release-please]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/release-please
 [release-please-app]: https://github.com/apps/release-please
-[trusted-contribution]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/trusted-contribution
+[release-trigger]:  https://github.com/googleapis/repo-automation-bots/tree/main/packages/release-trigger
+[release-trigger-app]: https://github.com/apps/release-trigger
+[trusted-contribution]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/trusted-contribution
 [trusted-contribution-app]: https://github.com/apps/trusted-contributions-gcf
-[failurechecker]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/failurechecker
+[failurechecker]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/failurechecker
 [failurechecker-app]: https://github.com/apps/failure-checker
-[label-sync]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/label-sync
+[label-sync]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/label-sync
 [label-sync-app]: https://github.com/apps/google-cloud-label-sync
-[flakybot]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/flakybot
+[flakybot]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/flakybot
 [flakybot-app]: https://github.com/apps/flaky-bot
-[merge-on-green]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/merge-on-green
+[merge-on-green]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/merge-on-green
 [merge-on-green-app]: https://github.com/apps/gcf-merge-on-green
-[snippet-bot]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/snippet-bot
+[snippet-bot]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/snippet-bot
 [snippet-bot-app]: https://github.com/apps/snippet-bot
-[sync-repo-settings]: https://github.com/googleapis/repo-automation-bots/tree/master/packages/sync-repo-settings
+[sync-repo-settings]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/sync-repo-settings
 [sync-repo-settings-app]: https://github.com/apps/sync-repo-settings
 [Wombat Dressing Room]: https://opensource.googleblog.com/2020/01/wombat-dressing-room-npm-publication_10.html

@@ -1,6 +1,6 @@
 # canary-bot
 
-Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
+Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/main/README.md) for deploying and testing your bots.
 
 This bot provides a testing ground for changes to other bots. Principally, it allows us to test and deploy changes to gcf-utils and other harness frameworks before deploying it to our bots.
 

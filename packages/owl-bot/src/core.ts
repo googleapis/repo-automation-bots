@@ -21,9 +21,24 @@ import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
-import {OwlBotLock, owlBotLockPath, owlBotLockFrom} from './config-files';
-import {OctokitType} from './octokit-util';
+import {RequestError} from '@octokit/types';
+// eslint-disable-next-line node/no-extraneous-import
+import {
+  OwlBotLock,
+  OWL_BOT_LOCK_PATH,
+  owlBotLockFrom,
+  DEFAULT_OWL_BOT_YAML_PATH,
+} from './config-files';
+import {OctokitFactory, OctokitType} from './octokit-util';
 import {OWL_BOT_IGNORE} from './labels';
+import {
+  findCopyTag,
+  findSourceHash,
+  sourceLinkFrom,
+  sourceLinkLineFrom,
+  unpackCopyTag,
+} from './copy-code';
+import {google} from '@google-cloud/cloudbuild/build/protos/protos';
 
 interface BuildArgs {
   image: string;
@@ -56,10 +71,13 @@ interface AuthArgs {
   installation: number;
 }
 
-interface BuildResponse {
+interface BuildSummary {
   conclusion: 'success' | 'failure';
   summary: string;
   text: string;
+}
+
+interface BuildResponse extends BuildSummary {
   detailsURL: string;
 }
 
@@ -115,7 +133,7 @@ export async function triggerPostProcessBuild(
     triggerId: args.trigger,
     source: {
       projectId: project,
-      branchName: 'master', // TODO: It might fail if we change the default branch.
+      branchName: 'main', // TODO: It might fail if we change the default branch.
       substitutions: {
         _GITHUB_TOKEN: token.token,
         _PR: args.pr.toString(),
@@ -132,47 +150,58 @@ export async function triggerPostProcessBuild(
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const buildId: string = (resp as any).metadata.build.id;
+  const detailsURL = detailsUrlFrom(buildId, project);
   try {
     // TODO(bcoe): work with fenster@ to figure out why awaiting a long
     // running operation does not behave as expected:
     // const [build] = await resp.promise();
     const build = await waitForBuild(project, buildId, cb);
-    if (!build.steps) throw Error('trigger contained no steps');
-    const successMessage = `successfully ran ${build.steps.length} steps 🎉!`;
-    let conclusion: 'success' | 'failure' = 'success';
-    let summary = successMessage;
-    let text = '';
-    let failures = 0;
-    for (const step of build.steps) {
-      if (step.status !== 'SUCCESS') {
-        conclusion = 'failure';
-        summary = `${++failures} steps failed 🙁`;
-        text += `❌ step ${step.name} failed with status ${step.status}\n`;
-      }
-    }
-    if (conclusion === 'success') {
-      text = `successfully ran ${build.steps.length} steps 🎉!`;
-    }
-    return {
-      conclusion,
-      summary,
-      text,
-      detailsURL: detailsUrl(buildId, project),
-    };
-  } catch (err) {
+    return {detailsURL, ...summarizeBuild(build)};
+  } catch (e) {
+    const err = e as Error;
     logger.error(err);
-    return {
-      conclusion: 'failure',
-      summary: 'unknown build failure',
-      text: 'unknown build failure',
-      detailsURL: detailsUrl(buildId, project),
-    };
+    return buildFailureFrom(detailsURL);
   }
+}
+
+function summarizeBuild(
+  build: google.devtools.cloudbuild.v1.IBuild
+): BuildSummary {
+  if (!build.steps) throw Error('trigger contained no steps');
+  const successMessage = `successfully ran ${build.steps.length} steps 🎉!`;
+  let conclusion: 'success' | 'failure' = 'success';
+  let summary = successMessage;
+  let text = '';
+  let failures = 0;
+  for (const step of build.steps) {
+    if (step.status !== 'SUCCESS') {
+      conclusion = 'failure';
+      summary = `${++failures} steps failed 🙁`;
+      text += `❌ step ${step.name} failed with status ${step.status}\n`;
+    }
+  }
+  if (conclusion === 'success') {
+    text = `successfully ran ${build.steps.length} steps 🎉!`;
+  }
+  return {
+    conclusion,
+    summary,
+    text,
+  };
+}
+
+function buildFailureFrom(detailsUrl: string): BuildResponse {
+  return {
+    conclusion: 'failure',
+    summary: 'unknown build failure',
+    text: 'unknown build failure',
+    detailsURL: detailsUrl,
+  };
 }
 
 // Helper to build a link to the Cloud Build job, which peers in DPE
 // can use to view a given post processor run:
-function detailsUrl(buildID: string, project: string): string {
+function detailsUrlFrom(buildID: string, project: string): string {
   return `https://console.cloud.google.com/cloud-build/builds;region=global/${buildID}?project=${project}`;
 }
 
@@ -180,7 +209,7 @@ async function waitForBuild(
   projectId: string,
   id: string,
   client: CloudBuildClient
-) {
+): Promise<google.devtools.cloudbuild.v1.IBuild> {
   for (let i = 0; i < 60; i++) {
     const [build] = await client.getBuild({projectId, id});
     if (build.status !== 'WORKING' && build.status !== 'QUEUED') {
@@ -331,7 +360,7 @@ export async function getOwlBotLock(
   const configString = await getFileContent(
     prOwner,
     prRepo,
-    owlBotLockPath,
+    OWL_BOT_LOCK_PATH,
     prData.head.ref,
     octokit
   );
@@ -379,7 +408,8 @@ export async function getFileContent(
     }
     const text = Buffer.from(data.content, 'base64').toString('utf8');
     return text;
-  } catch (err) {
+  } catch (e) {
+    const err = e as RequestError;
     if (err.status === 404) return undefined;
     else throw err;
   }
@@ -461,12 +491,12 @@ async function hasOwlBotLoop(
   // by the post-processor one after another, this indicates that we're
   // potentially looping, e.g., flip flopping a date between 2020 and 2021.
   //
-  // It's okay to have 2 commits from Owl-Bot in a row, e.g., a commit for
+  // It's okay to have 4 commits from Owl-Bot in a row, e.g., a commit for
   // a code update plus the post processor.
   //
   // It's also okay to run the post-processor many more than circuitBreaker
   // times on a long lived PR, with human edits being made.
-  const circuitBreaker = 3;
+  const circuitBreaker = 5;
   // TODO(bcoe): we should move to an async iterator for listCommits:
   const commits = (
     await octokit.pulls.listCommits({
@@ -476,13 +506,27 @@ async function hasOwlBotLoop(
       per_page: 100,
     })
   ).data;
-  let count = 0;
-  for (const commit of commits) {
-    if (commit?.author?.login === OWLBOT_USER) count++;
-    else count = 0;
-    if (count >= circuitBreaker) return true;
+
+  // get the most recent commits (limit by circuit breaker)
+  const lastFewCommits = commits
+    .sort((a, b) => {
+      const aDate = new Date(a.commit.author?.date || 0);
+      const bDate = new Date(b.commit.author?.date || 0);
+
+      // sort desc
+      return bDate.valueOf() - aDate.valueOf();
+    })
+    .slice(0, circuitBreaker);
+
+  // not enough commits to trigger a circuit breaker
+  if (lastFewCommits.length < circuitBreaker) return false;
+
+  for (const commit of lastFewCommits) {
+    if (commit?.author?.login !== OWLBOT_USER) return false;
   }
-  return false;
+
+  // all of the recent commits were from owl-bot
+  return true;
 }
 
 /*
@@ -566,7 +610,7 @@ async function updatePullRequestAfterPostProcessor(
       pull.draft &&
       pull.labels.find(label => label.name === OWL_BOT_LOCK_UPDATE)
     ) {
-      if (1 === files.length && files[0].filename === owlBotLockPath) {
+      if (1 === files.length && files[0].filename === OWL_BOT_LOCK_PATH) {
         // It only updated the lock file.  No reason to merge this pull request.
         // Close it.
         await octokit.pulls.update({
@@ -589,6 +633,119 @@ async function updatePullRequestAfterPostProcessor(
   }
 }
 
+export interface RegenerateArgs {
+  owner: string;
+  repo: string;
+  branch: string;
+  prNumber: number;
+  prBody: string;
+  gcpProjectId: string;
+  buildTriggerId: string;
+}
+
+export async function triggerRegeneratePullRequest(
+  octokitFactory: OctokitFactory,
+  args: RegenerateArgs
+): Promise<void> {
+  const token = await octokitFactory.getGitHubShortLivedAccessToken();
+  const octokit = await octokitFactory.getShortLivedOctokit(token);
+  // No matter what the outcome, we'll create a comment below.
+  const _createComment = async (body: string): Promise<void> => {
+    await octokit.issues.createComment({
+      owner: args.owner,
+      repo: args.repo,
+      issue_number: args.prNumber,
+      body,
+    });
+  };
+
+  const reportError = (error: string) => {
+    console.error(error);
+    return _createComment(error);
+  };
+
+  const reportInfo = (text: string) => {
+    console.info(text);
+    return _createComment(text);
+  };
+
+  let sourceHash = '';
+  let yamlPath = DEFAULT_OWL_BOT_YAML_PATH;
+
+  // The user checked the "Regenerate this pull request" box.
+
+  // First try to unpack the source commit hash and .OwlBot.yaml path from
+  // a Copy Tag.
+  const copyTagText = findCopyTag(args.prBody);
+  if (copyTagText) {
+    try {
+      const copyTag = unpackCopyTag(copyTagText);
+      sourceHash = copyTag.h;
+      yamlPath = copyTag.p;
+      console.info(`Found Copy-Tag: ${copyTag}`);
+    } catch (e) {
+      await reportError(
+        `Owl Bot could not regenerate pull request ${args.prNumber} because the Copy-Tag is corrupt.\n${e}`
+      );
+      return;
+    }
+  }
+
+  // Older pull requests won't have a Copy-Tag, so use the commit hash
+  if (!sourceHash) {
+    sourceHash = findSourceHash(args.prBody);
+  }
+  if (!sourceHash) {
+    // But there's no source hash to regenerate from.  Oh no!
+    const sourceLine = sourceLinkLineFrom(sourceLinkFrom('abc123'));
+    await reportError(`Owl Bot could not regenerate pull request ${args.prNumber} because the body is missing a source hash.
+
+A source hash in the source link looks like this:
+${sourceLine}`);
+    return;
+  }
+  let buildName = '';
+  try {
+    const cb = core.getCloudBuildInstance();
+    // Is there a reason to wait for for the long-running build to complete
+    // here?
+    const [resp] = await cb.runBuildTrigger({
+      projectId: args.gcpProjectId,
+      triggerId: args.buildTriggerId,
+      source: {
+        projectId: args.gcpProjectId,
+        branchName: 'main', // TODO: It might fail if we change the default branch.
+        substitutions: {
+          _GITHUB_TOKEN: token,
+          _PR: args.prNumber.toString(),
+          _PR_BRANCH: args.branch,
+          _PR_OWNER: args.owner,
+          _REPOSITORY: args.repo,
+          _SOURCE_HASH: sourceHash,
+          _OWL_BOT_YAML_PATH: yamlPath,
+        },
+      },
+    });
+    buildName = resp?.name ?? '';
+  } catch (err) {
+    await reportError(`Owl Bot failed to regenerate pull request ${args.prNumber}.
+
+${err}`);
+    return;
+  }
+  await reportInfo(`Owl bot is regenerating pull request ${args.prNumber}...
+Build name: ${stripBuildName(buildName)}`);
+}
+
+/**
+ * The build name returned by runBuildTrigger includes a full path with the
+ * project name, and I'd rather not show that to the world.
+ */
+function stripBuildName(buildName: string): string {
+  const chunks = buildName.split(/\//);
+  return chunks.length > 0 ? chunks[chunks.length - 1] : '';
+}
+
 export const core = {
   commitsIterator,
   createCheck,
@@ -601,8 +758,9 @@ export const core = {
   getOwlBotLock,
   hasOwlBotLoop,
   lastCommitFromOwlBot,
-  owlBotLockPath,
+  OWL_BOT_LOCK_PATH,
   triggerPostProcessBuild,
+  triggerRegeneratePullRequest,
   updatePullRequestAfterPostProcessor,
   OWL_BOT_LOCK_UPDATE: OWL_BOT_LOCK_UPDATE,
 };

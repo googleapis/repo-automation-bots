@@ -17,7 +17,7 @@ import {makeDirTree} from './dir-tree';
 import * as fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
-import {OwlBotYaml, owlBotYamlPath} from '../src/config-files';
+import {OwlBotYaml, DEFAULT_OWL_BOT_YAML_PATH} from '../src/config-files';
 import {newCmd} from '../src/cmd';
 
 /**
@@ -65,7 +65,7 @@ export function makeRepoWithOwlBotYaml(
   cmd('git config user.email "test@example.com"', {cwd: dir});
   cmd('git config user.name "test"', {cwd: dir});
 
-  const yamlPath = path.join(dir, owlBotYamlPath);
+  const yamlPath = path.join(dir, DEFAULT_OWL_BOT_YAML_PATH);
   fs.mkdirSync(path.dirname(yamlPath), {recursive: true});
   const text = yaml.dump(owlBotYaml);
   fs.writeFileSync(yamlPath, text);

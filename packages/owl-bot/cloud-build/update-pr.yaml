@@ -34,6 +34,14 @@ steps:
       - 'Owl Bot'
     env:
       - 'HOME=/workspace'
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - config
+      - --global
+      - pull.rebase
+      - 'false'
+    env:
+      - 'HOME=/workspace'
   # Populate credentials for cloning:
   - name: 'bash'
     args:
@@ -82,11 +90,22 @@ steps:
     args: [
       '-l',
       '-c',
-      "git commit -m $'🦉 Updates from OwlBot\n\nSee https://github.com/googleapis/repo-automation-bots/blob/master/packages/owl-bot/README.md'; exit 0"
+      "git commit -m $'🦉 Updates from OwlBot\n\nSee https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md'; exit 0"
     ]
     dir: ${_REPOSITORY}
     env:
       - 'HOME=/workspace'
+  # Pull any recent changes to minimize risk of missing refs for the user.
+  # NOTE: This may not render owl-bot's desired state. Ensure owl-bot is ran after all relevant changes are captured.
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - pull
+      - origin
+      - ${_PR_BRANCH}
+    dir: ${_REPOSITORY}
+    env:
+      - 'HOME=/workspace'
+  # Push updates:
   - name: 'gcr.io/cloud-builders/git'
     args:
       - push

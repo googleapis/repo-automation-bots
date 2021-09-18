@@ -106,7 +106,8 @@ function findBranchConfiguration(
     if (found) {
       return found;
     }
-  } catch (err) {
+  } catch (e) {
+    const err = e as Error;
     err.message =
       `got an error finding the branch config: ${err.message},` +
       `config: ${JSON.stringify(config)}`;
@@ -138,6 +139,7 @@ async function createGitHubRelease(
     releaseType: configuration.releaseType,
     extraFiles: configuration.extraFiles,
     releaseLabel: configuration.releaseLabel,
+    defaultBranch: configuration.branch,
   };
   if (configuration.manifest) {
     const manifest = factory.manifest(releaseOptions);
@@ -212,6 +214,8 @@ async function createReleasePR(
 ): Promise<ReleasePR | Manifest> {
   const releaseType = configuration.releaseType
     ? configuration.releaseType
+    : configuration.manifest
+    ? 'simple'
     : releaseTypeFromRepoLanguage(repoLanguage);
   const packageName = configuration.packageName || repoName;
 
@@ -352,7 +356,8 @@ const handler = (app: Probot) => {
     // can create another scheduler job.
     try {
       await syncLabels(context.octokit, owner, repoName, RELEASE_PLEASE_LABELS);
-    } catch (err) {
+    } catch (e) {
+      const err = e as Error;
       err.message = `Failed to sync the labels: ${err.message}`;
       logger.error(err);
     }
@@ -513,6 +518,91 @@ const handler = (app: Probot) => {
       context.payload.pull_request.head.sha,
       context.payload.pull_request.number
     );
+  });
+
+  // If a release PR is closed unmerged, label with autorelease: closed
+  app.on('pull_request.closed', async context => {
+    const repoUrl = context.payload.repository.full_name;
+    const {owner, repo} = context.repo();
+    const remoteConfiguration = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repo,
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
+    );
+
+    // If no configuration is specified,
+    if (!remoteConfiguration) {
+      logger.info(`release-please not configured for (${repoUrl})`);
+      return;
+    }
+
+    if (context.payload.pull_request.merged) {
+      logger.info('ignoring merged pull request');
+      return;
+    }
+
+    if (
+      context.payload.pull_request.labels.some(label => {
+        return label.name === 'autorelease: pending';
+      })
+    ) {
+      await Promise.all([
+        context.octokit.issues.removeLabel(
+          context.repo({
+            issue_number: context.payload.pull_request.number,
+            name: 'autorelease: pending',
+          })
+        ),
+        context.octokit.issues.addLabels(
+          context.repo({
+            issue_number: context.payload.pull_request.number,
+            labels: ['autorelease: closed'],
+          })
+        ),
+      ]);
+    }
+  });
+
+  // If a closed release PR is reopened, re-label with autorelease: pending
+  app.on('pull_request.reopened', async context => {
+    const repoUrl = context.payload.repository.full_name;
+    const {owner, repo} = context.repo();
+    const remoteConfiguration = await getConfig<ConfigurationOptions>(
+      context.octokit,
+      owner,
+      repo,
+      WELL_KNOWN_CONFIGURATION_FILE,
+      {schema: schema}
+    );
+
+    // If no configuration is specified,
+    if (!remoteConfiguration) {
+      logger.info(`release-please not configured for (${repoUrl})`);
+      return;
+    }
+
+    if (
+      context.payload.pull_request.labels.some(label => {
+        return label.name === 'autorelease: closed';
+      })
+    ) {
+      await Promise.all([
+        context.octokit.issues.removeLabel(
+          context.repo({
+            issue_number: context.payload.pull_request.number,
+            name: 'autorelease: closed',
+          })
+        ),
+        context.octokit.issues.addLabels(
+          context.repo({
+            issue_number: context.payload.pull_request.number,
+            labels: ['autorelease: pending'],
+          })
+        ),
+      ]);
+    }
   });
 };
 

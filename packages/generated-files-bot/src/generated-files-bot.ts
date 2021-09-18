@@ -16,7 +16,7 @@
 import {Context, Probot, ProbotOctokit} from 'probot';
 import {logger, addOrUpdateIssueComment} from 'gcf-utils';
 import {load} from 'js-yaml';
-import {query} from 'jsonpath';
+import jp from 'jsonpath';
 import {match} from 'minimatch';
 import {
   ConfigChecker,
@@ -66,8 +66,7 @@ export function parseManifest(
   jsonpath: string
 ): GeneratedFile[] {
   const data = type === 'json' ? JSON.parse(content) : load(content);
-  const items = query(data, jsonpath);
-
+  const items = jp.query(data, jsonpath);
   return normalizeGeneratedFiles(items);
 }
 
@@ -284,7 +283,8 @@ export function handler(app: Probot) {
         {},
         {schema: schema}
       );
-    } catch (err) {
+    } catch (e) {
+      const err = e as Error;
       err.message = `Error reading configuration: ${err.message}`;
       logger.error(err);
       return;

@@ -1,6 +1,6 @@
 # merge-on-green
 
-Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/master/README.md) for deploying and testing your bots.
+Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/main/README.md) for deploying and testing your bots.
 
 This bot uses nock for mocking requests to GitHub.
 

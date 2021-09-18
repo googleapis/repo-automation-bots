@@ -398,31 +398,47 @@ describe('core', () => {
     });
   });
   describe('hasOwlBotLoop', () => {
+    /** A helper function for simulating a date-ordered list of commits */
+    function generateCommitList(commitOrderByAuthor: string[]) {
+      const commits: {
+        author: {
+          login: string;
+        };
+        commit: {
+          author: {
+            date: string;
+          };
+        };
+      }[] = [];
+
+      for (let i = 0; i < commitOrderByAuthor.length; i++) {
+        commits.push({
+          author: {
+            login: commitOrderByAuthor[i],
+          },
+          commit: {
+            author: {
+              date: new Date(i).toISOString(),
+            },
+          },
+        });
+      }
+
+      return commits;
+    }
+
     it('returns false if post processor not looping', async () => {
-      const commits = [
-        // Two PRs from gcf-owl-bot[bot] are expected: a PR to
-        // submit files, followed by a commit from the post processor:
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-        },
-        {
-          author: {
-            login: 'bcoe',
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-        },
-      ];
+      // Two PRs from gcf-owl-bot[bot] are expected: a PR to
+      // submit files, followed by a commit from the post processor:
+      const commits = generateCommitList([
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'bcoe',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+      ]);
+
       const githubMock = nock('https://api.github.com')
         .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
         .reply(200, commits);
@@ -430,35 +446,65 @@ describe('core', () => {
       assert.strictEqual(loop, false);
       githubMock.done();
     });
+
     it('returns true if post processor looping', async () => {
-      const commits = [
-        // Three commits from OwlBot in a row should not happen:
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-        },
-        {
-          author: {
-            login: 'gcf-owl-bot[bot]',
-          },
-        },
-        {
-          author: {
-            login: 'bcoe',
-          },
-        },
-      ];
+      const commits = generateCommitList([
+        'bcoe',
+        'gcf-owl-bot[bot]',
+        'bcoe',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]', // this commit should trigger the breaker
+      ]);
+
       const githubMock = nock('https://api.github.com')
         .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
         .reply(200, commits);
       const loop = await core.hasOwlBotLoop('bcoe', 'foo', 22, new Octokit());
       assert.strictEqual(loop, true);
+      githubMock.done();
+    });
+
+    it('returns false if there was a loop in the past, but not within the last few commits', async () => {
+      const commits = generateCommitList([
+        'bcoe',
+        'gcf-owl-bot[bot]',
+        'bcoe',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'gcf-owl-bot[bot]',
+        'bcoe', // this commit should break the loop
+      ]);
+
+      const githubMock = nock('https://api.github.com')
+        .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
+        .reply(200, commits);
+      const loop = await core.hasOwlBotLoop('bcoe', 'foo', 22, new Octokit());
+      assert.strictEqual(loop, false);
+      githubMock.done();
+    });
+
+    it('returns false if there were less than the number of commits from the circuit breaker', async () => {
+      const commits = generateCommitList(['gcf-owl-bot[bot]']);
+
+      const githubMock = nock('https://api.github.com')
+        .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
+        .reply(200, commits);
+      const loop = await core.hasOwlBotLoop('bcoe', 'foo', 22, new Octokit());
+      assert.strictEqual(loop, false);
+      githubMock.done();
+    });
+
+    it('returns false if there were 0 commits in the PR', async () => {
+      const githubMock = nock('https://api.github.com')
+        .get('/repos/bcoe/foo/pulls/22/commits?per_page=100')
+        .reply(200, []);
+      const loop = await core.hasOwlBotLoop('bcoe', 'foo', 22, new Octokit());
+      assert.strictEqual(loop, false);
       githubMock.done();
     });
   });
