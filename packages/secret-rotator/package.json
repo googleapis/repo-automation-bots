@@ -30,6 +30,7 @@
   },
   "homepage": "https://github.com/googleapis/repo-automation-bots#readme",
   "devDependencies": {
+    "@types/express": "^4.17.13",
     "@types/mocha": "^9.0.0",
     "@types/sinon": "^10.0.2",
     "c8": "^7.7.3",
@@ -43,6 +44,7 @@
     "@google-cloud/secret-manager": "^3.10.0",
     "@googleapis/iam": "^0.2.0",
     "express": "^4.17.1",
+    "gcf-utils": "^13.0.2",
     "google-auth-library": "^7.9.1",
     "typescript": "^4.4.3"
   }
