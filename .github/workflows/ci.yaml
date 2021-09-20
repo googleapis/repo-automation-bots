@@ -100,6 +100,6 @@ jobs:
       - uses: JustinBeckwith/linkinator-action@v1
         with:
           paths: '**/*.md'
-          concurrency: 1
+          concurrency: 20
           verbosity: 'ERROR'
           skip: 'node_modules/ http://devrel/products http://localhost:3000 https://www.github.com/googleapis/repo-automation-bots/compare/*'
