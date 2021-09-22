@@ -16,6 +16,7 @@
 set -eo pipefail
 
 directoryName='secret-rotator'
+botName='secret-rotator'
 project='secret-rotator-prod'
 region='us-central1'
 serviceNameForCloudRun='secret-rotator-service-agent@secret-rotator-prod.iam.gserviceaccount.com'
