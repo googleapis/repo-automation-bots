@@ -55,6 +55,11 @@
     "type": "BOOLEAN"
   },
   {
+    "mode": "REQUIRED",
+    "name": "hasMainDefault",
+    "type": "BOOLEAN"
+  },
+  {
     "mode": "REPEATED",
     "name": "topics",
     "type": "STRING"
