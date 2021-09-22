@@ -41,7 +41,7 @@ describe('behavior of Cloud Run service', async () => {
   it('should get 200 when posting, and parse correctly', async () => {
     const response = await gaxios.request({
       method: 'POST',
-      url: `http://localhost:${TEST_SERVER_PORT}/rotate-secret`,
+      url: `http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`,
       data: {
         serviceAccountProjectId: 'test-service-account',
         serviceAccountEmail: 'test-service-account-email',
@@ -63,10 +63,10 @@ describe('behavior of Cloud Run service', async () => {
   });
 
   it('should throw an error if service account is falsy', async () => {
-    assert.rejects(async () => {
+    await assert.rejects(async () => {
       await gaxios.request({
         method: 'POST',
-        url: `http://localhost:${TEST_SERVER_PORT}/rotate-secret`,
+        url: `http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`,
         headers: {'Content-Type': 'application/json'},
         data: {
           serviceAccountProjectId: '',
@@ -75,14 +75,14 @@ describe('behavior of Cloud Run service', async () => {
           secretName: 'test-secret-name',
         },
       });
-    });
+    }, /Error: Request failed with status code 400/);
   });
 
   it('should throw an error if service account email is falsy', async () => {
-    assert.rejects(async () => {
+    await assert.rejects(async () => {
       await gaxios.request({
         method: 'POST',
-        url: `http://localhost:${TEST_SERVER_PORT}/rotate-secret`,
+        url: `http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`,
         headers: {'Content-Type': 'application/json'},
         data: {
           serviceAccountProjectId: 'test-service-account',
@@ -91,14 +91,14 @@ describe('behavior of Cloud Run service', async () => {
           secretName: 'test-secret-name',
         },
       });
-    });
+    }, /Error: Request failed with status code 400/);
   });
 
   it('should throw an error if secret manager project ID is falsy', async () => {
-    assert.rejects(async () => {
+    await assert.rejects(async () => {
       await gaxios.request({
         method: 'POST',
-        url: `http://localhost:${TEST_SERVER_PORT}/rotate-secret`,
+        url: `http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`,
         headers: {'Content-Type': 'application/json'},
         data: {
           serviceAccountProjectId: 'test-service-account',
@@ -107,14 +107,14 @@ describe('behavior of Cloud Run service', async () => {
           secretName: 'test-secret-name',
         },
       });
-    });
+    }, /Error: Request failed with status code 400/);
   });
 
   it('should throw an error if secret name is falsy', async () => {
-    assert.rejects(async () => {
+    await assert.rejects(async () => {
       await gaxios.request({
         method: 'POST',
-        url: `http://localhost:${TEST_SERVER_PORT}/rotate-secret`,
+        url: `http://localhost:${TEST_SERVER_PORT}/rotate-service-account-key`,
         headers: {'Content-Type': 'application/json'},
         data: {
           serviceAccountProjectId: 'test-service-account',
@@ -123,11 +123,11 @@ describe('behavior of Cloud Run service', async () => {
           secretName: '',
         },
       });
-    });
+    }, /Error: Request failed with status code 400/);
   });
 
   it('should get 404 when calling with any other method', async () => {
-    assert.rejects(async () => {
+    await assert.rejects(async () => {
       await gaxios.request({
         method: 'GET',
         url: `http://localhost:${TEST_SERVER_PORT}/`,

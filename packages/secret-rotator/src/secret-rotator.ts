@@ -98,6 +98,12 @@ export class SecretRotator {
       `creating new key for service account: ${serviceAccountEmail} (${serviceAccountProjectId})`
     );
 
+    await this.deleteExpiredServiceAccountKeys(
+      this.iamClient,
+      serviceAccountProjectId,
+      serviceAccountEmail
+    );
+
     const serviceAccountKey = await this.createServiceAccountKey(
       this.iamClient,
       serviceAccountProjectId,
@@ -112,11 +118,5 @@ export class SecretRotator {
       serviceAccountKey
     );
     logger.info(`updated secret: ${version}`);
-
-    await this.deleteExpiredServiceAccountKeys(
-      this.iamClient,
-      serviceAccountProjectId,
-      serviceAccountEmail
-    );
   }
 }

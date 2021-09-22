@@ -17,24 +17,29 @@ import {GoogleAuth} from 'google-auth-library';
 import {SecretRotator} from './secret-rotator';
 import {iam} from '@googleapis/iam';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
+import {logger} from 'gcf-utils';
 export const app = express();
 
 app.use(express.json());
 
-app.post('/rotate-secret', async (req: Request, res: Response) => {
+app.post('/rotate-service-account-key', async (req: Request, res: Response) => {
   const serviceAccountProjectId = req.body.serviceAccountProjectId;
   const serviceAccountEmail = req.body.serviceAccountEmail;
   const secretManagerProjectId = req.body.secretManagerProjectId;
   const secretName = req.body.secretName;
 
   if (!serviceAccountProjectId) {
-    throw new Error('No service account project ID specified');
+    logger.error('No service account project ID specified');
+    res.sendStatus(400).send('No service account project ID specified');
   } else if (!serviceAccountEmail) {
-    throw new Error('No service account email specified');
+    logger.error('No service account email specified');
+    res.sendStatus(400).send('No service account email specified');
   } else if (!secretManagerProjectId) {
-    throw new Error('No secret manager project ID specified');
+    logger.error('No secret manager project ID specified');
+    res.sendStatus(400).send('No secret manager project ID specified');
   } else if (!secretName) {
-    throw new Error('No secret name specified');
+    logger.error('No secret name specified');
+    res.sendStatus(400).send('No secret name specified');
   }
 
   const auth = await new GoogleAuth({

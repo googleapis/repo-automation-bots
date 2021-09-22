@@ -1,4 +1,4 @@
-# Copyright 2020 Google LLC
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,16 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-steps:
-  # - name: gcr.io/cloud-builders/npm
-  #   id: "build"
-  #   waitFor: ["-"]
-  #   entrypoint: bash
-  #   args:
-  #     - "-e"
-  #     - "./scripts/build-function.sh"
-  #     - "$_DIRECTORY"
-      
+steps: 
   - name: gcr.io/cloud-builders/docker
     id: "build-docker"
     waitFor: ["-"]
@@ -46,20 +37,3 @@ steps:
     args:
       - "-e"
       - "./scripts/publish-cloud-run-secret-rotator.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-      - "$_SERVICE_ACCOUNT_CLOUD_RUN"
-      - "$_SERVICE_ACCOUNT_INVOKER"
-      # botName
-      - "secret-rotator"
-      # timeout
-      - "3600"
-      # minInstances: We want to serve Github webhook quickly.
-      - "3"
-      # concurrency: We saw some errors in gRPC stack (#2265) with the default
-      # 80 concurrency.
-      - "40"
