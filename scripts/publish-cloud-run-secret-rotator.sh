@@ -20,37 +20,13 @@ if [ $# -lt 8 ]; then
   exit 1
 fi
 
-directoryName=$1
-project=$2
-bucket=$3
-keyLocation=$4
-keyRing=$5
-region=$6
-serviceNameForCloudRun=$7
-serviceNameForInvoker=$8
-
-botName=$(echo "${directoryName}" | rev | cut -d/ -f1 | rev)
-if [ $# -ge 9 ]; then
-  botName=$9
-fi
-
-if [ $# -ge 10 ]; then
-  timeout=${10}
-else
-  timeout="3600"
-fi
-
-if [ $# -ge 11 ]; then
-  minInstances=${11}
-else
-  minInstances="0"
-fi
-
-if [ $# -ge 12 ]; then
-  concurrency=${12}
-else
-  concurrency="80"
-fi
+directoryName='secret-rotator'
+project='secret-rotator-prod'
+region='us-central1'
+serviceNameForCloudRun='secret-rotator-service-agent@secret-rotator-prod.iam.gserviceaccount.com'
+serviceNameForInvoker='scheduler-service-agent@secret-rotator-prod.iam.gserviceaccount.com'
+timeout=3600
+concurrency=80
 
 pushd "${directoryName}"
 serviceName=${botName//_/-}
@@ -58,30 +34,12 @@ serviceName=${botName//_/-}
 deployArgs=(
   "--image"
   "gcr.io/${project}/${botName}"
-  "--set-env-vars"
-  "DRIFT_PRO_BUCKET=${bucket}"
-  "--set-env-vars"
-  "KEY_LOCATION=${keyLocation}"
-  "--set-env-vars"
-  "KEY_RING=${keyRing}"
-  "--set-env-vars"
-  "PROJECT_ID=${project}"
-  "--set-env-vars"
-  "GCF_LOCATION=${region}"
-  "--set-env-vars"
-  "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD='1'"
-  "--set-env-vars"
-  "WEBHOOK_TMP=${webhookTmpBucket}"
-  "--set-env-vars"
-  "BOT_RUNTIME=run"
   "--platform"
   "managed"
   "--region"
   "${region}"
   "--timeout"
   "${timeout}"
-  "--min-instances"
-  "${minInstances}"
   "--concurrency"
   "${concurrency}"
   "--service-account"

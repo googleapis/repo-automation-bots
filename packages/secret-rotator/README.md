@@ -11,7 +11,7 @@ A service deployed to Cloud Run that rotates and deprecates keys.
 
 ## Contributing
 
-If you have suggestions for how `release-brancher` could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
+If you have suggestions for how `secret-rotator` could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
 
 For more, check out the Contributing Guide.
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Helper} from '../src/helper';
+import {SecretRotator} from '../src/secret-rotator';
 import sinon, {SinonStubbedInstance} from 'sinon';
 import {describe, it} from 'mocha';
 import {iam_v1} from '@googleapis/iam';
@@ -121,13 +121,9 @@ const iamClientStubCreate = {
 
 describe('behavior of helper functions', async () => {
   it('should return the right name when creating a service account key', async () => {
-    const helper = new Helper(
+    const helper = new SecretRotator(
       iamClientStubCreate,
-      secretManagerClientStub,
-      'test-service-account',
-      'test-service-account-email',
-      'test-secret-project-manager-Id',
-      'test-secret-name'
+      secretManagerClientStub
     );
 
     const response = await helper.createServiceAccountKey(
@@ -141,13 +137,9 @@ describe('behavior of helper functions', async () => {
   });
 
   it('should throw if there is no key', async () => {
-    const helper = new Helper(
+    const helper = new SecretRotator(
       iamClientStubNoKey,
-      secretManagerClientStub,
-      'test-service-account',
-      'test-service-account-email',
-      'test-secret-project-manager-Id',
-      'test-secret-name'
+      secretManagerClientStub
     );
 
     assert.rejects(async () => {
@@ -160,13 +152,9 @@ describe('behavior of helper functions', async () => {
   });
 
   it('should return the correct secret', async () => {
-    const helper = new Helper(
+    const helper = new SecretRotator(
       iamClientStubCreate,
-      secretManagerClientStub,
-      'test-service-account',
-      'test-service-account-email',
-      'test-secret-project-manager-Id',
-      'test-secret-name'
+      secretManagerClientStub
     );
 
     const buff = Buffer.from('testResult', 'base64');
@@ -182,13 +170,9 @@ describe('behavior of helper functions', async () => {
   });
 
   it('should delete any expired keys', async () => {
-    const helper = new Helper(
+    const helper = new SecretRotator(
       iamClientStubListAndDelete,
-      secretManagerClientStub,
-      'test-service-account',
-      'test-service-account-email',
-      'test-secret-project-manager-Id',
-      'test-secret-name'
+      secretManagerClientStub
     );
 
     // Avoiding using spies because of complicated dependency injections.

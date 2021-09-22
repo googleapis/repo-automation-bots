@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as app from '../src/app';
-import {Helper} from '../src/helper';
+import {SecretRotator} from '../src/secret-rotator';
 import sinon, {SinonStub} from 'sinon';
 import * as gaxios from 'gaxios';
 import {describe, it} from 'mocha';
@@ -30,7 +30,7 @@ describe('behavior of Cloud Run service', async () => {
     server = app.app.listen(TEST_SERVER_PORT, () => {
       console.log(`Secret-rotator: listening on port ${TEST_SERVER_PORT}`);
     });
-    rotateSecretStub = sinon.stub(Helper.prototype, 'rotateSecret');
+    rotateSecretStub = sinon.stub(SecretRotator.prototype, 'rotateSecret');
   });
 
   afterEach(done => {
@@ -38,22 +38,10 @@ describe('behavior of Cloud Run service', async () => {
     server.close(done);
   });
 
-  it('should get 200 when posting', async () => {
+  it('should get 200 when posting, and parse correctly', async () => {
     const response = await gaxios.request({
       method: 'POST',
-      url: `http://localhost:${TEST_SERVER_PORT}/`,
-    });
-
-    assert.ok(rotateSecretStub.calledOnce);
-
-    assert.deepStrictEqual(response.status, 200);
-  });
-
-  it('should parse JSON correctly', async () => {
-    const response = await gaxios.request({
-      method: 'POST',
-      url: `http://localhost:${TEST_SERVER_PORT}/`,
-      headers: {'Content-Type': 'application/json'},
+      url: `http://localhost:${TEST_SERVER_PORT}/rotate-secret`,
       data: {
         serviceAccountProjectId: 'test-service-account',
         serviceAccountEmail: 'test-service-account-email',
@@ -62,6 +50,7 @@ describe('behavior of Cloud Run service', async () => {
       },
     });
 
+    assert.ok(rotateSecretStub.calledOnce);
     assert.ok(
       rotateSecretStub.calledWith(
         'test-service-account',
@@ -71,6 +60,70 @@ describe('behavior of Cloud Run service', async () => {
       )
     );
     assert.deepStrictEqual(response.status, 200);
+  });
+
+  it('should throw an error if service account is falsy', async () => {
+    assert.rejects(async () => {
+      await gaxios.request({
+        method: 'POST',
+        url: `http://localhost:${TEST_SERVER_PORT}/rotate-secret`,
+        headers: {'Content-Type': 'application/json'},
+        data: {
+          serviceAccountProjectId: '',
+          serviceAccountEmail: 'test-service-account-email',
+          secretManagerProjectId: 'test-secret-project-manager-Id',
+          secretName: 'test-secret-name',
+        },
+      });
+    });
+  });
+
+  it('should throw an error if service account email is falsy', async () => {
+    assert.rejects(async () => {
+      await gaxios.request({
+        method: 'POST',
+        url: `http://localhost:${TEST_SERVER_PORT}/rotate-secret`,
+        headers: {'Content-Type': 'application/json'},
+        data: {
+          serviceAccountProjectId: 'test-service-account',
+          serviceAccountEmail: '',
+          secretManagerProjectId: 'test-secret-project-manager-Id',
+          secretName: 'test-secret-name',
+        },
+      });
+    });
+  });
+
+  it('should throw an error if secret manager project ID is falsy', async () => {
+    assert.rejects(async () => {
+      await gaxios.request({
+        method: 'POST',
+        url: `http://localhost:${TEST_SERVER_PORT}/rotate-secret`,
+        headers: {'Content-Type': 'application/json'},
+        data: {
+          serviceAccountProjectId: 'test-service-account',
+          serviceAccountEmail: 'test-service-account-email',
+          secretManagerProjectId: '',
+          secretName: 'test-secret-name',
+        },
+      });
+    });
+  });
+
+  it('should throw an error if secret name is falsy', async () => {
+    assert.rejects(async () => {
+      await gaxios.request({
+        method: 'POST',
+        url: `http://localhost:${TEST_SERVER_PORT}/rotate-secret`,
+        headers: {'Content-Type': 'application/json'},
+        data: {
+          serviceAccountProjectId: 'test-service-account',
+          serviceAccountEmail: 'test-service-account-email',
+          secretManagerProjectId: 'test-secret-project-manager-Id',
+          secretName: '',
+        },
+      });
+    });
   });
 
   it('should get 404 when calling with any other method', async () => {

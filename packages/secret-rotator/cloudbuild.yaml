@@ -13,14 +13,14 @@
 # limitations under the License.
 
 steps:
-  - name: gcr.io/cloud-builders/npm
-    id: "build"
-    waitFor: ["-"]
-    entrypoint: bash
-    args:
-      - "-e"
-      - "./scripts/build-function.sh"
-      - "$_DIRECTORY"
+  # - name: gcr.io/cloud-builders/npm
+  #   id: "build"
+  #   waitFor: ["-"]
+  #   entrypoint: bash
+  #   args:
+  #     - "-e"
+  #     - "./scripts/build-function.sh"
+  #     - "$_DIRECTORY"
       
   - name: gcr.io/cloud-builders/docker
     id: "build-docker"

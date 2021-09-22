@@ -19,14 +19,16 @@ FROM node:14-alpine
 # Create and change to the app directory.
 WORKDIR /usr/src/app
 
+COPY package*.json ./
+
+# Install production dependencies.
+RUN npm install
+
 # Copy local code to the container image.
 COPY . ./
 
-# Install production dependencies.
-# If you add a package-lock.json, speed your build by switching to 'npm ci'.
-# RUN npm ci --only=production
-RUN npm install
 RUN npm run compile
+
 RUN chmod 755 /usr/src/app/build/src/index.js
 
 # Run the web service on container startup.

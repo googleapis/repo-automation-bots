@@ -16,28 +16,16 @@ import {iam_v1} from '@googleapis/iam';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
 import {logger} from 'gcf-utils';
 
-export class Helper {
+export class SecretRotator {
   iamClient: iam_v1.Iam;
   secretManagerClient: SecretManagerServiceClient;
-  serviceAccountProjectId: string;
-  serviceAccountEmail: string;
-  secretManagerProjectId: string;
-  secretName: string;
 
   constructor(
     iamClient: iam_v1.Iam,
-    secretManagerClient: SecretManagerServiceClient,
-    serviceAccountProjectId: string,
-    serviceAccountEmail: string,
-    secretManagerProjectId: string,
-    secretName: string
+    secretManagerClient: SecretManagerServiceClient
   ) {
     this.iamClient = iamClient;
     this.secretManagerClient = secretManagerClient;
-    this.serviceAccountProjectId = serviceAccountProjectId;
-    this.serviceAccountEmail = serviceAccountEmail;
-    this.secretManagerProjectId = secretManagerProjectId;
-    this.secretName = secretName;
   }
 
   public async createServiceAccountKey(
@@ -52,7 +40,6 @@ export class Helper {
         privateKeyType: 'TYPE_GOOGLE_CREDENTIALS_FILE',
       },
     });
-    console.log(key.data.privateKeyData);
     if (!key.data.privateKeyData) {
       throw new Error('unable to return data');
     }
