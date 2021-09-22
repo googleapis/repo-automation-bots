@@ -15,11 +15,6 @@
 
 set -eo pipefail
 
-if [ $# -lt 8 ]; then
-  echo "Usage: $0 <botDirectory> <projectId> <bucket> <keyLocation> <keyRing> <region> <botName> <service-account> [service-account] [timeout] [min-instance] [concurrency]"
-  exit 1
-fi
-
 directoryName='secret-rotator'
 project='secret-rotator-prod'
 region='us-central1'
