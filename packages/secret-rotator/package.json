@@ -1,0 +1,51 @@
+{
+  "name": "secret-rotator",
+  "version": "1.0.0",
+  "description": "rotate secrets for service accounts",
+  "main": "build/src/index.js",
+  "files": [
+    "build/src"
+  ],
+  "engines": {
+    "node": ">=12.10.0"
+  },
+  "scripts": {
+    "start": "node ./targets/build/src/index.js",
+    "clean": "gts clean",
+    "compile": "tsc -p .",
+    "fix": "gts fix",
+    "lint": "gts check",
+    "test": "c8 mocha build/test",
+    "pretest": "npm run compile",
+    "precompile": "gts clean"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/googleapis/repo-automation-bots.git"
+  },
+  "author": "Google LLC.",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/googleapis/repo-automation-bots/issues"
+  },
+  "homepage": "https://github.com/googleapis/repo-automation-bots#readme",
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/mocha": "^9.0.0",
+    "@types/sinon": "^10.0.2",
+    "c8": "^7.7.3",
+    "gaxios": "^4.3.1",
+    "gts": "^3.1.0",
+    "mocha": "^9.1.1",
+    "nock": "^13.1.3",
+    "sinon": "^11.1.2",
+    "typescript": "^4.4.3"
+  },
+  "dependencies": {
+    "@google-cloud/secret-manager": "^3.10.0",
+    "@googleapis/iam": "^0.2.0",
+    "express": "^4.17.1",
+    "gcf-utils": "^13.0.2",
+    "google-auth-library": "^7.9.1"
+  }
+}
