@@ -17,6 +17,7 @@ set -eo pipefail
 
 directoryName='secret-rotator'
 botName='secret-rotator'
+imageProject='repo-automation-bots'
 project='secret-rotator-prod'
 region='us-central1'
 serviceNameForCloudRun='secret-rotator-service-agent@secret-rotator-prod.iam.gserviceaccount.com'
@@ -29,7 +30,7 @@ serviceName=${botName//_/-}
 
 deployArgs=(
   "--image"
-  "gcr.io/${project}/${botName}"
+  "gcr.io/${imageProject}/${botName}"
   "--platform"
   "managed"
   "--region"
@@ -48,6 +49,7 @@ gcloud beta run deploy "${serviceName}" "${deployArgs[@]}"
 
 echo "Adding ability for scheduler to execute the Function"
 gcloud run services add-iam-policy-binding "${serviceName}" \
+  --project="${project}" \
   --member="${serviceNameForInvoker}" \
   --region "${region}" \
   --role="roles/run.invoker"
