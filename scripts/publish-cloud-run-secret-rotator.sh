@@ -24,7 +24,7 @@ serviceNameForInvoker='scheduler-service-agent@secret-rotator-prod.iam.gservicea
 timeout=3600
 concurrency=80
 
-pushd "${directoryName}"
+pushd "packages/${directoryName}"
 serviceName=${botName//_/-}
 
 deployArgs=(
