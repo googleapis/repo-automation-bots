@@ -29,6 +29,8 @@ pushd "packages/${directoryName}"
 serviceName=${botName//_/-}
 
 deployArgs=(
+  "--project"
+  "${project}"
   "--image"
   "gcr.io/${imageProject}/${botName}"
   "--platform"
@@ -42,6 +44,8 @@ deployArgs=(
   "--service-account"
   "${serviceNameForCloudRun}"
   "--quiet"
+  "--project"
+  "${project}"
 )
 
 echo "About to cloud run app ${serviceName}"
