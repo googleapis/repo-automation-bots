@@ -31,15 +31,19 @@ app.post('/rotate-service-account-key', async (req: Request, res: Response) => {
   if (!serviceAccountProjectId) {
     logger.error('No service account project ID specified');
     res.sendStatus(400).send('No service account project ID specified');
+    return;
   } else if (!serviceAccountEmail) {
     logger.error('No service account email specified');
     res.sendStatus(400).send('No service account email specified');
+    return;
   } else if (!secretManagerProjectId) {
     logger.error('No secret manager project ID specified');
     res.sendStatus(400).send('No secret manager project ID specified');
+    return;
   } else if (!secretName) {
     logger.error('No secret name specified');
     res.sendStatus(400).send('No secret name specified');
+    return;
   }
 
   const auth = await new GoogleAuth({
