@@ -39,6 +39,7 @@ describe('changer', () => {
     hasRenovateConfig: true,
     hasSecurityPolicy: true,
     hasValidLicense: true,
+    hasMainDefault: true,
     timestamp: new Date(),
   };
 

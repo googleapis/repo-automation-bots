@@ -84,6 +84,10 @@ export interface PolicyResult {
    */
   hasSecurityPolicy: boolean;
   /**
+   * Is the default branch set to `main`, and not `master`?
+   */
+  hasMainDefault: boolean;
+  /**
    * Date when the scan was run for this repository
    */
   timestamp: Date;
@@ -256,6 +260,13 @@ export class Policy {
   }
 
   /**
+   * Ensure `main` is the default branch name.
+   */
+  async hasMainDefault(repo: GitHubRepo) {
+    return repo.default_branch === 'main';
+  }
+
+  /**
    * Merge Commits are disabled
    */
   async hasMergeCommitsDisabled(repo: GitHubRepo) {
@@ -306,6 +317,7 @@ export class Policy {
       hasBranchProtection,
       hasMergeCommitsDisabled,
       hasSecurityPolicy,
+      hasMainDefault,
     ] = await Promise.all([
       this.hasRenovate(repo),
       this.hasLicense(repo),
@@ -315,6 +327,7 @@ export class Policy {
       this.hasBranchProtection(repo),
       this.hasMergeCommitsDisabled(repo),
       this.hasSecurityPolicy(repo),
+      this.hasMainDefault(repo),
     ]);
     const [org, name] = repo.full_name.split('/');
     const results: PolicyResult = {
@@ -328,6 +341,7 @@ export class Policy {
       hasContributing,
       hasCodeowners,
       hasBranchProtection,
+      hasMainDefault,
       hasMergeCommitsDisabled,
       hasSecurityPolicy,
       timestamp: new Date(),
