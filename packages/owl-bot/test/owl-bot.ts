@@ -970,7 +970,7 @@ describe('owlBot', () => {
     });
     sandbox.assert.calledOnce(triggerBuildStub);
     sandbox.assert.calledOnce(createCheckStub);
-    sandbox.assert.calledOnce(hasOwlBotLoopStub);
+    sandbox.assert.notCalled(hasOwlBotLoopStub);
     sandbox.assert.calledOnce(updatePullRequestStub);
     githubMock.done();
   });
@@ -1042,7 +1042,7 @@ describe('owlBot', () => {
     });
     sandbox.assert.calledOnce(triggerBuildStub);
     sandbox.assert.calledOnce(createCheckStub);
-    sandbox.assert.calledOnce(hasOwlBotLoopStub);
+    sandbox.assert.notCalled(hasOwlBotLoopStub);
     sandbox.assert.calledOnce(updatePullRequestStub);
     githubMock.done();
   });
@@ -1114,7 +1114,7 @@ describe('owlBot', () => {
     });
     sandbox.assert.calledOnce(triggerBuildStub);
     sandbox.assert.calledOnce(createCheckStub);
-    sandbox.assert.calledOnce(hasOwlBotLoopStub);
+    sandbox.assert.notCalled(hasOwlBotLoopStub);
     sandbox.assert.calledOnce(updatePullRequestStub);
     githubMock.done();
   });
