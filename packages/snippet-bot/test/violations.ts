@@ -16,7 +16,11 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import {Configuration, DEFAULT_CONFIGURATION} from '../src//configuration';
-import {checkProductPrefixViolations, checkRemovingUsedTagViolations, Violation} from '../src/violations';
+import {
+  checkProductPrefixViolations,
+  checkRemovingUsedTagViolations,
+  Violation,
+} from '../src/violations';
 import {
   ChangesInPullRequest,
   RegionTagLocation,
@@ -85,11 +89,11 @@ describe('checkProductPrefixViolations', async () => {
   });
   it('should warn missing region_tag_prefix', async () => {
     const result = await checkProductPrefixViolations(changes1, config);
-    assert(result.length == 1);
+    assert(result.length === 1);
   });
   it('should allow api_shortname for samplegen', async () => {
     const result = await checkProductPrefixViolations(changes2, config);
-    assert(result.length == 0);
+    assert(result.length === 0);
   });
 });
 
