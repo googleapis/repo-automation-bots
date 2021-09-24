@@ -38,7 +38,7 @@ import * as sinon from 'sinon';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-describe('checkProductPrefixViolations', async () => {
+describe('checkProductPrefixViolations', () => {
   const loc: RegionTagLocation = {
     type: 'add',
     regionTag: 'run_hello',
