@@ -57,6 +57,15 @@ describe('checkProductPrefixViolations', async () => {
     sha: 'sha',
     line: 42,
   };
+  const loc3: RegionTagLocation = {
+    type: 'add',
+    regionTag: 'cloudrun_hello',
+    owner: 'owner',
+    repo: 'repo',
+    file: 'file',
+    sha: 'sha',
+    line: 42,
+  };
   const changes1: ChangesInPullRequest = {
     changes: [loc],
     added: 1,
@@ -65,6 +74,12 @@ describe('checkProductPrefixViolations', async () => {
   };
   const changes2: ChangesInPullRequest = {
     changes: [loc2],
+    added: 1,
+    deleted: 0,
+    files: ['file'],
+  };
+  const changes3: ChangesInPullRequest = {
+    changes: [loc3],
     added: 1,
     deleted: 0,
     files: ['file'],
@@ -93,6 +108,10 @@ describe('checkProductPrefixViolations', async () => {
   });
   it('should allow api_shortname for samplegen', async () => {
     const result = await checkProductPrefixViolations(changes2, config);
+    assert(result.length === 0);
+  });
+  it('should allow region_tag_prefix for non samplegen sample', async () => {
+    const result = await checkProductPrefixViolations(changes3, config);
     assert(result.length === 0);
   });
 });
