@@ -26,6 +26,8 @@ import {mkdirSync, writeFileSync} from 'fs';
 import * as protos from '@google-cloud/cloudbuild/build/protos/protos';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
 import {Octokit} from '@octokit/rest';
+import {OctokitType} from '../src/octokit-util';
+import {OwlBotLock} from '../src/config-files';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -49,6 +51,15 @@ function initSandbox(prData: unknown) {
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any as InstanceType<typeof Octokit>);
+}
+
+async function getOwlBotLock(
+  repoFull: string,
+  pullNumber: number,
+  octokit: OctokitType
+): Promise<OwlBotLock | undefined> {
+  const lockText = await core.fetchOwlBotLock(repoFull, pullNumber, octokit);
+  return undefined === lockText ? undefined : core.parseOwlBotLock(lockText);
 }
 
 function newPrData(labels: string[] = []): unknown {
@@ -232,7 +243,7 @@ describe('core', () => {
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any as InstanceType<typeof Octokit>;
-      const lock = await core.getOwlBotLock('bcoe/test', 22, octokit);
+      const lock = await getOwlBotLock('bcoe/test', 22, octokit);
       assert.strictEqual(lock!.docker.image, 'node');
       assert.strictEqual(
         lock!.docker.digest,
@@ -272,7 +283,7 @@ describe('core', () => {
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any as InstanceType<typeof Octokit>;
-      assert.rejects(core.getOwlBotLock('bcoe/test', 22, octokit));
+      assert.rejects(getOwlBotLock('bcoe/test', 22, octokit));
     });
     it('returns "undefined" if config not found', async () => {
       const prData = {
@@ -298,7 +309,7 @@ describe('core', () => {
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any as InstanceType<typeof Octokit>;
-      const config = await core.getOwlBotLock('bcoe/test', 22, octokit);
+      const config = await getOwlBotLock('bcoe/test', 22, octokit);
       assert.strictEqual(config, undefined);
     });
   });
