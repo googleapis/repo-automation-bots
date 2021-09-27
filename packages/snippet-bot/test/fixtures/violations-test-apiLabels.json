@@ -1,0 +1,10 @@
+{
+  "products": [
+    {
+      "display_name": "Cloud Run",
+      "github_label": "api: run",
+      "api_shortname": "run",
+      "region_tag_prefix": "cloudrun"
+    }
+  ]
+}

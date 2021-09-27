@@ -16,7 +16,11 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import {Configuration, DEFAULT_CONFIGURATION} from '../src//configuration';
-import {checkRemovingUsedTagViolations, Violation} from '../src/violations';
+import {
+  checkProductPrefixViolations,
+  checkRemovingUsedTagViolations,
+  Violation,
+} from '../src/violations';
 import {
   ChangesInPullRequest,
   RegionTagLocation,
@@ -25,12 +29,92 @@ import {
 
 import * as snippetsModule from '../src/snippets';
 import {Snippets} from '../src/snippets';
+import {ApiLabels} from '../src/api-labels';
+import * as apiLabelsModule from '../src/api-labels';
 import {resolve} from 'path';
 import assert from 'assert';
 import {describe, it} from 'mocha';
 import * as sinon from 'sinon';
 
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
+
+describe('checkProductPrefixViolations', () => {
+  const loc: RegionTagLocation = {
+    type: 'add',
+    regionTag: 'run_hello',
+    owner: 'owner',
+    repo: 'repo',
+    file: 'file',
+    sha: 'sha',
+    line: 42,
+  };
+  const loc2: RegionTagLocation = {
+    type: 'add',
+    regionTag: 'run_generated_hello',
+    owner: 'owner',
+    repo: 'repo',
+    file: 'file',
+    sha: 'sha',
+    line: 42,
+  };
+  const loc3: RegionTagLocation = {
+    type: 'add',
+    regionTag: 'cloudrun_hello',
+    owner: 'owner',
+    repo: 'repo',
+    file: 'file',
+    sha: 'sha',
+    line: 42,
+  };
+  const changes1: ChangesInPullRequest = {
+    changes: [loc],
+    added: 1,
+    deleted: 0,
+    files: ['file'],
+  };
+  const changes2: ChangesInPullRequest = {
+    changes: [loc2],
+    added: 1,
+    deleted: 0,
+    files: ['file'],
+  };
+  const changes3: ChangesInPullRequest = {
+    changes: [loc3],
+    added: 1,
+    deleted: 0,
+    files: ['file'],
+  };
+  const config: Configuration = new Configuration({...DEFAULT_CONFIGURATION});
+
+  let getApiLabelsStub: sinon.SinonStub<[string], Promise<ApiLabels>>;
+
+  const sandbox = sinon.createSandbox();
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  beforeEach(() => {
+    const apiLabels = require(resolve(
+      fixturesPath,
+      './violations-test-apiLabels'
+    ));
+    getApiLabelsStub = sandbox.stub(apiLabelsModule, 'getApiLabels');
+    getApiLabelsStub.resolves(apiLabels);
+  });
+  it('should warn missing region_tag_prefix', async () => {
+    const result = await checkProductPrefixViolations(changes1, config);
+    assert(result.length === 1);
+  });
+  it('should allow api_shortname for samplegen', async () => {
+    const result = await checkProductPrefixViolations(changes2, config);
+    assert(result.length === 0);
+  });
+  it('should allow region_tag_prefix for non samplegen sample', async () => {
+    const result = await checkProductPrefixViolations(changes3, config);
+    assert(result.length === 0);
+  });
+});
 
 describe('checkRemovingUsedTagViolations', () => {
   const loc: RegionTagLocation = {

@@ -290,7 +290,7 @@ export async function handlePullRequestLabeled(
       defaultBranch: payload?.repository?.default_branch,
     },
     octokit,
-    false
+    isBotAccount(payload.sender.login)
   );
   logger.metric('owlbot.run_post_processor');
 }
