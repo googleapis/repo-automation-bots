@@ -17,7 +17,7 @@ import {FirestoreConfigsStore} from '../../database';
 import {scanGithubForConfigs} from '../../handlers';
 import yargs = require('yargs');
 import {octokitFactoryFrom} from '../../octokit-util';
-import * as http from 'http';
+import {serve} from '../../serve';
 
 interface Args {
   'pem-path': string;
@@ -27,35 +27,6 @@ interface Args {
   project: string;
   port: number;
   ignore: string[];
-}
-
-/**
- * Runs a webserver that scans the configs whenever the url /scan-configs is requested.
- */
-function serve(port: number, callback: () => Promise<void>) {
-  const server = http.createServer(async (req, res) => {
-    // Require the url /scan-configs because health checks and the like may
-    // arrive at / or other urls, and we don't want to kick off a 20-minute,
-    // github-quota-consuming scan for every such request.
-    if ('/scan-configs' === req.url) {
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'text/plain');
-      res.write('Working...\n');
-      try {
-        await callback();
-        res.end('Done.');
-      } catch (e) {
-        console.error(e);
-        res.end('Error.  See logs.');
-      }
-    } else {
-      res.statusCode = 404;
-      res.setHeader('Content-Type', 'text/plain');
-      res.end("You're probably looking for /scan-configs.");
-    }
-  });
-  console.log('Listening on port ' + port);
-  server.listen(port);
 }
 
 export const scanConfigs: yargs.CommandModule<{}, Args> = {
@@ -121,7 +92,7 @@ export const scanConfigs: yargs.CommandModule<{}, Args> = {
       );
     };
     if (argv.port) {
-      serve(argv.port, invoke);
+      await serve(argv.port, '/scan-configs', invoke);
     } else {
       await invoke();
     }

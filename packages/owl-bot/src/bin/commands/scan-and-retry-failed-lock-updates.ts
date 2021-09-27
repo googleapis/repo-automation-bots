@@ -16,11 +16,13 @@
 
 import yargs = require('yargs');
 import {scanAndRetryFailedLockUpdates} from '../../scan-and-retry-failed-lock-updates';
+import {serve} from '../../serve';
 
 type Args = {
   'trigger-id': string;
   'max-tries': number;
   'project-id': string;
+  port: number;
 };
 
 export const scanAndRetryFailedLockUpdatesCommand: yargs.CommandModule<
@@ -49,13 +51,27 @@ export const scanAndRetryFailedLockUpdatesCommand: yargs.CommandModule<
         type: 'number',
         demand: false,
         default: 3,
+      })
+      .option('port', {
+        describe:
+          'run a webserver listening to this port.  Requests to /rebuild ' +
+          'trigger actually scanning the configs.',
+        type: 'number',
+        demand: false,
+        default: 0,
       });
   },
   async handler(argv) {
-    await scanAndRetryFailedLockUpdates(
-      argv['project-id'],
-      argv['trigger-id'],
-      argv['max-tries']
-    );
+    const invoke = () =>
+      scanAndRetryFailedLockUpdates(
+        argv['project-id'],
+        argv['trigger-id'],
+        argv['max-tries']
+      );
+    if (argv.port) {
+      await serve(argv.port, '/rebuild', invoke);
+    } else {
+      await invoke();
+    }
   },
 };
