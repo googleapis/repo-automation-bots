@@ -3,47 +3,47 @@ exports['Runner createBranch creates a branch 1'] = {
   "sha": "abcd1234"
 }
 
-exports['Runner updateReleasePleaseConfig with releaseType updates a basic config 1'] = `
-releaseType: java-yoshi
+exports['Runner updateReleasePleaseConfig with releaseType java-lts updates a basic config 1'] = `
+releaseType: java-lts
 bumpMinorPreMajor: true
 branches:
-  - releaseType: custom-releaser
+  - releaseType: java-lts
     bumpMinorPreMajor: true
     branch: 1.x
 
 `
 
-exports['Runner updateReleasePleaseConfig with releaseType updates a config with extra branches already configured 1'] = `
-releaseType: java-yoshi
+exports['Runner updateReleasePleaseConfig with releaseType java-lts updates a config with extra branches already configured 1'] = `
+releaseType: java-lts
 bumpMinorPreMajor: true
 branches:
   - branch: 3.1.x
-    releaseType: java-yoshi
+    releaseType: java-lts
     bumpMinorPreMajor: true
-  - releaseType: custom-releaser
+  - releaseType: java-lts
     bumpMinorPreMajor: true
     branch: 1.x
 
 `
 
 exports['Runner updateReleasePleaseConfig without releaseType updates a basic config 1'] = `
-releaseType: java-yoshi
+releaseType: java-lts
 bumpMinorPreMajor: true
 branches:
-  - releaseType: java-yoshi
+  - releaseType: java-lts
     bumpMinorPreMajor: true
     branch: 1.x
 
 `
 
 exports['Runner updateReleasePleaseConfig without releaseType updates a config with extra branches already configured 1'] = `
-releaseType: java-yoshi
+releaseType: java-lts
 bumpMinorPreMajor: true
 branches:
   - branch: 3.1.x
-    releaseType: java-yoshi
+    releaseType: java-lts
     bumpMinorPreMajor: true
-  - releaseType: java-yoshi
+  - releaseType: java-lts
     bumpMinorPreMajor: true
     branch: 1.x
 
@@ -184,7 +184,7 @@ exports['pr-changes'] = [
     ".github/release-please.yml",
     {
       "mode": "100644",
-      "content": "releaseType: java-yoshi\nbumpMinorPreMajor: true\nbranches:\n  - releaseType: java-yoshi\n    bumpMinorPreMajor: true\n    branch: 1.x\n"
+      "content": "releaseType: java-lts\nbumpMinorPreMajor: true\nbranches:\n  - releaseType: java-lts\n    bumpMinorPreMajor: true\n    branch: 1.x\n"
     }
   ],
   [
@@ -192,6 +192,23 @@ exports['pr-changes'] = [
     {
       "mode": "100644",
       "content": "rebaseMergeAllowed: false\nsquashMergeAllowed: true\nmergeCommitAllowed: false\nbranchProtectionRules:\n  - pattern: master\n    isAdminEnforced: true\n    requiredApprovingReviewCount: 1\n    requiresCodeOwnerReviews: true\n    requiresStrictStatusChecks: false\n    requiredStatusCheckContexts:\n      - dependencies (8)\n      - dependencies (11)\n      - linkage-monitor\n      - lint\n      - clirr\n      - units (7)\n      - units (8)\n      - units (11)\n      - 'Kokoro - Test: Integration'\n      - cla/google\n  - pattern: 1.x\n    isAdminEnforced: true\n    requiredApprovingReviewCount: 1\n    requiresCodeOwnerReviews: true\n    requiresStrictStatusChecks: false\n    requiredStatusCheckContexts:\n      - dependencies (8)\n      - dependencies (11)\n      - linkage-monitor\n      - lint\n      - clirr\n      - units (7)\n      - units (8)\n      - units (11)\n      - 'Kokoro - Test: Integration'\n      - cla/google\npermissionRules:\n  - team: yoshi-admins\n    permission: admin\n  - team: yoshi-java-admins\n    permission: admin\n  - team: yoshi-java\n    permission: push\n"
+    }
+  ]
+]
+
+exports['pr-changes-java-lts-no-sp'] = [
+  [
+    ".github/release-please.yml",
+    {
+      "mode": "100644",
+      "content": "releaseType: java-lts\nbumpMinorPreMajor: true\nbranches:\n  - releaseType: java-lts-no-sp\n    bumpMinorPreMajor: true\n    branch: 1.3.x\n"
+    }
+  ],
+  [
+    ".github/sync-repo-settings.yaml",
+    {
+      "mode": "100644",
+      "content": "rebaseMergeAllowed: false\nsquashMergeAllowed: true\nmergeCommitAllowed: false\nbranchProtectionRules:\n  - pattern: master\n    isAdminEnforced: true\n    requiredApprovingReviewCount: 1\n    requiresCodeOwnerReviews: true\n    requiresStrictStatusChecks: false\n    requiredStatusCheckContexts:\n      - dependencies (8)\n      - dependencies (11)\n      - linkage-monitor\n      - lint\n      - clirr\n      - units (7)\n      - units (8)\n      - units (11)\n      - 'Kokoro - Test: Integration'\n      - cla/google\n  - pattern: 1.3.x\n    isAdminEnforced: true\n    requiredApprovingReviewCount: 1\n    requiresCodeOwnerReviews: true\n    requiresStrictStatusChecks: false\n    requiredStatusCheckContexts:\n      - dependencies (8)\n      - dependencies (11)\n      - linkage-monitor\n      - lint\n      - clirr\n      - units (7)\n      - units (8)\n      - units (11)\n      - 'Kokoro - Test: Integration'\n      - cla/google\npermissionRules:\n  - team: yoshi-admins\n    permission: admin\n  - team: yoshi-java-admins\n    permission: admin\n  - team: yoshi-java\n    permission: push\n"
     }
   ]
 ]
@@ -207,7 +224,28 @@ exports['pr-options'] = {
   "fork": false
 }
 
+exports['pr-options-lts-no-sp'] = {
+  "upstreamRepo": "testRepo",
+  "upstreamOwner": "testOwner",
+  "message": "feat: configure branch 1.3.x as a release branch",
+  "title": "feat: configure branch 1.3.x as a release branch",
+  "description": "enable releases",
+  "branch": "release-brancher/1.3.x",
+  "force": true,
+  "fork": false
+}
+
 exports['workflows-pr-changes'] = [
+  [
+    ".github/workflows/ci.yaml",
+    {
+      "mode": "100644",
+      "content": "'on':\n  push:\n    branches:\n      - 1.x\n      - other\n  pull_request: null\n"
+    }
+  ]
+]
+
+exports['workflows-pr-changes-java-lts-no-sp'] = [
   [
     ".github/workflows/ci.yaml",
     {
@@ -236,6 +274,18 @@ exports['workflows-pr-options'] = {
   "upstreamOwner": "testOwner",
   "message": "feat: configure initial sp version",
   "title": "feat: configure initial sp version",
+  "description": "Configures CI for branch",
+  "branch": "release-brancher/ci/1.x",
+  "primary": "1.x",
+  "force": true,
+  "fork": false
+}
+
+exports['workflows-pr-options-java-lts-no-sp'] = {
+  "upstreamRepo": "testRepo",
+  "upstreamOwner": "testOwner",
+  "message": "feat: configure the protected release branch",
+  "title": "feat: configure the protected release branch",
   "description": "Configures CI for branch",
   "branch": "release-brancher/ci/1.x",
   "primary": "1.x",

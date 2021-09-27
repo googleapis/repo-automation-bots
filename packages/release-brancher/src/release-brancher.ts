@@ -245,7 +245,14 @@ export class Runner {
       }
     }
 
-    const message = `build: configure branch ${this.branchName} as a release branch`;
+    // java-lts was for June 2021 release. Use java-lts-no-sp for the December 2021 release onwards.
+    const withSpVersion = this.releaseType === 'java-lts';
+    // This relies on "feat: " keyword to bump the next minor version from default branch.
+    // Alternatively we could use "Release-As: XXX" keyword but that would require fetching the
+    // version of the latest release. "feat: " is more simple to do the same task.
+    const message = withSpVersion
+      ? `build: configure branch ${this.branchName} as a release branch`
+      : `feat: configure branch ${this.branchName} as a release branch`;
     return await createPullRequest(this.octokit, changes, {
       upstreamRepo: this.upstreamRepo,
       upstreamOwner: this.upstreamOwner,
@@ -328,7 +335,10 @@ export class Runner {
         }
       }
     }
-    const message = 'feat: configure initial sp version';
+    const message =
+      this.releaseType === 'java-lts'
+        ? 'feat: configure initial sp version'
+        : 'feat: configure the protected release branch';
     return await createPullRequest(this.octokit, changes, {
       upstreamRepo: this.upstreamRepo,
       upstreamOwner: this.upstreamOwner,
