@@ -15,7 +15,8 @@ import {
   createCheck,
   getAuthenticatedOctokit,
   getGitHubShortLivedAccessToken,
-  getOwlBotLock,
+  fetchOwlBotLock,
+  parseOwlBotLock,
   triggerPostProcessBuild,
 } from '../../core';
 import {promisify} from 'util';
@@ -82,11 +83,12 @@ export const triggerBuildCommand: yargs.CommandModule<{}, Args> = {
       argv.installation
     );
     const octokit = await getAuthenticatedOctokit(token.token);
-    const lock = await getOwlBotLock(argv.repo, Number(argv.pr), octokit);
-    if (!lock) {
+    const lockText = await fetchOwlBotLock(argv.repo, Number(argv.pr), octokit);
+    if (lockText === undefined) {
       console.info('no .OwlBot.lock.yaml found');
       return;
     }
+    const lock = parseOwlBotLock(lockText);
     const image = `${lock.docker.image}@${lock.docker.digest}`;
     const buildStatus = await triggerPostProcessBuild(
       {

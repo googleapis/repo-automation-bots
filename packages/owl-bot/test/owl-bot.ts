@@ -1472,7 +1472,7 @@ describe('owlBot', () => {
     );
     sandbox.assert.calledWith(
       createCheckStub,
-      sinon.match.has('text', 'lock file did not contain "docker" key')
+      sinon.match.has('text', 'Error: lock file did not contain "docker" key')
     );
     githubMock.done();
   });
