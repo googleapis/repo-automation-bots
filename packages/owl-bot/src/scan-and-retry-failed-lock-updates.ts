@@ -20,18 +20,33 @@ const twentyFourHours =
   60 * // minutes
   24; // hours.
 
+/**
+ * Scans all the cloud builds for the past 24 hours, and retries builds
+ * that never succeeded.
+ *
+ * @param maxTries try building each trigger at most this many times
+ */
+
 export async function scanAndRetryFailedLockUpdates(
   projectId: string,
   triggerId: string,
-  maxTries: number
+  maxTries: number,
+  logger = console
 ): Promise<void> {
   const cb = core.getCloudBuildInstance();
   const builds = cb.listBuildsAsync({projectId, pageSize: 100});
-  const rebuilds = await filterBuildsToRetry(triggerId, maxTries, builds);
-  console.info(`${rebuilds.length} to rebuild`);
+  const rebuilds = await filterBuildsToRetry(
+    triggerId,
+    maxTries,
+    builds,
+    logger
+  );
+  logger.info(`${rebuilds.length} to rebuild`);
   for (const build of rebuilds) {
-    console.info(`Triggering rebuild for ${build.name}`);
-    console.debug(build);
+    logger.info(`Triggering rebuild for ${build.name}`);
+    logger.debug(build);
+    // This Cloud Run job will run once per hour, so we don't have to worry
+    // about throttling retries.
     await cb.retryBuild({
       name: build.name,
       projectId: build.projectId,
@@ -44,11 +59,14 @@ export async function scanAndRetryFailedLockUpdates(
  * Scans all the cloud builds for the past 24 hours looking for failures for
  * the given build trigger.  Returns a list of builds that should be retried
  * because they never succeeded.
+ *
+ * @param maxTries try building each trigger at most this many times
  */
 export async function filterBuildsToRetry(
   triggerId: string,
   maxTries: number,
-  builds: AsyncIterable<google.devtools.cloudbuild.v1.IBuild>
+  builds: AsyncIterable<google.devtools.cloudbuild.v1.IBuild>,
+  logger = console
 ): Promise<google.devtools.cloudbuild.v1.IBuild[]> {
   // An original build and its retry build will share the same substitution
   // values.  So group them by substition values.
@@ -63,7 +81,7 @@ export async function filterBuildsToRetry(
   > = new Map();
   let newestCreateTime: google.protobuf.ITimestamp | null = null;
   for await (const build of builds) {
-    console.debug(`${build.createTime?.seconds} ${build.name}`);
+    logger.debug(`${build.createTime?.seconds} ${build.name}`);
     if (!newestCreateTime) {
       newestCreateTime = build.createTime!;
     }
@@ -72,7 +90,7 @@ export async function filterBuildsToRetry(
       Number(newestCreateTime.seconds) - Number(build.createTime.seconds) >
         twentyFourHours
     ) {
-      console.info('Finished scanning recent builds.');
+      logger.info('Finished scanning recent builds.');
       break;
     }
     if (build.buildTriggerId !== triggerId) {
