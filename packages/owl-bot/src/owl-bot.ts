@@ -19,7 +19,7 @@ import {FirestoreConfigsStore, Db} from './database';
 import {Probot, Logger} from 'probot';
 import {logger} from 'gcf-utils';
 import {syncLabels} from '@google-automations/label-utils';
-import {core, RegenerateArgs} from './core';
+import {core, RegenerateArgs, parseOwlBotLock} from './core';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/types';
@@ -358,22 +358,26 @@ const runPostProcessor = async (
 ) => {
   // Fetch the .Owlbot.lock.yaml from head of PR:
   let lock: OwlBotLock | undefined = undefined;
+  // Common args for all calls to createCheck in this function.
+  const checkArgs = {
+    privateKey: privateKey,
+    appId: appId,
+    installation: opts.installation,
+    pr: opts.prNumber,
+    repo: opts.base,
+  };
   // Attempt to load the OwlBot lock file for a repository, if the lock
   // file is corrupt an error will be thrown and we should show a failing
   // status:
+  let lockText: string | undefined = undefined;
   try {
-    lock = await core.getOwlBotLock(opts.base, opts.prNumber, octokit);
+    lockText = await core.fetchOwlBotLock(opts.base, opts.prNumber, octokit);
   } catch (e) {
-    const err = e as Error;
     await core.createCheck(
       {
-        privateKey,
-        appId,
-        installation: opts.installation,
-        pr: opts.prNumber,
-        repo: opts.base,
-        text: err.message,
-        summary: 'The OwlBot lock file on this repository is corrupt',
+        ...checkArgs,
+        text: String(e),
+        summary: 'Failed to fetch the lock file',
         conclusion: 'failure',
         title: '🦉 OwlBot - failure',
         detailsURL:
@@ -383,21 +387,34 @@ const runPostProcessor = async (
     );
     return;
   }
-  if (!lock) {
+  if (!lockText) {
     logger.info(`no .OwlBot.lock.yaml found for ${opts.head}`);
     // If OwlBot is not configured on repo, indicate success. This makes
     // it easier to enable OwlBot as a required check during migration:
     await core.createCheck(
       {
-        privateKey,
-        appId,
-        installation: opts.installation,
-        pr: opts.prNumber,
-        repo: opts.base,
+        ...checkArgs,
         text: 'OwlBot is not yet enabled on this repository',
         summary: 'OwlBot is not yet enabled on this repository',
         conclusion: 'success',
         title: '🦉 OwlBot - success',
+        detailsURL:
+          'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
+      },
+      octokit
+    );
+    return;
+  }
+  try {
+    lock = parseOwlBotLock(lockText);
+  } catch (e) {
+    await core.createCheck(
+      {
+        ...checkArgs,
+        text: String(e),
+        summary: 'The OwlBot lock file on this repository is corrupt',
+        conclusion: 'failure',
+        title: '🦉 OwlBot - failure',
         detailsURL:
           'https://github.com/googleapis/repo-automation-bots/tree/master/packages/owl-bot',
       },
@@ -415,11 +432,7 @@ const runPostProcessor = async (
 
     await core.createCheck(
       {
-        privateKey,
-        appId,
-        installation: opts.installation,
-        pr: opts.prNumber,
-        repo: opts.base,
+        ...checkArgs,
         text: message,
         summary: message,
         conclusion: 'failure',
@@ -452,11 +465,7 @@ const runPostProcessor = async (
     // Update pull request with status of job:
     await core.createCheck(
       {
-        privateKey,
-        appId,
-        installation: opts.installation,
-        pr: opts.prNumber,
-        repo: opts.base,
+        ...checkArgs,
         text: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
         summary: `Ignored by Owl Bot because of ${OWL_BOT_IGNORE} label`,
         conclusion: 'success',
@@ -472,11 +481,7 @@ const runPostProcessor = async (
   // Update pull request with status of job:
   await core.createCheck(
     {
-      privateKey,
-      appId,
-      installation: opts.installation,
-      pr: opts.prNumber,
-      repo: opts.base,
+      ...checkArgs,
       text: buildStatus.text,
       summary: buildStatus.summary,
       conclusion: buildStatus.conclusion,

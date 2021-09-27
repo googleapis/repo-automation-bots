@@ -345,11 +345,11 @@ function getCloudBuildInstance() {
  * @param {number} pullNumber - pull request to base branch on.
  * @param {OctokitType} octokit - authenticated instance of Octokit.
  */
-export async function getOwlBotLock(
+export async function fetchOwlBotLock(
   repoFull: string,
   pullNumber: number,
   octokit: OctokitType
-): Promise<OwlBotLock | undefined> {
+): Promise<string | undefined> {
   const [owner, repo] = repoFull.split('/');
   const {data: prData} = await octokit.pulls.get({
     owner,
@@ -364,13 +364,16 @@ export async function getOwlBotLock(
     prData.head.ref,
     octokit
   );
-  if (configString === undefined) {
-    logger.warn(`no .OwlBot.lock.yaml found in ${repoFull}`);
-    return configString;
-  }
+  return configString;
+}
+
+export function parseOwlBotLock(configString: string): OwlBotLock {
   const maybeOwlBotLock = load(configString);
   if (maybeOwlBotLock === null || typeof maybeOwlBotLock !== 'object') {
-    throw Error('lock file did not parse as object');
+    throw new Error(`Lock file did not parse correctly.  Expected an object.
+Found ${maybeOwlBotLock}
+while parsing
+${configString}`);
   }
   return owlBotLockFrom(maybeOwlBotLock);
 }
@@ -755,7 +758,8 @@ export const core = {
   getFilesModifiedBySha,
   getFileContent,
   getGitHubShortLivedAccessToken,
-  getOwlBotLock,
+  fetchOwlBotLock,
+  parseOwlBotLock,
   hasOwlBotLoop,
   lastCommitFromOwlBot,
   OWL_BOT_LOCK_PATH,
