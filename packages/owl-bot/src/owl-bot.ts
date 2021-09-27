@@ -289,7 +289,8 @@ export async function handlePullRequestLabeled(
       repo,
       defaultBranch: payload?.repository?.default_branch,
     },
-    octokit
+    octokit,
+    isBotAccount(payload.sender.login)
   );
   logger.metric('owlbot.run_post_processor');
 }
@@ -352,7 +353,8 @@ const runPostProcessor = async (
   project: string,
   trigger: string,
   opts: RunPostProcessorOpts,
-  octokit: Octokit
+  octokit: Octokit,
+  breakLoop = true
 ) => {
   // Fetch the .Owlbot.lock.yaml from head of PR:
   let lock: OwlBotLock | undefined = undefined;
@@ -404,7 +406,10 @@ const runPostProcessor = async (
     return;
   }
   // Detect looping OwlBot behavior and break the cycle:
-  if (await core.hasOwlBotLoop(opts.owner, opts.repo, opts.prNumber, octokit)) {
+  if (
+    breakLoop &&
+    (await core.hasOwlBotLoop(opts.owner, opts.repo, opts.prNumber, octokit))
+  ) {
     const message = `Too many OwlBot updates created in a row for ${opts.owner}/${opts.repo}`;
     logger.warn(message);
 
