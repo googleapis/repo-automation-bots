@@ -31,16 +31,16 @@
   "dependencies": {
     "@commitlint/config-conventional": "^13.1.0",
     "@commitlint/lint": "^13.1.0",
-    "@octokit/openapi-types": "^10.2.2",
+    "@octokit/openapi-types": "^10.6.0",
     "gcf-utils": "^13.0.2"
   },
   "devDependencies": {
     "@types/mocha": "^9.0.0",
-    "@types/node": "^16.9.4",
+    "@types/node": "^16.10.1",
     "c8": "^7.9.0",
     "cross-env": "^7.0.3",
     "gts": "^3.1.0",
-    "mocha": "^9.1.1",
+    "mocha": "^9.1.2",
     "nock": "^13.1.3",
     "smee-client": "^1.2.2",
     "snap-shot-it": "^7.9.6",
