@@ -96,6 +96,12 @@ function removeReaction() {
     .delete('/repos/testOwner/testRepo/issues/1/reactions/1')
     .reply(204);
 }
+
+function getRepoInstallation() {
+  return nock('https://api.github.com')
+    .get('/repos/testOwner/testRepo/installation')
+    .reply(200, {id: 12345});
+}
 // general structure of tests: this file tests the merge-on-green logic,
 // which wraps the merge logic itself. I have attempted to divide up the
 // tests based on what its testing, but also based on sandbox scopes for
@@ -678,6 +684,7 @@ describe('merge-on-green wrapper logic', () => {
             'automerge'
           ),
           searchForPRs([], 'automerge%3A%20exact'),
+          getRepoInstallation(),
         ];
 
         await probot.receive({
@@ -720,6 +727,7 @@ describe('merge-on-green wrapper logic', () => {
             ],
             'automerge%3A%20exact'
           ),
+          getRepoInstallation(),
         ];
 
         await probot.receive({
