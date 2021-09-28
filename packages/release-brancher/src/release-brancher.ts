@@ -25,6 +25,7 @@ interface RunnerOptions {
   gitHubToken: string;
   upstreamRepo: string;
   upstreamOwner: string;
+  pullRequestTitle?: string;
 }
 
 interface ReleasePleaseBranchConfig {
@@ -61,6 +62,7 @@ export class Runner {
   octokit: Octokit;
   upstreamRepo: string;
   upstreamOwner: string;
+  pullRequestTitle: string | undefined;
 
   constructor(options: RunnerOptions) {
     this.branchName = options.branchName;
@@ -69,6 +71,7 @@ export class Runner {
     this.octokit = new Octokit({auth: options.gitHubToken});
     this.upstreamRepo = options.upstreamRepo;
     this.upstreamOwner = options.upstreamOwner;
+    this.pullRequestTitle = options.pullRequestTitle;
   }
 
   private async getTargetSha(tag: string): Promise<string | undefined> {
@@ -246,7 +249,10 @@ export class Runner {
     }
 
     const defaultBranch = await this.getDefaultBranch();
-    const message = `build: configure branch ${this.branchName} as a release branch`;
+    const message =
+      this.pullRequestTitle === undefined
+        ? `build: configure branch ${this.branchName} as a release branch`
+        : this.pullRequestTitle;
     return await createPullRequest(this.octokit, changes, {
       upstreamRepo: this.upstreamRepo,
       upstreamOwner: this.upstreamOwner,
@@ -330,7 +336,7 @@ export class Runner {
         }
       }
     }
-    const message = 'feat: configure initial sp version';
+    const message = 'feat: configure the protected branch';
     return await createPullRequest(this.octokit, changes, {
       upstreamRepo: this.upstreamRepo,
       upstreamOwner: this.upstreamOwner,
