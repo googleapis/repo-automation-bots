@@ -204,7 +204,8 @@ exports['pr-options'] = {
   "description": "enable releases",
   "branch": "release-brancher/1.x",
   "force": true,
-  "fork": false
+  "fork": false,
+  "primary": "master"
 }
 
 exports['workflows-pr-changes'] = [
