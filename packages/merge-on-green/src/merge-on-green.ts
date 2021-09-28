@@ -470,7 +470,6 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
       const ownerAndRepoArray = issue.repository_url.split('/');
       const owner = ownerAndRepoArray[ownerAndRepoArray.length - 2];
       const repo = ownerAndRepoArray[ownerAndRepoArray.length - 1];
-      console.log('hello?');
       const installationId = (
         await github.apps.getRepoInstallation({
           owner,
