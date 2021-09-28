@@ -245,6 +245,7 @@ export class Runner {
       }
     }
 
+    const defaultBranch = await this.getDefaultBranch();
     const message = `build: configure branch ${this.branchName} as a release branch`;
     return await createPullRequest(this.octokit, changes, {
       upstreamRepo: this.upstreamRepo,
@@ -252,6 +253,7 @@ export class Runner {
       message,
       title: message,
       description: 'enable releases',
+      primary: defaultBranch,
       branch: `release-brancher/${this.branchName}`,
       force: true,
       fork: false,

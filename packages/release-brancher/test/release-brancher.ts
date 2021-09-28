@@ -331,6 +331,12 @@ describe('Runner', () => {
           content: Buffer.from(
             loadFixture('sync-repo-settings/basic.yaml')
           ).toString('base64'),
+        })
+        .get('/repos/testOwner/testRepo')
+        .reply(200, {
+          name: 'testRepo',
+          full_name: 'testOwner/testRepo',
+          default_branch: 'master',
         });
       sandbox.replace(
         suggester,
@@ -377,6 +383,12 @@ describe('Runner', () => {
           content: Buffer.from(
             loadFixture('sync-repo-settings/with-extra-branches.yaml')
           ).toString('base64'),
+        })
+        .get('/repos/testOwner/testRepo')
+        .reply(200, {
+          name: 'testRepo',
+          full_name: 'testOwner/testRepo',
+          default_branch: 'master',
         });
       sandbox.replace(
         suggester,
@@ -410,7 +422,13 @@ describe('Runner', () => {
         .get(
           '/repos/testOwner/testRepo/contents/.github%2Fsync-repo-settings.yaml'
         )
-        .reply(404);
+        .reply(404)
+        .get('/repos/testOwner/testRepo')
+        .reply(200, {
+          name: 'testRepo',
+          full_name: 'testOwner/testRepo',
+          default_branch: 'master',
+        });
       sandbox.replace(
         suggester,
         'createPullRequest',
