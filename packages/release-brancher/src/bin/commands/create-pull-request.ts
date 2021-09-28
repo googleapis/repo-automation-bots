@@ -21,6 +21,7 @@ interface Args {
   'release-type'?: string;
   'github-token': string;
   repo: string;
+  'pull-request-title'?: string;
 }
 
 export const createPullRequestCommand: yargs.CommandModule<{}, Args> = {
@@ -55,6 +56,11 @@ export const createPullRequestCommand: yargs.CommandModule<{}, Args> = {
         describe: 'target repository',
         type: 'string',
         demand: true,
+      })
+      .option('pull-request-title', {
+        describe:
+          'commit message and the title of the pull request against default branch',
+        type: 'string',
       });
   },
   async handler(argv) {
@@ -66,6 +72,7 @@ export const createPullRequestCommand: yargs.CommandModule<{}, Args> = {
       branchName: argv['branch-name'],
       targetTag: argv['target-tag'],
       gitHubToken: argv['github-token'],
+      pullRequestTitle: argv['pull-request-title'],
     });
     await runner.createBranch();
     await runner.createPullRequest();
