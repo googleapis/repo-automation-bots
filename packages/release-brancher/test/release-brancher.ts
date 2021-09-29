@@ -331,6 +331,12 @@ describe('Runner', () => {
           content: Buffer.from(
             loadFixture('sync-repo-settings/basic.yaml')
           ).toString('base64'),
+        })
+        .get('/repos/testOwner/testRepo')
+        .reply(200, {
+          name: 'testRepo',
+          full_name: 'testOwner/testRepo',
+          default_branch: 'master',
         });
       sandbox.replace(
         suggester,
@@ -345,6 +351,62 @@ describe('Runner', () => {
           // Map does not work well with snapshot
           snapshot('pr-changes', Array.from(changes.entries()));
           snapshot('pr-options', options);
+          return Promise.resolve(2345);
+        }
+      );
+      const pullNumber = await runner.createPullRequest();
+      assert.equal(pullNumber, 2345);
+
+      requests.done();
+    });
+
+    it('opens or creates a new pull request overriding the default title', async () => {
+      runner = new Runner({
+        branchName: '1.3.x',
+        targetTag: 'v1.3.0',
+        gitHubToken: 'sometoken',
+        upstreamOwner: 'testOwner',
+        upstreamRepo: 'testRepo',
+        pullRequestTitle: 'feat: next release from default branch is 1.4.0',
+      });
+      const requests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/contents/.github%2Frelease-please.yml')
+        .reply(200, {
+          content: Buffer.from(
+            loadFixture('release-please/basic.yaml'),
+            'utf8'
+          ).toString('base64'),
+        })
+        .get(
+          '/repos/testOwner/testRepo/contents/.github%2Fsync-repo-settings.yaml'
+        )
+        .reply(200, {
+          content: Buffer.from(
+            loadFixture('sync-repo-settings/basic.yaml')
+          ).toString('base64'),
+        })
+        .get('/repos/testOwner/testRepo')
+        .reply(200, {
+          name: 'testRepo',
+          full_name: 'testOwner/testRepo',
+          default_branch: 'master',
+        });
+      sandbox.replace(
+        suggester,
+        'createPullRequest',
+        (
+          _octokit: Octokit,
+          changes: suggester.Changes | null | undefined,
+          options: CreatePullRequestUserOptions
+        ): Promise<number> => {
+          assert.ok(changes);
+
+          // Map does not work well with snapshot
+          snapshot(
+            'pr-changes-with-title-override',
+            Array.from(changes.entries())
+          );
+          snapshot('pr-options-with-title-override', options);
           return Promise.resolve(2345);
         }
       );
@@ -377,6 +439,12 @@ describe('Runner', () => {
           content: Buffer.from(
             loadFixture('sync-repo-settings/with-extra-branches.yaml')
           ).toString('base64'),
+        })
+        .get('/repos/testOwner/testRepo')
+        .reply(200, {
+          name: 'testRepo',
+          full_name: 'testOwner/testRepo',
+          default_branch: 'master',
         });
       sandbox.replace(
         suggester,
@@ -410,7 +478,13 @@ describe('Runner', () => {
         .get(
           '/repos/testOwner/testRepo/contents/.github%2Fsync-repo-settings.yaml'
         )
-        .reply(404);
+        .reply(404)
+        .get('/repos/testOwner/testRepo')
+        .reply(200, {
+          name: 'testRepo',
+          full_name: 'testOwner/testRepo',
+          default_branch: 'master',
+        });
       sandbox.replace(
         suggester,
         'createPullRequest',
