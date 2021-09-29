@@ -57,6 +57,7 @@ export interface OwlBotYaml {
   docker?: {
     image: string;
   };
+  squash?: boolean;
   'deep-copy-regex'?: DeepCopyRegex[];
   'deep-remove-regex'?: string[];
   'deep-preserve-regex'?: string[];

@@ -44,6 +44,16 @@ docker:
     });
   });
 
+  it('parses squash', async () => {
+    const text = `
+squash: true
+`;
+    const config = owlBotYamlFromText(text);
+    assert.deepStrictEqual(config, {
+      squash: true,
+    });
+  });
+
   it('throws an exception when a required field is missing', async () => {
     const text = `
 deep-copy-regex:
