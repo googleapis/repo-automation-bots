@@ -53,11 +53,6 @@ export function cloneRepo(dir: string, logger = console): string {
   return clone;
 }
 
-// Use anys to mock parts of the octokit API.
-// We'll still see compile time errors if in the src/ code if there's a type error
-// calling the octokit APIs.
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 describe('commitPostProcessorUpdate', () => {
   const cmd = newCmd();
   const yamlPath = '.github/.OwlBot.yaml';
