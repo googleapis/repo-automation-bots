@@ -22,11 +22,14 @@ gcloud run deploy owlbot-retry-builds \
     --concurrency=1 \
     --memory=4Gi \
     --ingress=all \
+    --no-allow-unauthenticated \
     --max-instances=1 \
     --min-instances=0 \
     --port=8080 \
     --service-account=owlbot-retry-builds@repo-automation-bots.iam.gserviceaccount.com \
-    --timeout=30m
+    --timeout=30m \
+    --args="scan-and-retry-failed-lock-updates,--port,8080"
+
 
 # Run the job once per hour.
 
