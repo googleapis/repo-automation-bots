@@ -483,4 +483,23 @@ describe('Sync repo settings', () => {
     });
     scopes.forEach(s => s.done());
   });
+
+  it('should sync settings for a newly transferred repo', async () => {
+    const org = 'Codertocat';
+    const repo = 'Hello-World';
+    getConfigStub.resolves(null);
+    const scopes = [
+      nockLanguagesList(org, repo, {kotlin: 1}),
+      nockUpdateTeamMembership('cloud-dpe', org, repo),
+      nockUpdateTeamMembership('cloud-devrel-pgm', org, repo),
+      nockDefaultBranch('Codertocat/Hello-World', 'main'),
+    ];
+    const payload = require(resolve(fixturesPath, 'repository_transferred'));
+    await probot.receive({
+      name: 'repository',
+      payload,
+      id: 'abc123',
+    });
+    scopes.forEach(s => s.done());
+  });
 });
