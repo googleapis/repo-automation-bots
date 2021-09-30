@@ -16,8 +16,15 @@
 
 import {Probot, Context} from 'probot';
 import {logger} from 'gcf-utils';
-import {ConfigChecker,  getConfigWithDefault} from '@google-automations/bot-config-utils';
-import {ConfigurationOptions, CONFIGURATION_FILE_PATH, DEFAULT_CONFIGURATION} from './configuration';
+import {
+  ConfigChecker,
+  getConfigWithDefault,
+} from '@google-automations/bot-config-utils';
+import {
+  ConfigurationOptions,
+  CONFIGURATION_FILE_PATH,
+  DEFAULT_CONFIGURATION,
+} from './configuration';
 import schema from './config-schema.json';
 
 const DO_NOT_MERGE = 'do not merge';
@@ -57,7 +64,13 @@ export = (app: Probot) => {
         l => l.name === DO_NOT_MERGE || l.name === DO_NOT_MERGE_2
       );
 
-      const config = await getConfigWithDefault<ConfigurationOptions>(context.octokit, owner, repo, CONFIGURATION_FILE_PATH, DEFAULT_CONFIGURATION);
+      const config = await getConfigWithDefault<ConfigurationOptions>(
+        context.octokit,
+        owner,
+        repo,
+        CONFIGURATION_FILE_PATH,
+        DEFAULT_CONFIGURATION
+      );
 
       const existingCheck = await findCheck(context, owner, repo, sha);
 
