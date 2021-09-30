@@ -696,7 +696,7 @@ function handler(app: Probot) {
         prNumber,
         watchedPullRequest.label,
         watchedPullRequest.reactionId,
-        context.octokit
+        (await app.auth(watchedPullRequest.installationId)) ?? context.octokit
       );
     }
   });
