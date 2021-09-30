@@ -21,14 +21,3 @@ export const DEFAULT_CONFIGURATION: ConfigurationOptions = {
 };
 
 export const CONFIGURATION_FILE_PATH = 'do-not-merge.yml';
-
-export class Configuration {
-  private options: ConfigurationOptions;
-
-  constructor(options: ConfigurationOptions) {
-    this.options = options;
-  }
-  alwaysCreateStatusCheck(): boolean {
-    return this.options.alwaysCreateStatusCheck;
-  }
-}
