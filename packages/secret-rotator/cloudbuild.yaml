@@ -22,13 +22,13 @@ steps:
       - "-f"
       - "Dockerfile"
       - "-t"
-      - "gcr.io/$PROJECT_ID/secret-rotator"
+      - "gcr.io/$_PROJECT_ID/secret-rotator"
       - "."
 
   - name: gcr.io/cloud-builders/docker
     id: "push-docker"
     waitFor: ["build-docker"]
-    args: ["push", "gcr.io/$PROJECT_ID/secret-rotator"]
+    args: ["push", "gcr.io/$_PROJECT_ID/secret-rotator"]
 
   - name: gcr.io/cloud-builders/gcloud
     id: "deploy-cloud-run"
@@ -37,3 +37,7 @@ steps:
     args:
       - "-e"
       - "./scripts/publish-cloud-run-secret-rotator.sh"
+      - "$_PROJECT_ID"
+      - "$_SERVICE_NAME_CLOUD_RUN"
+      - "$_SERVICE_NAME_CLOUD_INVOKER"
+ 

@@ -17,11 +17,11 @@ set -eo pipefail
 
 directoryName='secret-rotator'
 botName='secret-rotator'
-imageProject='repo-automation-bots'
-project='secret-rotator-prod'
+imageProject=$1
+project=$1
 region='us-central1'
-serviceNameForCloudRun='secret-rotator-service-agent@secret-rotator-prod.iam.gserviceaccount.com'
-serviceNameForInvoker='scheduler-service-agent@secret-rotator-prod.iam.gserviceaccount.com'
+serviceNameForCloudRun=$2
+serviceNameForInvoker=$3
 timeout=3600
 concurrency=80
 

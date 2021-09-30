@@ -10,7 +10,7 @@
     "node": ">=12.10.0"
   },
   "scripts": {
-    "start": "node ./targets/build/src/index.js",
+    "start": "node ./build/src/index.js",
     "clean": "gts clean",
     "compile": "tsc -p .",
     "fix": "gts fix",

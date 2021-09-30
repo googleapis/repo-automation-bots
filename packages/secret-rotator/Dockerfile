@@ -22,7 +22,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install production dependencies.
-RUN npm ci
+RUN npm install
 
 # Copy local code to the container image.
 COPY . ./
@@ -39,9 +39,7 @@ COPY --from=BUILD /usr/src/app/build build
 
 RUN npm ci --only=production
 
-ENV NODE_ENV "production"
-
 RUN chmod 755 /usr/src/app/build/src/index.js
 
 # Run the web service on container startup.
-ENTRYPOINT ["/usr/src/app/build/src/index.js"]
+CMD [ "npm", "run", "start" ]
