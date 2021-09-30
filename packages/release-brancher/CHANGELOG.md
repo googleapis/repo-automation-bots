@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.3.1](https://www.github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.3.0...release-brancher-v1.3.1) (2021-09-30)
+
+
+### Bug Fixes
+
+* **release-brancher:** use "ci:" (non-releasable) in init ([#2622](https://www.github.com/googleapis/repo-automation-bots/issues/2622)) ([c4b3ac5](https://www.github.com/googleapis/repo-automation-bots/commit/c4b3ac5e50f9579202a614c655e79eaf4bca362e))
+
 ## [1.3.0](https://www.github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.2.0...release-brancher-v1.3.0) (2021-09-28)
 
 

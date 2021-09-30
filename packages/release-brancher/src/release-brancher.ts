@@ -336,7 +336,12 @@ export class Runner {
         }
       }
     }
-    const message = 'feat: configure the protected branch';
+
+    // For java-lts type, we want a release through a releasable commit ('feat: ') immediately
+    // after creating the protected branch.
+    const message =
+      (this.releaseType === 'java-lts' ? 'feat' : 'ci') +
+      ': configure the protected branch';
     return await createPullRequest(this.octokit, changes, {
       upstreamRepo: this.upstreamRepo,
       upstreamOwner: this.upstreamOwner,
