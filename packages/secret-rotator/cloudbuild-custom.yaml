@@ -40,4 +40,3 @@ steps:
       - "$_PROJECT_ID"
       - "$_SERVICE_NAME_CLOUD_RUN"
       - "$_SERVICE_NAME_CLOUD_INVOKER"
- 
