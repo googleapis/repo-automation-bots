@@ -27,7 +27,9 @@ import * as fs from 'fs';
  */
 export function makeDirTree(rootDir: string, specs: string[]): void {
   for (const spec of specs) {
-    const [apath, content] = spec.split(':', 2);
+    const firstColon = spec.indexOf(':');
+    const apath = firstColon < 0 ? spec : spec.substr(0, firstColon);
+    const content = firstColon < 0 ? '' : spec.substr(firstColon + 1);
     const fpath = path.join(rootDir, apath);
     const dirName = content ? path.dirname(fpath) : fpath;
     fs.mkdirSync(dirName, {recursive: true});
