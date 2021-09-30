@@ -27,6 +27,7 @@
     "lint": "gts check"
   },
   "dependencies": {
+    "@google-automations/bot-config-utils": "^4.0.0",
     "gcf-utils": "^13.0.2"
   },
   "devDependencies": {
