@@ -123,4 +123,21 @@ export function handler(app: Probot) {
       config: config || undefined,
     });
   });
+
+  app.on('repository.transferred', async context => {
+    const {owner, repo} = context.repo();
+    const config = await getConfig<RepoConfig>(
+      context.octokit,
+      owner,
+      repo,
+      CONFIG_FILE_NAME,
+      {fallbackToOrgConfig: false, schema: schema}
+    );
+    const repoSettings = new SyncRepoSettings(context.octokit, logger);
+    await repoSettings.syncRepoSettings({
+      repo: `${owner}/${repo}`,
+      config: config || undefined,
+      defaultBranch: repo.default_branch,
+    });
+  });
 }
