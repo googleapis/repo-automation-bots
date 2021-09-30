@@ -2,6 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": ".OwlBot.yaml Settings Config",
   "description": "Schema for defining the .OwlBot.yaml config",
+  "type": "object",
   "additionalProperties": false,
   "properties": {
     "begin-after-commit-hash": {
@@ -18,6 +19,10 @@
           "type": "string"
         }
       }
+    },
+    "squash": {
+      "type": "boolean",
+      "description": "Owl bot will squash copy-code commits and the first post-processor commit into a single commit.  Defaults to false."
     },
     "deep-copy-regex": {
       "description": "Directories and files to copy from googleapis-gen",
