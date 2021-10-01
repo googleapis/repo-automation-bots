@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "do-not-merge config",
+  "description": "Schema for defining the do-not-merge config",
+  "additionalProperties": false,
+  "type": "object",
+  "properties": {
+    "alwaysCreateStatusCheck": {
+      "description": "Indicates whether the bot always create status checks",
+      "type": "boolean"
+    }
+  }
+}
