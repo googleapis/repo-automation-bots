@@ -16,6 +16,16 @@
 
 import {Probot, Context} from 'probot';
 import {logger} from 'gcf-utils';
+import {
+  ConfigChecker,
+  getConfigWithDefault,
+} from '@google-automations/bot-config-utils';
+import {
+  ConfigurationOptions,
+  CONFIGURATION_FILE_PATH,
+  DEFAULT_CONFIGURATION,
+} from './configuration';
+import schema from './config-schema.json';
 
 const DO_NOT_MERGE = 'do not merge';
 const DO_NOT_MERGE_2 = 'do-not-merge';
@@ -54,6 +64,14 @@ export = (app: Probot) => {
         l => l.name === DO_NOT_MERGE || l.name === DO_NOT_MERGE_2
       );
 
+      const config = await getConfigWithDefault<ConfigurationOptions>(
+        context.octokit,
+        owner,
+        repo,
+        CONFIGURATION_FILE_PATH,
+        DEFAULT_CONFIGURATION
+      );
+
       const existingCheck = await findCheck(context, owner, repo, sha);
 
       if (!labelFound) {
@@ -70,6 +88,15 @@ export = (app: Probot) => {
             check_run_id: existingCheck.id,
             owner,
             repo,
+            output: SUCCESS_OUTPUT,
+          });
+        } else if (config.alwaysCreateStatusCheck) {
+          await context.octokit.checks.create({
+            conclusion: 'success',
+            name: CHECK_NAME,
+            owner,
+            repo,
+            head_sha: sha,
             output: SUCCESS_OUTPUT,
           });
         }
@@ -109,6 +136,50 @@ export = (app: Probot) => {
         output: FAILURE_OUTPUT,
       });
       logger.metric('do_not_merge.add_label');
+    }
+  );
+
+  app.on(
+    [
+      'pull_request.opened',
+      'pull_request.reopened',
+      'pull_request.edited',
+      'pull_request.synchronize',
+    ],
+    async context => {
+      // Exit if the PR is closed.
+      if (context.payload.pull_request.state === 'closed') {
+        logger.info(
+          `The pull request ${context.payload.pull_request.url} is closed, exiting.`
+        );
+        return;
+      }
+      // If the head repo is null, we can not proceed.
+      if (
+        context.payload.pull_request.head.repo === undefined ||
+        context.payload.pull_request.head.repo === null
+      ) {
+        logger.info(
+          `The head repo is undefined for ${context.payload.pull_request.url}, exiting.`
+        );
+        return;
+      }
+      const {owner, repo} = context.repo();
+
+      // We should first check the config schema. Otherwise, we'll miss
+      // the opportunity for checking the schema when adding the config
+      // file for the first time.
+      const configChecker = new ConfigChecker<ConfigurationOptions>(
+        schema,
+        CONFIGURATION_FILE_PATH
+      );
+      await configChecker.validateConfigChanges(
+        context.octokit,
+        owner,
+        repo,
+        context.payload.pull_request.head.sha,
+        context.payload.pull_request.number
+      );
     }
   );
 };
