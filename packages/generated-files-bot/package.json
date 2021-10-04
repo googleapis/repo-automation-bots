@@ -39,7 +39,7 @@
     "@types/jsonpath": "^0.2.0",
     "@types/minimatch": "^3.0.5",
     "@types/mocha": "^9.0.0",
-    "@types/node": "^16.10.1",
+    "@types/node": "^16.10.2",
     "@types/sinon": "^10.0.4",
     "c8": "^7.9.0",
     "cross-env": "^7.0.3",
