@@ -1244,7 +1244,10 @@ describe('owlBot', () => {
       payload: payload as any,
       id: 'abc123',
     });
-    sandbox.assert.calledWith(loggerStub, sandbox.match(/.*skipping labels.*/));
+    sandbox.assert.calledWith(
+      loggerStub,
+      sandbox.match(/.*skipping non-owlbot label.*/)
+    );
   });
   it('returns early if PR from same repo and label other than owlbot:run added', async () => {
     const payload = {
@@ -1279,7 +1282,10 @@ describe('owlBot', () => {
       payload: payload as any,
       id: 'abc123',
     });
-    sandbox.assert.calledWith(loggerStub, sandbox.match(/.*skipping labels.*/));
+    sandbox.assert.calledWith(
+      loggerStub,
+      sandbox.match(/.*skipping non-owlbot label.*/)
+    );
   });
   it('returns early if PR from same repo and label other than owlbot:run added', async () => {
     const payload = {
