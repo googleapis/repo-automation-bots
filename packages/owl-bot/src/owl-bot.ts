@@ -245,6 +245,14 @@ export async function handlePullRequestLabeled(
     throw Error(`no installation token found for ${head}`);
   }
 
+  // Only run on label event if the label added is the owlbot label
+  if (payload.label.name !== OWLBOT_RUN_LABEL) {
+    logger.info(
+      `skipping non-owlbot label: ${payload.label.name} ${head} for ${base}`
+    );
+    return;
+  }
+
   const hasRunLabel = !!payload.pull_request.labels.filter(
     l => l.name === OWLBOT_RUN_LABEL
   ).length;
