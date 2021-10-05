@@ -127,7 +127,7 @@ describe('commitPostProcessorUpdate', () => {
     assert.match(log, /Updates from OwlBot/);
   });
 
-  it('Squashes commit when .OwlBot.yaml contains flag', async () => {
+  it('squashes commit when .OwlBot.yaml contains flag', async () => {
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, [`${yamlPath}:squash: true`]);
@@ -141,5 +141,28 @@ describe('commitPostProcessorUpdate', () => {
     );
     assert.doesNotMatch(log, /Updates from OwlBot/);
     assert.match(log, /Copy-Tag/);
+  });
+
+  it("doesn't create a commit when no changes are pending", async () => {
+    const origin = makeOrigin();
+    makeDirTree(origin, [`${yamlPath}:squash: true`]);
+    cmd(`git add ${yamlPath}`, {cwd: origin});
+    const copyTag = copyTagFrom(yamlPath, 'abc123');
+    cmd(`git commit -m "Copy-Tag: ${copyTag}"`, {cwd: origin});
+    const head = cmd('git log -1 --format=%H main', {cwd: origin}).toString(
+      'utf-8'
+    );
+    const clone = cloneRepo(origin);
+    await commitPostProcessorUpdate(clone);
+    const log = cmd('git log --format=%B main', {cwd: origin}).toString(
+      'utf-8'
+    );
+    assert.doesNotMatch(log, /Updates from OwlBot/);
+    assert.match(log, /Copy-Tag/);
+    // No commits should have been pushed.
+    assert.strictEqual(
+      head,
+      cmd('git log -1 --format=%H main', {cwd: origin}).toString('utf-8')
+    );
   });
 });
