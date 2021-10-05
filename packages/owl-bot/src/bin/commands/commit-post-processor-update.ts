@@ -48,6 +48,7 @@ export async function commitPostProcessorUpdate(repoDir = ''): Promise<void> {
   const status = cmd('git status --porcelain', {cwd: repoDir}).toString(
     'utf-8'
   );
+  // `git status` --porcelain returns empty stdout when no changes are pending.
   if (!status) {
     return; // No changes made.  Nothing to do.
   }
