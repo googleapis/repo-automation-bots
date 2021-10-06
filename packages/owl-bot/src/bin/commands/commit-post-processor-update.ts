@@ -45,6 +45,13 @@ export async function commitPostProcessorUpdate(repoDir = ''): Promise<void> {
   }
   // Add all pending changes to the commit.
   cmd('git add -A .', {cwd: repoDir});
+  const status = cmd('git status --porcelain', {cwd: repoDir}).toString(
+    'utf-8'
+  );
+  // `git status` --porcelain returns empty stdout when no changes are pending.
+  if (!status) {
+    return; // No changes made.  Nothing to do.
+  }
   // Unpack the Copy-Tag.
   const body = cmd('git log -1 --format=%B', {cwd: repoDir}).toString('utf-8');
   const copyTagText = findCopyTag(body);

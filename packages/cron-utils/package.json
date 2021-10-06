@@ -19,15 +19,15 @@
   "dependencies": {
     "@google-cloud/scheduler": "^2.3.0",
     "@googleapis/run": "^5.1.0",
-    "google-auth-library": "^7.9.2",
+    "google-auth-library": "^7.10.0",
     "js-yaml": "^4.1.0",
     "yargs": "^17.2.1"
   },
   "devDependencies": {
-    "@octokit/rest": "^18.11.1",
+    "@octokit/rest": "^18.11.4",
     "@types/js-yaml": "^4.0.3",
     "@types/mocha": "^9.0.0",
-    "@types/node": "^16.10.1",
+    "@types/node": "^16.10.2",
     "@types/sinon": "^10.0.4",
     "@types/yargs": "^17.0.3",
     "c8": "^7.9.0",

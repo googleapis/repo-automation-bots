@@ -930,6 +930,9 @@ describe('owlBot', () => {
           },
         },
       },
+      label: {
+        name: OWLBOT_RUN_LABEL,
+      },
     };
     const config = `docker:
     image: node
@@ -1001,6 +1004,9 @@ describe('owlBot', () => {
             full_name: 'rennie/owl-bot-testing',
           },
         },
+      },
+      label: {
+        name: OWLBOT_RUN_LABEL,
       },
     };
     const config = `docker:
@@ -1074,6 +1080,9 @@ describe('owlBot', () => {
           },
         },
       },
+      label: {
+        name: OWLBOT_RUN_LABEL,
+      },
     };
     const config = `docker:
     image: node
@@ -1146,6 +1155,9 @@ describe('owlBot', () => {
             full_name: 'rennie/owl-bot-testing',
           },
         },
+      },
+      label: {
+        name: OWLBOT_RUN_LABEL,
       },
     };
     const config = `docker:
@@ -1221,6 +1233,9 @@ describe('owlBot', () => {
           },
         },
       },
+      label: {
+        name: 'cla:yes',
+      },
     };
     const loggerStub = sandbox.stub(logger, 'info');
     await probot.receive({
@@ -1229,7 +1244,10 @@ describe('owlBot', () => {
       payload: payload as any,
       id: 'abc123',
     });
-    sandbox.assert.calledWith(loggerStub, sandbox.match(/.*skipping labels.*/));
+    sandbox.assert.calledWith(
+      loggerStub,
+      sandbox.match(/.*skipping non-owlbot label.*/)
+    );
   });
   it('returns early if PR from same repo and label other than owlbot:run added', async () => {
     const payload = {
@@ -1253,6 +1271,9 @@ describe('owlBot', () => {
           },
         },
       },
+      label: {
+        name: 'cla:yes',
+      },
     };
     const loggerStub = sandbox.stub(logger, 'info');
     await probot.receive({
@@ -1261,7 +1282,48 @@ describe('owlBot', () => {
       payload: payload as any,
       id: 'abc123',
     });
-    sandbox.assert.calledWith(loggerStub, sandbox.match(/.*skipping labels.*/));
+    sandbox.assert.calledWith(
+      loggerStub,
+      sandbox.match(/.*skipping non-owlbot label.*/)
+    );
+  });
+  it('returns early if PR from same repo and label other than owlbot:run added', async () => {
+    const payload = {
+      action: 'labeled',
+      installation: {
+        id: 12345,
+      },
+      sender: {
+        login: 'bcoe',
+      },
+      pull_request: {
+        labels: [{name: OWLBOT_RUN_LABEL}, {name: 'cla:yes'}],
+        head: {
+          repo: {
+            full_name: 'bcoe/owl-bot-testing',
+          },
+        },
+        base: {
+          repo: {
+            full_name: 'bcoe/owl-bot-testing',
+          },
+        },
+      },
+      label: {
+        name: 'cla:yes',
+      },
+    };
+    const loggerStub = sandbox.stub(logger, 'info');
+    await probot.receive({
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
+      id: 'abc123',
+    });
+    sandbox.assert.calledWith(
+      loggerStub,
+      sandbox.match(/.*skipping non-owlbot label.*/)
+    );
   });
   it('returns early when "owlbot:run" label added by bot, and last commit was from OwlBot', async () => {
     const payload = {
@@ -1290,6 +1352,9 @@ describe('owlBot', () => {
             full_name: 'rennie/owl-bot-testing',
           },
         },
+      },
+      label: {
+        name: OWLBOT_RUN_LABEL,
       },
     };
     const githubMock = nock('https://api.github.com')
@@ -1335,6 +1400,9 @@ describe('owlBot', () => {
             full_name: 'rennie/owl-bot-testing',
           },
         },
+      },
+      label: {
+        name: OWLBOT_RUN_LABEL,
       },
     };
     const config = `docker:
