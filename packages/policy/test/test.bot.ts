@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* eslint-disable node/no-extraneous-import */
-
+// eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
@@ -26,6 +25,7 @@ import * as policy from '../src/policy';
 import * as bq from '../src/export';
 import * as changer from '../src/changer';
 import {policyBot} from '../src/bot';
+import * as gh from '../src/issue';
 
 nock.disableNetConnect();
 
@@ -268,6 +268,7 @@ describe('bot', () => {
       .resolves(fakeResult);
     const exportStub = sinon.stub(bq, 'exportToBigQuery').resolves();
     const submitFixesStub = sinon.stub(c, 'submitFixes').throws();
+    const openIssueStub = sinon.stub(gh, 'openIssue').resolves();
     const errStub = sinon.stub(logger, 'error');
 
     await probot.receive({
@@ -295,5 +296,6 @@ describe('bot', () => {
     assert.ok(exportStub.calledOnce);
     assert.ok(submitFixesStub.calledOnce);
     assert.ok(errStub.calledOnce);
+    assert.ok(openIssueStub.calledOnce);
   });
 });
