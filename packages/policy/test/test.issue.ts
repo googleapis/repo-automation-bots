@@ -70,14 +70,16 @@ describe('issue', () => {
   });
 
   it('should close an open issue if suddenly valid', async () => {
+    const issueNumber = 42;
     const scope = nock(githubHost)
       .get(`/repos/${org}/${repo}/issues?state=open`)
       .reply(200, [
         {
           title: '[Policy Bot] hello',
+          number: issueNumber,
         },
       ])
-      .patch(`/repos/${org}/${repo}/issues/`)
+      .patch(`/repos/${org}/${repo}/issues/${issueNumber}`)
       .reply(200);
     await gh.openIssue(octokit, policyResult);
     scope.done();
