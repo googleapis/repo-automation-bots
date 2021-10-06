@@ -28,6 +28,16 @@ import * as gh from '../src/issue';
 nock.disableNetConnect();
 
 describe('cli', () => {
+  let cacheGitHubToken: string | undefined;
+  let cacheGHToken: string | undefined;
+  before(() => {
+    cacheGitHubToken = process.env.GITHUB_TOKEN;
+    cacheGHToken = process.env.GH_TOKEN;
+  });
+  after(() => {
+    process.env.GITHUB_TOKEN = cacheGitHubToken;
+    process.env.GH_TOKEN = cacheGHToken;
+  });
   afterEach(() => {
     sinon.restore();
   });
