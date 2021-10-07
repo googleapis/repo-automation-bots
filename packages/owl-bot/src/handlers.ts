@@ -197,11 +197,18 @@ export async function scanGithubForConfigs(
   );
   for (const repo of repos) {
     // Load the current configs from the db.
+    const repoFull = `${githubOrg}/${repo.name}`;
     if (ignoreRepos.includes(repo.name)) {
-      console.info(`Ignoring ${repo.name}`);
+      console.info(`Ignoring ${repoFull}`);
       continue;
     }
-    const repoFull = `${githubOrg}/${repo.name}`;
+    if (repo.archived) {
+      configsStore.clearConfigs(repoFull);
+      console.info(
+        `Removing ${repoFull}'s configs from the database because the repo is archived.`
+      );
+      continue;
+    }
     const configs = await configsStore.getConfigs(repoFull);
     const defaultBranch = repo.default_branch ?? 'master';
     logger.info(`Refreshing configs for ${githubOrg}/${repo.name}`);
