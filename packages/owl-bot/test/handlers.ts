@@ -99,6 +99,10 @@ describe('handlers', () => {
           recordedId = buildId;
           return Promise.resolve(recordedId);
         }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        clearConfigs(repo: string): Promise<void> {
+          throw new Error('Method not implemented.');
+        }
       }
       const fakeConfigStore = new FakeConfigStore();
       // Mock the method from code-suggester that opens the upstream
@@ -188,6 +192,10 @@ describe('handlers', () => {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           BuildIdId: string
         ): Promise<string> {
+          throw new Error('Method not implemented.');
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        clearConfigs(repo: string): Promise<void> {
           throw new Error('Method not implemented.');
         }
       }
