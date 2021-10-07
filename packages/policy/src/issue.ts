@@ -26,10 +26,11 @@ export type UpdateIssueParam =
 
 export async function openIssue(octokit: Octokit, result: PolicyResult) {
   // Craft the message to be used in the GitHub
+  // note:  add this back later:
+  // - [${result.hasBranchProtection ? 'x' : ' '}] Branch protection is enabled
   const message = `
 [Policy Bot](https://github.com/googleapis/repo-automation-bots/tree/main/packages/policy#policy-bot) found one or more issues with this repository.
 - [${result.hasMainDefault ? 'x' : ' '}] Default branch is 'main'
-- [${result.hasBranchProtection ? 'x' : ' '}] Branch protection is enabled
 - [${result.hasRenovateConfig ? 'x' : ' '}] Renovate bot is enabled
 - [${result.hasMergeCommitsDisabled ? 'x' : ' '}] Merge commits disabled
 - [${result.hasCodeowners ? 'x' : ' '}] There is a CODEOWNERS file
@@ -60,10 +61,10 @@ export async function openIssue(octokit: Octokit, result: PolicyResult) {
   }
 
   // Check if this repository is compliant
+  // note:  add `result.hasMainDefault` back later
   const isValid =
     result.hasCodeowners &&
     result.hasContributing &&
-    result.hasMainDefault &&
     result.hasMergeCommitsDisabled &&
     result.hasRenovateConfig &&
     result.hasSecurityPolicy &&
