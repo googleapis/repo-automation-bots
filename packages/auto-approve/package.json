@@ -33,14 +33,14 @@
     "gcf-utils": "^13.0.2"
   },
   "devDependencies": {
-    "@octokit/rest": "^18.11.4",
-    "@octokit/webhooks": "^9.15.0",
+    "@octokit/rest": "^18.12.0",
+    "@octokit/webhooks": "^9.16.0",
     "@octokit/webhooks-definitions": "^3.62.6",
     "@probot/octokit-plugin-config": "^1.1.2",
     "@types/mocha": "^9.0.0",
-    "@types/node": "^16.10.2",
+    "@types/node": "^16.10.3",
     "@types/sinon": "^10.0.4",
-    "c8": "^7.9.0",
+    "c8": "^7.10.0",
     "cross-env": "^7.0.3",
     "gts": "^3.1.0",
     "js-yaml": "^4.1.0",
