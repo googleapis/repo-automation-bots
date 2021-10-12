@@ -153,6 +153,15 @@ export function flakybot(app: Probot) {
       );
     }
   );
+
+  app.on('workflow_job.completed', async context => {
+    const job = context.payload.workflow_job;
+    if (job.conclusion !== 'failure') {
+      return;
+    }
+    job.
+  });
+
   // meta comment about the 'any' here: https://github.com/octokit/webhooks.js/issues/277
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('pubsub.message' as any, async context => {
