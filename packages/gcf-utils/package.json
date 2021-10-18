@@ -42,7 +42,7 @@
     "get-stream": "^6.0.1",
     "into-stream": "^6.0.0",
     "octokit-auth-probot": "^1.2.6",
-    "pino": "^6.11.3",
+    "pino": "^7.0.0",
     "probot": "^12.1.0",
     "tmp": "^0.2.1",
     "uuid": "^8.3.2",
