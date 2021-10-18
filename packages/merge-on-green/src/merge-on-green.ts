@@ -32,6 +32,7 @@ const TABLE = 'mog-prs';
 const datastore = new Datastore();
 const MAX_TEST_TIME = 1000 * 60 * 60 * 6; // 6 hr.
 const WORKER_SIZE = 4;
+const MAX_ENTRIES = 100;
 
 handler.allowlist = [
   'googleapis',
@@ -44,7 +45,7 @@ handler.allowlist = [
   'firebase',
 ];
 
-interface DatastorePR {
+export interface DatastorePR {
   number: number;
   repo: string;
   owner: string;
@@ -55,6 +56,7 @@ interface DatastorePR {
   url: string;
   reactionId: number;
   installationId?: number;
+  created: string;
 }
 
 interface IncomingPR {
@@ -73,6 +75,20 @@ interface Label {
   name: string;
 }
 
+handler.maybeReducePRList = function maybeReducePRList(prs: DatastorePR[]) {
+  if (prs.length > MAX_ENTRIES) {
+       if ((Date.now() % 2) === 0) {
+        prs = prs.filter(x => (((new Date(x.created!)).getTime() % prs.length) <= prs.length/2));
+        logger.info(`Too many entries in Datastore table; examining first ${prs.length}`)
+      } else {
+        prs = prs.filter(x => (((new Date(x.created!)).getTime() % prs.length) > prs.length/2));
+        logger.info(`Too many entries in Datastore table; examining second ${prs.length}`)
+      }
+  }
+
+  return [prs];
+}
+
 /**
  * Retrieves Query response from Datastore
  * @returns a Promise that can have any data type as it is the result of the Query, plus some standard types like the query key
@@ -83,6 +99,7 @@ handler.getDatastore = async function getDatastore(installationId?: number) {
     query = query.filter('installationId', installationId);
   }
   const [prs] = await datastore.runQuery(query);
+
   return [prs];
 };
 
@@ -94,13 +111,14 @@ handler.getDatastore = async function getDatastore(installationId?: number) {
 handler.listPRs = async function listPRs(
   installationId?: number
 ): Promise<DatastorePR[]> {
-  const [prs] = await handler.getDatastore(installationId);
+  const [prsDatastore] = await handler.getDatastore(installationId);
+  const [prs] = handler.maybeReducePRList(prsDatastore);
   const result: DatastorePR[] = [];
   for (const pr of prs) {
     const created = new Date(pr.created).getTime();
     const now = new Date().getTime();
     let state = 'continue';
-    const url = pr[datastore.KEY]?.name;
+    const url = (pr as any)[datastore.KEY]?.name;
     //TODO: I'd prefer to not have a "list" method that has side effects - perhaps later refactor
     //this to do the list, then have an explicit loop over the returned WatchPR objects that removes the expired ones.
     if (now - created > MAX_TEST_TIME) {
@@ -108,6 +126,7 @@ handler.listPRs = async function listPRs(
     }
     const watchPr: DatastorePR = {
       number: pr.number,
+      created: pr.created,
       repo: pr.repo,
       owner: pr.owner,
       state: state as 'continue' | 'stop',
@@ -533,7 +552,7 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
  * @param app type probot
  * @returns void
  */
-function handler(app: Probot) {
+export function handler(app: Probot) {
   // This scheduled job iterates through the PR database and removes PRs
   // That are closed or do not have an applicable label anymore.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -726,4 +745,3 @@ function handler(app: Probot) {
   });
 }
 
-export = handler;
