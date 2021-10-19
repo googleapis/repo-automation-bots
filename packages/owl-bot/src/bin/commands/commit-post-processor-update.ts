@@ -21,7 +21,7 @@
 // we want to squash the changes made by the post processor.
 
 import yargs = require('yargs');
-import { commitAndPushPostProcessorUpdate } from '../../commit-post-processor-update';
+import {commitAndPushPostProcessorUpdate} from '../../commit-post-processor-update';
 
 export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, {}> = {
   command: 'commit-post-processor-update',
@@ -31,6 +31,5 @@ export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, {}> = {
     'depending on the squash flag in .OwlBot.yaml.\n\n' +
     'Run this command in the root directory of a client library repository ' +
     'after running the post processor.',
-    handler: () => commitAndPushPostProcessorUpdate(),
-  };
-
+  handler: () => commitAndPushPostProcessorUpdate(),
+};

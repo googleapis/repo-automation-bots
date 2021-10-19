@@ -26,11 +26,22 @@ import {findCopyTag, loadOwlBotYaml, unpackCopyTag} from './copy-code';
 import * as proc from 'child_process';
 import path = require('path');
 
-export async function commitPostProcessorUpdate(repoDir = ''): Promise<void> {
-  const cmd = newCmd(console);
-  if (['', '.'].includes(repoDir)) {
-    repoDir = cwd();
+/**
+ * Returns the current working directory if the argument is empty or '.'.
+ */
+function emptyToCwd(dir?: string): string {
+  if (!dir || '.' === dir) {
+    return cwd();
+  } else {
+    return dir;
   }
+}
+
+export async function commitPostProcessorUpdate(
+  repoDir = ''
+): Promise<'nochange' | 'squashed' | 'committed'> {
+  const cmd = newCmd(console);
+  repoDir = emptyToCwd(repoDir);
   // Add all pending changes to the commit.
   cmd('git add -A .', {cwd: repoDir});
   const status = cmd('git status --porcelain', {cwd: repoDir}).toString(
@@ -38,7 +49,7 @@ export async function commitPostProcessorUpdate(repoDir = ''): Promise<void> {
   );
   // `git status` --porcelain returns empty stdout when no changes are pending.
   if (!status) {
-    return; // No changes made.  Nothing to do.
+    return 'nochange'; // No changes made.  Nothing to do.
   }
   // Unpack the Copy-Tag.
   const body = cmd('git log -1 --format=%B', {cwd: repoDir}).toString('utf-8');
@@ -51,9 +62,7 @@ export async function commitPostProcessorUpdate(repoDir = ''): Promise<void> {
       if (yaml.squash) {
         // Amend (squash) pending changes into the previous commit.
         cmd('git commit --amend --no-edit', {cwd: repoDir});
-        // Must force push back to origin.
-        cmd('git push -f', {cwd: repoDir});
-        return;
+        return 'squashed';
       }
     } catch (e) {
       console.error(e);
@@ -66,14 +75,25 @@ export async function commitPostProcessorUpdate(repoDir = ''): Promise<void> {
     '🦉 Updates from OwlBot\n\nSee https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md';
   console.log(`git commit -m "${commitMessage}"`);
   proc.spawnSync('git', ['commit', '-m', commitMessage], {cwd: repoDir});
+  return 'committed';
 }
 
-
-export async function commitAndPushPostProcessorUpdate(repoDir = ''): Promise<void> {
-  await commitPostProcessorUpdate(repoDir);
+export async function commitAndPushPostProcessorUpdate(
+  repoDir = ''
+): Promise<void> {
+  repoDir = emptyToCwd(repoDir);
+  const whatHappened = await commitPostProcessorUpdate(repoDir);
   const cmd = newCmd(console);
-  // Pull any recent changes to minimize risk of missing refs for the user.
-  cmd('git pull', {cwd: repoDir});
-  // Push changes back to origin.
-  cmd('git push', {cwd: repoDir});
+  switch (whatHappened) {
+    case 'committed':
+      // Pull any recent changes to minimize risk of missing refs for the user.
+      cmd('git pull', {cwd: repoDir});
+      // Push changes back to origin.
+      cmd('git push', {cwd: repoDir});
+      break;
+    case 'squashed':
+      // Must force push back to origin.
+      cmd('git push -f', {cwd: repoDir});
+      break;
+  }
 }
