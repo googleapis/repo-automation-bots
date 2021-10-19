@@ -110,7 +110,7 @@ export async function commitAndPushPostProcessorUpdate(
  */
 export function zipRepoDir(repoDir: string, comment: string): string {
   const zip = new AdmZip();
-  zip.addLocalFolder(repoDir, undefined, filename => filename !== '.git');
+  zip.addLocalFolder(repoDir);
   zip.addZipComment(comment);
   const tmpPath = tmp.fileSync({discardDescriptor: true}).name;
   zip.writeZip(tmpPath);
