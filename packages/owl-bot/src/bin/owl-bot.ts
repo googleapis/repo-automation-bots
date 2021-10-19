@@ -30,6 +30,7 @@ import {copyCodeIntoPullRequestCommand} from './commands/copy-code-into-pull-req
 import {copyBazelBin} from './commands/copy-bazel-bin';
 import {scanAndRetryFailedLockUpdatesCommand} from './commands/scan-and-retry-failed-lock-updates';
 import {commitPostProcessorUpdateCommand} from './commands/commit-post-processor-update';
+import { storePostProcessorUpdateCommand } from './commands/store-post-processor-update';
 
 yargs(process.argv.slice(2))
   .command(triggerBuildCommand)
@@ -48,7 +49,7 @@ yargs(process.argv.slice(2))
   .command(copyCodeIntoPullRequestCommand)
   .command(scanAndRetryFailedLockUpdatesCommand)
   .command(commitPostProcessorUpdateCommand)
-  .command(commitPostProcessorUpdateCommand)
+  .command(storePostProcessorUpdateCommand)
   .demandCommand(1)
   .strictCommands()
   .parse();
