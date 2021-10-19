@@ -48,6 +48,8 @@ steps:
       - clone
       - -b
       - ${_PR_BRANCH}
+      - --depth
+      - 2
       - https://github.com/${_PR_OWNER}/${_REPOSITORY}.git
     env:
       - 'HOME=/workspace'

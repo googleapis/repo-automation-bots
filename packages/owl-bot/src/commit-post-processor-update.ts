@@ -25,6 +25,9 @@ import {newCmd} from './cmd';
 import {findCopyTag, loadOwlBotYaml, unpackCopyTag} from './copy-code';
 import * as proc from 'child_process';
 import path = require('path');
+import AdmZip from 'adm-zip';
+import { Storage } from '@google-cloud/storage';
+import tmp from 'tmp';
 
 /**
  * Returns the current working directory if the argument is empty or '.'.
@@ -78,6 +81,9 @@ export async function commitPostProcessorUpdate(
   return 'committed';
 }
 
+/**
+ * Commits changes, and pushes changes back up to the open pull request.
+ */
 export async function commitAndPushPostProcessorUpdate(
   repoDir = ''
 ): Promise<void> {
@@ -97,3 +103,34 @@ export async function commitAndPushPostProcessorUpdate(
       break;
   }
 }
+
+/**
+ * Returns the path to the temporary zip file.
+ */
+export function zipRepoDir(repoDir: string, comment: string): string {
+  const zip = new AdmZip();
+  zip.addLocalFolder(repoDir, undefined, filename => filename !== '.git');
+  zip.addZipComment(comment);
+  const tmpPath = tmp.fileSync( { discardDescriptor: true} ).name;
+  zip.writeZip(tmpPath);
+  return tmpPath;
+}
+
+/**
+ * Commits changes, and stores them in a google cloud storage bucket.
+ */
+export async function commitAndStorePostProcessorUpdate(
+  repoDir: string,
+  storageClient: Storage,
+  bucketName: string,
+  storagePath: string,
+): Promise<void> {
+  repoDir = emptyToCwd(repoDir);
+  const whatHappened = await commitPostProcessorUpdate(repoDir);
+  if ('nochange' === whatHappened) {
+    return;
+  }
+  const zipPath = zipRepoDir(repoDir, whatHappened);
+  await storageClient.bucket(bucketName).upload(zipPath, { destination: storagePath });
+}
+
