@@ -128,9 +128,10 @@ export async function commitAndStorePostProcessorUpdate(
 ): Promise<void> {
   repoDir = emptyToCwd(repoDir);
   const whatHappened = await commitPostProcessorUpdate(repoDir);
-  if ('nochange' === whatHappened) {
-    return;
-  }
+  // DO NOT MERGE until the 3 lines below are uncommented.
+  // if ('nochange' === whatHappened) {
+  //   return;
+  // }
   const zipPath = zipRepoDir(repoDir, whatHappened);
   console.info(`Uploading ${zipPath} to gs://${bucketName}/${storagePath}`);
   await storageClient
