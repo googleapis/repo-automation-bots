@@ -26,7 +26,7 @@ import {findCopyTag, loadOwlBotYaml, unpackCopyTag} from './copy-code';
 import * as proc from 'child_process';
 import path = require('path');
 import AdmZip from 'adm-zip';
-import { Storage } from '@google-cloud/storage';
+import {Storage} from '@google-cloud/storage';
 import tmp from 'tmp';
 
 /**
@@ -52,6 +52,7 @@ export async function commitPostProcessorUpdate(
   );
   // `git status` --porcelain returns empty stdout when no changes are pending.
   if (!status) {
+    console.info('no change');
     return 'nochange'; // No changes made.  Nothing to do.
   }
   // Unpack the Copy-Tag.
@@ -111,7 +112,7 @@ export function zipRepoDir(repoDir: string, comment: string): string {
   const zip = new AdmZip();
   zip.addLocalFolder(repoDir, undefined, filename => filename !== '.git');
   zip.addZipComment(comment);
-  const tmpPath = tmp.fileSync( { discardDescriptor: true} ).name;
+  const tmpPath = tmp.fileSync({discardDescriptor: true}).name;
   zip.writeZip(tmpPath);
   return tmpPath;
 }
@@ -123,7 +124,7 @@ export async function commitAndStorePostProcessorUpdate(
   repoDir: string,
   storageClient: Storage,
   bucketName: string,
-  storagePath: string,
+  storagePath: string
 ): Promise<void> {
   repoDir = emptyToCwd(repoDir);
   const whatHappened = await commitPostProcessorUpdate(repoDir);
@@ -131,6 +132,8 @@ export async function commitAndStorePostProcessorUpdate(
     return;
   }
   const zipPath = zipRepoDir(repoDir, whatHappened);
-  await storageClient.bucket(bucketName).upload(zipPath, { destination: storagePath });
+  console.info(`Uploading ${zipPath} to gs://${bucketName}/${storagePath}`);
+  await storageClient
+    .bucket(bucketName)
+    .upload(zipPath, {destination: storagePath});
 }
-
