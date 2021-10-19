@@ -22,9 +22,12 @@ import {handler, DatastorePR} from '../src/merge-on-green';
 import {MERGE_ON_GREEN_LABELS} from '../src/labels';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
+import path from 'path';
+import * as fs from 'fs';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import * as labelUtilsModule from '@google-automations/label-utils';
+import {RSA_NO_PADDING} from 'constants';
 
 const testingOctokitInstance = new Octokit({auth: 'abc123'});
 const sandbox = sinon.createSandbox();
@@ -376,27 +379,57 @@ describe('merge-on-green wrapper logic', () => {
     });
 
     describe('PRs when scheduler is called', () => {
-    it.only('maybeReducePRList should return all PRs if there are less than 100 entries in Datastore', () => {
-      let pr: DatastorePR = {
-        repo: 'testRepo',
-        number: 1,
-        owner: 'testOwner',
-        branchProtection: ['Special Check'],
-        label: 'automerge',
-        author: 'testOwner',
-        reactionId: 1,
-        created: '2021-09-28T13:00:36.500Z',
-        url: 'http://example.com',
-        state: 'continue'
-      };
-      handler.getDatastore = async () => {
-        return [[pr]];
-      };
+      it('maybeReducePRList should return all PRs if there are less than 100 entries in Datastore', () => {
+        let pr: DatastorePR = {
+          repo: 'testRepo',
+          number: 1,
+          owner: 'testOwner',
+          branchProtection: ['Special Check'],
+          label: 'automerge',
+          author: 'testOwner',
+          reactionId: 1,
+          created: '2021-09-28T13:00:36.500Z',
+          url: 'http://example.com',
+          state: 'continue',
+        };
+        handler.getDatastore = async () => {
+          return [[pr]];
+        };
 
-      assert.deepStrictEqual(handler.maybeReducePRList([pr]), [pr]);
-    })
-    });
-    
+        assert.deepStrictEqual(handler.maybeReducePRList([pr]), [[pr]]);
+      });
+
+      it('maybeReducePRList should return some PRs if there are less than 100 entries in Datastore', () => {
+        let datevalues = require(resolve(
+          fixturesPath,
+          'events',
+          'datastore_prs.json'
+        ));
+
+        let prs: DatastorePR[] = [];
+        for (const entry of datevalues) {
+          prs.push({
+            repo: 'testRepo',
+            number: 1,
+            owner: 'testOwner',
+            branchProtection: ['Special Check'],
+            label: 'automerge',
+            author: 'testOwner',
+            reactionId: 1,
+            created: entry as string,
+            url: 'http://example.com',
+            state: 'continue',
+          });
+        }
+        handler.getDatastore = async () => {
+          return [prs];
+        };
+
+        const [reducedPRs] = handler.maybeReducePRList(prs);
+
+        assert.ok(reducedPRs.length === 49 || reducedPRs.length === 51);
+      });
+
     describe('PRs when labeled', () => {
       beforeEach(() => {
         sandbox.replace(handler, 'allowlist', ['testOwner']);

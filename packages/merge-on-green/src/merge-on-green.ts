@@ -75,19 +75,27 @@ interface Label {
   name: string;
 }
 
+/**
+ * Reduces the list of PRs to search by half if there are more than 100 entries at a time
+ * @returns an array of Datastore PRs
+ */
 handler.maybeReducePRList = function maybeReducePRList(prs: DatastorePR[]) {
-  if (prs.length > MAX_ENTRIES) {
-       if ((Date.now() % 2) === 0) {
-        prs = prs.filter(x => (((new Date(x.created!)).getTime() % prs.length) <= prs.length/2));
-        logger.info(`Too many entries in Datastore table; examining first ${prs.length}`)
-      } else {
-        prs = prs.filter(x => (((new Date(x.created!)).getTime() % prs.length) > prs.length/2));
-        logger.info(`Too many entries in Datastore table; examining second ${prs.length}`)
-      }
+  if (prs.length >= MAX_ENTRIES) {
+    if (Date.now() % 2 === 0) {
+      prs = prs.filter(x => new Date(x.created!).getTime() % 2 === 0);
+      logger.info(
+        `Too many entries in Datastore table; examining first ${prs.length}`
+      );
+    } else {
+      prs = prs.filter(x => new Date(x.created!).getTime() % 2 === 1);
+      logger.info(
+        `Too many entries in Datastore table; examining second ${prs.length}`
+      );
+    }
   }
 
   return [prs];
-}
+};
 
 /**
  * Retrieves Query response from Datastore
@@ -744,4 +752,3 @@ export function handler(app: Probot) {
     }
   });
 }
-
