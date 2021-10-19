@@ -62,7 +62,7 @@ steps:
       - 'DEFAULT_BRANCH=$_DEFAULT_BRANCH'
 
   # Store the results in cloud storage.
-  - name: 'gcr.io/cloud-devrel-public-resources/owlbot-cli'
+  - name: 'gcr.io/cloud-devrel-public-resources/owlbot-cli:rennie-test'
     args:
       - store-post-processor-update
       - --bucket

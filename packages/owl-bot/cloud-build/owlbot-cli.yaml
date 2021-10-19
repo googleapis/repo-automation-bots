@@ -19,11 +19,8 @@ steps:
     args:
       - "build"
       - "-t"
-      - "gcr.io/cloud-devrel-public-resources/owlbot-cli"
-      - "-t"
-      - "gcr.io/repo-automation-bots/owlbot-cli"
+      - "gcr.io/cloud-devrel-public-resources/owlbot-cli:rennie-test"
       - "."
 
 images:
-  - gcr.io/cloud-devrel-public-resources/owlbot-cli
-  - gcr.io/repo-automation-bots/owlbot-cli
+  - gcr.io/cloud-devrel-public-resources/owlbot-cli:rennie-test
