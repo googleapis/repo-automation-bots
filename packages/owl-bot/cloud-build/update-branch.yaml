@@ -42,6 +42,7 @@ steps:
       - 'false'
     env:
       - 'HOME=/workspace'
+
   # Clone user/branch that created PR:
   - name: 'gcr.io/cloud-builders/git'
     args:
@@ -53,11 +54,25 @@ steps:
       - https://github.com/${_PR_OWNER}/${_REPOSITORY}.git
     env:
       - 'HOME=/workspace'
+
   # Run container listed in OwlBot.yaml:
   - name: ${_CONTAINER}
     dir: '${_REPOSITORY}'
     env:
       - 'DEFAULT_BRANCH=$_DEFAULT_BRANCH'
+
+  # Store the results in cloud storage.
+  - name: 'gcr.io/cloud-devrel-public-resources/owlbot-cli'
+    args:
+      - store-post-processor-update
+      - --bucket
+      - ${_CLOUD_STORAGE_BUCKET}
+      - --path
+      - ${_CLOUD_STORAGE_PATH}
+    dir: ${_REPOSITORY}
+    env:
+      - 'HOME=/workspace'
+
 
 # allow 20 minutes for the post-processor image to run
 timeout: '1200s'
