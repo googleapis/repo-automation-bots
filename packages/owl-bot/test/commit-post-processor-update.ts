@@ -17,7 +17,7 @@ import * as assert from 'assert';
 import tmp from 'tmp';
 import {makeDirTree} from './dir-tree';
 import {newCmd} from '../src/cmd';
-import {commitPostProcessorUpdate} from '../src/bin/commands/commit-post-processor-update';
+import {commitAndPushPostProcessorUpdate} from '../src/commit-post-processor-update';
 import {copyTagFrom} from '../src/copy-code';
 
 export function makeOrigin(logger = console): string {
@@ -53,7 +53,7 @@ export function cloneRepo(dir: string, logger = console): string {
   return clone;
 }
 
-describe('commitPostProcessorUpdate', () => {
+describe('commitAndPushPostProcessorUpdate', () => {
   const cmd = newCmd();
   const yamlPath = '.github/.OwlBot.yaml';
 
@@ -61,7 +61,7 @@ describe('commitPostProcessorUpdate', () => {
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-    await commitPostProcessorUpdate(clone);
+    await commitAndPushPostProcessorUpdate(clone);
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -75,7 +75,7 @@ describe('commitPostProcessorUpdate', () => {
     cmd('git add c.txt', {cwd: clone});
     cmd('git commit -m "Copy-Tag: abc123"', {cwd: clone});
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-    await commitPostProcessorUpdate(clone);
+    await commitAndPushPostProcessorUpdate(clone);
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -90,7 +90,7 @@ describe('commitPostProcessorUpdate', () => {
     const copyTag = copyTagFrom(yamlPath, 'abc123');
     cmd(`git commit -m "Copy-Tag: ${copyTag}"`, {cwd: clone});
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-    await commitPostProcessorUpdate(clone);
+    await commitAndPushPostProcessorUpdate(clone);
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -105,7 +105,7 @@ describe('commitPostProcessorUpdate', () => {
     const copyTag = copyTagFrom(yamlPath, 'abc123');
     cmd(`git commit -m "Copy-Tag: ${copyTag}"`, {cwd: clone});
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-    await commitPostProcessorUpdate(clone);
+    await commitAndPushPostProcessorUpdate(clone);
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -120,7 +120,7 @@ describe('commitPostProcessorUpdate', () => {
     const copyTag = copyTagFrom(yamlPath, 'abc123');
     cmd(`git commit -m "Copy-Tag: ${copyTag}"`, {cwd: clone});
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-    await commitPostProcessorUpdate(clone);
+    await commitAndPushPostProcessorUpdate(clone);
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -135,7 +135,7 @@ describe('commitPostProcessorUpdate', () => {
     const copyTag = copyTagFrom(yamlPath, 'abc123');
     cmd(`git commit -m "Copy-Tag: ${copyTag}"`, {cwd: clone});
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-    await commitPostProcessorUpdate(clone);
+    await commitAndPushPostProcessorUpdate(clone);
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -153,7 +153,7 @@ describe('commitPostProcessorUpdate', () => {
       'utf-8'
     );
     const clone = cloneRepo(origin);
-    await commitPostProcessorUpdate(clone);
+    await commitAndPushPostProcessorUpdate(clone);
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
