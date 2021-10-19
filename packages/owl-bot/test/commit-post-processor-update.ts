@@ -17,8 +17,13 @@ import * as assert from 'assert';
 import tmp from 'tmp';
 import {makeDirTree} from './dir-tree';
 import {newCmd} from '../src/cmd';
-import {commitAndPushPostProcessorUpdate} from '../src/commit-post-processor-update';
+import {
+  commitAndPushPostProcessorUpdate,
+  commitPostProcessorUpdate,
+  zipRepoDir,
+} from '../src/commit-post-processor-update';
 import {copyTagFrom} from '../src/copy-code';
+import AdmZip from 'adm-zip';
 
 export function makeOrigin(logger = console): string {
   const cmd = newCmd(logger);
@@ -164,5 +169,23 @@ describe('commitAndPushPostProcessorUpdate', () => {
       head,
       cmd('git log -1 --format=%H main', {cwd: origin}).toString('utf-8')
     );
+  });
+});
+
+describe('zipRepoDir', () => {
+  it('zips the repo.', async () => {
+    const origin = makeOrigin();
+    const clone = cloneRepo(origin);
+    makeDirTree(clone, ['a.txt:The post processor ran.']);
+    await commitPostProcessorUpdate(clone);
+    const zipFilePath = zipRepoDir(clone, 'committed');
+
+    console.log(zipFilePath);
+    const zip = new AdmZip(zipFilePath);
+    // The .git directory should be in the zip file.
+    assert.ok(zip.getEntry('.git/HEAD'));
+    // And so should the new a.txt.
+    const text = zip.getEntry('a.txt')!.getData().toString('utf-8');
+    assert.strictEqual(text, 'The post processor ran.');
   });
 });
