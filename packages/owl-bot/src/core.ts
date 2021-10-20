@@ -150,6 +150,17 @@ export async function triggerPostProcessBuild(
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const buildId: string = (resp as any).metadata.build.id;
+  return await waitForAndReportBuildResponse(buildId, project, cb);
+}
+
+/**
+ * Unpacks cloud build response into a BuildResponse, and logs errors.
+ */
+async function waitForAndReportBuildResponse(
+  buildId: string,
+  project: string,
+  cb: CloudBuildClient
+): Promise<BuildResponse> {
   const detailsURL = detailsUrlFrom(buildId, project);
   try {
     // TODO(bcoe): work with fenster@ to figure out why awaiting a long
