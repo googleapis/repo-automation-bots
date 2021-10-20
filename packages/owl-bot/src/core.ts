@@ -127,40 +127,43 @@ export async function triggerPostProcessBuild(
   }
 
   const [prOwner, prRepo] = prData.head.repo.full_name.split('/');
-  const cb = core.getCloudBuildInstance();
-  const [resp] = await cb.runBuildTrigger({
-    projectId: project,
-    triggerId: args.trigger,
-    source: {
+  return await runTrigger(
+    {
       projectId: project,
-      branchName: 'main', // TODO: It might fail if we change the default branch.
-      substitutions: {
-        _GITHUB_TOKEN: token.token,
-        _PR: args.pr.toString(),
-        _PR_BRANCH: prData.head.ref,
-        _PR_OWNER: prOwner,
-        _REPOSITORY: prRepo,
-        // _CONTAINER must contain the image digest. For example:
-        // gcr.io/repo-automation-tools/nodejs-post-processor**@1234abcd**
-        // TODO: read this from OwlBot.yaml.
-        _CONTAINER: args.image,
-        _DEFAULT_BRANCH: args.defaultBranch ?? 'master',
+      triggerId: args.trigger,
+      source: {
+        projectId: project,
+        branchName: 'main', // TODO: It might fail if we change the default branch.
+        substitutions: {
+          _GITHUB_TOKEN: token.token,
+          _PR: args.pr.toString(),
+          _PR_BRANCH: prData.head.ref,
+          _PR_OWNER: prOwner,
+          _REPOSITORY: prRepo,
+          // _CONTAINER must contain the image digest. For example:
+          // gcr.io/repo-automation-tools/nodejs-post-processor**@1234abcd**
+          // TODO: read this from OwlBot.yaml.
+          _CONTAINER: args.image,
+          _DEFAULT_BRANCH: args.defaultBranch ?? 'master',
+        },
       },
     },
-  });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const buildId: string = (resp as any).metadata.build.id;
-  return await waitForAndReportBuildResponse(buildId, project, cb);
+    project
+  );
 }
 
 /**
- * Unpacks cloud build response into a BuildResponse, and logs errors.
+ * Runs the build trigger, waits for it to complete, logs errors,
+ * and returns a BuildResponse.
  */
-async function waitForAndReportBuildResponse(
-  buildId: string,
-  project: string,
-  cb: CloudBuildClient
+async function runTrigger(
+  request: google.devtools.cloudbuild.v1.IRunBuildTriggerRequest,
+  project: string
 ): Promise<BuildResponse> {
+  const cb = core.getCloudBuildInstance();
+  const [resp] = await cb.runBuildTrigger(request);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const buildId: string = (resp as any).metadata.build.id;
   const detailsURL = detailsUrlFrom(buildId, project);
   try {
     // TODO(bcoe): work with fenster@ to figure out why awaiting a long
