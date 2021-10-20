@@ -32,7 +32,7 @@ const TABLE = 'mog-prs';
 const datastore = new Datastore();
 const MAX_TEST_TIME = 1000 * 60 * 60 * 6; // 6 hr.
 const WORKER_SIZE = 4;
-const MAX_ENTRIES = 100;
+const MAX_ENTRIES = 25;
 
 handler.allowlist = [
   'googleapis',
@@ -81,15 +81,11 @@ interface Label {
  */
 handler.maybeReducePRList = function maybeReducePRList(prs: DatastorePR[]) {
   if (prs.length >= MAX_ENTRIES) {
-    if (Date.now() % 2 === 0) {
-      prs = prs.filter(x => new Date(x.created!).getTime() % 2 === 0);
+    const modulus = prs.length / MAX_ENTRIES;
+    if (Date.now() % modulus === 0) {
+      prs = prs.filter(x => new Date(x.created!).getTime() % modulus === 0);
       logger.info(
-        `Too many entries in Datastore table; examining first ${prs.length}`
-      );
-    } else {
-      prs = prs.filter(x => new Date(x.created!).getTime() % 2 === 1);
-      logger.info(
-        `Too many entries in Datastore table; examining second ${prs.length}`
+        `Too many entries in Datastore table; examining the set of ${prs.length}`
       );
     }
   }

@@ -424,7 +424,7 @@ describe('merge-on-green wrapper logic', () => {
 
         const [reducedPRs] = handler.maybeReducePRList(prs);
 
-        assert.ok(reducedPRs.length === 49 || reducedPRs.length === 51);
+        assert.ok(reducedPRs.length >= 22 && reducedPRs.length <= 27);
       });
     });
 
