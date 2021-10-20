@@ -25,6 +25,7 @@ interface RunnerOptions {
   gitHubToken: string;
   upstreamRepo: string;
   upstreamOwner: string;
+  pullRequestTitle?: string;
 }
 
 interface ReleasePleaseBranchConfig {
@@ -61,6 +62,7 @@ export class Runner {
   octokit: Octokit;
   upstreamRepo: string;
   upstreamOwner: string;
+  pullRequestTitle: string | undefined;
 
   constructor(options: RunnerOptions) {
     this.branchName = options.branchName;
@@ -69,6 +71,7 @@ export class Runner {
     this.octokit = new Octokit({auth: options.gitHubToken});
     this.upstreamRepo = options.upstreamRepo;
     this.upstreamOwner = options.upstreamOwner;
+    this.pullRequestTitle = options.pullRequestTitle;
   }
 
   private async getTargetSha(tag: string): Promise<string | undefined> {
@@ -245,13 +248,18 @@ export class Runner {
       }
     }
 
-    const message = `build: configure branch ${this.branchName} as a release branch`;
+    const defaultBranch = await this.getDefaultBranch();
+    const message =
+      this.pullRequestTitle === undefined
+        ? `build: configure branch ${this.branchName} as a release branch`
+        : this.pullRequestTitle;
     return await createPullRequest(this.octokit, changes, {
       upstreamRepo: this.upstreamRepo,
       upstreamOwner: this.upstreamOwner,
       message,
       title: message,
       description: 'enable releases',
+      primary: defaultBranch,
       branch: `release-brancher/${this.branchName}`,
       force: true,
       fork: false,
@@ -328,7 +336,12 @@ export class Runner {
         }
       }
     }
-    const message = 'feat: configure initial sp version';
+
+    // For java-lts type, we want a release through a releasable commit ('feat: ') immediately
+    // after creating the protected branch.
+    const message =
+      (this.releaseType === 'java-lts' ? 'feat' : 'ci') +
+      ': configure the protected branch';
     return await createPullRequest(this.octokit, changes, {
       upstreamRepo: this.upstreamRepo,
       upstreamOwner: this.upstreamOwner,

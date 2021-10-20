@@ -1,5 +1,24 @@
 # Changelog
 
+### [1.3.1](https://www.github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.3.0...release-brancher-v1.3.1) (2021-09-30)
+
+
+### Bug Fixes
+
+* **release-brancher:** use "ci:" (non-releasable) in init ([#2622](https://www.github.com/googleapis/repo-automation-bots/issues/2622)) ([c4b3ac5](https://www.github.com/googleapis/repo-automation-bots/commit/c4b3ac5e50f9579202a614c655e79eaf4bca362e))
+
+## [1.3.0](https://www.github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.2.0...release-brancher-v1.3.0) (2021-09-28)
+
+
+### Features
+
+* **release-brancher:** add argument to override pull request title ([#2615](https://www.github.com/googleapis/repo-automation-bots/issues/2615)) ([1f952c7](https://www.github.com/googleapis/repo-automation-bots/commit/1f952c73eba10bc8eedc5c5a16944622b8e84c46))
+
+
+### Bug Fixes
+
+* **release-brancher:** provide default branch name for PRs ([#2618](https://www.github.com/googleapis/repo-automation-bots/issues/2618)) ([24a15a8](https://www.github.com/googleapis/repo-automation-bots/commit/24a15a89a76e15153f0e6cce2c7d69d97464df5c))
+
 ## [1.2.0](https://www.github.com/googleapis/repo-automation-bots/compare/release-brancher-v1.1.2...release-brancher-v1.2.0) (2021-08-09)
 
 

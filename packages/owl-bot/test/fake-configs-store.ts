@@ -80,6 +80,11 @@ export class FakeConfigsStore implements ConfigsStore {
     }
   }
 
+  clearConfigs(repo: string): Promise<void> {
+    this.configs.delete(repo);
+    return Promise.resolve();
+  }
+
   findReposWithPostProcessor(
     dockerImageName: string
   ): Promise<[string, Configs][]> {

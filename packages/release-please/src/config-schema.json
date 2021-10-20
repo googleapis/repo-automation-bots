@@ -23,6 +23,7 @@
                         "go-yoshi",
                         "java-bom",
                         "java-lts",
+                        "java-backport",
                         "java-yoshi",
                         "node",
                         "ocaml",

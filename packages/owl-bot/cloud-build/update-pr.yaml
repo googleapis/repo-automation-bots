@@ -76,44 +76,13 @@ steps:
     dir: '${_REPOSITORY}'
     env:
       - 'DEFAULT_BRANCH=$_DEFAULT_BRANCH'
-  # Commit any changes to working directory:
-  - name: 'gcr.io/cloud-builders/git'
+  # Commit any changes back to the pull request.
+  - name: 'gcr.io/cloud-devrel-public-resources/owlbot-cli'
     args:
-      - add
-      - -A
-      - .
-    dir: ${_REPOSITORY}
-    env:
-      - 'HOME=/workspace'
-  - name: 'gcr.io/cloud-builders/git'
-    entrypoint: bash
-    args: [
-      '-l',
-      '-c',
-      "git commit -m $'🦉 Updates from OwlBot\n\nSee https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md'; exit 0"
-    ]
-    dir: ${_REPOSITORY}
-    env:
-      - 'HOME=/workspace'
-  # Pull any recent changes to minimize risk of missing refs for the user.
-  # NOTE: This may not render owl-bot's desired state. Ensure owl-bot is ran after all relevant changes are captured.
-  - name: 'gcr.io/cloud-builders/git'
-    args:
-      - pull
-      - origin
-      - ${_PR_BRANCH}
-    dir: ${_REPOSITORY}
-    env:
-      - 'HOME=/workspace'
-  # Push updates:
-  - name: 'gcr.io/cloud-builders/git'
-    args:
-      - push
-      - origin
-      - ${_PR_BRANCH}
+      - commit-post-processor-update
     dir: ${_REPOSITORY}
     env:
       - 'HOME=/workspace'
 
-# allow 20 minutes for the post-processor image to run
-timeout: '1200s'
+# allow 40 minutes for the post-processor image to run
+timeout: '2400s'

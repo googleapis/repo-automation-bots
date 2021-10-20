@@ -470,6 +470,13 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
       const ownerAndRepoArray = issue.repository_url.split('/');
       const owner = ownerAndRepoArray[ownerAndRepoArray.length - 2];
       const repo = ownerAndRepoArray[ownerAndRepoArray.length - 1];
+      const installationId = (
+        await github.apps.getRepoInstallation({
+          owner,
+          repo,
+        })
+      ).data.id;
+
       await handler.addPR(
         {
           number: issue.number,
@@ -479,6 +486,7 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
           url: issue.html_url,
           label: MERGE_ON_GREEN_LABEL,
           author: issue.user?.login || '',
+          installationId,
         },
         issue.html_url,
         github
@@ -492,6 +500,12 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
       const ownerAndRepoArray = issue.repository_url.split('/');
       const owner = ownerAndRepoArray[ownerAndRepoArray.length - 2];
       const repo = ownerAndRepoArray[ownerAndRepoArray.length - 1];
+      const installationId = (
+        await github.apps.getRepoInstallation({
+          owner,
+          repo,
+        })
+      ).data.id;
       await handler.addPR(
         {
           number: issue.number,
@@ -501,6 +515,7 @@ handler.scanForMissingPullRequests = async function scanForMissingPullRequests(
           url: issue.html_url,
           label: MERGE_ON_GREEN_LABEL_SECURE,
           author: issue.user?.login || '',
+          installationId,
         },
         issue.html_url,
         github
@@ -681,7 +696,7 @@ function handler(app: Probot) {
         prNumber,
         watchedPullRequest.label,
         watchedPullRequest.reactionId,
-        context.octokit
+        (await app.auth(watchedPullRequest.installationId)) ?? context.octokit
       );
     }
   });
