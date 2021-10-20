@@ -23,10 +23,21 @@ import * as policy from '../src/policy';
 import * as cli from '../src/cli';
 import * as changer from '../src/changer';
 import * as bq from '../src/export';
+import * as gh from '../src/issue';
 
 nock.disableNetConnect();
 
 describe('cli', () => {
+  let cacheGitHubToken: string | undefined;
+  let cacheGHToken: string | undefined;
+  before(() => {
+    cacheGitHubToken = process.env.GITHUB_TOKEN;
+    cacheGHToken = process.env.GH_TOKEN;
+  });
+  after(() => {
+    process.env.GITHUB_TOKEN = cacheGitHubToken;
+    process.env.GH_TOKEN = cacheGHToken;
+  });
   afterEach(() => {
     sinon.restore();
   });
@@ -111,5 +122,26 @@ describe('cli', () => {
     } as unknown as meow.Result<{}>;
     await cli.main(m);
     assert.ok(exportStub.calledOnce);
+  });
+
+  it('should attempt to file an issue if asked nicely', async () => {
+    process.env.GH_TOKEN = 'token';
+    const p = new policy.Policy(new Octokit(), console);
+    const repoMetadata = {
+      full_name: 'googleapis/nodejs-storage',
+    } as policy.GitHubRepo;
+    const policyMetadata = {} as policy.PolicyResult;
+    sinon.stub(p, 'getRepo').resolves(repoMetadata);
+    sinon.stub(p, 'checkRepoPolicy').resolves(policyMetadata);
+    sinon.stub(policy, 'getPolicy').returns(p);
+    const reportStub = sinon.stub(gh, 'openIssue').resolves();
+    const m = {
+      flags: {
+        repo: 'googleapis/nodejs-storage',
+        report: true,
+      },
+    } as unknown as meow.Result<{}>;
+    await cli.main(m);
+    assert.ok(reportStub.calledOnce);
   });
 });

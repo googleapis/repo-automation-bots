@@ -18,6 +18,7 @@ import {logger} from 'gcf-utils';
 import {getPolicy} from './policy';
 import {exportToBigQuery} from './export';
 import {getChanger} from './changer';
+import {openIssue} from './issue';
 
 export const allowedOrgs = ['googleapis', 'googlecloudplatform'];
 
@@ -50,8 +51,18 @@ export function policyBot(app: Probot) {
       }
     }
 
+    // write results to BigQuery
     const result = await policy.checkRepoPolicy(repoMetadata);
     await exportToBigQuery(result);
+
+    // open, close, or update a corresponding GitHub issue
+    try {
+      await openIssue(context.octokit, result);
+    } catch (e) {
+      const err = e as Error;
+      err.message = `Error opening GitHub issue: ${err.message}`;
+      logger.error(err);
+    }
 
     // specifically wrap this in a try/catch to avoid retries if the fix
     // causes any errors.  Otherwise, the entire function is retried, and the

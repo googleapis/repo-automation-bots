@@ -77,6 +77,12 @@ export interface ConfigsStore {
   ): Promise<boolean>;
 
   /**
+   * Removes configuration files contents into the database.
+   * @param repo full repo name like "googleapis/nodejs-vision"
+   */
+  clearConfigs(repo: string): Promise<void>;
+
+  /**
    * Finds repos with their docker.image set to dockerImaegname in their
    * .OwlBot.lock.yaml files.
    * @param dockerImageName the name of the post-processore docker image
