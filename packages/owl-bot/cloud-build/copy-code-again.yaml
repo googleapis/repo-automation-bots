@@ -75,6 +75,5 @@ steps:
     env:
       - 'HOME=/workspace'
 
-
-# The github token only lives 10 minutes.
-timeout: '600s'
+# allow 40 minutes for the post-processor image to run
+timeout: '2400s'

@@ -702,4 +702,48 @@ describe('TrustedContributionTestRunner', () => {
     assert.ok(errorStub.calledOnce);
     requests.done();
   });
+
+  describe('with alternate labels configured', () => {
+    beforeEach(() => {
+      getConfigStub.resolves(loadConfig('labels.yml'));
+    });
+
+    it('sets alternate labels on PR, if PR author is a trusted contributor', async () => {
+      requests = requests
+        .post(
+          '/repos/chingor13/google-auth-library-java/issues/3/labels',
+          (body: object) => {
+            assert.deepStrictEqual(body, {
+              labels: ['kokoro:force-run'],
+            });
+            return true;
+          }
+        )
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: {
+          action: 'opened',
+          pull_request: {
+            number: 3,
+            head: {
+              sha: 'testsha',
+            },
+            user: {
+              login: 'renovate-bot',
+            },
+          },
+          repository: {
+            name: 'google-auth-library-java',
+            owner: {
+              login: 'chingor13',
+            },
+          },
+        } as PullRequestOpenedEvent,
+        id: 'abc123',
+      });
+      requests.done();
+    });
+  });
 });
