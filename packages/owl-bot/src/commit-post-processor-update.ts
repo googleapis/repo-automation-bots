@@ -26,8 +26,6 @@ import {findCopyTag, loadOwlBotYaml, unpackCopyTag} from './copy-code';
 import * as proc from 'child_process';
 import path = require('path');
 import AdmZip from 'adm-zip';
-import {Storage} from '@google-cloud/storage';
-import tmp from 'tmp';
 
 /**
  * Returns the current working directory if the argument is empty or '.'.

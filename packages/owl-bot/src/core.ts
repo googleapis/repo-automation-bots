@@ -19,7 +19,7 @@ import {logger} from 'gcf-utils';
 import {sign} from 'jsonwebtoken';
 import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
-import {Octokit, RestEndpointMethodTypes} from '@octokit/rest';
+import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/types';
 // eslint-disable-next-line node/no-extraneous-import
@@ -146,13 +146,13 @@ export async function triggerIsolatedPostProcessBuild(
           _CONTAINER: args.image,
           _DEFAULT_BRANCH: args.defaultBranch ?? 'master',
           _CLOUD_STORAGE_BUCKET: 'repo-automation-bots-post-processor-logs',
-          _CLOUD_STORAGE_PATH: zipFilePath
+          _CLOUD_STORAGE_PATH: zipFilePath,
         },
       },
     },
     project
   );
-  if ("success" === buildResponse.conclusion) {
+  if ('success' === buildResponse.conclusion) {
     // unzipAndPush
   }
   return buildResponse;
