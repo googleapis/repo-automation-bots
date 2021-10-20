@@ -12,6 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# An attacker could slip some nasty code into owlbot.py or specify a custom
+# docker image in .OwlBot.yaml and steal secrets when Owl Bot runs the
+# post processor.
+#
+# Our first line of defense against this attack is that Owl Bot only runs
+# the post processor for pull requests authored by Googlers or with a
+# owlbot:run label applied by a Googler.  But humans err and a clever hacker
+# may be able to slip one by.
+#
+# Our second line of defense is the context in which the post processor
+# specified by this yaml file is run.  It runs with no github tokens.
+# It only has privileges to write logs, and to write to a single cloud
+# storage bucket.  This yaml runs the post processor and stores the zipped
+# result in the bucket.  Later, the Owl Bot Cloud Task fetches the zip and
+# pushes the result to github.
+
 steps:
   # Check git version
   - name: 'gcr.io/cloud-builders/git'
