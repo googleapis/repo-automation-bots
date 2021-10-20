@@ -64,15 +64,18 @@ steps:
   # Store the results in cloud storage.
   - name: 'gcr.io/cloud-devrel-public-resources/owlbot-cli:rennie-test'
     args:
-      - store-post-processor-update
-      - --bucket
-      - ${_CLOUD_STORAGE_BUCKET}
+      - zip-post-processor-update
       - --path
-      - ${_CLOUD_STORAGE_PATH}
+      - '/workspace/${_CLOUD_STORAGE_PATH}'
     dir: ${_REPOSITORY}
     env:
       - 'HOME=/workspace'
 
+# Store the artifacts in Google Cloud Storage
+artifacts:
+  objects:
+    location: 'gs://${_CLOUD_STORAGE_BUCKET}'
+    paths: ['${_CLOUD_STORAGE_BUCKET}']
 
 # allow 20 minutes for the post-processor image to run
 timeout: '1200s'

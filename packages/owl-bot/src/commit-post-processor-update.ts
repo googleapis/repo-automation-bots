@@ -106,35 +106,16 @@ export async function commitAndPushPostProcessorUpdate(
 }
 
 /**
- * Returns the path to the temporary zip file.
+ * Commits changes and zips them.
  */
-export function zipRepoDir(repoDir: string, comment: string): string {
-  const zip = new AdmZip();
-  zip.addLocalFolder(repoDir);
-  zip.addZipComment(comment);
-  const tmpPath = tmp.fileSync({discardDescriptor: true}).name;
-  zip.writeZip(tmpPath);
-  return tmpPath;
-}
-
-/**
- * Commits changes, and stores them in a google cloud storage bucket.
- */
-export async function commitAndStorePostProcessorUpdate(
+export async function commitAndZipPostProcessorUpdate(
   repoDir: string,
-  storageClient: Storage,
-  bucketName: string,
-  storagePath: string
+  zipFilePath: string
 ): Promise<void> {
   repoDir = emptyToCwd(repoDir);
   const whatHappened = await commitPostProcessorUpdate(repoDir);
-  // DO NOT MERGE until the 3 lines below are uncommented.
-  // if ('nochange' === whatHappened) {
-  //   return;
-  // }
-  const zipPath = zipRepoDir(repoDir, whatHappened);
-  console.info(`Uploading ${zipPath} to gs://${bucketName}/${storagePath}`);
-  await storageClient
-    .bucket(bucketName)
-    .upload(zipPath, {destination: storagePath});
+  const zip = new AdmZip();
+  zip.addLocalFolder(repoDir);
+  zip.addZipComment(whatHappened);
+  zip.writeZip(zipFilePath);
 }
