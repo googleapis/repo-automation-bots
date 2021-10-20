@@ -253,12 +253,13 @@ export async function createCheck(args: CheckArgs, octokit?: OctokitType) {
     });
   }
   const [owner, repo] = args.repo.split('/');
+  const prName = `${args.repo} #${args.pr}`;
   const headCommit = await getHeadCommit(owner, repo, Number(args.pr), octokit);
   if (!headCommit) {
-    logger.warn(`no commit found for PR ${args.pr}`);
+    logger.warn(`No commit found for ${prName}.`);
     return;
   }
-  await octokit.checks.create({
+  const response = await octokit.checks.create({
     owner,
     repo,
     name: 'OwlBot Post Processor',
@@ -272,6 +273,15 @@ export async function createCheck(args: CheckArgs, octokit?: OctokitType) {
       text: args.text,
     },
   });
+  if (201 === response.status) {
+    logger.info(`Created check for ${prName}: ${response.data.html_url}`);
+  } else {
+    logger.error(
+      `Failed to create check for ${prName}.  ` +
+        `Status: ${response.status}.\n` +
+        JSON.stringify(response)
+    );
+  }
 }
 
 export async function getGitHubShortLivedAccessToken(
@@ -579,7 +589,7 @@ async function updatePullRequestAfterPostProcessor(
   // If someone asked owl bot to ignore this PR, never close or promote it.
   if (pull.labels.find(label => label.name === OWL_BOT_IGNORE)) {
     logger.info(
-      `Ignoring ${owner}/${repo} #${prNumber} because it's labeled with ${OWL_BOT_IGNORE}.`
+      `I won't close or promote ${owner}/${repo} #${prNumber} because it's labeled with ${OWL_BOT_IGNORE}.`
     );
     return;
   }
@@ -587,7 +597,7 @@ async function updatePullRequestAfterPostProcessor(
   const owlBotLabels = [OWL_BOT_LOCK_UPDATE, OWL_BOT_COPY];
   if (!pull.labels.find(label => owlBotLabels.indexOf(label.name ?? '') >= 0)) {
     logger.info(
-      `Ignoring ${owner}/${repo} #${prNumber} because it's not labled with ${owlBotLabels}.`
+      `I won't close or promote ${owner}/${repo} #${prNumber} because it's not labeled with ${owlBotLabels}.`
     );
     return;
   }
