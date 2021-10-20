@@ -19,7 +19,7 @@ import {logger} from 'gcf-utils';
 import {sign} from 'jsonwebtoken';
 import {request} from 'gaxios';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
-import {Octokit} from '@octokit/rest';
+import {Octokit, RestEndpointMethodTypes} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/types';
 // eslint-disable-next-line node/no-extraneous-import
@@ -95,6 +95,64 @@ interface Token {
 export const OWL_BOT_LOCK_UPDATE = 'owl-bot-update-lock';
 export const OWL_BOT_COPY = 'owl-bot-copy';
 
+function projectIdFromArgs(args: {project?: string}): string {
+  const project = args.project || process.env.PROJECT_ID;
+  if (!project) {
+    throw Error('gcloud project must be provided');
+  }
+  return project;
+}
+
+export async function triggerIsolatedPostProcessBuild(
+  args: BuildArgs,
+  octokit?: OctokitType
+): Promise<BuildResponse | null> {
+  const project = projectIdFromArgs(args);
+  const [owner, repo] = args.repo.split('/');
+  if (!octokit) {
+    octokit = await core.getAuthenticatedOctokit(args);
+  }
+  const {data: prData} = await octokit.pulls.get({
+    owner,
+    repo,
+    pull_number: args.pr,
+  });
+
+  // See if someone asked owl bot to ignore this PR.
+  if (prData.labels.find(label => label.name === OWL_BOT_IGNORE)) {
+    logger.info(
+      `Ignoring ${owner}/${repo} #${args.pr} because it's labeled with ${OWL_BOT_IGNORE}.`
+    );
+    return null;
+  }
+
+  const [prOwner, prRepo] = prData.head.repo.full_name.split('/');
+  return await runTrigger(
+    {
+      projectId: project,
+      triggerId: args.trigger,
+      source: {
+        projectId: project,
+        branchName: 'main', // TODO: It might fail if we change the default branch.
+        substitutions: {
+          _PR: args.pr.toString(),
+          _PR_BRANCH: prData.head.ref,
+          _PR_OWNER: prOwner,
+          _REPOSITORY: prRepo,
+          // _CONTAINER must contain the image digest. For example:
+          // gcr.io/repo-automation-tools/nodejs-post-processor**@1234abcd**
+          _CONTAINER: args.image,
+          _DEFAULT_BRANCH: args.defaultBranch ?? 'master',
+          _CLOUD_STORAGE_BUCKET: 'repo-automation-bots-post-processor-logs',
+          _CLOUD_STORAGE_PATH: 'TODO',
+        },
+      },
+    },
+    project
+  );
+  // TODO: unpack the zip file in from the bucket and push it.
+}
+
 export async function triggerPostProcessBuild(
   args: BuildArgs,
   octokit?: OctokitType
@@ -104,10 +162,7 @@ export async function triggerPostProcessBuild(
     args.appId,
     args.installation
   );
-  const project = args.project || process.env.PROJECT_ID;
-  if (!project) {
-    throw Error('gcloud project must be provided');
-  }
+  const project = projectIdFromArgs(args);
   const [owner, repo] = args.repo.split('/');
   if (!octokit) {
     octokit = await core.getAuthenticatedOctokit(token.token);
@@ -142,7 +197,6 @@ export async function triggerPostProcessBuild(
           _REPOSITORY: prRepo,
           // _CONTAINER must contain the image digest. For example:
           // gcr.io/repo-automation-tools/nodejs-post-processor**@1234abcd**
-          // TODO: read this from OwlBot.yaml.
           _CONTAINER: args.image,
           _DEFAULT_BRANCH: args.defaultBranch ?? 'master',
         },
