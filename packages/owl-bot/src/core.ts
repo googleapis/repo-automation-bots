@@ -39,6 +39,7 @@ import {
   unpackCopyTag,
 } from './copy-code';
 import {google} from '@google-cloud/cloudbuild/build/protos/protos';
+import {v4 as uuidv4} from 'uuid';
 
 interface BuildArgs {
   image: string;
@@ -126,8 +127,9 @@ export async function triggerIsolatedPostProcessBuild(
     return null;
   }
 
+  const zipFilePath = uuidv4() + '.zip';
   const [prOwner, prRepo] = prData.head.repo.full_name.split('/');
-  return await runTrigger(
+  const buildResponse = await runTrigger(
     {
       projectId: project,
       triggerId: args.trigger,
@@ -144,13 +146,16 @@ export async function triggerIsolatedPostProcessBuild(
           _CONTAINER: args.image,
           _DEFAULT_BRANCH: args.defaultBranch ?? 'master',
           _CLOUD_STORAGE_BUCKET: 'repo-automation-bots-post-processor-logs',
-          _CLOUD_STORAGE_PATH: 'TODO',
+          _CLOUD_STORAGE_PATH: zipFilePath
         },
       },
     },
     project
   );
-  // TODO: unpack the zip file in from the bucket and push it.
+  if ("success" === buildResponse.conclusion) {
+    // unzipAndPush
+  }
+  return buildResponse;
 }
 
 export async function triggerPostProcessBuild(
