@@ -29,7 +29,7 @@ import {
   owlBotLockFrom,
   DEFAULT_OWL_BOT_YAML_PATH,
 } from './config-files';
-import {OctokitFactory, OctokitType} from './octokit-util';
+import {OctokitFactory, octokitFactoryFrom, OctokitType} from './octokit-util';
 import {OWL_BOT_IGNORE} from './labels';
 import {
   findCopyTag,
@@ -40,6 +40,10 @@ import {
 } from './copy-code';
 import {google} from '@google-cloud/cloudbuild/build/protos/protos';
 import {v4 as uuidv4} from 'uuid';
+import { Storage } from '@google-cloud/storage';
+import tmp from 'tmp';
+import { rm, stat, statSync } from 'fs';
+import { pushPatch } from './commit-post-processor-update';
 
 interface BuildArgs {
   image: string;
@@ -106,6 +110,7 @@ function projectIdFromArgs(args: {project?: string}): string {
 
 export async function triggerIsolatedPostProcessBuild(
   args: BuildArgs,
+  storage: Storage,
   octokit?: OctokitType
 ): Promise<BuildResponse | null> {
   const project = projectIdFromArgs(args);
@@ -127,7 +132,8 @@ export async function triggerIsolatedPostProcessBuild(
     return null;
   }
 
-  const zipFilePath = uuidv4() + '.zip';
+  const bucket = 'repo-automation-bots-post-processor-logs';
+  const patchFilePath = uuidv4() + '.patch';
   const [prOwner, prRepo] = prData.head.repo.full_name.split('/');
   const buildResponse = await runTrigger(
     {
@@ -135,7 +141,7 @@ export async function triggerIsolatedPostProcessBuild(
       triggerId: args.trigger,
       source: {
         projectId: project,
-        branchName: 'main', // TODO: It might fail if we change the default branch.
+        branchName: 'main',
         substitutions: {
           _PR: args.pr.toString(),
           _PR_BRANCH: prData.head.ref,
@@ -145,18 +151,26 @@ export async function triggerIsolatedPostProcessBuild(
           // gcr.io/repo-automation-tools/nodejs-post-processor**@1234abcd**
           _CONTAINER: args.image,
           _DEFAULT_BRANCH: args.defaultBranch ?? 'master',
-          _CLOUD_STORAGE_BUCKET: 'repo-automation-bots-post-processor-logs',
-          _CLOUD_STORAGE_PATH: zipFilePath,
+          _CLOUD_STORAGE_BUCKET: bucket,
+          _CLOUD_STORAGE_PATH: patchFilePath,
         },
       },
     },
     project
   );
   if ('success' === buildResponse.conclusion) {
-    // unzipAndPush
+    // Fetch the patch file.
+    const tmpPatchFilePath = tmp.fileSync({detachDescriptor: true, keep: true}).name;
+    try {
+      await storage.bucket(bucket).file(patchFilePath).download({destination: tmpPatchFilePath});
+      await pushPatch(tmpPatchFilePath, prOwner, prRepo, prData.head.ref);
+    } finally {
+      await promisify(rm)(tmpPatchFilePath);
+    }
   }
   return buildResponse;
 }
+
 
 export async function triggerPostProcessBuild(
   args: BuildArgs,

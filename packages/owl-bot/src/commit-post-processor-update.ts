@@ -25,7 +25,10 @@ import {newCmd} from './cmd';
 import {findCopyTag, loadOwlBotYaml, unpackCopyTag} from './copy-code';
 import * as proc from 'child_process';
 import path = require('path');
-import AdmZip from 'adm-zip';
+import tmp from 'tmp';
+import rimraf = require('rimraf');
+import { promisify } from 'util';
+import { statSync } from 'fs';
 
 /**
  * Returns the current working directory if the argument is empty or '.'.
@@ -103,17 +106,23 @@ export async function commitAndPushPostProcessorUpdate(
   }
 }
 
-/**
- * Commits changes and zips them.
- */
-export async function commitAndZipPostProcessorUpdate(
-  repoDir: string,
-  zipFilePath: string
-): Promise<void> {
-  repoDir = emptyToCwd(repoDir);
-  const whatHappened = await commitPostProcessorUpdate(repoDir);
-  const zip = new AdmZip();
-  zip.addLocalFolder(repoDir);
-  zip.addZipComment(whatHappened);
-  zip.writeZip(zipFilePath);
+export async function pushPatch(
+  patchFilePath: string,
+  prOwner: string,
+  prRepo: string,
+  prBranch: string): Promise<void>
+{
+  if (0 === statSync(patchFilePath).size) {
+    return; // Optimization: avoid cloning the repo when unnecessary.
+  }
+  const cmd = newCmd();
+  const tmpDir = tmp.dirSync({keep: true});
+  try {
+    cmd(`git clone -b ${prBranch} --depth 2 git@github.com:${prOwner}/${prRepo}.git`, {cwd: tmpDir.name});
+    const repoDir = path.join(tmpDir.name, prRepo);
+    cmd(`git apply ${patchFilePath}`, {cwd: repoDir});
+    await commitAndPushPostProcessorUpdate(repoDir);
+  } finally {
+    await promisify(rimraf)(tmpDir.name);
+  }
 }
