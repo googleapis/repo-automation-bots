@@ -29,7 +29,7 @@ import {
   owlBotLockFrom,
   DEFAULT_OWL_BOT_YAML_PATH,
 } from './config-files';
-import {OctokitFactory, octokitFactoryFrom, OctokitType} from './octokit-util';
+import {OctokitFactory, OctokitType} from './octokit-util';
 import {OWL_BOT_IGNORE} from './labels';
 import {
   findCopyTag,
@@ -40,10 +40,13 @@ import {
 } from './copy-code';
 import {google} from '@google-cloud/cloudbuild/build/protos/protos';
 import {v4 as uuidv4} from 'uuid';
-import { Storage } from '@google-cloud/storage';
+import {Storage} from '@google-cloud/storage';
 import tmp from 'tmp';
-import { rm, stat, statSync } from 'fs';
-import { pushPatch } from './commit-post-processor-update';
+import {statSync} from 'fs';
+import {pushPatch} from './commit-post-processor-update';
+import {newCmd} from './cmd';
+import rimraf from 'rimraf';
+import path from 'path';
 
 interface BuildArgs {
   image: string;
@@ -160,17 +163,29 @@ export async function triggerIsolatedPostProcessBuild(
   );
   if ('success' === buildResponse.conclusion) {
     // Fetch the patch file.
-    const tmpPatchFilePath = tmp.fileSync({detachDescriptor: true, keep: true}).name;
+    const tmpDir = tmp.dirSync({keep: true});
+    const tmpPatchFilePath = path.join(tmpDir.name, patchFilePath);
     try {
-      await storage.bucket(bucket).file(patchFilePath).download({destination: tmpPatchFilePath});
-      await pushPatch(tmpPatchFilePath, prOwner, prRepo, prData.head.ref);
+      await storage
+        .bucket(bucket)
+        .file(patchFilePath)
+        .download({destination: tmpPatchFilePath});
+      if (0 === statSync(patchFilePath).size) {
+        return buildResponse; // Optimization: avoid cloning the repo when unnecessary.
+      }
+      // Clone the repo so we can apply the patch and push it back to github.
+      const cmd = newCmd();
+      cmd(
+        `git clone -b ${prData.head.ref} --depth 2 git@github.com:${prOwner}/${prRepo}.git`,
+        {cwd: tmpDir.name}
+      );
+      await pushPatch(patchFilePath, path.join(tmpDir.name, prRepo));
     } finally {
-      await promisify(rm)(tmpPatchFilePath);
+      await promisify(rimraf)(tmpDir.name);
     }
   }
   return buildResponse;
 }
-
 
 export async function triggerPostProcessBuild(
   args: BuildArgs,
