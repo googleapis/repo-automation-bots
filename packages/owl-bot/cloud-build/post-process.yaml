@@ -82,7 +82,7 @@ steps:
     entrypoint: 'bash'
     args:
     - '-c'
-    - 'git add -A && git commit --allow-empty -m "post processor changes" && git log -1 -p > ${_CLOUD_STORAGE_PATH}'
+    - 'git add -A && git diff --cached -p > ${_CLOUD_STORAGE_PATH}'
     dir: '${_REPOSITORY}'
     env:
       - 'HOME=/workspace'
