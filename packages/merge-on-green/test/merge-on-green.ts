@@ -25,7 +25,6 @@ import assert from 'assert';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import * as labelUtilsModule from '@google-automations/label-utils';
-import {readdir} from 'fs';
 
 const testingOctokitInstance = new Octokit({auth: 'abc123'});
 const sandbox = sinon.createSandbox();
