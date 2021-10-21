@@ -77,17 +77,17 @@ steps:
     env:
       - 'DEFAULT_BRANCH=$_DEFAULT_BRANCH'
 
-  # Store the results in cloud storage.
-  - name: 'gcr.io/cloud-devrel-public-resources/owlbot-cli:rennie-test'
+  # Create a patch for changes made by the post processor.
+  - name: 'gcr.io/cloud-builders/git'
+    entrypoint: 'bash'
     args:
-      - zip-post-processor-update
-      - --path
-      - '/workspace/${_CLOUD_STORAGE_PATH}'
-    dir: ${_REPOSITORY}
+    - '-c'
+    - 'git add -A && git commit --allow-empty -m "post processor changes" && git log -1 -p > ${_CLOUD_STORAGE_PATH}'
+    dir: '${_REPOSITORY}'
     env:
       - 'HOME=/workspace'
 
-# Store the artifacts in Google Cloud Storage
+# Store the patch in Google Cloud Storage
 artifacts:
   objects:
     location: 'gs://${_CLOUD_STORAGE_BUCKET}'
