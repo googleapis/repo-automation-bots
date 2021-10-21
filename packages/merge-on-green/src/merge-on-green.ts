@@ -76,7 +76,7 @@ interface Label {
 }
 
 /**
- * Reduces the list of PRs to search by half if there are more than 100 entries at a time
+ * Reduces the list of PRs to search by chunk sizes if there are more entries than 1 chunk allows
  * @returns an array of Datastore PRs
  */
 handler.maybeReducePRList = function maybeReducePRList(prs: DatastorePR[]) {
