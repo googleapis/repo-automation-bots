@@ -25,6 +25,7 @@ import assert from 'assert';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 import * as labelUtilsModule from '@google-automations/label-utils';
+import { readdir } from 'fs';
 
 const testingOctokitInstance = new Octokit({auth: 'abc123'});
 const sandbox = sinon.createSandbox();
@@ -396,7 +397,7 @@ describe('merge-on-green wrapper logic', () => {
         assert.deepStrictEqual(handler.maybeReducePRList([pr]), [[pr]]);
       });
 
-      it('maybeReducePRList should return some PRs if there are less than 100 entries in Datastore', () => {
+      it('maybeReducePRList should return some PRs if there are more than 100 entries in Datastore', () => {
         const datevalues = require(resolve(
           fixturesPath,
           'events',
@@ -424,7 +425,7 @@ describe('merge-on-green wrapper logic', () => {
 
         const [reducedPRs] = handler.maybeReducePRList(prs);
 
-        assert.ok(reducedPRs.length >= 22 && reducedPRs.length <= 27);
+        assert.deepStrictEqual(reducedPRs.length, 22);
       });
     });
 
