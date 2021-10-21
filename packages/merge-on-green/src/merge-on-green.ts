@@ -81,11 +81,17 @@ interface Label {
  */
 handler.maybeReducePRList = function maybeReducePRList(prs: DatastorePR[]) {
   if (prs.length >= MAX_ENTRIES) {
-    const modulus = prs.length / MAX_ENTRIES;
-    prs = prs.filter(x => new Date(x.created!).getTime() % modulus === 0);
-    logger.info(
-      `Too many entries in Datastore table; examining the set of ${prs.length}`
-    );
+    if (Date.now() % 2 === 0) {
+      prs = prs.filter(x => new Date(x.created!).getTime() % 2 === 0);
+      logger.info(
+        `Too many entries in Datastore table; examining first ${prs.length}`
+      );
+    } else {
+      prs = prs.filter(x => new Date(x.created!).getTime() % 2 === 1);
+      logger.info(
+        `Too many entries in Datastore table; examining second ${prs.length}`
+      );
+    }
   }
 
   return [prs];
