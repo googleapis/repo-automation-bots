@@ -398,14 +398,8 @@ describe('merge-on-green wrapper logic', () => {
       });
 
       it('maybeReducePRList should return some PRs if there are less than 100 entries in Datastore', () => {
-        const datevalues = require(resolve(
-          fixturesPath,
-          'events',
-          'datastore_prs.json'
-        ));
-
         const prs: DatastorePR[] = [];
-        for (const entry of datevalues) {
+        for (let i = 0; i < 100; i++) {
           prs.push({
             repo: 'testRepo',
             number: 1,
@@ -414,7 +408,7 @@ describe('merge-on-green wrapper logic', () => {
             label: 'automerge',
             author: 'testOwner',
             reactionId: 1,
-            created: entry as string,
+            created: 'created',
             url: 'http://example.com',
             state: 'continue',
           });
@@ -425,7 +419,7 @@ describe('merge-on-green wrapper logic', () => {
 
         const [reducedPRs] = handler.maybeReducePRList(prs);
 
-        assert.ok(reducedPRs.length === 49 || reducedPRs.length === 51);
+        assert.ok(reducedPRs.length === 25);
       });
     });
 

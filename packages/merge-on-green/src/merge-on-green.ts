@@ -80,21 +80,15 @@ interface Label {
  * @returns an array of Datastore PRs
  */
 handler.maybeReducePRList = function maybeReducePRList(prs: DatastorePR[]) {
+  let prsReduced: DatastorePR[] = [];
   if (prs.length >= MAX_ENTRIES) {
-    if (Date.now() % 2 === 0) {
-      prs = prs.filter(x => new Date(x.created!).getTime() % 2 === 0);
-      logger.info(
-        `Too many entries in Datastore table; examining first ${prs.length}`
-      );
-    } else {
-      prs = prs.filter(x => new Date(x.created!).getTime() % 2 === 1);
-      logger.info(
-        `Too many entries in Datastore table; examining second ${prs.length}`
-      );
+    for (let i = 0; i < MAX_ENTRIES; i++) {
+      const index = Math.round(Math.random() * prs.length);
+      prsReduced = prsReduced.concat(prs.splice(index, 1));
     }
   }
 
-  return [prs];
+  return prsReduced.length ? [prsReduced] : [prs];
 };
 
 /**
