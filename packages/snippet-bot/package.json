@@ -44,7 +44,7 @@
     "@types/node": "^16.3.3",
     "@types/node-fetch": "^2.5.11",
     "@types/sinon": "^10.0.2",
-    "@types/tar": "^4.0.5",
+    "@types/tar": "^6.0.0",
     "@types/tmp": "^0.2.1",
     "@octokit/webhooks-definitions": "^3.67.3",
     "c8": "^7.7.3",
