@@ -19,6 +19,7 @@
 // squash flag in .OwlBot.yaml makes it more complicated.  When squash
 // is true and the most recent commit was a copy from googleapis-gen, then
 // we want to squash the changes made by the post processor.
+//
 
 import {cwd} from 'process';
 import yargs = require('yargs');
