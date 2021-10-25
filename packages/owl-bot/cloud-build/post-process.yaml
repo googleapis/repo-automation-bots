@@ -90,7 +90,7 @@ steps:
 # Store the patch in Google Cloud Storage
 artifacts:
   objects:
-    location: 'gs://${_CLOUD_STORAGE_BUCKET}'
+    location: 'gs://${_CLOUD_STORAGE_BUCKET}/'
     paths: ['${_CLOUD_STORAGE_PATH}']
 
 # allow 20 minutes for the post-processor image to run
