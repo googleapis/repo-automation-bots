@@ -46,6 +46,7 @@ export function cloneRepo(dir: string, logger = console): string {
   cmd(`git clone ${dir} ${clone}`);
   cmd('git config user.email "test@example.com"', {cwd: clone});
   cmd('git config user.name "test"', {cwd: clone});
+  cmd('git config pull.rebase false', {cwd: clone});
 
   // Check out another branch so we can push back to the main branch of origin.
   cmd('git checkout -b some-other-branch', {cwd: dir});
