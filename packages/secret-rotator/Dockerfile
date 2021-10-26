@@ -44,4 +44,4 @@ ENV NODE_ENV "production"
 RUN chmod 755 /usr/src/app/build/src/index.js
 
 # Run the web service on container startup.
-ENTRYPOINT ["/usr/src/app/build/src/index.js"]
+CMD [ "npm", "run", "start" ]
