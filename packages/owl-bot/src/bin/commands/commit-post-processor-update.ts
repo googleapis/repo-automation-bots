@@ -61,10 +61,12 @@ export async function commitPostProcessorUpdate(repoDir = ''): Promise<void> {
       // Look in .OwlBot.yaml for a squash flag.
       const yaml = await loadOwlBotYaml(path.join(repoDir, copyTag.p));
       if (yaml.squash) {
+        // There's no reason to run hooks, and they could potentially execute
+        // untrusted code, so pass --no-verify.
         // Amend (squash) pending changes into the previous commit.
-        cmd('git commit --amend --no-edit', {cwd: repoDir});
+        cmd('git commit --no-verify --amend --no-edit', {cwd: repoDir});
         // Must force push back to origin.
-        cmd('git push -f', {cwd: repoDir});
+        cmd('git push --no-verify -f', {cwd: repoDir});
         return;
       }
     } catch (e) {
@@ -78,8 +80,10 @@ export async function commitPostProcessorUpdate(repoDir = ''): Promise<void> {
     '🦉 Updates from OwlBot\n\nSee https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md';
   console.log(`git commit -m "${commitMessage}"`);
   proc.spawnSync('git', ['commit', '-m', commitMessage], {cwd: repoDir});
+  // There's no reason to run hooks, and they could potentially execute
+  // untrusted code, so pass --no-verify.
   // Pull any recent changes to minimize risk of missing refs for the user.
-  cmd('git pull', {cwd: repoDir});
+  cmd('git pull --no-verify', {cwd: repoDir});
   // Push changes back to origin.
-  cmd('git push', {cwd: repoDir});
+  cmd('git push --no-verify', {cwd: repoDir});
 }
