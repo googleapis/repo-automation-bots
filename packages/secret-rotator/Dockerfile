@@ -22,7 +22,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install production dependencies.
-RUN npm install
+RUN npm ci
 
 # Copy local code to the container image.
 COPY . ./
@@ -38,6 +38,8 @@ COPY package*.json ./
 COPY --from=BUILD /usr/src/app/build build
 
 RUN npm ci --only=production
+
+ENV NODE_ENV "production"
 
 RUN chmod 755 /usr/src/app/build/src/index.js
 
