@@ -29,11 +29,3 @@ steps:
     id: "push-docker"
     waitFor: ["build-docker"]
     args: ["push", "gcr.io/$PROJECT_ID/secret-rotator"]
-
-  - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-cloud-run"
-    waitFor: ["push-docker"]
-    entrypoint: bash
-    args:
-      - "-e"
-      - "./scripts/publish-cloud-run-secret-rotator.sh"
