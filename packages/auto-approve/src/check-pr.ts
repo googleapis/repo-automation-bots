@@ -18,18 +18,10 @@ import {getChangedFiles, File} from './get-pr-info';
 import {logger} from 'gcf-utils';
 import {
   getTargetFiles,
-  getVersions,
-  isMajorVersionChanging,
-  isMinorVersionUpgraded,
-  isOneDependencyChanged,
   checkFilePathsMatch,
-  doesDependencyChangeMatchPRTitle,
-  Versions,
-  mergesOnWeekday,
+  correctNumberOfFiles,
 } from './utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
-import {languageVersioningRules} from './language-versioning-rules';
-// type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
 
 // This file manages the logic to check whether a given PR matches the config in the repository
 
@@ -67,9 +59,6 @@ export async function checkPRAgainstConfig(
     let filePathsMatch = true;
     let fileCountMatch = true;
     let additionalRules = true;
-    let doesDependencyMatch;
-    let isVersionValid;
-    let oneDependencyChanged;
     const releasePRFiles: File[] = [];
 
     // Since there's only one allowed title per author right now, we don't need to
@@ -95,7 +84,7 @@ export async function checkPRAgainstConfig(
     const fileAndFileRules = getTargetFiles(
       changedFiles,
       rulesToValidateAgainst.author,
-      languageVersioningRules
+      title
     );
 
     // If we've found the file in this ruleset, let's run the additional checks
@@ -103,55 +92,17 @@ export async function checkPRAgainstConfig(
     // for each file. This way, we can be as specific as possible as to how the file
     // needs to be checked.
     for (const fileAndFileRule of fileAndFileRules) {
-      // First, get the versions we're checking for the file
-      const versions = getVersions(
-        fileAndFileRule.file,
-        fileAndFileRule.fileRule.oldVersion!,
-        fileAndFileRule.fileRule.newVersion!,
-        fileAndFileRule.fileRule.process
-      );
-
-      // Have to enter different processes for different checks
-      if (versions && fileAndFileRule.fileRule.process === 'release') {
-        // If it's a release process, just make sure that the versions are minor
-        // bumps and are increasing, and are only changing one at a time
-        additionalRules =
-          runVersioningValidation(versions) &&
-          isOneDependencyChanged(fileAndFileRule.file) &&
-          mergesOnWeekday();
-      } else if (
-        versions &&
-        (fileAndFileRule.fileRule.process === 'dependency' ||
-          fileAndFileRule.fileRule.process === 'java-dependency')
-      ) {
-        // If it's a dependency update process, make sure that the versions are minor
-        // bumps and are increasing, are only changing one at a time, and are changing
-        // the dependency they say they are supposed to change
-
-        // At the end of the loop, we want to make sure that all of the changed files
-        // in a renovate bot pr conform to one of the language versioning rules
-        releasePRFiles.push(fileAndFileRule.file);
-
-        doesDependencyMatch = doesDependencyChangeMatchPRTitle(
-          versions,
-          // We can assert dependency will exist, since the process is type 'dependency'
-          fileAndFileRule.fileRule.dependency!,
-          title,
-          fileAndFileRule.fileRule.process
-        );
-        isVersionValid = runVersioningValidation(versions);
-        oneDependencyChanged = isOneDependencyChanged(fileAndFileRule.file);
-        additionalRules =
-          doesDependencyMatch && isVersionValid && oneDependencyChanged;
-      }
+      additionalRules = await fileAndFileRule.checkPR();
 
       if (additionalRules === false) {
         // Adding in logging statement and additional vars for debugging
         logger.info(
-          `File ${fileAndFileRule.file.filename} failed additional validation check for ${repoOwner}/${repo}/${prNumber}: Does dependency match? ${doesDependencyMatch}, are the versions minor bumps? ${isVersionValid}, is only one dependency changed? ${oneDependencyChanged}`
+          `File ${fileAndFileRule.changedFile.filename} failed additional validation check for ${repoOwner}/${repo}/${prNumber}`
         );
         return false;
       }
+
+      releasePRFiles.push(fileAndFileRule.changedFile);
     }
 
     // This additional check confirms that there were no files changed in the PR
@@ -167,19 +118,14 @@ export async function checkPRAgainstConfig(
       }
     }
 
-    //check if changed file paths match
-    if (rulesToValidateAgainst.changedFiles) {
-      filePathsMatch = checkFilePathsMatch(
-        changedFiles.map(x => x.filename),
-        rulesToValidateAgainst
-      );
-    }
+    //check if changed files counts match
+    fileCountMatch = correctNumberOfFiles(rulesToValidateAgainst, pr);
 
-    //check if Valid number of max files
-    if (rulesToValidateAgainst.maxFiles) {
-      fileCountMatch =
-        pr.pull_request.changed_files <= rulesToValidateAgainst.maxFiles;
-    }
+    //check to see if file paths match
+    filePathsMatch = checkFilePathsMatch(
+      changedFiles.map(x => x.filename),
+      rulesToValidateAgainst
+    );
     logger.info(
       `Info for ${repoOwner}/${repo}/${prNumber} Author: ${rulesToValidateAgainst.author}`
     );
@@ -198,24 +144,4 @@ export async function checkPRAgainstConfig(
     logger.info(`${repoOwner}/${repo}/${prNumber} does not match config`);
     return false;
   }
-}
-
-/**
- * Runs additional validation checks when a version is upgraded to ensure that the
- * version is only upgraded, not downgraded, and that the major version is not bumped.
- *
- * @param file The incoming target file that has a matching ruleset in language-versioning-rules
- * @param pr The matching ruleset of the file above from language-versioning-rules
- * @returns true if the package was upgraded appropriately, and had only one thing changed
- */
-function runVersioningValidation(versions: Versions): boolean {
-  let majorBump = true;
-  let minorBump = false;
-
-  if (versions) {
-    majorBump = isMajorVersionChanging(versions);
-    minorBump = isMinorVersionUpgraded(versions);
-  }
-
-  return !majorBump && minorBump;
 }

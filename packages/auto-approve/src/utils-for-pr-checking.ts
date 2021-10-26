@@ -17,6 +17,11 @@ import {ValidPr} from './check-pr';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import {PullRequestEvent} from '@octokit/webhooks-types/schema';
+import * as node from './language-rules/node';
+import * as python from './language-rules/python';
+import * as java from './language-rules/java';
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -37,8 +42,8 @@ export interface fileAndMetadata {
 export interface FileSpecificRule {
   prAuthor: string;
   process: string;
-  targetFile: string;
-  dependency?: RegExp;
+  title?: RegExp;
+  targetFile: RegExp;
   oldVersion?: RegExp;
   newVersion?: RegExp;
 }
@@ -66,34 +71,36 @@ export interface Versions {
  *
  * @param changedFiles an array of changed files from a PR
  * @param author the author of the PR
- * @param languageRules the json representation of additional rules for each kind of file
  * @returns an array of objects containing the specific files to be scrutinized.
  */
 export function getTargetFiles(
   changedFiles: File[],
   author: string,
-  languageRules: FileSpecificRule[]
-): fileAndMetadata[] {
-  const targetFiles = [];
+  title: string
+) {
+  const languages = [node, java, python];
+  const languageChecks = [];
 
   for (const changedFile of changedFiles) {
-    for (const rule of languageRules) {
-      if (
-        rule.prAuthor === author &&
-        changedFile.filename === rule.targetFile
-      ) {
-        targetFiles.push({file: changedFile, fileRule: rule});
-      } else if (
-        rule.prAuthor === author &&
-        changedFile.filename.endsWith(rule.targetFile) &&
-        rule.process === 'java-dependency'
-      ) {
-        targetFiles.push({file: changedFile, fileRule: rule});
+    for (const language of languages) {
+      const fileMatch = language.PERMITTED_FILES.find(
+        (x: {prAuthor: string; targetFile: RegExp}) =>
+          x.prAuthor === author && x.targetFile.test(changedFile.filename)
+      );
+
+      if (fileMatch) {
+        const languageRule = new language.Rules(
+          changedFile,
+          author,
+          fileMatch,
+          title
+        );
+        languageChecks.push(languageRule);
       }
     }
   }
 
-  return targetFiles;
+  return languageChecks;
 }
 
 /**
@@ -109,8 +116,7 @@ export function getTargetFiles(
 export function getVersions(
   versionFile: File | undefined,
   oldVersionRegex: RegExp,
-  newVersionRegex: RegExp,
-  process: string
+  newVersionRegex: RegExp
 ): Versions | undefined {
   if (!versionFile) {
     return undefined;
@@ -126,27 +132,15 @@ export function getVersions(
   const oldVersions = versionFile.patch?.match(oldVersionRegex);
   const newVersions = versionFile.patch?.match(newVersionRegex);
   if (oldVersions) {
-    if (process === 'java-dependency') {
-      oldDependencyName = `${oldVersions[1]}:${oldVersions[2]}`;
-      oldMajorVersion = oldVersions[4] || oldVersions[6];
-      oldMinorVersion = oldVersions[5] || oldVersions[7];
-    } else {
-      oldDependencyName = oldVersions[1];
-      oldMajorVersion = oldVersions[2];
-      oldMinorVersion = oldVersions[3];
-    }
+    oldDependencyName = oldVersions[1];
+    oldMajorVersion = oldVersions[2];
+    oldMinorVersion = oldVersions[3];
   }
 
   if (newVersions) {
-    if (process === 'java-dependency') {
-      newDependencyName = `${newVersions[1]}:${newVersions[2]}`;
-      newMajorVersion = newVersions[5] || newVersions[7];
-      newMinorVersion = newVersions[6] || newVersions[8];
-    } else {
-      newDependencyName = newVersions[1];
-      newMajorVersion = newVersions[2];
-      newMinorVersion = newVersions[3];
-    }
+    newDependencyName = newVersions[1];
+    newMajorVersion = newVersions[2];
+    newMinorVersion = newVersions[3];
   }
 
   // If there is a change with a file that requires special validation checks,
@@ -178,6 +172,74 @@ export function getVersions(
 }
 
 /**
+ * Given a patch for a file that was changed in a PR, and a regular expression to search
+ * for the old version number and a regular expression to search for the new version number,
+ * this function will return the old and new versions of a package for a Java file.
+ *
+ * @param versionFile the changed file that has additional rules to conform to
+ * @param oldVersionRegex the regular exp to find the old version number of whatever is being changed
+ * @param newVersionRegex the regular exp to find the new version number of whatever is being changed
+ * @returns the previous and new major and minor versions of a package in an object containing those 4 properties.
+ */
+export function getJavaVersions(
+  versionFile: File | undefined,
+  oldVersionRegex: RegExp,
+  newVersionRegex: RegExp
+): Versions | undefined {
+  if (!versionFile) {
+    return undefined;
+  }
+
+  let oldDependencyName;
+  let newDependencyName;
+  let oldMajorVersion;
+  let oldMinorVersion;
+  let newMajorVersion;
+  let newMinorVersion;
+
+  const oldVersions = versionFile.patch?.match(oldVersionRegex);
+  const newVersions = versionFile.patch?.match(newVersionRegex);
+  if (oldVersions) {
+    oldDependencyName = `${oldVersions[1]}:${oldVersions[2]}`;
+    oldMajorVersion = oldVersions[4] || oldVersions[6];
+    oldMinorVersion = oldVersions[5] || oldVersions[7];
+  }
+
+  if (newVersions) {
+    newDependencyName = `${newVersions[1]}:${newVersions[2]}`;
+    newMajorVersion = newVersions[5] || newVersions[7];
+    newMinorVersion = newVersions[6] || newVersions[8];
+  }
+
+  // If there is a change with a file that requires special validation checks,
+  // and we can't find these pieces of information, we should throw an error, and not
+  // perform any other checks, since that would open us up to potentially merging a
+  // sensitive file without having proper checks.
+  if (
+    !(
+      oldDependencyName &&
+      newDependencyName &&
+      oldMajorVersion &&
+      oldMinorVersion &&
+      newMajorVersion &&
+      newMinorVersion
+    )
+  ) {
+    throw Error(
+      `Could not find versions in ${versionFile.filename}/${versionFile.sha}`
+    );
+  }
+
+  return {
+    oldDependencyName,
+    newDependencyName,
+    oldMajorVersion,
+    oldMinorVersion,
+    newMajorVersion,
+    newMinorVersion,
+  };
+}
+/**
  * This function checks whether the dependency stated in a given title was the one that was changed
  *
  * @param versions the Versions object that contains the old dependency name and new dependency name and versions
@@ -188,8 +250,7 @@ export function getVersions(
 export function doesDependencyChangeMatchPRTitle(
   versions: Versions,
   dependencyRegex: RegExp,
-  title: string,
-  process: string
+  title: string
 ): boolean {
   let dependencyName;
   const titleRegex = title.match(dependencyRegex);
@@ -197,10 +258,36 @@ export function doesDependencyChangeMatchPRTitle(
   if (titleRegex) {
     dependencyName = titleRegex[2];
 
-    if (process === 'java-dependency') {
-      if (!dependencyName.includes('com.google.')) {
-        return false;
-      }
+    return (
+      versions.newDependencyName === versions.oldDependencyName &&
+      dependencyName === versions.newDependencyName
+    );
+  }
+
+  return false;
+}
+
+/**
+ * This function checks whether the dependency stated in a given title was the one that was changed in a Java file
+ *
+ * @param versions the Versions object that contains the old dependency name and new dependency name and versions
+ * @param dependencyRegex the regular exp to find the dependency within the title of the PR
+ * @param title the title of the PR
+ * @returns whether the old dependency, new dependency, and dependency in the title all match
+ */
+export function doesDependencyChangeMatchPRTitleJava(
+  versions: Versions,
+  dependencyRegex: RegExp,
+  title: string
+): boolean {
+  let dependencyName;
+  const titleRegex = title.match(dependencyRegex);
+
+  if (titleRegex) {
+    dependencyName = titleRegex[2];
+
+    if (!dependencyName.includes('com.google.')) {
+      return false;
     }
     return (
       versions.newDependencyName === versions.oldDependencyName &&
@@ -282,5 +369,44 @@ export function mergesOnWeekday(): boolean {
   if (dayOfWeek >= 5 || dayOfWeek === 0) {
     return false;
   }
+  return true;
+}
+
+/**
+ * Runs additional validation checks when a version is upgraded to ensure that the
+ * version is only upgraded, not downgraded, and that the major version is not bumped.
+ *
+ * @param file The incoming target file that has a matching ruleset in language-versioning-rules
+ * @param pr The matching ruleset of the file above from language-versioning-rules
+ * @returns true if the package was upgraded appropriately, and had only one thing changed
+ */
+export function runVersioningValidation(versions: Versions): boolean {
+  let majorBump = true;
+  let minorBump = false;
+
+  if (versions) {
+    majorBump = isMajorVersionChanging(versions);
+    minorBump = isMinorVersionUpgraded(versions);
+  }
+
+  return !majorBump && minorBump;
+}
+
+/**
+ * Checks to see if there is an appropriate number of files changed.
+ *
+ * @param rulesToValidateAgainst The matching ruleset of the file above from language-versioning-rules
+ * @param pr The incoming pr
+ * @returns true if there is a max number of files and the pr is under those files, or if there isn't a max number of files
+ */
+export function correctNumberOfFiles(
+  rulesToValidateAgainst: ValidPr,
+  pr: PullRequestEvent
+) {
+  //check if Valid number of max files
+  if (rulesToValidateAgainst.maxFiles) {
+    return pr.pull_request.changed_files <= rulesToValidateAgainst.maxFiles;
+  }
+
   return true;
 }

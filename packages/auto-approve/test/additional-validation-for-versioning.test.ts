@@ -15,15 +15,18 @@
 import {
   getTargetFiles,
   getVersions,
+  getJavaVersions,
   isMajorVersionChanging,
   isMinorVersionUpgraded,
   isOneDependencyChanged,
   doesDependencyChangeMatchPRTitle,
+  doesDependencyChangeMatchPRTitleJava,
   mergesOnWeekday,
 } from '../src/utils-for-pr-checking';
+import * as node from '../src/language-rules/node';
+import * as java from '../src/language-rules/java';
 import {describe, it} from 'mocha';
 import assert from 'assert';
-import {languageVersioningRules} from '../src/language-versioning-rules';
 import sinon from 'sinon';
 
 describe('run additional versioning checks', () => {
@@ -39,26 +42,21 @@ describe('run additional versioning checks', () => {
         },
         {filename: 'filename2', sha: '5678'},
       ];
-      const fileAndFileRuleExpectation = [
-        {
-          file: {
-            filename: 'package.json',
-            sha: '1234',
-            additions: 1,
-            deletions: 1,
-            patch: 'patch',
-          },
-          fileRule: languageVersioningRules[0],
-        },
-      ];
 
       const fileAndFileRule = getTargetFiles(
         prFiles,
         'release-please[bot]',
-        languageVersioningRules
+        'title'
       );
 
-      assert.deepStrictEqual(fileAndFileRule, fileAndFileRuleExpectation);
+      assert.deepStrictEqual(fileAndFileRule, [
+        new node.Rules(
+          prFiles[0],
+          'release-please[bot]',
+          node.PERMITTED_FILES[0],
+          'title'
+        ),
+      ]);
     });
 
     it('should correctly identify the target file if it exists in the PR but is later in the file structure', async () => {
@@ -72,26 +70,21 @@ describe('run additional versioning checks', () => {
           patch: 'patch',
         },
       ];
-      const fileAndFileRuleExpectation = [
-        {
-          file: {
-            filename: 'package.json',
-            sha: '1234',
-            additions: 1,
-            deletions: 1,
-            patch: 'patch',
-          },
-          fileRule: languageVersioningRules[0],
-        },
-      ];
 
       const fileAndFileRule = getTargetFiles(
         prFiles,
         'release-please[bot]',
-        languageVersioningRules
+        'title'
       );
 
-      assert.deepStrictEqual(fileAndFileRule, fileAndFileRuleExpectation);
+      assert.deepStrictEqual(fileAndFileRule, [
+        new node.Rules(
+          prFiles[1],
+          'release-please[bot]',
+          node.PERMITTED_FILES[0],
+          'title'
+        ),
+      ]);
     });
 
     it('should return an empty array if the file does not match any special rules', async () => {
@@ -109,7 +102,7 @@ describe('run additional versioning checks', () => {
       const fileAndFileRule = getTargetFiles(
         prFiles,
         'release-please[bot]',
-        languageVersioningRules
+        'title'
       );
 
       assert.deepStrictEqual(fileAndFileRule, []);
@@ -130,7 +123,7 @@ describe('run additional versioning checks', () => {
       const fileAndFileRule = getTargetFiles(
         prFiles,
         'not-release-please-bot',
-        languageVersioningRules
+        'title'
       );
 
       assert.deepStrictEqual(fileAndFileRule, []);
@@ -147,26 +140,16 @@ describe('run additional versioning checks', () => {
         },
       ];
 
-      const fileAndFileRuleExpectation = [
-        {
-          file: {
-            filename: 'iam/api-client/pom.xml',
-            sha: '1234',
-            additions: 1,
-            deletions: 1,
-            patch: 'patch',
-          },
-          fileRule: languageVersioningRules[4],
-        },
-      ];
+      const fileAndFileRule = getTargetFiles(prFiles, 'renovate-bot', 'title');
 
-      const fileAndFileRule = getTargetFiles(
-        prFiles,
-        'renovate-bot',
-        languageVersioningRules
-      );
-
-      assert.deepStrictEqual(fileAndFileRule, fileAndFileRuleExpectation);
+      assert.deepStrictEqual(fileAndFileRule, [
+        new java.Rules(
+          prFiles[0],
+          'renovate-bot',
+          java.PERMITTED_FILES[0],
+          'title'
+        ),
+      ]);
     });
   });
 
@@ -191,8 +174,6 @@ describe('run additional versioning checks', () => {
           '   "engines": {',
       };
 
-      const fileRule = languageVersioningRules[0];
-
       const getVersionsExpectation = {
         oldDependencyName: 'version',
         newDependencyName: 'version',
@@ -203,9 +184,8 @@ describe('run additional versioning checks', () => {
       };
       const versions = getVersions(
         PRFile,
-        fileRule.oldVersion,
-        fileRule.newVersion,
-        fileRule.process
+        node.PERMITTED_FILES[0].oldVersion,
+        node.PERMITTED_FILES[0].newVersion
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
@@ -231,8 +211,6 @@ describe('run additional versioning checks', () => {
           '   "engines": {',
       };
 
-      const fileRule = languageVersioningRules[0];
-
       const getVersionsExpectation = {
         oldDependencyName: '@google-cloud/nodejs-asset',
         newDependencyName: '@google-cloud/nodejs-asset',
@@ -243,9 +221,8 @@ describe('run additional versioning checks', () => {
       };
       const versions = getVersions(
         PRFile,
-        fileRule.oldVersion,
-        fileRule.newVersion,
-        fileRule.process
+        node.PERMITTED_FILES[0].oldVersion,
+        node.PERMITTED_FILES[0].newVersion
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
@@ -271,27 +248,21 @@ describe('run additional versioning checks', () => {
           '   "engines": {',
       };
 
-      const fileRule = languageVersioningRules[0];
-
       assert.throws(() => {
         getVersions(
           PRFile,
-          fileRule.oldVersion,
-          fileRule.newVersion,
-          fileRule.process
+          node.PERMITTED_FILES[0].oldVersion,
+          node.PERMITTED_FILES[0].newVersion
         );
       }, /Could not find versions in package.json\/c9fadc5c8972d1c034a050eb6b1a6b79fcd67785/);
     });
 
     it('should return undefined if the target file does not exist', () => {
-      const fileRule = languageVersioningRules[0];
-
       assert.strictEqual(
         getVersions(
           undefined,
-          fileRule.oldVersion,
-          fileRule.newVersion,
-          fileRule.process
+          node.PERMITTED_FILES[0].oldVersion,
+          node.PERMITTED_FILES[0].newVersion
         ),
         undefined
       );
@@ -314,7 +285,7 @@ describe('run additional versioning checks', () => {
           '     <dependency>',
       };
 
-      const fileRule = languageVersioningRules[4];
+      const fileRule = java.PERMITTED_FILES[0];
 
       const getVersionsExpectation = {
         oldDependencyName: 'com.google.cloud:google-cloud-datacatalog',
@@ -324,11 +295,10 @@ describe('run additional versioning checks', () => {
         newMajorVersion: '1',
         newMinorVersion: '32.1',
       };
-      const versions = getVersions(
+      const versions = getJavaVersions(
         PRFile,
         fileRule.oldVersion,
-        fileRule.newVersion,
-        fileRule.process
+        fileRule.newVersion
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
@@ -353,8 +323,6 @@ describe('run additional versioning checks', () => {
           '         <!-- Test dependencies -->',
       };
 
-      const fileRule = languageVersioningRules[4];
-
       const getVersionsExpectation = {
         oldDependencyName: 'com.google.cloud:google-cloud-datacatalog',
         newDependencyName: 'com.google.cloud:google-cloud-datacatalog',
@@ -363,11 +331,10 @@ describe('run additional versioning checks', () => {
         newMajorVersion: '1',
         newMinorVersion: '4.2',
       };
-      const versions = getVersions(
+      const versions = getJavaVersions(
         PRFile,
-        fileRule.oldVersion,
-        fileRule.newVersion,
-        fileRule.process
+        java.PERMITTED_FILES[0].oldVersion,
+        java.PERMITTED_FILES[0].newVersion
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
@@ -530,9 +497,8 @@ describe('run additional versioning checks', () => {
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
         versions,
-        languageVersioningRules[1].dependency!,
-        title,
-        languageVersioningRules[1].process
+        node.PERMITTED_FILES[1].title!,
+        title
       );
 
       assert.strictEqual(doesDependencyMatch, false);
@@ -553,9 +519,8 @@ describe('run additional versioning checks', () => {
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
         versions,
-        languageVersioningRules[1].dependency!,
-        title,
-        languageVersioningRules[1].process
+        node.PERMITTED_FILES[1].title!,
+        title
       );
 
       assert.ok(doesDependencyMatch);
@@ -576,9 +541,8 @@ describe('run additional versioning checks', () => {
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
         versions,
-        languageVersioningRules[1].dependency!,
-        title,
-        languageVersioningRules[1].process
+        node.PERMITTED_FILES[1].title!,
+        title
       );
 
       assert.strictEqual(doesDependencyMatch, false);
@@ -597,11 +561,10 @@ describe('run additional versioning checks', () => {
       const title =
         'chore(deps): update dependency google-cloud-secret-manager to v2.5.0';
 
-      const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
+      const doesDependencyMatch = doesDependencyChangeMatchPRTitleJava(
         versions,
-        languageVersioningRules[4].dependency!,
-        title,
-        languageVersioningRules[4].process
+        java.PERMITTED_FILES[0].title!,
+        title
       );
 
       assert.strictEqual(doesDependencyMatch, false);
@@ -620,11 +583,10 @@ describe('run additional versioning checks', () => {
       const title =
         'chore(deps): update dependency com.google.cloud:google-cloud-datacatalog to v2.5.0';
 
-      const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
+      const doesDependencyMatch = doesDependencyChangeMatchPRTitleJava(
         versions,
-        languageVersioningRules[4].dependency!,
-        title,
-        languageVersioningRules[4].process
+        java.PERMITTED_FILES[0].title!,
+        title
       );
 
       assert.ok(doesDependencyMatch);
