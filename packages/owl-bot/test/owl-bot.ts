@@ -107,6 +107,7 @@ describe('owlBot', () => {
             },
           },
           base: {
+            ref: 'main',
             repo: {
               full_name: 'SurferJeffAtGoogle/owl-bot-testing',
             },
@@ -141,6 +142,7 @@ describe('owlBot', () => {
             ref: 'abc123',
           },
           base: {
+            ref: 'main',
             repo: {
               full_name: 'bcoe/owl-bot-testing',
             },
@@ -200,6 +202,7 @@ describe('owlBot', () => {
             ref: 'abc123',
           },
           base: {
+            ref: 'main',
             repo: {
               full_name: 'bcoe/owl-bot-testing',
             },
@@ -255,6 +258,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'bcoe/owl-bot-testing',
           },
@@ -325,6 +329,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'bcoe/owl-bot-testing',
           },
@@ -392,6 +397,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'bcoe/owl-bot-testing',
           },
@@ -452,6 +458,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'bcoe/owl-bot-testing',
           },
@@ -517,6 +524,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'bcoe/owl-bot-testing',
           },
@@ -584,6 +592,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'bcoe/owl-bot-testing',
           },
@@ -651,6 +660,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'bcoe/owl-bot-testing',
           },
@@ -715,6 +725,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'bcoe/owl-bot-testing',
           },
@@ -925,6 +936,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'blerg',
           repo: {
             full_name: 'rennie/owl-bot-testing',
           },
@@ -1000,6 +1012,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'rennie/owl-bot-testing',
           },
@@ -1075,6 +1088,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'rennie/owl-bot-testing',
           },
@@ -1151,6 +1165,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'rennie/owl-bot-testing',
           },
@@ -1228,6 +1243,7 @@ describe('owlBot', () => {
           },
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'SurferJeffAtGoogle/owl-bot-testing',
           },
@@ -1266,6 +1282,7 @@ describe('owlBot', () => {
           },
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'bcoe/owl-bot-testing',
           },
@@ -1304,6 +1321,7 @@ describe('owlBot', () => {
           },
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'bcoe/owl-bot-testing',
           },
@@ -1348,6 +1366,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'rennie/owl-bot-testing',
           },
@@ -1396,6 +1415,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'rennie/owl-bot-testing',
           },
@@ -1452,7 +1472,6 @@ describe('owlBot', () => {
     sandbox.assert.calledOnce(updatePullRequestStub);
     githubMock.done();
   });
-
   it('returns early and adds success status if no lock file found', async () => {
     const payload = {
       action: 'synchronize',
@@ -1469,6 +1488,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'bcoe/owl-bot-testing',
           },
@@ -1482,6 +1502,55 @@ describe('owlBot', () => {
         '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(404);
+    const createCheckStub = sandbox.stub(core, 'createCheck');
+    await probot.receive({
+      name: 'pull_request',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      payload: payload as any,
+      id: 'abc123',
+    });
+    sandbox.assert.calledWith(
+      createCheckStub,
+      sinon.match.has('conclusion', 'success')
+    );
+    githubMock.done();
+  });
+  it('returns early and adds success status if base is not default branch', async () => {
+    const payload = {
+      action: 'synchronize',
+      installation: {
+        id: 12345,
+      },
+      pull_request: {
+        labels: [],
+        number: 33,
+        head: {
+          repo: {
+            full_name: 'bcoe/owl-bot-testing',
+          },
+          ref: 'abc123',
+        },
+        base: {
+          ref: 'batman-branch',
+          repo: {
+            full_name: 'bcoe/owl-bot-testing',
+          },
+        },
+      },
+    };
+    const config = `docker:
+    image: node
+    digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
+    const githubMock = nock('https://api.github.com')
+      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .reply(200, payload.pull_request)
+      .get(
+        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+      )
+      .reply(200, {
+        content: Buffer.from(config).toString('base64'),
+        encoding: 'base64',
+      });
     const createCheckStub = sandbox.stub(core, 'createCheck');
     await probot.receive({
       name: 'pull_request',
@@ -1511,6 +1580,7 @@ describe('owlBot', () => {
           ref: 'abc123',
         },
         base: {
+          ref: 'main',
           repo: {
             full_name: 'bcoe/owl-bot-testing',
           },
@@ -1556,10 +1626,10 @@ function pullRequestEditedEventFrom(
   const result = {
     pull_request: {
       base: {
+        ref: 'main',
         repo: {
           full_name: 'googleapis/nodejs-dlp',
         },
-        ref: 'main',
       },
       head: {
         repo: {

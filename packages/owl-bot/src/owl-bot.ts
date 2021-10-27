@@ -127,6 +127,9 @@ export function OwlBot(
       const [owner, repo] = head.split('/');
       const installation = context.payload.installation?.id;
       const prNumber = context.payload.pull_request.number;
+      const baseRef = context.payload.pull_request.base.ref;
+      const defaultBranch =
+        context.payload?.repository?.default_branch ?? 'main';
 
       if (!installation) {
         throw Error(`no installation token found for ${head}`);
@@ -147,11 +150,12 @@ export function OwlBot(
         {
           head,
           base,
+          baseRef,
           prNumber,
           installation,
           owner,
           repo,
-          defaultBranch: context.payload?.repository?.default_branch,
+          defaultBranch,
         },
         context.octokit
       );
@@ -283,6 +287,8 @@ export async function handlePullRequestLabeled(
     return;
   }
 
+  // If label is explicitly added, run as if PR is made against default branch:
+  const defaultBranch = payload?.repository?.default_branch;
   await runPostProcessor(
     appId,
     privateKey,
@@ -291,11 +297,12 @@ export async function handlePullRequestLabeled(
     {
       head,
       base,
+      baseRef: defaultBranch,
       prNumber,
       installation,
       owner,
       repo,
-      defaultBranch: payload?.repository?.default_branch,
+      defaultBranch,
     },
     octokit,
     isBotAccount(payload.sender.login)
@@ -349,6 +356,7 @@ function isBotAccount(sender: string): boolean {
 interface RunPostProcessorOpts {
   head: string;
   base: string;
+  baseRef: string;
   prNumber: number;
   installation: number;
   owner: string;
@@ -430,6 +438,26 @@ const runPostProcessor = async (
     );
     return;
   }
+
+  // Only run post processor if PR is against primary branch.
+  // TODO: extend on this logic to handle pre-release branches.
+  if (opts.baseRef !== opts.defaultBranch) {
+    logger.info(`${opts.baseRef} !== ${opts.defaultBranch}`);
+    await core.createCheck(
+      {
+        ...checkArgs,
+        text: 'Ignored by Owl Bot because of PR against non-default branch',
+        summary: 'Ignored by Owl Bot because of PR against non-default branch',
+        conclusion: 'success',
+        title: '🦉 OwlBot - non-default branch',
+        detailsURL:
+          'https://github.com/googleapis/repo-automation-bots/blob/main/packages/owl-bot/README.md',
+      },
+      octokit
+    );
+    return;
+  }
+
   // Detect looping OwlBot behavior and break the cycle:
   if (
     breakLoop &&
