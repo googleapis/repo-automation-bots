@@ -93,6 +93,30 @@ describe('owlBot', () => {
       );
     });
   });
+  describe('Cron for syncing labels ', () => {
+    it('does not call syncLabels for external organizations', async () => {
+      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          repository: {
+            name: 'testRepo',
+            owner: {
+              login: 'testOwner',
+            },
+          },
+          organization: {
+            login: 'testOrg',
+          },
+          syncLabels: true,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+      sinon.assert.notCalled(syncLabelsStub);
+    });
+  });
   describe('post processing pull request', () => {
     it('returns early and logs if pull request opened from fork', async () => {
       const payload = {
