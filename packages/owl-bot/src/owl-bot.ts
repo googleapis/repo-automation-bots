@@ -229,6 +229,10 @@ export function OwlBot(
       const repo = context.payload.repository.name;
       if (SYNC_LABEL_ORGANIZATIONS.includes(owner)) {
         await syncLabels(context.octokit, owner, repo, OWL_BOT_LABELS);
+      } else {
+        logger.info(
+          `Ignoring ${owner}/${repo} because it's in the wrong organization.`
+        );
       }
       return;
     }
