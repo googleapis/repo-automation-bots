@@ -18,6 +18,7 @@ import tmp from 'tmp';
 import {collectConfigs, CollectedConfigs} from './configs-store';
 import * as fs from 'fs';
 import path from 'path';
+import {newCmd} from './cmd';
 
 /**
  * Fetches the configuration files from a github repo.
@@ -30,18 +31,21 @@ export async function fetchConfigs(
     ref: string;
   }
 ): Promise<CollectedConfigs> {
-  const response = await octokit.repos.downloadZipballArchive(githubRepo);
+  const cmd = newCmd();
 
-  const tmpDir = tmp.dirSync().name;
+  const tmpDir = tmp.dirSync({keep: true}).name;
   try {
-    const zip = new AdmZip(Buffer.from(response.data as ArrayBuffer));
-    zip.extractAllTo(tmpDir);
-
-    // The root directory of the zip is <repo-name>-<short-hash>.
-    // That's actually the directory we want to work in.
-    const [rootDir] = fs.readdirSync(tmpDir);
-
-    return collectConfigs(path.join(tmpDir, rootDir));
+    // Frustratingly, there's no way to clone a repo at a particular ref.
+    // We observed the ref milliseconds ago, so it should be in the most recent 10
+    // commits for sure.  If not, then we'll catch it again the next time
+    // scan-configs runs.
+    cmd(
+      `git clone --depth 10 https://github.com/${githubRepo.owner}/${githubRepo.repo}.git`,
+      {cwd: tmpDir}
+    );
+    const repoDir = path.join(tmpDir, githubRepo.repo);
+    cmd(`git checkout ${githubRepo.ref}`, {cwd: repoDir});
+    return collectConfigs(repoDir);
   } finally {
     // When running in cloud functions, space is limited, so clean up.
     fs.rmdirSync(tmpDir, {recursive: true});
