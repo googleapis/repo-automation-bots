@@ -20,6 +20,8 @@ const twentyFourHours =
   60 * // minutes
   24; // hours.
 
+const seventyTwoHours = 3 * twentyFourHours;
+
 /**
  * Scans all the cloud builds for the past 24 hours, and retries builds
  * that never succeeded.
@@ -85,11 +87,9 @@ export async function filterBuildsToRetry(
     if (!newestCreateTime) {
       newestCreateTime = build.createTime!;
     }
-    if (
-      build.createTime &&
-      Number(newestCreateTime.seconds) - Number(build.createTime.seconds) >
-        twentyFourHours
-    ) {
+    const secondsElapsedSinceCreateTime =
+      Number(newestCreateTime.seconds) - Number(build.createTime!.seconds);
+    if (secondsElapsedSinceCreateTime > seventyTwoHours) {
       logger.info('Finished scanning recent builds.');
       break;
     }
@@ -110,6 +110,9 @@ export async function filterBuildsToRetry(
     if (counts) {
       counts.failureCount += failed;
       counts.successCount += succeeded;
+    } else if (secondsElapsedSinceCreateTime > twentyFourHours) {
+      // A build that happened more than 24 hours ago is not one we should
+      // retry.
     } else {
       countsMap.set(key, {
         build,
