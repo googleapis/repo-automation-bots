@@ -24,7 +24,7 @@ import {
   createIssueIfTitleDoesntExist,
   OctokitFactory,
 } from './octokit-util';
-import {githubRepoFromOwnerSlashName} from './github-repo';
+import {GithubRepo, githubRepo, githubRepoFromOwnerSlashName} from './github-repo';
 import {fetchConfigs} from './fetch-configs';
 
 type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
@@ -251,18 +251,17 @@ export async function refreshConfigs(
   configsStore: ConfigsStore,
   configs: Configs | undefined,
   octokit: OctokitType,
-  githubOrg: string,
-  repoName: string,
+  githubRepo: GithubRepo,
   defaultBranch: string,
   installationId: number
 ): Promise<void> {
   // Query github for the commit hash of the default branch.
   const {data: branchData} = await octokit.repos.getBranch({
-    owner: githubOrg,
-    repo: repoName,
+    owner: githubRepo.owner,
+    repo: githubRepo.repo,
     branch: defaultBranch,
   });
-  const repoFull = `${githubOrg}/${repoName}`;
+  const repoFull = githubRepo.toString();
   const commitHash = branchData.commit.sha;
   if (!commitHash) {
     logger.error(`${repoFull}:${defaultBranch} is missing a commit sha!`);
@@ -283,11 +282,7 @@ export async function refreshConfigs(
     commitHash: commitHash,
   };
 
-  const {lock, yamls, badConfigs} = await fetchConfigs(octokit, {
-    owner: githubOrg,
-    repo: repoName,
-    ref: commitHash,
-  });
+  const {lock, yamls, badConfigs} = await fetchConfigs(githubRepo, commitHash);
   if (lock) {
     newConfigs.lock = lock;
   }
@@ -306,8 +301,8 @@ export async function refreshConfigs(
     for (const badConfig of badConfigs) {
       await createIssueIfTitleDoesntExist(
         octokit,
-        githubOrg,
-        repoName,
+        githubRepo.owner,
+        githubRepo.repo,
         badConfig.path + ' is broken.',
         'This repo will not receive automatic updates until this issue is fixed.\n\n' +
           String(badConfig.error)

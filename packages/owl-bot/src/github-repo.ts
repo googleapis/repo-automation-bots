@@ -23,7 +23,7 @@ export interface GithubRepo {
   toString(): string;
 }
 
-function githubRepo(owner: string, repo: string): GithubRepo {
+export function githubRepo(owner: string, repo: string): GithubRepo {
   return {
     owner,
     repo,
