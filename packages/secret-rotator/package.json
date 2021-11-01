@@ -32,7 +32,7 @@
   "devDependencies": {
     "@types/express": "^4.17.13",
     "@types/mocha": "^9.0.0",
-    "@types/sinon": "^10.0.5",
+    "@types/sinon": "^10.0.6",
     "c8": "^7.10.0",
     "gaxios": "^4.3.2",
     "gts": "^3.1.0",
