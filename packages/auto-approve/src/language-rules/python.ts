@@ -12,16 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {File} from '../get-pr-info';
 import {logger} from 'gcf-utils';
 import {
   getVersions,
-  FileSpecificRule,
   runVersioningValidation,
   isOneDependencyChanged,
-  Versions,
   doesDependencyChangeMatchPRTitle,
 } from '../utils-for-pr-checking';
+import {LanguageRule, File, FileSpecificRule, Versions} from '../interfaces';
 
 export const PERMITTED_FILES = [
   {
@@ -37,7 +35,7 @@ export const PERMITTED_FILES = [
   },
 ];
 
-export class Rules {
+export class Rules implements LanguageRule {
   changedFile: File;
   author: string;
   fileRule: FileSpecificRule;
@@ -73,7 +71,7 @@ export class Rules {
     return passesAdditionalChecks;
   }
 
-  private async dependencyProcess(versions: Versions) {
+  public async dependencyProcess(versions: Versions) {
     const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
       versions,
       // We can assert title will exist, since the process is type 'dependency'

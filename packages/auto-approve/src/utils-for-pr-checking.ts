@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {File} from './get-pr-info';
-import {ValidPr} from './check-pr';
+import {File, ValidPr, Versions} from './interfaces';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -24,44 +23,6 @@ import * as java from './language-rules/java';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-/**
- * Interface for return type of array from getTargetFiles. It is the amalgamation
- * of the file that was changed in the PR, plus the file rule that applies
- * to that given file.
- */
-export interface fileAndMetadata {
-  file: File;
-  fileRule: FileSpecificRule;
-}
-/**
- * Interface for rules in `./language-versioning-rules.json`. These
- * are rules for files that match an author and filename, and then provide
- * regex for the versions for those particular formats.
- */
-export interface FileSpecificRule {
-  prAuthor: string;
-  process: string;
-  title?: RegExp;
-  targetFile: RegExp;
-  oldVersion?: RegExp;
-  newVersion?: RegExp;
-}
-
-/**
- * Interface for the versions found in the selected files. These versions are
- * picked out based on the regex listed in `./language-versioning-rules.json` for
- * that particular file. From there, you will get the previous dependency, new
- * dependency, and previous version number and changed version number.
- */
-export interface Versions {
-  oldDependencyName: string;
-  newDependencyName: string;
-  oldMajorVersion: string;
-  oldMinorVersion: string;
-  newMajorVersion: string;
-  newMinorVersion: string;
-}
 
 /**
  * Takes all of the files changed in a given PR, and checks them against a set of

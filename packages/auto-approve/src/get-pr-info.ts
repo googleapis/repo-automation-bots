@@ -16,26 +16,10 @@
 import {RequestError} from '@octokit/request-error';
 import {logger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
+import {File, Reviews} from './interfaces';
 
 // This file gets information about the incoming pull request, such as what files were changed, etc.
 
-export interface Reviews {
-  user: {
-    login: string;
-  };
-  state: string;
-  commit_id: string;
-  id: number;
-}
-
-export interface File {
-  sha: string;
-  filename: string;
-  patch?: string;
-  additions?: number;
-  deletions?: number;
-  changes?: number;
-}
 /**
  * Returns file names of the PR that were changed.
  *

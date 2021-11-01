@@ -17,27 +17,18 @@
 import yaml from 'js-yaml';
 import Ajv from 'ajv';
 import {Octokit} from '@octokit/rest';
-import {Configuration} from './auto-approve';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
+import {GHFile, Configuration} from './interfaces';
 
 const ajv = new Ajv();
 
 const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
 
-interface File {
-  content: string | undefined;
-}
-
-export interface ErrorMessage {
-  wrongProperty: Record<string, string>;
-  message: string | undefined;
-}
-
 import schema from './valid-pr-schema.json';
 
-function isFile(file: File | unknown): file is File {
-  return (file as File).content !== undefined;
+function isFile(file: GHFile | unknown): file is GHFile {
+  return (file as GHFile).content !== undefined;
 }
 
 /**

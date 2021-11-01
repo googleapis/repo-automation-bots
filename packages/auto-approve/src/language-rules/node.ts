@@ -13,16 +13,14 @@
 // limitations under the License.
 
 import {logger} from 'gcf-utils';
-import {File} from '../get-pr-info';
 import {
   getVersions,
-  FileSpecificRule,
   runVersioningValidation,
   isOneDependencyChanged,
   mergesOnWeekday,
-  Versions,
   doesDependencyChangeMatchPRTitle,
 } from '../utils-for-pr-checking';
+import {LanguageRule, File, FileSpecificRule, Versions} from '../interfaces';
 
 export const PERMITTED_FILES = [
   {
@@ -57,7 +55,7 @@ export const PERMITTED_FILES = [
   },
 ];
 
-export class Rules {
+export class Rules implements LanguageRule {
   changedFile: File;
   author: string;
   fileRule: FileSpecificRule;
@@ -95,7 +93,7 @@ export class Rules {
     return passesAdditionalChecks;
   }
 
-  private async releaseProcess(versions: Versions) {
+  public async releaseProcess(versions: Versions): Promise<boolean> {
     const versionsCorrect = runVersioningValidation(versions);
     const oneDependencyChanged = isOneDependencyChanged(this.changedFile);
     const mergedOnWeekday = mergesOnWeekday();
@@ -111,7 +109,7 @@ export class Rules {
     return versionsCorrect && oneDependencyChanged && mergedOnWeekday;
   }
 
-  private async dependencyProcess(versions: Versions) {
+  public async dependencyProcess(versions: Versions): Promise<boolean> {
     const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
       versions,
       // We can assert title will exist, since the process is type 'dependency'

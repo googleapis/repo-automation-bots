@@ -14,7 +14,8 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {PullRequestEvent} from '@octokit/webhooks-types/schema';
-import {getChangedFiles, File} from './get-pr-info';
+import {getChangedFiles} from './get-pr-info';
+import {File, ValidPr} from './interfaces';
 import {logger} from 'gcf-utils';
 import {
   getTargetFiles,
@@ -24,13 +25,6 @@ import {
 import {Octokit} from '@octokit/rest';
 
 // This file manages the logic to check whether a given PR matches the config in the repository
-
-export interface ValidPr {
-  author: string;
-  title: string;
-  changedFiles?: string[];
-  maxFiles?: number;
-}
 
 /**
  * Checks that a given PR matches the rules in the auto-approve.yml file in the repository

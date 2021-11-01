@@ -15,6 +15,7 @@
 import * as autoApprove from '../src/auto-approve';
 import * as getPRInfo from '../src/get-pr-info';
 import * as checkConfig from '../src/check-config';
+import * as interfaces from '../src/interfaces';
 import * as checkPR from '../src/check-pr';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
@@ -62,7 +63,7 @@ function getConfigFile(
 function getReviewsCompleted(
   owner: string,
   repo: string,
-  response: getPRInfo.Reviews[]
+  response: interfaces.Reviews[]
 ) {
   return nock('https://api.github.com')
     .get(`/repos/${owner}/${repo}/pulls/1/reviews`)
