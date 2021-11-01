@@ -134,4 +134,29 @@ describe('filterBuildsToRetry', () => {
     );
     assert.deepStrictEqual([], rebuilds);
   });
+
+  it('ignores build that exceeds max-failures over 48 hours', async () => {
+    const builds: google.devtools.cloudbuild.v1.IBuild[] = [
+      {
+        name: 'iFailedAgain',
+        createTime: {seconds: 1632347329, nanos: 10},
+        buildTriggerId: 'a2',
+        status: 'FAILURE',
+        substitutions: {_A: 'b', _C: 'd'},
+      },
+      {
+        name: 'iFailed',
+        createTime: {seconds: 1632260628, nanos: 10},
+        buildTriggerId: 'a2',
+        status: 'FAILURE',
+        substitutions: {_C: 'd', _A: 'b'},
+      },
+    ];
+    const rebuilds = await filterBuildsToRetry(
+      'a2',
+      2,
+      asyncIteratorFrom(builds)
+    );
+    assert.deepStrictEqual([], rebuilds);
+  });
 });
