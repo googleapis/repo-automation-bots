@@ -34,9 +34,13 @@ import {core} from '../src/core';
 import {FakeConfigsStore} from './fake-configs-store';
 import {GithubRepo} from '../src/github-repo';
 import {CloudBuildClient} from '@google-cloud/cloudbuild';
-import {newFakeOctokit, newFakeOctokitFactory} from './fake-octokit';
+import {newFakeOctokitFactory} from './fake-octokit';
 import {newFakeCloudBuildClient} from './fake-cloud-build-client';
 import AdmZip from 'adm-zip';
+import tmp from 'tmp';
+import * as fs from 'fs';
+import path from 'path';
+import { newCmd } from '../src/cmd';
 
 const sandbox = sinon.createSandbox();
 
@@ -212,6 +216,26 @@ describe('handlers', () => {
   });
 });
 
+function repoFromZip(repoName: string, zip: AdmZip): GithubRepo {
+  const tmpDir = tmp.dirSync().name;
+  zip.extractAllTo(tmpDir);
+  // The root directory of the zip is <repo-name>-<short-hash>.
+  // That's actually the directory we want to work in.
+  const [rootDir] = fs.readdirSync(tmpDir);
+  const repoDir = rootDir ? path.join(tmpDir, rootDir) : tmpDir;
+  const cmd = newCmd();
+  cmd('git init', {cwd: repoDir});
+  cmd('git add -A', {cwd: repoDir});
+  cmd('git commit --allow-empty -m "files"', {cwd: repoDir});
+  cmd('git checkout -b 123', {cwd: repoDir});
+  return {
+    getCloneUrl: () => repoDir,
+    owner: 'googleapis',
+    repo: repoName,
+    toString: () => `googleapis/${repoName}`
+  };
+}
+
 function zipWithOwlBotYaml(): AdmZip {
   const zip = new AdmZip();
   zip.addZipComment('This is a test.');
@@ -276,8 +300,7 @@ describe('refreshConfigs', () => {
       configsStore,
       undefined,
       octokitSha123(zipWithOwlBotYaml()),
-      'googleapis',
-      'nodejs-vision',
+      repoFromZip('nodejs-vision', zipWithOwlBotYaml()),
       'main',
       42
     );
@@ -327,8 +350,7 @@ describe('refreshConfigs', () => {
       configsStore,
       undefined,
       octokitSha123(zip),
-      'googleapis',
-      'nodejs-vision',
+      repoFromZip('nodejs-vision', zip),
       'main',
       42
     );
@@ -363,8 +385,7 @@ describe('refreshConfigs', () => {
       configsStore,
       undefined,
       octokitSha123(),
-      'googleapis',
-      'nodejs-vision',
+      repoFromZip('nodejs-vision', new AdmZip()),
       'main',
       42
     );
@@ -403,8 +424,7 @@ describe('refreshConfigs', () => {
       configsStore,
       undefined,
       octokitSha123(),
-      'googleapis',
-      'nodejs-vision',
+      repoFromZip('nodejs-vision', new AdmZip()),
       'main',
       77
     );
@@ -437,8 +457,7 @@ describe('refreshConfigs', () => {
       configsStore,
       configs,
       octokitSha123(),
-      'googleapis',
-      'nodejs-vision',
+      repoFromZip('nodejs-vision', new AdmZip()),
       'main',
       77
     );
@@ -467,8 +486,7 @@ describe('refreshConfigs', () => {
       configsStore,
       undefined,
       octokit,
-      'googleapis',
-      'nodejs-vision',
+      repoFromZip('nodejs-vision', zip),
       'main',
       42
     );

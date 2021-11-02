@@ -35,7 +35,7 @@ export async function fetchConfigs(
     // commits for sure.  If not, then we'll catch it again the next time
     // scan-configs runs.
     const cloneUrl = githubRepo.getCloneUrl();
-    cmd( `git clone --depth 10 ${cloneUrl}`, {cwd: tmpDir});
+    cmd( `git clone --depth 10 ${cloneUrl} ${githubRepo.repo}`, {cwd: tmpDir});
     const repoDir = path.join(tmpDir, githubRepo.repo);
     cmd(`git checkout ${ref}`, {cwd: repoDir});
     return collectConfigs(repoDir);
