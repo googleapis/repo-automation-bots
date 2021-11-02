@@ -60,7 +60,12 @@ Copy-Tag: ${copyTag}
     };
     assert.strictEqual(
       true,
-      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
+      await copyExists(
+        octokit as unknown as OctokitType,
+        destRepo,
+        'abc123',
+        1000
+      )
     );
   });
 
@@ -79,7 +84,12 @@ Copy-Tag: ${copyTag}
     };
     assert.strictEqual(
       true,
-      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
+      await copyExists(
+        octokit as unknown as OctokitType,
+        destRepo,
+        'abc123',
+        1000
+      )
     );
   });
 
@@ -104,7 +114,12 @@ Copy-Tag: ${copyTag}
     };
     assert.strictEqual(
       false,
-      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
+      await copyExists(
+        octokit as unknown as OctokitType,
+        destRepo,
+        'abc123',
+        1000
+      )
     );
   });
 
@@ -129,7 +144,12 @@ Copy-Tag: ${copyTag}
     };
     assert.strictEqual(
       false,
-      await copyExists(octokit as unknown as OctokitType, destRepo, 'def456')
+      await copyExists(
+        octokit as unknown as OctokitType,
+        destRepo,
+        'def456',
+        1000
+      )
     );
   });
 
@@ -146,7 +166,12 @@ Source-Link: https://github.com/googleapis/googleapis/abc123
     };
     assert.strictEqual(
       true,
-      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
+      await copyExists(
+        octokit as unknown as OctokitType,
+        destRepo,
+        'abc123',
+        1000
+      )
     );
   });
 });

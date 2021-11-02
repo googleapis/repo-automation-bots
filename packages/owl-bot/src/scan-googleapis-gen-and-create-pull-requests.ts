@@ -62,11 +62,13 @@ function isCommitHashTooOld(
  * Scans googleapis-gen and creates pull requests in target repos
  * (ex: nodejs-vision) when corresponding code has been updated.
  * @param sourceRepo normally 'googleapis/googlapis-gen'
+ * @param copyExistsSearchDepth how far into past pull requests and issues to search
  */
 export async function scanGoogleapisGenAndCreatePullRequests(
   sourceRepo: string,
   octokitFactory: OctokitFactory,
   configsStore: ConfigsStore,
+  copyExistsSearchDepth: number,
   cloneDepth = 100,
   logger = console
 ): Promise<number> {
@@ -119,7 +121,15 @@ export async function scanGoogleapisGenAndCreatePullRequests(
         logger.info(
           `Ignoring ${repoFullName} because ${commitHash} is too old.`
         );
-      } else if (!(await copyExists(octokit, repo, commitHash, logger))) {
+      } else if (
+        !(await copyExists(
+          octokit,
+          repo,
+          commitHash,
+          copyExistsSearchDepth,
+          logger
+        ))
+      ) {
         const todo: Todo = {repo, commitHash};
         logger.info(`Pushing todo onto stack: ${todo}`);
         todoStack.push(todo);

@@ -272,7 +272,7 @@ export async function copyCodeAndCreatePullRequest(
   const token = await octokitFactory.getGitHubShortLivedAccessToken();
   // Octokit token may have expired; refresh it.
   const octokit = await octokitFactory.getShortLivedOctokit(token);
-  if (await copyExists(octokit, destRepo, dest.sourceCommitHash)) {
+  if (await copyExists(octokit, destRepo, dest.sourceCommitHash, 100)) {
     return; // Mid-air collision!
   }
 
@@ -545,24 +545,21 @@ export function copyDirs(
  * @param octokit an octokit instance
  * @param destRepo the repo to search
  * @param sourceCommitHash the string to search for
+ * @param searchDepth the depth of pull request and issue histories to search.
  * @returns true if there's a PR or issue with the commit hash exists
  */
 export async function copyExists(
   octokit: OctokitType,
   destRepo: AffectedRepo,
   sourceCommitHash: string,
+  searchDepth: number,
   logger = console
 ): Promise<boolean> {
   // I observed octokit.search.issuesAndPullRequests() not finding recent, open
   // pull requests.  So enumerate them.
   const owner = destRepo.repo.owner;
   const repo = destRepo.repo.repo;
-  const pulls = await octokit.pulls.list({
-    owner,
-    repo,
-    per_page: 100,
-    state: 'all',
-  });
+  const per_page = 100;
   const copyTag = copyTagFrom(destRepo.yamlPath, sourceCommitHash);
 
   // A generic function that finds matches in either pull request or issue
@@ -587,17 +584,37 @@ export async function copyExists(
     return false;
   };
 
-  if (findInBodies('Pull request', pulls)) return true;
+  for (let page = 1, prsSeen = 0; prsSeen < searchDepth; page += 1) {
+    const pulls = await octokit.pulls.list({
+      owner,
+      repo,
+      per_page,
+      state: 'all',
+      page,
+    });
+    if (findInBodies('Pull request', pulls)) return true;
+    prsSeen += pulls.data.length;
+    if (pulls.data.length < per_page) {
+      break; // No more to see.
+    }
+  }
 
   // And enumerate recent issues too.
-  const issues = await octokit.issues.listForRepo({
-    owner,
-    repo,
-    per_page: 100,
-    state: 'all',
-  });
+  for (let page = 1, issuesSeen = 0; issuesSeen < searchDepth; page += 1) {
+    const issues = await octokit.issues.listForRepo({
+      owner,
+      repo,
+      per_page,
+      state: 'all',
+      page,
+    });
 
-  if (findInBodies('Issue', issues)) return true;
+    if (findInBodies('Issue', issues)) return true;
+    issuesSeen += issues.data.length;
+    if (issues.data.length < per_page) {
+      break; // No more to see.
+    }
+  }
 
   logger.info(`${sourceCommitHash} not found in ${owner}/${repo}.`);
   return false;
