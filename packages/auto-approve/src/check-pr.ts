@@ -18,7 +18,7 @@ import {getChangedFiles} from './get-pr-info';
 import {File, ValidPr} from './interfaces';
 import {logger} from 'gcf-utils';
 import {
-  getTargetFiles,
+  getTargetRules,
   checkFilePathsMatch,
   correctNumberOfFiles,
 } from './utils-for-pr-checking';
@@ -75,7 +75,7 @@ export async function checkPRAgainstConfig(
 
     // This function checks to see if the PR is a 'special' PR,
     // i.e., if its authorship qualifies it for further checks
-    const fileAndFileRules = getTargetFiles(
+    const fileAndFileRules = await getTargetRules(
       changedFiles,
       rulesToValidateAgainst.author,
       title

@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {logger} from 'gcf-utils';
-import {
-  getVersions,
-  runVersioningValidation,
-  isOneDependencyChanged,
-  doesDependencyChangeMatchPRTitle,
-} from '../utils-for-pr-checking';
-import {LanguageRule, File, FileSpecificRule, Versions} from '../interfaces';
+import {getVersions, dependencyProcess} from '../utils-for-pr-checking';
+import {LanguageRule, File, FileSpecificRule} from '../interfaces';
 
 export const PERMITTED_FILES = [
   {
@@ -35,23 +29,26 @@ export const PERMITTED_FILES = [
   },
 ];
 
-export class Rules implements LanguageRule {
+export class PythonDependency implements LanguageRule {
   changedFile: File;
   author: string;
   fileRule: FileSpecificRule;
   title: string;
 
-  permittedFilesAndAuthors = PERMITTED_FILES;
-
-  constructor(
-    changedFile: File,
-    author: string,
-    languageRule: FileSpecificRule,
-    title: string
-  ) {
+  constructor(changedFile: File, author: string, title: string) {
     this.changedFile = changedFile;
     this.author = author;
-    this.fileRule = languageRule;
+    this.fileRule = {
+      prAuthor: 'renovate-bot',
+      process: 'dependency',
+      targetFile: /^samples\/snippets\/requirements.txt$/,
+      // This would match: fix(deps): update dependency @octokit to v1
+      title: /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
+      // This would match: -  google-cloud-storage==1.39.0
+      oldVersion: /-[\s]?(@?[^=]*)==([0-9])*\.([0-9]*\.[0-9]*)/,
+      // This would match: +  google-cloud-storage==1.40.0
+      newVersion: /\+[\s]?(@?[^=]*)==([0-9])*\.([0-9]*\.[0-9]*)/,
+    };
     this.title = title;
   }
 
@@ -63,32 +60,15 @@ export class Rules implements LanguageRule {
     );
     let passesAdditionalChecks = false;
     if (versions) {
-      if (this.fileRule.process === 'dependency') {
-        passesAdditionalChecks = await this.dependencyProcess(versions);
-      }
+      passesAdditionalChecks = await dependencyProcess(
+        versions,
+        this.fileRule,
+        this.title,
+        this.changedFile,
+        this.author
+      );
     }
 
     return passesAdditionalChecks;
-  }
-
-  public async dependencyProcess(versions: Versions) {
-    const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
-      versions,
-      // We can assert title will exist, since the process is type 'dependency'
-      this.fileRule.title!,
-      this.title
-    );
-    const isVersionValid = runVersioningValidation(versions);
-    const oneDependencyChanged = isOneDependencyChanged(this.changedFile);
-    logger.info(
-      `Versions upgraded correctly for ${this.changedFile.sha}/${this.changedFile.filename}/${this.author}? ${isVersionValid}`
-    );
-    logger.info(
-      `One dependency changed for ${this.changedFile.sha}/${this.changedFile.filename}/${this.author}? ${oneDependencyChanged}`
-    );
-    logger.info(
-      `Does dependency match title for ${this.changedFile.sha}/${this.changedFile.filename}/${this.author}? ${doesDependencyMatch}`
-    );
-    return doesDependencyMatch && isVersionValid && oneDependencyChanged;
   }
 }

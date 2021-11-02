@@ -17,9 +17,15 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import {PullRequestEvent} from '@octokit/webhooks-types/schema';
-import * as node from './language-rules/node';
-import * as python from './language-rules/python';
-import * as java from './language-rules/java';
+import {
+  NodeDependency1,
+  NodeDependency2,
+  NodeRelease,
+} from './language-rules/node';
+import {PythonDependency} from './language-rules/python';
+import {JavaDependency} from './language-rules/java';
+import {FileSpecificRule, LanguageRule} from './interfaces';
+import {logger} from 'gcf-utils';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -34,33 +40,31 @@ dayjs.extend(timezone);
  * @param author the author of the PR
  * @returns an array of objects containing the specific files to be scrutinized.
  */
-export function getTargetFiles(
+export async function getTargetRules(
   changedFiles: File[],
   author: string,
   title: string
 ) {
-  const languages = [node, java, python];
-  const languageChecks = [];
+  const languageRules = [
+    NodeDependency1,
+    NodeDependency2,
+    NodeRelease,
+    JavaDependency,
+    PythonDependency,
+  ];
+  const languageChecks: LanguageRule[] = [];
 
   for (const changedFile of changedFiles) {
-    for (const language of languages) {
-      const fileMatch = language.PERMITTED_FILES.find(
-        (x: {prAuthor: string; targetFile: RegExp}) =>
-          x.prAuthor === author && x.targetFile.test(changedFile.filename)
-      );
-
-      if (fileMatch) {
-        const languageRule = new language.Rules(
-          changedFile,
-          author,
-          fileMatch,
-          title
-        );
-        languageChecks.push(languageRule);
+    for (const Rule of languageRules) {
+      const instantiatedRule = await new Rule(changedFile, author, title);
+      if (
+        instantiatedRule.fileRule.prAuthor === author &&
+        instantiatedRule.fileRule.targetFile.test(changedFile.filename)
+      ) {
+        languageChecks.push(instantiatedRule);
       }
     }
   }
-
   return languageChecks;
 }
 
@@ -370,4 +374,51 @@ export function correctNumberOfFiles(
   }
 
   return true;
+}
+
+export async function dependencyProcess(
+  versions: Versions,
+  fileRule: FileSpecificRule,
+  title: string,
+  changedFile: File,
+  author: string
+): Promise<boolean> {
+  const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
+    versions,
+    // We can assert title will exist, since the process is type 'dependency'
+    fileRule.title!,
+    title
+  );
+  const isVersionValid = runVersioningValidation(versions);
+  const oneDependencyChanged = isOneDependencyChanged(changedFile);
+  logger.info(
+    `Versions upgraded correctly for ${changedFile.sha}/${changedFile.filename}/${author}? ${isVersionValid}`
+  );
+  logger.info(
+    `One dependency changed for ${changedFile.sha}/${changedFile.filename}/${author}? ${oneDependencyChanged}`
+  );
+  logger.info(
+    `Does dependency match title for ${changedFile.sha}/${changedFile.filename}/${author}? ${doesDependencyMatch}`
+  );
+  return doesDependencyMatch && isVersionValid && oneDependencyChanged;
+}
+
+export async function releaseProcess(
+  versions: Versions,
+  changedFile: File,
+  author: string
+): Promise<boolean> {
+  const versionsCorrect = runVersioningValidation(versions);
+  const oneDependencyChanged = isOneDependencyChanged(changedFile);
+  const mergedOnWeekday = mergesOnWeekday();
+  logger.info(
+    `Versions upgraded correctly for ${changedFile.sha}/${changedFile.filename}/${author}? ${versionsCorrect}`
+  );
+  logger.info(
+    `One dependency changed for ${changedFile.sha}/${changedFile.filename}/${author}? ${versionsCorrect}? ${oneDependencyChanged}`
+  );
+  logger.info(
+    `Merges on the correct time for ${changedFile.sha}/${changedFile.filename}/${author}? ${versionsCorrect}? ${mergedOnWeekday}`
+  );
+  return versionsCorrect && oneDependencyChanged && mergedOnWeekday;
 }

@@ -19,11 +19,11 @@
  */
 export interface FileSpecificRule {
   prAuthor: string;
-  process: string;
+  process?: string;
   title?: RegExp;
   targetFile: RegExp;
-  oldVersion?: RegExp;
-  newVersion?: RegExp;
+  oldVersion: RegExp;
+  newVersion: RegExp;
 }
 
 /**
@@ -48,13 +48,10 @@ export interface Versions {
  */
 export interface LanguageRule {
   checkPR(): Promise<boolean>;
-  releaseProcess?(versions: Versions): Promise<boolean>;
-  dependencyProcess?(versions: Versions): Promise<boolean>;
   changedFile: File;
   author: string;
   fileRule: FileSpecificRule;
   title: string;
-  permittedFilesAndAuthors: FileSpecificRule[];
 }
 
 /**

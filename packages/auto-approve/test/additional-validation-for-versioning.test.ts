@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {
-  getTargetFiles,
+  getTargetRules,
   getVersions,
   getJavaVersions,
   isMajorVersionChanging,
@@ -23,8 +23,12 @@ import {
   doesDependencyChangeMatchPRTitleJava,
   mergesOnWeekday,
 } from '../src/utils-for-pr-checking';
-import * as node from '../src/language-rules/node';
-import * as java from '../src/language-rules/java';
+import {
+  NodeDependency1,
+  NodeDependency2,
+  NodeRelease,
+} from '../src/language-rules/node';
+import {JavaDependency} from '../src/language-rules/java';
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import sinon from 'sinon';
@@ -43,19 +47,14 @@ describe('run additional versioning checks', () => {
         {filename: 'filename2', sha: '5678'},
       ];
 
-      const fileAndFileRule = getTargetFiles(
+      const fileAndFileRule = await getTargetRules(
         prFiles,
         'release-please[bot]',
         'title'
       );
 
       assert.deepStrictEqual(fileAndFileRule, [
-        new node.Rules(
-          prFiles[0],
-          'release-please[bot]',
-          node.PERMITTED_FILES[0],
-          'title'
-        ),
+        new NodeRelease(prFiles[0], 'release-please[bot]', 'title'),
       ]);
     });
 
@@ -71,19 +70,14 @@ describe('run additional versioning checks', () => {
         },
       ];
 
-      const fileAndFileRule = getTargetFiles(
+      const fileAndFileRule = await getTargetRules(
         prFiles,
         'release-please[bot]',
         'title'
       );
 
       assert.deepStrictEqual(fileAndFileRule, [
-        new node.Rules(
-          prFiles[1],
-          'release-please[bot]',
-          node.PERMITTED_FILES[0],
-          'title'
-        ),
+        new NodeRelease(prFiles[1], 'release-please[bot]', 'title'),
       ]);
     });
 
@@ -99,7 +93,7 @@ describe('run additional versioning checks', () => {
         {filename: 'filename2', sha: '5678'},
       ];
 
-      const fileAndFileRule = getTargetFiles(
+      const fileAndFileRule = await getTargetRules(
         prFiles,
         'release-please[bot]',
         'title'
@@ -120,7 +114,7 @@ describe('run additional versioning checks', () => {
         {filename: 'filename2', sha: '5678'},
       ];
 
-      const fileAndFileRule = getTargetFiles(
+      const fileAndFileRule = await getTargetRules(
         prFiles,
         'not-release-please-bot',
         'title'
@@ -140,15 +134,14 @@ describe('run additional versioning checks', () => {
         },
       ];
 
-      const fileAndFileRule = getTargetFiles(prFiles, 'renovate-bot', 'title');
+      const fileAndFileRule = await getTargetRules(
+        prFiles,
+        'renovate-bot',
+        'title'
+      );
 
       assert.deepStrictEqual(fileAndFileRule, [
-        new java.Rules(
-          prFiles[0],
-          'renovate-bot',
-          java.PERMITTED_FILES[0],
-          'title'
-        ),
+        new JavaDependency(prFiles[0], 'renovate-bot', 'title'),
       ]);
     });
   });
@@ -184,8 +177,8 @@ describe('run additional versioning checks', () => {
       };
       const versions = getVersions(
         PRFile,
-        node.PERMITTED_FILES[0].oldVersion,
-        node.PERMITTED_FILES[0].newVersion
+        new NodeDependency1(PRFile, 'author', 'title').fileRule.oldVersion,
+        new NodeDependency1(PRFile, 'author', 'title').fileRule.newVersion
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
@@ -221,8 +214,8 @@ describe('run additional versioning checks', () => {
       };
       const versions = getVersions(
         PRFile,
-        node.PERMITTED_FILES[0].oldVersion,
-        node.PERMITTED_FILES[0].newVersion
+        new NodeDependency1(PRFile, 'author', 'title').fileRule.oldVersion,
+        new NodeDependency1(PRFile, 'author', 'title').fileRule.newVersion
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
@@ -251,18 +244,37 @@ describe('run additional versioning checks', () => {
       assert.throws(() => {
         getVersions(
           PRFile,
-          node.PERMITTED_FILES[0].oldVersion,
-          node.PERMITTED_FILES[0].newVersion
+          new NodeDependency1(PRFile, 'author', 'title').fileRule.oldVersion,
+          new NodeDependency1(PRFile, 'author', 'title').fileRule.newVersion
         );
       }, /Could not find versions in package.json\/c9fadc5c8972d1c034a050eb6b1a6b79fcd67785/);
     });
 
     it('should return undefined if the target file does not exist', () => {
+      const PRFile = {
+        sha: 'c9fadc5c8972d1c034a050eb6b1a6b79fcd67785',
+        filename: 'package.json',
+        status: 'modified',
+        additions: 1,
+        deletions: 1,
+        changes: 2,
+        patch:
+          '@@ -1,7 +1,7 @@\n' +
+          ' {\n' +
+          '   "name": "@google-cloud/kms",\n' +
+          '   "description": "Google Cloud Key Management Service (KMS) API client for Node.js",\n' +
+          '-  : "2.3.0",\n' +
+          '+  : "2.3.1",\n' +
+          '   "license": "Apache-2.0",\n' +
+          '   "author": "Google LLC",\n' +
+          '   "engines": {',
+      };
+
       assert.strictEqual(
         getVersions(
           undefined,
-          node.PERMITTED_FILES[0].oldVersion,
-          node.PERMITTED_FILES[0].newVersion
+          new NodeDependency1(PRFile, 'author', 'title').fileRule.oldVersion,
+          new NodeDependency1(PRFile, 'author', 'title').fileRule.newVersion
         ),
         undefined
       );
@@ -285,7 +297,7 @@ describe('run additional versioning checks', () => {
           '     <dependency>',
       };
 
-      const fileRule = java.PERMITTED_FILES[0];
+      const fileRule = new JavaDependency(PRFile, 'author', 'title').fileRule;
 
       const getVersionsExpectation = {
         oldDependencyName: 'com.google.cloud:google-cloud-datacatalog',
@@ -331,10 +343,13 @@ describe('run additional versioning checks', () => {
         newMajorVersion: '1',
         newMinorVersion: '4.2',
       };
+
+      const fileRule = new JavaDependency(PRFile, 'author', 'title').fileRule;
+
       const versions = getJavaVersions(
         PRFile,
-        java.PERMITTED_FILES[0].oldVersion,
-        java.PERMITTED_FILES[0].newVersion
+        fileRule.oldVersion,
+        fileRule.newVersion
       );
 
       assert.deepStrictEqual(versions, getVersionsExpectation);
@@ -483,6 +498,25 @@ describe('run additional versioning checks', () => {
 
   describe('whether the dependency names match', () => {
     it('should return false if the title does not match the dependency changed', () => {
+      const PRFile = {
+        sha: 'c9fadc5c8972d1c034a050eb6b1a6b79fcd67785',
+        filename: 'package.json',
+        status: 'modified',
+        additions: 1,
+        deletions: 1,
+        changes: 3,
+        patch:
+          '@@ -1,7 +1,7 @@\n' +
+          ' {\n' +
+          '   "name": "@google-cloud/kms",\n' +
+          '   "description": "Google Cloud Key Management Service (KMS) API client for Node.js",\n' +
+          '-  "version": "2.3.0",\n' +
+          '+  "version": "2.3.1",\n' +
+          '   "license": "Apache-2.0",\n' +
+          '   "author": "Google LLC",\n' +
+          '   "engines": {',
+      };
+
       const versions = {
         oldDependencyName: 'version',
         newDependencyName: 'version',
@@ -497,7 +531,7 @@ describe('run additional versioning checks', () => {
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
         versions,
-        node.PERMITTED_FILES[1].title!,
+        new NodeDependency1(PRFile, 'author', title).fileRule.title!,
         title
       );
 
@@ -505,6 +539,25 @@ describe('run additional versioning checks', () => {
     });
 
     it('should return true if the title matches the dependency changed', () => {
+      const PRFile = {
+        sha: 'c9fadc5c8972d1c034a050eb6b1a6b79fcd67785',
+        filename: 'package.json',
+        status: 'modified',
+        additions: 1,
+        deletions: 1,
+        changes: 3,
+        patch:
+          '@@ -1,7 +1,7 @@\n' +
+          ' {\n' +
+          '   "name": "@google-cloud/kms",\n' +
+          '   "description": "Google Cloud Key Management Service (KMS) API client for Node.js",\n' +
+          '-  "version": "2.3.0",\n' +
+          '+  "version": "2.3.1",\n' +
+          '   "license": "Apache-2.0",\n' +
+          '   "author": "Google LLC",\n' +
+          '   "engines": {',
+      };
+
       const versions = {
         oldDependencyName: 'google-cloud-secret-manager',
         newDependencyName: 'google-cloud-secret-manager',
@@ -519,7 +572,7 @@ describe('run additional versioning checks', () => {
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
         versions,
-        node.PERMITTED_FILES[1].title!,
+        new NodeDependency1(PRFile, 'author', title).fileRule.title!,
         title
       );
 
@@ -527,6 +580,25 @@ describe('run additional versioning checks', () => {
     });
 
     it('should return false if title does not adhere to regex pattern', () => {
+      const PRFile = {
+        sha: 'c9fadc5c8972d1c034a050eb6b1a6b79fcd67785',
+        filename: 'package.json',
+        status: 'modified',
+        additions: 1,
+        deletions: 1,
+        changes: 3,
+        patch:
+          '@@ -1,7 +1,7 @@\n' +
+          ' {\n' +
+          '   "name": "@google-cloud/kms",\n' +
+          '   "description": "Google Cloud Key Management Service (KMS) API client for Node.js",\n' +
+          '-  "version": "2.3.0",\n' +
+          '+  "version": "2.3.1",\n' +
+          '   "license": "Apache-2.0",\n' +
+          '   "author": "Google LLC",\n' +
+          '   "engines": {',
+      };
+
       const versions = {
         oldDependencyName: 'google-cloud-secret-manager',
         newDependencyName: 'google-cloud-secret-manager',
@@ -541,7 +613,7 @@ describe('run additional versioning checks', () => {
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
         versions,
-        node.PERMITTED_FILES[1].title!,
+        new NodeDependency2(PRFile, 'author', title).fileRule.title!,
         title
       );
 
@@ -549,6 +621,25 @@ describe('run additional versioning checks', () => {
     });
 
     it('should return false if the dependency changed for Java does not include `.google.`', () => {
+      const PRFile = {
+        sha: 'c9fadc5c8972d1c034a050eb6b1a6b79fcd67785',
+        filename: 'package.json',
+        status: 'modified',
+        additions: 1,
+        deletions: 1,
+        changes: 3,
+        patch:
+          '@@ -1,7 +1,7 @@\n' +
+          ' {\n' +
+          '   "name": "@google-cloud/kms",\n' +
+          '   "description": "Google Cloud Key Management Service (KMS) API client for Node.js",\n' +
+          '-  "version": "2.3.0",\n' +
+          '+  "version": "2.3.1",\n' +
+          '   "license": "Apache-2.0",\n' +
+          '   "author": "Google LLC",\n' +
+          '   "engines": {',
+      };
+
       const versions = {
         oldDependencyName: 'google-cloud-secret-manager',
         newDependencyName: 'google-cloud-secret-manager',
@@ -563,7 +654,7 @@ describe('run additional versioning checks', () => {
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleJava(
         versions,
-        java.PERMITTED_FILES[0].title!,
+        new JavaDependency(PRFile, 'renovate-bot', 'title').fileRule.title!,
         title
       );
 
@@ -571,6 +662,25 @@ describe('run additional versioning checks', () => {
     });
 
     it('should return true if the dependency changed for Java does include `.google.`', () => {
+      const PRFile = {
+        sha: 'c9fadc5c8972d1c034a050eb6b1a6b79fcd67785',
+        filename: 'package.json',
+        status: 'modified',
+        additions: 1,
+        deletions: 1,
+        changes: 3,
+        patch:
+          '@@ -1,7 +1,7 @@\n' +
+          ' {\n' +
+          '   "name": "@google-cloud/kms",\n' +
+          '   "description": "Google Cloud Key Management Service (KMS) API client for Node.js",\n' +
+          '-  "version": "2.3.0",\n' +
+          '+  "version": "2.3.1",\n' +
+          '   "license": "Apache-2.0",\n' +
+          '   "author": "Google LLC",\n' +
+          '   "engines": {',
+      };
+
       const versions = {
         oldDependencyName: 'com.google.cloud:google-cloud-datacatalog',
         newDependencyName: 'com.google.cloud:google-cloud-datacatalog',
@@ -585,7 +695,7 @@ describe('run additional versioning checks', () => {
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleJava(
         versions,
-        java.PERMITTED_FILES[0].title!,
+        new JavaDependency(PRFile, 'renovate-bot', 'title').fileRule.title!,
         title
       );
 
