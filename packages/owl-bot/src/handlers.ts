@@ -217,8 +217,7 @@ export async function scanGithubForConfigs(
         configsStore,
         configs,
         await octokitFactory.getShortLivedOctokit(),
-        githubOrg,
-        repo.name,
+        githubRepo(githubOrg, repo.name),
         defaultBranch,
         orgInstallationId
       );

@@ -32,6 +32,7 @@ import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from './labels';
 import {OwlBotLock} from './config-files';
 import {octokitFactoryFrom} from './octokit-util';
 import {REGENERATE_CHECKBOX_TEXT} from './copy-code';
+import { githubRepo } from './github-repo';
 
 const SYNC_LABEL_ORGANIZATIONS = ['googleapis', 'GoogleCloudPlatform'];
 
@@ -209,8 +210,7 @@ export function OwlBot(
       configStore,
       configs,
       context.octokit,
-      org,
-      context.payload.repository.name,
+      githubRepo(org, context.payload.repository.name),
       context.payload.repository.default_branch ?? 'master',
       installationId
     );
