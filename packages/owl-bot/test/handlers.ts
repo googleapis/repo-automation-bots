@@ -40,8 +40,8 @@ import AdmZip from 'adm-zip';
 import tmp from 'tmp';
 import * as fs from 'fs';
 import path from 'path';
-import { newCmd } from '../src/cmd';
-import * as fc from '../src/fetch-configs'
+import {newCmd} from '../src/cmd';
+import * as fc from '../src/fetch-configs';
 
 const sandbox = sinon.createSandbox();
 
@@ -233,7 +233,7 @@ function repoFromZip(repoName: string, zip: AdmZip): GithubRepo {
     getCloneUrl: () => repoDir,
     owner: 'googleapis',
     repo: repoName,
-    toString: () => `googleapis/${repoName}`
+    toString: () => `googleapis/${repoName}`,
   };
 }
 
@@ -588,12 +588,11 @@ describe('scanGithubForConfigs', () => {
           path: '.github/.OwlBot.yaml',
           yaml: {
             docker: {
-              image:
-                'gcr.io/repo-automation-bots/nodejs-post-processor:latest',
+              image: 'gcr.io/repo-automation-bots/nodejs-post-processor:latest',
             },
-          }
-        }
-      ]
+          },
+        },
+      ],
     });
 
     await scanGithubForConfigs(

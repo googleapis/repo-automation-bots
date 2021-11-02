@@ -17,7 +17,7 @@ import {collectConfigs, CollectedConfigs} from './configs-store';
 import * as fs from 'fs';
 import path from 'path';
 import {newCmd} from './cmd';
-import { GithubRepo } from './github-repo';
+import {GithubRepo} from './github-repo';
 
 /**
  * Fetches the configuration files from a github repo.
@@ -35,7 +35,7 @@ export async function fetchConfigs(
     // commits for sure.  If not, then we'll catch it again the next time
     // scan-configs runs.
     const cloneUrl = githubRepo.getCloneUrl();
-    cmd( `git clone --depth 10 ${cloneUrl} ${githubRepo.repo}`, {cwd: tmpDir});
+    cmd(`git clone --depth 10 ${cloneUrl} ${githubRepo.repo}`, {cwd: tmpDir});
     const repoDir = path.join(tmpDir, githubRepo.repo);
     cmd(`git checkout ${ref}`, {cwd: repoDir});
     return collectConfigs(repoDir);

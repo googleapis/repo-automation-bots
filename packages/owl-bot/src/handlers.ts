@@ -24,7 +24,11 @@ import {
   createIssueIfTitleDoesntExist,
   OctokitFactory,
 } from './octokit-util';
-import {GithubRepo, githubRepo, githubRepoFromOwnerSlashName} from './github-repo';
+import {
+  GithubRepo,
+  githubRepo,
+  githubRepoFromOwnerSlashName,
+} from './github-repo';
 import {fetchConfigs} from './fetch-configs';
 
 type ListReposResponse = Endpoints['GET /orgs/{org}/repos']['response'];
