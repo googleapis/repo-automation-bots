@@ -18,6 +18,7 @@ import tmp from 'tmp';
 import {
   copyCodeAndCreatePullRequest,
   copyExists,
+  newRepoHistoryCache,
   toLocalRepo,
 } from './copy-code';
 import {getFilesModifiedBySha} from '.';
@@ -89,6 +90,7 @@ export async function scanGoogleapisGenAndCreatePullRequests(
 
   const todoStack: Todo[] = [];
   let octokit: null | OctokitType = null;
+  const repoHistoryCache = newRepoHistoryCache();
 
   // Search the commit history for commits that still need to be copied
   // to destination repos.
@@ -127,6 +129,7 @@ export async function scanGoogleapisGenAndCreatePullRequests(
           repo,
           commitHash,
           copyExistsSearchDepth,
+          repoHistoryCache,
           logger
         ))
       ) {

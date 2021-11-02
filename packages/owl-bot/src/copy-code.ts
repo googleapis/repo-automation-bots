@@ -538,6 +538,51 @@ export function copyDirs(
 }
 
 /**
+ * Caches issues and pull requests for a repository.
+ *
+ * Specifically designed for scanGoogleapisGenAndCreatePullRequests() and the worst
+ * case scenario
+ * https://github.com/googleapis/googleapis/commit/bcfd386c224fded5f5c5be7a17bc5884a2a52f59
+ * in which this cache reduces the number of github API calls from approximately 2000
+ * to approximately 20.  The github token has a quota of about 5000 requests per hour,
+ * so this cache is essential.
+ */
+export type RepoHistoryCache = Map<
+  string,
+  {data: {number: number; body?: string | null}[]}
+>;
+
+export function newRepoHistoryCache(): RepoHistoryCache {
+  return new Map();
+}
+
+/**
+ * A request to list issues or list pull requests.  Used as cache key.
+ */
+interface Request {
+  owner: string;
+  repo: string;
+  per_page: number;
+  state: 'all';
+  page: number;
+}
+
+/**
+ * Converts Request to a string cache key.
+ */
+function keyFrom(kind: 'pulls' | 'issues', request: Request): string {
+  // Can't stringify the request directly because the order of properties is not
+  // guaranteed to be consistent.
+  return JSON.stringify([
+    kind,
+    request.owner,
+    request.repo,
+    request.per_page,
+    request.page,
+  ]);
+}
+
+/**
  * Searches for copy tags in recent pull requests and commits.  Pull requests
  * created by older versions of Owl Bot do not contain a copy tag; for those
  * pull requests, we search for the commit hash from googleapis-gen.
@@ -553,6 +598,7 @@ export async function copyExists(
   destRepo: AffectedRepo,
   sourceCommitHash: string,
   searchDepth: number,
+  cache?: RepoHistoryCache,
   logger = console
 ): Promise<boolean> {
   // I observed octokit.search.issuesAndPullRequests() not finding recent, open
@@ -561,6 +607,7 @@ export async function copyExists(
   const repo = destRepo.repo.repo;
   const per_page = 100;
   const copyTag = copyTagFrom(destRepo.yamlPath, sourceCommitHash);
+  cache = cache ?? newRepoHistoryCache();
 
   // A generic function that finds matches in either pull request or issue
   // bodies.
@@ -585,13 +632,22 @@ export async function copyExists(
   };
 
   for (let page = 1, prsSeen = 0; prsSeen < searchDepth; page += 1) {
-    const pulls = await octokit.pulls.list({
+    const request: Request = {
       owner,
       repo,
       per_page,
       state: 'all',
       page,
-    });
+    };
+    const cacheKey = keyFrom('pulls', request);
+    const cachedPulls = cache.get(cacheKey);
+    let pulls;
+    if (cachedPulls) {
+      pulls = cachedPulls;
+    } else {
+      pulls = await octokit.pulls.list({...request});
+      cache.set(cacheKey, pulls);
+    }
     if (findInBodies('Pull request', pulls)) return true;
     prsSeen += pulls.data.length;
     if (pulls.data.length < per_page) {
@@ -601,14 +657,22 @@ export async function copyExists(
 
   // And enumerate recent issues too.
   for (let page = 1, issuesSeen = 0; issuesSeen < searchDepth; page += 1) {
-    const issues = await octokit.issues.listForRepo({
+    const request: Request = {
       owner,
       repo,
       per_page,
       state: 'all',
       page,
-    });
-
+    };
+    const cacheKey = keyFrom('issues', request);
+    const cachedIssues = cache.get(cacheKey);
+    let issues;
+    if (cachedIssues) {
+      issues = cachedIssues;
+    } else {
+      issues = await octokit.issues.listForRepo({...request});
+      cache.set(cacheKey, issues);
+    }
     if (findInBodies('Issue', issues)) return true;
     issuesSeen += issues.data.length;
     if (issues.data.length < per_page) {
