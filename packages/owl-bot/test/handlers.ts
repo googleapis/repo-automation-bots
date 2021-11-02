@@ -41,6 +41,7 @@ import tmp from 'tmp';
 import * as fs from 'fs';
 import path from 'path';
 import { newCmd } from '../src/cmd';
+import * as fc from '../src/fetch-configs'
 
 const sandbox = sinon.createSandbox();
 
@@ -580,10 +581,21 @@ describe('scanGithubForConfigs', () => {
 
   it('works with an installationId', async () => {
     const configsStore = new FakeConfigsStore();
-    sandbox.stub(core, 'getFileContent').resolves(`
-      docker:
-        image: gcr.io/repo-automation-bots/nodejs-post-processor:latest
-    `);
+    sandbox.stub(fc, 'fetchConfigs').resolves({
+      badConfigs: [],
+      yamls: [
+        {
+          path: '.github/.OwlBot.yaml',
+          yaml: {
+            docker: {
+              image:
+                'gcr.io/repo-automation-bots/nodejs-post-processor:latest',
+            },
+          }
+        }
+      ]
+    });
+
     await scanGithubForConfigs(
       configsStore,
       octokitFactoryWithRepos,
