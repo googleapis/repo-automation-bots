@@ -890,10 +890,12 @@ describe('owlBot', () => {
       assert.ok(callArgs[0] instanceof FirestoreConfigsStore);
       assert.strictEqual(callArgs[1], customConfig);
       assert.ok(callArgs[2] instanceof ProbotOctokit);
-      assert.strictEqual(callArgs[3], payload.organization.login);
-      assert.strictEqual(callArgs[4], payload.repository.name);
-      assert.strictEqual(callArgs[5], payload.repository.default_branch);
-      assert.strictEqual(callArgs[6], payload.installation.id);
+      assert.strictEqual(
+        callArgs[3].toString(),
+        payload.organization.login + '/' + payload.repository.name
+      );
+      assert.strictEqual(callArgs[4], payload.repository.default_branch);
+      assert.strictEqual(callArgs[5], payload.installation.id);
     });
 
     it('should log an error if `payload.installation.id` is not available', async () => {

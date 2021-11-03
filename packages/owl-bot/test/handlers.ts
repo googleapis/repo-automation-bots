@@ -225,7 +225,9 @@ function repoFromZip(repoName: string, zip: AdmZip): GithubRepo {
   const [rootDir] = fs.readdirSync(tmpDir);
   const repoDir = rootDir ? path.join(tmpDir, rootDir) : tmpDir;
   const cmd = newCmd();
-  cmd('git init', {cwd: repoDir});
+  cmd('git init -b main', {cwd: repoDir});
+  cmd('git config user.email "test@example.com"', {cwd: repoDir});
+  cmd('git config user.name "test"', {cwd: repoDir});
   cmd('git add -A', {cwd: repoDir});
   cmd('git commit --allow-empty -m "files"', {cwd: repoDir});
   cmd('git checkout -b 123', {cwd: repoDir});
