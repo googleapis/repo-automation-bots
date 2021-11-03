@@ -128,7 +128,8 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
       await scanGoogleapisGenAndCreatePullRequests(
         abcRepo,
         {} as OctokitFactory,
-        new FakeConfigsStore()
+        new FakeConfigsStore(),
+        1000
       ),
       0
     );
@@ -143,7 +144,8 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
     await scanGoogleapisGenAndCreatePullRequests(
       abcRepo,
       factory(octokit),
-      configsStore
+      configsStore,
+      1000
     );
 
     // Confirm it created one pull request.
@@ -193,7 +195,8 @@ Copy-Tag: ${copyTag}`
     await scanGoogleapisGenAndCreatePullRequests(
       abcRepo,
       factory(octokit),
-      configsStore
+      configsStore,
+      1000
     );
 
     // Confirm it created one pull request.
@@ -215,7 +218,8 @@ Copy-Tag: ${copyTag}`
     await scanGoogleapisGenAndCreatePullRequests(
       abcRepo,
       factory(octokit),
-      configsStore
+      configsStore,
+      1000
     );
 
     // Confirm it created one pull request.
@@ -233,7 +237,8 @@ Copy-Tag: ${copyTag}`
     await scanGoogleapisGenAndCreatePullRequests(
       abcRepo,
       factory(octokit),
-      configsStore
+      configsStore,
+      1000
     );
 
     // Confirm it created one pull request.
