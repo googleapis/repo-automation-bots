@@ -46,4 +46,4 @@ steps:
       - --firestore-project
       - ${_FIRESTORE_PROJECT}
 
-timeout: '7200s'
+timeout: '14400s'
