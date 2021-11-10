@@ -12,14 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# The Dockerfile for owlbot-cli
-
-# Use the official lightweight Node.js 14 image.
+# Use the official lightweight Node.js 12 image.
 # https://hub.docker.com/_/node
 FROM node:14-alpine
-
-# Bump the heap size
-ENV NODE_OPTIONS='--max-old-space-size=8192'
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
