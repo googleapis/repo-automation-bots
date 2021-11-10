@@ -17,7 +17,7 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, Context} from 'probot';
 import {logger} from 'gcf-utils';
-import {ValidPr, checkPRAgainstConfig} from './check-pr';
+import {checkPRAgainstConfig} from './check-pr';
 import {
   getChangedFiles,
   getBlobFromPRFiles,
@@ -27,11 +27,10 @@ import {
 import {checkAutoApproveConfig, checkCodeOwners} from './check-config.js';
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {Octokit} from '@octokit/rest';
+import {Configuration} from './interfaces';
 
 const APPROVER = 'yoshi-approver';
-export interface Configuration {
-  rules: ValidPr[];
-}
+
 const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
 
 export async function authenticateWithSecret(

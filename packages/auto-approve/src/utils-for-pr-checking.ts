@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {File} from './get-pr-info';
-import {ValidPr} from './check-pr';
+import {ValidPr, File} from './interfaces';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -249,14 +248,14 @@ export function isOneDependencyChanged(versionFile: File): boolean {
  * Returns true if all changes to the prFiles are permitted by the PR type.
  *
  * @param prFiles list of file paths printed by 'git log --name-only'
- * @param validTypeOfPR a valid pull request
+ * @param changedFilesRules allowed regex file patterns for filenames
  * @returns true if the file paths match the file paths allowed by the configuration, false if not
  */
 export function checkFilePathsMatch(
   prFiles: string[],
-  validTypeOfPR: ValidPr
+  changedFilesRules?: RegExp[]
 ): boolean {
-  if (!validTypeOfPR.changedFiles) {
+  if (!changedFilesRules) {
     return true;
   }
   let filesMatch = true;
@@ -264,7 +263,7 @@ export function checkFilePathsMatch(
   // Each file in a given PR should match at least one of the configuration rules
   // in auto-appprove.yml; should set filesMatch to false if at least one does not
   for (const file of prFiles) {
-    if (!validTypeOfPR.changedFiles.some(x => file.match(x))) {
+    if (!changedFilesRules.some(x => file.match(x))) {
       filesMatch = false;
     }
   }
@@ -283,4 +282,28 @@ export function mergesOnWeekday(): boolean {
     return false;
   }
   return true;
+}
+
+export function checkAuthor(
+  authorToCompare: string,
+  incomingAuthor: string
+): boolean {
+  return authorToCompare === incomingAuthor;
+}
+
+export function checkTitle(title: string, titleRegex?: RegExp): boolean {
+  if (!titleRegex) {
+    return false;
+  }
+  return titleRegex.test(title);
+}
+
+export function checkFileCount(
+  incomingFileCount: number,
+  maxFiles?: number
+): boolean {
+  if (!maxFiles) {
+    return false;
+  }
+  return incomingFileCount <= maxFiles;
 }
