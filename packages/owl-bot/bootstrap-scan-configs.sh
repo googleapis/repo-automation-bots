@@ -33,6 +33,7 @@ gcloud beta run deploy owlbot-scan-configs \
     --ingress=all \
     --max-instances=1 \
     --min-instances=0 \
+    --region us-central1 \
     --port=8080 \
     --service-account=owlbot-scan-configs@repo-automation-bots.iam.gserviceaccount.com \
     --timeout=59m \

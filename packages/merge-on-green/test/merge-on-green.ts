@@ -18,7 +18,7 @@ import {resolve} from 'path';
 import nock from 'nock';
 import sinon, {SinonStub} from 'sinon';
 import {describe, it, beforeEach, afterEach, suite} from 'mocha';
-import handler from '../src/merge-on-green';
+import {handler, DatastorePR} from '../src/merge-on-green';
 import {MERGE_ON_GREEN_LABELS} from '../src/labels';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
@@ -372,6 +372,53 @@ describe('merge-on-green wrapper logic', () => {
         });
 
         sinon.assert.notCalled(stub);
+      });
+    });
+
+    describe('PRs when scheduler is called', () => {
+      it('maybeReducePRList should return all PRs if there are less than 100 entries in Datastore', () => {
+        const pr: DatastorePR = {
+          repo: 'testRepo',
+          number: 1,
+          owner: 'testOwner',
+          branchProtection: ['Special Check'],
+          label: 'automerge',
+          author: 'testOwner',
+          reactionId: 1,
+          created: '2021-09-28T13:00:36.500Z',
+          url: 'http://example.com',
+          state: 'continue',
+        };
+        handler.getDatastore = async () => {
+          return [[pr]];
+        };
+
+        assert.deepStrictEqual(handler.maybeReducePRList([pr]), [[pr]]);
+      });
+
+      it('maybeReducePRList should return some PRs if there are less than 100 entries in Datastore', () => {
+        const prs: DatastorePR[] = [];
+        for (let i = 0; i < 100; i++) {
+          prs.push({
+            repo: 'testRepo',
+            number: 1,
+            owner: 'testOwner',
+            branchProtection: ['Special Check'],
+            label: 'automerge',
+            author: 'testOwner',
+            reactionId: 1,
+            created: 'created',
+            url: 'http://example.com',
+            state: 'continue',
+          });
+        }
+        handler.getDatastore = async () => {
+          return [prs];
+        };
+
+        const [reducedPRs] = handler.maybeReducePRList(prs);
+
+        assert.ok(reducedPRs.length === 25);
       });
     });
 

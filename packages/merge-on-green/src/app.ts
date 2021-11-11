@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import {GCFBootstrapper} from 'gcf-utils';
-import appFn from './merge-on-green';
+import {handler} from './merge-on-green';
 
 const bootstrap = new GCFBootstrapper();
-module.exports['merge_on_green'] = bootstrap.gcf(appFn, {
+module.exports['merge_on_green'] = bootstrap.gcf(handler, {
   logging: true,
 });
