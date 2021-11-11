@@ -498,7 +498,7 @@ export function copyDirs(
   for (const deadDir of deadDirs) {
     logger.info(`rmdir  ${deadDir}`);
     try {
-      fs.rmdirSync(deadDir);
+      fs.rmdirSync(deadDir, {recursive: true});
     } catch (e) {
       logger.info(e);
     }
