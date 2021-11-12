@@ -98,7 +98,7 @@ export const populateMetrics: yargs.CommandModule<{}, Args> = {
             })
           ).data;
           // Immediately after a commit, it can take a few minutes for a
-          // manifest to populate, check the last three commits to
+          // manifest to populate, check the last few commits to
           // allow for this:
           let manifest = '';
           for (let i = 0; i < 4; i++) {
