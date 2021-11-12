@@ -55,9 +55,12 @@ export async function octokitTokenFrom(argv: OctokitParams): Promise<string> {
 /**
  * Creates an authenticated instance of octokit.
  */
-export async function octokitFrom(argv: OctokitParams): Promise<OctokitType> {
+export async function octokitFrom(
+  argv: OctokitParams,
+  shouldRetry = false
+): Promise<OctokitType> {
   const token = await octokitTokenFrom(argv);
-  return await core.getAuthenticatedOctokit(token, false);
+  return await core.getAuthenticatedOctokit(token, false, shouldRetry);
 }
 
 /**

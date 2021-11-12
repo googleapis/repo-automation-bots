@@ -28,6 +28,7 @@ import {maybeCreatePullRequestForLockUpdateCommand} from './commands/maybe-creat
 import {testWebhook} from './commands/test-webhook';
 import {copyCodeIntoPullRequestCommand} from './commands/copy-code-into-pull-request';
 import {copyBazelBin} from './commands/copy-bazel-bin';
+import {populateMetrics} from './commands/populate-metrics';
 import {scanAndRetryFailedLockUpdatesCommand} from './commands/scan-and-retry-failed-lock-updates';
 import {commitPostProcessorUpdateCommand} from './commands/commit-post-processor-update';
 
@@ -48,6 +49,7 @@ yargs(process.argv.slice(2))
   .command(copyCodeIntoPullRequestCommand)
   .command(scanAndRetryFailedLockUpdatesCommand)
   .command(commitPostProcessorUpdateCommand)
+  .command(populateMetrics)
   .demandCommand(1)
   .strictCommands()
   .parse();

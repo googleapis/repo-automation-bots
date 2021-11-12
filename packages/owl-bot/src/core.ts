@@ -30,6 +30,7 @@ import {
   DEFAULT_OWL_BOT_YAML_PATH,
 } from './config-files';
 import {OctokitFactory, OctokitType} from './octokit-util';
+import {retry} from '@octokit/plugin-retry';
 import {OWL_BOT_IGNORE} from './labels';
 import {
   findCopyTag,
@@ -322,7 +323,8 @@ export function getAccessTokenURL(installation: number) {
 let cachedOctokit: OctokitType;
 export async function getAuthenticatedOctokit(
   auth: string | AuthArgs,
-  cache = true
+  cache = true,
+  shouldRetry = false
 ): Promise<OctokitType> {
   if (cache && cachedOctokit) return cachedOctokit;
   let tokenString: string;
@@ -336,8 +338,11 @@ export async function getAuthenticatedOctokit(
   } else {
     tokenString = auth;
   }
-  const octokit = new Octokit({
+  const OctokitConstructor = shouldRetry ? Octokit.plugin(retry) : Octokit;
+  const octokit = new OctokitConstructor({
     auth: tokenString,
+    doNotRetry: [409],
+    request: {retries: 3},
   });
   if (cache) cachedOctokit = octokit;
   return octokit;
