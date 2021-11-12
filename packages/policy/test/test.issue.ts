@@ -15,6 +15,7 @@
 import nock from 'nock';
 import {describe, it} from 'mocha';
 import * as sinon from 'sinon';
+import assert from 'assert';
 import * as gh from '../src/issue';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
@@ -77,6 +78,7 @@ describe('issue', () => {
         {
           title: '[Policy Bot] hello',
           number: issueNumber,
+          labels: [],
         },
       ])
       .patch(`/repos/${org}/${repo}/issues/${issueNumber}`)
@@ -92,6 +94,28 @@ describe('issue', () => {
       .get(`/repos/${org}/${repo}/issues?state=open`)
       .reply(200, [])
       .post(`/repos/${org}/${repo}/issues`)
+      .reply(200);
+    await gh.openIssue(octokit, invalidResult);
+    scope.done();
+  });
+
+  it('it should preserve original labels on an issue', async () => {
+    const issueNumber = 42;
+    const invalidResult = Object.assign({}, policyResult);
+    invalidResult.hasContributing = false;
+    const scope = nock(githubHost)
+      .get(`/repos/${org}/${repo}/issues?state=open`)
+      .reply(200, [
+        {
+          title: '[Policy Bot] hello',
+          number: issueNumber,
+          labels: ['boop'],
+        },
+      ])
+      .patch(`/repos/${org}/${repo}/issues/${issueNumber}`, body => {
+        assert.deepStrictEqual(body.labels, ['boop', 'policybot']);
+        return true;
+      })
       .reply(200);
     await gh.openIssue(octokit, invalidResult);
     scope.done();
