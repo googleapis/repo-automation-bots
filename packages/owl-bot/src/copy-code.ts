@@ -495,6 +495,9 @@ export function copyDirs(
     }
   }
   // Then remove directories.  Some removes may fail because inner files were excluded.
+  // Sort the directories longest name first, so that child directories are
+  // removed before parent directories.
+  deadDirs.sort((a, b) => b.length - a.length);
   for (const deadDir of deadDirs) {
     logger.info(`rmdir  ${deadDir}`);
     try {

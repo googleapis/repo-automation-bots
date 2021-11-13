@@ -72,13 +72,19 @@ export async function openIssue(octokit: Octokit, result: PolicyResult) {
     result.hasBranchProtection;
 
   if (existingIssue) {
+    const labels = existingIssue.labels.map(x =>
+      typeof x === 'string' ? x : x.name!
+    );
+    if (!labels.includes('policybot')) {
+      labels.push('policybot');
+    }
     await octokit.issues.update({
       issue_number: existingIssue.number,
       owner: result.org,
       repo: result.repo,
       body: message,
       state: isValid ? 'closed' : 'open',
-      labels: ['policybot', 'type: process'],
+      labels,
     });
   } else {
     if (!isValid) {
@@ -87,6 +93,7 @@ export async function openIssue(octokit: Octokit, result: PolicyResult) {
         owner: result.org,
         repo: result.repo,
         body: message,
+        labels: ['policybot', 'type: process'],
       });
     }
   }
