@@ -42,7 +42,25 @@ steps:
       - 'false'
     env:
       - 'HOME=/workspace'
-  # Populate credentials for cloning:
+  # Clone user/branch that created PR:
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - clone
+      - -b
+      - ${_PR_BRANCH}
+      - --depth
+      - '2'
+      - https://github.com/${_PR_OWNER}/${_REPOSITORY}.git
+    env:
+      - 'HOME=/workspace'
+
+  # Run container listed in OwlBot.yaml:
+  - name: ${_CONTAINER}
+    dir: '${_REPOSITORY}'
+    env:
+      - 'DEFAULT_BRANCH=$_DEFAULT_BRANCH'
+
+  # Install credentials *after* running the container.
   - name: 'bash'
     args:
       - '-eEuo'
@@ -62,20 +80,7 @@ steps:
     env:
       - 'GITHUB_TOKEN=$_GITHUB_TOKEN'
       - 'HOME=/workspace'
-  # Clone user/branch that created PR:
-  - name: 'gcr.io/cloud-builders/git'
-    args:
-      - clone
-      - -b
-      - ${_PR_BRANCH}
-      - https://github.com/${_PR_OWNER}/${_REPOSITORY}.git
-    env:
-      - 'HOME=/workspace'
-  # Run container listed in OwlBot.yaml:
-  - name: ${_CONTAINER}
-    dir: '${_REPOSITORY}'
-    env:
-      - 'DEFAULT_BRANCH=$_DEFAULT_BRANCH'
+  
   # Commit any changes back to the pull request.
   - name: 'gcr.io/cloud-devrel-public-resources/owlbot-cli'
     args:
@@ -84,5 +89,6 @@ steps:
     env:
       - 'HOME=/workspace'
 
-# allow 20 minutes for the post-processor image to run
-timeout: '1200s'
+# allow 40 minutes for the post-processor image to run
+timeout: '2400s'
+logsBucket: 'gs://repo-automation-bots-post-processor-logs'

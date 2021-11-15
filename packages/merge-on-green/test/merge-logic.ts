@@ -18,7 +18,7 @@ import nock from 'nock';
 import sinon, {SinonStub} from 'sinon';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import assert from 'assert';
-import handler from '../src/merge-on-green';
+import {handler} from '../src/merge-on-green';
 import {
   CheckStatus,
   Reviews,
