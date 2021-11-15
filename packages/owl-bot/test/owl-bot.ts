@@ -93,6 +93,30 @@ describe('owlBot', () => {
       );
     });
   });
+  describe('Cron for syncing labels ', () => {
+    it('does not call syncLabels for external organizations', async () => {
+      const syncLabelsStub = sandbox.stub(labelUtilsModule, 'syncLabels');
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          repository: {
+            name: 'testRepo',
+            owner: {
+              login: 'testOwner',
+            },
+          },
+          organization: {
+            login: 'testOrg',
+          },
+          syncLabels: true,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+      sinon.assert.notCalled(syncLabelsStub);
+    });
+  });
   describe('post processing pull request', () => {
     it('returns early and logs if pull request opened from fork', async () => {
       const payload = {
@@ -866,10 +890,12 @@ describe('owlBot', () => {
       assert.ok(callArgs[0] instanceof FirestoreConfigsStore);
       assert.strictEqual(callArgs[1], customConfig);
       assert.ok(callArgs[2] instanceof ProbotOctokit);
-      assert.strictEqual(callArgs[3], payload.organization.login);
-      assert.strictEqual(callArgs[4], payload.repository.name);
-      assert.strictEqual(callArgs[5], payload.repository.default_branch);
-      assert.strictEqual(callArgs[6], payload.installation.id);
+      assert.strictEqual(
+        callArgs[3].toString(),
+        payload.organization.login + '/' + payload.repository.name
+      );
+      assert.strictEqual(callArgs[4], payload.repository.default_branch);
+      assert.strictEqual(callArgs[5], payload.installation.id);
     });
 
     it('should log an error if `payload.installation.id` is not available', async () => {

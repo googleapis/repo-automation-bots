@@ -32,6 +32,9 @@ import {OWLBOT_RUN_LABEL, OWL_BOT_IGNORE, OWL_BOT_LABELS} from './labels';
 import {OwlBotLock} from './config-files';
 import {octokitFactoryFrom} from './octokit-util';
 import {REGENERATE_CHECKBOX_TEXT} from './copy-code';
+import {githubRepo} from './github-repo';
+
+const SYNC_LABEL_ORGANIZATIONS = ['googleapis', 'GoogleCloudPlatform'];
 
 interface PubSubContext {
   github: Octokit;
@@ -207,8 +210,7 @@ export function OwlBot(
       configStore,
       configs,
       context.octokit,
-      org,
-      context.payload.repository.name,
+      githubRepo(org, context.payload.repository.name),
       context.payload.repository.default_branch ?? 'master',
       installationId
     );
@@ -225,7 +227,13 @@ export function OwlBot(
       // syncing labels
       const owner = context.payload.organization.login;
       const repo = context.payload.repository.name;
-      await syncLabels(context.octokit, owner, repo, OWL_BOT_LABELS);
+      if (SYNC_LABEL_ORGANIZATIONS.includes(owner)) {
+        await syncLabels(context.octokit, owner, repo, OWL_BOT_LABELS);
+      } else {
+        logger.info(
+          `Ignoring ${owner}/${repo} because it's in the wrong organization.`
+        );
+      }
       return;
     }
   });

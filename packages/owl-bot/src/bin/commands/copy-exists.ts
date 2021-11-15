@@ -26,6 +26,7 @@ export interface Args {
   'source-repo-commit-hash': string;
   'dest-repo': string;
   'dest-owlbot-yaml': string;
+  'search-depth': number;
 }
 
 export const copyExists: yargs.CommandModule<{}, Args> = {
@@ -66,6 +67,13 @@ export const copyExists: yargs.CommandModule<{}, Args> = {
         type: 'string',
         default: '.github/.OwlBot.yaml',
         demand: false,
+      })
+      .option('search-depth', {
+        describe:
+          'When searching pull request and issue histories to see if a pull' +
+          ' request for the commit was already created, search this deep',
+        type: 'number',
+        default: 1000,
       });
   },
   async handler(argv) {
@@ -76,7 +84,8 @@ export const copyExists: yargs.CommandModule<{}, Args> = {
         repo: githubRepoFromOwnerSlashName(argv['dest-repo']),
         yamlPath: argv['dest-owlbot-yaml'],
       },
-      argv['source-repo-commit-hash']
+      argv['source-repo-commit-hash'],
+      argv['search-depth']
     );
   },
 };

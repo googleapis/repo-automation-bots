@@ -21,6 +21,7 @@ import {
   copyTagFrom,
   findCopyTag,
   findSourceHash,
+  newRepoHistoryCache,
   sourceLinkFrom,
   stat,
   unpackCopyTag,
@@ -60,7 +61,50 @@ Copy-Tag: ${copyTag}
     };
     assert.strictEqual(
       true,
-      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
+      await copyExists(
+        octokit as unknown as OctokitType,
+        destRepo,
+        'abc123',
+        1000
+      )
+    );
+  });
+
+  it('finds pull request in cache with copy tag', async () => {
+    const octokit = await fakeOctokit();
+    const copyTag = copyTagFrom('some-api/.OwlBot.yaml', 'abc123');
+    await octokit.pulls.create({
+      body: `blah blah blah
+Source-Link: https://github.com/googleapis/googleapis/abc123
+Copy-Tag: ${copyTag}
+`,
+    });
+    const destRepo: AffectedRepo = {
+      yamlPath: 'some-api/.OwlBot.yaml',
+      repo: githubRepoFromOwnerSlashName('googleapis/spell-checker'),
+    };
+    const cache = newRepoHistoryCache();
+    assert.strictEqual(
+      true,
+      await copyExists(
+        octokit as unknown as OctokitType,
+        destRepo,
+        'abc123',
+        1000,
+        cache
+      )
+    );
+
+    // Confirm its in the cache.
+    assert.strictEqual(
+      true,
+      await copyExists(
+        (await fakeOctokit()) as unknown as OctokitType,
+        destRepo,
+        'abc123',
+        1000,
+        cache
+      )
     );
   });
 
@@ -79,7 +123,12 @@ Copy-Tag: ${copyTag}
     };
     assert.strictEqual(
       true,
-      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
+      await copyExists(
+        octokit as unknown as OctokitType,
+        destRepo,
+        'abc123',
+        1000
+      )
     );
   });
 
@@ -104,7 +153,12 @@ Copy-Tag: ${copyTag}
     };
     assert.strictEqual(
       false,
-      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
+      await copyExists(
+        octokit as unknown as OctokitType,
+        destRepo,
+        'abc123',
+        1000
+      )
     );
   });
 
@@ -129,7 +183,12 @@ Copy-Tag: ${copyTag}
     };
     assert.strictEqual(
       false,
-      await copyExists(octokit as unknown as OctokitType, destRepo, 'def456')
+      await copyExists(
+        octokit as unknown as OctokitType,
+        destRepo,
+        'def456',
+        1000
+      )
     );
   });
 
@@ -146,7 +205,12 @@ Source-Link: https://github.com/googleapis/googleapis/abc123
     };
     assert.strictEqual(
       true,
-      await copyExists(octokit as unknown as OctokitType, destRepo, 'abc123')
+      await copyExists(
+        octokit as unknown as OctokitType,
+        destRepo,
+        'abc123',
+        1000
+      )
     );
   });
 });
@@ -348,6 +412,16 @@ describe('copyDirs', () => {
       ],
     });
     assert.deepStrictEqual(collectDirTree(destDir), ['x.txt:c']);
+  });
+
+  it('removes nested directories', () => {
+    const tempo = tmp.dirSync();
+    const destDir = makeSourceTree(tempo.name);
+    const sourceDir = path.join(tempo.name, 'dest');
+    copyDirs(sourceDir, destDir, {
+      'deep-remove-regex': ['/.*'],
+    });
+    assert.deepStrictEqual(collectDirTree(destDir), []);
   });
 });
 
