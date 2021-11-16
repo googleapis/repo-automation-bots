@@ -118,7 +118,7 @@ describe('owlBot', () => {
     });
   });
   describe('post processing pull request', () => {
-    it('returns early and logs if pull request opened from fork', async () => {
+    it('returns early and logs if pull request on a repository in an organization which is not allowed', async () => {
       const payload = {
         action: 'opened',
         installation: {
@@ -128,6 +128,38 @@ describe('owlBot', () => {
           head: {
             repo: {
               full_name: 'bcoe/owl-bot-testing',
+            },
+          },
+          base: {
+            ref: 'main',
+            repo: {
+              full_name: 'bcoe/owl-bot-testing',
+            },
+          },
+        },
+      };
+      const loggerStub = sandbox.stub(logger, 'info');
+      await probot.receive({
+        name: 'pull_request',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: payload as any,
+        id: 'abc123',
+      });
+      sandbox.assert.calledWith(
+        loggerStub,
+        sandbox.match(/.*is not allowed to run the post processor*/)
+      );
+    });
+    it('returns early and logs if pull request opened from fork', async () => {
+      const payload = {
+        action: 'opened',
+        installation: {
+          id: 12345,
+        },
+        pull_request: {
+          head: {
+            repo: {
+              full_name: 'googleapis/owl-bot-testing',
             },
           },
           base: {
@@ -161,14 +193,14 @@ describe('owlBot', () => {
           number: 33,
           head: {
             repo: {
-              full_name: 'bcoe/owl-bot-testing',
+              full_name: 'googleapis/owl-bot-testing',
             },
             ref: 'abc123',
           },
           base: {
             ref: 'main',
             repo: {
-              full_name: 'bcoe/owl-bot-testing',
+              full_name: 'googleapis/owl-bot-testing',
             },
           },
         },
@@ -177,16 +209,16 @@ describe('owlBot', () => {
       image: node
       digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
       const githubMock = nock('https://api.github.com')
-        .get('/repos/bcoe/owl-bot-testing/pulls/33')
+        .get('/repos/googleapis/owl-bot-testing/pulls/33')
         .reply(200, payload.pull_request)
         .get(
-          '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+          '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
         )
         .reply(200, {
           content: Buffer.from(config).toString('base64'),
           encoding: 'base64',
         })
-        .get('/repos/bcoe/owl-bot-testing/pulls/33')
+        .get('/repos/googleapis/owl-bot-testing/pulls/33')
         .reply(200, payload.pull_request);
       const triggerBuildStub = sandbox
         .stub(core, 'triggerPostProcessBuild')
@@ -221,14 +253,14 @@ describe('owlBot', () => {
           number: 33,
           head: {
             repo: {
-              full_name: 'bcoe/owl-bot-testing',
+              full_name: 'googleapis/owl-bot-testing',
             },
             ref: 'abc123',
           },
           base: {
             ref: 'main',
             repo: {
-              full_name: 'bcoe/owl-bot-testing',
+              full_name: 'googleapis/owl-bot-testing',
             },
           },
         },
@@ -237,10 +269,10 @@ describe('owlBot', () => {
       image: node
       digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
       const githubMock = nock('https://api.github.com')
-        .get('/repos/bcoe/owl-bot-testing/pulls/33')
+        .get('/repos/googleapis/owl-bot-testing/pulls/33')
         .reply(200, payload.pull_request)
         .get(
-          '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+          '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
         )
         .reply(200, {
           content: Buffer.from(config).toString('base64'),
@@ -277,14 +309,14 @@ describe('owlBot', () => {
         number: 33,
         head: {
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
         labels: [
@@ -298,22 +330,22 @@ describe('owlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, {
         content: Buffer.from(config).toString('base64'),
         encoding: 'base64',
       })
-      .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33/files')
       // No files changed:
       .reply(200, [])
       // Update to closed state:
-      .patch('/repos/bcoe/owl-bot-testing/pulls/33')
+      .patch('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
@@ -348,14 +380,14 @@ describe('owlBot', () => {
         number: 33,
         head: {
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
         labels: [
@@ -372,12 +404,12 @@ describe('owlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, {
         content: Buffer.from(config).toString('base64'),
@@ -416,14 +448,14 @@ describe('owlBot', () => {
         number: 33,
         head: {
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
         labels: [],
@@ -433,12 +465,12 @@ describe('owlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, {
         content: Buffer.from(config).toString('base64'),
@@ -477,14 +509,14 @@ describe('owlBot', () => {
         number: 33,
         head: {
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
         labels: [
@@ -501,10 +533,10 @@ describe('owlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, {
         content: Buffer.from(config).toString('base64'),
@@ -543,14 +575,14 @@ describe('owlBot', () => {
         labels: [{name: core.OWL_BOT_LOCK_UPDATE}],
         head: {
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
@@ -559,22 +591,22 @@ describe('owlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, {
         content: Buffer.from(config).toString('base64'),
         encoding: 'base64',
       })
-      .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
       .reply(200, [{filename: OWL_BOT_LOCK_PATH}])
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       // Update to closed state:
-      .patch('/repos/bcoe/owl-bot-testing/pulls/33', {state: 'closed'})
+      .patch('/repos/googleapis/owl-bot-testing/pulls/33', {state: 'closed'})
       .reply(200);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
@@ -611,14 +643,14 @@ describe('owlBot', () => {
         labels: [{name: core.OWL_BOT_LOCK_UPDATE}],
         head: {
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
@@ -627,22 +659,22 @@ describe('owlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, {
         content: Buffer.from(config).toString('base64'),
         encoding: 'base64',
       })
-      .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
       .reply(200, [{filename: OWL_BOT_LOCK_PATH}, {filename: 'README.md'}])
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       // Promote to "ready for review."
-      .patch('/repos/bcoe/owl-bot-testing/pulls/33', {draft: false})
+      .patch('/repos/googleapis/owl-bot-testing/pulls/33', {draft: false})
       .reply(200);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
@@ -679,14 +711,14 @@ describe('owlBot', () => {
         labels: [{name: 'owl-bot-copy'}],
         head: {
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
@@ -695,19 +727,19 @@ describe('owlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, {
         content: Buffer.from(config).toString('base64'),
         encoding: 'base64',
       })
-      .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
       .reply(200, [{filename: OWL_BOT_LOCK_PATH}])
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
@@ -744,14 +776,14 @@ describe('owlBot', () => {
         labels: [{name: core.OWL_BOT_LOCK_UPDATE}],
         head: {
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
@@ -760,19 +792,19 @@ describe('owlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, {
         content: Buffer.from(config).toString('base64'),
         encoding: 'base64',
       })
-      .get('/repos/bcoe/owl-bot-testing/pulls/33/files')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33/files')
       // Only the lock file changed.
       .reply(200, [{filename: OWL_BOT_LOCK_PATH}])
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
@@ -946,7 +978,7 @@ describe('owlBot', () => {
         id: 12345,
       },
       sender: {
-        login: 'bcoe',
+        login: 'rennie',
       },
       pull_request: {
         number: 33,
@@ -957,14 +989,14 @@ describe('owlBot', () => {
         ],
         head: {
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'rennie/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'blerg',
           repo: {
-            full_name: 'rennie/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
@@ -976,16 +1008,16 @@ describe('owlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/rennie/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/rennie/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, {
         content: Buffer.from(config).toString('base64'),
         encoding: 'base64',
       })
-      .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .delete('/repos/googleapis/owl-bot-testing/issues/33/labels/owlbot%3Arun')
       .reply(200);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
@@ -1022,7 +1054,7 @@ describe('owlBot', () => {
         id: 12345,
       },
       sender: {
-        login: 'bcoe',
+        login: 'rennie',
       },
       pull_request: {
         number: 33,
@@ -1033,14 +1065,14 @@ describe('owlBot', () => {
         ],
         head: {
           repo: {
-            full_name: 'rennie/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'rennie/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
@@ -1052,16 +1084,16 @@ describe('owlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/rennie/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/rennie/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, {
         content: Buffer.from(config).toString('base64'),
         encoding: 'base64',
       })
-      .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .delete('/repos/googleapis/owl-bot-testing/issues/33/labels/owlbot%3Arun')
       .reply(200);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
@@ -1098,7 +1130,7 @@ describe('owlBot', () => {
         id: 12345,
       },
       sender: {
-        login: 'bcoe',
+        login: 'rennie',
       },
       pull_request: {
         number: 33,
@@ -1109,14 +1141,14 @@ describe('owlBot', () => {
         ],
         head: {
           repo: {
-            full_name: 'rennie/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'rennie/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
@@ -1128,16 +1160,16 @@ describe('owlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/rennie/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/rennie/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, {
         content: Buffer.from(config).toString('base64'),
         encoding: 'base64',
       })
-      .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .delete('/repos/googleapis/owl-bot-testing/issues/33/labels/owlbot%3Arun')
       .reply(404);
     const triggerBuildStub = sandbox
       .stub(core, 'triggerPostProcessBuild')
@@ -1175,7 +1207,7 @@ describe('owlBot', () => {
         id: 12345,
       },
       sender: {
-        login: 'bcoe',
+        login: 'rennie',
       },
       pull_request: {
         number: 33,
@@ -1186,14 +1218,14 @@ describe('owlBot', () => {
         ],
         head: {
           repo: {
-            full_name: 'rennie/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'rennie/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
@@ -1207,14 +1239,14 @@ describe('owlBot', () => {
 
     let deleteLabelCalledFirst: boolean | void = undefined;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/rennie/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, () => {
         deleteLabelCalledFirst ??= false;
 
         return payload.pull_request;
       })
       .get(
-        '/repos/rennie/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, () => {
         deleteLabelCalledFirst ??= false;
@@ -1224,7 +1256,7 @@ describe('owlBot', () => {
           encoding: 'base64',
         };
       })
-      .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .delete('/repos/googleapis/owl-bot-testing/issues/33/labels/owlbot%3Arun')
       .reply(200, () => {
         deleteLabelCalledFirst ??= true;
 
@@ -1259,13 +1291,13 @@ describe('owlBot', () => {
         id: 12345,
       },
       sender: {
-        login: 'bcoe',
+        login: 'googleapis',
       },
       pull_request: {
         labels: [{name: 'cla:yes'}],
         head: {
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
         base: {
@@ -1298,19 +1330,19 @@ describe('owlBot', () => {
         id: 12345,
       },
       sender: {
-        login: 'bcoe',
+        login: 'googleapis',
       },
       pull_request: {
         labels: [{name: 'cla:yes'}],
         head: {
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
@@ -1337,19 +1369,19 @@ describe('owlBot', () => {
         id: 12345,
       },
       sender: {
-        login: 'bcoe',
+        login: 'googleapis',
       },
       pull_request: {
         labels: [{name: OWLBOT_RUN_LABEL}, {name: 'cla:yes'}],
         head: {
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
@@ -1436,14 +1468,14 @@ describe('owlBot', () => {
         ],
         head: {
           repo: {
-            full_name: 'rennie/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'rennie/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
@@ -1455,16 +1487,16 @@ describe('owlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/rennie/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/rennie/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, {
         content: Buffer.from(config).toString('base64'),
         encoding: 'base64',
       })
-      .delete('/repos/rennie/owl-bot-testing/issues/33/labels/owlbot%3Arun')
+      .delete('/repos/googleapis/owl-bot-testing/issues/33/labels/owlbot%3Arun')
       .reply(200);
     const lastCommitFromOwlBot = sandbox
       .stub(core, 'lastCommitFromOwlBot')
@@ -1509,23 +1541,23 @@ describe('owlBot', () => {
         number: 33,
         head: {
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
     };
     const githubMock = nock('https://api.github.com')
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(404);
     const createCheckStub = sandbox.stub(core, 'createCheck');
@@ -1552,14 +1584,14 @@ describe('owlBot', () => {
         number: 33,
         head: {
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'batman-branch',
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
@@ -1568,10 +1600,10 @@ describe('owlBot', () => {
     image: node
     digest: sha256:9205bb385656cd196f5303b03983282c95c2dfab041d275465c525b501574e5c`;
     const githubMock = nock('https://api.github.com')
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, {
         content: Buffer.from(config).toString('base64'),
@@ -1601,23 +1633,23 @@ describe('owlBot', () => {
         number: 33,
         head: {
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
           ref: 'abc123',
         },
         base: {
           ref: 'main',
           repo: {
-            full_name: 'bcoe/owl-bot-testing',
+            full_name: 'googleapis/owl-bot-testing',
           },
         },
       },
     };
     const githubMock = nock('https://api.github.com')
-      .get('/repos/bcoe/owl-bot-testing/pulls/33')
+      .get('/repos/googleapis/owl-bot-testing/pulls/33')
       .reply(200, payload.pull_request)
       .get(
-        '/repos/bcoe/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
+        '/repos/googleapis/owl-bot-testing/contents/.github%2F.OwlBot.lock.yaml?ref=abc123'
       )
       .reply(200, {
         content: Buffer.from('bad-config: 99').toString('base64'),
