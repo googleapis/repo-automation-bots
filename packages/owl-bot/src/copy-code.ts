@@ -482,28 +482,25 @@ export function copyDirs(
       );
     }
   }
-  const deadDirs: string[] = [];
-  // Remove files first.
+  // Sort the paths longest name first, so that child files and directories are
+  // removed before parent directories.
+  deadPaths.sort((a, b) => b.length - a.length);
+
   for (let deadPath of deadPaths) {
     deadPath = path.join(destDir, deadPath);
     const deadStat = stat(deadPath);
     if (deadStat?.isDirectory()) {
-      deadDirs.push(deadPath);
+      logger.info(`rmdir  ${deadPath}`);
+      try {
+        fs.rmdirSync(deadPath);
+      } catch (e) {
+        // Expect some failures if .OwlBot.yaml asked us to preserve some files
+        // in directories that are otherwise deleted.
+        logger.info(e);
+      }
     } else if (deadStat) {
       logger.info(`rm  ${deadPath}`);
       fs.rmSync(deadPath);
-    }
-  }
-  // Then remove directories.  Some removes may fail because inner files were excluded.
-  // Sort the directories longest name first, so that child directories are
-  // removed before parent directories.
-  deadDirs.sort((a, b) => b.length - a.length);
-  for (const deadDir of deadDirs) {
-    logger.info(`rmdir  ${deadDir}`);
-    try {
-      fs.rmdirSync(deadDir);
-    } catch (e) {
-      logger.info(e);
     }
   }
 
