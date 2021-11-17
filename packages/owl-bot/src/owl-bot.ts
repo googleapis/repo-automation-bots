@@ -34,7 +34,9 @@ import {octokitFactoryFrom} from './octokit-util';
 import {REGENERATE_CHECKBOX_TEXT} from './copy-code';
 import {githubRepo} from './github-repo';
 
-const SYNC_LABEL_ORGANIZATIONS = ['googleapis', 'GoogleCloudPlatform'];
+// We use lower case organization names here, so we need to always
+// check against lower cased owner.
+const ALLOWED_ORGANIZATIONS = ['googleapis', 'googlecloudplatform'];
 
 interface PubSubContext {
   github: Octokit;
@@ -127,6 +129,7 @@ export function OwlBot(
     async context => {
       const head = context.payload.pull_request.head.repo.full_name;
       const base = context.payload.pull_request.base.repo.full_name;
+      const baseOwner = base.split('/')[0];
       const [owner, repo] = head.split('/');
       const installation = context.payload.installation?.id;
       const prNumber = context.payload.pull_request.number;
@@ -142,6 +145,14 @@ export function OwlBot(
       // added by a maintainer to trigger the post processor.
       if (head !== base) {
         logger.info(`head ${head} does not match base ${base} skipping`);
+        return;
+      }
+
+      // We limit the organization for running post processor.
+      if (!ALLOWED_ORGANIZATIONS.includes(baseOwner.toLowerCase())) {
+        logger.info(
+          `base ${base} is not allowed to run the post processor, skipping`
+        );
         return;
       }
 
@@ -227,7 +238,7 @@ export function OwlBot(
       // syncing labels
       const owner = context.payload.organization.login;
       const repo = context.payload.repository.name;
-      if (SYNC_LABEL_ORGANIZATIONS.includes(owner)) {
+      if (ALLOWED_ORGANIZATIONS.includes(owner.toLowerCase())) {
         await syncLabels(context.octokit, owner, repo, OWL_BOT_LABELS);
       } else {
         logger.info(
@@ -291,6 +302,14 @@ export async function handlePullRequestLabeled(
   ) {
     logger.info(
       `skipping post-processor run for ${owner}/${repo} pr = ${prNumber}`
+    );
+    return;
+  }
+
+  // We limit the organization for running post processor.
+  if (!ALLOWED_ORGANIZATIONS.includes(owner.toLowerCase())) {
+    logger.info(
+      `base ${base} is not allowed to run the post processor, skipping`
     );
     return;
   }
