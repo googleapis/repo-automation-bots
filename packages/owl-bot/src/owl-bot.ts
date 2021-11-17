@@ -34,7 +34,9 @@ import {octokitFactoryFrom} from './octokit-util';
 import {REGENERATE_CHECKBOX_TEXT} from './copy-code';
 import {githubRepo} from './github-repo';
 
-const ALLOWED_ORGANIZATIONS = ['googleapis', 'GoogleCloudPlatform'];
+// We use lower case organization names here, so we need to always
+// check against lower cased owner.
+const ALLOWED_ORGANIZATIONS = ['googleapis', 'googlecloudplatform'];
 
 interface PubSubContext {
   github: Octokit;
@@ -147,7 +149,7 @@ export function OwlBot(
       }
 
       // We limit the organization for running post processor.
-      if (!ALLOWED_ORGANIZATIONS.includes(baseOwner)) {
+      if (!ALLOWED_ORGANIZATIONS.includes(baseOwner.toLowerCase())) {
         logger.info(
           `base ${base} is not allowed to run the post processor, skipping`
         );
@@ -236,7 +238,7 @@ export function OwlBot(
       // syncing labels
       const owner = context.payload.organization.login;
       const repo = context.payload.repository.name;
-      if (ALLOWED_ORGANIZATIONS.includes(owner)) {
+      if (ALLOWED_ORGANIZATIONS.includes(owner.toLowerCase())) {
         await syncLabels(context.octokit, owner, repo, OWL_BOT_LABELS);
       } else {
         logger.info(
@@ -305,7 +307,7 @@ export async function handlePullRequestLabeled(
   }
 
   // We limit the organization for running post processor.
-  if (!ALLOWED_ORGANIZATIONS.includes(owner)) {
+  if (!ALLOWED_ORGANIZATIONS.includes(owner.toLowerCase())) {
     logger.info(
       `base ${base} is not allowed to run the post processor, skipping`
     );
