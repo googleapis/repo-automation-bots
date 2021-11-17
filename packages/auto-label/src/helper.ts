@@ -22,12 +22,30 @@ export const CONFIG_FILE_NAME = 'auto-label.yaml';
 // Default app configs if user didn't specify a .config
 export const LABEL_PRODUCT_BY_DEFAULT = true;
 
+// The max amount of days which can be configured for staleness
+export const MAX_DAYS = 365;
+
+// The default amount of days to be used to assume that pull request is stale
+export const DEFAULT_DAYS_TO_STALE = 60;
+
+// The default prefix for all stale labels
+export const STALE_PREFIX = 'stale:';
+
+// The label for old pull requests
+export const OLD_LABEL = 'old';
+
+// The label for old pull requests
+export const CRITICAL_LABEL = 'critical';
+
 export const DEFAULT_CONFIGS = {
   product: LABEL_PRODUCT_BY_DEFAULT,
   language: {
     pullrequest: false,
   },
   path: {
+    pullrequest: false,
+  },
+  staleness: {
     pullrequest: false,
   },
 };
@@ -45,6 +63,35 @@ export function labelExists(labels: Label[], new_label: string): Label | null {
   return null;
 }
 
+/**
+ * Checks whether the intended label already exists by given prefix
+ */
+export function fetchLabelByPrefix(
+  labels: Label[],
+  label_prefix: string
+): Label | null {
+  for (const label of labels) {
+    if (label.name?.startsWith(label_prefix)) {
+      logger.info(
+        `Exiting: label ${label.name} found by prefix ${label_prefix}`
+      );
+      return label;
+    }
+  }
+  return null;
+}
+
+/**
+ * Checks whether the given time is already expired (e.g. over given days limit)
+ */
+export function isExpiredByDays(time: string, limit: number) {
+  const created_at = Date.parse(time);
+  const diffInMs = Math.abs(Date.now() - created_at);
+  const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+  if (isNaN(diffInDays) || typeof diffInDays === 'undefined') return false;
+  return diffInDays > limit;
+}
+
 // *** Helper functions for product type labels ***
 export interface PathConfig {
   [index: string]: string | PathConfig;
@@ -59,6 +106,12 @@ export interface LanguageConfig {
   paths?: PathConfig;
 }
 
+export interface StaleConfig {
+  pullrequest?: boolean;
+  old?: number;
+  critical?: number;
+}
+
 export interface Config {
   enabled?: boolean;
   product?: boolean;
@@ -68,10 +121,11 @@ export interface Config {
     paths?: PathConfig;
   };
   language?: LanguageConfig;
+  staleness?: StaleConfig;
 }
 
 export interface Label {
-  name: string;
+  name?: string;
 }
 
 export interface DriftApi {

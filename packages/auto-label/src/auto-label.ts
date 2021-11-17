@@ -100,7 +100,7 @@ handler.addLabeltoRepoAndIssue = async function addLabeltoRepoAndIssue(
 
       const cleanUpOtherLabels = labelsOnIssue.filter(
         (element: Label) =>
-          element.name.startsWith('api') &&
+          element.name?.startsWith('api') &&
           element.name !== foundAPIName?.name &&
           element.name !== autoDetectedLabel
       );
@@ -215,6 +215,7 @@ handler.autoLabelOnPR = async function autoLabelOnPR(
     pull_number,
   });
   const labels = context.payload.pull_request.labels;
+  const new_labels = [];
 
   // If user has turned on path labels by configuring {path: {pullrequest: false, }}
   // By default, this feature is turned off
@@ -225,12 +226,7 @@ handler.autoLabelOnPR = async function autoLabelOnPR(
       logger.info(
         `Path label added to PR #${pull_number} in ${owner}/${repo} is ${path_label}`
       );
-      await context.octokit.issues.addLabels({
-        owner,
-        repo,
-        issue_number: pull_number,
-        labels: [path_label],
-      });
+      new_labels.push(path_label);
     }
   }
 
@@ -249,15 +245,102 @@ handler.autoLabelOnPR = async function autoLabelOnPR(
       logger.info(
         `Language label added to PR #${pull_number} in ${owner}/${repo} is ${language_label}`
       );
+      new_labels.push(language_label);
+    }
+  }
+
+  // Update all labels gathered so far if any
+  if (new_labels.length) {
+    logger.info(
+      `Labels added to PR# ${pull_number} in ${owner}/${repo} are ${JSON.stringify(
+        new_labels
+      )}`
+    );
+    await context.octokit.issues.addLabels({
+      owner,
+      repo,
+      issue_number: pull_number,
+      labels: new_labels,
+    });
+  }
+};
+
+/**
+ * Function updating a stale label on pull request based on configuration values.
+ * Removes previous staleness label if exists
+ */
+async function updateStalenessLabel(
+  context: Context<'pull_request'> | Context<'issues'>,
+  owner: string,
+  repo: string,
+  config: Config
+) {
+  // If user has turned on stale labels by configuring {staleness: {pullrequest: true, old: 60, critical: 120}}
+  // By default, this feature is turned off
+  if (!config.staleness?.pullrequest) {
+    return;
+  }
+  const response = await context.octokit.rest.pulls.list({
+    owner: owner,
+    repo: repo,
+  });
+  if (!response || !response.data) {
+    logger.info(`No active PRs available in ${owner}/${repo}...`);
+    return;
+  }
+
+  let old = config.staleness?.old || helper.DEFAULT_DAYS_TO_STALE;
+  let critical = config.staleness?.critical || helper.DEFAULT_DAYS_TO_STALE * 2;
+  let label = null;
+
+  // Make sure that config is right and if not, set defaults
+  if (old > critical || critical > helper.MAX_DAYS || old < 0) {
+    logger.info(
+      `The staleness config is wrong, old = ${old}, critical = ${critical}, fixing...`
+    );
+    old = helper.DEFAULT_DAYS_TO_STALE;
+    critical = helper.DEFAULT_DAYS_TO_STALE * 2;
+  }
+
+  for (const pull of response.data) {
+    logger.info(
+      `Checking staleness in PR #${pull.number} in ${owner}/${repo}...`
+    );
+    const staleLabel = helper.fetchLabelByPrefix(
+      pull.labels,
+      helper.STALE_PREFIX
+    );
+
+    if (helper.isExpiredByDays(pull.created_at, critical)) {
+      label = `${helper.STALE_PREFIX} ${helper.CRITICAL_LABEL}`;
+    } else if (helper.isExpiredByDays(pull.created_at, old)) {
+      label = `${helper.STALE_PREFIX} ${helper.OLD_LABEL}`;
+    }
+
+    if (label && label !== staleLabel?.name) {
+      // We are going to update a label now, remove an old one if exists
+      if (staleLabel) {
+        logger.info(
+          `Deleting ${staleLabel.name!} in ${owner}/${repo}/${pull.number}...`
+        );
+        context.octokit.issues.removeLabel({
+          owner,
+          repo,
+          issue_number: pull.number,
+          name: staleLabel.name!,
+        });
+      }
+
+      logger.info(`Adding ${label} to ${owner}/${repo}/${pull.number}...`);
       await context.octokit.issues.addLabels({
         owner,
         repo,
-        issue_number: pull_number,
-        labels: [language_label],
+        issue_number: pull.number,
+        labels: [label],
       });
     }
   }
-};
+}
 
 /**
  * Main function, responds to label being added
@@ -281,6 +364,9 @@ export function handler(app: Probot) {
       logger.info(`Skipping for ${owner}/${repo}`);
       return;
     }
+
+    // Update staleness labels on all pull requests in the repo
+    updateStalenessLabel(context, owner, repo, config);
 
     logger.info(`running for org ${context.payload.cron_org}`);
     if (context.payload.cron_org !== owner) {
