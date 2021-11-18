@@ -142,6 +142,14 @@ export function handler(app: Probot) {
       'pull_request.synchronize',
     ],
     async (context: Context<'pull_request'>) => {
+      // During codefreeze, simply set the RELEASE_FREEZE environment variable.
+      if (process.env.RELEASE_FREEZE) {
+        console.info(
+          'releases are currently frozen, unset the environment variable RELEASE_FREEZE to re-enable.'
+        );
+        return;
+      }
+
       const pr = context.payload;
       const owner = pr.repository.owner.login;
       const repoHead = pr.pull_request.head.repo.name;
