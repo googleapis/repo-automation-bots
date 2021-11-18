@@ -87,6 +87,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
+## [13.1.0](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.0.2...gcf-utils-v13.1.0) (2021-11-18)
+
+
+### Features
+
+* **gcf-utils:** add allowed_organizations to repository cron ([#2909](https://www.github.com/googleapis/repo-automation-bots/issues/2909)) ([4a190c4](https://www.github.com/googleapis/repo-automation-bots/commit/4a190c404e082a7ba2ddd762d1b8debc8b0bebe5))
+
 ### [13.0.2](https://www.github.com/googleapis/repo-automation-bots/compare/gcf-utils-v13.0.1...gcf-utils-v13.0.2) (2021-09-17)
 
 

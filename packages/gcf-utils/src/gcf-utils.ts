@@ -70,6 +70,7 @@ interface Scheduled {
   message?: {[key: string]: string};
   cron_type?: CronType;
   cron_org?: string;
+  allowed_organizations?: string[];
 }
 
 interface EnqueueTaskParams {
@@ -768,6 +769,16 @@ export class GCFBootstrapper {
       const promises: Array<Promise<void>> = new Array<Promise<void>>();
       const batchSize = 30;
       for await (const installation of installationGenerator) {
+        if (body.allowed_organizations !== undefined) {
+          const org = installation?.account?.login.toLowerCase();
+          if (!body.allowed_organizations.includes(org)) {
+            logger.info(
+              `${org} is not allowed for this scheduler job, skipping`
+            );
+            continue;
+          }
+        }
+
         const generator = this.eachInstalledRepository(
           installation.id,
           wrapConfig
