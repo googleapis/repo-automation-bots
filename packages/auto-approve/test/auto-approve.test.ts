@@ -461,7 +461,7 @@ describe('auto-approve', () => {
       afterEach(() => {
         sandbox.restore();
       });
-      it('returns early if RELEASE_FREEZE is truthy', async () => {
+      it('returns early if RELEASE_FREEZE is truthy and PR is from release-please', async () => {
         sandbox.stub(process, 'env').value({});
         process.env.RELEASE_FREEZE = 'true';
         const consoleStub = sandbox.stub(console, 'info');
@@ -469,7 +469,7 @@ describe('auto-approve', () => {
         const payload = require(resolve(
           fixturesPath,
           'events',
-          'pull_request_opened'
+          'pull_request_release_please'
         ));
 
         await probot.receive({
