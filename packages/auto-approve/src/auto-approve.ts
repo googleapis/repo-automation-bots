@@ -152,7 +152,7 @@ export function handler(app: Probot) {
       // During codefreeze, simply set the RELEASE_FREEZE environment variable.
       // if a PR is from release-please, it will not be merged:
       if (
-        process.env.RELEASE_FREEZE &&
+        process.env.RELEASE_FREEZE === 'true' &&
         pr.pull_request.user.login.includes('release-please')
       ) {
         console.info(
