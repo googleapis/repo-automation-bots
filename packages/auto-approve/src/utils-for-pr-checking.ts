@@ -107,11 +107,11 @@ export function getTargetFiles(
  */
 export function getVersions(
   versionFile: File | undefined,
-  oldVersionRegex: RegExp,
-  newVersionRegex: RegExp,
-  process: string
+  oldVersionRegex?: RegExp,
+  newVersionRegex?: RegExp,
+  process?: string
 ): Versions | undefined {
-  if (!versionFile) {
+  if (!versionFile || !oldVersionRegex || !newVersionRegex) {
     return undefined;
   }
 
@@ -177,6 +177,74 @@ export function getVersions(
 }
 
 /**
+ * Given a patch for a file that was changed in a PR, and a regular expression to search
+ * for the old version number and a regular expression to search for the new version number,
+ * this function will return the old and new versions of a package for not-Java (see getJavaVersions for other function).
+ *
+ * @param versionFile the changed file that has additional rules to conform to
+ * @param oldVersionRegex the regular exp to find the old version number of whatever is being changed
+ * @param newVersionRegex the regular exp to find the new version number of whatever is being changed
+ * @returns the previous and new major and minor versions of a package in an object containing those 4 properties.
+ */
+export function getVersionsV2(
+  versionFile: File | undefined,
+  oldVersionRegex?: RegExp,
+  newVersionRegex?: RegExp
+): Versions | undefined {
+  if (!versionFile || !oldVersionRegex || !newVersionRegex) {
+    return undefined;
+  }
+
+  let oldDependencyName;
+  let newDependencyName;
+  let oldMajorVersion;
+  let oldMinorVersion;
+  let newMajorVersion;
+  let newMinorVersion;
+
+  const oldVersions = versionFile.patch?.match(oldVersionRegex);
+  const newVersions = versionFile.patch?.match(newVersionRegex);
+  if (oldVersions) {
+    oldDependencyName = oldVersions[1];
+    oldMajorVersion = oldVersions[2];
+    oldMinorVersion = oldVersions[3];
+  }
+
+  if (newVersions) {
+    newDependencyName = newVersions[1];
+    newMajorVersion = newVersions[2];
+    newMinorVersion = newVersions[3];
+  }
+
+  // If there is a change with a file that requires special validation checks,
+  // and we can't find these pieces of information, we should throw an error, and not
+  // perform any other checks, since that would open us up to potentially merging a
+  // sensitive file without having proper checks.
+  if (
+    !(
+      oldDependencyName &&
+      newDependencyName &&
+      oldMajorVersion &&
+      oldMinorVersion &&
+      newMajorVersion &&
+      newMinorVersion
+    )
+  ) {
+    throw Error(
+      `Could not find versions in ${versionFile.filename}/${versionFile.sha}`
+    );
+  }
+  return {
+    oldDependencyName,
+    newDependencyName,
+    oldMajorVersion,
+    oldMinorVersion,
+    newMajorVersion,
+    newMinorVersion,
+  };
+}
+
+/**
  * This function checks whether the dependency stated in a given title was the one that was changed
  *
  * @param versions the Versions object that contains the old dependency name and new dependency name and versions
@@ -188,7 +256,7 @@ export function doesDependencyChangeMatchPRTitle(
   versions: Versions,
   dependencyRegex: RegExp,
   title: string,
-  process: string
+  process?: string
 ): boolean {
   let dependencyName;
   const titleRegex = title.match(dependencyRegex);
@@ -201,6 +269,34 @@ export function doesDependencyChangeMatchPRTitle(
         return false;
       }
     }
+    return (
+      versions.newDependencyName === versions.oldDependencyName &&
+      dependencyName === versions.newDependencyName
+    );
+  }
+
+  return false;
+}
+
+/**
+ * This function checks whether the dependency stated in a given title was the one that was changed (non Java, see doesDependencyChangeMatchPRTitleJava)
+ *
+ * @param versions the Versions object that contains the old dependency name and new dependency name and versions
+ * @param dependencyRegex the regular exp to find the dependency within the title of the PR
+ * @param title the title of the PR
+ * @returns whether the old dependency, new dependency, and dependency in the title all match
+ */
+export function doesDependencyChangeMatchPRTitleV2(
+  versions: Versions,
+  dependencyRegex: RegExp,
+  title: string
+): boolean {
+  let dependencyName;
+  const titleRegex = title.match(dependencyRegex);
+
+  if (titleRegex) {
+    dependencyName = titleRegex[2];
+
     return (
       versions.newDependencyName === versions.oldDependencyName &&
       dependencyName === versions.newDependencyName
@@ -306,4 +402,123 @@ export function checkFileCount(
     return false;
   }
   return incomingFileCount <= maxFiles;
+}
+
+/**
+ * Runs additional validation checks when a version is upgraded to ensure that the
+ * version is only upgraded, not downgraded, and that the major version is not bumped.
+ *
+ * @param file The incoming target file that has a matching ruleset in language-versioning-rules
+ * @param pr The matching ruleset of the file above from language-versioning-rules
+ * @returns true if the package was upgraded appropriately, and had only one thing changed
+ */
+export function runVersioningValidation(versions: Versions): boolean {
+  let majorBump = true;
+  let minorBump = false;
+
+  if (versions) {
+    majorBump = isMajorVersionChanging(versions);
+    minorBump = isMinorVersionUpgraded(versions);
+  }
+
+  return !majorBump && minorBump;
+}
+
+/**
+ * This function checks whether the dependency stated in a given title was the one that was changed in a Java file
+ *
+ * @param versions the Versions object that contains the old dependency name and new dependency name and versions
+ * @param dependencyRegex the regular exp to find the dependency within the title of the PR
+ * @param title the title of the PR
+ * @returns whether the old dependency, new dependency, and dependency in the title all match
+ */
+export function doesDependencyChangeMatchPRTitleJava(
+  versions: Versions,
+  dependencyRegex: RegExp,
+  title: string
+): boolean {
+  let dependencyName;
+  const titleRegex = title.match(dependencyRegex);
+
+  if (titleRegex) {
+    dependencyName = titleRegex[2];
+
+    if (!dependencyName.includes('com.google.')) {
+      return false;
+    }
+    return (
+      versions.newDependencyName === versions.oldDependencyName &&
+      dependencyName === versions.newDependencyName
+    );
+  }
+  return false;
+}
+
+/**
+ * Given a patch for a file that was changed in a PR, and a regular expression to search
+ * for the old version number and a regular expression to search for the new version number,
+ * this function will return the old and new versions of a package for a Java file.
+ *
+ * @param versionFile the changed file that has additional rules to conform to
+ * @param oldVersionRegex the regular exp to find the old version number of whatever is being changed
+ * @param newVersionRegex the regular exp to find the new version number of whatever is being changed
+ * @returns the previous and new major and minor versions of a package in an object containing those 4 properties.
+ */
+export function getJavaVersions(
+  versionFile: File | undefined,
+  oldVersionRegex?: RegExp,
+  newVersionRegex?: RegExp
+): Versions | undefined {
+  if (!versionFile || !oldVersionRegex || !newVersionRegex) {
+    return undefined;
+  }
+
+  let oldDependencyName;
+  let newDependencyName;
+  let oldMajorVersion;
+  let oldMinorVersion;
+  let newMajorVersion;
+  let newMinorVersion;
+
+  const oldVersions = versionFile.patch?.match(oldVersionRegex);
+  const newVersions = versionFile.patch?.match(newVersionRegex);
+  if (oldVersions) {
+    oldDependencyName = `${oldVersions[1]}:${oldVersions[2]}`;
+    oldMajorVersion = oldVersions[4] || oldVersions[6];
+    oldMinorVersion = oldVersions[5] || oldVersions[7];
+  }
+
+  if (newVersions) {
+    newDependencyName = `${newVersions[1]}:${newVersions[2]}`;
+    newMajorVersion = newVersions[5] || newVersions[7];
+    newMinorVersion = newVersions[6] || newVersions[8];
+  }
+
+  // If there is a change with a file that requires special validation checks,
+  // and we can't find these pieces of information, we should throw an error, and not
+  // perform any other checks, since that would open us up to potentially merging a
+  // sensitive file without having proper checks.
+  if (
+    !(
+      oldDependencyName &&
+      newDependencyName &&
+      oldMajorVersion &&
+      oldMinorVersion &&
+      newMajorVersion &&
+      newMinorVersion
+    )
+  ) {
+    throw Error(
+      `Could not find versions in ${versionFile.filename}/${versionFile.sha}`
+    );
+  }
+
+  return {
+    oldDependencyName,
+    newDependencyName,
+    oldMajorVersion,
+    oldMinorVersion,
+    newMajorVersion,
+    newMinorVersion,
+  };
 }

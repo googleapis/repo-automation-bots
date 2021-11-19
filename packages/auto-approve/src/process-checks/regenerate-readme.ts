@@ -5,7 +5,6 @@ import {
   checkFileCount,
   checkFilePathsMatch,
 } from '../utils-for-pr-checking';
-import {Octokit} from '@octokit/rest';
 
 export class RegenerateReadme implements LanguageRule {
   incomingPR: {
@@ -32,7 +31,6 @@ export class RegenerateReadme implements LanguageRule {
       }
     ];
   };
-  octokitInstance: Octokit;
 
   constructor(
     incomingPrAuthor: string,
@@ -41,8 +39,7 @@ export class RegenerateReadme implements LanguageRule {
     incomingChangedFiles: File[],
     incomingRepoName: string,
     incomingRepoOwner: string,
-    incomingPrNumber: number,
-    octokitInstance: Octokit
+    incomingPrNumber: number
   ) {
     (this.incomingPR = {
       author: incomingPrAuthor,
@@ -62,8 +59,7 @@ export class RegenerateReadme implements LanguageRule {
           /^README.md$/,
           /\.github\/readme\/synth.metadata\/synth\.metadata$/,
         ],
-      }),
-      (this.octokitInstance = octokitInstance);
+      });
   }
 
   public async checkPR(): Promise<boolean> {

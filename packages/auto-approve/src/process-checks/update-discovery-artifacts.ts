@@ -5,7 +5,6 @@ import {
   checkFileCount,
   checkFilePathsMatch,
 } from '../utils-for-pr-checking';
-import {Octokit} from '@octokit/rest';
 
 export class UpdateDiscoveryArtifacts implements LanguageRule {
   incomingPR: {
@@ -32,7 +31,6 @@ export class UpdateDiscoveryArtifacts implements LanguageRule {
       }
     ];
   };
-  octokitInstance: Octokit;
 
   constructor(
     incomingPrAuthor: string,
@@ -41,8 +39,7 @@ export class UpdateDiscoveryArtifacts implements LanguageRule {
     incomingChangedFiles: File[],
     incomingRepoName: string,
     incomingRepoOwner: string,
-    incomingPrNumber: number,
-    octokitInstance: Octokit
+    incomingPrNumber: number
   ) {
     (this.incomingPR = {
       author: incomingPrAuthor,
@@ -63,8 +60,7 @@ export class UpdateDiscoveryArtifacts implements LanguageRule {
           /^docs\/dyn\/.*\.html$/,
           /^googleapiclient\/discovery_cache\/documents\/.*\.json$/,
         ],
-      }),
-      (this.octokitInstance = octokitInstance);
+      });
   }
 
   public async checkPR(): Promise<boolean> {

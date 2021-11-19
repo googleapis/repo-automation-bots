@@ -1,11 +1,14 @@
-import {LanguageRule, File} from '../../interfaces';
+import {LanguageRule, File, FileRule} from '../../interfaces';
 import {
   checkAuthor,
   checkTitle,
   checkFileCount,
   checkFilePathsMatch,
+  doesDependencyChangeMatchPRTitleV2,
+  getVersionsV2,
+  runVersioningValidation,
+  isOneDependencyChanged,
 } from '../../utils-for-pr-checking';
-import {Octokit} from '@octokit/rest';
 
 export class NodeDependency implements LanguageRule {
   incomingPR: {
@@ -30,7 +33,6 @@ export class NodeDependency implements LanguageRule {
       targetFileToCheck: RegExp;
     }[];
   };
-  octokitInstance: Octokit;
 
   constructor(
     incomingPrAuthor: string,
@@ -39,8 +41,7 @@ export class NodeDependency implements LanguageRule {
     incomingChangedFiles: File[],
     incomingRepoName: string,
     incomingRepoOwner: string,
-    incomingPrNumber: number,
-    octokitInstance: Octokit
+    incomingPrNumber: number
   ) {
     (this.incomingPR = {
       author: incomingPrAuthor,
@@ -56,7 +57,7 @@ export class NodeDependency implements LanguageRule {
         allFilesChecked: true,
         titleRegex:
           /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
-        maxFiles: 50,
+        maxFiles: 3,
         fileNameRegex: [/package\.json$/],
         fileRules: [
           {
@@ -82,8 +83,7 @@ export class NodeDependency implements LanguageRule {
               /\+[\s]*"(@?\S*)":[\s]"(?:\^?|~?)([0-9])*\.([0-9]*\.[0-9]*)"/,
           },
         ],
-      }),
-      (this.octokitInstance = octokitInstance);
+      });
   }
 
   public async checkPR(): Promise<boolean> {
@@ -106,6 +106,42 @@ export class NodeDependency implements LanguageRule {
       this.incomingPR.changedFiles.map(x => x.filename),
       this.classRule.fileNameRegex
     );
+
+    for (const file of this.incomingPR.changedFiles) {
+      const fileMatch = this.classRule.fileRules?.find((x: FileRule) =>
+        x.targetFileToCheck.test(file.filename)
+      );
+
+      if (fileMatch) {
+        const versions = getVersionsV2(
+          file,
+          fileMatch.oldVersion,
+          fileMatch.newVersion
+        );
+        if (versions) {
+          const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
+            versions,
+            // We can assert this exists since we're in the class rule that contains it
+            fileMatch.dependencyTitle!,
+            this.incomingPR.title
+          );
+
+          const isVersionValid = runVersioningValidation(versions);
+
+          const oneDependencyChanged = isOneDependencyChanged(file);
+
+          if (
+            !(doesDependencyMatch && isVersionValid && oneDependencyChanged)
+          ) {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
 
     return (
       authorshipMatches && titleMatches && fileCountMatch && filePatternsMatch

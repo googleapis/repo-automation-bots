@@ -29,6 +29,18 @@ import {PullRequestEvent} from '@octokit/webhooks-types/schema';
     oldVersion: RegExp;
     newVersion: RegExp;
   }
+
+/**
+ * Interface for rules in each processes' classRule. These
+ * are rules for files that match an author and filename, and then provide
+ * regex for the versions for those particular formats.
+ */
+ export interface FileRule {
+    oldVersion?: RegExp;
+    newVersion?: RegExp;
+    dependencyTitle?: RegExp;
+    targetFileToCheck: RegExp;
+  }
   
   /**
    * Interface for the versions found in the selected files. These versions are
@@ -67,14 +79,8 @@ import {PullRequestEvent} from '@octokit/webhooks-types/schema';
         titleRegex?: RegExp;
         fileNameRegex?: RegExp[];
         maxFiles?: number;
-        fileRules?: {
-            oldVersion?: RegExp;
-            newVersion?: RegExp;
-            dependencyTitle?: RegExp;
-            targetFileToCheck: RegExp;
-        }[];
+        fileRules?: FileRule[];
     }
-    octokitInstance?: Octokit;
   }
   
   /**
