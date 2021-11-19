@@ -420,7 +420,6 @@ describe('auto-approve', () => {
     afterEach(() => {
       sandbox.restore();
     });
-
     it('creates a separate octokit instance and authenticates with secret in secret manager', async () => {
       checkPRAgainstConfigStub.returns(true);
       checkAutoApproveStub.returns('');
@@ -455,6 +454,34 @@ describe('auto-approve', () => {
       assert.ok(getSecretStub.calledOnce);
       assert.ok(secretOctokit.pulls.createReview.calledOnce);
       assert.ok(secretOctokit.issues.addLabels.calledOnce);
+    });
+
+    describe('RELEASE_FREEZE', () => {
+      const sandbox = sinon.createSandbox();
+      afterEach(() => {
+        sandbox.restore();
+      });
+      it('returns early if RELEASE_FREEZE is truthy and PR is from release-please', async () => {
+        sandbox.stub(process, 'env').value({});
+        process.env.RELEASE_FREEZE = 'true';
+        const consoleStub = sandbox.stub(console, 'info');
+
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_release_please'
+        ));
+
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+        sandbox.assert.calledWith(
+          consoleStub,
+          sinon.match(/releases are currently frozen/)
+        );
+      });
     });
   });
 });
