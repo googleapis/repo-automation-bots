@@ -35,6 +35,8 @@ const config = await getConfig<Config>(
 
 You can use a similar method that supports default value.
 
+> Note: on permission errors `getConfigWithDefault` will return the default configuration.
+
 ```typescript
 import {
   getConfigWithDefault,
