@@ -451,7 +451,9 @@ export async function getConfigWithDefault<ConfigType>(
     const err = e as RequestError;
     // For 4xx codes return default config.
     if (![401, 403, 404].includes(err.status)) {
-      logger.warn(`received ${err.status} reading ${path} for ${owner}/${repo}`);
+      logger.warn(
+        `received ${err.status} reading ${path} for ${owner}/${repo}`
+      );
       throw err;
     }
     if (repo === '.github' || !options.fallbackToOrgConfig || options.branch) {
@@ -492,7 +494,9 @@ export async function getConfigWithDefault<ConfigType>(
     } catch (e) {
       const err = e as RequestError;
       if (![401, 403, 404].includes(err.status)) {
-        logger.warn(`received ${err.status} reading ${path} for ${owner}/${repo}`);
+        logger.warn(
+          `received ${err.status} reading ${path} for ${owner}/${repo}`
+        );
         throw err;
       }
       return defaultConfig;
