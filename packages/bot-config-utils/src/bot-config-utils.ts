@@ -447,7 +447,6 @@ export async function getConfigWithDefault<ConfigType>(
       throw new Error('could not handle getContent result.');
     }
   } catch (e) {
-    console.info(e);
     const err = e as RequestError;
     // For 4xx codes return default config.
     if (![401, 403, 404].includes(err.status)) {
