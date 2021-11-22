@@ -625,14 +625,14 @@ describe('config', () => {
         scope.done();
       }
     });
-    it('throws an error upon non 404 errors for the org config', async () => {
+    it('throws an error upon non 401/403/404 errors for the org config', async () => {
       const owner = 'googleapis';
       const repo = 'repo-automation-bots';
       const filename = 'flakybot.yaml';
 
       const scopes = [
         getConfigFile('flakybot.yaml', owner, repo, 404),
-        getConfigFile('flakybot.yaml', owner, '.github', 403),
+        getConfigFile('flakybot.yaml', owner, '.github', 502),
       ];
 
       await assert.rejects(
@@ -876,14 +876,14 @@ describe('config', () => {
         scope.done();
       }
     });
-    it('throws an error upon non 404 errors for the org config', async () => {
+    it('throws an error upon non 401/403/404 errors for the org config', async () => {
       const owner = 'googleapis';
       const repo = 'repo-automation-bots';
       const filename = 'flakybot.yaml';
 
       const scopes = [
-        getConfigFile('flakybot.yaml', owner, repo, 404),
-        getConfigFile('flakybot.yaml', owner, '.github', 403),
+        getConfigFile('flakybot.yaml', owner, repo, 403),
+        getConfigFile('flakybot.yaml', owner, '.github', 502),
       ];
 
       await assert.rejects(
