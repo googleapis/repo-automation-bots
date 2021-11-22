@@ -64,13 +64,18 @@ export = (app: Probot) => {
         l => l.name === DO_NOT_MERGE || l.name === DO_NOT_MERGE_2
       );
 
-      const config = await getConfigWithDefault<ConfigurationOptions>(
-        context.octokit,
-        owner,
-        repo,
-        CONFIGURATION_FILE_PATH,
-        DEFAULT_CONFIGURATION
-      );
+      let config = DEFAULT_CONFIGURATION;
+      try {
+        config = await getConfigWithDefault<ConfigurationOptions>(
+          context.octokit,
+          owner,
+          repo,
+          CONFIGURATION_FILE_PATH,
+          DEFAULT_CONFIGURATION
+        );
+      } catch (err) {
+        logger.error(err as Error);
+      }
 
       const existingCheck = await findCheck(context, owner, repo, sha);
 
