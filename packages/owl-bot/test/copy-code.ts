@@ -413,6 +413,16 @@ describe('copyDirs', () => {
     });
     assert.deepStrictEqual(collectDirTree(destDir), ['x.txt:c']);
   });
+
+  it('removes nested directories', () => {
+    const tempo = tmp.dirSync();
+    const destDir = makeSourceTree(tempo.name);
+    const sourceDir = path.join(tempo.name, 'dest');
+    copyDirs(sourceDir, destDir, {
+      'deep-remove-regex': ['/.*'],
+    });
+    assert.deepStrictEqual(collectDirTree(destDir), []);
+  });
 });
 
 describe('copyCode', function () {

@@ -29,7 +29,7 @@
   "dependencies": {
     "@google-automations/label-utils": "^2.0.2",
     "@google-cloud/datastore": "^6.6.1",
-    "gcf-utils": "^13.0.2"
+    "gcf-utils": "^13.1.0"
   },
   "devDependencies": {
     "@types/mocha": "^9.0.0",
@@ -42,7 +42,7 @@
     "nock": "^13.2.0",
     "sinon": "^12.0.1",
     "snap-shot-it": "^7.9.6",
-    "typescript": "~4.4.4"
+    "typescript": "~4.5.0"
   },
   "engines": {
     "node": ">= 12.18.2"
