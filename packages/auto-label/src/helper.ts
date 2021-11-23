@@ -70,6 +70,9 @@ export function fetchLabelByPrefix(
   labels: Label[],
   label_prefix: string
 ): Label | null {
+  if (!labels) {
+    return null;
+  }
   for (const label of labels) {
     if (label.name.startsWith(label_prefix)) {
       logger.info(

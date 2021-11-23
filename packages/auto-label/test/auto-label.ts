@@ -715,7 +715,7 @@ describe('auto-label', () => {
       ghRequests.done();
     });
 
-    it('does not adds staleness label for stale pull request', async () => {
+    it('does not adds staleness label for stale pull request with config disabled', async () => {
       const config = loadConfig('valid-config.yml');
       getConfigWithDefaultStub.resolves(config);
       const ghRequests = nock('https://api.github.com')
@@ -747,6 +747,44 @@ describe('auto-label', () => {
             color: 'C9FFE5',
           },
         ]);
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          organization: {login: 'testOwner'},
+          repository: {name: 'testRepo', owner: {login: 'testOwner'}},
+          cron_org: 'testOwner',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
+    it('adds staleness labels when feature enabled with default config values', async () => {
+      const config = loadConfig('valid-config-staleness-defaults.yml');
+      getConfigWithDefaultStub.resolves(config);
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, [
+          {
+            number: 5,
+            created_at: '2010-10-06T16:45:18Z',
+            pull_request: {
+              url: 'https://api.github.com/repos/testOwner/testRepo/issues/5',
+            },
+          },
+        ])
+        .post('/repos/testOwner/testRepo/issues/5/labels')
+        .reply(200, [
+          {
+            name: 'stale: critical',
+            color: 'C9FFE5',
+          },
+        ])
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, []);
 
       await probot.receive({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
