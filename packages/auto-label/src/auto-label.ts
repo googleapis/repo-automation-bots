@@ -304,7 +304,7 @@ async function updateStalenessLabel(
       logger.info(`No active PRs available in ${owner}/${repo}...`);
       return;
     }
-    for (const pull of response.data) {
+    for (const pull of response.data as IssueResponse['data']) {
       // Skip all non-pull request issues
       if (!pull.pull_request) {
         continue;
