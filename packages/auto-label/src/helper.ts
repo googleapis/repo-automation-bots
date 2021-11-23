@@ -71,7 +71,7 @@ export function fetchLabelByPrefix(
   label_prefix: string
 ): Label | null {
   for (const label of labels) {
-    if (label.name?.startsWith(label_prefix)) {
+    if (label.name.startsWith(label_prefix)) {
       logger.info(
         `Exiting: label ${label.name} found by prefix ${label_prefix}`
       );
@@ -125,7 +125,7 @@ export interface Config {
 }
 
 export interface Label {
-  name?: string;
+  name: string;
 }
 
 export interface DriftApi {
