@@ -314,7 +314,7 @@ async function updateStalenessLabel(
       );
       let label = null;
       const staleLabel = helper.fetchLabelByPrefix(
-        pull.labels,
+        Array.from(pull.labels, l => l.name),
         helper.STALE_PREFIX
       );
       if (helper.isExpiredByDays(pull.created_at, critical)) {
@@ -322,17 +322,17 @@ async function updateStalenessLabel(
       } else if (helper.isExpiredByDays(pull.created_at, old)) {
         label = `${helper.STALE_PREFIX} ${helper.OLD_LABEL}`;
       }
-      if (label && label !== staleLabel?.name) {
+      if (label && label !== staleLabel) {
         // We are going to update a label now, remove an old one if exists
         if (staleLabel) {
           logger.info(
-            `Deleting ${staleLabel.name} in ${owner}/${repo}/${pull.number}...`
+            `Deleting ${staleLabel} in ${owner}/${repo}/${pull.number}...`
           );
           context.octokit.issues.removeLabel({
             owner,
             repo,
             issue_number: pull.number,
-            name: staleLabel.name,
+            name: staleLabel,
           });
         }
         logger.metric('auto-label.label-added', {
