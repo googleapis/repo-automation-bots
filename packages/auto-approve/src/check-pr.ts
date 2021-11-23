@@ -19,8 +19,6 @@ import {logger} from 'gcf-utils';
 import {
   getTargetFiles,
   getVersions,
-  isMajorVersionChanging,
-  isMinorVersionUpgraded,
   isOneDependencyChanged,
   checkFilePathsMatch,
   doesDependencyChangeMatchPRTitle,

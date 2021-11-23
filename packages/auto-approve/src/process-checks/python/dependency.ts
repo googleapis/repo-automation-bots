@@ -8,6 +8,7 @@ import {
   getVersionsV2,
   runVersioningValidation,
   isOneDependencyChanged,
+  reportIndividualChecks,
 } from '../../utils-for-pr-checking';
 
 export class PythonDependency implements LanguageRule {
@@ -22,7 +23,6 @@ export class PythonDependency implements LanguageRule {
   };
   classRule: {
     author: string;
-    allFilesChecked: boolean;
     titleRegex?: RegExp;
     maxFiles: number;
     fileNameRegex?: RegExp[];
@@ -54,11 +54,10 @@ export class PythonDependency implements LanguageRule {
     }),
       (this.classRule = {
         author: 'renovate-bot',
-        allFilesChecked: true,
         titleRegex:
           /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
         maxFiles: 3,
-        fileNameRegex: [/package\.json$/],
+        fileNameRegex: [/requirements.txt$/],
         fileRules: [
           {
             targetFileToCheck: /^samples\/snippets\/requirements.txt$/,
@@ -66,20 +65,20 @@ export class PythonDependency implements LanguageRule {
             dependencyTitle: new RegExp(
               /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/
             ),
-            // This would match: -  google-cloud-storage==1.39.0
+            // This would match: '-google-cloud-storage==1.39.0
             oldVersion: new RegExp(
-              /-[\s]?(@?[^=]*)==([0-9])*\.([0-9]*\.[0-9]*)/
+              /[\s]-(@?[^=0-9]*)==([0-9])*\.([0-9]*\.[0-9]*)/
             ),
-            // This would match: +  google-cloud-storage==1.40.0
+            // This would match: '+google-cloud-storage==1.40.0
             newVersion: new RegExp(
-              /\+[\s]?(@?[^=]*)==([0-9])*\.([0-9]*\.[0-9]*)/
+              /[\s]\+(@?[^=0-9]*)==([0-9])*\.([0-9]*\.[0-9]*)/
             ),
           },
         ],
       });
   }
 
-  public async checkPR(): Promise<boolean> {
+  public checkPR(): boolean {
     const authorshipMatches = checkAuthor(
       this.classRule.author,
       this.incomingPR.author
@@ -126,6 +125,14 @@ export class PythonDependency implements LanguageRule {
           if (
             !(doesDependencyMatch && isVersionValid && oneDependencyChanged)
           ) {
+            reportIndividualChecks(
+              ['doesDependencyMatch', 'isVersionValid', 'oneDependencyChanged'],
+              [doesDependencyMatch, isVersionValid, oneDependencyChanged],
+              this.incomingPR.repoOwner,
+              this.incomingPR.repoName,
+              this.incomingPR.prNumber,
+              file.filename
+            );
             return false;
           }
         } else {
@@ -136,6 +143,18 @@ export class PythonDependency implements LanguageRule {
       }
     }
 
+    reportIndividualChecks(
+      [
+        'authorshipMatches',
+        'titleMatches',
+        'fileCountMatches',
+        'filePatternsMatch',
+      ],
+      [authorshipMatches, titleMatches, fileCountMatch, filePatternsMatch],
+      this.incomingPR.repoOwner,
+      this.incomingPR.repoName,
+      this.incomingPR.prNumber
+    );
     return (
       authorshipMatches && titleMatches && fileCountMatch && filePatternsMatch
     );

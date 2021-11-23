@@ -15,14 +15,8 @@
 // eslint-disable-next-line node/no-extraneous-import
 import {PullRequestEvent} from '@octokit/webhooks-types/schema';
 import {getChangedFiles} from './get-pr-info';
-import {UpdateDiscoveryArtifacts} from './process-checks/update-discovery-artifacts';
-import {RegenerateReadme} from './process-checks/regenerate-readme';
-import {DiscoveryDocUpdate} from './process-checks/discovery-doc-update';
-import {PythonDependency} from './process-checks/python/dependency';
-import {NodeDependency} from './process-checks/node/dependency';
-import {NodeRelease} from './process-checks/node/release';
-import {JavaDependency} from './process-checks/java/dependency';
 import {Octokit} from '@octokit/rest';
+import {ConfigurationV2} from './interfaces';
 
 // This file manages the logic to check whether a given PR matches the config in the repository
 
@@ -35,6 +29,7 @@ import {Octokit} from '@octokit/rest';
  * @returns true if PR matches config appropriately, false if not
  */
 export async function checkPRAgainstConfig(
+  config: ConfigurationV2,
   pr: PullRequestEvent,
   octokit: Octokit
 ): Promise<Boolean> {
@@ -45,16 +40,6 @@ export async function checkPRAgainstConfig(
   const title = pr.pull_request.title;
   const fileCount = pr.pull_request.changed_files;
 
-  const potentialRulesToValidateAgainst = [
-    UpdateDiscoveryArtifacts,
-    RegenerateReadme,
-    DiscoveryDocUpdate,
-    PythonDependency,
-    NodeDependency,
-    NodeRelease,
-    JavaDependency,
-  ];
-
   // Get changed files fromPR
   const changedFiles = await getChangedFiles(
     octokit,
@@ -63,7 +48,7 @@ export async function checkPRAgainstConfig(
     prNumber
   );
 
-  for (const Rule of potentialRulesToValidateAgainst) {
+  for (const Rule of config.processes) {
     const instantiatedRule = new Rule(
       prAuthor,
       title,
@@ -74,9 +59,9 @@ export async function checkPRAgainstConfig(
       prNumber
     );
 
-    const passed = await instantiatedRule.checkPR();
+    const passed = instantiatedRule.checkPR();
 
-    // Stop early if the PR passes for one of the cases
+    // Stop early if the PR passes for one of the cases allowed by the config
     if (passed === true) {
       return true;
     }

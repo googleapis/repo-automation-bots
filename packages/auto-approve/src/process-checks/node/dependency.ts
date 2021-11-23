@@ -8,6 +8,7 @@ import {
   getVersionsV2,
   runVersioningValidation,
   isOneDependencyChanged,
+  reportIndividualChecks,
 } from '../../utils-for-pr-checking';
 
 export class NodeDependency implements LanguageRule {
@@ -22,7 +23,6 @@ export class NodeDependency implements LanguageRule {
   };
   classRule: {
     author: string;
-    allFilesChecked: boolean;
     titleRegex?: RegExp;
     maxFiles: number;
     fileNameRegex?: RegExp[];
@@ -54,7 +54,6 @@ export class NodeDependency implements LanguageRule {
     }),
       (this.classRule = {
         author: 'renovate-bot',
-        allFilesChecked: true,
         titleRegex:
           /^(fix|chore)\(deps\): update dependency (@?\S*) to v(\S*)$/,
         maxFiles: 3,
@@ -86,7 +85,7 @@ export class NodeDependency implements LanguageRule {
       });
   }
 
-  public async checkPR(): Promise<boolean> {
+  public checkPR(): boolean {
     const authorshipMatches = checkAuthor(
       this.classRule.author,
       this.incomingPR.author
@@ -131,8 +130,17 @@ export class NodeDependency implements LanguageRule {
           const oneDependencyChanged = isOneDependencyChanged(file);
 
           if (
-            !(doesDependencyMatch && isVersionValid && oneDependencyChanged)
+            (doesDependencyMatch && isVersionValid && oneDependencyChanged) ===
+            false
           ) {
+            reportIndividualChecks(
+              ['doesDependencyMatch', 'isVersionValid', 'oneDependencyChanged'],
+              [doesDependencyMatch, isVersionValid, oneDependencyChanged],
+              this.incomingPR.repoOwner,
+              this.incomingPR.repoName,
+              this.incomingPR.prNumber,
+              file.filename
+            );
             return false;
           }
         } else {
@@ -143,6 +151,18 @@ export class NodeDependency implements LanguageRule {
       }
     }
 
+    reportIndividualChecks(
+      [
+        'authorshipMatches',
+        'titleMatches',
+        'fileCountMatches',
+        'filePatternsMatch',
+      ],
+      [authorshipMatches, titleMatches, fileCountMatch, filePatternsMatch],
+      this.incomingPR.repoOwner,
+      this.incomingPR.repoName,
+      this.incomingPR.prNumber
+    );
     return (
       authorshipMatches && titleMatches && fileCountMatch && filePatternsMatch
     );

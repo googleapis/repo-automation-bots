@@ -24,6 +24,7 @@ import sinon, {SinonStub} from 'sinon';
 import {describe, it, beforeEach} from 'mocha';
 import * as assert from 'assert';
 import snapshot from 'snap-shot-it';
+import {Reviews} from '../src/interfaces';
 
 const {Octokit} = require('@octokit/rest');
 
@@ -59,11 +60,7 @@ function getConfigFile(
   }
 }
 
-function getReviewsCompleted(
-  owner: string,
-  repo: string,
-  response: getPRInfo.Reviews[]
-) {
+function getReviewsCompleted(owner: string, repo: string, response: Reviews[]) {
   return nock('https://api.github.com')
     .get(`/repos/${owner}/${repo}/pulls/1/reviews`)
     .reply(200, response);

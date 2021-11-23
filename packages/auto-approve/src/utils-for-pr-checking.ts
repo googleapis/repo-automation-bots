@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ValidPr, File} from './interfaces';
+import {File} from './interfaces';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import {logger} from 'gcf-utils';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -389,7 +390,7 @@ export function checkAuthor(
 
 export function checkTitle(title: string, titleRegex?: RegExp): boolean {
   if (!titleRegex) {
-    return false;
+    return true;
   }
   return titleRegex.test(title);
 }
@@ -399,7 +400,7 @@ export function checkFileCount(
   maxFiles?: number
 ): boolean {
   if (!maxFiles) {
-    return false;
+    return true;
   }
   return incomingFileCount <= maxFiles;
 }
@@ -408,20 +409,11 @@ export function checkFileCount(
  * Runs additional validation checks when a version is upgraded to ensure that the
  * version is only upgraded, not downgraded, and that the major version is not bumped.
  *
- * @param file The incoming target file that has a matching ruleset in language-versioning-rules
- * @param pr The matching ruleset of the file above from language-versioning-rules
- * @returns true if the package was upgraded appropriately, and had only one thing changed
+ * @param versions the versions object returned from getVersions, getVersionsV2, and getJavaVersions
+ * @returns true if the version is only bumped a minor, not a major
  */
 export function runVersioningValidation(versions: Versions): boolean {
-  let majorBump = true;
-  let minorBump = false;
-
-  if (versions) {
-    majorBump = isMajorVersionChanging(versions);
-    minorBump = isMinorVersionUpgraded(versions);
-  }
-
-  return !majorBump && minorBump;
+  return !isMajorVersionChanging(versions) && isMinorVersionUpgraded(versions);
 }
 
 /**
@@ -521,4 +513,20 @@ export function getJavaVersions(
     newMajorVersion,
     newMinorVersion,
   };
+}
+
+export function reportIndividualChecks(
+  checkNames: string[],
+  checkStatuses: boolean[],
+  repoOwner: string,
+  repoName: string,
+  prNumber: number,
+  fileName?: string
+) {
+  for (let x = 0; x < checkNames.length; x++) {
+    fileName = fileName ?? 'no particular';
+    logger.info(
+      `Check ${checkNames[x]} for ${repoOwner}/${repoName}/${prNumber} for ${fileName} file is ${checkStatuses[x]}`
+    );
+  }
 }

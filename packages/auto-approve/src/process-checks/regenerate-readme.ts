@@ -4,6 +4,7 @@ import {
   checkTitle,
   checkFileCount,
   checkFilePathsMatch,
+  reportIndividualChecks,
 } from '../utils-for-pr-checking';
 
 export class RegenerateReadme implements LanguageRule {
@@ -18,7 +19,6 @@ export class RegenerateReadme implements LanguageRule {
   };
   classRule: {
     author: string;
-    allFilesChecked: boolean;
     titleRegex?: RegExp;
     maxFiles: number;
     fileNameRegex?: RegExp[];
@@ -52,7 +52,6 @@ export class RegenerateReadme implements LanguageRule {
     }),
       (this.classRule = {
         author: 'yoshi-automation',
-        allFilesChecked: false,
         titleRegex: /^chore: regenerate README$/,
         maxFiles: 2,
         fileNameRegex: [
@@ -62,7 +61,7 @@ export class RegenerateReadme implements LanguageRule {
       });
   }
 
-  public async checkPR(): Promise<boolean> {
+  public checkPR(): boolean {
     const authorshipMatches = checkAuthor(
       this.classRule.author,
       this.incomingPR.author
@@ -81,6 +80,19 @@ export class RegenerateReadme implements LanguageRule {
     const filePatternsMatch = checkFilePathsMatch(
       this.incomingPR.changedFiles.map(x => x.filename),
       this.classRule.fileNameRegex
+    );
+
+    reportIndividualChecks(
+      [
+        'authorshipMatches',
+        'titleMatches',
+        'fileCountMatches',
+        'filePatternsMatch',
+      ],
+      [authorshipMatches, titleMatches, fileCountMatch, filePatternsMatch],
+      this.incomingPR.repoOwner,
+      this.incomingPR.repoName,
+      this.incomingPR.prNumber
     );
 
     return (

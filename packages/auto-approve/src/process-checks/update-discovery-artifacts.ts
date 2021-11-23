@@ -4,6 +4,7 @@ import {
   checkTitle,
   checkFileCount,
   checkFilePathsMatch,
+  reportIndividualChecks,
 } from '../utils-for-pr-checking';
 
 export class UpdateDiscoveryArtifacts implements LanguageRule {
@@ -18,7 +19,6 @@ export class UpdateDiscoveryArtifacts implements LanguageRule {
   };
   classRule: {
     author: string;
-    allFilesChecked: boolean;
     titleRegex?: RegExp;
     maxFiles: number;
     fileNameRegex?: RegExp[];
@@ -52,7 +52,6 @@ export class UpdateDiscoveryArtifacts implements LanguageRule {
     }),
       (this.classRule = {
         author: 'yoshi-code-bot',
-        allFilesChecked: false,
         titleRegex: /^chore: Update discovery artifacts/,
         maxFiles: 2,
         fileNameRegex: [
@@ -63,7 +62,7 @@ export class UpdateDiscoveryArtifacts implements LanguageRule {
       });
   }
 
-  public async checkPR(): Promise<boolean> {
+  public checkPR(): boolean {
     const authorshipMatches = checkAuthor(
       this.classRule.author,
       this.incomingPR.author
@@ -82,6 +81,19 @@ export class UpdateDiscoveryArtifacts implements LanguageRule {
     const filePatternsMatch = checkFilePathsMatch(
       this.incomingPR.changedFiles.map(x => x.filename),
       this.classRule.fileNameRegex
+    );
+
+    reportIndividualChecks(
+      [
+        'authorshipMatches',
+        'titleMatches',
+        'fileCountMatches',
+        'filePatternsMatch',
+      ],
+      [authorshipMatches, titleMatches, fileCountMatch, filePatternsMatch],
+      this.incomingPR.repoOwner,
+      this.incomingPR.repoName,
+      this.incomingPR.prNumber
     );
 
     return (
