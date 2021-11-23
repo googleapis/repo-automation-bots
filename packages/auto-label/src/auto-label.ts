@@ -304,7 +304,7 @@ async function updateStalenessLabel(
       logger.info(`No active PRs available in ${owner}/${repo}...`);
       return;
     }
-    for (const pull of response.data as IssueResponse['data']) {
+    for (const pull of response.data) {
       // Skip all non-pull request issues
       if (!pull.pull_request) {
         continue;
@@ -326,13 +326,13 @@ async function updateStalenessLabel(
         // We are going to update a label now, remove an old one if exists
         if (staleLabel) {
           logger.info(
-            `Deleting ${staleLabel.name!} in ${owner}/${repo}/${pull.number}...`
+            `Deleting ${staleLabel.name} in ${owner}/${repo}/${pull.number}...`
           );
           context.octokit.issues.removeLabel({
             owner,
             repo,
             issue_number: pull.number,
-            name: staleLabel.name!,
+            name: staleLabel.name,
           });
         }
         logger.metric('auto-label.label-added', {
