@@ -314,7 +314,7 @@ async function updateStalenessLabel(
       );
       let label = null;
       const staleLabel = helper.fetchLabelByPrefix(
-        Array.from(pull.labels, l => l.name),
+        pull.labels,
         helper.STALE_PREFIX
       );
       if (helper.isExpiredByDays(pull.created_at, critical)) {
@@ -322,7 +322,7 @@ async function updateStalenessLabel(
       } else if (helper.isExpiredByDays(pull.created_at, old)) {
         label = `${helper.STALE_PREFIX} ${helper.OLD_LABEL}`;
       }
-      if (label && label !== staleLabel) {
+      if (label && label !== staleLabel?.name) {
         // We are going to update a label now, remove an old one if exists
         if (staleLabel) {
           logger.info(
@@ -332,7 +332,7 @@ async function updateStalenessLabel(
             owner,
             repo,
             issue_number: pull.number,
-            name: staleLabel,
+            name: staleLabel.name,
           });
         }
         logger.metric('auto-label.label-added', {

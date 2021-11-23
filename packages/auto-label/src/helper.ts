@@ -67,12 +67,14 @@ export function labelExists(labels: Label[], new_label: string): Label | null {
  * Checks whether the intended label already exists by given prefix
  */
 export function fetchLabelByPrefix(
-  labels: string[],
+  labels: Label[],
   label_prefix: string
-): string | null {
+): Label | null {
   for (const label of labels) {
-    if (label.startsWith(label_prefix)) {
-      logger.info(`Exiting: label ${label} found by prefix ${label_prefix}`);
+    if (label.name.startsWith(label_prefix)) {
+      logger.info(
+        `Exiting: label ${label.name} found by prefix ${label_prefix}`
+      );
       return label;
     }
   }
