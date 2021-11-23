@@ -314,7 +314,7 @@ async function updateStalenessLabel(
       );
       let label = null;
       const staleLabel = helper.fetchLabelByPrefix(
-        pull.labels,
+        pull.labels as Label[],
         helper.STALE_PREFIX
       );
       if (helper.isExpiredByDays(pull.created_at, critical)) {
