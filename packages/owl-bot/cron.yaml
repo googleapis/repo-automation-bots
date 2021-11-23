@@ -14,4 +14,7 @@ cron:
     description: owl-bot syncing labels
     params:
       cron_type: "repository"
+      allowed_organizations:
+        - "googleapis"
+        - "googlecloudplatform"
       syncLabels: true

@@ -94,13 +94,6 @@ describe('language-and-path-labeling', () => {
         .get('/repos/testOwner/testRepo/pulls/12/files')
         .reply(200, pr_files_payload)
 
-        // Mock issues.addlabels adding path_label
-        .post('/repos/testOwner/testRepo/issues/12/labels', body => {
-          assert.notStrictEqual(body, expected_labels);
-          return true;
-        })
-        .reply(200)
-
         // Mock issues.addlabels adding language_label
         .post('/repos/testOwner/testRepo/issues/12/labels', body => {
           assert.notStrictEqual(body, expected_labels);

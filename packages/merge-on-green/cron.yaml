@@ -22,4 +22,7 @@ cron:
     schedule: "0 1 * * *"
     params:
       cron_type: "repository"
+      allowed_organizations:
+        - "googleapis"
+        - "googlecloudplatform"
       syncLabels: true

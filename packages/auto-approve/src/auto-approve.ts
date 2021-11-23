@@ -148,6 +148,18 @@ export function handler(app: Probot) {
       const repo = pr.pull_request.base.repo.name;
       const prNumber = pr.number;
 
+      // During codefreeze, simply set the RELEASE_FREEZE environment variable.
+      // if a PR is from release-please, it will not be merged:
+      if (
+        process.env.RELEASE_FREEZE === 'true' &&
+        pr.pull_request.user.login.includes('release-please')
+      ) {
+        console.info(
+          'releases are currently frozen, unset the environment variable RELEASE_FREEZE to re-enable.'
+        );
+        return;
+      }
+
       const PRFiles = await getChangedFiles(
         context.octokit,
         owner,

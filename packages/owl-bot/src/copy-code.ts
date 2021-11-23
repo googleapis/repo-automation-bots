@@ -495,6 +495,9 @@ export function copyDirs(
     }
   }
   // Then remove directories.  Some removes may fail because inner files were excluded.
+  // Sort the directories longest name first, so that child directories are
+  // removed before parent directories.
+  deadDirs.sort((a, b) => b.length - a.length);
   for (const deadDir of deadDirs) {
     logger.info(`rmdir  ${deadDir}`);
     try {
@@ -547,13 +550,27 @@ export function copyDirs(
  * to approximately 20.  The github token has a quota of about 5000 requests per hour,
  * so this cache is essential.
  */
-export type RepoHistoryCache = Map<
-  string,
-  {data: {number: number; body?: string | null}[]}
->;
+type Issues = {data: {number: number; body?: string | null}[]};
+export type RepoHistoryCache = Map<string, Issues>;
 
 export function newRepoHistoryCache(): RepoHistoryCache {
   return new Map();
+}
+
+/**
+ * Reduces the memory footprint of the cache entry before we store it in the cache.
+ * We're only interested in the Copy-Tag in the body.
+ */
+function stripIssues(issues: Issues): Issues {
+  return {
+    data: issues.data.map(issue => {
+      const copyTag = findCopyTag(issue.body ?? '');
+      return {
+        number: issue.number,
+        body: copyTag ? copyTagFooter + copyTag : '',
+      };
+    }),
+  };
 }
 
 /**
@@ -646,7 +663,7 @@ export async function copyExists(
       pulls = cachedPulls;
     } else {
       pulls = await octokit.pulls.list({...request});
-      cache.set(cacheKey, pulls);
+      cache.set(cacheKey, stripIssues(pulls));
     }
     if (findInBodies('Pull request', pulls)) return true;
     prsSeen += pulls.data.length;
@@ -671,7 +688,7 @@ export async function copyExists(
       issues = cachedIssues;
     } else {
       issues = await octokit.issues.listForRepo({...request});
-      cache.set(cacheKey, issues);
+      cache.set(cacheKey, stripIssues(issues));
     }
     if (findInBodies('Issue', issues)) return true;
     issuesSeen += issues.data.length;
