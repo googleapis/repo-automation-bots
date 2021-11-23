@@ -970,7 +970,7 @@ describe('run additional versioning checks', () => {
         1
       );
 
-      const doesDependencyMatch = doesDependencyChangeMatchPRTitle(
+      const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
         versions,
         nodeDependency.classRule.fileRules![0].dependencyTitle!,
         nodeDependency.incomingPR.title

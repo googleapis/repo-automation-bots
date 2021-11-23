@@ -12,16 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Octokit} from '@octokit/rest';
-import {PullRequestEvent} from '@octokit/webhooks-types/schema';
-import {UpdateDiscoveryArtifacts} from './process-checks/update-discovery-artifacts';
-import {RegenerateReadme} from './process-checks/regenerate-readme';
-import {DiscoveryDocUpdate} from './process-checks/discovery-doc-update';
-import {PythonDependency} from './process-checks/python/dependency';
-import {NodeDependency} from './process-checks/node/dependency';
-import {NodeRelease} from './process-checks/node/release';
-import {JavaDependency} from './process-checks/java/dependency';
-
 /**
  * Interface for rules in each languages' PERMITTED_FILES list. These
  * are rules for files that match an author and filename, and then provide
@@ -129,25 +119,6 @@ export interface GHFile {
   content: string | undefined;
 }
 
-//   type Constants = typeof Constants[keyof typeof Constants]
-//   const Constants = {
-//     updateDiscoveryArtifacts = UpdateDiscoveryArtifacts,
-//     regenerateReadme = RegenerateReadme,
-//     discoveryDocUpdate = DiscoveryDocUpdate,
-//     pythonDependency = PythonDependency,
-//     nodeDependency = NodeDependency,
-//     nodeRelease = NodeRelease,
-//     javaDependency = JavaDependency
-//   } as const;
-export enum Processes {
-  updateDiscoveryArtifacts = 'UpdateDiscoveryArtifacts',
-  RegenerateReadme = 'RegenerateReadme',
-  discoveryDocUpdate = 'DiscoveryDocUpdate',
-  pythonDependency = 'PythonDependency',
-  nodeDependency = 'NodeDependency',
-  nodeRelease = 'NodeRelease',
-  javaDependency = 'JavaDependency',
-}
 /**
  * Interface for an auto-approve.yml configuration (repo/auto-approve.yml)
  */
@@ -155,21 +126,53 @@ export interface Configuration {
   rules: ValidPr[];
 }
 
-/**
- * Interface for an auto-approve.yml configuration (repo/auto-approve.yml)
- */
+// /**
+//  * Interface for an auto-approve.yml configuration (repo/auto-approve.yml)
+//  */
+// export interface ConfigurationV2 {
+//   processes: (
+//     | Constructable<UpdateDiscoveryArtifacts>
+//     | Constructable<RegenerateReadme>
+//     | Constructable<DiscoveryDocUpdate>
+//     | Constructable<PythonDependency>
+//     | Constructable<NodeDependency>
+//     | Constructable<NodeRelease>
+//     | Constructable<JavaDependency>
+//   )[];
+// }
+
 export interface ConfigurationV2 {
-  processes: (
-    | Constructable<UpdateDiscoveryArtifacts>
-    | Constructable<RegenerateReadme>
-    | Constructable<DiscoveryDocUpdate>
-    | Constructable<PythonDependency>
-    | Constructable<NodeDependency>
-    | Constructable<NodeRelease>
-    | Constructable<JavaDependency>
-  )[];
+  processes: string[];
 }
 
-interface Constructable<T> {
-  new (...args: any): T;
+export abstract class Process {
+  incomingPR: {
+    author: string;
+    title: string;
+    fileCount: number;
+    changedFiles: File[];
+    repoName: string;
+    repoOwner: string;
+    prNumber: number;
+  };
+
+  constructor(
+    incomingPrAuthor: string,
+    incomingTitle: string,
+    incomingFileCount: number,
+    incomingChangedFiles: File[],
+    incomingRepoName: string,
+    incomingRepoOwner: string,
+    incomingPrNumber: number
+  ) {
+    this.incomingPR = {
+      author: incomingPrAuthor,
+      title: incomingTitle,
+      fileCount: incomingFileCount,
+      changedFiles: incomingChangedFiles,
+      repoName: incomingRepoName,
+      repoOwner: incomingRepoOwner,
+      prNumber: incomingPrNumber,
+    };
+  }
 }

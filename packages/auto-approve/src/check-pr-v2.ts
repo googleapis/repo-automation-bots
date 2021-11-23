@@ -17,8 +17,46 @@ import {PullRequestEvent} from '@octokit/webhooks-types/schema';
 import {getChangedFiles} from './get-pr-info';
 import {Octokit} from '@octokit/rest';
 import {ConfigurationV2} from './interfaces';
-
+import {UpdateDiscoveryArtifacts} from './process-checks/update-discovery-artifacts';
+import {RegenerateReadme} from './process-checks/regenerate-readme';
+import {DiscoveryDocUpdate} from './process-checks/discovery-doc-update';
+import {PythonDependency} from './process-checks/python/dependency';
+import {NodeDependency} from './process-checks/node/dependency';
+import {NodeRelease} from './process-checks/node/release';
+import {JavaDependency} from './process-checks/java/dependency';
 // This file manages the logic to check whether a given PR matches the config in the repository
+
+// We need this typeMap to convert the JSON input (string) into a corresponding type.
+const typeMap = [
+  {
+    configValue: 'UpdateDiscoveryArtifacts',
+    configType: UpdateDiscoveryArtifacts,
+  },
+  {
+    configValue: 'RegenerateReadme',
+    configType: RegenerateReadme,
+  },
+  {
+    configValue: 'DiscoveryDocUpdate',
+    configType: DiscoveryDocUpdate,
+  },
+  {
+    configValue: 'PythonDependency',
+    configType: PythonDependency,
+  },
+  {
+    configValue: 'NodeDependency',
+    configType: NodeDependency,
+  },
+  {
+    configValue: 'NodeRelease',
+    configType: NodeRelease,
+  },
+  {
+    configValue: 'JavaDependency',
+    configType: JavaDependency,
+  },
+];
 
 /**
  * Checks that a given PR matches the rules in the auto-approve.yml file in the repository
@@ -48,8 +86,11 @@ export async function checkPRAgainstConfig(
     prNumber
   );
 
-  for (const Rule of config.processes) {
-    const instantiatedRule = new Rule(
+  for (const rule of config.processes) {
+    const Rule = typeMap.find(x => x.configValue === rule);
+    // We can assert we'll find a match, since the config has already passed
+    // a check that it corresponds to one of the processes
+    const instantiatedRule = new Rule!.configType(
       prAuthor,
       title,
       fileCount,

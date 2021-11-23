@@ -257,7 +257,7 @@ export function doesDependencyChangeMatchPRTitle(
   versions: Versions,
   dependencyRegex: RegExp,
   title: string,
-  process?: string
+  process: string
 ): boolean {
   let dependencyName;
   const titleRegex = title.match(dependencyRegex);
