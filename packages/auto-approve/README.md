@@ -105,6 +105,8 @@ repo's needs.
 
 As before, a repo may select one or more of these processes if they are relevant to the repository.
 
+If you'd like to petition for a new workflow, please submit a bug in this directory with the label `bot: auto-approve`.
+
 Furthermore, the bot still requires a CODEOWNERS file to look like so:
 
 There should be a CODEWONERS file, under `.github/CODEOWNERS` in your repository. You must add a line that adds the Github Automation team as a codeowner for the `auto-approve.yml` file you have created, and they will be alerted anytime there is a change to the file. See the example below.
