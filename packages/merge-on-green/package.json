@@ -42,7 +42,7 @@
     "nock": "^13.2.0",
     "sinon": "^12.0.1",
     "snap-shot-it": "^7.9.6",
-    "typescript": "~4.4.4"
+    "typescript": "~4.5.0"
   },
   "engines": {
     "node": ">= 12.18.2"
