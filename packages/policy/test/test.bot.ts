@@ -164,6 +164,89 @@ describe('bot', () => {
     assert.ok(submitFixesStub.calledOnce);
   });
 
+  it('should run the check and saves the result', async () => {
+    const repo = 'nodejs-storage';
+    const org = 'googleapis';
+    const fakeRepo = {
+      full_name: 'googleapis/nodejs-storage',
+    } as policy.GitHubRepo;
+    const fakeResult = {} as policy.PolicyResult;
+    const p = new policy.Policy(new Octokit(), console);
+    const c = new changer.Changer(new Octokit(), fakeRepo);
+    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
+    const getChangerStub = sinon.stub(changer, 'getChanger').returns(c);
+    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
+    const checkPolicyStub = sinon
+      .stub(p, 'checkRepoPolicy')
+      .resolves(fakeResult);
+    const exportStub = sinon.stub(bq, 'exportToBigQuery').resolves();
+    const submitFixesStub = sinon.stub(c, 'submitFixes').resolves();
+
+    await probot.receive({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: 'schedule.repository' as any,
+      payload: {
+        repository: {
+          name: repo,
+          owner: {
+            login: org,
+          },
+        },
+        organization: {
+          login: org,
+        },
+        cron_org: org,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
+      id: 'abc123',
+    });
+    assert.ok(getPolicyStub.calledOnce);
+    assert.ok(getChangerStub.calledOnce);
+    assert.ok(getRepoStub.calledOnce);
+    assert.ok(checkPolicyStub.calledOnce);
+    assert.ok(exportStub.calledOnce);
+    assert.ok(submitFixesStub.calledOnce);
+  });
+
+  it('should raise error if checkRepoPolicy throws', async () => {
+    const repo = 'nodejs-docs-samples';
+    const org = 'GoogleCloudPlatform';
+    const fakeRepo = {
+      topics: ['samples'],
+      full_name: 'googleapis/nodejs-storage',
+    } as policy.GitHubRepo;
+    const p = new policy.Policy(new Octokit(), console);
+    const getPolicyStub = sinon.stub(policy, 'getPolicy').returns(p);
+    const getRepoStub = sinon.stub(p, 'getRepo').resolves(fakeRepo);
+    const checkPolicyStub = sinon
+      .stub(p, 'checkRepoPolicy')
+      .throws(Error('reading file failed'));
+    await assert.rejects(
+      probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          repository: {
+            name: repo,
+            owner: {
+              login: org,
+            },
+          },
+          organization: {
+            login: org,
+          },
+          cron_org: org,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      }),
+      /reading file failed/
+    );
+    assert.ok(getPolicyStub.calledOnce);
+    assert.ok(getRepoStub.calledOnce);
+    assert.ok(checkPolicyStub.calledOnce);
+  });
+
   it('should skip archived repos', async () => {
     const repo = 'nodejs-storage';
     const org = 'googleapis';
