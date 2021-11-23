@@ -280,64 +280,75 @@ async function updateStalenessLabel(
   if (!config.staleness?.pullrequest) {
     return;
   }
-  const response = await context.octokit.rest.pulls.list({
-    owner: owner,
-    repo: repo,
-  });
-  if (!response || !response.data) {
-    logger.info(`No active PRs available in ${owner}/${repo}...`);
+
+  const old = config.staleness?.old || helper.DEFAULT_DAYS_TO_STALE;
+  const critical =
+    config.staleness?.critical || helper.DEFAULT_DAYS_TO_STALE * 2;
+
+  // Make sure that config is right and if not, set defaults
+  if (old > critical || critical > helper.MAX_DAYS || old <= 0) {
+    logger.info(
+      `The staleness config is wrong, old = ${old}, critical = ${critical}, bailing...`
+    );
     return;
   }
 
-  let old = config.staleness?.old || helper.DEFAULT_DAYS_TO_STALE;
-  let critical = config.staleness?.critical || helper.DEFAULT_DAYS_TO_STALE * 2;
-  let label = null;
-
-  // Make sure that config is right and if not, set defaults
-  if (old > critical || critical > helper.MAX_DAYS || old < 0) {
-    logger.info(
-      `The staleness config is wrong, old = ${old}, critical = ${critical}, fixing...`
-    );
-    old = helper.DEFAULT_DAYS_TO_STALE;
-    critical = helper.DEFAULT_DAYS_TO_STALE * 2;
-  }
-
-  for (const pull of response.data) {
-    logger.info(
-      `Checking staleness in PR #${pull.number} in ${owner}/${repo}...`
-    );
-    const staleLabel = helper.fetchLabelByPrefix(
-      pull.labels,
-      helper.STALE_PREFIX
-    );
-
-    if (helper.isExpiredByDays(pull.created_at, critical)) {
-      label = `${helper.STALE_PREFIX} ${helper.CRITICAL_LABEL}`;
-    } else if (helper.isExpiredByDays(pull.created_at, old)) {
-      label = `${helper.STALE_PREFIX} ${helper.OLD_LABEL}`;
+  for await (const response of context.octokit.paginate.iterator(
+    context.octokit.rest.issues.listForRepo,
+    {
+      owner: owner,
+      repo: repo,
     }
-
-    if (label && label !== staleLabel?.name) {
-      // We are going to update a label now, remove an old one if exists
-      if (staleLabel) {
-        logger.info(
-          `Deleting ${staleLabel.name!} in ${owner}/${repo}/${pull.number}...`
-        );
-        context.octokit.issues.removeLabel({
+  )) {
+    if (!response || !response.data) {
+      logger.info(`No active PRs available in ${owner}/${repo}...`);
+      return;
+    }
+    for (const pull of response.data) {
+      // Skip all non-pull request issues
+      if (!pull.pull_request) {
+        continue;
+      }
+      logger.info(
+        `Checking staleness in PR #${pull.number} in ${owner}/${repo}...`
+      );
+      let label = null;
+      const staleLabel = helper.fetchLabelByPrefix(
+        pull.labels,
+        helper.STALE_PREFIX
+      );
+      if (helper.isExpiredByDays(pull.created_at, critical)) {
+        label = `${helper.STALE_PREFIX} ${helper.CRITICAL_LABEL}`;
+      } else if (helper.isExpiredByDays(pull.created_at, old)) {
+        label = `${helper.STALE_PREFIX} ${helper.OLD_LABEL}`;
+      }
+      if (label && label !== staleLabel?.name) {
+        // We are going to update a label now, remove an old one if exists
+        if (staleLabel) {
+          logger.info(
+            `Deleting ${staleLabel.name!} in ${owner}/${repo}/${pull.number}...`
+          );
+          context.octokit.issues.removeLabel({
+            owner,
+            repo,
+            issue_number: pull.number,
+            name: staleLabel.name!,
+          });
+        }
+        logger.metric('auto-label.label-added', {
+          repo: `${owner}/${repo}/`,
+          number: pull.number,
+          label: label,
+          mode: 'staledetect',
+        });
+        logger.info(`Adding ${label} to ${owner}/${repo}/${pull.number}...`);
+        await context.octokit.issues.addLabels({
           owner,
           repo,
           issue_number: pull.number,
-          name: staleLabel.name!,
+          labels: [label],
         });
       }
-
-      logger.info(`Adding ${label} to ${owner}/${repo}/${pull.number}...`);
-      await context.octokit.issues.addLabels({
-        owner,
-        repo,
-        issue_number: pull.number,
-        labels: [label],
-      });
     }
   }
 }

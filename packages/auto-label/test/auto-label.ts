@@ -572,7 +572,7 @@ describe('auto-label', () => {
       const config = loadConfig('valid-config-staleness.yml');
       getConfigWithDefaultStub.resolves(config);
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/pulls')
+        .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
           {
             number: 5,
@@ -583,6 +583,9 @@ describe('auto-label', () => {
                 color: 'C9FFE5',
               },
             ],
+            pull_request: {
+              url: 'https://api.github.com/repos/testOwner/testRepo/issues/5',
+            },
           },
         ])
         .get('/repos/testOwner/testRepo/issues')
@@ -606,7 +609,7 @@ describe('auto-label', () => {
       const config = loadConfig('valid-config-staleness.yml');
       getConfigWithDefaultStub.resolves(config);
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/pulls')
+        .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
           {
             number: 5,
@@ -617,6 +620,9 @@ describe('auto-label', () => {
                 color: 'C9FFE5',
               },
             ],
+            pull_request: {
+              url: 'https://api.github.com/repos/testOwner/testRepo/issues/5',
+            },
           },
         ])
         .delete('/repos/testOwner/testRepo/issues/5/labels/stale%3A%20old')
@@ -654,12 +660,15 @@ describe('auto-label', () => {
       const config = loadConfig('valid-config-staleness.yml');
       getConfigWithDefaultStub.resolves(config);
       const ghRequests = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/pulls')
+        .get('/repos/testOwner/testRepo/issues')
         .reply(200, [
           {
             number: 5,
             created_at: '2021-10-06T16:45:18Z',
             labels: [],
+            pull_request: {
+              url: 'https://api.github.com/repos/testOwner/testRepo/issues/5',
+            },
           },
         ])
         .post('/repos/testOwner/testRepo/issues/5/labels')
@@ -673,6 +682,53 @@ describe('auto-label', () => {
         .reply(200, [
           {
             number: 1,
+          },
+        ])
+        .get('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [{name: 'api:theWrongLabel'}])
+        .post('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ])
+        .delete('/repos/testOwner/testRepo/issues/1/labels/api%3AtheWrongLabel')
+        .reply(200, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ]);
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          organization: {login: 'testOwner'},
+          repository: {name: 'testRepo', owner: {login: 'testOwner'}},
+          cron_org: 'testOwner',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
+    it('does not adds staleness label for stale pull request', async () => {
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, [
+          {
+            number: 1,
+            // return stale pull request to make sure it will be ignored due to disabled config
+            created_at: '2010-10-01T16:45:18Z',
+            labels: [],
+            pull_request: {
+              url: 'https://api.github.com/repos/testOwner/testRepo/issues/1',
+            },
           },
         ])
         .get('/repos/testOwner/testRepo/issues/1/labels')
