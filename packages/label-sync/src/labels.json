@@ -234,6 +234,16 @@
       "name": "lang: go",
       "description": "Issues specific to Go.",
       "color": "2fe0da"
+    },
+    {
+      "name": "stale: old",
+      "description": "Pull request is old and needs attention.",
+      "color": "ab270b"
+    },
+    {
+      "name": "stale: critical",
+      "description": "Pull request is critically old and needs prioritization.",
+      "color": "801904"
     }
   ]
 }
