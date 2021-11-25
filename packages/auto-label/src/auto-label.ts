@@ -278,6 +278,7 @@ async function updateStalenessLabel(
   // If user has turned on stale labels by configuring {staleness: {pullrequest: true, old: 60, critical: 120}}
   // By default, this feature is turned off
   if (!config.staleness?.pullrequest) {
+    logger.info(`Staleness feature is disabled for ${owner}/${repo}...`);
     return;
   }
 
@@ -292,7 +293,9 @@ async function updateStalenessLabel(
     );
     return;
   }
-
+  logger.info(
+    `Running staleness check for ${owner}/${repo}, config: old=${old}, critical=${critical}...`
+  );
   for await (const response of context.octokit.paginate.iterator(
     context.octokit.rest.issues.listForRepo,
     {
