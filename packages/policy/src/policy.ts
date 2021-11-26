@@ -178,7 +178,11 @@ export class Policy {
         });
       })
     );
-    const good = results.filter(x => x.status === 200);
+    const good = results.filter(x => {
+      if (x.status >= 500)
+        throw Error(`received ${x.status} fetching ${file} in ${repo}`);
+      return x.status === 200;
+    });
     return good.length > 0;
   }
 

@@ -349,4 +349,35 @@ describe('policy', () => {
     assert.deepStrictEqual(result, expected);
     stubs.forEach(x => assert.ok(x.calledOnce));
   });
+
+  it('should raise error if grabbing file tracked by policy fails', async () => {
+    const repo = {
+      full_name: 'googleapis/nodejs-storage',
+      default_branch: 'main',
+      license: {
+        key: 'beerpl',
+      },
+      language: 'ruby',
+    } as GitHubRepo;
+
+    const getSecurityMd = nock('https://raw.githubusercontent.com')
+      .get('/googleapis/nodejs-storage/main/SECURITY.md')
+      .reply(200)
+      .get('/googleapis/nodejs-storage/main/.github/SECURITY.md')
+      .reply(502);
+
+    // we've already individually tested all of these functions, so stub them
+    const stubs = [
+      sinon.stub(policy, 'hasRenovate').resolves(true),
+      sinon.stub(policy, 'hasLicense').resolves(true),
+      sinon.stub(policy, 'hasCodeOfConduct').resolves(true),
+      sinon.stub(policy, 'hasContributing').resolves(true),
+      sinon.stub(policy, 'hasCodeOwners').resolves(true),
+      sinon.stub(policy, 'hasBranchProtection').resolves(true),
+      sinon.stub(policy, 'hasMergeCommitsDisabled').resolves(true),
+      sinon.stub(policy, 'hasMainDefault').resolves(true),
+    ];
+    await assert.rejects(policy.checkRepoPolicy(repo), /received 502 fetching/);
+    getSecurityMd.done();
+  });
 });
