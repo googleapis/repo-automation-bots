@@ -30,14 +30,14 @@
   "dependencies": {
     "@google-automations/bot-config-utils": "^4.0.0",
     "@google-automations/label-utils": "^2.0.2",
-    "@octokit/webhooks": "^9.18.0",
+    "@octokit/webhooks": "^9.20.0",
     "gcf-utils": "^13.1.0",
     "release-please": "^12.6.0"
   },
   "devDependencies": {
     "@octokit/rest": "^18.12.0",
     "@types/mocha": "^9.0.0",
-    "@types/node": "^16.11.9",
+    "@types/node": "^16.11.10",
     "@types/semver": "^7.3.9",
     "@types/sinon": "^10.0.6",
     "c8": "^7.10.0",
