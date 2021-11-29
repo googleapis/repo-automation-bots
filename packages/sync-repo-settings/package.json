@@ -29,17 +29,17 @@
   "dependencies": {
     "@google-automations/bot-config-utils": "^4.0.0",
     "extend": "^3.0.2",
-    "gcf-utils": "^13.0.2",
+    "gcf-utils": "^13.1.0",
     "js-yaml": "^4.1.0",
     "yargs": "^17.2.1"
   },
   "devDependencies": {
     "@types/extend": "^3.0.1",
-    "@types/js-yaml": "^4.0.4",
+    "@types/js-yaml": "^4.0.5",
     "@types/mocha": "^9.0.0",
-    "@types/node": "^16.11.7",
+    "@types/node": "^16.11.10",
     "@types/sinon": "^10.0.6",
-    "@types/yargs": "^17.0.5",
+    "@types/yargs": "^17.0.7",
     "c8": "^7.10.0",
     "cross-env": "^7.0.3",
     "gts": "^3.1.0",
@@ -48,7 +48,7 @@
     "nock": "^13.2.1",
     "sinon": "^12.0.1",
     "snap-shot-it": "^7.9.6",
-    "typescript": "~4.5.0"
+    "typescript": "~4.5.2"
   },
   "engines": {
     "node": ">= 12.18.2"
