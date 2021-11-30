@@ -15,12 +15,8 @@
 import {describe, it} from 'mocha';
 import * as docker from '../src/docker-api';
 import * as assert from 'assert';
-import nock from 'nock';
 
-describe('fetchConfig', () => {
-  nock.cleanAll();
-  nock.enableNetConnect(/.*/);
-
+describe.skip('fetchConfig', () => {
   it('fetches a real docker image', async () => {
     const config = await docker.fetchConfig(
       'gcr.io/cloud-devrel-public-resources/owlbot-nodejs',
