@@ -45,6 +45,7 @@
     "@types/minimatch": "^3.0.5",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.3.3",
+    "@types/node-fetch": "^2.5.12",
     "@types/rimraf": "^3.0.1",
     "@types/sinon": "^10.0.2",
     "@types/tmp": "^0.2.1",
@@ -75,6 +76,7 @@
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^8.5.1",
     "minimatch": "^3.0.4",
+    "node-fetch": "^2.6.1",
     "probot": "^12.1.1",
     "tmp": "^0.2.1",
     "yargs": "^17.0.1"
