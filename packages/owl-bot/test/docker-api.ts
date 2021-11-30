@@ -17,9 +17,10 @@ import * as docker from '../src/docker-api';
 import * as assert from 'assert';
 import nock from 'nock';
 
-nock.enableNetConnect(/.*/);
-
 describe('fetchConfig', () => {
+  nock.cleanAll();
+  nock.enableNetConnect(/.*/);
+
   it('fetches a real docker image', async () => {
     const config = await docker.fetchConfig(
       'gcr.io/cloud-devrel-public-resources/owlbot-nodejs',
