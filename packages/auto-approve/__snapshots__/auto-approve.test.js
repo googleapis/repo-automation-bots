@@ -72,21 +72,6 @@ exports['auto-approve main auto-approve function config exists on main branch wi
   }
 }
 
-exports['auto-approve gets secrets and authenticates separately for approval creates a separate octokit instance and authenticates with secret in secret manager 1'] = {
-  'head_sha': 'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
-  'name': 'Auto-approve.yml check',
-  'conclusion': 'success',
-  'output': {
-    'title': 'Auto-approve.yml check',
-    'summary': 'Successful auto-approve.yml config check',
-    'text': ''
-  }
-}
-
-exports['auto-approve gets secrets and authenticates separately for approval creates a separate octokit instance and authenticates with secret in secret manager 2'] = {
-  'event': 'APPROVE'
-}
-
 exports['auto-approve main auto-approve function config does not exist on main branch attempts to get codeowners file and create a passing status check if PR contains correct config 1'] = {
   'head_sha': 'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
   'name': 'Auto-approve.yml check',
@@ -118,4 +103,19 @@ exports['auto-approve main auto-approve function config does not exist on main b
     'summary': 'Successful auto-approve.yml config check',
     'text': ''
   }
+}
+
+exports['auto-approve gets secrets and authenticates separately for approval creates a separate octokit instance and authenticates with secret in secret manager 1'] = {
+  'head_sha': 'c5b0c82f5d58dd4a87e4e3e5f73cd752e552931a',
+  'name': 'Auto-approve.yml check',
+  'conclusion': 'success',
+  'output': {
+    'title': 'Auto-approve.yml check',
+    'summary': 'Successful auto-approve.yml config check',
+    'text': ''
+  }
+}
+
+exports['auto-approve gets secrets and authenticates separately for approval creates a separate octokit instance and authenticates with secret in secret manager 2'] = {
+  'event': 'APPROVE'
 }
