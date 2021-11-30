@@ -17,8 +17,7 @@ import * as docker from '../src/docker-api';
 import * as assert from 'assert';
 import nock from 'nock';
 
-nock.cleanAll();
-nock.enableNetConnect();
+nock.enableNetConnect(/.*/);
 
 describe('fetchConfig', () => {
   it('fetches a real docker image', async () => {
