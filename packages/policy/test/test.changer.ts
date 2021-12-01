@@ -93,4 +93,18 @@ describe('changer', () => {
     await c.submitFixes(result);
     scope.done();
   });
+
+  it('should not throw if the upstream branch does not exist', async () => {
+    const octokit = new Octokit();
+    const scope = nock('https://api.github.com')
+      .get('/repos/googleapis/nodejs-storage/pulls?state=open&per_page=100')
+      .reply(200, []);
+    const stub = sinon
+      .stub(suggester, 'createPullRequest')
+      .rejects(new Error('Branch not found'));
+    const c = new changer.Changer(octokit, repo);
+    await c.submitFixes(result);
+    assert.ok(stub.calledOnce);
+    scope.done();
+  });
 });
