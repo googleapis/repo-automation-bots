@@ -68,7 +68,7 @@ export function policyBot(app: Probot) {
     // causes any errors.  Otherwise, the entire function is retried, and the
     // result is recorded twice.
     try {
-      const changer = getChanger(context.octokit, repoMetadata);
+      const changer = getChanger(context.octokit, repoMetadata, logger);
       await changer.submitFixes(result);
     } catch (e) {
       const err = e as Error;
