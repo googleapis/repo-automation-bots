@@ -1,0 +1,4 @@
+processes:
+  - "UpdateDiscoveryArtifacts"
+  - "RegenerateReadme"
+  - "DiscoveryDocUpdate"
