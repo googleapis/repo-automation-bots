@@ -24,10 +24,19 @@ import {cwd} from 'process';
 import yargs = require('yargs');
 import {newCmd} from '../../cmd';
 import {findCopyTag, loadOwlBotYaml, unpackCopyTag} from '../../copy-code';
+import {OWL_BOT_IGNORE} from '../../labels';
+import {octokitFactoryFromToken} from '../../octokit-util';
 import * as proc from 'child_process';
 import path = require('path');
+import {githubRepoFromOwnerSlashName} from '../../github-repo';
 
-export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, {}> = {
+interface Args {
+  'dest-repo': string;
+  pr: number;
+  'github-token': string;
+}
+
+export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, Args> = {
   command: 'commit-post-processor-update',
   describe:
     'Runs either `git commit -m "Updates from OwlBot"` or ' +
@@ -35,10 +44,35 @@ export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, {}> = {
     'depending on the squash flag in .OwlBot.yaml.\n\n' +
     'Run this command in the root directory of a client library repository ' +
     'after running the post processor.',
-  handler: () => commitPostProcessorUpdate(),
+  builder(yargs) {
+    return yargs
+      .option('dest-repo', {
+        describe: "The PR's destination repo (e.g., googleapis/foo)",
+        type: 'string',
+        demand: true,
+      })
+      .option('pr', {
+        describe: 'The pull request number',
+        type: 'number',
+        demand: true,
+      })
+      .option('github-token', {
+        describe: 'Short-lived GitHub token.',
+        type: 'string',
+        demand: true,
+      });
+  },
+  handler: argv => commitPostProcessorUpdate(argv),
 };
 
-export async function commitPostProcessorUpdate(repoDir = ''): Promise<void> {
+export async function commitPostProcessorUpdate(
+  args: Args,
+  repoDir = ''
+): Promise<void> {
+  const octokitFactory = octokitFactoryFromToken(args['github-token']);
+  const octokit = await octokitFactory.getShortLivedOctokit();
+  const repo = githubRepoFromOwnerSlashName(args['dest-repo']);
+
   const cmd = newCmd(console);
   if (['', '.'].includes(repoDir)) {
     repoDir = cwd();
@@ -52,6 +86,22 @@ export async function commitPostProcessorUpdate(repoDir = ''): Promise<void> {
   if (!status) {
     return; // No changes made.  Nothing to do.
   }
+
+  // Check if the ignore label has been added during the post-processing.
+  // If so, do not push changes.
+  const {data: prData} = await octokit.pulls.get({
+    owner: repo.owner,
+    repo: repo.repo,
+    pull_number: args.pr,
+  });
+
+  if (prData.labels.find(label => label.name === OWL_BOT_IGNORE)) {
+    console.log(
+      `Not making any changes to ${repo}#${args.pr} because it's labeled with ${OWL_BOT_IGNORE}.`
+    );
+    return;
+  }
+
   // Unpack the Copy-Tag.
   const body = cmd('git log -1 --format=%B', {cwd: repoDir}).toString('utf-8');
   const copyTagText = findCopyTag(body);
