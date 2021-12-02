@@ -149,7 +149,7 @@ function createConfigResponse(configFile: string) {
 // Emulate fetching the file list.
 function fetchFileList(fileName: string) {
   return nock('https://api.github.com')
-    .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+    .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=50')
     .reply(200, [
       {
         filename: `.github/${fileName}`,
@@ -161,7 +161,7 @@ function fetchFileList(fileName: string) {
 // Emulate the given config file is modified in the PR.
 function fetchFilesInPR(configFile: string, fileName: string) {
   return nock('https://api.github.com')
-    .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+    .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=50')
     .reply(200, [
       {
         filename: `.github/${fileName}`,
@@ -231,7 +231,7 @@ describe('config test app', () => {
       const payload = require(resolve(fixturesPath, 'pr_event'));
 
       const scope = nock('https://api.github.com')
-        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=100')
+        .get('/repos/tmatsuo/repo-automation-bots/pulls/14/files?per_page=50')
         .reply(404);
       await probot.receive({
         name: 'pull_request',

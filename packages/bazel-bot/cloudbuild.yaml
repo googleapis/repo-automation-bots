@@ -28,6 +28,11 @@ steps:
     # is defined in the Cloud Build UI, with the intention that it is only
     # used for exceptional circumstances.
     - "BROKEN_SHAS=$_BROKEN_SHAS"
+    # Use source/target branch variables to override the default git
+    # branch which is cloned. This is primarily used for preview
+    # branch support.
+    - "SOURCE_BRANCH=$_SOURCE_BRANCH"
+    - "TARGET_BRANCH=$_TARGET_BRANCH"
 
 timeout: '7200s'
 
