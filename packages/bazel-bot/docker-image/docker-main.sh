@@ -18,10 +18,21 @@ set -e
 git config --global user.email "bazel-bot-development[bot]@users.noreply.github.com"
 git config --global user.name "Bazel Bot"
 
-git clone https://github.com/googleapis/googleapis.git
-git clone https://github.com/googleapis/googleapis-gen.git
+SOURCE_CLONE_ARGS=
+if [[ $SOURCE_BRANCH != "" ]]
+then
+  SOURCE_CLONE_ARGS="-b $SOURCE_BRANCH"
+fi
+
+TARGET_CLONE_ARGS=
+if [[ $TARGET_BRANCH != "" ]]
+then
+  TARGET_CLONE_ARGS="-b $TARGET_BRANCH"
+fi
+
+git clone https://github.com/googleapis/googleapis.git ${SOURCE_CLONE_ARGS}
+git clone https://github.com/googleapis/googleapis-gen.git ${TARGET_CLONE_ARGS}
 
 mydir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 bash -x "$mydir/generate-googleapis-gen.sh"
-

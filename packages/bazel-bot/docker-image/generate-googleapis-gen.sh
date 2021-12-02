@@ -31,11 +31,11 @@
 set -e
 
 # path to clone of https://github.com/googleapis/googleapis with
-#   master branch checked out.
+#   with the correct source branch checked out.
 export GOOGLEAPIS=${GOOGLEAPIS:=`realpath googleapis`}
 
 # path to clone of https://github.com/googleapis/googleapis-gen
-#   with master branch checked out.
+#   with the correct target branch checked out.
 export GOOGLEAPIS_GEN=${GOOGLEAPIS_GEN:=`realpath googleapis-gen`}
 
 mydir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
@@ -141,12 +141,15 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         git -C "$GOOGLEAPIS_GEN" tag "googleapis-$sha"
         git -C "$GOOGLEAPIS_GEN" push origin "googleapis-$sha"
     else
+        # Determine the current branch so we can explicitly push to it
+        declare -r googleapis_gen_branch=$(git -C "$GOOGLEAPIS_GEN" branch --show-current)
+
         # Copy the commit message from the commit in googleapis.
         git -C "$GOOGLEAPIS" log -1 --format=%s%n%n%b > commit-msg.txt
         echo "Source-Link: https://github.com/googleapis/googleapis/commit/$sha" >> commit-msg.txt
         # Commit changes and push them.
         git -C "$GOOGLEAPIS_GEN" commit -F "$(realpath commit-msg.txt)"
         git -C "$GOOGLEAPIS_GEN" tag "googleapis-$sha"
-        git -C "$GOOGLEAPIS_GEN" push origin master "googleapis-$sha"
+        git -C "$GOOGLEAPIS_GEN" push origin "$googleapis_gen_branch" "googleapis-$sha"
     fi
 done
