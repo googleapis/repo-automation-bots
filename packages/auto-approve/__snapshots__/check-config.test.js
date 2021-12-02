@@ -35,7 +35,7 @@ exports['check for config whether YAML file has valid schema should fail if ther
 `
 
 exports['check for config whether YAML file has valid schema V2 should fail if YAML has any other properties than the ones specified 1'] = `
-[{"wrongProperty":{"allowedValues":["UpdateDiscoveryArtifacts","RegenerateReadme","DiscoveryDocUpdate","PythonDependency","NodeDependency","NodeRelease","JavaDependency"]},"message":"must be equal to one of the allowed values"}]
+[{"wrongProperty":{"allowedValues":["UpdateDiscoveryArtifacts","RegenerateReadme","DiscoveryDocUpdate","PythonDependency","NodeDependency","NodeRelease","JavaDependency","OwlBotTemplateChanges"]},"message":"must be equal to one of the allowed values"}]
 `
 
 exports['check for config whether YAML file has valid schema V2 should fail if the property is wrong 1'] = `

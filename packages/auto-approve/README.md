@@ -93,6 +93,11 @@ Below is what each process checks for:
     - Increase the non-major package version of a dependency
     - Only change one dependency
     - Change the dependency that was there previously, and that is on the title of the PR, and is a Google dependency
+* OwlBotTemplateChanges:
+  - Checks that the author is 'gcf-owl-bot[bot]'
+  - Checks that the title of the PR does NOT include feat, fix, or !
+  - Checks that the body of the PR does not contain a PiperOrigin ID
+  - Checks that the .repo-metadata.json of the repo contains "library_type": "GAPIC_AUTO"
   
 
 This change in configuration permits the following:
