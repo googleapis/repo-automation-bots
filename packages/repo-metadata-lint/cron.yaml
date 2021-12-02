@@ -1,0 +1,9 @@
+cron:
+  - name: repo_metadata_lint
+    schedule: 0 1 * * *
+    description: repo_metadata_lint for googleapis
+    params:
+      installation:
+        id: TODO
+      cron_org: googleapis
+
