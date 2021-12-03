@@ -13,7 +13,9 @@
 // limitations under the License.
 //
 
-interface Result {
+const {URL} = require('url');
+
+export interface ValidationResult {
   status: 'success' | 'error';
   errors: Array<string>;
 }
@@ -34,7 +36,7 @@ const RELEASE_LEVELS = ['preview', 'stable'];
 // Apply validation logic to .repo-metadata.json.
 export class Validate {
   static validate(path: string, repoMetadataContent: string) {
-    const result: Result = {status: 'success', errors: []};
+    const result: ValidationResult = {status: 'success', errors: []};
     try {
       JSON.parse(repoMetadataContent);
     } catch (err) {
@@ -72,6 +74,21 @@ export class Validate {
       result.errors.push(
         `invalid release_level ${repoMetadata.release_level} in ${path}`
       );
+    }
+
+    if (!repoMetadata.client_documentation) {
+      result.status = 'error';
+      result.errors.push(`client_documentation field missing from ${path}`);
+    } else {
+      // TODO: actually check response status of URL.
+      try {
+        new URL(repoMetadata.client_documentation);
+      } catch (err) {
+        result.status = 'error';
+        result.errors.push(
+          `client_documentation for ${path} was invalid URL ${repoMetadata.client_documentation}`
+        );
+      }
     }
 
     return result;

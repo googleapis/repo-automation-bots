@@ -16,18 +16,15 @@
 import {Probot, ProbotOctokit} from 'probot';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import nock from 'nock';
-// import * as assert from 'assert';
 import * as sinon from 'sinon';
 import {handler} from '../src/repo-metadata-lint';
 import {logger} from 'gcf-utils';
+
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
 
 describe('repo-metadata-lint', () => {
   let probot: Probot;
-  let errorStub: sinon.SinonStub;
-  let infoStub: sinon.SinonStub;
-
   beforeEach(() => {
     probot = new Probot({
       githubToken: 'abc123',
@@ -36,12 +33,7 @@ describe('repo-metadata-lint', () => {
         throttle: {enabled: false},
       }),
     });
-
     probot.load(handler);
-
-    // throw and fail the test if we're writing
-    errorStub = sandbox.stub(logger, 'error').throwsArg(0);
-    infoStub = sandbox.stub(logger, 'info');
   });
 
   afterEach(() => {
@@ -51,7 +43,9 @@ describe('repo-metadata-lint', () => {
 
   describe('schedule.repository', () => {
     it('handles schedule.repository event', async () => {
+      const infoStub = sandbox.stub(logger, 'info');
       await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'schedule.repository' as any,
         payload: {
           organization: {login: 'foo-org'},

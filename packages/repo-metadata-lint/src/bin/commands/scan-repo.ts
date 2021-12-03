@@ -15,6 +15,8 @@
 import yargs = require('yargs');
 import {octokitFrom} from '../../utils/octokit-util';
 import {GetRepoFiles} from '../../get-repo-files';
+import {IssueOpener} from '../../issue-opener';
+import {Validate, ValidationResult} from '../../validate';
 
 interface Args {
   'pem-path': string;
@@ -70,8 +72,16 @@ export const scanRepo: yargs.CommandModule<{}, Args> = {
       argv['commit-cache-bucket'],
       octokit
     );
-    for await (const metadata of getRepoFiles.repoMetadata()) {
-      console.info(metadata);
+    const results: Array<ValidationResult> = [];
+    for await (const [path, metadata] of getRepoFiles.repoMetadata()) {
+      const result = Validate.validate(path, metadata);
+      if (result.status === 'error') {
+        results.push(result);
+      }
+    }
+    if (results.length) {
+      const opener = new IssueOpener(argv.owner, argv.repo, octokit);
+      opener.open(results);
     }
   },
 };

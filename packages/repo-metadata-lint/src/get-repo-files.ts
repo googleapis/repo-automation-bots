@@ -60,17 +60,17 @@ export class GetRepoFiles {
       logger.warn(`unable to find file listing for ${this.owner}/${this.repo}`);
       return;
     }
-    for (const file of files.trim().split(/\r?\n/)) {
-      if (file.toLowerCase().endsWith('.repo-metadata.json')) {
+    for (const path of files.trim().split(/\r?\n/)) {
+      if (path.toLowerCase().endsWith('.repo-metadata.json')) {
         const resp = (
           await this.octokit.rest.repos.getContent({
             owner: this.owner,
             repo: this.repo,
-            path: file,
+            path,
           })
         ).data;
         if (isFile(resp)) {
-          yield Buffer.from(resp.content, 'base64').toString('utf8');
+          yield [path, Buffer.from(resp.content, 'base64').toString('utf8')];
         }
       }
     }

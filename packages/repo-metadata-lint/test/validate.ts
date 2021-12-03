@@ -30,6 +30,7 @@ describe('validate', () => {
       name: 'bigquery',
       release_level: 'stable',
       library_type: 'GAPIC_AUTO',
+      client_documentation: 'http://example.com',
     });
     const result = Validate.validate('apis/foo/.repo-metadata.json', file);
     assert.strictEqual(result.status, 'error');
@@ -44,6 +45,7 @@ describe('validate', () => {
       name: 'bigquery',
       release_level: 'stable',
       library_type: 'MISC',
+      client_documentation: 'http://example.com',
     });
     const result = Validate.validate('apis/foo/.repo-metadata.json', file);
     assert.strictEqual(result.status, 'success');
@@ -55,6 +57,7 @@ describe('validate', () => {
       name: 'bigquery',
       api_shortname: 'bigquery',
       release_level: 'stable',
+      client_documentation: 'http://example.com',
     });
     const result = Validate.validate('apis/foo/.repo-metadata.json', file);
     assert.strictEqual(result.status, 'error');
@@ -70,6 +73,7 @@ describe('validate', () => {
       api_shortname: 'bigquery',
       release_level: 'stable',
       library_type: 'GAPIC_BLERG',
+      client_documentation: 'http://example.com',
     });
     const result = Validate.validate('apis/foo/.repo-metadata.json', file);
     assert.strictEqual(result.status, 'error');
@@ -85,12 +89,59 @@ describe('validate', () => {
       api_shortname: 'bigquery',
       release_level: 'ga',
       library_type: 'GAPIC_AUTO',
+      client_documentation: 'http://example.com',
     });
     const result = Validate.validate('apis/foo/.repo-metadata.json', file);
     assert.strictEqual(result.status, 'error');
     assert.strictEqual(
       result.errors[0],
       'invalid release_level ga in apis/foo/.repo-metadata.json'
+    );
+  });
+
+  it('returns validation error if release_level missing', () => {
+    const file = JSON.stringify({
+      name: 'bigquery',
+      api_shortname: 'bigquery',
+      library_type: 'GAPIC_AUTO',
+      client_documentation: 'http://example.com',
+    });
+    const result = Validate.validate('apis/foo/.repo-metadata.json', file);
+    assert.strictEqual(result.status, 'error');
+    assert.strictEqual(
+      result.errors[0],
+      'release_level field missing from apis/foo/.repo-metadata.json'
+    );
+  });
+
+  it('returns validation error if client_documentation missing', () => {
+    const file = JSON.stringify({
+      name: 'bigquery',
+      api_shortname: 'bigquery',
+      library_type: 'GAPIC_AUTO',
+      release_level: 'stable',
+    });
+    const result = Validate.validate('apis/foo/.repo-metadata.json', file);
+    assert.strictEqual(result.status, 'error');
+    assert.strictEqual(
+      result.errors[0],
+      'client_documentation field missing from apis/foo/.repo-metadata.json'
+    );
+  });
+
+  it('returns validation error if client_documentation is invalid URL', () => {
+    const file = JSON.stringify({
+      name: 'bigquery',
+      api_shortname: 'bigquery',
+      library_type: 'GAPIC_AUTO',
+      release_level: 'stable',
+      client_documentation: 'example',
+    });
+    const result = Validate.validate('apis/foo/.repo-metadata.json', file);
+    assert.strictEqual(result.status, 'error');
+    assert.strictEqual(
+      result.errors[0],
+      'client_documentation for apis/foo/.repo-metadata.json was invalid URL example'
     );
   });
 });

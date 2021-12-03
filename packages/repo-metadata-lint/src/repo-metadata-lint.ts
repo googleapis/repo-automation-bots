@@ -23,16 +23,17 @@ import {logger} from 'gcf-utils';
  */
 export function handler(app: Probot) {
   // Nightly cron opens tracking issues for fixing errors in .repo-metadata.json.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
     const owner = context.payload.organization.login;
-    const repo = context.payload.repository.name;
-    logger.info('schedule endpoint');
+    // const repo = context.payload.repository.name;
+    logger.info('schedule endpoint', owner);
   });
 
   // Adds failing check to pull requests if .repo-metadata.json is invalid.
   app.on(['pull_request.opened', 'pull_request.synchronize'], async context => {
     const owner = context.payload.repository.owner.login;
-    const repo = context.payload.repository.name;
-    logger.info('pr opened endpoint');
+    // const repo = context.payload.repository.name;
+    logger.info('pr opened endpoint', owner);
   });
 }
