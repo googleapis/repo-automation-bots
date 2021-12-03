@@ -16,6 +16,7 @@ import {OwlBotTemplateChanges} from '../src/process-checks/owl-bot-template-chan
 import {describe, it} from 'mocha';
 import assert from 'assert';
 import nock from 'nock';
+import sinon from 'sinon';
 
 const {Octokit} = require('@octokit/rest');
 
@@ -117,7 +118,7 @@ describe('behavior of OwlBotTemplateChanges process', () => {
     fileRequest.done();
   });
 
-  it('should return false in checkPR if incoming PR includes PiperOriginId', async () => {
+  it('should return false in checkPR if incoming PR includes PiperOrigin-RevId', async () => {
     const owlBotTemplateChanges = new OwlBotTemplateChanges(
       'gcf-owl-bot[bot]',
       'a fine title',
@@ -127,7 +128,12 @@ describe('behavior of OwlBotTemplateChanges process', () => {
       'testRepoOwner',
       1,
       octokit,
-      'PiperOrigin-RevId'
+      '... signature to CreateFeatureStore, CreateEntityType, CreateFeature feat: add network and enable_private_service_connect to IndexEndpoint feat: add service_attachment to IndexPrivateEndpoints feat: add stratified_split field to training_pipeline InputDataConfig fix: remove invalid resource annotations in LineageSubgraph' +
+        'Regenerate this pull request now.' +
+        'PiperOrigin-RevId: 413686247' +
+        'Source-Link: googleapis/googleapis@244a89d' +
+        'Source-Link: googleapis/googleapis-gen@c485e44' +
+        'Copy-Tag: eyJwIjoiLmdpdGh1Yi8uT3dsQm90LnlhbWwiLCJoIjoiYzQ4NWU0NGExYjJmZWY1MTZlOWJjYTM2NTE0ZDUwY2ViZDVlYTUxZiJ9'
     );
 
     const fileRequest = nock('https://api.github.com')

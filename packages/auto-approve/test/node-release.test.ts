@@ -15,6 +15,7 @@
 import {NodeRelease} from '../src/process-checks/node/release';
 import {describe, it} from 'mocha';
 import assert from 'assert';
+import sinon from 'sinon';
 
 const {Octokit} = require('@octokit/rest');
 
@@ -23,6 +24,13 @@ const octokit = new Octokit({
 });
 
 describe('behavior of Node Release process', () => {
+  beforeEach(() => {
+    sinon.stub(Date, 'now').returns(1623280558000);
+  });
+
+  afterEach(() => {
+    sinon.restore();
+  });
   it('should get constructed with the appropriate values', () => {
     const nodeRelease = new NodeRelease(
       'testAuthor',

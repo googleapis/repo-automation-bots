@@ -96,7 +96,7 @@ Below is what each process checks for:
 * OwlBotTemplateChanges:
   - Checks that the author is 'gcf-owl-bot[bot]'
   - Checks that the title of the PR does NOT include feat, fix, or !
-  - Checks that the body of the PR does not contain a PiperOrigin ID
+  - Checks that the body of the PR does not contain a PiperOrigin-RevId
   - Checks that the .repo-metadata.json of the repo contains "library_type": "GAPIC_AUTO"
   
 
