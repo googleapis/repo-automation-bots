@@ -48,7 +48,7 @@ injecting the following substitutions:
 * `_REPOSITORY`: The name of the forked repository (_may differ from base_).
 * `_PR`: The pull request number
 * `_PR_BRANCH`: The branch that a PR has been created from.
-* `_PR_OWNER`: The owner of the PR's repo (e.g. 'googleapis' in 'https://github.com/googleapis/synthtool')
+* `_PR_OWNER`: The owner of the PR's repo (e.g. 'googleapis' in https://github.com/googleapis/synthtool)
 * `_PR_USER`: The user creating the PR.
 * `_GITHUB_TOKEN`: [a short-lived GitHub JWT](https://docs.github.com/en/free-pro-team@latest/developers/apps/authenticating-with-github-apps).
 * `_CONTAINER`: The docker container to run (loaded from `.github/OwlBot.yaml`).
