@@ -34,6 +34,7 @@ interface Args {
   'dest-repo': string;
   pr: number;
   'github-token': string;
+  'repo-path': string;
 }
 
 export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, Args> = {
@@ -60,20 +61,23 @@ export const commitPostProcessorUpdateCommand: yargs.CommandModule<{}, Args> = {
         describe: 'Short-lived GitHub token.',
         type: 'string',
         demand: true,
+      })
+      .option('repo-path', {
+        describe: 'Local path to the repository',
+        type: 'string',
+        default: cwd(),
       });
   },
   handler: argv => commitPostProcessorUpdate(argv),
 };
 
-export async function commitPostProcessorUpdate(
-  args: Args,
-  repoDir = ''
-): Promise<void> {
+export async function commitPostProcessorUpdate(args: Args): Promise<void> {
   const octokitFactory = octokitFactoryFromToken(args['github-token']);
   const octokit = await octokitFactory.getShortLivedOctokit();
   const repo = githubRepoFromOwnerSlashName(args['dest-repo']);
 
   const cmd = newCmd(console);
+  let repoDir = args['repo-path'];
   if (['', '.'].includes(repoDir)) {
     repoDir = cwd();
   }
