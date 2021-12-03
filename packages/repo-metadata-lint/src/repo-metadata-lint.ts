@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /* eslint-disable-next-line node/no-extraneous-import */
-import {Probot, Context} from 'probot';
+import {Probot} from 'probot';
 import {logger} from 'gcf-utils';
 
 // type IssueResponse = Endpoints['GET /repos/{owner}/{repo}/issues']['response'];

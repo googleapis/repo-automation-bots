@@ -9,6 +9,7 @@
   "homepage": "https://github.com/googleapis/repo-automation-bots",
   "bugs": "https://github.com/googleapis/repo-automation-bots/issues",
   "main": "build/src/app.js",
+  "bin": "build/src/bin/repo-metadata-lint.ts",
   "files": [
     "build/src"
   ],
@@ -27,13 +28,19 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "gcf-utils": "^13.0.2"
+    "@google-cloud/storage": "^5.16.1",
+    "@octokit/rest": "^18.12.0",
+    "gaxios": "^4.3.2",
+    "gcf-utils": "^13.0.2",
+    "jsonwebtoken": "^8.5.1",
+    "yargs": "^17.3.0"
   },
   "devDependencies": {
     "@octokit/types": "^6.34.0",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.11.6",
     "@types/sinon": "^10.0.6",
+    "@types/yargs": "^17.0.7",
     "c8": "^7.10.0",
     "cross-env": "^7.0.3",
     "gts": "^3.1.0",
