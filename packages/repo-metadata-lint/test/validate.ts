@@ -24,4 +24,73 @@ describe('validate', () => {
     assert.strictEqual(result.status, 'error');
     assert.strictEqual(result.errors[0], 'could not parse .repo-metadata.json');
   });
+
+  it('returns validation error if api_shortname missing and library type corresponds to API', () => {
+    const file = JSON.stringify({
+      name: 'bigquery',
+      release_level: 'stable',
+      library_type: 'GAPIC_AUTO',
+    });
+    const result = Validate.validate('apis/foo/.repo-metadata.json', file);
+    assert.strictEqual(result.status, 'error');
+    assert.strictEqual(
+      result.errors[0],
+      'api_shortname field missing from apis/foo/.repo-metadata.json'
+    );
+  });
+
+  it('succeeds if api_shortname missing, but library type does not correspond to API', () => {
+    const file = JSON.stringify({
+      name: 'bigquery',
+      release_level: 'stable',
+      library_type: 'MISC',
+    });
+    const result = Validate.validate('apis/foo/.repo-metadata.json', file);
+    assert.strictEqual(result.status, 'success');
+    assert.strictEqual(result.errors.length, 0);
+  });
+
+  it('returns validation error if library_type missing', () => {
+    const file = JSON.stringify({
+      name: 'bigquery',
+      api_shortname: 'bigquery',
+      release_level: 'stable',
+    });
+    const result = Validate.validate('apis/foo/.repo-metadata.json', file);
+    assert.strictEqual(result.status, 'error');
+    assert.strictEqual(
+      result.errors[0],
+      'library_type field missing from apis/foo/.repo-metadata.json'
+    );
+  });
+
+  it('returns validation error if library_type invalid', () => {
+    const file = JSON.stringify({
+      name: 'bigquery',
+      api_shortname: 'bigquery',
+      release_level: 'stable',
+      library_type: 'GAPIC_BLERG',
+    });
+    const result = Validate.validate('apis/foo/.repo-metadata.json', file);
+    assert.strictEqual(result.status, 'error');
+    assert.strictEqual(
+      result.errors[0],
+      'invalid library_type GAPIC_BLERG in apis/foo/.repo-metadata.json'
+    );
+  });
+
+  it('returns validation error if release_level not preview or stable', () => {
+    const file = JSON.stringify({
+      name: 'bigquery',
+      api_shortname: 'bigquery',
+      release_level: 'ga',
+      library_type: 'GAPIC_AUTO',
+    });
+    const result = Validate.validate('apis/foo/.repo-metadata.json', file);
+    assert.strictEqual(result.status, 'error');
+    assert.strictEqual(
+      result.errors[0],
+      'invalid release_level ga in apis/foo/.repo-metadata.json'
+    );
+  });
 });
