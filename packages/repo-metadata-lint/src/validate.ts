@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-const {URL} = require('url');
+import {URL} from 'url';
 
 export interface ValidationResult {
   status: 'success' | 'error';
