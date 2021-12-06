@@ -41,6 +41,6 @@ export async function fetchConfigs(
     return collectConfigs(repoDir);
   } finally {
     // When running in cloud functions, space is limited, so clean up.
-    fs.rmSync(tmpDir, {recursive: true});
+    fs.rmdirSync(tmpDir, {recursive: true});
   }
 }
