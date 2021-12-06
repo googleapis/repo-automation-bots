@@ -80,11 +80,17 @@ steps:
     env:
       - 'GITHUB_TOKEN=$_GITHUB_TOKEN'
       - 'HOME=/workspace'
-  
+
   # Commit any changes back to the pull request.
   - name: 'gcr.io/cloud-devrel-public-resources/owlbot-cli'
     args:
       - commit-post-processor-update
+      - --dest-repo
+      - ${_PR_OWNER}/${_REPOSITORY}
+      - --pr
+      - ${_PR}
+      - --github-token
+      - ${_GITHUB_TOKEN}
     dir: ${_REPOSITORY}
     env:
       - 'HOME=/workspace'
