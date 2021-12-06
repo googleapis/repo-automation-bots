@@ -118,6 +118,23 @@ path:
       # i.e. label all files in ./test/fixtures and down as "testfixtures"
 ```
 
+-------------------
+
+## Staleness Label
+
+Bot runs on all pull requests and labels them with staleness indicator based on configured values. Currently there are two staleness labels available: `stale: old` and `stale: extraold`.
+
+Staleness labeling is turned off by default. To turn on staleness labeling:
+```yaml
+# In .github/auto-label.yaml
+staleness:
+  pullrequest: true
+  old: 10
+  # By default old is 60 days if no value is configured
+  extraold: 20
+  # By default extraold is 120 days if no value is configured
+```
+
 ## Running tests:
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/main/README.md) for deploying and testing your bots.

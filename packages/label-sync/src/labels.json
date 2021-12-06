@@ -241,7 +241,7 @@
       "color": "ab270b"
     },
     {
-      "name": "stale: critical",
+      "name": "stale: extraold",
       "description": "Pull request is critically old and needs prioritization.",
       "color": "801904"
     }
