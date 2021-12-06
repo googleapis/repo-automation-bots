@@ -35,6 +35,10 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
 RUN apt-add-repository https://cli.github.com/packages
 RUN apt-get update
 RUN apt-get install -y gh jq
+# We need an updated version of git to use git branch --show-version
+# (This was introduced in 2.23.0; when the base image has that version
+# or later, this can be removed.)
+RUN apt-get upgrade -y git
 
 # Copy the source files from this directory.
 COPY generate-googleapis-gen.sh /generate-googleapis-gen.sh
