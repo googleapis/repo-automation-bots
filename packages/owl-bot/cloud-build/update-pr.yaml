@@ -50,13 +50,13 @@ steps:
       - ${_PR_BRANCH}
       - --depth
       - '2'
-      - https://github.com/${_PR_OWNER}/${_REPOSITORY}.git
+      - https://github.com/${_PR_OWNER}/${_PR_REPOSITORY}.git
     env:
       - 'HOME=/workspace'
 
   # Run container listed in OwlBot.yaml:
   - name: ${_CONTAINER}
-    dir: '${_REPOSITORY}'
+    dir: '${_PR_REPOSITORY}'
     env:
       - 'DEFAULT_BRANCH=$_DEFAULT_BRANCH'
 
@@ -86,12 +86,12 @@ steps:
     args:
       - commit-post-processor-update
       - --dest-repo
-      - ${_PR_OWNER}/${_REPOSITORY}
+      - ${_OWNER}/${_REPOSITORY}
       - --pr
       - ${_PR}
       - --github-token
       - ${_GITHUB_TOKEN}
-    dir: ${_REPOSITORY}
+    dir: ${_PR_REPOSITORY}
     env:
       - 'HOME=/workspace'
 
