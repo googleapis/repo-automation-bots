@@ -30,7 +30,7 @@ describe('validate', () => {
       name: 'bigquery',
       release_level: 'stable',
       library_type: 'GAPIC_AUTO',
-      client_documentation: 'http://example.com',
+      client_documentation: 'https://example.com',
     });
     const result = Validate.validate('apis/foo/.repo-metadata.json', file);
     assert.strictEqual(result.status, 'error');
@@ -44,8 +44,8 @@ describe('validate', () => {
     const file = JSON.stringify({
       name: 'bigquery',
       release_level: 'stable',
-      library_type: 'MISC',
-      client_documentation: 'http://example.com',
+      library_type: 'OTHER',
+      client_documentation: 'https://example.com',
     });
     const result = Validate.validate('apis/foo/.repo-metadata.json', file);
     assert.strictEqual(result.status, 'success');
@@ -57,13 +57,13 @@ describe('validate', () => {
       name: 'bigquery',
       api_shortname: 'bigquery',
       release_level: 'stable',
-      client_documentation: 'http://example.com',
+      client_documentation: 'https://example.com',
     });
     const result = Validate.validate('apis/foo/.repo-metadata.json', file);
     assert.strictEqual(result.status, 'error');
     assert.strictEqual(
       result.errors[0],
-      'library_type field missing from apis/foo/.repo-metadata.json'
+      "must have required property 'library_type' in apis/foo/.repo-metadata.json"
     );
   });
 
@@ -73,13 +73,13 @@ describe('validate', () => {
       api_shortname: 'bigquery',
       release_level: 'stable',
       library_type: 'GAPIC_BLERG',
-      client_documentation: 'http://example.com',
+      client_documentation: 'https://example.com',
     });
     const result = Validate.validate('apis/foo/.repo-metadata.json', file);
     assert.strictEqual(result.status, 'error');
     assert.strictEqual(
       result.errors[0],
-      'invalid library_type GAPIC_BLERG in apis/foo/.repo-metadata.json'
+      'library_type must be equal to one of the allowed values in apis/foo/.repo-metadata.json'
     );
   });
 
@@ -89,13 +89,13 @@ describe('validate', () => {
       api_shortname: 'bigquery',
       release_level: 'ga',
       library_type: 'GAPIC_AUTO',
-      client_documentation: 'http://example.com',
+      client_documentation: 'https://example.com',
     });
     const result = Validate.validate('apis/foo/.repo-metadata.json', file);
     assert.strictEqual(result.status, 'error');
     assert.strictEqual(
       result.errors[0],
-      'invalid release_level ga in apis/foo/.repo-metadata.json'
+      'release_level must be equal to one of the allowed values in apis/foo/.repo-metadata.json'
     );
   });
 
@@ -104,13 +104,13 @@ describe('validate', () => {
       name: 'bigquery',
       api_shortname: 'bigquery',
       library_type: 'GAPIC_AUTO',
-      client_documentation: 'http://example.com',
+      client_documentation: 'https://example.com',
     });
     const result = Validate.validate('apis/foo/.repo-metadata.json', file);
     assert.strictEqual(result.status, 'error');
     assert.strictEqual(
       result.errors[0],
-      'release_level field missing from apis/foo/.repo-metadata.json'
+      "must have required property 'release_level' in apis/foo/.repo-metadata.json"
     );
   });
 
@@ -141,7 +141,7 @@ describe('validate', () => {
     assert.strictEqual(result.status, 'error');
     assert.strictEqual(
       result.errors[0],
-      'client_documentation for apis/foo/.repo-metadata.json was invalid URL example'
+      'client_documentation must match pattern "^https://.*" in apis/foo/.repo-metadata.json'
     );
   });
 });

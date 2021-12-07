@@ -14,7 +14,7 @@
 
 import yargs = require('yargs');
 import {octokitFrom} from '../../utils/octokit-util';
-import {GetRepoFiles} from '../../get-repo-files';
+import {FileIterator} from '../../file-iterator';
 import {IssueOpener} from '../../issue-opener';
 import {Validate, ValidationResult} from '../../validate';
 
@@ -66,14 +66,14 @@ export const scanRepo: yargs.CommandModule<{}, Args> = {
   },
   async handler(argv) {
     const octokit = await octokitFrom(argv);
-    const getRepoFiles = new GetRepoFiles(
+    const iterator = new FileIterator(
       argv.owner,
       argv.repo,
       argv['commit-cache-bucket'],
       octokit
     );
     const results: Array<ValidationResult> = [];
-    for await (const [path, metadata] of getRepoFiles.repoMetadata()) {
+    for await (const [path, metadata] of iterator.repoMetadata()) {
       const result = Validate.validate(path, metadata);
       if (result.status === 'error') {
         results.push(result);

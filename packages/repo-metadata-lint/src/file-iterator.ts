@@ -35,7 +35,7 @@ function isFile(file: File | unknown): file is File {
 // Load full contents of GitHub repository from commit cache,
 // use this to iterate over individual .repo-metadata.json files.
 // This approach is used for the benefit of mono-repos.
-export class GetRepoFiles {
+export class FileIterator {
   octokit: OctokitType;
   owner: string;
   repo: string;

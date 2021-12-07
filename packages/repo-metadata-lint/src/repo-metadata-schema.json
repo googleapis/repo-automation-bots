@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": ".repo-metadata.json",
+  "description": "Schema for .repo-metadtaa.json file",
+  "additionalProperties": true,
+  "type": "object",
+  "properties": {
+    "api_shortname": {
+      "type": "string"
+    },
+    "client_documentation": {
+      "type": "string",
+      "pattern": "^https://.*"
+    },
+    "library_type": {
+      "type": "string",
+      "enum": ["GAPIC_AUTO", "GAPIC_MANUAL", "AGENT", "OTHER", "AUTH", "REST", "GAPIC_COMBO", "INTEGRATION"]
+    },
+    "release_level": {
+      "type": "string",
+      "enum": ["preview", "stable"]
+    }
+  },
+  "required": ["library_type", "release_level"]
+}

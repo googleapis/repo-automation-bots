@@ -13,30 +13,31 @@
 // limitations under the License.
 //
 
-import {URL} from 'url';
+import Ajv from 'ajv';
+import schema from './repo-metadata-schema.json';
 
 export interface ValidationResult {
   status: 'success' | 'error';
   errors: Array<string>;
 }
 
-const LIBRARY_TYPES = [
+// Types of libraries that should include api_shortname in .repo-metadata.json.
+const API_LIBRARY_TYPES = [
   'GAPIC_AUTO',
   'GAPIC_MANUAL',
   'AGENT',
-  'MISC',
-  'AUTH',
-  'various',
-  'REST',
+  'GAPIC_COMBO',
+  'INTEGRATION',
 ];
-// Types of libraries that should include api_shortname in .repo-metadata.json.
-const API_LIBRARY_TYPES = ['GAPIC_AUTO', 'GAPIC_MANUAL', 'AGENT'];
-const RELEASE_LEVELS = ['preview', 'stable'];
 
 // Apply validation logic to .repo-metadata.json.
 export class Validate {
   static validate(path: string, repoMetadataContent: string) {
+    const ajv = new Ajv();
+    const validate = ajv.compile(schema);
     const result: ValidationResult = {status: 'success', errors: []};
+
+    // Parse JSON content.
     try {
       JSON.parse(repoMetadataContent);
     } catch (err) {
@@ -46,15 +47,22 @@ export class Validate {
     }
     const repoMetadata = JSON.parse(repoMetadataContent);
 
-    if (!repoMetadata.library_type) {
+    // Perform simple validation using JSON schema.
+    const valid = validate(repoMetadata);
+    if (valid === false) {
       result.status = 'error';
-      result.errors.push(`library_type field missing from ${path}`);
-    } else if (!LIBRARY_TYPES.includes(repoMetadata.library_type)) {
-      result.status = 'error';
-      result.errors.push(
-        `invalid library_type ${repoMetadata.library_type} in ${path}`
-      );
+      for (const error of validate.errors || []) {
+        result.errors.push(
+          `${
+            error.instancePath
+              ? error.instancePath.replace(/^\/(.*)/, '$1 ')
+              : ''
+          }${error.message} in ${path}`
+        );
+      }
     }
+
+    // Perform complex validation, e.g., checking URLs.
 
     // TODO: is there a way we could cross-reference this value with
     // service.yml for a given API.
@@ -66,29 +74,13 @@ export class Validate {
       result.errors.push(`api_shortname field missing from ${path}`);
     }
 
-    if (!repoMetadata.release_level) {
-      result.status = 'error';
-      result.errors.push(`release_level field missing from ${path}`);
-    } else if (!RELEASE_LEVELS.includes(repoMetadata.release_level)) {
-      result.status = 'error';
-      result.errors.push(
-        `invalid release_level ${repoMetadata.release_level} in ${path}`
-      );
-    }
-
-    if (!repoMetadata.client_documentation) {
+    // TODO: check whether documentation URL returns 200.
+    if (
+      !repoMetadata.client_documentation &&
+      API_LIBRARY_TYPES.includes(repoMetadata.library_type)
+    ) {
       result.status = 'error';
       result.errors.push(`client_documentation field missing from ${path}`);
-    } else {
-      // TODO: actually check response status of URL.
-      try {
-        new URL(repoMetadata.client_documentation);
-      } catch (err) {
-        result.status = 'error';
-        result.errors.push(
-          `client_documentation for ${path} was invalid URL ${repoMetadata.client_documentation}`
-        );
-      }
     }
 
     return result;
