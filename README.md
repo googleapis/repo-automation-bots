@@ -25,7 +25,7 @@ by Google on GitHub.
 | [snippet-bot] | Check for mismatched region tags in PRs | [install][snippet-bot-app] |
 | [sync-repo-settings] | Synchronize repository settings from a centralized config | [install][sync-repo-settings-app] |
 | [trusted-contribution] | Allows Kokoro CI to trigger for trusted contributors | [install][trusted-contribution-app] |
-| [repo-metadata-lint] | Lint .repo-metadata.json files | [install][repo-metadata-lint] |
+| [repo-metadata-lint] | Lint .repo-metadata.json files | [install][repo-metadata-lint-app] |
 
 ## Development environment
 
@@ -149,4 +149,5 @@ at the specified schedule.
 [sync-repo-settings]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/sync-repo-settings
 [sync-repo-settings-app]: https://github.com/apps/sync-repo-settings
 [Wombat Dressing Room]: https://opensource.googleblog.com/2020/01/wombat-dressing-room-npm-publication_10.html
-[repo-metadata-lint]: https://github.com/apps/repo-metadata-lint
+[repo-metadata-lint]: https://github.com/googleapis/repo-automation-bots/tree/main/packages/repo-metadata-lint
+[repo-metadata-lint-app]: https://github.com/apps/repo-metadata-lint
