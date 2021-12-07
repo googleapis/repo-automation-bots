@@ -20,7 +20,7 @@ import fs from 'fs';
 import {request} from 'gaxios';
 import {sign} from 'jsonwebtoken';
 
-const {readFile} = promisify(fs.promises);
+const {readFile} = fs.promises;
 
 export type OctokitType =
   | InstanceType<typeof Octokit>
