@@ -26,8 +26,7 @@ const API_LIBRARY_TYPES = [
   'GAPIC_AUTO',
   'GAPIC_MANUAL',
   'AGENT',
-  'GAPIC_COMBO',
-  'INTEGRATION',
+  'GAPIC_COMBO'
 ];
 
 // Apply validation logic to .repo-metadata.json.
@@ -72,15 +71,6 @@ export class Validate {
     ) {
       result.status = 'error';
       result.errors.push(`api_shortname field missing from ${path}`);
-    }
-
-    // TODO: check whether documentation URL returns 200.
-    if (
-      !repoMetadata.client_documentation &&
-      API_LIBRARY_TYPES.includes(repoMetadata.library_type)
-    ) {
-      result.status = 'error';
-      result.errors.push(`client_documentation field missing from ${path}`);
     }
 
     return result;

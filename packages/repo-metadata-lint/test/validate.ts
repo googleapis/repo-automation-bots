@@ -125,7 +125,7 @@ describe('validate', () => {
     assert.strictEqual(result.status, 'error');
     assert.strictEqual(
       result.errors[0],
-      'client_documentation field missing from apis/foo/.repo-metadata.json'
+      "must have required property 'client_documentation' in apis/foo/.repo-metadata.json"
     );
   });
 

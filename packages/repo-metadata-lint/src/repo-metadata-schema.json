@@ -21,5 +21,5 @@
       "enum": ["preview", "stable"]
     }
   },
-  "required": ["library_type", "release_level"]
+  "required": ["library_type", "release_level", "client_documentation"]
 }
