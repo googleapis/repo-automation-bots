@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {Octokit} from '@octokit/rest';
 import {LanguageRule, File, FileRule, Process} from '../../interfaces';
 import {
   checkAuthor,
-  checkTitle,
+  checkTitleOrBody,
   checkFileCount,
   checkFilePathsMatch,
   getJavaVersions,
@@ -46,7 +47,9 @@ export class JavaDependency extends Process implements LanguageRule {
     incomingChangedFiles: File[],
     incomingRepoName: string,
     incomingRepoOwner: string,
-    incomingPrNumber: number
+    incomingPrNumber: number,
+    incomingOctokit: Octokit,
+    incomingBody?: string
   ) {
     super(
       incomingPrAuthor,
@@ -55,7 +58,9 @@ export class JavaDependency extends Process implements LanguageRule {
       incomingChangedFiles,
       incomingRepoName,
       incomingRepoOwner,
-      incomingPrNumber
+      incomingPrNumber,
+      incomingOctokit,
+      incomingBody
     ),
       (this.classRule = {
         author: 'renovate-bot',
@@ -101,13 +106,13 @@ export class JavaDependency extends Process implements LanguageRule {
       });
   }
 
-  public checkPR(): boolean {
+  public async checkPR(): Promise<boolean> {
     const authorshipMatches = checkAuthor(
       this.classRule.author,
       this.incomingPR.author
     );
 
-    const titleMatches = checkTitle(
+    const titleMatches = checkTitleOrBody(
       this.incomingPR.title,
       this.classRule.titleRegex
     );

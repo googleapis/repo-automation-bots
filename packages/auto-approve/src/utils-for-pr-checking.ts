@@ -388,11 +388,11 @@ export function checkAuthor(
   return authorToCompare === incomingAuthor;
 }
 
-export function checkTitle(title: string, titleRegex?: RegExp): boolean {
-  if (!titleRegex) {
+export function checkTitleOrBody(titleOrBody: string, regex?: RegExp): boolean {
+  if (!regex) {
     return true;
   }
-  return titleRegex.test(title);
+  return regex.test(titleOrBody);
 }
 
 export function checkFileCount(

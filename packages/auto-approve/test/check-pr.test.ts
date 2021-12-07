@@ -20,8 +20,8 @@ import {checkFilePathsMatch} from '../src/utils-for-pr-checking';
 import nock from 'nock';
 import {resolve} from 'path';
 import yaml from 'js-yaml';
-import sinon from 'sinon';
 import {File, ValidPr} from '../src/interfaces';
+import sinon from 'sinon';
 
 const {Octokit} = require('@octokit/rest');
 
@@ -44,7 +44,6 @@ describe('check pr against config', async () => {
   afterEach(() => {
     sinon.restore();
   });
-
   describe('checks that files match at least one of the patterns', () => {
     it('should return true if the file list is empty', () => {
       const prFiles = [
