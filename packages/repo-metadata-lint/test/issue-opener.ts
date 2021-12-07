@@ -21,6 +21,8 @@ import {ProbotOctokit} from 'probot';
 import * as sinon from 'sinon';
 import {logger} from 'gcf-utils';
 import assert from 'assert';
+import {ErrorMessageText} from '../src/error-message-text';
+import {ValidationResult} from '../src/validate';
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -32,7 +34,7 @@ describe('open-issue', () => {
   });
 
   describe('schedule.repository', () => {
-    it('does not open an issue if open issues already exist with repo-metadata:lint label', async () => {
+    it('does not open an issue if open issues already exists with same list of errors', async () => {
       const infoStub = sandbox.stub(logger, 'info');
       const Octokit = ProbotOctokit.defaults({
         retry: {enabled: false},
@@ -40,17 +42,102 @@ describe('open-issue', () => {
       });
       const octokit = new Octokit();
       const opener = new IssueOpener('bcoe', 'foo', octokit);
-      const lookupIssues = nock('https://api.github.com')
-        .get('/repos/bcoe/foo/issues?labels=repo-metadata%3A%20lint')
-        .reply(200, [{number: 200}]);
-      await opener.open([
+      const results: ValidationResult[] = [
         {
           status: 'error',
-          errors: ['foo bar'],
+          errors: ['foo bar', 'a second error'],
         },
-      ]);
+      ];
+      const lookupIssues = nock('https://api.github.com')
+        .get('/repos/bcoe/foo/issues?labels=repo-metadata%3A%20lint')
+        .reply(200, [
+          {number: 200, body: ErrorMessageText.forIssueBody(results)},
+        ]);
+      await opener.open(results);
       lookupIssues.done();
       sandbox.assert.calledOnce(infoStub);
+    });
+
+    it('does not open issue if no error results provided', async () => {
+      const infoStub = sandbox.stub(logger, 'info');
+      const Octokit = ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      });
+      const octokit = new Octokit();
+      const opener = new IssueOpener('bcoe', 'foo', octokit);
+      const results: ValidationResult[] = [];
+      const lookupIssues = nock('https://api.github.com')
+        .get('/repos/bcoe/foo/issues?labels=repo-metadata%3A%20lint')
+        .reply(200, []);
+      await opener.open(results);
+      lookupIssues.done();
+      sandbox.assert.calledOnce(infoStub);
+    });
+
+    it('closes existing issue if no errors still exist', async () => {
+      const infoStub = sandbox.stub(logger, 'info');
+      const Octokit = ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      });
+      const octokit = new Octokit();
+      const opener = new IssueOpener('bcoe', 'foo', octokit);
+      const oldResults: ValidationResult[] = [
+        {
+          status: 'error',
+          errors: ['foo bar', 'a second error'],
+        },
+      ];
+      const newResults: ValidationResult[] = [];
+      const lookupIssues = nock('https://api.github.com')
+        .get('/repos/bcoe/foo/issues?labels=repo-metadata%3A%20lint')
+        .reply(200, [
+          {number: 200, body: ErrorMessageText.forIssueBody(oldResults)},
+        ])
+        .patch('/repos/bcoe/foo/issues/200', body => {
+          assert.strictEqual(body.state, 'closed');
+          return true;
+        })
+        .reply(200);
+      await opener.open(newResults);
+      lookupIssues.done();
+      sandbox.assert.calledOnce(infoStub);
+    });
+
+    it('updates an issue if errors have changed', async () => {
+      const Octokit = ProbotOctokit.defaults({
+        retry: {enabled: false},
+        throttle: {enabled: false},
+      });
+      const octokit = new Octokit();
+      const opener = new IssueOpener('bcoe', 'foo', octokit);
+      const oldResults: ValidationResult[] = [
+        {
+          status: 'error',
+          errors: ['foo bar', 'a second error'],
+        },
+      ];
+      const newResults: ValidationResult[] = [
+        {
+          status: 'error',
+          errors: ['foo bar', 'a second error', 'a third error'],
+        },
+      ];
+      const lookupIssues = nock('https://api.github.com')
+        .get('/repos/bcoe/foo/issues?labels=repo-metadata%3A%20lint')
+        .reply(200, [
+          {number: 200, body: ErrorMessageText.forIssueBody(oldResults)},
+        ])
+        .patch('/repos/bcoe/foo/issues/200', body => {
+          assert(
+            body.title.includes('Your .repo-metadata.json file has a problem')
+          );
+          return true;
+        })
+        .reply(200);
+      await opener.open(newResults);
+      lookupIssues.done();
     });
 
     it('opens issue for a single validation error', async () => {

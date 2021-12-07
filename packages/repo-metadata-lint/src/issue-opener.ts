@@ -14,6 +14,7 @@
 //
 
 import {logger} from 'gcf-utils';
+import {ErrorMessageText} from './error-message-text';
 import {OctokitType} from './utils/octokit-util';
 import {ValidationResult} from './validate';
 
@@ -31,6 +32,8 @@ export class IssueOpener {
     this.repo = repo;
   }
   async open(results: ValidationResult[]) {
+    let update = false;
+    let updateIssueNumber = 0;
     const repoMetadataIssues = (
       await this.octokit.rest.issues.listForRepo({
         owner: this.owner,
@@ -40,33 +43,46 @@ export class IssueOpener {
     ).data;
     if (repoMetadataIssues.length) {
       const issue = repoMetadataIssues[0];
-      logger.info(
-        `${this.owner}/${this.repo} already had open issue ${issue.number}`
-      );
+      update = true;
+      updateIssueNumber = issue.number;
+      if (ErrorMessageText.eql(issue.body || '', results)) {
+        logger.info(
+          `${this.owner}/${this.repo} has identical issue ${issue.number}`
+        );
+        return;
+      }
+    }
+    if (results.length === 0) {
+      logger.info(`${this.owner}/${this.repo} has no validation errors`);
+      if (update) {
+        await this.octokit.issues.update({
+          owner: this.owner,
+          repo: this.repo,
+          issue_number: updateIssueNumber,
+          state: 'closed',
+        });
+      }
       return;
     }
     const title = `Your .repo-metadata.json file${
       results.length > 1 ? 's have' : ' has'
     } a problem 🤒`;
-    let body = `You have a problem with your .repo-metadata.json file${
-      results.length > 1 ? 's' : ''
-    }:
-
-Result of scan 📈:
-
-\`\`\`
-`;
-    for (const result of results) {
-      body += result.errors.join('\n') + '\n';
+    if (update) {
+      await this.octokit.issues.update({
+        owner: this.owner,
+        repo: this.repo,
+        title,
+        body: ErrorMessageText.forIssueBody(results),
+        issue_number: updateIssueNumber,
+      });
+    } else {
+      await this.octokit.issues.create({
+        owner: this.owner,
+        repo: this.repo,
+        title,
+        body: ErrorMessageText.forIssueBody(results),
+        labels: ISSUE_LABELS,
+      });
     }
-    body +=
-      '```\n\n ☝️ Once you correct these problems, you can close this issue.\n\nReach out to **go/github-automation** if you have any questions.';
-    await this.octokit.issues.create({
-      owner: this.owner,
-      repo: this.repo,
-      title,
-      body,
-      labels: ISSUE_LABELS,
-    });
   }
 }
