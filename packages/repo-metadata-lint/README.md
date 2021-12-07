@@ -5,6 +5,9 @@ Validates the fields in `.repo-metadata.json`:
 * opening tracking bugs for corrupt `.repo-metadata.json` files.
 * adding a failing check to PRs that corrupt `.repo-metadata.json`.
 
+Follow [this link](https://github.com/apps/repo-metadata-lint) to install
+the GitHub application.
+
 ## Running tests:
 
 `npm run test`
