@@ -16,6 +16,12 @@ import {NodeDependency} from '../src/process-checks/node/dependency';
 import {describe, it} from 'mocha';
 import assert from 'assert';
 
+const {Octokit} = require('@octokit/rest');
+
+const octokit = new Octokit({
+  auth: 'mypersonalaccesstoken123',
+});
+
 describe('behavior of Node Dependency process', () => {
   it('should get constructed with the appropriate values', () => {
     const nodeDependency = new NodeDependency(
@@ -25,7 +31,9 @@ describe('behavior of Node Dependency process', () => {
       [{filename: 'hello', sha: '2345'}],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
     const expectation = {
@@ -37,6 +45,7 @@ describe('behavior of Node Dependency process', () => {
         repoName: 'testRepoName',
         repoOwner: 'testRepoOwner',
         prNumber: 1,
+        body: 'body',
       },
       classRule: {
         author: 'renovate-bot',
@@ -69,13 +78,15 @@ describe('behavior of Node Dependency process', () => {
           },
         ],
       },
+      octokit,
     };
 
     assert.deepStrictEqual(nodeDependency.incomingPR, expectation.incomingPR);
     assert.deepStrictEqual(nodeDependency.classRule, expectation.classRule);
+    assert.deepStrictEqual(nodeDependency.octokit, octokit);
   });
 
-  it('should return false in checkPR if incoming PR does not match classRules', () => {
+  it('should return false in checkPR if incoming PR does not match classRules', async () => {
     const nodeDependency = new NodeDependency(
       'testAuthor',
       'testTitle',
@@ -83,13 +94,15 @@ describe('behavior of Node Dependency process', () => {
       [{filename: 'hello', sha: '2345'}],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.deepStrictEqual(nodeDependency.checkPR(), false);
+    assert.deepStrictEqual(await nodeDependency.checkPR(), false);
   });
 
-  it('should return false in checkPR if one of the files did not match additional rules in fileRules', () => {
+  it('should return false in checkPR if one of the files did not match additional rules in fileRules', async () => {
     const nodeDependency = new NodeDependency(
       'renovate-bot',
       'fix(deps): update dependency @octokit/auth-app to v16',
@@ -132,13 +145,15 @@ describe('behavior of Node Dependency process', () => {
       ],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.deepStrictEqual(nodeDependency.checkPR(), false);
+    assert.deepStrictEqual(await nodeDependency.checkPR(), false);
   });
 
-  it('should return true in checkPR if incoming PR does match ONE OF the classRules, and no files do not match ANY of the rules', () => {
+  it('should return true in checkPR if incoming PR does match ONE OF the classRules, and no files do not match ANY of the rules', async () => {
     const nodeDependency = new NodeDependency(
       'renovate-bot',
       'fix(deps): update dependency @octokit/auth-app to v16',
@@ -164,9 +179,11 @@ describe('behavior of Node Dependency process', () => {
       ],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.ok(nodeDependency.checkPR());
+    assert.ok(await nodeDependency.checkPR());
   });
 });

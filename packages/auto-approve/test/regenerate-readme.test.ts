@@ -16,6 +16,12 @@ import {RegenerateReadme} from '../src/process-checks/regenerate-readme';
 import {describe, it} from 'mocha';
 import assert from 'assert';
 
+const {Octokit} = require('@octokit/rest');
+
+const octokit = new Octokit({
+  auth: 'mypersonalaccesstoken123',
+});
+
 describe('behavior of RegenerateReadme process', () => {
   it('should get constructed with the appropriate values', () => {
     const regenerateReadme = new RegenerateReadme(
@@ -25,7 +31,9 @@ describe('behavior of RegenerateReadme process', () => {
       [{filename: 'hello', sha: '2345'}],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
     const expectation = {
@@ -37,6 +45,7 @@ describe('behavior of RegenerateReadme process', () => {
         repoName: 'testRepoName',
         repoOwner: 'testRepoOwner',
         prNumber: 1,
+        body: 'body',
       },
       classRule: {
         author: 'yoshi-automation',
@@ -47,13 +56,15 @@ describe('behavior of RegenerateReadme process', () => {
           /\.github\/readme\/synth.metadata\/synth\.metadata$/,
         ],
       },
+      octokit,
     };
 
     assert.deepStrictEqual(regenerateReadme.incomingPR, expectation.incomingPR);
     assert.deepStrictEqual(regenerateReadme.classRule, expectation.classRule);
+    assert.deepStrictEqual(regenerateReadme.octokit, octokit);
   });
 
-  it('should return false in checkPR if incoming PR does not match classRules', () => {
+  it('should return false in checkPR if incoming PR does not match classRules', async () => {
     const regenerateReadme = new RegenerateReadme(
       'testAuthor',
       'testTitle',
@@ -61,13 +72,15 @@ describe('behavior of RegenerateReadme process', () => {
       [{filename: 'hello', sha: '2345'}],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.deepStrictEqual(regenerateReadme.checkPR(), false);
+    assert.deepStrictEqual(await regenerateReadme.checkPR(), false);
   });
 
-  it('should return true in checkPR if incoming PR does match classRules', () => {
+  it('should return true in checkPR if incoming PR does match classRules', async () => {
     const regenerateReadme = new RegenerateReadme(
       'yoshi-automation',
       'chore: regenerate README',
@@ -80,9 +93,11 @@ describe('behavior of RegenerateReadme process', () => {
       ],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.ok(regenerateReadme.checkPR());
+    assert.ok(await regenerateReadme.checkPR());
   });
 });
