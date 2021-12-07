@@ -93,11 +93,13 @@ export async function commitPostProcessorUpdate(args: Args): Promise<void> {
 
   // Check if the ignore label has been added during the post-processing.
   // If so, do not push changes.
+  console.log(`Retrieving PR info for ${repo}`);
   const {data: prData} = await octokit.pulls.get({
     owner: repo.owner,
     repo: repo.repo,
     pull_number: args.pr,
   });
+  console.log(`Retrieved PR info for ${repo}`);
 
   if (prData.labels.find(label => label.name === OWL_BOT_IGNORE)) {
     console.log(
