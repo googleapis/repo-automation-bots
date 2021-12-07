@@ -16,12 +16,11 @@ import {Octokit} from '@octokit/rest';
 // Conflicting linters think the next line is extraneous or necessary.
 // eslint-disable-next-line node/no-extraneous-import
 import {ProbotOctokit} from 'probot';
-import {promisify} from 'util';
-import {readFile} from 'fs';
+import fs from 'fs';
 import {request} from 'gaxios';
 import {sign} from 'jsonwebtoken';
 
-const readFileAsync = promisify(readFile);
+const {readFile} = promisify(fs.promises);
 
 export type OctokitType =
   | InstanceType<typeof Octokit>
@@ -53,7 +52,7 @@ interface Token {
 export async function octokitTokenFrom(argv: OctokitParams): Promise<string> {
   let privateKey = '';
   if (argv['pem-path']) {
-    privateKey = await readFileAsync(argv['pem-path'], 'utf8');
+    privateKey = await readFile(argv['pem-path'], 'utf8');
   } else if (argv.privateKey) {
     privateKey = argv.privateKey;
   }
