@@ -26,7 +26,7 @@ const API_LIBRARY_TYPES = [
   'GAPIC_AUTO',
   'GAPIC_MANUAL',
   'AGENT',
-  'GAPIC_COMBO'
+  'GAPIC_COMBO',
 ];
 
 // Apply validation logic to .repo-metadata.json.
