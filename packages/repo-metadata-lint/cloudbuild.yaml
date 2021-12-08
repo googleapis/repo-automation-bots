@@ -1,4 +1,4 @@
-# Copyright 2020 Google LLC
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,9 +35,7 @@ steps:
       - "$_KEY_LOCATION"
       - "$_KEY_RING"
       - "$_FUNCTION_REGION"
-      - "nodejs14"
-      - "540s"
-      - "68a5145e-8907-4301-a4b6-b7e37892a510"
+      - "nodejs12"
 
   - name: gcr.io/cloud-builders/npm
     id: "cron-deploy"
@@ -50,43 +48,3 @@ steps:
       - "$_FUNCTION_REGION"
       - "$_REGION"
       - "$_DIRECTORY"
-
-  - name: gcr.io/cloud-builders/docker
-    id: "build-docker"
-    waitFor: ["-"]
-    dir: packages/owl-bot
-    args:
-      - "build"
-      - "-f"
-      - "Dockerfile.frontend"
-      - "-t"
-      - "gcr.io/$PROJECT_ID/owl-bot"
-      - "."
-
-  - name: gcr.io/cloud-builders/docker
-    id: "push-docker"
-    waitFor: ["build-docker"]
-    args: ["push", "gcr.io/$PROJECT_ID/owl-bot"]
-
-  - name: gcr.io/cloud-builders/gcloud
-    id: "deploy-cloud-run"
-    waitFor: ["push-docker"]
-    entrypoint: bash
-    args:
-      - "-e"
-      - "./scripts/publish-cloud-run.sh"
-      - "$_DIRECTORY"
-      - "$PROJECT_ID"
-      - "$_BUCKET"
-      - "$_KEY_LOCATION"
-      - "$_KEY_RING"
-      - "$_FUNCTION_REGION"
-      # botName
-      - "owl-bot"
-      # timeout
-      - "3600"
-      # minInstances: We want to serve Github webhook quickly.
-      - "3"
-      # concurrency: We saw some errors in gRPC stack (#2265) with the default
-      # 80 concurrency.
-      - "40"
