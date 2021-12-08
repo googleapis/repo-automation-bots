@@ -15,7 +15,11 @@
 import {JavaDependency} from '../src/process-checks/java/dependency';
 import {describe, it} from 'mocha';
 import assert from 'assert';
+const {Octokit} = require('@octokit/rest');
 
+const octokit = new Octokit({
+  auth: 'mypersonalaccesstoken123',
+});
 describe('behavior of UpdateDiscoveryArtifacts process', () => {
   it('should get constructed with the appropriate values', () => {
     const javaDependency = new JavaDependency(
@@ -25,7 +29,9 @@ describe('behavior of UpdateDiscoveryArtifacts process', () => {
       [{filename: 'hello', sha: '2345'}],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
     const expectation = {
@@ -37,6 +43,7 @@ describe('behavior of UpdateDiscoveryArtifacts process', () => {
         repoName: 'testRepoName',
         repoOwner: 'testRepoOwner',
         prNumber: 1,
+        body: 'body',
       },
       classRule: {
         author: 'renovate-bot',
@@ -80,13 +87,15 @@ describe('behavior of UpdateDiscoveryArtifacts process', () => {
           },
         ],
       },
+      octokit,
     };
 
     assert.deepStrictEqual(javaDependency.incomingPR, expectation.incomingPR);
     assert.deepStrictEqual(javaDependency.classRule, expectation.classRule);
+    assert.deepStrictEqual(javaDependency.octokit, octokit);
   });
 
-  it('should return false in checkPR if incoming PR does not match classRules', () => {
+  it('should return false in checkPR if incoming PR does not match classRules', async () => {
     const javaDependency = new JavaDependency(
       'testAuthor',
       'testTitle',
@@ -94,13 +103,15 @@ describe('behavior of UpdateDiscoveryArtifacts process', () => {
       [{filename: 'hello', sha: '2345'}],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.deepStrictEqual(javaDependency.checkPR(), false);
+    assert.deepStrictEqual(await javaDependency.checkPR(), false);
   });
 
-  it('should return false in checkPR if one of the files did not match additional rules in fileRules', () => {
+  it('should return false in checkPR if one of the files did not match additional rules in fileRules', async () => {
     const javaDependency = new JavaDependency(
       'renovate-bot',
       'fix(deps): update dependency cloud.google.com to v16',
@@ -139,13 +150,15 @@ describe('behavior of UpdateDiscoveryArtifacts process', () => {
       ],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.deepStrictEqual(javaDependency.checkPR(), false);
+    assert.deepStrictEqual(await javaDependency.checkPR(), false);
   });
 
-  it('should return true in checkPR if incoming PR does match classRules', () => {
+  it('should return true in checkPR if incoming PR does match classRules', async () => {
     const javaDependency = new JavaDependency(
       'renovate-bot',
       'fix(deps): update dependency com.google.cloud:google-cloud-datacatalog to v16',
@@ -169,9 +182,11 @@ describe('behavior of UpdateDiscoveryArtifacts process', () => {
       ],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.ok(javaDependency.checkPR());
+    assert.ok(await javaDependency.checkPR());
   });
 });

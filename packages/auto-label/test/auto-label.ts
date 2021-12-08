@@ -579,7 +579,7 @@ describe('auto-label', () => {
             created_at: '2021-10-06T16:45:18Z',
             labels: [
               {
-                name: 'stale: critical',
+                name: 'stale: extraold',
                 color: 'C9FFE5',
               },
             ],
@@ -605,7 +605,7 @@ describe('auto-label', () => {
       ghRequests.done();
     });
 
-    it('updates old staleness label to critical', async () => {
+    it('updates old staleness label to extraold', async () => {
       const config = loadConfig('valid-config-staleness.yml');
       getConfigWithDefaultStub.resolves(config);
       const ghRequests = nock('https://api.github.com')
@@ -635,7 +635,7 @@ describe('auto-label', () => {
         .post('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200, [
           {
-            name: 'stale: critical',
+            name: 'stale: extraold',
             color: 'A9FFE5',
           },
         ])
@@ -674,7 +674,7 @@ describe('auto-label', () => {
         .post('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200, [
           {
-            name: 'stale: critical',
+            name: 'stale: extraold',
             color: 'C9FFE5',
           },
         ])
@@ -779,7 +779,7 @@ describe('auto-label', () => {
         .post('/repos/testOwner/testRepo/issues/5/labels')
         .reply(200, [
           {
-            name: 'stale: critical',
+            name: 'stale: extraold',
             color: 'C9FFE5',
           },
         ])

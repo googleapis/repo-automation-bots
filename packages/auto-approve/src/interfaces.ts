@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import {Octokit} from '@octokit/rest';
 
 /**
  * Interface for rules in each languages' PERMITTED_FILES list. These
@@ -59,7 +60,7 @@ export interface Versions {
  * checks, and then overall confirms if that PR passes additional checks for its given language.
  */
 export interface LanguageRule {
-  checkPR(): boolean;
+  checkPR(): Promise<boolean>;
   incomingPR: {
     author: string;
     title: string;
@@ -68,6 +69,7 @@ export interface LanguageRule {
     repoName: string;
     repoOwner: string;
     prNumber: number;
+    body?: string;
   };
   classRule: {
     author: string;
@@ -75,7 +77,9 @@ export interface LanguageRule {
     fileNameRegex?: RegExp[];
     maxFiles?: number;
     fileRules?: FileRule[];
+    bodyRegex?: RegExp;
   };
+  octokit: Octokit;
 }
 
 /**
@@ -126,21 +130,6 @@ export interface Configuration {
   rules: ValidPr[];
 }
 
-// /**
-//  * Interface for an auto-approve.yml configuration (repo/auto-approve.yml)
-//  */
-// export interface ConfigurationV2 {
-//   processes: (
-//     | Constructable<UpdateDiscoveryArtifacts>
-//     | Constructable<RegenerateReadme>
-//     | Constructable<DiscoveryDocUpdate>
-//     | Constructable<PythonDependency>
-//     | Constructable<NodeDependency>
-//     | Constructable<NodeRelease>
-//     | Constructable<JavaDependency>
-//   )[];
-// }
-
 export interface ConfigurationV2 {
   processes: string[];
 }
@@ -154,7 +143,9 @@ export abstract class Process {
     repoName: string;
     repoOwner: string;
     prNumber: number;
+    body?: string;
   };
+  octokit: Octokit;
 
   constructor(
     incomingPrAuthor: string,
@@ -163,7 +154,9 @@ export abstract class Process {
     incomingChangedFiles: File[],
     incomingRepoName: string,
     incomingRepoOwner: string,
-    incomingPrNumber: number
+    incomingPrNumber: number,
+    incomingOctokit: Octokit,
+    incomingBody?: string
   ) {
     this.incomingPR = {
       author: incomingPrAuthor,
@@ -173,6 +166,8 @@ export abstract class Process {
       repoName: incomingRepoName,
       repoOwner: incomingRepoOwner,
       prNumber: incomingPrNumber,
+      body: incomingBody,
     };
+    this.octokit = incomingOctokit;
   }
 }
