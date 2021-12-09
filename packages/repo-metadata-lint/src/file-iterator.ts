@@ -115,6 +115,9 @@ export class FileIterator {
     return manifest;
   }
   async getFile(file: string): Promise<string> {
+    if (!this.lastSha) {
+      await this.getFileListing();
+    }
     file = `owners/${this.owner}/repos/${this.repo}/commits/${this.lastSha}/files/${file}`;
     const [result] = await this.storage
       .bucket(COMMIT_CACHE_BUCKET)

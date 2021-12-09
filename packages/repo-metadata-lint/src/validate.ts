@@ -86,19 +86,19 @@ export class Validate {
       GOOGLEAPIS_REPO,
       octokit
     );
-    const fileListing = await iterator.getFileListing();
-    const apis = new Set();
-    for (const file of fileListing.split('\n')) {
-      if (file.endsWith('.yaml')) {
-        const contents = await iterator.getFile(file);
-        const matchApiShortName = contents.match(/name: (?<apiShortName>[^.\n]+)\.googleapis/);
-        if (matchApiShortName && matchApiShortName.groups) {
-          const api = matchApiShortName.groups.apiShortName;
-          if (apis.has(api)) continue;
-          console.info(api)
-          apis.add(api)
-        }
-      }
+    const apiIndexRaw = await iterator.getFile('api-index-v1.json');
+    const apiIndex = JSON.parse(apiIndexRaw) as {
+      apis: Array<{hostName: string}>
+    };
+    const apiShortNames = new Set<string>()
+    for (const api of apiIndex.apis) {
+      const match = api.hostName.match(/(?<service>[^.]+)/);
+      if (match && match.groups) {
+        apiShortNames.add(match.groups.service)
+      } 
     }
+    const apis = Array.from(apiShortNames).sort();
+    console.info(apis.length);
+    console.info(JSON.stringify(apis, null, 2));
   }
 }
