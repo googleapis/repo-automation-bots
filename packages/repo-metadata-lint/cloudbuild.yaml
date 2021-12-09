@@ -27,7 +27,7 @@ steps:
     waitFor: ["build"]
     entrypoint: bash
     env:
-      - SERVICE_ACCOUNT: repo-metadata-lint@repo-automation-bots.iam.gserviceaccount.com
+      - 'SERVICE_ACCOUNT=repo-metadata-lint@repo-automation-bots.iam.gserviceaccount.com'
     args:
       - "-e"
       - "./scripts/publish-function.sh"
