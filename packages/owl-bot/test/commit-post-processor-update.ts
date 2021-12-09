@@ -92,6 +92,10 @@ describe('commitPostProcessorUpdate', () => {
       .reply(200, payload.pull_request);
   }
 
+  /**
+   * A helper function for passing args to `commitPostProcessorUpdate`.
+   * Helps keeps things DRY when the params aren't unique.
+   * */
   function prepareArgs(
     repoPath: string
   ): Parameters<typeof commitPostProcessorUpdate>[0] {
@@ -105,6 +109,8 @@ describe('commitPostProcessorUpdate', () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
+
+    /** Increments the counter so each test can have its own unique PR */
     pr++;
     labels = [];
 
