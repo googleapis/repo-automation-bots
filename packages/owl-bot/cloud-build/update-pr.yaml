@@ -50,13 +50,13 @@ steps:
       - ${_PR_BRANCH}
       - --depth
       - '2'
-      - https://github.com/${_PR_OWNER}/${_REPOSITORY}.git
+      - https://github.com/${_PR_OWNER}/${_PR_REPOSITORY}.git
     env:
       - 'HOME=/workspace'
 
   # Run container listed in OwlBot.yaml:
   - name: ${_CONTAINER}
-    dir: '${_REPOSITORY}'
+    dir: '${_PR_REPOSITORY}'
     env:
       - 'DEFAULT_BRANCH=$_DEFAULT_BRANCH'
 
@@ -80,12 +80,18 @@ steps:
     env:
       - 'GITHUB_TOKEN=$_GITHUB_TOKEN'
       - 'HOME=/workspace'
-  
+
   # Commit any changes back to the pull request.
   - name: 'gcr.io/cloud-devrel-public-resources/owlbot-cli'
     args:
       - commit-post-processor-update
-    dir: ${_REPOSITORY}
+      - --dest-repo
+      - ${_OWNER}/${_REPOSITORY}
+      - --pr
+      - ${_PR}
+      - --github-token
+      - ${_GITHUB_TOKEN}
+    dir: ${_PR_REPOSITORY}
     env:
       - 'HOME=/workspace'
 
