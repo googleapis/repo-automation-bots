@@ -22,7 +22,6 @@ import {
   isOneDependencyChanged,
   checkFilePathsMatch,
   doesDependencyChangeMatchPRTitle,
-  Versions,
   mergesOnWeekday,
   runVersioningValidation,
 } from './utils-for-pr-checking';

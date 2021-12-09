@@ -142,7 +142,15 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         git -C "$GOOGLEAPIS_GEN" push origin "googleapis-$sha"
     else
         # Determine the current branch so we can explicitly push to it
-        declare -r googleapis_gen_branch=$(git -C "$GOOGLEAPIS_GEN" branch --show-current)
+        # TODO(jskeet): use the commented-out line below; it requires
+        # a newer version of git (2.23.0) than we have (2.20.1).
+        # googleapis_gen_branch=$(git -C "$GOOGLEAPIS_GEN" branch --show-current)
+        if [[ $TARGET_BRANCH != "" ]]
+        then
+          googleapis_gen_branch=$TARGET_BRANCH
+        else
+          googleapis_gen_branch=master
+        fi
 
         # Copy the commit message from the commit in googleapis.
         git -C "$GOOGLEAPIS" log -1 --format=%s%n%n%b > commit-msg.txt

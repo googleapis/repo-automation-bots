@@ -26,7 +26,7 @@ import {
   doesDependencyChangeMatchPRTitleJava,
   checkFilePathsMatch,
   checkAuthor,
-  checkTitle,
+  checkTitleOrBody,
   checkFileCount,
   runVersioningValidation,
 } from '../src/utils-for-pr-checking';
@@ -37,7 +37,11 @@ import sinon from 'sinon';
 import {JavaDependency} from '../src/process-checks/java/dependency';
 import {NodeDependency} from '../src/process-checks/node/dependency';
 import {NodeRelease} from '../src/process-checks/node/release';
+const {Octokit} = require('@octokit/rest');
 
+const octokit = new Octokit({
+  auth: 'mypersonalaccesstoken123',
+});
 describe('run additional versioning checks', () => {
   describe('get target file tests', () => {
     it('should correctly identify the target file if it exists in the PR', async () => {
@@ -414,7 +418,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const getVersionsExpectation = {
@@ -461,7 +467,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const getVersionsExpectation = {
@@ -508,7 +516,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       assert.throws(() => {
@@ -528,7 +538,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       assert.strictEqual(
@@ -567,7 +579,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const getVersionsExpectation = {
@@ -613,7 +627,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const getVersionsExpectation = {
@@ -909,7 +925,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
@@ -938,7 +956,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
@@ -967,7 +987,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
@@ -998,7 +1020,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleJava(
@@ -1027,7 +1051,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleJava(
@@ -1118,7 +1144,7 @@ describe('run additional versioning checks', () => {
   describe('checks that titles match', () => {
     it('should return true if title matches regex', () => {
       assert.ok(
-        checkTitle(
+        checkTitleOrBody(
           'chore: Update discovery artifacts NOW',
           /^chore: Update discovery artifacts/
         )
@@ -1127,13 +1153,16 @@ describe('run additional versioning checks', () => {
 
     it('should return false if title does not match regex', () => {
       assert.deepStrictEqual(
-        checkTitle('dont match this!', /^chore: Update discovery artifacts/),
+        checkTitleOrBody(
+          'dont match this!',
+          /^chore: Update discovery artifacts/
+        ),
         false
       );
     });
 
     it('should return true if there is no title regex', () => {
-      assert.ok(checkTitle('match this, I dont care', undefined));
+      assert.ok(checkTitleOrBody('match this, I dont care', undefined));
     });
   });
 
