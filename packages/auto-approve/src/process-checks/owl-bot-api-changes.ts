@@ -93,9 +93,9 @@ export class OwlBotAPIChanges extends Process implements LanguageRule {
       this.octokit
     );
 
-    let noOtherOwlBotPRs = false;
+    let otherOwlBotPRs = false;
     if (openOwlBotPRs > 1) {
-      noOtherOwlBotPRs = true;
+      otherOwlBotPRs = true;
     }
 
     const commitsOnPR = await listCommitsOnAPR(
@@ -105,12 +105,12 @@ export class OwlBotAPIChanges extends Process implements LanguageRule {
       this.octokit
     );
 
-    const otherCommitAuthors = commitsOnPR.filter(
+    const commitAuthors = commitsOnPR.filter(
       x => x.author?.login !== this.classRule.author
     );
-    let noOtherCommitAuthors = false;
-    if (otherCommitAuthors.length > 0) {
-      noOtherCommitAuthors = true;
+    let otherCommitAuthors = false;
+    if (commitAuthors.length > 0) {
+      otherCommitAuthors = true;
     }
 
     reportIndividualChecks(
@@ -127,8 +127,8 @@ export class OwlBotAPIChanges extends Process implements LanguageRule {
         !titleMatches,
         bodyMatches,
         isGAPIC,
-        !noOtherOwlBotPRs,
-        !noOtherCommitAuthors,
+        !otherOwlBotPRs,
+        !otherCommitAuthors,
       ],
       this.incomingPR.repoOwner,
       this.incomingPR.repoName,
@@ -141,8 +141,8 @@ export class OwlBotAPIChanges extends Process implements LanguageRule {
       !titleMatches &&
       bodyMatches &&
       isGAPIC &&
-      !noOtherOwlBotPRs &&
-      !noOtherCommitAuthors
+      !otherOwlBotPRs &&
+      !otherCommitAuthors
     );
   }
 }

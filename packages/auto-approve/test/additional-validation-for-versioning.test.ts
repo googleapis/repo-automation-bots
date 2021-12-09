@@ -1223,16 +1223,8 @@ describe('run additional versioning checks', () => {
         octokit
       );
 
-      // const prCount2 = await getOpenPRsInRepoFromSameAuthor(
-      //   'testRepoOwner',
-      //   'testRepoName',
-      //   'someOtherAuthor',
-      //   octokit
-      // );
-
       prRequest.done();
       assert.deepStrictEqual(prCount, 1);
-      //assert.deepStrictEqual(prCount2, 0);
     });
 
     it('should return the number of PRs from someOtherAuthor', async () => {
