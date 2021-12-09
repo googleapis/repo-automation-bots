@@ -8,7 +8,7 @@
     "build/src"
   ],
   "engines": {
-    "node": ">=12.10.0"
+    "node": ">=14.0.0"
   },
   "scripts": {
     "start": "node ./build/src/server.js",

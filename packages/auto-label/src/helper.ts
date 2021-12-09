@@ -34,8 +34,8 @@ export const STALE_PREFIX = 'stale:';
 // The label for old pull requests
 export const OLD_LABEL = 'old';
 
-// The label for old pull requests
-export const CRITICAL_LABEL = 'critical';
+// The label for extra old pull requests
+export const EXTRAOLD_LABEL = 'extraold';
 
 export const DEFAULT_CONFIGS = {
   product: LABEL_PRODUCT_BY_DEFAULT,
@@ -112,7 +112,7 @@ export interface LanguageConfig {
 export interface StaleConfig {
   pullrequest?: boolean;
   old?: number;
-  critical?: number;
+  extraold?: number;
 }
 
 export interface Config {

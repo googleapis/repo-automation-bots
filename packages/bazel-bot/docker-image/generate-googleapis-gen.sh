@@ -144,12 +144,12 @@ for (( idx=${#ungenerated_shas[@]}-1 ; idx>=0 ; idx-- )) ; do
         # Determine the current branch so we can explicitly push to it
         # TODO(jskeet): use the commented-out line below; it requires
         # a newer version of git (2.23.0) than we have (2.20.1).
-        # declare -r googleapis_gen_branch=$(git -C "$GOOGLEAPIS_GEN" branch --show-current)
+        # googleapis_gen_branch=$(git -C "$GOOGLEAPIS_GEN" branch --show-current)
         if [[ $TARGET_BRANCH != "" ]]
         then
-          declare -r googleapis_gen_branch=$TARGET_BRANCH
+          googleapis_gen_branch=$TARGET_BRANCH
         else
-          declare -r googleapis_gen_branch=master
+          googleapis_gen_branch=master
         fi
 
         # Copy the commit message from the commit in googleapis.

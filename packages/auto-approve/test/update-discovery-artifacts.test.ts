@@ -16,6 +16,12 @@ import {UpdateDiscoveryArtifacts} from '../src/process-checks/update-discovery-a
 import {describe, it} from 'mocha';
 import assert from 'assert';
 
+const {Octokit} = require('@octokit/rest');
+
+const octokit = new Octokit({
+  auth: 'mypersonalaccesstoken123',
+});
+
 describe('behavior of UpdateDiscoveryArtifacts process', () => {
   it('should get constructed with the appropriate values', () => {
     const updateDiscoveryArtifacts = new UpdateDiscoveryArtifacts(
@@ -25,7 +31,9 @@ describe('behavior of UpdateDiscoveryArtifacts process', () => {
       [{filename: 'hello', sha: '2345'}],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
     const expectation = {
@@ -37,6 +45,7 @@ describe('behavior of UpdateDiscoveryArtifacts process', () => {
         repoName: 'testRepoName',
         repoOwner: 'testRepoOwner',
         prNumber: 1,
+        body: 'body',
       },
       classRule: {
         author: 'yoshi-code-bot',
@@ -48,6 +57,7 @@ describe('behavior of UpdateDiscoveryArtifacts process', () => {
           /^googleapiclient\/discovery_cache\/documents\/.*\.json$/,
         ],
       },
+      octokit,
     };
 
     assert.deepStrictEqual(
@@ -58,9 +68,10 @@ describe('behavior of UpdateDiscoveryArtifacts process', () => {
       updateDiscoveryArtifacts.classRule,
       expectation.classRule
     );
+    assert.deepStrictEqual(updateDiscoveryArtifacts.octokit, octokit);
   });
 
-  it('should return false in checkPR if incoming PR does not match classRules', () => {
+  it('should return false in checkPR if incoming PR does not match classRules', async () => {
     const updateDiscoveryArtifacts = new UpdateDiscoveryArtifacts(
       'testAuthor',
       'testTitle',
@@ -68,13 +79,15 @@ describe('behavior of UpdateDiscoveryArtifacts process', () => {
       [{filename: 'hello', sha: '2345'}],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.deepStrictEqual(updateDiscoveryArtifacts.checkPR(), false);
+    assert.deepStrictEqual(await updateDiscoveryArtifacts.checkPR(), false);
   });
 
-  it('should return true in checkPR if incoming PR does match classRules', () => {
+  it('should return true in checkPR if incoming PR does match classRules', async () => {
     const updateDiscoveryArtifacts = new UpdateDiscoveryArtifacts(
       'yoshi-code-bot',
       'chore: Update discovery artifacts',
@@ -87,9 +100,11 @@ describe('behavior of UpdateDiscoveryArtifacts process', () => {
       ],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.ok(updateDiscoveryArtifacts.checkPR());
+    assert.ok(await updateDiscoveryArtifacts.checkPR());
   });
 });
