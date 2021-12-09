@@ -32,6 +32,8 @@ function isFile(file: File | unknown): file is File {
   return (file as File).content !== undefined;
 }
 
+const COMMIT_CACHE_BUCKET = 'github_commit_cache';
+
 // Load full contents of GitHub repository from commit cache,
 // use this to iterate over individual .repo-metadata.json files.
 // This approach is used for the benefit of mono-repos.
@@ -39,18 +41,16 @@ export class FileIterator {
   octokit: OctokitType;
   owner: string;
   repo: string;
-  bucket: string;
   storage: Storage;
+  lastSha?: string;
   constructor(
     owner: string,
     repo: string,
-    bucket: string,
     octokit: OctokitType
   ) {
     this.octokit = octokit;
     this.owner = owner;
     this.repo = repo;
-    this.bucket = bucket;
     this.storage = new Storage();
   }
   // Emit any .repo-metadata.json files found in file listing.
@@ -76,7 +76,7 @@ export class FileIterator {
     }
   }
   // Fetch the file listing from commit cache.
-  private async getFileListing(): Promise<string> {
+  async getFileListing(): Promise<string> {
     const perPage = 5;
     const commits = (
       await this.octokit.rest.repos.listCommits({
@@ -96,10 +96,12 @@ export class FileIterator {
         const manifestFile = `owners/${this.owner}/repos/${this.repo}/commits/${commit.sha}/file_manifest.txt`;
         try {
           const [result] = await this.storage
-            .bucket(this.bucket)
+            .bucket(COMMIT_CACHE_BUCKET)
             .file(manifestFile)
             .download();
+          this.lastSha = commit.sha;
           manifest = result.toString('utf8');
+          break;
         } catch (_err) {
           const err = _err as {code: number};
           if (err.code === 404) {
@@ -111,5 +113,13 @@ export class FileIterator {
       }
     }
     return manifest;
+  }
+  async getFile(file: string): Promise<string> {
+    file = `owners/${this.owner}/repos/${this.repo}/commits/${this.lastSha}/files/${file}`;
+    const [result] = await this.storage
+      .bucket(COMMIT_CACHE_BUCKET)
+      .file(file)
+      .download();
+    return result.toString('utf8');
   }
 }

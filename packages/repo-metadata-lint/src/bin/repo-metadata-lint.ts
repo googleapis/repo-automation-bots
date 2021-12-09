@@ -15,9 +15,11 @@
 
 import yargs = require('yargs');
 import {scanRepo} from './commands/scan-repo';
+import {validApiShortNames} from './commands/valid-api-short-names';
 
 yargs(process.argv.slice(2))
   .command(scanRepo)
+  .command(validApiShortNames)
   .demandCommand(1)
   .strictCommands()
   .parse();

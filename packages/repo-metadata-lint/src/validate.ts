@@ -15,6 +15,8 @@
 
 import Ajv from 'ajv';
 import schema from './repo-metadata-schema.json';
+import { FileIterator } from './file-iterator';
+import {OctokitType} from './utils/octokit-util';
 
 export interface ValidationResult {
   status: 'success' | 'error';
@@ -28,6 +30,9 @@ const API_LIBRARY_TYPES = [
   'AGENT',
   'GAPIC_COMBO',
 ];
+
+const GOOGLEAPIS_OWNER = 'googleapis';
+const GOOGLEAPIS_REPO = 'googleapis';
 
 // Apply validation logic to .repo-metadata.json.
 export class Validate {
@@ -74,5 +79,26 @@ export class Validate {
     }
 
     return result;
+  }
+  static async validApiShortNames(octokit: OctokitType) {
+    const iterator = new FileIterator(
+      GOOGLEAPIS_OWNER,
+      GOOGLEAPIS_REPO,
+      octokit
+    );
+    const fileListing = await iterator.getFileListing();
+    const apis = new Set();
+    for (const file of fileListing.split('\n')) {
+      if (file.endsWith('.yaml')) {
+        const contents = await iterator.getFile(file);
+        const matchApiShortName = contents.match(/name: (?<apiShortName>[^.\n]+)\.googleapis/);
+        if (matchApiShortName && matchApiShortName.groups) {
+          const api = matchApiShortName.groups.apiShortName;
+          if (apis.has(api)) continue;
+          console.info(api)
+          apis.add(api)
+        }
+      }
+    }
   }
 }
