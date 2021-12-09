@@ -138,8 +138,10 @@ export async function triggerPostProcessBuild(
         _GITHUB_TOKEN: token.token,
         _PR: args.pr.toString(),
         _PR_BRANCH: prData.head.ref,
+        _OWNER: owner,
+        _REPOSITORY: repo,
         _PR_OWNER: prOwner,
-        _REPOSITORY: prRepo,
+        _PR_REPOSITORY: prRepo,
         // _CONTAINER must contain the image digest. For example:
         // gcr.io/repo-automation-tools/nodejs-post-processor**@1234abcd**
         // TODO: read this from OwlBot.yaml.
