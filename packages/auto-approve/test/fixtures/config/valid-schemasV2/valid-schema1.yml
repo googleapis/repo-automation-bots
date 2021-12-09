@@ -6,3 +6,5 @@ processes:
   - "NodeDependency"
   - "NodeRelease"
   - "JavaDependency"
+  - "OwlBotTemplateChanges"
+  - "OwlBotAPIChanges"

@@ -29,10 +29,45 @@ const octokit = new Octokit({
 });
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
-function listChangedFilesPR(status: number, response: File[]) {
+function getPRsOnRepo(
+  owner: string,
+  repo: string,
+  response: {id: number; user: {login: string}}[]
+) {
   return nock('https://api.github.com')
-    .get('/repos/testOwner/testRepo/pulls/1/files')
-    .reply(status, response);
+    .get(`/repos/${owner}/${repo}/pulls?state=open`)
+    .reply(200, response);
+}
+
+function getFileOnARepo(
+  owner: string,
+  repo: string,
+  path: string,
+  response: {name: string; content: string}
+) {
+  return nock('https://api.github.com')
+    .get(`/repos/${owner}/${repo}/contents/${path}`)
+    .reply(200, response);
+}
+
+function listCommitsOnAPR(
+  owner: string,
+  repo: string,
+  response: {author: {login: string}}[]
+) {
+  return nock('https://api.github.com')
+    .get(`/repos/${owner}/${repo}/pulls/1/commits`)
+    .reply(200, response);
+}
+
+function getFilesOnAPR(
+  owner: string,
+  repo: string,
+  response: {filename: string; sha: string}[]
+) {
+  return nock('https://api.github.com')
+    .get(`/repos/${owner}/${repo}/pulls/1/files`)
+    .reply(200, response);
 }
 
 describe('check pr against config', async () => {
@@ -65,9 +100,37 @@ describe('check pr against config', async () => {
         )
       ) as ConfigurationV2;
 
-      const fileRequest = nock('https://api.github.com')
-        .get('/repos/GoogleCloudPlatform/python-docs-samples/pulls/1/files')
-        .reply(200, [{filename: 'requirements.txt', sha: '1234'}]);
+      const scopes = [
+        getFilesOnAPR('GoogleCloudPlatform', 'python-docs-samples', [
+          {filename: 'requirements.txt', sha: '1234'},
+        ]),
+        listCommitsOnAPR('GoogleCloudPlatform', 'python-docs-samples', [
+          {author: {login: 'gcf-owl-bot[bot]'}},
+        ]),
+        getFileOnARepo(
+          'GoogleCloudPlatform',
+          'python-docs-samples',
+          '.repo-metadata.json',
+          {
+            name: '.repo-metadata.json',
+            content:
+              'ewogICAgIm5hbWUiOiAiZGxwIiwKICAgICJuYW1lX3ByZXR0eSI6ICJDbG91ZCBEYXRhIExvc3MgUHJldmVudGlvbiIsCiAgICAicHJvZHVjdF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9kbHAvZG9jcy8iLAogICAgImNsaWVudF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9weXRob24vZG9jcy9yZWZlcmVuY2UvZGxwL2xhdGVzdCIsCiAgICAiaXNzdWVfdHJhY2tlciI6ICIiLAogICAgInJlbGVhc2VfbGV2ZWwiOiAiZ2EiLAogICAgImxhbmd1YWdlIjogInB5dGhvbiIsCiAgICAibGlicmFyeV90eXBlIjogIkdBUElDX0FVVE8iLAogICAgInJlcG8iOiAiZ29vZ2xlYXBpcy9weXRob24tZGxwIiwKICAgICJkaXN0cmlidXRpb25fbmFtZSI6ICJnb29nbGUtY2xvdWQtZGxwIiwKICAgICJhcGlfaWQiOiAiZGxwLmdvb2dsZWFwaXMuY29tIiwKICAgICJyZXF1aXJlc19iaWxsaW5nIjogdHJ1ZSwKICAgICJkZWZhdWx0X3ZlcnNpb24iOiAidjIiLAogICAgImNvZGVvd25lcl90ZWFtIjogIiIKfQ==',
+          }
+        ),
+        getFileOnARepo(
+          'GoogleCloudPlatform',
+          'python-docs-samples',
+          '.repo-metadata.json',
+          {
+            name: '.repo-metadata.json',
+            content:
+              'ewogICAgIm5hbWUiOiAiZGxwIiwKICAgICJuYW1lX3ByZXR0eSI6ICJDbG91ZCBEYXRhIExvc3MgUHJldmVudGlvbiIsCiAgICAicHJvZHVjdF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9kbHAvZG9jcy8iLAogICAgImNsaWVudF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9weXRob24vZG9jcy9yZWZlcmVuY2UvZGxwL2xhdGVzdCIsCiAgICAiaXNzdWVfdHJhY2tlciI6ICIiLAogICAgInJlbGVhc2VfbGV2ZWwiOiAiZ2EiLAogICAgImxhbmd1YWdlIjogInB5dGhvbiIsCiAgICAibGlicmFyeV90eXBlIjogIkdBUElDX0FVVE8iLAogICAgInJlcG8iOiAiZ29vZ2xlYXBpcy9weXRob24tZGxwIiwKICAgICJkaXN0cmlidXRpb25fbmFtZSI6ICJnb29nbGUtY2xvdWQtZGxwIiwKICAgICJhcGlfaWQiOiAiZGxwLmdvb2dsZWFwaXMuY29tIiwKICAgICJyZXF1aXJlc19iaWxsaW5nIjogdHJ1ZSwKICAgICJkZWZhdWx0X3ZlcnNpb24iOiAidjIiLAogICAgImNvZGVvd25lcl90ZWFtIjogIiIKfQ==',
+          }
+        ),
+        getPRsOnRepo('GoogleCloudPlatform', 'python-docs-samples', [
+          {id: 2, user: {login: 'gcf-owl-bot[bot]'}},
+        ]),
+      ];
 
       const pr = require(resolve(
         fixturesPath,
@@ -77,19 +140,37 @@ describe('check pr against config', async () => {
 
       await checkPR.checkPRAgainstConfig(validPR, pr, octokit);
 
-      fileRequest.done();
+      scopes.forEach(scope => scope.done());
     });
 
-    it('should return false if incoming PR does not have an author that matches any of the processes', async () => {
+    it('should return false if incoming PR does not match any of the processes', async () => {
       const pr = require(resolve(
         fixturesPath,
         'events',
         'pull_request_opened'
       ));
 
-      const fileRequest = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/pulls/1/files')
-        .reply(200);
+      const scopes = [
+        getFilesOnAPR('testOwner', 'testRepo', [
+          {filename: 'requirements.txt', sha: '1234'},
+        ]),
+        listCommitsOnAPR('testOwner', 'testRepo', [
+          {author: {login: 'gcf-owl-bot[bot]'}},
+        ]),
+        getFileOnARepo('testOwner', 'testRepo', '.repo-metadata.json', {
+          name: '.repo-metadata.json',
+          content:
+            'ewogICAgIm5hbWUiOiAiZGxwIiwKICAgICJuYW1lX3ByZXR0eSI6ICJDbG91ZCBEYXRhIExvc3MgUHJldmVudGlvbiIsCiAgICAicHJvZHVjdF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9kbHAvZG9jcy8iLAogICAgImNsaWVudF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9weXRob24vZG9jcy9yZWZlcmVuY2UvZGxwL2xhdGVzdCIsCiAgICAiaXNzdWVfdHJhY2tlciI6ICIiLAogICAgInJlbGVhc2VfbGV2ZWwiOiAiZ2EiLAogICAgImxhbmd1YWdlIjogInB5dGhvbiIsCiAgICAibGlicmFyeV90eXBlIjogIkdBUElDX0FVVE8iLAogICAgInJlcG8iOiAiZ29vZ2xlYXBpcy9weXRob24tZGxwIiwKICAgICJkaXN0cmlidXRpb25fbmFtZSI6ICJnb29nbGUtY2xvdWQtZGxwIiwKICAgICJhcGlfaWQiOiAiZGxwLmdvb2dsZWFwaXMuY29tIiwKICAgICJyZXF1aXJlc19iaWxsaW5nIjogdHJ1ZSwKICAgICJkZWZhdWx0X3ZlcnNpb24iOiAidjIiLAogICAgImNvZGVvd25lcl90ZWFtIjogIiIKfQ==',
+        }),
+        getFileOnARepo('testOwner', 'testRepo', '.repo-metadata.json', {
+          name: '.repo-metadata.json',
+          content:
+            'ewogICAgIm5hbWUiOiAiZGxwIiwKICAgICJuYW1lX3ByZXR0eSI6ICJDbG91ZCBEYXRhIExvc3MgUHJldmVudGlvbiIsCiAgICAicHJvZHVjdF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9kbHAvZG9jcy8iLAogICAgImNsaWVudF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9weXRob24vZG9jcy9yZWZlcmVuY2UvZGxwL2xhdGVzdCIsCiAgICAiaXNzdWVfdHJhY2tlciI6ICIiLAogICAgInJlbGVhc2VfbGV2ZWwiOiAiZ2EiLAogICAgImxhbmd1YWdlIjogInB5dGhvbiIsCiAgICAibGlicmFyeV90eXBlIjogIkdBUElDX0FVVE8iLAogICAgInJlcG8iOiAiZ29vZ2xlYXBpcy9weXRob24tZGxwIiwKICAgICJkaXN0cmlidXRpb25fbmFtZSI6ICJnb29nbGUtY2xvdWQtZGxwIiwKICAgICJhcGlfaWQiOiAiZGxwLmdvb2dsZWFwaXMuY29tIiwKICAgICJyZXF1aXJlc19iaWxsaW5nIjogdHJ1ZSwKICAgICJkZWZhdWx0X3ZlcnNpb24iOiAidjIiLAogICAgImNvZGVvd25lcl90ZWFtIjogIiIKfQ==',
+        }),
+        getPRsOnRepo('testOwner', 'testRepo', [
+          {id: 2, user: {login: 'gcf-owl-bot[bot]'}},
+        ]),
+      ];
 
       const prMatchesConfig = await checkPR.checkPRAgainstConfig(
         validPR,
@@ -97,7 +178,7 @@ describe('check pr against config', async () => {
         octokit
       );
       assert.strictEqual(prMatchesConfig, false);
-      fileRequest.done();
+      scopes.forEach(scope => scope.done());
     });
 
     it('should return false if incoming PR does not have a title that matches any of the processes', async () => {
@@ -107,17 +188,34 @@ describe('check pr against config', async () => {
         'pull_request_opened_right_author_wrong_title'
       ));
 
-      const fileRequest = nock('https://api.github.com')
-        .get('/repos/testOwner/testRepo/pulls/1/files')
-        .reply(200);
-
+      const scopes = [
+        getFilesOnAPR('testOwner', 'testRepo', [
+          {filename: 'requirements.txt', sha: '1234'},
+        ]),
+        listCommitsOnAPR('testOwner', 'testRepo', [
+          {author: {login: 'gcf-owl-bot[bot]'}},
+        ]),
+        getFileOnARepo('testOwner', 'testRepo', '.repo-metadata.json', {
+          name: '.repo-metadata.json',
+          content:
+            'ewogICAgIm5hbWUiOiAiZGxwIiwKICAgICJuYW1lX3ByZXR0eSI6ICJDbG91ZCBEYXRhIExvc3MgUHJldmVudGlvbiIsCiAgICAicHJvZHVjdF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9kbHAvZG9jcy8iLAogICAgImNsaWVudF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9weXRob24vZG9jcy9yZWZlcmVuY2UvZGxwL2xhdGVzdCIsCiAgICAiaXNzdWVfdHJhY2tlciI6ICIiLAogICAgInJlbGVhc2VfbGV2ZWwiOiAiZ2EiLAogICAgImxhbmd1YWdlIjogInB5dGhvbiIsCiAgICAibGlicmFyeV90eXBlIjogIkdBUElDX0FVVE8iLAogICAgInJlcG8iOiAiZ29vZ2xlYXBpcy9weXRob24tZGxwIiwKICAgICJkaXN0cmlidXRpb25fbmFtZSI6ICJnb29nbGUtY2xvdWQtZGxwIiwKICAgICJhcGlfaWQiOiAiZGxwLmdvb2dsZWFwaXMuY29tIiwKICAgICJyZXF1aXJlc19iaWxsaW5nIjogdHJ1ZSwKICAgICJkZWZhdWx0X3ZlcnNpb24iOiAidjIiLAogICAgImNvZGVvd25lcl90ZWFtIjogIiIKfQ==',
+        }),
+        getFileOnARepo('testOwner', 'testRepo', '.repo-metadata.json', {
+          name: '.repo-metadata.json',
+          content:
+            'ewogICAgIm5hbWUiOiAiZGxwIiwKICAgICJuYW1lX3ByZXR0eSI6ICJDbG91ZCBEYXRhIExvc3MgUHJldmVudGlvbiIsCiAgICAicHJvZHVjdF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9kbHAvZG9jcy8iLAogICAgImNsaWVudF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9weXRob24vZG9jcy9yZWZlcmVuY2UvZGxwL2xhdGVzdCIsCiAgICAiaXNzdWVfdHJhY2tlciI6ICIiLAogICAgInJlbGVhc2VfbGV2ZWwiOiAiZ2EiLAogICAgImxhbmd1YWdlIjogInB5dGhvbiIsCiAgICAibGlicmFyeV90eXBlIjogIkdBUElDX0FVVE8iLAogICAgInJlcG8iOiAiZ29vZ2xlYXBpcy9weXRob24tZGxwIiwKICAgICJkaXN0cmlidXRpb25fbmFtZSI6ICJnb29nbGUtY2xvdWQtZGxwIiwKICAgICJhcGlfaWQiOiAiZGxwLmdvb2dsZWFwaXMuY29tIiwKICAgICJyZXF1aXJlc19iaWxsaW5nIjogdHJ1ZSwKICAgICJkZWZhdWx0X3ZlcnNpb24iOiAidjIiLAogICAgImNvZGVvd25lcl90ZWFtIjogIiIKfQ==',
+        }),
+        getPRsOnRepo('testOwner', 'testRepo', [
+          {id: 2, user: {login: 'gcf-owl-bot[bot]'}},
+        ]),
+      ];
       const prMatchesConfig = await checkPR.checkPRAgainstConfig(
         validPR,
         pr,
         octokit
       );
       assert.strictEqual(prMatchesConfig, false);
-      fileRequest.done();
+      scopes.forEach(scope => scope.done());
     });
 
     it('should return false if incoming PR does not have the correct filenames for any of the processes', async () => {
@@ -127,10 +225,28 @@ describe('check pr against config', async () => {
         'pull_request_opened_right_author_and_title'
       ));
 
-      const scopes = listChangedFilesPR(200, [
-        {filename: 'changedFile1', sha: '1234'},
-        {filename: 'changedFile2', sha: '1234'},
-      ]);
+      const scopes = [
+        getFilesOnAPR('testOwner', 'testRepo', [
+          {filename: 'changedFile1', sha: '1234'},
+          {filename: 'changedFile2', sha: '1234'},
+        ]),
+        listCommitsOnAPR('testOwner', 'testRepo', [
+          {author: {login: 'gcf-owl-bot[bot]'}},
+        ]),
+        getFileOnARepo('testOwner', 'testRepo', '.repo-metadata.json', {
+          name: '.repo-metadata.json',
+          content:
+            'ewogICAgIm5hbWUiOiAiZGxwIiwKICAgICJuYW1lX3ByZXR0eSI6ICJDbG91ZCBEYXRhIExvc3MgUHJldmVudGlvbiIsCiAgICAicHJvZHVjdF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9kbHAvZG9jcy8iLAogICAgImNsaWVudF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9weXRob24vZG9jcy9yZWZlcmVuY2UvZGxwL2xhdGVzdCIsCiAgICAiaXNzdWVfdHJhY2tlciI6ICIiLAogICAgInJlbGVhc2VfbGV2ZWwiOiAiZ2EiLAogICAgImxhbmd1YWdlIjogInB5dGhvbiIsCiAgICAibGlicmFyeV90eXBlIjogIkdBUElDX0FVVE8iLAogICAgInJlcG8iOiAiZ29vZ2xlYXBpcy9weXRob24tZGxwIiwKICAgICJkaXN0cmlidXRpb25fbmFtZSI6ICJnb29nbGUtY2xvdWQtZGxwIiwKICAgICJhcGlfaWQiOiAiZGxwLmdvb2dsZWFwaXMuY29tIiwKICAgICJyZXF1aXJlc19iaWxsaW5nIjogdHJ1ZSwKICAgICJkZWZhdWx0X3ZlcnNpb24iOiAidjIiLAogICAgImNvZGVvd25lcl90ZWFtIjogIiIKfQ==',
+        }),
+        getFileOnARepo('testOwner', 'testRepo', '.repo-metadata.json', {
+          name: '.repo-metadata.json',
+          content:
+            'ewogICAgIm5hbWUiOiAiZGxwIiwKICAgICJuYW1lX3ByZXR0eSI6ICJDbG91ZCBEYXRhIExvc3MgUHJldmVudGlvbiIsCiAgICAicHJvZHVjdF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9kbHAvZG9jcy8iLAogICAgImNsaWVudF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9weXRob24vZG9jcy9yZWZlcmVuY2UvZGxwL2xhdGVzdCIsCiAgICAiaXNzdWVfdHJhY2tlciI6ICIiLAogICAgInJlbGVhc2VfbGV2ZWwiOiAiZ2EiLAogICAgImxhbmd1YWdlIjogInB5dGhvbiIsCiAgICAibGlicmFyeV90eXBlIjogIkdBUElDX0FVVE8iLAogICAgInJlcG8iOiAiZ29vZ2xlYXBpcy9weXRob24tZGxwIiwKICAgICJkaXN0cmlidXRpb25fbmFtZSI6ICJnb29nbGUtY2xvdWQtZGxwIiwKICAgICJhcGlfaWQiOiAiZGxwLmdvb2dsZWFwaXMuY29tIiwKICAgICJyZXF1aXJlc19iaWxsaW5nIjogdHJ1ZSwKICAgICJkZWZhdWx0X3ZlcnNpb24iOiAidjIiLAogICAgImNvZGVvd25lcl90ZWFtIjogIiIKfQ==',
+        }),
+        getPRsOnRepo('testOwner', 'testRepo', [
+          {id: 2, user: {login: 'gcf-owl-bot[bot]'}},
+        ]),
+      ];
 
       const prMatchesConfig = await checkPR.checkPRAgainstConfig(
         validPR,
@@ -138,8 +254,8 @@ describe('check pr against config', async () => {
         octokit
       );
 
-      scopes.done();
       assert.strictEqual(prMatchesConfig, false);
+      scopes.forEach(scope => scope.done());
     });
 
     it('should return false if incoming PR does not have the correct number of files changed for any of the processes', async () => {
@@ -149,11 +265,32 @@ describe('check pr against config', async () => {
         'pull_request_opened_right_author_and_title'
       ));
 
-      const scopes = listChangedFilesPR(200, [
-        {filename: 'README.md', sha: '1234'},
-        {filename: '.github/readme/synth.metadata/synth.metadata', sha: '1234'},
-        {filename: 'README.md', sha: '1234'},
-      ]);
+      const scopes = [
+        getFilesOnAPR('testOwner', 'testRepo', [
+          {filename: 'README.md', sha: '1234'},
+          {
+            filename: '.github/readme/synth.metadata/synth.metadata',
+            sha: '1234',
+          },
+          {filename: 'README.md', sha: '1234'},
+        ]),
+        listCommitsOnAPR('testOwner', 'testRepo', [
+          {author: {login: 'gcf-owl-bot[bot]'}},
+        ]),
+        getFileOnARepo('testOwner', 'testRepo', '.repo-metadata.json', {
+          name: '.repo-metadata.json',
+          content:
+            'ewogICAgIm5hbWUiOiAiZGxwIiwKICAgICJuYW1lX3ByZXR0eSI6ICJDbG91ZCBEYXRhIExvc3MgUHJldmVudGlvbiIsCiAgICAicHJvZHVjdF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9kbHAvZG9jcy8iLAogICAgImNsaWVudF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9weXRob24vZG9jcy9yZWZlcmVuY2UvZGxwL2xhdGVzdCIsCiAgICAiaXNzdWVfdHJhY2tlciI6ICIiLAogICAgInJlbGVhc2VfbGV2ZWwiOiAiZ2EiLAogICAgImxhbmd1YWdlIjogInB5dGhvbiIsCiAgICAibGlicmFyeV90eXBlIjogIkdBUElDX0FVVE8iLAogICAgInJlcG8iOiAiZ29vZ2xlYXBpcy9weXRob24tZGxwIiwKICAgICJkaXN0cmlidXRpb25fbmFtZSI6ICJnb29nbGUtY2xvdWQtZGxwIiwKICAgICJhcGlfaWQiOiAiZGxwLmdvb2dsZWFwaXMuY29tIiwKICAgICJyZXF1aXJlc19iaWxsaW5nIjogdHJ1ZSwKICAgICJkZWZhdWx0X3ZlcnNpb24iOiAidjIiLAogICAgImNvZGVvd25lcl90ZWFtIjogIiIKfQ==',
+        }),
+        getFileOnARepo('testOwner', 'testRepo', '.repo-metadata.json', {
+          name: '.repo-metadata.json',
+          content:
+            'ewogICAgIm5hbWUiOiAiZGxwIiwKICAgICJuYW1lX3ByZXR0eSI6ICJDbG91ZCBEYXRhIExvc3MgUHJldmVudGlvbiIsCiAgICAicHJvZHVjdF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9kbHAvZG9jcy8iLAogICAgImNsaWVudF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9weXRob24vZG9jcy9yZWZlcmVuY2UvZGxwL2xhdGVzdCIsCiAgICAiaXNzdWVfdHJhY2tlciI6ICIiLAogICAgInJlbGVhc2VfbGV2ZWwiOiAiZ2EiLAogICAgImxhbmd1YWdlIjogInB5dGhvbiIsCiAgICAibGlicmFyeV90eXBlIjogIkdBUElDX0FVVE8iLAogICAgInJlcG8iOiAiZ29vZ2xlYXBpcy9weXRob24tZGxwIiwKICAgICJkaXN0cmlidXRpb25fbmFtZSI6ICJnb29nbGUtY2xvdWQtZGxwIiwKICAgICJhcGlfaWQiOiAiZGxwLmdvb2dsZWFwaXMuY29tIiwKICAgICJyZXF1aXJlc19iaWxsaW5nIjogdHJ1ZSwKICAgICJkZWZhdWx0X3ZlcnNpb24iOiAidjIiLAogICAgImNvZGVvd25lcl90ZWFtIjogIiIKfQ==',
+        }),
+        getPRsOnRepo('testOwner', 'testRepo', [
+          {id: 2, user: {login: 'gcf-owl-bot[bot]'}},
+        ]),
+      ];
 
       const prMatchesConfig = await checkPR.checkPRAgainstConfig(
         validPR,
@@ -161,7 +298,7 @@ describe('check pr against config', async () => {
         octokit
       );
 
-      scopes.done();
+      scopes.forEach(scope => scope.done());
       assert.strictEqual(prMatchesConfig, false);
     });
 
@@ -172,10 +309,17 @@ describe('check pr against config', async () => {
         'pull_request_opened_right_author_and_title_file_count'
       ));
 
-      const scopes = listChangedFilesPR(200, [
-        {filename: 'README.md', sha: '1234'},
-        {filename: '.github/readme/synth.metadata/synth.metadata', sha: '1234'},
-      ]);
+      // Since this case is succeeding, it won't get to call all of the scopes for the rest
+      // of the cases
+      const scopes = [
+        getFilesOnAPR('testOwner', 'testRepo', [
+          {filename: 'README.md', sha: '1234'},
+          {
+            filename: '.github/readme/synth.metadata/synth.metadata',
+            sha: '1234',
+          },
+        ]),
+      ];
 
       const prMatchesConfig = await checkPR.checkPRAgainstConfig(
         validPR,
@@ -183,7 +327,7 @@ describe('check pr against config', async () => {
         octokit
       );
 
-      scopes.done();
+      scopes.forEach(scope => scope.done());
       assert.ok(prMatchesConfig);
     });
 
@@ -206,17 +350,21 @@ describe('check pr against config', async () => {
         'pull_request_opened_right_author_and_title_partial_schema'
       ));
 
-      const scopes = listChangedFilesPR(200, [
-        {filename: 'README.md', sha: '1234'},
-        {filename: '.github/readme/synth.metadata/synth.metadata', sha: '1234'},
-      ]);
-
+      const scopes = [
+        getFilesOnAPR('testOwner', 'testRepo', [
+          {filename: 'README.md', sha: '1234'},
+          {
+            filename: '.github/readme/synth.metadata/synth.metadata',
+            sha: '1234',
+          },
+        ]),
+      ];
       const prMatchesConfig = await checkPR.checkPRAgainstConfig(
         validPR,
         pr,
         octokit
       );
-      scopes.done();
+      scopes.forEach(scope => scope.done());
       assert.ok(prMatchesConfig);
     });
   });
