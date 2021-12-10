@@ -18,7 +18,9 @@
     "fix": "gts fix",
     "lint": "gts check",
     "test": "c8 mocha build/test",
+    "system-test": "c8 mocha build/system-test",
     "pretest": "npm run compile",
+    "presystem-test": "npm run compile",
     "precompile": "gts clean"
   },
   "repository": {
