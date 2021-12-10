@@ -8,6 +8,14 @@ Validates the fields in `.repo-metadata.json`:
 Follow [this link](https://github.com/apps/repo-metadata-lint) to install
 the GitHub application.
 
+## Checks
+
+* `library_type` field is present.
+* `release_level` field is present.
+* `client_documentation` field is present.
+* `api_shortname` is present, if `library_type` one of `GAPIC_AUTO`, `GAPIC_MANUAL`, `AGENT`, `GAPIC_COMBO`.
+* `api_shortname` matches one of domain prefixes populated by [googleapis-api-index-generator](https://github.com/googleapis/googleapis-api-index-generator).
+
 ## Running tests:
 
 `npm run test`

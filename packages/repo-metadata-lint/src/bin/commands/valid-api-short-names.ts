@@ -14,22 +14,18 @@
 
 import yargs = require('yargs');
 import {octokitFrom} from '../../utils/octokit-util';
-import {FileIterator} from '../../file-iterator';
-import {IssueOpener} from '../../issue-opener';
-import {Validate, ValidationResult} from '../../validate';
+import {Validate} from '../../validate';
 
 interface Args {
   'pem-path': string;
   'app-id': number;
   installation: number;
-  owner: string;
-  repo: string;
 }
 
-export const scanRepo: yargs.CommandModule<{}, Args> = {
-  command: 'scan-repo',
+export const validApiShortNames: yargs.CommandModule<{}, Args> = {
+  command: 'valid-api-short-names',
   describe:
-    'scans a repository opening issues for corrupt .repo-metadata.json files',
+    'return list of valid API short-names based on service_xyz.yml files in file listing',
   builder(yargs) {
     return yargs
       .option('pem-path', {
@@ -46,30 +42,12 @@ export const scanRepo: yargs.CommandModule<{}, Args> = {
         describe: 'installation ID for GitHub app',
         type: 'number',
         demand: true,
-      })
-      .option('owner', {
-        describe: 'organization to lint .repo-metadata.json for',
-        type: 'string',
-        demand: true,
-      })
-      .option('repo', {
-        describe: 'repo to lint .repo-metadata.json for',
-        type: 'string',
-        demand: true,
       });
   },
   async handler(argv) {
     const octokit = await octokitFrom(argv);
-    const iterator = new FileIterator(argv.owner, argv.repo, octokit);
-    const results: Array<ValidationResult> = [];
     const validate = new Validate(octokit);
-    for await (const [path, metadata] of iterator.repoMetadata()) {
-      const result = await validate.validate(path, metadata);
-      if (result.status === 'error') {
-        results.push(result);
-      }
-    }
-    const opener = new IssueOpener(argv.owner, argv.repo, octokit);
-    opener.open(results);
+    const validApiShortNames = await validate.validApiShortNames();
+    console.info(JSON.stringify(Array.from(validApiShortNames), null, 2));
   },
 };
