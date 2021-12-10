@@ -23,6 +23,11 @@ import * as sinon from 'sinon';
 
 const apiIndex = readFileSync('./test/fixtures/api-index-v1.json');
 const sandbox = sinon.createSandbox();
+const Octokit = ProbotOctokit.defaults({
+  retry: {enabled: false},
+  throttle: {enabled: false},
+});
+const octokit = new Octokit();
 
 function mockValidApiShortNames() {
   const FileIterator = sandbox.stub(fileIterator, 'FileIterator');
@@ -36,11 +41,6 @@ describe('validate', () => {
   });
 
   it('returns validation error for broken JSON', async () => {
-    const Octokit = ProbotOctokit.defaults({
-      retry: {enabled: false},
-      throttle: {enabled: false},
-    });
-    const octokit = new Octokit();
     const corruptFile = '{';
     const validate = new Validate(octokit);
     const result = await validate.validate('.repo-metadata.json', corruptFile);
@@ -49,11 +49,6 @@ describe('validate', () => {
   });
 
   it('returns validation error if api_shortname is not a known API', async () => {
-    const Octokit = ProbotOctokit.defaults({
-      retry: {enabled: false},
-      throttle: {enabled: false},
-    });
-    const octokit = new Octokit();
     const validApiShortNames = mockValidApiShortNames();
     const file = JSON.stringify({
       api_shortname: 'zombocom',
@@ -75,11 +70,6 @@ describe('validate', () => {
   });
 
   it('succeeds if api_shortname missing, but library type does not correspond to API', async () => {
-    const Octokit = ProbotOctokit.defaults({
-      retry: {enabled: false},
-      throttle: {enabled: false},
-    });
-    const octokit = new Octokit();
     const file = JSON.stringify({
       name: 'bigquery',
       release_level: 'stable',
@@ -96,11 +86,6 @@ describe('validate', () => {
   });
 
   it('returns validation error if library_type missing', async () => {
-    const Octokit = ProbotOctokit.defaults({
-      retry: {enabled: false},
-      throttle: {enabled: false},
-    });
-    const octokit = new Octokit();
     const file = JSON.stringify({
       name: 'bigquery',
       api_shortname: 'bigquery',
@@ -120,11 +105,6 @@ describe('validate', () => {
   });
 
   it('returns validation error if library_type invalid', async () => {
-    const Octokit = ProbotOctokit.defaults({
-      retry: {enabled: false},
-      throttle: {enabled: false},
-    });
-    const octokit = new Octokit();
     const file = JSON.stringify({
       name: 'bigquery',
       api_shortname: 'bigquery',
@@ -145,12 +125,7 @@ describe('validate', () => {
   });
 
   it('returns validation error if release_level not preview or stable', async () => {
-    const Octokit = ProbotOctokit.defaults({
-      retry: {enabled: false},
-      throttle: {enabled: false},
-    });
     const validApiShortNames = mockValidApiShortNames();
-    const octokit = new Octokit();
     const file = JSON.stringify({
       name: 'bigquery',
       api_shortname: 'bigquery',
@@ -172,11 +147,6 @@ describe('validate', () => {
   });
 
   it('returns validation error if release_level missing', async () => {
-    const Octokit = ProbotOctokit.defaults({
-      retry: {enabled: false},
-      throttle: {enabled: false},
-    });
-    const octokit = new Octokit();
     const validApiShortNames = mockValidApiShortNames();
     const file = JSON.stringify({
       name: 'bigquery',
@@ -198,11 +168,6 @@ describe('validate', () => {
   });
 
   it('returns validation error if client_documentation missing', async () => {
-    const Octokit = ProbotOctokit.defaults({
-      retry: {enabled: false},
-      throttle: {enabled: false},
-    });
-    const octokit = new Octokit();
     const validApiShortNames = mockValidApiShortNames();
     const file = JSON.stringify({
       name: 'bigquery',
@@ -224,11 +189,6 @@ describe('validate', () => {
   });
 
   it('returns validation error if client_documentation is invalid URL', async () => {
-    const Octokit = ProbotOctokit.defaults({
-      retry: {enabled: false},
-      throttle: {enabled: false},
-    });
-    const octokit = new Octokit();
     const validApiShortNames = mockValidApiShortNames();
     const file = JSON.stringify({
       name: 'bigquery',
@@ -251,11 +211,6 @@ describe('validate', () => {
   });
 
   it('succeeds when all fields are valid for GAPIC libraries', async () => {
-    const Octokit = ProbotOctokit.defaults({
-      retry: {enabled: false},
-      throttle: {enabled: false},
-    });
-    const octokit = new Octokit();
     const validApiShortNames = mockValidApiShortNames();
     const file = JSON.stringify({
       release_level: 'stable',
