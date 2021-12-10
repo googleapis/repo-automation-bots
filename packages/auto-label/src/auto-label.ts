@@ -275,7 +275,7 @@ async function updateStalenessLabel(
   repo: string,
   config: Config
 ) {
-  // If user has turned on stale labels by configuring {staleness: {pullrequest: true, old: 60, critical: 120}}
+  // If user has turned on stale labels by configuring {staleness: {pullrequest: true, old: 60, extraold: 120}}
   // By default, this feature is turned off
   if (!config.staleness?.pullrequest) {
     logger.info(`Staleness feature is disabled for ${owner}/${repo}...`);
@@ -283,18 +283,18 @@ async function updateStalenessLabel(
   }
 
   const old = config.staleness?.old || helper.DEFAULT_DAYS_TO_STALE;
-  const critical =
-    config.staleness?.critical || helper.DEFAULT_DAYS_TO_STALE * 2;
+  const extraold =
+    config.staleness?.extraold || helper.DEFAULT_DAYS_TO_STALE * 2;
 
   // Make sure that config is right and if not, set defaults
-  if (old > critical || critical > helper.MAX_DAYS || old <= 0) {
+  if (old > extraold || extraold > helper.MAX_DAYS || old <= 0) {
     logger.info(
-      `The staleness config is wrong, old = ${old}, critical = ${critical}, bailing...`
+      `The staleness config is wrong, old = ${old}, extraold = ${extraold}, bailing...`
     );
     return;
   }
   logger.info(
-    `Running staleness check for ${owner}/${repo}, config: old=${old}, critical=${critical}...`
+    `Running staleness check for ${owner}/${repo}, config: old=${old}, extraold=${extraold}...`
   );
   for await (const response of context.octokit.paginate.iterator(
     context.octokit.rest.issues.listForRepo,
@@ -320,8 +320,8 @@ async function updateStalenessLabel(
         pull.labels as Label[],
         helper.STALE_PREFIX
       );
-      if (helper.isExpiredByDays(pull.created_at, critical)) {
-        label = `${helper.STALE_PREFIX} ${helper.CRITICAL_LABEL}`;
+      if (helper.isExpiredByDays(pull.created_at, extraold)) {
+        label = `${helper.STALE_PREFIX} ${helper.EXTRAOLD_LABEL}`;
       } else if (helper.isExpiredByDays(pull.created_at, old)) {
         label = `${helper.STALE_PREFIX} ${helper.OLD_LABEL}`;
       }
