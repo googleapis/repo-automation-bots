@@ -56,18 +56,15 @@ export const scanRepo: yargs.CommandModule<{}, Args> = {
         describe: 'repo to lint .repo-metadata.json for',
         type: 'string',
         demand: true,
-      })
+      });
   },
   async handler(argv) {
     const octokit = await octokitFrom(argv);
-    const iterator = new FileIterator(
-      argv.owner,
-      argv.repo,
-      octokit
-    );
+    const iterator = new FileIterator(argv.owner, argv.repo, octokit);
     const results: Array<ValidationResult> = [];
+    const validate = new Validate(octokit);
     for await (const [path, metadata] of iterator.repoMetadata()) {
-      const result = Validate.validate(path, metadata);
+      const result = await validate.validate(path, metadata);
       if (result.status === 'error') {
         results.push(result);
       }

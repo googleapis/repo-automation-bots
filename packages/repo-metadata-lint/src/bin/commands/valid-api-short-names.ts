@@ -46,6 +46,8 @@ export const validApiShortNames: yargs.CommandModule<{}, Args> = {
   },
   async handler(argv) {
     const octokit = await octokitFrom(argv);
-    await Validate.validApiShortNames(octokit);
+    const validate = new Validate(octokit);
+    const validApiShortNames = await validate.validApiShortNames();
+    console.info(JSON.stringify(Array.from(validApiShortNames), null, 2));
   },
 };

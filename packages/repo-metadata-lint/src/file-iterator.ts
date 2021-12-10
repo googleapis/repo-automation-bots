@@ -43,11 +43,7 @@ export class FileIterator {
   repo: string;
   storage: Storage;
   lastSha?: string;
-  constructor(
-    owner: string,
-    repo: string,
-    octokit: OctokitType
-  ) {
+  constructor(owner: string, repo: string, octokit: OctokitType) {
     this.octokit = octokit;
     this.owner = owner;
     this.repo = repo;
@@ -115,6 +111,7 @@ export class FileIterator {
     return manifest;
   }
   async getFile(file: string): Promise<string> {
+    // By loading the file index, we ensure that the repository is fully indexed.
     if (!this.lastSha) {
       await this.getFileListing();
     }

@@ -15,7 +15,7 @@
 
 import Ajv from 'ajv';
 import schema from './repo-metadata-schema.json';
-import { FileIterator } from './file-iterator';
+import * as fileIterator from './file-iterator';
 import {OctokitType} from './utils/octokit-util';
 
 export interface ValidationResult {
@@ -36,8 +36,14 @@ const GOOGLEAPIS_REPO = 'googleapis';
 
 // Apply validation logic to .repo-metadata.json.
 export class Validate {
-  static validate(path: string, repoMetadataContent: string) {
-    const ajv = new Ajv();
+  octokit: OctokitType;
+  constructor(octokit: OctokitType) {
+    this.octokit = octokit;
+  }
+  async validate(path: string, repoMetadataContent: string) {
+    const ajv = new Ajv({
+      allErrors: true,
+    });
     const validate = ajv.compile(schema);
     const result: ValidationResult = {status: 'success', errors: []};
 
@@ -66,39 +72,41 @@ export class Validate {
       }
     }
 
-    // Perform complex validation, e.g., checking URLs.
-
-    // TODO: is there a way we could cross-reference this value with
-    // service.yml for a given API.
-    if (
-      !repoMetadata.api_shortname &&
-      API_LIBRARY_TYPES.includes(repoMetadata.library_type)
-    ) {
-      result.status = 'error';
-      result.errors.push(`api_shortname field missing from ${path}`);
+    // Conditionally validate api_shortname for GAPIC libraries:
+    if (API_LIBRARY_TYPES.includes(repoMetadata.library_type)) {
+      if (!repoMetadata.api_shortname) {
+        result.status = 'error';
+        result.errors.push(`api_shortname field missing from ${path}`);
+      } else {
+        const apiShortNames = await this.validApiShortNames();
+        if (!apiShortNames.has(repoMetadata.api_shortname)) {
+          result.status = 'error';
+          result.errors.push(
+            `api_shortname '${repoMetadata.api_shortname}' invalid in ${path}`
+          );
+        }
+      }
     }
 
     return result;
   }
-  static async validApiShortNames(octokit: OctokitType) {
-    const iterator = new FileIterator(
+  async validApiShortNames() {
+    const iterator = new fileIterator.FileIterator(
       GOOGLEAPIS_OWNER,
       GOOGLEAPIS_REPO,
-      octokit
+      this.octokit
     );
     const apiIndexRaw = await iterator.getFile('api-index-v1.json');
     const apiIndex = JSON.parse(apiIndexRaw) as {
-      apis: Array<{hostName: string}>
+      apis: Array<{hostName: string}>;
     };
-    const apiShortNames = new Set<string>()
+    const apiShortNames = new Set<string>();
     for (const api of apiIndex.apis) {
       const match = api.hostName.match(/(?<service>[^.]+)/);
       if (match && match.groups) {
-        apiShortNames.add(match.groups.service)
-      } 
+        apiShortNames.add(match.groups.service);
+      }
     }
-    const apis = Array.from(apiShortNames).sort();
-    console.info(apis.length);
-    console.info(JSON.stringify(apis, null, 2));
+    return apiShortNames;
   }
 }
