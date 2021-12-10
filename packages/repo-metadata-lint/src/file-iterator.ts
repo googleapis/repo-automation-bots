@@ -111,7 +111,8 @@ export class FileIterator {
     return manifest;
   }
   async getFile(file: string): Promise<string> {
-    // By loading the file index, we ensure that the repository is fully indexed.
+    // By loading the file index, we ensure that we've chosen a SHA for a fully indexed
+    // version of commits in cache:
     if (!this.lastSha) {
       await this.getFileListing();
     }
