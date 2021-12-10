@@ -20,3 +20,4 @@ cron:
       installation:
         id: 21068138
       cron_org: googleapis
+      cron_type: repository
