@@ -19,6 +19,9 @@ import nock from 'nock';
 import * as sinon from 'sinon';
 import {handler} from '../src/repo-metadata-lint';
 import {logger} from 'gcf-utils';
+import * as fileIterator from '../src/file-iterator';
+
+async function* emptyIterator() {}
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -43,6 +46,10 @@ describe('repo-metadata-lint', () => {
 
   describe('schedule.repository', () => {
     it('handles schedule.repository event', async () => {
+      const FileIterator = sandbox.stub(fileIterator, 'FileIterator');
+      FileIterator.prototype.repoMetadata = sandbox
+        .stub()
+        .returns(emptyIterator());
       const infoStub = sandbox.stub(logger, 'info');
       await probot.receive({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,7 +62,7 @@ describe('repo-metadata-lint', () => {
         } as any,
         id: 'abc123',
       });
-      sandbox.assert.calledOnce(infoStub);
+      sandbox.assert.calledWith(infoStub, sinon.match(/no validation errors/));
     });
   });
 });
