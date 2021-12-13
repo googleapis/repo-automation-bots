@@ -73,7 +73,7 @@
 		"old": {
 		    "type": "number"
 		},
-		"critical": {
+		"extraold": {
 		    "type": "number"
 		}
 	    }

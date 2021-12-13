@@ -16,9 +16,13 @@
 import {RequestError} from '@octokit/request-error';
 import {logger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
-import {Reviews, File} from './interfaces';
+import {Reviews, File, GHFile} from './interfaces';
 
 // This file gets information about the incoming pull request, such as what files were changed, etc.
+
+function isFile(file: GHFile | unknown): file is GHFile {
+  return (file as GHFile).content !== undefined;
+}
 
 /**
  * Returns file names of the PR that were changed.
@@ -111,10 +115,9 @@ export function cleanReviews(reviewsCompleted: Reviews[]): Reviews[] {
 
 /**
  * Function grabs completed reviews on a given pr
- * @param owner of pr (from Watch PR)
- * @param repo of pr (from Watch PR)
+ * @param owner of pr
+ * @param repo of pr
  * @param pr pr number
- * @param github unique installation id for each function
  * @returns an array of Review types
  */
 export async function getReviewsCompleted(
@@ -129,4 +132,36 @@ export async function getReviewsCompleted(
     pull_number: pr,
   });
   return reviewsCompleted.data as Reviews[];
+}
+
+/**
+ * Function grabs contents of a specific file in a repository
+ * @param owner of repo of pr
+ * @param repo of of repo of pr
+ * @param path path to file
+ * @returns content of the file, or else throws an error if not a file
+ */
+export async function getFileContent(
+  owner: string,
+  repo: string,
+  path: string,
+  octokit: Octokit
+): Promise<string> {
+  const fileContent = await octokit.repos.getContent({
+    owner,
+    repo,
+    path,
+  });
+
+  if (isFile(fileContent.data)) {
+    const dataContent = Buffer.from(
+      fileContent.data.content,
+      'base64'
+    ).toString('utf8');
+    return dataContent;
+  }
+
+  throw new Error(
+    `${owner}/${repo}/${path} is a folder, cannot get file contents`
+  );
 }

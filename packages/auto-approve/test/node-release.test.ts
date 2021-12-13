@@ -15,8 +15,22 @@
 import {NodeRelease} from '../src/process-checks/node/release';
 import {describe, it} from 'mocha';
 import assert from 'assert';
+import sinon from 'sinon';
+
+const {Octokit} = require('@octokit/rest');
+
+const octokit = new Octokit({
+  auth: 'mypersonalaccesstoken123',
+});
 
 describe('behavior of Node Release process', () => {
+  beforeEach(() => {
+    sinon.stub(Date, 'now').returns(1623280558000);
+  });
+
+  afterEach(() => {
+    sinon.restore();
+  });
   it('should get constructed with the appropriate values', () => {
     const nodeRelease = new NodeRelease(
       'testAuthor',
@@ -25,7 +39,9 @@ describe('behavior of Node Release process', () => {
       [{filename: 'hello', sha: '2345'}],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
     const expectation = {
@@ -37,6 +53,7 @@ describe('behavior of Node Release process', () => {
         repoName: 'testRepoName',
         repoOwner: 'testRepoOwner',
         prNumber: 1,
+        body: 'body',
       },
       classRule: {
         author: 'release-please',
@@ -57,13 +74,15 @@ describe('behavior of Node Release process', () => {
           },
         ],
       },
+      octokit,
     };
 
     assert.deepStrictEqual(nodeRelease.incomingPR, expectation.incomingPR);
     assert.deepStrictEqual(nodeRelease.classRule, expectation.classRule);
+    assert.deepStrictEqual(nodeRelease.octokit, octokit);
   });
 
-  it('should return false in checkPR if incoming PR does not match classRules', () => {
+  it('should return false in checkPR if incoming PR does not match classRules', async () => {
     const nodeRelease = new NodeRelease(
       'testAuthor',
       'testTitle',
@@ -71,13 +90,15 @@ describe('behavior of Node Release process', () => {
       [{filename: 'hello', sha: '2345'}],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.deepStrictEqual(nodeRelease.checkPR(), false);
+    assert.deepStrictEqual(await nodeRelease.checkPR(), false);
   });
 
-  it('should return false in checkPR if one of the files does not match regular expression for permitted files', () => {
+  it('should return false in checkPR if one of the files does not match regular expression for permitted files', async () => {
     const nodeRelease = new NodeRelease(
       'release-please',
       'fix(deps): update dependency mocha to v16',
@@ -120,13 +141,15 @@ describe('behavior of Node Release process', () => {
       ],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.deepStrictEqual(nodeRelease.checkPR(), false);
+    assert.deepStrictEqual(await nodeRelease.checkPR(), false);
   });
 
-  it('should return true in checkPR if incoming PR does match ONE OF the classRules, and no files do not match ANY of the rules', () => {
+  it('should return true in checkPR if incoming PR does match ONE OF the classRules, and no files do not match ANY of the rules', async () => {
     const nodeRelease = new NodeRelease(
       'release-please',
       'chore: release 2.3.1',
@@ -152,9 +175,11 @@ describe('behavior of Node Release process', () => {
       ],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.ok(nodeRelease.checkPR());
+    assert.ok(await nodeRelease.checkPR());
   });
 });

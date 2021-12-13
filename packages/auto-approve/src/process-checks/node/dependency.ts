@@ -15,7 +15,7 @@
 import {LanguageRule, File, FileRule, Process} from '../../interfaces';
 import {
   checkAuthor,
-  checkTitle,
+  checkTitleOrBody,
   checkFileCount,
   checkFilePathsMatch,
   doesDependencyChangeMatchPRTitleV2,
@@ -24,6 +24,7 @@ import {
   isOneDependencyChanged,
   reportIndividualChecks,
 } from '../../utils-for-pr-checking';
+import {Octokit} from '@octokit/rest';
 
 export class NodeDependency extends Process implements LanguageRule {
   classRule: {
@@ -46,7 +47,9 @@ export class NodeDependency extends Process implements LanguageRule {
     incomingChangedFiles: File[],
     incomingRepoName: string,
     incomingRepoOwner: string,
-    incomingPrNumber: number
+    incomingPrNumber: number,
+    incomingOctokit: Octokit,
+    incomingBody?: string
   ) {
     super(
       incomingPrAuthor,
@@ -55,7 +58,9 @@ export class NodeDependency extends Process implements LanguageRule {
       incomingChangedFiles,
       incomingRepoName,
       incomingRepoOwner,
-      incomingPrNumber
+      incomingPrNumber,
+      incomingOctokit,
+      incomingBody
     ),
       (this.classRule = {
         author: 'renovate-bot',
@@ -90,13 +95,13 @@ export class NodeDependency extends Process implements LanguageRule {
       });
   }
 
-  public checkPR(): boolean {
+  public async checkPR(): Promise<boolean> {
     const authorshipMatches = checkAuthor(
       this.classRule.author,
       this.incomingPR.author
     );
 
-    const titleMatches = checkTitle(
+    const titleMatches = checkTitleOrBody(
       this.incomingPR.title,
       this.classRule.titleRegex
     );

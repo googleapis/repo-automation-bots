@@ -19,6 +19,9 @@ import {makeDirTree} from './dir-tree';
 import {newCmd} from '../src/cmd';
 import {commitPostProcessorUpdate} from '../src/bin/commands/commit-post-processor-update';
 import {copyTagFrom} from '../src/copy-code';
+import sinon from 'sinon';
+import nock from 'nock';
+import {OWL_BOT_IGNORE, OWLBOT_RUN_LABEL} from '../src/labels';
 
 export function makeOrigin(logger = console): string {
   const cmd = newCmd(logger);
@@ -57,12 +60,73 @@ export function cloneRepo(dir: string, logger = console): string {
 describe('commitPostProcessorUpdate', () => {
   const cmd = newCmd();
   const yamlPath = '.github/.OwlBot.yaml';
+  const destRepo = 'test-org/test-repo';
+  const gitHubToken = 'test-github-token';
+  let sandbox: sinon.SinonSandbox;
+  let pr = 0;
+  let labels: {name: string}[] = [];
+
+  function prepareGitHubEndpoint() {
+    const payload = {
+      pull_request: {
+        labels,
+        number: pr,
+        head: {
+          repo: {
+            full_name: destRepo,
+          },
+          ref: 'abc123',
+        },
+        base: {
+          ref: 'main',
+          repo: {
+            full_name: destRepo,
+          },
+        },
+      },
+    };
+
+    nock.cleanAll();
+    nock('https://api.github.com')
+      .get(`/repos/${destRepo}/pulls/${pr}`)
+      .reply(200, payload.pull_request);
+  }
+
+  /**
+   * A helper function for passing args to `commitPostProcessorUpdate`.
+   * Helps keeps things DRY when the params aren't unique.
+   * */
+  function prepareArgs(
+    repoPath: string
+  ): Parameters<typeof commitPostProcessorUpdate>[0] {
+    return {
+      'dest-repo': destRepo,
+      pr,
+      'github-token': gitHubToken,
+      'repo-path': repoPath,
+    };
+  }
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+
+    /** Increments the counter so each test can have its own unique PR */
+    pr++;
+    labels = [];
+
+    prepareGitHubEndpoint();
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+    sandbox.restore();
+  });
 
   it("adds commit when there's no Copy-Tag", async () => {
     const origin = makeOrigin();
     const clone = cloneRepo(origin);
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-    await commitPostProcessorUpdate(clone);
+    await commitPostProcessorUpdate(prepareArgs(clone));
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -76,7 +140,7 @@ describe('commitPostProcessorUpdate', () => {
     cmd('git add c.txt', {cwd: clone});
     cmd('git commit -m "Copy-Tag: abc123"', {cwd: clone});
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-    await commitPostProcessorUpdate(clone);
+    await commitPostProcessorUpdate(prepareArgs(clone));
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -91,7 +155,7 @@ describe('commitPostProcessorUpdate', () => {
     const copyTag = copyTagFrom(yamlPath, 'abc123');
     cmd(`git commit -m "Copy-Tag: ${copyTag}"`, {cwd: clone});
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-    await commitPostProcessorUpdate(clone);
+    await commitPostProcessorUpdate(prepareArgs(clone));
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -106,7 +170,7 @@ describe('commitPostProcessorUpdate', () => {
     const copyTag = copyTagFrom(yamlPath, 'abc123');
     cmd(`git commit -m "Copy-Tag: ${copyTag}"`, {cwd: clone});
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-    await commitPostProcessorUpdate(clone);
+    await commitPostProcessorUpdate(prepareArgs(clone));
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -121,7 +185,7 @@ describe('commitPostProcessorUpdate', () => {
     const copyTag = copyTagFrom(yamlPath, 'abc123');
     cmd(`git commit -m "Copy-Tag: ${copyTag}"`, {cwd: clone});
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-    await commitPostProcessorUpdate(clone);
+    await commitPostProcessorUpdate(prepareArgs(clone));
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -136,7 +200,7 @@ describe('commitPostProcessorUpdate', () => {
     const copyTag = copyTagFrom(yamlPath, 'abc123');
     cmd(`git commit -m "Copy-Tag: ${copyTag}"`, {cwd: clone});
     makeDirTree(clone, ['a.txt:The post processor ran.']);
-    await commitPostProcessorUpdate(clone);
+    await commitPostProcessorUpdate(prepareArgs(clone));
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -154,7 +218,7 @@ describe('commitPostProcessorUpdate', () => {
       'utf-8'
     );
     const clone = cloneRepo(origin);
-    await commitPostProcessorUpdate(clone);
+    await commitPostProcessorUpdate(prepareArgs(clone));
     const log = cmd('git log --format=%B main', {cwd: origin}).toString(
       'utf-8'
     );
@@ -165,5 +229,43 @@ describe('commitPostProcessorUpdate', () => {
       head,
       cmd('git log -1 --format=%H main', {cwd: origin}).toString('utf-8')
     );
+  });
+
+  it("Doesn't create a commit if the 'ignore' label is present", async () => {
+    const origin = makeOrigin();
+    const clone = cloneRepo(origin);
+    makeDirTree(clone, ['a.txt:The post processor ran.']);
+    const head = cmd('git log -1 --format=%H main', {cwd: origin}).toString(
+      'utf-8'
+    );
+
+    labels.push({name: OWL_BOT_IGNORE});
+    prepareGitHubEndpoint();
+
+    await commitPostProcessorUpdate(prepareArgs(clone));
+    const log = cmd('git log --format=%B main', {cwd: origin}).toString(
+      'utf-8'
+    );
+    assert.doesNotMatch(log, /Updates from OwlBot/);
+    // No commits should have been pushed.
+    assert.strictEqual(
+      head,
+      cmd('git log -1 --format=%H main', {cwd: origin}).toString('utf-8')
+    );
+  });
+
+  it('Creates a commit if labels other than ignore are present', async () => {
+    const origin = makeOrigin();
+    const clone = cloneRepo(origin);
+    makeDirTree(clone, ['a.txt:The post processor ran.']);
+
+    labels.push({name: OWLBOT_RUN_LABEL});
+    prepareGitHubEndpoint();
+
+    await commitPostProcessorUpdate(prepareArgs(clone));
+    const log = cmd('git log --format=%B main', {cwd: origin}).toString(
+      'utf-8'
+    );
+    assert.match(log, /Updates from OwlBot/);
   });
 });
