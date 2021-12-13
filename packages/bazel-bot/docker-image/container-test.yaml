@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,12 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cron:
-  - name: repo_metadata_lint
-    schedule: 0 1 * * *
-    description: repo_metadata_lint for googleapis
-    params:
-      installation:
-        id: 21068138
-      cron_org: googleapis
-      cron_type: repository
+schemaVersion: 1.0.0
+commandTests:
+- name: "bazel version"
+  command: ["bazel", "--version"]
+  expectedOutput: ["bazel.*.*"]
+- name: "git version"
+  command: ["git", "--version"]
+  expectedOutput: ["git version.*.*"]
+- name: "gh version"
+  command: ["gh", "--version"]
+  expectedOutput: ["gh version.*"]
+- name: "jq version"
+  command: ["jq", "--version"]
+  expectedOutput: ["jq-.*"]
+- name: "jwt installed"
+  command: ["jwt", "--version"]
+  expectedOutput: ["jwt .*"]

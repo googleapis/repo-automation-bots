@@ -12,12 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cron:
-  - name: repo_metadata_lint
-    schedule: 0 1 * * *
-    description: repo_metadata_lint for googleapis
-    params:
-      installation:
-        id: 21068138
-      cron_org: googleapis
-      cron_type: repository
+steps:
+  - name: gcr.io/cloud-builders/docker
+    id: "build-docker"
+    waitFor: ["-"]
+    dir: packages/bazel-bot/docker-image
+    args:
+      - "build"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/bazel-bot"
+      - "."
+
+  - name: gcr.io/gcp-runtimes/structure_test
+    args:
+      - "-i"
+      - "gcr.io/$PROJECT_ID/bazel-bot"
+      - "--config"
+      - "/workspace/packages/bazel-bot/docker-image/container-test.yaml"
+      - "-v"
+    waitFor: ["build-docker"]

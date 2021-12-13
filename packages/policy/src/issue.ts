@@ -60,7 +60,6 @@ export async function openIssue(octokit: Octokit, result: PolicyResult) {
   }
 
   // Check if this repository is compliant
-  // note:  add `result.hasMainDefault` back later
   const isValid =
     result.hasCodeowners &&
     result.hasContributing &&
@@ -69,7 +68,8 @@ export async function openIssue(octokit: Octokit, result: PolicyResult) {
     result.hasSecurityPolicy &&
     result.hasValidLicense &&
     result.hasCodeOfConduct &&
-    result.hasBranchProtection;
+    result.hasBranchProtection &&
+    result.hasMainDefault;
 
   if (existingIssue) {
     const labels = existingIssue.labels.map(x =>
