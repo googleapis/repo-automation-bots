@@ -19,6 +19,7 @@ import {promisify} from 'util';
 import {writeFile} from 'fs';
 import yargs = require('yargs');
 import {dump} from 'js-yaml';
+import {fetchConfig} from '../../docker-api';
 
 const writeFileAsync = promisify(writeFile);
 
@@ -47,7 +48,15 @@ export const writeLock: yargs.CommandModule<{}, Args> = {
   async handler(argv) {
     const [image, digest] = argv['image'].split('@');
     const config: OwlBotLock = {docker: {image, digest}};
-    const text = dump(config);
+    let text = dump(config);
+    try {
+      const timestamp = (await fetchConfig(image, digest)).created;
+      const separator = text.endsWith('\n') ? '' : '\n';
+      text += `${separator}# created: ${timestamp}\n`;
+    } catch (e) {
+      // Failing to fetch the timestamp is not fatal.
+      console.error(e);
+    }
     await writeFileAsync(argv['lock-file-path'], text);
   },
 };
