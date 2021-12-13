@@ -90,6 +90,7 @@ export class FileIterator {
       if (commit) {
         // https://storage.cloud.google.com/github_commit_cache/owners/googleapis/repos/common-protos-ruby/commits/05c465a67533c9b0f71b1ff49903743a657c4208/file_manifest.txt
         const manifestFile = `owners/${this.owner}/repos/${this.repo}/commits/${commit.sha}/file_manifest.txt`;
+        logger.info(`get ${manifestFile} from ${COMMIT_CACHE_BUCKET}`);
         try {
           const [result] = await this.storage
             .bucket(COMMIT_CACHE_BUCKET)
@@ -99,10 +100,14 @@ export class FileIterator {
           manifest = result.toString('utf8');
           break;
         } catch (_err) {
-          const err = _err as {code: number};
+          const err = _err as {code: number; message: string};
           if (err.code === 404) {
             continue;
           } else {
+            logger.error(
+              `received error code = ${err.code} msg = ${err.message}`,
+              err
+            );
             throw err;
           }
         }
