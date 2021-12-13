@@ -15,8 +15,8 @@
 /* eslint-disable-next-line node/no-extraneous-import */
 import {Probot} from 'probot';
 import {logger} from 'gcf-utils';
-
-// type IssueResponse = Endpoints['GET /repos/{owner}/{repo}/issues']['response'];
+import * as fileIterator from './file-iterator';
+import {Validate, ValidationResult} from './validate';
 
 /**
  * Main function, run on schedule and on PRs, checking validity of .repo-metadata.json.
@@ -26,8 +26,27 @@ export function handler(app: Probot) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('schedule.repository' as any, async context => {
     const owner = context.payload.organization.login;
-    // const repo = context.payload.repository.name;
-    logger.info('schedule endpoint', owner);
+    const repo = context.payload.repository.name;
+    const iterator = new fileIterator.FileIterator(
+      owner,
+      repo,
+      context.octokit
+    );
+    const results: Array<ValidationResult> = [];
+    const validate = new Validate(context.octokit);
+    for await (const [path, metadata] of iterator.repoMetadata()) {
+      const result = await validate.validate(path, metadata);
+      if (result.status === 'error') {
+        results.push(result);
+      }
+    }
+    if (results.length === 0) {
+      logger.info(`no validation errors found for ${owner}/${repo}`);
+    } else {
+      logger.info(
+        `${results.length} validation errors found for ${owner}/${repo}`
+      );
+    }
   });
 
   // Adds failing check to pull requests if .repo-metadata.json is invalid.

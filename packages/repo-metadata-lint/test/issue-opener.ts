@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// eslint-disable-next-line node/no-extraneous-import
 import {describe, it, afterEach} from 'mocha';
 import nock from 'nock';
 import {IssueOpener} from '../src/issue-opener';
