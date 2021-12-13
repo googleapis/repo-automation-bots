@@ -67,6 +67,16 @@ export interface OwlBotYaml {
 // The default path where .OwlBot.yaml is expected to be found.
 export const DEFAULT_OWL_BOT_YAML_PATH = '.github/.OwlBot.yaml';
 
+/**
+ * Validates that a provided path is valid for owl-bot. We expect an
+ * absolute path (starts with a `/`). If invalid, appends an error
+ * message to the provided errors array.
+ *
+ * @param {string} path The candidate path
+ * @param {string} fieldName The name of the path field. Used for building
+ *   a nice error message.
+ * @param {string[]} errorMessages The error message collector
+ */
 function validatePath(
   path: string,
   fieldName: string,
@@ -79,6 +89,13 @@ function validatePath(
   }
 }
 
+/**
+ * Validates that a regex is valid for owl-bot. If invalid, appends an
+ * error message to the provided errors array.
+ *
+ * @param {string} regex The candidate regex
+ * @param {string[]} errorMessages The error message collector
+ */
 function validateRegex(regex: string, errorMessages: string[]) {
   try {
     toFrontMatchRegExp(regex);
@@ -112,7 +129,7 @@ export function owlBotYamlFromText(yamlText: string): OwlBotYaml {
   const errorMessages: string[] = [];
   if (!validate(loaded)) {
     for (const err of validate.errors as DefinedError[]) {
-      const message = err.message
+      const message = err?.message
         ? `${err.instancePath} ${err.message}`
         : JSON.stringify(err);
       errorMessages.push(message);
