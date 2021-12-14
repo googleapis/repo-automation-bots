@@ -32,7 +32,7 @@ function isFile(file: GHFile | unknown): file is GHFile {
   return (file as GHFile).content !== undefined;
 }
 
-function isConfigV2(
+export function isConfigV2(
   config: ConfigurationV2 | Configuration | unknown
 ): config is ConfigurationV2 {
   return (<ConfigurationV2>config).processes !== undefined;
@@ -99,7 +99,7 @@ export async function checkAutoApproveConfig(
   octokit: Octokit,
   owner: string,
   repo: string,
-  autoApproveFile: string | Configuration | undefined
+  autoApproveFile: string | Configuration | ConfigurationV2 | undefined
 ): Promise<string> {
   let message = '';
 

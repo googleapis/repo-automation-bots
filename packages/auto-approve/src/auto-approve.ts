@@ -18,16 +18,22 @@
 import {Probot, Context} from 'probot';
 import {logger} from 'gcf-utils';
 import {checkPRAgainstConfig} from './check-pr';
+import {checkPRAgainstConfigV2} from './check-pr-v2';
 import {
   getChangedFiles,
   getBlobFromPRFiles,
   getReviewsCompleted,
   cleanReviews,
 } from './get-pr-info';
-import {checkAutoApproveConfig, checkCodeOwners} from './check-config.js';
+import {
+  checkAutoApproveConfig,
+  checkCodeOwners,
+  isConfigV2,
+} from './check-config.js';
 import {v1 as SecretManagerV1} from '@google-cloud/secret-manager';
 import {Octokit} from '@octokit/rest';
-import {Configuration} from './interfaces';
+import {Configuration, ConfigurationV2} from './interfaces';
+import yaml from 'js-yaml';
 
 const APPROVER = 'yoshi-approver';
 
@@ -66,7 +72,7 @@ export async function authenticateWithSecret(
 async function evaluateAndSubmitCheckForConfig(
   owner: string,
   repo: string,
-  config: string | Configuration | undefined,
+  config: string | Configuration | ConfigurationV2 | undefined,
   codeOwnersFile: string | undefined,
   octokit: Octokit,
   headSha: string
@@ -212,18 +218,22 @@ export function handler(app: Probot) {
           pr: prNumber,
         });
       } else {
-        let config: Configuration | null;
+        let config: Configuration | ConfigurationV2 | null;
         // Get auto-approve.yml file if it exists
         // Reading the config requires access to code permissions, which are not
         // always available for private repositories.
         try {
-          config = await context.config<Configuration>(CONFIGURATION_FILE_PATH);
+          config = await context.config<Configuration | ConfigurationV2>(
+            CONFIGURATION_FILE_PATH
+          );
         } catch (e) {
           const err = e as Error;
           err.message = `Error reading configuration: ${err.message}`;
           logger.error(err);
           config = null;
         }
+        console.log(config);
+        //console.log(isConfigV2(config));
         // If there is a config, first confirm that it matches the guidelines
         // Then, check to see whether the incoming PR matches the config
         if (config) {
@@ -242,12 +252,22 @@ export function handler(app: Probot) {
             return;
           }
 
-          // Check to see whether the incoming PR matches the incoming PR
-          const isPRValid = await checkPRAgainstConfig(
-            config,
-            context.payload,
-            context.octokit
-          );
+          let isPRValid;
+          // If the configuration is V2, use the second version checks
+          if (isConfigV2(config)) {
+            // Check to see whether the incoming PR matches the incoming PR
+            isPRValid = await checkPRAgainstConfigV2(
+              config,
+              context.payload,
+              context.octokit
+            );
+          } else {
+            isPRValid = await checkPRAgainstConfig(
+              config,
+              context.payload,
+              context.octokit
+            );
+          }
 
           // If both PR and config are valid, pull in approving-mechanism to tag and approve PR
           if (isPRValid === true && isConfigValid === true) {
