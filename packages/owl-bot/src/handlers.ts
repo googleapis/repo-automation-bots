@@ -307,8 +307,10 @@ export async function refreshConfigs(
         githubRepo.owner,
         githubRepo.repo,
         badConfig.path + ' is broken.',
-        'This repo will not receive automatic updates until this issue is fixed.\n\n' +
-          String(badConfig.error)
+        [
+          'This repo will not receive automatic updates until this issue is fixed.\n',
+          ...badConfig.errorMessages,
+        ].join('\n* ')
       );
     }
   } else {

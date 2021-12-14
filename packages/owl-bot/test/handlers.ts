@@ -496,6 +496,43 @@ describe('refreshConfigs', () => {
 
     assert.strictEqual(issuesCreateSpy.callCount, 2);
   });
+
+  it('creates issues with nice messages when there are validation errors', async () => {
+    const configsStore = new FakeConfigsStore();
+    const invalidConfig =
+      'deep-copy-regex:\n - source: /(*foo)\n   dest: missing/leading/slash';
+
+    const zip = new AdmZip();
+    zip.addFile('repo-abc123/.github/.OwlBot.yaml', Buffer.from(invalidConfig));
+
+    const octokit = octokitSha123(zip);
+    const issuesCreateSpy = sandbox.spy(octokit.issues, 'create');
+
+    await refreshConfigs(
+      configsStore,
+      undefined,
+      octokit,
+      repoFromZip('nodejs-vision', zip),
+      'main',
+      42
+    );
+
+    assert.strictEqual(issuesCreateSpy.callCount, 1);
+    sinon.assert.calledOnceWithExactly(
+      issuesCreateSpy,
+      sinon.match.has(
+        'body',
+        sinon.match(new RegExp('expected the first character of dest'))
+      )
+    );
+    sinon.assert.calledOnceWithExactly(
+      issuesCreateSpy,
+      sinon.match.has(
+        'body',
+        sinon.match(new RegExp('SyntaxError: Invalid regular expression'))
+      )
+    );
+  });
 });
 
 describe('scanGithubForConfigs', () => {
