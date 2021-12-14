@@ -232,8 +232,6 @@ export function handler(app: Probot) {
           logger.error(err);
           config = null;
         }
-        console.log(config);
-        //console.log(isConfigV2(config));
         // If there is a config, first confirm that it matches the guidelines
         // Then, check to see whether the incoming PR matches the config
         if (config) {

@@ -26,7 +26,6 @@ import {describe, it, beforeEach} from 'mocha';
 import * as assert from 'assert';
 import snapshot from 'snap-shot-it';
 import {ConfigurationV2, Configuration, Reviews} from '../src/interfaces';
-import yaml from 'js-yaml';
 import * as fs from 'fs';
 
 const {Octokit} = require('@octokit/rest');
