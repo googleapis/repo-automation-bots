@@ -18,6 +18,7 @@ import {
   OWL_BOT_LOCK_PATH,
   OwlBotYaml,
   owlBotYamlFromText,
+  InvalidOwlBotConfigError,
 } from './config-files';
 import {GithubRepo} from './github-repo';
 import * as fs from 'fs';
@@ -134,8 +135,7 @@ export interface ConfigsStore {
 export interface CollectedConfigs {
   lock?: OwlBotLock;
   yamls: OwlBotYamlAndPath[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  badConfigs: {path: string; error: any}[];
+  badConfigs: {path: string; errorMessages: string[]}[];
 }
 
 /**
@@ -156,7 +156,8 @@ export function collectConfigs(dir: string): CollectedConfigs {
       const lockYaml = load(lockText) as Record<string, any>;
       configs.lock = owlBotLockFrom(lockYaml);
     } catch (e) {
-      configs.badConfigs.push({path: OWL_BOT_LOCK_PATH, error: e});
+      const errorMessages = e instanceof Error ? [e.toString()] : [String(e)];
+      configs.badConfigs.push({path: OWL_BOT_LOCK_PATH, errorMessages});
     }
   }
   // .OwlBot.yamls may be scattered throughout the directory.  Find them.
@@ -173,7 +174,9 @@ export function collectConfigs(dir: string): CollectedConfigs {
         yaml: owlBotYamlFromText(yamlText),
       });
     } catch (e) {
-      configs.badConfigs.push({path: yamlPath, error: e});
+      const errorMessages =
+        e instanceof InvalidOwlBotConfigError ? e.errorMessages : [String(e)];
+      configs.badConfigs.push({path: yamlPath, errorMessages});
     }
   }
   return configs;
