@@ -357,6 +357,70 @@ async function updateStalenessLabel(
 }
 
 /**
+ * Function updating a T-shirt size label on pull request if configuration is enabled.
+ * Removes previous size label if exists
+ */
+async function updatePullRequestSizeLabel(
+  context: Context<'pull_request'>,
+  pull_number: number,
+  owner: string,
+  repo: string,
+  config: Config
+) {
+  // Update pull request size label if user has turned on pull request size labels feature by configuring {requestsize: {enabled: true,}}
+  // By default, this feature is turned off
+  if (!config?.requestsize?.enabled) {
+    logger.info(
+      `Skipping pull request size calculations for PR#${pull_number} in ${owner}/${repo}`
+    );
+    return;
+  }
+  const filesChanged = await context.octokit.pulls.listFiles({
+    owner,
+    repo,
+    pull_number,
+  });
+  logger.info(
+    `Request size calculation in PR #${pull_number} in ${owner}/${repo}...`
+  );
+  let changes = 0;
+  filesChanged.data.forEach(item => {
+    changes += item.changes;
+  });
+  logger.info(
+    `Amount of changes in pull request ${pull_number} in ${owner}/${repo} is ${changes}`
+  );
+  const pr_size = `${helper.SIZE_PREFIX} ${helper.getPullRequestSize(changes)}`;
+  const size_label = helper.fetchLabelByPrefix(
+    context.payload.pull_request.labels,
+    helper.SIZE_PREFIX
+  );
+  if (pr_size !== size_label?.name) {
+    if (size_label) {
+      logger.info(
+        `Deleting ${size_label.name} in ${owner}/${repo}/${pull_number}...`
+      );
+      context.octokit.issues.removeLabel({
+        owner,
+        repo,
+        issue_number: pull_number,
+        name: size_label.name,
+      });
+    }
+    // Update the PR size label
+    logger.info(
+      `Request size label added to PR #${pull_number} in ${owner}/${repo}, label is "${pr_size}"`
+    );
+    await context.octokit.issues.addLabels({
+      owner,
+      repo,
+      issue_number: pull_number,
+      labels: [pr_size],
+    });
+  }
+}
+
+/**
  * Main function, responds to label being added
  */
 export function handler(app: Probot) {
@@ -476,11 +540,6 @@ export function handler(app: Probot) {
       context.payload.pull_request.head.sha,
       context.payload.pull_request.number
     );
-    // For the auto label main logic, synchronize event is irrelevant.
-    if (context.payload.action === 'synchronize') {
-      return;
-    }
-
     const config = await getConfigWithDefault<Config>(
       context.octokit,
       owner,
@@ -489,7 +548,17 @@ export function handler(app: Probot) {
       DEFAULT_CONFIGS,
       {schema: schema}
     );
-
+    await updatePullRequestSizeLabel(
+      context,
+      context.payload.pull_request.number,
+      owner,
+      repo,
+      config
+    );
+    // For the auto label main logic, synchronize event is irrelevant.
+    if (context.payload.action === 'synchronize') {
+      return;
+    }
     await handler.autoLabelOnPR(context, owner, repo, config);
   });
 

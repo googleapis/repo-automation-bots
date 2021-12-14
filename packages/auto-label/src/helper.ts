@@ -31,6 +31,9 @@ export const DEFAULT_DAYS_TO_STALE = 60;
 // The default prefix for all stale labels
 export const STALE_PREFIX = 'stale:';
 
+// The default prefix for all pull request size labels
+export const SIZE_PREFIX = 'size:';
+
 // The label for old pull requests
 export const OLD_LABEL = 'old';
 
@@ -47,6 +50,9 @@ export const DEFAULT_CONFIGS = {
   },
   staleness: {
     pullrequest: false,
+  },
+  requestsize: {
+    enabled: false,
   },
 };
 
@@ -95,6 +101,24 @@ export function isExpiredByDays(time: string, limit: number) {
   return diffInDays > limit;
 }
 
+/**
+ * Checks whether the intended label already exists by given prefix
+ */
+export function getPullRequestSize(changes: number): string {
+  if (changes >= 1500) {
+    return 'xxl';
+  } else if (changes >= 1250) {
+    return 'xl';
+  } else if (changes >= 1000) {
+    return 'l';
+  } else if (changes >= 250) {
+    return 'm';
+  } else if (changes >= 50) {
+    return 's';
+  }
+  return 'xs';
+}
+
 // *** Helper functions for product type labels ***
 export interface PathConfig {
   [index: string]: string | PathConfig;
@@ -115,6 +139,10 @@ export interface StaleConfig {
   extraold?: number;
 }
 
+export interface PullRequestSizeConfig {
+  enabled?: boolean;
+}
+
 export interface Config {
   enabled?: boolean;
   product?: boolean;
@@ -125,6 +153,7 @@ export interface Config {
   };
   language?: LanguageConfig;
   staleness?: StaleConfig;
+  requestsize?: PullRequestSizeConfig;
 }
 
 export interface Label {
