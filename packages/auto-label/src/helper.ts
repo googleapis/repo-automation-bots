@@ -68,7 +68,7 @@ export const DEFAULT_CONFIGS = {
  *   "size: xl" for pull request with less than 1500 changes.
  *   "size: xxl" for pull request with more than 1500 changes.
  */
-export const PULL_REUEST_SIZE_LABELS = [
+export const PULL_REQUEST_SIZE_LABELS = [
   {
     name: 'size: xs',
     description: 'Pull request size is extra small.',

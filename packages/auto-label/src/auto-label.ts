@@ -456,7 +456,7 @@ export function handler(app: Probot) {
         context.octokit,
         owner,
         repo,
-        helper.PULL_REUEST_SIZE_LABELS
+        helper.PULL_REQUEST_SIZE_LABELS
       );
     }
     // Update staleness labels on all pull requests in the repo
