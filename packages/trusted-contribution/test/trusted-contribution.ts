@@ -261,7 +261,7 @@ describe('TrustedContributionTestRunner', () => {
             '/repos/chingor13/google-auth-library-java/issues/3/labels',
             (body: object) => {
               assert.deepStrictEqual(body, {
-                labels: ['kokoro:force-run', 'owlbot:run'],
+                labels: ['kokoro:force-run'],
               });
               return true;
             }
@@ -326,6 +326,90 @@ describe('TrustedContributionTestRunner', () => {
           .post(
             '/repos/chingor13/google-auth-library-java/issues/3/labels',
             () => true
+          )
+          .reply(200);
+
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'opened',
+            pull_request: {
+              number: 3,
+              head: {
+                sha: 'testsha',
+              },
+              user: {
+                login: 'custom-user',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          } as PullRequestOpenedEvent,
+          id: 'abc123',
+        });
+        requests.done();
+      });
+
+      it('adds owlbot:run label if OwlBot config found', async () => {
+        requests = requests
+          .get(
+            '/repos/chingor13/google-auth-library-java/contents/.github%2F.OwlBot.lock.yaml'
+          )
+          .reply(200, 'foo')
+          .post(
+            '/repos/chingor13/google-auth-library-java/issues/3/labels',
+            (body: object) => {
+              assert.deepStrictEqual(body, {
+                labels: ['kokoro:force-run', 'owlbot:run'],
+              });
+              return true;
+            }
+          )
+          .reply(200);
+
+        await probot.receive({
+          name: 'pull_request',
+          payload: {
+            action: 'opened',
+            pull_request: {
+              number: 3,
+              head: {
+                sha: 'testsha',
+              },
+              user: {
+                login: 'custom-user',
+              },
+            },
+            repository: {
+              name: 'google-auth-library-java',
+              owner: {
+                login: 'chingor13',
+              },
+            },
+          } as PullRequestOpenedEvent,
+          id: 'abc123',
+        });
+        requests.done();
+      });
+
+      it('does not add owlbot:run label if OwlBot config not found', async () => {
+        requests = requests
+          .get(
+            '/repos/chingor13/google-auth-library-java/contents/.github%2F.OwlBot.lock.yaml'
+          )
+          .reply(404, 'foo')
+          .post(
+            '/repos/chingor13/google-auth-library-java/issues/3/labels',
+            (body: object) => {
+              assert.deepStrictEqual(body, {
+                labels: ['kokoro:force-run'],
+              });
+              return true;
+            }
           )
           .reply(200);
 

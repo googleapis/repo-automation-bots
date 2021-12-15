@@ -38,12 +38,9 @@ const DEFAULT_TRUSTED_CONTRIBUTORS = [
   'gcf-owl-bot[bot]',
   'google-cloud-policy-bot[bot]',
 ];
-const DEFAULT_ANNOTATIONS: Annotation[] = [
-  {
-    type: 'label',
-    text: ['kokoro:force-run', 'owlbot:run'],
-  },
-];
+const DEFAULT_LABELS = ['kokoro:force-run'];
+const OWLBOT_LABEL = 'owlbot:run';
+const OWLBOT_CONFIG_PATH = '.github/.OwlBot.lock.yaml';
 
 function isTrustedContribution(
   config: ConfigurationOptions,
@@ -105,9 +102,37 @@ export = (app: Probot) => {
       if (remoteConfiguration.disabled) {
         return;
       }
+
+      // Check if repository is configured for OwlBot, by fetching .github/.OwlBot.yaml,
+      // which exists in all OwlBot-enabled repositories:
+      let hasOwlBotConfig = false;
+      try {
+        await context.octokit.rest.repos.getContent({
+          owner,
+          repo,
+          path: OWLBOT_CONFIG_PATH,
+        });
+        hasOwlBotConfig = true;
+      } catch (_err) {
+        const err = _err as {code: number};
+        if (err.code !== 404) {
+          logger.error(err);
+        }
+      }
+
       if (isTrustedContribution(remoteConfiguration, PR_AUTHOR)) {
+        // Only adds owlbot:run if repository appears to be configured for OwlBot:
+        const defaultAnnotations: Array<Annotation> = [
+          {type: 'label', text: [...DEFAULT_LABELS]},
+        ];
+        if (
+          hasOwlBotConfig &&
+          !defaultAnnotations[0].text.includes(OWLBOT_LABEL)
+        ) {
+          (defaultAnnotations[0].text as Array<string>).push(OWLBOT_LABEL);
+        }
         const annotations =
-          remoteConfiguration.annotations || DEFAULT_ANNOTATIONS;
+          remoteConfiguration.annotations || defaultAnnotations;
         let octokit: Octokit | null = null;
         for (const annotation of annotations) {
           if (annotation.type === 'label') {
