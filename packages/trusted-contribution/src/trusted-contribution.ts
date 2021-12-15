@@ -103,25 +103,22 @@ export = (app: Probot) => {
         return;
       }
 
-      // Check if repository is configured for OwlBot, by fetching .github/.OwlBot.yaml,
-      // which exists in all OwlBot-enabled repositories:
-      let hasOwlBotConfig = false;
-      try {
-        await context.octokit.rest.repos.getContent({
-          owner,
-          repo,
-          path: OWLBOT_CONFIG_PATH,
-        });
-        hasOwlBotConfig = true;
-      } catch (_err) {
-        const err = _err as {code: number};
-        if (err.code !== 404) {
-          logger.error(err);
-        }
-      }
-
       if (isTrustedContribution(remoteConfiguration, PR_AUTHOR)) {
         // Only adds owlbot:run if repository appears to be configured for OwlBot:
+        let hasOwlBotConfig = false;
+        try {
+          await context.octokit.rest.repos.getContent({
+            owner,
+            repo,
+            path: OWLBOT_CONFIG_PATH,
+          });
+          hasOwlBotConfig = true;
+        } catch (_err) {
+          const err = _err as {code: number};
+          if (err.code !== 404) {
+            throw err;
+          }
+        }  
         const defaultAnnotations: Array<Annotation> = [
           {type: 'label', text: [...DEFAULT_LABELS]},
         ];
@@ -131,6 +128,7 @@ export = (app: Probot) => {
         ) {
           (defaultAnnotations[0].text as Array<string>).push(OWLBOT_LABEL);
         }
+
         const annotations =
           remoteConfiguration.annotations || defaultAnnotations;
         let octokit: Octokit | null = null;
