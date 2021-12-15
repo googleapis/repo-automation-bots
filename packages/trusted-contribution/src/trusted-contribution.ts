@@ -118,7 +118,7 @@ export = (app: Probot) => {
           if (err.code !== 404) {
             throw err;
           }
-        }  
+        }
         const defaultAnnotations: Array<Annotation> = [
           {type: 'label', text: [...DEFAULT_LABELS]},
         ];
