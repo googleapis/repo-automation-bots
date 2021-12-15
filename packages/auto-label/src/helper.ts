@@ -60,6 +60,13 @@ export const DEFAULT_CONFIGS = {
  * The list of all labels used to mark pull request size.
  * Given a fact that by default pull request size labeling feature is off,
  * we will update those labels in repo only when configuration is enabled
+ * Currently there are following labels available:
+ *   "size: xs" for pull request with less than 50 changes.
+ *   "size: s" for pull request with less than 250 changes.
+ *   "size: m" for pull request with less than 1000 changes.
+ *   "size: l" for pull request with less than 1250 changes.
+ *   "size: xl" for pull request with less than 1500 changes.
+ *   "size: xxl" for pull request with more than 1500 changes.
  */
 export const PULL_REUEST_SIZE_LABELS = [
   {
