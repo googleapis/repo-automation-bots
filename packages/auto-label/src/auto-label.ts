@@ -32,6 +32,7 @@ import {
   ConfigChecker,
   getConfigWithDefault,
 } from '@google-automations/bot-config-utils';
+import {syncLabels} from '@google-automations/label-utils';
 
 type IssueResponse = Endpoints['GET /repos/{owner}/{repo}/issues']['response'];
 
@@ -362,14 +363,19 @@ async function updateStalenessLabel(
  */
 async function updatePullRequestSizeLabel(
   context: Context<'pull_request'>,
-  pull_number: number,
   owner: string,
   repo: string,
   config: Config
 ) {
-  // Update pull request size label if user has turned on pull request size labels feature by configuring {requestsize: {enabled: true,}}
+  const pull_number = context.payload.pull_request.number;
+  // Update pull request size label if user has turned on config, product and
+  // pull request size labels feature by configuring {requestsize: {enabled: true,}}
   // By default, this feature is turned off
-  if (!config?.requestsize?.enabled) {
+  if (
+    !config?.product ||
+    config?.enabled === false ||
+    !config?.requestsize?.enabled
+  ) {
     logger.info(
       `Skipping pull request size calculations for PR#${pull_number} in ${owner}/${repo}`
     );
@@ -442,7 +448,17 @@ export function handler(app: Probot) {
       logger.info(`Skipping for ${owner}/${repo}`);
       return;
     }
-
+    // If the pull request size labeling enabled, update all labels in a repo
+    // We run it here since the scheduler runs once in a while, so we dont
+    // need to update labels on pull request change event
+    if (config?.requestsize?.enabled) {
+      await syncLabels(
+        context.octokit,
+        owner,
+        repo,
+        helper.PULL_REUEST_SIZE_LABELS
+      );
+    }
     // Update staleness labels on all pull requests in the repo
     updateStalenessLabel(context, owner, repo, config);
 
@@ -548,13 +564,7 @@ export function handler(app: Probot) {
       DEFAULT_CONFIGS,
       {schema: schema}
     );
-    await updatePullRequestSizeLabel(
-      context,
-      context.payload.pull_request.number,
-      owner,
-      repo,
-      config
-    );
+    await updatePullRequestSizeLabel(context, owner, repo, config);
     // For the auto label main logic, synchronize event is irrelevant.
     if (context.payload.action === 'synchronize') {
       return;

@@ -57,6 +57,44 @@ export const DEFAULT_CONFIGS = {
 };
 
 /**
+ * The list of all labels used to mark pull request size.
+ * Given a fact that by default pull request size labeling feature is off,
+ * we will update those labels in repo only when configuration is enabled
+ */
+export const PULL_REUEST_SIZE_LABELS = [
+  {
+    name: 'size: xs',
+    description: 'Pull request size is extra small.',
+    color: '2deb01',
+  },
+  {
+    name: 'size: s',
+    description: 'Pull request size is small.',
+    color: '2cc785',
+  },
+  {
+    name: 'size: m',
+    description: 'Pull request size is medium.',
+    color: '5d743d',
+  },
+  {
+    name: 'size: l',
+    description: 'Pull request size is large.',
+    color: 'd65692',
+  },
+  {
+    name: 'size: xl',
+    description: 'Pull request size is extra large.',
+    color: '912925',
+  },
+  {
+    name: 'size: xxl',
+    description: 'Pull request size is extra extra large.',
+    color: 'd22b5f',
+  },
+];
+
+/**
  * Checks whether the intended label already exists
  */
 export function labelExists(labels: Label[], new_label: string): Label | null {
