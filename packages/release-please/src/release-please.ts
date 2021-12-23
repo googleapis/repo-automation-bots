@@ -14,14 +14,6 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
-import {
-  ReleasePRFactoryOptions,
-  GitHubReleaseFactoryOptions,
-  ReleasePR,
-  factory,
-  setLogger,
-  Errors,
-} from 'release-please';
 import {Runner} from './runner';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
@@ -30,13 +22,16 @@ import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {request} from '@octokit/request';
 import {logger} from 'gcf-utils';
-import {
-  ReleaseType,
-  getReleaserNames,
-} from 'release-please/build/src/releasers';
+import {ReleaseType, getReleaserTypes} from 'release-please/build/src/factory';
+import {setLogger} from 'release-please/build/src/util/logger';
+import * as Errors from 'release-please/build/src/errors';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import {syncLabels} from '@google-automations/label-utils';
-import {Manifest} from 'release-please/build/src/manifest';
+import {
+  Manifest,
+  ReleaserConfig,
+  ManifestOptions,
+} from 'release-please/build/src/manifest';
 import schema from './config-schema.json';
 import {
   BranchConfiguration,
@@ -45,6 +40,7 @@ import {
   DEFAULT_CONFIGURATION,
 } from './config-constants';
 import {FORCE_RUN_LABEL, RELEASE_PLEASE_LABELS} from './labels';
+import {GitHub} from 'release-please/build/src/github';
 type RequestBuilderType = typeof request;
 type DefaultFunctionType = RequestBuilderType['defaults'];
 type RequestFunctionType = ReturnType<DefaultFunctionType>;
@@ -55,8 +51,6 @@ interface GitHubAPI {
   graphql: Function;
   request: RequestFunctionType;
 }
-
-const DEFAULT_API_URL = 'https://api.github.com';
 
 function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
   if (language === null) {
@@ -73,8 +67,8 @@ function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
     case 'go':
       return 'go-yoshi';
     default: {
-      const releasers = getReleaserNames();
-      if (releasers.includes(language.toLowerCase())) {
+      const releasers = getReleaserTypes();
+      if (releasers.includes(language.toLowerCase() as ReleaseType)) {
         return language.toLowerCase() as ReleaseType;
       } else {
         throw Error(`unknown release type: ${language}`);
@@ -116,38 +110,28 @@ function findBranchConfiguration(
   return null;
 }
 
-// turn a merged release-please release PR into a GitHub release.
-async function createGitHubRelease(
-  packageName: string,
-  repoUrl: string,
-  configuration: BranchConfiguration,
-  github: GitHubAPI
+/**
+ * Returns the repository's default/primary branch.
+ *
+ * @param {string} owner owner portion of GitHub repo URL.
+ * @param {string} repo repo portion of GitHub repo URL.
+ * @param {object} octokit authenticated Octokit instance.
+ * @returns {string}
+ */
+async function getRepositoryDefaultBranch(
+  owner: string,
+  repo: string,
+  octokit: OctokitType
 ) {
-  const releaseOptions: GitHubReleaseFactoryOptions = {
-    label: 'autorelease: pending',
-    repoUrl,
-    packageName,
-    apiUrl: DEFAULT_API_URL,
-    octokitAPIs: {
-      octokit: github as {} as OctokitType,
-      graphql: github.graphql,
-      request: github.request,
-    },
-    path: configuration.path,
-    changelogPath: configuration.changelogPath ?? 'CHANGELOG.md',
-    monorepoTags: configuration.monorepoTags,
-    releaseType: configuration.releaseType,
-    extraFiles: configuration.extraFiles,
-    releaseLabel: configuration.releaseLabel,
-    defaultBranch: configuration.branch,
-  };
-  if (configuration.manifest) {
-    const manifest = factory.manifest(releaseOptions);
-    await Runner.manifestRelease(manifest);
-  } else {
-    const ghr = factory.githubRelease(releaseOptions);
-    await Runner.releaser(ghr);
-  }
+  const {data} = await octokit.repos.get({
+    owner,
+    repo,
+  });
+  return (
+    data as {
+      default_branch: string;
+    }
+  ).default_branch;
 }
 
 /**
@@ -180,84 +164,83 @@ async function getConfigWithDefaultBranch(
   return config;
 }
 
-/**
- * Returns the repository's default/primary branch.
- *
- * @param {string} owner owner portion of GitHub repo URL.
- * @param {string} repo repo portion of GitHub repo URL.
- * @param {object} octokit authenticated Octokit instance.
- * @returns {string}
- */
-async function getRepositoryDefaultBranch(
+async function buildGitHub(
   owner: string,
   repo: string,
-  octokit: OctokitType
-) {
-  const {data} = await octokit.repos.get({
+  octokit: GitHubAPI,
+  defaultBranch?: string
+): Promise<GitHub> {
+  return await GitHub.create({
     owner,
     repo,
+    defaultBranch,
+    octokitAPIs: {
+      octokit: octokit as {} as OctokitType,
+      request: octokit.request,
+      graphql: octokit.graphql,
+    },
   });
-  return (
-    data as {
-      default_branch: string;
-    }
-  ).default_branch;
 }
 
-async function createReleasePR(
-  repoName: string,
-  repoUrl: string,
+async function buildManifest(
+  github: GitHub,
   repoLanguage: string | null,
-  configuration: BranchConfiguration,
-  github: GitHubAPI,
-  snapshot?: boolean
-): Promise<ReleasePR | Manifest> {
+  configuration: BranchConfiguration
+): Promise<Manifest> {
+  if (configuration.manifest) {
+    return await Manifest.fromManifest(github, configuration.branch);
+  }
+
   const releaseType = configuration.releaseType
     ? configuration.releaseType
     : configuration.manifest
     ? 'simple'
     : releaseTypeFromRepoLanguage(repoLanguage);
-  const packageName = configuration.packageName || repoName;
+  const packageName = configuration.packageName || github.repository.repo;
 
-  const buildOptions: ReleasePRFactoryOptions = {
-    defaultBranch: configuration.branch,
-    packageName,
-    repoUrl,
-    apiUrl: DEFAULT_API_URL,
-    octokitAPIs: {
-      octokit: github as {} as OctokitType,
-      graphql: github.graphql,
-      request: github.request,
-    },
-    bumpMinorPreMajor: configuration.bumpMinorPreMajor,
-    path: configuration.path,
-    monorepoTags: configuration.monorepoTags,
+  const releaserConfig: ReleaserConfig = {
     releaseType,
+    versioning: 'default',
+    bumpMinorPreMajor: configuration.bumpMinorPreMajor,
+    // bumpPatchForMinorPreMajor: undefined,
+    // releaseAs: undefined,
+    // skipGithubRelease: undefined,
+    // draft: undefined,
+    // draftPullRequest: undefined,
+    packageName,
+    includeComponentInTag: configuration.monorepoTags,
+    // pullRequestTitlePattern: undefined,
+    // changelogSections: undefined,
+    changelogPath: configuration.changelogPath,
+    changelogType: 'default',
+    // versionFile: undefined,
     extraFiles: configuration.extraFiles,
   };
-  if (snapshot !== undefined) {
-    buildOptions.snapshot = snapshot;
-  }
-  if (configuration.releaseLabels) {
-    buildOptions.label = configuration.releaseLabels.join(',');
-  }
-
-  if (configuration.manifest) {
-    const manifest = factory.manifest(buildOptions);
-    await Runner.manifest(manifest);
-    return manifest;
-  } else {
-    const releasePR = factory.releasePR(buildOptions);
-    await Runner.runner(releasePR);
-    return releasePR;
-  }
+  const manifestOverrides: ManifestOptions = {
+    // bootstrapSha: undefined,
+    // lastReleaseSha: undefined,
+    // alwaysLinkLocal: undefined,
+    // separatePullRequests: undefined,
+    // plugins: undefined,
+    // fork: undefined,
+    // signoff: undefined,
+    // manifestPath: undefined,
+    labels: configuration.releaseLabels,
+    releaseLabels: configuration.releaseLabels,
+  };
+  return await Manifest.fromConfig(
+    github,
+    configuration.branch,
+    releaserConfig,
+    manifestOverrides,
+    configuration.path
+  );
 }
 
 const handler = (app: Probot) => {
   app.on('push', async context => {
     const repoUrl = context.payload.repository.full_name;
     const branch = context.payload.ref.replace('refs/heads/', '');
-    const repoName = context.payload.repository.name;
     const repoLanguage = context.payload.repository.language;
     const {owner, repo} = context.repo();
 
@@ -288,15 +271,21 @@ const handler = (app: Probot) => {
     setLogger(logger);
 
     logger.info(`push (${repoUrl})`);
+
+    const github = await buildGitHub(
+      owner,
+      repo,
+      context.octokit as GitHubAPI,
+      context.payload.repository.default_branch
+    );
+    const manifest = await buildManifest(
+      github,
+      repoLanguage,
+      branchConfiguration
+    );
+
     try {
-      await createReleasePR(
-        repoName,
-        repoUrl,
-        repoLanguage,
-        branchConfiguration,
-        context.octokit as GitHubAPI,
-        undefined
-      );
+      await Runner.createPullRequests(manifest);
     } catch (e) {
       if (e instanceof Errors.ConfigurationError) {
         // In the future, this could raise an issue against the
@@ -314,12 +303,7 @@ const handler = (app: Probot) => {
     if (branchConfiguration.handleGHRelease) {
       logger.info(`handling GitHub release for (${repoUrl})`);
       try {
-        await createGitHubRelease(
-          branchConfiguration.packageName ?? repoName,
-          repoUrl,
-          branchConfiguration,
-          context.octokit as GitHubAPI
-        );
+        await Runner.createReleases(manifest);
       } catch (e) {
         if (e instanceof Errors.DuplicateReleaseError) {
           // In the future, this could raise an issue against the
@@ -337,11 +321,11 @@ const handler = (app: Probot) => {
   app.on('schedule.repository' as any, async context => {
     const repoUrl = context.payload.repository.full_name;
     const owner = context.payload.organization.login;
-    const repoName = context.payload.repository.name;
+    const repo = context.payload.repository.name;
 
     const remoteConfiguration = await getConfigWithDefaultBranch(
       owner,
-      repoName,
+      repo,
       context.octokit
     );
 
@@ -355,7 +339,7 @@ const handler = (app: Probot) => {
     // errors and continue. If this strategy becomes problematic, we
     // can create another scheduler job.
     try {
-      await syncLabels(context.octokit, owner, repoName, RELEASE_PLEASE_LABELS);
+      await syncLabels(context.octokit, owner, repo, RELEASE_PLEASE_LABELS);
     } catch (e) {
       const err = e as Error;
       err.message = `Failed to sync the labels: ${err.message}`;
@@ -382,14 +366,19 @@ const handler = (app: Probot) => {
     const repository = await context.octokit.repos.get(context.repo());
     const repoLanguage = repository.data.language;
 
-    await createReleasePR(
-      repoName,
-      repoUrl,
-      repoLanguage,
-      defaultBranchConfiguration,
+    const github = await buildGitHub(
+      owner,
+      repo,
       context.octokit as GitHubAPI,
-      true
+      context.payload.repository.default_branch
     );
+    const manifest = await buildManifest(
+      github,
+      repoLanguage,
+      defaultBranchConfiguration
+    );
+
+    await Runner.createPullRequests(manifest);
 
     if (!configuration.branches) {
       return;
@@ -400,14 +389,7 @@ const handler = (app: Probot) => {
         logger.info(
           `schedule.repository (${repoUrl}, ${branchConfiguration.branch})`
         );
-        return createReleasePR(
-          repoName,
-          repoUrl,
-          repoLanguage,
-          branchConfiguration,
-          context.octokit as GitHubAPI,
-          true
-        );
+        return Runner.createPullRequests(manifest);
       })
     );
   });
@@ -435,7 +417,6 @@ const handler = (app: Probot) => {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
     const branch = context.payload.pull_request.base.ref;
-    const repoName = context.payload.repository.name;
     const repoLanguage = context.payload.repository.language;
 
     // remove the label
@@ -449,7 +430,7 @@ const handler = (app: Probot) => {
     // check release please config
     const remoteConfiguration = await getConfigWithDefaultBranch(
       owner,
-      repoName,
+      repo,
       context.octokit
     );
 
@@ -471,14 +452,19 @@ const handler = (app: Probot) => {
     }
 
     logger.info(`pull_request.labeled (${repoUrl})`);
-    await createReleasePR(
-      repoName,
-      repoUrl,
-      repoLanguage,
-      branchConfiguration,
+
+    const github = await buildGitHub(
+      owner,
+      repo,
       context.octokit as GitHubAPI,
-      undefined
+      context.payload.repository.default_branch
     );
+    const manifest = await buildManifest(
+      github,
+      repoLanguage,
+      branchConfiguration
+    );
+    await Runner.createPullRequests(manifest);
   });
 
   app.on('release.created', async context => {

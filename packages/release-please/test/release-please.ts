@@ -18,8 +18,6 @@ import {RELEASE_PLEASE_LABELS} from '../src/labels';
 import {Runner} from '../src/runner';
 import {describe, it, beforeEach} from 'mocha';
 import {resolve} from 'path';
-import {Octokit} from '@octokit/rest';
-type OctokitType = InstanceType<typeof Octokit>;
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
 import {
@@ -31,25 +29,25 @@ import * as fs from 'fs';
 import yaml from 'js-yaml';
 import * as sinon from 'sinon';
 import assert, {fail} from 'assert';
-import {GitHubRelease, ReleasePR, factory, Errors} from 'release-please';
 import * as botConfigModule from '@google-automations/bot-config-utils';
 import * as labelUtilsModule from '@google-automations/label-utils';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
+import {Manifest} from 'release-please/build/src/manifest';
+import * as Errors from 'release-please/build/src/errors';
 
 const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
 const fixturesPath = resolve(__dirname, '../../test/fixtures');
 
 // helper to get the name of the releaser
-function getReleaserName(pr: ReleasePR): string {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return pr.constructor.name;
+function getReleaserName(manifest: Manifest): string {
+  return manifest.repositoryConfig['.'].releaseType;
 }
 
-function assertReleaserType(expectedType: string, pr: ReleasePR) {
-  const releaserName = getReleaserName(pr);
+function assertReleaserType(expectedType: string, manifest: Manifest) {
+  const releaserName = getReleaserName(manifest);
   assert(
     expectedType === releaserName,
     `expected to find ${expectedType}, found ${releaserName}`
@@ -59,23 +57,6 @@ function assertReleaserType(expectedType: string, pr: ReleasePR) {
 function loadConfig(configFile: string) {
   return yaml.load(
     fs.readFileSync(resolve(fixturesPath, 'config', configFile), 'utf-8')
-  );
-}
-
-function stubDefaultBranchLookup() {
-  sandbox.replace(
-    api,
-    'getRepositoryDefaultBranch',
-    async (
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      owner: string,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      repo: string,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      _octokit: OctokitType
-    ): Promise<string> => {
-      return 'master';
-    }
   );
 }
 
@@ -111,10 +92,14 @@ describe('ReleasePleaseBot', () => {
 
     it('should build a release PR', async () => {
       let executed = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('JavaYoshi', pr);
-        executed = true;
-      });
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('JavaYoshi', manifest);
+          executed = true;
+        }
+      );
       getConfigStub.resolves(loadConfig('valid.yml'));
 
       await probot.receive(
@@ -127,15 +112,17 @@ describe('ReleasePleaseBot', () => {
     it('should handle GitHub releases, if configured', async () => {
       let runnerExecuted = false;
       let releaserExecuted = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('JavaYoshi', pr);
-        runnerExecuted = true;
-      });
-      sandbox.replace(Runner, 'releaser', async (pr: GitHubRelease) => {
-        assert(pr instanceof GitHubRelease);
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('JavaYoshi', manifest);
+          runnerExecuted = true;
+        }
+      );
+      sandbox.replace(Runner, 'createReleases', async () => {
         releaserExecuted = true;
       });
-      const releaseSpy = sandbox.spy(factory, 'githubRelease');
       getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -143,18 +130,20 @@ describe('ReleasePleaseBot', () => {
       );
       assert(runnerExecuted, 'should have executed the runner');
       assert(releaserExecuted, 'GitHub release should have run');
-      assert(releaseSpy.calledWith(sinon.match.has('releaseLabel', undefined)));
     });
 
     it('should ignore duplicated GitHub releases', async () => {
       let runnerExecuted = false;
       let releaserExecuted = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('JavaYoshi', pr);
-        runnerExecuted = true;
-      });
-      sandbox.replace(Runner, 'releaser', async (pr: GitHubRelease) => {
-        assert(pr instanceof GitHubRelease);
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('JavaYoshi', manifest);
+          runnerExecuted = true;
+        }
+      );
+      sandbox.replace(Runner, 'createReleases', async () => {
         releaserExecuted = true;
 
         throw new Errors.DuplicateReleaseError(
@@ -174,7 +163,6 @@ describe('ReleasePleaseBot', () => {
           'abc'
         );
       });
-      const releaseSpy = sandbox.spy(factory, 'githubRelease');
       getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -182,23 +170,26 @@ describe('ReleasePleaseBot', () => {
       );
       assert(runnerExecuted, 'should have executed the runner');
       assert(releaserExecuted, 'GitHub release should have run');
-      assert(releaseSpy.calledWith(sinon.match.has('releaseLabel', undefined)));
     });
 
     it('should ignore configuration errors', async () => {
       let runnerExecuted = false;
       const releaserExecuted = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('JavaYoshi', pr);
-        runnerExecuted = true;
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('JavaYoshi', manifest);
+          runnerExecuted = true;
 
-        throw new Errors.MissingRequiredFileError(
-          'versions.txt',
-          'YoshiJava',
-          'testOwner/testRepo'
-        );
-      });
-      sandbox.replace(Runner, 'releaser', async () => {
+          throw new Errors.MissingRequiredFileError(
+            'versions.txt',
+            'YoshiJava',
+            'testOwner/testRepo'
+          );
+        }
+      );
+      sandbox.replace(Runner, 'createReleases', async () => {
         fail('should not get here');
       });
       getConfigStub.resolves(loadConfig('valid_handle_gh_release.yml'));
@@ -211,7 +202,9 @@ describe('ReleasePleaseBot', () => {
     });
 
     it('should ignore if the branch is the configured primary branch', async () => {
-      sandbox.stub(Runner, 'runner').rejects('should not be running a release');
+      sandbox
+        .stub(Runner, 'createPullRequests')
+        .rejects('should not be running a release');
       getConfigStub.resolves(loadConfig('feature_branch_as_primary.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -221,11 +214,14 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow overriding the release strategy from configuration', async () => {
       let executed = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('Ruby', pr);
-        executed = true;
-      });
-      stubDefaultBranchLookup();
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('Ruby', manifest);
+          executed = true;
+        }
+      );
       getConfigStub.resolves(loadConfig('ruby_release.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -236,11 +232,17 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow overriding the package-name from configuration', async () => {
       let executed = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assert.deepStrictEqual(pr.packageName, '@google-cloud/foo');
-        executed = true;
-      });
-      stubDefaultBranchLookup();
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assert.deepStrictEqual(
+            manifest.repositoryConfig['.'].packageName,
+            '@google-cloud/foo'
+          );
+          executed = true;
+        }
+      );
       getConfigStub.resolves(loadConfig('ruby_release_alternate_pkg_name.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -251,10 +253,14 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow overriding the release tags from configuration', async () => {
       let executed = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assert.deepStrictEqual(pr.labels, ['foo', 'bar']);
-        executed = true;
-      });
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assert.deepStrictEqual(manifest['labels'], ['foo', 'bar']);
+          executed = true;
+        }
+      );
       getConfigStub.resolves(loadConfig('valid.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -266,16 +272,20 @@ describe('ReleasePleaseBot', () => {
     it('should allow overriding the release label when creating a release', async () => {
       let runnerExecuted = false;
       let releaserExecuted = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('JavaYoshi', pr);
-        runnerExecuted = true;
-      });
-      sandbox.replace(Runner, 'releaser', async (pr: GitHubRelease) => {
-        assert(pr instanceof GitHubRelease);
-        assert.strictEqual(pr.releaseLabel, 'autorelease: published');
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('JavaYoshi', manifest);
+          runnerExecuted = true;
+        }
+      );
+      sandbox.replace(Runner, 'createReleases', async (manifest: Manifest) => {
+        assert.strictEqual(manifest['releaseLabels'], [
+          'autorelease: published',
+        ]);
         releaserExecuted = true;
       });
-      const releaseSpy = sandbox.spy(factory, 'githubRelease');
       getConfigStub.resolves(loadConfig('override_release_tag.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -283,15 +293,12 @@ describe('ReleasePleaseBot', () => {
       );
       assert(runnerExecuted, 'should have executed the runner');
       assert(releaserExecuted, 'GitHub release should have run');
-      assert(
-        releaseSpy.calledWith(
-          sinon.match.has('releaseLabel', 'autorelease: published')
-        )
-      );
     });
 
     it('should ignore webhook if not configured', async () => {
-      sandbox.stub(Runner, 'runner').rejects('should not be running a release');
+      sandbox
+        .stub(Runner, 'createPullRequests')
+        .rejects('should not be running a release');
       getConfigStub.resolves(null);
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -301,11 +308,14 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow an empty config file with the defaults', async () => {
       let executed = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('JavaYoshi', pr);
-        executed = true;
-      });
-      stubDefaultBranchLookup();
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('JavaYoshi', manifest);
+          executed = true;
+        }
+      );
       getConfigStub.resolves({});
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -316,12 +326,15 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow configuring minor bump for breaking change pre 1.0', async () => {
       let executed = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('JavaYoshi', pr);
-        assert(pr.bumpMinorPreMajor);
-        executed = true;
-      });
-      stubDefaultBranchLookup();
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('JavaYoshi', manifest);
+          assert(manifest.repositoryConfig['.'].bumpMinorPreMajor);
+          executed = true;
+        }
+      );
       getConfigStub.resolves(loadConfig('minor_pre_major.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -332,12 +345,15 @@ describe('ReleasePleaseBot', () => {
 
     it('should detect the default branch if not specified in configuration', async () => {
       let executed = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('Node', pr);
-        assert('master' === pr.gh.defaultBranch);
-        executed = true;
-      });
-      stubDefaultBranchLookup();
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('Node', manifest);
+          assert('master' === manifest['github'].repository.defaultBranch);
+          executed = true;
+        }
+      );
       getConfigStub.resolves(loadConfig('release_type_no_primary_branch.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -348,9 +364,8 @@ describe('ReleasePleaseBot', () => {
 
     describe('for manifest releases', () => {
       it('should build a release PR', async () => {
-        const manifest = sandbox.stub(Runner, 'manifest').resolves();
+        const manifest = sandbox.stub(Runner, 'createPullRequests').resolves();
         getConfigStub.resolves(loadConfig('manifest.yml'));
-        stubDefaultBranchLookup();
         await probot.receive(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           {name: 'push', payload: payload as any, id: 'abc123'}
@@ -359,9 +374,9 @@ describe('ReleasePleaseBot', () => {
       });
 
       it('should handle GitHub releases, if configured', async () => {
-        const manifest = sandbox.stub(Runner, 'manifest').resolves();
+        const manifest = sandbox.stub(Runner, 'createPullRequests').resolves();
         const manifestRelease = sandbox
-          .stub(Runner, 'manifestRelease')
+          .stub(Runner, 'createReleases')
           .resolves();
         getConfigStub.resolves(loadConfig('manifest_handle_gh_release.yml'));
         await probot.receive(
@@ -377,9 +392,8 @@ describe('ReleasePleaseBot', () => {
           fixturesPath,
           './push_to_master_weird_language'
         ));
-        const manifest = sandbox.stub(Runner, 'manifest').resolves();
+        const manifest = sandbox.stub(Runner, 'createPullRequests').resolves();
         getConfigStub.resolves(loadConfig('manifest.yml'));
-        stubDefaultBranchLookup();
         await probot.receive(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           {name: 'push', payload: payload as any, id: 'abc123'}
@@ -390,12 +404,16 @@ describe('ReleasePleaseBot', () => {
 
     it('should allow configuring extra files', async () => {
       let executed = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assert.deepStrictEqual(pr.extraFiles, [
-          'src/com/google/foo/Version.java',
-        ]);
-        executed = true;
-      });
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assert.deepStrictEqual(manifest.repositoryConfig['.'].extraFiles, [
+            'src/com/google/foo/Version.java',
+          ]);
+          executed = true;
+        }
+      );
       getConfigStub.resolves(loadConfig('extra_files.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -413,7 +431,9 @@ describe('ReleasePleaseBot', () => {
     });
 
     it('should ignore the webhook', async () => {
-      sandbox.stub(Runner, 'runner').rejects('should not be running a release');
+      sandbox
+        .stub(Runner, 'createPullRequests')
+        .rejects('should not be running a release');
       getConfigStub.resolves(loadConfig('valid.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -423,10 +443,14 @@ describe('ReleasePleaseBot', () => {
 
     it('should create the PR if the branch is the configured primary branch', async () => {
       let executed = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('JavaYoshi', pr);
-        executed = true;
-      });
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('JavaYoshi', manifest);
+          executed = true;
+        }
+      );
       getConfigStub.resolves(loadConfig('feature_branch_as_primary.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -437,10 +461,14 @@ describe('ReleasePleaseBot', () => {
 
     it('should create the PR if the branch is configured as an alternate branch', async () => {
       let executed = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('JavaYoshi', pr);
-        executed = true;
-      });
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('JavaYoshi', manifest);
+          executed = true;
+        }
+      );
       getConfigStub.resolves(loadConfig('multi_branch.yml'));
       await probot.receive(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -452,16 +480,18 @@ describe('ReleasePleaseBot', () => {
     it('should handle GitHub releases, if configured', async () => {
       let runnerExecuted = false;
       let releaserExecuted = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('JavaYoshi', pr);
-        runnerExecuted = true;
-      });
-      sandbox.replace(Runner, 'releaser', async (pr: GitHubRelease) => {
-        assert(pr instanceof GitHubRelease);
-        assert(pr.gh.defaultBranch === 'feature-branch');
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('JavaYoshi', manifest);
+          runnerExecuted = true;
+        }
+      );
+      sandbox.replace(Runner, 'createReleases', async (manifest: Manifest) => {
+        assert(manifest['targetBranch'] === 'feature-branch');
         releaserExecuted = true;
       });
-      const releaseSpy = sandbox.spy(factory, 'githubRelease');
       getConfigStub.resolves(
         loadConfig('valid_handle_gh_release_alternate_branch.yml')
       );
@@ -471,7 +501,6 @@ describe('ReleasePleaseBot', () => {
       );
       assert(runnerExecuted, 'should have executed the runner');
       assert(releaserExecuted, 'GitHub release should have run');
-      assert(releaseSpy.calledWith(sinon.match.has('releaseLabel', undefined)));
     });
   });
 
@@ -492,10 +521,14 @@ describe('ReleasePleaseBot', () => {
         },
         cron_org: 'Codertocat',
       };
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('JavaYoshi', pr);
-        executed = true;
-      });
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('JavaYoshi', manifest);
+          executed = true;
+        }
+      );
       getConfigStub.resolves(loadConfig('valid.yml'));
       const repository = require(resolve(fixturesPath, './repository'));
       const requests = nock('https://api.github.com')
@@ -538,10 +571,14 @@ describe('ReleasePleaseBot', () => {
         },
         cron_org: 'Codertocat',
       };
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('JavaYoshi', pr);
-        executed = true;
-      });
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('JavaYoshi', manifest);
+          executed = true;
+        }
+      );
       getConfigStub.resolves(loadConfig('valid.yml'));
       const repository = require(resolve(fixturesPath, './repository'));
       const requests = nock('https://api.github.com')
@@ -583,9 +620,16 @@ describe('ReleasePleaseBot', () => {
         },
         cron_org: 'Codertocat',
       };
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        executedBranches.set(pr.gh.defaultBranch!, getReleaserName(pr));
-      });
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          executedBranches.set(
+            manifest['targetBranch'],
+            getReleaserName(manifest)
+          );
+        }
+      );
       getConfigStub.resolves(loadConfig('multi_branch.yml'));
       const repository = require(resolve(fixturesPath, './repository'));
       const requests = nock('https://api.github.com')
@@ -619,10 +663,14 @@ describe('ReleasePleaseBot', () => {
     it('should try to create a release', async () => {
       payload = require(resolve(fixturesPath, './pull_request_labeled'));
       let executed = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('JavaYoshi', pr);
-        executed = true;
-      });
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('JavaYoshi', manifest);
+          executed = true;
+        }
+      );
       getConfigStub.resolves(loadConfig('valid.yml'));
       const requests = nock('https://api.github.com')
         .delete(
@@ -645,10 +693,14 @@ describe('ReleasePleaseBot', () => {
         './pull_request_labeled_feature_branch'
       ));
       let executed = false;
-      sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-        assertReleaserType('JavaYoshi', pr);
-        executed = true;
-      });
+      sandbox.replace(
+        Runner,
+        'createPullRequests',
+        async (manifest: Manifest) => {
+          assertReleaserType('JavaYoshi', manifest);
+          executed = true;
+        }
+      );
       getConfigStub.resolves(loadConfig('multi_branch.yml'));
       const requests = nock('https://api.github.com')
         .delete(
@@ -667,7 +719,9 @@ describe('ReleasePleaseBot', () => {
 
     it('should ignore other labels', async () => {
       payload = require(resolve(fixturesPath, './pull_request_labeled_other'));
-      sandbox.stub(Runner, 'runner').rejects('should not be running a release');
+      sandbox
+        .stub(Runner, 'createPullRequests')
+        .rejects('should not be running a release');
 
       await probot.receive({
         name: 'pull_request',
@@ -761,10 +815,14 @@ describe('ReleasePleaseBot', () => {
   it('should fetch default branch from GitHub if not provided', async () => {
     const payload = require(resolve(fixturesPath, './push_to_main'));
     let executed = false;
-    sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-      assertReleaserType('Ruby', pr);
-      executed = true;
-    });
+    sandbox.replace(
+      Runner,
+      'createPullRequests',
+      async (manifest: Manifest) => {
+        assertReleaserType('Ruby', manifest);
+        executed = true;
+      }
+    );
     const requests = nock('https://api.github.com')
       .get('/repos/chingor13/google-auth-library-java')
       .reply(200, {
@@ -782,10 +840,14 @@ describe('ReleasePleaseBot', () => {
   it('should use primaryBranch from config if one is set', async () => {
     const payload = require(resolve(fixturesPath, './push_to_main'));
     let executed = false;
-    sandbox.replace(Runner, 'runner', async (pr: ReleasePR) => {
-      assertReleaserType('JavaYoshi', pr);
-      executed = true;
-    });
+    sandbox.replace(
+      Runner,
+      'createPullRequests',
+      async (manifest: Manifest) => {
+        assertReleaserType('JavaYoshi', manifest);
+        executed = true;
+      }
+    );
     getConfigStub.resolves(loadConfig('main_branch.yml'));
     await probot.receive(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
