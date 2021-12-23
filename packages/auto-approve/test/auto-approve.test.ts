@@ -102,6 +102,8 @@ describe('auto-approve', () => {
   let getSecretStub: SinonStub;
   let checkPRAgainstConfigV2Stub: SinonStub;
 
+  const sandbox = sinon.createSandbox();
+
   beforeEach(() => {
     probot = createProbot({
       defaults: {
@@ -111,26 +113,20 @@ describe('auto-approve', () => {
     });
     probot.load(autoApprove.handler);
 
-    checkPRAgainstConfigStub = sinon.stub(checkPR, 'checkPRAgainstConfig');
-    getChangedFilesStub = sinon.stub(getPRInfo, 'getChangedFiles');
-    getBlobFromPRFilesStub = sinon.stub(getPRInfo, 'getBlobFromPRFiles');
-    checkAutoApproveStub = sinon.stub(checkConfig, 'checkAutoApproveConfig');
-    checkCodeOwnersStub = sinon.stub(checkConfig, 'checkCodeOwners');
-    getSecretStub = sinon.stub(autoApprove, 'authenticateWithSecret');
-    checkPRAgainstConfigV2Stub = sinon.stub(
+    checkPRAgainstConfigStub = sandbox.stub(checkPR, 'checkPRAgainstConfig');
+    getChangedFilesStub = sandbox.stub(getPRInfo, 'getChangedFiles');
+    getBlobFromPRFilesStub = sandbox.stub(getPRInfo, 'getBlobFromPRFiles');
+    checkAutoApproveStub = sandbox.stub(checkConfig, 'checkAutoApproveConfig');
+    checkCodeOwnersStub = sandbox.stub(checkConfig, 'checkCodeOwners');
+    getSecretStub = sandbox.stub(autoApprove, 'authenticateWithSecret');
+    checkPRAgainstConfigV2Stub = sandbox.stub(
       checkPRV2,
       'checkPRAgainstConfigV2'
     );
   });
 
   afterEach(() => {
-    checkPRAgainstConfigStub.restore();
-    getChangedFilesStub.restore();
-    getBlobFromPRFilesStub.restore();
-    checkAutoApproveStub.restore();
-    checkCodeOwnersStub.restore();
-    getSecretStub.restore();
-    checkPRAgainstConfigV2Stub.restore();
+    sandbox.restore();
   });
 
   describe('main auto-approve function', () => {
@@ -527,10 +523,6 @@ describe('auto-approve', () => {
   });
 
   describe('gets secrets and authenticates separately for approval', () => {
-    const sandbox = sinon.createSandbox();
-    afterEach(() => {
-      sandbox.restore();
-    });
     it('creates a separate octokit instance and authenticates with secret in secret manager', async () => {
       checkPRAgainstConfigStub.returns(true);
       checkAutoApproveStub.returns('');
@@ -573,10 +565,6 @@ describe('auto-approve', () => {
     });
 
     describe('RELEASE_FREEZE', () => {
-      const sandbox = sinon.createSandbox();
-      afterEach(() => {
-        sandbox.restore();
-      });
       it('returns early if RELEASE_FREEZE is truthy and PR is from release-please', async () => {
         sandbox.stub(process, 'env').value({});
         process.env.RELEASE_FREEZE = 'true';
