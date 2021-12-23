@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ReleaseType} from 'release-please/build/src/factory';
+import {ReleaseType} from 'release-please';
 
 export interface BranchOptions {
   releaseLabels?: string[];

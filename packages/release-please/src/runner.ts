@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Manifest} from 'release-please/build/src/manifest';
+import {Manifest} from 'release-please';
 
 export class Runner {
   static createPullRequests = async (manifest: Manifest) => {

@@ -22,16 +22,18 @@ import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {request} from '@octokit/request';
 import {logger} from 'gcf-utils';
-import {ReleaseType, getReleaserTypes} from 'release-please/build/src/factory';
-import {setLogger} from 'release-please/build/src/util/logger';
-import * as Errors from 'release-please/build/src/errors';
 import {ConfigChecker, getConfig} from '@google-automations/bot-config-utils';
 import {syncLabels} from '@google-automations/label-utils';
 import {
+  Errors,
+  GitHub,
   Manifest,
-  ReleaserConfig,
   ManifestOptions,
-} from 'release-please/build/src/manifest';
+  ReleaseType,
+  ReleaserConfig,
+  getReleaserTypes,
+  setLogger,
+} from 'release-please';
 import schema from './config-schema.json';
 import {
   BranchConfiguration,
@@ -40,7 +42,6 @@ import {
   DEFAULT_CONFIGURATION,
 } from './config-constants';
 import {FORCE_RUN_LABEL, RELEASE_PLEASE_LABELS} from './labels';
-import {GitHub} from 'release-please/build/src/github';
 type RequestBuilderType = typeof request;
 type DefaultFunctionType = RequestBuilderType['defaults'];
 type RequestFunctionType = ReturnType<DefaultFunctionType>;

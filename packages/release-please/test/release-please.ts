@@ -34,8 +34,7 @@ import * as labelUtilsModule from '@google-automations/label-utils';
 import nock from 'nock';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
-import {Manifest} from 'release-please/build/src/manifest';
-import * as Errors from 'release-please/build/src/errors';
+import {Errors, Manifest} from 'release-please';
 
 const sandbox = sinon.createSandbox();
 nock.disableNetConnect();
