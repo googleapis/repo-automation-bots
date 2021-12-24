@@ -25,6 +25,7 @@ import {NodeDependency} from './process-checks/node/dependency';
 import {NodeRelease} from './process-checks/node/release';
 import {JavaDependency} from './process-checks/java/dependency';
 import {OwlBotTemplateChanges} from './process-checks/owl-bot-template-changes';
+import {OwlBotAPIChanges} from './process-checks/owl-bot-api-changes';
 // This file manages the logic to check whether a given PR matches the config in the repository
 
 // We need this typeMap to convert the JSON input (string) into a corresponding type.
@@ -60,6 +61,10 @@ const typeMap = [
   {
     configValue: 'OwlBotTemplateChanges',
     configType: OwlBotTemplateChanges,
+  },
+  {
+    configValue: 'OwlBotAPIChanges',
+    configType: OwlBotAPIChanges,
   },
 ];
 

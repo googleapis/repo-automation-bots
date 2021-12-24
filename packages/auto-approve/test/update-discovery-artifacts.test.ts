@@ -50,7 +50,6 @@ describe('behavior of UpdateDiscoveryArtifacts process', () => {
       classRule: {
         author: 'yoshi-code-bot',
         titleRegex: /^chore: Update discovery artifacts/,
-        maxFiles: 2,
         fileNameRegex: [
           /^docs\/dyn\/index\.md$/,
           /^docs\/dyn\/.*\.html$/,
