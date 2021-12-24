@@ -1,0 +1,10 @@
+[
+  {
+    "sha": "c6e90cc6cd13f2f4341ba58618f7a2e2c4d552f4",
+    "filename": "test/fixtures/issue1.opened.json",
+    "status": "added",
+    "additions": 1658,
+    "deletions": 0,
+    "changes": 1658
+  }
+]
