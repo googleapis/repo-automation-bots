@@ -75,7 +75,7 @@ describe('check pr against config', async () => {
         'pull_request_opened_fork'
       ));
 
-      await checkPR.checkPRAgainstConfig(validPR, pr, octokit);
+      await checkPR.checkPRAgainstConfigV2(validPR, pr, octokit);
 
       fileRequest.done();
     });
@@ -91,7 +91,7 @@ describe('check pr against config', async () => {
         .get('/repos/testOwner/testRepo/pulls/1/files')
         .reply(200);
 
-      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+      const prMatchesConfig = await checkPR.checkPRAgainstConfigV2(
         validPR,
         pr,
         octokit
@@ -111,7 +111,7 @@ describe('check pr against config', async () => {
         .get('/repos/testOwner/testRepo/pulls/1/files')
         .reply(200);
 
-      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+      const prMatchesConfig = await checkPR.checkPRAgainstConfigV2(
         validPR,
         pr,
         octokit
@@ -132,7 +132,7 @@ describe('check pr against config', async () => {
         {filename: 'changedFile2', sha: '1234'},
       ]);
 
-      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+      const prMatchesConfig = await checkPR.checkPRAgainstConfigV2(
         validPR,
         pr,
         octokit
@@ -155,7 +155,7 @@ describe('check pr against config', async () => {
         {filename: 'README.md', sha: '1234'},
       ]);
 
-      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+      const prMatchesConfig = await checkPR.checkPRAgainstConfigV2(
         validPR,
         pr,
         octokit
@@ -177,7 +177,7 @@ describe('check pr against config', async () => {
         {filename: '.github/readme/synth.metadata/synth.metadata', sha: '1234'},
       ]);
 
-      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+      const prMatchesConfig = await checkPR.checkPRAgainstConfigV2(
         validPR,
         pr,
         octokit
@@ -211,7 +211,7 @@ describe('check pr against config', async () => {
         {filename: '.github/readme/synth.metadata/synth.metadata', sha: '1234'},
       ]);
 
-      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+      const prMatchesConfig = await checkPR.checkPRAgainstConfigV2(
         validPR,
         pr,
         octokit
