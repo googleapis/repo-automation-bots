@@ -20,7 +20,7 @@ import nock from 'nock';
 import {resolve} from 'path';
 import yaml from 'js-yaml';
 import sinon from 'sinon';
-import {ConfigurationV2, File} from '../src/interfaces';
+import {ConfigurationV2} from '../src/interfaces';
 
 const {Octokit} = require('@octokit/rest');
 
@@ -209,7 +209,7 @@ describe('check pr against config', async () => {
           {id: 2, user: {login: 'gcf-owl-bot[bot]'}},
         ]),
       ];
-      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+      const prMatchesConfig = await checkPR.checkPRAgainstConfigV2(
         validPR,
         pr,
         octokit
@@ -359,7 +359,7 @@ describe('check pr against config', async () => {
           },
         ]),
       ];
-      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+      const prMatchesConfig = await checkPR.checkPRAgainstConfigV2(
         validPR,
         pr,
         octokit
