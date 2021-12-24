@@ -76,7 +76,7 @@ const typeMap = [
  * @param octokit the Octokit instance on which to make calls to the Github API
  * @returns true if PR matches config appropriately, false if not
  */
-export async function checkPRAgainstConfig(
+export async function checkPRAgainstConfigV2(
   config: ConfigurationV2,
   pr: PullRequestEvent,
   octokit: Octokit

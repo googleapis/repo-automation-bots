@@ -138,7 +138,7 @@ describe('check pr against config', async () => {
         'pull_request_opened_fork'
       ));
 
-      await checkPR.checkPRAgainstConfig(validPR, pr, octokit);
+      await checkPR.checkPRAgainstConfigV2(validPR, pr, octokit);
 
       scopes.forEach(scope => scope.done());
     });
@@ -172,7 +172,7 @@ describe('check pr against config', async () => {
         ]),
       ];
 
-      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+      const prMatchesConfig = await checkPR.checkPRAgainstConfigV2(
         validPR,
         pr,
         octokit
@@ -248,7 +248,7 @@ describe('check pr against config', async () => {
         ]),
       ];
 
-      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+      const prMatchesConfig = await checkPR.checkPRAgainstConfigV2(
         validPR,
         pr,
         octokit
@@ -292,7 +292,7 @@ describe('check pr against config', async () => {
         ]),
       ];
 
-      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+      const prMatchesConfig = await checkPR.checkPRAgainstConfigV2(
         validPR,
         pr,
         octokit
@@ -321,7 +321,7 @@ describe('check pr against config', async () => {
         ]),
       ];
 
-      const prMatchesConfig = await checkPR.checkPRAgainstConfig(
+      const prMatchesConfig = await checkPR.checkPRAgainstConfigV2(
         validPR,
         pr,
         octokit
