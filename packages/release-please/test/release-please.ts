@@ -180,7 +180,6 @@ describe('ReleasePleaseBot', () => {
       });
 
       it('should allow overriding the release strategy from configuration', async () => {
-        sandbox.stub(api, 'getRepositoryDefaultBranch').resolves('master');
         getConfigStub.resolves(loadConfig('ruby_release.yml'));
         await probot.receive(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -200,7 +199,6 @@ describe('ReleasePleaseBot', () => {
       });
 
       it('should allow overriding the package-name from configuration', async () => {
-        sandbox.stub(api, 'getRepositoryDefaultBranch').resolves('master');
         getConfigStub.resolves(
           loadConfig('ruby_release_alternate_pkg_name.yml')
         );
@@ -274,7 +272,6 @@ describe('ReleasePleaseBot', () => {
       });
 
       it('should allow an empty config file with the defaults', async () => {
-        sandbox.stub(api, 'getRepositoryDefaultBranch').resolves('master');
         getConfigStub.resolves({});
         await probot.receive(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -286,7 +283,6 @@ describe('ReleasePleaseBot', () => {
       });
 
       it('should allow configuring minor bump for breaking change pre 1.0', async () => {
-        sandbox.stub(api, 'getRepositoryDefaultBranch').resolves('master');
         getConfigStub.resolves(loadConfig('minor_pre_major.yml'));
         await probot.receive(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -306,7 +302,6 @@ describe('ReleasePleaseBot', () => {
       });
 
       it('should detect the default branch if not specified in configuration', async () => {
-        sandbox.stub(api, 'getRepositoryDefaultBranch').resolves('master');
         getConfigStub.resolves(
           loadConfig('release_type_no_primary_branch.yml')
         );
@@ -354,7 +349,6 @@ describe('ReleasePleaseBot', () => {
       });
 
       it('should build a release PR', async () => {
-        sandbox.stub(api, 'getRepositoryDefaultBranch').resolves('master');
         getConfigStub.resolves(loadConfig('manifest.yml'));
         await probot.receive(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -379,7 +373,6 @@ describe('ReleasePleaseBot', () => {
       });
 
       it('should ignore the repo language not being supported', async () => {
-        sandbox.stub(api, 'getRepositoryDefaultBranch').resolves('master');
         payload = require(resolve(
           fixturesPath,
           './push_to_master_weird_language'

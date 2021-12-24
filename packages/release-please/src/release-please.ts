@@ -146,7 +146,8 @@ async function getRepositoryDefaultBranch(
 async function getConfigWithDefaultBranch(
   owner: string,
   repo: string,
-  octokit: OctokitType
+  octokit: OctokitType,
+  defaultBranch?: string
 ): Promise<ConfigurationOptions | null> {
   const config = await getConfig<ConfigurationOptions>(
     octokit,
@@ -156,11 +157,8 @@ async function getConfigWithDefaultBranch(
     {schema: schema}
   );
   if (config && !config.primaryBranch) {
-    config.primaryBranch = await api.getRepositoryDefaultBranch(
-      owner,
-      repo,
-      octokit
-    );
+    config.primaryBranch =
+      defaultBranch || (await getRepositoryDefaultBranch(owner, repo, octokit));
   }
   return config;
 }
@@ -249,7 +247,8 @@ const handler = (app: Probot) => {
     const remoteConfiguration = await getConfigWithDefaultBranch(
       owner,
       repo,
-      context.octokit
+      context.octokit,
+      context.payload.repository.default_branch
     );
 
     // If no configuration is specified,
@@ -386,7 +385,8 @@ const handler = (app: Probot) => {
     const remoteConfiguration = await getConfigWithDefaultBranch(
       owner,
       repo,
-      context.octokit
+      context.octokit,
+      context.payload.repository.default_branch
     );
 
     // If no configuration is specified,
