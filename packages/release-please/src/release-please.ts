@@ -189,6 +189,7 @@ async function buildManifest(
   configuration: BranchConfiguration
 ): Promise<Manifest> {
   if (configuration.manifest) {
+    logger.info('building from manifest file');
     return await Manifest.fromManifest(github, configuration.branch);
   }
 
@@ -227,7 +228,7 @@ async function buildManifest(
     // signoff: undefined,
     // manifestPath: undefined,
     labels: configuration.releaseLabels,
-    releaseLabels: configuration.releaseLabels,
+    releaseLabels: configuration.releaseLabel?.split(','),
   };
   return await Manifest.fromConfig(
     github,
@@ -346,53 +347,6 @@ const handler = (app: Probot) => {
       err.message = `Failed to sync the labels: ${err.message}`;
       logger.error(err);
     }
-
-    const configuration = {
-      ...DEFAULT_CONFIGURATION,
-      ...remoteConfiguration,
-    };
-
-    // use gcf-logger as logger for release-please
-    setLogger(logger);
-
-    logger.info(
-      `schedule.repository (${repoUrl}, ${configuration.primaryBranch})`
-    );
-    const defaultBranchConfiguration = {
-      ...configuration,
-      ...{branch: configuration.primaryBranch},
-    };
-
-    // get the repository language
-    const repository = await context.octokit.repos.get(context.repo());
-    const repoLanguage = repository.data.language;
-
-    const github = await buildGitHub(
-      owner,
-      repo,
-      context.octokit as GitHubAPI,
-      context.payload.repository.default_branch
-    );
-    const manifest = await buildManifest(
-      github,
-      repoLanguage,
-      defaultBranchConfiguration
-    );
-
-    await Runner.createPullRequests(manifest);
-
-    if (!configuration.branches) {
-      return;
-    }
-
-    await Promise.all(
-      configuration.branches.map(branchConfiguration => {
-        logger.info(
-          `schedule.repository (${repoUrl}, ${branchConfiguration.branch})`
-        );
-        return Runner.createPullRequests(manifest);
-      })
-    );
   });
 
   app.on('pull_request.labeled', async context => {
