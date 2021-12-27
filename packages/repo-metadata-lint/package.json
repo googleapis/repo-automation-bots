@@ -34,14 +34,14 @@
     "gaxios": "^4.3.2",
     "gcf-utils": "^13.1.0",
     "jsonwebtoken": "^8.5.1",
-    "yargs": "^17.3.0"
+    "yargs": "^17.3.1"
   },
   "devDependencies": {
     "@octokit/types": "^6.34.0",
     "@types/mocha": "^9.0.0",
-    "@types/node": "^17.0.1",
+    "@types/node": "^17.0.5",
     "@types/sinon": "^10.0.6",
-    "@types/yargs": "^17.0.7",
+    "@types/yargs": "^17.0.8",
     "c8": "^7.10.0",
     "cross-env": "^7.0.3",
     "gts": "^3.1.0",
