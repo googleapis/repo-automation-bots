@@ -165,7 +165,7 @@ describe('ReleasePleaseBot', () => {
         );
 
         sinon.assert.calledOnce(createPullRequestsStub);
-        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnce(createReleasesStub);
       });
 
       it('should ignore if the branch is not the configured primary branch', async () => {
