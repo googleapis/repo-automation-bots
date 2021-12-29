@@ -285,20 +285,6 @@ const handler = (app: Probot) => {
       branchConfiguration
     );
 
-    try {
-      await Runner.createPullRequests(manifest);
-    } catch (e) {
-      if (e instanceof Errors.ConfigurationError) {
-        // In the future, this could raise an issue against the
-        // installed repository
-        logger.warn(e);
-        return;
-      } else {
-        // re-raise
-        throw e;
-      }
-    }
-
     // release-please can handle creating a release on GitHub, we opt not to do
     // this for our repos that have autorelease enabled.
     if (branchConfiguration.handleGHRelease) {
@@ -313,6 +299,20 @@ const handler = (app: Probot) => {
         } else {
           throw e;
         }
+      }
+    }
+
+    try {
+      await Runner.createPullRequests(manifest);
+    } catch (e) {
+      if (e instanceof Errors.ConfigurationError) {
+        // In the future, this could raise an issue against the
+        // installed repository
+        logger.warn(e);
+        return;
+      } else {
+        // re-raise
+        throw e;
       }
     }
   });
