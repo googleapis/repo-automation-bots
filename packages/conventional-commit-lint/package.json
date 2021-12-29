@@ -29,8 +29,8 @@
     "lint": "gts check"
   },
   "dependencies": {
-    "@commitlint/config-conventional": "^15.0.0",
-    "@commitlint/lint": "^15.0.0",
+    "@commitlint/config-conventional": "^16.0.0",
+    "@commitlint/lint": "^16.0.0",
     "@octokit/openapi-types": "^11.2.0",
     "gcf-utils": "^13.1.0"
   },
