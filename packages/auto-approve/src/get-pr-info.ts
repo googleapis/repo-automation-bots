@@ -165,3 +165,18 @@ export async function getFileContent(
     `${owner}/${repo}/${path} is a folder, cannot get file contents`
   );
 }
+
+export async function listCommitsOnAPR(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  octokit: Octokit
+) {
+  const commits = await octokit.paginate(await octokit.pulls.listCommits, {
+    owner,
+    repo,
+    pull_number: prNumber,
+  });
+
+  return commits;
+}

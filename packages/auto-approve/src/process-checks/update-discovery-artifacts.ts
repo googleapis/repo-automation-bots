@@ -16,7 +16,6 @@ import {LanguageRule, File, Process} from '../interfaces';
 import {
   checkAuthor,
   checkTitleOrBody,
-  checkFileCount,
   checkFilePathsMatch,
   reportIndividualChecks,
 } from '../utils-for-pr-checking';
@@ -26,7 +25,6 @@ export class UpdateDiscoveryArtifacts extends Process implements LanguageRule {
   classRule: {
     author: string;
     titleRegex?: RegExp;
-    maxFiles: number;
     fileNameRegex?: RegExp[];
     fileRules?: [
       {
@@ -63,7 +61,6 @@ export class UpdateDiscoveryArtifacts extends Process implements LanguageRule {
       (this.classRule = {
         author: 'yoshi-code-bot',
         titleRegex: /^chore: Update discovery artifacts/,
-        maxFiles: 2,
         fileNameRegex: [
           /^docs\/dyn\/index\.md$/,
           /^docs\/dyn\/.*\.html$/,
@@ -83,11 +80,6 @@ export class UpdateDiscoveryArtifacts extends Process implements LanguageRule {
       this.classRule.titleRegex
     );
 
-    const fileCountMatch = checkFileCount(
-      this.incomingPR.fileCount,
-      this.classRule.maxFiles
-    );
-
     const filePatternsMatch = checkFilePathsMatch(
       this.incomingPR.changedFiles.map(x => x.filename),
       this.classRule.fileNameRegex
@@ -100,14 +92,12 @@ export class UpdateDiscoveryArtifacts extends Process implements LanguageRule {
         'fileCountMatches',
         'filePatternsMatch',
       ],
-      [authorshipMatches, titleMatches, fileCountMatch, filePatternsMatch],
+      [authorshipMatches, titleMatches, filePatternsMatch],
       this.incomingPR.repoOwner,
       this.incomingPR.repoName,
       this.incomingPR.prNumber
     );
 
-    return (
-      authorshipMatches && titleMatches && fileCountMatch && filePatternsMatch
-    );
+    return authorshipMatches && titleMatches && filePatternsMatch;
   }
 }

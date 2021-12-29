@@ -31,6 +31,9 @@ export const DEFAULT_DAYS_TO_STALE = 60;
 // The default prefix for all stale labels
 export const STALE_PREFIX = 'stale:';
 
+// The default prefix for all pull request size labels
+export const SIZE_PREFIX = 'size:';
+
 // The label for old pull requests
 export const OLD_LABEL = 'old';
 
@@ -48,7 +51,55 @@ export const DEFAULT_CONFIGS = {
   staleness: {
     pullrequest: false,
   },
+  requestsize: {
+    enabled: false,
+  },
 };
+
+/**
+ * The list of all labels used to mark pull request size.
+ * Given a fact that by default pull request size labeling feature is off,
+ * we will update those labels in repo only when configuration is enabled
+ * Currently there are following labels available:
+ *   "size: xs" for pull request with less than 50 changes.
+ *   "size: s" for pull request with less than 250 changes.
+ *   "size: m" for pull request with less than 1000 changes.
+ *   "size: l" for pull request with less than 1250 changes.
+ *   "size: xl" for pull request with less than 1500 changes.
+ *   "size: xxl" for pull request with more than 1500 changes.
+ */
+export const PULL_REQUEST_SIZE_LABELS = [
+  {
+    name: 'size: xs',
+    description: 'Pull request size is extra small.',
+    color: '2deb01',
+  },
+  {
+    name: 'size: s',
+    description: 'Pull request size is small.',
+    color: '2cc785',
+  },
+  {
+    name: 'size: m',
+    description: 'Pull request size is medium.',
+    color: '5d743d',
+  },
+  {
+    name: 'size: l',
+    description: 'Pull request size is large.',
+    color: 'd65692',
+  },
+  {
+    name: 'size: xl',
+    description: 'Pull request size is extra large.',
+    color: '912925',
+  },
+  {
+    name: 'size: xxl',
+    description: 'Pull request size is extra extra large.',
+    color: 'd22b5f',
+  },
+];
 
 /**
  * Checks whether the intended label already exists
@@ -95,6 +146,24 @@ export function isExpiredByDays(time: string, limit: number) {
   return diffInDays > limit;
 }
 
+/**
+ * Checks whether the intended label already exists by given prefix
+ */
+export function getPullRequestSize(changes: number): string {
+  if (changes >= 1500) {
+    return 'xxl';
+  } else if (changes >= 1250) {
+    return 'xl';
+  } else if (changes >= 1000) {
+    return 'l';
+  } else if (changes >= 250) {
+    return 'm';
+  } else if (changes >= 50) {
+    return 's';
+  }
+  return 'xs';
+}
+
 // *** Helper functions for product type labels ***
 export interface PathConfig {
   [index: string]: string | PathConfig;
@@ -115,6 +184,10 @@ export interface StaleConfig {
   extraold?: number;
 }
 
+export interface PullRequestSizeConfig {
+  enabled?: boolean;
+}
+
 export interface Config {
   enabled?: boolean;
   product?: boolean;
@@ -125,6 +198,7 @@ export interface Config {
   };
   language?: LanguageConfig;
   staleness?: StaleConfig;
+  requestsize?: PullRequestSizeConfig;
 }
 
 export interface Label {
