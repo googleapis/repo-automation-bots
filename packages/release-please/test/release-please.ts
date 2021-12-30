@@ -301,6 +301,25 @@ describe('ReleasePleaseBot', () => {
         );
       });
 
+      it('should allow configuring patch bump for feature changes pre 1.0', async () => {
+        getConfigStub.resolves(loadConfig('patch_pre_major.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          fromConfigStub,
+          sinon.match.instanceOf(GitHub),
+          'master',
+          sinon.match.has('bumpPatchForMinorPreMajor', true),
+          sinon.match.any,
+          undefined
+        );
+      });
+
       it('should detect the default branch if not specified in configuration', async () => {
         getConfigStub.resolves(
           loadConfig('release_type_no_primary_branch.yml')
@@ -328,6 +347,123 @@ describe('ReleasePleaseBot', () => {
           sinon.match.instanceOf(GitHub),
           'master',
           sinon.match.has('extraFiles', ['src/com/google/foo/Version.java']),
+          sinon.match.any,
+          undefined
+        );
+      });
+
+      it('should allow configuring draft releases', async () => {
+        getConfigStub.resolves(loadConfig('draft_releases.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          fromConfigStub,
+          sinon.match.instanceOf(GitHub),
+          'master',
+          sinon.match.has('draft', true),
+          sinon.match.any,
+          undefined
+        );
+      });
+
+      it('should allow configuring draft pull requests', async () => {
+        getConfigStub.resolves(loadConfig('draft_pull_requests.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          fromConfigStub,
+          sinon.match.instanceOf(GitHub),
+          'master',
+          sinon.match.has('draftPullRequest', true),
+          sinon.match.any,
+          undefined
+        );
+      });
+
+      it('should allow configuring pull request title', async () => {
+        getConfigStub.resolves(loadConfig('custom_title.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          fromConfigStub,
+          sinon.match.instanceOf(GitHub),
+          'master',
+          sinon.match.has(
+            'pullRequestTitlePattern',
+            'chore: release ${component} ${version}'
+          ),
+          sinon.match.any,
+          undefined
+        );
+      });
+
+      it('should allow configuring version file', async () => {
+        getConfigStub.resolves(loadConfig('version_file.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          fromConfigStub,
+          sinon.match.instanceOf(GitHub),
+          'master',
+          sinon.match.has('versionFile', 'VERSION'),
+          sinon.match.any,
+          undefined
+        );
+      });
+
+      it('should allow configuring versioning strategy', async () => {
+        getConfigStub.resolves(loadConfig('versioning.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          fromConfigStub,
+          sinon.match.instanceOf(GitHub),
+          'master',
+          sinon.match.has('versioning', 'always-bump-patch'),
+          sinon.match.any,
+          undefined
+        );
+      });
+
+      it('should allow configuring changelog notes type', async () => {
+        getConfigStub.resolves(loadConfig('changelog_type.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          fromConfigStub,
+          sinon.match.instanceOf(GitHub),
+          'master',
+          sinon.match.has('changelogType', 'github'),
           sinon.match.any,
           undefined
         );
@@ -386,6 +522,24 @@ describe('ReleasePleaseBot', () => {
         sinon.assert.calledOnce(createPullRequestsStub);
         sinon.assert.notCalled(createReleasesStub);
         sinon.assert.calledOnce(fromManifestStub);
+      });
+
+      it('should allow customizing the manifest config file and path', async () => {
+        getConfigStub.resolves(loadConfig('manifest_custom_paths.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          fromManifestStub,
+          sinon.match.instanceOf(GitHub),
+          'master',
+          'path/to/config.json',
+          'path/to/manifest.json'
+        );
       });
     });
   });

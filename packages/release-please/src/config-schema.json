@@ -19,22 +19,39 @@
                 },
                 "releaseType": {
                     "enum": [
+                        "dart",
+                        "elixir",
                         "go",
                         "go-yoshi",
+                        "helm",
                         "java-bom",
                         "java-lts",
                         "java-backport",
                         "java-yoshi",
+                        "krm-blueprint",
                         "node",
                         "ocaml",
+                        "php",
                         "php-yoshi",
                         "python",
                         "ruby",
                         "ruby-yoshi",
                         "rust",
                         "simple",
-                        "terraform-module",
-                        "helm"
+                        "terraform-module"
+                    ]
+                },
+                "versioning": {
+                    "enum": [
+                        "default",
+                        "always-bump-patch",
+                        "service-pack"
+                    ]
+                },
+                "changelogType": {
+                    "enum": [
+                        "default",
+                        "github"
                     ]
                 },
                 "packageName": {
@@ -46,6 +63,9 @@
                 "bumpMinorPreMajor": {
                     "type": "boolean"
                 },
+                "bumpPatchForMinorPreMajor": {
+                    "type": "boolean"
+                },
                 "path": {
                     "type": "string"
                 },
@@ -55,6 +75,12 @@
                 "manifest": {
                     "type": "boolean"
                 },
+                "manifestFile": {
+                    "type": "string"
+                },
+                "manifestConfig": {
+                    "type": "string"
+                },
                 "extraFiles": {
                     "type": "array",
                     "items": {
@@ -62,6 +88,21 @@
                     }
                 },
                 "releaseLabel": {
+                    "type": "string"
+                },
+                "releaseAs": {
+                    "type": "string"
+                },
+                "draft": {
+                    "type": "boolean"
+                },
+                "draftPullRequest": {
+                    "type": "boolean"
+                },
+                "pullRequestTitlePattern": {
+                    "type": "string"
+                },
+                "versionFile": {
                     "type": "string"
                 }
             }
@@ -76,12 +117,21 @@
         "packageName": true,
         "handleGHRelease": true,
         "bumpMinorPreMajor": true,
+        "bumpPatchForMinorPreMajor": true,
         "path": true,
         "changelogPath": true,
         "manifest": true,
+        "manifestFile": true,
+        "manifestConfig": true,
         "extraFiles": true,
         "releaseLabel": true,
-        "disableFailureChecker": true
+        "draft": true,
+        "draftPullRequest": true,
+        "pullRequestTitlePattern": true,
+        "versionFile": true,
+        "disableFailureChecker": true,
+        "versioning": true,
+        "changelogType": true
     },
     "allOf": [
         { "$ref": "#/definitions/BranchOptions"},
@@ -106,12 +156,21 @@
                             "packageName": true,
                             "handleGHRelease": true,
                             "bumpMinorPreMajor": true,
+                            "bumpPatchForMinorPreMajor": true,
                             "path": true,
                             "changelogPath": true,
                             "manifest": true,
+                            "manifestFile": true,
+                            "manifestConfig": true,
                             "extraFiles": true,
                             "releaseLabel": true,
-                            "disableFailureChecker": true
+                            "draft": true,
+                            "draftPullRequest": true,
+                            "pullRequestTitlePattern": true,
+                            "versionFile": true,
+                            "disableFailureChecker": true,
+                            "versioning": true,
+                            "changelogType": true
                         },
                         "allOf": [
                             { "$ref": "#/definitions/BranchOptions"},

@@ -188,7 +188,12 @@ async function buildManifest(
 ): Promise<Manifest> {
   if (configuration.manifest) {
     logger.info('building from manifest file');
-    return await Manifest.fromManifest(github, configuration.branch);
+    return await Manifest.fromManifest(
+      github,
+      configuration.branch,
+      configuration.manifestConfig,
+      configuration.manifestFile
+    );
   }
 
   const releaseType = configuration.releaseType
@@ -200,31 +205,22 @@ async function buildManifest(
 
   const releaserConfig: ReleaserConfig = {
     releaseType,
-    versioning: 'default',
+    versioning: configuration.versioning,
     bumpMinorPreMajor: configuration.bumpMinorPreMajor,
-    // bumpPatchForMinorPreMajor: undefined,
-    // releaseAs: undefined,
-    // skipGithubRelease: undefined,
-    // draft: undefined,
-    // draftPullRequest: undefined,
+    bumpPatchForMinorPreMajor: configuration.bumpPatchForMinorPreMajor,
+    draft: configuration.draft,
+    draftPullRequest: configuration.draftPullRequest,
     packageName,
     includeComponentInTag: configuration.monorepoTags,
-    // pullRequestTitlePattern: undefined,
-    // changelogSections: undefined,
+    pullRequestTitlePattern: configuration.pullRequestTitlePattern,
+    // changelogSections: configuration.changelogSections,
     changelogPath: configuration.changelogPath,
-    changelogType: 'default',
-    // versionFile: undefined,
+    changelogType: configuration.changelogType,
+    versionFile: configuration.versionFile,
     extraFiles: configuration.extraFiles,
   };
   const manifestOverrides: ManifestOptions = {
-    // bootstrapSha: undefined,
-    // lastReleaseSha: undefined,
-    // alwaysLinkLocal: undefined,
-    // separatePullRequests: undefined,
-    // plugins: undefined,
-    // fork: undefined,
-    // signoff: undefined,
-    // manifestPath: undefined,
+    manifestPath: configuration.manifestFile,
     labels: configuration.releaseLabels,
     releaseLabels: configuration.releaseLabel?.split(','),
   };
