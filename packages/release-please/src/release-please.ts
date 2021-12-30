@@ -81,34 +81,26 @@ function releaseTypeFromRepoLanguage(language: string | null): ReleaseType {
 function findBranchConfiguration(
   branch: string,
   config: ConfigurationOptions
-): BranchConfiguration | null {
+): BranchConfiguration[] {
+  const configurations: BranchConfiguration[] = [];
+
   // look at primaryBranch first
   if (branch === config.primaryBranch) {
-    return {
+    configurations.push({
       ...config,
       ...{branch},
-    };
-  }
-
-  if (!config.branches) {
-    return null;
-  }
-
-  try {
-    const found = config.branches.find(branchConfig => {
-      return branch === branchConfig.branch;
     });
-    if (found) {
-      return found;
-    }
-  } catch (e) {
-    const err = e as Error;
-    err.message =
-      `got an error finding the branch config: ${err.message},` +
-      `config: ${JSON.stringify(config)}`;
-    logger.error(err);
   }
-  return null;
+
+  if (config.branches) {
+    for (const branchConfig of config.branches) {
+      if (branch === branchConfig.branch) {
+        configurations.push(branchConfig);
+      }
+    }
+  }
+
+  return configurations;
 }
 
 /**
@@ -258,16 +250,15 @@ const handler = (app: Probot) => {
       ...remoteConfiguration,
     };
 
-    const branchConfiguration = findBranchConfiguration(branch, configuration);
-    if (!branchConfiguration) {
-      logger.info(`Did not find configuration for branch: ${branch}`);
-      return;
-    }
-
     // use gcf-logger as logger for release-please
     setLogger(logger);
 
-    logger.info(`push (${repoUrl})`);
+    logger.info(`push (${repoUrl}, ${branch})`);
+    const branchConfigurations = findBranchConfiguration(branch, configuration);
+
+    if (branchConfigurations.length === 0) {
+      return;
+    }
 
     const github = await buildGitHub(
       owner,
@@ -275,40 +266,45 @@ const handler = (app: Probot) => {
       context.octokit as GitHubAPI,
       context.payload.repository.default_branch
     );
-    const manifest = await buildManifest(
-      github,
-      repoLanguage,
-      branchConfiguration
-    );
 
-    // release-please can handle creating a release on GitHub, we opt not to do
-    // this for our repos that have autorelease enabled.
-    if (branchConfiguration.handleGHRelease) {
-      logger.info(`handling GitHub release for (${repoUrl})`);
-      try {
-        await Runner.createReleases(manifest);
-      } catch (e) {
-        if (e instanceof Errors.DuplicateReleaseError) {
-          // In the future, this could raise an issue against the
-          // installed repository
-          logger.warn('Release tag already exists, skipping...', e);
-        } else {
-          throw e;
+    for (const branchConfiguration of branchConfigurations) {
+      logger.debug(branchConfiguration);
+
+      const manifest = await buildManifest(
+        github,
+        repoLanguage,
+        branchConfiguration
+      );
+
+      // release-please can handle creating a release on GitHub, we opt not to do
+      // this for our repos that have autorelease enabled.
+      if (branchConfiguration.handleGHRelease) {
+        logger.info(`handling GitHub release for (${repoUrl})`);
+        try {
+          await Runner.createReleases(manifest);
+        } catch (e) {
+          if (e instanceof Errors.DuplicateReleaseError) {
+            // In the future, this could raise an issue against the
+            // installed repository
+            logger.warn('Release tag already exists, skipping...', e);
+          } else {
+            throw e;
+          }
         }
       }
-    }
 
-    try {
-      await Runner.createPullRequests(manifest);
-    } catch (e) {
-      if (e instanceof Errors.ConfigurationError) {
-        // In the future, this could raise an issue against the
-        // installed repository
-        logger.warn(e);
-        return;
-      } else {
-        // re-raise
-        throw e;
+      try {
+        await Runner.createPullRequests(manifest);
+      } catch (e) {
+        if (e instanceof Errors.ConfigurationError) {
+          // In the future, this could raise an issue against the
+          // installed repository
+          logger.warn(e);
+          return;
+        } else {
+          // re-raise
+          throw e;
+        }
       }
     }
   });
@@ -396,13 +392,11 @@ const handler = (app: Probot) => {
       ...remoteConfiguration,
     };
 
-    const branchConfiguration = findBranchConfiguration(branch, configuration);
-    if (!branchConfiguration) {
-      logger.info(`Did not find configuration for branch: ${branch}`);
+    logger.info(`pull_request.labeled (${repoUrl}, ${branch})`);
+    const branchConfigurations = findBranchConfiguration(branch, configuration);
+    if (branchConfigurations.length === 0) {
       return;
     }
-
-    logger.info(`pull_request.labeled (${repoUrl})`);
 
     const github = await buildGitHub(
       owner,
@@ -410,12 +404,16 @@ const handler = (app: Probot) => {
       context.octokit as GitHubAPI,
       context.payload.repository.default_branch
     );
-    const manifest = await buildManifest(
-      github,
-      repoLanguage,
-      branchConfiguration
-    );
-    await Runner.createPullRequests(manifest);
+
+    for (const branchConfiguration of branchConfigurations) {
+      logger.debug(branchConfiguration);
+      const manifest = await buildManifest(
+        github,
+        repoLanguage,
+        branchConfiguration
+      );
+      await Runner.createPullRequests(manifest);
+    }
   });
 
   app.on('release.created', async context => {

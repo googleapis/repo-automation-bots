@@ -1,0 +1,9 @@
+primaryBranch: master
+releaseType: node
+path: packages/node-pkg
+packageName: node
+branches:
+- branch: master
+  releaseType: java-yoshi
+  path: packages/java-pkg
+  packageName: java

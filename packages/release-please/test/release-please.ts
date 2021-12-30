@@ -468,6 +468,34 @@ describe('ReleasePleaseBot', () => {
           undefined
         );
       });
+
+      it('should allow configuring multiple times for a branch', async () => {
+        getConfigStub.resolves(loadConfig('multiple.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledTwice(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledTwice(fromConfigStub);
+        sinon.assert.calledWith(
+          fromConfigStub,
+          sinon.match.instanceOf(GitHub),
+          'master',
+          sinon.match.has('releaseType', 'node'),
+          sinon.match.any,
+          'packages/node-pkg'
+        );
+        sinon.assert.calledWith(
+          fromConfigStub,
+          sinon.match.instanceOf(GitHub),
+          'master',
+          sinon.match.has('releaseType', 'java-yoshi'),
+          sinon.match.any,
+          'packages/java-pkg'
+        );
+      });
     });
 
     describe('for manifest releases', () => {
