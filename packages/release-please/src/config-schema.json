@@ -90,9 +90,6 @@
                 "releaseLabel": {
                     "type": "string"
                 },
-                "releaseAs": {
-                    "type": "string"
-                },
                 "draft": {
                     "type": "boolean"
                 },
