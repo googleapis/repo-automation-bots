@@ -14,9 +14,11 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot} from 'probot';
+// eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/request-error';
 import {logger} from 'gcf-utils';
 import {getConfig} from '@google-automations/bot-config-utils';
-import {parseCherryPickComment, cherryPickCommit} from './cherry-pick';
+import {parseCherryPickComment, cherryPickAsPullRequest} from './cherry-pick';
 
 const CONFIGURATION_FILE_PATH = 'cherry-pick-bot.yml';
 
@@ -45,6 +47,11 @@ export = (app: Probot) => {
       return;
     }
 
+    if (remoteConfig.enabled === false) {
+      logger.debug(`ignoring explicitly disabled repository ${owner}/${repo}`);
+      return;
+    }
+
     if (
       !ALLOWED_COMMENTER_ASSOCIATIONS.has(
         context.payload.comment.author_association
@@ -65,26 +72,38 @@ export = (app: Probot) => {
     logger.info(
       `${context.payload.comment.user.login} requested cherry-pick to branch ${targetBranch}`
     );
-    const pullRequest = (
-      await context.octokit.pulls.get(
+
+    let pullRequest: {sha: string | null; number: number};
+    try {
+      const {data: pullData} = await context.octokit.pulls.get(
         context.repo({
           pull_number: context.payload.issue.number,
         })
-      )
-    ).data;
+      );
+      pullRequest = {
+        sha: pullData.merge_commit_sha,
+        number: pullData.number,
+      };
+    } catch (e) {
+      if (e instanceof RequestError && e.status === 404) {
+        logger.warn('requested cherry-pick on issue instead of pull request');
+        return;
+      }
+      throw e;
+    }
 
-    if (!pullRequest.merge_commit_sha) {
+    if (!pullRequest.sha) {
       logger.warn(
         `pull request ${pullRequest.number} is not merged, skipping.`
       );
       return;
     }
 
-    await cherryPickCommit(
+    await cherryPickAsPullRequest(
       context.octokit,
       owner,
       repo,
-      pullRequest.merge_commit_sha,
+      pullRequest.sha,
       targetBranch
     );
   });

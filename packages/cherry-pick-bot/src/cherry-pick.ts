@@ -25,7 +25,7 @@ interface PullRequest {
   body: string | null;
 }
 
-const COMMENT_REGEX = /^\/cherry-pick\s+(?<branch>\w+)/;
+const COMMENT_REGEX = /^\/cherry-pick\s+(?<branch>\w[-\w]*)/;
 
 /**
  * Parse a comment string to see if it matches the expected cherry-pick
@@ -36,7 +36,7 @@ const COMMENT_REGEX = /^\/cherry-pick\s+(?<branch>\w+)/;
  *   or null if it does not match
  */
 export function parseCherryPickComment(comment: string): string | null {
-  const match = comment.match(COMMENT_REGEX);
+  const match = comment.trim().match(COMMENT_REGEX);
   if (match?.groups) {
     return match.groups.branch;
   }
@@ -51,8 +51,9 @@ export function parseCherryPickComment(comment: string): string | null {
  * @param {string} repo The repository name
  * @param {string} commitSha The commit to cherry-pick
  * @param {string} targetBranch The target branch of the pull request
+ * @returns {PullRequest}
  */
-export async function cherryPickPullRequest(
+export async function cherryPickAsPullRequest(
   octokit: OctokitType,
   owner: string,
   repo: string,

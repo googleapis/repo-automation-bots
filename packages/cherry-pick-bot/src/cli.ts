@@ -19,7 +19,7 @@ import {logger} from 'gcf-utils';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
 
-import {cherryPickPullRequest} from './cherry-pick';
+import {cherryPickAsPullRequest} from './cherry-pick';
 
 interface Args {
   commit: string;
@@ -63,7 +63,7 @@ const sync: yargs.CommandModule<{}, Args> = {
     const octokit = new Octokit({
       auth: argv['github-token'],
     });
-    const pullRequest = await cherryPickPullRequest(
+    const pullRequest = await cherryPickAsPullRequest(
       octokit,
       owner,
       repo,
