@@ -12,13 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Manifest} from 'release-please';
+import {ReleasePR, GitHubRelease} from 'release-please';
+import {Manifest} from 'release-please/build/src/manifest';
 
 export class Runner {
-  static createPullRequests = async (manifest: Manifest) => {
-    await manifest.createPullRequests();
+  static runner = async (pr: ReleasePR) => {
+    await pr.run();
   };
-  static createReleases = async (manifest: Manifest) => {
-    await manifest.createReleases();
+  static releaser = async (release: GitHubRelease) => {
+    await release.run();
+  };
+  static manifest = async (manifest: Manifest) => {
+    await manifest.pullRequest();
+  };
+  static manifestRelease = async (manifest: Manifest) => {
+    await manifest.githubRelease();
   };
 }
