@@ -24,34 +24,53 @@ options:
 
 | Name                | Description                                        | Type       | Default                                                                               |
 | ------------------- | -------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------- |
-| `primaryBranch`     | The primary branch from which releases are started | `string`   | `master`                                                                              |
-| `releaseLabels`     | List of labels to add to the release PR.           | `string[]` | `null`                                                                                |
-| `releaseType`       | Release strategy                                   | `string`   | strategy detected from the repository's primary language                              |
-| `handleGHRelease`   | Release to GitHub                                  | `boolean`  | `false`                                                                               |
-| `bumpMinorPreMajor` | Bump minor for breaking changes before GA          | `boolean`  | default from underlying release strategy                                              |
-| `packageName`       | The name of the package to publish to publish to an upstream registry such as npm. | `string` | the repository name                                     |
-| `path`              | Create a release from a path other than the repository's root | `string` | the repository root                                                          |
-| `changelogPath`     | Path to the changelog to write releases notes to when creating a release | `string` | `CHANGELOG.md`                                                    |
-| `manifest`          | Whether or not this is a manifest release          | `boolean`  | `false`                                                                               |
-| `extraFiles`        | Additional files to track (if language supports it) | `string[]` | `[]`                                                                                 |
-| `branches`          | Additional release branches to track               | `BranchConfiguration[]` | `[]`                                                                     |
-| `releaseLabel`      | The label applied to pull request after creating the GitHub release | `string` | release-please default (`autorelease: tagged`)                         |
+| `primaryBranch` | The primary branch from which releases are started | `string` | `master` |
+| `releaseLabels` | List of labels to add to the release PR. | `string[]` | `null` |
+| `releaseType` | Release strategy | `string` | strategy detected from the repository's primary language |
+| `versioning` | Versioning strategy | `string` | `default` |
+| `handleGHRelease` | Release to GitHub | `boolean` | `false` |
+| `bumpMinorPreMajor` | Bump minor for breaking changes before GA | `boolean` | default from underlying release strategy |
+| `bumpPatchForMinorPreMajor` | Bump patch for feature changes before GA | `boolean` | default from underlying release strategy |
+| `packageName` | The name of the package to publish to publish to an upstream registry such as npm. | `string` | the repository name |
+| `path` | Create a release from a path other than the repository's root | `string` | the repository root |
+| `changelogPath` | Path to the changelog to write releases notes to when creating a release | `string` | `CHANGELOG.md` |
+| `changelogType` | Strategy for generating the changelog entries. One of `default` or `github` | `string` | `default` |
+| `manifest` | Whether or not this is a manifest release | `boolean`  | `false` |
+| `manifestConfig` | Path to the manifest config | `string` | `release-please-config.json` |
+| `manifestFile` | Path to the manifest file | `string` | `.release-please-manifest.json` |
+| `extraFiles` | Additional files to track (if language supports it) | `string[]` | `[]` |
+| `versionFile` | Path to the version file (if language supports it) | `string` | |
+| `branches` | Additional release branches to track | `BranchConfiguration[]` | `[]` |
+| `releaseLabel` | The label applied to pull request after creating the GitHub release | `string` | release-please default (`autorelease: tagged`) |
+| `draft` | Whether to create the release as a draft | `boolean` | `false` |
+| `draftPullRequest` | Whether to create the pull request as a draft | `boolean` | `false` |
+| `pullRequestTitlePattern` | Customize the pull request title | `string` | |
 
 `BranchConfiguration`:
 
 | Name                | Description                                        | Type       | Default                                                                               |
 | ------------------- | -------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------- |
-| `branch`            | The branch from which releases are started         | `string`   | required                                                                              |
-| `releaseLabels`     | List of labels to add to the release PR.           | `string[]` | `null`                                                                                |
-| `releaseType`       | Release strategy                                   | `string`   | strategy detected from the repository's primary language                              |
-| `handleGHRelease`   | Release to GitHub                                  | `boolean`  | `false`                                                                               |
-| `bumpMinorPreMajor` | Bump minor for breaking changes before GA          | `boolean`  | default from underlying release strategy                                              |
-| `packageName`       | The name of the package to publish to publish to an upstream registry such as npm. | `string` | the repository name                                     |
-| `path`              | Create a release from a path other than the repository's root | `string` | the repository root                                                          |
-| `changelogPath`     | Path to the changelog to write releases notes to when creating a release | `string` | `CHANGELOG.md`                                                    |
-| `manifest`          | Whether or not this is a manifest release          | `boolean`  | `false`                                                                               |
-| `extraFiles`        | Additional files to track (if language supports it) | `string[]` | `[]`                                                                                 |
-| `releaseLabel`      | The label applied to pull request after creating the GitHub release | `string` | release-please default (`autorelease: tagged`)                         |
+| `branch` | The branch from which releases are started | `string` | required |
+| `releaseLabels` | List of labels to add to the release PR. | `string[]` | `null` |
+| `releaseType` | Release strategy | `string` | strategy detected from the repository's primary language |
+| `versioning` | Versioning strategy | `string` | `default` |
+| `handleGHRelease` | Release to GitHub | `boolean` | `false` |
+| `bumpMinorPreMajor` | Bump minor for breaking changes before GA | `boolean` | default from underlying release strategy |
+| `bumpPatchForMinorPreMajor` | Bump patch for feature changes before GA | `boolean` | default from underlying release strategy |
+| `packageName` | The name of the package to publish to publish to an upstream registry such as npm. | `string` | the repository name |
+| `path` | Create a release from a path other than the repository's root | `string` | the repository root |
+| `changelogPath` | Path to the changelog to write releases notes to when creating a release | `string` | `CHANGELOG.md` |
+| `changelogType` | Strategy for generating the changelog entries. One of `default` or `github` | `string` | `default` |
+| `manifest` | Whether or not this is a manifest release | `boolean`  | `false` |
+| `manifestConfig` | Path to the manifest config | `string` | `release-please-config.json` |
+| `manifestFile` | Path to the manifest file | `string` | `.release-please-manifest.json` |
+| `extraFiles` | Additional files to track (if language supports it) | `string[]` | `[]` |
+| `versionFile` | Path to the version file (if language supports it) | `string` | |
+| `branches` | Additional release branches to track | `BranchConfiguration[]` | `[]` |
+| `releaseLabel` | The label applied to pull request after creating the GitHub release | `string` | release-please default (`autorelease: tagged`) |
+| `draft` | Whether to create the release as a draft | `boolean` | `false` |
+| `draftPullRequest` | Whether to create the pull request as a draft | `boolean` | `false` |
+| `pullRequestTitlePattern` | Customize the pull request title | `string` | |
 
 ### Usage
 
