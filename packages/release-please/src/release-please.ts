@@ -203,7 +203,7 @@ async function buildManifest(
     draft: configuration.draft,
     draftPullRequest: configuration.draftPullRequest,
     packageName,
-    includeComponentInTag: configuration.monorepoTags,
+    includeComponentInTag: !!configuration.monorepoTags,
     pullRequestTitlePattern: configuration.pullRequestTitlePattern,
     // changelogSections: configuration.changelogSections,
     changelogPath: configuration.changelogPath,

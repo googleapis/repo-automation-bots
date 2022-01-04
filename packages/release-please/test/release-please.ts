@@ -477,6 +477,44 @@ describe('ReleasePleaseBot', () => {
         );
       });
 
+      it('should allow configuring monorepo tags', async () => {
+        getConfigStub.resolves(loadConfig('monorepo_tags.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          fromConfigStub,
+          sinon.match.instanceOf(GitHub),
+          'master',
+          sinon.match.has('includeComponentInTag', true),
+          sinon.match.any,
+          undefined
+        );
+      });
+
+      it('should default monorepo tags to false', async () => {
+        getConfigStub.resolves(loadConfig('valid.yml'));
+        await probot.receive(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          {name: 'push', payload: payload as any, id: 'abc123'}
+        );
+
+        sinon.assert.calledOnce(createPullRequestsStub);
+        sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          fromConfigStub,
+          sinon.match.instanceOf(GitHub),
+          'master',
+          sinon.match.has('includeComponentInTag', false),
+          sinon.match.any,
+          undefined
+        );
+      });
+
       it('should allow configuring multiple times for a branch', async () => {
         getConfigStub.resolves(loadConfig('multiple.yml'));
         await probot.receive(
