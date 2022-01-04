@@ -45,7 +45,6 @@ options:
 | `draft` | Whether to create the release as a draft | `boolean` | `false` |
 | `draftPullRequest` | Whether to create the pull request as a draft | `boolean` | `false` |
 | `pullRequestTitlePattern` | Customize the pull request title | `string` | |
-| `monorepoTags` | Whether to include the component name in the release | `boolean` | `false |
 
 `BranchConfiguration`:
 
@@ -72,7 +71,6 @@ options:
 | `draft` | Whether to create the release as a draft | `boolean` | `false` |
 | `draftPullRequest` | Whether to create the pull request as a draft | `boolean` | `false` |
 | `pullRequestTitlePattern` | Customize the pull request title | `string` | |
-| `monorepoTags` | Whether to include the component name in the release | `boolean` | `false |
 
 ### Usage
 
