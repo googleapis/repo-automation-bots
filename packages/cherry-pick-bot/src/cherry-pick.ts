@@ -15,6 +15,8 @@
 import {logger} from 'gcf-utils';
 // eslint-disable-next-line node/no-extraneous-import
 import {Octokit} from '@octokit/rest';
+// eslint-disable-next-line node/no-extraneous-import
+import {RequestError} from '@octokit/request-error';
 
 type OctokitType = InstanceType<typeof Octokit>;
 
@@ -71,7 +73,13 @@ export async function cherryPickAsPullRequest(
   ).data.commit.sha;
 
   logger.debug(`creating new branch: ${newBranchName} from ${targetBranch}`);
-  await createRef(octokit, owner, repo, newBranchName, targetBranchHead);
+  await createOrUpdateRef(
+    octokit,
+    owner,
+    repo,
+    newBranchName,
+    targetBranchHead
+  );
 
   const newHeadSha = await cherryPickCommit(
     octokit,
@@ -130,7 +138,13 @@ export async function cherryPickCommit(
 
   const temporaryRefName = `temp-${targetBranch}`;
   logger.debug(`creating temporary ref: ${temporaryRefName}`);
-  await createRef(octokit, owner, repo, temporaryRefName, newBranchHeadSha);
+  await createOrUpdateRef(
+    octokit,
+    owner,
+    repo,
+    temporaryRefName,
+    newBranchHeadSha
+  );
 
   logger.debug(`fetching ${targetBranch} tree SHA`);
   const {
@@ -157,15 +171,17 @@ export async function cherryPickCommit(
     : undefined;
 
   // create sibiling commit
-  await octokit.git.createCommit({
+  await createCommit(
+    octokit,
     owner,
     repo,
+    commit.message,
+    commit.parents[0].sha,
+    newBranchHeadTree,
     author,
-    committer,
-    message: commit.message,
-    parents: [commit.parents[0].sha],
-    tree: newBranchHeadTree,
-  });
+    committer
+  );
+
   // merge
   logger.debug(`Merge ${commitSha} into ${temporaryRefName}`);
   const {
@@ -182,35 +198,22 @@ export async function cherryPickCommit(
     repo,
   });
   logger.debug('creating commit with different tree');
-  const {
-    data: {sha: newHeadSha},
-  } = await octokit.git.createCommit({
+  const newHeadSha = await createCommit(
+    octokit,
     owner,
     repo,
+    commit.message,
+    commit.parents[0].sha,
+    mergedTree,
     author,
-    committer,
-    message: commit.message,
-    parents: [commit.parents[0].sha],
-    tree: mergedTree,
-  });
+    committer
+  );
 
   logger.debug(`updating ref: ${newHeadSha}`);
-  await octokit.git.updateRef({
-    force: true,
-    owner,
-    repo,
-    ref: `heads/${temporaryRefName}`,
-    sha: newHeadSha,
-  });
+  await updateRef(octokit, owner, repo, temporaryRefName, newHeadSha);
 
   // update target branch ref to new cherry-picked commit
-  await octokit.git.updateRef({
-    force: true,
-    owner,
-    repo,
-    ref: `heads/${targetBranch}`,
-    sha: newHeadSha,
-  });
+  await updateRef(octokit, owner, repo, targetBranch, newHeadSha);
 
   // cleanup temporary ref
   await octokit.git.deleteRef({
@@ -220,6 +223,25 @@ export async function cherryPickCommit(
   });
 
   return newHeadSha;
+}
+
+async function createOrUpdateRef(
+  octokit: OctokitType,
+  owner: string,
+  repo: string,
+  ref: string,
+  sha: string
+) {
+  try {
+    await createRef(octokit, owner, repo, ref, sha);
+  } catch (e) {
+    if (e instanceof RequestError && e.status === 422) {
+      logger.warn(`${ref} already exists, updating instead`);
+      await updateRef(octokit, owner, repo, ref, sha);
+      return;
+    }
+    throw e;
+  }
 }
 
 async function createRef(
@@ -235,4 +257,44 @@ async function createRef(
     repo,
     sha,
   });
+}
+
+async function updateRef(
+  octokit: OctokitType,
+  owner: string,
+  repo: string,
+  ref: string,
+  sha: string
+) {
+  await octokit.git.updateRef({
+    force: true,
+    owner,
+    repo,
+    ref: `heads/${ref}`,
+    sha,
+  });
+}
+
+async function createCommit(
+  octokit: OctokitType,
+  owner: string,
+  repo: string,
+  message: string,
+  parentSha: string,
+  tree: string,
+  author?: {name: string; email: string},
+  committer?: {name?: string; email?: string}
+): Promise<string> {
+  const {
+    data: {sha: newHeadSha},
+  } = await octokit.git.createCommit({
+    owner,
+    repo,
+    author,
+    committer,
+    message,
+    parents: [parentSha],
+    tree,
+  });
+  return newHeadSha;
 }

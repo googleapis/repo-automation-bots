@@ -71,7 +71,7 @@ const sync: yargs.CommandModule<{}, Args> = {
       argv['branch']
     );
     logger.info(
-      `opened pull request ${pullRequest.number} (${pullRequest.html_url})`
+      `opened pull request ${pullRequest.number} - ${pullRequest.html_url}`
     );
   },
 };
