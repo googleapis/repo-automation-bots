@@ -19,6 +19,7 @@ import {
   getReviewsCompleted,
   cleanReviews,
   getFileContent,
+  listCommitsOnAPR,
 } from '../src/get-pr-info';
 import {describe, it} from 'mocha';
 import assert from 'assert';
@@ -185,6 +186,34 @@ describe('get PR info tests', async () => {
           octokit
         );
       }, /testOwner\/testRepo\/folder is a folder, cannot get file contents/);
+    });
+  });
+
+  describe('listCommittsOnAPR method', async () => {
+    it('should get all the commits in a PR', async () => {
+      const commitRequest = nock('https://api.github.com')
+        .get('/repos/testRepoOwner/testRepoName/pulls/1/commits')
+        .reply(200, [{author: {login: 'testAuthor'}}]);
+
+      const commits = await listCommitsOnAPR(
+        'testRepoOwner',
+        'testRepoName',
+        1,
+        octokit
+      );
+
+      commitRequest.done();
+      assert.deepStrictEqual(commits, [{author: {login: 'testAuthor'}}]);
+    });
+
+    it('should throw an error if commits are not received', async () => {
+      nock('https://api.github.com')
+        .get('/repos/testRepoOwner/testRepoName/pulls/1/commits')
+        .reply(400);
+
+      assert.rejects(async () => {
+        await listCommitsOnAPR('testRepoOwner', 'testRepoName', 1, octokit);
+      }, /HttpError: Unknown error/);
     });
   });
 });

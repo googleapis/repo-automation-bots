@@ -29,6 +29,7 @@ import {
   checkTitleOrBody,
   checkFileCount,
   runVersioningValidation,
+  getOpenPRsInRepoFromSameAuthor,
 } from '../src/utils-for-pr-checking';
 import {describe, it} from 'mocha';
 import assert from 'assert';
@@ -37,6 +38,7 @@ import sinon from 'sinon';
 import {JavaDependency} from '../src/process-checks/java/dependency';
 import {NodeDependency} from '../src/process-checks/node/dependency';
 import {NodeRelease} from '../src/process-checks/node/release';
+import nock from 'nock';
 const {Octokit} = require('@octokit/rest');
 
 const octokit = new Octokit({
@@ -1205,6 +1207,55 @@ describe('run additional versioning checks', () => {
       };
 
       assert.deepStrictEqual(runVersioningValidation(versions), false);
+    });
+  });
+
+  describe('getting all open PRs in a repo from an author', async () => {
+    it('should return the number of PRs from anotherAuthor', async () => {
+      const prRequest = nock('https://api.github.com')
+        .get('/repos/testRepoOwner/testRepoName/pulls?state=open')
+        .reply(200, [{id: 1, user: {login: 'anotherAuthor'}}]);
+
+      const prCount = await getOpenPRsInRepoFromSameAuthor(
+        'testRepoOwner',
+        'testRepoName',
+        'anotherAuthor',
+        octokit
+      );
+
+      prRequest.done();
+      assert.deepStrictEqual(prCount, 1);
+    });
+
+    it('should return the number of PRs from someOtherAuthor', async () => {
+      const prRequest = nock('https://api.github.com')
+        .get('/repos/testRepoOwner/testRepoName/pulls?state=open')
+        .reply(200, [{id: 1, user: {login: 'anotherAuthor'}}]);
+
+      const prCount2 = await getOpenPRsInRepoFromSameAuthor(
+        'testRepoOwner',
+        'testRepoName',
+        'someOtherAuthor',
+        octokit
+      );
+
+      prRequest.done();
+      assert.deepStrictEqual(prCount2, 0);
+    });
+
+    it('should throw an error if prs are not received', async () => {
+      nock('https://api.github.com')
+        .get('/repos/testRepoOwner/testRepoName/pulls?state=open')
+        .reply(400);
+
+      assert.rejects(async () => {
+        await getOpenPRsInRepoFromSameAuthor(
+          'testRepoOwner',
+          'testRepoName',
+          'anotherAuthor',
+          octokit
+        );
+      }, /HttpError: Unknown error/);
     });
   });
 });
