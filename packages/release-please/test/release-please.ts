@@ -331,6 +331,14 @@ describe('ReleasePleaseBot', () => {
 
         sinon.assert.calledOnce(createPullRequestsStub);
         sinon.assert.notCalled(createReleasesStub);
+        sinon.assert.calledOnceWithExactly(
+          fromConfigStub,
+          sinon.match.instanceOf(GitHub),
+          'master', // target is default branch of repository inferred from payload
+          sinon.match.any,
+          sinon.match.any,
+          undefined
+        );
       });
 
       it('should allow configuring extra files', async () => {
