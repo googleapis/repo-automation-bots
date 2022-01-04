@@ -17,6 +17,7 @@ import {logger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
+import * as crypto from 'crypto';
 
 type OctokitType = InstanceType<typeof Octokit>;
 
@@ -51,7 +52,7 @@ export function parseCherryPickComment(comment: string): string | null {
  * @param {OctokitType} octokit An authenticated Octokit instance
  * @param {string} owner The repository owner
  * @param {string} repo The repository name
- * @param {string} commitSha The commit to cherry-pick
+ * @param {string[]} commits The commit SHAs to cherry-pick
  * @param {string} targetBranch The target branch of the pull request
  * @returns {PullRequest}
  */
@@ -59,11 +60,12 @@ export async function cherryPickAsPullRequest(
   octokit: OctokitType,
   owner: string,
   repo: string,
-  commitSha: string,
+  commits: string[],
   targetBranch: string
 ): Promise<PullRequest> {
-  logger.info(`cherry-pick ${commitSha} to ${targetBranch} via pull request`);
-  const newBranchName = `cherry-pick-${commitSha}-${targetBranch}`;
+  logger.info(`cherry-pick ${commits} to ${targetBranch} via pull request`);
+  const hash = crypto.createHash('md5').update(commits.join(',')).digest('hex');
+  const newBranchName = `cherry-pick-${hash.substring(0, 6)}-${targetBranch}`;
   const targetBranchHead = (
     await octokit.repos.getBranch({
       owner,
@@ -85,7 +87,7 @@ export async function cherryPickAsPullRequest(
     octokit,
     owner,
     repo,
-    commitSha,
+    commits,
     newBranchName
   );
   logger.debug(`cherry-picked as ${newHeadSha}`);
@@ -96,7 +98,7 @@ export async function cherryPickAsPullRequest(
     repo,
     head: newBranchName,
     base: targetBranch,
-    title: `chore: cherry-pick commit ${commitSha} to ${targetBranch}`,
+    title: `chore: cherry-pick commit ${commits.join(', ')} to ${targetBranch}`,
   });
   return pullRequest;
 }
@@ -106,29 +108,22 @@ export async function cherryPickAsPullRequest(
  * @param {OctokitType} octokit An authenticated Octokit instance
  * @param {string} owner The repository owner
  * @param {string} repo The repository name
- * @param {string} commitSha The commit to cherry-pick
+ * @param {string[]} commits The commit SHAs to cherry-pick
  * @param {string} targetBranch The target branch of the pull request
  */
 export async function cherryPickCommit(
   octokit: OctokitType,
   owner: string,
   repo: string,
-  commitSha: string,
+  commits: string[],
   targetBranch: string
 ): Promise<string> {
-  logger.info(`cherry-pick ${commitSha} to branch ${targetBranch}`);
+  logger.info(`cherry-pick ${commits} to branch ${targetBranch}`);
 
-  logger.debug(`fetching commit data for: ${commitSha}`);
-  const {data: commit} = await octokit.git.getCommit({
-    owner,
-    repo,
-    commit_sha: commitSha,
-  });
-
-  logger.debug('fetching new branch sha');
+  logger.debug(`fetching sha for ref ${targetBranch}`);
   const {
     data: {
-      object: {sha: newBranchHeadSha},
+      object: {sha: initialHeadSha},
     },
   } = await octokit.git.getRef({
     owner,
@@ -143,77 +138,93 @@ export async function cherryPickCommit(
     owner,
     repo,
     temporaryRefName,
-    newBranchHeadSha
+    initialHeadSha
   );
 
   logger.debug(`fetching ${targetBranch} tree SHA`);
   const {
     data: {
-      tree: {sha: newBranchHeadTree},
+      tree: {sha: initialHeadTree},
     },
   } = await octokit.git.getCommit({
     owner,
     repo,
-    commit_sha: newBranchHeadSha,
+    commit_sha: initialHeadSha,
   });
 
-  const author = commit.author
-    ? {
-        name: commit.author.name!,
-        email: commit.author.email!,
-      }
-    : undefined;
-  const committer = commit.committer
-    ? {
-        name: commit.committer.name || undefined,
-        email: commit.committer.email || undefined,
-      }
-    : undefined;
+  let headSha = initialHeadSha;
+  let headTree = initialHeadTree;
 
-  // create sibiling commit
-  await createCommit(
-    octokit,
-    owner,
-    repo,
-    commit.message,
-    commit.parents[0].sha,
-    newBranchHeadTree,
-    author,
-    committer
-  );
+  for (const sha of commits) {
+    logger.debug(`fetching commit data for: ${sha}`);
+    const {data: commit} = await octokit.git.getCommit({
+      owner,
+      repo,
+      commit_sha: sha,
+    });
 
-  // merge
-  logger.debug(`Merge ${commitSha} into ${temporaryRefName}`);
-  const {
-    data: {
-      commit: {
-        tree: {sha: mergedTree},
+    const author = commit.author
+      ? {
+          name: commit.author.name!,
+          email: commit.author.email!,
+        }
+      : undefined;
+    const committer = commit.committer
+      ? {
+          name: commit.committer.name || undefined,
+          email: commit.committer.email || undefined,
+        }
+      : undefined;
+    const parent = commit.parents[0].sha;
+
+    // create sibiling commit
+    const siblingSha = await createCommit(
+      octokit,
+      owner,
+      repo,
+      `sibling of ${sha}`,
+      parent,
+      headTree,
+      author,
+      committer
+    );
+    await updateRef(octokit, owner, repo, temporaryRefName, siblingSha);
+
+    // merge
+    logger.debug(`merge ${sha} into ${temporaryRefName}`);
+    const {
+      data: {
+        commit: {
+          tree: {sha: mergedTree},
+        },
       },
-    },
-  } = await octokit.repos.merge({
-    base: temporaryRefName,
-    commit_message: `Merge ${commitSha} into ${temporaryRefName}`,
-    head: commitSha,
-    owner,
-    repo,
-  });
-  logger.debug('creating commit with different tree');
-  const newHeadSha = await createCommit(
-    octokit,
-    owner,
-    repo,
-    commit.message,
-    commit.parents[0].sha,
-    mergedTree,
-    author,
-    committer
-  );
+    } = await octokit.repos.merge({
+      base: temporaryRefName,
+      commit_message: `Merge ${sha} into ${temporaryRefName}`,
+      head: sha,
+      owner,
+      repo,
+    });
+    logger.debug('creating commit with different tree');
+    const newHeadSha = await createCommit(
+      octokit,
+      owner,
+      repo,
+      commit.message,
+      headSha,
+      mergedTree,
+      author,
+      committer
+    );
 
-  logger.debug(`updating ref: ${newHeadSha}`);
-  await updateRef(octokit, owner, repo, temporaryRefName, newHeadSha);
+    logger.debug(`updating ref: ${newHeadSha}`);
+    await updateRef(octokit, owner, repo, temporaryRefName, newHeadSha);
 
+    headSha = newHeadSha;
+    headTree = mergedTree;
+  }
   // update target branch ref to new cherry-picked commit
-  await updateRef(octokit, owner, repo, targetBranch, newHeadSha);
+  await updateRef(octokit, owner, repo, targetBranch, headSha);
 
   // cleanup temporary ref
   await octokit.git.deleteRef({
@@ -222,7 +233,7 @@ export async function cherryPickCommit(
     repo,
   });
 
-  return newHeadSha;
+  return headSha;
 }
 
 async function createOrUpdateRef(

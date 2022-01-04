@@ -67,7 +67,7 @@ const sync: yargs.CommandModule<{}, Args> = {
       octokit,
       owner,
       repo,
-      argv['commit'],
+      [argv['commit']],
       argv['branch']
     );
     logger.info(

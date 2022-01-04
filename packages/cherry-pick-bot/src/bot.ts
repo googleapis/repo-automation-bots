@@ -103,7 +103,7 @@ export = (app: Probot) => {
       context.octokit,
       owner,
       repo,
-      pullRequest.sha,
+      [pullRequest.sha],
       targetBranch
     );
   });
