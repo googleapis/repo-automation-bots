@@ -46,7 +46,7 @@ docker:
       'deep-remove-regex': ['/src'],
       'begin-after-commit-hash': 'abc123',
       docker: {image: 'gcr.io/cloud-devrel-resources/synthtool-nodejs:prod'},
-      'insert-folder-names-into-pull-request-titles': false
+      'insert-folder-names-into-pull-request-titles': false,
     });
   });
 
