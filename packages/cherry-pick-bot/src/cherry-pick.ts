@@ -83,7 +83,7 @@ export async function cherryPickAsPullRequest(
     targetBranchHead
   );
 
-  const newHeadSha = await cherryPickCommit(
+  const newHeadSha = await cherryPickCommits(
     octokit,
     owner,
     repo,
@@ -111,7 +111,7 @@ export async function cherryPickAsPullRequest(
  * @param {string[]} commits The commit SHAs to cherry-pick
  * @param {string} targetBranch The target branch of the pull request
  */
-export async function cherryPickCommit(
+export async function cherryPickCommits(
   octokit: OctokitType,
   owner: string,
   repo: string,
@@ -185,8 +185,12 @@ export async function cherryPickCommit(
       `sibling of ${sha}`,
       parent,
       headTree,
-      author,
-      committer
+      {
+        authorName: author?.name,
+        authorEmail: author?.email,
+        committerName: committer?.name,
+        committerEmail: committer?.email,
+      }
     );
     await updateRef(octokit, owner, repo, temporaryRefName, siblingSha);
 
@@ -213,8 +217,12 @@ export async function cherryPickCommit(
       commit.message,
       headSha,
       mergedTree,
-      author,
-      committer
+      {
+        authorName: author?.name,
+        authorEmail: author?.email,
+        committerName: committer?.name,
+        committerEmail: committer?.email,
+      }
     );
 
     logger.debug(`updating ref: ${newHeadSha}`);
@@ -236,6 +244,15 @@ export async function cherryPickCommit(
   return headSha;
 }
 
+/**
+ * Create or update a GitHub reference.
+ *
+ * @param {OctokitType} octokit Authenticated octokit instance
+ * @param {string} owner Owner of the repository
+ * @param {string} repo Name of the repository
+ * @param {string} ref Reference (branch name)
+ * @param {string} sha Commit SHA that the reference should point to
+ */
 async function createOrUpdateRef(
   octokit: OctokitType,
   owner: string,
@@ -244,7 +261,12 @@ async function createOrUpdateRef(
   sha: string
 ) {
   try {
-    await createRef(octokit, owner, repo, ref, sha);
+    await octokit.git.createRef({
+      owner,
+      ref: `refs/heads/${ref}`,
+      repo,
+      sha,
+    });
   } catch (e) {
     if (e instanceof RequestError && e.status === 422) {
       logger.warn(`${ref} already exists, updating instead`);
@@ -255,21 +277,15 @@ async function createOrUpdateRef(
   }
 }
 
-async function createRef(
-  octokit: OctokitType,
-  owner: string,
-  repo: string,
-  ref: string,
-  sha: string
-) {
-  await octokit.git.createRef({
-    owner,
-    ref: `refs/heads/${ref}`,
-    repo,
-    sha,
-  });
-}
-
+/**
+ * Update an existing GitHub reference.
+ *
+ * @param {OctokitType} octokit Authenticated octokit instance
+ * @param {string} owner Owner of the repository
+ * @param {string} repo Name of the repository
+ * @param {string} ref Reference (branch name)
+ * @param {string} sha Commit SHA that the reference should point to
+ */
 async function updateRef(
   octokit: OctokitType,
   owner: string,
@@ -286,6 +302,29 @@ async function updateRef(
   });
 }
 
+interface CreateCommitOptions {
+  authorName?: string;
+  authorEmail?: string;
+  committerName?: string;
+  committerEmail?: string;
+}
+
+/**
+ * Create a new GitHub commit
+ *
+ * @param {OctokitType} octokit Authenticated octokit instance
+ * @param {string} owner Owner of the repository
+ * @param {string} repo Name of the repository
+ * @param {string} message Commit message
+ * @param {string} parentSha SHA of the parent commit
+ * @param {string} tree SHA of the git tree
+ * @param {CreateCommitOptions} options
+ * @param {string} options.authorName Name of author of the commit
+ * @param {string} options.authorEmail Email of author of the commit
+ * @param {string} options.committerName Name of committer of the commit
+ * @param {string} options.committerEmail Email of the committer of the commit
+ * @return {string} SHA of the newly created commit
+ */
 async function createCommit(
   octokit: OctokitType,
   owner: string,
@@ -293,16 +332,21 @@ async function createCommit(
   message: string,
   parentSha: string,
   tree: string,
-  author?: {name: string; email: string},
-  committer?: {name?: string; email?: string}
+  options?: CreateCommitOptions
 ): Promise<string> {
   const {
     data: {sha: newHeadSha},
   } = await octokit.git.createCommit({
     owner,
     repo,
-    author,
-    committer,
+    author:
+      options?.authorName && options?.authorEmail
+        ? {name: options.authorName, email: options.authorEmail}
+        : undefined,
+    committer: {
+      name: options?.committerName,
+      email: options?.committerEmail,
+    },
     message,
     parents: [parentSha],
     tree,
