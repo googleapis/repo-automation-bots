@@ -5,9 +5,9 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "insert-folder-names-into-pull-request-titles": {
-      "type":"boolean",
-      "description": "Insert the name of the folder when creating pull requests.  Mono-repos will like this."
+    "api-name": {
+      "type":"string",
+      "description": "Gets inserted into pull request titles.  Useful for mono-repos."
     },
     "begin-after-commit-hash": {
       "type": "string",

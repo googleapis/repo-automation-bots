@@ -92,9 +92,10 @@ export async function createPullRequestFromLastCommit(
   labels: string[],
   octokit: OctokitType,
   prBody = '',
-  //  apiName = '',
+  // apiName = '',
   logger = console
 ): Promise<void> {
+  const apiName = '';
   const cmd = newCmd(logger);
   const githubRepo = await octokit.repos.get({owner, repo});
 
@@ -109,7 +110,10 @@ export async function createPullRequestFromLastCommit(
     .trim();
   const commitBody = prBody ?? getLastCommitBody(localRepoDir, logger);
 
-  const {title, body} = resplit(commitSubject, commitBody);
+  const {title, body} = resplit(
+    insertApiName(commitSubject, apiName),
+    commitBody
+  );
 
   // Create a pull request.
   const pull = await octokit.pulls.create({

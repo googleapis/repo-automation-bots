@@ -34,7 +34,7 @@ deep-preserve-regex:
 
 begin-after-commit-hash: abc123
 
-insert-folder-names-into-pull-request-titles: false
+api-name: Billing
 
 docker:
   image: gcr.io/cloud-devrel-resources/synthtool-nodejs:prod
@@ -46,7 +46,7 @@ docker:
       'deep-remove-regex': ['/src'],
       'begin-after-commit-hash': 'abc123',
       docker: {image: 'gcr.io/cloud-devrel-resources/synthtool-nodejs:prod'},
-      'insert-folder-names-into-pull-request-titles': false,
+      'api-name': 'Billing',
     });
   });
 
