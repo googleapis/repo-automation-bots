@@ -92,10 +92,9 @@ export async function createPullRequestFromLastCommit(
   labels: string[],
   octokit: OctokitType,
   prBody = '',
-  // apiName = '',
+  apiName = '',
   logger = console
 ): Promise<void> {
-  const apiName = '';
   const cmd = newCmd(logger);
   const githubRepo = await octokit.repos.get({owner, repo});
 
