@@ -62,6 +62,7 @@ export interface OwlBotYaml {
   'deep-remove-regex'?: string[];
   'deep-preserve-regex'?: string[];
   'begin-after-commit-hash'?: string;
+  'insert-folder-names-into-pull-request-titles'?: boolean;
 }
 
 // The default path where .OwlBot.yaml is expected to be found.
