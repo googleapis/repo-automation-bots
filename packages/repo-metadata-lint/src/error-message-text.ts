@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-import { ValidationResult } from './validate';
+import {ValidationResult} from './validate';
 
 const START_GENERATED = 'Result of scan';
 const STOP_GENERATED = 'correct these problems';
@@ -24,15 +24,15 @@ const STOP_GENERATED = 'correct these problems';
 export class ErrorMessageText {
   // Generate content for nightly issues on GitHub:
   static forIssueBody(results: ValidationResult[]) {
-    let body = `You have a problem with your .repo-metadata.json file${results.length > 1 ? 's' : ''
-      }:
+    let body = `You have a problem with your .repo-metadata.json file${
+      results.length > 1 ? 's' : ''
+    }:
 
 ${START_GENERATED} 📈:
 
 `;
     body += ErrorMessageText.resultsErrors(results);
-    body +=
-      `\n\n ☝️ Once you ${STOP_GENERATED}, you can close this issue.\n\nReach out to **go/github-automation** if you have any questions.`;
+    body += `\n\n ☝️ Once you ${STOP_GENERATED}, you can close this issue.\n\nReach out to **go/github-automation** if you have any questions.`;
     return body;
   }
   // Internal helper for the "results of scan" section of issue or
@@ -41,9 +41,9 @@ ${START_GENERATED} 📈:
     let body = '';
     for (const result of results) {
       for (const error of result.errors) {
-        body += `* ${error}\n`
+        body += `* ${error}\n`;
       }
-      body += '\n'
+      body += '\n';
     }
     return body.trim();
   }
