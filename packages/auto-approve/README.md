@@ -22,6 +22,8 @@ processes:
   - "NodeDependency"
   - "NodeRelease"
   - "JavaDependency"
+  - "OwlBotTemplateChanges"
+  - "OwlBotAPIChanges"
 ```
 
 These seven processes represent different workflows for what auto-approve will approve and merge in a given repository. To see their logic in full, see the corresponding file in /src/process-checks.
@@ -98,6 +100,14 @@ Below is what each process checks for:
   - Checks that the title of the PR does NOT include feat, fix, or !
   - Checks that the body of the PR does not contain 'PiperOrigin-RevId'
   - Checks that the .repo-metadata.json of the repo contains "library_type": "GAPIC_AUTO"
+* OwlBotAPIChanges:
+  - Checks that the author is 'gcf-owl-bot[bot]'
+  - Checks that the title of the PR does NOT include breaking, BREAKING, or !
+  - Checks that the body of the PR DOES contain 'PiperOrigin-RevId'
+  - Checks that the .repo-metadata.json of the repo contains "library_type": "GAPIC_AUTO"
+  - Checks that there are no other PRs in that repository that have been opened by gcf-owl-bot[bot]
+  - Checks that the PR does not have any commits from any other authors other than gcf-owl-bot[bot]
+
   
 
 This change in configuration permits the following:
