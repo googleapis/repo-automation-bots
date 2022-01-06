@@ -14,7 +14,12 @@
 
 import {describe, it} from 'mocha';
 import * as assert from 'assert';
-import {MAX_BODY_LENGTH, MAX_TITLE_LENGTH, resplit} from '../src/create-pr';
+import {
+  insertApiName,
+  MAX_BODY_LENGTH,
+  MAX_TITLE_LENGTH,
+  resplit,
+} from '../src/create-pr';
 
 describe('resplit', () => {
   it('leaves a short title unchanged', () => {
@@ -50,5 +55,49 @@ describe('resplit', () => {
     assert.strictEqual(tb.title, 'title');
     assert.strictEqual(tb.body.length, MAX_BODY_LENGTH);
     assert.ok(tb.body.length < body.length);
+  });
+});
+
+describe('insertApiName', () => {
+  it('does nothing when the api name is empty', () => {
+    const title = 'chore(bazel): Update gapic-generator-php to v1.2.1';
+    const newTitle = insertApiName(title, '');
+    assert.deepStrictEqual(newTitle, title);
+  });
+
+  it('inserts the api name after the colon.', () => {
+    const title = 'chore(bazel): Update gapic-generator-php to v1.2.1';
+    const newTitle = insertApiName(title, 'Billing');
+    assert.deepStrictEqual(
+      newTitle,
+      'chore(bazel): [Billing] Update gapic-generator-php to v1.2.1'
+    );
+  });
+
+  it("inserts the api name at the beginning when there's no colon.", () => {
+    const title = 'chore(bazel) Update gapic-generator-php to v1.2.1';
+    const newTitle = insertApiName(title, 'Billing');
+    assert.deepStrictEqual(
+      newTitle,
+      '[Billing] chore(bazel) Update gapic-generator-php to v1.2.1'
+    );
+  });
+
+  it('ignores a colon after a newline.', () => {
+    const title = 'chore(bazel)\n: Update gapic-generator-php to v1.2.1';
+    const newTitle = insertApiName(title, 'Billing');
+    assert.deepStrictEqual(
+      newTitle,
+      '[Billing] chore(bazel)\n: Update gapic-generator-php to v1.2.1'
+    );
+  });
+
+  it('ignores a colon after 40 characters', () => {
+    const title = 'chore(bazel) Update gapic-generator-php to v1.2.1 : colon';
+    const newTitle = insertApiName(title, 'Billing');
+    assert.deepStrictEqual(
+      newTitle,
+      '[Billing] chore(bazel) Update gapic-generator-php to v1.2.1 : colon'
+    );
   });
 });

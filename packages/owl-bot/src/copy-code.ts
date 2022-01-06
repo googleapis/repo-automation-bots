@@ -71,6 +71,7 @@ interface LocalCopy {
   kind: 'LocalCopy';
   dir: string; // The local directory of the github repo.
   sourceCommitHash: string; // The commit hash from which the code was copied.
+  yaml: OwlBotYaml;
 }
 
 /**
@@ -238,6 +239,7 @@ ${copyTagLine}`,
     kind: 'LocalCopy',
     dir: destDir,
     sourceCommitHash,
+    yaml,
   };
 }
 
@@ -290,6 +292,7 @@ export async function copyCodeAndCreatePullRequest(
     [OWL_BOT_COPY],
     octokit,
     prBody,
+    dest.yaml['api-name'] ?? '',
     logger
   );
 }
