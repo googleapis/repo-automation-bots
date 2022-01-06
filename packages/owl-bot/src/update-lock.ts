@@ -54,6 +54,7 @@ export async function maybeCreatePullRequestForLockUpdate(
       [core.OWL_BOT_LOCK_UPDATE],
       octokit,
       '',
+      '', // No API name because this PR was not triggered by an API change.
       logger
     );
   } else {
