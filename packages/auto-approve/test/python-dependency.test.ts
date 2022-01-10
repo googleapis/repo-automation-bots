@@ -16,6 +16,12 @@ import {PythonDependency} from '../src/process-checks/python/dependency';
 import {describe, it} from 'mocha';
 import assert from 'assert';
 
+const {Octokit} = require('@octokit/rest');
+
+const octokit = new Octokit({
+  auth: 'mypersonalaccesstoken123',
+});
+
 describe('behavior of Python Dependency process', () => {
   it('should get constructed with the appropriate values', () => {
     const pythonDependency = new PythonDependency(
@@ -25,7 +31,9 @@ describe('behavior of Python Dependency process', () => {
       [{filename: 'hello', sha: '2345'}],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
     const expectation = {
@@ -37,6 +45,7 @@ describe('behavior of Python Dependency process', () => {
         repoName: 'testRepoName',
         repoOwner: 'testRepoOwner',
         prNumber: 1,
+        body: 'body',
       },
       classRule: {
         author: 'renovate-bot',
@@ -62,13 +71,15 @@ describe('behavior of Python Dependency process', () => {
           },
         ],
       },
+      octokit,
     };
 
     assert.deepStrictEqual(pythonDependency.incomingPR, expectation.incomingPR);
     assert.deepStrictEqual(pythonDependency.classRule, expectation.classRule);
+    assert.deepStrictEqual(pythonDependency.octokit, octokit);
   });
 
-  it('should return false in checkPR if incoming PR does not match classRules', () => {
+  it('should return false in checkPR if incoming PR does not match classRules', async () => {
     const pythonDependency = new PythonDependency(
       'testAuthor',
       'testTitle',
@@ -76,13 +87,15 @@ describe('behavior of Python Dependency process', () => {
       [{filename: 'hello', sha: '2345'}],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.deepStrictEqual(pythonDependency.checkPR(), false);
+    assert.deepStrictEqual(await pythonDependency.checkPR(), false);
   });
 
-  it('should return false in checkPR if one of the files did not match additional rules in fileRules', () => {
+  it('should return false in checkPR if one of the files did not match additional rules in fileRules', async () => {
     const pythonDependency = new PythonDependency(
       'renovate-bot',
       'fix(deps): update dependency cloud.google.com to v16',
@@ -117,13 +130,15 @@ describe('behavior of Python Dependency process', () => {
       ],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.deepStrictEqual(pythonDependency.checkPR(), false);
+    assert.deepStrictEqual(await pythonDependency.checkPR(), false);
   });
 
-  it('should return true in checkPR if incoming PR does match classRules', () => {
+  it('should return true in checkPR if incoming PR does match classRules', async () => {
     const pythonDependency = new PythonDependency(
       'renovate-bot',
       'fix(deps): update dependency google-cloud-storage to v16',
@@ -144,9 +159,11 @@ describe('behavior of Python Dependency process', () => {
       ],
       'testRepoName',
       'testRepoOwner',
-      1
+      1,
+      octokit,
+      'body'
     );
 
-    assert.ok(pythonDependency.checkPR());
+    assert.ok(await pythonDependency.checkPR());
   });
 });

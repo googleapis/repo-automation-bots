@@ -76,6 +76,7 @@ describe('maybeCreatePullRequestForLockUpdate', () => {
         ['owl-bot-update-lock'],
         {fake: true},
         '',
+        '',
         console,
       ],
     ]);

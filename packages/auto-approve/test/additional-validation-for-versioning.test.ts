@@ -26,9 +26,10 @@ import {
   doesDependencyChangeMatchPRTitleJava,
   checkFilePathsMatch,
   checkAuthor,
-  checkTitle,
+  checkTitleOrBody,
   checkFileCount,
   runVersioningValidation,
+  getOpenPRsInRepoFromSameAuthor,
 } from '../src/utils-for-pr-checking';
 import {describe, it} from 'mocha';
 import assert from 'assert';
@@ -37,7 +38,12 @@ import sinon from 'sinon';
 import {JavaDependency} from '../src/process-checks/java/dependency';
 import {NodeDependency} from '../src/process-checks/node/dependency';
 import {NodeRelease} from '../src/process-checks/node/release';
+import nock from 'nock';
+const {Octokit} = require('@octokit/rest');
 
+const octokit = new Octokit({
+  auth: 'mypersonalaccesstoken123',
+});
 describe('run additional versioning checks', () => {
   describe('get target file tests', () => {
     it('should correctly identify the target file if it exists in the PR', async () => {
@@ -414,7 +420,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const getVersionsExpectation = {
@@ -461,7 +469,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const getVersionsExpectation = {
@@ -508,7 +518,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       assert.throws(() => {
@@ -528,7 +540,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       assert.strictEqual(
@@ -567,7 +581,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const getVersionsExpectation = {
@@ -613,7 +629,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const getVersionsExpectation = {
@@ -909,7 +927,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
@@ -938,7 +958,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
@@ -967,7 +989,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleV2(
@@ -998,7 +1022,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleJava(
@@ -1027,7 +1053,9 @@ describe('run additional versioning checks', () => {
         [{filename: 'hello', sha: '2345'}],
         'testRepoName',
         'testRepoOwner',
-        1
+        1,
+        octokit,
+        'body'
       );
 
       const doesDependencyMatch = doesDependencyChangeMatchPRTitleJava(
@@ -1118,7 +1146,7 @@ describe('run additional versioning checks', () => {
   describe('checks that titles match', () => {
     it('should return true if title matches regex', () => {
       assert.ok(
-        checkTitle(
+        checkTitleOrBody(
           'chore: Update discovery artifacts NOW',
           /^chore: Update discovery artifacts/
         )
@@ -1127,13 +1155,16 @@ describe('run additional versioning checks', () => {
 
     it('should return false if title does not match regex', () => {
       assert.deepStrictEqual(
-        checkTitle('dont match this!', /^chore: Update discovery artifacts/),
+        checkTitleOrBody(
+          'dont match this!',
+          /^chore: Update discovery artifacts/
+        ),
         false
       );
     });
 
     it('should return true if there is no title regex', () => {
-      assert.ok(checkTitle('match this, I dont care', undefined));
+      assert.ok(checkTitleOrBody('match this, I dont care', undefined));
     });
   });
 
@@ -1176,6 +1207,55 @@ describe('run additional versioning checks', () => {
       };
 
       assert.deepStrictEqual(runVersioningValidation(versions), false);
+    });
+  });
+
+  describe('getting all open PRs in a repo from an author', async () => {
+    it('should return the number of PRs from anotherAuthor', async () => {
+      const prRequest = nock('https://api.github.com')
+        .get('/repos/testRepoOwner/testRepoName/pulls?state=open')
+        .reply(200, [{id: 1, user: {login: 'anotherAuthor'}}]);
+
+      const prCount = await getOpenPRsInRepoFromSameAuthor(
+        'testRepoOwner',
+        'testRepoName',
+        'anotherAuthor',
+        octokit
+      );
+
+      prRequest.done();
+      assert.deepStrictEqual(prCount, 1);
+    });
+
+    it('should return the number of PRs from someOtherAuthor', async () => {
+      const prRequest = nock('https://api.github.com')
+        .get('/repos/testRepoOwner/testRepoName/pulls?state=open')
+        .reply(200, [{id: 1, user: {login: 'anotherAuthor'}}]);
+
+      const prCount2 = await getOpenPRsInRepoFromSameAuthor(
+        'testRepoOwner',
+        'testRepoName',
+        'someOtherAuthor',
+        octokit
+      );
+
+      prRequest.done();
+      assert.deepStrictEqual(prCount2, 0);
+    });
+
+    it('should throw an error if prs are not received', async () => {
+      nock('https://api.github.com')
+        .get('/repos/testRepoOwner/testRepoName/pulls?state=open')
+        .reply(400);
+
+      assert.rejects(async () => {
+        await getOpenPRsInRepoFromSameAuthor(
+          'testRepoOwner',
+          'testRepoName',
+          'anotherAuthor',
+          octokit
+        );
+      }, /HttpError: Unknown error/);
     });
   });
 });

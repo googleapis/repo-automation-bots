@@ -45,11 +45,16 @@ The following sections are internal details for Yosh Team members.
 1. The post processing bot runs `cloud-build/update-pr.yaml` on Cloud Build,
 injecting the following substitutions:
 
-* `_REPOSITORY`: The name of the forked repository (_may differ from base_).
+* `_PR`: The pull request number
+* `_OWNER`: The owner of the PR's destination repo (e.g. 'googleapis' in https://github.com/googleapis/synthtool)
+* `_REPOSITORY`: The name of the base repository.
+* `_PR_OWNER`: The owner of the PR's source repo (e.g. 'renovate-bot' in https://github.com/renovate-bot/synthtool)
 * `_PR_BRANCH`: The branch that a PR has been created from.
+* `_PR_REPOSITORY`: The name of the forked repository (_may differ from base_).
 * `_PR_USER`: The user creating the PR.
 * `_GITHUB_TOKEN`: [a short-lived GitHub JWT](https://docs.github.com/en/free-pro-team@latest/developers/apps/authenticating-with-github-apps).
 * `_CONTAINER`: The docker container to run (loaded from `.github/OwlBot.yaml`).
+* `_DEFAULT_BRANCH`: The default branch of the repository
 
 2. The appropriate repository and branch are cloned to a working directory.
 3. Any changes made relative to the working directory are pushed back to

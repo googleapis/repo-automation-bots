@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {owlBotYamlFromText} from '../src/config-files';
+import {
+  owlBotYamlFromText,
+  InvalidOwlBotConfigError,
+} from '../src/config-files';
 import {describe, it} from 'mocha';
 import * as assert from 'assert';
 
@@ -31,6 +34,8 @@ deep-preserve-regex:
 
 begin-after-commit-hash: abc123
 
+api-name: Billing
+
 docker:
   image: gcr.io/cloud-devrel-resources/synthtool-nodejs:prod
 `;
@@ -41,6 +46,7 @@ docker:
       'deep-remove-regex': ['/src'],
       'begin-after-commit-hash': 'abc123',
       docker: {image: 'gcr.io/cloud-devrel-resources/synthtool-nodejs:prod'},
+      'api-name': 'Billing',
     });
   });
 
@@ -62,6 +68,17 @@ deep-copy-regex:
 docker:
   image: gcr.io/cloud-devrel-resources/synthtool-nodejs:prod
 `;
-    assert.throws(() => owlBotYamlFromText(text));
+    assert.throws(
+      () => owlBotYamlFromText(text),
+      err => {
+        assert.ok(err instanceof InvalidOwlBotConfigError);
+        assert.strictEqual(err.errorMessages.length, 1);
+        assert.strictEqual(
+          err.errorMessages[0],
+          "/deep-copy-regex/0 must have required property 'dest'"
+        );
+        return true;
+      }
+    );
   });
 });

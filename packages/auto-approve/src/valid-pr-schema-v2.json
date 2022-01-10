@@ -18,7 +18,9 @@
           "PythonDependency",
           "NodeDependency",
           "NodeRelease",
-          "JavaDependency"
+          "JavaDependency",
+          "OwlBotTemplateChanges",
+          "OwlBotAPIChanges"
         ]
       }
     }

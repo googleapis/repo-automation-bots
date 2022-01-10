@@ -24,6 +24,8 @@ import {PythonDependency} from './process-checks/python/dependency';
 import {NodeDependency} from './process-checks/node/dependency';
 import {NodeRelease} from './process-checks/node/release';
 import {JavaDependency} from './process-checks/java/dependency';
+import {OwlBotTemplateChanges} from './process-checks/owl-bot-template-changes';
+import {OwlBotAPIChanges} from './process-checks/owl-bot-api-changes';
 // This file manages the logic to check whether a given PR matches the config in the repository
 
 // We need this typeMap to convert the JSON input (string) into a corresponding type.
@@ -56,6 +58,14 @@ const typeMap = [
     configValue: 'JavaDependency',
     configType: JavaDependency,
   },
+  {
+    configValue: 'OwlBotTemplateChanges',
+    configType: OwlBotTemplateChanges,
+  },
+  {
+    configValue: 'OwlBotAPIChanges',
+    configType: OwlBotAPIChanges,
+  },
 ];
 
 /**
@@ -66,7 +76,7 @@ const typeMap = [
  * @param octokit the Octokit instance on which to make calls to the Github API
  * @returns true if PR matches config appropriately, false if not
  */
-export async function checkPRAgainstConfig(
+export async function checkPRAgainstConfigV2(
   config: ConfigurationV2,
   pr: PullRequestEvent,
   octokit: Octokit
@@ -77,6 +87,7 @@ export async function checkPRAgainstConfig(
   const prNumber = pr.number;
   const title = pr.pull_request.title;
   const fileCount = pr.pull_request.changed_files;
+  const body = pr.pull_request.body;
 
   // Get changed files fromPR
   const changedFiles = await getChangedFiles(
@@ -97,10 +108,12 @@ export async function checkPRAgainstConfig(
       changedFiles,
       repo,
       repoOwner,
-      prNumber
+      prNumber,
+      octokit,
+      body ?? undefined
     );
 
-    const passed = instantiatedRule.checkPR();
+    const passed = await instantiatedRule.checkPR();
 
     // Stop early if the PR passes for one of the cases allowed by the config
     if (passed === true) {

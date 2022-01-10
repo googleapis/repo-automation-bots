@@ -17,6 +17,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import {logger} from 'gcf-utils';
+import {Octokit} from '@octokit/rest';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -388,11 +389,11 @@ export function checkAuthor(
   return authorToCompare === incomingAuthor;
 }
 
-export function checkTitle(title: string, titleRegex?: RegExp): boolean {
-  if (!titleRegex) {
+export function checkTitleOrBody(titleOrBody: string, regex?: RegExp): boolean {
+  if (!regex) {
     return true;
   }
-  return titleRegex.test(title);
+  return regex.test(titleOrBody);
 }
 
 export function checkFileCount(
@@ -529,4 +530,21 @@ export function reportIndividualChecks(
       `Check ${checkNames[x]} for ${repoOwner}/${repoName}/${prNumber} for ${fileName} file is ${checkStatuses[x]}`
     );
   }
+}
+
+export async function getOpenPRsInRepoFromSameAuthor(
+  owner: string,
+  repo: string,
+  author: string,
+  octokit: Octokit
+): Promise<number> {
+  const otherPRs = await octokit.paginate(octokit.rest.pulls.list, {
+    owner,
+    repo,
+    state: 'open',
+  });
+
+  const matchingPRs = otherPRs.filter(x => x.user?.login === author);
+
+  return matchingPRs.length;
 }

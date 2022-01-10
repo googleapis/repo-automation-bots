@@ -18,6 +18,8 @@ import {
   getBlobFromPRFiles,
   getReviewsCompleted,
   cleanReviews,
+  getFileContent,
+  listCommitsOnAPR,
 } from '../src/get-pr-info';
 import {describe, it} from 'mocha';
 import assert from 'assert';
@@ -124,6 +126,94 @@ describe('get PR info tests', async () => {
           id: 12345,
         },
       ]);
+    });
+  });
+
+  describe('getFileContents method', async () => {
+    it('should get all the file contents in a repo', async () => {
+      const fileRequest = nock('https://api.github.com')
+        .get('/repos/testRepoOwner/testRepoName/contents/.repo-metadata.json')
+        .reply(200, {
+          name: '.repo-metadata.json',
+          content:
+            'ewogICAgIm5hbWUiOiAiZGxwIiwKICAgICJuYW1lX3ByZXR0eSI6ICJDbG91ZCBEYXRhIExvc3MgUHJldmVudGlvbiIsCiAgICAicHJvZHVjdF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9kbHAvZG9jcy8iLAogICAgImNsaWVudF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9weXRob24vZG9jcy9yZWZlcmVuY2UvZGxwL2xhdGVzdCIsCiAgICAiaXNzdWVfdHJhY2tlciI6ICIiLAogICAgInJlbGVhc2VfbGV2ZWwiOiAiZ2EiLAogICAgImxhbmd1YWdlIjogInB5dGhvbiIsCiAgICAibGlicmFyeV90eXBlIjogIkdBUElDX0FVVE8iLAogICAgInJlcG8iOiAiZ29vZ2xlYXBpcy9weXRob24tZGxwIiwKICAgICJkaXN0cmlidXRpb25fbmFtZSI6ICJnb29nbGUtY2xvdWQtZGxwIiwKICAgICJhcGlfaWQiOiAiZGxwLmdvb2dsZWFwaXMuY29tIiwKICAgICJyZXF1aXJlc19iaWxsaW5nIjogdHJ1ZSwKICAgICJkZWZhdWx0X3ZlcnNpb24iOiAidjIiLAogICAgImNvZGVvd25lcl90ZWFtIjogIiIKfQ==',
+        });
+
+      const file = await getFileContent(
+        'testRepoOwner',
+        'testRepoName',
+        '.repo-metadata.json',
+        octokit
+      );
+
+      fileRequest.done();
+      assert.deepStrictEqual(JSON.parse(file), {
+        name: 'dlp',
+        name_pretty: 'Cloud Data Loss Prevention',
+        product_documentation: 'https://cloud.google.com/dlp/docs/',
+        client_documentation:
+          'https://cloud.google.com/python/docs/reference/dlp/latest',
+        issue_tracker: '',
+        release_level: 'ga',
+        language: 'python',
+        library_type: 'GAPIC_AUTO',
+        repo: 'googleapis/python-dlp',
+        distribution_name: 'google-cloud-dlp',
+        api_id: 'dlp.googleapis.com',
+        requires_billing: true,
+        default_version: 'v2',
+        codeowner_team: '',
+      });
+    });
+
+    it('should throw an error if the file is actually a folder', async () => {
+      nock('https://api.github.com')
+        .get('/repos/testRepoOwner/testRepoName/contents/folder')
+        .reply(200, [
+          {
+            name: '.repo-metadata.json',
+            content:
+              'ewogICAgIm5hbWUiOiAiZGxwIiwKICAgICJuYW1lX3ByZXR0eSI6ICJDbG91ZCBEYXRhIExvc3MgUHJldmVudGlvbiIsCiAgICAicHJvZHVjdF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9kbHAvZG9jcy8iLAogICAgImNsaWVudF9kb2N1bWVudGF0aW9uIjogImh0dHBzOi8vY2xvdWQuZ29vZ2xlLmNvbS9weXRob24vZG9jcy9yZWZlcmVuY2UvZGxwL2xhdGVzdCIsCiAgICAiaXNzdWVfdHJhY2tlciI6ICIiLAogICAgInJlbGVhc2VfbGV2ZWwiOiAiZ2EiLAogICAgImxhbmd1YWdlIjogInB5dGhvbiIsCiAgICAibGlicmFyeV90eXBlIjogIkdBUElDX0FVVE8iLAogICAgInJlcG8iOiAiZ29vZ2xlYXBpcy9weXRob24tZGxwIiwKICAgICJkaXN0cmlidXRpb25fbmFtZSI6ICJnb29nbGUtY2xvdWQtZGxwIiwKICAgICJhcGlfaWQiOiAiZGxwLmdvb2dsZWFwaXMuY29tIiwKICAgICJyZXF1aXJlc19iaWxsaW5nIjogdHJ1ZSwKICAgICJkZWZhdWx0X3ZlcnNpb24iOiAidjIiLAogICAgImNvZGVvd25lcl90ZWFtIjogIiIKfQ==',
+          },
+          {name: 'otherFile'},
+        ]);
+
+      assert.rejects(async () => {
+        await getFileContent(
+          'testRepoOwner',
+          'testRepoName',
+          'folder',
+          octokit
+        );
+      }, /testOwner\/testRepo\/folder is a folder, cannot get file contents/);
+    });
+  });
+
+  describe('listCommittsOnAPR method', async () => {
+    it('should get all the commits in a PR', async () => {
+      const commitRequest = nock('https://api.github.com')
+        .get('/repos/testRepoOwner/testRepoName/pulls/1/commits')
+        .reply(200, [{author: {login: 'testAuthor'}}]);
+
+      const commits = await listCommitsOnAPR(
+        'testRepoOwner',
+        'testRepoName',
+        1,
+        octokit
+      );
+
+      commitRequest.done();
+      assert.deepStrictEqual(commits, [{author: {login: 'testAuthor'}}]);
+    });
+
+    it('should throw an error if commits are not received', async () => {
+      nock('https://api.github.com')
+        .get('/repos/testRepoOwner/testRepoName/pulls/1/commits')
+        .reply(400);
+
+      assert.rejects(async () => {
+        await listCommitsOnAPR('testRepoOwner', 'testRepoName', 1, octokit);
+      }, /HttpError: Unknown error/);
     });
   });
 });

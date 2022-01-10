@@ -32,6 +32,7 @@ import {
   ConfigChecker,
   getConfigWithDefault,
 } from '@google-automations/bot-config-utils';
+import {syncLabels} from '@google-automations/label-utils';
 
 type IssueResponse = Endpoints['GET /repos/{owner}/{repo}/issues']['response'];
 
@@ -275,7 +276,7 @@ async function updateStalenessLabel(
   repo: string,
   config: Config
 ) {
-  // If user has turned on stale labels by configuring {staleness: {pullrequest: true, old: 60, critical: 120}}
+  // If user has turned on stale labels by configuring {staleness: {pullrequest: true, old: 60, extraold: 120}}
   // By default, this feature is turned off
   if (!config.staleness?.pullrequest) {
     logger.info(`Staleness feature is disabled for ${owner}/${repo}...`);
@@ -283,18 +284,18 @@ async function updateStalenessLabel(
   }
 
   const old = config.staleness?.old || helper.DEFAULT_DAYS_TO_STALE;
-  const critical =
-    config.staleness?.critical || helper.DEFAULT_DAYS_TO_STALE * 2;
+  const extraold =
+    config.staleness?.extraold || helper.DEFAULT_DAYS_TO_STALE * 2;
 
   // Make sure that config is right and if not, set defaults
-  if (old > critical || critical > helper.MAX_DAYS || old <= 0) {
+  if (old > extraold || extraold > helper.MAX_DAYS || old <= 0) {
     logger.info(
-      `The staleness config is wrong, old = ${old}, critical = ${critical}, bailing...`
+      `The staleness config is wrong, old = ${old}, extraold = ${extraold}, bailing...`
     );
     return;
   }
   logger.info(
-    `Running staleness check for ${owner}/${repo}, config: old=${old}, critical=${critical}...`
+    `Running staleness check for ${owner}/${repo}, config: old=${old}, extraold=${extraold}...`
   );
   for await (const response of context.octokit.paginate.iterator(
     context.octokit.rest.issues.listForRepo,
@@ -320,8 +321,8 @@ async function updateStalenessLabel(
         pull.labels as Label[],
         helper.STALE_PREFIX
       );
-      if (helper.isExpiredByDays(pull.created_at, critical)) {
-        label = `${helper.STALE_PREFIX} ${helper.CRITICAL_LABEL}`;
+      if (helper.isExpiredByDays(pull.created_at, extraold)) {
+        label = `${helper.STALE_PREFIX} ${helper.EXTRAOLD_LABEL}`;
       } else if (helper.isExpiredByDays(pull.created_at, old)) {
         label = `${helper.STALE_PREFIX} ${helper.OLD_LABEL}`;
       }
@@ -357,6 +358,75 @@ async function updateStalenessLabel(
 }
 
 /**
+ * Function updating a T-shirt size label on pull request if configuration is enabled.
+ * Removes previous size label if exists
+ */
+async function updatePullRequestSizeLabel(
+  context: Context<'pull_request'>,
+  owner: string,
+  repo: string,
+  config: Config
+) {
+  const pull_number = context.payload.pull_request.number;
+  // Update pull request size label if user has turned on config, product and
+  // pull request size labels feature by configuring {requestsize: {enabled: true,}}
+  // By default, this feature is turned off
+  if (
+    !config?.product ||
+    config?.enabled === false ||
+    !config?.requestsize?.enabled
+  ) {
+    logger.info(
+      `Skipping pull request size calculations for PR#${pull_number} in ${owner}/${repo}`
+    );
+    return;
+  }
+  const filesChanged = await context.octokit.pulls.listFiles({
+    owner,
+    repo,
+    pull_number,
+  });
+  logger.info(
+    `Request size calculation in PR #${pull_number} in ${owner}/${repo}...`
+  );
+  let changes = 0;
+  filesChanged.data.forEach(item => {
+    changes += item.changes;
+  });
+  logger.info(
+    `Amount of changes in pull request ${pull_number} in ${owner}/${repo} is ${changes}`
+  );
+  const pr_size = `${helper.SIZE_PREFIX} ${helper.getPullRequestSize(changes)}`;
+  const size_label = helper.fetchLabelByPrefix(
+    context.payload.pull_request.labels,
+    helper.SIZE_PREFIX
+  );
+  if (pr_size !== size_label?.name) {
+    if (size_label) {
+      logger.info(
+        `Deleting ${size_label.name} in ${owner}/${repo}/${pull_number}...`
+      );
+      context.octokit.issues.removeLabel({
+        owner,
+        repo,
+        issue_number: pull_number,
+        name: size_label.name,
+      });
+    }
+    // Update the PR size label
+    logger.info(
+      `Request size label added to PR #${pull_number} in ${owner}/${repo}, label is "${pr_size}"`
+    );
+    await context.octokit.issues.addLabels({
+      owner,
+      repo,
+      issue_number: pull_number,
+      labels: [pr_size],
+    });
+  }
+}
+
+/**
  * Main function, responds to label being added
  */
 export function handler(app: Probot) {
@@ -378,7 +448,17 @@ export function handler(app: Probot) {
       logger.info(`Skipping for ${owner}/${repo}`);
       return;
     }
-
+    // If the pull request size labeling enabled, update all labels in a repo
+    // We run it here since the scheduler runs once in a while, so we dont
+    // need to update labels on pull request change event
+    if (config?.requestsize?.enabled) {
+      await syncLabels(
+        context.octokit,
+        owner,
+        repo,
+        helper.PULL_REQUEST_SIZE_LABELS
+      );
+    }
     // Update staleness labels on all pull requests in the repo
     updateStalenessLabel(context, owner, repo, config);
 
@@ -476,11 +556,6 @@ export function handler(app: Probot) {
       context.payload.pull_request.head.sha,
       context.payload.pull_request.number
     );
-    // For the auto label main logic, synchronize event is irrelevant.
-    if (context.payload.action === 'synchronize') {
-      return;
-    }
-
     const config = await getConfigWithDefault<Config>(
       context.octokit,
       owner,
@@ -489,7 +564,11 @@ export function handler(app: Probot) {
       DEFAULT_CONFIGS,
       {schema: schema}
     );
-
+    await updatePullRequestSizeLabel(context, owner, repo, config);
+    // For the auto label main logic, synchronize event is irrelevant.
+    if (context.payload.action === 'synchronize') {
+      return;
+    }
     await handler.autoLabelOnPR(context, owner, repo, config);
   });
 

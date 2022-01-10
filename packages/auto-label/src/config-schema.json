@@ -73,10 +73,19 @@
 		"old": {
 		    "type": "number"
 		},
-		"critical": {
+		"extraold": {
 		    "type": "number"
 		}
 	    }
-	}
+	},
+	"requestsize": {
+	    "type": "object",
+	    "additionalProperties": false,
+	    "properties": {
+		"enabled": {
+		    "type": "boolean"
+		}
+	    }
+	}	
     }
 }
