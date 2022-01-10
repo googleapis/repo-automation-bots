@@ -51,9 +51,37 @@ export function getLastCommitBody(
     .trim();
 }
 
+// Exported for testing only.
+/**
+ * Inserts an API name into a pr title after the first colon.
+ * Ex:
+ *   chore(bazel): Update gapic-generator-php to v1.2.1
+ * bocomes
+ *   chore(bazel): [Billing] Update gapic-generator-php to v1.2.1
+ */
+export function insertApiName(prTitle: string, apiName: string): string {
+  if (!apiName) {
+    return prTitle;
+  }
+  // Only search for the colon in the first 40 characters of the title,
+  // and stop at new lines.  A conventional commit message shouldn't
+  // exceed 40 characters.
+  const match = /^[^\r\n]{1,40}/.exec(prTitle);
+  const firstForty = match ? match[0] : '';
+  const firstColon = firstForty.indexOf(':');
+  if (firstColon < 0) {
+    return `[${apiName}] ${prTitle}`;
+  } else {
+    const left = prTitle.substring(0, firstColon + 1);
+    const right = prTitle.substring(firstColon + 1);
+    return `${left} [${apiName}]${right}`;
+  }
+}
+
 /**
  * Creates a pull request using the title and commit message from the most
  * recent commit.
+ * @argument apiName Name of the API to optionally include in the PR title.
  */
 export async function createPullRequestFromLastCommit(
   owner: string,
@@ -64,6 +92,7 @@ export async function createPullRequestFromLastCommit(
   labels: string[],
   octokit: OctokitType,
   prBody = '',
+  apiName = '',
   logger = console
 ): Promise<void> {
   const cmd = newCmd(logger);
@@ -80,7 +109,10 @@ export async function createPullRequestFromLastCommit(
     .trim();
   const commitBody = prBody ?? getLastCommitBody(localRepoDir, logger);
 
-  const {title, body} = resplit(commitSubject, commitBody);
+  const {title, body} = resplit(
+    insertApiName(commitSubject, apiName),
+    commitBody
+  );
 
   // Create a pull request.
   const pull = await octokit.pulls.create({
