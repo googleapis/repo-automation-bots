@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ReleaseType} from 'release-please/build/src/releasers';
+import {
+  ReleaseType,
+  VersioningStrategyType,
+  ChangelogNotesType,
+} from 'release-please';
 
 export interface BranchOptions {
   releaseLabels?: string[];
@@ -21,11 +25,20 @@ export interface BranchOptions {
   packageName?: string;
   handleGHRelease?: boolean;
   bumpMinorPreMajor?: boolean;
+  bumpPatchForMinorPreMajor?: boolean;
   path?: string;
   changelogPath?: string;
   manifest?: boolean;
+  manifestFile?: string;
+  manifestConfig?: string;
   extraFiles?: string[];
   releaseLabel?: string;
+  draft?: boolean;
+  draftPullRequest?: boolean;
+  pullRequestTitlePattern?: string;
+  versionFile?: string;
+  versioning?: VersioningStrategyType;
+  changelogType?: ChangelogNotesType;
 }
 
 export interface BranchConfiguration extends BranchOptions {
