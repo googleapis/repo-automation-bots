@@ -5,6 +5,10 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
+    "api-name": {
+      "type":"string",
+      "description": "Gets inserted into pull request titles.  Useful for mono-repos."
+    },
     "begin-after-commit-hash": {
       "type": "string",
       "description": "Start creating pull requests after this googleapis-gen commit hash."
