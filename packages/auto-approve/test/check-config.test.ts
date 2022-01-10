@@ -50,10 +50,14 @@ function getAutoApproveFile(response: string | undefined, status: number) {
     );
 }
 
-async function invalidateSchema(configNum: number) {
+async function checkForValidSchema(
+  configNum: number,
+  V2: string,
+  invalid: string
+) {
   return await validateSchema(
     fs.readFileSync(
-      `./test/fixtures/config/invalid-schemas/invalid-schema${configNum}.yml`,
+      `./test/fixtures/config/${invalid}valid-schemas${V2}/${invalid}valid-schema${configNum}.yml`,
       'utf8'
     )
   );
@@ -85,79 +89,102 @@ describe('check for config', () => {
   describe('whether YAML file has valid schema', async () => {
     it('should fail if YAML has any other properties than the ones specified', async () => {
       //does not have any additional properties
-      const isSchemaValid = await invalidateSchema(1);
+      const isSchemaValid = await checkForValidSchema(1, '', 'in');
       snapshot(isSchemaValid ? isSchemaValid : 'undefined');
     });
 
     it('should fail if title does not match first author', async () => {
       //title does not correspond to author
-      const isSchemaValid = await invalidateSchema(2);
+      const isSchemaValid = await checkForValidSchema(2, '', 'in');
       snapshot(isSchemaValid ? isSchemaValid : 'undefined');
     });
 
     it('should fail if title does not match second author', async () => {
       //title does not correspond to author
-      const isSchemaValid = await invalidateSchema(3);
+      const isSchemaValid = await checkForValidSchema(3, '', 'in');
       snapshot(isSchemaValid ? isSchemaValid : 'undefined');
     });
 
     it('should fail if title does not match third author', async () => {
       //title does not correspond to author
-      const isSchemaValid = await invalidateSchema(4);
+      const isSchemaValid = await checkForValidSchema(4, '', 'in');
       snapshot(isSchemaValid ? isSchemaValid : 'undefined');
     });
 
     it('should fail if author is not allowed', async () => {
       //author is not allowed
-      const isSchemaValid = await invalidateSchema(5);
+      const isSchemaValid = await checkForValidSchema(5, '', 'in');
       snapshot(isSchemaValid ? isSchemaValid : 'undefined');
     });
 
     it('should fail if it does not have title property', async () => {
       //missing 'title' property
-      const isSchemaValid = await invalidateSchema(6);
+      const isSchemaValid = await checkForValidSchema(6, '', 'in');
       snapshot(isSchemaValid ? isSchemaValid : 'undefined');
     });
 
     it('should fail if config is empty', async () => {
       //empty array
-      const isSchemaValid = await invalidateSchema(7);
+      const isSchemaValid = await checkForValidSchema(7, '', 'in');
       snapshot(isSchemaValid ? isSchemaValid : 'undefined');
     });
 
     it('should fail if there are duplicate items', async () => {
       //duplicate items
-      const isSchemaValid = await invalidateSchema(8);
+      const isSchemaValid = await checkForValidSchema(8, '', 'in');
       snapshot(isSchemaValid ? isSchemaValid : 'undefined');
     });
 
     it('should return empty string if YAML has all of the possible valid options', async () => {
-      const isSchemaValid = await validateSchema(
-        fs.readFileSync(
-          './test/fixtures/config/valid-schemas/valid-schema1.yml',
-          'utf8'
-        )
-      );
+      const isSchemaValid = await checkForValidSchema(1, '', '');
       assert.strictEqual(isSchemaValid, '');
     });
 
     it('should return empty string if YAML has any one of the possible valid options', async () => {
-      const isSchemaValid = await validateSchema(
-        fs.readFileSync(
-          './test/fixtures/config/valid-schemas/valid-schema2.yml',
-          'utf8'
-        )
-      );
+      const isSchemaValid = await checkForValidSchema(2, '', '');
       assert.strictEqual(isSchemaValid, '');
     });
 
     it('should return empty string if YAML has some of the possible valid options', async () => {
-      const isSchemaValid = await validateSchema(
-        fs.readFileSync(
-          './test/fixtures/config/valid-schemas/valid-schema3.yml',
-          'utf8'
-        )
-      );
+      const isSchemaValid = await checkForValidSchema(3, '', '');
+      assert.strictEqual(isSchemaValid, '');
+    });
+  });
+
+  describe('whether YAML file has valid schema V2', async () => {
+    it('should fail if YAML has any other properties than the ones specified', async () => {
+      const isSchemaValid = await checkForValidSchema(1, 'V2', 'in');
+      snapshot(isSchemaValid ? isSchemaValid : 'undefined');
+    });
+
+    it('should fail if the property is wrong', async () => {
+      const isSchemaValid = await checkForValidSchema(2, 'V2', 'in');
+      snapshot(isSchemaValid ? isSchemaValid : 'undefined');
+    });
+
+    it('should fail if both v1 and v2 schemas are included', async () => {
+      const isSchemaValid = await checkForValidSchema(3, 'V2', 'in');
+      snapshot(isSchemaValid ? isSchemaValid : 'undefined');
+    });
+
+    it('should fail if there are duplicate items', async () => {
+      //duplicate items
+      const isSchemaValid = await checkForValidSchema(4, 'V2', 'in');
+      snapshot(isSchemaValid ? isSchemaValid : 'undefined');
+    });
+
+    it('should return empty string if YAML has all of the possible valid options', async () => {
+      const isSchemaValid = await checkForValidSchema(1, 'V2', '');
+      assert.strictEqual(isSchemaValid, '');
+    });
+
+    it('should return empty string if YAML has any one of the possible valid options', async () => {
+      const isSchemaValid = await checkForValidSchema(2, 'V2', '');
+      assert.strictEqual(isSchemaValid, '');
+    });
+
+    it('should return empty string if YAML has some of the possible valid options', async () => {
+      const isSchemaValid = await checkForValidSchema(3, 'V2', '');
       assert.strictEqual(isSchemaValid, '');
     });
   });

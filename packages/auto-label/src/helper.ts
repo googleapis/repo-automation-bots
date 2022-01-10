@@ -22,6 +22,24 @@ export const CONFIG_FILE_NAME = 'auto-label.yaml';
 // Default app configs if user didn't specify a .config
 export const LABEL_PRODUCT_BY_DEFAULT = true;
 
+// The max amount of days which can be configured for staleness
+export const MAX_DAYS = 365;
+
+// The default amount of days to be used to assume that pull request is stale
+export const DEFAULT_DAYS_TO_STALE = 60;
+
+// The default prefix for all stale labels
+export const STALE_PREFIX = 'stale:';
+
+// The default prefix for all pull request size labels
+export const SIZE_PREFIX = 'size:';
+
+// The label for old pull requests
+export const OLD_LABEL = 'old';
+
+// The label for extra old pull requests
+export const EXTRAOLD_LABEL = 'extraold';
+
 export const DEFAULT_CONFIGS = {
   product: LABEL_PRODUCT_BY_DEFAULT,
   language: {
@@ -30,7 +48,58 @@ export const DEFAULT_CONFIGS = {
   path: {
     pullrequest: false,
   },
+  staleness: {
+    pullrequest: false,
+  },
+  requestsize: {
+    enabled: false,
+  },
 };
+
+/**
+ * The list of all labels used to mark pull request size.
+ * Given a fact that by default pull request size labeling feature is off,
+ * we will update those labels in repo only when configuration is enabled
+ * Currently there are following labels available:
+ *   "size: xs" for pull request with less than 50 changes.
+ *   "size: s" for pull request with less than 250 changes.
+ *   "size: m" for pull request with less than 1000 changes.
+ *   "size: l" for pull request with less than 1250 changes.
+ *   "size: xl" for pull request with less than 1500 changes.
+ *   "size: xxl" for pull request with more than 1500 changes.
+ */
+export const PULL_REQUEST_SIZE_LABELS = [
+  {
+    name: 'size: xs',
+    description: 'Pull request size is extra small.',
+    color: '2deb01',
+  },
+  {
+    name: 'size: s',
+    description: 'Pull request size is small.',
+    color: '2cc785',
+  },
+  {
+    name: 'size: m',
+    description: 'Pull request size is medium.',
+    color: '5d743d',
+  },
+  {
+    name: 'size: l',
+    description: 'Pull request size is large.',
+    color: 'd65692',
+  },
+  {
+    name: 'size: xl',
+    description: 'Pull request size is extra large.',
+    color: '912925',
+  },
+  {
+    name: 'size: xxl',
+    description: 'Pull request size is extra extra large.',
+    color: 'd22b5f',
+  },
+];
 
 /**
  * Checks whether the intended label already exists
@@ -43,6 +112,56 @@ export function labelExists(labels: Label[], new_label: string): Label | null {
     }
   }
   return null;
+}
+
+/**
+ * Checks whether the intended label already exists by given prefix
+ */
+export function fetchLabelByPrefix(
+  labels: Label[],
+  label_prefix: string
+): Label | null {
+  if (!labels) {
+    return null;
+  }
+  for (const label of labels) {
+    if (label.name.startsWith(label_prefix)) {
+      logger.info(
+        `Exiting: label ${label.name} found by prefix ${label_prefix}`
+      );
+      return label;
+    }
+  }
+  return null;
+}
+
+/**
+ * Checks whether the given time is already expired (e.g. over given days limit)
+ */
+export function isExpiredByDays(time: string, limit: number) {
+  const created_at = Date.parse(time);
+  const diffInMs = Math.abs(Date.now() - created_at);
+  const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+  if (isNaN(diffInDays) || typeof diffInDays === 'undefined') return false;
+  return diffInDays > limit;
+}
+
+/**
+ * Checks whether the intended label already exists by given prefix
+ */
+export function getPullRequestSize(changes: number): string {
+  if (changes >= 1500) {
+    return 'xxl';
+  } else if (changes >= 1250) {
+    return 'xl';
+  } else if (changes >= 1000) {
+    return 'l';
+  } else if (changes >= 250) {
+    return 'm';
+  } else if (changes >= 50) {
+    return 's';
+  }
+  return 'xs';
 }
 
 // *** Helper functions for product type labels ***
@@ -59,6 +178,16 @@ export interface LanguageConfig {
   paths?: PathConfig;
 }
 
+export interface StaleConfig {
+  pullrequest?: boolean;
+  old?: number;
+  extraold?: number;
+}
+
+export interface PullRequestSizeConfig {
+  enabled?: boolean;
+}
+
 export interface Config {
   enabled?: boolean;
   product?: boolean;
@@ -68,6 +197,8 @@ export interface Config {
     paths?: PathConfig;
   };
   language?: LanguageConfig;
+  staleness?: StaleConfig;
+  requestsize?: PullRequestSizeConfig;
 }
 
 export interface Label {

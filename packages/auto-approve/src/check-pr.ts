@@ -14,31 +14,23 @@
 
 // eslint-disable-next-line node/no-extraneous-import
 import {PullRequestEvent} from '@octokit/webhooks-types/schema';
-import {getChangedFiles, File} from './get-pr-info';
+import {getChangedFiles} from './get-pr-info';
 import {logger} from 'gcf-utils';
 import {
   getTargetFiles,
   getVersions,
-  isMajorVersionChanging,
-  isMinorVersionUpgraded,
   isOneDependencyChanged,
   checkFilePathsMatch,
   doesDependencyChangeMatchPRTitle,
-  Versions,
   mergesOnWeekday,
+  runVersioningValidation,
 } from './utils-for-pr-checking';
 import {Octokit} from '@octokit/rest';
 import {languageVersioningRules} from './language-versioning-rules';
+import {ValidPr, File} from './interfaces';
 // type PullsListFilesResponseData = operations['pulls/list-files']['responses']['200']['application/json'];
 
 // This file manages the logic to check whether a given PR matches the config in the repository
-
-export interface ValidPr {
-  author: string;
-  title: string;
-  changedFiles?: string[];
-  maxFiles?: number;
-}
 
 /**
  * Checks that a given PR matches the rules in the auto-approve.yml file in the repository
@@ -171,7 +163,7 @@ export async function checkPRAgainstConfig(
     if (rulesToValidateAgainst.changedFiles) {
       filePathsMatch = checkFilePathsMatch(
         changedFiles.map(x => x.filename),
-        rulesToValidateAgainst
+        rulesToValidateAgainst.changedFiles.map(x => RegExp(x))
       );
     }
 
@@ -198,24 +190,4 @@ export async function checkPRAgainstConfig(
     logger.info(`${repoOwner}/${repo}/${prNumber} does not match config`);
     return false;
   }
-}
-
-/**
- * Runs additional validation checks when a version is upgraded to ensure that the
- * version is only upgraded, not downgraded, and that the major version is not bumped.
- *
- * @param file The incoming target file that has a matching ruleset in language-versioning-rules
- * @param pr The matching ruleset of the file above from language-versioning-rules
- * @returns true if the package was upgraded appropriately, and had only one thing changed
- */
-function runVersioningValidation(versions: Versions): boolean {
-  let majorBump = true;
-  let minorBump = false;
-
-  if (versions) {
-    majorBump = isMajorVersionChanging(versions);
-    minorBump = isMinorVersionUpgraded(versions);
-  }
-
-  return !majorBump && minorBump;
 }

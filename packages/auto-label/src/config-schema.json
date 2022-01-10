@@ -62,6 +62,30 @@
 		},
 		"paths": {"$ref": "#/definitions/path"}
 	    }
-	}
+	},
+	"staleness": {
+	    "type": "object",
+	    "additionalProperties": false,
+	    "properties": {
+		"pullrequest": {
+		    "type": "boolean"
+		},
+		"old": {
+		    "type": "number"
+		},
+		"extraold": {
+		    "type": "number"
+		}
+	    }
+	},
+	"requestsize": {
+	    "type": "object",
+	    "additionalProperties": false,
+	    "properties": {
+		"enabled": {
+		    "type": "boolean"
+		}
+	    }
+	}	
     }
 }

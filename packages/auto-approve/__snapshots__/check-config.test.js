@@ -33,3 +33,19 @@ exports['check for config whether YAML file has valid schema should fail if conf
 exports['check for config whether YAML file has valid schema should fail if there are duplicate items 1'] = `
 [{"wrongProperty":{"i":1,"j":0},"message":"must NOT have duplicate items (items ## 0 and 1 are identical)"}]
 `
+
+exports['check for config whether YAML file has valid schema V2 should fail if YAML has any other properties than the ones specified 1'] = `
+[{"wrongProperty":{"allowedValues":["UpdateDiscoveryArtifacts","RegenerateReadme","DiscoveryDocUpdate","PythonDependency","NodeDependency","NodeRelease","JavaDependency","OwlBotTemplateChanges","OwlBotAPIChanges"]},"message":"must be equal to one of the allowed values"}]
+`
+
+exports['check for config whether YAML file has valid schema V2 should fail if the property is wrong 1'] = `
+[{"wrongProperty":{"additionalProperty":"processeses"},"message":"must NOT have additional properties"}]
+`
+
+exports['check for config whether YAML file has valid schema V2 should fail if both v1 and v2 schemas are included 1'] = `
+[{"wrongProperty":{"additionalProperty":"rules"},"message":"must NOT have additional properties"}]
+`
+
+exports['check for config whether YAML file has valid schema V2 should fail if there are duplicate items 1'] = `
+[{"wrongProperty":{"i":0,"j":1},"message":"must NOT have duplicate items (items ## 1 and 0 are identical)"}]
+`

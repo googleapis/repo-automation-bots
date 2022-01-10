@@ -269,6 +269,120 @@ describe('auto-label', () => {
       );
     });
 
+    it('labels a pull request with correct size', async () => {
+      const config = loadConfig('valid-config-pr-size.yml');
+      getConfigWithDefaultStub.resolves(config);
+      const pr_opened_payload = require(resolve(
+        fixturesPath,
+        './events/pr_opened.json'
+      ));
+      const pr_files_payload = require(resolve(
+        fixturesPath,
+        './events/pr_opened_files.json'
+      ));
+      const expected_labels = {
+        labels: ['size: s'],
+      };
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/pulls/12/files')
+        .reply(200, pr_files_payload)
+        // Mock issues.addlabels adding size label
+        .post('/repos/testOwner/testRepo/issues/12/labels', body => {
+          assert.deepStrictEqual(body, expected_labels);
+          return true;
+        })
+        .reply(200)
+        .get('/repos/testOwner/testRepo/issues/12/labels')
+        .reply(200, [
+          {
+            name: 'size: s',
+          },
+        ])
+        .post('/repos/testOwner/testRepo/issues/12/labels')
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: pr_opened_payload,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
+    it('re-labels a pull request with correct size after size change', async () => {
+      const config = loadConfig('valid-config-pr-size.yml');
+      getConfigWithDefaultStub.resolves(config);
+      const pr_opened_payload = require(resolve(
+        fixturesPath,
+        './events/pr_updates_size_change.json'
+      ));
+      const pr_files_payload = require(resolve(
+        fixturesPath,
+        './events/pr_opened_files.json'
+      ));
+      const expected_labels = {
+        labels: ['size: s'],
+      };
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/pulls/12/files')
+        .reply(200, pr_files_payload)
+        .delete('/repos/testOwner/testRepo/issues/12/labels/size%3A%20xxl')
+        .reply(200, [
+          {
+            name: 'size: xxl',
+            color: 'C9FFE5',
+          },
+        ])
+        // Mock issues.addlabels adding size label
+        .post('/repos/testOwner/testRepo/issues/12/labels', body => {
+          assert.deepStrictEqual(body, expected_labels);
+          return true;
+        })
+        .reply(200)
+        .get('/repos/testOwner/testRepo/issues/12/labels')
+        .reply(200, [
+          {
+            name: 'size: s',
+          },
+        ])
+        .post('/repos/testOwner/testRepo/issues/12/labels')
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: pr_opened_payload,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
+    it('does not re-labels a pull request when size was not changed', async () => {
+      const config = loadConfig('valid-config-pr-size.yml');
+      getConfigWithDefaultStub.resolves(config);
+      const pr_opened_payload = require(resolve(
+        fixturesPath,
+        './events/pr_updates_size_change.json'
+      ));
+      const pr_files_payload = require(resolve(
+        fixturesPath,
+        './events/pr_opened_files_xxl_size.json'
+      ));
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/pulls/12/files')
+        .reply(200, pr_files_payload)
+        .get('/repos/testOwner/testRepo/issues/12/labels')
+        .reply(200)
+        .post('/repos/testOwner/testRepo/issues/12/labels')
+        .reply(200);
+
+      await probot.receive({
+        name: 'pull_request',
+        payload: pr_opened_payload,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
     it('does not re-label an issue', async () => {
       const config = loadConfig('valid-config.yml');
       getConfigWithDefaultStub.resolves(config);
@@ -554,6 +668,238 @@ describe('auto-label', () => {
             name: 'samples',
           },
         ]);
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          organization: {login: 'testOwner'},
+          repository: {name: 'testRepo', owner: {login: 'testOwner'}},
+          cron_org: 'testOwner',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
+    it('does not updates staleness labels when same', async () => {
+      const config = loadConfig('valid-config-staleness.yml');
+      getConfigWithDefaultStub.resolves(config);
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, [
+          {
+            number: 5,
+            created_at: '2021-10-06T16:45:18Z',
+            labels: [
+              {
+                name: 'stale: extraold',
+                color: 'C9FFE5',
+              },
+            ],
+            pull_request: {
+              url: 'https://api.github.com/repos/testOwner/testRepo/issues/5',
+            },
+          },
+        ])
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, []);
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          organization: {login: 'testOwner'},
+          repository: {name: 'testRepo', owner: {login: 'testOwner'}},
+          cron_org: 'testOwner',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
+    it('updates old staleness label to extraold', async () => {
+      const config = loadConfig('valid-config-staleness.yml');
+      getConfigWithDefaultStub.resolves(config);
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, [
+          {
+            number: 5,
+            created_at: '2021-10-06T16:45:18Z',
+            labels: [
+              {
+                name: 'stale: old',
+                color: 'C9FFE5',
+              },
+            ],
+            pull_request: {
+              url: 'https://api.github.com/repos/testOwner/testRepo/issues/5',
+            },
+          },
+        ])
+        .delete('/repos/testOwner/testRepo/issues/5/labels/stale%3A%20old')
+        .reply(200, [
+          {
+            name: 'stale: old',
+            color: 'C9FFE5',
+          },
+        ])
+        .post('/repos/testOwner/testRepo/issues/5/labels')
+        .reply(200, [
+          {
+            name: 'stale: extraold',
+            color: 'A9FFE5',
+          },
+        ])
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, []);
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          organization: {login: 'testOwner'},
+          repository: {name: 'testRepo', owner: {login: 'testOwner'}},
+          cron_org: 'testOwner',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
+    it('adds staleness label', async () => {
+      const config = loadConfig('valid-config-staleness.yml');
+      getConfigWithDefaultStub.resolves(config);
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, [
+          {
+            number: 5,
+            created_at: '2021-10-06T16:45:18Z',
+            labels: [],
+            pull_request: {
+              url: 'https://api.github.com/repos/testOwner/testRepo/issues/5',
+            },
+          },
+        ])
+        .post('/repos/testOwner/testRepo/issues/5/labels')
+        .reply(200, [
+          {
+            name: 'stale: extraold',
+            color: 'C9FFE5',
+          },
+        ])
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, [
+          {
+            number: 1,
+          },
+        ])
+        .get('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [{name: 'api:theWrongLabel'}])
+        .post('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ])
+        .delete('/repos/testOwner/testRepo/issues/1/labels/api%3AtheWrongLabel')
+        .reply(200, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ]);
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          organization: {login: 'testOwner'},
+          repository: {name: 'testRepo', owner: {login: 'testOwner'}},
+          cron_org: 'testOwner',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
+    it('does not adds staleness label for stale pull request with config disabled', async () => {
+      const config = loadConfig('valid-config.yml');
+      getConfigWithDefaultStub.resolves(config);
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, [
+          {
+            number: 1,
+            // return stale pull request to make sure it will be ignored due to disabled config
+            created_at: '2010-10-01T16:45:18Z',
+            labels: [],
+            pull_request: {
+              url: 'https://api.github.com/repos/testOwner/testRepo/issues/1',
+            },
+          },
+        ])
+        .get('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [{name: 'api:theWrongLabel'}])
+        .post('/repos/testOwner/testRepo/issues/1/labels')
+        .reply(200, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ])
+        .delete('/repos/testOwner/testRepo/issues/1/labels/api%3AtheWrongLabel')
+        .reply(200, [
+          {
+            name: 'myGitHubLabel',
+            color: 'C9FFE5',
+          },
+        ]);
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          organization: {login: 'testOwner'},
+          repository: {name: 'testRepo', owner: {login: 'testOwner'}},
+          cron_org: 'testOwner',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+      ghRequests.done();
+    });
+
+    it('adds staleness labels when feature enabled with default config values', async () => {
+      const config = loadConfig('valid-config-staleness-defaults.yml');
+      getConfigWithDefaultStub.resolves(config);
+      const ghRequests = nock('https://api.github.com')
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, [
+          {
+            number: 5,
+            created_at: '2010-10-06T16:45:18Z',
+            pull_request: {
+              url: 'https://api.github.com/repos/testOwner/testRepo/issues/5',
+            },
+          },
+        ])
+        .post('/repos/testOwner/testRepo/issues/5/labels')
+        .reply(200, [
+          {
+            name: 'stale: extraold',
+            color: 'C9FFE5',
+          },
+        ])
+        .get('/repos/testOwner/testRepo/issues')
+        .reply(200, []);
+
       await probot.receive({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'schedule.repository' as any,

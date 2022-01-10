@@ -118,6 +118,53 @@ path:
       # i.e. label all files in ./test/fixtures and down as "testfixtures"
 ```
 
+-------------------
+
+## Staleness Label
+
+Bot runs on all pull requests and labels them with staleness indicator based on configured values. Currently there are two staleness labels available: `stale: old` and `stale: extraold`.
+
+Staleness labeling is turned off by default. To turn on staleness labeling:
+
+```yaml
+# In .github/auto-label.yaml
+staleness:
+  pullrequest: true
+  old: 10
+  # By default old is 60 days if no value is configured
+  extraold: 20
+  # By default extraold is 120 days if no value is configured
+```
+
+-------------------
+
+## Size Label
+
+Bot runs on a pull request when it changes and labels them with T-shirt size indicator if feature is enabled. 
+
+Currently there are following labels available:
+
+  `size: xs` for pull request with less than 50 changes.
+  
+  `size: s` for pull request with less than 250 changes.
+  
+  `size: m` for pull request with less than 1000 changes.
+  
+  `size: l` for pull request with less than 1250 changes.
+  
+  `size: xl` for pull request with less than 1500 changes.
+  
+  `size: xxl` for pull request with more than 1500 changes.
+  
+
+Size labeling is turned off by default. To turn on size labeling:
+
+```yaml
+# In .github/auto-label.yaml
+requestsize:
+  enabled: true
+```
+
 ## Running tests:
 
 Instructions are provided in [googleapis/repo-automation-bots](https://github.com/googleapis/repo-automation-bots/blob/main/README.md) for deploying and testing your bots.

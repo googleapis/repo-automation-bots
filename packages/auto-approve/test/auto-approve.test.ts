@@ -16,6 +16,7 @@ import * as autoApprove from '../src/auto-approve';
 import * as getPRInfo from '../src/get-pr-info';
 import * as checkConfig from '../src/check-config';
 import * as checkPR from '../src/check-pr';
+import * as checkPRV2 from '../src/check-pr-v2';
 import {resolve} from 'path';
 // eslint-disable-next-line node/no-extraneous-import
 import {Probot, createProbot, ProbotOctokit} from 'probot';
@@ -24,6 +25,8 @@ import sinon, {SinonStub} from 'sinon';
 import {describe, it, beforeEach} from 'mocha';
 import * as assert from 'assert';
 import snapshot from 'snap-shot-it';
+import {ConfigurationV2, Configuration, Reviews} from '../src/interfaces';
+import * as fs from 'fs';
 
 const {Octokit} = require('@octokit/rest');
 
@@ -40,7 +43,7 @@ const TestingOctokit = ProbotOctokit.defaults({
 function getConfigFile(
   owner: string,
   repo: string,
-  response: string | undefined,
+  response: Configuration | ConfigurationV2 | undefined,
   status: number
 ) {
   if (status === 404) {
@@ -55,15 +58,11 @@ function getConfigFile(
   } else {
     return nock('https://api.github.com')
       .get(`/repos/${owner}/${repo}/contents/.github%2Fauto-approve.yml`)
-      .reply(status, {response});
+      .reply(status, response);
   }
 }
 
-function getReviewsCompleted(
-  owner: string,
-  repo: string,
-  response: getPRInfo.Reviews[]
-) {
+function getReviewsCompleted(owner: string, repo: string, response: Reviews[]) {
   return nock('https://api.github.com')
     .get(`/repos/${owner}/${repo}/pulls/1/reviews`)
     .reply(200, response);
@@ -101,6 +100,9 @@ describe('auto-approve', () => {
   let checkAutoApproveStub: SinonStub;
   let checkCodeOwnersStub: SinonStub;
   let getSecretStub: SinonStub;
+  let checkPRAgainstConfigV2Stub: SinonStub;
+
+  const sandbox = sinon.createSandbox();
 
   beforeEach(() => {
     probot = createProbot({
@@ -111,21 +113,20 @@ describe('auto-approve', () => {
     });
     probot.load(autoApprove.handler);
 
-    checkPRAgainstConfigStub = sinon.stub(checkPR, 'checkPRAgainstConfig');
-    getChangedFilesStub = sinon.stub(getPRInfo, 'getChangedFiles');
-    getBlobFromPRFilesStub = sinon.stub(getPRInfo, 'getBlobFromPRFiles');
-    checkAutoApproveStub = sinon.stub(checkConfig, 'checkAutoApproveConfig');
-    checkCodeOwnersStub = sinon.stub(checkConfig, 'checkCodeOwners');
-    getSecretStub = sinon.stub(autoApprove, 'authenticateWithSecret');
+    checkPRAgainstConfigStub = sandbox.stub(checkPR, 'checkPRAgainstConfig');
+    getChangedFilesStub = sandbox.stub(getPRInfo, 'getChangedFiles');
+    getBlobFromPRFilesStub = sandbox.stub(getPRInfo, 'getBlobFromPRFiles');
+    checkAutoApproveStub = sandbox.stub(checkConfig, 'checkAutoApproveConfig');
+    checkCodeOwnersStub = sandbox.stub(checkConfig, 'checkCodeOwners');
+    getSecretStub = sandbox.stub(autoApprove, 'authenticateWithSecret');
+    checkPRAgainstConfigV2Stub = sandbox.stub(
+      checkPRV2,
+      'checkPRAgainstConfigV2'
+    );
   });
 
   afterEach(() => {
-    checkPRAgainstConfigStub.restore();
-    getChangedFilesStub.restore();
-    getBlobFromPRFilesStub.restore();
-    checkAutoApproveStub.restore();
-    checkCodeOwnersStub.restore();
-    getSecretStub.restore();
+    sandbox.restore();
   });
 
   describe('main auto-approve function', () => {
@@ -143,7 +144,12 @@ describe('auto-approve', () => {
         ));
 
         const scopes = [
-          getConfigFile('testOwner', 'testRepo', 'fake-config', 200),
+          getConfigFile(
+            'testOwner',
+            'testRepo',
+            {rules: [{author: 'fake-author', title: 'fake-title'}]},
+            200
+          ),
           getReviewsCompleted('testOwner', 'testRepo', []),
           submitReview('testOwner', 'testRepo', 200),
           addLabels('testOwner', 'testRepo', 200),
@@ -173,7 +179,12 @@ describe('auto-approve', () => {
         ));
 
         const scopes = [
-          getConfigFile('testOwner', 'testRepo', 'fake-config', 200),
+          getConfigFile(
+            'testOwner',
+            'testRepo',
+            {rules: [{author: 'fake-author', title: 'fake-title'}]},
+            200
+          ),
           getReviewsCompleted('testOwner', 'testRepo', [
             {
               user: {login: 'yoshi-approver'},
@@ -211,7 +222,7 @@ describe('auto-approve', () => {
           getConfigFile(
             'GoogleCloudPlatform',
             'python-docs-samples',
-            'fake-config',
+            {rules: [{author: 'fake-author', title: 'fake-title'}]},
             200
           ),
           getReviewsCompleted('GoogleCloudPlatform', 'python-docs-samples', []),
@@ -247,7 +258,12 @@ describe('auto-approve', () => {
         ));
 
         const scopes = [
-          getConfigFile('testOwner', 'testRepo', 'fake-config', 200),
+          getConfigFile(
+            'testOwner',
+            'testRepo',
+            {rules: [{author: 'fake-author', title: 'fake-title'}]},
+            200
+          ),
           createCheck('testOwner', 'testRepo', 200),
         ];
 
@@ -273,7 +289,12 @@ describe('auto-approve', () => {
         ));
 
         const scopes = [
-          getConfigFile('testOwner', 'testRepo', 'fake-config', 200),
+          getConfigFile(
+            'testOwner',
+            'testRepo',
+            {rules: [{author: 'fake-author', title: 'fake-title'}]},
+            200
+          ),
           createCheck('testOwner', 'testRepo', 200),
         ];
 
@@ -291,7 +312,6 @@ describe('auto-approve', () => {
       // before we decide whether to check if auto-approve.yml is on main branch
       it('will not check config on master if the config is modified on PR', async () => {
         getBlobFromPRFilesStub.returns('fake-file');
-
         const payload = require(resolve(
           fixturesPath,
           'events',
@@ -308,6 +328,93 @@ describe('auto-approve', () => {
 
         scope.done();
         getBlobFromPRFilesStub.reset();
+      });
+
+      it('uses the correct function to check the PR if the config is V2', async () => {
+        const validPR = fs.readFileSync(
+          resolve(
+            fixturesPath,
+            'config',
+            'valid-schemasV2',
+            'valid-schema1.yml'
+          ),
+          'utf8'
+        );
+
+        checkPRAgainstConfigV2Stub.returns(true);
+        checkAutoApproveStub.returns('');
+        checkCodeOwnersStub.returns('');
+        getSecretStub.returns(new Octokit({auth: '123'}));
+
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened_right_author_and_title_file_count'
+        ));
+
+        const scopes = [
+          getConfigFile(
+            'testOwner',
+            'testRepo',
+            validPR as unknown as ConfigurationV2,
+            200
+          ),
+          getReviewsCompleted('testOwner', 'testRepo', []),
+          submitReview('testOwner', 'testRepo', 200),
+          addLabels('testOwner', 'testRepo', 200),
+          createCheck('testOwner', 'testRepo', 200),
+        ];
+
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
+        assert.ok(checkPRAgainstConfigV2Stub.calledOnce);
+      });
+
+      it('uses the correct function to check the PR if the config is V1', async () => {
+        const validPR = fs.readFileSync(
+          resolve(fixturesPath, 'config', 'valid-schemas', 'valid-schema1.yml'),
+          'utf8'
+        );
+
+        checkPRAgainstConfigStub.returns(true);
+        checkAutoApproveStub.returns('');
+        checkCodeOwnersStub.returns('');
+        getSecretStub.returns(new Octokit({auth: '123'}));
+
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_opened_right_author_and_title_file_count'
+        ));
+
+        const scopes = [
+          getConfigFile(
+            'testOwner',
+            'testRepo',
+            validPR as unknown as ConfigurationV2,
+            200
+          ),
+          getReviewsCompleted('testOwner', 'testRepo', []),
+          submitReview('testOwner', 'testRepo', 200),
+          addLabels('testOwner', 'testRepo', 200),
+          createCheck('testOwner', 'testRepo', 200),
+        ];
+
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+
+        scopes.forEach(scope => scope.done());
+        assert.ok(getChangedFilesStub.calledOnce);
+        assert.ok(checkPRAgainstConfigStub.calledOnce);
       });
     });
 
@@ -416,11 +523,6 @@ describe('auto-approve', () => {
   });
 
   describe('gets secrets and authenticates separately for approval', () => {
-    const sandbox = sinon.createSandbox();
-    afterEach(() => {
-      sandbox.restore();
-    });
-
     it('creates a separate octokit instance and authenticates with secret in secret manager', async () => {
       checkPRAgainstConfigStub.returns(true);
       checkAutoApproveStub.returns('');
@@ -438,7 +540,12 @@ describe('auto-approve', () => {
       ));
 
       const scopes = [
-        getConfigFile('testOwner', 'testRepo', 'fake-config', 200),
+        getConfigFile(
+          'testOwner',
+          'testRepo',
+          {rules: [{author: 'fake-author', title: 'fake-title'}]},
+          200
+        ),
         getReviewsCompleted('testOwner', 'testRepo', []),
         submitReview('testOwner', 'testRepo', 200),
         addLabels('testOwner', 'testRepo', 200),
@@ -455,6 +562,30 @@ describe('auto-approve', () => {
       assert.ok(getSecretStub.calledOnce);
       assert.ok(secretOctokit.pulls.createReview.calledOnce);
       assert.ok(secretOctokit.issues.addLabels.calledOnce);
+    });
+
+    describe('RELEASE_FREEZE', () => {
+      it('returns early if RELEASE_FREEZE is truthy and PR is from release-please', async () => {
+        sandbox.stub(process, 'env').value({});
+        process.env.RELEASE_FREEZE = 'true';
+        const consoleStub = sandbox.stub(console, 'info');
+
+        const payload = require(resolve(
+          fixturesPath,
+          'events',
+          'pull_request_release_please'
+        ));
+
+        await probot.receive({
+          name: 'pull_request',
+          payload,
+          id: 'abc123',
+        });
+        sandbox.assert.calledWith(
+          consoleStub,
+          sinon.match(/releases are currently frozen/)
+        );
+      });
     });
   });
 });

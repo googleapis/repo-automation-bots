@@ -17,7 +17,7 @@ import {Octokit} from '@octokit/rest';
 import {createPullRequest, Changes} from 'code-suggester';
 import {request} from 'gaxios';
 import {v4 as uuid} from 'uuid';
-import {PolicyResult, GitHubRepo} from './policy';
+import {PolicyResult, GitHubRepo, Logger} from './policy';
 // eslint-disable-next-line node/no-extraneous-import
 import {Endpoints} from '@octokit/types';
 type PullRequests =
@@ -63,7 +63,11 @@ export class Changer {
   private name: string;
   private prsCache?: PullRequests;
 
-  constructor(octokit: Octokit, repo: GitHubRepo) {
+  constructor(
+    octokit: Octokit,
+    repo: GitHubRepo,
+    private logger: Logger = console
+  ) {
     this.octokit = octokit;
     this.repo = repo;
     const [owner, name] = repo.full_name.split('/');
@@ -115,17 +119,30 @@ export class Changer {
       ],
     ]);
 
-    await createPullRequest(this.octokit, changes, {
-      title,
-      message: title,
-      description: title,
-      upstreamOwner: this.owner,
-      upstreamRepo: this.name,
-      fork: false,
-      primary: this.repo.default_branch,
-      retry: 0,
-      branch: `policy-bot-${uuid()}`,
-    });
+    try {
+      await createPullRequest(this.octokit, changes, {
+        title,
+        message: title,
+        description: title,
+        upstreamOwner: this.owner,
+        upstreamRepo: this.name,
+        fork: false,
+        primary: this.repo.default_branch,
+        retry: 0,
+        branch: `policy-bot-${uuid()}`,
+      });
+    } catch (e) {
+      const err = e as Error;
+      if (err.message === 'Branch not found') {
+        // If a repository is empty, and the initial commit has not been pushed - the default branch
+        // doesn't exist and this would throw an error. This should not be fatal, so warn on the error.
+        this.logger.warn(
+          `Branch ${this.repo.default_branch} does not exist on repository ${this.owner}/${this.name}.`
+        );
+      } else {
+        throw err;
+      }
+    }
   }
 
   /**
@@ -149,6 +166,10 @@ export class Changer {
   }
 }
 
-export function getChanger(octokit: Octokit, repo: GitHubRepo) {
-  return new Changer(octokit, repo);
+export function getChanger(
+  octokit: Octokit,
+  repo: GitHubRepo,
+  logger: Logger = console
+) {
+  return new Changer(octokit, repo, logger);
 }

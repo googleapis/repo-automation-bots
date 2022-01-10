@@ -17,7 +17,7 @@
 import yaml from 'js-yaml';
 import Ajv from 'ajv';
 import {Octokit} from '@octokit/rest';
-import {Configuration} from './auto-approve';
+import {Configuration, GHFile, ConfigurationV2} from './interfaces';
 // eslint-disable-next-line node/no-extraneous-import
 import {RequestError} from '@octokit/request-error';
 
@@ -25,19 +25,17 @@ const ajv = new Ajv();
 
 const CONFIGURATION_FILE_PATH = 'auto-approve.yml';
 
-interface File {
-  content: string | undefined;
-}
-
-export interface ErrorMessage {
-  wrongProperty: Record<string, string>;
-  message: string | undefined;
-}
-
 import schema from './valid-pr-schema.json';
+import schemaV2 from './valid-pr-schema-v2.json';
 
-function isFile(file: File | unknown): file is File {
-  return (file as File).content !== undefined;
+function isFile(file: GHFile | unknown): file is GHFile {
+  return (file as GHFile).content !== undefined;
+}
+
+export function isConfigV2(
+  config: ConfigurationV2 | Configuration | unknown
+): config is ConfigurationV2 {
+  return (<ConfigurationV2>config).processes !== undefined;
 }
 
 /**
@@ -71,7 +69,16 @@ export async function validateSchema(
 ): Promise<string> {
   const parsedYaml =
     typeof configYaml === 'string' ? yaml.load(configYaml) : configYaml;
-  const validateSchema = await ajv.compile(schema);
+  let validateSchema;
+  if (
+    typeof parsedYaml === 'object' &&
+    parsedYaml !== null &&
+    isConfigV2(parsedYaml as unknown)
+  ) {
+    validateSchema = await ajv.compile(schemaV2);
+  } else {
+    validateSchema = await ajv.compile(schema);
+  }
   await validateSchema(parsedYaml);
   const errorText = (await validateSchema).errors?.map(x => {
     return {wrongProperty: x.params, message: x.message};
@@ -92,7 +99,7 @@ export async function checkAutoApproveConfig(
   octokit: Octokit,
   owner: string,
   repo: string,
-  autoApproveFile: string | Configuration | undefined
+  autoApproveFile: string | Configuration | ConfigurationV2 | undefined
 ): Promise<string> {
   let message = '';
 

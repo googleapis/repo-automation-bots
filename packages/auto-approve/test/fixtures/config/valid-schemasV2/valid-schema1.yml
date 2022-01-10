@@ -1,0 +1,10 @@
+processes:
+  - "UpdateDiscoveryArtifacts"
+  - "RegenerateReadme"
+  - "DiscoveryDocUpdate"
+  - "PythonDependency"
+  - "NodeDependency"
+  - "NodeRelease"
+  - "JavaDependency"
+  - "OwlBotTemplateChanges"
+  - "OwlBotAPIChanges"

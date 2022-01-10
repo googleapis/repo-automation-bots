@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "@google-automations/auto-approve/v2",
+  "description": "A PR safe to merge",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "processes": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "UpdateDiscoveryArtifacts",
+          "RegenerateReadme",
+          "DiscoveryDocUpdate",
+          "PythonDependency",
+          "NodeDependency",
+          "NodeRelease",
+          "JavaDependency",
+          "OwlBotTemplateChanges",
+          "OwlBotAPIChanges"
+        ]
+      }
+    }
+  }
+ }
+ 
