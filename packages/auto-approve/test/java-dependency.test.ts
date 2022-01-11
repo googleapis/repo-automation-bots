@@ -296,9 +296,7 @@ describe('behavior of Java Dependency process', () => {
             ' \n' +
             "   // To run function locally using Functions Framework's local invoker\n" +
             "-  invoker 'com.google.cloud.functions.invoker:java-function-invoker:1.0.0-alpha-2-rc5'\n" +
-            "+  invoker 'com.google.cloud.functions.invoker:java-function-invoker:1.0.2'\n" +
-            '   // [END functions_gradle_add_dependencies]\n' +
-            '   // [END functions_example_pom_dependencies]\n',
+            "+  invoker 'com.google.cloud.functions.invoker:java-function-invoker:1.0.2'\n",
         },
       ],
       'testRepoName',
