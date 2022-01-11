@@ -1,0 +1,3 @@
+manifest: true
+manifestConfig: path/to/config.json
+manifestFile: path/to/manifest.json
