@@ -20,11 +20,11 @@ import {Octokit} from '@octokit/rest';
  */
 export interface FileSpecificRule {
   prAuthor: string;
-  process?: string;
-  title?: RegExp;
-  targetFile: RegExp;
-  oldVersion: RegExp;
-  newVersion: RegExp;
+  process: string;
+  targetFile: string;
+  dependency?: RegExp;
+  oldVersion?: RegExp;
+  newVersion?: RegExp;
 }
 
 /**
@@ -52,6 +52,16 @@ export interface Versions {
   oldMinorVersion: string;
   newMajorVersion: string;
   newMinorVersion: string;
+}
+
+/**
+ * Interface for return type of array from getTargetFiles. It is the amalgamation
+ * of the file that was changed in the PR, plus the file rule that applies
+ * to that given file.
+ */
+export interface fileAndMetadata {
+  file: File;
+  fileRule: FileSpecificRule;
 }
 
 /**

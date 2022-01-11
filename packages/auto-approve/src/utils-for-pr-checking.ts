@@ -12,52 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {File} from './interfaces';
+import {File, FileSpecificRule, fileAndMetadata, Versions} from './interfaces';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import {logger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
+import {fileURLToPath} from 'url';
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-/**
- * Interface for return type of array from getTargetFiles. It is the amalgamation
- * of the file that was changed in the PR, plus the file rule that applies
- * to that given file.
- */
-export interface fileAndMetadata {
-  file: File;
-  fileRule: FileSpecificRule;
-}
-/**
- * Interface for rules in `./language-versioning-rules.json`. These
- * are rules for files that match an author and filename, and then provide
- * regex for the versions for those particular formats.
- */
-export interface FileSpecificRule {
-  prAuthor: string;
-  process: string;
-  targetFile: string;
-  dependency?: RegExp;
-  oldVersion?: RegExp;
-  newVersion?: RegExp;
-}
-
-/**
- * Interface for the versions found in the selected files. These versions are
- * picked out based on the regex listed in `./language-versioning-rules.json` for
- * that particular file. From there, you will get the previous dependency, new
- * dependency, and previous version number and changed version number.
- */
-export interface Versions {
-  oldDependencyName: string;
-  newDependencyName: string;
-  oldMajorVersion: string;
-  oldMinorVersion: string;
-  newMajorVersion: string;
-  newMinorVersion: string;
-}
 
 /**
  * Takes all of the files changed in a given PR, and checks them against a set of
@@ -436,12 +399,20 @@ export function doesDependencyChangeMatchPRTitleJava(
   if (titleRegex) {
     dependencyName = titleRegex[2];
 
-    if (!dependencyName.includes('com.google.')) {
+    if (
+      !(
+        dependencyName.includes('com.google.') ||
+        dependencyName.includes('io.grpc')
+      )
+    ) {
       return false;
     }
     return (
-      versions.newDependencyName === versions.oldDependencyName &&
-      dependencyName === versions.newDependencyName
+      (versions.newDependencyName === versions.oldDependencyName &&
+        dependencyName === versions.newDependencyName) ||
+      (versions.newDependencyName.includes('grpc') &&
+        versions.oldDependencyName.includes('grpc') &&
+        dependencyName.includes('grpc'))
     );
   }
   return false;
@@ -472,19 +443,54 @@ export function getJavaVersions(
   let oldMinorVersion;
   let newMajorVersion;
   let newMinorVersion;
+  let oldMajorRevVersion;
+  let newMajorRevVersion;
 
   const oldVersions = versionFile.patch?.match(oldVersionRegex);
   const newVersions = versionFile.patch?.match(newVersionRegex);
-  if (oldVersions) {
-    oldDependencyName = `${oldVersions[1]}:${oldVersions[2]}`;
-    oldMajorVersion = oldVersions[4] || oldVersions[6];
-    oldMinorVersion = oldVersions[5] || oldVersions[7];
+
+  if (versionFile.filename.includes('build.gradle')) {
+    if (oldVersions) {
+      oldDependencyName = oldVersions[1] || oldVersions[4];
+      oldMajorVersion = oldVersions[2] || oldVersions[5];
+      oldMinorVersion = oldVersions[6] || oldVersions[3];
+    }
+
+    if (newVersions) {
+      newDependencyName = newVersions[1] || newVersions[4];
+      newMajorVersion = newVersions[2] || newVersions[5];
+      newMinorVersion = newVersions[6] || newVersions[3];
+    }
+  } else {
+    if (oldVersions) {
+      oldDependencyName = `${oldVersions[1]}:${oldVersions[2]}`;
+      oldMajorRevVersion = oldVersions[4];
+      oldMajorVersion = oldVersions[5] || oldVersions[7];
+      oldMinorVersion = oldVersions[6] || oldVersions[8];
+    }
+
+    if (newVersions) {
+      newDependencyName = `${newVersions[1]}:${newVersions[2]}`;
+      newMajorRevVersion = newVersions[5];
+      newMajorVersion = newVersions[6] || newVersions[8];
+      newMinorVersion = newVersions[7] || newVersions[9];
+    }
   }
 
-  if (newVersions) {
-    newDependencyName = `${newVersions[1]}:${newVersions[2]}`;
-    newMajorVersion = newVersions[5] || newVersions[7];
-    newMinorVersion = newVersions[6] || newVersions[8];
+  // This reassignment occurs when apiary clients are updated, where the date changes, but not the
+  // version.
+  // See this bug: https://github.com/googleapis/repo-automation-bots/issues/2371
+  // See this as an example: https://github.com/GoogleCloudPlatform/java-docs-samples/pull/5888/files
+  if (
+    oldMajorRevVersion &&
+    newMajorRevVersion &&
+    Number(oldMajorVersion) === Number(newMajorVersion) &&
+    Number(oldMinorVersion) === Number(newMinorVersion)
+  ) {
+    oldMajorVersion = '0';
+    oldMinorVersion = oldMajorRevVersion;
+    newMajorVersion = '0';
+    newMinorVersion = newMajorRevVersion;
   }
 
   // If there is a change with a file that requires special validation checks,
