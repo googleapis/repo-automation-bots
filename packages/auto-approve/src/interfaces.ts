@@ -20,7 +20,8 @@ import {Octokit} from '@octokit/rest';
  */
 export interface FileSpecificRule {
   prAuthor: string;
-  process: string;
+  process?: string;
+  title?: RegExp;
   targetFile: string;
   dependency?: RegExp;
   oldVersion?: RegExp;

@@ -18,7 +18,6 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import {logger} from 'gcf-utils';
 import {Octokit} from '@octokit/rest';
-import {fileURLToPath} from 'url';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
