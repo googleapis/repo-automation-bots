@@ -60,6 +60,9 @@ describe('repo-metadata-lint', () => {
         .stub()
         .returns(emptyIterator());
       const infoStub = sandbox.stub(logger, 'info');
+      const githubApiRequests = nock('https://api.github.com')
+        .get('/repos/foo-org/foo-repo/issues?labels=repo-metadata%3A%20lint')
+        .reply(200, []);
       await probot.receive({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'schedule.repository' as any,
@@ -72,6 +75,7 @@ describe('repo-metadata-lint', () => {
         id: 'abc123',
       });
       sandbox.assert.calledWith(infoStub, sinon.match(/no validation errors/));
+      githubApiRequests.done();
     });
 
     it('opens an issue on failure', async () => {
