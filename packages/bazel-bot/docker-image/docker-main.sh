@@ -30,8 +30,18 @@ then
   TARGET_CLONE_ARGS="-b $TARGET_BRANCH"
 fi
 
+# According to https://docs.github.com/en/developers/apps/authenticating-with-github-apps#authenticating-as-a-github-app
+JWT=$(jwt encode --secret "@$GITHUB_APP_SECRET" --iss "$GITHUB_APP_ID" --exp "+10 min" --alg RS256)
+
+# According to https://docs.github.com/en/developers/apps/authenticating-with-github-apps#authenticating-as-an-installation
+GITHUB_TOKEN=$(curl -X POST \
+    -H "Authorization: Bearer $JWT" \
+    -H "Accept: application/vnd.github.v3+json" \
+    https://api.github.com/app/installations/$GITHUB_APP_INSTALLATION_ID/access_tokens \
+    | jq -r .token)
+
 git clone https://github.com/googleapis/googleapis.git ${SOURCE_CLONE_ARGS}
-git clone https://github.com/googleapis/googleapis-gen.git ${TARGET_CLONE_ARGS}
+git clone https://x-access-token:$GITHUB_TOKEN@github.com/googleapis/googleapis-gen.git ${TARGET_CLONE_ARGS}
 
 mydir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
