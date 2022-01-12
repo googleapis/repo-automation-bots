@@ -16,7 +16,11 @@
 import {ValidationResult} from './validate';
 
 const START_GENERATED = 'Result of scan';
-const STOP_GENERATED = 'correct these problems';
+const STOP_GENERATED = 'address these problems';
+const SCHEMA_URL =
+  'https://github.com/googleapis/repo-automation-bots/blob/main/packages/repo-metadata-lint/src/repo-metadata-schema.json';
+const APIS_INDEX =
+  'https://github.com/googleapis/googleapis/blob/master/api-index-v1.json';
 
 // Helper class to generate and compare error messages based
 // on an array of validation errors, potentially across multiple
@@ -32,7 +36,11 @@ ${START_GENERATED} 📈:
 
 `;
     body += ErrorMessageText.resultsErrors(results);
-    body += `\n\n ☝️ Once you ${STOP_GENERATED}, you can close this issue.\n\nReach out to **go/github-automation** if you have any questions.`;
+    body += `\n\n ☝️ Once you ${STOP_GENERATED}, you can close this issue.\n\n`;
+    body += '### Need help?';
+    body += `\n* [Schema definition](${SCHEMA_URL}): lists valid options for each field.\n* [API index](${APIS_INDEX}): for gRPC libraries **api_shortname** should match the subdomain of an API's **hostName**.`;
+    body +=
+      '\n* Reach out to **go/github-automation** if you have any questions.';
     return body;
   }
   // Internal helper for the "results of scan" section of issue or
@@ -52,8 +60,7 @@ ${START_GENERATED} 📈:
     const resultsErrors = ErrorMessageText.resultsErrors(results);
     const issueErrors = [];
     let collecting = false;
-    // Parse the error output stored in issue, this is the part
-    // between ``` and ```:
+    // Parse the error output stored in issue:
     for (const line of issueBody.split(/\r?\n/)) {
       if (line.includes(START_GENERATED) && !collecting) {
         collecting = true;
