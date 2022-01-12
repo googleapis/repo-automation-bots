@@ -16,7 +16,7 @@
 import {ValidationResult} from './validate';
 
 const START_GENERATED = 'Result of scan';
-const STOP_GENERATED = 'correct these problems';
+const STOP_GENERATED = 'address these problems';
 const SCHEMA_URL =
   'https://github.com/googleapis/repo-automation-bots/blob/main/packages/repo-metadata-lint/src/repo-metadata-schema.json';
 const APIS_INDEX =
@@ -60,8 +60,7 @@ ${START_GENERATED} 📈:
     const resultsErrors = ErrorMessageText.resultsErrors(results);
     const issueErrors = [];
     let collecting = false;
-    // Parse the error output stored in issue, this is the part
-    // between ``` and ```:
+    // Parse the error output stored in issue:
     for (const line of issueBody.split(/\r?\n/)) {
       if (line.includes(START_GENERATED) && !collecting) {
         collecting = true;
