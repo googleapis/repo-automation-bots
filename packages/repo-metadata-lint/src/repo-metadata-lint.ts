@@ -17,6 +17,7 @@ import {Probot} from 'probot';
 import {logger} from 'gcf-utils';
 import * as fileIterator from './file-iterator';
 import {Validate, ValidationResult} from './validate';
+import {IssueOpener} from './issue-opener';
 
 /**
  * Main function, run on schedule and on PRs, checking validity of .repo-metadata.json.
@@ -46,6 +47,8 @@ export function handler(app: Probot) {
       logger.info(
         `${results.length} validation errors found for ${owner}/${repo}`
       );
+      const opener = new IssueOpener(owner, repo, context.octokit);
+      await opener.open(results);
     }
   });
 

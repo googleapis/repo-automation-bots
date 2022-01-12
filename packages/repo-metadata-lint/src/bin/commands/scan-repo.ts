@@ -70,6 +70,6 @@ export const scanRepo: yargs.CommandModule<{}, Args> = {
       }
     }
     const opener = new IssueOpener(argv.owner, argv.repo, octokit);
-    opener.open(results);
+    await opener.open(results);
   },
 };
