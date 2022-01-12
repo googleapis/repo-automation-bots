@@ -17,6 +17,10 @@ import {ValidationResult} from './validate';
 
 const START_GENERATED = 'Result of scan';
 const STOP_GENERATED = 'correct these problems';
+const SCHEMA_URL =
+  'https://github.com/googleapis/repo-automation-bots/blob/main/packages/repo-metadata-lint/src/repo-metadata-schema.json';
+const APIS_INDEX =
+  'https://github.com/googleapis/googleapis/blob/master/api-index-v1.json';
 
 // Helper class to generate and compare error messages based
 // on an array of validation errors, potentially across multiple
@@ -33,6 +37,7 @@ ${START_GENERATED} 📈:
 `;
     body += ErrorMessageText.resultsErrors(results);
     body += `\n\n ☝️ Once you ${STOP_GENERATED}, you can close this issue.\n\nReach out to **go/github-automation** if you have any questions.`;
+    body += `\n* [schema definition](${SCHEMA_URL}): lists valid options for each field.\n* [api index](${APIS_INDEX}): for gRPC libraries **api_shortname** should match subdomain of **hostName**.`;
     return body;
   }
   // Internal helper for the "results of scan" section of issue or
