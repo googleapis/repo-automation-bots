@@ -1,5 +1,12 @@
 # Changelog
 
+### [4.0.1](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v4.0.0...bot-config-utils-v4.0.1) (2021-12-02)
+
+
+### Bug Fixes
+
+* **bot-config-util:** reduce concurrency of file list operation ([#2947](https://www.github.com/googleapis/repo-automation-bots/issues/2947)) ([484e3e0](https://www.github.com/googleapis/repo-automation-bots/commit/484e3e0bfd9ec4d51c5309e01239f731485f976d)), closes [#1949](https://www.github.com/googleapis/repo-automation-bots/issues/1949)
+
 ## [4.0.0](https://www.github.com/googleapis/repo-automation-bots/compare/bot-config-utils-v3.2.0...bot-config-utils-v4.0.0) (2021-08-09)
 
 
