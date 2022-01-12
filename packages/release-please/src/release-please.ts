@@ -281,7 +281,13 @@ const handler = (app: Probot) => {
       if (branchConfiguration.handleGHRelease) {
         logger.info(`handling GitHub release for (${repoUrl})`);
         try {
-          await Runner.createReleases(manifest);
+          const numReleases = await Runner.createReleases(manifest);
+          logger.info(`Created ${numReleases} releases`);
+          if (numReleases) {
+            // pause to let GitHub index releases before trying to open new pull requests
+            logger.info('Sleeping for 2 seconds');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
         } catch (e) {
           if (e instanceof Errors.DuplicateReleaseError) {
             // In the future, this could raise an issue against the
