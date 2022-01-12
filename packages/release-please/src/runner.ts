@@ -18,7 +18,8 @@ export class Runner {
   static createPullRequests = async (manifest: Manifest) => {
     await manifest.createPullRequests();
   };
-  static createReleases = async (manifest: Manifest) => {
-    await manifest.createReleases();
+  static createReleases = async (manifest: Manifest): Promise<number> => {
+    const releases = await manifest.createReleases();
+    return releases.filter(release => !!release).length;
   };
 }
