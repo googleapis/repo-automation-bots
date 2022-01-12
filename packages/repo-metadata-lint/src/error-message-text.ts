@@ -38,7 +38,7 @@ ${START_GENERATED} 📈:
     body += ErrorMessageText.resultsErrors(results);
     body += `\n\n ☝️ Once you ${STOP_GENERATED}, you can close this issue.\n\n`;
     body += '### Need help?';
-    body += `\n* [Schema definition](${SCHEMA_URL}): lists valid options for each field.\n* [API index](${APIS_INDEX}): for gRPC libraries **api_shortname** should match subdomain of **hostName**.`;
+    body += `\n* [Schema definition](${SCHEMA_URL}): lists valid options for each field.\n* [API index](${APIS_INDEX}): for gRPC libraries **api_shortname** should match the subdomain of an API's **hostName**.`;
     body +=
       '\n* Reach out to **go/github-automation** if you have any questions.';
     return body;
