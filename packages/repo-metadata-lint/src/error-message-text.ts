@@ -15,6 +15,9 @@
 
 import {ValidationResult} from './validate';
 
+const START_GENERATED = 'Result of scan';
+const STOP_GENERATED = 'correct these problems';
+
 // Helper class to generate and compare error messages based
 // on an array of validation errors, potentially across multiple
 // .repo-metadata.json files.
@@ -25,12 +28,11 @@ export class ErrorMessageText {
       results.length > 1 ? 's' : ''
     }:
 
-Result of scan 📈:
+${START_GENERATED} 📈:
 
 `;
-    body += '```\n' + ErrorMessageText.resultsErrors(results) + '\n```';
-    body +=
-      '\n\n ☝️ Once you correct these problems, you can close this issue.\n\nReach out to **go/github-automation** if you have any questions.';
+    body += ErrorMessageText.resultsErrors(results);
+    body += `\n\n ☝️ Once you ${STOP_GENERATED}, you can close this issue.\n\nReach out to **go/github-automation** if you have any questions.`;
     return body;
   }
   // Internal helper for the "results of scan" section of issue or
@@ -38,7 +40,10 @@ Result of scan 📈:
   private static resultsErrors(results: ValidationResult[]) {
     let body = '';
     for (const result of results) {
-      body += result.errors.join('\n');
+      for (const error of result.errors) {
+        body += `* ${error}\n`;
+      }
+      body += '\n';
     }
     return body.trim();
   }
@@ -50,15 +55,15 @@ Result of scan 📈:
     // Parse the error output stored in issue, this is the part
     // between ``` and ```:
     for (const line of issueBody.split(/\r?\n/)) {
-      if (line.includes('```') && !collecting) {
+      if (line.includes(START_GENERATED) && !collecting) {
         collecting = true;
         continue;
       }
-      if (line.includes('```')) {
+      if (line.includes(STOP_GENERATED)) {
         break;
       }
       if (collecting) issueErrors.push(line);
     }
-    return resultsErrors === issueErrors.join('\n');
+    return resultsErrors.trim() === issueErrors.join('\n').trim();
   }
 }
