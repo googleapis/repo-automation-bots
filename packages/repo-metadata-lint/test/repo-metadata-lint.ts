@@ -20,8 +20,17 @@ import * as sinon from 'sinon';
 import {handler} from '../src/repo-metadata-lint';
 import {logger} from 'gcf-utils';
 import * as fileIterator from '../src/file-iterator';
+import {assert} from 'console';
 
 async function* emptyIterator() {}
+async function* failingIterator() {
+  yield [
+    './foo',
+    JSON.stringify({
+      library_type: 'BATMAN_LIB',
+    }),
+  ];
+}
 
 nock.disableNetConnect();
 const sandbox = sinon.createSandbox();
@@ -51,6 +60,9 @@ describe('repo-metadata-lint', () => {
         .stub()
         .returns(emptyIterator());
       const infoStub = sandbox.stub(logger, 'info');
+      const githubApiRequests = nock('https://api.github.com')
+        .get('/repos/foo-org/foo-repo/issues?labels=repo-metadata%3A%20lint')
+        .reply(200, []);
       await probot.receive({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         name: 'schedule.repository' as any,
@@ -63,6 +75,37 @@ describe('repo-metadata-lint', () => {
         id: 'abc123',
       });
       sandbox.assert.calledWith(infoStub, sinon.match(/no validation errors/));
+      githubApiRequests.done();
+    });
+
+    it('opens an issue on failure', async () => {
+      const FileIterator = sandbox.stub(fileIterator, 'FileIterator');
+      FileIterator.prototype.repoMetadata = sandbox
+        .stub()
+        .returns(failingIterator());
+      const infoStub = sandbox.stub(logger, 'info');
+      const githubApiRequests = nock('https://api.github.com')
+        .get('/repos/foo-org/foo-repo/issues?labels=repo-metadata%3A%20lint')
+        .reply(200, [])
+        .post('/repos/foo-org/foo-repo/issues', (post: {body: string}) => {
+          assert(post.body.includes('library_type must be equal to one of'));
+          return true;
+        })
+        .reply(200);
+
+      await probot.receive({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        name: 'schedule.repository' as any,
+        payload: {
+          organization: {login: 'foo-org'},
+          repository: {name: 'foo-repo', owner: {login: 'bar-login'}},
+          cron_org: 'foo-org',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        id: 'abc123',
+      });
+      sandbox.assert.calledWith(infoStub, sinon.match(/1 validation errors/));
+      githubApiRequests.done();
     });
   });
 });
