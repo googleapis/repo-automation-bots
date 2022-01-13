@@ -24,6 +24,7 @@ interface Args {
   'source-repo-commit-hash': string;
   dest: string | undefined;
   'config-file': string;
+  token?: string;
 }
 
 export const copyCodeCommand: yargs.CommandModule<{}, Args> = {
@@ -54,6 +55,10 @@ export const copyCodeCommand: yargs.CommandModule<{}, Args> = {
         describe: 'Path in the directory to the .OwlBot.yaml config.',
         type: 'string',
         default: '.github/.OwlBot.yaml',
+      })
+      .option('token', {
+        describe: 'Token for cloning private googleapis-gen repo',
+        type: 'string',
       });
   },
   async handler(argv) {
@@ -63,7 +68,9 @@ export const copyCodeCommand: yargs.CommandModule<{}, Args> = {
       argv['source-repo-commit-hash'],
       destDir,
       tmp.dirSync().name,
-      await loadOwlBotYaml(path.join(destDir, argv['config-file']))
+      await loadOwlBotYaml(path.join(destDir, argv['config-file'])),
+      console,
+      argv.token
     );
   },
 };
