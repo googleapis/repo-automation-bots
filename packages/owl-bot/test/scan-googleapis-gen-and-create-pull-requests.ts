@@ -127,7 +127,9 @@ describe('scanGoogleapisGenAndCreatePullRequests', function () {
     assert.strictEqual(
       await scanGoogleapisGenAndCreatePullRequests(
         abcRepo,
-        {} as OctokitFactory,
+        {
+          getGitHubShortLivedAccessToken: () => Promise.resolve(''),
+        } as OctokitFactory,
         new FakeConfigsStore(),
         1000
       ),
