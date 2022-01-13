@@ -77,7 +77,13 @@ export async function scanGoogleapisGenAndCreatePullRequests(
   const workDir = tmp.dirSync().name;
   // cloneDepth + 1 because the final commit in a shallow clone is grafted: it contains
   // the combined state of all earlier commits, so we don't want to examine it.
-  const sourceDir = toLocalRepo(sourceRepo, workDir, logger, cloneDepth + 1);
+  const sourceDir = toLocalRepo(
+    sourceRepo,
+    workDir,
+    logger,
+    cloneDepth + 1,
+    await octokitFactory.getGitHubShortLivedAccessToken()
+  );
 
   // Collect the history of commit hashes.
   const cmd = newCmd(logger);
