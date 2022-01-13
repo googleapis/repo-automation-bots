@@ -30,6 +30,7 @@ import {OWL_BOT_COPY} from './core';
 import {newCmd} from './cmd';
 import {createPullRequestFromLastCommit, getLastCommitBody} from './create-pr';
 import {AffectedRepo} from './configs-store';
+import {githubRepoFromOwnerSlashName} from './github-repo';
 
 // This code generally uses Sync functions because:
 // 1. None of our current designs including calling this code from a web
@@ -350,24 +351,25 @@ export async function loadOwlBotYaml(yamlPath: string): Promise<OwlBotYaml> {
  * @param workDir a local directory where the cloned repo will be created
  * @param logger a logger
  * @param depth the depth param to pass to git clone.
+ * @param accessToken use this access token when cloning the repo.
  * @returns the path to the local repo.
  */
 export function toLocalRepo(
   repo: string,
   workDir: string,
   logger = console,
-  depth = 100
+  depth = 100,
+  accessToken = ''
 ): string {
   if (stat(repo)?.isDirectory()) {
     logger.info(`Using local source repo directory ${repo}`);
     return repo;
   } else {
-    const [, repoName] = repo.split('/');
-    const localDir = path.join(workDir, repoName);
+    const githubRepo = githubRepoFromOwnerSlashName(repo);
+    const localDir = path.join(workDir, githubRepo.repo);
+    const url = githubRepo.getCloneUrl(accessToken);
     const cmd = newCmd(logger);
-    cmd(
-      `git clone --depth=${depth} "https://github.com/${repo}.git" ${localDir}`
-    );
+    cmd(`git clone --depth=${depth} "${url}" ${localDir}`);
     return localDir;
   }
 }
