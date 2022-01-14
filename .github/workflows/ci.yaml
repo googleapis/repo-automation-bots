@@ -102,4 +102,4 @@ jobs:
           paths: '**/*.md'
           concurrency: 1
           verbosity: 'ERROR'
-          skip: 'node_modules/ http://devrel/products http://localhost:3000 https://www.github.com/googleapis/repo-automation-bots/compare/*'
+          skip: 'node_modules/ http://devrel/products http://localhost:3000 https://www.github.com/googleapis/repo-automation-bots/compare/* https://github.com/googleapis/googleapis-gen'

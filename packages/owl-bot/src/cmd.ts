@@ -19,12 +19,20 @@ export type Cmd = (
   options?: proc.ExecSyncOptions | undefined
 ) => Buffer;
 
+function sanitize(command: string) {
+  command = command.replace(
+    /x-access-token:([^/]+)/,
+    'x-access-token:REDACTED'
+  );
+  return command;
+}
+
 export function newCmd(logger = console): Cmd {
   const cmd = (
     command: string,
     options?: proc.ExecSyncOptions | undefined
   ): Buffer => {
-    logger.info(command);
+    logger.info(sanitize(command));
     return proc.execSync(command, options);
   };
   return cmd;
