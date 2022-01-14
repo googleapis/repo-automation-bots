@@ -70,7 +70,7 @@ export const copyCodeCommand: yargs.CommandModule<{}, Args> = {
       tmp.dirSync().name,
       await loadOwlBotYaml(path.join(destDir, argv['config-file'])),
       console,
-      argv.token
+      argv.token ?? process.env.GITHUB_TOKEN
     );
   },
 };
