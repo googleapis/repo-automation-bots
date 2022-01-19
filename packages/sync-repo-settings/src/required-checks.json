@@ -42,8 +42,16 @@
         "requiresCodeOwnerReviews": true,
         "requiresStrictStatusChecks": true,
         "requiredStatusCheckContexts": [
-          "Kokoro",
-          "cla/google"
+          "cla/google",
+          "OwlBot Post Processor",
+          "docs",
+          "lint",
+          "unit (3.6)",
+          "unit (3.7)",
+          "unit (3.8)",
+          "unit (3.9)",
+          "unit (3.10)",
+          "cover"
         ]
       }
     ],
@@ -62,6 +70,10 @@
       },
       {
         "team": "python-samples-owners",
+        "permission": "push"
+      },
+      {
+        "team": "python-samples-reviewers",
         "permission": "push"
       }
     ]
