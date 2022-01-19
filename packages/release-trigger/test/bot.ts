@@ -31,13 +31,16 @@ const fixturesPath = resolve(__dirname, '../../test/fixtures');
 function buildFakePullRequest(
   owner: string,
   repo: string,
-  number: number
+  number: number,
+  labels: string[] = ['autorelease: tagged']
 ): releaseTriggerModule.PullRequest {
   return {
     html_url: `https://github.com/${owner}/${repo}/pull/${number}`,
     number,
     state: 'closed',
-    labels: [{name: 'autorelease: tagged'}],
+    labels: labels.map(label => {
+      return {name: label};
+    }),
     merge_commit_sha: 'abcd1234',
     base: {
       repo: {
@@ -128,6 +131,60 @@ describe('bot', () => {
         sinon.match.any,
         sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 1234})
       );
+      sinon.assert.calledWith(
+        markTriggeredStub,
+        sinon.match.any,
+        sinon.match({owner: 'Codertocat', repo: 'Hello-World', number: 1235})
+      );
+      requests.done();
+    });
+
+    it('should ignore if pull request already triggered', async () => {
+      const payload = require(resolve(
+        fixturesPath,
+        './events/release_published'
+      ));
+      const pull1 = buildFakePullRequest('Codertocat', 'Hello-World', 1234);
+      const pull1Triggered = buildFakePullRequest(
+        'Codertocat',
+        'Hello-World',
+        1234,
+        ['autorelease: tagged', 'autorelease: triggered']
+      );
+      const pull2 = buildFakePullRequest('Codertocat', 'Hello-World', 1235);
+      const requests = nock('https://api.github.com')
+        .get('/repos/Codertocat/Hello-World/pulls/1234')
+        .reply(200, pull1Triggered)
+        .get('/repos/Codertocat/Hello-World/pulls/1235')
+        .reply(200, pull2);
+
+      getConfigStub.resolves({enabled: true});
+      datastoreLockAcquireStub.resolves(true);
+      datastoreLockReleaseStub.resolves(true);
+      const findPullRequestsStub = sandbox
+        .stub(releaseTriggerModule, 'findPendingReleasePullRequests')
+        .resolves([pull1, pull2]);
+      const triggerKokoroJobStub = sandbox
+        .stub(releaseTriggerModule, 'triggerKokoroJob')
+        .resolves({stdout: '', stderr: ''});
+      const markTriggeredStub = sandbox
+        .stub(releaseTriggerModule, 'markTriggered')
+        .resolves();
+
+      await probot.receive({
+        name: 'release.published',
+        payload: payload,
+        id: 'abc123',
+      });
+
+      sinon.assert.calledOnce(getConfigStub);
+      sinon.assert.calledOnce(findPullRequestsStub);
+      sinon.assert.calledOnce(triggerKokoroJobStub);
+      sinon.assert.calledWith(
+        triggerKokoroJobStub,
+        'https://github.com/Codertocat/Hello-World/pull/1235'
+      );
+      sinon.assert.calledOnce(markTriggeredStub);
       sinon.assert.calledWith(
         markTriggeredStub,
         sinon.match.any,
