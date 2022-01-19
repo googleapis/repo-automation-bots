@@ -402,17 +402,10 @@ export async function copyCode(
   destDir: string,
   workDir: string,
   yaml: OwlBotYaml,
-  logger = console,
-  accessToken?: string
+  logger = console
 ): Promise<{sourceCommitHash: string; commitMsgPath: string}> {
   const cmd = newCmd(logger);
-  const sourceDir = toLocalRepo(
-    sourceRepo,
-    workDir,
-    logger,
-    100,
-    accessToken ?? ''
-  );
+  const sourceDir = toLocalRepo(sourceRepo, workDir, logger);
   // Check out the specific hash we want to copy from.
   if ('none' === sourceCommitHash) {
     // User is running copy-code from command line.  The path specified by
